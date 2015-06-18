@@ -1,0 +1,98 @@
+.login {
+  align-items: center;
+  background-color: $color-gray-dark;
+  background-image: url("/images/login-bg.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+
+  .login-body {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+
+    svg {
+      fill: $color-white;
+      height: 70px;
+      margin-bottom: $x-big;
+      width: 200px;
+      @include animation(.1s,1.5s,fadeInDown);
+    }
+
+    .login-content {
+      display: flex;
+      flex-direction: column;
+      width: 320px;
+      @include animation(1s,1s,fadeIn);
+
+      .input-text {
+        background-color: transparent;
+        border-color: $color-gray;
+        color: $color-gray-darker;
+        font-size: $fs18;
+
+        @include placeholder {
+          color: $color-gray;
+        }
+
+        &:hover {
+
+          @include placeholder {
+            color: $color-white;
+          }
+
+        }
+
+        &:focus {
+          background-color: rgba(255,255,255,.3);
+          border-color: $color-gray-lighter;
+        }
+
+        &.success {
+          background-color: $color-success-light;
+          color: $color-success-dark;
+
+          @include placeholder {
+            color: $color-white;
+          }
+
+        }
+
+        &.error {
+          background-color: rgba(234,35,35,.3);
+          color: red;
+
+          @include placeholder {
+            color: $color-white;
+          }
+
+        }
+
+      }
+
+      .input-checkbox {
+        margin: $big 0;
+
+        label {
+          color: $color-gray-light;
+        }
+
+      }
+
+      .login-links {
+        display: flex;
+        font-size: $fs13;
+        justify-content: space-between;
+        margin-top: $medium;
+      }
+
+    }
+
+  }
+
+}

@@ -1,0 +1,146 @@
+/// This mixin allows you  to add styles to a specific Media query inside the style selector specifying which Breaking Point you want to choose.
+/// @group Mixins
+/// @parameter $point - This parameter decide which one of Breaking Point you want to use: "bp-papabear" (Desktop), "bp-mamabear" (Tablet) and "bp-babybear" (Mobile).
+@mixin bp($point) {
+
+  $bp-babybear: "(min-width: 720px)";
+  $bp-mamabear: "(min-width: 1020px)";
+  $bp-papabear: "(min-width: 1366px)";
+
+  @if $point == papa-bear {
+    @media #{$bp-papabear} { @content; }
+  }
+  @else if $point == mama-bear {
+    @media #{$bp-mamabear} { @content; }
+  }
+  @else if $point == baby-bear {
+    @media #{$bp-babybear}  { @content; }
+  }
+
+}
+
+
+// Advanced positioning
+// ----------------
+@mixin position($type,
+                $top: $position-default,
+                $right: $position-default,
+                $bottom: $position-default,
+                $left: $position-default) {
+  position: $type;
+  $allowed_types: absolute relative fixed;
+  @if not index($allowed_types, $type) {
+    @warn "Unknown position: #{$type}.";
+  }
+  @each $data in top $top, right $right, bottom $bottom, left $left {
+    #{nth($data, 1)}: nth($data, 2);
+  }
+}
+@mixin absolute($top: $position-default, $right: $position-default, $bottom: $position-default, $left: $position-default) {
+  @include position(absolute, $top, $right, $bottom, $left);
+}
+@mixin relative($top: $position-default, $right: $position-default, $bottom: $position-default, $left: $position-default) {
+  @include position(relative, $top, $right, $bottom, $left);
+}
+@mixin fixed($top: $position-default, $right: $position-default, $bottom: $position-default, $left: $position-default) {
+  @include position(fixed, $top, $right, $bottom, $left);
+}
+
+
+/// Center an element vertically and horizontally with an absolute position.
+/// @group Mixins
+
+@mixin centerer {
+  @include absolute(50%,null,null,50%);
+  transform: translate(-50%,-50%);
+}
+
+
+
+/// This mixing allow you to add placeholder colors in all availables browsers
+/// @group Mixins
+
+@mixin placeholder {
+  &::-webkit-input-placeholder {
+      @content;
+  }
+
+  &:-moz-placeholder { /* Firefox 18- */
+      @content;
+  }
+
+  &::-moz-placeholder {  /* Firefox 19+ */
+      @content;
+  }
+
+  &:-ms-input-placeholder {
+      @content;
+  }
+}
+
+/// Allows you to visually
+/// @group Mixins
+
+@mixin hide-text {
+	font: 0/0 a;
+	color: transparent;
+	text-shadow: none;
+}
+
+/// Shortcut mixin to add new font-face compatible with all browser. To work you need to add the follow formats of font:".eot", ".woff", ".ttf" and "svg".
+/// @group Mixins
+/// @parameter $style-name - Name of the font style
+/// @parameter $file  - Name of the font file.
+/// @parameter $weight [normal] - With this variable you can add how much weight you want to add to this specific font. EX: Bold
+/// @parameter $style [normal] - With this variable you can add a font style to this specific font. EX: Italic
+
+@mixin font-face($style-name, $file, $weight: unquote("normal"), $style: unquote("normal") ) {
+    $filepath: "/fonts/" + $file;
+    @font-face {
+        font-family: "#{$style-name}";
+        src: url($filepath + ".eot");
+        src: url($filepath + ".eot?#iefix") format('embedded-opentype'), url($filepath + ".woff") format('woff'), url($filepath + ".ttf")  format('truetype'), url($filepath + ".svg#" + $style-name + "") format('svg');
+        font-weight: unquote($weight);
+        font-style: unquote($style);
+    }
+}
+
+
+@mixin tooltipShow {
+  &:hover {
+    .icon-tooltip {
+      display: block;
+      left: 2rem;
+      animation: tooltipAppear .2s linear ;
+    }
+  }
+  &.active {
+    .icon-tooltip {
+      display: block;
+      left: 2rem;
+      animation: tooltipAppear .2s linear ;
+    }
+  }
+}
+
+@mixin text-ellipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+@mixin paragraph-ellipsis {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  position: relative;
+
+  &::after {
+    background-color: $color-white;
+    bottom: -3px;
+    content: "...";
+    padding-left: 10px;
+    position: absolute;
+    right: 2px;
+  }
+
+}

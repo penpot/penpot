@@ -1,0 +1,48 @@
+// Font sizes
+$fs8: 0.5rem;
+$fs9: 0.5625rem;
+$fs10: 0.625rem;
+$fs11: 0.6875rem;
+$fs12: 0.75rem;
+$fs13: 0.8125rem;
+$fs14: 0.875rem;
+$fs15: 0.9375rem;
+$fs16: 1rem ;
+$fs18: 1.125rem;
+$fs19: 1.1875rem;
+$fs20: 1.25rem;
+$fs21: 1.315rem;
+$fs22: 1.375rem;
+$fs24: 1.5rem;
+$fs26: 1.625rem;
+$fs28: 1.75rem;
+$fs30: 1.875rem;
+$fs32: 2rem;
+$fs34: 2.125rem;
+$fs36: 2.25rem;
+$fs38: 2.375rem;
+$fs40: 2.5rem;
+$fs42: 2.675rem;
+$fs44: 2.75rem;
+
+$extrabold: 900;
+
+// Line height
+$base-lh: 1.43;
+$base-lh-sm: 1.33;
+$title-lh: 1.25;
+$title-lh-sm: 1.15;
+
+// Font sources
+@include font-face("sourcesanspro","sourcesanspro-extralight",100);
+@include font-face("sourcesanspro","sourcesanspro-extralightitalic",100,italic);
+@include font-face("sourcesanspro","sourcesanspro-light",200);
+@include font-face("sourcesanspro","sourcesanspro-lightitalic",200,italic);
+@include font-face("sourcesanspro","sourcesanspro-regular",normal);
+@include font-face("sourcesanspro","sourcesanspro-italic",normal,italic);
+@include font-face("sourcesanspro","sourcesanspro-semibold",500);
+@include font-face("sourcesanspro","sourcesanspro-semibolditalic",500,italic);
+@include font-face("sourcesanspro","sourcesanspro-bold",bold);
+@include font-face("sourcesanspro","sourcesanspro-bolditalic",bold,italic);
+@include font-face("sourcesanspro","sourcesanspro-black",900);
+@include font-face("sourcesanspro","sourcesanspro-blackitalic",900,italic);

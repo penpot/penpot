@@ -1,0 +1,17 @@
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" width="500" height="500" viewBox="0 0 500.00001 500.00001" id="svg2" version="1.1" sodipodi:docname="stroke.svg">
+  <defs id="defs4"/>
+  <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" showgrid="false" units="px"/>
+  <metadata id="metadata7">
+    <rdf:RDF>
+      <cc:Work rdf:about="">
+        <dc:format>
+
+          image/svg+xml
+
+        </dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <path d="M0 0L0 45 0 500 45 500 45 45 500 45 500 0 45 0 0 0zM109.10938 109.10938L109.10938 154.10938 109.10938 243.55859 154.10938 243.55859 154.10938 154.10938 229.70312 154.10938 229.70312 109.10938 154.10938 109.10938 109.10938 109.10938zM273.13477 109.10938L273.13477 154.10938 369.70312 154.10938 369.70312 109.10938 273.13477 109.10938zM413.13477 109.10938L413.13477 154.10938 500 154.10938 500 109.10938 413.13477 109.10938zM234.10938 234.10938L234.10938 258.04102 234.10938 500 258.04102 500 258.04102 258.04102 500 258.04102 500 234.10938 258.04102 234.10938 234.10938 234.10938zM109.10938 286.99219L109.10938 383.55859 154.10938 383.55859 154.10938 286.99219 109.10938 286.99219zM109.10938 426.99219L109.10938 500 154.10938 500 154.10938 426.99219 109.10938 426.99219z" id="rect20106"/>
+</svg>

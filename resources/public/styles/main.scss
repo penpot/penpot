@@ -1,0 +1,43 @@
+// UXBOX STYLES
+//#################################################
+//
+//#################################################
+
+@import 'dependencies/colors';
+@import 'dependencies/helpers';
+@import 'dependencies/mixin';
+@import 'dependencies/fonts';
+@import 'dependencies/reset';
+@import 'dependencies/animations';
+@import 'dependencies/z-index';
+
+//#################################################
+// Layouts
+//#################################################
+
+@import 'base';
+@import 'layouts/main-layout';
+@import 'layouts/login';
+
+//#################################################
+// Commons
+//#################################################
+
+@import 'framework';
+
+//#################################################
+// Partials
+//#################################################
+
+@import 'partials/main-bar';
+@import 'partials/workspace-bar';
+@import 'partials/workspace-rules';
+@import 'partials/workspace-canvas';
+@import 'partials/element-options';
+@import 'partials/tool-bar';
+@import 'partials/project-bar';
+@import 'partials/settings-bar';
+@import 'partials/dashboard-bar';
+@import 'partials/dashboard-grid';
+@import 'partials/activity-bar';
+@import 'partials/lightbox';

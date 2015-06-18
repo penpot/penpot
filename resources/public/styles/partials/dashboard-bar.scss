@@ -1,0 +1,47 @@
+.dashboard-bar {
+  align-items: center;
+  display: flex;
+  font-size: $fs14;
+  padding: $small $medium $small $x-big*2;
+
+  .dashboard-info {
+    align-items: center;
+    display: flex;
+
+    .dashboard-projects {
+      font-weight: bold;
+      margin-right: $medium;
+    }
+
+    .sort-by {
+      margin-left: $small;
+    }
+
+    .input-select {
+      background-color: transparent;
+      border-color: $color-gray;
+      margin-bottom: 0;
+      margin-left: $medium;
+      padding: 3px 15px 3px 3px;
+    }
+
+  }
+
+  .dashboard-search {
+    cursor: pointer;
+    margin-left: $big;
+
+    svg {
+      fill: $color-gray-dark;
+      height: 20px;
+      width: 20px;
+
+      &:hover {
+        fill: $color-gray-darker;
+      }
+
+    }
+
+  }
+
+}

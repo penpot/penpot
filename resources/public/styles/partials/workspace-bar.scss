@@ -1,0 +1,134 @@
+.workspace-bar {
+  align-items: center;
+  background-color: $color-gray;
+  display: flex;
+  height: 40px;
+  padding: $x-small $medium $x-small 65px;
+  position: relative;
+  z-index: 11;
+
+  .main-icon {
+    align-items: center;
+    background-color: $color-gray-darker;
+    cursor: pointer;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 50px;
+
+    a {
+      height: 35px;
+
+      svg {
+        fill: $color-gray;
+        height: 35px;
+        width: 35px;
+
+        }
+
+      &:hover {
+
+        svg {
+          fill: $color-primary;
+        }
+
+      }
+
+    }
+
+  }
+
+  .project-tree-btn {
+    align-items: center;
+    background-image: url("/images/svg/arrow.svg");
+    background-repeat: no-repeat;
+    background-position: 94% 45%;
+    background-size: 10px 10px;
+    background-color: $color-gray-dark;
+    border-radius: $br-small;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    min-width: 180px;
+    padding: $x-small $x-big+$x-small $x-small $medium;
+
+    svg {
+      fill: $color-primary;
+      height: 20px;
+      margin-right: $small;
+      width: 20px;
+    }
+
+    span {
+      color: $color-primary;
+    }
+
+    &:hover {
+      background-color: $color-gray-darker;
+    }
+
+  }
+
+  .workspace-options {
+    display: flex;
+
+    .options-btn {
+      align-items: center;
+      border-right: 1px solid $color-gray-dark;
+      display: flex;
+      margin: 0;
+
+      &:last-child {
+        border: none;
+      }
+
+      li {
+        align-items: center;
+        background-color: $color-gray-lighter;
+        border-radius: $br-small;
+        cursor: pointer;
+        display: flex;
+        height: 30px;
+        justify-content: center;
+        margin: 0 $small;
+        position: relative;
+        width: 30px;
+
+        a {
+          padding-top: 6px;
+        }
+
+        svg {
+          fill: $color-gray-dark;
+          height: 18px;
+          width: 18px;
+        }
+
+        &:hover {
+          background-color: $color-white;
+
+          svg {
+            fill: $color-gray-darker;
+          }
+
+        }
+
+        &.selected {
+          background-color: $color-primary;
+
+          svg {
+            fill: $color-white;
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+}

@@ -1,0 +1,75 @@
+.activity-bar {
+  background-color: $color-white;
+  bottom: 0;
+  height: 100%;
+  position: fixed;
+  right: 0;
+  width: 250px;
+
+  .activity-bar-inside {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding-top: 70px;
+  }
+
+  h4 {
+    color: $color-gray-dark;
+    font-size: $fs16;
+    font-weight: bold;
+    margin-bottom: $x-small;
+  }
+
+  .date-ribbon {
+    background-color: lighten($color-gray-light, 12%);
+    box-sizing: border-box;
+    color: $color-white;
+    font-size: $fs12;
+    font-weight: bold;
+    padding: 2px;
+    text-align: center;
+    width: 100%;
+  }
+
+  .activity-input {
+    border-bottom: 1px solid $color-gray-lighter;
+    box-sizing: border-box;
+    display: flex;
+    font-size: $fs13;
+    padding: $small;
+    width: 100%;
+
+    img.activity-author {
+      border-radius: 50%;
+      flex-shrink: 0;
+      height: 30px;
+      margin-right: $medium;
+      width: 30px;
+    }
+
+    .activity-content {
+      display: flex;
+      flex-direction: column;
+
+      .activity-project {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+
+        a {
+          font-weight: bold;
+          margin: 0 3px;
+        }
+
+      }
+
+      .activity-time {
+        color: $color-gray-light;
+        font-size: $fs11;
+        font-style: italic;
+      }
+    }
+  }
+
+}

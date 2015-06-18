@@ -1,0 +1,78 @@
+.lightbox {
+  align-items: center;
+  background-color: $color-dark-bg;
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  height: 100%;
+  left: 0;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+
+  .lightbox-body {
+    align-items: center;
+    background-color: $color-white;
+    border-radius: $br-medium;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: $medium $x-big;
+    position: relative;
+    width: 500px;
+    @include animation(.1s,1s,fadeInDown);
+
+    .input-text {
+      margin: 1rem 0;
+      width: 100%;
+    }
+
+    .project-size {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+
+      .input-text {
+        width: 35%;
+      }
+
+      .toggle-layout {
+
+        svg {
+          fill: $color-gray;
+          height: 20px;
+          width: 20px;
+
+          &:hover {
+            fill: $color-gray-darker;
+          }
+
+        }
+
+      }
+
+    }
+
+    .close {
+      position: absolute;
+      right: -30px;
+      transform: rotate(45deg);
+      top: -30px;
+
+      svg {
+        fill: $color-white;
+        height: 20px;
+        width: 20px;
+
+        &:hover {
+          fill: $color-danger;
+        }
+
+      }
+
+    }
+
+  }
+
+}

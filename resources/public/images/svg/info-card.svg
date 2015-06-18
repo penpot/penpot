@@ -1,0 +1,17 @@
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" width="500" height="500" viewBox="0 0 500.00001 500.00001" id="svg2" version="1.1" sodipodi:docname="info-card.svg">
+  <defs id="defs4"/>
+  <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" showgrid="false" units="px" showguides="false"/>
+  <metadata id="metadata7">
+    <rdf:RDF>
+      <cc:Work rdf:about="">
+        <dc:format>
+
+          image/svg+xml
+
+        </dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <path d="M0 66.220703L0 90.060547 0 433.7793 500 433.7793 500 66.220703 0 66.220703zM47.679688 113.90039L452.32031 113.90039 452.32031 386.09961 47.679688 386.09961 47.679688 113.90039zM86.482422 168.72852L86.482422 222.60547 413.51758 222.60547 413.51758 168.72852 86.482422 168.72852zM86.482422 280.45508L86.482422 334.33008 304.40625 334.33008 304.40625 280.45508 86.482422 280.45508z" id="rect20188"/>
+</svg>

@@ -1,0 +1,95 @@
+.project-bar {
+  background-color: $color-white;
+  border-right: 1px solid $color-gray-lighter;
+  bottom: 0;
+  height: 100%;
+  left:55px;
+  position: fixed;
+  width: 200px;
+  z-index: 9;
+
+  &.toggle {
+    left:-201px;
+  }
+
+  .project-bar-inside {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding-top: 60px;
+
+    .project-name {
+      border-bottom: 1px solid $color-gray-lighter;
+      box-sizing: border-box;
+      font-size: $fs14;
+      font-weight: bold;
+      padding: 0 $small;
+      width: 100%;
+    }
+
+    .btn-primary {
+      font-size: $fs13;
+      padding: 8px $small;
+      width: 90%;
+    }
+
+  }
+
+}
+
+.tree-view {
+  width: 100%;
+
+  li {
+    align-items: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    padding: $x-small $small;
+    position: relative;
+
+    svg {
+      fill: $color-gray-light;
+      height: 12px;
+      margin-right: $x-small;
+      width: 12px;
+    }
+
+    span {
+      font-size: $fs13;
+    }
+
+    &:hover,
+    &.current {
+
+      span {
+        color: $color-primary;
+      }
+
+    }
+
+    .options {
+      align-items: center;
+      position: absolute;
+      display: flex;
+      right: 0;
+      top: 40%;
+
+      svg {
+        fill: $color-gray-light;
+        height: 12px;
+        margin-right: $small;
+        width: 12px;
+
+        &:hover {
+          fill: $color-gray-dark;
+        }
+
+      }
+
+    }
+
+  }
+
+}

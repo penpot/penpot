@@ -1,0 +1,20 @@
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" width="500" height="500" viewBox="0 0 500.00001 500.00001" id="svg2" version="1.1" sodipodi:docname="redo.svg">
+  <defs id="defs4"/>
+  <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" showgrid="false" units="px"/>
+  <metadata id="metadata7">
+    <rdf:RDF>
+      <cc:Work rdf:about="">
+        <dc:format>
+
+
+          image/svg+xml
+
+
+        </dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <use id="use32130" xlink:href="#symbol16714" transform="matrix(0.48875855,0,0,0.48875855,266.5973,18.208584)" x="0" y="0" width="100%" height="100%"/>
+  <path d="m500 347.50598-194.98014 0c27.55203-27.55072 55.10416-55.10136 82.65613-82.65215C327.39168 206.90271 231.32389 189.78669 155.1482 224.79886 103.26115 247.81119 60.65224 291.76695 40.76894 345.09037 27.45072 339.77332 13.04174 336.26647 0 331.15782 32.63846 242.0093 118.1235 174.40453 212.77952 164.9605c72.62965-8.28281 148.4548 16.23278 202.49296 65.55342 20.92216-19.20789 62.85308-56.27487 84.72752-78.0199z" id="path4315" sodipodi:nodetypes="cccccccccc"/>
+</svg>

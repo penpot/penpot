@@ -1,0 +1,17 @@
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" width="500" height="500" viewBox="0 0 500 500.00001" id="svg2" version="1.1" sodipodi:docname="arrow.svg">
+  <defs id="defs4"/>
+  <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" showgrid="false" units="px"/>
+  <metadata id="metadata7">
+    <rdf:RDF>
+      <cc:Work rdf:about="">
+        <dc:format>
+          image/svg+xml
+        </dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g id="layer1" transform="translate(0,-552.36216)">
+    <path d="m138.95104 552.39877c-15.97981-0.91956-29.97031 15.64781-25.60739 31.33414 4.13074 8.64975 24.56735 29.78594 24.56735 29.78594 0 0 124.53922 124.60864 185.12839 188.55293 2.98762 7.37445-5.2414 11.74615-9.09921 16.46818-65.67593 65.77624-134.53948 128.31983-199.74642 194.55784-10.04086 14.0513-0.63252 36.5051 16.6162 38.8691 11.18564 2.1327 21.43639-4.6772 28.26602-12.9034 69.31825-65.46486 137.62693-132.00453 206.41188-198.03973 7.65756-8.14176 16.96875-15.29428 22.61013-25.01415 5.09335-12.02529-1.09218-25.6828-11.04128-33.08286-74.27352-75.37761-148.37953-150.94757-224.06956-224.8979-3.90281-3.30297-8.78051-5.91159-14.03611-5.63009z" id="path4149" sodipodi:nodetypes="ccccccccccccc"/>
+  </g>
+</svg>

@@ -1,0 +1,130 @@
+.dashboard-grid {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-size: $fs14;
+  height: 100%;
+  padding: $medium 250px $medium $medium;
+
+  .dashboard-grid-content {
+    align-items: center;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 60vh;
+    justify-content: center;
+    margin: $big;
+    width: 100%;
+
+    .grid-item {
+      align-items: center;
+      border-radius: $br-medium;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 150px;
+      margin: $medium $medium 0 $medium;
+      padding: $medium;
+      position: relative;
+      text-align: center;
+      width: 20%;
+
+      &.add-project {
+        border: 2px dashed $color-gray-light;
+        box-shadow: inset 0 0 0 transparent;
+        justify-content: center;
+
+        span {
+          background-color: $color-primary-light;
+          border-radius: 5px;
+          color: $color-white;
+          font-size: $fs24;
+          padding: $small $medium;
+        }
+
+        &:hover {
+          background-color: $color-primary-light;
+          border: 2px solid $color-white;
+
+          span {
+            color: $color-white;
+          }
+
+        }
+
+      }
+
+      &.project-th {
+        background-color: $color-white;
+        border-bottom: 2px solid lighten($color-gray-light, 12%);
+
+        &:hover {
+          border-color: $color-primary;
+
+          h3 {
+            color: $color-primary;
+          }
+
+        }
+
+        h3 {
+          color: $color-gray-darker;
+          font-weight: 400;
+        }
+
+        .project-th-update {
+          color: $color-gray-light;
+        }
+
+        .project-th-actions {
+          align-items: center;
+          box-sizing: border-box;
+          bottom: 0;
+          display: flex;
+          left: 0;
+          padding: $small;
+          position: absolute;
+          width: 100%;
+
+          svg {
+            fill: $color-gray-light;
+            height: 14px;
+            margin-right: 5px;
+            width: 14px;
+          }
+
+          span {
+            color: $color-gray-light;
+          }
+
+          .project-th-icon {
+            align-items: center;
+            display: flex;
+            margin-right: $small;
+
+            &.delete {
+              margin-left: auto;
+              margin-right: 0;
+
+              svg {
+                fill: $color-danger;
+              }
+
+              &:hover {
+                transform: scale(1.4);
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+}

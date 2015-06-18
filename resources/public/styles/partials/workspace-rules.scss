@@ -1,0 +1,13 @@
+.workspace-content {
+  .horizontal-rule {
+    transition: none;
+    position: absolute;
+    pointer-events: none;
+  }
+  .vertical-rule {
+    transition: none;
+    position: absolute;
+    pointer-events: none;
+    left: 50px;
+  }
+}

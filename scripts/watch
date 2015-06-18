@@ -1,0 +1,2 @@
+#!/bin/sh
+lein with-profile +front trampoline run -m clojure.main scripts/watch.clj

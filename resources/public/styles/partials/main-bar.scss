@@ -1,0 +1,82 @@
+.main-bar {
+  align-items: center;
+  background-color: $color-gray;
+  display: flex;
+  height: 50px;
+  padding: $x-small $medium;
+  position: relative;
+  z-index: 10;
+
+  .main-logo {
+
+    svg {
+      fill: $color-white;
+      height: 40px;
+      width: 120px;
+    }
+
+  }
+
+}
+
+.user-zone {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  margin-left: auto;
+  position: relative;
+
+  span {
+    color: $color-gray-lighter;
+    margin: $small;
+  }
+
+  img {
+    border: 2px solid $color-gray-lighter;
+    border-radius: 50%;
+    width: 32px;
+  }
+
+  .dropdown {
+    background-color: $color-white;
+    border-radius: $br-small;
+    box-sizing: border-box;
+    left: 0;
+    padding: 0 $small;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 12;
+    @include animation(0,.2s,fadeInDown);
+
+    li {
+      font-size: $fs13;
+      padding: $small 0;
+
+      svg {
+        fill: $color-gray-light;
+        height: 12px;
+        width: 12px;
+      }
+
+      span {
+        color: $color-gray-light;
+      }
+
+      &:hover {
+
+        span {
+          color: $color-gray-darker;
+        }
+
+        svg {
+          fill: $color-gray-darker;
+        }
+
+      }
+
+    }
+
+  }
+
+}

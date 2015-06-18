@@ -1,0 +1,19 @@
+{
+  "name": "uxbox-ui",
+  "version": "0.0.0",
+  "main": "app.js",
+  "author": "Uxbox",
+  "license": "BSD",
+  "scripts": {
+    "watch": "gulp",
+    "dist": "gulp dist"
+  },
+  "dependencies": {
+    "gulp": "3.8.11",
+    "gulp-clean": "0.3.1",
+    "gulp-plumber": "0.6.2",
+    "gulp-sass": "2.0.4",
+    "gulp-autoprefixer": "2.3.1",
+    "gulp-watch": "4.2.5"
+  }
+}

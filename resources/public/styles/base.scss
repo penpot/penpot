@@ -1,0 +1,210 @@
+body {
+  background-color: $color-gray-lighter;
+  color: $color-gray-dark;
+  display: flex;
+  flex-direction: column;
+  font-family: "sourcesanspro", sans-serif;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+}
+
+* {
+  transition: all .4s ease;
+}
+
+.global-zeroclipboard-container {
+  transition: none;
+
+  #global-zeroclipboard-flash-bridge {
+    transition: none;
+  }
+
+  object {
+    transition: none;
+  }
+
+}
+
+img {
+  height: auto;
+  width: 100%;
+}
+
+svg {
+
+  * {
+    transition: none;
+  }
+
+}
+
+*:focus {
+  outline: none;
+  box-shadow: 0;
+}
+
+
+a {
+  color: $color-primary;
+
+  &:hover {
+    color: $color-primary-dark;
+  }
+
+}
+
+p {
+  font-size: $fs13;
+  margin-bottom: 1rem;
+  line-height: $base-lh-sm;
+
+  @include bp(baby-bear) {
+    font-size: $fs16;
+    line-height: $base-lh;
+  }
+
+}
+
+li {
+  line-height: $base-lh-sm;
+
+  @include bp(baby-bear) {
+    line-height: $base-lh
+  }
+
+}
+
+ul {
+  margin-bottom: 1rem;
+}
+
+strong {
+  font-weight: bold;
+}
+
+.relative {
+  position: relative;
+}
+
+h1 {
+  font-size: $fs34;
+  font-weight: 500;
+  line-height: $title-lh-sm;
+
+  @include bp(baby-bear) {
+    font-size: $fs38;
+    line-height: $title-lh;
+  }
+
+  &.supertitle {
+    font-size: $fs44;
+    font-weight: 300;
+    line-height: $title-lh-sm;
+
+    @include bp(baby-bear) {
+      font-size: $fs44;
+      line-height: $title-lh;
+    }
+
+  }
+
+}
+h2 {
+  font-size: $fs24;
+  font-weight: 300;
+  line-height: $title-lh-sm;
+
+  @include bp(baby-bear) {
+    font-size: $fs32;
+    line-height: $title-lh;
+  }
+
+}
+
+h3 {
+  font-size: $fs24;
+  font-weight: 300;
+  padding: .5rem 0;
+}
+
+h4 {
+  font-size: $fs18;
+  font-weight: 300;
+}
+
+@-webkit-keyframes rotation {
+    from {-webkit-transform: rotate(0deg);}
+    to   {-webkit-transform: rotate(359deg);}
+}
+
+@-webkit-keyframes rotation-negative {
+    from {-webkit-transform: rotate(0deg);}
+    to   {-webkit-transform: rotate(-359deg);}
+}
+
+
+@keyframes tooltipAppear {
+  0%   {opacity: 0; display: none;}
+  1% {display: block; opacity: 0; left: 3rem}
+  100% {opacity: 1; left: 2rem}
+}
+
+
+@keyframes show {
+  0%   {opacity: 0; display: none;}
+  1% {display: block; opacity: 0;}
+  100% {opacity: 1;}
+}
+
+@keyframes hide {
+  0%   {opacity: 1; display: block;}
+  99% {opacity: 0; display: block}
+  100% {display: none;}
+}
+
+.hide {
+  display: none !important;
+  transition: all 0.5s ease;
+}
+
+.visuallyHidden {
+  opacity: 0 !important;
+  transition: all 0.5s ease;
+}
+
+.show {
+  animation: show .4s linear ;
+  display: block !important;
+}
+
+.center {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hidden-input  {
+  display: none;
+}
+
+.bold {
+  font-weight: bold !important;
+}
+
+.nopd {
+  padding: 0 !important;
+}
+
+hr {
+  border-top: solid 1px $color-gray-light;
+  border-right: 0;
+  border-left: 0;
+  border-bottom: 0;
+  margin: 1rem 0;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+     margin: 0;
+}

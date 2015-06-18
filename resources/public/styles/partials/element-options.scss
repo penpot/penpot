@@ -1,0 +1,132 @@
+.element-options {
+  display: flex;
+  position: absolute;
+  transition: all .1s ease;
+
+  .element-icons {
+    background-color: $color-white;
+    border: 1px solid darken($color-gray-lighter, 5%);
+    border-radius: $br-small;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin: 0;
+
+    li {
+      align-items: center;
+      border-bottom: 1px solid $color-gray-lighter;
+      border-radius: $br-small;
+      cursor: pointer;
+      display: flex;
+      padding: $small;
+
+      svg {
+        fill: $color-gray;
+        height: 15px;
+        width: 15px;
+      }
+
+      &:hover {
+
+        svg {
+          fill: $color-primary;
+        }
+
+      }
+
+      &.selected {
+        background-color: $color-gray-darker;
+
+        svg {
+          fill: $color-primary;
+        }
+
+      }
+
+      &:last-child {
+        border: none;
+      }
+
+    }
+
+  }
+
+  .element-set {
+    background-color: $color-gray-darker;
+    border-radius: $br-small;
+    color: $color-gray-light;
+    margin-left: $x-small;
+    width: 220px;
+
+    .element-set-title {
+      background-color: $color-gray-dark;
+      border-top-left-radius: $br-small;
+      border-top-right-radius: $br-small;
+      box-sizing: border-box;
+      color: $color-gray-lighter;
+      font-weight: bold;
+      padding: 2px $x-small;
+      width: 100%;
+    }
+
+  }
+
+}
+
+.element-set-content {
+  display: flex;
+  flex-direction: column;
+  padding: $small;
+
+  .input-text {
+    background-color: transparent;
+    border-color: $color-gray;
+    box-sizing: border-box;
+    font-size: $fs13;
+    margin: $x-small;
+    padding: $x-small;
+    width: 100%;
+
+    &:focus {
+      color: $color-white;
+      border-color: $color-white;
+    }
+
+  }
+
+  .input-select {
+
+    &:focus {
+      color: $color-gray;
+    }
+
+  }
+
+  span {
+    color: darken($color-gray-darker, 20%);
+    font-size: $fs12;
+  }
+
+  .lock-size {
+    cursor: pointer;
+    width: 20%;
+
+    svg {
+      fill: $color-gray-light;
+      height: 15px;
+      width: 15px;
+
+      &:hover {
+        fill: $color-primary;
+      }
+
+    }
+
+    &.selected {
+
+      svg {
+        fill: $color-white;
+      }
+    }
+  }
+}

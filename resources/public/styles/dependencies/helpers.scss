@@ -1,0 +1,48 @@
+// Padding & Margin sizes
+$x-small: 5px;
+$small: 10px;
+$medium: 15px;
+$big: 20px;
+$x-big: 30px;
+
+// Border radius
+$br-small: 3px;
+$br-medium: 5px;
+$br-big: 8px;
+
+// Alignments
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.row-flex {
+  align-items: center;
+  display: flex;
+  margin-bottom: $x-small;
+
+  &.column {
+    flex-direction: column;
+  }
+
+}
+
+&.half {
+  width: 50%;
+}
+
+// Display
+.hidden {
+    display: none;
+}
+
+.hide {
+    opacity: 0;
+}
+
+.display {
+    opacity: 1 !important;
+}
