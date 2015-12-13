@@ -218,7 +218,6 @@
 
 (defn dashboard-render
   [own]
-  (println "2222")
   (html
    [:main.dashboard-main
     (header)

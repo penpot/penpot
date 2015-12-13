@@ -51,7 +51,6 @@
   "Emits an event or a collection of them.
   The order of events does not matters."
   ([event]
-   (println "emit! " event)
    (rx/push! bus event))
   ([event & events]
    (run! #(rx/push! bus %) (into [event] events))))
@@ -84,7 +83,6 @@
     (-apply-update [_ _]
       state)))
 
-
 (defn init
   "Initializes the stream event loop and
   return a stream with model changes."
@@ -108,6 +106,5 @@
       (rx/on-value $ emit!))
 
     ;; Initialize the stream machinary with initial state.
-    (emit! (reset-state state))
-
+    (emit! (swap-state (fn [s] (merge s state))))
     state-s))

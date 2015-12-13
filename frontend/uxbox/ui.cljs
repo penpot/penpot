@@ -7,13 +7,12 @@
             [uxbox.ui.dashboard :as ui.d]))
 
 (def ^:private ^:static state
-  (as-> (l/select-keys [:location]) $
+  (as-> (l/select-keys [:location :location-params]) $
     (l/focus-atom $ s/state)))
 
 (defn app-render
   [own]
-  (println "KAKA: " @state)
-  (let [{:keys [location location-params]} (rum/react state)]
+  (let [{:keys [location location-params] :as state} (rum/react state)]
     (case location
       :auth/login (ui.u/login)
       ;; :auth/register (u/register)
@@ -28,18 +27,6 @@
   (util/component {:render app-render
                    :mixins [rum/reactive]
                    :name "app"}))
-
-;; (rum/defc app < rum/reactive
-;;   [conn location]
-;;   (let [{:keys [location location-params]} (rum/react state)]
-;;     (case location
-;;       :auth/login (u/login)
-;;       :auth/register (u/register)
-;;       :auth/recover (u/recover-password)
-;;       :main/dashboard (d/dashboard)
-;;       :main/project (w/workspace conn location-params)
-;;       :main/page    (w/workspace conn location-params))))
-
 (defn mount!
   [el]
   (rum/mount (app) el))

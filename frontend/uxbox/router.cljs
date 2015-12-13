@@ -2,8 +2,8 @@
   (:require [bidi.router]
             [bidi.bidi :as bidi]
             [goog.events :as events]
+            [uxbox.state]
             [uxbox.rstore :as rs]))
-
 
 (enable-console-print!)
 
@@ -24,7 +24,6 @@
 
     rs/UpdateEvent
     (-apply-update [_ state]
-      (println "-apply-update" handler route-params)
       (merge state
              {:location handler}
              (when route-params
@@ -66,12 +65,12 @@
 
 (defn- on-navigate
   [data]
-  (println "on-navigate:" data)
   (rs/emit! (update-location data)))
 
 (defonce +router+
   (bidi.router/start-router! routes {:on-navigate on-navigate
                                      :default-location {:handler :auth/login}}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

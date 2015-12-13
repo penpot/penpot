@@ -21,7 +21,7 @@
         cls (rum/build-class (conj mixins spec) name)
         ctr (fn self
               ([] (self {}))
-              ([&props]
+              ([& props]
                (let [state {:rum/props props}]
                  (rum/element cls state nil))))]
     (with-meta ctr {:rum/class cls})))
@@ -88,6 +88,28 @@
    :transfer-state cursored-transfer-state
    :should-update cursored-should-update
    :wrap-render cursored-wrap-render})
+
+(defn local
+  "Adds an atom to component’s state that can be used as local state.
+   Atom is stored under key `:rum/local`.
+   Component will be automatically re-rendered if atom’s value changes"
+  ([]
+   (local {} :rum/local))
+  ([initial]
+   (local initial :rum/local))
+  ([initial key]
+   {:transfer-state
+    (fn [old new]
+      (assoc new key (old key)))
+    :will-mount
+    (fn [state]
+      (let [local-state (atom initial)
+            component   (:rum/react-component state)]
+        (add-watch local-state key
+                   (fn [_ _ _ _]
+                     (rum/request-render component)))
+        (assoc state key local-state)))
+    }))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses Helpers

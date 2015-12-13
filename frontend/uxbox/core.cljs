@@ -1,7 +1,8 @@
 (ns uxbox.core
-  (:require [uxbox.ui :as ui]
+  (:require [uxbox.state]
+            [uxbox.ui :as ui]
             [uxbox.ui.navigation]
-            [uxbox.state]
+            [uxbox.router]
             [uxbox.rstore]
             [goog.dom :as dom]))
 
