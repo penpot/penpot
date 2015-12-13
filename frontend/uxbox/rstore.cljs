@@ -51,6 +51,7 @@
   "Emits an event or a collection of them.
   The order of events does not matters."
   ([event]
+   (println "emit! " event)
    (rx/push! bus event))
   ([event & events]
    (run! #(rx/push! bus %) (into [event] events))))
@@ -73,13 +74,16 @@
   the provided value."
   [state]
   (reify
+    IPrintWithWriter
+    (-pr-writer [_ writer x]
+      (-write writer "#<event:rstore/reset-state ")
+      (-pr-writer state writer x)
+      (-write writer ">"))
+
     UpdateEvent
     (-apply-update [_ _]
-      state)
+      state)))
 
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:rstore/reset-state>"))))
 
 (defn init
   "Initializes the stream event loop and

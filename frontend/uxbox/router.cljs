@@ -14,10 +14,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn update-location
-  [{:keys [handler route-params]}]
+  [{:keys [handler route-params] :as params}]
   (reify
+    IPrintWithWriter
+    (-pr-writer [mv writer x]
+      (-write writer "#<event:router/update-location ")
+      (-pr-writer params writer x)
+      (-write writer ">"))
+
     rs/UpdateEvent
     (-apply-update [_ state]
+      (println "-apply-update" handler route-params)
       (merge state
              {:location handler}
              (when route-params
@@ -28,6 +35,10 @@
   ([name params]
    {:pre [(keyword? name)]}
    (reify
+     IPrintWithWriter
+     (-pr-writer [mv writer _]
+       (-write writer "#<event:router/navigate>"))
+
      rs/EffectEvent
      (-apply-effect [_ state]
        (let [loc (merge {:handler name}
@@ -60,7 +71,7 @@
 
 (defonce +router+
   (bidi.router/start-router! routes {:on-navigate on-navigate
-                                     :default-location {:handler :login}}))
+                                     :default-location {:handler :auth/login}}))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

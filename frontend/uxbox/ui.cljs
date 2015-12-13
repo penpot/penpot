@@ -3,7 +3,8 @@
             [cats.labs.lens :as l]
             [uxbox.state :as s]
             [uxbox.util :as util]
-            [uxbox.ui.users :as u]))
+            [uxbox.ui.users :as ui.u]
+            [uxbox.ui.dashboard :as ui.d]))
 
 (def ^:private ^:static state
   (as-> (l/select-keys [:location]) $
@@ -11,15 +12,16 @@
 
 (defn app-render
   [own]
+  (println "KAKA: " @state)
   (let [{:keys [location location-params]} (rum/react state)]
-    (println @state)
     (case location
-      :auth/login (u/login)
+      :auth/login (ui.u/login)
       ;; :auth/register (u/register)
       ;; :auth/recover (u/recover-password)
-      ;; :main/dashboard (d/dashboard)
+      :main/dashboard (ui.d/dashboard)
       ;; :main/project (w/workspace conn location-params)
       ;; :main/page (w/workspace conn location-params))))
+      nil
       )))
 
 (def app

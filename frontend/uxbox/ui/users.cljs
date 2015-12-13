@@ -1,5 +1,6 @@
 (ns uxbox.ui.users
   (:require [rum.core :as rum]
+            [uxbox.router :as r]
             ;; [uxbox.users.queries :as q]
             ;; [uxbox.ui.mixins :as mx]
             [uxbox.ui.icons :as icons]
@@ -25,8 +26,13 @@
        icons/exit
        [:span "Save & Exit"]]])
 
+;; FIXME this is a temporal
+(def current-user (atom {:user/fullname "Cirilla"
+                         :user/avatar "http://lorempixel.com/50/50/"}))
+(def menu-open? (atom false))
+
 (rum/defcs user < (rum/local false :menu-open?)
-  [{:keys [menu-open? current-user]} conn]
+  [own]
   (let [usr @current-user]
     [:div.user-zone {:on-mouse-enter #(reset! menu-open? true)
                      :on-mouse-leave #(reset! menu-open? false)}
@@ -54,10 +60,10 @@
     {:name "login"
      :value "Continue"
      :type "submit"
-     :on-click #(nav/navigate! :dashboard)}]
+     :on-click #(r/go :main/dashboard)}]
    [:div.login-links
     [:a
-     {:on-click #(nav/navigate! :login)}
+     {:on-click #(r/go :auth/login)}
      "You already have an account?"]]])
 
 (rum/defc register < rum/static
@@ -78,13 +84,13 @@
     {:name "login"
      :value "Continue"
      :type "submit"
-     :on-click #(nav/navigate! :dashboard)}]
+     :on-click #(r/go :main/dashboard)}]
    [:div.login-links
     [:a
-     {:on-click #(nav/navigate! :login)}
+     {:on-click #(r/go :auth/login)}
      "You have remembered your password?"]
     [:a
-     {:on-click #(nav/navigate! :register)}
+     {:on-click #(r/go :auth/register)}
      "Don't have an account?"]]])
 
 (rum/defc recover-password < rum/static
@@ -113,10 +119,10 @@
     {:name "login"
      :value "Continue"
      :type "submit"
-     :on-click #(nav/navigate! :dashboard)}]
+     :on-click #(r/go :main/dashboard)}]
    [:div.login-links
-    [:a {:on-click #(nav/navigate! :recover-password)} "Forgot your password?"]
-    [:a {:on-click #(nav/navigate! :register)} "Don't have an account?"]]])
+    [:a {:on-click #(r/go :auth/recover-password)} "Forgot your password?"]
+    [:a {:on-click #(r/go :auth/register)} "Don't have an account?"]]])
 
 (rum/defc login
   []
