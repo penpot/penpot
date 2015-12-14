@@ -41,6 +41,7 @@
    :dependencies [[org.clojure/clojurescript "1.7.189"]
                   [funcool/cuerdas "0.7.0"]
                   [rum "0.6.0"]
+                  [bouncer "0.3.3"]
                   [funcool/promesa "0.6.0"]
                   [funcool/beicon "0.3.0"]
                   [funcool/cats "1.2.0"]

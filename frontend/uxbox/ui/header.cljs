@@ -20,6 +20,3 @@
    {:render header-render
     :name "header"
     :mixins [rum/static]}))
-
-
-

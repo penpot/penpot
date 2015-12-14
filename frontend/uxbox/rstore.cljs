@@ -1,7 +1,6 @@
 (ns uxbox.rstore
   "Reactive storage management architecture helpers."
-  (:require [beicon.core :as rx]
-            [promesa.core :as prom]))
+  (:require [beicon.core :as rx]))
 
 ;; An abstraction for implement a simple state
 ;; transition. The `-apply-update` function receives
@@ -45,7 +44,7 @@
   [e]
   (satisfies? EffectEvent e))
 
-(defonce ^:static bus (rx/bus))
+(defonce bus (rx/bus))
 
 (defn emit!
   "Emits an event or a collection of them.

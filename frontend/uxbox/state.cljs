@@ -6,10 +6,15 @@
 
 (defonce state (atom {}))
 
-(def stream
+(defonce stream
   (rs/init {:user {:fullname "Cirilla"
                    :avatar "http://lorempixel.com/50/50/"}
+            :projects []
+            :pages []
             :projects-by-id {}
             :pages-by-id {}}))
 
-(rx/to-atom stream state)
+(defonce +setup-stuff+
+  (do
+    (rx/to-atom stream state)))
+

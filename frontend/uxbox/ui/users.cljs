@@ -5,8 +5,6 @@
             [uxbox.router :as r]
             [uxbox.state :as s]
             [uxbox.util :as util]
-            ;; [uxbox.users.queries :as q]
-            ;; [uxbox.ui.mixins :as mx]
             [uxbox.ui.icons :as icons]
             [uxbox.ui.navigation :as nav]))
 

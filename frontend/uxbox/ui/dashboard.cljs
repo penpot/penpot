@@ -1,48 +1,53 @@
 (ns uxbox.ui.dashboard
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [cats.labs.lens :as l]
             [cuerdas.core :as str]
             [uxbox.util :as util]
             [uxbox.router :as r]
+            [uxbox.rstore :as rs]
+            [uxbox.state :as s]
+            [uxbox.data.projects :as dp]
+            [uxbox.ui.icons.dashboard :as icons]
             [uxbox.ui.icons :as i]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.header :as ui.h]
             [uxbox.ui.lightbox :as lightbox]
-            ;; [uxbox.ui.activity :refer [timeline]]
-            [uxbox.ui.icons.dashboard :as icons]
-            ;; [uxbox.projects.queries :as q]
-            ;; [uxbox.projects.actions :as actions]
             [uxbox.time :refer [ago]]))
 
-;; Config
-;; TODO: i18nized names
-(def project-orderings {:project/name "name"
-                        :project/last-updated "date updated"
-                        :project/created "date created"})
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpers & Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def project-layouts {:mobile {:name "Mobile"
-                               :id "mobile"
-                               :width 320
-                               :height 480}
-                      :tablet {:name "Tablet"
-                               :id "tablet"
-                               :width 1024
-                               :height 768}
-                      :notebook {:name "Notebook"
-                                 :id "notebook"
-                                 :width 1366
-                                 :height 768}
-                      :desktop {:name "Desktop"
-                                :id "desktop"
-                                :width 1920
-                                :height 1080}})
+;; FIXME rename
+(def +ordering-options+ {:name "name"
+                         :last-updated "date updated"
+                         :created "date created"})
 
-(def new-project-defaults {:name ""
-                           :width 1920
-                           :height 1080
-                           :layout :desktop})
+(def +layouts+ {:mobile {:name "Mobile"
+                         :id "mobile"
+                         :width 320
+                         :height 480}
+                :tablet {:name "Tablet"
+                         :id "tablet"
+                         :width 1024
+                         :height 768}
+                :notebook {:name "Notebook"
+                           :id "notebook"
+                           :width 1366
+                           :height 768}
+                :desktop {:name "Desktop"
+                          :id "desktop"
+                          :width 1920
+                          :height 1080}})
 
-(def name->order (into {} (for [[k v] project-orderings] [v k])))
+(def ^:static ^:private
+  +project-defaults+ {:name ""
+                      :width 1920
+                      :height 1080
+                      :layout :desktop})
+
+;; (def name->order (into {} (for [[k v] project-orderings] [v k])))
 
 ;; Views
 
@@ -52,28 +57,31 @@
 
 (defn layout-input
   [local layout-id]
-  (let [layout (get-in project-layouts [layout-id])
+  (let [layout (get-in +layouts+ [layout-id])
         id (:id layout)
         name (:name layout)
         width (:width layout)
         height (:height layout)]
     (html
-     [:input
-      {:type "radio"
-       :key id
-       :id id
-       :name "project-layout"
-       :value name
-       :checked (= layout-id (:layout @local))
-       :on-change #(swap! local merge {:layout layout-id :width width :height height})}]
-     [:label {:value (:name @local) :for id} name])))
+     [:div
+      [:input
+       {:type "radio"
+        :key id
+        :id id
+        :name "project-layout"
+        :value name
+        :checked (= layout-id (:layout @local))
+        :on-change #(swap! local merge {:layout layout-id :width width :height height})}]
+      [:label {:value (:name @local) :for id} name]])))
 
 (defn- layout-selector
   [local]
   (html
    [:div.input-radio.radio-primary
-    (vec (cons :div.input-radio.radio-primary
-               (mapcat #(layout-input local %) (keys project-layouts))))]))
+    (layout-input local :mobile)
+    (layout-input local :tablet)
+    (layout-input local :notebook)
+    (layout-input local :desktop)]))
 
 (defn- new-project-lightbox-render
   [own]
@@ -116,10 +124,15 @@
       (when-not (empty? (str/trim name))
         [:input#project-btn.btn-primary
          {:value "Go go go!"
+          :on-click #(do
+                       (dom/prevent-default %)
+                       (rs/emit! (dp/create-project @local))
+                       (lightbox/close!))
+
           :type "submit"}])]
-     [:a.close
-      {:href "#"
-       :on-click #(lightbox/close!)}
+     [:a.close {:href "#"
+                :on-click #(do (dom/prevent-default %)
+                               (lightbox/close!))}
       i/close]])))
 
                     ;; (.preventDefault e)
@@ -134,7 +147,7 @@
   (util/component
    {:render new-project-lightbox-render
     :name "new-project-lightbox"
-    :mixins [(rum/local new-project-defaults)]}))
+    :mixins [(rum/local +project-defaults+)]}))
 
 (defmethod lightbox/render-lightbox :new-project
   [_]
@@ -144,35 +157,39 @@
 ;; Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:static menu-state
+  (as-> (l/select-keys [:projects]) $
+    (l/focus-atom $ s/state)))
+
 (rum/defc project-sort-selector < rum/reactive
   [sort-order]
-  (let [sort-name (get project-orderings (rum/react sort-order))]
-    [:select.input-select
-     {:on-change #(reset! sort-order (name->order (.-value (.-target %))))
-      :value sort-name}
-     (for [order (keys project-orderings)
-           :let [name (get project-orderings order)]]
-       [:option {:key name} name])]))
-
-(rum/defc project-count < rum/static
-  [n]
-  [:span.dashboard-projects n " projects"])
+  nil)
+  ;; (let [sort-name (get project-orderings (rum/react sort-order))]
+  ;;   [:select.input-select
+  ;;    {:on-change #(reset! sort-order (name->order (.-value (.-target %))))
+  ;;     :value sort-name}
+  ;;    (for [order (keys project-orderings)
+  ;;          :let [name (get project-orderings order)]]
+  ;;      [:option {:key name} name])]))
 
 (defn menu-render
   []
-  (html
-   [:section#dashboard-bar.dashboard-bar
-    [:div.dashboard-info
-     (project-count 0)
-     [:span "Sort by"]
-     (project-sort-selector (atom :name))]
-    [:div.dashboard-search
-     icons/search]]))
+  (let [state (rum/react menu-state)
+        pcount (count (:projects state))]
+    (html
+     [:section#dashboard-bar.dashboard-bar
+      [:div.dashboard-info
+       [:span.dashboard-projects pcount " projects"]
+       [:span "Sort by"]
+       #_(project-sort-selector (atom :name))]
+      [:div.dashboard-search
+       icons/search]])))
 
 (def menu
   (util/component
    {:render menu-render
-    :name "dashboard-menu"}))
+    :name "dashboard-menu"
+    :mixins [rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Project Item
@@ -200,7 +217,7 @@
                     %)}
       icons/trash]]]))
 
-(def project
+(def project-item
   (util/component
    {:render project-render
     :name "project"
@@ -217,18 +234,26 @@
 ;; Grid
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:static grid-state
+  (as-> (l/select-keys [:projects :projects-by-id]) $
+    (l/focus-atom $ s/state)))
+
 (defn grid-render
   [own]
   (letfn [(on-click [e]
             (dom/prevent-default e)
             (lightbox/set! :new-project))]
-    (html
-     [:section.dashboard-grid
-      [:h2 "Your projects"]
-      [:div.dashboard-grid-content
-       [:div.dashboard-grid-content
-        [:div.grid-item.add-project {:on-click on-click}
-         [:span "+ New project"]]]]])))
+    (let [state (rum/react grid-state)]
+      (html
+       [:section.dashboard-grid
+        [:h2 "Your projects"]
+        [:div.dashboard-grid-content
+         [:div.dashboard-grid-content
+          [:div.grid-item.add-project {:on-click on-click}
+           [:span "+ New project"]]
+          (for [pid (:projects state)]
+            (let [item (get-in state [:projects-by-id pid])]
+              (rum/with-key (project-item item) (str pid))))]]]))))
 
 (def grid
   (util/component
@@ -247,17 +272,9 @@
     (ui.h/header)
     [:section.dashboard-content
      (menu)
-     (grid)]
-    #_(timeline conn)]))
-
+     (grid)]]))
 
 (def dashboard
   (util/component {:render dashboard-render
-                   :mixins [rum/reactive]
+                   :mixins [rum/static]
                    :name "dashboard"}))
-
-;; (rum/defc dashboard
-;;   [conn]
-;;   [:div
-;;    (dashboard* conn)
-;;    #_(lightbox conn)])

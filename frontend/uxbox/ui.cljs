@@ -8,7 +8,7 @@
             [uxbox.ui.users :as ui.u]
             [uxbox.ui.dashboard :as ui.d]))
 
-(def ^:private ^:static state
+(def ^:static state
   (as-> (l/select-keys [:location :location-params]) $
     (l/focus-atom $ s/state)))
 
