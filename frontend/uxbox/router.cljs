@@ -43,7 +43,6 @@
        (let [loc (merge {:handler name}
                         (when params
                           {:route-params params}))]
-         (println "navigate" loc)
          (bidi.router/set-location! +router+ loc))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -70,7 +69,7 @@
 
 (defonce +router+
   (bidi.router/start-router! routes {:on-navigate on-navigate
-                                     :default-location {:handler :auth/login}}))
+                                     :default-location {:handler :main/dashboard}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api

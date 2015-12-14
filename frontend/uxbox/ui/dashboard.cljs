@@ -197,7 +197,6 @@
 
 (defn project-render
   [own project]
-  (println "project-render" project)
   (let [on-click #(rs/emit! (dp/go-to-project (:id project)))]
     (html
      [:div.grid-item.project-th {:on-click on-click
@@ -237,7 +236,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:static grid-state
-  (as-> (l/select-keys [:projects :projects-by-id]) $
+  (as-> (l/select-keys [:projects-by-id]) $
     (l/focus-atom $ s/state)))
 
 (defn grid-render
@@ -253,9 +252,8 @@
          [:div.dashboard-grid-content
           [:div.grid-item.add-project {:on-click on-click}
            [:span "+ New project"]]
-          (for [pid (:projects state)]
-            (let [item (get-in state [:projects-by-id pid])]
-              (rum/with-key (project-item item) (str pid))))]]]))))
+          (for [item (vals (:projects-by-id state))]
+            (rum/with-key (project-item item) (:id item)))]]]))))
 
 (def grid
   (util/component

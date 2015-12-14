@@ -14,7 +14,6 @@
 
 (defn set!
   [kind]
-  (println "lightbox$set!" kind)
   (reset! +current+ kind))
 
 (defn close!

@@ -89,8 +89,6 @@
 
 (defn workspace-render
   [own projectid]
-  (println "workspace-render" @s/state)
-  (println 22222 @page-state)
   (html
    [:div "hello world"
     ;; (header conn page ws/grid? project-bar-visible?)

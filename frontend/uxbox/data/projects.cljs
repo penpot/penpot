@@ -22,6 +22,33 @@
    :project [v/required sc/uuid]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn assoc-project
+  "A reduce function for assoc the project
+  to the state map."
+  [state proj]
+  (let [uuid (:id proj)]
+    (update-in state [:projects-by-id] assoc uuid proj)))
+
+(defn assoc-page
+  "A reduce function for assoc the page
+  to the state map."
+  [state page]
+  (let [uuid (:id page)]
+    (update-in state [:pages-by-id] assoc uuid page)))
+
+;; (defn project-pages
+;;   "Get a ordered list of pages that
+;;   belongs to a specified project."
+;;   [state projectid]
+;;   (let [xf (comp
+;;             (filter #(= projectid (:project %)))
+;;             (map #(get-in state [:pages-by-id %])))]
+;;     (into [] xf (:pages state))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -31,16 +58,12 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [uuid (random-uuid)
-            page {:id uuid
+      (let [page {:id (random-uuid)
                   :project project
                   :name name
                   :width width
                   :height height}]
-        (-> state
-            (update-in [:pages] conj uuid)
-            (update-in [:projects-by-id project :pages] conj uuid)
-            (update-in [:pages-by-id] assoc uuid page))))
+        (assoc-page state page)))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
@@ -57,10 +80,8 @@
                     :name name
                     :width width
                     :height height
-                    :pages []}]
-          (-> state
-              (update-in [:projects] conj uuid)
-              (update-in [:projects-by-id] assoc uuid proj))))
+                    :layout layout}]
+          (assoc-project state proj)))
 
       rs/EffectEvent
       (-apply-effect [_ state]
@@ -82,7 +103,7 @@
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/go-to-project>"))))
+      (-write writer "#<event:u.s.p/initialize-workspace>"))))
 
 (defn go-to-project
   "A shortcut event that redirects the user to the

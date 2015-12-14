@@ -18,7 +18,6 @@
 (defn app-render
   [own]
   (let [{:keys [location location-params] :as state} (rum/react state)]
-    (println 1111 location location-params)
     (html
      [:section
       (ui.lb/lightbox)
