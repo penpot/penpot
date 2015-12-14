@@ -4,24 +4,15 @@
             [cuerdas.core :refer [trim]]
             [uxbox.util :as util]
             [uxbox.router :as r]
-            [uxbox.ui.navigation :as nav]
-            ;; [uxbox.ui.mixins :as mx]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.users :as ui.u]
-            ;; [uxbox.ui.lightbox :refer [lightbox
-            ;;                            render-lightbox
-            ;;                            set-lightbox!
-            ;;                            close-lightbox!]]
+            [uxbox.ui.dom :as dom]
+            [uxbox.ui.header :as ui.h]
+            [uxbox.ui.lightbox :as lightbox]
             ;; [uxbox.ui.activity :refer [timeline]]
             [uxbox.ui.icons.dashboard :as icons]
             ;; [uxbox.projects.queries :as q]
             ;; [uxbox.projects.actions :as actions]
             [uxbox.time :refer [ago]]))
-
-(def lightbox (constantly nil))
-(def render-lightbox (constantly nil))
-(def set-lightbox! (constantly nil))
-(def close-lightbox! (constantly nil))
 
 ;; Config
 ;; TODO: i18nized names
@@ -55,51 +46,52 @@
 
 ;; Views
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lightbox
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn layout-input
-  [layout new-project]
+  [layout local]
   (let [human-name (get-in project-layouts [layout :name])
         id (str "project-" (get-in project-layouts [layout :id]))
         tag (str "input#" id)
         tag (keyword tag)]
     [[tag
-       {:type "radio"
-        :key id
-        :name "project-layout"
-        :value human-name
-        :checked (= layout (:layout @new-project))
-        :on-change #(swap! new-project merge {:layout layout
-                                              :width (get-in project-layouts [layout :width])
-                                              :height (get-in project-layouts [layout :height])})}]
-      [:label
-        {:value name
-         :for id}
-         human-name]]))
+      {:type "radio"
+       :key id
+       :name "project-layout"
+       :value human-name
+       :checked (= layout (:layout @local))
+       :on-change #(swap! local merge {:layout layout
+                                       :width (get-in project-layouts [layout :width])
+                                       :height (get-in project-layouts [layout :height])})}]
+     [:label
+      {:value name
+       :for id}
+      human-name]]))
 
-(rum/defc layout-selector
-  [new-project]
-  (vec (cons :div.input-radio.radio-primary
-             (mapcat #(layout-input % new-project) (keys project-layouts)))))
+(defn- layout-selector
+  [local]
+  (html
+   [:div.input-radio.radio-primary
+    (vec (cons :div.input-radio.radio-primary
+               (mapcat #(layout-input % local) (keys project-layouts))))]))
 
-(rum/defcs new-project-lightbox < (rum/local new-project-defaults :new-project)
-  [{:keys [new-project]} conn]
-  (let [{:keys [name width height layout]} @new-project]
+(defn- new-project-lightbox-render
+  [own]
+  (let [local (:rum/local own)
+        width (:width @local)
+        height (:height @local)]
+   (html
     [:div.lightbox-body
      [:h3 "New project"]
-     [:form
-      {:on-submit (fn [e]
-                    (.preventDefault e)
-                    (let [new-project-attributes {:name (trim name)
-                                                  :width (int width)
-                                                  :height (int height)
-                                                  :layout layout}]
-                     ;; (actions/create-project conn new-project-attributes)
-                     (close-lightbox!)))}
+     [:form {:on-submit (constantly nil)}
       [:input#project-name.input-text
-       {:placeholder "New project name"
-        :type "text"
-        :value name
-        :auto-focus true
-        :on-change #(swap! new-project assoc :name (.-value (.-target %)))}]
+        {:placeholder "New project name"
+         :type "text"
+         :value name
+         :auto-focus true
+         :on-change #(swap! local assoc :name (.-value (.-target %)))}]
       [:div.project-size
        [:input#project-witdh.input-text
         {:placeholder "Width"
@@ -107,10 +99,10 @@
          :min 0 ;;TODO check this value
          :max 666666 ;;TODO check this value
          :value width
-         :on-change #(swap! new-project assoc :width (.-value (.-target %)))}]
+         :on-change #(swap! local assoc :width (.-value (.-target %)))}]
        [:a.toggle-layout
         {:href "#"
-         :on-click #(swap! new-project assoc :width height :height width)}
+         :on-click #(swap! local assoc :width width :height height)}
         i/toggle]
        [:input#project-height.input-text
         {:placeholder "Height"
@@ -118,9 +110,9 @@
          :min 0 ;;TODO check this value
          :max 666666 ;;TODO check this value
          :value height
-         :on-change #(swap! new-project assoc :height (.-value (.-target %)))}]]
+         :on-change #(swap! local assoc :height (.-value (.-target %)))}]]
       ;; Layout selector
-      (layout-selector new-project)
+      (layout-selector local)
       ;; Submit
       (when-not (empty? (trim name))
         [:input#project-btn.btn-primary
@@ -128,23 +120,30 @@
           :type "submit"}])]
      [:a.close
       {:href "#"
-       :on-click #(close-lightbox!)}
-      i/close]]))
+       :on-click #(lightbox/close!)}
+      i/close]])))
 
-;; (defmethod render-lightbox :new-project
-;;   [_ conn]
-;;   (new-project-lightbox conn))
+                    ;; (.preventDefault e)
+                    ;; (let [new-project-attributes {:name (trim name)
+                    ;;                               :width (int width)
+                    ;;                               :height (int height)
+                    ;;                               :layout layout}]
+                    ;;  ;; (actions/create-project conn new-project-attributes)
+                    ;;  (close-lightbox!)))}
 
-(rum/defc header
-  []
-  [:header#main-bar.main-bar
-   [:div.main-logo
-    (nav/link "/" i/logo)]
-   (ui.u/user)])
+(def new-project-lightbox
+  (util/component
+   {:render new-project-lightbox-render
+    :name "new-project-lightbox"
+    :mixins [(rum/local new-project-defaults)]}))
 
-(rum/defc project-count < rum/static
-  [n]
-  [:span.dashboard-projects n " projects"])
+(defmethod lightbox/render-lightbox :new-project
+  [_]
+  (new-project-lightbox))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Menu
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (rum/defc project-sort-selector < rum/reactive
   [sort-order]
@@ -156,47 +155,57 @@
            :let [name (get project-orderings order)]]
        [:option {:key name} name])]))
 
-(rum/defc dashboard-bar
+(rum/defc project-count < rum/static
+  [n]
+  [:span.dashboard-projects n " projects"])
+
+(defn menu-render
   []
-  [:section#dashboard-bar.dashboard-bar
+  (html
+   [:section#dashboard-bar.dashboard-bar
     [:div.dashboard-info
      (project-count 0)
      [:span "Sort by"]
      (project-sort-selector (atom :name))]
     [:div.dashboard-search
-     icons/search]])
+     icons/search]]))
 
-(rum/defc project-card < rum/static
-  [conn
-   {uuid :project/uuid
-    last-update :project/last-updated
-    name :project/name
-    pages :project/pages
-    comment-count :project/comment-count}]
-  [:div.grid-item.project-th
-   {:on-click #(r/go :project {:project-uuid uuid})
-    :key uuid}
-   [:h3
-    name]
-   [:span.project-th-update "Updated " (ago last-update)]
-   [:div.project-th-actions
-    [:div.project-th-icon.pages
-     icons/page
-     [:span pages]]
-    [:div.project-th-icon.comments
-     i/chat
-     [:span comment-count]]
-    [:div.project-th-icon.delete
-     {:on-click #(do (.stopPropagation %)
-                     ;; (actions/delete-project conn uuid)
-                     %)}
-     icons/trash]]])
+(def menu
+  (util/component
+   {:render menu-render
+    :name "dashboard-menu"}))
 
-(rum/defc new-project < rum/static
-  []
-  [:div.grid-item.add-project
-   {:on-click #(set-lightbox! :new-project)}
-   [:span "+ New project"]])
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Project Item
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn project-render
+  [own project]
+  (html
+   [:div.grid-item.project-th {:on-click (constantly nil)
+                               :key (:uuid project)}
+    [:h3 (:name project)]
+    [:span.project-th-update
+     (str "Updated " (ago (:last-update project)))]
+    [:div.project-th-actions
+     [:div.project-th-icon.pages
+      icons/page
+      [:span 0]]
+     [:div.project-th-icon.comments
+      i/chat
+      [:span 0]]
+     [:div.project-th-icon.delete
+      {:on-click #(do
+                    (dom/stop-propagation %)
+                    ;; (actions/delete-project conn uuid)
+                    %)}
+      icons/trash]]]))
+
+(def project
+  (util/component
+   {:render project-render
+    :name "project"
+    :mixins [rum/static]}))
 
 ;; (defn sorted-projects
 ;;   [projects sort-order]
@@ -205,26 +214,41 @@
 ;;       project-cards
 ;;       (reverse project-cards))))
 
-(rum/defc dashboard-grid < rum/reactive
-  [projects sort-order]
-  [:section.dashboard-grid
-    [:h2 "Your projects"]
-   [:div.dashboard-grid-content
-    (vec
-     (concat [:div.dashboard-grid-content
-              (new-project)]
-             #_(sorted-projects projects
-                              (rum/react sort-order))))]])
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Grid
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn grid-render
+  [own]
+  (letfn [(on-click [e]
+            (dom/prevent-default e)
+            (lightbox/set! :new-project))]
+    (html
+     [:section.dashboard-grid
+      [:h2 "Your projects"]
+      [:div.dashboard-grid-content
+       [:div.dashboard-grid-content
+        [:div.grid-item.add-project {:on-click on-click}
+         [:span "+ New project"]]]]])))
+
+(def grid
+  (util/component
+   {:render grid-render
+    :name "grid"
+    :mixins [rum/reactive]}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Main
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn dashboard-render
   [own]
   (html
    [:main.dashboard-main
-    (header)
+    (ui.h/header)
     [:section.dashboard-content
-     #_(dashboard-bar sort-order @project-count)
-     (dashboard-bar)
-     (dashboard-grid [] (atom :name))]
+     (menu)
+     (grid)]
     #_(timeline conn)]))
 
 

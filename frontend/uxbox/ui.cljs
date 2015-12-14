@@ -13,15 +13,18 @@
 (defn app-render
   [own]
   (let [{:keys [location location-params] :as state} (rum/react state)]
-    (case location
-      :auth/login (ui.u/login)
-      ;; :auth/register (u/register)
-      ;; :auth/recover (u/recover-password)
-      :main/dashboard (ui.d/dashboard)
-      ;; :main/project (w/workspace conn location-params)
-      ;; :main/page (w/workspace conn location-params))))
-      nil
-      )))
+    (html
+     [:section
+      (lb/lightb
+      (case location
+        :auth/login (ui.u/login)
+        ;; :auth/register (u/register)
+        ;; :auth/recover (u/recover-password)
+        :main/dashboard (ui.d/dashboard)
+        ;; :main/project (w/workspace conn location-params)
+        ;; :main/page (w/workspace conn location-params))))
+        nil
+        )))
 
 (def app
   (util/component {:render app-render
