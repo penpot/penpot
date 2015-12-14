@@ -1,5 +1,6 @@
 (ns uxbox.ui.lightbox
-  (:require [rum.core :as rum]
+  (:require [sablono.core :as html :refer-macros [html]]
+            [rum.core :as rum]
             [uxbox.util :as util]
             [uxbox.ui.keyboard :as k]
             [goog.events :as events])
@@ -49,10 +50,11 @@
 (defn- lightbox-render
   [own]
   (let [name (rum/react +current+)]
-    [:div.lightbox {:class (when (nil? name) "hide")}
-     (render-lightbox name)]))
+    (html
+     [:div.lightbox {:class (when (nil? name) "hide")}
+      (render-lightbox name)])))
 
-(def lightbox
+(def ^:static lightbox
   (util/component
    {:name "lightbox"
     :render lightbox-render

@@ -1,7 +1,7 @@
 (ns uxbox.ui.dashboard
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [cuerdas.core :refer [trim]]
+            [cuerdas.core :as str]
             [uxbox.util :as util]
             [uxbox.router :as r]
             [uxbox.ui.icons :as i]
@@ -51,35 +51,34 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn layout-input
-  [layout local]
-  (let [human-name (get-in project-layouts [layout :name])
-        id (str "project-" (get-in project-layouts [layout :id]))
-        tag (str "input#" id)
-        tag (keyword tag)]
-    [[tag
+  [local layout-id]
+  (let [layout (get-in project-layouts [layout-id])
+        id (:id layout)
+        name (:name layout)
+        width (:width layout)
+        height (:height layout)]
+    (html
+     [:input
       {:type "radio"
        :key id
+       :id id
        :name "project-layout"
-       :value human-name
-       :checked (= layout (:layout @local))
-       :on-change #(swap! local merge {:layout layout
-                                       :width (get-in project-layouts [layout :width])
-                                       :height (get-in project-layouts [layout :height])})}]
-     [:label
-      {:value name
-       :for id}
-      human-name]]))
+       :value name
+       :checked (= layout-id (:layout @local))
+       :on-change #(swap! local merge {:layout layout-id :width width :height height})}]
+     [:label {:value (:name @local) :for id} name])))
 
 (defn- layout-selector
   [local]
   (html
    [:div.input-radio.radio-primary
     (vec (cons :div.input-radio.radio-primary
-               (mapcat #(layout-input % local) (keys project-layouts))))]))
+               (mapcat #(layout-input local %) (keys project-layouts))))]))
 
 (defn- new-project-lightbox-render
   [own]
   (let [local (:rum/local own)
+        name (:name @local)
         width (:width @local)
         height (:height @local)]
    (html
@@ -114,7 +113,7 @@
       ;; Layout selector
       (layout-selector local)
       ;; Submit
-      (when-not (empty? (trim name))
+      (when-not (empty? (str/trim name))
         [:input#project-btn.btn-primary
          {:value "Go go go!"
           :type "submit"}])]

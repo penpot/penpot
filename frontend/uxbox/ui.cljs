@@ -1,8 +1,10 @@
 (ns uxbox.ui
-  (:require [rum.core :as rum]
+  (:require [sablono.core :as html :refer-macros [html]]
+            [rum.core :as rum]
             [cats.labs.lens :as l]
             [uxbox.state :as s]
             [uxbox.util :as util]
+            [uxbox.ui.lightbox :as ui.lb]
             [uxbox.ui.users :as ui.u]
             [uxbox.ui.dashboard :as ui.d]))
 
@@ -15,7 +17,7 @@
   (let [{:keys [location location-params] :as state} (rum/react state)]
     (html
      [:section
-      (lb/lightb
+      (ui.lb/lightbox)
       (case location
         :auth/login (ui.u/login)
         ;; :auth/register (u/register)
@@ -24,7 +26,7 @@
         ;; :main/project (w/workspace conn location-params)
         ;; :main/page (w/workspace conn location-params))))
         nil
-        )))
+        )])))
 
 (def app
   (util/component {:render app-render
