@@ -197,25 +197,27 @@
 
 (defn project-render
   [own project]
-  (html
-   [:div.grid-item.project-th {:on-click (constantly nil)
-                               :key (:uuid project)}
-    [:h3 (:name project)]
-    [:span.project-th-update
-     (str "Updated " (ago (:last-update project)))]
-    [:div.project-th-actions
-     [:div.project-th-icon.pages
-      icons/page
-      [:span 0]]
-     [:div.project-th-icon.comments
-      i/chat
-      [:span 0]]
-     [:div.project-th-icon.delete
-      {:on-click #(do
-                    (dom/stop-propagation %)
-                    ;; (actions/delete-project conn uuid)
-                    %)}
-      icons/trash]]]))
+  (println "project-render" project)
+  (let [on-click #(rs/emit! (dp/go-to-project (:id project)))]
+    (html
+     [:div.grid-item.project-th {:on-click on-click
+                                 :key (:id project)}
+      [:h3 (:name project)]
+      [:span.project-th-update
+       (str "Updated " (ago (:last-update project)))]
+      [:div.project-th-actions
+       [:div.project-th-icon.pages
+        icons/page
+        [:span 0]]
+       [:div.project-th-icon.comments
+        i/chat
+        [:span 0]]
+       [:div.project-th-icon.delete
+        {:on-click #(do
+                      (dom/stop-propagation %)
+                      ;; (actions/delete-project conn uuid)
+                      %)}
+        icons/trash]]])))
 
 (def project-item
   (util/component

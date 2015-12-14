@@ -43,6 +43,7 @@
        (let [loc (merge {:handler name}
                         (when params
                           {:route-params params}))]
+         (println "navigate" loc)
          (bidi.router/set-location! +router+ loc))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,7 +51,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private project-route
-  [bidi/uuid :project-uuid])
+  [[bidi/uuid :project-uuid]])
 
 (def ^:private page-route
   [[bidi/uuid :project-uuid] "/" [bidi/uuid :page-uuid]])

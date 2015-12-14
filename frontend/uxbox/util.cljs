@@ -112,8 +112,19 @@
     }))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses Helpers
+;; Lenses & Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn dep-in
+  [where link]
+  {:pre [(vector? where) (vector? link)]}
+  (l/lens
+   (fn [s]
+     (let [value (get-in s link)
+           path (conj where value)]
+       (get-in s path)))
+   (fn [s f]
+     (throw (ex-info "Not implemented" {})))))
 
 (defn derive
   [a path]

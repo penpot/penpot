@@ -3,9 +3,12 @@
             [rum.core :as rum]
             [cats.labs.lens :as l]
             [uxbox.state :as s]
+            [uxbox.rstore :as rs]
             [uxbox.util :as util]
+            [uxbox.data.projects :as dp]
             [uxbox.ui.lightbox :as ui.lb]
             [uxbox.ui.users :as ui.u]
+            [uxbox.ui.workspace :as ui.w]
             [uxbox.ui.dashboard :as ui.d]))
 
 (def ^:static state
@@ -15,6 +18,7 @@
 (defn app-render
   [own]
   (let [{:keys [location location-params] :as state} (rum/react state)]
+    (println 1111 location location-params)
     (html
      [:section
       (ui.lb/lightbox)
@@ -23,8 +27,11 @@
         ;; :auth/register (u/register)
         ;; :auth/recover (u/recover-password)
         :main/dashboard (ui.d/dashboard)
-        ;; :main/project (w/workspace conn location-params)
-        ;; :main/page (w/workspace conn location-params))))
+        ;; :main/project (ui.w/workspace (:project-uuid location-params))
+        :main/page (let [projectid (:project-uuid location-params)
+                         pageid (:page-uuid location-params)]
+                     (rs/emit! (dp/initialize-workspace projectid pageid))
+                     (ui.w/workspace projectid pageid))
         nil
         )])))
 
