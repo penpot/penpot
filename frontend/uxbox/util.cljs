@@ -42,16 +42,16 @@
   (str ":rum/cursored-" (:rum/id state)))
 
 (def ^:private
-  deref-map-xform
-  (map (fn [[k v]] [k (if (satisfies? IDeref v) @v v)])))
+  deref-xform
+  (map (fn [x] (if (satisfies? IDeref x) @x x))))
 
 (defn- deref-props
   [data]
-  (into {} deref-map-xform data))
+  (into [] deref-xform data))
 
 (defn- cursored-did-mount
   [state]
-  (doseq [[k v] (:rum/props state)
+  (doseq [v (:rum/props state)
           :when (satisfies? IWatchable v)]
     (add-watch v (cursored-key state)
                (fn [_ _ _ _]
@@ -125,6 +125,10 @@
        (get-in s path)))
    (fn [s f]
      (throw (ex-info "Not implemented" {})))))
+
+(defn getter
+  [f]
+  (l/lens f #(throw (ex-info "Not implemented" {}))))
 
 (defn derive
   [a path]

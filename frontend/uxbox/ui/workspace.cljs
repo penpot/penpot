@@ -11,7 +11,6 @@
             [uxbox.ui.icons.dashboard :as icons]
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
-            [uxbox.ui.header :as ui.h]
             [uxbox.ui.users :as ui.u]
             [uxbox.ui.navigation :as nav]
             [uxbox.ui.dom :as dom]))
@@ -22,6 +21,11 @@
 
 (def ^:static page-state
   (as-> (util/dep-in [:pages-by-id] [:workspace :page]) $
+    (l/focus-atom $ s/state)))
+
+(def ^:static pages-state
+  (as-> (util/getter #(let [pid (get-in % [:workspace :project])]
+                        (dp/project-pages % pid))) $
     (l/focus-atom $ s/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -86,7 +90,7 @@
 (def header
   (util/component
    {:render header-render
-    :name "header"
+    :name "workspace-header"
     :mixins [rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -135,7 +139,59 @@
     :mixins [rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Header
+;; Project Bar
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- project-sidebar-item-render
+  [own page-l]
+  (let [page @page-l]
+    (html
+     [:li.single-page
+      {:class "current"
+       :on-click #(dp/go-to-project (:project page) (:id page))}
+      [:div.tree-icon i/page]
+      [:span (:name page)]
+      [:div.options
+       [:div {:on-click (constantly nil)} i/pencil]
+       [:div {:class (when-not false "hide")
+              :on-click (constantly nil)}
+        i/trash]]])))
+
+(def project-sidebar-item
+  (util/component
+   {:render project-sidebar-item-render
+    :name "project-sidebar-item"
+    :mixins [util/cursored]}))
+
+(defn project-sidebar-render
+  [own]
+  (let [project (rum/react project-state)
+        name (:name project)
+        pages (rum/react pages-state)]
+    (println "project-sidebar-render" pages)
+    (html
+     [:div#project-bar.project-bar
+      (when-not (:visible project true)
+        {:class "toggle"})
+      [:div.project-bar-inside
+       [:span.project-name name]
+       [:ul.tree-view
+        (for [page pages]
+          (let [pageid (:id page)
+                lense (l/in [:pages-by-id pageid])
+                page-l (l/focus-atom lense s/state)]
+            ;; (println "project-sidebar-render$1" @page-l)
+            (rum/with-key (project-sidebar-item page-l) (str pageid))))]
+       #_(new-page conn project)]])))
+
+(def project-sidebar
+  (util/component
+   {:render project-sidebar-render
+    :name "project-sidebar"
+    :mixins [rum/reactive]}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Workspace
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn workspace-render
@@ -147,8 +203,8 @@
      [:section.workspace-content
       ;; Toolbar
       (toolbar)
-    ;;   ;; Project bar
-    ;;   (project-bar conn project page pages @project-bar-visible?)
+      ;; Project bar
+      (project-sidebar)
     ;;   ;; Rules
     ;;   (horizontal-rule (rum/react ws/zoom))
     ;;   (vertical-rule (rum/react ws/zoom))
