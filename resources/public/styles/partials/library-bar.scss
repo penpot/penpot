@@ -1,75 +1,86 @@
-.activity-bar {
+.library-bar {
   background-color: $color-white;
   bottom: 0;
   height: 100%;
+  left: 0;
   position: fixed;
-  right: 0;
   width: 250px;
 
-  .activity-bar-inside {
-    align-items: center;
+  .library-bar-inside {
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    padding-top: 70px;
-  }
+    height: 100%;
+    padding-top: 60px;
 
-  h4 {
-    color: $color-gray-dark;
-    font-size: $fs16;
-    font-weight: bold;
-    margin-bottom: $x-small;
-  }
-
-  .date-ribbon {
-    background-color: lighten($color-gray-light, 12%);
-    box-sizing: border-box;
-    color: $color-white;
-    font-size: $fs12;
-    font-weight: bold;
-    padding: 2px;
-    text-align: center;
-    width: 100%;
-  }
-
-  .activity-input {
-    border-bottom: 1px solid $color-gray-lighter;
-    box-sizing: border-box;
-    display: flex;
-    font-size: $fs13;
-    padding: $small;
-    width: 100%;
-
-    img.activity-author {
-      border-radius: 50%;
-      flex-shrink: 0;
-      height: 30px;
-      margin-right: $medium;
-      width: 30px;
-    }
-
-    .activity-content {
+    .library-tabs {
+      align-items: center;
+      background-color: $color-gray-lighter;
       display: flex;
-      flex-direction: column;
+      justify-content: space-around;
+      margin: 0;
+      padding-top: 12px;
 
-      .activity-project {
-        align-items: center;
-        display: flex;
-        flex-wrap: wrap;
+      li {
+        background-color: darken($color-gray-lighter, 10%);
+        border-top-left-radius: 3px;
+        border-top-right-radius: 3px;
+        color: $color-gray;
+        cursor: pointer;
+        font-weight: bold;
+        padding: .6rem;
 
-        a {
-          font-weight: bold;
-          margin: 0 3px;
+        &:hover {
+          color: $color-white;
+        }
+
+        &.current {
+          background-color: $color-white;
+          color: $color-primary;
         }
 
       }
 
-      .activity-time {
-        color: $color-gray-light;
-        font-size: $fs11;
-        font-style: italic;
-      }
     }
+
+    .library-elements {
+      display: flex;
+      flex-direction: column;
+      height: 85%;
+      overflow-y: auto;
+      padding-bottom: 20px;
+
+      li {
+        border-bottom: 1px solid $color-gray-lighter;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+
+        .element-title {
+          color: $color-gray-dark;
+          font-weight: bold;
+          margin-bottom: 5px;
+        }
+
+        .element-subtitle {
+          color: $color-gray-light;
+          font-style: italic;
+        }
+
+        &:hover,
+        .current {
+          background-color: $color-primary;
+
+          .element-title,
+          .element-subtitle {
+            color: $color-white;
+          }
+        }
+
+      }
+
+    }
+
   }
 
 }
