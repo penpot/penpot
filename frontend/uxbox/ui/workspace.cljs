@@ -142,53 +142,106 @@
 ;; Project Bar
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- project-sidebar-item-render
-  [own page-l]
-  (let [page @page-l]
+(defn- project-sidebar-pageitem-render
+  [own page numpages]
+  (let [pageid (:id page)]
     (html
      [:li.single-page
       {:class "current"
+       :key pageid
        :on-click #(dp/go-to-project (:project page) (:id page))}
       [:div.tree-icon i/page]
       [:span (:name page)]
       [:div.options
        [:div {:on-click (constantly nil)} i/pencil]
-       [:div {:class (when-not false "hide")
-              :on-click (constantly nil)}
+       [:div {:class (when (= 1 (count @pages-state)) "hide")
+              :on-click #(rs/emit! (dp/delete-page pageid))}
         i/trash]]])))
 
-(def project-sidebar-item
+(def project-sidebar-pageitem
   (util/component
-   {:render project-sidebar-item-render
-    :name "project-sidebar-item"
+   {:render project-sidebar-pageitem-render
+    :name "project-sidebar-pageitem"
     :mixins [util/cursored]}))
+
+(defn- project-sidebar-pagelist-render
+  [own local]
+  (let [project (rum/react project-state)
+        pages (rum/react pages-state)
+        name (:name project)]
+    (html
+     [:div.project-bar-inside
+      [:span.project-name name]
+      [:ul.tree-view
+       (for [page pages] (project-sidebar-pageitem page (count pages)))]
+      [:button.btn-primary.btn-small
+       {:on-click #(reset! local {:edit true :form {}})}
+       "+ Add new page"]])))
+
+(defn- project-sidebar-form-render
+  [own parent]
+  (letfn [(on-change [e]
+            (let [value (str/trim (dom/event->value e))]
+              (swap! parent assoc-in [:form :name] value)))
+          (on-save [e]
+            (let [project @project-state
+                  name (get-in @parent [:form :name])
+                  data {:project (:id project)
+                        :width (:width project)
+                        :height (:height project)
+                        :name name}]
+              (rs/emit! (dp/create-page data))
+              (reset! parent {:edit false})))
+          (on-cancel [e]
+            (reset! parent {:edit false}))]
+    (html
+     [:div.project-bar-inside
+      [:input.input-text
+       {
+        :name "test"
+        :auto-focus true
+        :placeholder "Page title"
+        :type "text"
+        :value (get-in @parent [:form :name] "")
+        :on-change on-change
+        }]
+      [:button.btn-primary.btn-small
+       {:disabled (str/empty? (get-in @parent [:form :name] ""))
+        :on-click on-save}
+       "Save"]
+      [:button.btn-primary.btn-small
+       {:on-click on-cancel}
+       "Cancel"]])))
+
+(def project-sidebar-form
+  (util/component
+   {:render project-sidebar-form-render
+    :name "project-sidebar-form"
+    :mixins [rum/reactive]}))
+
+(def project-sidebar-pagelist
+  (util/component
+   {:render project-sidebar-pagelist-render
+    :name "project-sidebar-pagelist"
+    :mixins [rum/reactive]}))
 
 (defn project-sidebar-render
   [own]
-  (let [project (rum/react project-state)
-        name (:name project)
-        pages (rum/react pages-state)]
-    (println "project-sidebar-render" pages)
+  (let [local (:rum/local own)
+        project (rum/react project-state)]
     (html
      [:div#project-bar.project-bar
       (when-not (:visible project true)
         {:class "toggle"})
-      [:div.project-bar-inside
-       [:span.project-name name]
-       [:ul.tree-view
-        (for [page pages]
-          (let [pageid (:id page)
-                lense (l/in [:pages-by-id pageid])
-                page-l (l/focus-atom lense s/state)]
-            ;; (println "project-sidebar-render$1" @page-l)
-            (rum/with-key (project-sidebar-item page-l) (str pageid))))]
-       #_(new-page conn project)]])))
+      (if (:edit @local)
+        (project-sidebar-form local)
+        (project-sidebar-pagelist local))])))
 
 (def project-sidebar
   (util/component
    {:render project-sidebar-render
     :name "project-sidebar"
-    :mixins [rum/reactive]}))
+    :mixins [rum/reactive (rum/local {:edit false :form {}})]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace

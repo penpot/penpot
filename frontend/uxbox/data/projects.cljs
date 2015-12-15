@@ -71,6 +71,17 @@
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.s.p/create-page>"))))
 
+(defn delete-page
+  [pageid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:pages-by-id] dissoc pageid))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.s.p/create-page>"))))
+
 (defn create-project
   [{:keys [name width height layout] :as data}]
   (sc/validate! +project-schema+ data)

@@ -7,3 +7,7 @@
 (defn prevent-default
   [e]
   (.preventDefault e))
+
+(defn event->value
+  [e]
+  (.-value (.-target e)))
