@@ -1,17 +1,1 @@
-<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" width="500" height="500" viewBox="0 0 499.99999 500.00001" id="svg2" version="1.1" sodipodi:docname="pencil.svg">
-  <defs id="defs4"/>
-  <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" showgrid="false" borderlayer="true" fit-margin-top="0" fit-margin-left="0" fit-margin-right="0" fit-margin-bottom="0" units="px"/>
-  <metadata id="metadata7">
-    <rdf:RDF>
-      <cc:Work rdf:about="">
-        <dc:format>
-          image/svg+xml
-        </dc:format>
-        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g id="layer1" transform="translate(771.30239,-356.33953)">
-    <path d="M380.46484 0L24.412109 356.04297 23.611328 360.75977 0 500 143.95703 475.58789 500 119.53516 380.46484 0zM380.46484 42.425781L410.10547 72.066406 89.792969 392.37109 60.152344 362.73047 380.46484 42.425781zM427.7832 89.744141L457.57422 119.53516 137.26953 439.84766 107.4707 410.04883 427.7832 89.744141zM49.513672 387.44727L112.55078 450.48438 60.949219 459.23438 40.660156 439.6543 49.513672 387.44727z" transform="translate(-771.30239,356.33953)" id="path20135" style="baseline-shift:baseline;block-progression:tb;color-interpolation-filters:linearRGB;color-interpolation:sRGB;color-rendering:auto;direction:ltr;fill:#000;font-family:sans-serif;font-size:medium;image-rendering:auto;isolation:auto;letter-spacing:normal;line-height:normal;mix-blend-mode:normal;shape-rendering:auto;solid-color:#000000;solid-opacity:1;text-align:start;text-anchor:start;text-decoration-color:#000000;text-decoration-line:none;text-decoration-style:solid;text-decoration:none;text-indent:0;text-rendering:auto;text-transform:none;white-space:normal;word-spacing:normal;writing-mode:lr-tb"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 499.99999 500.00001"><path d="M380.465 0L24.412 356.043l-.8 4.717L0 500l143.957-24.412L500 119.535 380.465 0zm0 42.426l29.64 29.64L89.793 392.37l-29.64-29.64L380.464 42.426zm47.318 47.318l29.79 29.79L137.27 439.85l-29.8-29.8L427.784 89.745zM49.513 387.447l63.038 63.037-51.6 8.75-20.29-19.58 8.854-52.207z" style="block-progression:tb;isolation:auto;line-height:normal;mix-blend-mode:normal;text-align:start;text-decoration-color:#000000;text-decoration-line:none;text-decoration-style:solid;text-indent:0;text-transform:none" font-family="sans-serif" solid-color="#000000" white-space="normal"/></svg>

@@ -127,6 +127,80 @@
       svg {
         fill: $color-white;
       }
+
+    }
+
+  }
+
+}
+
+.color-th {
+  background-color: $color-gray-light;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  height: 25px;
+  margin: 5px 4px 0 4px;
+  width: 25px;
+  &.palette-th {
+    align-items: center;
+    background-color: $color-gray-darker;
+    border: 2px solid $color-gray-light;
+    display: flex;
+    justify-content: center;
+    svg {
+      fill: $color-gray-light;
+      height: 18px;
+      width: 18px;
+    }
+    &:hover {
+      border-color: $color-primary;
+      svg {
+        fill: $color-primary;
+      }
+    }
+  }
+}
+
+.border-element {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  margin: 5px 2% 0 2%;
+  svg {
+    fill: $color-gray-light;
+    height: 12px;
+    width: 12px;
+  }
+  &.top-left {
+    svg {
+      transform: rotate(270deg);
+    }
+  }
+  &.bottom-left {
+    svg {
+      transform: rotate(180deg);
+    }
+  }
+  &.bottom-right {
+    svg {
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.align-icons {
+  cursor: pointer;
+  svg {
+    fill: $color-gray-light;
+    height: 20px;
+    margin: 5px 7px 0 7px;
+    width: 20px;
+  }
+  &:hover,
+  &.current {
+    svg {
+      fill: $color-primary;
     }
   }
 }
