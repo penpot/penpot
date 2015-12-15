@@ -3,17 +3,18 @@
   height: 100%;
   position: relative;
 
-  .dashboard-content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-  }
-
   .workspace-content {
     display: flex;
     height: 100%;
     width: 100%;
   }
 
+}
+
+.dashboard-content {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
 }

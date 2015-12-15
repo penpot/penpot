@@ -248,12 +248,11 @@
       (html
        [:section.dashboard-grid
         [:h2 "Your projects"]
-        [:div.dashboard-grid-content
          [:div.dashboard-grid-content
           [:div.grid-item.add-project {:on-click on-click}
            [:span "+ New project"]]
           (for [item (vals (:projects-by-id state))]
-            (rum/with-key (project-item item) (:id item)))]]]))))
+            (rum/with-key (project-item item) (:id item)))]]))))
 
 (def grid
   (util/component

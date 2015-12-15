@@ -11,9 +11,11 @@
     box-sizing: border-box;
     display: flex;
     flex-wrap: wrap;
-    min-height: 60vh;
+    height: 100%;
     justify-content: center;
     margin: $big;
+    max-height: 100%;
+    overflow: scroll;
     width: 100%;
 
     .grid-item {
@@ -125,6 +127,10 @@
 
     }
 
+  }
+  // STYLES FOR LIBRARIES
+  &.library {
+    padding: $medium $medium $medium 250px;
   }
 
 }

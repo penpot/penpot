@@ -72,10 +72,11 @@
     background-color: $color-white;
     border-radius: $br-small;
     box-sizing: border-box;
-    left: 0;
+    min-width: 150px;
     padding: 0 $small;
     position: absolute;
     top: 0;
+    right: 0;
     width: 100%;
     z-index: 12;
     @include animation(0,.2s,fadeInDown);

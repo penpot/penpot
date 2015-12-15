@@ -15,13 +15,13 @@
      (nav/link "/" i/logo)]
     [:ul.main-nav
      [:li
-      [:a {:href "/"} "PROJECTS"]]
+      [:a {:href "/#/"} "PROJECTS"]]
      [:li.current
-      [:a {:href "/elements"} "ELEMENTS"]]
+      [:a {:href "/#/elements"} "ELEMENTS"]]
      [:li
-      [:a {:href "/icons"} "ICONS"]]
+      [:a {:href "/#/icons"} "ICONS"]]
      [:li
-      [:a {:href "/colors"} "COLORS"]]]
+      [:a {:href "/#/colors"} "COLORS"]]]
     (ui.u/user)]))
 
 (def ^:static header
