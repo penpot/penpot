@@ -145,29 +145,35 @@
 
 (defn- project-sidebar-pageitem-render
   [own parent page numpages]
+  (println "pageitem-render" (:id page))
   (letfn [(on-edit [e]
             (let [data {:edit true :form page}]
               (reset! parent data)))]
-    (html
-     [:li.single-page
-      {:class "current"
-       :on-click #(dp/go-to-project (:project page) (:id page))}
-      [:div.tree-icon i/page]
-      [:span (:name page)]
-      [:div.options
-       [:div {:on-click on-edit} i/pencil]
-       [:div {:class (when (= 1 (count @pages-state)) "hide")
-              :on-click #(rs/emit! (dp/delete-page (:id page)))}
-        i/trash]]])))
+    (let [curpage (rum/react page-state)
+          active? (= (:id curpage) (:id page))
+          deletable? (> numpages 1)
+          navigate #(rs/emit! (dp/go-to-project (:project page) (:id page)))
+          delete #(rs/emit! (dp/delete-page (:id page)))]
+      (html
+       [:li.single-page
+        {:class (when active? "current")
+         :on-click navigate}
+        [:div.tree-icon i/page]
+        [:span (:name page)]
+        [:div.options
+         [:div {:on-click on-edit} i/pencil]
+         [:div {:class (when-not deletable? "hide")
+                :on-click delete}
+          i/trash]]]))))
 
 (def project-sidebar-pageitem
   (util/component
    {:render project-sidebar-pageitem-render
     :name "project-sidebar-pageitem"
-    :mixins [util/cursored]}))
+    :mixins [rum/reactive]}))
 
 (defn- project-sidebar-pagelist-render
-  [own local]
+  [own parent]
   (let [project (rum/react project-state)
         pages (rum/react pages-state)
         name (:name project)]
@@ -176,11 +182,17 @@
       [:span.project-name name]
       [:ul.tree-view
        (for [page pages]
-         (let [component (project-sidebar-pageitem local page (count pages))]
+         (let [component (project-sidebar-pageitem parent page (count pages))]
            (rum/with-key component (str (:id page)))))]
       [:button.btn-primary.btn-small
-       {:on-click #(reset! local {:edit true :form {}})}
+       {:on-click #(reset! parent {:edit true :form {}})}
        "+ Add new page"]])))
+
+(def project-sidebar-pagelist
+  (util/component
+   {:render project-sidebar-pagelist-render
+    :name "project-sidebar-pagelist"
+    :mixins [rum/reactive]}))
 
 (defn- project-sidebar-form-render
   [own parent]
@@ -232,15 +244,10 @@
     :name "project-sidebar-form"
     :mixins [rum/reactive]}))
 
-(def project-sidebar-pagelist
-  (util/component
-   {:render project-sidebar-pagelist-render
-    :name "project-sidebar-pagelist"
-    :mixins [rum/reactive]}))
-
 (defn project-sidebar-render
   [own]
   (let [local (:rum/local own)
+        page (rum/react page-state)
         project (rum/react project-state)]
     (html
      [:div#project-bar.project-bar
@@ -288,10 +295,18 @@
     (rs/emit! (dp/initialize-workspace projectid pageid))
     own))
 
+(defn workspace-transfer-state
+  [old-state state]
+  (let [[projectid pageid] (:rum/props state)]
+    (println "workspace-transfer-state" old-state)
+    (println "workspace-transfer-state" state)
+    (rs/emit! (dp/initialize-workspace projectid pageid))))
+
 (def ^:static workspace
   (util/component
    {:render workspace-render
     :will-mount workspace-will-mount
+    :transfer-state workspace-transfer-state
     :name "workspace"
     :mixins [rum/static]}))
 
