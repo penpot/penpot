@@ -26,69 +26,82 @@
         [:h2 "Library name"]
         [:div.dashboard-grid-content
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
+            [:span.grid-item-image icons/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/pencil]
+              [:div.project-th-icon.edit icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
         ]
       ]

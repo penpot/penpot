@@ -26,6 +26,7 @@
       flex-direction: column;
       flex-shrink: 0;
       height: 150px;
+      justify-content: center;
       margin: $medium $medium 0 $medium;
       padding: $medium;
       position: relative;
@@ -119,10 +120,26 @@
 
             }
 
+            &.edit {
+
+              &:hover {
+                transform: scale(1.4);
+              }
+
+            }
+
           }
 
         }
 
+      }
+
+      .grid-item-image {
+        svg {
+          height: 20%;
+          max-width: 120px;
+          width: 40%;
+        }
       }
 
     }
