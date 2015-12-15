@@ -71,6 +71,17 @@
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.s.p/create-page>"))))
 
+(defn update-page-name
+  [pageid name]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:pages-by-id pageid] assoc :name name))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.s.p/update-page-name>"))))
+
 (defn delete-page
   [pageid]
   (reify
@@ -80,7 +91,7 @@
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/create-page>"))))
+      (-write writer "#<event:u.s.p/edit-page>"))))
 
 (defn create-project
   [{:keys [name width height layout] :as data}]
