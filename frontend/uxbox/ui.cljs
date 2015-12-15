@@ -30,7 +30,6 @@
         :main/colors (ui.elements/colors)
         :main/page (let [projectid (:project-uuid location-params)
                          pageid (:page-uuid location-params)]
-                     (rs/emit! (dp/initialize-workspace projectid pageid))
                      (ui.w/workspace projectid pageid))
         nil
         )])))

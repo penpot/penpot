@@ -82,3 +82,13 @@
   "Redirect the user to other url."
   ([name] (go name nil))
   ([name params] (rs/emit! (navigate name params))))
+
+(defn route-for
+  "Given a location handler and optional parameter map, return the URI
+  for such handler and parameters."
+  ([location]
+   (bidi/path-for routes location))
+  ([location params]
+   (apply bidi/path-for routes location (into []
+                                              (mapcat (fn [[k v]] [k v]))
+                                              params))))

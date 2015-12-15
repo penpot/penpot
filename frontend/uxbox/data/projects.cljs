@@ -3,6 +3,7 @@
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
+            [uxbox.time :as time]
             [bouncer.validators :as v]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -39,14 +40,14 @@
   (let [uuid (:id page)]
     (update-in state [:pages-by-id] assoc uuid page)))
 
-;; (defn project-pages
-;;   "Get a ordered list of pages that
-;;   belongs to a specified project."
-;;   [state projectid]
-;;   (let [xf (comp
-;;             (filter #(= projectid (:project %)))
-;;             (map #(get-in state [:pages-by-id %])))]
-;;     (into [] xf (:pages state))))
+(defn project-pages
+  "Get a ordered list of pages that
+  belongs to a specified project."
+  [state projectid]
+  (->> (vals (:pages-by-id state))
+       (filter #(= projectid (:project %)))
+       (sort-by :created)
+       (into [])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
@@ -60,6 +61,7 @@
     (-apply-update [_ state]
       (let [page {:id (random-uuid)
                   :project project
+                  :created (time/now :unix)
                   :name name
                   :width width
                   :height height}]
@@ -79,6 +81,7 @@
         (let [proj {:id uuid
                     :name name
                     :width width
+                    :created (time/now :unix)
                     :height height
                     :layout layout}]
           (assoc-project state proj)))
@@ -99,7 +102,9 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc state :workspace {:project projectid :page pageid}))
+      (assoc state :workspace {:project projectid
+                               :page pageid
+                               :toolboxes {}}))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
@@ -117,9 +122,10 @@
        (if pageid
          (rs/emit! (r/navigate :main/page {:project-uuid projectid
                                            :page-uuid pageid}))
-         (let [pages (get-in state [:projects-by-id projectid :pages])]
+         (let [pages (project-pages state projectid)
+               pageid (:id (first pages))]
            (rs/emit! (r/navigate :main/page {:project-uuid projectid
-                                             :page-uuid (first pages)})))))
+                                             :page-uuid pageid})))))
      IPrintWithWriter
      (-pr-writer [mv writer _]
        (-write writer "#<event:u.s.p/go-to-project")))))
