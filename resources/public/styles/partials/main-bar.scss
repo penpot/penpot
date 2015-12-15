@@ -19,6 +19,37 @@
 
 }
 
+.main-nav {
+  align-items: center;
+  display: flex;
+  height: 50px;
+  margin: 0 0 0 100px;
+
+  li {
+
+    a {
+      color: lighten($color-gray-light, 12%);
+      padding: 1rem;
+
+      &:hover {
+        color: $color-white;
+      }
+
+    }
+
+    &.current {
+
+      a {
+        color: $color-white;
+        font-weight: bold;
+      }
+
+    }
+
+  }
+
+}
+
 .user-zone {
   align-items: center;
   cursor: pointer;

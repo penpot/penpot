@@ -13,9 +13,15 @@
    [:header#main-bar.main-bar
     [:div.main-logo
      (nav/link "/" i/logo)]
-    [:ul
-     [:li "foo"]
-     [:li "bar"]]
+    [:ul.main-nav
+     [:li
+      [:a {:href "/"} "PROJECTS"]]
+     [:li.current
+      [:a {:href "/elements"} "ELEMENTS"]]
+     [:li
+      [:a {:href "/icons"} "ICONS"]]
+     [:li
+      [:a {:href "/colors"} "COLORS"]]]
     (ui.u/user)]))
 
 (def ^:static header
