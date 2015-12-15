@@ -60,7 +60,7 @@
 
 (defn- cursored-will-umount
   [state]
-  (doseq [[k v] (:rum/props state)
+  (doseq [v (:rum/props state)
           :when (satisfies? IWatchable v)]
     (remove-watch v (cursored-key state)))
   state)
