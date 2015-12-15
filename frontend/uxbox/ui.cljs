@@ -7,9 +7,10 @@
             [uxbox.util :as util]
             [uxbox.data.projects :as dp]
             [uxbox.ui.lightbox :as ui.lb]
-            [uxbox.ui.users :as ui.u]
+            [uxbox.ui.users :as ui.users]
+            [uxbox.ui.elements :as ui.elements]
             [uxbox.ui.workspace :as ui.w]
-            [uxbox.ui.dashboard :as ui.d]))
+            [uxbox.ui.dashboard :as ui.dashboard]))
 
 (def ^:static state
   (as-> (l/select-keys [:location :location-params]) $
@@ -22,11 +23,11 @@
      [:section
       (ui.lb/lightbox)
       (case location
-        :auth/login (ui.u/login)
-        ;; :auth/register (u/register)
-        ;; :auth/recover (u/recover-password)
-        :main/dashboard (ui.d/dashboard)
-        ;; :main/project (ui.w/workspace (:project-uuid location-params))
+        :auth/login (ui.users/login)
+        :main/dashboard (ui.dashboard/dashboard)
+        :main/elements (ui.elements/elements)
+        :main/icons (ui.elements/icons)
+        :main/colors (ui.elements/colors)
         :main/page (let [projectid (:project-uuid location-params)
                          pageid (:page-uuid location-params)]
                      (rs/emit! (dp/initialize-workspace projectid pageid))

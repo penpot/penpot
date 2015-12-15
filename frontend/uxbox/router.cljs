@@ -60,6 +60,9 @@
                ["auth/register" :auth/register]
                ["auth/recover" :auth/recover-password]
                ["dashboard" :main/dashboard]
+               ["elements" :main/elements]
+               ["icons" :main/icons]
+               ["colors" :main/colors]
                ["workspace/" [[project-route :main/project]
                               [page-route :main/page]]]]])
 
