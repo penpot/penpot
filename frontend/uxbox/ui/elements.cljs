@@ -2,8 +2,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [uxbox.ui.header :as ui.header]
-            [uxbox.ui.icons.dashboard :as icons]
-            [uxbox.ui.icons :as i]
+            [uxbox.ui.icons :as icons]
             [uxbox.util :as util]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -29,67 +28,67 @@
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
           [:div.grid-item.project-th
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon icons/search]
+              [:div.project-th-icon icons/pencil]
               [:div.project-th-icon.delete icons/trash]]]
         ]
       ]
