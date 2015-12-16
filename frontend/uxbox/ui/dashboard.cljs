@@ -135,14 +135,6 @@
                                (lightbox/close!))}
       i/close]])))
 
-                    ;; (.preventDefault e)
-                    ;; (let [new-project-attributes {:name (trim name)
-                    ;;                               :width (int width)
-                    ;;                               :height (int height)
-                    ;;                               :layout layout}]
-                    ;;  ;; (actions/create-project conn new-project-attributes)
-                    ;;  (close-lightbox!)))}
-
 (def new-project-lightbox
   (util/component
    {:render new-project-lightbox-render

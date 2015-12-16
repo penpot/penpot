@@ -309,6 +309,7 @@
         ]
         [:div.dashboard-grid-content
           [:div.grid-item.small-item.add-project
+            {on-click #(lightbox/set! :new-color)}
             [:span "+ New color"]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#81dadd"}}]
@@ -476,6 +477,36 @@
    {:render new-icon-lightbox-render
     :name "new-icon-lightbox"}))
 
+;; ADD COLOR LIGHTBOX
+
 (defmethod lightbox/render-lightbox :new-icon
   [_]
-  (new-icon-lightbox))
+  (new-icon-lightbox))(defn- new-color-lightbox-render
+  [own]
+   (html
+    [:div.lightbox-body
+      [:h3 "New color"]
+      [:form
+        [:div.row-flex
+          [:input#color-hex.input-text
+            {:placeholder "#"
+            :type "text"
+            :auto-focus true}]
+          [:input#color-rgb.input-text
+            {:placeholder "RGB"
+            :type "text"
+            :auto-focus true}]]
+        [:input#project-btn.btn-primary {:value "+ Add color" :type "submit"}]]
+      [:a.close {:href "#"
+                :on-click #(do (dom/prevent-default %)
+                               (lightbox/close!))}
+      i/close]]))
+
+(def new-color-lightbox
+  (util/component
+   {:render new-color-lightbox-render
+    :name "new-color-lightbox"}))
+
+(defmethod lightbox/render-lightbox :new-color
+  [_]
+  (new-color-lightbox))
