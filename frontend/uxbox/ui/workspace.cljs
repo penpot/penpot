@@ -49,7 +49,7 @@
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon
-       (nav/link (r/route-for :dashboard) i/logo-icon)]
+       (nav/link (r/route-for :main/dashboard) i/logo-icon)]
       [:div.project-tree-btn
        {:on-click (constantly nil)}
        i/project-tree
