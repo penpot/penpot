@@ -490,12 +490,10 @@
         [:div.row-flex
           [:input#color-hex.input-text
             {:placeholder "#"
-            :type "text"
-            :auto-focus true}]
+            :type "text"}]
           [:input#color-rgb.input-text
             {:placeholder "RGB"
-            :type "text"
-            :auto-focus true}]]
+            :type "text"}]]
         [:input#project-btn.btn-primary {:value "+ Add color" :type "submit"}]]
       [:a.close {:href "#"
                 :on-click #(do (dom/prevent-default %)
