@@ -3,7 +3,9 @@
             [rum.core :as rum]
             [uxbox.ui.header :as ui.header]
             [uxbox.ui.library-bar :as ui.library-bar]
-            [uxbox.ui.icons :as icons]
+            [uxbox.ui.icons :as i]
+            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.ui.dom :as dom]
             [uxbox.util :as util]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -22,97 +24,98 @@
           [:span "Sort by"]
             #_(project-sort-selector (atom :name))]
           [:div.dashboard-search
-            icons/search]]
+            i/search]]
       (ui.library-bar/library-bar)
       [:section.dashboard-grid.library
         [:div.dashboard-title
           [:h2 "Element library name"]
           [:div.edition
-            [:span icons/pencil]
-            [:span icons/trash]
+            [:span i/pencil]
+            [:span i/trash]
           ]
         ]
         [:div.dashboard-grid-content
           [:div.grid-item.add-project
+            {on-click #(lightbox/set! :new-element)}
             [:span "+ New element"]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom element"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
         ]
       ]
     ]
@@ -139,133 +142,133 @@
           [:span "Sort by"]
             #_(project-sort-selector (atom :name))]
           [:div.dashboard-search
-            icons/search]]
+            i/search]]
       (ui.library-bar/library-bar)
       [:section.dashboard-grid.library
         [:div.dashboard-title
           [:h2 "Icon library name"]
           [:div.edition
-            [:span icons/pencil]
-            [:span icons/trash]
+            [:span i/pencil]
+            [:span i/trash]
           ]
         ]
         [:div.dashboard-grid-content
           [:div.grid-item.small-item.add-project
             [:span "+ New icon"]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/logo-icon]
+            [:span.grid-item-image i/logo-icon]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/pencil]
+            [:span.grid-item-image i/pencil]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/trash]
+            [:span.grid-item-image i/trash]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/search]
+            [:span.grid-item-image i/search]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/image]
+            [:span.grid-item-image i/image]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/toggle]
+            [:span.grid-item-image i/toggle]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/chat]
+            [:span.grid-item-image i/chat]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/close]
+            [:span.grid-item-image i/close]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/page]
+            [:span.grid-item-image i/page]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/folder]
+            [:span.grid-item-image i/folder]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/infocard]
+            [:span.grid-item-image i/infocard]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/fill]
+            [:span.grid-item-image i/fill]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/stroke]
+            [:span.grid-item-image i/stroke]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/action]
+            [:span.grid-item-image i/action]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/undo]
+            [:span.grid-item-image i/undo]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/redo]
+            [:span.grid-item-image i/redo]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/export]
+            [:span.grid-item-image i/export]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/exit]
+            [:span.grid-item-image i/exit]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
-            [:span.grid-item-image icons/user]
+            [:span.grid-item-image i/user]
             [:h3 "Custom icon"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
         ]
       ]
     ]
@@ -293,14 +296,14 @@
           [:span "Sort by"]
             #_(project-sort-selector (atom :name))]
           [:div.dashboard-search
-            icons/search]]
+            i/search]]
       (ui.library-bar/library-bar)
       [:section.dashboard-grid.library
         [:div.dashboard-title
           [:h2 "Colors library name"]
           [:div.edition
-            [:span icons/pencil]
-            [:span icons/trash]
+            [:span i/pencil]
+            [:span i/trash]
           ]
         ]
         [:div.dashboard-grid-content
@@ -311,92 +314,92 @@
             [:span.color-data "#00f9ff"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#6eafd6"}}]
             [:span.color-data "#009fff"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#0078ff"}}]
             [:span.color-data "#0078ff"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#005eff"}}]
             [:span.color-data "#005eff"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#0900ff"}}]
             [:span.color-data "#0900ff"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#7502f1"}}]
             [:span.color-data "#7502f1"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#ffe705"}}]
             [:span.color-data "#ffe705"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#00ffab"}}]
             [:span.color-data "#00ffab"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#d56c5e"}}]
             [:span.color-data "#f52105"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#ae80df"}}]
             [:span.color-data "#7502f1"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#e7ba64"}}]
             [:span.color-data "#ffe705"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#73c2a8"}}]
             [:span.color-data "#00ffab"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
           [:div.grid-item.small-item.project-th
             [:span.color-swatch {:style {:background-color "#f52105"}}]
             [:span.color-data "#f52105"]
             [:span.color-data "RGB 31,31,31"]
             [:div.project-th-actions
-              [:div.project-th-icon.edit icons/pencil]
-              [:div.project-th-icon.delete icons/trash]]]
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]]]
         ]
       ]
     ]
@@ -407,3 +410,36 @@
    {:render colors-render
     :name "colors"
     :mixins [rum/static]}))
+
+;;;;;;;;;;;
+;; Lightbox
+;;;;;;;;;;
+(defn- new-element-lightbox-render
+  [own]
+
+   (html
+    [:div.lightbox-body
+      [:h3 "New element"]
+        [:div.row-flex
+          [:div.lightbox-big-btn
+            [:span.big-svg i/shapes]
+            [:span.text "Go to workspace"]
+          ]
+          [:div.lightbox-big-btn
+            [:span.big-svg.upload i/exit]
+            [:span.text "Upload file"]
+          ]
+        ]
+      [:a.close {:href "#"
+                :on-click #(do (dom/prevent-default %)
+                               (lightbox/close!))}
+                               i/close]]))
+
+(def new-element-lightbox
+  (util/component
+   {:render new-element-lightbox-render
+    :name "new-element-lightbox"}))
+
+(defmethod lightbox/render-lightbox :new-element
+  [_]
+  (new-element-lightbox))

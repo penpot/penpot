@@ -76,3 +76,51 @@
   }
 
 }
+
+.lightbox-big-btn {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  margin: 1rem;
+
+  .big-svg {
+    background-color: $color-gray-lighter;
+    border-radius: $br-medium;
+    padding: 3rem;
+
+    svg {
+      fill: $color-gray;
+      height: 40px;
+      width: 40px;
+    }
+
+    &.upload {
+
+      svg {
+        transform: rotate(-90deg);
+      }
+
+    }
+
+  }
+
+  .text {
+    color: $color-gray-light;
+    margin-top: .5rem;
+  }
+
+  &:hover {
+
+    .big-svg {
+      background-color: $color-primary;
+
+      svg {
+        fill: $color-white;
+      }
+
+    }
+
+  }
+
+}
