@@ -8,6 +8,7 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.data.projects :as dp]
+            [uxbox.data.workspace :as dw]
             [uxbox.ui.icons.dashboard :as icons]
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
@@ -29,6 +30,10 @@
                         (dp/project-pages % pid))) $
     (l/focus-atom $ s/state)))
 
+(def ^:static workspace-state
+  (as-> (l/in [:workspace]) $
+    (l/focus-atom $ s/state)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Header
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -45,13 +50,14 @@
 
 (defn header-render
   [own]
-  (let [page (rum/react page-state)]
+  (let [page (rum/react page-state)
+        toggle #(rs/emit! (dw/toggle-pagesbar))]
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon
        (nav/link (r/route-for :dashboard/projects) i/logo-icon)]
       [:div.project-tree-btn
-       {:on-click (constantly nil)}
+       {:on-click toggle}
        i/project-tree
        [:span (:name page)]]
       [:div.workspace-options
@@ -145,7 +151,6 @@
 
 (defn- project-sidebar-pageitem-render
   [own parent page numpages]
-  (println "pageitem-render" (:id page))
   (letfn [(on-edit [e]
             (let [data {:edit true :form page}]
               (reset! parent data)))]
@@ -228,8 +233,7 @@
           :type "text"
           :value (get-in @parent [:form :name] "")
           :on-change on-change
-          :on-key-up on-key-up
-          }]
+          :on-key-up on-key-up}]
         [:button.btn-primary.btn-small
          {:disabled (str/empty? (str/trim (get-in @parent [:form :name] "")))
           :on-click on-save}
@@ -247,11 +251,11 @@
 (defn project-sidebar-render
   [own]
   (let [local (:rum/local own)
-        page (rum/react page-state)
+        workspace (rum/react workspace-state)
         project (rum/react project-state)]
     (html
      [:div#project-bar.project-bar
-      (when-not (:visible project true)
+      (when-not (:visible-pagebar workspace false)
         {:class "toggle"})
       (if (:edit @local)
         (project-sidebar-form local)

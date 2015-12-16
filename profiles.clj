@@ -13,7 +13,7 @@
 
  :common
  {:dependencies [[org.clojure/clojure "1.7.0"]
-                 [funcool/cats "1.2.0"]]}
+                 [funcool/cats "1.2.1"]]}
 
  ;; Backend profile
 
@@ -44,7 +44,6 @@
                   [bouncer "0.3.3"]
                   [funcool/promesa "0.6.0"]
                   [funcool/beicon "0.3.0"]
-                  [funcool/cats "1.2.0"]
                   [cljsjs/moment "2.10.6-0"]
                   [figwheel-sidecar "0.5.0-2" :scope "test"]
                   [bidi "1.21.0"]

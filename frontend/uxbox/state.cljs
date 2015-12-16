@@ -10,6 +10,7 @@
   (rs/init {:user {:fullname "Cirilla"
                    :avatar "http://lorempixel.com/50/50/"}
             :dashboard {:section :dashboard/projects}
+            :workspace {}
             :projects-by-id {}
             :pages-by-id {}}))
 

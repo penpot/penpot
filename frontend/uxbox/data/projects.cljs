@@ -124,9 +124,10 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc state :workspace {:project projectid
-                               :page pageid
-                               :toolboxes {}}))
+      (let [s {:project projectid
+               :page pageid
+               :toolboxes {}}]
+        (update state :workspace merge s)))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
