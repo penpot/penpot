@@ -14,9 +14,9 @@
     [:div.main-logo
      (nav/link "/" i/logo)]
     [:ul.main-nav
-     [:li
-      [:a {:href "/#/"} "PROJECTS"]]
      [:li.current
+      [:a {:href "/#/"} "PROJECTS"]]
+     [:li
       [:a {:href "/#/elements"} "ELEMENTS"]]
      [:li
       [:a {:href "/#/icons"} "ICONS"]]

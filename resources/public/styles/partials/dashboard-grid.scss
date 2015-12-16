@@ -36,7 +36,7 @@
           svg {
             fill: $color-gray-darker;
           }
-          
+
         }
 
       }
@@ -73,6 +73,10 @@
       position: relative;
       text-align: center;
       width: 20%;
+
+      &.small-item {
+        max-width: 12%;
+      }
 
       &.add-project {
         border: 2px dashed $color-gray-light;
@@ -181,6 +185,21 @@
           max-width: 120px;
           width: 40%;
         }
+      }
+
+      .color-swatch {
+        border-top-left-radius: $br-medium;
+        border-top-right-radius: $br-medium;
+        height: 25%;
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 100%;
+      }
+
+      .color-data {
+        color: $color-gray;
+        margin-top: 15px;
       }
 
     }
