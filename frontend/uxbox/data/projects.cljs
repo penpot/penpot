@@ -132,6 +132,17 @@
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.s.p/initialize-workspace>"))))
 
+(defn set-dashboard-section
+  [section]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:dashboard :section] section))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.s.p/go-to-project"))))
+
 (defn go-to-project
   "A shortcut event that redirects the user to the
   first page of the project."

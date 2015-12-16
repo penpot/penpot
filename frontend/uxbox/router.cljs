@@ -57,8 +57,8 @@
 
 (def ^:static
   routes ["/" [["auth/login" :auth/login]
-               ["auth/register" :auth/register]
-               ["auth/recover" :auth/recover-password]
+               ;; ["auth/register" :auth/register]
+               ;; ["auth/recover" :auth/recover-password]
                ["dashboard/" [["projects" :dashboard/projects]
                               ["elements" :dashboard/elements]
                               ["icons" :dashboard/icons]
@@ -66,13 +66,10 @@
                ["workspace/" [[project-route :main/project]
                               [page-route :main/page]]]]])
 
-(defn- on-navigate
-  [data]
-  (rs/emit! (update-location data)))
-
 (defonce +router+
-  (bidi.router/start-router! routes {:on-navigate on-navigate
-                                     :default-location {:handler :auth/login}}))
+  (let [opts {:on-navigate #(rs/emit! (update-location %))
+              :default-location {:handler :dashboard/projects}}]
+    (bidi.router/start-router! routes opts)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api

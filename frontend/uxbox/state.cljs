@@ -9,7 +9,7 @@
 (defonce stream
   (rs/init {:user {:fullname "Cirilla"
                    :avatar "http://lorempixel.com/50/50/"}
-            :workspace nil
+            :dashboard {:section :dashboard/projects}
             :projects-by-id {}
             :pages-by-id {}}))
 
