@@ -153,11 +153,11 @@
      rs/EffectEvent
      (-apply-effect [_ state]
        (if pageid
-         (rs/emit! (r/navigate :main/page {:project-uuid projectid
-                                           :page-uuid pageid}))
+         (rs/emit! (r/navigate :workspace/page {:project-uuid projectid
+                                                :page-uuid pageid}))
          (let [pages (project-pages state projectid)
                pageid (:id (first pages))]
-           (rs/emit! (r/navigate :main/page {:project-uuid projectid
+           (rs/emit! (r/navigate :workspace/page {:project-uuid projectid
                                              :page-uuid pageid})))))
      IPrintWithWriter
      (-pr-writer [mv writer _]

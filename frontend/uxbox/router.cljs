@@ -49,9 +49,6 @@
 ;; Router declaration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private project-route
-  [[bidi/uuid :project-uuid]])
-
 (def ^:private page-route
   [[bidi/uuid :project-uuid] "/" [bidi/uuid :page-uuid]])
 
@@ -63,8 +60,7 @@
                               ["elements" :dashboard/elements]
                               ["icons" :dashboard/icons]
                               ["colors" :dashboard/colors]]]
-               ["workspace/" [[project-route :main/project]
-                              [page-route :main/page]]]]])
+               ["workspace/" [[page-route :workspace/page]]]]])
 
 (defonce +router+
   (let [opts {:on-navigate #(rs/emit! (update-location %))

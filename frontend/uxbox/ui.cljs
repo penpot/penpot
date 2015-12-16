@@ -28,9 +28,9 @@
         :dashboard/elements (ui.dashboard.elements/elements)
         :dashboard/icons (ui.dashboard.elements/icons)
         :dashboard/colors (ui.dashboard.elements/colors)
-        :main/page (let [projectid (:project-uuid location-params)
-                         pageid (:page-uuid location-params)]
-                     (ui.w/workspace projectid pageid))
+        :workspace/page (let [projectid (:project-uuid location-params)
+                              pageid (:page-uuid location-params)]
+                          (ui.w/workspace projectid pageid))
         nil
         )])))
 
