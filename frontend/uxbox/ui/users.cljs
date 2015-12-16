@@ -93,7 +93,7 @@
     {:name "login"
      :value "Continue"
      :type "submit"
-     :on-click #(r/go :main/dashboard)}]
+     :on-click #(r/go :dashboard/projects)}]
    [:div.login-links
     [:a
      {:on-click #(r/go :auth/login)}
@@ -117,7 +117,7 @@
     {:name "login"
      :value "Continue"
      :type "submit"
-     :on-click #(r/go :main/dashboard)}]
+     :on-click #(r/go :dashboard/projects)}]
    [:div.login-links
     [:a
      {:on-click #(r/go :auth/login)}
@@ -156,7 +156,7 @@
     {:name "login"
      :value "Continue"
      :type "submit"
-     :on-click #(r/go :main/dashboard)}]
+     :on-click #(r/go :dashboard/projects)}]
    [:div.login-links
     [:a {:on-click #(r/go :auth/recover-password)} "Forgot your password?"]
     [:a {:on-click #(r/go :auth/register)} "Don't have an account?"]]])

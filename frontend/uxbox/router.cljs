@@ -59,10 +59,10 @@
   routes ["/" [["auth/login" :auth/login]
                ["auth/register" :auth/register]
                ["auth/recover" :auth/recover-password]
-               ["dashboard" :main/dashboard]
-               ["elements" :main/elements]
-               ["icons" :main/icons]
-               ["colors" :main/colors]
+               ["dashboard/" [["projects" :dashboard/projects]
+                              ["elements" :dashboard/elements]
+                              ["icons" :dashboard/icons]
+                              ["colors" :dashboard/colors]]]
                ["workspace/" [[project-route :main/project]
                               [page-route :main/page]]]]])
 
@@ -72,7 +72,7 @@
 
 (defonce +router+
   (bidi.router/start-router! routes {:on-navigate on-navigate
-                                     :default-location {:handler :main/dashboard}}))
+                                     :default-location {:handler :auth/login}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api

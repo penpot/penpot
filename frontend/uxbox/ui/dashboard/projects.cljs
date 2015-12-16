@@ -1,4 +1,4 @@
-(ns uxbox.ui.dashboard
+(ns uxbox.ui.dashboard.projects
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cats.labs.lens :as l]
@@ -11,7 +11,7 @@
             [uxbox.ui.icons.dashboard :as icons]
             [uxbox.ui.icons :as i]
             [uxbox.ui.dom :as dom]
-            [uxbox.ui.header :as ui.h]
+            [uxbox.ui.dashboard.header :as dsh.header]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.time :refer [ago]]))
 
@@ -256,16 +256,16 @@
 ;; Main
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn dashboard-render
+(defn projects-render
   [own]
   (html
    [:main.dashboard-main
-    (ui.h/header)
+    (dsh.header/header)
     [:section.dashboard-content
      (menu)
      (grid)]]))
 
-(def dashboard
-  (util/component {:render dashboard-render
+(def projects
+  (util/component {:render projects-render
                    :mixins [rum/static]
-                   :name "dashboard"}))
+                   :name "projects"}))

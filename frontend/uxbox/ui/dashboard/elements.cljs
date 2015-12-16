@@ -1,7 +1,7 @@
-(ns uxbox.ui.elements
+(ns uxbox.ui.dashboard.elements
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.ui.header :as ui.header]
+            [uxbox.ui.dashboard.header :as dsh.header]
             [uxbox.ui.library-bar :as ui.library-bar]
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
@@ -16,7 +16,7 @@
   [own]
   (html
    [:main.dashboard-main
-    (ui.header/header)
+    (dsh.header/header)
     [:section.dashboard-content
       [:section#dashboard-bar.dashboard-bar.library-gap
         [:div.dashboard-info
@@ -134,7 +134,7 @@
   [own]
   (html
    [:main.dashboard-main
-    (ui.header/header)
+    (dsh.header/header)
     [:section.dashboard-content
       [:section#dashboard-bar.dashboard-bar.library-gap
         [:div.dashboard-info
@@ -289,7 +289,7 @@
   [own]
   (html
    [:main.dashboard-main
-    (ui.header/header)
+    (dsh.header/header)
     [:section.dashboard-content
       [:section#dashboard-bar.dashboard-bar.library-gap
         [:div.dashboard-info
