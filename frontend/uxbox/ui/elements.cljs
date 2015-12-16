@@ -154,6 +154,7 @@
         ]
         [:div.dashboard-grid-content
           [:div.grid-item.small-item.add-project
+            {on-click #(lightbox/set! :new-icon)}
             [:span "+ New icon"]]
           [:div.grid-item.small-item.project-th
             [:span.grid-item-image i/logo-icon]
@@ -411,9 +412,12 @@
     :name "colors"
     :mixins [rum/static]}))
 
-;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lightbox
-;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; ADD ELEMENT LIGHTBOX
+
 (defn- new-element-lightbox-render
   [own]
 
@@ -443,3 +447,35 @@
 (defmethod lightbox/render-lightbox :new-element
   [_]
   (new-element-lightbox))
+
+;; ADD ICON LIGHTBOX
+
+(defn- new-icon-lightbox-render
+  [own]
+
+   (html
+    [:div.lightbox-body
+      [:h3 "New icon"]
+        [:div.row-flex
+          [:div.lightbox-big-btn
+            [:span.big-svg i/shapes]
+            [:span.text "Go to workspace"]
+          ]
+          [:div.lightbox-big-btn
+            [:span.big-svg.upload i/exit]
+            [:span.text "Upload file"]
+          ]
+        ]
+      [:a.close {:href "#"
+                :on-click #(do (dom/prevent-default %)
+                               (lightbox/close!))}
+                               i/close]]))
+
+(def new-icon-lightbox
+  (util/component
+   {:render new-icon-lightbox-render
+    :name "new-icon-lightbox"}))
+
+(defmethod lightbox/render-lightbox :new-icon
+  [_]
+  (new-icon-lightbox))
