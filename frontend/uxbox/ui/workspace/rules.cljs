@@ -3,10 +3,11 @@
             [rum.core :as rum]
             [cuerdas.core :as str]
             [beicon.core :as rx]
-            [uxbox.util :as util]
             [uxbox.state :as s]
             [uxbox.ui.dom :as dom]
-            [uxbox.ui.workspace.base :as wd]))
+            [uxbox.ui.workspace.base :as wd]
+            [uxbox.ui.util :as util]))
+
 
 (def viewport-height  3000)
 (def viewport-width 3000)

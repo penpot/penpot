@@ -5,13 +5,15 @@
             [cats.labs.lens :as l]
             [uxbox.state :as s]
             [uxbox.rstore :as rs]
-            [uxbox.util :as util]
             [uxbox.data.projects :as dp]
             [uxbox.ui.lightbox :as ui.lb]
             [uxbox.ui.users :as ui.users]
             [uxbox.ui.dashboard.projects :as ui.dashboard.projects]
             [uxbox.ui.dashboard.elements :as ui.dashboard.elements]
-            [uxbox.ui.workspace :as ui.w]))
+            [uxbox.ui.workspace :as ui.w]
+            [uxbox.ui.util :as util]
+            [uxbox.ui.mixins :as mx]))
+
 
 (def ^:static state
   (as-> (l/select-keys [:location :location-params]) $
@@ -40,5 +42,5 @@
   []
   (let [app-dom (gdom/getElement "app")
         lb-dom (gdom/getElement "lightbox")]
-    (rum/mount (app) app-dom)
-    (rum/mount (ui.lb/lightbox) lb-dom)))
+    (util/mount (app) app-dom)
+    (util/mount (ui.lb/lightbox) lb-dom)))

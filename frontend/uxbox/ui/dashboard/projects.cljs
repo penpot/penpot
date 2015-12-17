@@ -3,17 +3,17 @@
             [rum.core :as rum]
             [cats.labs.lens :as l]
             [cuerdas.core :as str]
-            [uxbox.util :as util]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
+            [uxbox.time :as time]
             [uxbox.data.projects :as dp]
             [uxbox.ui.icons.dashboard :as icons]
             [uxbox.ui.icons :as i]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.dashboard.header :as dsh.header]
             [uxbox.ui.lightbox :as lightbox]
-            [uxbox.time :refer [ago]]))
+            [uxbox.ui.util :as util]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers & Constants
@@ -195,7 +195,7 @@
                                  :key (:id project)}
       [:h3 (:name project)]
       [:span.project-th-update
-       (str "Updated " (ago (:last-update project)))]
+       (str "Updated " (time/ago (:last-update project)))]
       [:div.project-th-actions
        [:div.project-th-icon.pages
         icons/page

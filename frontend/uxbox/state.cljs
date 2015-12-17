@@ -1,6 +1,6 @@
 (ns uxbox.state
-  (:require [uxbox.rstore :as rs]
-            [beicon.core :as rx]))
+  (:require [beicon.core :as rx]
+            [uxbox.rstore :as rs]))
 
 (enable-console-print!)
 

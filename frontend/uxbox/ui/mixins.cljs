@@ -1,37 +1,8 @@
-(ns uxbox.util
+(ns uxbox.ui.mixins
   (:refer-clojure :exclude [derive])
   (:require [rum.core :as rum]
             [cats.labs.lens :as l]
             [goog.dom.forms :as gforms]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Sugar for define rum components
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn component
-  [spec]
-  (let [name (or (:name spec)
-                 (str (gensym "rum-")))
-        mixins (or (:mixins spec)
-                   [])
-        spec (merge (dissoc spec :name :mixins)
-                    (when-let [rfn (:render spec)]
-                      {:render (fn [state]
-                                 [(apply rfn state (:rum/props state)) state])}))
-        cls (rum/build-class (conj mixins spec) name)
-        ctr (fn self
-              ([] (self {}))
-              ([& props]
-               (let [state {:rum/props props}]
-                 (rum/element cls state nil))))]
-    (with-meta ctr {:rum/class cls})))
-
-(defn ref-value
-  [own ref]
-  (let [component (-> own :rum/react-component)
-        ref-node (aget (.-refs component) ref)
-        dom-node  (.findDOMNode js/ReactDOM ref-node)]
-    (.-value dom-node)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Cursored & Lenses
@@ -116,44 +87,3 @@
   {:should-update
    (fn [old-state new-state]
      (not= (:rum/props old-state) (:rum/props new-state)))})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses & Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn dep-in
-  [where link]
-  {:pre [(vector? where) (vector? link)]}
-  (l/lens
-   (fn [s]
-     (let [value (get-in s link)
-           path (conj where value)]
-       (get-in s path)))
-   (fn [s f]
-     (throw (ex-info "Not implemented" {})))))
-
-(defn getter
-  [f]
-  (l/lens f #(throw (ex-info "Not implemented" {}))))
-
-(defn derive
-  [a path]
-  (l/focus-atom (l/in path) a))
-
-(defn focus
-  ([state]
-   (l/focus-atom l/id state))
-  ([lens state]
-   (l/focus-atom lens state)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Dom Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn prevent-default
-  [e]
-  (.preventDefault e))
-
-(defn get-value
-  [el]
-  (gforms/getValue el))

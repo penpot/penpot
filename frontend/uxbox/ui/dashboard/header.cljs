@@ -2,19 +2,18 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cats.labs.lens :as l]
-            [uxbox.util :as util]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.data.projects :as dp]
             [uxbox.ui.navigation :as nav]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.users :as ui.u]))
+            [uxbox.ui.users :as ui.u]
+            [uxbox.ui.util :as util]))
 
 (def ^:static header-state
   (as-> (l/in [:dashboard]) $
     (l/focus-atom $ s/state)))
-
 
 (defn- header-link
   [section content]

@@ -1,7 +1,8 @@
 (ns uxbox.ui.library-bar
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.util :as util]
+            [uxbox.ui.util :as ui]
+            [uxbox.ui.mixins :as mx]
             [uxbox.ui.icons :as i]))
 
 (defn library-bar-render
@@ -78,7 +79,7 @@
    ]))
 
 (def ^:static library-bar
-  (util/component
+  (ui/component
    {:render library-bar-render
     :name "library-bar"
-    :mixins [rum/static]}))
+    :mixins [mx/static]}))

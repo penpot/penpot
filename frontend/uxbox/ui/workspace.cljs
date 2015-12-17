@@ -1,11 +1,11 @@
 (ns uxbox.ui.workspace
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.util :as util]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.data.projects :as dp]
+            [uxbox.ui.util :as util]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.rules :as wr]
             [uxbox.ui.workspace.workarea :as wa]))

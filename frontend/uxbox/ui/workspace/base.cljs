@@ -4,34 +4,35 @@
             [beicon.core :as rx]
             [cats.labs.lens :as l]
             [cuerdas.core :as str]
-            [uxbox.util :as util]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
+            [uxbox.util.lens :as ul]
             [uxbox.ui.icons.dashboard :as icons]
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.keyboard :as k]
             [uxbox.ui.users :as ui.u]
             [uxbox.ui.navigation :as nav]
-            [uxbox.ui.dom :as dom]))
+            [uxbox.ui.dom :as dom]
+            [uxbox.ui.util :as util]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:static project-state
-  (as-> (util/dep-in [:projects-by-id] [:workspace :project]) $
+  (as-> (ul/dep-in [:projects-by-id] [:workspace :project]) $
     (l/focus-atom $ s/state)))
 
 (def ^:static page-state
-  (as-> (util/dep-in [:pages-by-id] [:workspace :page]) $
+  (as-> (ul/dep-in [:pages-by-id] [:workspace :page]) $
     (l/focus-atom $ s/state)))
 
 (def ^:static pages-state
-  (as-> (util/getter #(let [pid (get-in % [:workspace :project])]
+  (as-> (ul/getter #(let [pid (get-in % [:workspace :project])]
                         (dp/project-pages % pid))) $
     (l/focus-atom $ s/state)))
 

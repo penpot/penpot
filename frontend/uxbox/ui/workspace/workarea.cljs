@@ -1,14 +1,14 @@
 (ns uxbox.ui.workspace.workarea
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.util :as util]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.data.projects :as dp]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.rules :as wr]))
-
+            [uxbox.ui.workspace.rules :as wr]
+            [uxbox.ui.mixins :as mx]
+            [uxbox.ui.util :as util]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Coordinates Debug
@@ -47,7 +47,7 @@
   (util/component
    {:render background-render
     :name "background"
-    :mixins [util/static]}))
+    :mixins [mx/static]}))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -123,7 +123,7 @@
   (util/component
    {:render grid-render
     :name "grid"
-    :mixins [util/static]}))
+    :mixins [mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas

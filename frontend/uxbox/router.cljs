@@ -2,7 +2,6 @@
   (:require [bidi.router]
             [bidi.bidi :as bidi]
             [goog.events :as events]
-            [uxbox.state]
             [uxbox.rstore :as rs]))
 
 (enable-console-print!)

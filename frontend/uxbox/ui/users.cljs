@@ -4,9 +4,9 @@
             [rum.core :as rum]
             [uxbox.router :as r]
             [uxbox.state :as s]
-            [uxbox.util :as util]
             [uxbox.ui.icons :as icons]
-            [uxbox.ui.navigation :as nav]))
+            [uxbox.ui.navigation :as nav]
+            [uxbox.ui.util :as util]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Menu

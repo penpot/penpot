@@ -6,7 +6,8 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.dom :as dom]
-            [uxbox.util :as util]))
+            [uxbox.ui.mixins :as mx]
+            [uxbox.ui.util :as util]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Elements
@@ -125,7 +126,7 @@
   (util/component
    {:render elements-render
     :name "elements"
-    :mixins [rum/static]}))
+    :mixins [mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Icons
@@ -279,7 +280,7 @@
   (util/component
    {:render icons-render
     :name "icons"
-    :mixins [rum/static]}))
+    :mixins [mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Colors
@@ -411,7 +412,7 @@
   (util/component
    {:render colors-render
     :name "colors"
-    :mixins [rum/static]}))
+    :mixins [mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lightbox

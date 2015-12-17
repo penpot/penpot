@@ -1,7 +1,7 @@
 (ns uxbox.ui.lightbox
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.util :as util]
+            [uxbox.ui.util :as util]
             [uxbox.ui.keyboard :as k]
             [goog.events :as events])
   (:import goog.events.EventType))
