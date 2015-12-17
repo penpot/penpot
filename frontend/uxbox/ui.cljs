@@ -1,5 +1,6 @@
 (ns uxbox.ui
   (:require [sablono.core :as html :refer-macros [html]]
+            [goog.dom :as gdom]
             [rum.core :as rum]
             [cats.labs.lens :as l]
             [uxbox.state :as s]
@@ -19,25 +20,25 @@
 (defn app-render
   [own]
   (let [{:keys [location location-params] :as state} (rum/react state)]
-    (html
-     [:section
-      (ui.lb/lightbox)
-      (case location
-        :auth/login (ui.users/login)
-        :dashboard/projects (ui.dashboard.projects/projects)
-        :dashboard/elements (ui.dashboard.elements/elements)
-        :dashboard/icons (ui.dashboard.elements/icons)
-        :dashboard/colors (ui.dashboard.elements/colors)
-        :workspace/page (let [projectid (:project-uuid location-params)
-                              pageid (:page-uuid location-params)]
-                          (ui.w/workspace projectid pageid))
-        nil
-        )])))
+    (case location
+      :auth/login (ui.users/login)
+      :dashboard/projects (ui.dashboard.projects/projects)
+      :dashboard/elements (ui.dashboard.elements/elements)
+      :dashboard/icons (ui.dashboard.elements/icons)
+      :dashboard/colors (ui.dashboard.elements/colors)
+      :workspace/page (let [projectid (:project-uuid location-params)
+                            pageid (:page-uuid location-params)]
+                        (ui.w/workspace projectid pageid))
+      nil
+      )))
 
 (def app
   (util/component {:render app-render
                    :mixins [rum/reactive]
                    :name "app"}))
-(defn mount!
-  [el]
-  (rum/mount (app) el))
+(defn init
+  []
+  (let [app-dom (gdom/getElement "app")
+        lb-dom (gdom/getElement "lightbox")]
+    (rum/mount (app) app-dom)
+    (rum/mount (ui.lb/lightbox) lb-dom)))

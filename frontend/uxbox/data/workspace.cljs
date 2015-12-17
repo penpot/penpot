@@ -21,5 +21,3 @@
     IPrintWithWriter
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.s.p/toggle-pagebar>"))))
-
-

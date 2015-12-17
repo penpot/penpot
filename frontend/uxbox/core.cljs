@@ -11,10 +11,9 @@
 
 (enable-console-print!)
 
-(let [dom (dom/getElement "app")]
-  (ui/mount! dom))
-
 (defonce +setup+
   (do
+    (println "BOOTSTRAP")
+    (ui/init)
     (rs/emit! (dl/load-data))
     (rx/on-value s/stream #(dl/persist-state %))))
