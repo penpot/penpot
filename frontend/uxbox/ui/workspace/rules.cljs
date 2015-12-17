@@ -25,9 +25,8 @@
                 (cond
                   (< (mod value big-ticks-mod) step-size)
                   (do
-                    (println "foobar")
                     (html
-                     [:g
+                     [:g {:key position}
                       [:line {:x1 position :x2 position :y1 5 :y2 padding :stroke "#7f7f7f"}]
                       [:text {:x (+ position 2) :y 13 :fill "#7f7f7f" :style {:font-size "12px"}} value]]))
                   (< (mod value mid-ticks-mod) step-size)
@@ -47,7 +46,7 @@
       [:g
        (for [tick ticks]
          (let [position (* (+ tick start-width) zoom)]
-           (rum/with-key (lines position tick padding) (str tick))))]])))
+           (lines position tick padding)))]])))
 
 (def h-rule
   (util/component
@@ -91,7 +90,7 @@
        [:rect {:x 0 :y padding :height height :width padding :fill "#bab7b7"}]
        (for [tick ticks]
          (let [position (* (+ tick start-height) zoom)]
-           (rum/with-key (lines position tick padding) (str tick))))]])))
+           (lines position tick padding)))]])))
 
 (def v-rule
   (util/component
