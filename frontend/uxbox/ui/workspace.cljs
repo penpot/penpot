@@ -6,6 +6,7 @@
             [uxbox.state :as s]
             [uxbox.data.projects :as dp]
             [uxbox.ui.util :as util]
+            [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.toolbar :as wt]
             [uxbox.ui.workspace.leftsidebar :as wl]
@@ -19,7 +20,6 @@
 
 (defn workspace-render
   [own projectid]
-  (println "workspace-render")
   (html
    [:div
     (wh/header)
@@ -36,9 +36,9 @@
       ;; Canvas
       (wa/workarea)
       ;; (working-area conn @open-toolboxes page project shapes (rum/react ws/zoom) (rum/react ws/grid?))
-    ;;   ;; Aside
-    ;;   (when-not (empty? @open-toolboxes)
-    ;;     (aside conn open-toolboxes page shapes))
+      ;;   ;; Aside
+      ;;   (when-not (empty? @open-toolboxes)
+      ;;     (aside conn open-toolboxes page shapes))
       ]]]))
 
 (defn workspace-will-mount
@@ -58,5 +58,5 @@
     :will-mount workspace-will-mount
     :transfer-state workspace-transfer-state
     :name "workspace"
-    :mixins [rum/static]}))
+    :mixins [mx/static rum/reactive]}))
 

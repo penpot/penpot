@@ -5,21 +5,15 @@
             [beicon.core :as rx]
             [uxbox.state :as s]
             [uxbox.ui.dom :as dom]
-            [uxbox.ui.workspace.base :as wd]
+            [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.mixins :as mx]
             [uxbox.ui.util :as util]))
 
-
-(def viewport-height  3000)
-(def viewport-width 3000)
-
-(def document-start-x 50)
-(def document-start-y 50)
-
 (defn h-rule-render
-  [zoom]
-  (let [left (rum/react wd/left-scroll)
-        width viewport-width
-        start-width document-start-x
+  [own]
+  (let [left (or (rum/react wb/left-scroll) 0)
+        width wb/viewport-width
+        start-width wb/document-start-x
         padding 20
         zoom 1
         big-ticks-mod (/ 100 zoom)
@@ -30,10 +24,12 @@
         lines (fn [position value padding]
                 (cond
                   (< (mod value big-ticks-mod) step-size)
-                  (html
-                   [:g
-                    [:line {:x1 position :x2 position :y1 5 :y2 padding :stroke "#7f7f7f"}]
-                    [:text {:x (+ position 2) :y 13 :fill "#7f7f7f" :style {:font-size "12px"}} value]])
+                  (do
+                    (println "foobar")
+                    (html
+                     [:g
+                      [:line {:x1 position :x2 position :y1 5 :y2 padding :stroke "#7f7f7f"}]
+                      [:text {:x (+ position 2) :y 13 :fill "#7f7f7f" :style {:font-size "12px"}} value]]))
                   (< (mod value mid-ticks-mod) step-size)
                   (html
                    [:line {:key position :x1 position :x2 position :y1 10 :y2 padding :stroke "#7f7f7f"}])
@@ -57,14 +53,13 @@
   (util/component
    {:render h-rule-render
     :name "h-rule"
-    :mixins [rum/reactive]}))
-
+    :mixins [mx/static rum/reactive]}))
 
 (defn v-rule-render
-  [zoom]
-  (let [height viewport-height
-        start-height document-start-y
-        top (rum/react wd/top-scroll)
+  [own]
+  (let [height wb/viewport-height
+        start-height wb/document-start-y
+        top (or (rum/react wb/top-scroll) 0)
         zoom 1
         padding 20
         big-ticks-mod (/ 100 zoom)
@@ -102,4 +97,4 @@
   (util/component
    {:render v-rule-render
     :name "v-rule"
-    :mixins [rum/reactive]}))
+    :mixins [mx/static rum/reactive]}))

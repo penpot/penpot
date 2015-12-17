@@ -10,24 +10,14 @@
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn toggle-pagesbar
-  []
+(defn toggle-tool
+  [toolname]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:workspace :pagesbar-enabled] (fnil not false)))
+      (let [key (keyword (str (name toolname) "-enabled"))]
+        (update-in state [:workspace key] (fnil not false))))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/toggle-pagebar>"))))
-
-(defn toggle-grid
-  []
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (update-in state [:workspace :grid-enabled] (fnil not false)))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/toggle-grid>"))))
+      (-write writer "#<event:u.s.p/toggle-tool>"))))
