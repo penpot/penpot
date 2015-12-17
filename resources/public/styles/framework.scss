@@ -49,6 +49,16 @@
   }
 }
 
+.btn-delete {
+  @extend %btn;
+  background: $color-danger;
+  color: $color-white;
+  &:hover {
+    background: $color-danger-dark;
+    color: $color-white;
+  }
+}
+
 .btn-gray {
   @extend %btn;
   background: $color-gray;

@@ -255,7 +255,7 @@
          {:disabled (str/empty? (str/trim (get-in @parent [:form :name] "")))
           :on-click on-save}
          "Save"]
-        [:button.btn-primary.btn-small
+        [:button.btn-delete.btn-small
          {:on-click on-cancel}
          "Cancel"]]))))
 

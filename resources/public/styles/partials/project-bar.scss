@@ -3,7 +3,7 @@
   border-right: 1px solid $color-gray-lighter;
   bottom: 0;
   height: 100%;
-  left:55px;
+  left: 50px;
   position: fixed;
   width: 200px;
   z-index: 9;
@@ -28,8 +28,10 @@
       width: 100%;
     }
 
-    .btn-primary {
+    .btn-primary,
+    .btn-delete {
       font-size: $fs13;
+      margin-bottom: .5rem;
       padding: 8px $small;
       width: 90%;
     }
