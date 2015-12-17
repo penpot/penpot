@@ -16,6 +16,7 @@
 
 (defn workspace-render
   [own projectid]
+  (println "workspace-render")
   (html
    [:div
     (wb/header)
@@ -30,7 +31,7 @@
       (wr/v-rule)
 
       ;; Canvas
-      ;; (wa/working-area)
+      (wa/workarea)
       ;; (working-area conn @open-toolboxes page project shapes (rum/react ws/zoom) (rum/react ws/grid?))
     ;;   ;; Aside
     ;;   (when-not (empty? @open-toolboxes)

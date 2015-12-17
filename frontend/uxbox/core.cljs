@@ -16,4 +16,5 @@
     (println "BOOTSTRAP")
     (ui/init)
     (rs/emit! (dl/load-data))
-    (rx/on-value s/stream #(dl/persist-state %))))
+    (rx/on-value s/stream #(dl/persist-state %))
+    1))

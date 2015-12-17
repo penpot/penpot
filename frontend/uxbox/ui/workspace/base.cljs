@@ -39,7 +39,6 @@
   (as-> (l/in [:workspace]) $
     (l/focus-atom $ s/state)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Streams
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,6 +49,16 @@
 
 (defonce top-scroll (rx/to-atom top-scroll-s))
 (defonce left-scroll (rx/to-atom left-scroll-s))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def viewport-height  3000)
+(def viewport-width 3000)
+
+(def document-start-x 50)
+(def document-start-y 50)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Header
@@ -67,49 +76,52 @@
 
 (defn header-render
   [own]
-  (let [page (rum/react page-state)
-        toggle #(rs/emit! (dw/toggle-pagesbar))]
-    (html
-     [:header#workspace-bar.workspace-bar
-      [:div.main-icon
-       (nav/link (r/route-for :dashboard/projects) i/logo-icon)]
-      [:div.project-tree-btn
-       {:on-click toggle}
-       i/project-tree
-       [:span (:name page)]]
-      [:div.workspace-options
-       [:ul.options-btn
-        [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
-         i/undo]
-        [:li.tooltip.tooltip-bottom {:alt "Redo (Ctrl + Shift + Z)"}
-         i/redo]]
-       [:ul.options-btn
-        ;; TODO: refactor
-        [:li.tooltip.tooltip-bottom
-         {:alt "Export (Ctrl + E)"}
-         ;; page-title
-         [:a {:download (str (:name page) ".svg")
-              :href "#" :on-click on-download-clicked}
-          i/export]]
-        [:li.tooltip.tooltip-bottom
-         {:alt "Image (Ctrl + I)"}
-         i/image]]
-       [:ul.options-btn
-        [:li.tooltip.tooltip-bottom
-         {:alt "Ruler (Ctrl + R)"}
-         i/ruler]
-        [:li.tooltip.tooltip-bottom
-         {:alt "Grid (Ctrl + G)"
-          :class (when false "selected")
-          :on-click (constantly nil)}
-         i/grid]
-        [:li.tooltip.tooltip-bottom
-         {:alt "Align (Ctrl + A)"}
-         i/alignment]
-        [:li.tooltip.tooltip-bottom
-         {:alt "Organize (Ctrl + O)"}
-         i/organize]]]
-      (ui.u/user)])))
+  (letfn [(toggle-pagesbar [e]
+            (rs/emit! (dw/toggle-pagesbar)))
+          (toggle-grid [e]
+            (rs/emit! (dw/toggle-grid)))]
+    (let [page (rum/react page-state)]
+      (html
+       [:header#workspace-bar.workspace-bar
+        [:div.main-icon
+         (nav/link (r/route-for :dashboard/projects) i/logo-icon)]
+        [:div.project-tree-btn
+         {:on-click toggle-pagesbar}
+         i/project-tree
+         [:span (:name page)]]
+        [:div.workspace-options
+         [:ul.options-btn
+          [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
+           i/undo]
+          [:li.tooltip.tooltip-bottom {:alt "Redo (Ctrl + Shift + Z)"}
+           i/redo]]
+         [:ul.options-btn
+          ;; TODO: refactor
+          [:li.tooltip.tooltip-bottom
+           {:alt "Export (Ctrl + E)"}
+           ;; page-title
+           [:a {:download (str (:name page) ".svg")
+                :href "#" :on-click on-download-clicked}
+            i/export]]
+          [:li.tooltip.tooltip-bottom
+           {:alt "Image (Ctrl + I)"}
+           i/image]]
+         [:ul.options-btn
+          [:li.tooltip.tooltip-bottom
+           {:alt "Ruler (Ctrl + R)"}
+           i/ruler]
+          [:li.tooltip.tooltip-bottom
+           {:alt "Grid (Ctrl + G)"
+            :class (when false "selected")
+            :on-click toggle-grid}
+           i/grid]
+          [:li.tooltip.tooltip-bottom
+           {:alt "Align (Ctrl + A)"}
+           i/alignment]
+          [:li.tooltip.tooltip-bottom
+           {:alt "Organize (Ctrl + O)"}
+           i/organize]]]
+        (ui.u/user)]))))
 
 (def header
   (util/component
@@ -272,7 +284,7 @@
         project (rum/react project-state)]
     (html
      [:div#project-bar.project-bar
-      (when-not (:visible-pagebar workspace false)
+      (when-not (:pagesbar-enabled workspace false)
         {:class "toggle"})
       (if (:edit @local)
         (project-sidebar-form local)

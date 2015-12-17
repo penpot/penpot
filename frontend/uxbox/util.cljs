@@ -111,6 +111,12 @@
         (assoc state key local-state)))
     }))
 
+
+(def static
+  {:should-update
+   (fn [old-state new-state]
+     (not= (:rum/props old-state) (:rum/props new-state)))})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses & Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

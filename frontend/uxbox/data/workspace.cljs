@@ -15,9 +15,20 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (println "KAKAKA" (get-in state [:workspace :visible-pagebar]))
-      (update-in state [:workspace :visible-pagebar] (fnil not false)))
+      (update-in state [:workspace :pagesbar-enabled] (fnil not false)))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.s.p/toggle-pagebar>"))))
+
+(defn toggle-grid
+  []
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (println "toggle-grid")
+      (update-in state [:workspace :grid-enabled] (fnil not false)))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.s.p/toggle-grid>"))))
