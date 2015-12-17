@@ -30,7 +30,7 @@
       (wr/v-rule)
 
       ;; Canvas
-      (wa/working-area)
+      ;; (wa/working-area)
       ;; (working-area conn @open-toolboxes page project shapes (rum/react ws/zoom) (rum/react ws/grid?))
     ;;   ;; Aside
     ;;   (when-not (empty? @open-toolboxes)
