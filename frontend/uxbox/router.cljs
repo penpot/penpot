@@ -11,7 +11,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn update-location
   [{:keys [handler route-params] :as params}]
   (reify
@@ -61,10 +60,14 @@
                               ["colors" :dashboard/colors]]]
                ["workspace/" [[page-route :workspace/page]]]]])
 
-(defonce +router+
+(def ^:static ^:private +router+ nil)
+
+(defn init
+  []
   (let [opts {:on-navigate #(rs/emit! (update-location %))
-              :default-location {:handler :dashboard/projects}}]
-    (bidi.router/start-router! routes opts)))
+              :default-location {:handler :dashboard/projects}}
+        router (bidi.router/start-router! routes opts)]
+    (set! +router+ router)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api

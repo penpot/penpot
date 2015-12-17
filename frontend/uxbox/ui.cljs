@@ -22,6 +22,7 @@
 (defn app-render
   [own]
   (let [{:keys [location location-params] :as state} (rum/react state)]
+    (println "app-render" location state)
     (case location
       :auth/login (ui.users/login)
       :dashboard/projects (ui.dashboard.projects/projects)
@@ -42,5 +43,5 @@
   []
   (let [app-dom (gdom/getElement "app")
         lb-dom (gdom/getElement "lightbox")]
-    (util/mount (app) app-dom)
-    (util/mount (ui.lb/lightbox) lb-dom)))
+    (rum/mount (app) app-dom)
+    (rum/mount (ui.lb/lightbox) lb-dom)))
