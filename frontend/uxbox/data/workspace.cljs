@@ -26,7 +26,6 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (println "toggle-grid")
       (update-in state [:workspace :grid-enabled] (fnil not false)))
 
     IPrintWithWriter

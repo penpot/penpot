@@ -58,7 +58,6 @@
 
 (defn grid-render
   [own enabled? width height start-width start-height zoom]
-  (println "grid-render")
   (letfn [(vertical-line [position value padding]
             (let [ticks-mod (/ 100 zoom)
                   step-size (/ 10 zoom)]
@@ -193,7 +192,6 @@
   []
   (let [workspace (rum/react wb/workspace-state)
         zoom 1]
-    (println "viewport-render" (:grid-enabled workspace true))
     (html
      [:svg#viewport
       {:width wb/viewport-height
@@ -208,7 +206,7 @@
                   :viewport-width wb/viewport-width
                   :document-start-x wb/document-start-x
                   :document-start-y wb/document-start-y})
-       (grid (:grid-enabled workspace true)
+       (grid (:grid-enabled workspace false)
              wb/viewport-width
              wb/viewport-height
              wb/document-start-x
@@ -227,7 +225,6 @@
 
 (defn working-area-render
   [own]
-  (println "working-area-render")
   (html
    [:section.workspace-canvas
     {:class "no-tool-bar"}

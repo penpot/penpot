@@ -7,6 +7,9 @@
             [uxbox.data.projects :as dp]
             [uxbox.ui.util :as util]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.toolbar :as wt]
+            [uxbox.ui.workspace.leftsidebar :as wl]
+            [uxbox.ui.workspace.header :as wh]
             [uxbox.ui.workspace.rules :as wr]
             [uxbox.ui.workspace.workarea :as wa]))
 
@@ -19,13 +22,13 @@
   (println "workspace-render")
   (html
    [:div
-    (wb/header)
+    (wh/header)
     [:main.main-content
      [:section.workspace-content
       ;; Toolbar
-      (wb/toolbar)
+      (wt/toolbar)
       ;; Project bar
-      (wb/project-sidebar)
+      (wl/left-sidebar)
       ;; Rules
       (wr/h-rule)
       (wr/v-rule)
