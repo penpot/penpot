@@ -27,17 +27,17 @@
        [:ul.main-tools
         [:li.tooltip
          {:alt "Shapes (Ctrl + Shift + F)"
-          :class (when (:tools-enabled workspace false) "current")
-          :on-click (partial toggle :tools)}
+          :class (when (:draw-toolbox-enabled workspace false) "current")
+          :on-click (partial toggle :draw)}
          i/shapes]
         [:li.tooltip
          {:alt "Icons (Ctrl + Shift + I)"
-          :class (when (:icons-enabled workspace false) "current")
+          :class (when (:icons-toolbox-enabled workspace false) "current")
           :on-click (partial toggle :icons)}
          i/icon-set]
         [:li.tooltip
          {:alt "Elements (Ctrl + Shift + L)"
-          :class (when (:layers-enabled workspace false) "current")
+          :class (when (:layers-toolbox-enabled workspace false) "current")
           :on-click (partial toggle :layers)}
          i/layers]
         [:li.tooltip

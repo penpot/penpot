@@ -27,7 +27,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [key (keyword (str (name toolname) "-enabled"))
+      (let [key (keyword (str (name toolname) "-toolbox-enabled"))
             val (get-in state [:workspace key] false)
             state (assoc-in state [:workspace key] (not val))]
         (if val

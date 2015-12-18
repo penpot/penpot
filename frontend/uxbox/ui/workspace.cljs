@@ -12,7 +12,7 @@
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (h-rule v-rule)]
-            [uxbox.ui.workspace.workarea :refer (workarea)]))
+            [uxbox.ui.workspace.workarea :refer (workarea aside)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace
@@ -20,27 +20,29 @@
 
 (defn workspace-render
   [own projectid]
-  (html
-   [:div
-    (header)
-    [:main.main-content
-     [:section.workspace-content
-      ;; Lateral Menu (left side)
-      (lateralmenu)
+  (let [workspace (rum/react wb/workspace-state )]
+    (html
+     [:div
+      (header)
+      [:main.main-content
+       [:section.workspace-content
+        ;; Lateral Menu (left side)
+        (lateralmenu)
 
-      ;; Pages management lightbox
-      (pagesmngr)
+        ;; Pages management lightbox
+        (pagesmngr)
 
-      ;; Rules
-      (h-rule)
-      (v-rule)
+        ;; Rules
+        (h-rule)
+        (v-rule)
 
-      ;; Canvas
-      (workarea)
+        ;; Canvas
+        (workarea)]
 
-      ;; Aside
-      ;; (wa/aside)
-      ]]]))
+       ;; Aside
+       (when-not (empty? (:toolboxes workspace))
+         (aside))]])))
+
 
 (defn workspace-will-mount
   [own]

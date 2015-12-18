@@ -4,11 +4,12 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
+            [uxbox.ui.mixins :as mx]
+            [uxbox.ui.util :as util]
             [uxbox.data.projects :as dp]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.rules :as wr]
-            [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.workspace.toolboxes :refer (draw-toolbox)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Coordinates Debug
@@ -214,20 +215,17 @@
 (defn aside-render
   [own]
   (let [workspace (rum/react wb/workspace-state)]
-    [:aside#settings-bar.settings-bar
-     [:div.settings-bar-inside
-      [:p "foo bar"]
-      #_(when (:tools open-setting-boxes)
-        (tools open-toolboxes))
-
-      #_(when (:icons open-setting-boxes)
-        (icon-sets open-toolboxes))
-
-      #_(when (:components open-setting-boxes)
-        (components open-toolboxes components))
-
-      #_(when (:layers open-setting-boxes)
-        (layers conn open-toolboxes page shapes))]]))
+    (html
+     [:aside#settings-bar.settings-bar
+      [:div.settings-bar-inside
+       (when (:draw-toolbox-enabled workspace false)
+         (draw-toolbox))
+       #_(when (:icons open-setting-boxes)
+           (icon-sets open-toolboxes))
+       #_(when (:components open-setting-boxes)
+           (components open-toolboxes components))
+       #_(when (:layers open-setting-boxes)
+           (layers conn open-toolboxes page shapes))]])))
 
 (def aside
   (util/component
