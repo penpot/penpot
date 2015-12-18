@@ -127,7 +127,7 @@
       (let [s {:project projectid
                :toolboxes #{}
                :page pageid}]
-        (update state :workspace merge s)))
+        (assoc state :workspace s)))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
@@ -159,7 +159,7 @@
          (let [pages (project-pages state projectid)
                pageid (:id (first pages))]
            (rs/emit! (r/navigate :workspace/page {:project-uuid projectid
-                                             :page-uuid pageid})))))
+                                                  :page-uuid pageid})))))
      IPrintWithWriter
      (-pr-writer [mv writer _]
        (-write writer "#<event:u.s.p/go-to-project")))))
