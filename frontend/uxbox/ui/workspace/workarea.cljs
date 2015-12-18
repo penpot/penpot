@@ -9,7 +9,7 @@
             [uxbox.data.projects :as dp]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.rules :as wr]
-            [uxbox.ui.workspace.toolboxes :refer (draw-toolbox)]))
+            [uxbox.ui.workspace.toolboxes :refer (draw-toolbox layers)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Coordinates Debug
@@ -224,8 +224,8 @@
            (icon-sets open-toolboxes))
        #_(when (:components open-setting-boxes)
            (components open-toolboxes components))
-       #_(when (:layers open-setting-boxes)
-           (layers conn open-toolboxes page shapes))]])))
+       (when (:layers-toolbox-enabled workspace false)
+         (layers))]])))
 
 (def aside
   (util/component

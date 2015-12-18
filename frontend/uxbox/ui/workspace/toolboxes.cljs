@@ -67,3 +67,46 @@
    {:render draw-toolbox-render
     :name "draw-toolbox"
     :mixins [mx/static rum/reactive]}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Layers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn layers-render
+  []
+  (let [workspace (rum/react wb/workspace-state)
+        close #(rs/emit! (dw/toggle-toolbox :layers))
+        tools (->> (into [] draw-tools)
+                   (sort-by (comp :priority second)))]
+    (html
+     [:div#layers.tool-window
+      [:div.tool-window-bar
+       [:div.tool-window-icon i/layers]
+       [:span "Layers"]
+       [:div.tool-window-close {:on-click close} i/close]]
+      [:div.tool-window-content
+       [:ul.element-list
+        #_(for [shape (reverse shapes)]
+          (let [{shape-id :shape/uuid
+                 selected? :shape/selected?
+                 locked? :shape/locked?
+                 visible? :shape/visible?
+                 raw-shape :shape/data} shape]
+            [:li {:key shape-id
+                :class (when selected? "selected")}
+             [:div.toggle-element
+              {:class (when visible? "selected")
+               :on-click #(actions/toggle-shape-visibility conn shape-id)} icons/eye]
+             [:div.block-element
+              {:class (when locked? "selected")
+               :on-click #(actions/toggle-shape-lock conn shape-id)} icons/lock]
+             [:div.element-icon
+              (shapes/icon raw-shape)]
+             [:span (shapes/name raw-shape)]]))]]])))
+
+(def ^:static layers
+  (util/component
+   {:render layers-render
+    :name "layers"
+    :mixins [rum/reactive]}))
+
