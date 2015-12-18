@@ -8,11 +8,11 @@
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.toolbar :as wt]
-            [uxbox.ui.workspace.leftsidebar :as wl]
-            [uxbox.ui.workspace.header :as wh]
-            [uxbox.ui.workspace.rules :as wr]
-            [uxbox.ui.workspace.workarea :as wa]))
+            [uxbox.ui.workspace.lateralmenu :refer (lateralmenu)]
+            [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
+            [uxbox.ui.workspace.header :refer (header)]
+            [uxbox.ui.workspace.rules :refer (h-rule v-rule)]
+            [uxbox.ui.workspace.workarea :refer (workarea)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace
@@ -22,19 +22,21 @@
   [own projectid]
   (html
    [:div
-    (wh/header)
+    (header)
     [:main.main-content
      [:section.workspace-content
-      ;; Toolbar
-      (wt/toolbar)
-      ;; Project bar
-      (wl/left-sidebar)
+      ;; Lateral Menu (left side)
+      (lateralmenu)
+
+      ;; Pages management lightbox
+      (pagesmngr)
+
       ;; Rules
-      (wr/h-rule)
-      (wr/v-rule)
+      (h-rule)
+      (v-rule)
 
       ;; Canvas
-      (wa/workarea)
+      (workarea)
       ;; (working-area conn @open-toolboxes page project shapes (rum/react ws/zoom) (rum/react ws/grid?))
       ;;   ;; Aside
       ;;   (when-not (empty? @open-toolboxes)

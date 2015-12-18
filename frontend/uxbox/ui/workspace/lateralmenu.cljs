@@ -1,4 +1,4 @@
-(ns uxbox.ui.workspace.toolbar
+(ns uxbox.ui.workspace.lateralmenu
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cats.labs.lens :as l]
@@ -10,17 +10,17 @@
             [uxbox.ui.util :as util]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Toolbar
+;; Lateral Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- toggle-toolbox
   [state item]
   (update state item (fnil not false)))
 
-(defn toolbar-render
+(defn lateralmenu-render
   [own]
   (let [workspace (rum/react wb/workspace-state)
-        toggle #(rs/emit! (dw/toggle-tool %))]
+        toggle #(rs/emit! (dw/toggle-toolbox %))]
     (html
      [:div#tool-bar.tool-bar
       [:div.tool-bar-inside
@@ -44,8 +44,8 @@
          {:alt "Feedback (Ctrl + Shift + M)"}
          i/chat]]]])))
 
-(def ^:static toolbar
+(def ^:static lateralmenu
   (util/component
-   {:render toolbar-render
-    :name "toolbar"
+   {:render lateralmenu-render
+    :name "lateralmenu"
     :mixins [rum/reactive]}))

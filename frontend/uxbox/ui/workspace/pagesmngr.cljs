@@ -1,4 +1,4 @@
-(ns uxbox.ui.workspace.leftsidebar
+(ns uxbox.ui.workspace.pagesmngr
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cuerdas.core :as str]
@@ -11,7 +11,7 @@
             [uxbox.ui.dom :as dom]
             [uxbox.ui.util :as util]))
 
-(defn- project-sidebar-pageitem-render
+(defn- page-item-render
   [own parent page numpages]
   (letfn [(on-edit [e]
             (let [data {:edit true :form page}]
@@ -25,6 +25,7 @@
       (html
        [:li.single-page
         {:class (when active? "current")
+         :key (str (:id page))
          :on-click navigate}
         [:div.tree-icon i/page]
         [:span (:name page)]
@@ -34,13 +35,13 @@
                 :on-click delete}
           i/trash]]]))))
 
-(def project-sidebar-pageitem
+(def page-item
   (util/component
-   {:render project-sidebar-pageitem-render
-    :name "project-sidebar-pageitem"
+   {:render page-item-render
+    :name "page-item"
     :mixins [rum/reactive]}))
 
-(defn- project-sidebar-pagelist-render
+(defn- page-list-render
   [own parent]
   (let [project (rum/react wb/project-state)
         pages (rum/react wb/pages-state)
@@ -50,19 +51,19 @@
       [:span.project-name name]
       [:ul.tree-view
        (for [page pages]
-         (let [component (project-sidebar-pageitem parent page (count pages))]
-           (rum/with-key component (str (:id page)))))]
+         (-> (page-item parent page (count pages))
+             (rum/with-key (:id page))))]
       [:button.btn-primary.btn-small
        {:on-click #(reset! parent {:edit true :form {}})}
        "+ Add new page"]])))
 
-(def project-sidebar-pagelist
+(def page-list
   (util/component
-   {:render project-sidebar-pagelist-render
-    :name "project-sidebar-pagelist"
+   {:render page-list-render
+    :name "page-list"
     :mixins [rum/reactive]}))
 
-(defn- project-sidebar-form-render
+(defn- page-form-render
   [own parent]
   (let [form (:form @parent)
         project @wb/project-state]
@@ -105,13 +106,13 @@
          {:on-click on-cancel}
          "Cancel"]]))))
 
-(def project-sidebar-form
+(def page-form
   (util/component
-   {:render project-sidebar-form-render
-    :name "project-sidebar-form"
+   {:render page-form-render
+    :name "page-form"
     :mixins [rum/reactive]}))
 
-(defn left-sidebar-render
+(defn pagesmngr-render
   [own]
   (let [local (:rum/local own)
         workspace (rum/react wb/workspace-state)
@@ -121,11 +122,11 @@
       (when-not (:pagesbar-enabled workspace false)
         {:class "toggle"})
       (if (:edit @local)
-        (project-sidebar-form local)
-        (project-sidebar-pagelist local))])))
+        (page-form local)
+        (page-list local))])))
 
-(def left-sidebar
+(def pagesmngr
   (util/component
-   {:render left-sidebar-render
-    :name "left-sidebar"
+   {:render pagesmngr-render
+    :name "pagesmngr"
     :mixins [rum/reactive (mx/local {:edit false :form {}})]}))
