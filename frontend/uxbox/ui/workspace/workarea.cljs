@@ -14,11 +14,9 @@
 ;; Coordinates Debug
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce canvas-coordinates (atom [1 1]))
-
 (defn coordenates-render
   []
-  (let [[x y] (rum/react canvas-coordinates)]
+  (let [[x y] (rum/react wb/mouse-position)]
     (html
      [:div
       {:style {:position "absolute" :left "80px" :top "20px"}}
@@ -162,6 +160,7 @@
      [:svg#page-canvas
       {:x wb/document-start-x
        :y wb/document-start-y
+       :ref "canvas"
        :width page-width
        :height page-height
        ;; :on-mouse-down cs/on-mouse-down
@@ -182,7 +181,7 @@
   (util/component
    {:render canvas-render
     :name "canvas"
-    :mixins [rum/reactive]}))
+    :mixins [rum/reactive wb/mouse-mixin]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Viewport

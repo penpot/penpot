@@ -29,5 +29,11 @@
         dom-node  (.findDOMNode js/ReactDOM ref-node)]
     (.-value dom-node)))
 
+(defn get-ref-dom
+  [own ref]
+  (let [component (-> own :rum/react-component)
+        ref-node (aget (.-refs component) ref)]
+    (.findDOMNode js/ReactDOM ref-node)))
+
 
 (def mount rum/mount)
