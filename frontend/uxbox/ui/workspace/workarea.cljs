@@ -55,14 +55,14 @@
 (def ^:static grid-color "#cccccc")
 
 (defn grid-render
-  [own enabled? width height start-width start-height zoom]
+  [own enabled? zoom]
   (letfn [(vertical-line [position value padding]
             (let [ticks-mod (/ 100 zoom)
                   step-size (/ 10 zoom)]
               (if (< (mod value ticks-mod) step-size)
                 (html [:line {:key position
                               :y1 padding
-                              :y2 width
+                              :y2 wb/viewport-width
                               :x1 position
                               :x2 position
                               :stroke grid-color
@@ -70,7 +70,7 @@
                               :opacity 0.75}])
                 (html [:line {:key position
                               :y1 padding
-                              :y2 width
+                              :y2 wb/viewport-width
                               :x1 position
                               :x2 position
                               :stroke grid-color
@@ -84,7 +84,7 @@
                               :y1 position
                               :y2 position
                               :x1 padding
-                              :x2 height
+                              :x2 wb/viewport-height
                               :stroke grid-color
                               :stroke-width (/ 0.5 zoom)
                               :opacity 0.75}])
@@ -92,29 +92,30 @@
                               :y1 position
                               :y2 position
                               :x1 padding
-                              :x2 height
+                              :x2 wb/viewport-height
                               :stroke grid-color
                               :stroke-width (/ 0.5 zoom)
                               :opacity 0.25}]))))]
     (let [padding (* 20 zoom)
           ticks-mod (/ 100 zoom)
           step-size (/ 10 zoom)
-          vertical-ticks (range (- padding start-height)
-                                (- height start-height padding) step-size)
-          horizontal-ticks (range (- padding start-width)
-                                  (- width start-width padding) step-size)]
+          vertical-ticks (range (- padding wb/document-start-y)
+                                (- wb/viewport-height wb/document-start-y padding)
+                                step-size)
+          horizontal-ticks (range (- padding wb/document-start-x)
+                                  (- wb/viewport-width wb/document-start-x padding)
+                                  step-size)]
       (html
        [:g.grid
         {:style {:display (if enabled? "block" "none")}}
         (for [tick vertical-ticks]
-          (let [position (+ tick start-width)
+          (let [position (+ tick wb/document-start-x)
                 line (vertical-line position tick padding)]
             (rum/with-key line (str "tick-" tick))))
         (for [tick horizontal-ticks]
-          (let [position (+ tick start-height)
+          (let [position (+ tick wb/document-start-y)
                 line (horizontal-line position tick padding)]
             (rum/with-key line (str "tick-" tick))))]))))
-
 
 (def grid
   (util/component
@@ -198,19 +199,7 @@
       [:g.zoom
        {:transform (str "scale(" zoom ", " zoom ")")}
        (canvas)
-       #_(canvas conn
-                 page
-                 shapes
-                 {:viewport-height wb/viewport-height
-                  :viewport-width wb/viewport-width
-                  :document-start-x wb/document-start-x
-                  :document-start-y wb/document-start-y})
-       (grid (:grid-enabled workspace false)
-             wb/viewport-width
-             wb/viewport-height
-             wb/document-start-x
-             wb/document-start-y
-             zoom)]])))
+       (grid (:grid-enabled workspace false) zoom)]])))
 
 (def viewport
   (util/component
