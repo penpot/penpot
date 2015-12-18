@@ -21,3 +21,21 @@
     IPrintWithWriter
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.s.p/toggle-tool>"))))
+
+(defn toggle-toolbox
+  [toolname]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [key (keyword (str (name toolname) "-enabled"))
+            val (get-in state [:workspace key] false)
+            state (assoc-in state [:workspace key] (not val))]
+        (if val
+          (update-in state [:workspace :toolboxes] disj toolname)
+          (update-in state [:workspace :toolboxes] conj toolname))))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.s.p/toggle-tool>"))))
+
+

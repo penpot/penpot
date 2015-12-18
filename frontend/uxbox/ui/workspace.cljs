@@ -37,10 +37,9 @@
 
       ;; Canvas
       (workarea)
-      ;; (working-area conn @open-toolboxes page project shapes (rum/react ws/zoom) (rum/react ws/grid?))
-      ;;   ;; Aside
-      ;;   (when-not (empty? @open-toolboxes)
-      ;;     (aside conn open-toolboxes page shapes))
+
+      ;; Aside
+      ;; (wa/aside)
       ]]]))
 
 (defn workspace-will-mount

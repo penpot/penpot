@@ -125,6 +125,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [s {:project projectid
+               :toolboxes #{}
                :page pageid}]
         (update state :workspace merge s)))
 

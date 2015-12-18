@@ -208,29 +208,57 @@
     :mixins [rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Aside
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn aside-render
+  [own]
+  (let [workspace (rum/react wb/workspace-state)]
+    [:aside#settings-bar.settings-bar
+     [:div.settings-bar-inside
+      [:p "foo bar"]
+      #_(when (:tools open-setting-boxes)
+        (tools open-toolboxes))
+
+      #_(when (:icons open-setting-boxes)
+        (icon-sets open-toolboxes))
+
+      #_(when (:components open-setting-boxes)
+        (components open-toolboxes components))
+
+      #_(when (:layers open-setting-boxes)
+        (layers conn open-toolboxes page shapes))]]))
+
+(def aside
+  (util/component
+   {:render aside-render
+    :name "aside"
+    :mixins [rum/reactive]}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Work Area
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn working-area-render
   [own]
-  (html
-   [:section.workspace-canvas
-    {:class "no-tool-bar"}
-    #_{:class (when (empty? open-setting-boxes)
-              "no-tool-bar")
-     :on-scroll (constantly nil)}
-    #_(when (:selected page)
-        (element-options conn
-                         page-cursor
-                         project-cursor
-                         zoom-cursor
-                         shapes-cursor))
-    (coordinates)
-    (viewport)]))
+  (let [workspace (rum/react wb/workspace-state)]
+    (html
+     [:section.workspace-canvas
+      {:class (when (empty? (:toolboxes workspace)) "no-tool-bar")
+       :on-scroll (constantly nil)}
+
+      #_(when (:selected page)
+          (element-options conn
+                           page-cursor
+                           project-cursor
+                           zoom-cursor
+                           shapes-cursor))
+      (coordinates)
+      (viewport)])))
 
 (def workarea
   (util/component
    {:render working-area-render
     :name "workarea"
-    :mixins []}))
+    :mixins [rum/reactive]}))
 
