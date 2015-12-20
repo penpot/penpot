@@ -7,10 +7,9 @@
             [uxbox.rstore :as rs]
             [uxbox.data.projects :as dp]
             [uxbox.ui.lightbox :as ui.lb]
-            [uxbox.ui.users :as ui.users]
-            [uxbox.ui.dashboard.projects :as ui.dashboard.projects]
-            [uxbox.ui.dashboard.elements :as ui.dashboard.elements]
-            [uxbox.ui.workspace :as ui.w]
+            [uxbox.ui.users :as users]
+            [uxbox.ui.dashboard :as dashboard]
+            [uxbox.ui.workspace :refer (workspace)]
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]))
 
@@ -24,14 +23,14 @@
   (let [{:keys [location location-params] :as state} (rum/react state)]
     (println "app-render" location state)
     (case location
-      :auth/login (ui.users/login)
-      :dashboard/projects (ui.dashboard.projects/projects)
-      :dashboard/elements (ui.dashboard.elements/elements)
-      :dashboard/icons (ui.dashboard.elements/icons)
-      :dashboard/colors (ui.dashboard.elements/colors)
+      :auth/login (users/login)
+      :dashboard/projects (dashboard/projects-page)
+      :dashboard/elements (dashboard/elements-page)
+      :dashboard/icons (dashboard/icons-page)
+      :dashboard/colors (dashboard/colors-page)
       :workspace/page (let [projectid (:project-uuid location-params)
                             pageid (:page-uuid location-params)]
-                        (ui.w/workspace projectid pageid))
+                        (workspace projectid pageid))
       nil
       )))
 

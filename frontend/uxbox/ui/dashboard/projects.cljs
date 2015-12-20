@@ -8,7 +8,6 @@
             [uxbox.state :as s]
             [uxbox.time :as time]
             [uxbox.data.projects :as dp]
-            [uxbox.ui.icons.dashboard :as icons]
             [uxbox.ui.icons :as i]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.dashboard.header :as dsh.header]
@@ -149,9 +148,9 @@
 ;; Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static menu-state
-  (as-> (l/select-keys [:projects]) $
-    (l/focus-atom $ s/state)))
+;; (def ^:static menu-state
+;;   (as-> (l/select-keys [:projects]) $
+;;     (l/focus-atom $ s/state)))
 
 (rum/defc project-sort-selector < rum/reactive
   [sort-order]
@@ -166,28 +165,27 @@
 
 (defn menu-render
   []
-  (let [state (rum/react menu-state)
+  (let [state {:projects []} #_(rum/react menu-state)
         pcount (count (:projects state))]
     (html
      [:section#dashboard-bar.dashboard-bar
       [:div.dashboard-info
        [:span.dashboard-projects pcount " projects"]
-       [:span "Sort by"]
-       #_(project-sort-selector (atom :name))]
+       [:span "Sort by"]]
       [:div.dashboard-search
-       icons/search]])))
+       i/search]])))
 
 (def menu
   (util/component
    {:render menu-render
-    :name "dashboard-menu"
+    :name "projects-menu"
     :mixins [rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Project Item
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn project-render
+(defn project-item-render
   [own project]
   (let [on-click #(rs/emit! (dp/go-to-project (:id project)))]
     (html
@@ -198,7 +196,7 @@
        (str "Updated " (time/ago (:last-update project)))]
       [:div.project-th-actions
        [:div.project-th-icon.pages
-        icons/page
+        i/page
         [:span 0]]
        [:div.project-th-icon.comments
         i/chat
@@ -208,11 +206,11 @@
                       (dom/stop-propagation %)
                       ;; (actions/delete-project conn uuid)
                       %)}
-        icons/trash]]])))
+        i/trash]]])))
 
 (def project-item
   (util/component
-   {:render project-render
+   {:render project-item-render
     :name "project"
     :mixins [rum/static]}))
 
@@ -252,20 +250,3 @@
     :name "grid"
     :mixins [rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Main
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn projects-render
-  [own]
-  (html
-   [:main.dashboard-main
-    (dsh.header/header)
-    [:section.dashboard-content
-     (menu)
-     (grid)]]))
-
-(def projects
-  (util/component {:render projects-render
-                   :mixins [rum/static]
-                   :name "projects"}))
