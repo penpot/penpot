@@ -89,7 +89,7 @@
     (header)
     [:section.dashboard-content
      (colors/menu)
-     (ui.library-bar/library-bar)
+     (colors/nav)
      [:section.dashboard-grid.library
       (colors/page-title)
       (colors/grid)]]]))

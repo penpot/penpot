@@ -48,7 +48,33 @@
     :mixins [mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Colors
+;; Nav
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn nav-render
+  [own]
+  (html
+   [:div.library-bar
+    [:div.library-bar-inside
+     [:ul.library-tabs
+      [:li.current "STANDARD"]
+      [:li "YOUR LIBRARIES"]]
+     [:ul.library-elements
+      #_[:li
+       [:a.btn-primary {:href "#"} "+ New library"]
+       ]
+      [:li
+       [:span.element-title "Library 1"]
+       [:span.element-subtitle "21 elements"]]]]]))
+
+(def ^:static nav
+  (util/component
+   {:render nav-render
+    :name "nav"
+    :mixins [mx/static]}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Nav
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn grid-render
