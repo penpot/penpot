@@ -68,7 +68,7 @@
         }
 
         &:hover,
-        .current {
+        &.current {
           background-color: $color-primary;
 
           .element-title,

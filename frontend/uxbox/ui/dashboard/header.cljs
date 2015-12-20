@@ -17,10 +17,9 @@
 
 (defn- header-link
   [section content]
-  (let [link (r/route-for section)
-        on-click #(rs/emit! (dp/set-dashboard-section section))]
+  (let [link (r/route-for section)]
     (html
-     [:a {:href (str "/#" link) :on-click on-click} content])))
+     [:a {:href (str "/#" link)} content])))
 
 (defn header-render
   [own]

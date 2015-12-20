@@ -52,7 +52,6 @@
            (rest)
            (mapv #(js/parseInt % 16))))
 
-
 (defn rgb-to-hex
   [[r g b]]
   (letfn [(to-hex [c]

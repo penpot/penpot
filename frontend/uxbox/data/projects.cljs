@@ -119,36 +119,11 @@
       (-pr-writer [mv writer _]
         (-write writer "#<event:u.s.p/create-project>")))))
 
-(defn initialize-workspace
-  [projectid pageid]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [s {:project projectid
-               :toolboxes #{}
-               :page pageid}]
-        (assoc state :workspace s)))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/initialize-workspace>"))))
-
-(defn set-dashboard-section
-  [section]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:dashboard :section] section))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/go-to-project"))))
-
-(defn go-to-project
+(defn go-to
   "A shortcut event that redirects the user to the
   first page of the project."
   ([projectid]
-   (go-to-project projectid nil))
+   (go-to projectid nil))
   ([projectid pageid]
    (reify
      rs/EffectEvent
@@ -162,4 +137,4 @@
                                                   :page-uuid pageid})))))
      IPrintWithWriter
      (-pr-writer [mv writer _]
-       (-write writer "#<event:u.s.p/go-to-project")))))
+       (-write writer "#<event:u.s.p/go-to")))))

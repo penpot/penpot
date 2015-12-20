@@ -8,6 +8,7 @@
             [uxbox.state :as s]
             [uxbox.time :as time]
             [uxbox.data.projects :as dp]
+            [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.dashboard.header :as dsh.header]
@@ -187,7 +188,7 @@
 
 (defn project-item-render
   [own project]
-  (let [on-click #(rs/emit! (dp/go-to-project (:id project)))]
+  (let [on-click #(rs/emit! (dp/go-to (:id project)))]
     (html
      [:div.grid-item.project-th {:on-click on-click
                                  :key (:id project)}

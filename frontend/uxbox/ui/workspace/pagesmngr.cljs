@@ -4,6 +4,7 @@
             [cuerdas.core :as str]
             [uxbox.rstore :as rs]
             [uxbox.data.projects :as dp]
+            [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
             [uxbox.ui.keyboard :as k]
             [uxbox.ui.mixins :as mx]
@@ -20,7 +21,7 @@
     (let [curpage (rum/react wb/page-state)
           active? (= (:id curpage) (:id page))
           deletable? (> numpages 1)
-          navigate #(rs/emit! (dp/go-to-project (:project page) (:id page)))
+          navigate #(rs/emit! (dp/go-to (:project page) (:id page)))
           delete #(rs/emit! (dp/delete-page (:id page)))]
       (html
        [:li.single-page

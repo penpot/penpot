@@ -1,12 +1,28 @@
 (ns uxbox.ui.dashboard.colors
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-             [uxbox.ui.library-bar :as ui.library-bar]
+            [cats.labs.lens :as l]
+            [uxbox.state :as s]
+            [uxbox.rstore :as rs]
+            [uxbox.data.dashboard :as dd]
+            [uxbox.ui.dashboard.builtins :as builtins]
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.util :as util]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lenses
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:static dashboard-state
+  (as-> (l/in [:dashboard]) $
+    (l/focus-atom $ s/state)))
+
+(def ^:static colors-state
+  (as-> (l/in [:colors-by-id]) $
+    (l/focus-atom $ s/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Menu
@@ -53,25 +69,39 @@
 
 (defn nav-render
   [own]
-  (html
-   [:div.library-bar
-    [:div.library-bar-inside
-     [:ul.library-tabs
-      [:li.current "STANDARD"]
-      [:li "YOUR LIBRARIES"]]
-     [:ul.library-elements
-      #_[:li
-       [:a.btn-primary {:href "#"} "+ New library"]
-       ]
-      [:li
-       [:span.element-title "Library 1"]
-       [:span.element-subtitle "21 elements"]]]]]))
+  (let [dashboard (rum/react dashboard-state)
+        colors (rum/react colors-state)
+        collid (:collection-id dashboard)
+        own? (= (:collection-type dashboard) :own)
+        builtin? (= (:collection-type dashboard) :builtin)
+        collections (if own?
+                      (sort-by :id (vals colors))
+                      builtins/+colors+)]
+    (html
+     [:div.library-bar
+      [:div.library-bar-inside
+       [:ul.library-tabs
+        [:li (when builtin? {:class-name "current"})
+         "STANDARD"]
+        [:li (when own? {:class-name "current"})
+         "YOUR LIBRARIES"]]
+       [:ul.library-elements
+        ;; (when own?
+        ;;   [:li
+        ;;    [:a.btn-primary {:href "#"} "+ New library"]])
+        (for [props collections]
+          [:li {:key (str (:id props))
+                :on-click #(rs/emit! (dd/set-collection (:id props)))
+                :class-name (when (= (:id props) collid) "current")}
+           [:span.element-title (:name props)]
+           [:span.element-subtitle
+            (str (count (:colors props)) " elements")]])]]])))
 
 (def ^:static nav
   (util/component
    {:render nav-render
     :name "nav"
-    :mixins [mx/static]}))
+    :mixins [rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Nav

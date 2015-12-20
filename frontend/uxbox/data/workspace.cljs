@@ -36,6 +36,18 @@
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/toggle-tool>"))))
+      (-write writer "#<event:u.s.p/toggle-toolbox>"))))
 
+(defn initialize
+  [projectid pageid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [s {:project projectid
+               :toolboxes #{}
+               :page pageid}]
+        (assoc state :workspace s)))
 
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.s.p/initialize>"))))

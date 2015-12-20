@@ -4,7 +4,7 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
-            [uxbox.data.projects :as dp]
+            [uxbox.data.workspace :as dw]
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
@@ -43,17 +43,17 @@
        (when-not (empty? (:toolboxes workspace))
          (aside))]])))
 
-
 (defn workspace-will-mount
   [own]
   (let [[projectid pageid] (:rum/props own)]
-    (rs/emit! (dp/initialize-workspace projectid pageid))
+    (rs/emit! (dw/initialize projectid pageid))
     own))
 
 (defn workspace-transfer-state
   [old-state state]
   (let [[projectid pageid] (:rum/props state)]
-    (rs/emit! (dp/initialize-workspace projectid pageid))))
+   (rs/emit! (dw/initialize projectid pageid))
+   state))
 
 (def ^:static workspace
   (util/component
