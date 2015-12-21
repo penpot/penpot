@@ -8,6 +8,7 @@
             [uxbox.ui.dashboard.builtins :as builtins]
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
+            [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.util :as util]))
@@ -230,7 +231,12 @@
             {:placeholder "RGB"
             :type "text"}]]
         [:input#project-btn.btn-primary {:value "+ Add color" :type "submit"}]]
-      [:a.close {:href "#"
+
+     (colorpicker (fn [{:keys [rgb hex]}]
+                    (println "HEX:" hex)
+                    (println "RGB:" rgb)))
+
+     [:a.close {:href "#"
                 :on-click #(do (dom/prevent-default %)
                                (lightbox/close!))}
       i/close]]))

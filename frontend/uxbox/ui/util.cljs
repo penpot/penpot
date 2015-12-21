@@ -46,13 +46,13 @@
 ;; Color Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn hex-to-rgb
+(defn hex->rgb
   [^string data]
   (some->> (re-find #"^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$" data)
            (rest)
            (mapv #(js/parseInt % 16))))
 
-(defn rgb-to-hex
+(defn rgb->hex
   [[r g b]]
   (letfn [(to-hex [c]
             (let [hexdata (.toString c 16)]
