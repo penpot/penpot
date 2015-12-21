@@ -21,14 +21,30 @@
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn merge-if-not-exists
+  [map & maps]
+  (let [result (transient map)]
+    (loop [maps maps]
+      (if-let [nextval (first maps)]
+        (do
+          (run! (fn [[key value]]
+                  (when-not (contains? result key)
+                    (assoc! result key value)))
+                nextval)
+          (recur (rest maps)))
+        (persistent! result)))))
+
 (defn initialize
   [section]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc state :dashboard {:section section
-                               :collection-type :builtin
-                               :collection-id nil}))
+      (as-> state $
+        (assoc-in $ [:dashboard :section] section)
+        (update $ :dashboard merge-if-not-exists
+                {:collection-type :builtin
+                 :collection-id 1})))
+
     IPrintWithWriter
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.d.d/initialize>"))))
@@ -36,16 +52,21 @@
 (defn set-collection-type
   [type]
   {:pre [(contains? #{:builtin :own} type)]}
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (as-> state $
-        (assoc-in $ [:dashboard :collection-type] type)
-        (assoc-in $ [:dashboard :collection-id] nil)))
+  (letfn [(select-first [state]
+            (if (= type :builtin)
+              (assoc-in state [:dashboard :collection-id] 1)
+              (let [coll (sort-by :id (vals (:colors-by-id state)))]
+                (assoc-in state [:dashboard :collection-id] (:id (first coll))))))]
+    (reify
+      rs/UpdateEvent
+      (-apply-update [_ state]
+        (as-> state $
+          (assoc-in $ [:dashboard :collection-type] type)
+          (select-first $)))
 
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/set-collection-type>"))))
+      IPrintWithWriter
+      (-pr-writer [mv writer _]
+        (-write writer "#<event:u.d.d/set-collection-type>")))))
 
 (defn set-collection
   [id]

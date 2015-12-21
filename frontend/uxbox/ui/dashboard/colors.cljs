@@ -77,14 +77,16 @@
         builtin? (= (:collection-type dashboard) :builtin)
         collections (if own?
                       (sort-by :id (vals colors))
-                      builtins/+colors+)]
+                      builtins/+color-collections+)]
     (html
      [:div.library-bar
       [:div.library-bar-inside
        [:ul.library-tabs
-        [:li (when builtin? {:class-name "current"})
+        [:li {:class-name (when builtin? "current")
+              :on-click #(rs/emit! (dd/set-collection-type :builtin))}
          "STANDARD"]
-        [:li (when own? {:class-name "current"})
+        [:li {:class-name (when own? "current")
+              :on-click #(rs/emit! (dd/set-collection-type :own))}
          "YOUR LIBRARIES"]]
        [:ul.library-elements
         ;; (when own?

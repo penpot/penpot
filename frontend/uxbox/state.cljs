@@ -7,7 +7,7 @@
 (defonce state (atom {}))
 
 (defonce stream
-  (rs/init {:user {:fullname "Cirilla"
+  (rs/init {:user {:fullname "Cirilla Fiona"
                    :avatar "http://lorempixel.com/50/50/"}
             :dashboard {}
             :workspace {}
