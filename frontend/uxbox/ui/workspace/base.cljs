@@ -85,19 +85,27 @@
                   y (.-clientY event)]
               (rx/push! mouse-bus [(- x offset-x)
                                    (- y offset-y)])))]
-    (->> (events/listen js/document EventType.MOUSEMOVE on-mousemove)
-         (assoc own ::eventkey))))
+    (let [key (events/listen js/document EventType.MOUSEMOVE on-mousemove)]
+      (js/console.log "mouse-mixin-did-mount" key)
+      (assoc own ::eventkey key))))
 
 (defn- mouse-mixin-will-unmount
   [own]
-  (println "mouse-mixin-will-unmount")
   (let [key (::eventkey own)]
+    (js/console.log "mouse-mixin-will-unmount" key)
     (events/unlistenByKey key)
     (dissoc own ::eventkey)))
 
+(defn- mouse-mixin-transfer-state
+  [old-own own]
+  (let [key (::eventkey old-own)]
+    (js/console.log "mouse-mixin-transfer-state" key)
+    (assoc own ::eventkey key)))
+
 (def ^:static mouse-mixin
   {:did-mount mouse-mixin-did-mount
-   :will-unmount mouse-mixin-will-unmount})
+   :will-unmount mouse-mixin-will-unmount
+   :transfer-state mouse-mixin-transfer-state})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
