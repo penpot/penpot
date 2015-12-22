@@ -1,4 +1,4 @@
-(ns uxbox.ui.workspace.keyboard
+(ns uxbox.ui.workspace.shortcuts
   (:require [beicon.core :as rx]
             [uxbox.rstore :as rs]
             [uxbox.ui.keyboard :as kbd]

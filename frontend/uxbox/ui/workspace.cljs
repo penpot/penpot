@@ -7,7 +7,7 @@
             [uxbox.data.workspace :as dw]
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.workspace.keyboard :as wkbd]
+            [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.lateralmenu :refer (lateralmenu)]
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
@@ -62,5 +62,5 @@
     :will-mount workspace-will-mount
     :transfer-state workspace-transfer-state
     :name "workspace"
-    :mixins [mx/static rum/reactive wkbd/mixin]}))
+    :mixins [mx/static rum/reactive wshortcuts/mixin]}))
 
