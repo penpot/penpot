@@ -92,14 +92,12 @@
 (defn- mouse-mixin-will-unmount
   [own]
   (let [key (::eventkey own)]
-    (js/console.log "mouse-mixin-will-unmount" key)
     (events/unlistenByKey key)
     (dissoc own ::eventkey)))
 
 (defn- mouse-mixin-transfer-state
   [old-own own]
   (let [key (::eventkey old-own)]
-    (js/console.log "mouse-mixin-transfer-state" key)
     (assoc own ::eventkey key)))
 
 (def ^:static mouse-mixin
