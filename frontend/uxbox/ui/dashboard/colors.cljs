@@ -13,6 +13,12 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.util :as util]))
 
+(defn- get-collection
+  [state type id]
+  (case type
+    :builtin (get builtins/+color-collections-by-id+ id)
+    :own (get-in state [:colors-by-id id])))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -112,108 +118,34 @@
 
 (defn grid-render
   [own]
-  (html
-   [:div.dashboard-grid-content
-    [:div.grid-item.small-item.add-project
-     {on-click #(lightbox/set! :new-color)}
-     [:span "+ New color"]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#81dadd"}}]
-     [:span.color-data "#00f9ff"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#6eafd6"}}]
-     [:span.color-data "#009fff"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#0078ff"}}]
-     [:span.color-data "#0078ff"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#005eff"}}]
-     [:span.color-data "#005eff"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#0900ff"}}]
-     [:span.color-data "#0900ff"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#7502f1"}}]
-     [:span.color-data "#7502f1"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#ffe705"}}]
-     [:span.color-data "#ffe705"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#00ffab"}}]
-     [:span.color-data "#00ffab"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#d56c5e"}}]
-     [:span.color-data "#f52105"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#ae80df"}}]
-     [:span.color-data "#7502f1"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#e7ba64"}}]
-     [:span.color-data "#ffe705"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#73c2a8"}}]
-     [:span.color-data "#00ffab"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]
-    [:div.grid-item.small-item.project-th
-     [:span.color-swatch {:style {:background-color "#f52105"}}]
-     [:span.color-data "#f52105"]
-     [:span.color-data "RGB 31,31,31"]
-     [:div.project-th-actions
-      [:div.project-th-icon.edit i/pencil]
-      [:div.project-th-icon.delete i/trash]]]]))
+  (let [dashboard (rum/react dashboard-state)
+        own? (= (:collection-type dashboard) :own)
+        coll (get-collection {}
+                             (:collection-type dashboard)
+                             (:collection-id dashboard))]
+    (html
+     [:div.dashboard-grid-content
+      (when own?
+        [:div.grid-item.small-item.add-project
+         {:on-click #(lightbox/set! :new-color)}
+         [:span "+ New color"]])
+      (for [color (:colors coll)
+            :let [color-str (name color)
+                  color-hex (str "#" color-str)
+                  color-rgb (util/hex->rgb color-hex)]]
+        [:div.grid-item.small-item.project-th {:key color-str}
+         [:span.color-swatch {:style {:background-color color-hex}}]
+         [:span.color-data (str "#" color-str)]
+         [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]
+         [:div.project-th-actions
+          [:div.project-th-icon.edit i/pencil]
+          [:div.project-th-icon.delete i/trash]]])])))
 
 (def grid
   (util/component
    {:render grid-render
     :name "colors"
-    :mixins [mx/static]}))
+    :mixins [mx/static rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lightbox
@@ -232,12 +164,10 @@
           [:input#color-rgb.input-text
             {:placeholder "RGB"
             :type "text"}]]
-        [:input#project-btn.btn-primary {:value "+ Add color" :type "submit"}]]
-
-     (colorpicker (fn [{:keys [rgb hex]}]
-                    (println "HEX:" hex)
-                    (println "RGB:" rgb)))
-
+       (colorpicker (fn [{:keys [rgb hex]}]
+                      (println "HEX:" hex)
+                      (println "RGB:" rgb)))
+       [:input#project-btn.btn-primary {:value "+ Add color" :type "submit"}]]
      [:a.close {:href "#"
                 :on-click #(do (dom/prevent-default %)
                                (lightbox/close!))}
