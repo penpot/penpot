@@ -16,10 +16,8 @@
   (let [canvas (util/get-ref-dom own "colorpicker")
         context (.getContext canvas "2d")
         brect (.getBoundingClientRect canvas)
-        ox (.-left brect)
-        oy (.-top brect)
-        x (- (.-pageX e) ox)
-        y (- (.-pageY e) oy)
+        x (- (.-pageX e) (.-left brect))
+        y (- (.-pageY e) (.-top brect))
         image (.getImageData context x y 1 1)
         r (aget (.-data image) 0)
         g (aget (.-data image) 1)
@@ -30,12 +28,13 @@
 (defn colorpicker-render
   [own callback]
   (html
-   [:canvas
-    {:width "400"
-     :height "300"
-     :on-click #(on-click-handler % own callback)
-     :id "colorpicker"
-     :ref "colorpicker"}]))
+   [:section.colorpicker
+    [:canvas
+     {:width "400"
+      :height "300"
+      :on-click #(on-click-handler % own callback)
+      :id "colorpicker"
+      :ref "colorpicker"}]]))
 
 (defn colorpicker-did-mount
   [own]
