@@ -1,8 +1,14 @@
 (ns uxbox.ui.keyboard
-  (:require [goog.events :as events])
-  (:import [goog.events EventType KeyCodes]
-           [goog.ui KeyboardShortcutHandler]))
+  (:require [goog.events :as events]
+            [beicon.core :as rx])
+  (:import goog.events.EventType
+           goog.events.KeyCodes
+           goog.ui.KeyboardShortcutHandler
+           goog.ui.KeyboardShortcutHandler))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Public Api
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn is-keycode?
   [keycode]
@@ -12,28 +18,32 @@
 (def esc? (is-keycode? 27))
 (def enter? (is-keycode? 13))
 
-;; (def workspace-event-keys
-;;   ["DELETE" "ESC" "CTRL+C" "CTRL+V" "CTRL+B" "CTRL+E" "CTRL+L" "SHIFT+Q"
-;;    "SHIFT+W" "SHIFT+E" "CTRL+SHIFT+I" "CTRL+SHIFT+F" "CTRL+SHIFT+C"
-;;    "CTRL+SHIFT+L" "CTRL+G" "CTRL+UP" "CTRL+DOWN" "CTRL+SHIFT+UP"
-;;    "CTRL+SHIFT+DOWN" "SHIFT+I" "SHIFT+0" "SHIFT+O"])
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shortcuts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; ;; Mixins
+(defonce ^:static +shortcuts+
+  #{:ctrl+g
+    :esc
+    :ctrl+shift+f
+    :ctrl+shift+l})
 
-;; (defn keyboard-keypress
-;;   "A mixin for capture keyboard events."
-;;   [event-keys]
-;;   (let [handler (KeyboardShortcutHandler. js/document)]
-;;     (doseq [shortcut event-keys]
-;;       (.registerShortcut handler shortcut shortcut))
+(defonce ^:static +handler+
+  (KeyboardShortcutHandler. js/document))
 
-;;     {:will-mount (fn [state]
-;;                    (events/listen handler
-;;                                   KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED
-;;                                   ws/on-workspace-keypress)
-;;                    state)
-;;      :will-unmount (fn [state]
-;;                    (events/unlisten js/document
-;;                                     EventType.KEYDOWN
-;;                                     ws/on-workspace-keypress)
-;;                      state)}))
+(defonce ^:static ^:private +bus+
+  (rx/bus))
+
+(defonce ^:static +stream+
+  (rx/to-observable +bus+))
+
+(defn init
+  "Initialize the shortcuts handler."
+  []
+  (doseq [item +shortcuts+]
+    (let [identifier (name item)]
+      (.registerShortcut +handler+ identifier identifier)))
+  (let [event KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED]
+    (events/listen +handler+ event #(rx/push! +bus+ (keyword (.-identifier %))))))
+
+(rx/on-value +stream+ #(println "[debug]: shortcut:" %))

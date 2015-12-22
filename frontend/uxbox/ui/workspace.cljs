@@ -7,6 +7,7 @@
             [uxbox.data.workspace :as dw]
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
+            [uxbox.ui.workspace.keyboard :as wkbd]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.lateralmenu :refer (lateralmenu)]
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
@@ -20,7 +21,7 @@
 
 (defn- workspace-render
   [own projectid]
-  (let [workspace (rum/react wb/workspace-state )]
+  (let [workspace (rum/react wb/workspace-state)]
     (html
      [:div
       (header)
@@ -61,5 +62,5 @@
     :will-mount workspace-will-mount
     :transfer-state workspace-transfer-state
     :name "workspace"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static rum/reactive wkbd/mixin]}))
 

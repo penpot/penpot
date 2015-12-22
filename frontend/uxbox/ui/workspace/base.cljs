@@ -31,10 +31,8 @@
     (l/focus-atom $ s/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Streams
+;; Scroll Stream
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Scroll
 
 (defonce ^:private scroll-bus (rx/bus))
 (defonce scroll-s (rx/dedupe scroll-bus))
@@ -52,7 +50,9 @@
 (defonce top-scroll (rx/to-atom top-scroll-s))
 (defonce left-scroll (rx/to-atom left-scroll-s))
 
-;; Mouse pos
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Mouse Position Stream
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; (defn- coords-delta
 ;;   [[old new]]
@@ -64,11 +64,6 @@
 ;; (def ^{:doc "A stream of mouse coordinate deltas as `[dx dy]` vectors."}
 ;;   delta
 ;;   (s/map coords-delta (s/partition 2 client-position)))
-
-;; DEBUG
-;; (rx/on-value (rx/dedupe scroll-bus)
-;;              (fn [event]
-;;                (println event)))
 
 (defonce mouse-bus (rx/bus))
 (defonce mouse-s (rx/dedupe mouse-bus))
