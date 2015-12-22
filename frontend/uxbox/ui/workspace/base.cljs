@@ -76,20 +76,17 @@
 
 (defn- mouse-mixin-did-mount
   [own]
-  (println "mouse-mixin-did-mount")
-  (let [canvas (util/get-ref-dom own "canvas")
-        on-mousemove (fn [event]
-                       (let [brect (.getBoundingClientRect canvas)
-                             offset-x (.-left brect)
-                             offset-y (.-top brect)
-                             x (.-clientX event)
-                             y (.-clientY event)]
-                         (rx/push! mouse-bus [(- x offset-x)
-                                              (- y offset-y)])))
-        key (events/listen js/document
-                           EventType.MOUSEMOVE
-                           on-mousemove)]
-    (assoc own ::eventkey key)))
+  (letfn [(on-mousemove [event]
+            (let [canvas (util/get-ref-dom own "canvas")
+                  brect (.getBoundingClientRect canvas)
+                  offset-x (.-left brect)
+                  offset-y (.-top brect)
+                  x (.-clientX event)
+                  y (.-clientY event)]
+              (rx/push! mouse-bus [(- x offset-x)
+                                   (- y offset-y)])))]
+    (->> (events/listen js/document EventType.MOUSEMOVE on-mousemove)
+         (assoc own ::eventkey))))
 
 (defn- mouse-mixin-will-unmount
   [own]

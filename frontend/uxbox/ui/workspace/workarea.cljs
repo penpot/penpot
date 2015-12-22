@@ -43,7 +43,6 @@
     :name "background"
     :mixins [mx/static]}))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -122,22 +121,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (rum/defc canvas < rum/reactive
-;;                    shapes-push-mixin
-;;                    (mx/cmds-mixin
-;;                     [::draw draw! (fn [[conn page] shape]
-;;                                     (actions/draw-shape conn page shape))]
-
-;;                     [::move move! (fn [[conn] selections]
-;;                                     (actions/update-shapes conn selections))])
-;;   [conn
-;;    page
-;;    shapes
-;;    {:keys [viewport-height
-;;            viewport-width
-;;            document-start-x
-;;            document-start-y]}]
 
 (defn canvas-render
   []
