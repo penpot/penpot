@@ -57,18 +57,26 @@
 
 (defn page-title-render
   []
-  (html
-   [:div.dashboard-title
-    [:h2 "Colors library name"]
-    [:div.edition
-     [:span i/pencil]
-     [:span i/trash]]]))
+  (let [dashboard (rum/react dashboard-state)
+        own? (= (:collection-type dashboard) :own)
+        coll (get-collection {}
+                             (:collection-type dashboard)
+                             (:collection-id dashboard))]
+    (html
+     [:div.dashboard-title
+      (if coll
+        [:h2 (str "Library: " (:name coll))]
+        [:h2 "No library selected"])
+      (when (and own? coll)
+        [:div.edition
+         [:span i/pencil]
+         [:span i/trash]])])))
 
 (def ^:static page-title
   (util/component
    {:render page-title-render
     :name "page-title"
-    :mixins [mx/static]}))
+    :mixins [mx/static rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Nav
@@ -95,9 +103,9 @@
               :on-click #(rs/emit! (dd/set-collection-type :own))}
          "YOUR LIBRARIES"]]
        [:ul.library-elements
-        ;; (when own?
-        ;;   [:li
-        ;;    [:a.btn-primary {:href "#"} "+ New library"]])
+        (when own?
+          [:li
+           [:a.btn-primary {:href "#"} "+ New library"]])
         (for [props collections]
           [:li {:key (str (:id props))
                 :on-click #(rs/emit! (dd/set-collection (:id props)))
@@ -123,23 +131,25 @@
         coll (get-collection {}
                              (:collection-type dashboard)
                              (:collection-id dashboard))]
-    (html
-     [:div.dashboard-grid-content
-      (when own?
-        [:div.grid-item.small-item.add-project
-         {:on-click #(lightbox/set! :new-color)}
-         [:span "+ New color"]])
-      (for [color (:colors coll)
-            :let [color-str (name color)
+    (when coll
+      (html
+       [:div.dashboard-grid-content
+        (when own?
+          [:div.grid-item.small-item.add-project
+           {:on-click #(lightbox/set! :new-color)}
+           [:span "+ New color"]])
+        (for [color (:colors coll)
+              :let [color-str (name color)
                   color-hex (str "#" color-str)
-                  color-rgb (util/hex->rgb color-hex)]]
-        [:div.grid-item.small-item.project-th {:key color-str}
-         [:span.color-swatch {:style {:background-color color-hex}}]
-         [:span.color-data (str "#" color-str)]
-         [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]
-         [:div.project-th-actions
-          [:div.project-th-icon.edit i/pencil]
-          [:div.project-th-icon.delete i/trash]]])])))
+                    color-rgb (util/hex->rgb color-hex)]]
+          [:div.grid-item.small-item.project-th {:key color-str}
+           [:span.color-swatch {:style {:background-color color-hex}}]
+           [:span.color-data (str "#" color-str)]
+           [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]
+           (when own?
+             [:div.project-th-actions
+              [:div.project-th-icon.edit i/pencil]
+              [:div.project-th-icon.delete i/trash]])])]))))
 
 (def grid
   (util/component
