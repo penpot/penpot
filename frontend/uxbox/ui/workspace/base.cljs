@@ -74,26 +74,33 @@
 (defonce mouse-s (rx/dedupe mouse-bus))
 (defonce mouse-position (rx/to-atom (rx/throttle 50 mouse-s)))
 
-(def mouse-mixin
-  {:did-mount
-   (fn [own]
-     (let [canvas (util/get-ref-dom own "canvas")
-           key (events/listen js/document EventType.MOUSEMOVE
-                             (fn [event]
-                               (let [brect (.getBoundingClientRect canvas)
-                                     offset-x (.-left brect)
-                                     offset-y (.-top brect)
-                                     x (.-clientX event)
-                                     y (.-clientY event)]
-                                 (rx/push! mouse-bus [(- x offset-x)
-                                                      (- y offset-y)]))))]
-       (assoc own ::eventkey key)))
+(defn- mouse-mixin-did-mount
+  [own]
+  (println "mouse-mixin-did-mount")
+  (let [canvas (util/get-ref-dom own "canvas")
+        on-mousemove (fn [event]
+                       (let [brect (.getBoundingClientRect canvas)
+                             offset-x (.-left brect)
+                             offset-y (.-top brect)
+                             x (.-clientX event)
+                             y (.-clientY event)]
+                         (rx/push! mouse-bus [(- x offset-x)
+                                              (- y offset-y)])))
+        key (events/listen js/document
+                           EventType.MOUSEMOVE
+                           on-mousemove)]
+    (assoc own ::eventkey key)))
 
-   :did-unmount
-   (fn [own]
-     (let [key (::eventkey own)]
-       (events/unlistenByKey key)
-       (dissoc own ::eventkey)))})
+(defn- mouse-mixin-will-unmount
+  [own]
+  (println "mouse-mixin-will-unmount")
+  (let [key (::eventkey own)]
+    (events/unlistenByKey key)
+    (dissoc own ::eventkey)))
+
+(def ^:static mouse-mixin
+  {:did-mount mouse-mixin-did-mount
+   :will-unmount mouse-mixin-will-unmount})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants

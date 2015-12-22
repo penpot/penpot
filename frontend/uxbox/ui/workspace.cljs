@@ -18,7 +18,7 @@
 ;; Workspace
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn workspace-render
+(defn- workspace-render
   [own projectid]
   (let [workspace (rum/react wb/workspace-state )]
     (html
@@ -43,13 +43,13 @@
        (when-not (empty? (:toolboxes workspace))
          (aside))]])))
 
-(defn workspace-will-mount
+(defn- workspace-will-mount
   [own]
   (let [[projectid pageid] (:rum/props own)]
     (rs/emit! (dw/initialize projectid pageid))
     own))
 
-(defn workspace-transfer-state
+(defn- workspace-transfer-state
   [old-state state]
   (let [[projectid pageid] (:rum/props state)]
    (rs/emit! (dw/initialize projectid pageid))
