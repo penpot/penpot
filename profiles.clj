@@ -43,7 +43,7 @@
                   [rum "0.6.0"]
                   [bouncer "0.3.3"]
                   [funcool/promesa "0.6.0"]
-                  [funcool/beicon "0.3.0"]
+                  [funcool/beicon "0.4.0"]
                   [cljsjs/moment "2.10.6-0"]
                   [figwheel-sidecar "0.5.0-2" :scope "test"]
                   [bidi "1.21.0"]
