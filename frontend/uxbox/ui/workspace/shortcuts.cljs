@@ -75,13 +75,11 @@
 
 (defn -will-mount
   [own]
-  (println "shortcut-will-mount")
   (let [sub (init-handler)]
     (assoc own ::subscription sub)))
 
 (defn -will-unmount
   [own]
-  (println "shortcut-will-unmount")
   (let [sub (::subscription own)]
     (sub)
     (dissoc own ::subscription)))

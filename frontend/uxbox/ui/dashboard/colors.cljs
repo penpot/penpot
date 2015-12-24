@@ -5,10 +5,12 @@
             [cats.labs.lens :as l]
             [uxbox.state :as st]
             [uxbox.rstore :as rs]
+            [uxbox.schema :as sc]
             [uxbox.data.dashboard :as dd]
             [uxbox.util.lens :as ul]
-            [uxbox.ui.dashboard.builtins :as builtins]
             [uxbox.ui.icons :as i]
+            [uxbox.ui.form :as form]
+            [uxbox.ui.dashboard.builtins :as builtins]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.dom :as dom]
@@ -68,7 +70,7 @@
 (defn page-title-render
   [own coll]
   (letfn [(on-title-edited [e]
-            (let [content (.-innerText (.-target e))
+            (let [content (dom/event->inner-text e)
                   collid (:id coll)]
               (rs/emit! (dd/rename-color-collection collid content))))
           (on-delete [e]
@@ -188,17 +190,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; TODO: implement proper form validation
+(def ^:static +color-form-schema+
+  {:hex [sc/required sc/color]})
 
 (defn- color-lightbox-render
   [own {:keys [coll color]}]
   (let [local (:rum/local own)]
     (letfn [(submit [e]
-              (let [params {:id (:id coll) :from color
-                            :to (:hex @local)}]
-                (rs/emit! (dd/replace-color params))
-                (lightbox/close!)))
+              (if-let [errors (sc/validate +color-form-schema+ @local)]
+                (swap! local assoc :errors errors)
+                (let [params {:id (:id coll) :from color
+                              :to (:hex @local)}]
+                  (rs/emit! (dd/replace-color params))
+                  (lightbox/close!))))
             (on-change [e]
-              (let [value (str/trim (.-value (.-target e)))]
+              (let [value (str/trim (dom/event->value e))]
                 (swap! local assoc :hex value)))]
       (html
        [:div.lightbox-body
@@ -207,6 +213,7 @@
          [:div.row-flex
           [:input#color-hex.input-text
            {:placeholder "#"
+            :class (form/error-class local :hex)
             :on-change on-change
             :value (or (:hex @local) color "")
             :type "text"}]]

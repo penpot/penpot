@@ -21,7 +21,6 @@
 (defn app-render
   [own]
   (let [{:keys [location location-params] :as state} (rum/react state)]
-    (println "app-render" location state)
     (case location
       :auth/login (users/login)
       :dashboard/projects (dashboard/projects-page)

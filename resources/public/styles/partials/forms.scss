@@ -1,0 +1,10 @@
+// TODO: juan revisit
+
+input,
+select,
+textarea {
+  &.invalid {
+    border-color: red;
+    color: red;
+  }
+}

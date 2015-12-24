@@ -8,6 +8,10 @@
   [e]
   (.preventDefault e))
 
+(defn event->inner-text
+  [e]
+  (.-innerText (.-target e)))
+
 (defn event->value
   [e]
   (.-value (.-target e)))
