@@ -18,9 +18,17 @@
 (v/defvalidator uuid
   "Validates maybe-an-int is a valid integer.
   For use with validation functions such as `validate` or `valid?`"
-  {:default-message-format "%s must be a uuid instance"}
+  {:default-message-format "%s must be a uuid instance"
+   :optinal true}
   [v]
   (instance? cljs.core.UUID v))
+
+(v/defvalidator color
+  "Validates if a string is a valid color."
+  {:default-message-format "%s must be a valid hex color"
+   :optional true}
+  [v]
+  (not (nil? (re-find #"^#[0-9A-Fa-f]{6}$" v))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api
