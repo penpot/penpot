@@ -43,4 +43,3 @@
   ([schema data]
    (when-let [errors (validate schema data)]
      (throw (ex-info "Invalid data" errors)))))
-
