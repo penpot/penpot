@@ -15,6 +15,7 @@
 (defonce ^:static +shortcuts+
   #{:ctrl+g
     :ctrl+shift+f
+    :ctrl+shift+i
     :ctrl+shift+l})
 
 (defonce ^:static ^:private +bus+
@@ -53,6 +54,10 @@
 (defmethod -handle-event :ctrl+shift+l
   [_]
   (rs/emit! (dw/toggle-toolbox :layers)))
+
+(defmethod -handle-event :ctrl+shift+i
+  [_]
+  (rs/emit! (dw/toggle-toolbox :icons)))
 
 (defmethod -handle-event :ctrl+shift+f
   [_]
