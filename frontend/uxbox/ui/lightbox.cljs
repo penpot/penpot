@@ -12,9 +12,11 @@
 
 (defonce +current+ (atom nil))
 
-(defn set!
-  [kind]
-  (reset! +current+ kind))
+(defn open!
+  ([kind]
+   (open! kind nil))
+  ([kind params]
+   (reset! +current+ (merge {:name kind} params))))
 
 (defn close!
   []
@@ -24,7 +26,7 @@
 ;; UI
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmulti render-lightbox identity)
+(defmulti render-lightbox :name)
 (defmethod render-lightbox :default [_] nil)
 
 (defn- on-esc-clicked
@@ -33,30 +35,34 @@
     (close!)))
 
 (defn- lightbox-will-mount
-  [state]
-  (events/listen js/document
-                 EventType.KEYDOWN
-                 on-esc-clicked)
-  state)
+  [own]
+  (let [key (events/listen js/document
+                           EventType.KEYDOWN
+                           on-esc-clicked)]
+    (assoc own ::eventkey key)))
 
 (defn- lightbox-will-umount
-  [state]
-  (events/unlisten js/document
-                   EventType.KEYDOWN
-                   on-esc-clicked)
-  state)
+  [own]
+  (let [key (::eventkey own)]
+    (events/unlistenByKey key)
+    (dissoc own ::eventkey)))
+
+(defn- lightbox-transfer-state
+  [old-own own]
+  (assoc own ::eventkey (::eventkey old-own)))
 
 (defn- lightbox-render
   [own]
-  (let [name (rum/react +current+)]
+  (let [params (rum/react +current+)]
     (html
-     [:div.lightbox {:class (when (nil? name) "hide")}
-      (render-lightbox name)])))
+     [:div.lightbox {:class (when (nil? params) "hide")}
+      (render-lightbox params)])))
 
 (def ^:static lightbox
   (util/component
    {:name "lightbox"
     :render lightbox-render
+    :transfer-state lightbox-transfer-state
     :will-mount lightbox-will-mount
     :will-unmount lightbox-will-umount
     :mixins [rum/reactive]}))
