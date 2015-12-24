@@ -16,7 +16,7 @@
                              :projects-by-id])
         stream (->> (l/focus-atom lens st/state)
                     (rx/from-atom)
-                    (rx/debounce 1000)
+                    (rx/sample 1000)
                     (rx/tap #(println "[save]")))]
     (rx/on-value stream #(dl/persist-state %))))
 
