@@ -13,6 +13,7 @@
   "Initialize the storage subsystem."
   []
   (let [lens (l/select-keys [:pages-by-id
+                             :colors-by-id
                              :projects-by-id])
         stream (->> (l/focus-atom lens st/state)
                     (rx/from-atom)
