@@ -1,10 +1,12 @@
 (ns uxbox.ui.dashboard.colors
-  (:require [sablono.core :as html :refer-macros [html]]
+  (:require [sablono.core :refer-macros [html]]
             [rum.core :as rum]
+            [cuerdas.core :as str]
             [cats.labs.lens :as l]
-            [uxbox.state :as s]
+            [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.data.dashboard :as dd]
+            [uxbox.util.lens :as ul]
             [uxbox.ui.dashboard.builtins :as builtins]
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
@@ -13,23 +15,31 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.util :as util]))
 
-(defn- get-collection
-  [state type id]
-  (case type
-    :builtin (get builtins/+color-collections-by-id+ id)
-    :own (get-in state [:colors-by-id id])))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:static dashboard-state
   (as-> (l/in [:dashboard]) $
-    (l/focus-atom $ s/state)))
+    (l/focus-atom $ st/state)))
 
-(def ^:static colors-state
+(def ^:static collections-state
   (as-> (l/in [:colors-by-id]) $
-    (l/focus-atom $ s/state)))
+    (l/focus-atom $ st/state)))
+
+(def ^:static collection-state
+  (as-> (ul/dep-in [:colors-by-id] [:dashboard :collection-id]) $
+    (l/focus-atom $ st/state)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-collection
+  [type id]
+  (case type
+    :builtin (get builtins/+color-collections-by-id+ id)
+    :own (get-in @st/state [:colors-by-id id])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Menu
@@ -56,21 +66,28 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn page-title-render
-  []
-  (let [dashboard (rum/react dashboard-state)
-        own? (= (:collection-type dashboard) :own)
-        coll (get-collection {}
-                             (:collection-type dashboard)
-                             (:collection-id dashboard))]
-    (html
-     [:div.dashboard-title
-      (if coll
-        [:h2 (str "Library: " (:name coll))]
-        [:h2 "No library selected"])
-      (when (and own? coll)
-        [:div.edition
-         [:span i/pencil]
-         [:span i/trash]])])))
+  [own coll]
+  (letfn [(on-title-edited [e]
+            (let [content (.-innerText (.-target e))
+                  collid (:id coll)]
+              (rs/emit! (dd/rename-color-collection collid content))))
+          (on-delete [e]
+            (rs/emit! (dd/delete-color-collection (:id coll))))]
+    (let [dashboard (rum/react dashboard-state)
+          own? (:builtin coll false)]
+      (html
+       [:div.dashboard-title {}
+        (if coll
+          [:h2 {}
+           [:span "Library: "]
+           [:span {:content-editable ""
+                   :on-key-up on-title-edited}
+            (:name coll)]]
+          [:h2 "No library selected"])
+        (if (and (not own?) coll)
+          [:div.edition {}
+           #_[:span i/pencil]
+           [:span {:on-click on-delete} i/trash]])]))))
 
 (def ^:static page-title
   (util/component
@@ -85,7 +102,7 @@
 (defn nav-render
   [own]
   (let [dashboard (rum/react dashboard-state)
-        colors (rum/react colors-state)
+        colors (rum/react collections-state)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
@@ -105,7 +122,9 @@
        [:ul.library-elements
         (when own?
           [:li
-           [:a.btn-primary {:href "#"} "+ New library"]])
+           [:a.btn-primary
+            {:on-click #(rs/emit! (dd/mk-color-collection))}
+            "+ New library"]])
         (for [props collections]
           [:li {:key (str (:id props))
                 :on-click #(rs/emit! (dd/set-collection (:id props)))
@@ -127,67 +146,85 @@
 (defn grid-render
   [own]
   (let [dashboard (rum/react dashboard-state)
-        own? (= (:collection-type dashboard) :own)
-        coll (get-collection {}
-                             (:collection-type dashboard)
-                             (:collection-id dashboard))]
+        coll-type (:collection-type dashboard)
+        coll-id (:collection-id dashboard)
+        own? (= coll-type :own)
+        coll (case coll-type
+               :builtin (get builtins/+color-collections-by-id+ coll-id)
+               :own (rum/react collection-state))
+        edit-cb #(lightbox/open! :color-form {:coll coll :color %})
+        remove-cb #(rs/emit! (dd/remove-color {:id (:id coll) :color %}))]
     (when coll
       (html
-       [:div.dashboard-grid-content
-        (when own?
-          [:div.grid-item.small-item.add-project
-           {:on-click #(lightbox/set! :new-color)}
-           [:span "+ New color"]])
-        (for [color (:colors coll)
-              :let [color-str (name color)
-                  color-hex (str "#" color-str)
-                    color-rgb (util/hex->rgb color-hex)]]
-          [:div.grid-item.small-item.project-th {:key color-str}
-           [:span.color-swatch {:style {:background-color color-hex}}]
-           [:span.color-data (str "#" color-str)]
-           [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]
-           (when own?
-             [:div.project-th-actions
-              [:div.project-th-icon.edit i/pencil]
-              [:div.project-th-icon.delete i/trash]])])]))))
+       [:section.dashboard-grid.library
+        (page-title coll)
+        [:div.dashboard-grid-content
+         (when own?
+           [:div.grid-item.small-item.add-project
+            {:on-click #(lightbox/open! :color-form {:coll coll})}
+            [:span "+ New color"]])
+         (for [color (remove nil? (:colors coll))
+               :let [color-rgb (util/hex->rgb color)]]
+           [:div.grid-item.small-item.project-th {:key color}
+            [:span.color-swatch {:style {:background-color color}}]
+            [:span.color-data color]
+            [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]
+            (if own?
+              [:div.project-th-actions
+               [:div.project-th-icon.edit
+                {:on-click #(edit-cb color)} i/pencil]
+               [:div.project-th-icon.delete
+                {:on-click #(remove-cb color)}
+                i/trash]])])]]))))
 
 (def grid
   (util/component
    {:render grid-render
-    :name "colors"
+    :name "grid"
     :mixins [mx/static rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lightbox
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- new-color-lightbox-render
-  [own]
-   (html
-    [:div.lightbox-body
-      [:h3 "New color"]
-      [:form
-        [:div.row-flex
+;; TODO: implement proper form validation
+
+(defn- color-lightbox-render
+  [own {:keys [coll color]}]
+  (let [local (:rum/local own)]
+    (letfn [(submit [e]
+              (let [params {:id (:id coll) :from color
+                            :to (:hex @local)}]
+                (rs/emit! (dd/replace-color params))
+                (lightbox/close!)))
+            (on-change [e]
+              (let [value (str/trim (.-value (.-target e)))]
+                (swap! local assoc :hex value)))]
+      (html
+       [:div.lightbox-body
+        [:h3 "New color"]
+        [:form
+         [:div.row-flex
           [:input#color-hex.input-text
-            {:placeholder "#"
-            :type "text"}]
-          [:input#color-rgb.input-text
-            {:placeholder "RGB"
+           {:placeholder "#"
+            :on-change on-change
+            :value (or (:hex @local) color "")
             :type "text"}]]
-       (colorpicker (fn [{:keys [rgb hex]}]
-                      (println "HEX:" hex)
-                      (println "RGB:" rgb)))
-       [:input#project-btn.btn-primary {:value "+ Add color" :type "submit"}]]
-     [:a.close {:href "#"
-                :on-click #(do (dom/prevent-default %)
-                               (lightbox/close!))}
-      i/close]]))
+         (colorpicker #(swap! local merge %))
+         [:input#project-btn.btn-primary
+          {:value "+ Add color"
+           :on-click submit
+           :type "submit"}]]
+        [:a.close {:on-click #(lightbox/close!)}
+       i/close]]))))
 
-(def new-color-lightbox
+(def color-lightbox
   (util/component
-   {:render new-color-lightbox-render
-    :name "new-color-lightbox"}))
+   {:render color-lightbox-render
+    :name "color-lightbox"
+    :mixins [(rum/local {})
+             mx/static]}))
 
-(defmethod lightbox/render-lightbox :new-color
-  [_]
-  (new-color-lightbox))
+(defmethod lightbox/render-lightbox :color-form
+  [params]
+  (color-lightbox params))

@@ -127,9 +127,7 @@
     [:section.dashboard-content
      (colors/menu)
      (colors/nav)
-     [:section.dashboard-grid.library
-      (colors/page-title)
-      (colors/grid)]]]))
+     (colors/grid)]]))
 
 (defn colors-page-will-mount
   [own]
