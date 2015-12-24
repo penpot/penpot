@@ -198,10 +198,10 @@
       [:div.project-th-actions
        [:div.project-th-icon.pages
         i/page
-        [:span 0]]
+        [:span "0"]]
        [:div.project-th-icon.comments
         i/chat
-        [:span 0]]
+        [:span "0"]]
        [:div.project-th-icon.delete
         {:on-click #(do
                       (dom/stop-propagation %)
