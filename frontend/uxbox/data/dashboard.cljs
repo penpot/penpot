@@ -86,9 +86,85 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (println "set-collection" id)
       (assoc-in state [:dashboard :collection-id] id))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.d.d/set-collection>"))))
+
+(defn mk-color-collection
+  []
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [id (random-uuid)
+            coll {:name "Unnamed collection"
+                  :id id :colors #{}}]
+        (-> state
+            (assoc-in [:colors-by-id id] coll)
+            (assoc-in [:dashboard :collection-id] id)
+            (assoc-in [:dashboard :collection-type] :own))))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.d.d/mk-color-collection>"))))
+
+(defn rename-color-collection
+  [id name]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:colors-by-id id :name] name))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.d.d/rename-color-collection>"))))
+
+(defn delete-color-collection
+  [id]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [state (update state :colors-by-id dissoc id)
+            colls (sort-by :id (vals (:colors-by-id state)))]
+        (assoc-in state [:dashboard :collection-id] (:id (first colls)))))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.d.d/rename-color-collection>"))))
+
+(defn replace-color
+  "Add or replace color in a collection."
+  [{:keys [id from to] :as params}]
+  (sc/validate! +color-replace-schema+ params)
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (if-let [colors (get-in state [:colors-by-id id :colors])]
+        (as-> colors $
+          (disj $ from)
+          (conj $ to)
+          (assoc-in state [:colors-by-id id :colors] $))
+        state))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.d.d/replace-color>"))))
+
+(defn remove-color
+  "Remove color in a collection."
+  [{:keys [id color] :as params}]
+  (sc/validate! +remove-color-schema+ params)
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (if-let [colors (get-in state [:colors-by-id id :colors])]
+        (as-> colors $
+          (disj $ color)
+          (assoc-in state [:colors-by-id id :colors] $))
+        state))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.d.d/remove-color>"))))
+
