@@ -68,8 +68,8 @@
   (letfn [(select-first [state]
             (if (= type :builtin)
               (assoc-in state [:dashboard :collection-id] 1)
-              (let [coll (sort-by :id (vals (:colors-by-id state)))]
-                (assoc-in state [:dashboard :collection-id] (:id (first coll))))))]
+              (let [colls (sort-by :id (vals (:colors-by-id state)))]
+                (assoc-in state [:dashboard :collection-id] (:id (first colls))))))]
     (reify
       rs/UpdateEvent
       (-apply-update [_ state]
