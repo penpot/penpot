@@ -92,10 +92,8 @@
     (header)
     [:section.dashboard-content
      (icons/menu)
-     (ui.library-bar/library-bar)
-     [:section.dashboard-grid.library
-      (icons/page-title)
-      (icons/grid)]]]))
+     (icons/nav)
+     (icons/grid)]]))
 
 (defn icons-page-will-mount
   [own]
