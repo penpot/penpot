@@ -234,7 +234,7 @@
   [own]
   (letfn [(on-click [e]
             (dom/prevent-default e)
-            (lightbox/set! :new-project))]
+            (lightbox/open! :new-project))]
     (let [state (rum/react grid-state)]
       (html
        [:section.dashboard-grid

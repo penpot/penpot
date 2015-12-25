@@ -58,7 +58,7 @@
   (html
    [:div.dashboard-grid-content
     [:div.grid-item.add-project
-     {on-click #(lightbox/set! :new-element)}
+     {on-click #(lightbox/open! :new-element)}
      [:span "+ New element"]]
     [:div.grid-item.project-th
      [:span.grid-item-image i/image]

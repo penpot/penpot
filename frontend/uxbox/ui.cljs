@@ -13,7 +13,6 @@
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]))
 
-
 (def ^:static state
   (as-> (l/select-keys [:location :location-params]) $
     (l/focus-atom $ s/state)))

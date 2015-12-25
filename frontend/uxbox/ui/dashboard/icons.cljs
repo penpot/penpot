@@ -55,7 +55,7 @@
   (html
    [:div.dashboard-grid-content
     [:div.grid-item.small-item.add-project
-     {on-click #(lightbox/set! :new-icon)}
+     {on-click #(lightbox/open! :new-icon)}
      [:span "+ New icon"]]
     [:div.grid-item.small-item.project-th
      [:span.grid-item-image i/logo-icon]
