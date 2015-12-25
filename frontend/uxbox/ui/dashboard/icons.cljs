@@ -148,8 +148,7 @@
        [:section.dashboard-grid.library
         (page-title coll)
         [:div.dashboard-grid-content
-         (for [icon (:icons coll)
-               :let [_ (println icon)]]
+         (for [icon (:icons coll)]
            [:div.grid-item.small-item.project-th {:key (str (:id icon))}
             [:span.grid-item-image #_i/toggle (shapes/render icon)]
             [:h3 "Custom icon"]
