@@ -4,6 +4,8 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
+            [uxbox.shapes :as shapes]
+            [uxbox.library.icons :as _icons]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.util :as util]
             [uxbox.data.projects :as dp]
@@ -147,6 +149,9 @@
        ;; :on-mouse-up cs/on-mouse-up
        }
       (background)
+      [:svg#page-layout
+       (shapes/render (first _icons/+material+)
+                      {:x 20 :y 20 :width 300 :height 300})]
       #_(apply vector :svg#page-layout (map shapes/shape->svg raw-shapes))
       #_(when-let [shape (rum/react drawing)]
           (shapes/shape->drawing-svg shape))
