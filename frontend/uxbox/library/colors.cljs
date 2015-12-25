@@ -1,6 +1,6 @@
-(ns uxbox.ui.dashboard.builtins)
+(ns uxbox.library.colors)
 
-(def ^:static +color-collections+
+(def ^:static +collections+
   [{:name "Generic 1"
     :id 1
     :builtin true
@@ -12,8 +12,8 @@
               "#7502f1"
               "#ffe705"
               "#00ffab"
-              "#f52105"
-              }}
+              "#f52105"}}
+
    {:name "Generic 2"
     :id 2
     :builtin true
@@ -34,10 +34,4 @@
               "#3fe720"
               "#30ff20"
               "#352120"
-              "#352140"
-              }}])
-
-(def ^:static +color-collections-by-id+
-  (let [data (transient {})]
-    (run! #(assoc! data (:id %) %) +color-collections+)
-    (persistent! data)))
+              "#352140"}}])

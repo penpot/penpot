@@ -6,11 +6,11 @@
             [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.schema :as sc]
+            [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
             [uxbox.util.lens :as ul]
             [uxbox.ui.icons :as i]
             [uxbox.ui.form :as form]
-            [uxbox.ui.dashboard.builtins :as builtins]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.dom :as dom]
@@ -40,7 +40,7 @@
 (defn- get-collection
   [type id]
   (case type
-    :builtin (get builtins/+color-collections-by-id+ id)
+    :builtin (get library/+color-collections-by-id+ id)
     :own (get-in @st/state [:colors-by-id id])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -110,7 +110,7 @@
         builtin? (= (:collection-type dashboard) :builtin)
         collections (if own?
                       (sort-by :id (vals colors))
-                      builtins/+color-collections+)]
+                      library/+color-collections+)]
     (html
      [:div.library-bar
       [:div.library-bar-inside
@@ -152,7 +152,7 @@
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
         coll (case coll-type
-               :builtin (get builtins/+color-collections-by-id+ coll-id)
+               :builtin (get library/+color-collections-by-id+ coll-id)
                :own (rum/react collection-state))
         edit-cb #(lightbox/open! :color-form {:coll coll :color %})
         remove-cb #(rs/emit! (dd/remove-color {:id (:id coll) :color %}))]
