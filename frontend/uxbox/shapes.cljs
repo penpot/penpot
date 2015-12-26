@@ -24,12 +24,29 @@
     (assoc data :view-box (apply str (interpose " " view-box)))
     data))
 
+(defn extract-attrs
+  "Extract predefinet attrs from shapes."
+  [shape]
+  (select-keys shape [:width :height :view-box :x :y :cx :cy]))
+
 (defmethod -render :builtin/icon
-  [{:keys [data width height view-box] :as shape} attrs]
+  [{:keys [data] :as shape} attrs]
   (let [attrs (as-> shape $
-                (select-keys $ [:width :height :view-box])
+                (extract-attrs $)
                 (remove-nil-vals $)
                 (merge $ attrs)
                 (transform-attrs $))]
     (html
      [:svg attrs data])))
+
+(defmethod -render :builtin/icon-svg
+  [{:keys [image] :as shape} attrs]
+  (let [attrs (as-> shape $
+                (extract-attrs $)
+                (remove-nil-vals $)
+                (merge $ attrs)
+                (transform-attrs $))]
+    (html
+     [:svg attrs
+      [:image image]])))
+

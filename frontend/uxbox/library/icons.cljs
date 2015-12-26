@@ -13,7 +13,19 @@
     :data [:path {:d "M38.71 20.07c-1.36-6.88-7.43-12.07-14.71-12.07-5.78 0-10.79 3.28-13.3 8.07-6.01.65-10.7 5.74-10.7 11.93 0 6.63 5.37 12 12 12h26c5.52 0 10-4.48 10-10 0-5.28-4.11-9.56-9.29-9.93z"}]}
    ])
 
+(def ^:private +external+
+  [{:name "Custon icon"
+    :view-box [0 0 50 50]
+    :id :material/foobar
+    :type :builtin/icon-svg
+    :image {:xlink-href "http://s.cdpn.io/3/kiwi.svg"
+            :width 50
+            :height 50}}])
+
 (def +collections+
   [{:name "Material design"
     :id 1
-    :icons +material+}])
+    :icons +material+}
+   {:name "External icons"
+    :id 2
+    :icons +external+}])

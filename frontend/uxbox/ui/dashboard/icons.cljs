@@ -151,7 +151,7 @@
          (for [icon (:icons coll)]
            [:div.grid-item.small-item.project-th {:key (str (:id icon))}
             [:span.grid-item-image #_i/toggle (shapes/render icon)]
-            [:h3 "Custom icon"]
+            [:h3 (:name icon)]
             #_[:div.project-th-actions
              [:div.project-th-icon.edit i/pencil]
              [:div.project-th-icon.delete i/trash]]])]]))))
