@@ -11,3 +11,9 @@
     (persistent! data)))
 
 (def ^:static index-by-id #(index-by % :id))
+
+(defn remove-nil-vals
+  "Given a map, return a map removing key-value
+  pairs when value is `nil`."
+  [data]
+  (into {} (remove (comp nil? second) data)))
