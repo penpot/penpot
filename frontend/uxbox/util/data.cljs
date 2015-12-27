@@ -1,5 +1,10 @@
 (ns uxbox.util.data
-  "A collection of data transformation utils.")
+  "A collection of data transformation utils."
+  (:require [cljs.reader :as r]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data structure manipulation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn index-by
   "Return a indexed map of the collection
@@ -17,3 +22,15 @@
   pairs when value is `nil`."
   [data]
   (into {} (remove (comp nil? second) data)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Numbers Parsing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn read-string
+  [v]
+  (r/read-string v))
+
+(defn parse-int
+  [v]
+  (js/parseInt v 10))
