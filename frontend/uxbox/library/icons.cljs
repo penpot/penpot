@@ -24,8 +24,10 @@
 
 (def +collections+
   [{:name "Material design"
+    :builtin true
     :id 1
     :icons +material+}
    {:name "External icons"
+    :builtin true
     :id 2
     :icons +external+}])
