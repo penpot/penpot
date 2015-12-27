@@ -11,7 +11,7 @@
             [uxbox.data.projects :as dp]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.rules :as wr]
-            [uxbox.ui.workspace.toolboxes :refer (draw-toolbox layers)]))
+            [uxbox.ui.workspace.toolboxes :as toolboxes]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Coordinates Debug
@@ -248,13 +248,11 @@
      [:aside#settings-bar.settings-bar
       [:div.settings-bar-inside
        (when (:draw-toolbox-enabled workspace false)
-         (draw-toolbox))
-       #_(when (:icons open-setting-boxes)
-           (icon-sets open-toolboxes))
-       #_(when (:components open-setting-boxes)
-           (components open-toolboxes components))
+         (toolboxes/draw-tools))
+       (when (:icons-toolbox-enabled workspace false)
+         (toolboxes/icons))
        (when (:layers-toolbox-enabled workspace false)
-         (layers))]])))
+         (toolboxes/layers))]])))
 
 (def aside
   (util/component
