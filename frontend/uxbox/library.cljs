@@ -22,4 +22,3 @@
 
 (def ^:static +icon-collections-by-id+
   (index-by-id icons/+collections+))
-

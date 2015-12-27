@@ -143,13 +143,14 @@
         ;;        :own (rum/react collection-state))]
         ;; edit-cb #(lightbox/open! :icon-form {:coll coll :icon %})
         ;; remove-cb #(rs/emit! (dd/remove-icon {:id (:id coll) :icon %}))]
+    ;; (println "KAKAKKA" coll-type coll-id coll)
     (when coll
       (html
        [:section.dashboard-grid.library
         (page-title coll)
         [:div.dashboard-grid-content
          (for [icon (:icons coll)]
-           [:div.grid-item.small-item.project-th {:key (str (:id icon))}
+           [:div.grid-item.small-item.project-th {}
             [:span.grid-item-image #_i/toggle (shapes/render icon)]
             [:h3 (:name icon)]
             #_[:div.project-th-actions
@@ -161,135 +162,6 @@
    {:render grid-render
     :name "grid"
     :mixins [mx/static rum/reactive]}))
-
-
-;; (defn grid-render
-;;   [own]
-;;   (html
-;;    [:div.dashboard-grid-content
-;;     [:div.grid-item.small-item.add-project
-;;      {on-click #(lightbox/open! :new-icon)}
-;;      [:span "+ New icon"]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/logo-icon]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/pencil]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/trash]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/search]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/image]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/toggle]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/chat]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/close]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/page]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/folder]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/infocard]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/fill]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/stroke]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/action]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/undo]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/redo]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/export]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/exit]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]
-;;     [:div.grid-item.small-item.project-th
-;;      [:span.grid-item-image i/user]
-;;      [:h3 "Custom icon"]
-;;      [:div.project-th-actions
-;;       [:div.project-th-icon.edit i/pencil]
-;;       [:div.project-th-icon.delete i/trash]]]]))
-
-;; (def grid
-;;   (util/component
-;;    {:render grid-render
-;;     :name "grid"
-;;     :mixins [mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lightbox

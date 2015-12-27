@@ -6,14 +6,47 @@
 ;; Data structure manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; NOTE: commented because tansients are buggy in cljs?
+;; (defn index-by
+;;   "Return a indexed map of the collection
+;;   keyed by the result of executing the getter
+;;   over each element of the collection."
+;;   [coll getter]
+;;   (let [data (transient {})]
+;;     (run! #(do
+;;              (println (getter %))
+;;              (assoc! data (getter %) %)) coll)
+;;     (println "test1:" (keys data))
+;;     (let [r (persistent! data)]
+;;       (println "test2:" (keys r))
+;;       r)))
+
+;; (defn index-by
+;;   "Return a indexed map of the collection
+;;   keyed by the result of executing the getter
+;;   over each element of the collection."
+;;   [coll getter]
+;;   (let [data (transient {})]
+;;     (loop [coll coll]
+;;       (let [item (first coll)]
+;;         (if item
+;;           (do
+;;             (assoc! data (getter item) item)
+;;             (recur (rest coll)))
+;;           (let [_ 1 #_(println "test1:" (keys data))
+;;                 r (persistent! data)]
+;;             (println "test2:" (keys r))
+;;             r))))))
+
 (defn index-by
   "Return a indexed map of the collection
   keyed by the result of executing the getter
   over each element of the collection."
   [coll getter]
-  (let [data (transient {})]
-    (run! #(assoc! data (getter %) %) coll)
-    (persistent! data)))
+  (reduce (fn [acc item]
+            (assoc acc (getter item) item))
+          {}
+          coll))
 
 (def ^:static index-by-id #(index-by % :id))
 

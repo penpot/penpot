@@ -1,17 +1,20 @@
-(ns uxbox.library.icons)
-
-(def ^:private +material+
-  [{:name "Attachment"
-    :id :material/attachment
-    :type :builtin/icon
-    :view-box [0 0 50 50]
-    :data [:path {:d "M15 36c-6.08 0-11-4.93-11-11s4.92-11 11-11h21c4.42 0 8 3.58 8 8s-3.58 8-8 8h-17c-2.76 0-5-2.24-5-5s2.24-5 5-5h15v3h-15c-1.1 0-2 .89-2 2s.9 2 2 2h17c2.76 0 5-2.24 5-5s-2.24-5-5-5h-21c-4.42 0-8 3.58-8 8s3.58 8 8 8h19v3h-19z"}]}
-   {:name "Cloud"
-    :id :material/cloud
-    :type :builtin/icon
-    :view-box [0 0 50 50]
-    :data [:path {:d "M38.71 20.07c-1.36-6.88-7.43-12.07-14.71-12.07-5.78 0-10.79 3.28-13.3 8.07-6.01.65-10.7 5.74-10.7 11.93 0 6.63 5.37 12 12 12h26c5.52 0 10-4.48 10-10 0-5.28-4.11-9.56-9.29-9.93z"}]}
-   ])
+(ns uxbox.library.icons
+  (:require [uxbox.library.icons.material-design-actions :as md-actions]
+            [uxbox.library.icons.material-design-alerts :as md-alerts]
+            [uxbox.library.icons.material-design-av :as md-av]
+            [uxbox.library.icons.material-design-communication :as md-comm]
+            [uxbox.library.icons.material-design-content :as md-content]
+            [uxbox.library.icons.material-design-device :as md-device]
+            [uxbox.library.icons.material-design-editor :as md-editor]
+            [uxbox.library.icons.material-design-file :as md-file]
+            [uxbox.library.icons.material-design-hardware :as md-hardware]
+            [uxbox.library.icons.material-design-image :as md-image]
+            [uxbox.library.icons.material-design-maps :as md-maps]
+            [uxbox.library.icons.material-design-navigation :as md-nav]
+            [uxbox.library.icons.material-design-notification :as md-not]
+            [uxbox.library.icons.material-design-social :as md-social]
+            [uxbox.library.icons.material-design-toggle :as md-toggle]
+            ))
 
 (def ^:private +external+
   [{:name "Custon icon"
@@ -23,11 +26,67 @@
             :height 50}}])
 
 (def +collections+
-  [{:name "Material design"
+  [{:name "Material design (actions)"
     :builtin true
     :id 1
-    :icons +material+}
-   {:name "External icons"
+    :icons md-actions/+icons+}
+   {:name "Material design (alerts)"
     :builtin true
     :id 2
+    :icons md-alerts/+icons+}
+   {:name "Material design (Av)"
+    :builtin true
+    :id 3
+    :icons md-av/+icons+}
+   {:name "Material design (Communication)"
+    :builtin true
+    :id 4
+    :icons md-comm/+icons+}
+   {:name "Material design (Content)"
+    :builtin true
+    :id 5
+    :icons md-content/+icons+}
+   {:name "Material design (Device)"
+    :builtin true
+    :id 6
+    :icons md-device/+icons+}
+   {:name "Material design (Editor)"
+    :builtin true
+    :id 7
+    :icons md-editor/+icons+}
+   {:name "Material design (File)"
+    :builtin true
+    :id 8
+    :icons md-file/+icons+}
+   {:name "Material design (Hardware)"
+    :builtin true
+    :id 9
+    :icons md-hardware/+icons+}
+   {:name "Material design (Image)"
+    :builtin true
+    :id 10
+    :icons md-image/+icons+}
+   {:name "Material design (Maps)"
+    :builtin true
+    :id 11
+    :icons md-maps/+icons+}
+   {:name "Material design (Navigation)"
+    :builtin true
+    :id 12
+    :icons md-nav/+icons+}
+   {:name "Material design (Notifications)"
+    :builtin true
+    :id 13
+    :icons md-not/+icons+}
+   {:name "Material design (Social)"
+    :builtin true
+    :id 14
+    :icons md-social/+icons+}
+   {:name "Material design (Toggle)"
+    :builtin true
+    :id 15
+    :icons md-toggle/+icons+}
+   {:name "External icons"
+    :builtin true
+    :id 40
     :icons +external+}])
