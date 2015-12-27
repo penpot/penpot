@@ -102,3 +102,45 @@
     :name "layers"
     :mixins [rum/reactive]}))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Icons
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn icons-render
+  [own]
+  (let [local (:rum/local own)
+        collid (:collid @local)
+        icons (get-in library/+icon-collections-by-id+ [collid :icons])
+        on-close #(rs/emit! (dw/toggle-toolbox :icons))
+        on-change (fn [e]
+                    (let [value (dom/event->value e)
+                          value (read-string value)]
+                      (swap! local assoc :collid value)))]
+    (html
+     [:div#form-figures.tool-window
+      [:div.tool-window-bar
+       [:div.tool-window-icon i/window]
+       [:span "Icons"]
+       [:div.tool-window-close
+        {:on-click on-close} i/close]]
+      [:div.tool-window-content
+       [:div.figures-catalog
+        ;; extract component: set selector
+        [:select.input-select.small
+         {:on-change on-change :value collid} ; TODO: maybe missing pr-str
+         (for [icon-coll library/+icon-collections+]
+           [:option {:key (str "icon-coll" (:id icon-coll))
+                     :value (pr-str (:id icon-coll))}
+            (:name icon-coll)])]]
+       (for [icon icons]
+         [:div.figure-btn {:key (str "icon" (:id icon))
+                           :class nil #_"selected"
+                           :on-click (constantly nil)}
+          (shapes/render icon)])]])))
+
+(def ^:static icons
+  (util/component
+   {:render icons-render
+    :name "icons-toolbox"
+    :mixins [rum/reactive
+             (mx/local {:collid 1 :builtin true})]}))
