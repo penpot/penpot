@@ -95,7 +95,7 @@
         item (first _icons/+external+)
         ]
     (html
-     [:svg#page-canvas
+     [:svg.page-canvas
       {:x wb/document-start-x
        :y wb/document-start-y
        :ref "canvas"
@@ -105,8 +105,8 @@
        ;; :on-mouse-up cs/on-mouse-up
        }
       (background)
-      [:svg#page-layout
-       (shape item)]
+      [:svg.page-layout
+       #_(shape item)]
       #_(apply vector :svg#page-layout (map shapes/shape->svg raw-shapes))
       #_(when-let [shape (rum/react drawing)]
           (shapes/shape->drawing-svg shape))

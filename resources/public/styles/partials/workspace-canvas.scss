@@ -10,7 +10,13 @@
     margin-right: 0;
   }
 
-  #viewport, #page-canvas, #page-layout {
+  .viewport {
+    &.drawing {
+      cursor: cell;
+    }
+  }
+
+  .viewport, .page-canvas, .page-layout {
     overflow: visible;
   }
 }
