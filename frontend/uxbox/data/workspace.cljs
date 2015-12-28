@@ -123,21 +123,8 @@
     (-apply-update [_ state]
       ;; (println "apply-delta" shapeid delta)
       (let [pageid (get-in state [:workspace :page])
-            _ (assert pageid)
             shape (get-in state [:pages-by-id pageid :shapes-by-id shapeid])]
         (update-in state [:pages-by-id pageid :shapes-by-id shapeid] merge
                    {:x (+ (:x shape) dx)
                     :y (+ (:y shape) dy)})))))
 
-
-;; (defn apply-delta'
-;;   "Mark a shape selected for drawing in the canvas."
-;;   [shapeid [dx dy :as delta]]
-;;   (reify
-;;     rs/UpdateEvent
-;;     (-apply-update [_ state]
-;;       ;; (println "apply-delta'" shapeid delta)
-;;       (let [pageid (get-in state [:workspace :page])
-;;             shape (get-in state [:pages-by-id pageid :shapes-by-id shapeid])]
-;;         (update-in state [:pages-by-id pageid :shapes-by-id shapeid] merge
-;;                    {:x dx :y dy})))))
