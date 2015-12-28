@@ -65,6 +65,18 @@
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.d.w/select-for-drawing>"))))
 
+(defn select-shape
+  "Mark a shape selected for drawing in the canvas."
+  [id]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [selected (get-in state [:workspace :selected])]
+        (if (contains? selected id)
+          (update-in state [:workspace :selected] disj id)
+          (update-in state [:workspace :selected] conj id))))))
+
+
 ;; TODO: validate shape
 
 (defn add-shape
