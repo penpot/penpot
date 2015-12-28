@@ -31,6 +31,10 @@
   (as-> (l/in [:workspace]) $
     (l/focus-atom $ s/state)))
 
+(def ^:static selected-state
+  (as-> (l/in [:workspace :selected]) $
+    (l/focus-atom $ s/state)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scroll Stream
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
