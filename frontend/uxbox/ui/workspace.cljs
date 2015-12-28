@@ -7,14 +7,34 @@
             [uxbox.data.workspace :as dw]
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.lateralmenu :refer (lateralmenu)]
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (h-rule v-rule)]
             [uxbox.ui.workspace.sidebar :refer (aside)]
-            [uxbox.ui.workspace.workarea :refer (viewport coordinates)]))
+            [uxbox.ui.workspace.workarea :refer (viewport)]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Coordinates Debug
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- coordenates-render
+  [own]
+  (let [[x y] (rum/react wb/mouse-position)]
+    (html
+     [:div {:style {:position "absolute" :left "80px" :top "20px"}}
+      [:table
+       [:tbody
+        [:tr [:td "X:"] [:td x]]
+        [:tr [:td "Y:"] [:td y]]]]])))
+
+(def coordinates
+  (util/component
+   {:render coordenates-render
+    :name "coordenates"
+    :mixins [rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace
