@@ -62,6 +62,7 @@
       (let [page {:id (random-uuid)
                   :project project
                   :created (time/now :unix)
+                  :shapes []
                   :name name
                   :width width
                   :height height}]
