@@ -45,6 +45,7 @@
     (-apply-update [_ state]
       (let [s {:project projectid
                :toolboxes #{}
+               :selected #{}
                :page pageid}]
         (assoc state :workspace s)))
 
