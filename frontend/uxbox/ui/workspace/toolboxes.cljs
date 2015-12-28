@@ -133,8 +133,7 @@
                      :value (pr-str (:id icon-coll))}
             (:name icon-coll)])]]
        (for [icon icons]
-         [:div.figure-btn {:key (str "icon" (:id icon))
-                           :class nil #_"selected"
+         [:div.figure-btn {:class nil #_"selected"
                            :on-click (constantly nil)}
           (shapes/render icon)])]])))
 
