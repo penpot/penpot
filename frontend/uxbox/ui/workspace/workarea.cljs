@@ -6,22 +6,39 @@
             [uxbox.state :as s]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.util :as util]
+            [uxbox.data.workspace :as dw]
             [uxbox.ui.workspace.canvas :refer (canvas)]
             [uxbox.ui.workspace.grid :refer (grid)]
             [uxbox.ui.workspace.base :as wb]))
 
+;; TODO: implement as streams
+
+(defn- on-click
+  [event wstate]
+  (let [mousepos @wb/mouse-position
+        shape (:drawing wstate)]
+    (when shape
+      (let [props {:x (first mousepos)
+                   :y (second mousepos)
+                   :width 100
+                   :height 100}]
+        (rs/emit!
+         (dw/add-shape shape props)
+         (dw/select-for-drawing nil))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Viewport
+;; Viewport Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn viewport-render
-  []
+  [own]
   (let [workspace (rum/react wb/workspace-state)
         drawing? (:drawing workspace)
         zoom 1]
     (html
      [:svg.viewport {:width wb/viewport-height
                      :height wb/viewport-width
+                     :on-click #(on-click % workspace)
                      :class (when drawing? "drawing")}
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
        (canvas)

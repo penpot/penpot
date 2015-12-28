@@ -106,16 +106,28 @@
 ;; Icons
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- select-icon
+  [icon]
+  (if (= (:drawing @wb/workspace-state) icon)
+    (rs/emit! (dw/select-for-drawing nil))
+    (rs/emit! (dw/select-for-drawing icon))))
+
+(defn- change-icon-coll
+  [local event]
+  (let [value (-> (dom/event->value event)
+                  (read-string))]
+    (swap! local assoc :collid value)
+    (rs/emit! (dw/select-for-drawing nil))))
+
 (defn icons-render
   [own]
   (let [local (:rum/local own)
+        workspace (rum/react wb/workspace-state)
         collid (:collid @local)
         icons (get-in library/+icon-collections-by-id+ [collid :icons])
         on-close #(rs/emit! (dw/toggle-toolbox :icons))
-        on-change (fn [e]
-                    (let [value (dom/event->value e)
-                          value (read-string value)]
-                      (swap! local assoc :collid value)))]
+        on-select #(select-icon %)
+        on-change #(change-icon-coll local %)]
     (html
      [:div#form-figures.tool-window
       [:div.tool-window-bar
@@ -132,9 +144,10 @@
            [:option {:key (str "icon-coll" (:id icon-coll))
                      :value (pr-str (:id icon-coll))}
             (:name icon-coll)])]]
-       (for [icon icons]
-         [:div.figure-btn {:class nil #_"selected"
-                           :on-click (constantly nil)}
+       (for [icon icons
+             :let [selected? (= (:drawing workspace) icon)]]
+         [:div.figure-btn {:class (when selected? "selected")
+                           :on-click #(on-select icon)}
           (shapes/render icon)])]])))
 
 (def ^:static icons

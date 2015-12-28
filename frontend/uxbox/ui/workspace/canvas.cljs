@@ -111,7 +111,8 @@
        }
       (background)
       [:svg.page-layout
-       #_(shape item)]
+       (for [item (:shapes page)]
+         (shape item))]
       #_(apply vector :svg#page-layout (map shapes/shape->svg raw-shapes))
       #_(when-let [shape (rum/react drawing)]
           (shapes/shape->drawing-svg shape))
