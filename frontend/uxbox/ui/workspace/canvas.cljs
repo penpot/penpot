@@ -8,6 +8,7 @@
             [uxbox.shapes :as shapes]
             [uxbox.library.icons :as _icons]
             [uxbox.data.projects :as dp]
+            [uxbox.data.workspace :as dw]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.util :as util]
@@ -49,25 +50,21 @@
    :stroke "gray"})
 
 (defn- shape-render
-  [own {:keys [x y] :as shape}]
-  (let [local (:rum/local own)]
+  [own {:keys [id x y width height] :as shape}]
+  (let [local (:rum/local own)
+        selected (rum/react wb/selected-state)]
     (html
      [:g {
           :on-mouse-down
           (fn [event]
-            (println "mouse-down")
+            (swap! local assoc :init-coords [x y])
             (rx/push! wb/selected-shape-b shape))
 
-          ;; :on-mouse-move
-          ;; (fn [event]
-          ;;   (when (:drop @local)
-          ;;     (println "mouse-move" @wb/mouse-position2)
-          ;;     (let [target (.-currentTarget event)
-          ;;           [nx ny] @wb/mouse-position2
-          ;;           svg (aget (.-childNodes target) 0)]
-          ;;       (.setAttribute svg "x" nx)
-          ;;       (.setAttribute svg "y" ny)))
-          ;;   false)
+          :on-click
+          (fn [ev]
+            (when (= (:init-coords @local) [x y])
+              (rs/emit! (dw/select-shape id))
+              (println "click")))
 
           :on-mouse-up
           (fn [event]
@@ -75,7 +72,21 @@
             (rx/push! wb/selected-shape-b :nothing)
             (dom/stop-propagation event))
           }
-      (shapes/render shape)])))
+      (shapes/render shape)
+      (if (contains? selected id)
+        [:g {:class "controls"}
+         [:rect {:x x :y y :width width :height height
+                 :style {:stroke "black" :fill "transparent"
+                         :stroke-opacity "0.5"}}]
+         [:circle (merge default-selection-props
+                         {:cx x :cy y})]
+         [:circle (merge default-selection-props
+                         {:cx (+ x width) :cy y})]
+         [:circle (merge default-selection-props
+                         {:cx x :cy (+ y height)})]
+         [:circle (merge default-selection-props
+                         {:cx (+ x width) :cy (+ y height)})]])])))
+
 
 ;; (defn- shape-render
 ;;   [own shape]
@@ -104,7 +115,7 @@
   (util/component
    {:render shape-render
     :name "shape"
-    :mixins [mx/static (mx/local {})]}))
+    :mixins [mx/static rum/reactive (mx/local {})]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas
