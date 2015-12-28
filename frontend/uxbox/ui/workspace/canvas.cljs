@@ -125,17 +125,7 @@
   []
   (let [page (rum/react wb/page-state)
         page-width (:width page)
-        page-height (:height page)
-        ;; selection-uuids (rum/react selected-ids)
-        ;; selected-shapes (rum/react selected-shapes)
-        ;; raw-shapes (into []
-        ;;                  (comp
-        ;;                   (filter :shape/visible?)
-        ;;                   (filter #(not (contains? selection-uuids (:shape/uuid %))))
-        ;;                   (map :shape/data))
-        ;;                  shapes)
-        item (first _icons/+external+)
-        ]
+        page-height (:height page)]
     (html
      [:svg.page-canvas
       {:x wb/document-start-x
@@ -147,24 +137,12 @@
        (fn [event]
          (rx/push! wb/selected-shape-b :nothing)
          (dom/stop-propagation event))
-
-       ;; :on-mouse-down cs/on-mouse-down
-       ;; :on-mouse-up cs/on-mouse-up
        }
       (background)
       [:svg.page-layout {}
        (for [shapeid (:shapes page)
              :let [item (get-in page [:shapes-by-id shapeid])]]
-         (rum/with-key (shape item) (str shapeid)))]
-      #_(apply vector :svg#page-layout (map shapes/shape->svg raw-shapes))
-      #_(when-let [shape (rum/react drawing)]
-          (shapes/shape->drawing-svg shape))
-      #_(when-not (empty? selected-shapes)
-          (let [rs selected-shapes]
-            (vec (cons :g
-                       (concat
-                        (map shapes/shape->selected-svg rs)
-                        (map shapes/shape->svg rs))))))])))
+         (rum/with-key (shape item) (str shapeid)))]])))
 
 (def canvas
   (util/component
