@@ -13,7 +13,8 @@
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (h-rule v-rule)]
-            [uxbox.ui.workspace.workarea :refer (workarea aside)]))
+            [uxbox.ui.workspace.sidebar :refer (aside)]
+            [uxbox.ui.workspace.workarea :refer (viewport coordinates)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace
@@ -21,7 +22,8 @@
 
 (defn- workspace-render
   [own projectid]
-  (let [workspace (rum/react wb/workspace-state)]
+  (let [workspace (rum/react wb/workspace-state)
+        no-toolbars? (empty? (:toolboxes workspace))]
     (html
      [:div
       (header)
@@ -38,10 +40,19 @@
         (v-rule)
 
         ;; Canvas
-        (workarea)]
+        [:section.workspace-canvas {:class (when no-toolbars? "no-tool-bar")
+                                    :on-scroll (constantly nil)}
+         #_(when (:selected page)
+             (element-options conn
+                              page-cursor
+                              project-cursor
+                              zoom-cursor
+                              shapes-cursor))
+         (coordinates)
+         (viewport)]]
 
        ;; Aside
-       (when-not (empty? (:toolboxes workspace))
+       (when-not no-toolbars?
          (aside))]])))
 
 (defn- workspace-will-mount

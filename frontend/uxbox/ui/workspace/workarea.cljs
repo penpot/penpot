@@ -4,15 +4,10 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
-            [uxbox.shapes :as shapes]
-            [uxbox.library.icons :as _icons]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.util :as util]
-            [uxbox.data.projects :as dp]
             [uxbox.ui.workspace.canvas :as wc]
-            [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.rules :as wr]
-            [uxbox.ui.workspace.toolboxes :as toolboxes]))
+            [uxbox.ui.workspace.base :as wb]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Coordinates Debug
@@ -133,54 +128,3 @@
    {:render viewport-render
     :name "viewport"
     :mixins [rum/reactive]}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Aside
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn aside-render
-  [own]
-  (let [workspace (rum/react wb/workspace-state)]
-    (html
-     [:aside#settings-bar.settings-bar
-      [:div.settings-bar-inside
-       (when (:draw-toolbox-enabled workspace false)
-         (toolboxes/draw-tools))
-       (when (:icons-toolbox-enabled workspace false)
-         (toolboxes/icons))
-       (when (:layers-toolbox-enabled workspace false)
-         (toolboxes/layers))]])))
-
-(def aside
-  (util/component
-   {:render aside-render
-    :name "aside"
-    :mixins [rum/reactive]}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Work Area
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn working-area-render
-  [own]
-  (let [workspace (rum/react wb/workspace-state)]
-    (html
-     [:section.workspace-canvas
-      {:class (when (empty? (:toolboxes workspace)) "no-tool-bar")
-       :on-scroll (constantly nil)}
-
-      #_(when (:selected page)
-          (element-options conn
-                           page-cursor
-                           project-cursor
-                           zoom-cursor
-                           shapes-cursor))
-      (coordinates)
-      (viewport)])))
-
-(def workarea
-  (util/component
-   {:render working-area-render
-    :name "workarea"
-    :mixins [rum/reactive]}))
-
