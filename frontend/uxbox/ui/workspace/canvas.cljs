@@ -57,20 +57,22 @@
      [:g {
           :on-mouse-down
           (fn [event]
+            (dom/stop-propagation event)
             (swap! local assoc :init-coords [x y])
-            (rx/push! wb/selected-shape-b shape))
+            (reset! wb/shapes-dragging? true))
 
           :on-click
-          (fn [ev]
+          (fn [event]
             (when (= (:init-coords @local) [x y])
-              (rs/emit! (dw/select-shape id))
-              (println "click")))
+              (if (.-ctrlKey event)
+                (rs/emit! (dw/select-shape id))
+                (rs/emit! (dw/deselect-all)
+                          (dw/select-shape id)))))
 
           :on-mouse-up
           (fn [event]
-            (println "mouse-up")
-            (rx/push! wb/selected-shape-b :nothing)
-            (dom/stop-propagation event))
+            (dom/stop-propagation event)
+            (reset! wb/shapes-dragging? false))
           }
       (shapes/render shape)
       (if (contains? selected id)
@@ -133,10 +135,16 @@
        :ref "canvas"
        :width page-width
        :height page-height
+
+       :on-mouse-down
+       (fn [event]
+         (dom/stop-propagation event)
+         (rs/emit! (dw/deselect-all)))
+
        :on-mouse-up
        (fn [event]
-         (rx/push! wb/selected-shape-b :nothing)
-         (dom/stop-propagation event))
+         (dom/stop-propagation event)
+         (reset! wb/shapes-dragging? false))
        }
       (background)
       [:svg.page-layout {}

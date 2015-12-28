@@ -76,6 +76,13 @@
           (update-in state [:workspace :selected] disj id)
           (update-in state [:workspace :selected] conj id))))))
 
+(defn deselect-all
+  "Mark a shape selected for drawing in the canvas."
+  []
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:workspace :selected] #{}))))
 
 ;; TODO: validate shape
 

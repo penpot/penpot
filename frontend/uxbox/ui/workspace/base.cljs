@@ -59,22 +59,7 @@
 ;; Mouse Position Stream
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def immediate-scheduler js/Rx.Scheduler.immediate)
-(def current-thread-scheduler js/Rx.Scheduler.currentThread)
-
-(defn observe-on
-  [scheduler ob]
-  (.observeOn ob scheduler))
-
-(defn subscribe-on
-  [scheduler ob]
-  (.subscribeOn ob scheduler))
-
-;; (defn window
-;;   [n ob]
-;;   (.windowWithCount ob n))
-
-(defonce selected-shape-b (rx/bus))
+(defonce shapes-dragging? (atom false))
 
 (defonce mouse-b (rx/bus))
 (defonce mouse-s (rx/dedupe mouse-b))
@@ -94,16 +79,12 @@
        (rx/buffer 2 1)
        (rx/map coords-delta)))
 
-(defonce _subscription_
-  (as-> (rx/with-latest-from vector selected-shape-b mouse-delta-s) $
-    (rx/filter #(not= :nothing (second %)) $)
-    ;; (observe-on current-thread-scheduler $)
-    (rx/on-value $ (fn [[delta shape]]
-                     (rs/emit! (dw/apply-delta (:id shape) delta))))))
-
-  ;; (rx/on-value mouse-delta-s
-  ;;              (fn [val]
-  ;;                (println "delta" val))))
+(defonce $$drag-subscription$$
+  (as-> mouse-delta-s $
+    (rx/filter #(deref shapes-dragging?) $)
+    (rx/on-value $ (fn [delta]
+                     (doseq [id @selected-state]
+                       (rs/emit! (dw/apply-delta id delta)))))))
 
 ;; Materialized views
 
