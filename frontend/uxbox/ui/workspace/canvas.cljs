@@ -48,26 +48,31 @@
 
 (defn- shape-render
   [own shape]
-  (let [local (:rum/local own)
-        x 30
-        y 30
-        width 100
-        height 100]
-    (html
-     [:g
-      (shapes/render shape {:x x :y y :width width :height height})
-      [:g {:class "controls"}
-       [:rect {:x x :y y :width width :height height
-               :style {:stroke "black" :fill "transparent"
-                       :stroke-opacity "0.5"}}]
-       [:circle (merge default-selection-props
-                       {:cx x :cy y})]
-       [:circle (merge default-selection-props
-                       {:cx (+ x width) :cy y})]
-       [:circle (merge default-selection-props
-                       {:cx x :cy (+ y height)})]
-       [:circle (merge default-selection-props
-                       {:cx (+ x width) :cy (+ y height)})]]])))
+  (let [local (:rum/local own)]
+    (shapes/render shape)))
+
+;; (defn- shape-render
+;;   [own shape]
+;;   (let [local (:rum/local own)
+;;         x 30
+;;         y 30
+;;         width 100
+;;         height 100]
+;;     (html
+;;      [:g
+;;       (shapes/render shape {:x x :y y :width width :height height})
+;;       [:g {:class "controls"}
+;;        [:rect {:x x :y y :width width :height height
+;;                :style {:stroke "black" :fill "transparent"
+;;                        :stroke-opacity "0.5"}}]
+;;        [:circle (merge default-selection-props
+;;                        {:cx x :cy y})]
+;;        [:circle (merge default-selection-props
+;;                        {:cx (+ x width) :cy y})]
+;;        [:circle (merge default-selection-props
+;;                        {:cx x :cy (+ y height)})]
+;;        [:circle (merge default-selection-props
+;;                        {:cx (+ x width) :cy (+ y height)})]]])))
 
 (def shape
   (util/component
