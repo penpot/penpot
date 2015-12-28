@@ -74,11 +74,13 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (println "add-shape")
-      (if-let [pageid (get-in state [:workspace :page])]
-        (update-in state [:pages-by-id pageid :shapes] conj
-                   (merge shape props))
-        state))
+      (let [id (random-uuid)
+            pageid (get-in state [:workspace :page])
+            _ (assert pageid)
+            shape (merge shape props {:id id})]
+        (as-> state $
+          (update-in $ [:pages-by-id pageid :shapes] conj id)
+          (update-in $ [:pages-by-id pageid :shapes-by-id] assoc id shape))))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
@@ -101,3 +103,29 @@
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.d.w/initialize>"))))
 
+(defn apply-delta
+  "Mark a shape selected for drawing in the canvas."
+  [shapeid [dx dy :as delta]]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      ;; (println "apply-delta" shapeid delta)
+      (let [pageid (get-in state [:workspace :page])
+            _ (assert pageid)
+            shape (get-in state [:pages-by-id pageid :shapes-by-id shapeid])]
+        (update-in state [:pages-by-id pageid :shapes-by-id shapeid] merge
+                   {:x (+ (:x shape) dx)
+                    :y (+ (:y shape) dy)})))))
+
+
+;; (defn apply-delta'
+;;   "Mark a shape selected for drawing in the canvas."
+;;   [shapeid [dx dy :as delta]]
+;;   (reify
+;;     rs/UpdateEvent
+;;     (-apply-update [_ state]
+;;       ;; (println "apply-delta'" shapeid delta)
+;;       (let [pageid (get-in state [:workspace :page])
+;;             shape (get-in state [:pages-by-id pageid :shapes-by-id shapeid])]
+;;         (update-in state [:pages-by-id pageid :shapes-by-id shapeid] merge
+;;                    {:x dx :y dy})))))

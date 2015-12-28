@@ -4,6 +4,7 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.data.projects :as dp]
+            [uxbox.data.workspace :as dw]
             [uxbox.util.lens :as ul]
             [uxbox.ui.util :as util]
             [goog.events :as events])
@@ -54,20 +55,57 @@
 ;; Mouse Position Stream
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (defn- coords-delta
-;;   [[old new]]
-;;   (let [[oldx oldy] old
-;;         [newx newy] new]
-;;     [(* 2 (- newx oldx))
-;;      (* 2 (- newy oldy))]))
+(def immediate-scheduler js/Rx.Scheduler.immediate)
+(def current-thread-scheduler js/Rx.Scheduler.currentThread)
 
-;; (def ^{:doc "A stream of mouse coordinate deltas as `[dx dy]` vectors."}
-;;   delta
-;;   (s/map coords-delta (s/partition 2 client-position)))
+(defn observe-on
+  [scheduler ob]
+  (.observeOn ob scheduler))
 
-(defonce mouse-bus (rx/bus))
-(defonce mouse-s (rx/dedupe mouse-bus))
-(defonce mouse-position (rx/to-atom (rx/throttle 50 mouse-s)))
+(defn subscribe-on
+  [scheduler ob]
+  (.subscribeOn ob scheduler))
+
+;; (defn window
+;;   [n ob]
+;;   (.windowWithCount ob n))
+
+(defonce selected-shape-b (rx/bus))
+
+(defonce mouse-b (rx/bus))
+(defonce mouse-s (rx/dedupe mouse-b))
+
+;; Deltas
+
+(defn- coords-delta
+  [[old new]]
+  (let [[oldx oldy] old
+        [newx newy] new]
+    [(- newx oldx)
+     (- newy oldy)]))
+
+(defonce mouse-delta-s
+  (->> mouse-s
+       (rx/sample 10)
+       (rx/buffer 2 1)
+       (rx/map coords-delta)))
+
+(defonce _subscription_
+  (as-> (rx/with-latest-from vector selected-shape-b mouse-delta-s) $
+    (rx/filter #(not= :nothing (second %)) $)
+    ;; (observe-on current-thread-scheduler $)
+    (rx/on-value $ (fn [[delta shape]]
+                     (rs/emit! (dw/apply-delta (:id shape) delta))))))
+
+  ;; (rx/on-value mouse-delta-s
+  ;;              (fn [val]
+  ;;                (println "delta" val))))
+
+;; Materialized views
+
+(defonce mouse-position (rx/to-atom (rx/sample 50 mouse-s)))
+;; (defonce mouse-position2 (rx/to-atom mouse-s))
+
 
 (defn- mouse-mixin-did-mount
   [own]
@@ -78,8 +116,8 @@
                   offset-y (.-top brect)
                   x (.-clientX event)
                   y (.-clientY event)]
-              (rx/push! mouse-bus [(- x offset-x)
-                                   (- y offset-y)])))]
+              (rx/push! mouse-b [(- x offset-x)
+                                 (- y offset-y)])))]
     (let [key (events/listen js/document EventType.MOUSEMOVE on-mousemove)]
       (js/console.log "mouse-mixin-did-mount" key)
       (assoc own ::eventkey key))))

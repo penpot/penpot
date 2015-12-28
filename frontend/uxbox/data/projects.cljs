@@ -63,6 +63,7 @@
                   :project project
                   :created (time/now :unix)
                   :shapes []
+                  :shapes-by-id {}
                   :name name
                   :width width
                   :height height}]

@@ -1,14 +1,16 @@
 (ns uxbox.ui.workspace.canvas
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [beicon.core :as rx]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.shapes :as shapes]
             [uxbox.library.icons :as _icons]
-            [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util]
             [uxbox.data.projects :as dp]
+            [uxbox.ui.mixins :as mx]
+            [uxbox.ui.dom :as dom]
+            [uxbox.ui.util :as util]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.rules :as wr]
             [uxbox.ui.workspace.toolboxes :as toolboxes]))
@@ -47,9 +49,33 @@
    :stroke "gray"})
 
 (defn- shape-render
-  [own shape]
+  [own {:keys [x y] :as shape}]
   (let [local (:rum/local own)]
-    (shapes/render shape)))
+    (html
+     [:g {
+          :on-mouse-down
+          (fn [event]
+            (println "mouse-down")
+            (rx/push! wb/selected-shape-b shape))
+
+          ;; :on-mouse-move
+          ;; (fn [event]
+          ;;   (when (:drop @local)
+          ;;     (println "mouse-move" @wb/mouse-position2)
+          ;;     (let [target (.-currentTarget event)
+          ;;           [nx ny] @wb/mouse-position2
+          ;;           svg (aget (.-childNodes target) 0)]
+          ;;       (.setAttribute svg "x" nx)
+          ;;       (.setAttribute svg "y" ny)))
+          ;;   false)
+
+          :on-mouse-up
+          (fn [event]
+            (println "mouse-up")
+            (rx/push! wb/selected-shape-b :nothing)
+            (dom/stop-propagation event))
+          }
+      (shapes/render shape)])))
 
 ;; (defn- shape-render
 ;;   [own shape]
@@ -78,7 +104,7 @@
   (util/component
    {:render shape-render
     :name "shape"
-    :mixins [mx/static]}))
+    :mixins [mx/static (mx/local {})]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas
@@ -106,13 +132,19 @@
        :ref "canvas"
        :width page-width
        :height page-height
+       :on-mouse-up
+       (fn [event]
+         (rx/push! wb/selected-shape-b :nothing)
+         (dom/stop-propagation event))
+
        ;; :on-mouse-down cs/on-mouse-down
        ;; :on-mouse-up cs/on-mouse-up
        }
       (background)
-      [:svg.page-layout
-       (for [item (:shapes page)]
-         (shape item))]
+      [:svg.page-layout {}
+       (for [shapeid (:shapes page)
+             :let [item (get-in page [:shapes-by-id shapeid])]]
+         (rum/with-key (shape item) (str shapeid)))]
       #_(apply vector :svg#page-layout (map shapes/shape->svg raw-shapes))
       #_(when-let [shape (rum/react drawing)]
           (shapes/shape->drawing-svg shape))
