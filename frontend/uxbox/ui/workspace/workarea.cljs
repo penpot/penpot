@@ -41,7 +41,7 @@
 (def ^:static grid-color "#cccccc")
 
 (defn grid-render
-  [own enabled? zoom]
+  [own zoom]
   (letfn [(vertical-line [position value padding]
             (let [ticks-mod (/ 100 zoom)
                   step-size (/ 10 zoom)]
@@ -85,6 +85,8 @@
     (let [padding (* 20 zoom)
           ticks-mod (/ 100 zoom)
           step-size (/ 10 zoom)
+          workspace (rum/react wb/workspace-state)
+          enabled? (:grid-enabled workspace false)
           vertical-ticks (range (- padding wb/document-start-y)
                                 (- wb/viewport-height wb/document-start-y padding)
                                 step-size)
@@ -107,7 +109,7 @@
   (util/component
    {:render grid-render
     :name "grid"
-    :mixins [mx/static]}))
+    :mixins [mx/static rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Viewport
@@ -116,15 +118,15 @@
 (defn viewport-render
   []
   (let [workspace (rum/react wb/workspace-state)
+        drawing? (:drawing workspace)
         zoom 1]
     (html
-     [:svg#viewport
-      {:width wb/viewport-height
-       :height wb/viewport-width}
-      [:g.zoom
-       {:transform (str "scale(" zoom ", " zoom ")")}
+     [:svg.viewport {:width wb/viewport-height
+                     :height wb/viewport-width
+                     :class (when drawing? "drawing")}
+      [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
        (wc/canvas)
-       (grid (:grid-enabled workspace false) zoom)]])))
+       (grid zoom)]])))
 
 (def viewport
   (util/component
