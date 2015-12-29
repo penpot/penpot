@@ -91,11 +91,10 @@
     (-apply-update [_ state]
       (assoc-in state [:workspace :selected] #{}))))
 
-;; TODO: validate shape
-
 (defn add-shape
   "Mark a shape selected for drawing in the canvas."
   [shape props]
+  (sc/validate! +shape-schema+ shape)
   (sc/validate! +shape-props-schema+ props)
   (reify
     rs/UpdateEvent

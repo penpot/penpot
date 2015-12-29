@@ -1,7 +1,8 @@
 (ns uxbox.schema
-  (:refer-clojure :exclude [keyword uuid])
+  (:refer-clojure :exclude [keyword uuid vector])
   (:require [bouncer.core :as b]
-            [bouncer.validators :as v]))
+            [bouncer.validators :as v]
+            [uxbox.shapes :refer (shape?)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Validators
