@@ -21,9 +21,7 @@
 ;; Api
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmulti -render
-  (fn [shape attrs]
-    (:type shape)))
+(declare -render)
 
 (defn render
   ([shape] (-render shape nil))
@@ -32,6 +30,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- dispatch-by-type
+  [shape props]
+  (:type shape))
+
+(defmulti -render
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
+(defmulti -move
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
 
 (defn transform-attrs
   [{:keys [view-box] :as data}]
@@ -65,3 +75,8 @@
      [:svg attrs
       [:image image]])))
 
+(defmethod -move ::shape
+  [shape {:keys [dx dy] :as opts}]
+  (assoc shape
+         :x (+ (:x shape) dx)
+         :y (+ (:y shape) dy)))

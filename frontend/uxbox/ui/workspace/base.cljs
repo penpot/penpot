@@ -91,8 +91,8 @@
   (as-> mouse-delta-s $
     (rx/filter #(deref shapes-dragging?) $)
     (rx/on-value $ (fn [delta]
-                     (doseq [id @selected-state]
-                       (rs/emit! (dw/apply-delta id delta)))))))
+                     (doseq [sid @selected-state]
+                       (rs/emit! (dw/move-shape sid delta)))))))
 
 ;; Materialized views
 

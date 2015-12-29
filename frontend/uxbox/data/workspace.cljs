@@ -1,10 +1,11 @@
 (ns uxbox.data.workspace
-  (:require [uxbox.rstore :as rs]
+  (:require [bouncer.validators :as v]
+            [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
             [uxbox.time :as time]
-            [bouncer.validators :as v]))
+            [uxbox.shapes :as shapes]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Schemas
@@ -127,14 +128,11 @@
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.d.w/initialize>"))))
 
-(defn apply-delta
+(defn move-shape
   "Mark a shape selected for drawing in the canvas."
   [sid [dx dy :as delta]]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (update-in state [:shapes-by-id sid] merge
-                   {:x (+ (:x shape) dx)
-                    :y (+ (:y shape) dy)})))))
-
+        (update-in state [:shapes-by-id sid] shapes/-move {:dx dx :dy dy})))))
