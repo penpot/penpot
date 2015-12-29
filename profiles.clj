@@ -46,7 +46,7 @@
                   [cljsjs/react-dom "0.14.3-1"]
                   [cljsjs/react-dom-server "0.14.3-0"]
 
-                  [bouncer "0.3.3"]
+                  [bouncer "1.0.0"]
                   [funcool/promesa "0.6.0"]
                   [funcool/beicon "0.5.0"]
                   [cljsjs/moment "2.10.6-0"]
