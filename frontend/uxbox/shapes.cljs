@@ -3,6 +3,21 @@
             [uxbox.util.data :refer (remove-nil-vals)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Types
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:static ^:private +hierarchy+
+  (as-> (make-hierarchy) $
+    (derive $ :builtin/icon ::shape)
+    (derive $ :builtin/icon-svg ::shape)
+    (derive $ :builtin/icon-group ::shape)))
+
+(defn shape?
+  [type]
+  {:pre [(keyword? type)]}
+  (isa? +hierarchy+ type ::shape))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Api
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
