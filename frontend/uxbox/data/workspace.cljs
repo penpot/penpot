@@ -16,6 +16,13 @@
    :width [v/required v/integer]
    :height [v/required v/integer]})
 
+(def ^:static +shape-schema+
+  {:x [v/integer]
+   :y [v/integer]
+   :width [v/integer]
+   :height [v/integer]
+   :type [v/required sc/shape-type]})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
