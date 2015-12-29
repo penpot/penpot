@@ -27,6 +27,14 @@
                         (dp/project-pages % pid))) $
     (l/focus-atom $ s/state)))
 
+(def ^:static shapes-state
+  (as-> (ul/getter (fn [state]
+                     (let [pid (get-in state [:workspace :page])
+                           shapes (->> (vals (:shapes-by-id state))
+                                       (filter #(= (:page %) pid)))]
+                       (into [] shapes)))) $
+    (l/focus-atom $ s/state)))
+
 (def ^:static workspace-state
   (as-> (l/in [:workspace]) $
     (l/focus-atom $ s/state)))

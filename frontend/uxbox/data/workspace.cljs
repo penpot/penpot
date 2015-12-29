@@ -93,13 +93,12 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [id (random-uuid)
-            pageid (get-in state [:workspace :page])
-            _ (assert pageid)
-            shape (merge shape props {:id id})]
+      (let [sid (random-uuid)
+            pid (get-in state [:workspace :page])
+            shape (merge shape props {:id sid :page pid})]
         (as-> state $
-          (update-in $ [:pages-by-id pageid :shapes] conj id)
-          (update-in $ [:pages-by-id pageid :shapes-by-id] assoc id shape))))
+          (update-in $ [:pages-by-id pid :shapes] conj sid)
+          (assoc-in $ [:shapes-by-id sid] shape))))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
@@ -124,14 +123,12 @@
 
 (defn apply-delta
   "Mark a shape selected for drawing in the canvas."
-  [shapeid [dx dy :as delta]]
+  [sid [dx dy :as delta]]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      ;; (println "apply-delta" shapeid delta)
-      (let [pageid (get-in state [:workspace :page])
-            shape (get-in state [:pages-by-id pageid :shapes-by-id shapeid])]
-        (update-in state [:pages-by-id pageid :shapes-by-id shapeid] merge
+      (let [shape (get-in state [:shapes-by-id sid])]
+        (update-in state [:shapes-by-id sid] merge
                    {:x (+ (:x shape) dx)
                     :y (+ (:y shape) dy)})))))
 

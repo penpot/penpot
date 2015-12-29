@@ -16,14 +16,22 @@
   to the state map."
   [state color-coll]
   (let [uuid (:id color-coll)]
-    (update-in state [:colors-by-id] assoc uuid color-coll)))
+    (update state :colors-by-id assoc uuid color-coll)))
+
+(defn assoc-shape
+  [state shape]
+  (let [id (:id shape)]
+    (update state :shapes-by-id assoc id shape)))
 
 (defn persist-state
   [state]
   (let [pages (into #{} (vals (:pages-by-id state)))
         projects (into #{} (vals (:projects-by-id state)))
+        shapes (into #{} (vals (:shapes-by-id state)))
         color-colls (into #{} (vals (:colors-by-id state)))]
+
     (assoc! local-storage :data {:pages pages
+                                 :shapes shapes
                                  :projects projects
                                  :color-collections color-colls})))
 
@@ -41,6 +49,7 @@
         (as-> state $
           (reduce dp/assoc-project $ (:projects data))
           (reduce dp/assoc-page $ (:pages data))
-          (reduce assoc-color $ (:color-collections data)))
+          (reduce assoc-color $ (:color-collections data))
+          (reduce assoc-shape $ (:shapes data)))
         state))))
 

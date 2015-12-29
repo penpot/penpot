@@ -9,6 +9,7 @@
                    :avatar "http://lorempixel.com/50/50/"}
             :dashboard {}
             :workspace {}
+            :shapes-by-id {}
             :elements-by-id {}
             :colors-by-id {}
             :icons-by-id {}

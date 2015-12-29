@@ -126,6 +126,7 @@
 (defn canvas-render
   []
   (let [page (rum/react wb/page-state)
+        shapes (rum/react wb/shapes-state)
         page-width (:width page)
         page-height (:height page)]
     (html
@@ -150,9 +151,8 @@
       (grid 1)
 
       [:svg.page-layout {}
-       (for [shapeid (:shapes page)
-             :let [item (get-in page [:shapes-by-id shapeid])]]
-         (rum/with-key (shape item) (str shapeid)))]])))
+       (for [item shapes]
+         (rum/with-key (shape item) (str (:id item))))]])))
 
 (def canvas
   (util/component

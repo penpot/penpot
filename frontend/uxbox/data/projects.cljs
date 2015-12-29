@@ -1,10 +1,11 @@
 (ns uxbox.data.projects
-  (:require [uxbox.rstore :as rs]
+  (:require [bouncer.validators :as v]
+            [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
             [uxbox.time :as time]
-            [bouncer.validators :as v]))
+            [uxbox.util.data :refer (without-keys)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Schemas
@@ -63,7 +64,6 @@
                   :project project
                   :created (time/now :unix)
                   :shapes []
-                  :shapes-by-id {}
                   :name name
                   :width width
                   :height height}]
@@ -89,7 +89,10 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:pages-by-id] dissoc pageid))
+      (let [shapeids (get-in state [:pages-by-id pageid :shapes])]
+        (as-> state $
+          (update $ :shapes-by-id without-keys shapeids)
+          (update $ :pages-by-id dissoc pageid))))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
@@ -106,8 +109,7 @@
                     :name name
                     :width width
                     :created (time/now :unix)
-                    :height height
-                    :layout layout}]
+                    :height height}]
           (assoc-project state proj)))
 
       rs/EffectEvent
@@ -116,7 +118,6 @@
                                 :width width
                                 :height height
                                 :project uuid})))
-
       IPrintWithWriter
       (-pr-writer [mv writer _]
         (-write writer "#<event:u.s.p/create-project>")))))
