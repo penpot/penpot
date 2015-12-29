@@ -13,7 +13,7 @@
             [uxbox.ui.dom :as dom]
             [uxbox.ui.util :as util]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.rules :as wr]
+            [uxbox.ui.workspace.grid :refer (grid)]
             [uxbox.ui.workspace.toolboxes :as toolboxes]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -147,6 +147,8 @@
          (reset! wb/shapes-dragging? false))
        }
       (background)
+      (grid 1)
+
       [:svg.page-layout {}
        (for [shapeid (:shapes page)
              :let [item (get-in page [:shapes-by-id shapeid])]]

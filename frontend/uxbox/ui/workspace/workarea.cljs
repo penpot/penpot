@@ -42,7 +42,7 @@
                      :class (when drawing? "drawing")}
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
        (canvas)
-       (grid zoom)]])))
+       #_(grid zoom)]])))
 
 (def viewport
   (util/component

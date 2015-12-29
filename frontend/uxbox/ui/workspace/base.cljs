@@ -127,8 +127,8 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def viewport-height  3000)
-(def viewport-width 3000)
+(def viewport-height  2048)
+(def viewport-width 2048)
 
 (def document-start-x 50)
 (def document-start-y 50)
