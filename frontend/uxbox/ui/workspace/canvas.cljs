@@ -129,30 +129,25 @@
         shapes (rum/react wb/shapes-state)
         page-width (:width page)
         page-height (:height page)]
-    (html
-     [:svg.page-canvas
-      {:x wb/document-start-x
-       :y wb/document-start-y
-       :ref "canvas"
-       :width page-width
-       :height page-height
-
-       :on-mouse-down
-       (fn [event]
-         (dom/stop-propagation event)
-         (rs/emit! (dw/deselect-all)))
-
-       :on-mouse-up
-       (fn [event]
-         (dom/stop-propagation event)
-         (reset! wb/shapes-dragging? false))
-       }
-      (background)
-      (grid 1)
-
-      [:svg.page-layout {}
-       (for [item shapes]
-         (rum/with-key (shape item) (str (:id item))))]])))
+    (letfn [(on-mouse-down [event]
+              (dom/stop-propagation event)
+              (rs/emit! (dw/deselect-all)))
+            (on-mouse-up [event]
+              (dom/stop-propagation event)
+              (reset! wb/shapes-dragging? false))]
+      (html
+       [:svg.page-canvas {:x wb/document-start-x
+                          :y wb/document-start-y
+                          :ref "canvas"
+                          :width page-width
+                          :height page-height
+                          :on-mouse-down on-mouse-down
+                          :on-mouse-up on-mouse-up}
+        (background)
+        (grid 1)
+        [:svg.page-layout {}
+         (for [item shapes]
+           (rum/with-key (shape item) (str (:id item))))]]))))
 
 (def canvas
   (util/component
