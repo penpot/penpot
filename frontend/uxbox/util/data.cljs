@@ -22,6 +22,13 @@
   [data]
   (into {} (remove (comp nil? second) data)))
 
+(defn without-keys
+  "Return a map without the keys provided
+  in the `keys` parameter."
+  [data keys]
+  (persistent!
+   (reduce #(dissoc! %1 %2) (transient data) keys)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numbers Parsing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
