@@ -127,6 +127,9 @@
   []
   (let [page (rum/react wb/page-state)
         shapes (rum/react wb/shapes-state)
+        selected-ids (rum/react wb/selected-state)
+        selected (filter (comp selected-ids :id) shapes)
+        nonselected (filter (comp not selected-ids :id) shapes)
         page-width (:width page)
         page-height (:height page)]
     (letfn [(on-mouse-down [event]
@@ -146,8 +149,12 @@
         (background)
         (grid 1)
         [:svg.page-layout {}
-         (for [item shapes]
-           (rum/with-key (shape item) (str (:id item))))]]))))
+         (for [item nonselected]
+           (rum/with-key (shape item) (str (:id item))))
+         (if (seq selected)
+           [:g.selected
+            (for [item selected]
+              (rum/with-key (shape item) (str (:id item))))])]]))))
 
 (def canvas
   (util/component
