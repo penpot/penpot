@@ -55,24 +55,25 @@
   (select-keys shape [:width :height :view-box :x :y :cx :cy]))
 
 (defmethod -render :builtin/icon
-  [{:keys [data] :as shape} attrs]
+  [{:keys [data id] :as shape} attrs]
   (let [attrs (as-> shape $
                 (extract-attrs $)
                 (remove-nil-vals $)
                 (merge $ attrs)
                 (transform-attrs $))]
     (html
-     [:svg attrs data])))
+     [:svg (merge attrs {:key (str id)})
+      data])))
 
 (defmethod -render :builtin/icon-svg
-  [{:keys [image] :as shape} attrs]
+  [{:keys [image id] :as shape} attrs]
   (let [attrs (as-> shape $
                 (extract-attrs $)
                 (remove-nil-vals $)
                 (merge $ attrs)
                 (transform-attrs $))]
     (html
-     [:svg attrs
+     [:svg (merge attrs {:key (str id)})
       [:image image]])))
 
 (defmethod -move ::shape
