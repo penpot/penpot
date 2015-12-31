@@ -49,74 +49,93 @@
    :fill "lavender"
    :stroke "gray"})
 
-(defn- shape-render
+(defn shape-render
   [own {:keys [id x y width height] :as shape}]
-  (let [local (:rum/local own)
-        selected (rum/react wb/selected-state)]
-    (html
-     [:g {
-          :on-mouse-down
-          (fn [event]
-            (dom/stop-propagation event)
-            (swap! local assoc :init-coords [x y])
-            (reset! wb/shapes-dragging? true))
-
-          :on-click
-          (fn [event]
-            (when (= (:init-coords @local) [x y])
-              (if (.-ctrlKey event)
+  (let [selected (rum/react wb/selected-state)
+        selected? (contains? selected id)]
+    (letfn [(on-mouse-down [event]
+              (let [local (:rum/local own)]
+                (dom/stop-propagation event)
+                (swap! local assoc :init-coords [x y])
+                (reset! wb/shapes-dragging? true))
+              (cond
+                (and (not selected?)
+                     (empty? selected))
                 (rs/emit! (dw/select-shape id))
-                (rs/emit! (dw/deselect-all)
-                          (dw/select-shape id)))))
 
-          :on-mouse-up
-          (fn [event]
-            (dom/stop-propagation event)
-            (reset! wb/shapes-dragging? false))
-          }
-      (shapes/render shape)
-      (if (contains? selected id)
-        [:g {:class "controls"}
-         [:rect {:x x :y y :width width :height height
-                 :style {:stroke "black" :fill "transparent"
+                (and (not selected?)
+                     (not (empty? selected)))
+                (if (.-ctrlKey event)
+                  (rs/emit! (dw/select-shape id))
+                  (rs/emit! (dw/deselect-all)
+                            (dw/select-shape id)))))
+            (on-mouse-up [event]
+              (dom/stop-propagation event)
+              (reset! wb/shapes-dragging? false))]
+      (html
+       [:g {:on-mouse-down on-mouse-down
+            :on-mouse-up on-mouse-up}
+        (shapes/render shape)
+        (if selected?
+          [:g {:class "controls"}
+           [:rect {:x x :y y :width width :height height
+                   :style {:stroke "black" :fill "transparent"
                          :stroke-opacity "0.5"}}]
-         [:circle (merge default-selection-props
-                         {:cx x :cy y})]
-         [:circle (merge default-selection-props
-                         {:cx (+ x width) :cy y})]
-         [:circle (merge default-selection-props
-                         {:cx x :cy (+ y height)})]
-         [:circle (merge default-selection-props
-                         {:cx (+ x width) :cy (+ y height)})]])])))
-
-
-;; (defn- shape-render
-;;   [own shape]
-;;   (let [local (:rum/local own)
-;;         x 30
-;;         y 30
-;;         width 100
-;;         height 100]
-;;     (html
-;;      [:g
-;;       (shapes/render shape {:x x :y y :width width :height height})
-;;       [:g {:class "controls"}
-;;        [:rect {:x x :y y :width width :height height
-;;                :style {:stroke "black" :fill "transparent"
-;;                        :stroke-opacity "0.5"}}]
-;;        [:circle (merge default-selection-props
-;;                        {:cx x :cy y})]
-;;        [:circle (merge default-selection-props
-;;                        {:cx (+ x width) :cy y})]
-;;        [:circle (merge default-selection-props
-;;                        {:cx x :cy (+ y height)})]
-;;        [:circle (merge default-selection-props
-;;                        {:cx (+ x width) :cy (+ y height)})]]])))
+           [:circle (merge default-selection-props
+                           {:cx x :cy y})]
+           [:circle (merge default-selection-props
+                           {:cx (+ x width) :cy y})]
+           [:circle (merge default-selection-props
+                           {:cx x :cy (+ y height)})]
+           [:circle (merge default-selection-props
+                           {:cx (+ x width) :cy (+ y height)})]])]))))
 
 (def shape
   (util/component
    {:render shape-render
     :name "shape"
+    :mixins [mx/static rum/reactive (mx/local {})]}))
+
+(defn- selected-shapes-render
+  [own shapes]
+  (let [selected (rum/react wb/selected-state)
+        local (:rum/local own)
+        x (apply min (map :x shapes))
+        y (apply min (map :y shapes))
+        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
+        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
+        width (- x' x)
+        height (- y' y)]
+    (letfn [(on-mouse-down [event]
+              (dom/stop-propagation event)
+              (swap! local assoc :init-coords [x y])
+              (reset! wb/shapes-dragging? true))
+            (on-mouse-up [event]
+              (dom/stop-propagation event)
+              (reset! wb/shapes-dragging? false))]
+      (html
+       [:g.selected
+        {:on-mouse-down on-mouse-down
+         :on-mouse-up on-mouse-up}
+        (for [item shapes]
+          (shapes/render item))
+        [:g {:class "controls"}
+         [:rect {:x x :y y :width width :height height
+                 :style {:stroke "black" :fill "transparent"
+                         :stroke-opacity "0.5"}}]
+         [:circle (merge default-selection-props
+                       {:cx x :cy y})]
+         [:circle (merge default-selection-props
+                         {:cx (+ x width) :cy y})]
+         [:circle (merge default-selection-props
+                         {:cx x :cy (+ y height)})]
+         [:circle (merge default-selection-props
+                         {:cx (+ x width) :cy (+ y height)})]]]))))
+
+(def selected-shapes
+  (util/component
+   {:render selected-shapes-render
+    :name "selected-shapes"
     :mixins [mx/static rum/reactive (mx/local {})]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -151,10 +170,14 @@
         [:svg.page-layout {}
          (for [item nonselected]
            (rum/with-key (shape item) (str (:id item))))
-         (if (seq selected)
-           [:g.selected
-            (for [item selected]
-              (rum/with-key (shape item) (str (:id item))))])]]))))
+
+
+         (cond
+           (= (count selected) 1)
+           (shape (first selected))
+
+           (> (count selected) 1)
+           (selected-shapes selected))]]))))
 
 (def canvas
   (util/component
