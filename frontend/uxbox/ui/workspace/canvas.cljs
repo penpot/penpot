@@ -40,8 +40,7 @@
   selection-circle-style
   {:fillOpacity "0.5"
    :strokeWidth "1px"
-   :vectorEffect "non-scaling-stroke"
-   :cursor "move"})
+   :vectorEffect "non-scaling-stroke"})
 
 (def ^:private
   default-selection-props
@@ -73,22 +72,23 @@
               (dom/stop-propagation event)
               (reset! wb/shapes-dragging? false))]
       (html
-       [:g {:on-mouse-down on-mouse-down
-            :on-mouse-up on-mouse-up}
+       [:g.shape {:class (when selected? "selected")
+                  :on-mouse-down on-mouse-down
+                  :on-mouse-up on-mouse-up}
         (shapes/render shape)
         (if selected?
-          [:g {:class "controls"}
+          [:g.controls
            [:rect {:x x :y y :width width :height height
                    :style {:stroke "black" :fill "transparent"
                          :stroke-opacity "0.5"}}]
-           [:circle (merge default-selection-props
-                           {:cx x :cy y})]
-           [:circle (merge default-selection-props
-                           {:cx (+ x width) :cy y})]
-           [:circle (merge default-selection-props
-                           {:cx x :cy (+ y height)})]
-           [:circle (merge default-selection-props
-                           {:cx (+ x width) :cy (+ y height)})]])]))))
+           [:circle.top-left (merge default-selection-props
+                                    {:cx x :cy y})]
+           [:circle.top-right (merge default-selection-props
+                                     {:cx (+ x width) :cy y})]
+           [:circle.bottom-left (merge default-selection-props
+                                       {:cx x :cy (+ y height)})]
+           [:circle.bottom-right (merge default-selection-props
+                                        {:cx (+ x width) :cy (+ y height)})]])]))))
 
 (def shape
   (util/component
@@ -114,23 +114,23 @@
               (dom/stop-propagation event)
               (reset! wb/shapes-dragging? false))]
       (html
-       [:g.selected
-        {:on-mouse-down on-mouse-down
-         :on-mouse-up on-mouse-up}
+       [:g {:class "shape selected"
+            :on-mouse-down on-mouse-down
+            :on-mouse-up on-mouse-up}
         (for [item shapes]
           (shapes/render item))
-        [:g {:class "controls"}
+        [:g.controls
          [:rect {:x x :y y :width width :height height
                  :style {:stroke "black" :fill "transparent"
                          :stroke-opacity "0.5"}}]
-         [:circle (merge default-selection-props
-                       {:cx x :cy y})]
-         [:circle (merge default-selection-props
-                         {:cx (+ x width) :cy y})]
-         [:circle (merge default-selection-props
-                         {:cx x :cy (+ y height)})]
-         [:circle (merge default-selection-props
-                         {:cx (+ x width) :cy (+ y height)})]]]))))
+         [:circle.top-left (merge default-selection-props
+                                  {:cx x :cy y})]
+         [:circle.top-right (merge default-selection-props
+                                   {:cx (+ x width) :cy y})]
+         [:circle.bottom-left (merge default-selection-props
+                                     {:cx x :cy (+ y height)})]
+         [:circle.bottom-right (merge default-selection-props
+                                      {:cx (+ x width) :cy (+ y height)})]]]))))
 
 (def selected-shapes
   (util/component

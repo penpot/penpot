@@ -14,9 +14,20 @@
     &.drawing {
       cursor: cell;
     }
+
+    g.shape {
+      &.selected {
+        circle.top-left { cursor: nwse-resize; }
+        circle.bottom-right { cursor: nwse-resize; }
+        circle.top-right { cursor: nesw-resize; }
+        circle.bottom-left { cursor: nesw-resize; }
+      }
+    }
   }
 
   .viewport, .page-canvas, .page-layout {
     overflow: visible;
   }
+
+
 }
