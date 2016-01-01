@@ -69,6 +69,9 @@
 
 (defonce shapes-dragging? (atom false))
 
+(defonce selrect-dragging? (atom false))
+(defonce selrect-pos (atom nil))
+
 (defonce mouse-b (rx/bus))
 (defonce mouse-s (rx/dedupe mouse-b))
 
@@ -93,6 +96,47 @@
     (rx/on-value $ (fn [delta]
                      (doseq [sid @selected-state]
                        (rs/emit! (dw/move-shape sid delta)))))))
+
+(defn selrect->rect
+  [data]
+  (let [start (:start data)
+        current (:current data )
+        start-x (min (first start) (first current))
+        start-y (min (second start) (second current))
+        current-x (max (first start) (first current))
+        current-y (max (second start) (second current))
+        width (- current-x start-x)
+        height (- current-y start-y)]
+    {:x start-x
+     :y start-y
+     :width (- current-x start-x)
+     :height (- current-y start-y)}))
+
+(defonce $$selrect-subscription-0$$
+  (let [ss (as-> (rx/from-atom selrect-dragging?) $
+             (rx/dedupe $)
+             (rx/merge $ (rx/of false))
+             (rx/buffer 2 1 $)
+             (rx/share $))]
+    (as-> ss $
+      (rx/filter #(= (vec %) [false true]) $)
+      (rx/with-latest-from vector mouse-s $)
+      (rx/on-value $ (fn [[_ pos]]
+                       (swap! selrect-pos assoc
+                              :start pos
+                              :current pos))))
+    (as-> ss $
+      (rx/filter #(= (vec %) [true false]) $)
+      (rx/on-value $ (fn []
+                       (let [selrect (selrect->rect @selrect-pos)]
+                         (rs/emit! (dw/select-shapes selrect))
+                         (reset! selrect-pos nil)))))))
+
+(defonce $$selrect-subscription-1$$
+  (as-> mouse-s $
+    (rx/filter #(deref selrect-dragging?) $)
+    (rx/on-value $ (fn [pos]
+                     (swap! selrect-pos assoc :current pos)))))
 
 ;; Materialized views
 
