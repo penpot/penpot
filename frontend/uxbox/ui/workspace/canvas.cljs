@@ -138,12 +138,34 @@
     :name "selected-shapes"
     :mixins [mx/static rum/reactive (mx/local {})]}))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Select Rect
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn selrect-render
+  [own]
+  (when-let [data (rum/react wb/selrect-pos)]
+    (let [{:keys [x y width height]} (wb/selrect->rect data)]
+      (html
+       [:rect.selection-rect
+        {:x x
+         :y y
+         :width width
+         :height height}]))))
+
+(def ^:static selrect
+  (util/component
+   {:render selrect-render
+    :name "selrect"
+    :mixins [mx/static rum/reactive]}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn canvas-render
-  []
+  [own]
   (let [page (rum/react wb/page-state)
         shapes (rum/react wb/shapes-state)
         selected-ids (rum/react wb/selected-state)
