@@ -175,10 +175,13 @@
         page-height (:height page)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
-              (rs/emit! (dw/deselect-all)))
+              (when-not (empty? selected-ids)
+                (rs/emit! (dw/deselect-all)))
+              (reset! wb/selrect-dragging? true))
             (on-mouse-up [event]
               (dom/stop-propagation event)
-              (reset! wb/shapes-dragging? false))]
+              (reset! wb/shapes-dragging? false)
+              (reset! wb/selrect-dragging? false))]
       (html
        [:svg.page-canvas {:x wb/document-start-x
                           :y wb/document-start-y
@@ -192,14 +195,14 @@
         [:svg.page-layout {}
          (for [item nonselected]
            (rum/with-key (shape item) (str (:id item))))
-
-
          (cond
            (= (count selected) 1)
            (shape (first selected))
 
            (> (count selected) 1)
-           (selected-shapes selected))]]))))
+           (selected-shapes selected))
+
+         (selrect)]]))))
 
 (def canvas
   (util/component
