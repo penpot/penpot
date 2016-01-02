@@ -141,8 +141,6 @@
 ;; Materialized views
 
 (defonce mouse-position (rx/to-atom (rx/sample 50 mouse-s)))
-;; (defonce mouse-position2 (rx/to-atom mouse-s))
-
 
 (defn- mouse-mixin-did-mount
   [own]

@@ -62,8 +62,7 @@
                 (merge $ attrs)
                 (transform-attrs $))]
     (html
-     [:svg (merge attrs {:key (str id)})
-      data])))
+     [:svg (merge attrs {:key (str id)}) data])))
 
 (defmethod -render :builtin/icon-svg
   [{:keys [image id] :as shape} attrs]
