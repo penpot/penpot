@@ -18,12 +18,12 @@
 
 (def ^:private +external+
   [{:name "Custon icon"
-    :view-box [0 0 50 50]
+    :view-box [0 0 48 48]
     :id (gensym "icon")
     :type :builtin/icon-svg
     :image {:xlink-href "http://s.cdpn.io/3/kiwi.svg"
-            :width 50
-            :height 50}}])
+            :width 48
+            :height 48}}])
 
 (def +collections+
   [{:name "Material design (actions)"
