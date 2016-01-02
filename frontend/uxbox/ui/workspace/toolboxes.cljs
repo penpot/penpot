@@ -133,20 +133,20 @@
       [:div.tool-window-bar
        [:div.tool-window-icon i/window]
        [:span "Icons"]
-       [:div.tool-window-close
-        {:on-click on-close} i/close]]
+       [:div.tool-window-close {:on-click on-close} i/close]]
       [:div.tool-window-content
        [:div.figures-catalog
         ;; extract component: set selector
-        [:select.input-select.small
-         {:on-change on-change :value collid} ; TODO: maybe missing pr-str
+        [:select.input-select.small {:on-change on-change
+                                     :value collid}
          (for [icon-coll library/+icon-collections+]
            [:option {:key (str "icon-coll" (:id icon-coll))
                      :value (pr-str (:id icon-coll))}
             (:name icon-coll)])]]
        (for [icon icons
              :let [selected? (= (:drawing workspace) icon)]]
-         [:div.figure-btn {:class (when selected? "selected")
+         [:div.figure-btn {:key (str (:id icon))
+                           :class (when selected? "selected")
                            :on-click #(on-select icon)}
           (shapes/render icon)])]])))
 
