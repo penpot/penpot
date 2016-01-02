@@ -11,7 +11,8 @@
             [uxbox.ui.dashboard :as dashboard]
             [uxbox.ui.workspace :refer (workspace)]
             [uxbox.ui.util :as util]
-            [uxbox.ui.mixins :as mx]))
+            [uxbox.ui.mixins :as mx]
+            [uxbox.ui.shapes]))
 
 (def ^:static state
   (as-> (l/select-keys [:location :location-params]) $
