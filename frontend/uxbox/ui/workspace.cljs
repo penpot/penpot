@@ -27,8 +27,8 @@
      [:div {:style {:position "absolute" :left "80px" :top "20px"}}
       [:table
        [:tbody
-        [:tr [:td "X:"] [:td x]]
-        [:tr [:td "Y:"] [:td y]]]]])))
+        [:tr [:td "x="] [:td x]]
+        [:tr [:td "y="] [:td y]]]]])))
 
 (def coordinates
   (util/component
