@@ -15,12 +15,21 @@
       cursor: cell;
     }
 
-    g.shape {
-      &.selected {
-        circle.top-left { cursor: nwse-resize; }
-        circle.bottom-right { cursor: nwse-resize; }
-        circle.top-right { cursor: nesw-resize; }
-        circle.bottom-left { cursor: nesw-resize; }
+    svg {
+      g.shape {
+        &.selected {
+          circle.top-left { cursor: nwse-resize; }
+          circle.bottom-right { cursor: nwse-resize; }
+          circle.top-right { cursor: nesw-resize; }
+          circle.bottom-left { cursor: nesw-resize; }
+        }
+      }
+
+      rect.selection-rect {
+        fill: rgba(235, 215, 92, 0.1);
+        stroke: #000000;
+        stroke-width: 0.1px;
+
       }
     }
   }
