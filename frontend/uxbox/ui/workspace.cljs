@@ -1,13 +1,15 @@
 (ns uxbox.ui.workspace
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [cats.labs.lens :as l]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
-            [uxbox.state :as s]
+            [uxbox.state :as st]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.options :refer (element-opts)]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.lateralmenu :refer (lateralmenu)]
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
@@ -62,12 +64,11 @@
         ;; Canvas
         [:section.workspace-canvas {:class (when no-toolbars? "no-tool-bar")
                                     :on-scroll (constantly nil)}
-         #_(when (:selected page)
-             (element-options conn
-                              page-cursor
-                              project-cursor
-                              zoom-cursor
-                              shapes-cursor))
+         (when (and (:selected workspace)
+                    (= (count (:selected workspace)) 1))
+           (let [shape-id (first (:selected workspace))
+                 shape (l/focus-atom (l/in [:shapes-by-id shape-id]) st/state)]
+             (element-opts shape)))
          (coordinates)
          (viewport)]]
 
