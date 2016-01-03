@@ -22,23 +22,27 @@
 
 (defn- cursored-did-mount
   [state]
-  (doseq [v (:rum/props state)
-          :when (satisfies? IWatchable v)]
-    (add-watch v (cursored-key state)
-               (fn [_ _ _ _]
-                 (rum/request-render (:rum/react-component state)))))
-  state)
+  (let [key (gensym "foobar")]
+    (doseq [v (:rum/props state)
+            :when (satisfies? IWatchable v)]
+      (add-watch v key
+                 (fn [_ _ _ _]
+                   (rum/request-render (:rum/react-component state)))))
+    (assoc state ::key key)))
 
-(defn- cursored-will-umount
+(defn- cursored-will-unmount
   [state]
-  (doseq [v (:rum/props state)
-          :when (satisfies? IWatchable v)]
-    (remove-watch v (cursored-key state)))
-  state)
+  (let [key (::key state)]
+    (doseq [v (:rum/props state)
+            :when (satisfies? IWatchable v)]
+      (remove-watch v key))
+    (dissoc state ::key)))
 
 (defn- cursored-transfer-state
   [old new]
-  (assoc new :rum/old-props (:rum/old-props old)))
+  (assoc new
+         :rum/old-props (:rum/old-props old)
+         ::key (::key old)))
 
 (defn- cursored-should-update
   [old-state new-state]
@@ -51,14 +55,13 @@
       [dom (assoc next-state :rum/old-props (deref-props (:rum/props state)))])))
 
 (def cursored
-  "A cursor like mixin that works with
-  the `component` sugar syntax and lenses
-  from the cats library."
-  {:did-mount cursored-did-mount
-   :will-unmount cursored-will-umount
-   :transfer-state cursored-transfer-state
+  {:transfer-state cursored-transfer-state
    :should-update cursored-should-update
    :wrap-render cursored-wrap-render})
+
+(def cursored-watch
+  {:did-mount cursored-did-mount
+   :will-unmount cursored-will-unmount})
 
 (defn local
   "Adds an atom to component’s state that can be used as local state.
