@@ -64,7 +64,6 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (println "select-for-drawing" shape)
       (if shape
         (assoc-in state [:workspace :drawing] shape)
         (update-in state [:workspace] dissoc :drawing)))
@@ -111,7 +110,6 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (println "select-shapes" selrect)
       (let [pid (get-in state [:workspace :page])
             shapes (->> (vals (:shapes-by-id state))
                         (filter #(= (:page %) pid))
