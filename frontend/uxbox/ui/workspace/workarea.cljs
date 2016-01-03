@@ -33,6 +33,7 @@
 (defn viewport-render
   [own]
   (let [workspace (rum/react wb/workspace-state)
+        page (rum/react wb/page-state)
         drawing? (:drawing workspace)
         zoom 1]
     (html
@@ -41,8 +42,8 @@
                      :on-click #(on-click % workspace)
                      :class (when drawing? "drawing")}
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
-       (canvas)
-       #_(grid zoom)]])))
+       (if page
+         (canvas page))]])))
 
 (def viewport
   (util/component

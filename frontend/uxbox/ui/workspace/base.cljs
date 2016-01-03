@@ -2,7 +2,7 @@
   (:require [beicon.core :as rx]
             [cats.labs.lens :as l]
             [uxbox.rstore :as rs]
-            [uxbox.state :as s]
+            [uxbox.state :as st]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
             [uxbox.util.lens :as ul]
@@ -16,32 +16,20 @@
 
 (def ^:static project-state
   (as-> (ul/dep-in [:projects-by-id] [:workspace :project]) $
-    (l/focus-atom $ s/state)))
+    (l/focus-atom $ st/state)))
 
 (def ^:static page-state
   (as-> (ul/dep-in [:pages-by-id] [:workspace :page]) $
-    (l/focus-atom $ s/state)))
+    (l/focus-atom $ st/state)))
 
 (def ^:static pages-state
   (as-> (ul/getter #(let [pid (get-in % [:workspace :project])]
                         (dp/project-pages % pid))) $
-    (l/focus-atom $ s/state)))
-
-(def ^:static shapes-state
-  (as-> (ul/getter (fn [state]
-                     (let [pid (get-in state [:workspace :page])
-                           shapes (->> (vals (:shapes-by-id state))
-                                       (filter #(= (:page %) pid)))]
-                       (into [] shapes)))) $
-    (l/focus-atom $ s/state)))
+    (l/focus-atom $ st/state)))
 
 (def ^:static workspace-state
   (as-> (l/in [:workspace]) $
-    (l/focus-atom $ s/state)))
-
-(def ^:static selected-state
-  (as-> (l/in [:workspace :selected]) $
-    (l/focus-atom $ s/state)))
+    (l/focus-atom $ st/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scroll Stream
@@ -68,12 +56,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce shapes-dragging? (atom false))
-
 (defonce selrect-dragging? (atom false))
 (defonce selrect-pos (atom nil))
 
 (defonce mouse-b (rx/bus))
-(defonce mouse-s (rx/dedupe mouse-b))
+(defonce mouse-s
+  (->> mouse-b
+       (rx/filter #(= (:id %) (:id @page-state)))
+       (rx/map :coords)))
 
 ;; Deltas
 
@@ -94,8 +84,11 @@
   (as-> mouse-delta-s $
     (rx/filter #(deref shapes-dragging?) $)
     (rx/on-value $ (fn [delta]
-                     (doseq [sid @selected-state]
-                       (rs/emit! (dw/move-shape sid delta)))))))
+                     (let [pageid (get-in @st/state [:workspace :page])
+                           selected (get-in @st/state [:workspace :selected])
+                           page (get-in @st/state [:pages-by-id pageid])]
+                       (doseq [sid (filter selected (:shapes page))]
+                         (rs/emit! (dw/move-shape sid delta))))))))
 
 (defn selrect->rect
   [data]
@@ -140,38 +133,12 @@
 
 ;; Materialized views
 
-(defonce mouse-position (rx/to-atom (rx/sample 50 mouse-s)))
+(defonce mouse-position
+  (->> mouse-s
+       (rx/sample 50)
+       (rx/to-atom)))
 
-(defn- mouse-mixin-did-mount
-  [own]
-  (letfn [(on-mousemove [event]
-            (let [canvas (util/get-ref-dom own "canvas")
-                  brect (.getBoundingClientRect canvas)
-                  offset-x (.-left brect)
-                  offset-y (.-top brect)
-                  x (.-clientX event)
-                  y (.-clientY event)]
-              (rx/push! mouse-b [(- x offset-x)
-                                 (- y offset-y)])))]
-    (let [key (events/listen js/document EventType.MOUSEMOVE on-mousemove)]
-      (js/console.log "mouse-mixin-did-mount" key)
-      (assoc own ::eventkey key))))
-
-(defn- mouse-mixin-will-unmount
-  [own]
-  (let [key (::eventkey own)]
-    (events/unlistenByKey key)
-    (dissoc own ::eventkey)))
-
-(defn- mouse-mixin-transfer-state
-  [old-own own]
-  (let [key (::eventkey old-own)]
-    (assoc own ::eventkey key)))
-
-(def ^:static mouse-mixin
-  {:did-mount mouse-mixin-did-mount
-   :will-unmount mouse-mixin-will-unmount
-   :transfer-state mouse-mixin-transfer-state})
+(defonce bounding-rect (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
