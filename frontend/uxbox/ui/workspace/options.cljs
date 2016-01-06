@@ -1,11 +1,15 @@
 (ns uxbox.ui.workspace.options
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [uxbox.rstore :as rs]
             [uxbox.shapes :as shapes]
+            [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.workspace.base :as wb]))
+            [uxbox.ui.dom :as dom]
+            [uxbox.ui.workspace.base :as wb]
+            [uxbox.util.data :refer (parse-int)]))
 
 (def +menus-map+
   {:builtin/icon [:menu/measures :menu/fill]
@@ -70,41 +74,56 @@
 
 (defmethod -render-menu :menu/measures
   [menu own shape]
-  (html
-   [:div.element-set {:key (str (:id menu))}
-    [:div.element-set-title (:name menu)]
-    [:div.element-set-content
-     ;; SLIDEBAR FOR ROTATION AND OPACITY
-     [:span "Size"]
-     [:div.row-flex
-      [:input#width.input-text
-       {:placeholder "Width"
-        :type "number"
-        :value (:width shape)
-        :on-change (constantly nil)}]
-      [:div.lock-size i/lock]
-      [:input#width.input-text
-       {:placeholder "Height"
-        :type "number"
-        :value (:height shape)
-        :on-change (constantly nil)}]]
+  (letfn [(on-width-change [event]
+            (let [value (dom/event->value event)
+                  value (parse-int value 0)
+                  sid (:id shape)]
+              (-> (dw/update-shape-size sid {:width value})
+                  (rs/emit!))))
+          (on-height-change [event]
+            (let [value (dom/event->value event)
+                  value (parse-int value 0)
+                  sid (:id shape)]
+              (println value)
+              (-> (dw/update-shape-size sid {:height value})
+                  (rs/emit!))))]
+    (html
+     [:div.element-set {:key (str (:id menu))}
+      [:div.element-set-title (:name menu)]
+      [:div.element-set-content
+       ;; SLIDEBAR FOR ROTATION AND OPACITY
+       [:span "Size"]
+       [:div.row-flex
+        [:input#width.input-text
+         {:placeholder "Width"
+          :type "number"
+          :min "0"
+          :value (:width shape)
+          :on-change on-width-change}]
+        [:div.lock-size i/lock]
+        [:input#width.input-text
+         {:placeholder "Height"
+          :type "number"
+          :min "0"
+          :value (:height shape)
+          :on-change on-height-change}]]
 
-     [:span "Position"]
-     [:div.row-flex
-      [:input#width.input-text
-       {:placeholder "x"
-        :type "number"
-        :value (:x shape)
-        :on-change (constantly nil)}]
-      [:input#width.input-text
-       {:placeholder "y"
-        :type "number"
-        :value (:x shape)
-        :on-change (constantly nil)}]]
+       [:span "Position"]
+       [:div.row-flex
+        [:input#width.input-text
+         {:placeholder "x"
+          :type "number"
+          :value (:x shape)
+          :on-change (constantly nil)}]
+        [:input#width.input-text
+         {:placeholder "y"
+          :type "number"
+          :value (:x shape)
+          :on-change (constantly nil)}]]
 
-     [:span "Rotation"]
-     [:div.row-flex
-      [:input.slidebar {:type "range"}]]]]))
+       [:span "Rotation"]
+       [:div.row-flex
+        [:input.slidebar {:type "range"}]]]])))
 
 (defn element-opts-render
   [own shape]
