@@ -24,6 +24,11 @@
    :height [v/integer]
    :type [v/required sc/shape-type]})
 
+(def ^:static +shape-update-size-schema+
+  {:width [v/integer]
+   :height [v/integer]
+   :lock [v/boolean]})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -169,3 +174,19 @@
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])]
         (update-in state [:shapes-by-id sid] shapes/-move {:dx dx :dy dy})))))
+
+;; TODO: implement locked resize
+
+(defn update-shape-size
+  [sid {:keys [width height lock] :as opts}]
+  (sc/validate! +shape-update-size-schema+ opts)
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])
+            size (select-keys shape [:width :height])
+            size (merge size
+                        (when width {:width width})
+                        (when height {:height height}))]
+        (update-in state [:shapes-by-id sid]
+                   shapes/-resize size)))))
