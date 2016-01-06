@@ -9,7 +9,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.util.data :refer (parse-int)]))
+            [uxbox.util.data :refer (parse-int parse-float)]))
 
 (def +menus-map+
   {:builtin/icon [:menu/measures :menu/fill]
@@ -44,33 +44,47 @@
 
 (defmethod -render-menu :menu/fill
   [menu own shape]
-  (html
-   [:div.element-set {:key (str (:id menu))}
-    [:div.element-set-title (:name menu)]
-    [:div.element-set-content
-     ;; SLIDEBAR FOR ROTATION AND OPACITY
-     [:span "Color"]
-     [:div.row-flex
-      [:input#width.input-text
-       {:placeholder "#"
-        :type "text"
-        :value (:color shape "")
-        :on-change (constantly nil)}]]
+  (letfn [(on-color-change [event]
+            (let [value (dom/event->value event)
+                  sid (:id shape)]
+              (-> (dw/update-shape-color sid value)
+                  (rs/emit!))))
+          (on-opacity-change [event]
+            (let [value (dom/event->value event)
+                  value (parse-float value 1)]
+              (println "opacity:" value)))]
+    (html
+     [:div.element-set {:key (str (:id menu))}
+      [:div.element-set-title (:name menu)]
+      [:div.element-set-content
+       ;; SLIDEBAR FOR ROTATION AND OPACITY
+       [:span "Color"]
+       [:div.row-flex
+        [:input#width.input-text
+         {:placeholder "#"
+          :type "text"
+          :value (:fill shape "")
+          :on-change on-color-change}]]
 
-     ;; RECENT COLORS
-     [:span "Recent colors"]
-     [:div.row-flex
-      [:span.color-th]
-      [:span.color-th {:style {:background "#c5cb7f"}}]
-      [:span.color-th {:style {:background "#6cb533"}}]
-      [:span.color-th {:style {:background "#67c6b5"}}]
-      [:span.color-th {:style {:background "#a178e3"}}]
-      [:span.color-th.palette-th i/palette]]
+       ;; RECENT COLORS
+       [:span "Recent colors"]
+       [:div.row-flex
+        [:span.color-th]
+        [:span.color-th {:style {:background "#c5cb7f"}}]
+        [:span.color-th {:style {:background "#6cb533"}}]
+        [:span.color-th {:style {:background "#67c6b5"}}]
+        [:span.color-th {:style {:background "#a178e3"}}]
+        [:span.color-th.palette-th i/palette]]
 
-     ;; SLIDEBAR FOR ROTATION AND OPACITY
-     [:span "Opacity"]
-     [:div.row-flex
-      [:input.slidebar {:type "range"}]]]]))
+       ;; SLIDEBAR FOR ROTATION AND OPACITY
+       [:span "Opacity"]
+       [:div.row-flex
+        [:input.slidebar
+         {:type "range"
+          :min "0"
+          :max "1"
+          :step "0.02"
+          :on-change on-opacity-change}]]]])))
 
 (defmethod -render-menu :menu/measures
   [menu own shape]

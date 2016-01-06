@@ -33,7 +33,7 @@
   "Extract predefinet attrs from shapes."
   [shape]
   (select-keys shape [:rotation :lock :width :height
-                      :view-box :x :y :cx :cy]))
+                      :view-box :x :y :cx :cy :fill]))
 
 (defmethod shapes/-render :builtin/icon
   [{:keys [data id] :as shape} attrs]

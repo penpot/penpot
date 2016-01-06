@@ -201,3 +201,11 @@
                         (when height {:height height}))]
         (update-in state [:shapes-by-id sid]
                    shapes/-resize size)))))
+
+(defn update-shape-color
+  [sid color]
+  (sc/valid? sc/color color)
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:shapes-by-id sid :fill] color))))

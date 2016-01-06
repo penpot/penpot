@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [keyword uuid vector])
   (:require [bouncer.core :as b]
             [bouncer.validators :as v]
+            [cuerdas.core :as str]
             [uxbox.shapes :refer (shape?)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -55,3 +56,13 @@
   ([schema data]
    (when-let [errors (validate schema data)]
      (throw (ex-info "Invalid data" errors)))))
+
+(defn valid?
+  [validator data]
+  (let [result (validator data)]
+    (if result
+      result
+      (let [message (:default-message-format (meta validator))
+            message (str/format message data)]
+        (throw (ex-info message {}))))))
+

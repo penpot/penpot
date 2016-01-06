@@ -49,3 +49,12 @@
      (if (or (not v) (nan? v))
        default
        v))))
+
+(defn parse-float
+  ([v]
+   (js/parseFloat v))
+  ([v default]
+   (let [v (js/parseFloat v)]
+     (if (or (not v) (nan? v))
+       default
+       v))))
