@@ -45,6 +45,10 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+(defmulti -rotate
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -60,3 +64,7 @@
   (assoc shape
          :width width
          :height height))
+
+(defmethod -rotate ::shape
+  [shape rotation]
+  (assoc shape :rotation rotation))

@@ -84,8 +84,13 @@
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (println value)
               (-> (dw/update-shape-size sid {:height value})
+                  (rs/emit!))))
+          (on-rotation-change [event]
+            (let [value (dom/event->value event)
+                  value (parse-int value 0)
+                  sid (:id shape)]
+              (-> (dw/update-shape-rotation sid value)
                   (rs/emit!))))]
     (html
      [:div.element-set {:key (str (:id menu))}
@@ -123,7 +128,12 @@
 
        [:span "Rotation"]
        [:div.row-flex
-        [:input.slidebar {:type "range"}]]]])))
+        [:input.slidebar
+         {:type "range"
+          :min 0
+          :max 360
+          :value (:rotation shape 0)
+          :on-change on-rotation-change}]]]])))
 
 (defn element-opts-render
   [own shape]

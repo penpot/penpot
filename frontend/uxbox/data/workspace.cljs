@@ -175,6 +175,17 @@
       (let [shape (get-in state [:shapes-by-id sid])]
         (update-in state [:shapes-by-id sid] shapes/-move {:dx dx :dy dy})))))
 
+(defn update-shape-rotation
+  [sid rotation]
+  {:pre [(number? rotation)
+         (>= rotation 0)
+         (>= 360 rotation)]}
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id sid]
+                 shapes/-rotate rotation))))
+
 ;; TODO: implement locked resize
 
 (defn update-shape-size
