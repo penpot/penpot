@@ -4,23 +4,31 @@
             [uxbox.shapes :as shapes]
             [uxbox.util.data :refer (remove-nil-vals)]))
 
+(defn- transform-attr
+  [[key value :as pair]]
+  (println "transform-attr" pair)
+  (case key
+    :view-box [key (apply str (interpose " " value))]
+    :lock [:preserveAspectRatio
+           (if value "xMidYMid" "none")]
+    pair))
+
 (defn- transform-attrs
-  [{:keys [view-box] :as data}]
-  (if view-box
-    (assoc data :view-box (apply str (interpose " " view-box)))
-    data))
+  [{:keys [view-box lock] :as data}]
+  (let [xf (map transform-attr)]
+    (into {} xf data)))
 
 (defn- extract-attrs
   "Extract predefinet attrs from shapes."
   [shape]
-  (select-keys shape [:width :height :view-box :x :y :cx :cy]))
+  (select-keys shape [:lock :width :height :view-box :x :y :cx :cy]))
 
 (defmethod shapes/-render :builtin/icon
   [{:keys [data id] :as shape} attrs]
   (let [attrs (as-> shape $
                 (extract-attrs $)
                 (remove-nil-vals $)
-                (merge $ attrs)
+                (merge $ attrs {:lock false})
                 (transform-attrs $))]
     (html
      [:svg (merge attrs {:key (str id)}) data])))
