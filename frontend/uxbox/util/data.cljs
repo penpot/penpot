@@ -42,5 +42,10 @@
   (r/read-string v))
 
 (defn parse-int
-  [v]
-  (js/parseInt v 10))
+  ([v]
+   (js/parseInt v 10))
+  ([v default]
+   (let [v (js/parseInt v 10)]
+     (if (or (not v) (nan? v))
+       default
+       v))))
