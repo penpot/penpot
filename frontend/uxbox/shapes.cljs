@@ -41,6 +41,10 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+(defmulti -resize
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,3 +54,9 @@
   (assoc shape
          :x (+ (:x shape) dx)
          :y (+ (:y shape) dy)))
+
+(defmethod -resize ::shape
+  [shape {:keys [width height] :as opts}]
+  (assoc shape
+         :width width
+         :height height))
