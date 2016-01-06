@@ -29,6 +29,10 @@
    :height [v/integer]
    :lock [v/boolean]})
 
+(def ^:static +shape-update-fill-schema+
+  {:fill [sc/color]
+   :opacity [v/number]})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -202,10 +206,13 @@
         (update-in state [:shapes-by-id sid]
                    shapes/-resize size)))))
 
-(defn update-shape-color
-  [sid color]
-  (sc/valid? sc/color color)
+(defn update-shape-fill
+  [sid {:keys [fill opacity] :as opts}]
+  (sc/validate! +shape-update-fill-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:shapes-by-id sid :fill] color))))
+      (update-in state [:shapes-by-id sid]
+                 merge
+                 (when fill {:fill fill})
+                 (when opacity {:opacity opacity})))))

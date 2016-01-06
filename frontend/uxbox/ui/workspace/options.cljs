@@ -47,12 +47,14 @@
   (letfn [(on-color-change [event]
             (let [value (dom/event->value event)
                   sid (:id shape)]
-              (-> (dw/update-shape-color sid value)
+              (-> (dw/update-shape-fill sid {:fill value})
                   (rs/emit!))))
           (on-opacity-change [event]
             (let [value (dom/event->value event)
-                  value (parse-float value 1)]
-              (println "opacity:" value)))]
+                  value (parse-float value 1)
+                  sid (:id shape)]
+              (-> (dw/update-shape-fill sid {:opacity value})
+                  (rs/emit!))))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
@@ -83,7 +85,8 @@
          {:type "range"
           :min "0"
           :max "1"
-          :step "0.02"
+          :value (:opacity shape "1")
+          :step "0.0001"
           :on-change on-opacity-change}]]]])))
 
 (defmethod -render-menu :menu/measures
