@@ -6,7 +6,7 @@
             [uxbox.util.data :refer (remove-nil-vals)]))
 
 (defn- transform-attr
-  [acc key value]
+  [data acc key value]
   (case key
     :view-box
     (assoc! acc key (apply str (interpose " " value)))
@@ -15,8 +15,7 @@
     (assoc! acc :preserveAspectRatio (if value "xMidYMid" "none"))
 
     :rotation
-    (let [width (nth (:view-box data) 3)
-          center-x (+ (:x data) (/ (:width data) 2))
+    (let [center-x (+ (:x data) (/ (:width data) 2))
           center-y (+ (:y data) (/ (:height data) 2))]
       (assoc! acc :transform (str/format "rotate(%s %s %s)"
                                          value center-x center-y)))
@@ -26,7 +25,9 @@
 (defn- transform-attrs
   [data]
   (persistent!
-   (reduce-kv transform-attr (transient {}) data)))
+   (reduce-kv (partial transform-attr data)
+              (transient {})
+              data)))
 
 (defn- extract-attrs
   "Extract predefinet attrs from shapes."
