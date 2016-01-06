@@ -33,6 +33,10 @@
 ;; Numbers Parsing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn nan?
+  [v]
+  (js/isNaN v))
+
 (defn read-string
   [v]
   (r/read-string v))
