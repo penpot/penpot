@@ -6,7 +6,6 @@
 
 (defn- transform-attr
   [[key value :as pair]]
-  (println "transform-attr" pair)
   (case key
     :view-box [key (apply str (interpose " " value))]
     :lock [:preserveAspectRatio
