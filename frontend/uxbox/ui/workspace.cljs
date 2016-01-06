@@ -1,6 +1,7 @@
 (ns uxbox.ui.workspace
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [beicon.core :as rx]
             [cats.labs.lens :as l]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
@@ -42,6 +43,13 @@
 ;; Workspace
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- on-scroll
+  [event]
+  (let [target (.-target event)
+        top (.-scrollTop target)
+        left (.-scrollLeft target)]
+    (rx/push! wb/scroll-b {:top top :left left})))
+
 (defn- workspace-render
   [own projectid]
   (let [workspace (rum/react wb/workspace-state)
@@ -63,7 +71,7 @@
 
         ;; Canvas
         [:section.workspace-canvas {:class (when no-toolbars? "no-tool-bar")
-                                    :on-scroll (constantly nil)}
+                                    :on-scroll on-scroll}
          (when (and (:selected workspace)
                     (= (count (:selected workspace)) 1))
            (let [shape-id (first (:selected workspace))

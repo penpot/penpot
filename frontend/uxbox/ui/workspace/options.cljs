@@ -111,12 +111,13 @@
   (let [local (:rum/local own)
         shape (rum/react shape)
         [popup-x popup-y] (get-position shape)
+        scroll (or (rum/react wb/scroll-top) 0)
         zoom 1
         menus (get +menus-map+ (:type shape))
         active-menu (:menu @local (first menus))]
     (html
      [:div#element-options.element-options
-      {:style {:left (* popup-x zoom) :top (* popup-y zoom)}}
+      {:style {:left (* popup-x zoom) :top (- (* popup-y zoom) scroll)}}
       [:ul.element-icons
        (for [menu-id (get +menus-map+ (:type shape))
              :let [menu (get +menus-by-id+ menu-id)

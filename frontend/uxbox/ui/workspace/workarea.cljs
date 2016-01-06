@@ -11,8 +11,6 @@
             [uxbox.ui.workspace.grid :refer (grid)]
             [uxbox.ui.workspace.base :as wb]))
 
-;; TODO: implement as streams
-
 (defn- on-click
   [event wstate]
   (let [mousepos @wb/mouse-position

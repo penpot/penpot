@@ -35,21 +35,26 @@
 ;; Scroll Stream
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private scroll-bus (rx/bus))
-(defonce scroll-s (rx/dedupe scroll-bus))
+(defonce ^:private scroll-b (rx/bus))
 
-(defonce top-scroll-s
-  (->> scroll-bus
+(defonce scroll-s
+  (as-> scroll-b $
+    (rx/merge $ (rx/of {:top 0 :left 0}))
+    (rx/dedupe $)))
+
+(defonce scroll-top-s
+  (->> scroll-s
        (rx/map :top)
+       (rx/tap #(println "scroll:" %))
        (rx/dedupe)))
 
-(defonce left-scroll-s
-  (->> scroll-bus
+(defonce scroll-left-s
+  (->> scroll-s
        (rx/map :left)
        (rx/dedupe)))
 
-(defonce top-scroll (rx/to-atom top-scroll-s))
-(defonce left-scroll (rx/to-atom left-scroll-s))
+(defonce scroll-top (rx/to-atom scroll-top-s))
+(defonce scroll-left (rx/to-atom scroll-left-s))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mouse Position Stream
