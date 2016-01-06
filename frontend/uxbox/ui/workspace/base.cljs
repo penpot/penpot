@@ -45,7 +45,6 @@
 (defonce scroll-top-s
   (->> scroll-s
        (rx/map :top)
-       (rx/tap #(println "scroll:" %))
        (rx/dedupe)))
 
 (defonce scroll-left-s
