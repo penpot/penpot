@@ -1,6 +1,8 @@
 (ns uxbox.ui.workspace.sidebar
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [cats.labs.lens :as l]
+            [uxbox.state :as st]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.ui.mixins :as mx]
@@ -8,26 +10,28 @@
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.toolboxes :as toolboxes]))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Aside
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn aside-render
   [own]
-  (let [workspace (rum/react wb/workspace-state)]
+  (println "aside-render")
+  (let [toolboxes (rum/react wb/active-toolboxes-state)]
     (html
      [:aside#settings-bar.settings-bar
       [:div.settings-bar-inside
-       (when (:draw-toolbox-enabled workspace false)
+       (when (contains? toolboxes :draw)
          (toolboxes/draw-tools))
-       (when (:icons-toolbox-enabled workspace false)
+       (when (contains? toolboxes :icons)
          (toolboxes/icons))
-       (when (:layers-toolbox-enabled workspace false)
+       (when (contains? toolboxes :layers)
          (toolboxes/layers))]])))
 
 (def aside
   (util/component
    {:render aside-render
     :name "aside"
-    :mixins [rum/reactive]}))
+    :mixins [rum/reactive mx/static]}))
 

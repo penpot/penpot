@@ -19,7 +19,7 @@
 
 (defn lateralmenu-render
   [own]
-  (let [workspace (rum/react wb/workspace-state)
+  (let [toolboxes (rum/react wb/active-toolboxes-state)
         toggle #(rs/emit! (dw/toggle-toolbox %))]
     (html
      [:div#tool-bar.tool-bar
@@ -27,17 +27,17 @@
        [:ul.main-tools
         [:li.tooltip
          {:alt "Shapes (Ctrl + Shift + F)"
-          :class (when (:draw-toolbox-enabled workspace false) "current")
+          :class (when (contains? toolboxes :draw) "current")
           :on-click (partial toggle :draw)}
          i/shapes]
         [:li.tooltip
          {:alt "Icons (Ctrl + Shift + I)"
-          :class (when (:icons-toolbox-enabled workspace false) "current")
+          :class (when (contains? toolboxes :icons) "current")
           :on-click (partial toggle :icons)}
          i/icon-set]
         [:li.tooltip
          {:alt "Elements (Ctrl + Shift + L)"
-          :class (when (:layers-toolbox-enabled workspace false) "current")
+          :class (when (contains? toolboxes :layers) "current")
           :on-click (partial toggle :layers)}
          i/layers]
         [:li.tooltip

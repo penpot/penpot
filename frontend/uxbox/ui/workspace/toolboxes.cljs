@@ -1,9 +1,10 @@
 (ns uxbox.ui.workspace.toolboxes
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [cats.labs.lens :as l]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
-            [uxbox.state :as s]
+            [uxbox.state :as st]
             [uxbox.shapes :as shapes]
             [uxbox.library :as library]
             [uxbox.util.data :refer (read-string)]
@@ -13,6 +14,18 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.util :as util]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lenses
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private ^:static drawing-shape
+  "A focused vision of the drawing property
+  of the workspace status. This avoids
+  rerender the whole toolbox on each workspace
+  change."
+  (as-> (l/in [:workspace :drawing]) $
+    (l/focus-atom $ st/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Draw Tools
@@ -119,10 +132,21 @@
     (swap! local assoc :collid value)
     (rs/emit! (dw/select-for-drawing nil))))
 
+(defn- icon-wrapper-render
+  [own icon]
+  (shapes/render icon))
+
+(def ^:static ^:private icon-wrapper
+  (util/component
+   {:render icon-wrapper-render
+    :name "icon-wrapper"
+    :mixins [mx/static]}))
+
 (defn icons-render
   [own]
+  (println "icons-render")
   (let [local (:rum/local own)
-        workspace (rum/react wb/workspace-state)
+        drawing (rum/react drawing-shape)
         collid (:collid @local)
         icons (get-in library/+icon-collections-by-id+ [collid :icons])
         on-close #(rs/emit! (dw/toggle-toolbox :icons))
@@ -144,11 +168,11 @@
                      :value (pr-str (:id icon-coll))}
             (:name icon-coll)])]]
        (for [icon icons
-             :let [selected? (= (:drawing workspace) icon)]]
+             :let [selected? (= drawing icon)]]
          [:div.figure-btn {:key (str (:id icon))
                            :class (when selected? "selected")
                            :on-click #(on-select icon)}
-          (shapes/render icon)])]])))
+          (icon-wrapper icon)])]])))
 
 (def ^:static icons
   (util/component

@@ -60,16 +60,11 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [key (keyword (str (name toolname) "-toolbox-enabled"))
-            val (get-in state [:workspace key] false)
-            state (assoc-in state [:workspace key] (not val))]
-        (if val
-          (update-in state [:workspace :toolboxes] disj toolname)
-          (update-in state [:workspace :toolboxes] conj toolname))))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.w/toggle-toolbox>"))))
+      (let [toolboxes (get-in state [:workspace :toolboxes])]
+        (assoc-in state [:workspace :toolboxes]
+                  (if (contains? toolboxes toolname)
+                    (disj toolboxes toolname)
+                    (conj toolboxes toolname)))))))
 
 (defn select-for-drawing
   "Mark a shape selected for drawing in the canvas."

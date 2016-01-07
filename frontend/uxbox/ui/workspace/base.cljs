@@ -31,6 +31,10 @@
   (as-> (l/in [:workspace]) $
     (l/focus-atom $ st/state)))
 
+(def ^:static active-toolboxes-state
+  (as-> (l/in [:workspace :toolboxes]) $
+    (l/focus-atom $ st/state)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scroll Stream
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

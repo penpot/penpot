@@ -17,8 +17,7 @@
             [uxbox.ui.util :as util]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.grid :refer (grid)]
-            [uxbox.ui.workspace.options :refer (element-opts)]
-            [uxbox.ui.workspace.toolboxes :as toolboxes])
+            [uxbox.ui.workspace.options :refer (element-opts)])
   (:import goog.events.EventType))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
