@@ -1,4 +1,5 @@
 (ns uxbox.ui.workspace.base
+  (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [beicon.core :as rx]
             [cats.labs.lens :as l]
             [uxbox.rstore :as rs]
@@ -88,7 +89,7 @@
        (rx/buffer 2 1)
        (rx/map coords-delta)))
 
-(defonce $$drag-subscription$$
+(define-once
   (as-> mouse-delta-s $
     (rx/filter #(deref shapes-dragging?) $)
     (rx/on-value $ (fn [delta]
@@ -113,7 +114,7 @@
      :width (- current-x start-x)
      :height (- current-y start-y)}))
 
-(defonce $$selrect-subscription$$
+(define-once
   (let [ss (as-> (rx/from-atom selrect-dragging?) $
              (rx/dedupe $)
              (rx/merge $ (rx/of false))
