@@ -57,7 +57,6 @@
    [:main.dashboard-main
     (header)
     [:section.dashboard-content
-     (elements/menu)
      (ui.library-bar/library-bar)
      [:section.dashboard-grid.library
       (elements/page-title)
@@ -91,7 +90,6 @@
    [:main.dashboard-main
     (header)
     [:section.dashboard-content
-     (icons/menu)
      (icons/nav)
      (icons/grid)]]))
 
@@ -123,7 +121,6 @@
    [:main.dashboard-main
     (header)
     [:section.dashboard-content
-     (colors/menu)
      (colors/nav)
      (colors/grid)]]))
 

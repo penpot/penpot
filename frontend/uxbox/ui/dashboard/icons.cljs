@@ -25,35 +25,6 @@
   (as-> (l/in [:dashboard]) $
     (l/focus-atom $ st/state)))
 
-;; (def ^:static collections-state
-;;   (as-> (l/in [:icons-by-id]) $
-;;     (l/focus-atom $ st/state)))
-
-;; (def ^:static collection-state
-;;   (as-> (ul/dep-in [:icons-by-id] [:dashboard :collection-id]) $
-;;     (l/focus-atom $ st/state)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Menu
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn menu-render
-  []
-  (let [pcount 20]
-    (html
-     [:section#dashboard-bar.dashboard-bar
-      [:div.dashboard-info
-       [:span.dashboard-projects pcount " projects"]
-       [:span "Sort by"]]
-      [:div.dashboard-search i/search]])))
-
-(def ^:static menu
-  (util/component
-   {:render menu-render
-    :name "icons-menu"
-    :mixins [rum/reactive]}))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Title
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
