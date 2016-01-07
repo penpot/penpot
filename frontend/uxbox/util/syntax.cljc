@@ -7,4 +7,3 @@
     `(cljs.core/defonce ~sym
        (do ~@body
            nil))))
-
