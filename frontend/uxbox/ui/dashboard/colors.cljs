@@ -3,6 +3,7 @@
             [rum.core :as rum]
             [cuerdas.core :as str]
             [cats.labs.lens :as l]
+            [uxbox.locales :as t :refer (tr)]
             [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.schema :as sc]
@@ -49,13 +50,11 @@
           own? (:builtin coll false)]
       (html
        [:div.dashboard-title {}
-        (if coll
-          [:h2 {}
-           [:span "Library: "]
-           [:span {:content-editable ""
-                   :on-key-up on-title-edited}
-            (:name coll)]]
-          [:h2 "No library selected"])
+        [:h2 {}
+         [:span #ux/tr "ds.library-title"]
+         [:span {:content-editable ""
+                 :on-key-up on-title-edited}
+          (:name coll)]]
         (if (and (not own?) coll)
           [:div.edition {}
            #_[:span i/pencil]
@@ -97,13 +96,14 @@
            [:a.btn-primary
             {:on-click #(rs/emit! (dd/mk-color-collection))}
             "+ New library"]])
-        (for [props collections]
+        (for [props collections
+              :let [num (count (:colors props))]]
           [:li {:key (str (:id props))
                 :on-click #(rs/emit! (dd/set-collection (:id props)))
                 :class-name (when (= (:id props) collid) "current")}
            [:span.element-title (:name props)]
            [:span.element-subtitle
-            (str (count (:colors props)) " elements")]])]]])))
+            (tr "ds.num-elements" (t/c num))]])]]])))
 
 (def ^:static nav
   (util/component

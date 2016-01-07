@@ -35,13 +35,11 @@
         own? (:builtin coll false)]
     (html
      [:div.dashboard-title {}
-      (if coll
-        [:h2 {}
-         [:span "Library: "]
-         [:span {:content-editable ""
-                 :on-key-up (constantly nil)}
-          (:name coll)]]
-        [:h2 "No library selected"])
+      [:h2 {}
+       [:span #ux/tr "ds.library-title"]
+       [:span {:content-editable ""
+               :on-key-up (constantly nil)}
+        (:name coll)]]
       (if (and (not own?) coll)
         [:div.edition {}
          [:span {:on-click (constantly nil)}
@@ -53,7 +51,6 @@
     :name "page-title"
     :mixins [mx/static rum/reactive]}))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Nav
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -61,7 +58,6 @@
 (defn nav-render
   [own]
   (let [dashboard (rum/react dashboard-state)
-        ;; colors (rum/react collections-state)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
@@ -74,10 +70,10 @@
        [:ul.library-tabs
         [:li {:class-name (when builtin? "current")
               :on-click #(rs/emit! (dd/set-collection-type :builtin))}
-         "STANDARD"]
+         #ux/tr "ds.standard-title"]
         [:li {:class-name (when own? "current")
               :on-click #(rs/emit! (dd/set-collection-type :own))}
-         "YOUR LIBRARIES"]]
+         #ux/tr "ds.your-libraries-title"]]
        [:ul.library-elements
         (when own?
           [:li
