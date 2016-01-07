@@ -65,7 +65,11 @@
          i/alignment]
         [:li.tooltip.tooltip-bottom
          {:alt "Organize (Ctrl + O)"}
-         i/organize]]]
+         i/organize]]
+       [:ul.options-btn
+        [:li.tooltip.tooltip-bottom
+         {:alt "Multi-canvas (Ctrl + M)"}
+         i/multicanvas]]]
       (ui.u/user)])))
 
 (def header
@@ -73,4 +77,3 @@
    {:render header-render
     :name "workspace-header"
     :mixins [rum/reactive]}))
-
