@@ -101,13 +101,63 @@
                 :class (when selected? "selected")}
              [:div.toggle-element
               {:class (when visible? "selected")
-               :on-click #(actions/toggle-shape-visibility conn shape-id)} icons/eye]
+               :on-click #(actions/toggle-shape-visibility conn shape-id)} i/eye]
              [:div.block-element
               {:class (when locked? "selected")
-               :on-click #(actions/toggle-shape-lock conn shape-id)} icons/lock]
+               :on-click #(actions/toggle-shape-lock conn shape-id)} i/lock]
              [:div.element-icon
               (shapes/icon raw-shape)]
-             [:span (shapes/name raw-shape)]]))]]])))
+             [:span (shapes/name raw-shape)]]))
+;; TODO GROUPS
+            [:li
+              [:div.element-actions
+                [:div.toggle-element i/eye]
+                [:div.block-element i/lock]]
+              [:div.element-icon i/box]
+              [:span "Layer name"]]
+
+            [:li.group
+              [:div.element-actions
+                [:div.toggle-element i/eye]
+                [:div.block-element i/lock]
+                [:div.chain-element i/chain]]
+              [:div.element-icon i/folder]
+              [:span "Closed group"]
+              [:span.toggle-content i/arrow-slide]]
+
+            [:li.group.open
+              [:div.element-actions
+                [:div.toggle-element i/eye]
+                [:div.block-element i/lock]
+                [:div.chain-element i/chain]]
+              [:div.element-icon i/folder]
+              [:span "Opened group"]
+              [:span.toggle-content i/arrow-slide]]
+
+            [:li
+              [:div.element-actions
+                [:div.toggle-element i/eye]
+                [:div.block-element i/lock]]
+              [:div.sublevel-element i/sublevel]
+              [:div.element-icon i/box]
+              [:span "Sub layer"]]
+
+            [:li.group
+              [:div.element-actions
+                [:div.toggle-element i/eye]
+                [:div.block-element i/lock]
+                [:div.chain-element i/chain]]
+              [:div.sublevel-element i/sublevel]
+              [:div.element-icon i/folder]
+              [:span "Sub group"]
+              [:span.toggle-content i/arrow-slide]]]]
+
+        [:div.layers-tools
+          [:ul.layers-tools-content
+            [:li.clone-layer i/copy]
+            [:li.group-layer i/folder]
+            [:li.delete-layer i/trash]
+          ]]])))
 
 (def ^:static layers
   (util/component

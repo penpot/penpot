@@ -4,13 +4,14 @@
   height: 100%;
   position: fixed;
   right: 0;
-  width: 240px;
+  width: 250px;
 
   .settings-bar-inside {
     align-items: center;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    padding-bottom: 30px;
     padding-top: 50px;
     height: 100%;
 
@@ -79,6 +80,54 @@
 
   }
 
+  .layers-tools {
+    background-color: $color-gray-darker;
+    bottom: 0;
+    display: flex;
+    height: 30px;
+    justify-content: center;
+    position: absolute;
+    width: 100%;
+
+    .layers-tools-content {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      margin: 0;
+      width: 80px;
+
+      li {
+        cursor: pointer;
+
+        svg {
+          fill: $color-gray;
+          height: 16px;
+          width: 16px;
+
+          &:hover {
+            fill: $color-white;
+          }
+
+        }
+
+        &.delete-layer {
+
+          svg {
+
+            &:hover {
+              fill: $color-danger;
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
 }
 
 .tool-btn {
@@ -87,15 +136,15 @@
   cursor: pointer;
   display: flex;
   flex-shrink: 0;
-  height: 90px;
+  height: 94px;
   justify-content: center;
   margin: $medium 0 0 $big;
-  width: 90px;
+  width: 94px;
 
   svg {
     fill: $color-gray-darker;
-    height: 50px;
-    width: 50px;
+    height: 52px;
+    width: 52px;
   }
 
   &:hover {
@@ -118,10 +167,10 @@
   cursor: pointer;
   display: flex;
   flex-shrink: 0;
-  height: 60px;
+  height: 62px;
   justify-content: center;
   margin: $medium 0 0 $medium;
-  width: 60px;
+  width: 62px;
 
   svg {
     fill: $color-gray-darker;
@@ -156,15 +205,58 @@
 
     svg {
       fill: $color-gray;
-      height: 15px;
-      margin-right: $small;
-      width: 15px;
+      height: 13px;
+      margin-right: 8px;
+      width: 13px;
     }
 
-    .element-icon {
+    .element-actions {
+      align-items: center;
+      display: flex;
+      width: 62px;
+    }
+
+    .element-icon,
+    .sublevel-element {
 
       svg {
         fill: $color-gray-darker;
+      }
+
+    }
+
+    .toggle-content {
+      margin-left: auto;
+      width: 12px;
+
+      svg {
+        fill: $color-gray-darker;
+        transform: rotate(90deg);
+        width: 12px;
+      }
+
+      &:hover {
+
+        svg {
+          fill: $color-white;
+        }
+
+      }
+
+    }
+
+    &.group {
+
+      &.open {
+
+        .toggle-content {
+
+          svg {
+            transform: rotate(270deg);
+          }
+
+        }
+
       }
 
     }
