@@ -1,4 +1,8 @@
-(require '[cljs.build.api :as b])
+(require '[cljs.build.api :as b]
+         '[cljs.tagged-literals])
+
+(alter-var-root #'cljs.tagged-literals/*cljs-data-readers*
+                assoc 'ux/tr (fn [v] `(uxbox.locales/tr ~v)))
 
 (b/watch (b/inputs "frontend")
   {:main 'uxbox.core
