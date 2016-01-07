@@ -113,7 +113,7 @@
      :width (- current-x start-x)
      :height (- current-y start-y)}))
 
-(defonce $$selrect-subscription-0$$
+(defonce $$selrect-subscription$$
   (let [ss (as-> (rx/from-atom selrect-dragging?) $
              (rx/dedupe $)
              (rx/merge $ (rx/of false))
@@ -122,22 +122,24 @@
     (as-> ss $
       (rx/filter #(= (vec %) [false true]) $)
       (rx/with-latest-from vector mouse-s $)
-      (rx/on-value $ (fn [[_ pos]]
-                       (swap! selrect-pos assoc
-                              :start pos
-                              :current pos))))
+      (rx/on-value $ (fn [[_ [x y :as pos]]]
+                       (let [scroll (or @scroll-top 0)
+                             pos [x (+ y scroll)]]
+                         (swap! selrect-pos assoc
+                                :start pos
+                                :current pos)))))
     (as-> ss $
       (rx/filter #(= (vec %) [true false]) $)
       (rx/on-value $ (fn []
                        (let [selrect (selrect->rect @selrect-pos)]
                          (rs/emit! (dw/select-shapes selrect))
-                         (reset! selrect-pos nil)))))))
-
-(defonce $$selrect-subscription-1$$
-  (as-> mouse-s $
-    (rx/filter #(deref selrect-dragging?) $)
-    (rx/on-value $ (fn [pos]
-                     (swap! selrect-pos assoc :current pos)))))
+                         (reset! selrect-pos nil)))))
+    (as-> mouse-s $
+      (rx/filter #(deref selrect-dragging?) $)
+      (rx/on-value $ (fn [[x y :as pos]]
+                       (let [scroll (or @scroll-top 0)
+                             pos [x (+ y scroll)]]
+                         (swap! selrect-pos assoc :current pos)))))))
 
 ;; Materialized views
 
