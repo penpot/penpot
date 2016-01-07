@@ -130,7 +130,6 @@
   [own shape selected]
   (let [{:keys [id x y width height] :as shape} shape
         selected? (contains? selected id)]
-    (println "shape-render" id)
     (letfn [(on-mouse-down [event]
               (let [local (:rum/local own)]
                 (dom/stop-propagation event)
@@ -212,7 +211,6 @@
 
 (defn- canvas-render
   [own {:keys [width height id] :as page}]
-  (println "canvas-render" id)
   (let [workspace (rum/react wb/workspace-state)
         shapes-by-id (rum/react shapes-by-id)
         workspace-selected (:selected workspace)
