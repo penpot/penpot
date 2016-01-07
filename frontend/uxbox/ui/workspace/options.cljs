@@ -91,23 +91,23 @@
 
 (defmethod -render-menu :menu/measures
   [menu own shape]
-  (letfn [(on-width-change [event]
+  (letfn [(on-size-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (-> (dw/update-shape-size sid {:width value})
-                  (rs/emit!))))
-          (on-height-change [event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
-                  sid (:id shape)]
-              (-> (dw/update-shape-size sid {:height value})
+              (-> (dw/update-shape-size sid {attr value})
                   (rs/emit!))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
               (-> (dw/update-shape-rotation sid value)
+                  (rs/emit!))))
+          (on-pos-change [attr event]
+            (let [value (dom/event->value event)
+                  value (parse-int value nil)
+                  sid (:id shape)]
+              (-> (dw/update-shape-position sid {attr value})
                   (rs/emit!))))]
     (html
      [:div.element-set {:key (str (:id menu))}
@@ -121,27 +121,27 @@
           :type "number"
           :min "0"
           :value (:width shape)
-          :on-change on-width-change}]
+          :on-change (partial on-size-change :width)}]
         [:div.lock-size i/lock]
         [:input#width.input-text
          {:placeholder "Height"
           :type "number"
           :min "0"
           :value (:height shape)
-          :on-change on-height-change}]]
+          :on-change (partial on-size-change :height)}]]
 
        [:span "Position"]
        [:div.row-flex
         [:input#width.input-text
          {:placeholder "x"
           :type "number"
-          :value (:x shape)
-          :on-change (constantly nil)}]
+          :value (:x shape "")
+          :on-change (partial on-pos-change :x)}]
         [:input#width.input-text
          {:placeholder "y"
           :type "number"
-          :value (:x shape)
-          :on-change (constantly nil)}]]
+          :value (:y shape "")
+          :on-change (partial on-pos-change :y)}]]
 
        [:span "Rotation"]
        [:div.row-flex

@@ -33,6 +33,10 @@
   {:fill [sc/color]
    :opacity [v/number]})
 
+(def ^:static +shape-update-position-schema+
+  {:x [v/integer]
+   :y [v/integer]})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -205,6 +209,17 @@
                         (when height {:height height}))]
         (update-in state [:shapes-by-id sid]
                    shapes/-resize size)))))
+
+(defn update-shape-position
+  [sid {:keys [x y] :as opts}]
+  (sc/validate! +shape-update-position-schema+ opts)
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id sid]
+                 merge
+                 (when x {:x x})
+                 (when y {:y y})))))
 
 (defn update-shape-fill
   [sid {:keys [fill opacity] :as opts}]
