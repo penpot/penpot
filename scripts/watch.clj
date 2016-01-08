@@ -8,6 +8,7 @@
   {:main 'uxbox.core
    :output-to "resources/public/js/main.js"
    :output-dir "resources/public/js"
+   :parallel-build true
    :asset-path "/js"
    :optimizations :none
    :pretty-print true

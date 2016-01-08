@@ -12,6 +12,7 @@
    {:main 'uxbox.core
     :output-to "resources/public/js/main.js"
     :output-dir "resources/public/js"
+    :parallel-build true
     :optimizations :advanced
     :language-in  :ecmascript5
     :language-out :ecmascript5
