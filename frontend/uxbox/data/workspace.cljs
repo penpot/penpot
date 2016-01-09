@@ -48,11 +48,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [key (keyword (str (name toolname) "-enabled"))]
-        (update-in state [:workspace key] (fnil not false))))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.w/toggle-tool>"))))
+        (update-in state [:workspace key] (fnil not false))))))
 
 (defn toggle-toolbox
   "Toggle the visibility flag of the specified toolbox."
@@ -74,11 +70,7 @@
     (-apply-update [_ state]
       (if shape
         (assoc-in state [:workspace :drawing] shape)
-        (update-in state [:workspace] dissoc :drawing)))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.w/select-for-drawing>"))))
+        (update-in state [:workspace] dissoc :drawing)))))
 
 (defn select-shape
   "Mark a shape selected for drawing in the canvas."
@@ -146,11 +138,7 @@
             shape (merge shape props {:id sid :page pid})]
         (as-> state $
           (update-in $ [:pages-by-id pid :shapes] conj sid)
-          (assoc-in $ [:shapes-by-id sid] shape))))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.w/add-shape>"))))
+          (assoc-in $ [:shapes-by-id sid] shape))))))
 
 (defn initialize
   "Initialize the workspace state."
@@ -163,11 +151,7 @@
                :drawing nil
                :selected #{}
                :page pageid}]
-        (assoc state :workspace s)))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.w/initialize>"))))
+        (assoc state :workspace s)))))
 
 (defn move-shape
   "Mark a shape selected for drawing in the canvas."
