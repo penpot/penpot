@@ -1,4 +1,5 @@
 (ns uxbox.ui.workspace.shortcuts
+  (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [goog.events :as events]
             [beicon.core :as rx]
             [uxbox.rstore :as rs]
@@ -9,14 +10,20 @@
            goog.ui.KeyboardShortcutHandler))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Keyboard Shortcuts Watcher
+;; Keyboard Shortcuts Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce ^:static +shortcuts+
-  #{:ctrl+g
-    :ctrl+shift+f
-    :ctrl+shift+i
-    :ctrl+shift+l})
+  {:ctrl+g #(rs/emit! (dw/toggle-tool :grid))
+   :ctrl+shift+f #(rs/emit! (dw/toggle-toolbox :draw))
+   :ctrl+shift+i #(rs/emit! (dw/toggle-toolbox :icons))
+   :ctrl+shift+l #(rs/emit! (dw/toggle-toolbox :layers))
+   :esc (constantly nil)
+   :backspace (constantly nil)})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Keyboard Shortcuts Watcher
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce ^:static ^:private +bus+
   (rx/bus))
@@ -28,7 +35,7 @@
   []
   (let [handler (KeyboardShortcutHandler. js/document)]
     ;; Register shortcuts.
-    (doseq [item +shortcuts+]
+    (doseq [item (keys +shortcuts+)]
       (let [identifier (name item)]
         (.registerShortcut handler identifier identifier)))
 
@@ -40,34 +47,11 @@
         (events/unlistenByKey key)
         (.clearKeyListener handler)))))
 
-;; DEBUG
-(rx/on-value +stream+ #(println "[debug]: shortcut:" %))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Keyboard Shortcuts Handlers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmulti -handle-event identity)
-
-(defmethod -handle-event :default [ev] nil)
-
-(defmethod -handle-event :ctrl+shift+l
-  [_]
-  (rs/emit! (dw/toggle-toolbox :layers)))
-
-(defmethod -handle-event :ctrl+shift+i
-  [_]
-  (rs/emit! (dw/toggle-toolbox :icons)))
-
-(defmethod -handle-event :ctrl+shift+f
-  [_]
-  (rs/emit! (dw/toggle-toolbox :draw)))
-
-(defmethod -handle-event :ctrl+g
-  [_]
-  (rs/emit! (dw/toggle-tool :grid)))
-
-(rx/on-value +stream+ #(-handle-event %))
+(define-once
+  (rx/on-value +stream+ #(println "[debug]: shortcut:" %))
+  (rx/on-value +stream+ (fn [event]
+                          (when-let [handler (get +shortcuts+ event)]
+                            (handler)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Keyboard Shortcuts Mixin
