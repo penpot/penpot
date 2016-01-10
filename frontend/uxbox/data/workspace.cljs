@@ -1,5 +1,6 @@
 (ns uxbox.data.workspace
   (:require [bouncer.validators :as v]
+            [beicon.core :as rx]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
@@ -139,6 +140,31 @@
         (as-> state $
           (update-in $ [:pages-by-id pid :shapes] conj sid)
           (assoc-in $ [:shapes-by-id sid] shape))))))
+
+(defn delete-shape
+  "Remove the shape using its id."
+  [sid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [pageid (get-in state [:shapes-by-id sid :page])
+            shapes (as-> state $
+                     (get-in $ [:pages-by-id pageid :shapes])
+                     (remove #(= % sid) $)
+                     (into [] $))]
+        (as-> state $
+          (assoc-in $ [:pages-by-id pageid :shapes] shapes)
+          (update-in $ [:shapes-by-id] dissoc sid))))))
+
+(defn remove-selected
+  "Deselect all and remove all selected shapes."
+  []
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [selected (get-in state [:workspace :selected])]
+        (rx/from-coll
+         (into [(deselect-all)] (mapv #(delete-shape %) selected)))))))
 
 (defn initialize
   "Initialize the workspace state."

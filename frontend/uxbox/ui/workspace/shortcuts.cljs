@@ -19,7 +19,7 @@
    :ctrl+shift+i #(rs/emit! (dw/toggle-toolbox :icons))
    :ctrl+shift+l #(rs/emit! (dw/toggle-toolbox :layers))
    :esc (constantly nil)
-   :backspace (constantly nil)})
+   :backspace #(rs/emit! (dw/remove-selected))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Keyboard Shortcuts Watcher
