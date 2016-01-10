@@ -188,6 +188,22 @@
       (let [shape (get-in state [:shapes-by-id sid])]
         (update-in state [:shapes-by-id sid] shapes/-move {:dx dx :dy dy})))))
 
+(defn move-selected
+  "Move a minimal position unit the selected shapes."
+  [dir]
+  {:pre [(contains? #{:up :down :right :left} dir)]}
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [selected (get-in state [:workspace :selected])
+            delta (case dir
+                    :up [0 -1]
+                    :down [0 +1]
+                    :right [+1 0]
+                    :left [-1 0])]
+        (rx/from-coll
+         (map #(move-shape % delta) selected))))))
+
 (defn update-shape-rotation
   [sid rotation]
   {:pre [(number? rotation)
