@@ -47,7 +47,7 @@
         (events/unlistenByKey key)
         (.clearKeyListener handler)))))
 
-(define-once
+(define-once :subscriptions
   (rx/on-value +stream+ #(println "[debug]: shortcut:" %))
   (rx/on-value +stream+ (fn [event]
                           (when-let [handler (get +shortcuts+ event)]

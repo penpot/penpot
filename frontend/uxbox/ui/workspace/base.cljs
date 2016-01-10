@@ -89,7 +89,7 @@
        (rx/buffer 2 1)
        (rx/map coords-delta)))
 
-(define-once
+(define-once :mouse-subscriptions
   (as-> mouse-delta-s $
     (rx/filter #(deref shapes-dragging?) $)
     (rx/on-value $ (fn [delta]
@@ -114,7 +114,7 @@
      :width (- current-x start-x)
      :height (- current-y start-y)}))
 
-(define-once
+(define-once :selrect-subscriptions
   (let [ss (as-> (rx/from-atom selrect-dragging?) $
              (rx/dedupe $)
              (rx/merge $ (rx/of false))

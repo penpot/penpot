@@ -2,8 +2,7 @@
   (:refer-clojure :exclude [defonce]))
 
 (defmacro define-once
-  [& body]
-  (let [sym (gensym "uxbox-")]
+  [name' & body]
+  (let [sym (symbol (str (namespace name') "-" (name name')))]
     `(cljs.core/defonce ~sym
-       (do ~@body
-           nil))))
+       (do ~@body nil))))
