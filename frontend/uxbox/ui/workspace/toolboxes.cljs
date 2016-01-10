@@ -27,6 +27,15 @@
   (as-> (l/in [:workspace :drawing]) $
     (l/focus-atom $ st/state)))
 
+(def ^:static ^:private shapes-by-id
+  (as-> (l/key :shapes-by-id) $
+    (l/focus-atom $ st/state)))
+
+(defn- focus-page
+  [pageid]
+  (as-> (l/in [:pages-by-id pageid]) $
+    (l/focus-atom $ st/state)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Draw Tools
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -79,9 +88,31 @@
 ;; Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- layer-element-render
+  [own item selected]
+  (println "layer-element-render" (:id item))
+  (let [selected? (contains? selected (:id item))]
+    (html
+     [:li {:key (str (:id item))}
+      [:div.element-actions
+       [:div.toggle-element i/eye]
+       [:div.block-element i/lock]]
+      [:div.element-icon i/box]
+      [:span (or (:name item)
+                 (:id item))]])))
+
+(def ^:static ^:private layer-element
+  (util/component
+   {:render layer-element-render
+    :name "layer-element"
+    :mixins [mx/static]}))
+
 (defn layers-render
-  []
+  [own]
   (let [workspace (rum/react wb/workspace-state)
+        selected (:selected workspace)
+        shapes-by-id (rum/react shapes-by-id)
+        page (rum/react (focus-page (:page workspace)))
         close #(rs/emit! (dw/toggle-toolbox :layers))]
     (html
      [:div#layers.tool-window
@@ -91,73 +122,53 @@
        [:div.tool-window-close {:on-click close} i/close]]
       [:div.tool-window-content
        [:ul.element-list
-        #_(for [shape (reverse shapes)]
-          (let [{shape-id :shape/uuid
-                 selected? :shape/selected?
-                 locked? :shape/locked?
-                 visible? :shape/visible?
-                 raw-shape :shape/data} shape]
-            [:li {:key shape-id
-                :class (when selected? "selected")}
-             [:div.toggle-element
-              {:class (when visible? "selected")
-               :on-click #(actions/toggle-shape-visibility conn shape-id)} i/eye]
-             [:div.block-element
-              {:class (when locked? "selected")
-               :on-click #(actions/toggle-shape-lock conn shape-id)} i/lock]
-             [:div.element-icon
-              (shapes/icon raw-shape)]
-             [:span (shapes/name raw-shape)]]))
-;; TODO GROUPS
-            [:li
-              [:div.element-actions
-                [:div.toggle-element i/eye]
-                [:div.block-element i/lock]]
-              [:div.element-icon i/box]
-              [:span "Layer name"]]
+        (for [shape (map #(get shapes-by-id %) (:shapes page))
+              :let [component (layer-element shape selected)]]
+          (rum/with-key component (:id shape)))]]
+      [:div.layers-tools
+       [:ul.layers-tools-content
+        [:li.clone-layer i/copy]
+        [:li.group-layer i/folder]
+        [:li.delete-layer i/trash]
+        ]]])))
 
-            [:li.group
-              [:div.element-actions
-                [:div.toggle-element i/eye]
-                [:div.block-element i/lock]
-                [:div.chain-element i/chain]]
-              [:div.element-icon i/folder]
-              [:span "Closed group"]
-              [:span.toggle-content i/arrow-slide]]
 
-            [:li.group.open
-              [:div.element-actions
-                [:div.toggle-element i/eye]
-                [:div.block-element i/lock]
-                [:div.chain-element i/chain]]
-              [:div.element-icon i/folder]
-              [:span "Opened group"]
-              [:span.toggle-content i/arrow-slide]]
+        ;; [:li.group
+        ;;  [:div.element-actions
+        ;;   [:div.toggle-element i/eye]
+        ;;   [:div.block-element i/lock]
+        ;;   [:div.chain-element i/chain]]
+        ;;  [:div.element-icon i/folder]
+        ;;  [:span "Closed group"]
+        ;;  [:span.toggle-content i/arrow-slide]]
 
-            [:li
-              [:div.element-actions
-                [:div.toggle-element i/eye]
-                [:div.block-element i/lock]]
-              [:div.sublevel-element i/sublevel]
-              [:div.element-icon i/box]
-              [:span "Sub layer"]]
+        ;; [:li.group.open
+        ;;  [:div.element-actions
+        ;;   [:div.toggle-element i/eye]
+        ;;   [:div.block-element i/lock]
+        ;;   [:div.chain-element i/chain]]
+        ;;  [:div.element-icon i/folder]
+        ;;  [:span "Opened group"]
+        ;;  [:span.toggle-content i/arrow-slide]]
 
-            [:li.group
-              [:div.element-actions
-                [:div.toggle-element i/eye]
-                [:div.block-element i/lock]
-                [:div.chain-element i/chain]]
-              [:div.sublevel-element i/sublevel]
-              [:div.element-icon i/folder]
-              [:span "Sub group"]
-              [:span.toggle-content i/arrow-slide]]]]
+        ;; [:li
+        ;;  [:div.element-actions
+        ;;   [:div.toggle-element i/eye]
+        ;;   [:div.block-element i/lock]]
+        ;;  [:div.sublevel-element i/sublevel]
+        ;;  [:div.element-icon i/box]
+        ;;  [:span "Sub layer"]]
 
-        [:div.layers-tools
-          [:ul.layers-tools-content
-            [:li.clone-layer i/copy]
-            [:li.group-layer i/folder]
-            [:li.delete-layer i/trash]
-          ]]])))
+        ;; [:li.group
+        ;;  [:div.element-actions
+        ;;   [:div.toggle-element i/eye]
+        ;;   [:div.block-element i/lock]
+        ;;   [:div.chain-element i/chain]]
+        ;;  [:div.sublevel-element i/sublevel]
+        ;;  [:div.element-icon i/folder]
+        ;;  [:span "Sub group"]
+        ;;  [:span.toggle-content i/arrow-slide]]]]
+
 
 (def ^:static layers
   (util/component
