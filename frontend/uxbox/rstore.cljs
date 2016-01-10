@@ -101,7 +101,6 @@
     ;; pushed to the event-stream bus
     (as-> (rx/with-latest-from vector state-s watch-s) $
       (rx/flat-map (fn [[event model]] (-apply-watch event model)) $)
-      (rx/merge-all $)
       (rx/on-value $ emit!))
 
     ;; Initialize the stream machinary with initial state.
