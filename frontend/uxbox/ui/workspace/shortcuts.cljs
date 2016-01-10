@@ -20,6 +20,7 @@
    :ctrl+shift+l #(rs/emit! (dw/toggle-toolbox :layers))
    :esc #(rs/emit! (dw/deselect-all))
    :backspace #(rs/emit! (dw/remove-selected))
+   :delete #(rs/emit! (dw/remove-selected))
    :up #(rs/emit! (dw/move-selected :up))
    :down #(rs/emit! (dw/move-selected :down))
    :right #(rs/emit! (dw/move-selected :right))
