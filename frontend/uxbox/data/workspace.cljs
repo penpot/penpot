@@ -164,7 +164,7 @@
     (-apply-watch [_ state]
       (let [selected (get-in state [:workspace :selected])]
         (rx/from-coll
-         (into [(deselect-all)] (mapv #(delete-shape %) selected)))))))
+         (into [(deselect-all)] (map #(delete-shape %) selected)))))))
 
 (defn initialize
   "Initialize the workspace state."
