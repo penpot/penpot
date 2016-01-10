@@ -14,10 +14,11 @@
 (defn- on-click
   [event wstate]
   (let [mousepos @wb/mouse-position
+        scroll-top @wb/scroll-top
         shape (:drawing wstate)]
     (when shape
       (let [props {:x (first mousepos)
-                   :y (second mousepos)
+                   :y (+ (second mousepos) scroll-top)
                    :width 100
                    :height 100}]
         (rs/emit!
