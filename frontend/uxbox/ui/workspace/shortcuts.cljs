@@ -18,7 +18,7 @@
    :ctrl+shift+f #(rs/emit! (dw/toggle-toolbox :draw))
    :ctrl+shift+i #(rs/emit! (dw/toggle-toolbox :icons))
    :ctrl+shift+l #(rs/emit! (dw/toggle-toolbox :layers))
-   :esc (constantly nil)
+   :esc #(rs/emit! (dw/deselect-all))
    :backspace #(rs/emit! (dw/remove-selected))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
