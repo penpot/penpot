@@ -24,7 +24,7 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static shapes-by-id
+(def ^:static ^:private shapes-by-id
   (as-> (l/key :shapes-by-id) $
     (l/focus-atom $ st/state)))
 
