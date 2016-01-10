@@ -14,7 +14,7 @@
      :source-paths ["frontend"]
      :compiler {:main 'uxbox.core
                 :asset-path "js"
-                :parallel-build true
+                :parallel-build false
                 :optimizations :none
                 :pretty-print true
                 :language-in  :ecmascript5
