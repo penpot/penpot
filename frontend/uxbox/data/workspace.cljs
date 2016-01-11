@@ -255,3 +255,16 @@
                  merge
                  (when fill {:fill fill})
                  (when opacity {:opacity opacity})))))
+
+(defn update-selected-shapes-fill
+  "Update the fill related attributed on
+  selected shapes."
+  [opts]
+  (sc/validate! +shape-update-fill-schema+ opts)
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (rx/from-coll
+       (->> (get-in state [:workspace :selected])
+            (map #(update-shape-fill % opts)))))))
+

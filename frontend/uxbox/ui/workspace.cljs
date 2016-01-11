@@ -3,10 +3,10 @@
             [rum.core :as rum]
             [beicon.core :as rx]
             [cats.labs.lens :as l]
-            [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.icons :as i]
             [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
@@ -17,6 +17,7 @@
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (h-rule v-rule)]
             [uxbox.ui.workspace.sidebar :refer (aside)]
+            [uxbox.ui.workspace.colorpalette :refer (colorpalette)]
             [uxbox.ui.workspace.workarea :refer (viewport)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -79,6 +80,8 @@
              (element-opts shape)))
          (coordinates)
          (viewport)]]
+
+       (colorpalette)
 
        ;; Aside
        (when-not no-toolbars?

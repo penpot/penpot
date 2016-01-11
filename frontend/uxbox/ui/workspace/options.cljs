@@ -42,6 +42,9 @@
 (defmulti -render-menu
   (fn [menu own shape] (:id menu)))
 
+(def ^:private ^:static toggle-colorpalette
+  #(rs/emit! (dw/toggle-tool :workspace/colorpalette)))
+
 (defmethod -render-menu :menu/fill
   [menu own shape]
   (letfn [(on-color-change [event]
@@ -76,7 +79,8 @@
         [:span.color-th {:style {:background "#6cb533"}}]
         [:span.color-th {:style {:background "#67c6b5"}}]
         [:span.color-th {:style {:background "#a178e3"}}]
-        [:span.color-th.palette-th i/palette]]
+        [:span.color-th.palette-th {:on-click toggle-colorpalette}
+         i/palette]]
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]
