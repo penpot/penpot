@@ -24,14 +24,14 @@
 (defn header-render
   [own]
   (let [page (rum/react wb/page-state)
-        workspace (rum/react wb/workspace-state)
+        flags (rum/react wb/flags-state)
         toggle #(rs/emit! (dw/toggle-tool %))]
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon
        (nav/link (r/route-for :dashboard/projects) i/logo-icon)]
       [:div.project-tree-btn
-       {:on-click (partial toggle :pagesbar)}
+       {:on-click (partial toggle :workspace/pagesmngr)}
        i/project-tree
        [:span (:name page)]]
       [:div.workspace-options
@@ -57,8 +57,8 @@
          i/ruler]
         [:li.tooltip.tooltip-bottom
          {:alt "Grid (Ctrl + G)"
-          :class (when (:grid-enabled workspace) "selected")
-          :on-click (partial toggle :grid)}
+          :class (when (contains? flags :workspace/grid) "selected")
+          :on-click (partial toggle :workspace/grid)}
          i/grid]
         [:li.tooltip.tooltip-bottom
          {:alt "Align (Ctrl + A)"}

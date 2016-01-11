@@ -44,12 +44,14 @@
 
 (defn toggle-tool
   "Toggle the enabled flag of the specified tool."
-  [toolname]
+  [key]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [key (keyword (str (name toolname) "-enabled"))]
-        (update-in state [:workspace key] (fnil not false))))))
+      (let [flags (get-in state [:workspace :flags])]
+        (if (contains? flags key)
+          (assoc-in state [:workspace :flags] (disj flags key))
+          (assoc-in state [:workspace :flags] (conj flags key)))))))
 
 (defn toggle-toolbox
   "Toggle the visibility flag of the specified toolbox."
@@ -174,6 +176,7 @@
     (-apply-update [_ state]
       (let [s {:project projectid
                :toolboxes #{}
+               :flags #{}
                :drawing nil
                :selected #{}
                :page pageid}]

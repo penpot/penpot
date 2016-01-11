@@ -116,11 +116,11 @@
 (defn pagesmngr-render
   [own]
   (let [local (:rum/local own)
-        workspace (rum/react wb/workspace-state)
+        flags (rum/react wb/flags-state)
         project (rum/react wb/project-state)]
     (html
      [:div#project-bar.project-bar
-      (when-not (:pagesbar-enabled workspace false)
+      (when-not (contains? flags :workspace/pagesmngr)
         {:class "toggle"})
       (if (:edit @local)
         (page-form local)
