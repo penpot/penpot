@@ -22,17 +22,19 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static dashboard-state
-  (as-> (l/in [:dashboard]) $
-    (l/focus-atom $ st/state)))
+(def ^:static ^:private dashboard-l
+  (-> (l/in [:dashboard])
+      (l/focus-atom st/state)))
 
-(def ^:static collections-state
-  (as-> (l/in [:colors-by-id]) $
-    (l/focus-atom $ st/state)))
+(def ^:static ^:private collections-by-id-l
+  (-> (comp (l/in [:colors-by-id])
+            (ul/merge library/+color-collections-by-id+))
+      (l/focus-atom st/state)))
 
-(def ^:static collection-state
-  (as-> (ul/dep-in [:colors-by-id] [:dashboard :collection-id]) $
-    (l/focus-atom $ st/state)))
+(defn- focus-collection
+  [collid]
+  (-> (l/key collid)
+      (l/focus-atom collections-by-id-l)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Title
@@ -46,7 +48,7 @@
               (rs/emit! (dd/rename-color-collection collid content))))
           (on-delete [e]
             (rs/emit! (dd/delete-color-collection (:id coll))))]
-    (let [dashboard (rum/react dashboard-state)
+    (let [dashboard (rum/react dashboard-l)
           own? (:builtin coll false)]
       (html
        [:div.dashboard-title {}
@@ -72,14 +74,15 @@
 
 (defn nav-render
   [own]
-  (let [dashboard (rum/react dashboard-state)
-        colors (rum/react collections-state)
+  (let [dashboard (rum/react dashboard-l)
+        collections-by-id (rum/react collections-by-id-l)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
-        collections (if own?
-                      (sort-by :id (vals colors))
-                      library/+color-collections+)]
+        collections (as-> (vals collections-by-id) $
+                      (if own?
+                        (filter (comp not :builtin) $)
+                        (filter :builtin $)))]
     (html
      [:div.library-bar
       [:div.library-bar-inside
@@ -117,13 +120,11 @@
 
 (defn grid-render
   [own]
-  (let [dashboard (rum/react dashboard-state)
+  (let [dashboard (rum/react dashboard-l)
         coll-type (:collection-type dashboard)
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
-        coll (case coll-type
-               :builtin (get library/+color-collections-by-id+ coll-id)
-               :own (rum/react collection-state))
+        coll (rum/react (focus-collection coll-id))
         edit-cb #(lightbox/open! :color-form {:coll coll :color %})
         remove-cb #(rs/emit! (dd/remove-color {:id (:id coll) :color %}))]
     (when coll
