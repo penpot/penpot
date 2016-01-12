@@ -35,6 +35,10 @@
   (as-> (l/in [:workspace :toolboxes]) $
     (l/focus-atom $ st/state)))
 
+(def ^:static selected-shapes-l
+  (as-> (l/in [:workspace :selected]) $
+    (l/focus-atom $ st/state)))
+
 (def ^:static flags-l
   (as-> (l/in [:workspace :flags]) $
     (l/focus-atom $ st/state)))

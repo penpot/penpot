@@ -17,7 +17,7 @@
             [uxbox.ui.workspace.rules :refer (h-rule v-rule)]
             [uxbox.ui.workspace.sidebar :refer (aside)]
             [uxbox.ui.workspace.colorpalette :refer (colorpalette)]
-            [uxbox.ui.workspace.workarea :refer (viewport)]))
+            [uxbox.ui.workspace.canvas :refer (viewport)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Coordinates Debug

@@ -221,38 +221,27 @@
         shapes (sequence xf (:shapes page))
         shapes-selected (filter (comp workspace-selected :id) shapes)
         shapes-notselected (filter (comp not workspace-selected :id) shapes)]
-    (letfn [(on-mouse-down [event]
-              (dom/stop-propagation event)
-              (when-not (empty? shapes-selected)
-                (rs/emit! (dw/deselect-all)))
-              (reset! wb/selrect-dragging? true))
-            (on-mouse-up [event]
-              (dom/stop-propagation event)
-              (reset! wb/shapes-dragging? false)
-              (reset! wb/selrect-dragging? false))]
-      (html
-       [:svg#page-canvas.page-canvas {:x wb/document-start-x
-                                      :y wb/document-start-y
-                                      :ref (str "canvas" id)
-                                      :width width
-                                      :height height
-                                      :on-mouse-down on-mouse-down
-                                      :on-mouse-up on-mouse-up}
-        (background)
-        (grid 1)
-        [:svg.page-layout {}
-         (for [item shapes-notselected
-               :let [component (shape item workspace-selected)]]
-           (rum/with-key component (str (:id item))))
+    (html
+     [:svg#page-canvas.page-canvas {:x wb/document-start-x
+                                    :y wb/document-start-y
+                                    :ref (str "canvas" id)
+                                    :width width
+                                    :height height}
+      (background)
+      (grid 1)
+      [:svg.page-layout {}
+       (for [item shapes-notselected
+             :let [component (shape item workspace-selected)]]
+         (rum/with-key component (str (:id item))))
 
-         (cond
-           (= (count shapes-selected) 1)
-           (let [item (first shapes-selected)]
-             (shape item workspace-selected))
+       (cond
+         (= (count shapes-selected) 1)
+         (let [item (first shapes-selected)]
+           (shape item workspace-selected))
 
-           (> (count shapes-selected) 1)
-           (selected-shapes shapes-selected))
-         (selrect)]]))))
+         (> (count shapes-selected) 1)
+         (selected-shapes shapes-selected))
+       (selrect)]])))
 
 (def canvas
   (mx/component
@@ -262,3 +251,51 @@
     :transfer-state canvas-transfer-state
     :name "canvas"
     :mixins [mx/static rum/reactive]}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Viewport Component
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn viewport-render
+  [own]
+  (let [workspace (rum/react wb/workspace-l)
+        page (rum/react wb/page-l)
+        drawing? (:drawing workspace)
+        zoom 1]
+    (letfn [(on-mouse-down [event]
+              (dom/stop-propagation event)
+              (when-not (empty? (:selected workspace))
+                (rs/emit! (dw/deselect-all)))
+              (reset! wb/selrect-dragging? true))
+            (on-mouse-up [event]
+              (dom/stop-propagation event)
+              (reset! wb/shapes-dragging? false)
+              (reset! wb/selrect-dragging? false))
+            (on-click [event wstate]
+              (let [mousepos @wb/mouse-position
+                    scroll-top @wb/scroll-top
+                    shape (:drawing wstate)]
+                (when shape
+                  (let [props {:x (first mousepos)
+                               :y (+ (second mousepos) scroll-top)
+                               :width 100
+                               :height 100}]
+                    (rs/emit!
+                     (dw/add-shape shape props)
+                     (dw/select-for-drawing nil))))))]
+      (html
+       [:svg.viewport {:width wb/viewport-height
+                       :height wb/viewport-width
+                       :class (when drawing? "drawing")
+                       :on-click #(on-click % workspace)
+                       :on-mouse-down on-mouse-down
+                       :on-mouse-up on-mouse-up}
+        [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
+         (if page
+           (canvas page))]]))))
+
+(def viewport
+  (mx/component
+   {:render viewport-render
+    :name "viewport"
+    :mixins [rum/reactive]}))
