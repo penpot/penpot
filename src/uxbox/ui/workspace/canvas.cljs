@@ -7,6 +7,7 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
+            [uxbox.xforms :as xf]
             [uxbox.shapes :as shapes]
             [uxbox.util.lens :as ul]
             [uxbox.library.icons :as _icons]
@@ -130,21 +131,22 @@
   (let [{:keys [id x y width height] :as shape} shape
         selected? (contains? selected id)]
     (letfn [(on-mouse-down [event]
-              (let [local (:rum/local own)]
-                (dom/stop-propagation event)
-                (swap! local assoc :init-coords [x y])
-                (reset! wb/shapes-dragging? true))
-              (cond
-                (and (not selected?)
-                     (empty? selected))
-                (rs/emit! (dw/select-shape id))
-
-                (and (not selected?)
-                     (not (empty? selected)))
-                (if (.-ctrlKey event)
+              (when-not (:blocked shape)
+                (let [local (:rum/local own)]
+                  (dom/stop-propagation event)
+                  (swap! local assoc :init-coords [x y])
+                  (reset! wb/shapes-dragging? true))
+                (cond
+                  (and (not selected?)
+                       (empty? selected))
                   (rs/emit! (dw/select-shape id))
-                  (rs/emit! (dw/deselect-all)
-                            (dw/select-shape id)))))
+
+                  (and (not selected?)
+                       (not (empty? selected)))
+                  (if (.-ctrlKey event)
+                    (rs/emit! (dw/select-shape id))
+                    (rs/emit! (dw/deselect-all)
+                              (dw/select-shape id))))))
             (on-mouse-up [event]
               (dom/stop-propagation event)
               (reset! wb/shapes-dragging? false))]
@@ -213,9 +215,10 @@
   (let [workspace (rum/react wb/workspace-l)
         shapes-by-id (rum/react shapes-by-id)
         workspace-selected (:selected workspace)
-        shapes (->> (:shapes page)
-                    (map #(get shapes-by-id %))
-                    (filter #(not (:hidden % false))))
+        xf (comp
+            (map #(get shapes-by-id %))
+            (remove :hidden))
+        shapes (sequence xf (:shapes page))
         shapes-selected (filter (comp workspace-selected :id) shapes)
         shapes-notselected (filter (comp not workspace-selected :id) shapes)]
     (letfn [(on-mouse-down [event]

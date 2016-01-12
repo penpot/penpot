@@ -6,6 +6,7 @@
             [uxbox.state :as st]
             [uxbox.schema :as sc]
             [uxbox.time :as time]
+            [uxbox.xforms :as xf]
             [uxbox.shapes :as shapes]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -127,13 +128,15 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [pid (get-in state [:workspace :page])
-            shapes (->> (vals (:shapes-by-id state))
-                        (filter #(= (:page %) pid))
-                        (filter #(not (:hidden % false)))
-                        (filter #(contained-in-selrect? % selrect))
-                        (map :id))]
-        (assoc-in state [:workspace :selected] (into #{} shapes))))))
+      (let [pageid (get-in state [:workspace :page])
+            xf (comp
+                (filter #(= (:page %) pageid))
+                (remove :hidden)
+                (remove :blocked)
+                (filter #(contained-in-selrect? % selrect))
+                (map :id))]
+        (->> (into #{} xf (vals (:shapes-by-id state)))
+             (assoc-in state [:workspace :selected]))))))
 
 (defn add-shape
   "Mark a shape selected for drawing in the canvas."
@@ -235,6 +238,18 @@
         (if hidden?
           (assoc-in state [:shapes-by-id sid] (assoc shape :hidden false))
           (assoc-in state [:shapes-by-id sid] (assoc shape :hidden true)))))))
+
+(defn toggle-shape-blocking
+  [sid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (println "toggle-shape-blocking" sid)
+      (let [shape (get-in state [:shapes-by-id sid])
+            blocked? (:blocked shape false)]
+        (if blocked?
+          (assoc-in state [:shapes-by-id sid] (assoc shape :blocked false))
+          (assoc-in state [:shapes-by-id sid] (assoc shape :blocked true)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)

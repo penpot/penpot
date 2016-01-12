@@ -92,7 +92,8 @@
   (dom/prevent-default event)
   (let [id (:id item)]
     (cond
-      (:hidden item)
+      (or (:blocked item)
+          (:hidden item))
       nil
 
       (.-ctrlKey event)
@@ -117,11 +118,18 @@
     (when (contains? selected id)
       (rs/emit! (dw/select-shape id)))))
 
+(defn- toggle-blocking
+  [item event]
+  (dom/stop-propagation event)
+  (let [id (:id item)]
+    (rs/emit! (dw/toggle-shape-blocking id))))
+
 (defn- layer-element-render
   [own item selected]
   (let [selected? (contains? selected (:id item))
         select #(select-shape selected item %)
-        toggle-visibility #(toggle-visibility selected item %)]
+        toggle-visibility #(toggle-visibility selected item %)
+        toggle-blocking #(toggle-blocking item %)]
     (html
      [:li {:key (str (:id item))
            :on-click select
@@ -130,7 +138,9 @@
        [:div.toggle-element {:class (when-not (:hidden item) "selected")
                              :on-click toggle-visibility}
         i/eye]
-       [:div.block-element i/lock]]
+       [:div.block-element {:class (when (:blocked item) "selected")
+                            :on-click toggle-blocking}
+        i/lock]]
       [:div.element-icon (shapes/render item)]
       [:span (or (:name item)
                  (:id item))]])))
