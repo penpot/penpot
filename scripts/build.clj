@@ -8,11 +8,11 @@
 
 (let [start (System/nanoTime)]
   (b/build
-   (b/inputs "frontend")
+   (b/inputs "src")
    {:main 'uxbox.core
     :output-to "resources/public/js/main.js"
     :output-dir "resources/public/js"
-    :parallel-build true
+    :parallel-build false
     :optimizations :advanced
     :language-in  :ecmascript5
     :language-out :ecmascript5

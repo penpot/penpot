@@ -11,7 +11,7 @@
    :all-builds
    [{:id "dev"
      :figwheel true
-     :source-paths ["frontend"]
+     :source-paths ["src"]
      :compiler {:main 'uxbox.core
                 :asset-path "js"
                 :parallel-build false
