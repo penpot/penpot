@@ -213,7 +213,9 @@
   (let [workspace (rum/react wb/workspace-l)
         shapes-by-id (rum/react shapes-by-id)
         workspace-selected (:selected workspace)
-        shapes (map #(get shapes-by-id %) (:shapes page))
+        shapes (->> (:shapes page)
+                    (map #(get shapes-by-id %))
+                    (filter #(not (:hidden % false))))
         shapes-selected (filter (comp workspace-selected :id) shapes)
         shapes-notselected (filter (comp not workspace-selected :id) shapes)]
     (letfn [(on-mouse-down [event]

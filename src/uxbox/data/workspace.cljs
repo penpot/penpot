@@ -130,6 +130,7 @@
       (let [pid (get-in state [:workspace :page])
             shapes (->> (vals (:shapes-by-id state))
                         (filter #(= (:page %) pid))
+                        (filter #(not (:hidden % false)))
                         (filter #(contained-in-selrect? % selrect))
                         (map :id))]
         (assoc-in state [:workspace :selected] (into #{} shapes))))))
@@ -221,6 +222,19 @@
                  merge
                  (when fill {:fill fill})
                  (when opacity {:opacity opacity})))))
+
+
+(defn toggle-shape-visibility
+  [sid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (println "toggle-shape-visibility" sid)
+      (let [shape (get-in state [:shapes-by-id sid])
+            hidden? (:hidden shape false)]
+        (if hidden?
+          (assoc-in state [:shapes-by-id sid] (assoc shape :hidden false))
+          (assoc-in state [:shapes-by-id sid] (assoc shape :hidden true)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)
