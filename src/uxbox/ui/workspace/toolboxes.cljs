@@ -110,16 +110,18 @@
                 (dw/select-shape id)))))
 
 (defn- toggle-visibility
-  [item event]
+  [selected item event]
   (dom/stop-propagation event)
   (let [id (:id item)]
-    (rs/emit! (dw/toggle-shape-visibility id))))
+    (rs/emit! (dw/toggle-shape-visibility id))
+    (when (contains? selected id)
+      (rs/emit! (dw/select-shape id)))))
 
 (defn- layer-element-render
   [own item selected]
   (let [selected? (contains? selected (:id item))
         select #(select-shape selected item %)
-        toggle-visibility #(toggle-visibility item %)]
+        toggle-visibility #(toggle-visibility selected item %)]
     (html
      [:li {:key (str (:id item))
            :on-click select
