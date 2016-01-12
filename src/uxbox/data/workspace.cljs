@@ -263,6 +263,19 @@
     (-apply-update [_ state]
       (assoc-in state [:workspace :selected] #{}))))
 
+(defn copy-selected
+  "Copy the selected shapes."
+  []
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [selected (get-in state [:workspace :selected])]
+        (as-> selected $
+          (map #(get-in state [:shapes-by-id %]) $)
+          (map #(assoc % :id (random-uuid)) $)
+          (map #(add-shape % %) $)
+          (rx/from-coll $))))))
+
 (defn delete-selected
   "Deselect all and remove all selected shapes."
   []
