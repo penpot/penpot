@@ -39,8 +39,22 @@
    :y [v/integer]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Events
+;; Events (explicit)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn initialize
+  "Initialize the workspace state."
+  [projectid pageid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [s {:project projectid
+               :toolboxes #{:layers}
+               :flags #{}
+               :drawing nil
+               :selected #{}
+               :page pageid}]
+        (assoc state :workspace s)))))
 
 (defn toggle-tool
   "Toggle the enabled flag of the specified tool."
@@ -120,14 +134,6 @@
                         (map :id))]
         (assoc-in state [:workspace :selected] (into #{} shapes))))))
 
-(defn deselect-all
-  "Mark a shape selected for drawing in the canvas."
-  []
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:workspace :selected] #{}))))
-
 (defn add-shape
   "Mark a shape selected for drawing in the canvas."
   [shape props]
@@ -158,30 +164,6 @@
           (assoc-in $ [:pages-by-id pageid :shapes] shapes)
           (update-in $ [:shapes-by-id] dissoc sid))))))
 
-(defn remove-selected
-  "Deselect all and remove all selected shapes."
-  []
-  (reify
-    rs/WatchEvent
-    (-apply-watch [_ state]
-      (let [selected (get-in state [:workspace :selected])]
-        (rx/from-coll
-         (into [(deselect-all)] (map #(delete-shape %) selected)))))))
-
-(defn initialize
-  "Initialize the workspace state."
-  [projectid pageid]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [s {:project projectid
-               :toolboxes #{}
-               :flags #{}
-               :drawing nil
-               :selected #{}
-               :page pageid}]
-        (assoc state :workspace s)))))
-
 (defn move-shape
   "Mark a shape selected for drawing in the canvas."
   [sid [dx dy :as delta]]
@@ -190,22 +172,6 @@
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])]
         (update-in state [:shapes-by-id sid] shapes/-move {:dx dx :dy dy})))))
-
-(defn move-selected
-  "Move a minimal position unit the selected shapes."
-  [dir]
-  {:pre [(contains? #{:up :down :right :left} dir)]}
-  (reify
-    rs/WatchEvent
-    (-apply-watch [_ state]
-      (let [selected (get-in state [:workspace :selected])
-            delta (case dir
-                    :up [0 -1]
-                    :down [0 +1]
-                    :right [+1 0]
-                    :left [-1 0])]
-        (rx/from-coll
-         (map #(move-shape % delta) selected))))))
 
 (defn update-shape-rotation
   [sid rotation]
@@ -255,6 +221,44 @@
                  merge
                  (when fill {:fill fill})
                  (when opacity {:opacity opacity})))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Events (for selected)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn deselect-all
+  "Mark a shape selected for drawing in the canvas."
+  []
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:workspace :selected] #{}))))
+
+(defn remove-selected
+  "Deselect all and remove all selected shapes."
+  []
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [selected (get-in state [:workspace :selected])]
+        (rx/from-coll
+         (into [(deselect-all)] (map #(delete-shape %) selected)))))))
+
+(defn move-selected
+  "Move a minimal position unit the selected shapes."
+  [dir]
+  {:pre [(contains? #{:up :down :right :left} dir)]}
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [selected (get-in state [:workspace :selected])
+            delta (case dir
+                    :up [0 -1]
+                    :down [0 +1]
+                    :right [+1 0]
+                    :left [-1 0])]
+        (rx/from-coll
+         (map #(move-shape % delta) selected))))))
 
 (defn update-selected-shapes-fill
   "Update the fill related attributed on
