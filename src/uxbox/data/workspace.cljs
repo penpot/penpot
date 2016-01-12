@@ -263,7 +263,7 @@
     (-apply-update [_ state]
       (assoc-in state [:workspace :selected] #{}))))
 
-(defn remove-selected
+(defn delete-selected
   "Deselect all and remove all selected shapes."
   []
   (reify
