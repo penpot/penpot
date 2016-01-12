@@ -3,6 +3,7 @@
             [rum.core :as rum]
             [cats.labs.lens :as l]
             [goog.events :as events]
+            [uxbox.util.color :refer (rgb->hex)]
             [uxbox.ui.mixins :as mx])
   (:import goog.events.EventType))
 
@@ -21,7 +22,7 @@
         r (aget (.-data image) 0)
         g (aget (.-data image) 1)
         b (aget (.-data image) 2)]
-    (callback {:hex (mx/rgb->hex [r g b])
+    (callback {:hex (rgb->hex [r g b])
                :rgb [r g b]})))
 
 (defn colorpicker-render
