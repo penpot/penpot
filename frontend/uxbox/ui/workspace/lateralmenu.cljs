@@ -19,7 +19,7 @@
 
 (defn lateralmenu-render
   [own]
-  (let [toolboxes (rum/react wb/active-toolboxes-state)
+  (let [toolboxes (rum/react wb/toolboxes-l)
         toggle #(rs/emit! (dw/toggle-toolbox %))]
     (html
      [:div#tool-bar.tool-bar

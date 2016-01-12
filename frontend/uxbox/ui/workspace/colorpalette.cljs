@@ -42,7 +42,7 @@
 (defn- colorpalette-render
   [own]
   (let [local (:rum/local own)
-        flags (rum/react wb/flags-state)
+        flags (rum/react wb/flags-l)
         collections-by-id (rum/react collections-by-id-l)
         collections (vals collections-by-id)
         collection (if-let [collid (:selected @local)]

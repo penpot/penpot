@@ -149,7 +149,7 @@
 ;; Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (def ^:static menu-state
+;; (def ^:static menu-l
 ;;   (as-> (l/select-keys [:projects]) $
 ;;     (l/focus-atom $ s/state)))
 
@@ -166,7 +166,7 @@
 
 (defn menu-render
   []
-  (let [state {:projects []} #_(rum/react menu-state)
+  (let [state {:projects []} #_(rum/react menu-l)
         pcount (count (:projects state))]
     (html
      [:section#dashboard-bar.dashboard-bar
@@ -226,7 +226,7 @@
 ;; Grid
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static grid-state
+(def ^:static grid-l
   (as-> (l/select-keys [:projects-by-id]) $
     (l/focus-atom $ s/state)))
 
@@ -235,7 +235,7 @@
   (letfn [(on-click [e]
             (dom/prevent-default e)
             (lightbox/open! :new-project))]
-    (let [state (rum/react grid-state)]
+    (let [state (rum/react grid-l)]
       (html
        [:section.dashboard-grid
         [:h2 "Your projects"]

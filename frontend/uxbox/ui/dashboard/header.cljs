@@ -12,7 +12,7 @@
             [uxbox.ui.users :as ui.u]
             [uxbox.ui.util :as util]))
 
-(def ^:static header-state
+(def ^:static header-l
   (as-> (l/in [:dashboard]) $
     (l/focus-atom $ s/state)))
 
@@ -24,7 +24,7 @@
 
 (defn header-render
   [own]
-  (let [local (rum/react header-state)
+  (let [local (rum/react header-l)
         projects? (= (:section local) :dashboard/projects)
         elements? (= (:section local) :dashboard/elements)
         icons? (= (:section local) :dashboard/icons)

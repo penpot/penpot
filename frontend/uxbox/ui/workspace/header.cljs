@@ -23,8 +23,8 @@
 
 (defn header-render
   [own]
-  (let [page (rum/react wb/page-state)
-        flags (rum/react wb/flags-state)
+  (let [page (rum/react wb/page-l)
+        flags (rum/react wb/flags-l)
         toggle #(rs/emit! (dw/toggle-tool %))]
     (html
      [:header#workspace-bar.workspace-bar

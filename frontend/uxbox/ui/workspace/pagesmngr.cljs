@@ -18,7 +18,7 @@
             (let [data {:edit true :form page}]
               (reset! parent data)))]
 
-    (let [curpage (rum/react wb/page-state)
+    (let [curpage (rum/react wb/page-l)
           active? (= (:id curpage) (:id page))
           deletable? (> numpages 1)
           navigate #(rs/emit! (dp/go-to (:project page) (:id page)))
@@ -44,8 +44,8 @@
 
 (defn- page-list-render
   [own parent]
-  (let [project (rum/react wb/project-state)
-        pages (rum/react wb/pages-state)
+  (let [project (rum/react wb/project-l)
+        pages (rum/react wb/pages-l)
         name (:name project)]
     (html
      [:div.project-bar-inside
@@ -67,7 +67,7 @@
 (defn- page-form-render
   [own parent]
   (let [form (:form @parent)
-        project @wb/project-state]
+        project @wb/project-l]
     (letfn [(on-change [e]
               (let [value (dom/event->value e)]
                 (swap! parent assoc-in [:form :name] value)))
@@ -116,8 +116,8 @@
 (defn pagesmngr-render
   [own]
   (let [local (:rum/local own)
-        flags (rum/react wb/flags-state)
-        project (rum/react wb/project-state)]
+        flags (rum/react wb/flags-l)
+        project (rum/react wb/project-l)]
     (html
      [:div#project-bar.project-bar
       (when-not (contains? flags :workspace/pagesmngr)

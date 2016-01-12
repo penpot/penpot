@@ -21,7 +21,7 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static dashboard-state
+(def ^:static dashboard-l
   (as-> (l/in [:dashboard]) $
     (l/focus-atom $ st/state)))
 
@@ -31,7 +31,7 @@
 
 (defn page-title-render
   [own coll]
-  (let [dashboard (rum/react dashboard-state)
+  (let [dashboard (rum/react dashboard-l)
         own? (:builtin coll false)]
     (html
      [:div.dashboard-title {}
@@ -57,7 +57,7 @@
 
 (defn nav-render
   [own]
-  (let [dashboard (rum/react dashboard-state)
+  (let [dashboard (rum/react dashboard-l)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
@@ -100,14 +100,14 @@
 
 (defn grid-render
   [own]
-  (let [dashboard (rum/react dashboard-state)
+  (let [dashboard (rum/react dashboard-l)
         coll-type (:collection-type dashboard)
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
         coll (get library/+icon-collections-by-id+ coll-id)]
         ;; coll (case coll-type
         ;;        :builtin (get library/+color-collections-by-id+ coll-id)
-        ;;        :own (rum/react collection-state))]
+        ;;        :own (rum/react collection-l))]
         ;; edit-cb #(lightbox/open! :icon-form {:coll coll :icon %})
         ;; remove-cb #(rs/emit! (dd/remove-icon {:id (:id coll) :icon %}))]
     ;; (println "KAKAKKA" coll-type coll-id coll)

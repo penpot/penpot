@@ -17,7 +17,7 @@
 (defn aside-render
   [own]
   (println "aside-render")
-  (let [toolboxes (rum/react wb/active-toolboxes-state)]
+  (let [toolboxes (rum/react wb/toolboxes-l)]
     (html
      [:aside#settings-bar.settings-bar
       [:div.settings-bar-inside

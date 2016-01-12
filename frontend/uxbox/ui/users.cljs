@@ -48,13 +48,13 @@
                          :user/avatar "http://lorempixel.com/50/50/"}))
 (def menu-open? (atom false))
 
-(def ^:static user-state
+(def ^:static user-l
   (as-> (l/in [:user]) $
     (l/focus-atom $ s/state)))
 
 (defn user-render
   [own]
-  (let [user (rum/react user-state)
+  (let [user (rum/react user-l)
         local (:rum/local own)]
     (html
      [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)

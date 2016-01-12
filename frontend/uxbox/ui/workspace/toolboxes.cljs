@@ -60,7 +60,7 @@
 
 (defn draw-tools-render
   [open-toolboxes]
-  (let [workspace (rum/react wb/workspace-state)
+  (let [workspace (rum/react wb/workspace-l)
         close #(rs/emit! (dw/toggle-toolbox :draw))
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))]
@@ -109,7 +109,7 @@
 
 (defn layers-render
   [own]
-  (let [workspace (rum/react wb/workspace-state)
+  (let [workspace (rum/react wb/workspace-l)
         selected (:selected workspace)
         shapes-by-id (rum/react shapes-by-id)
         page (rum/react (focus-page (:page workspace)))
@@ -182,7 +182,7 @@
 
 (defn- select-icon
   [icon]
-  (if (= (:drawing @wb/workspace-state) icon)
+  (if (= (:drawing @wb/workspace-l) icon)
     (rs/emit! (dw/select-for-drawing nil))
     (rs/emit! (dw/select-for-drawing icon))))
 

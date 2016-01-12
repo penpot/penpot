@@ -15,28 +15,28 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static project-state
+(def ^:static project-l
   (as-> (ul/dep-in [:projects-by-id] [:workspace :project]) $
     (l/focus-atom $ st/state)))
 
-(def ^:static page-state
+(def ^:static page-l
   (as-> (ul/dep-in [:pages-by-id] [:workspace :page]) $
     (l/focus-atom $ st/state)))
 
-(def ^:static pages-state
+(def ^:static pages-l
   (as-> (ul/getter #(let [pid (get-in % [:workspace :project])]
                         (dp/project-pages % pid))) $
     (l/focus-atom $ st/state)))
 
-(def ^:static workspace-state
+(def ^:static workspace-l
   (as-> (l/in [:workspace]) $
     (l/focus-atom $ st/state)))
 
-(def ^:static active-toolboxes-state
+(def ^:static toolboxes-l
   (as-> (l/in [:workspace :toolboxes]) $
     (l/focus-atom $ st/state)))
 
-(def ^:static flags-state
+(def ^:static flags-l
   (as-> (l/in [:workspace :flags]) $
     (l/focus-atom $ st/state)))
 
@@ -75,7 +75,7 @@
 (defonce mouse-b (rx/bus))
 (defonce mouse-s
   (->> mouse-b
-       (rx/filter #(= (:id %) (:id @page-state)))
+       (rx/filter #(= (:id %) (:id @page-l)))
        (rx/map :coords)))
 
 ;; Deltas

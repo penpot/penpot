@@ -53,7 +53,7 @@
 
 (defn- workspace-render
   [own projectid]
-  (let [workspace (rum/react wb/workspace-state)
+  (let [workspace (rum/react wb/workspace-l)
         no-toolbars? (empty? (:toolboxes workspace))]
     (html
      [:div

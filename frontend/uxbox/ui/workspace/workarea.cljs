@@ -31,8 +31,8 @@
 
 (defn viewport-render
   [own]
-  (let [workspace (rum/react wb/workspace-state)
-        page (rum/react wb/page-state)
+  (let [workspace (rum/react wb/workspace-l)
+        page (rum/react wb/page-l)
         drawing? (:drawing workspace)
         zoom 1]
     (html
