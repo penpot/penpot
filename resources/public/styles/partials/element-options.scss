@@ -204,3 +204,26 @@
     }
   }
 }
+
+.element-color-picker {
+  align-items: center;
+  display: flex;
+  height: 160px;
+  margin: 0 4px;
+  .color-picker-body {
+    height: 100%;
+    margin-right: 15px;
+  }
+  .color-picker-bar {
+    height: 100%;
+    padding: relative;
+    width: 15px;
+    .color-bar-select {
+      background-color: $color-white;
+      height: 3px;
+      position: absolute;
+      width: 15px;
+      top: 30%;
+    }
+  }
+}

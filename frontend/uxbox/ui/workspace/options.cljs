@@ -64,6 +64,12 @@
       [:div.element-set-content
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
+       [:div.element-color-picker
+        [:div.color-picker-body
+          [:img {:src "images/color-gamma.png", :border "none"}]]
+        [:div.color-picker-bar
+          [:div.color-bar-select]
+          [:img {:src "images/color-bar.png", :border "none"}]]]
        [:div.row-flex
         [:input#width.input-text
          {:placeholder "#"
@@ -184,5 +190,3 @@
    {:render element-opts-render
     :name "element-opts"
     :mixins [rum/reactive (mx/local {})]}))
-
-
