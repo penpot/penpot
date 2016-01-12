@@ -87,13 +87,35 @@
 ;; Layers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- select-shape
+  [selected item event]
+  (dom/prevent-default event)
+  (let [id (:id item)]
+    (cond
+      (.-ctrlKey event)
+      (rs/emit! (dw/select-shape id))
+
+      (> (count selected) 1)
+      (rs/emit! (dw/deselect-all)
+                (dw/select-shape id))
+
+      (contains? selected id)
+      (rs/emit! (dw/select-shape id))
+
+      :else
+      (rs/emit! (dw/deselect-all)
+                (dw/select-shape id)))))
+
 (defn- layer-element-render
   [own item selected]
-  (let [selected? (contains? selected (:id item))]
+  (let [selected? (contains? selected (:id item))
+        select #(select-shape selected item %)]
     (html
-     [:li {:key (str (:id item))}
+     [:li {:key (str (:id item))
+           :on-click select
+           :class (when selected? "selected")}
       [:div.element-actions
-       [:div.toggle-element i/eye]
+       [:div.toggle-element {:class "selected"} i/eye]
        [:div.block-element i/lock]]
       [:div.element-icon i/box]
       [:span (or (:name item)

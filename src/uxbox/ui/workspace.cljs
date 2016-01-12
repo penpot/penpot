@@ -105,4 +105,3 @@
     :transfer-state workspace-transfer-state
     :name "workspace"
     :mixins [mx/static rum/reactive wshortcuts/mixin]}))
-

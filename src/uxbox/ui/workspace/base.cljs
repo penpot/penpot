@@ -24,7 +24,7 @@
 
 (def ^:static pages-l
   (as-> (ul/getter #(let [pid (get-in % [:workspace :project])]
-                        (dp/project-pages % pid))) $
+                      (dp/project-pages % pid))) $
     (l/focus-atom $ st/state)))
 
 (def ^:static workspace-l
