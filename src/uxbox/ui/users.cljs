@@ -6,7 +6,7 @@
             [uxbox.state :as s]
             [uxbox.ui.icons :as icons]
             [uxbox.ui.navigation :as nav]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Menu
@@ -34,7 +34,7 @@
      [:span "Save & Exit"]]]))
 
 (def user-menu
-  (util/component
+  (mx/component
    {:render menu-render
     :name "user-menu"
     :mixins []}))
@@ -65,7 +65,7 @@
       (user-menu (:open @local))])))
 
 (def user
-  (util/component
+  (mx/component
    {:render user-render
     :name "user"
     :mixins [rum/reactive (rum/local {:open false})]}))

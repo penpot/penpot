@@ -9,10 +9,10 @@
             [uxbox.data.workspace :as dw]
             [uxbox.util.lens :as ul]
             [uxbox.util.data :refer (read-string)]
+            [uxbox.util.color :refer (hex->rgb)]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.dom :as dom]
-            [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,7 +65,7 @@
         [:span.left-arrow i/arrow-slide]
         [:div.color-palette-content
          (for [hex-color (:colors collection)
-               :let [rgb-vec (util/hex->rgb hex-color)
+               :let [rgb-vec (hex->rgb hex-color)
                      rgb-color (apply str "" (interpose ", " rgb-vec))]]
            [:div.color-cell {:key (str hex-color)
                              :on-click #(select-color hex-color %)}
@@ -139,7 +139,7 @@
 ;;  [:span.color-text "+ Add color"]]]
 
 (def ^:static colorpalette
-  (util/component
+  (mx/component
    {:render colorpalette-render
     :name "colorpalette"
     :mixins [mx/static rum/reactive

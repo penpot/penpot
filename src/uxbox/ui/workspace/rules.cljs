@@ -6,8 +6,7 @@
             [uxbox.state :as s]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.mixins :as mx]))
 
 (def ^:static zoom 1)
 (def ^:static padding 20)
@@ -91,7 +90,7 @@
          (h-line pos tick))]])))
 
 (def h-rule
-  (util/component
+  (mx/component
    {:render h-rule-render
     :name "h-rule"
     :mixins [mx/static rum/reactive]}))
@@ -113,7 +112,7 @@
          (v-line pos tick))]])))
 
 (def v-rule
-  (util/component
+  (mx/component
    {:render v-rule-render
     :name "v-rule"
     :mixins [mx/static rum/reactive]}))

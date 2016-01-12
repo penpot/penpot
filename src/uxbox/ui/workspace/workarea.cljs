@@ -5,7 +5,6 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.workspace.canvas :refer (canvas)]
             [uxbox.ui.workspace.grid :refer (grid)]
@@ -45,7 +44,7 @@
          (canvas page))]])))
 
 (def viewport
-  (util/component
+  (mx/component
    {:render viewport-render
     :name "viewport"
     :mixins [rum/reactive]}))

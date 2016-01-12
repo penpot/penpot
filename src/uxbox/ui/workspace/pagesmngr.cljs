@@ -5,12 +5,11 @@
             [uxbox.rstore :as rs]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.keyboard :as k]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.dom :as dom]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.dom :as dom]))
 
 (defn- page-item-render
   [own parent page numpages]
@@ -37,7 +36,7 @@
           i/trash]]]))))
 
 (def page-item
-  (util/component
+  (mx/component
    {:render page-item-render
     :name "page-item"
     :mixins [rum/reactive]}))
@@ -59,7 +58,7 @@
        "+ Add new page"]])))
 
 (def page-list
-  (util/component
+  (mx/component
    {:render page-list-render
     :name "page-list"
     :mixins [rum/reactive]}))
@@ -108,7 +107,7 @@
          "Cancel"]]))))
 
 (def page-form
-  (util/component
+  (mx/component
    {:render page-form-render
     :name "page-form"
     :mixins [rum/reactive]}))
@@ -127,7 +126,7 @@
         (page-list local))])))
 
 (def pagesmngr
-  (util/component
+  (mx/component
    {:render pagesmngr-render
     :name "pagesmngr"
     :mixins [rum/reactive (mx/local {:edit false :form {}})]}))

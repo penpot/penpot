@@ -7,7 +7,6 @@
             [uxbox.state :as st]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.options :refer (element-opts)]
@@ -35,7 +34,7 @@
         [:tr [:td "y="] [:td y]]]]])))
 
 (def coordinates
-  (util/component
+  (mx/component
    {:render coordenates-render
     :name "coordenates"
     :mixins [rum/reactive]}))
@@ -100,7 +99,7 @@
    state))
 
 (def ^:static workspace
-  (util/component
+  (mx/component
    {:render workspace-render
     :will-mount workspace-will-mount
     :transfer-state workspace-transfer-state

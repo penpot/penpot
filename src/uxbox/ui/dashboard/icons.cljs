@@ -14,8 +14,7 @@
             [uxbox.ui.form :as form]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.dom :as dom]
-            [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses
@@ -46,7 +45,7 @@
           i/trash]])])))
 
 (def ^:static page-title
-  (util/component
+  (mx/component
    {:render page-title-render
     :name "page-title"
     :mixins [mx/static rum/reactive]}))
@@ -89,7 +88,7 @@
             (str (count (:icons props)) " elements")]])]]])))
 
 (def ^:static nav
-  (util/component
+  (mx/component
    {:render nav-render
     :name "nav"
     :mixins [rum/reactive]}))
@@ -125,7 +124,7 @@
              [:div.project-th-icon.delete i/trash]]])]]))))
 
 (def grid
-  (util/component
+  (mx/component
    {:render grid-render
     :name "grid"
     :mixins [mx/static rum/reactive]}))
@@ -155,6 +154,6 @@
      i/close]]))
 
 (def new-icon-lightbox
-  (util/component
+  (mx/component
    {:render new-icon-lightbox-render
     :name "new-icon-lightbox"}))

@@ -5,7 +5,6 @@
             [uxbox.shapes :as shapes]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.workspace.base :as wb]
@@ -186,7 +185,7 @@
         (-render-menu menu own shape))])))
 
 (def ^:static element-opts
-  (util/component
+  (mx/component
    {:render element-opts-render
     :name "element-opts"
     :mixins [rum/reactive (mx/local {})]}))

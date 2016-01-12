@@ -14,7 +14,6 @@
             [uxbox.data.workspace :as dw]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
-            [uxbox.ui.util :as util]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.grid :refer (grid)]
             [uxbox.ui.workspace.options :refer (element-opts)])
@@ -39,7 +38,7 @@
     {:x 0 :y 0 :width "100%" :height "100%" :fill "white"}]))
 
 (def background
-  (util/component
+  (mx/component
    {:render background-render
     :name "background"
     :mixins [mx/static]}))
@@ -60,7 +59,7 @@
          :height height}]))))
 
 (def ^:static selrect
-  (util/component
+  (mx/component
    {:render selrect-render
     :name "selrect"
     :mixins [mx/static rum/reactive]}))
@@ -117,7 +116,7 @@
                                       {:cx (+ x width) :cy (+ y height)})]]]))))
 
 (def selected-shapes
-  (util/component
+  (mx/component
    {:render selected-shapes-render
     :name "selected-shapes"
     :mixins [mx/static rum/reactive (mx/local {})]}))
@@ -169,7 +168,7 @@
                                         {:cx (+ x width) :cy (+ y height)})]])]))))
 
 (def shape
-  (util/component
+  (mx/component
    {:render shape-render
     :name "shape"
     :mixins [mx/static (mx/local {})]}))
@@ -188,7 +187,7 @@
                                   (- y offset-y)]}]
               (rx/push! wb/mouse-b event)))]
     (let [[page] (:rum/props own)
-          canvas (util/get-ref-dom own (str "canvas" (:id page)))
+          canvas (mx/get-ref-dom own (str "canvas" (:id page)))
           brect (.getBoundingClientRect canvas)
           brect [(.-left brect) (.-top brect)]
           key (events/listen js/document EventType.MOUSEMOVE
@@ -251,7 +250,7 @@
          (selrect)]]))))
 
 (def canvas
-  (util/component
+  (mx/component
    {:render canvas-render
     :did-mount canvas-did-mount
     :will-unmount canvas-will-unmount

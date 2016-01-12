@@ -1,7 +1,7 @@
 (ns uxbox.ui.lightbox
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.ui.util :as util]
+            [uxbox.ui.mixins :as mx]
             [uxbox.ui.keyboard :as k]
             [goog.events :as events])
   (:import goog.events.EventType))
@@ -59,7 +59,7 @@
       (render-lightbox params)])))
 
 (def ^:static lightbox
-  (util/component
+  (mx/component
    {:name "lightbox"
     :render lightbox-render
     :transfer-state lightbox-transfer-state

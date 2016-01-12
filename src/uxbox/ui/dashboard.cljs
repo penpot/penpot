@@ -6,15 +6,13 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
-            [uxbox.ui.util :as util]
             [uxbox.data.dashboard :as dd]
             [uxbox.ui.library-bar :as ui.library-bar]
             [uxbox.ui.dashboard.header :refer (header)]
             [uxbox.ui.dashboard.projects :as projects]
             [uxbox.ui.dashboard.elements :as elements]
             [uxbox.ui.dashboard.icons :as icons]
-            [uxbox.ui.dashboard.colors :as colors]
-            ))
+            [uxbox.ui.dashboard.colors :as colors]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page: projects
@@ -40,7 +38,7 @@
   state)
 
 (def ^:static projects-page
-  (util/component
+  (mx/component
    {:render projects-page-render
     :will-mount projects-page-will-mount
     :transfer-state projects-page-transfer-state
@@ -73,7 +71,7 @@
   state)
 
 (def ^:static elements-page
-  (util/component
+  (mx/component
    {:render elements-page-render
     :will-mount elements-page-will-mount
     :transfer-state elements-page-transfer-state
@@ -104,7 +102,7 @@
   state)
 
 (def ^:static icons-page
-  (util/component
+  (mx/component
    {:render icons-page-render
     :will-mount icons-page-will-mount
     :transfer-state icons-page-transfer-state
@@ -135,7 +133,7 @@
   state)
 
 (def ^:static colors-page
-  (util/component
+  (mx/component
    {:render colors-page-render
     :will-mount colors-page-will-mount
     :transfer-state colors-page-transfer-state

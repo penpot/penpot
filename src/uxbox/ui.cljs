@@ -10,7 +10,6 @@
             [uxbox.ui.users :as users]
             [uxbox.ui.dashboard :as dashboard]
             [uxbox.ui.workspace :refer (workspace)]
-            [uxbox.ui.util :as util]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.shapes]))
 
@@ -34,9 +33,9 @@
       )))
 
 (def app
-  (util/component {:render app-render
-                   :mixins [rum/reactive]
-                   :name "app"}))
+  (mx/component {:render app-render
+                 :mixins [rum/reactive]
+                 :name "app"}))
 (defn init
   []
   (let [app-dom (gdom/getElement "app")

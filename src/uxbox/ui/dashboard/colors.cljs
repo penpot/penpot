@@ -10,13 +10,13 @@
             [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
             [uxbox.util.lens :as ul]
+            [uxbox.util.color :refer (hex->rgb)]
             [uxbox.ui.icons :as i]
             [uxbox.ui.form :as form]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.dom :as dom]
-            [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses
@@ -63,7 +63,7 @@
            [:span {:on-click on-delete} i/trash]])]))))
 
 (def ^:static page-title
-  (util/component
+  (mx/component
    {:render page-title-render
     :name "page-title"
     :mixins [mx/static rum/reactive]}))
@@ -109,7 +109,7 @@
             (tr "ds.num-elements" (t/c num))]])]]])))
 
 (def ^:static nav
-  (util/component
+  (mx/component
    {:render nav-render
     :name "nav"
     :mixins [rum/reactive]}))
@@ -137,7 +137,7 @@
             {:on-click #(lightbox/open! :color-form {:coll coll})}
             [:span "+ New color"]])
          (for [color (remove nil? (:colors coll))
-               :let [color-rgb (util/hex->rgb color)]]
+               :let [color-rgb (hex->rgb color)]]
            [:div.grid-item.small-item.project-th {:key color}
             [:span.color-swatch {:style {:background-color color}}]
             [:span.color-data color]
@@ -151,7 +151,7 @@
                 i/trash]])])]]))))
 
 (def grid
-  (util/component
+  (mx/component
    {:render grid-render
     :name "grid"
     :mixins [mx/static rum/reactive]}))
@@ -197,7 +197,7 @@
        i/close]]))))
 
 (def color-lightbox
-  (util/component
+  (mx/component
    {:render color-lightbox-render
     :name "color-lightbox"
     :mixins [(rum/local {})

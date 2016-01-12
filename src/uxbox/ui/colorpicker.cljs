@@ -3,8 +3,7 @@
             [rum.core :as rum]
             [cats.labs.lens :as l]
             [goog.events :as events]
-            [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util])
+            [uxbox.ui.mixins :as mx])
   (:import goog.events.EventType))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -13,7 +12,7 @@
 
 (defn on-click-handler
   [e own callback]
-  (let [canvas (util/get-ref-dom own "colorpicker")
+  (let [canvas (mx/get-ref-dom own "colorpicker")
         context (.getContext canvas "2d")
         brect (.getBoundingClientRect canvas)
         x (- (.-pageX e) (.-left brect))
@@ -22,7 +21,7 @@
         r (aget (.-data image) 0)
         g (aget (.-data image) 1)
         b (aget (.-data image) 2)]
-    (callback {:hex (util/rgb->hex [r g b])
+    (callback {:hex (mx/rgb->hex [r g b])
                :rgb [r g b]})))
 
 (defn colorpicker-render
@@ -38,7 +37,7 @@
 
 (defn colorpicker-did-mount
   [own]
-  (let [canvas (util/get-ref-dom own "colorpicker")
+  (let [canvas (mx/get-ref-dom own "colorpicker")
         context (.getContext canvas "2d")
         img (js/Image.)]
     (set! (.-src img) "/images/colorspecrum-400x300.png")
@@ -51,7 +50,7 @@
     (events/unlistenByKey key)))
 
 (def ^:static colorpicker
-  (util/component
+  (mx/component
    {:render colorpicker-render
     :did-mount colorpicker-did-mount
     :will-unmout colorpicker-will-unmout

@@ -7,7 +7,7 @@
             [uxbox.data.workspace :as dw]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lateral Menu
@@ -45,7 +45,7 @@
          i/chat]]]])))
 
 (def ^:static lateralmenu
-  (util/component
+  (mx/component
    {:render lateralmenu-render
     :name "lateralmenu"
     :mixins [rum/reactive]}))

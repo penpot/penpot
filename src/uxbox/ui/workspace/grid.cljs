@@ -2,7 +2,6 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util]
             [uxbox.ui.workspace.base :as wb]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -78,7 +77,7 @@
             (rum/with-key line (str "tick-" tick))))]))))
 
 (def grid
-  (util/component
+  (mx/component
    {:render grid-render
     :name "grid"
     :mixins [mx/static rum/reactive]}))

@@ -9,7 +9,7 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.users :as ui.u]
             [uxbox.ui.navigation :as nav]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.mixins :as mx]))
 
 (defn on-download-clicked
   [event page]
@@ -73,7 +73,7 @@
       (ui.u/user)])))
 
 (def header
-  (util/component
+  (mx/component
    {:render header-render
     :name "workspace-header"
     :mixins [rum/reactive]}))

@@ -10,7 +10,7 @@
             [uxbox.ui.navigation :as nav]
             [uxbox.ui.icons :as i]
             [uxbox.ui.users :as ui.u]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.mixins :as mx]))
 
 (def ^:static header-l
   (as-> (l/in [:dashboard]) $
@@ -45,7 +45,7 @@
       (ui.u/user)])))
 
 (def ^:static header
-  (util/component
+  (mx/component
    {:render header-render
     :name "header"
     :mixins [rum/static

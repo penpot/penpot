@@ -4,8 +4,43 @@
             [cats.labs.lens :as l]
             [goog.dom.forms :as gforms]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Rum Sugar
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn component
+  [spec]
+  (let [name (or (:name spec)
+                 (str (gensym "rum-")))
+        mixins (or (:mixins spec)
+                   [])
+        spec (merge (dissoc spec :name :mixins)
+                    (when-let [rfn (:render spec)]
+                      {:render (fn [state]
+                                 [(apply rfn state (:rum/props state)) state])}))
+        cls (rum/build-class (conj mixins spec) name)
+        ctr (fn self
+              ([] (self {}))
+              ([& props]
+               (let [state {:rum/props props}]
+                 (rum/element cls state nil))))]
+    (with-meta ctr {:rum/class cls})))
+
+(defn ref-value
+  [own ref]
+  (let [component (-> own :rum/react-component)
+        ref-node (aget (.-refs component) ref)
+        dom-node  (.findDOMNode js/ReactDOM ref-node)]
+    (.-value dom-node)))
+
+(defn get-ref-dom
+  [own ref]
+  (let [component (-> own :rum/react-component)
+        ref-node (aget (.-refs component) ref)]
+    (.findDOMNode js/ReactDOM ref-node)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Cursored & Lenses
+;; Cursored Mixin
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- cursored-key
@@ -63,6 +98,10 @@
   {:did-mount cursored-did-mount
    :will-unmount cursored-will-unmount})
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Local Mixin
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn local
   "Adds an atom to component’s state that can be used as local state.
    Atom is stored under key `:rum/local`.
@@ -84,6 +123,10 @@
                      (rum/request-render component)))
         (assoc state key local-state)))
     }))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Static Mixin
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def static
   {:should-update

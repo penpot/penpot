@@ -13,7 +13,7 @@
             [uxbox.ui.dom :as dom]
             [uxbox.ui.dashboard.header :as dsh.header]
             [uxbox.ui.lightbox :as lightbox]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers & Constants
@@ -136,7 +136,7 @@
       i/close]])))
 
 (def new-project-lightbox
-  (util/component
+  (mx/component
    {:render new-project-lightbox-render
     :name "new-project-lightbox"
     :mixins [(rum/local +project-defaults+)]}))
@@ -177,7 +177,7 @@
        i/search]])))
 
 (def menu
-  (util/component
+  (mx/component
    {:render menu-render
     :name "projects-menu"
     :mixins [rum/reactive]}))
@@ -210,7 +210,7 @@
         i/trash]]])))
 
 (def project-item
-  (util/component
+  (mx/component
    {:render project-item-render
     :name "project"
     :mixins [rum/static]}))
@@ -246,7 +246,7 @@
             (rum/with-key (project-item item) (:id item)))]]))))
 
 (def grid
-  (util/component
+  (mx/component
    {:render grid-render
     :name "grid"
     :mixins [rum/reactive]}))

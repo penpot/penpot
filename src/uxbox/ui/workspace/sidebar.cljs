@@ -6,7 +6,6 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.toolboxes :as toolboxes]))
 
@@ -29,7 +28,7 @@
          (toolboxes/layers))]])))
 
 (def aside
-  (util/component
+  (mx/component
    {:render aside-render
     :name "aside"
     :mixins [rum/reactive mx/static]}))

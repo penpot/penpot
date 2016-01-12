@@ -5,8 +5,7 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.dom :as dom]
-            [uxbox.ui.mixins :as mx]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Title
@@ -22,7 +21,7 @@
      [:span i/trash]]]))
 
 (def ^:static page-title
-  (util/component
+  (mx/component
    {:render page-title-render
     :name "page-title"
     :mixins [mx/static]}))
@@ -118,7 +117,7 @@
       [:div.project-th-icon.delete i/trash]]]]))
 
 (def ^:static grid
-  (util/component
+  (mx/component
    {:render grid-render
     :name "grid"
     :mixins [mx/static]}))
@@ -145,7 +144,7 @@
      i/close]]))
 
 (def new-element-lightbox
-  (util/component
+  (mx/component
    {:render new-element-lightbox-render
     :name "new-element-lightbox"}))
 

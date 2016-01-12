@@ -12,8 +12,7 @@
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.dom :as dom]
-            [uxbox.ui.util :as util]))
+            [uxbox.ui.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses
@@ -79,7 +78,7 @@
           (:icon props)])]])))
 
 (def ^:static draw-tools
-  (util/component
+  (mx/component
    {:render draw-tools-render
     :name "draw-tools"
     :mixins [mx/static rum/reactive]}))
@@ -102,7 +101,7 @@
                  (:id item))]])))
 
 (def ^:static ^:private layer-element
-  (util/component
+  (mx/component
    {:render layer-element-render
     :name "layer-element"
     :mixins [mx/static]}))
@@ -171,7 +170,7 @@
 
 
 (def ^:static layers
-  (util/component
+  (mx/component
    {:render layers-render
     :name "layers"
     :mixins [rum/reactive]}))
@@ -198,7 +197,7 @@
   (shapes/render icon))
 
 (def ^:static ^:private icon-wrapper
-  (util/component
+  (mx/component
    {:render icon-wrapper-render
     :name "icon-wrapper"
     :mixins [mx/static]}))
@@ -236,7 +235,7 @@
           (icon-wrapper icon)])]])))
 
 (def ^:static icons
-  (util/component
+  (mx/component
    {:render icons-render
     :name "icons-toolbox"
     :mixins [rum/reactive

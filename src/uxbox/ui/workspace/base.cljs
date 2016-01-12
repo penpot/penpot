@@ -7,7 +7,6 @@
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
             [uxbox.util.lens :as ul]
-            [uxbox.ui.util :as util]
             [goog.events :as events])
   (:import goog.events.EventType))
 
