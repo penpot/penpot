@@ -1,4 +1,5 @@
 .color-palette {
+  @include animation(0,.5s,fadeInUp);
   align-items: center;
   background-color: $color-white;
   border-top: 1px solid $color-gray-lighter;
