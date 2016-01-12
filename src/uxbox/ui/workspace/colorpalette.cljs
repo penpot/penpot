@@ -55,8 +55,7 @@
        [:div.color-palette
         [:div.color-palette-actions
          [:select.input-select {:on-change select-collection}
-          (for [collection (vals collections-by-id)
-                :let [_ (println collection)]]
+          (for [collection (vals collections-by-id)]
             [:option {:key (str (:id collection))
                       :value (pr-str (:id collection))}
              (:name collection)])]
