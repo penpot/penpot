@@ -104,12 +104,6 @@
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
         coll (get library/+icon-collections-by-id+ coll-id)]
-        ;; coll (case coll-type
-        ;;        :builtin (get library/+color-collections-by-id+ coll-id)
-        ;;        :own (rum/react collection-l))]
-        ;; edit-cb #(lightbox/open! :icon-form {:coll coll :icon %})
-        ;; remove-cb #(rs/emit! (dd/remove-icon {:id (:id coll) :icon %}))]
-    ;; (println "KAKAKKA" coll-type coll-id coll)
     (when coll
       (html
        [:section.dashboard-grid.library

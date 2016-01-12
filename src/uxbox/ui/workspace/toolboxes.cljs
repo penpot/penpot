@@ -89,7 +89,6 @@
 
 (defn- layer-element-render
   [own item selected]
-  (println "layer-element-render" (:id item))
   (let [selected? (contains? selected (:id item))]
     (html
      [:li {:key (str (:id item))}
@@ -204,7 +203,6 @@
 
 (defn icons-render
   [own]
-  (println "icons-render")
   (let [local (:rum/local own)
         drawing (rum/react drawing-shape)
         collid (:collid @local)
