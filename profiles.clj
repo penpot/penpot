@@ -41,7 +41,7 @@
    :dependencies [[org.clojure/clojurescript "1.7.228"]
                   [funcool/cuerdas "0.7.1"]
                   [rum "0.6.0" :exclusions [sablono]]
-                  [sablono "0.5.4-SNAPSHOT"]
+                  [sablono "0.5.3"]
                   [cljsjs/react "0.14.3-0"]
                   [cljsjs/react-dom "0.14.3-1"]
                   [cljsjs/react-dom-server "0.14.3-0"]
