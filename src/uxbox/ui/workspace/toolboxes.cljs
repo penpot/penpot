@@ -117,7 +117,7 @@
       [:div.element-actions
        [:div.toggle-element {:class "selected"} i/eye]
        [:div.block-element i/lock]]
-      [:div.element-icon i/box]
+      [:div.element-icon (shapes/render item)]
       [:span (or (:name item)
                  (:id item))]])))
 
