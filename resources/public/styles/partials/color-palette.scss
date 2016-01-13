@@ -29,7 +29,11 @@
   .left-arrow {
     transform: rotate(180deg);
   }
+  &.fade-out-down {
+    @include animation(0,.5s,fadeOutDown);
+  }  
 }
+
 .color-palette-actions {
   display: flex;
   flex-direction: column;
