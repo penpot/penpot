@@ -208,7 +208,8 @@
 .element-color-picker {
   align-items: center;
   display: flex;
-  height: 160px;
+  height: 100%;
+  justify-content: center;
   margin: 0 4px;
   .color-picker-body {
     height: 100%;
@@ -221,7 +222,7 @@
     .color-bar-select {
       background-color: $color-white;
       height: 3px;
-      left: -1px;
+      left: 0;
       position: absolute;
       width: 15px;
       top: 30%;
