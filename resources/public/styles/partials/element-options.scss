@@ -216,11 +216,12 @@
   }
   .color-picker-bar {
     height: 100%;
-    padding: relative;
+    position: relative;
     width: 15px;
     .color-bar-select {
       background-color: $color-white;
       height: 3px;
+      left: -1px;
       position: absolute;
       width: 15px;
       top: 30%;
