@@ -111,7 +111,7 @@
         [:div.dashboard-grid-content
          (for [icon (:icons coll)]
            [:div.grid-item.small-item.project-th {}
-            [:span.grid-item-image #_i/toggle (shapes/render icon)]
+            [:span.grid-item-image #_i/toggle (shapes/-render-svg icon nil)]
             [:h3 (:name icon)]
             #_[:div.project-th-actions
              [:div.project-th-icon.edit i/pencil]
