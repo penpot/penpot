@@ -139,7 +139,7 @@
              (assoc-in state [:workspace :selected]))))))
 
 (defn add-shape
-  "Mark a shape selected for drawing in the canvas."
+  "Create and add shape to the current selected page."
   [shape props]
   (sc/validate! +shape-schema+ shape)
   (sc/validate! +shape-props-schema+ props)
@@ -232,7 +232,6 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (println "toggle-shape-visibility" sid)
       (let [shape (get-in state [:shapes-by-id sid])
             hidden? (:hidden shape false)]
         (if hidden?
@@ -244,7 +243,6 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (println "toggle-shape-blocking" sid)
       (let [shape (get-in state [:shapes-by-id sid])
             blocked? (:blocked shape false)]
         (if blocked?
