@@ -1,4 +1,5 @@
 (ns uxbox.core
+  (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [beicon.core :as rx]
             [cats.labs.lens :as l]
             [uxbox.state :as st]
@@ -9,8 +10,7 @@
 
 (enable-console-print!)
 
-(defn main
-  "Initialize the storage subsystem."
+(defn- main
   []
   (let [lens (l/select-keys [:pages-by-id
                              :shapes-by-id
@@ -23,13 +23,11 @@
                     (rx/tap #(println "[save]")))]
     (rx/on-value stream #(dl/persist-state %))))
 
-(defonce +setup+
-  (do
-    (println "bootstrap")
+(define-once :setup
+  (println "bootstrap")
+  (st/init)
+  (rt/init)
+  (ui/init)
 
-    (st/init)
-    (rt/init)
-    (ui/init)
-
-    (rs/emit! (dl/load-data))
-    (main)))
+  (rs/emit! (dl/load-data))
+  (main))
