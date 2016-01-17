@@ -10,7 +10,7 @@
    :build-ids ["dev"]
    :all-builds
    [{:id "dev"
-     :figwheel true
+     :figwheel {:on-jsload "uxbox.ui/init"}
      :source-paths ["src"]
      :compiler {:main 'uxbox.core
                 :asset-path "js"
