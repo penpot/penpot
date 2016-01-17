@@ -14,10 +14,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:static +shape-props-schema+
-  {:x [v/required v/integer]
-   :y [v/required v/integer]
-   :width [v/required v/integer]
-   :height [v/required v/integer]})
+  {:x [v/integer]
+   :y [v/integer]
+   :width [v/integer]
+   :height [v/integer]})
 
 (def ^:static +shape-schema+
   {:x [v/integer]
