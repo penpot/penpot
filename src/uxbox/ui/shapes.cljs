@@ -2,61 +2,56 @@
   "A ui related implementation for uxbox.shapes ns."
   (:require [sablono.core :refer-macros [html]]
             [cuerdas.core :as str]
+            [uxbox.state :as st]
             [uxbox.shapes :as shapes]
+            [uxbox.svg :as svg]
             [uxbox.util.data :refer (remove-nil-vals)]))
 
-(defn- transform-attr
-  [data acc key value]
-  (case key
-    :view-box
-    (assoc! acc key (apply str (interpose " " value)))
-
-    :lock
-    (assoc! acc :preserveAspectRatio (if value "xMidYMid" "none"))
-
-    :rotation
-    (let [center-x (+ (:x data) (/ (:width data) 2))
-          center-y (+ (:y data) (/ (:height data) 2))]
-      (assoc! acc :transform (str/format "rotate(%s %s %s)"
-                                         value center-x center-y)))
-
-    (assoc! acc key value)))
-
-(defn- transform-attrs
-  [data]
-  (persistent!
-   (reduce-kv (partial transform-attr data)
-              (transient {})
-              data)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Attribute transformations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- extract-attrs
   "Extract predefinet attrs from shapes."
   [shape]
-  (select-keys shape [:rotation :lock :width :height
-                      :view-box :x :y :cx :cy :fill
-                      :opacity]))
+  (select-keys shape [:rotation :width :height
+                      :x :y :opacity :fill]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Implementation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod shapes/-render :builtin/icon
   [{:keys [data id] :as shape} attrs]
-  (let [attrs (as-> shape $
-                (extract-attrs $)
-                (remove-nil-vals $)
-                (merge $ attrs {:lock false})
-                (transform-attrs $)
-                (merge $ {:key (str id)}))]
+  (let [key (str "use-" id)
+        transform (-> (merge shape attrs)
+                      (svg/calculate-transform))
+        attrs {:id key
+               :key key
+               :transform transform}]
+    (html
+     [:g attrs data])))
+
+(defmethod shapes/-render-svg :builtin/icon
+  [{:keys [data id view-box] :as shape} attrs]
+  (let [key (str "icon-svg-" id)
+        view-box (apply str (interpose " " view-box))
+        props {:view-box view-box :id key :key key}
+        attrs (-> shape
+                  (extract-attrs)
+                  (remove-nil-vals)
+                  (merge attrs props))]
+    (html
+     [:svg attrs data])))
+
+(defmethod shapes/-render :builtin/group
+  [{:keys [items id] :as shape} attrs]
+  (let [key (str "group-" id)
+        tfm (-> (merge shape attrs)
+                (svg/calculate-transform))
+        attrs {:id key :key key :transform tfm}
+        shapes-by-id (get @st/state :shapes-by-id)]
     (html
      [:g attrs
-      [:svg attrs data]])))
-
-(defmethod shapes/-render :builtin/icon-svg
-  [{:keys [image id] :as shape} attrs]
-  (let [attrs (as-> shape $
-                (extract-attrs $)
-                (remove-nil-vals $)
-                (merge $ attrs)
-                (transform-attrs $))]
-    (html
-     [:svg (merge attrs {:key (str id)})
-      [:image image]])))
-
-
+      (for [item (map #(get shapes-by-id %) items)]
+        (shapes/-render item nil))])))
