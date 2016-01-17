@@ -27,6 +27,10 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+(defmulti -render-svg
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
 (defmulti -move
   dispatch-by-type
   :hierarchy #'+hierarchy+)
