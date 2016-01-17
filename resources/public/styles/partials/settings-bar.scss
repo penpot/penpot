@@ -195,106 +195,101 @@
   width: 100%;
 
   li {
-    align-items: center;
-    border-bottom: 1px solid $color-gray-darker;
     box-sizing: border-box;
     cursor: pointer;
     display: flex;
-    padding: $small;
+    flex-direction: column;
     width: 100%;
 
-    svg {
-      fill: $color-gray;
-      height: 13px;
-      margin-right: 8px;
-      width: 13px;
-    }
-
-    .element-actions {
+    .element-list-body {
       align-items: center;
+      border-bottom: 1px solid $color-gray-darker;
+      box-sizing: border-box;
       display: flex;
-      width: 62px;
-    }
-
-    .element-icon,
-    .sublevel-element {
+      padding: $small;
+      width: 100%;
 
       svg {
-        fill: $color-gray-darker;
+        fill: $color-gray;
+        height: 13px;
+        margin-right: 8px;
+        width: 13px;
       }
 
-    }
-
-    .toggle-content {
-      margin-left: auto;
-      width: 12px;
-
-      svg {
-        fill: $color-gray-darker;
-        transform: rotate(90deg);
-        width: 12px;
+      .element-actions {
+        align-items: center;
+        display: flex;
+        width: 62px;
       }
 
-      &:hover {
+      .element-icon,
+      .sublevel-element {
 
         svg {
-          fill: $color-white;
+          fill: $color-gray-darker;
         }
 
       }
 
-    }
+      .toggle-content {
+        margin-left: auto;
+        width: 12px;
 
-    &.group {
+        svg {
+          fill: $color-gray-darker;
+          transform: rotate(90deg);
+          width: 12px;
+        }
 
-      &.open {
-
-        .toggle-content {
+        &:hover {
 
           svg {
-            transform: rotate(270deg);
+            fill: $color-white;
           }
 
         }
 
       }
 
-    }
+      &.group {
 
-    span {
-      color: darken($color-gray-darker, 8%);
-      font-size: $fs13;
-    }
+        &.open {
 
-    &.selected {
-      background-color: lighten($color-gray-darker, 5%);
+          .toggle-content {
 
-      .element-icon {
+            svg {
+              transform: rotate(270deg);
+            }
 
-        svg {
-          fill: $color-primary;
+          }
+
         }
 
       }
 
       span {
-        color: $color-primary;
+        color: darken($color-gray-darker, 8%);
+        font-size: $fs13;
       }
 
-    }
+      &.selected {
+        background-color: lighten($color-gray-darker, 5%);
 
-    .selected {
+        .element-icon {
 
-      svg {
-        fill: $color-gray-lighter;
+          svg {
+            fill: $color-primary;
+          }
+
+        }
+
+        span {
+          color: $color-primary;
+        }
+
       }
 
-    }
-
-    &:hover {
-      border-color: $color-gray-light;
-
-      .element-icon {
+      .selected {
 
         svg {
           fill: $color-gray-lighter;
@@ -302,8 +297,21 @@
 
       }
 
-      span {
-        color: $color-gray-lighter;
+      &:hover {
+        border-color: $color-gray-light;
+
+        .element-icon {
+
+          svg {
+            fill: $color-gray-lighter;
+          }
+
+        }
+
+        span {
+          color: $color-gray-lighter;
+        }
+
       }
 
     }

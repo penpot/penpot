@@ -134,16 +134,17 @@
      [:li {:key (str (:id item))
            :on-click select
            :class (when selected? "selected")}
-      [:div.element-actions
-       [:div.toggle-element {:class (when-not (:hidden item) "selected")
-                             :on-click toggle-visibility}
-        i/eye]
-       [:div.block-element {:class (when (:blocked item) "selected")
+      [:div.element-list-body
+       [:div.element-actions
+        [:div.toggle-element {:class (when-not (:hidden item) "selected")
+                              :on-click toggle-visibility}
+         i/eye]
+        [:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
-        i/lock]]
-      [:div.element-icon (shapes/render item)]
-      [:span (or (:name item)
-                 (:id item))]])))
+         i/lock]]
+       [:div.element-icon (shapes/render item)]
+       [:span (or (:name item)
+                  (:id item))]]])))
 
 (def ^:static ^:private layer-element
   (mx/component
@@ -173,29 +174,35 @@
           (rum/with-key component (:id shape)))
 
         [:li.group.open
-         [:div.element-actions
-          [:div.toggle-element i/eye]
-          [:div.block-element i/lock]
-          [:div.chain-element i/chain]]
-         [:div.element-icon i/folder]
-         [:span "Opened group"]
-         [:span.toggle-content i/arrow-slide]
-         [:ul
-          [:li
-           [:div.element-actions
-            [:div.toggle-element i/eye]
-            [:div.block-element i/lock]]
-           [:div.sublevel-element i/sublevel]
-           [:div.element-icon i/box]
-           [:span "Sub layer"]]
+         [:div.element-list-body
+          [:div.element-actions
+           [:div.toggle-element i/eye]
+           [:div.block-element i/lock]
+           [:div.chain-element i/chain]]
+          [:div.element-icon i/folder]
+          [:span "Opened group"]
+          [:span.toggle-content i/arrow-slide]]
 
-          [:li
-           [:div.element-actions
-            [:div.toggle-element i/eye]
-            [:div.block-element i/lock]]
-           [:div.sublevel-element i/sublevel]
-           [:div.element-icon i/box]
-           [:span "Sub layer"]]]]]]
+          [:ul
+
+           [:li
+            [:div.element-list-body
+             [:div.element-actions
+              [:div.toggle-element i/eye]
+              [:div.block-element i/lock]]
+             [:div.sublevel-element i/sublevel]
+             [:div.element-icon i/box]
+             [:span "Sub layer"]]]
+
+            [:li
+             [:div.element-list-body
+              [:div.element-actions
+               [:div.toggle-element i/eye]
+               [:div.block-element i/lock]]
+              [:div.sublevel-element i/sublevel]
+              [:div.element-icon i/box]
+              [:span "Sub layer"]]]]]]]
+
       [:div.layers-tools
        [:ul.layers-tools-content
         [:li.clone-layer {:on-click copy}
