@@ -8,7 +8,7 @@
   (as-> (make-hierarchy) $
     (derive $ :builtin/icon ::shape)
     (derive $ :builtin/icon-svg ::shape)
-    (derive $ :builtin/icon-group ::shape)))
+    (derive $ :builtin/group ::shape)))
 
 (defn shape?
   [type]
