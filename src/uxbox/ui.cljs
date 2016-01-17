@@ -38,6 +38,7 @@
                  :name "app"}))
 (defn init
   []
+  (println "ui/init")
   (let [app-dom (gdom/getElement "app")
         lb-dom (gdom/getElement "lightbox")]
     (rum/mount (app) app-dom)
