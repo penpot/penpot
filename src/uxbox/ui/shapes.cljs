@@ -4,7 +4,7 @@
             [cuerdas.core :as str]
             [uxbox.state :as st]
             [uxbox.shapes :as shapes]
-            [uxbox.svg :as svg]
+            [uxbox.util.svg :as svg]
             [uxbox.util.data :refer (remove-nil-vals)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

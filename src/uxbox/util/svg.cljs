@@ -1,8 +1,8 @@
-(ns uxbox.svg
+(ns uxbox.util.svg
   "A svg related utils."
   (:require [cuerdas.core :as str]
-            [uxbox.matrix :as mtx]
-            [uxbox.math :as mth]
+            [uxbox.util.matrix :as mtx]
+            [uxbox.util.math :as mth]
             [uxbox.util.data :refer (without-keys)]))
 
 (defn translate-matrix

@@ -1,4 +1,4 @@
-(ns uxbox.matrix
+(ns uxbox.util.matrix
   "A lightweight abstraction over Matrix library
   of the Google Closure Library."
   (:import goog.math.Matrix

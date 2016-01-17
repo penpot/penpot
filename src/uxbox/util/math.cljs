@@ -1,4 +1,4 @@
-(ns uxbox.math
+(ns uxbox.util.math
   "A collection of math utils."
   (:require [goog.math :as math]))
 
