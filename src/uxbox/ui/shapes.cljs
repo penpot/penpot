@@ -15,7 +15,13 @@
   "Extract predefinet attrs from shapes."
   [shape]
   (select-keys shape [:rotation :width :height
-                      :x :y :opacity :fill]))
+                      :x :y :opacity :fill :view-box]))
+
+(defn- make-debug-attrs
+  [attrs]
+  (let [xf (map (fn [[x v]]
+                  [(keyword (str "data-" (name x))) v]))]
+    (into {} xf attrs)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
@@ -26,11 +32,27 @@
   (let [key (str "use-" id)
         transform (-> (merge shape attrs)
                       (svg/calculate-transform))
-        attrs {:id key
-               :key key
-               :transform transform}]
+        attrs {:id key :key key :transform transform}
+        attrs (-> (extract-attrs shape)
+                  (make-debug-attrs)
+                  (merge attrs))]
     (html
      [:g attrs data])))
+
+(defmethod shapes/-render :builtin/group
+  [{:keys [items id] :as shape} attrs]
+  (let [key (str "group-" id)
+        tfm (-> (merge shape attrs)
+                (svg/calculate-transform))
+        attrs {:id key :key key :transform tfm}
+        attrs (-> (extract-attrs shape)
+                  (make-debug-attrs)
+                  (merge attrs))
+        shapes-by-id (get @st/state :shapes-by-id)]
+    (html
+     [:g attrs
+      (for [item (map #(get shapes-by-id %) items)]
+        (shapes/-render item nil))])))
 
 (defmethod shapes/-render-svg :builtin/icon
   [{:keys [data id view-box] :as shape} attrs]
@@ -44,14 +66,3 @@
     (html
      [:svg attrs data])))
 
-(defmethod shapes/-render :builtin/group
-  [{:keys [items id] :as shape} attrs]
-  (let [key (str "group-" id)
-        tfm (-> (merge shape attrs)
-                (svg/calculate-transform))
-        attrs {:id key :key key :transform tfm}
-        shapes-by-id (get @st/state :shapes-by-id)]
-    (html
-     [:g attrs
-      (for [item (map #(get shapes-by-id %) items)]
-        (shapes/-render item nil))])))
