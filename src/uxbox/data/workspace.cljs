@@ -274,6 +274,44 @@
           (map #(add-shape % %) $)
           (rx/from-coll $))))))
 
+(defn group-selected
+  []
+  (reify rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [selected (get-in state [:workspace :selected])
+            shapes-by-id (get state :shapes-by-id)
+            sid (random-uuid)
+            shapes (->> selected
+                        (map #(get shapes-by-id %))
+                        (map #(assoc % :group sid :id (random-uuid))))
+            x (apply min (map :x shapes))
+            y (apply min (map :y shapes))
+            x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
+            y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
+            width (- x' x)
+            height (- y' y)
+            pid (get-in state [:workspace :page])
+            shapes (map (fn [item]
+                          (assoc item
+                                 :x (- (:x item) x)
+                                 :y (- (:y item) y))) shapes)
+            shape {:type :builtin/group
+                   :items (mapv :id shapes)
+                   :view-box [0 0 width height]
+                   :page (get-in state [:workspace :page])
+                   :id sid}
+            props {:x x
+                   :y y
+                   :width width
+                   :height height
+                   :view-box [0 0 width height]}
+            shape (merge shape props)
+            shapes-map (reduce #(assoc %1 (:id %2) %2) {} shapes)]
+        (as-> state $
+          (update-in $ [:pages-by-id pid :shapes] conj sid)
+          (assoc-in $ [:shapes-by-id sid] shape)
+          (update $ :shapes-by-id merge shapes-map))))))
+
 (defn delete-selected
   "Deselect all and remove all selected shapes."
   []
