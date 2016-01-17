@@ -134,15 +134,18 @@
      [:li {:key (str (:id item))
            :on-click select
            :class (when selected? "selected")}
-      [:div.element-list-body
+      [:div.element-list-body {:class (when selected? "selected")}
        [:div.element-actions
         [:div.toggle-element {:class (when-not (:hidden item) "selected")
                               :on-click toggle-visibility}
          i/eye]
         [:div.block-element {:class (when (:blocked item) "selected")
-                            :on-click toggle-blocking}
+                             :on-click toggle-blocking}
          i/lock]]
-       [:div.element-icon (shapes/render item)]
+
+       (if (:group item)
+         [:div.sublevel-element i/sublevel])
+       [:div.element-icon (shapes/-render-svg item)]
        [:span (or (:name item)
                   (:id item))]]])))
 
@@ -152,6 +155,36 @@
     :name "layer-element"
     :mixins [mx/static]}))
 
+(declare layer-group)
+
+(defn- layer-group-render
+  [own item selected]
+  (let [selected? (contains? selected (:id item))
+        shapes-by-id (rum/react shapes-by-id)]
+    (html
+     [:li.group.open
+      [:div.element-list-body {:class (when selected? "selected")}
+       [:div.element-actions
+        [:div.toggle-element i/eye]
+        [:div.block-element i/lock]
+        [:div.chain-element i/chain]]
+       [:div.element-icon i/folder]
+       [:span "Opened group"]
+       [:span.toggle-content i/arrow-slide]]
+      [:ul
+       (for [shape (map #(get shapes-by-id %) (:items item))
+             :let [key (str (:id shape))]]
+         ;; TODO: make polymorphic
+         (case (:type shape)
+           :builtin/icon (rum/with-key (layer-element shape selected) key)
+           :builtin/group (rum/with-key (layer-group shape selected) key)))]])))
+
+(def ^:static ^:private layer-group
+  (mx/component
+   {:render layer-group-render
+    :name "layer-group"
+    :mixins [mx/static rum/reactive]}))
+
 (defn layers-render
   [own]
   (let [workspace (rum/react wb/workspace-l)
@@ -160,6 +193,7 @@
         page (rum/react (focus-page (:page workspace)))
         close #(rs/emit! (dw/toggle-toolbox :layers))
         copy #(rs/emit! (dw/copy-selected))
+        group #(rs/emit! (dw/group-selected))
         delete #(rs/emit! (dw/delete-selected))]
     (html
      [:div#layers.tool-window
@@ -170,44 +204,17 @@
       [:div.tool-window-content
        [:ul.element-list
         (for [shape (map #(get shapes-by-id %) (:shapes page))
-              :let [component (layer-element shape selected)]]
-          (rum/with-key component (:id shape)))
-
-        [:li.group.open
-         [:div.element-list-body
-          [:div.element-actions
-           [:div.toggle-element i/eye]
-           [:div.block-element i/lock]
-           [:div.chain-element i/chain]]
-          [:div.element-icon i/folder]
-          [:span "Opened group"]
-          [:span.toggle-content i/arrow-slide]]
-
-          [:ul
-
-           [:li
-            [:div.element-list-body
-             [:div.element-actions
-              [:div.toggle-element i/eye]
-              [:div.block-element i/lock]]
-             [:div.sublevel-element i/sublevel]
-             [:div.element-icon i/box]
-             [:span "Sub layer"]]]
-
-            [:li
-             [:div.element-list-body
-              [:div.element-actions
-               [:div.toggle-element i/eye]
-               [:div.block-element i/lock]]
-              [:div.sublevel-element i/sublevel]
-              [:div.element-icon i/box]
-              [:span "Sub layer"]]]]]]]
-
+              :let [key (str (:id shape))]]
+          ;; TODO: make polymorphic
+          (case (:type shape)
+            :builtin/icon (rum/with-key (layer-element shape selected) key)
+            :builtin/group (rum/with-key (layer-group shape selected) key)))]]
       [:div.layers-tools
        [:ul.layers-tools-content
         [:li.clone-layer {:on-click copy}
          i/copy]
-        [:li.group-layer i/folder]
+        [:li.group-layer {:on-click group}
+         i/folder]
         [:li.delete-layer {:on-click delete}
          i/trash]
         ]]])))
@@ -275,7 +282,7 @@
 
 (defn- icon-wrapper-render
   [own icon]
-  (shapes/render icon))
+  (shapes/-render-svg icon nil))
 
 (def ^:static ^:private icon-wrapper
   (mx/component

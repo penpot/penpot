@@ -66,7 +66,7 @@
     :mixins [mx/static rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Selected shapes group
+;; Selected shapes.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private
@@ -102,7 +102,7 @@
             :on-mouse-down on-mouse-down
             :on-mouse-up on-mouse-up}
         (for [item shapes]
-          (shapes/render item))
+          (shapes/-render item nil))
         [:g.controls
          [:rect {:x x :y y :width width :height height
                  :style {:stroke "black" :fill "transparent"
@@ -122,52 +122,73 @@
     :name "selected-shapes"
     :mixins [mx/static rum/reactive (mx/local {})]}))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shape
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn selected-shape-render
+  [own shape selected]
+  (let [{:keys [id x y width height] :as shape} shape]
+    (letfn [(on-mouse-down [event]
+              (when-not (:blocked shape)
+                (let [local (:rum/local own)]
+                  (dom/stop-propagation event)
+                  (swap! local assoc :init-coords [x y])
+                  (reset! wb/shapes-dragging? true))))
+            (on-mouse-up [event]
+              (dom/stop-propagation event)
+              (reset! wb/shapes-dragging? false))]
+      (html
+       [:g.shape {:class "selected"
+                  :on-mouse-down on-mouse-down
+                  :on-mouse-up on-mouse-up}
+        (shapes/-render shape nil)
+        [:g.controls
+         [:rect {:x x :y y :width width :height height
+                 :style {:stroke "black" :fill "transparent"
+                         :stroke-opacity "0.5"}}]
+         [:circle.top-left (merge default-selection-props
+                                  {:cx x :cy y})]
+         [:circle.top-right (merge default-selection-props
+                                   {:cx (+ x width) :cy y})]
+         [:circle.bottom-left (merge default-selection-props
+                                     {:cx x :cy (+ y height)})]
+         [:circle.bottom-right (merge default-selection-props
+                                      {:cx (+ x width) :cy (+ y height)})]]]))))
+
+(def selected-shape
+  (mx/component
+   {:render selected-shape-render
+    :name "selected-shape"
+    :mixins [mx/static (mx/local {})]}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn shape-render
   [own shape selected]
-  (let [{:keys [id x y width height] :as shape} shape
-        selected? (contains? selected id)]
+  ;; (println "shape" (:id shape))
+  (let [{:keys [id x y width height] :as shape} shape]
     (letfn [(on-mouse-down [event]
               (when-not (:blocked shape)
                 (let [local (:rum/local own)]
                   (dom/stop-propagation event)
                   (swap! local assoc :init-coords [x y])
                   (reset! wb/shapes-dragging? true))
-                (cond
-                  (and (not selected?)
-                       (empty? selected))
-                  (rs/emit! (dw/select-shape id))
-
-                  (and (not selected?)
-                       (not (empty? selected)))
                   (if (.-ctrlKey event)
                     (rs/emit! (dw/select-shape id))
                     (rs/emit! (dw/deselect-all)
-                              (dw/select-shape id))))))
+                              (dw/select-shape id)))))
+
             (on-mouse-up [event]
               (dom/stop-propagation event)
               (reset! wb/shapes-dragging? false))]
       (html
-       [:g.shape {:class (when selected? "selected")
-                  :on-mouse-down on-mouse-down
+       [:g.shape {:on-mouse-down on-mouse-down
                   :on-mouse-up on-mouse-up}
-        (shapes/render shape)
-        (if selected?
-          [:g.controls
-           [:rect {:x x :y y :width width :height height
-                   :style {:stroke "black" :fill "transparent"
-                         :stroke-opacity "0.5"}}]
-           [:circle.top-left (merge default-selection-props
-                                    {:cx x :cy y})]
-           [:circle.top-right (merge default-selection-props
-                                     {:cx (+ x width) :cy y})]
-           [:circle.bottom-left (merge default-selection-props
-                                       {:cx x :cy (+ y height)})]
-           [:circle.bottom-right (merge default-selection-props
-                                        {:cx (+ x width) :cy (+ y height)})]])]))))
+        (shapes/-render shape nil)]))))
 
 (def shape
   (mx/component
@@ -230,18 +251,19 @@
       (background)
       (grid 1)
       [:svg.page-layout {}
-       (for [item shapes-notselected
-             :let [component (shape item workspace-selected)]]
-         (rum/with-key component (str (:id item))))
+       [:g.main {}
+        (for [item shapes-notselected]
+          (-> (shape item workspace-selected)
+              (rum/with-key (str (:id item)))))
 
-       (cond
-         (= (count shapes-selected) 1)
-         (let [item (first shapes-selected)]
-           (shape item workspace-selected))
+        (cond
+          (= (count shapes-selected) 1)
+          (let [item (first shapes-selected)]
+            (selected-shape item workspace-selected))
 
-         (> (count shapes-selected) 1)
-         (selected-shapes shapes-selected))
-       (selrect)]])))
+          (> (count shapes-selected) 1)
+          (selected-shapes shapes-selected))
+        (selrect)]]])))
 
 (def canvas
   (mx/component
