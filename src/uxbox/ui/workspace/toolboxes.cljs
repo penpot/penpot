@@ -159,31 +159,46 @@
 
 (defn- layer-group-render
   [own item selected]
-  (let [selected? (contains? selected (:id item))
+  (let [local (:rum/local own)
+        selected? (contains? selected (:id item))
+        open? (:open @local true)
+        select #(select-shape selected item %)
+        toggle-visibility #(toggle-visibility selected item %)
+        toggle-blocking #(toggle-blocking item %)
+        toggle-open (fn [event]
+                      (dom/stop-propagation event)
+                      (swap! local assoc :open (not open?)))
         shapes-by-id (rum/react shapes-by-id)]
     (html
-     [:li.group.open
-      [:div.element-list-body {:class (when selected? "selected")}
+     [:li.group {:class (when open? "open")}
+      [:div.element-list-body {:class (when selected? "selected")
+                               :on-click select}
        [:div.element-actions
-        [:div.toggle-element i/eye]
-        [:div.block-element i/lock]
+        [:div.toggle-element {:class (when-not (:hidden item) "selected")
+                              :on-click toggle-visibility}
+         i/eye]
+        [:div.block-element {:class (when (:blocked item) "selected")
+                             :on-click toggle-blocking}
+         i/lock]
         [:div.chain-element i/chain]]
        [:div.element-icon i/folder]
-       [:span "Opened group"]
-       [:span.toggle-content i/arrow-slide]]
-      [:ul
-       (for [shape (map #(get shapes-by-id %) (:items item))
-             :let [key (str (:id shape))]]
-         ;; TODO: make polymorphic
-         (case (:type shape)
-           :builtin/icon (rum/with-key (layer-element shape selected) key)
-           :builtin/group (rum/with-key (layer-group shape selected) key)))]])))
+       [:span (:name item "Unnamed group")]
+       [:span.toggle-content {:on-click toggle-open}
+        i/arrow-slide]]
+      (if open?
+        [:ul
+         (for [shape (map #(get shapes-by-id %) (:items item))
+               :let [key (str (:id shape))]]
+           ;; TODO: make polymorphic
+           (case (:type shape)
+             :builtin/icon (rum/with-key (layer-element shape selected) key)
+             :builtin/group (rum/with-key (layer-group shape selected) key)))])])))
 
 (def ^:static ^:private layer-group
   (mx/component
    {:render layer-group-render
     :name "layer-group"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static rum/reactive (mx/local)]}))
 
 (defn layers-render
   [own]
