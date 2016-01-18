@@ -62,3 +62,31 @@
 (defmethod -rotate ::shape
   [shape rotation]
   (assoc shape :rotation rotation))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn group-size-and-position
+  "Given a collection of shapes, calculates the
+  dimensions of possible envolving rect.
+
+  Mainly used for calculate the selection
+  rect or shapes grop size."
+  [shapes]
+  (let [x (apply min (map :x shapes))
+        y (apply min (map :y shapes))
+        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
+        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
+        width (- x' x)
+        height (- y' y)]
+    [width height x y]))
+
+(defn translate-coords
+  "Given a shape and initial coords, transform
+  it mapping its coords to new provided initial coords."
+  [shape x y]
+  (let [x' (:x shape)
+        y' (:y shape)]
+    (assoc shape :x (- x' x) :y (- y' y))))
+

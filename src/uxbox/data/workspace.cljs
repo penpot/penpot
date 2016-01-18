@@ -1,6 +1,7 @@
 (ns uxbox.data.workspace
   (:require [bouncer.validators :as v]
             [beicon.core :as rx]
+            [uxbox.shapes :as sh]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
@@ -274,24 +275,6 @@
           (map #(add-shape % %) $)
           (rx/from-coll $))))))
 
-(defn- calc-dimensions
-  [shapes]
-  (let [x (apply min (map :x shapes))
-        y (apply min (map :y shapes))
-        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
-        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
-        width (- x' x)
-        height (- y' y)]
-    [width height x y]))
-
-(defn- map-coords
-  "Given a shape and initial coords, transform
-  it mapping its coords to new provided initial coords."
-  [shape x y]
-  (let [x' (:x shape)
-        y' (:y shape)]
-    (assoc shape :x (- x' x) :y (- y' y))))
-
 (defn group-selected
   []
   (reify rs/UpdateEvent
@@ -303,7 +286,7 @@
             shapes (->> selected
                         (map #(get shapes-by-id %))
                         (map #(assoc % :group sid)))
-            [width height x y] (calc-dimensions shapes)
+            [width height x y] (sh/group-size-and-position shapes)
             group {:type :builtin/group
                    :id sid
                    :name (str "Group " (rand-int 1000))
@@ -315,7 +298,7 @@
                    :page (get-in state [:workspace :page])
                    :view-box [0 0 width height]}
             shapes-map (->> shapes
-                            (map #(map-coords % x y))
+                            (map #(sh/translate-coords % x y))
                             (reduce #(assoc %1 (:id %2) %2) {}))
             shapes-list (->> (get-in state [:pages-by-id pid :shapes])
                              (filter (comp not selected))
