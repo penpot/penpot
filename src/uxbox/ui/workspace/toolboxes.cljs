@@ -231,46 +231,7 @@
         [:li.group-layer {:on-click group}
          i/folder]
         [:li.delete-layer {:on-click delete}
-         i/trash]
-        ]]])))
-
-
-        ;; [:li.group
-        ;;  [:div.element-actions
-        ;;   [:div.toggle-element i/eye]
-        ;;   [:div.block-element i/lock]
-        ;;   [:div.chain-element i/chain]]
-        ;;  [:div.element-icon i/folder]
-        ;;  [:span "Closed group"]
-        ;;  [:span.toggle-content i/arrow-slide]]
-
-        ;; [:li.group.open
-        ;;  [:div.element-actions
-        ;;   [:div.toggle-element i/eye]
-        ;;   [:div.block-element i/lock]
-        ;;   [:div.chain-element i/chain]]
-        ;;  [:div.element-icon i/folder]
-        ;;  [:span "Opened group"]
-        ;;  [:span.toggle-content i/arrow-slide]]
-
-        ;; [:li
-        ;;  [:div.element-actions
-        ;;   [:div.toggle-element i/eye]
-        ;;   [:div.block-element i/lock]]
-        ;;  [:div.sublevel-element i/sublevel]
-        ;;  [:div.element-icon i/box]
-        ;;  [:span "Sub layer"]]
-
-        ;; [:li.group
-        ;;  [:div.element-actions
-        ;;   [:div.toggle-element i/eye]
-        ;;   [:div.block-element i/lock]
-        ;;   [:div.chain-element i/chain]]
-        ;;  [:div.sublevel-element i/sublevel]
-        ;;  [:div.element-icon i/folder]
-        ;;  [:span "Sub group"]
-        ;;  [:span.toggle-content i/arrow-slide]]]]
-
+         i/trash]]]])))
 
 (def ^:static layers
   (mx/component
