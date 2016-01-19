@@ -23,8 +23,8 @@
 
 (defn rotation-matrix
   [^number degrees]
-  (let [v1 (mth/cos (mth/radiants degrees))
-        v2 (mth/sin (mth/radiants degrees))
+  (let [v1 (mth/cos (mth/radians degrees))
+        v2 (mth/sin (mth/radians degrees))
         v3 (mth/neg v2)]
     (mtx/matrix [[v1 v3 0]
                  [v2 v1 0]

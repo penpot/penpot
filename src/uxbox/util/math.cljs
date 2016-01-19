@@ -26,7 +26,7 @@
   [^number v]
   (- v))
 
-(defn radiants
+(defn radians
   "Converts degrees to radians."
   [^number degrees]
   (math/toRadians degrees))
