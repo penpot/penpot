@@ -286,7 +286,7 @@
             shapes (->> selected
                         (map #(get shapes-by-id %))
                         (map #(assoc % :group sid)))
-            [width height x y] (sh/group-size-and-position shapes)
+            {:keys [width height x y]} (sh/group-size-and-position shapes)
             group {:type :builtin/group
                    :id sid
                    :name (str "Group " (rand-int 1000))
