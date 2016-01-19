@@ -2,8 +2,9 @@
   :description "UXBox client"
   :url "http://uxbox.github.io"
   :license {:name "" :url ""}
+  :jvm-opts ["-Dclojure.compiler.direct-linking=true"]
 
-  :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
                  [org.clojure/clojurescript "1.7.228" :scope "provided"]
                  [figwheel-sidecar "0.5.0-2" :scope "test"]
 
