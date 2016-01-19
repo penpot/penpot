@@ -48,20 +48,21 @@
 
 (defn shapes-selrect-render
   [own shapes]
-  (let [[width height x y] (sh/group-size-and-position shapes)]
-    (html
-     [:g.controls
-      [:rect {:x x :y y :width width :height height
-              :style {:stroke "black" :fill "transparent"
-                      :stroke-opacity "0.5"}}]
-      [:circle.top-left (merge default-selection-props
-                               {:cx x :cy y})]
-      [:circle.top-right (merge default-selection-props
-                                {:cx (+ x width) :cy y})]
-      [:circle.bottom-left (merge default-selection-props
-                                  {:cx x :cy (+ y height)})]
-      [:circle.bottom-right (merge default-selection-props
-                                   {:cx (+ x width) :cy (+ y height)})]])))
+  (when (seq shapes)
+    (let [[width height x y] (sh/group-size-and-position shapes)]
+      (html
+       [:g.controls
+        [:rect {:x x :y y :width width :height height
+                :style {:stroke "black" :fill "transparent"
+                        :stroke-opacity "0.5"}}]
+        [:circle.top-left (merge default-selection-props
+                                 {:cx x :cy y})]
+        [:circle.top-right (merge default-selection-props
+                                  {:cx (+ x width) :cy y})]
+        [:circle.bottom-left (merge default-selection-props
+                                    {:cx x :cy (+ y height)})]
+        [:circle.bottom-right (merge default-selection-props
+                                     {:cx (+ x width) :cy (+ y height)})]]))))
 
 (def ^:static shapes-selrect
   (mx/component
