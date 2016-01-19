@@ -2,6 +2,10 @@
   "A collection of math utils."
   (:require [goog.math :as math]))
 
+(defn abs
+  [^number v]
+  (js/Math.abs v))
+
 (defn sin
   "Returns the sine of a number"
   [^number v]
