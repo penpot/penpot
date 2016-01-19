@@ -1,4 +1,4 @@
-(ns uxbox.ui.workspace.toolboxes
+(ns uxbox.ui.workspace.toolboxes.layers
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cats.labs.lens :as l]
@@ -36,55 +36,7 @@
     (l/focus-atom $ st/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Draw Tools
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:staric +draw-tools+
-  {:rect
-   {:icon i/box
-    :help "Box (Ctrl + B)"
-    :priority 10}
-   :circle
-   {:icon i/circle
-    :help "Circle (Ctrl + E)"
-    :priority 20}
-   :line
-   {:icon i/line
-    :help "Line (Ctrl + L)"
-    :priority 30}})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Draw Tool Box
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn draw-tools-render
-  [open-toolboxes]
-  (let [workspace (rum/react wb/workspace-l)
-        close #(rs/emit! (dw/toggle-toolbox :draw))
-        tools (->> (into [] +draw-tools+)
-                   (sort-by (comp :priority second)))]
-    (html
-     [:div#form-tools.tool-window
-      [:div.tool-window-bar
-       [:div.tool-window-icon i/window]
-       [:span "Tools"]
-       [:div.tool-window-close {:on-click close} i/close]]
-      [:div.tool-window-content
-       (for [[key props] tools]
-         [:div.tool-btn.tooltip.tooltip-hover
-          {:alt (:help props)
-           :key (name key)
-           :on-click (constantly nil)}
-          (:icon props)])]])))
-
-(def ^:static draw-tools
-  (mx/component
-   {:render draw-tools-render
-    :name "draw-tools"
-    :mixins [mx/static rum/reactive]}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Layers
+;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- select-shape
@@ -233,73 +185,9 @@
         [:li.delete-layer {:on-click delete}
          i/trash]]]])))
 
-(def ^:static layers
+(def ^:static layers-toolbox
   (mx/component
    {:render layers-render
     :name "layers"
     :mixins [rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Icons
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- select-icon
-  [icon]
-  (if (= (:drawing @wb/workspace-l) icon)
-    (rs/emit! (dw/select-for-drawing nil))
-    (rs/emit! (dw/select-for-drawing icon))))
-
-(defn- change-icon-coll
-  [local event]
-  (let [value (-> (dom/event->value event)
-                  (read-string))]
-    (swap! local assoc :collid value)
-    (rs/emit! (dw/select-for-drawing nil))))
-
-(defn- icon-wrapper-render
-  [own icon]
-  (shapes/-render-svg icon nil))
-
-(def ^:static ^:private icon-wrapper
-  (mx/component
-   {:render icon-wrapper-render
-    :name "icon-wrapper"
-    :mixins [mx/static]}))
-
-(defn icons-render
-  [own]
-  (let [local (:rum/local own)
-        drawing (rum/react drawing-shape)
-        collid (:collid @local)
-        icons (get-in library/+icon-collections-by-id+ [collid :icons])
-        on-close #(rs/emit! (dw/toggle-toolbox :icons))
-        on-select #(select-icon %)
-        on-change #(change-icon-coll local %)]
-    (html
-     [:div#form-figures.tool-window
-      [:div.tool-window-bar
-       [:div.tool-window-icon i/window]
-       [:span "Icons"]
-       [:div.tool-window-close {:on-click on-close} i/close]]
-      [:div.tool-window-content
-       [:div.figures-catalog
-        ;; extract component: set selector
-        [:select.input-select.small {:on-change on-change
-                                     :value collid}
-         (for [icon-coll library/+icon-collections+]
-           [:option {:key (str "icon-coll" (:id icon-coll))
-                     :value (pr-str (:id icon-coll))}
-            (:name icon-coll)])]]
-       (for [icon icons
-             :let [selected? (= drawing icon)]]
-         [:div.figure-btn {:key (str (:id icon))
-                           :class (when selected? "selected")
-                           :on-click #(on-select icon)}
-          (icon-wrapper icon)])]])))
-
-(def ^:static icons
-  (mx/component
-   {:render icons-render
-    :name "icons-toolbox"
-    :mixins [rum/reactive
-             (mx/local {:collid 1 :builtin true})]}))

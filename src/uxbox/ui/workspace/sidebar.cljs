@@ -7,7 +7,9 @@
             [uxbox.rstore :as rs]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.toolboxes :as toolboxes]))
+            [uxbox.ui.workspace.toolboxes.layers :refer (layers-toolbox)]
+            [uxbox.ui.workspace.toolboxes.icons :refer (icons-toolbox)]
+            [uxbox.ui.workspace.toolboxes.drawtools :refer (draw-toolbox)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Aside
@@ -20,11 +22,11 @@
      [:aside#settings-bar.settings-bar
       [:div.settings-bar-inside
        (when (contains? toolboxes :draw)
-         (toolboxes/draw-tools))
+         (draw-toolbox))
        (when (contains? toolboxes :icons)
-         (toolboxes/icons))
+         (icons-toolbox))
        (when (contains? toolboxes :layers)
-         (toolboxes/layers))]])))
+         (layers-toolbox))]])))
 
 (def aside
   (mx/component
