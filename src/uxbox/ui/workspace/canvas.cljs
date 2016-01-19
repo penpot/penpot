@@ -16,6 +16,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.selrect :refer (mouse-selrect)]
             [uxbox.ui.workspace.grid :refer (grid)]
             [uxbox.ui.workspace.options :refer (element-opts)])
   (:import goog.events.EventType))
@@ -43,27 +44,6 @@
    {:render background-render
     :name "background"
     :mixins [mx/static]}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Select Rect
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn selrect-render
-  [own]
-  (when-let [data (rum/react wb/selrect-pos)]
-    (let [{:keys [x y width height]} (wb/selrect->rect data)]
-      (html
-       [:rect.selection-rect
-        {:x x
-         :y y
-         :width width
-         :height height}]))))
-
-(def ^:static selrect
-  (mx/component
-   {:render selrect-render
-    :name "selrect"
-    :mixins [mx/static rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Selected shapes.
