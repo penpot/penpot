@@ -26,9 +26,7 @@
   of elements of the collection."
   [coll]
   {:pre [(coll? coll)
-         (coll? (first coll))
-         (= (count coll)
-            (count (first coll)))]}
+         (coll? (first coll))]}
   (Matrix. (clj->js coll)))
 
 (defn multiply
