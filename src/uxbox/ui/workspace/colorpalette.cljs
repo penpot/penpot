@@ -44,7 +44,7 @@
   (let [local (:rum/local own)
         flags (rum/react wb/flags-l)
         collections-by-id (rum/react collections-by-id-l)
-        collections (vals collections-by-id)
+        collections (sort-by :name (vals collections-by-id))
         collection (if-let [collid (:selected @local)]
                      (get collections-by-id collid)
                      (first collections))
@@ -55,7 +55,7 @@
        [:div.color-palette
         [:div.color-palette-actions
          [:select.input-select {:on-change select-collection}
-          (for [collection (vals collections-by-id)]
+          (for [collection collections]
             [:option {:key (str (:id collection))
                       :value (pr-str (:id collection))}
              (:name collection)])]
