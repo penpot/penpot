@@ -79,11 +79,11 @@
                   :on-mouse-up on-mouse-up}
         (shapes/-render shape nil)]))))
 
-(def shape
+(def ^:static shape
   (mx/component
    {:render shape-render
     :name "shape"
-    :mixins [mx/static (mx/local {})]}))
+    :mixins [(mx/local {}) rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas
