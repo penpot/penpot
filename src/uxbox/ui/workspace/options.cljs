@@ -14,9 +14,8 @@
             [uxbox.util.data :refer (parse-int parse-float)]))
 
 (def +menus-map+
-  {:builtin/icon [:menu/measures :menu/fill]
-   :builtin/group [:menu/measures]
-   :builtin/icon-svg [:menu/measures]})
+  {:builtin/icon [:menu/measures :menu/fill :menu/stroke]
+   :builtin/group [:menu/measures]})
 
 (def +menus-by-id+
   {:menu/measures
