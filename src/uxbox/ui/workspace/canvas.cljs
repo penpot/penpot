@@ -128,7 +128,8 @@
         xf (comp
             (map #(get shapes-by-id %))
             (remove :hidden))
-        shapes (sequence xf (:shapes page))
+        shapes (->> (vals shapes-by-id)
+                    (filter #(= (:page %) id)))
         shapes-selected (filter (comp workspace-selected :id) shapes)
         shapes-notselected (filter (comp not workspace-selected :id) shapes)]
     (html
@@ -142,17 +143,9 @@
       [:svg.page-layout {}
        (shapes-selrect shapes-selected)
        [:g.main {}
-        (for [item shapes]
+        (for [item (sequence xf (:shapes page))]
           (-> (shape item workspace-selected)
               (rum/with-key (str (:id item)))))
-
-        #_(cond
-          (= (count shapes-selected) 1)
-          (let [item (first shapes-selected)]
-            (selected-shape item workspace-selected))
-
-          (> (count shapes-selected) 1)
-          (selected-shapes shapes-selected))
         (mouse-selrect)]]])))
 
 (def canvas
