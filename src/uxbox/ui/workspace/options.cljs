@@ -2,7 +2,8 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [uxbox.rstore :as rs]
-            [uxbox.shapes :as shapes]
+            [uxbox.state :as st]
+            [uxbox.shapes :as sh]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
@@ -28,16 +29,17 @@
     :icon i/fill
     :id :menu/fill}})
 
-(defn viewportcoord->clientcoord
+(defn- viewportcoord->clientcoord
   [pageid viewport-x viewport-y]
   (let [[offset-x offset-y] (get @wb/bounding-rect pageid)
         new-x (+ viewport-x offset-x)
         new-y (+ viewport-y offset-y)]
     [new-x new-y]))
 
-(defn get-position
-  [{:keys [x y width page]}]
-  (let [vx (+ x width 50)
+(defn- get-position
+  [{:keys [page width] :as shape}]
+  (let [{:keys [x y]} (sh/resolve-position shape)
+        vx (+ x width 50)
         vy (- y 50)]
     (viewportcoord->clientcoord page vx vy)))
 

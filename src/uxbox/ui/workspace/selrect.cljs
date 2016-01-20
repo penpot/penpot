@@ -49,7 +49,8 @@
 (defn shapes-selrect-render
   [own shapes]
   (when (seq shapes)
-    (let [{:keys [width height x y]} (sh/group-size-and-position shapes)]
+    (let [shapes (map sh/resolve-position shapes)
+          {:keys [width height x y]} (sh/group-size-and-position shapes)]
       (html
        [:g.controls
         [:rect {:x x :y y :width width :height height
