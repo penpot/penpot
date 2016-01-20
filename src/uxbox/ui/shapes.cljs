@@ -14,14 +14,14 @@
 (defn- extract-attrs
   "Extract predefinet attrs from shapes."
   [shape]
-  (select-keys shape [:rotation :width :height
-                      :x :y :opacity :fill :view-box]))
+  (select-keys shape [:fill :opacity]))
 
 (defn- make-debug-attrs
-  [attrs]
-  (let [xf (map (fn [[x v]]
-                  [(keyword (str "data-" (name x))) v]))]
-    (into {} xf attrs)))
+  [shape]
+  (let [attrs (select-keys shape [:rotation :width :height :x :y])
+        xf (map (fn [[x v]]
+                    [(keyword (str "data-" (name x))) v]))]
+      (into {} xf attrs)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
@@ -32,10 +32,9 @@
   (let [key (str "use-" id)
         transform (-> (merge shape attrs)
                       (svg/calculate-transform))
-        attrs {:id key :key key :transform transform}
-        attrs (-> (extract-attrs shape)
-                  (make-debug-attrs)
-                  (merge attrs))]
+        attrs (merge {:id key :key key :transform transform}
+                     (extract-attrs shape)
+                     (make-debug-attrs shape))]
     (html
      [:g attrs data])))
 
