@@ -187,7 +187,9 @@
             :on-change on-change
             :value (or (:hex @local) color "")
             :type "text"}]]
-         (colorpicker #(swap! local merge %))
+         (colorpicker {:picker {:width 205 :height 205}
+                       :bar {:width 15 :height 205}
+                       :callback #(swap! local merge %)})
          [:input#project-btn.btn-primary
           {:value "+ Add color"
            :on-click submit
