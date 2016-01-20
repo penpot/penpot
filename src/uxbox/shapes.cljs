@@ -1,6 +1,7 @@
 (ns uxbox.shapes
   (:require [uxbox.util.matrix :as mtx]
-            [uxbox.util.math :as mth]))
+            [uxbox.util.math :as mth]
+            [uxbox.state :as st]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Types
@@ -147,4 +148,19 @@
   (let [x' (:x shape)
         y' (:y shape)]
     (assoc shape :x (- x' x) :y (- y' y))))
+
+(defn resolve-position
+  "Recursively resolve the real shape position in
+  the canvas."
+  [{:keys [width height x y group] :as shape}]
+  (if group
+    (let [group (get-in @st/state [:shapes-by-id group])
+          result (resolve-position
+                  (assoc group
+                         :x (+ (:x group) x)
+                         :y (+ (:y group) y)))]
+      (assoc shape
+             :x (:x result)
+             :y (:y result)))
+    shape))
 
