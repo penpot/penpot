@@ -156,7 +156,7 @@
           :value (:fill shape "")
           :on-change on-color-change}]]
 
-       (recent-colors shape)
+       (recent-colors shape #(change-fill {:fill %}))
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]
