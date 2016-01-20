@@ -41,7 +41,15 @@
   [v]
   (vector? v))
 
+
+(v/defvalidator function
+  "Validats if `v` is function."
+  {:default-message-format "%s must be a function."}
+  [v]
+  (fn? v))
+
 (def required v/required)
+(def number v/number)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api
