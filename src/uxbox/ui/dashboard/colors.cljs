@@ -160,7 +160,6 @@
 ;; Lightbox
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: implement proper form validation
 (def ^:static +color-form-schema+
   {:hex [sc/required sc/color]})
 
