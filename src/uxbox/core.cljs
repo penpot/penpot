@@ -30,4 +30,8 @@
   (ui/init)
 
   (rs/emit! (dl/load-data))
+
+  ;; During development, you can comment the
+  ;; following call for disable temprary the
+  ;; local persistence.
   (main))
