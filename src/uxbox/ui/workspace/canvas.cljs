@@ -51,7 +51,6 @@
 
 (defn shape-render
   [own shape selected]
-  ;; (println "shape" (:id shape))
   (let [{:keys [id x y width height] :as shape} shape
         selected? (contains? selected id)]
     (letfn [(on-mouse-down [event]
