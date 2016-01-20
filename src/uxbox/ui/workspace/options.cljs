@@ -26,7 +26,12 @@
    :menu/fill
    {:name "Fill"
     :icon i/fill
-    :id :menu/fill}})
+    :id :menu/fill}
+
+   :menu/stroke
+   {:name "Stroke"
+    :icon i/stroke
+    :id :menu/stroke}})
 
 (defn- viewportcoord->clientcoord
   [pageid viewport-x viewport-y]
@@ -44,6 +49,81 @@
 
 (defmulti -render-menu
   (fn [menu own shape] (:id menu)))
+
+(defmethod -render-menu :menu/stroke
+  [menu own shape]
+  (letfn [(change-stroke [value]
+            (let [sid (:id shape)]
+              (rs/emit! (dw/update-shape-stroke sid value))))
+          (on-width-change [event]
+            (let [value (dom/event->value event)
+                  value (parse-float value 1)]
+              (change-stroke {:width value})))
+          (on-opacity-change [event]
+            (let [value (dom/event->value event)
+                  value (parse-float value 1)]
+              (change-stroke {:opacity value})))
+          (on-color-change [event]
+            (let [value (dom/event->value event)]
+              (change-stroke {:color value})))]
+    (html
+     [:div.element-set {:key (str (:id menu))}
+      [:div.element-set-title (:name menu)]
+      [:div.element-set-content
+       [:span "Style"]
+       [:div.row-flex
+        [:input#width.input-text
+         {:placeholder "Width"
+          :type "number"
+          :min "0"
+          :value (:stroke-width shape "")
+          :on-change on-width-change}]
+        [:select#style {:placeholder "Style"}
+         [:option {:value "none"} "None"]
+         [:option {:value "none"} "Solid"]
+         [:option {:value "none"} "Dotted"]
+         [:option {:value "none"} "Dashed"]]]
+
+       ;; SLIDEBAR FOR ROTATION AND OPACITY
+       [:span "Color"]
+       (colorpicker {:picker {:width 165 :height 165}
+                     :bar {:width 15 :height 165}
+                     :callback #(change-stroke {:color (:hex %)})})
+
+       [:div.row-flex
+        [:input#width.input-text
+         {:placeholder "#"
+          :type "text"
+          :value (:stroke shape "")
+          :on-change on-color-change}]]
+
+       (recent-colors shape #(change-stroke {:color %}))
+       [:span "Border radius"]
+       [:div.row-flex
+        [:div.border-element.top-left
+         i/radius
+         [:input.input-text {:type "text" :placeholder "px"}]]
+        [:div.border-element.top-right
+         i/radius
+         [:input.input-text {:type "text" :placeholder "px"}]]
+        [:span.lock-size i/lock]
+        [:div.border-element.bottom-left
+         i/radius
+         [:input.input-text {:type "text" :placeholder "px"}]]
+        [:div.border-element.bottom-right
+         i/radius
+         [:input.input-text {:type "text" :placeholder "px"}]]]
+
+       ;; SLIDEBAR FOR ROTATION AND OPACITY
+       [:span "Opacity"]
+       [:div.row-flex
+        [:input.slidebar
+         {:type "range"
+          :min "0"
+          :max "1"
+          :value (:stroke-opacity shape "1")
+          :step "0.0001"
+          :on-change on-opacity-change}]]]])))
 
 (defmethod -render-menu :menu/fill
   [menu own shape]
