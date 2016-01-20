@@ -42,19 +42,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- recent-colors-render
-  [own {:keys [page id] :as shape}]
+  [own {:keys [page id] :as shape} callback]
   (let [shapes-by-id (rum/react shapes-by-id)
         shapes (->> (vals shapes-by-id)
                     (filter #(= (:page %) page)))
-        colors (calculate-colors shapes)
-        on-click #(rs/emit! (dw/update-shape-fill id {:fill %}))]
+        colors (calculate-colors shapes)]
     (html
      [:div
       [:span "Recent colors"]
       [:div.row-flex
        (for [color colors]
          [:span.color-th {:style {:background color}
-                          :on-click (partial on-click color)}])
+                          :on-click (partial callback color)}])
        (for [i (range (- 5 (count colors)))]
          [:span.color-th])
 
