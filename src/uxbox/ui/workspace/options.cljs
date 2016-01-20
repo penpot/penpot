@@ -7,6 +7,7 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
+            [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.util.data :refer (parse-int parse-float)]))
 
@@ -47,24 +48,33 @@
 
 (defmethod -render-menu :menu/fill
   [menu own shape]
-  (letfn [(on-color-change [event]
-            (let [value (dom/event->value event)
-                  sid (:id shape)]
-              (-> (dw/update-shape-fill sid {:fill value})
+  (letfn [(change-fill [value]
+            (println value)
+            (let [sid (:id shape)]
+              (-> (dw/update-shape-fill sid value)
                   (rs/emit!))))
+          (on-color-change [event]
+            (let [value (dom/event->value event)]
+              (change-fill {:fill value})))
           (on-opacity-change [event]
             (let [value (dom/event->value event)
-                  value (parse-float value 1)
-                  sid (:id shape)]
-              (-> (dw/update-shape-fill sid {:opacity value})
-                  (rs/emit!))))]
+                  value (parse-float value 1)]
+              (change-fill {:opacity value})))
+          (on-color-picker-event [{:keys [hex]}]
+            (change-fill {:fill hex}))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
       [:div.element-set-content
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
-       [:div.element-color-picker
+       #_(colorpicker (constantly nil))
+
+       (colorpicker {:picker {:width 165 :height 165}
+                     :bar {:width 15 :height 165}
+                     :callback on-color-picker-event})
+
+       #_[:div.element-color-picker
         [:div.color-picker-body
           [:img {:src "images/color-gamma.png", :border "none"}]]
         [:div.color-picker-bar
