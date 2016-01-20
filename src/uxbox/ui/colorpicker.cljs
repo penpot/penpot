@@ -52,7 +52,6 @@
 
     (add-watch local ::key
                (fn [_ _ o v]
-                 (println "add-watch" o v)
                  (when (not= (:color o) (:color v))
                    (draw-color-gradient context1 params (:color v)))))
 
@@ -78,7 +77,6 @@
         r (aget (.-data image) 0)
         g (aget (.-data image) 1)
         b (aget (.-data image) 2)]
-    (println [r g b])
     (color/rgb->hex [r g b])))
 
 (defn- colorpicker-render
