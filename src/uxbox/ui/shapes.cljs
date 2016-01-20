@@ -43,10 +43,8 @@
   (let [key (str "group-" id)
         tfm (-> (merge shape attrs)
                 (svg/calculate-transform))
-        attrs {:id key :key key :transform tfm}
-        attrs (-> (extract-attrs shape)
-                  (make-debug-attrs)
-                  (merge attrs))
+        attrs (merge {:id key :key key :transform tfm}
+                     (make-debug-attrs shape))
         shapes-by-id (get @st/state :shapes-by-id)]
     (html
      [:g attrs
