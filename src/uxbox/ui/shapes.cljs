@@ -14,7 +14,7 @@
 (defn- extract-attrs
   "Extract predefinet attrs from shapes."
   [shape]
-  (select-keys shape [:fill :opacity]))
+  (select-keys shape [:fill :opacity :stroke :stroke-opacity :stroke-width]))
 
 (defn- make-debug-attrs
   [shape]
