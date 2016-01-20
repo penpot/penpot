@@ -156,18 +156,23 @@
 
 (defn delete-shape
   "Remove the shape using its id."
-  [sid]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [pageid (get-in state [:shapes-by-id sid :page])
-            shapes (as-> state $
-                     (get-in $ [:pages-by-id pageid :shapes])
-                     (remove #(= % sid) $)
-                     (into [] $))]
+  [id]
+  (letfn [(dissoc-shape [state {:keys [id] :as shape}]
+            (if (= (:type shape) :builtin/group)
+              (let [state (update-in state [:shapes-by-id] dissoc id)]
+                (->> (map #(get-in state [:shapes-by-id %]) (:items shape))
+                     (reduce dissoc-shape state)))
+              (update-in state [:shapes-by-id] dissoc id)))]
+    (reify
+      rs/UpdateEvent
+      (-apply-update [_ state]
+      (let [shape (get-in state [:shapes-by-id id])
+            pageid (:page shape)
+            shapes (get-in state [:pages-by-id pageid :shapes])
+            shapes (into [] (remove #(= % id) shapes))]
         (as-> state $
           (assoc-in $ [:pages-by-id pageid :shapes] shapes)
-          (update-in $ [:shapes-by-id] dissoc sid))))))
+          (dissoc-shape $ shape)))))))
 
 (defn move-shape
   "Mark a shape selected for drawing in the canvas."
