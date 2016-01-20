@@ -36,6 +36,10 @@
   {:fill [sc/color]
    :opacity [v/number]})
 
+(def ^:static +shape-update-stroke-schema+
+  {:color [sc/color]
+   :opacity [v/number]})
+
 (def ^:static +shape-update-position-schema+
   {:x [v/integer]
    :y [v/integer]})
@@ -232,6 +236,17 @@
                  (when fill {:fill fill})
                  (when opacity {:opacity opacity})))))
 
+(defn update-shape-stroke
+  [sid {:keys [color opacity width] :as opts}]
+  (sc/validate! +shape-update-stroke-schema+ opts)
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id sid]
+                 merge
+                 (when width {:stroke-width width})
+                 (when color {:stroke color})
+                 (when opacity {:stroke-opacity opacity})))))
 
 (defn toggle-shape-visibility
   [sid]
