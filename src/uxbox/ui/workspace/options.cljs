@@ -8,6 +8,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.colorpicker :refer (colorpicker)]
+            [uxbox.ui.workspace.recent-colors :refer (recent-colors)]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.util.data :refer (parse-int parse-float)]))
 
@@ -43,13 +44,9 @@
 (defmulti -render-menu
   (fn [menu own shape] (:id menu)))
 
-(def ^:private ^:static toggle-colorpalette
-  #(rs/emit! (dw/toggle-tool :workspace/colorpalette)))
-
 (defmethod -render-menu :menu/fill
   [menu own shape]
   (letfn [(change-fill [value]
-            (println value)
             (let [sid (:id shape)]
               (-> (dw/update-shape-fill sid value)
                   (rs/emit!))))
@@ -78,16 +75,7 @@
           :value (:fill shape "")
           :on-change on-color-change}]]
 
-       ;; RECENT COLORS
-       [:span "Recent colors"]
-       [:div.row-flex
-        [:span.color-th]
-        [:span.color-th {:style {:background "#c5cb7f"}}]
-        [:span.color-th {:style {:background "#6cb533"}}]
-        [:span.color-th {:style {:background "#67c6b5"}}]
-        [:span.color-th {:style {:background "#a178e3"}}]
-        [:span.color-th.palette-th {:on-click toggle-colorpalette}
-         i/palette]]
+       (recent-colors shape)
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]
