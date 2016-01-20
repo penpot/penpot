@@ -225,6 +225,7 @@
                  (when x {:x x})
                  (when y {:y y})))))
 
+;; TODO: rename fill to "color" for consistency.
 (defn update-shape-fill
   [sid {:keys [fill opacity] :as opts}]
   (sc/validate! +shape-update-fill-schema+ opts)
