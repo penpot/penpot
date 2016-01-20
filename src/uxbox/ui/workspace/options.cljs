@@ -68,18 +68,9 @@
       [:div.element-set-content
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
-       #_(colorpicker (constantly nil))
-
        (colorpicker {:picker {:width 165 :height 165}
                      :bar {:width 15 :height 165}
                      :callback on-color-picker-event})
-
-       #_[:div.element-color-picker
-        [:div.color-picker-body
-          [:img {:src "images/color-gamma.png", :border "none"}]]
-        [:div.color-picker-bar
-          [:div.color-bar-select]
-          [:img {:src "images/color-bar.png", :border "none"}]]]
        [:div.row-flex
         [:input#width.input-text
          {:placeholder "#"
