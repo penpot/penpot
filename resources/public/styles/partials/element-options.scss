@@ -211,14 +211,16 @@
   height: 100%;
   justify-content: center;
   margin: 0 4px;
+
   .color-picker-body {
     height: 100%;
     margin-right: 15px;
   }
   .color-picker-bar {
-    height: 100%;
+    height: 205px;
     position: relative;
     width: 15px;
+
     .color-bar-select {
       background-color: $color-white;
       height: 3px;

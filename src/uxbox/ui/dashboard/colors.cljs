@@ -188,17 +188,11 @@
             :on-change on-change
             :value (or (:hex @local) color "")
             :type "text"}]]
-          [:div.element-color-picker
-           [:div.color-picker-body
-            [:img {:src "images/color-gamma.png", :border "none"}]]
-           [:div.color-picker-bar
-            [:div.color-bar-select]
-            [:img {:src "images/color-bar.png", :border "none"}]]]
          (colorpicker #(swap! local merge %))
          [:input#project-btn.btn-primary
           {:value "+ Add color"
            :on-click submit
-           :type "submit"}]]
+           :type "button"}]]
         [:a.close {:on-click #(lightbox/close!)}
        i/close]]))))
 
