@@ -26,6 +26,24 @@
   [^number v]
   (- v))
 
+(defn floor
+  "Returns the largest integer less than or
+  equal to a given number."
+  [^number v]
+  (js/Math.floor v))
+
+(defn round
+  "Returns the value of a number rounded to
+  the nearest integer."
+  [^number v]
+  (js/Math.round v))
+
+(defn ceil
+  "Returns the smallest integer greater than
+  or equal to a given number."
+  [^number v]
+  (js/Math.ceil v))
+
 (defn radians
   "Converts degrees to radians."
   [^number degrees]
