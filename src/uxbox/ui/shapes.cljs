@@ -48,7 +48,9 @@
         shapes-by-id (get @st/state :shapes-by-id)]
     (html
      [:g attrs
-      (for [item (map #(get shapes-by-id %) items)]
+      (for [item (->> items
+                      (map #(get shapes-by-id %))
+                      (remove :hidden))]
         (shapes/-render item nil))])))
 
 (defmethod shapes/-render-svg :builtin/icon
