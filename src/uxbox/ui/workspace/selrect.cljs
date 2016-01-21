@@ -42,9 +42,9 @@
    :vectorEffect "non-scaling-stroke"})
 
 (def ^:private default-selection-props
-  {:r 4 :style selection-circle-style
-   :fill "lavender"
-   :stroke "gray"})
+  {:r 5 :style selection-circle-style
+   :fill "#333"
+   :stroke "#333"})
 
 (defn shapes-selrect-render
   [own shapes]
@@ -53,9 +53,9 @@
           {:keys [width height x y]} (sh/group-size-and-position shapes)]
       (html
        [:g.controls
-        [:rect {:x x :y y :width width :height height
-                :style {:stroke "black" :fill "transparent"
-                        :stroke-opacity "0.5"}}]
+        [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
+                :style {:stroke "#333" :fill "transparent"
+                        :stroke-opacity "1"}}]
         [:circle.top-left (merge default-selection-props
                                  {:cx x :cy y})]
         [:circle.top-right (merge default-selection-props
