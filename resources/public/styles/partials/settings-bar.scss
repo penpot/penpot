@@ -193,6 +193,10 @@
 .element-list {
   margin: 0;
   width: 100%;
+  
+  ul {
+    margin: 0;
+  }
 
   li {
     box-sizing: border-box;
