@@ -117,7 +117,7 @@
                 (filter #(= (:page %) pageid))
                 (remove :hidden)
                 (remove :blocked)
-                (filter #(contained-in-selrect? % selrect))
+                (filter #(sh/contained-in? % selrect))
                 (map :id))]
         (->> (into #{} xf (vals (:shapes-by-id state)))
              (assoc-in state [:workspace :selected]))))))
