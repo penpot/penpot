@@ -206,7 +206,37 @@
                  (when x {:x x})
                  (when y {:y y})))))
 
+(defn rebuild-group-size
+  [id]
+  (letfn [(update-shape-pos [state {:keys [id x y] :as data}]
+            (update-in state [:shapes-by-id id] assoc :x x :y y))
+
+          (update-group-size [shape shapes]
+            (let [{:keys [width height]} (sh/group-size-and-position shapes)]
+              (assoc shape
+                     :width width
+                     :height height
+                     :view-box [0 0 width height])))
+
+          (update-group [shape shapes x y]
+            (-> shape
+                (update-group-size shapes)
+                (sh/translate-coords x y +)))]
+
+    (reify
+      rs/UpdateEvent
+      (-apply-update [_ state]
+        (let [shape (get-in state [:shapes-by-id id])
+              shapes (map #(get-in state [:shapes-by-id %]) (:items shape))
+              x (apply min (map :x shapes))
+              y (apply min (map :y shapes))
+              shapes (map #(sh/translate-coords % x y) shapes)]
+          (as-> state $
+            (reduce update-shape-pos $ shapes)
+            (update-in $ [:shapes-by-id id] #(update-group % shapes x y))))))))
+
 ;; TODO: rename fill to "color" for consistency.
+
 (defn update-shape-fill
   [sid {:keys [fill opacity] :as opts}]
   (sc/validate! +shape-update-fill-schema+ opts)
