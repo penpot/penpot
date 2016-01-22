@@ -2,6 +2,7 @@
   "A ui related implementation for uxbox.shapes ns."
   (:require [sablono.core :refer-macros [html]]
             [cuerdas.core :as str]
+            [rum.core :as rum]
             [uxbox.state :as st]
             [uxbox.shapes :as shapes]
             [uxbox.util.svg :as svg]
@@ -28,21 +29,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod shapes/-render :builtin/icon
-  [{:keys [data id] :as shape} attrs]
-  (let [key (str "use-" id)
-        transform (-> (merge shape attrs)
-                      (svg/calculate-transform))
-        attrs (merge {:id key :key key :transform transform}
+  [{:keys [data id] :as shape} _]
+  (let [key (str id)
+        rfm (svg/calculate-transform shape)
+        attrs (merge {:id key :key key :transform rfm}
                      (extract-attrs shape)
                      (make-debug-attrs shape))]
     (html
      [:g attrs data])))
 
 (defmethod shapes/-render :builtin/group
-  [{:keys [items id] :as shape} attrs]
+  [{:keys [items id] :as shape} factory]
   (let [key (str "group-" id)
-        tfm (-> (merge shape attrs)
-                (svg/calculate-transform))
+        tfm (svg/calculate-transform shape)
         attrs (merge {:id key :key key :transform tfm}
                      (make-debug-attrs shape))
         shapes-by-id (get @st/state :shapes-by-id)]
@@ -51,7 +50,8 @@
       (for [item (->> items
                       (map #(get shapes-by-id %))
                       (remove :hidden))]
-        (shapes/-render item nil))])))
+        (-> (factory item)
+            (rum/with-key (str (:id item)))))])))
 
 (defmethod shapes/-render-svg :builtin/icon
   [{:keys [data id view-box] :as shape} attrs]
