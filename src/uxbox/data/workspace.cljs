@@ -137,6 +137,8 @@
           (update-in $ [:pages-by-id pid :shapes] conj sid)
           (assoc-in $ [:shapes-by-id sid] shape))))))
 
+
+;; FIXME: delete shape that is part of group.
 (defn delete-shape
   "Remove the shape using its id."
   [id]
