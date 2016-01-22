@@ -282,6 +282,17 @@
           (assoc-in state [:shapes-by-id sid] (assoc shape :blocked false))
           (assoc-in state [:shapes-by-id sid] (assoc shape :blocked true)))))))
 
+(defn toggle-shape-locking
+  [sid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])
+            locked? (:locked shape false)]
+        (if locked?
+          (assoc-in state [:shapes-by-id sid] (assoc shape :locked false))
+          (assoc-in state [:shapes-by-id sid] (assoc shape :locked true)))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
