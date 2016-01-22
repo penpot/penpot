@@ -106,27 +106,6 @@
           (update-in state [:workspace :selected] disj id)
           (update-in state [:workspace :selected] conj id))))))
 
-(defn contained-in-selrect?
-  [shape selrect]
-  (let [sx1 (:x selrect)
-        sx2 (+ sx1 (:width selrect))
-        sy1 (:y selrect)
-        sy2 (+ sy1 (:height selrect))
-        rx1 (:x shape)
-        rx2 (+ rx1 (:width shape))
-        ry1 (:y shape)
-        ry2 (+ ry1 (:height shape))]
-    (and (neg? (- (:y selrect) (:y shape)))
-         (neg? (- (:x selrect) (:x shape)))
-         (pos? (- (+ (:y selrect)
-                     (:height selrect))
-                  (+ (:y shape)
-                     (:height shape))))
-         (pos? (- (+ (:x selrect)
-                     (:width selrect))
-                  (+ (:x shape)
-                     (:width shape)))))))
-
 (defn select-shapes
   "Select shapes that matches the select rect."
   [selrect]

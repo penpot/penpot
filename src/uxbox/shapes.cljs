@@ -164,3 +164,34 @@
              :y (:y result)))
     shape))
 
+(defn resolve-parent
+  "Recursively resolve the real shape parent."
+  [{:keys [group] :as shape}]
+  (if group
+    (resolve-parent (get-in @st/state [:shapes-by-id group]))
+    shape))
+
+(defn contained-in?
+  "Check if a shape is contained in the
+  provided selection rect."
+  [shape selrect]
+  (let [sx1 (:x selrect)
+        sx2 (+ sx1 (:width selrect))
+        sy1 (:y selrect)
+        sy2 (+ sy1 (:height selrect))
+        rx1 (:x shape)
+        rx2 (+ rx1 (:width shape))
+        ry1 (:y shape)
+        ry2 (+ ry1 (:height shape))]
+    (and (neg? (- (:y selrect) (:y shape)))
+         (neg? (- (:x selrect) (:x shape)))
+         (pos? (- (+ (:y selrect)
+                     (:height selrect))
+                  (+ (:y shape)
+                     (:height shape))))
+         (pos? (- (+ (:x selrect)
+                     (:width selrect))
+                  (+ (:x shape)
+                     (:width shape)))))))
+
+
