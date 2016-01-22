@@ -8,7 +8,7 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.xforms :as xf]
-            [uxbox.shapes :as shapes]
+            [uxbox.shapes :as sh]
             [uxbox.util.lens :as ul]
             [uxbox.library.icons :as _icons]
             [uxbox.data.projects :as dp]
@@ -49,35 +49,60 @@
 ;; Shape
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn shape-render
-  [own shape selected]
-  (let [{:keys [id x y width height] :as shape} shape
-        selected? (contains? selected id)]
-    (letfn [(on-mouse-down [event]
-              (when-not (:blocked shape)
-                (let [local (:rum/local own)]
-                  (dom/stop-propagation event)
-                  (swap! local assoc :init-coords [x y])
-                  (reset! wb/shapes-dragging? true))
-                (cond
-                  (and (not selected?)
-                       (empty? selected))
-                  (rs/emit! (dw/select-shape id))
+(declare shape)
 
-                  (and (not selected?)
-                       (not (empty? selected)))
-                  (if (.-ctrlKey event)
-                    (rs/emit! (dw/select-shape id))
-                    (rs/emit! (dw/deselect-all)
-                              (dw/select-shape id))))))
+(defn shape-render
+  [own item selected]
+  (let [{:keys [id x y width height group] :as item} item
+        selected? (contains? selected id)
+        local (:rum/local own)]
+    (letfn [(on-mouse-down [event]
+              (when-not (:blocked item)
+                ;; (let [local (:rum/local own)]
+                ;;   (swap! local assoc :init-coords [x y])
+                ;;   (reset! wb/shapes-dragging? true))
+                (cond
+                  (and group (:locked (sh/resolve-parent item)))
+                  nil
+
+                  (and (not selected?) (empty? selected))
+                  (do
+                    (dom/stop-propagation event)
+                    (swap! local assoc :init-coords [x y])
+                    (reset! wb/shapes-dragging? true)
+
+                    (rs/emit! (dw/select-shape id)))
+
+                  (and (not selected?) (not (empty? selected)))
+                  (do
+                    (dom/stop-propagation event)
+                    (swap! local assoc :init-coords [x y])
+                    (reset! wb/shapes-dragging? true)
+                    (if (.-ctrlKey event)
+                      (rs/emit! (dw/select-shape id))
+                      (rs/emit! (dw/deselect-all)
+                                (dw/select-shape id))))
+
+                  :else
+                  (do
+                    (dom/stop-propagation event)
+                    (swap! local assoc :init-coords [x y])
+                    (reset! wb/shapes-dragging? true)))))
+
             (on-mouse-up [event]
-              (dom/stop-propagation event)
-              (reset! wb/shapes-dragging? false))]
+              (cond
+                (and group (:locked (sh/resolve-parent item)))
+                nil
+
+                :else
+                (do
+                  (dom/stop-propagation event)
+                  (reset! wb/shapes-dragging? false))))]
       (html
        [:g.shape {:class (when selected? "selected")
                   :on-mouse-down on-mouse-down
                   :on-mouse-up on-mouse-up}
-        (shapes/-render shape nil)]))))
+        (sh/-render item #(shape % selected))]))))
 
 (def ^:static shape
   (mx/component
