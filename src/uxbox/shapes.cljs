@@ -144,10 +144,12 @@
 (defn translate-coords
   "Given a shape and initial coords, transform
   it mapping its coords to new provided initial coords."
-  [shape x y]
-  (let [x' (:x shape)
-        y' (:y shape)]
-    (assoc shape :x (- x' x) :y (- y' y))))
+  ([shape x y]
+   (translate-coords shape x y -))
+  ([shape x y op]
+   (let [x' (:x shape)
+         y' (:y shape)]
+     (assoc shape :x (op x' x) :y (op y' y)))))
 
 (defn resolve-position
   "Recursively resolve the real shape position in
