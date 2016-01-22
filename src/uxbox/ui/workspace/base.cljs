@@ -106,9 +106,11 @@
     (rx/on-value $ (fn [delta]
                      (let [pageid (get-in @st/state [:workspace :page])
                            selected (get-in @st/state [:workspace :selected])
-                           page (get-in @st/state [:pages-by-id pageid])]
-                       (doseq [sid (filter selected (:shapes page))]
-                         (rs/emit! (dw/move-shape sid delta))))))))
+                           shapes (->> (vals @shapes-by-id)
+                                       (filter #(= (:page %) pageid))
+                                       (filter (comp selected :id)))]
+                       (doseq [{:keys [id group]} shapes]
+                         (rs/emit! (dw/move-shape id delta))))))))
 
 (defn selrect->rect
   [data]
