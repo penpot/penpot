@@ -68,6 +68,12 @@
   (let [id (:id item)]
     (rs/emit! (dw/toggle-shape-blocking id))))
 
+(defn- toggle-locking
+  [item event]
+  (dom/stop-propagation event)
+  (let [id (:id item)]
+    (rs/emit! (dw/toggle-shape-locking id))))
+
 (defn- layer-element-render
   [own item selected]
   (let [selected? (contains? selected (:id item))
@@ -109,6 +115,7 @@
         select #(select-shape selected item %)
         toggle-visibility #(toggle-visibility selected item %)
         toggle-blocking #(toggle-blocking item %)
+        toggle-locking #(toggle-locking item %)
         toggle-open (fn [event]
                       (dom/stop-propagation event)
                       (swap! local assoc :open (not open?)))
@@ -124,7 +131,9 @@
         [:div.block-element {:class (when (:blocked item) "selected")
                              :on-click toggle-blocking}
          i/lock]
-        [:div.chain-element i/chain]]
+        [:div.chain-element {:class (when (:locked item) "selected")
+                             :on-click toggle-locking}
+         i/chain]]
        [:div.element-icon i/folder]
        [:span (:name item "Unnamed group")]
        [:span.toggle-content {:on-click toggle-open}
