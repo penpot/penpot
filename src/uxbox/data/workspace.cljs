@@ -301,9 +301,16 @@
   "Mark a shape selected for drawing in the canvas."
   []
   (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:workspace :selected] #{}))))
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [selected (get-in state [:workspace :selected])
+            mevent (rs/swap-state #(assoc-in state [:workspace :selected] #{}))]
+        (->> (map #(get-in state [:shapes-by-id %]) selected)
+             (rx/from-coll)
+             (rx/filter :group)
+             (rx/map :group)
+             (rx/map rebuild-group-size)
+             (rx/merge (rx/just mevent)))))))
 
 (defn copy-selected
   "Copy the selected shapes."
