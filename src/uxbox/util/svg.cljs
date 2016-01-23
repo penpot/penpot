@@ -60,8 +60,8 @@
                            apply-rotation))
 
 (defn calculate-transform
-  [attrs]
-  (let [result (->> (interpret-attrs attrs)
+  [shape]
+  (let [result (->> (interpret-attrs shape)
                     (apply mtx/multiply)
                     (deref)
                     (take 6)
