@@ -26,16 +26,20 @@
   #(rs/emit! (dw/toggle-tool :workspace/colorpalette)))
 
 (defn- count-color
-  [state shape]
-  (let [color (:fill shape)]
+  [state shape prop]
+  (let [color (prop shape)]
     (if (contains? state color)
       (update state color inc)
       (assoc state color 1))))
 
 (defn- calculate-colors
   [shapes]
-  (let [result (reduce count-color {} shapes)]
-    (take 5 (map first (sort-by second (into [] result))))))
+  (as-> (comp
+         #(count-color %1 %2 :fill)
+         #(count-color %1 %2 :stroke)) $
+    (reduce $ {} shapes)
+    (sort-by second (into [] $))
+    (take 5 (map first $))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
