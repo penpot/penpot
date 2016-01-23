@@ -138,26 +138,42 @@
           (assoc-in $ [:shapes-by-id sid] shape))))))
 
 
-;; FIXME: delete shape that is part of group.
 (defn delete-shape
   "Remove the shape using its id."
   [id]
-  (letfn [(dissoc-shape [state {:keys [id] :as shape}]
-            (if (= (:type shape) :builtin/group)
-              (let [state (update-in state [:shapes-by-id] dissoc id)]
-                (->> (map #(get-in state [:shapes-by-id %]) (:items shape))
-                     (reduce dissoc-shape state)))
-              (update-in state [:shapes-by-id] dissoc id)))]
+  (letfn [(dissoc-group [state {:keys [id] :as shape}]
+            (let [state (update-in state [:shapes-by-id] dissoc id)]
+              (->> (:items shape)
+                   (map #(get-in state [:shapes-by-id %]))
+                   (reduce dissoc-from-index state))))
+
+          (dissoc-icon [state {:keys [id] :as shape}]
+            (update-in state [:shapes-by-id] dissoc id))
+
+          (dissoc-from-group [state {:keys [id group] :as shape}]
+            (if-let [group' (get-in state [:shapes-by-id group])]
+              (as-> (:items group') $
+                (into [] (remove #(= % id) $))
+                (assoc-in state [:shapes-by-id group :items] $))
+              state))
+
+          (dissoc-from-page [state {:keys [page id] :as shape}]
+            (as-> (get-in state [:pages-by-id page :shapes]) $
+              (into [] (remove #(= % id) $))
+              (assoc-in state [:pages-by-id page :shapes] $)))
+
+          (dissoc-from-index [state shape]
+            (case (:type shape)
+              :builtin/icon (dissoc-icon state shape)
+              :builtin/group (dissoc-group state shape)))]
     (reify
       rs/UpdateEvent
       (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id id])
-            pageid (:page shape)
-            shapes (get-in state [:pages-by-id pageid :shapes])
-            shapes (into [] (remove #(= % id) shapes))]
-        (as-> state $
-          (assoc-in $ [:pages-by-id pageid :shapes] shapes)
-          (dissoc-shape $ shape)))))))
+        (let [shape (get-in state [:shapes-by-id id])]
+          (as-> state $
+            (dissoc-from-page $ shape)
+            (dissoc-from-group $ shape)
+            (dissoc-from-index $ shape)))))))
 
 (defn move-shape
   "Mark a shape selected for drawing in the canvas."
