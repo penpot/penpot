@@ -120,10 +120,11 @@
         final-y (- center-y d1)
         final-width (* d2 2)
         final-height (* d1 2)]
-    {:x final-x
-     :y final-y
-     :width final-width
-     :height final-height}))
+    (merge shape
+           {:x final-x
+            :y final-y
+            :width final-width
+            :height final-height})))
 
 (defn group-size-and-position
   "Given a collection of shapes, calculates the
