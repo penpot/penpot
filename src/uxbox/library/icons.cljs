@@ -16,15 +16,6 @@
             [uxbox.library.icons.material-design-toggle :as md-toggle]
             ))
 
-(def ^:private +external+
-  [{:name "Custon icon"
-    :view-box [0 0 48 48]
-    :id (gensym "icon")
-    :type :builtin/icon-svg
-    :image {:xlink-href "http://s.cdpn.io/3/kiwi.svg"
-            :width 48
-            :height 48}}])
-
 (def +collections+
   [{:name "Material design (actions)"
     :builtin true
@@ -85,8 +76,4 @@
    {:name "Material design (Toggle)"
     :builtin true
     :id 15
-    :icons md-toggle/+icons+}
-   {:name "External icons"
-    :builtin true
-    :id 40
-    :icons +external+}])
+    :icons md-toggle/+icons+}])
