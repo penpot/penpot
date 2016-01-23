@@ -195,8 +195,6 @@
       (update-in state [:shapes-by-id sid]
                  shapes/-rotate rotation))))
 
-;; TODO: implement locked resize
-
 (defn update-shape-size
   [sid {:keys [width height lock] :as opts}]
   (sc/validate! +shape-update-size-schema+ opts)

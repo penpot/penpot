@@ -173,9 +173,7 @@
         x (apply min (map :x shapes))
         y (apply min (map :y shapes))
         x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
-        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
-        width (- x' x)
-        height (- y' y)]
+        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))]
     {:width (- x' x)
      :height (- y' y)
      :x x
