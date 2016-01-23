@@ -46,6 +46,10 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+(defmulti -outer-rect
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,6 +69,37 @@
 (defmethod -rotate ::shape
   [shape rotation]
   (assoc shape :rotation rotation))
+
+(declare container-rect)
+(declare resolve-position)
+
+(defmethod -outer-rect ::shape
+  [{:keys [group] :as shape}]
+  (as-> shape $
+    (resolve-position $)
+    (container-rect $)))
+
+(defmethod -outer-rect :builtin/group
+  [{:keys [id group rotation view-box] :as shape}]
+  (let [shapes (->> (:items shape)
+                    (map #(get-in @st/state [:shapes-by-id %]))
+                    (map -outer-rect))
+
+        crect (-> shape
+                  (resolve-position)
+                  (container-rect))
+
+        shapes (into [crect] shapes)
+
+        x (apply min (map :x shapes))
+        y (apply min (map :y shapes))
+        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
+        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
+        width (- x' x)
+        height (- y' y)]
+    (as-> shape $
+      (merge $ {:width width :height height :x x :y y})
+      (container-rect $))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
