@@ -93,15 +93,8 @@
         x2 (- (+ x width) center-x)
         y2 (- y center-y)
 
-        rx1 (- (* x1 (mth/cos angle))
-               (* y1 (mth/sin angle)))
-        ry1 (+ (* x1 (mth/sin angle))
-               (* y1 (mth/cos angle)))
-
-        rx2 (- (* x2 (mth/cos angle))
-               (* y2 (mth/sin angle)))
-        ry2 (+ (* x2 (mth/sin angle))
-               (* y2 (mth/cos angle)))
+        [rx1 ry1] (apply-rotation [x1 y1] rotation)
+        [rx2 ry2] (apply-rotation [x2 y2] rotation)
 
         [d1 d2] (cond
                   (and (>= rotation 0)
