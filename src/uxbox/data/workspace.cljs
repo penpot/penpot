@@ -117,6 +117,7 @@
                 (filter #(= (:page %) pageid))
                 (remove :hidden)
                 (remove :blocked)
+                (map sh/resolve-position)
                 (filter #(sh/contained-in? % selrect))
                 (map :id))]
         (->> (into #{} xf (vals (:shapes-by-id state)))
