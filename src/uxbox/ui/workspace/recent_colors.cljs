@@ -2,6 +2,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cats.labs.lens :as l]
+            [uxbox.locales :refer (tr)]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.data.workspace :as dw]
@@ -53,7 +54,7 @@
         colors (calculate-colors shapes)]
     (html
      [:div
-      [:span "Recent colors"]
+      [:span (tr "ds.recent-colors")]
       [:div.row-flex
        (for [color colors]
          [:span.color-th {:style {:background color}

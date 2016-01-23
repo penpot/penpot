@@ -9,4 +9,8 @@
    "ds.standard-title" "STANDARD"
    "ds.your-libraries-title" "YOUR LIBRARIES"
    "ds.num-elements" ["%s element"
-                      "%s elements"]})
+                      "%s elements"]
+
+   "ds.recent-colors" "Recent colors"
+
+   })
