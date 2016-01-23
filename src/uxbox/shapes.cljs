@@ -181,6 +181,23 @@
      :x x
      :y y}))
 
+(declare resolve-position)
+
+(defn outer-rect
+  [shapes]
+  {:pre [(seq shapes)]}
+  (let [shapes (map -outer-rect shapes)
+        x (apply min (map :x shapes))
+        y (apply min (map :y shapes))
+        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
+        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
+        width (- x' x)
+        height (- y' y)]
+    {:width width
+     :height height
+     :x x
+     :y y}))
+
 (defn translate-coords
   "Given a shape and initial coords, transform
   it mapping its coords to new provided initial coords."
