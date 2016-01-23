@@ -69,10 +69,3 @@
     (->> (map #(nth result %) [0 3 1 4 2 5])
          (str/join ",")
          (str/format "matrix(%s)"))))
-
-(defn apply-transform
-  [attrs]
-  (let [transform (calculate-transform attrs)]
-    (-> attrs
-        (without-keys [:rotation :width :height :x :y :view-box])
-        (assoc :transform transform))))
