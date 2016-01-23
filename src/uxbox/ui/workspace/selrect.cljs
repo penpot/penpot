@@ -49,8 +49,7 @@
 (defn shapes-selrect-render
   [own shapes]
   (when (seq shapes)
-    (let [shapes (map sh/resolve-position shapes)
-          {:keys [width height x y]} (sh/group-size-and-position shapes)]
+    (let [{:keys [width height x y]} (sh/outer-rect shapes)]
       (html
        [:g.controls
         [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
