@@ -226,7 +226,7 @@
             (update-in state [:shapes-by-id id] assoc :x x :y y))
 
           (update-group-size [shape shapes]
-            (let [{:keys [width height]} (sh/group-size-and-position shapes)]
+            (let [{:keys [width height]} (sh/group-dimensions shapes)]
               (assoc shape
                      :width width
                      :height height
@@ -343,40 +343,44 @@
           (map #(add-shape % %) $)
           (rx/from-coll $))))))
 
+
 (defn group-selected
   []
-  (reify rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [shapes-by-id (get state :shapes-by-id)
-            sid (random-uuid)
-            pid (get-in state [:workspace :page])
-            selected (get-in state [:workspace :selected])
-            shapes (->> selected
-                        (map #(get shapes-by-id %))
-                        (map #(assoc % :group sid)))
-            {:keys [width height x y]} (sh/group-size-and-position shapes)
-            group {:type :builtin/group
-                   :id sid
-                   :name (str "Group " (rand-int 1000))
-                   :x x
-                   :y y
-                   :width width
-                   :height height
-                   :items (mapv :id shapes)
-                   :page (get-in state [:workspace :page])
-                   :view-box [0 0 width height]}
-            shapes-map (->> shapes
-                            (map #(sh/translate-coords % x y))
-                            (reduce #(assoc %1 (:id %2) %2) {}))
-            shapes-list (->> (get-in state [:pages-by-id pid :shapes])
-                             (filter (comp not selected))
-                             (into [sid]))]
+  (letfn [(update-shapes-on-page [state pid selected group]
+            (as-> (get-in state [:pages-by-id pid :shapes]) $
+              (remove selected $)
+              (into [group] $)
+              (assoc-in state [:pages-by-id pid :shapes] $)))
 
-        (as-> state $
-          (update $ :shapes-by-id merge shapes-map)
-          (update $ :shapes-by-id assoc sid group)
-          (update $ :workspace assoc :selected #{})
-          (update-in $ [:pages-by-id pid] assoc :shapes shapes-list))))))
+          (update-shapes-on-index [state shapes dimensions group]
+            (let [{:keys [x y]} dimensions]
+              (reduce (fn [state {:keys [id] :as shape}]
+                        (as-> shape $
+                          (sh/translate-coords $ x y)
+                          (assoc $ :group group)
+                          (assoc-in state [:shapes-by-id id] $)))
+                      state
+                      shapes)))]
+    (reify rs/UpdateEvent
+      (-apply-update [_ state]
+        (let [shapes-by-id (get state :shapes-by-id)
+              sid (random-uuid)
+              pid (get-in state [:workspace :page])
+              selected (get-in state [:workspace :selected])
+              selected' (map #(get shapes-by-id %) selected)
+              dimensions (sh/group-dimensions selected')
+
+              data {:type :builtin/group
+                    :name (str "Group " (rand-int 1000))
+                    :items (into [] selected)
+                    :id sid
+                    :page pid}
+              group (merge data dimensions)]
+          (as-> state $
+            (update-shapes-on-index $ selected' dimensions sid)
+            (update-shapes-on-page $ pid selected sid)
+            (update $ :shapes-by-id assoc sid group)
+            (update $ :workspace assoc :selected #{})))))))
 
 (defn delete-selected
   "Deselect all and remove all selected shapes."

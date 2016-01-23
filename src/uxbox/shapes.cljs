@@ -161,21 +161,21 @@
             :width final-width
             :height final-height})))
 
-(defn group-size-and-position
+(defn group-dimensions
   "Given a collection of shapes, calculates the
-  dimensions of possible envolving rect.
-
-  Mainly used for calculate the selection
-  rect or shapes grop size."
+  dimensions of the resultant group."
   [shapes]
   {:pre [(seq shapes)]}
   (let [shapes (map container-rect shapes)
         x (apply min (map :x shapes))
         y (apply min (map :y shapes))
         x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
-        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))]
-    {:width (- x' x)
-     :height (- y' y)
+        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
+        width (- x' x)
+        height (- y' y)]
+    {:width width
+     :height height
+     :view-box [0 0 width height]
      :x x
      :y y}))
 
