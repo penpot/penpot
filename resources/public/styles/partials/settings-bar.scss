@@ -193,7 +193,7 @@
 .element-list {
   margin: 0;
   width: 100%;
-  
+
   ul {
     margin: 0;
   }
@@ -204,6 +204,22 @@
     display: flex;
     flex-direction: column;
     width: 100%;
+
+    &.open {
+
+      ul {
+
+        li {
+
+          .element-list-body {
+            border-style: dashed;
+          }
+
+        }
+
+      }
+
+    }
 
     .element-list-body {
       align-items: center;
@@ -260,6 +276,7 @@
         &.open {
 
           .toggle-content {
+            flex-shrink: 0;
 
             svg {
               transform: rotate(270deg);
@@ -274,6 +291,8 @@
       span {
         color: darken($color-gray-darker, 8%);
         font-size: $fs13;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
       }
 
       &.selected {
