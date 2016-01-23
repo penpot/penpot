@@ -44,6 +44,10 @@
   [^number v]
   (js/Math.ceil v))
 
+(defn precision
+  [^number v ^number n]
+  (js/parseFloat (.toFixed v n)))
+
 (defn radians
   "Converts degrees to radians."
   [^number degrees]
