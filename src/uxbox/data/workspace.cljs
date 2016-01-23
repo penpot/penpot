@@ -244,6 +244,9 @@
       (-apply-update [_ state]
         (let [shape (get-in state [:shapes-by-id id])
               shapes (map #(get-in state [:shapes-by-id %]) (:items shape))
+              ;; shapes (->> (:items shape)
+              ;;             (map #(get-in state [:shapes-by-id %]))
+              ;;             (map (fn [v] (merge v (sh/container-rect v)))))
               x (apply min (map :x shapes))
               y (apply min (map :y shapes))
               shapes (map #(sh/translate-coords % x y) shapes)]
@@ -321,6 +324,7 @@
     (-apply-watch [_ state]
       (let [selected (get-in state [:workspace :selected])
             mevent (rs/swap-state #(assoc-in state [:workspace :selected] #{}))]
+        ;; (rx/just mevent)))))
         (->> (map #(get-in state [:shapes-by-id %]) selected)
              (rx/from-coll)
              (rx/filter :group)
