@@ -70,6 +70,17 @@
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn apply-rotation
+  [[x y :as v] rotation]
+  (let [angle (mth/radians rotation)
+        rx (- (* x (mth/cos angle))
+              (* y (mth/sin angle)))
+        ry (+ (* x (mth/sin angle))
+              (* y (mth/cos angle)))]
+    (let [r [(mth/precision rx 6)
+             (mth/precision ry 6)]]
+      r)))
+
 (defn container-rect
   [{:keys [x y width height rotation] :as shape}]
   (let [center-x (+ x (/ width 2))
