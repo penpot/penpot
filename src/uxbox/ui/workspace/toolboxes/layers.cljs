@@ -144,6 +144,7 @@
                :let [key (str (:id shape))]]
            ;; TODO: make polymorphic
            (case (:type shape)
+             :builtin/rect (rum/with-key (layer-element shape selected) key)
              :builtin/icon (rum/with-key (layer-element shape selected) key)
              :builtin/group (rum/with-key (layer-group shape selected) key)))])])))
 
@@ -175,6 +176,7 @@
               :let [key (str (:id shape))]]
           ;; TODO: make polymorphic
           (case (:type shape)
+            :builtin/rect (rum/with-key (layer-element shape selected) key)
             :builtin/icon (rum/with-key (layer-element shape selected) key)
             :builtin/group (rum/with-key (layer-group shape selected) key)))]]
       [:div.layers-tools
