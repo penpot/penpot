@@ -38,6 +38,19 @@
     (html
      [:g attrs data])))
 
+(defmethod shapes/-render :builtin/rect
+  [{:keys [id view-box] :as shape} _]
+  (let [key (str id)
+        rfm (svg/calculate-transform shape)
+        attrs (merge {:width (nth view-box 2)
+                      :height (nth view-box 3)
+                      :x 0 :y 0}
+                     (extract-attrs shape)
+                     (make-debug-attrs shape))]
+    (html
+     [:g {:id key :key key :transform rfm}
+      [:rect attrs]])))
+
 (defmethod shapes/-render :builtin/group
   [{:keys [items id] :as shape} factory]
   (let [key (str "group-" id)
@@ -54,14 +67,29 @@
             (rum/with-key (str (:id item)))))])))
 
 (defmethod shapes/-render-svg :builtin/icon
-  [{:keys [data id view-box] :as shape} attrs]
+  [{:keys [data id view-box] :as shape}]
   (let [key (str "icon-svg-" id)
         view-box (apply str (interpose " " view-box))
         props {:view-box view-box :id key :key key}
         attrs (-> shape
                   (extract-attrs)
                   (remove-nil-vals)
-                  (merge attrs props))]
+                  (merge props))]
     (html
      [:svg attrs data])))
+
+
+(defmethod shapes/-render-svg :builtin/rect
+  [{:keys [id view-box] :as shape}]
+  (let [key (str "icon-svg-" id)
+        view (apply str (interpose " " view-box))
+        props {:view-box view :id key :key key}
+        attrs (merge {:width (nth view-box 2)
+                      :height (nth view-box 3)
+                      :x 0 :y 0}
+                     (extract-attrs shape)
+                     (make-debug-attrs shape))]
+    (html
+     [:svg props
+      [:rect attrs]])))
 
