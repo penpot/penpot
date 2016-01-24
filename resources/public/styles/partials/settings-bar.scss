@@ -337,6 +337,18 @@
 
       }
 
+      &.drag-top {
+        border-top: 2px solid $color-primary;
+      }
+
+      &.drag-bottom {
+        border-bottom: 2px solid $color-primary;
+      }
+
+      &.drag-inside {
+        border: 2px solid $color-primary;
+      }
+
     }
 
   }
