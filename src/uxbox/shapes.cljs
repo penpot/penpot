@@ -49,7 +49,20 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+;; Used for calculate the outer rect that wraps
+;; up the whole underlying shape. Mostly used
+;; for calculate the shape or shapes selection
+;; rectangle.
+
 (defmulti -outer-rect
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
+;; Used for create the final shape data structure
+;; from initial shape data structure and final
+;; canvas position.
+
+(defmulti -initialize
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
@@ -57,17 +70,40 @@
 ;; Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defmethod -initialize ::shape
+  [shape props]
+  (merge shape props))
+
+(defmethod -initialize :builtin/line
+  [shape {:keys [x y width height]}]
+  (merge shape
+         {:x1 x :y1 y
+          :x2 (+ x width)
+          :y2 (+ y height)}))
+
 (defmethod -move ::shape
   [shape {:keys [dx dy] :as opts}]
   (assoc shape
          :x (+ (:x shape) dx)
          :y (+ (:y shape) dy)))
 
+(defmethod -move :builtin/line
+  [shape {:keys [dx dy] :as opts}]
+  (assoc shape
+         :x1 (+ (:x1 shape) dx)
+         :y1 (+ (:y1 shape) dy)
+         :x2 (+ (:x2 shape) dx)
+         :y2 (+ (:y2 shape) dy)))
+
 (defmethod -resize ::shape
   [shape {:keys [width height] :as opts}]
   (assoc shape
          :width width
          :height height))
+
+(defmethod -resize :builtin/line
+  [shape {:keys [width height] :as opts}]
+  (throw (ex-info "Not implemented" {})))
 
 (defmethod -rotate ::shape
   [shape rotation]

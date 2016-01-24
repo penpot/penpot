@@ -66,9 +66,10 @@
 (defmethod shapes/-render :builtin/line
   [{:keys [id view-box] :as shape} _]
   (let [key (str id)
-        rfm (svg/calculate-transform shape)
-        attrs (merge (extract-attrs shape)
-                     (make-debug-attrs shape))]
+        ;; rfm (svg/calculate-transform shape)
+        attrs (extract-attrs shape)]
+        ;; attrs (merge (extract-attrs shape)
+                     ;; (make-debug-attrs shape))]
     (html
      [:g {:id key :key key}
       [:line attrs]])))

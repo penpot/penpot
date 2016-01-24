@@ -17,7 +17,7 @@
   {:builtin/icon [:menu/measures :menu/fill :menu/stroke]
    :builtin/rect [:menu/measures :menu/fill :menu/stroke]
    :builtin/circle [:menu/measures :menu/fill :menu/stroke]
-   :builtin/line [:menu/measures :menu/stroke]
+   :builtin/line [:menu/stroke]
    :builtin/group [:menu/measures]})
 
 (def +menus-by-id+

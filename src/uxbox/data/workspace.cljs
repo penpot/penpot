@@ -133,11 +133,11 @@
     (-apply-update [_ state]
       (let [sid (random-uuid)
             pid (get-in state [:workspace :page])
-            shape (merge shape props {:id sid :page pid})]
+            shape (merge (sh/-initialize shape props)
+                         shape {:id sid :page pid})]
         (as-> state $
           (update-in $ [:pages-by-id pid :shapes] conj sid)
           (assoc-in $ [:shapes-by-id sid] shape))))))
-
 
 (defn delete-shape
   "Remove the shape using its id."
