@@ -10,6 +10,10 @@
 (def ^:static ^:private +hierarchy+
   (as-> (make-hierarchy) $
     (derive $ :builtin/icon ::shape)
+    (derive $ :builtin/rect ::shape)
+    (derive $ :builtin/line ::shape)
+    (derive $ :builtin/circle ::shape)
+    (derive $ :builtin/text ::shape)
     (derive $ :builtin/group ::shape)))
 
 (defn shape?
