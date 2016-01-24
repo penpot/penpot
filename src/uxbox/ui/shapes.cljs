@@ -5,6 +5,7 @@
             [rum.core :as rum]
             [uxbox.state :as st]
             [uxbox.shapes :as shapes]
+            [uxbox.ui.icons :as i]
             [uxbox.util.svg :as svg]
             [uxbox.util.data :refer (remove-nil-vals)]))
 
@@ -15,7 +16,8 @@
 (defn- extract-attrs
   "Extract predefinet attrs from shapes."
   [shape]
-  (select-keys shape [:fill :opacity :stroke :stroke-opacity :stroke-width]))
+  (select-keys shape [:fill :opacity :stroke :stroke-opacity :stroke-width
+                      :x1 :x2 :y1 :y2 :cx :cy :r]))
 
 (defn- make-debug-attrs
   [shape]
@@ -51,6 +53,26 @@
      [:g {:id key :key key :transform rfm}
       [:rect attrs]])))
 
+(defmethod shapes/-render :builtin/circle
+  [{:keys [id view-box] :as shape} _]
+  (let [key (str id)
+        rfm (svg/calculate-transform shape)
+        attrs (merge (extract-attrs shape)
+                     (make-debug-attrs shape))]
+    (html
+     [:g {:id key :key key :transform rfm}
+      [:circle attrs]])))
+
+(defmethod shapes/-render :builtin/line
+  [{:keys [id view-box] :as shape} _]
+  (let [key (str id)
+        rfm (svg/calculate-transform shape)
+        attrs (merge (extract-attrs shape)
+                     (make-debug-attrs shape))]
+    (html
+     [:g {:id key :key key}
+      [:line attrs]])))
+
 (defmethod shapes/-render :builtin/group
   [{:keys [items id] :as shape} factory]
   (let [key (str "group-" id)
@@ -78,18 +100,25 @@
     (html
      [:svg attrs data])))
 
-
 (defmethod shapes/-render-svg :builtin/rect
   [{:keys [id view-box] :as shape}]
-  (let [key (str "icon-svg-" id)
-        view (apply str (interpose " " view-box))
-        props {:view-box view :id key :key key}
-        attrs (merge {:width (nth view-box 2)
-                      :height (nth view-box 3)
-                      :x 0 :y 0}
-                     (extract-attrs shape)
-                     (make-debug-attrs shape))]
-    (html
-     [:svg props
-      [:rect attrs]])))
+  (html i/box))
+  ;; (let [key (str "icon-svg-" id)
+  ;;       view (apply str (interpose " " view-box))
+  ;;       props {:view-box view :id key :key key}
+  ;;       attrs (merge {:width (nth view-box 2)
+  ;;                     :height (nth view-box 3)
+  ;;                     :x 0 :y 0}
+  ;;                    (extract-attrs shape)
+  ;;                    (make-debug-attrs shape))]
+  ;;   (html
+  ;;    [:svg props
+  ;;     [:rect attrs]])))
 
+(defmethod shapes/-render-svg :builtin/circle
+  [{:keys [id view-box] :as shape}]
+  (html i/circle))
+
+(defmethod shapes/-render-svg :builtin/line
+  [{:keys [id view-box] :as shape}]
+  (html i/line))

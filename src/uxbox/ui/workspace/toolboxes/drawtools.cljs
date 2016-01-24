@@ -48,19 +48,24 @@
     :help (tr "ds.help.circle")
     :shape {:type :builtin/circle
             :name "Circle"
-            :width 20
-            :height 20
+            :cx 60
+            :cy 60
+            :r 60
             :stroke "#000000"
             :stroke-width "1"
-            :view-box [0 0 20 20]}
+            :view-box [0 0 120 120]}
     :priority 20}
    :line
    {:icon i/line
     :help (tr "ds.help.line")
     :shape {:type :builtin/line
-            :width 20
-            :height 20
-            :view-box [0 0 20 20]}
+            :name "Line"
+            :x1 0
+            :y1 0
+            :x2 200
+            :y2 0
+            :stroke "#000000"
+            :view-box [0 0 10 200]}
     :priority 30}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

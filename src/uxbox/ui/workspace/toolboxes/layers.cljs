@@ -145,6 +145,8 @@
            ;; TODO: make polymorphic
            (case (:type shape)
              :builtin/rect (rum/with-key (layer-element shape selected) key)
+             :builtin/circle (rum/with-key (layer-element shape selected) key)
+             :builtin/line (rum/with-key (layer-element shape selected) key)
              :builtin/icon (rum/with-key (layer-element shape selected) key)
              :builtin/group (rum/with-key (layer-group shape selected) key)))])])))
 
@@ -177,6 +179,8 @@
           ;; TODO: make polymorphic
           (case (:type shape)
             :builtin/rect (rum/with-key (layer-element shape selected) key)
+            :builtin/circle (rum/with-key (layer-element shape selected) key)
+            :builtin/line (rum/with-key (layer-element shape selected) key)
             :builtin/icon (rum/with-key (layer-element shape selected) key)
             :builtin/group (rum/with-key (layer-group shape selected) key)))]]
       [:div.layers-tools
