@@ -12,5 +12,10 @@
                       "%s elements"]
 
    "ds.recent-colors" "Recent colors"
+   "ds.tools" "Tools"
+
+   "ds.help.rect" "Box (Ctrl + B)"
+   "ds.help.circle" "Circle (Ctrl + E)"
+   "ds.help.line" "Line (Ctrl + L)"
 
    })
