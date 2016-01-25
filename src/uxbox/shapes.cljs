@@ -74,12 +74,16 @@
   [shape props]
   (merge shape props))
 
-(defmethod -initialize :builtin/line
+(defmethod -initialize :builtin/group
   [shape {:keys [x y width height]}]
-  (merge shape
-         {:x1 x :y1 y
-          :x2 (+ x width)
-          :y2 (+ y height)}))
+  shape)
+
+;; (defmethod -initialize :builtin/line
+;;   [shape {:keys [x y width height]}]
+;;   (merge shape
+;;          {:x1 x :y1 y
+;;           :x2 (+ x width)
+;;           :y2 (+ y height)}))
 
 (defmethod -move ::shape
   [shape {:keys [dx dy] :as opts}]
@@ -87,13 +91,19 @@
          :x (+ (:x shape) dx)
          :y (+ (:y shape) dy)))
 
-(defmethod -move :builtin/line
+(defmethod -move :builtin/group
   [shape {:keys [dx dy] :as opts}]
   (assoc shape
-         :x1 (+ (:x1 shape) dx)
-         :y1 (+ (:y1 shape) dy)
-         :x2 (+ (:x2 shape) dx)
-         :y2 (+ (:y2 shape) dy)))
+         :dx (+ (:dx shape 0) dx)
+         :dy (+ (:dy shape 0) dy)))
+
+;; (defmethod -move :builtin/line
+;;   [shape {:keys [dx dy] :as opts}]
+;;   (assoc shape
+;;          :x1 (+ (:x1 shape) dx)
+;;          :y1 (+ (:y1 shape) dy)
+;;          :x2 (+ (:x2 shape) dx)
+;;          :y2 (+ (:y2 shape) dy)))
 
 (defmethod -resize ::shape
   [shape {:keys [width height] :as opts}]
@@ -110,26 +120,20 @@
   (assoc shape :rotation rotation))
 
 (declare container-rect)
-(declare resolve-position)
 
 (defmethod -outer-rect ::shape
   [{:keys [group] :as shape}]
-  (as-> shape $
-    (resolve-position $)
-    (container-rect $)))
+  (let [group (get-in @st/state [:shapes-by-id group])]
+    (as-> shape $
+      (assoc $ :x (+ (:x shape) (:dx group 0)))
+      (assoc $ :y (+ (:y shape) (:dy group 0)))
+      (container-rect $))))
 
 (defmethod -outer-rect :builtin/group
-  [{:keys [id group rotation view-box] :as shape}]
+  [{:keys [id group rotation dx dy view-box] :as shape}]
   (let [shapes (->> (:items shape)
                     (map #(get-in @st/state [:shapes-by-id %]))
                     (map -outer-rect))
-
-        crect (-> shape
-                  (resolve-position)
-                  (container-rect))
-
-        shapes (into [crect] shapes)
-
         x (apply min (map :x shapes))
         y (apply min (map :y shapes))
         x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
@@ -218,8 +222,6 @@
      :x x
      :y y}))
 
-(declare resolve-position)
-
 (defn outer-rect
   [shapes]
   {:pre [(seq shapes)]}
@@ -244,21 +246,6 @@
    (let [x' (:x shape)
          y' (:y shape)]
      (assoc shape :x (op x' x) :y (op y' y)))))
-
-(defn resolve-position
-  "Recursively resolve the real shape position in
-  the canvas."
-  [{:keys [width height x y group] :as shape}]
-  (if group
-    (let [group (get-in @st/state [:shapes-by-id group])
-          result (resolve-position
-                  (assoc group
-                         :x (+ (:x group) x)
-                         :y (+ (:y group) y)))]
-      (assoc shape
-             :x (:x result)
-             :y (:y result)))
-    shape))
 
 (defn resolve-parent
   "Recursively resolve the real shape parent."

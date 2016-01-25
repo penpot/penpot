@@ -117,7 +117,7 @@
                 (filter #(= (:page %) pageid))
                 (remove :hidden)
                 (remove :blocked)
-                (map sh/resolve-position)
+                (map sh/-outer-rect)
                 (filter #(sh/contained-in? % selrect))
                 (map :id))]
         (->> (into #{} xf (vals (:shapes-by-id state)))
@@ -221,38 +221,6 @@
                  (when x {:x x})
                  (when y {:y y})))))
 
-(defn rebuild-group-size
-  [id]
-  (letfn [(update-shape-pos [state {:keys [id x y] :as data}]
-            (update-in state [:shapes-by-id id] assoc :x x :y y))
-
-          (update-group-size [shape shapes]
-            (let [{:keys [width height]} (sh/group-dimensions shapes)]
-              (assoc shape
-                     :width width
-                     :height height
-                     :view-box [0 0 width height])))
-
-          (update-group [shape shapes x y]
-            (-> shape
-                (update-group-size shapes)
-                (sh/translate-coords x y +)))]
-
-    (reify
-      rs/UpdateEvent
-      (-apply-update [_ state]
-        (let [shape (get-in state [:shapes-by-id id])
-              shapes (map #(get-in state [:shapes-by-id %]) (:items shape))
-              ;; shapes (->> (:items shape)
-              ;;             (map #(get-in state [:shapes-by-id %]))
-              ;;             (map (fn [v] (merge v (sh/container-rect v)))))
-              x (apply min (map :x shapes))
-              y (apply min (map :y shapes))
-              shapes (map #(sh/translate-coords % x y) shapes)]
-          (as-> state $
-            (reduce update-shape-pos $ shapes)
-            (update-in $ [:shapes-by-id id] #(update-group % shapes x y))))))))
-
 ;; TODO: rename fill to "color" for consistency.
 
 (defn update-shape-fill
@@ -319,17 +287,9 @@
   "Mark a shape selected for drawing in the canvas."
   []
   (reify
-    rs/WatchEvent
-    (-apply-watch [_ state]
-      (let [selected (get-in state [:workspace :selected])
-            mevent (rs/swap-state #(assoc-in state [:workspace :selected] #{}))]
-        ;; (rx/just mevent)))))
-        (->> (map #(get-in state [:shapes-by-id %]) selected)
-             (rx/from-coll)
-             (rx/filter :group)
-             (rx/map :group)
-             (rx/map rebuild-group-size)
-             (rx/merge (rx/just mevent)))))))
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:workspace :selected] #{}))))
 
 (defn copy-selected
   "Copy the selected shapes."
@@ -344,7 +304,6 @@
           (map #(add-shape % %) $)
           (rx/from-coll $))))))
 
-
 (defn group-selected
   []
   (letfn [(update-shapes-on-page [state pid selected group]
@@ -357,7 +316,6 @@
             (let [{:keys [x y]} dimensions]
               (reduce (fn [state {:keys [id] :as shape}]
                         (as-> shape $
-                          (sh/translate-coords $ x y)
                           (assoc $ :group group)
                           (assoc-in state [:shapes-by-id id] $)))
                       state

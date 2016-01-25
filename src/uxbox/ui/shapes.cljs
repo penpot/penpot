@@ -4,20 +4,21 @@
             [cuerdas.core :as str]
             [rum.core :as rum]
             [uxbox.state :as st]
-            [uxbox.shapes :as shapes]
+            [uxbox.shapes :as sh]
             [uxbox.ui.icons :as i]
             [uxbox.util.svg :as svg]
+            [uxbox.util.matrix :as mtx]
+            [uxbox.util.math :as mth]
             [uxbox.util.data :refer (remove-nil-vals)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Attribute transformations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- extract-attrs
+(defn- extract-style-attrs
   "Extract predefinet attrs from shapes."
   [shape]
-  (select-keys shape [:fill :opacity :stroke :stroke-opacity :stroke-width
-                      :x1 :x2 :y1 :y2 :cx :cy :r]))
+  (select-keys shape [:fill :opacity :stroke :stroke-opacity :stroke-width]))
 
 (defn- make-debug-attrs
   [shape]
@@ -30,96 +31,61 @@
 ;; Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod shapes/-render :builtin/icon
+(defmethod sh/-render :builtin/icon
   [{:keys [data id] :as shape} _]
   (let [key (str id)
         rfm (svg/calculate-transform shape)
         attrs (merge {:id key :key key :transform rfm}
-                     (extract-attrs shape)
-                     (make-debug-attrs shape))]
+                     ;; (select-keys shape [:x :y :width :height])
+                     (make-debug-attrs shape)
+                     (extract-style-attrs shape))]
     (html
      [:g attrs data])))
 
-(defmethod shapes/-render :builtin/rect
-  [{:keys [id view-box] :as shape} _]
-  (let [key (str id)
-        rfm (svg/calculate-transform shape)
-        attrs (merge {:width (nth view-box 2)
-                      :height (nth view-box 3)
-                      :x 0 :y 0}
-                     (extract-attrs shape)
-                     (make-debug-attrs shape))]
-    (html
-     [:g {:id key :key key :transform rfm}
-      [:rect attrs]])))
 
-(defmethod shapes/-render :builtin/circle
-  [{:keys [id view-box] :as shape} _]
-  (let [key (str id)
-        rfm (svg/calculate-transform shape)
-        attrs (merge (extract-attrs shape)
-                     (make-debug-attrs shape))]
-    (html
-     [:g {:id key :key key :transform rfm}
-      [:circle attrs]])))
+;; FIXME: the impl should be more clear.
 
-(defmethod shapes/-render :builtin/line
-  [{:keys [id view-box] :as shape} _]
-  (let [key (str id)
-        ;; rfm (svg/calculate-transform shape)
-        attrs (extract-attrs shape)]
-        ;; attrs (merge (extract-attrs shape)
-                     ;; (make-debug-attrs shape))]
-    (html
-     [:g {:id key :key key}
-      [:line attrs]])))
+(defmethod sh/-render :builtin/group
+  [{:keys [items id dx dy rotation] :as shape} factory]
+  (letfn [(rotation-matrix []
+            (let [shapes-by-id (get @st/state :shapes-by-id)
+                  shapes (map #(get shapes-by-id %) items)
+                  {:keys [x y width height]} (sh/outer-rect shapes)
+                  center-x (+ x (/ width 2))
+                  center-y (+ y (/ height 2))]
+              (mtx/multiply (svg/translate-matrix center-x center-y)
+                            (svg/rotation-matrix rotation)
+                            (svg/translate-matrix (- center-x)
+                                                  (- center-y)))))
+          (translate-matrix []
+            (svg/translate-matrix (or dx 0) (or dy 0)))
 
-(defmethod shapes/-render :builtin/group
-  [{:keys [items id] :as shape} factory]
-  (let [key (str "group-" id)
-        tfm (svg/calculate-transform shape)
-        attrs (merge {:id key :key key :transform tfm}
-                     (make-debug-attrs shape))
-        shapes-by-id (get @st/state :shapes-by-id)]
-    (html
-     [:g attrs
-      (for [item (->> items
-                      (map #(get shapes-by-id %))
-                      (remove :hidden))]
-        (-> (factory item)
-            (rum/with-key (str (:id item)))))])))
+          (transform []
+            (let [result (mtx/multiply (rotation-matrix)
+                                       (translate-matrix))
+                  result (flatten @result)]
+              (->> (map #(nth result %) [0 3 1 4 2 5])
+                   (str/join ",")
+                   (str/format "matrix(%s)"))))]
+    (let [key (str "group-" id)
+          tfm (transform)
+          attrs (merge {:id key :key key :transform tfm}
+                       (make-debug-attrs shape))
+          shapes-by-id (get @st/state :shapes-by-id)]
+      (html
+       [:g attrs
+        (for [item (->> items
+                        (map #(get shapes-by-id %))
+                        (remove :hidden))]
+          (-> (factory item)
+              (rum/with-key (str (:id item)))))]))))
 
-(defmethod shapes/-render-svg :builtin/icon
+(defmethod sh/-render-svg :builtin/icon
   [{:keys [data id view-box] :as shape}]
   (let [key (str "icon-svg-" id)
         view-box (apply str (interpose " " view-box))
         props {:view-box view-box :id key :key key}
-        attrs (-> shape
-                  (extract-attrs)
-                  (remove-nil-vals)
-                  (merge props))]
+        attrs (merge props
+                     (extract-style-attrs shape))]
     (html
      [:svg attrs data])))
-
-(defmethod shapes/-render-svg :builtin/rect
-  [{:keys [id view-box] :as shape}]
-  (html i/box))
-  ;; (let [key (str "icon-svg-" id)
-  ;;       view (apply str (interpose " " view-box))
-  ;;       props {:view-box view :id key :key key}
-  ;;       attrs (merge {:width (nth view-box 2)
-  ;;                     :height (nth view-box 3)
-  ;;                     :x 0 :y 0}
-  ;;                    (extract-attrs shape)
-  ;;                    (make-debug-attrs shape))]
-  ;;   (html
-  ;;    [:svg props
-  ;;     [:rect attrs]])))
-
-(defmethod shapes/-render-svg :builtin/circle
-  [{:keys [id view-box] :as shape}]
-  (html i/circle))
-
-(defmethod shapes/-render-svg :builtin/line
-  [{:keys [id view-box] :as shape}]
-  (html i/line))
