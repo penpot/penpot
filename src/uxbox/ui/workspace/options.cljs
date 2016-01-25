@@ -103,19 +103,9 @@
        (recent-colors shape #(change-stroke {:color %}))
        [:span "Border radius"]
        [:div.row-flex
-        [:div.border-element.top-left
-         i/radius
-         [:input.input-text {:type "text" :placeholder "px"}]]
-        [:div.border-element.top-right
-         i/radius
-         [:input.input-text {:type "text" :placeholder "px"}]]
+        [:input.input-text {:type "text" :placeholder "rx"}]
         [:span.lock-size i/lock]
-        [:div.border-element.bottom-left
-         i/radius
-         [:input.input-text {:type "text" :placeholder "px"}]]
-        [:div.border-element.bottom-right
-         i/radius
-         [:input.input-text {:type "text" :placeholder "px"}]]]
+        [:input.input-text {:type "text" :placeholder "ry"}]]
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]

@@ -241,6 +241,7 @@
       .element-actions {
         align-items: center;
         display: flex;
+        flex-shrink: 0;
         width: 62px;
       }
 
