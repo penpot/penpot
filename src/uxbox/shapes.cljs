@@ -7,7 +7,7 @@
 ;; Types
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static ^:private +hierarchy+
+(def ^:static +hierarchy+
   (as-> (make-hierarchy) $
     (derive $ :builtin/icon ::shape)
     (derive $ :builtin/rect ::shape)
