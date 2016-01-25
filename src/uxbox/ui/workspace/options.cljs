@@ -45,7 +45,7 @@
 
 (defn- get-position
   [{:keys [page width] :as shape}]
-  (let [{:keys [x y]} (sh/resolve-position shape)
+  (let [{:keys [x y]} (sh/-outer-rect shape)
         vx (+ x width 50)
         vy (- y 50)]
     (viewportcoord->clientcoord page vx vy)))
