@@ -18,10 +18,6 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static ^:private shapes-by-id
-  (as-> (l/key :shapes-by-id) $
-    (l/focus-atom $ st/state)))
-
 (defn- focus-page
   [pageid]
   (as-> (l/in [:pages-by-id pageid]) $
@@ -74,6 +70,13 @@
   (let [id (:id item)]
     (rs/emit! (dw/toggle-shape-locking id))))
 
+(defn- element-icon
+  [item]
+  (case (:type item)
+    :builtin/icon (shapes/-render-svg item)
+    :builtin/rect i/box
+    :builtin/group i/folder))
+
 (defn- layer-element-render
   [own item selected]
   (let [selected? (contains? selected (:id item))
@@ -84,20 +87,21 @@
      [:li {:key (str (:id item))
            :on-click select
            :class (when selected? "selected")}
-      [:div.element-list-body {:class (when selected? "selected")}
+      [:div.element-list-body
+       {:class (when selected? "selected")}
        [:div.element-actions
-        [:div.toggle-element {:class (when-not (:hidden item) "selected")
-                              :on-click toggle-visibility}
+        [:div.toggle-element
+         {:class (when-not (:hidden item) "selected")
+          :on-click toggle-visibility}
          i/eye]
-        [:div.block-element {:class (when (:blocked item) "selected")
-                             :on-click toggle-blocking}
+        [:div.block-element
+         {:class (when (:blocked item) "selected")
+          :on-click toggle-blocking}
          i/lock]]
-
        (if (:group item)
          [:div.sublevel-element i/sublevel])
-       [:div.element-icon (shapes/-render-svg item)]
-       [:span (or (:name item)
-                  (:id item))]]])))
+       [:div.element-icon (element-icon item)]
+       [:span (:name item "Unnamed")]]])))
 
 (def ^:static ^:private layer-element
   (mx/component
@@ -119,20 +123,24 @@
         toggle-open (fn [event]
                       (dom/stop-propagation event)
                       (swap! local assoc :open (not open?)))
-        shapes-by-id (rum/react shapes-by-id)]
+        shapes-by-id (rum/react wb/shapes-by-id)]
     (html
      [:li.group {:class (when open? "open")}
-      [:div.element-list-body {:class (when selected? "selected")
-                               :on-click select}
+      [:div.element-list-body
+       {:class (when selected? "selected")
+        :on-click select}
        [:div.element-actions
-        [:div.toggle-element {:class (when-not (:hidden item) "selected")
-                              :on-click toggle-visibility}
+        [:div.toggle-element
+         {:class (when-not (:hidden item) "selected")
+          :on-click toggle-visibility}
          i/eye]
-        [:div.block-element {:class (when (:blocked item) "selected")
-                             :on-click toggle-blocking}
+        [:div.block-element
+         {:class (when (:blocked item) "selected")
+          :on-click toggle-blocking}
          i/lock]
-        [:div.chain-element {:class (when (:locked item) "selected")
-                             :on-click toggle-locking}
+        [:div.chain-element
+         {:class (when (:locked item) "selected")
+          :on-click toggle-locking}
          i/chain]]
        [:div.element-icon i/folder]
        [:span (:name item "Unnamed group")]
@@ -142,13 +150,11 @@
         [:ul
          (for [shape (map #(get shapes-by-id %) (:items item))
                :let [key (str (:id shape))]]
-           ;; TODO: make polymorphic
-           (case (:type shape)
-             :builtin/rect (rum/with-key (layer-element shape selected) key)
-             :builtin/circle (rum/with-key (layer-element shape selected) key)
-             :builtin/line (rum/with-key (layer-element shape selected) key)
-             :builtin/icon (rum/with-key (layer-element shape selected) key)
-             :builtin/group (rum/with-key (layer-group shape selected) key)))])])))
+           (if (= (:type shape) :builtin/group)
+             (-> (layer-group shape selected)
+                 (rum/with-key key))
+             (-> (layer-element shape selected)
+                 (rum/with-key key))))])])))
 
 (def ^:static ^:private layer-group
   (mx/component
@@ -160,7 +166,7 @@
   [own]
   (let [workspace (rum/react wb/workspace-l)
         selected (:selected workspace)
-        shapes-by-id (rum/react shapes-by-id)
+        shapes-by-id (rum/react wb/shapes-by-id)
         page (rum/react (focus-page (:page workspace)))
         close #(rs/emit! (dw/toggle-toolbox :layers))
         copy #(rs/emit! (dw/copy-selected))
@@ -176,21 +182,16 @@
        [:ul.element-list
         (for [shape (map #(get shapes-by-id %) (:shapes page))
               :let [key (str (:id shape))]]
-          ;; TODO: make polymorphic
-          (case (:type shape)
-            :builtin/rect (rum/with-key (layer-element shape selected) key)
-            :builtin/circle (rum/with-key (layer-element shape selected) key)
-            :builtin/line (rum/with-key (layer-element shape selected) key)
-            :builtin/icon (rum/with-key (layer-element shape selected) key)
-            :builtin/group (rum/with-key (layer-group shape selected) key)))]]
+          (if (= (:type shape) :builtin/group)
+            (-> (layer-group shape selected)
+                (rum/with-key key))
+            (-> (layer-element shape selected)
+                (rum/with-key key))))]]
       [:div.layers-tools
        [:ul.layers-tools-content
-        [:li.clone-layer {:on-click copy}
-         i/copy]
-        [:li.group-layer {:on-click group}
-         i/folder]
-        [:li.delete-layer {:on-click delete}
-         i/trash]]]])))
+        [:li.clone-layer {:on-click copy} i/copy]
+        [:li.group-layer {:on-click group} i/folder]
+        [:li.delete-layer {:on-click delete} i/trash]]]])))
 
 (def ^:static layers-toolbox
   (mx/component
