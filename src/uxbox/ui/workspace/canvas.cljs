@@ -22,14 +22,6 @@
   (:import goog.events.EventType))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:static ^:private shapes-by-id
-  (as-> (l/key :shapes-by-id) $
-    (l/focus-atom $ st/state)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Background
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -148,7 +140,7 @@
 (defn- canvas-render
   [own {:keys [width height id] :as page}]
   (let [workspace (rum/react wb/workspace-l)
-        shapes-by-id (rum/react shapes-by-id)
+        shapes-by-id (rum/react wb/shapes-by-id)
         workspace-selected (:selected workspace)
         xf (comp
             (map #(get shapes-by-id %))
