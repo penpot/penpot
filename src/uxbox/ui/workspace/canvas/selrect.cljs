@@ -72,7 +72,6 @@
     (as-> ss $
       (rx/filter #(= (vec %) [false true]) $)
       (rx/with-latest-from vector wb/mouse-s $)
-      (rx/pr-log "kaka1" $)
       (rx/on-value $ (fn [[_ [x y :as pos]]]
                        (let [scroll (or @wb/scroll-top 0)
                              pos [x (+ y scroll)]]
