@@ -16,7 +16,8 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.selrect :refer (mouse-selrect shapes-selrect)]
+            [uxbox.ui.workspace.canvas.selection :refer (shapes-selection)]
+            [uxbox.ui.workspace.canvas.selrect :refer (selrect)]
             [uxbox.ui.workspace.grid :refer (grid)]
             [uxbox.ui.workspace.options :refer (element-opts)])
   (:import goog.events.EventType))
@@ -158,12 +159,12 @@
       (background)
       (grid 1)
       [:svg.page-layout {}
-       (shapes-selrect shapes-selected)
+       (shapes-selection shapes-selected)
        [:g.main {}
         (for [item (sequence xf (:shapes page))]
           (-> (shape item workspace-selected)
               (rum/with-key (str (:id item)))))
-        (mouse-selrect)]]])))
+        (selrect)]]])))
 
 (def canvas
   (mx/component

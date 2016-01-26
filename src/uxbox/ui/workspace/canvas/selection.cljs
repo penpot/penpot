@@ -1,5 +1,4 @@
-(ns uxbox.ui.workspace.selrect
-  "Components for indicate the user selection and selected shapes group."
+(ns uxbox.ui.workspace.canvas.selection
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
@@ -11,31 +10,6 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mouse Selection Rect
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn mouse-selrect-render
-  [own]
-  (when-let [data (rum/react wb/selrect-pos)]
-    (let [{:keys [x y width height]} (wb/selrect->rect data)]
-      (html
-       [:rect.selection-rect
-        {:x x
-         :y y
-         :width width
-         :height height}]))))
-
-(def ^:static mouse-selrect
-  (mx/component
-   {:render mouse-selrect-render
-    :name "mouse-selrect"
-    :mixins [mx/static rum/reactive]}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Shapes Selection Rect
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (def ^:private selection-circle-style
   {:fillOpacity "0.5"
    :strokeWidth "1px"
@@ -46,7 +20,7 @@
    :fill "#333"
    :stroke "#333"})
 
-(defn shapes-selrect-render
+(defn shapes-selection-render
   [own shapes]
   (when (seq shapes)
     (let [{:keys [width height x y]} (sh/outer-rect shapes)]
@@ -64,8 +38,8 @@
         [:circle.bottom-right (merge default-selection-props
                                      {:cx (+ x width) :cy (+ y height)})]]))))
 
-(def ^:static shapes-selrect
+(def ^:static shapes-selection
   (mx/component
-   {:render shapes-selrect-render
-    :name "shapes-selrect"
+   {:render shapes-selection-render
+    :name "shapes-selection"
     :mixins [mx/static]}))
