@@ -100,6 +100,19 @@
        (rx/buffer 2 1)
        (rx/map coords-delta)))
 
+;; Materialized views
+
+(defonce mouse-position
+  (->> mouse-s
+       (rx/sample 50)
+       (rx/to-atom)))
+
+(defonce bounding-rect (atom {}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Subscriptions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-once :mouse-subscriptions
   (as-> mouse-delta-s $
     (rx/filter #(deref shapes-dragging?) $)
@@ -154,15 +167,6 @@
                        (let [scroll (or @scroll-top 0)
                              pos [x (+ y scroll)]]
                          (swap! selrect-pos assoc :current pos)))))))
-
-;; Materialized views
-
-(defonce mouse-position
-  (->> mouse-s
-       (rx/sample 50)
-       (rx/to-atom)))
-
-(defonce bounding-rect (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants

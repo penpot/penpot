@@ -41,7 +41,6 @@
   [v]
   (vector? v))
 
-
 (v/defvalidator function
   "Validats if `v` is function."
   {:default-message-format "%s must be a function."}
