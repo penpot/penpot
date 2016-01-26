@@ -72,12 +72,22 @@
 (defonce scroll-left (rx/to-atom scroll-left-s))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mouse Position Stream
+;; Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce shapes-dragging? (atom false))
-(defonce selrect-dragging? (atom false))
-(defonce selrect-pos (atom nil))
+;; (defonce shapes-dragging? (atom false))
+;; (defonce selrect-dragging? (atom false))
+(defonce interactions-b (rx/bus))
+
+(defn emit-interaction!
+  ([type]
+   (rx/push! interactions-b {:type type}))
+  ([type payload]
+   (rx/push! interactions-b {:type type :payload payload})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Mouse Position Stream
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce mouse-b (rx/bus))
 (defonce mouse-s
@@ -108,65 +118,6 @@
        (rx/to-atom)))
 
 (defonce bounding-rect (atom {}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Subscriptions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define-once :mouse-subscriptions
-  (as-> mouse-delta-s $
-    (rx/filter #(deref shapes-dragging?) $)
-    (rx/on-value $ (fn [delta]
-                     (let [pageid (get-in @st/state [:workspace :page])
-                           selected (get-in @st/state [:workspace :selected])
-                           shapes (->> (vals @shapes-by-id)
-                                       (filter #(= (:page %) pageid))
-                                       (filter (comp selected :id)))]
-                       (doseq [{:keys [id group]} shapes]
-                         (rs/emit! (dw/move-shape id delta))))))))
-
-(defn selrect->rect
-  [data]
-  (let [start (:start data)
-        current (:current data )
-        start-x (min (first start) (first current))
-        start-y (min (second start) (second current))
-        current-x (max (first start) (first current))
-        current-y (max (second start) (second current))
-        width (- current-x start-x)
-        height (- current-y start-y)]
-    {:x start-x
-     :y start-y
-     :width (- current-x start-x)
-     :height (- current-y start-y)}))
-
-(define-once :selrect-subscriptions
-  (let [ss (as-> (rx/from-atom selrect-dragging?) $
-             (rx/dedupe $)
-             (rx/merge $ (rx/of false))
-             (rx/buffer 2 1 $)
-             (rx/share $))]
-    (as-> ss $
-      (rx/filter #(= (vec %) [false true]) $)
-      (rx/with-latest-from vector mouse-s $)
-      (rx/on-value $ (fn [[_ [x y :as pos]]]
-                       (let [scroll (or @scroll-top 0)
-                             pos [x (+ y scroll)]]
-                         (swap! selrect-pos assoc
-                                :start pos
-                                :current pos)))))
-    (as-> ss $
-      (rx/filter #(= (vec %) [true false]) $)
-      (rx/on-value $ (fn []
-                       (let [selrect (selrect->rect @selrect-pos)]
-                         (rs/emit! (dw/select-shapes selrect))
-                         (reset! selrect-pos nil)))))
-    (as-> mouse-s $
-      (rx/filter #(deref selrect-dragging?) $)
-      (rx/on-value $ (fn [[x y :as pos]]
-                       (let [scroll (or @scroll-top 0)
-                             pos [x (+ y scroll)]]
-                         (swap! selrect-pos assoc :current pos)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants

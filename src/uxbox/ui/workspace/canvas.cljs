@@ -16,6 +16,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.canvas.movement]
             [uxbox.ui.workspace.canvas.selection :refer (shapes-selection)]
             [uxbox.ui.workspace.canvas.selrect :refer (selrect)]
             [uxbox.ui.workspace.grid :refer (grid)]
@@ -51,9 +52,6 @@
         local (:rum/local own)]
     (letfn [(on-mouse-down [event]
               (when-not (:blocked item)
-                ;; (let [local (:rum/local own)]
-                ;;   (swap! local assoc :init-coords [x y])
-                ;;   (reset! wb/shapes-dragging? true))
                 (cond
                   (and group (:locked (sh/resolve-parent item)))
                   nil
@@ -62,15 +60,14 @@
                   (do
                     (dom/stop-propagation event)
                     (swap! local assoc :init-coords [x y])
-                    (reset! wb/shapes-dragging? true)
-
+                    (wb/emit-interaction! :shape/movement)
                     (rs/emit! (dw/select-shape id)))
 
                   (and (not selected?) (not (empty? selected)))
                   (do
                     (dom/stop-propagation event)
                     (swap! local assoc :init-coords [x y])
-                    (reset! wb/shapes-dragging? true)
+                    #_(reset! wb/shapes-dragging? true)
                     (if (.-ctrlKey event)
                       (rs/emit! (dw/select-shape id))
                       (rs/emit! (dw/deselect-all)
@@ -80,7 +77,7 @@
                   (do
                     (dom/stop-propagation event)
                     (swap! local assoc :init-coords [x y])
-                    (reset! wb/shapes-dragging? true)))))
+                    (wb/emit-interaction! :shape/movement)))))
 
             (on-mouse-up [event]
               (cond
@@ -90,7 +87,8 @@
                 :else
                 (do
                   (dom/stop-propagation event)
-                  (reset! wb/shapes-dragging? false))))]
+                  (wb/emit-interaction! :nothing)
+                  )))]
       (html
        [:g.shape {:class (when selected? "selected")
                   :on-mouse-down on-mouse-down
@@ -189,11 +187,10 @@
               (dom/stop-propagation event)
               (when-not (empty? (:selected workspace))
                 (rs/emit! (dw/deselect-all)))
-              (reset! wb/selrect-dragging? true))
+              (wb/emit-interaction! :selrect/draw))
             (on-mouse-up [event]
               (dom/stop-propagation event)
-              (reset! wb/shapes-dragging? false)
-              (reset! wb/selrect-dragging? false))
+              (wb/emit-interaction! :nothing))
             (on-click [event wstate]
               (let [mousepos @wb/mouse-position
                     scroll-top @wb/scroll-top
