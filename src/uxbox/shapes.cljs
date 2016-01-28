@@ -9,12 +9,13 @@
 
 (def ^:static +hierarchy+
   (as-> (make-hierarchy) $
-    (derive $ :builtin/icon ::shape)
-    (derive $ :builtin/rect ::shape)
+    (derive $ ::rect ::shape)
+    (derive $ :builtin/icon ::rect)
+    (derive $ :builtin/rect ::rect)
     (derive $ :builtin/line ::shape)
     (derive $ :builtin/circle ::shape)
     (derive $ :builtin/text ::shape)
-    (derive $ :builtin/group ::shape)))
+    (derive $ :builtin/group ::rect)))
 
 (defn shape?
   [type]
@@ -107,13 +108,7 @@
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
-(defmethod -resize' :builtin/icon
-  [shape [width height]]
-  (merge shape
-         (when width {:width width})
-         (when height {:height height})))
-
-(defmethod -resize' :builtin/group
+(defmethod -resize' ::rect
   [shape [width height]]
   (merge shape
          (when width {:width width})
@@ -125,17 +120,11 @@
 
 ;; Move
 
-(defmethod -move ::shape
+(defmethod -move ::rect
   [shape {:keys [dx dy] :as opts}]
   (assoc shape
          :x (+ (:x shape) dx)
          :y (+ (:y shape) dy)))
-
-(defmethod -move :builtin/group
-  [shape {:keys [dx dy] :as opts}]
-  (assoc shape
-         :dx (+ (:dx shape 0) dx)
-         :dy (+ (:dy shape 0) dy)))
 
 (defmethod -move :builtin/line
   [shape {:keys [dx dy] :as opts}]
@@ -144,6 +133,10 @@
          :y1 (+ (:y1 shape) dy)
          :x2 (+ (:x2 shape) dx)
          :y2 (+ (:y2 shape) dy)))
+
+(defmethod -move :default
+  [shape _]
+  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
 (defmethod -rotate ::shape
   [shape rotation]
@@ -183,6 +176,10 @@
     (as-> shape $
       (merge $ {:width width :height height :x x :y y})
       (container-rect $))))
+
+(defmethod -outer-rect :default
+  [shape _]
+  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
