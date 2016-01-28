@@ -176,9 +176,7 @@
         x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
         y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
         width (- x' x)
-        height (- y' y)
-        x (+ dx x)
-        y (+ dy y)]
+        height (- y' y)]
     (as-> shape $
       (merge $ {:width width :height height :x x :y y})
       (container-rect $))))
