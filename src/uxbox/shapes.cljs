@@ -160,11 +160,14 @@
       (container-rect $))))
 
 (defmethod -outer-rect :builtin/line
-  [shape]
-  (let [{:keys [x1 y1 x2 y2]} shape
-        props {:x x1 :y y1 :width (- x2 x1) :height (- y2 y1)}
-        shape (merge shape props)]
-    (container-rect shape)))
+  [{:keys [x1 y1 x2 y2 group] :as shape}]
+  (let [group (get-in @st/state [:shapes-by-id group])
+        props {:x (+ x1 (:dx group 0))
+               :y (+ y1 (:dy group 0))
+               :width (- x2 x1)
+               :height (- y2 y1)}]
+    (-> (merge shape props)
+        (container-rect))))
 
 (defmethod -outer-rect :builtin/group
   [{:keys [id group rotation dx dy] :as shape}]
