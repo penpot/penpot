@@ -305,14 +305,13 @@
               (into [group] $)
               (assoc-in state [:pages-by-id pid :shapes] $)))
 
-          (update-shapes-on-index [state shapes dimensions group]
-            (let [{:keys [x y]} dimensions]
-              (reduce (fn [state {:keys [id] :as shape}]
-                        (as-> shape $
-                          (assoc $ :group group)
-                          (assoc-in state [:shapes-by-id id] $)))
-                      state
-                      shapes)))]
+          (update-shapes-on-index [state shapes group]
+            (reduce (fn [state {:keys [id] :as shape}]
+                      (as-> shape $
+                        (assoc $ :group group)
+                        (assoc-in state [:shapes-by-id id] $)))
+                    state
+                    shapes))]
     (reify rs/UpdateEvent
       (-apply-update [_ state]
         (let [shapes-by-id (get state :shapes-by-id)
@@ -326,7 +325,7 @@
                     :id sid
                     :page pid}]
           (as-> state $
-            (update-shapes-on-index $ selected' dimensions sid)
+            (update-shapes-on-index $ selected' sid)
             (update-shapes-on-page $ pid selected sid)
             (update $ :shapes-by-id assoc sid group)
             (update $ :workspace assoc :selected #{})))))))
