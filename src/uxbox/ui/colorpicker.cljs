@@ -9,16 +9,18 @@
             [uxbox.ui.mixins :as mx])
   (:import goog.events.EventType))
 
-(def ^:static +params-schema+
-  {:picker {:width [sc/required sc/number]
-            :height [sc/required sc/number]}
-   :bar {:width [sc/required sc/number]
-         :height [sc/required sc/number]}
-   :callback [sc/required sc/function]})
+(def ^:static ^:private +types+
+  {:library
+   {:picker {:width 205 :height 205}
+    :bar {:width 15 :height 205 :img "/images/color-bar-library.png"}}
+   :options
+   {:picker {:width 165 :height 165}
+    :bar {:width 15 :height 165 :img "/images/color-bar-options.png"}}})
+
 
 (defn- draw-color-gradient
-  [context params color]
-  (let [width (get-in params [:picker :width])
+  [context type color]
+  (let [width (get-in +types+ [type :picker :width])
         halfwidth (/ width 2)
         gradient1 (.createLinearGradient context 0 halfwidth width halfwidth)
         gradient2 (.createLinearGradient context halfwidth width halfwidth 0)]
@@ -42,22 +44,23 @@
     (.fillRect context 0 0 width width)))
 
 (defn- initialize
-  [own params]
+  [own type]
   (let [canvas1 (mx/get-ref-dom own "colorpicker")
         context1 (.getContext canvas1 "2d")
         canvas2 (mx/get-ref-dom own "colorbar")
         context2 (.getContext canvas2 "2d")
         img (js/Image.)
+        img-path (get-in +types+ [type :bar :img])
         local (:rum/local own)]
 
     (add-watch local ::key
                (fn [_ _ o v]
                  (when (not= (:color o) (:color v))
-                   (draw-color-gradient context1 params (:color v)))))
+                   (draw-color-gradient context1 type (:color v)))))
 
-    (draw-color-gradient context1 params "#FF0000")
+    (draw-color-gradient context1 type "#FF0000")
 
-    (set! (.-src img) "/images/color-bar.png")
+    (set! (.-src img) img-path)
     (let [key (events/listen img EventType.LOAD #(.drawImage context2 img 0 0))]
       {::key key})))
 
@@ -80,12 +83,12 @@
     (color/rgb->hex [r g b])))
 
 (defn- colorpicker-render
-  [own {:keys [callback] :as params}]
+  [own type callback]
   (let [local (:rum/local own)
-        cp-width (get-in params [:picker :width])
-        cp-height (get-in params [:picker :height])
-        cb-width (get-in params [:bar :width])
-        cb-height (get-in params [:bar :height])
+        cp-width (get-in +types+ [type :picker :width])
+        cp-height (get-in +types+ [type :picker :height])
+        cb-width (get-in +types+ [type :bar :width])
+        cb-height (get-in +types+ [type :bar :height])
         bar-pos (:pos @local 0)]
     (letfn [(on-bar-mouse-down [event])
             (on-bar-mouse-up [event])
@@ -119,9 +122,8 @@
 
 (defn colorpicker-did-mount
   [own]
-  (let [params (first (:rum/props own))]
-    (sc/validate +params-schema+ params)
-    (->> (initialize own params)
+  (let [type (first (:rum/props own))]
+    (->> (initialize own type)
          (merge own))))
 
 (defn colorpicker-will-unmout

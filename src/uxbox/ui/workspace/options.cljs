@@ -91,9 +91,7 @@
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
-       (colorpicker {:picker {:width 165 :height 165}
-                     :bar {:width 15 :height 165}
-                     :callback #(change-stroke {:color (:hex %)})})
+       (colorpicker :options #(change-stroke {:color (:hex %)}))
 
        [:div.row-flex
         [:input#width.input-text
@@ -141,9 +139,7 @@
       [:div.element-set-content
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
-       (colorpicker {:picker {:width 165 :height 165}
-                     :bar {:width 15 :height 165}
-                     :callback on-color-picker-event})
+       (colorpicker :options on-color-picker-event)
        [:div.row-flex
         [:input#width.input-text
          {:placeholder "#"
