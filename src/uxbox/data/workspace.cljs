@@ -318,14 +318,11 @@
               pid (get-in state [:workspace :page])
               selected (get-in state [:workspace :selected])
               selected' (map #(get shapes-by-id %) selected)
-              dimensions (sh/group-dimensions selected')
-
-              data {:type :builtin/group
+              group {:type :builtin/group
                     :name (str "Group " (rand-int 1000))
                     :items (into [] selected)
                     :id sid
-                    :page pid}
-              group (merge data dimensions)]
+                    :page pid}]
           (as-> state $
             (update-shapes-on-index $ selected' dimensions sid)
             (update-shapes-on-page $ pid selected sid)
