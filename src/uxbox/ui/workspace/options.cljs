@@ -19,10 +19,10 @@
    :builtin/group []})
 
 (def +menus-by-id+
-  {:menu/measures
+  {:menu/icon-measures
    {:name "Size & position"
     :icon i/infocard
-    :id :menu/measures}
+    :id :menu/icon-measures}
 
    :menu/fill
    {:name "Fill"
