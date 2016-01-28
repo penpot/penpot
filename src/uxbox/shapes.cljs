@@ -104,6 +104,13 @@
   (assoc shape
          :x2 x2 :y2 y2))
 
+(defmethod -resize :builtin/rect
+  [shape [x2 y2]]
+  (let [{:keys [x y]} shape]
+    (assoc shape
+           :width (- x2 x)
+           :height (- y2 y))))
+
 (defmethod -resize :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))

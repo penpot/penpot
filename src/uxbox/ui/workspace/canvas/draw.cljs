@@ -78,6 +78,7 @@
             (when-let [shape (:drawing @wb/workspace-l)]
               (case (:type shape)
                 :builtin/icon (init-icon shape)
+                :builtin/rect (init-shape shape)
                 :builtin/line (init-shape shape))))]
 
     (as-> wb/interactions-b $

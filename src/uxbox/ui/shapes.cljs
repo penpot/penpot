@@ -68,6 +68,17 @@
     (html
      [:line attrs])))
 
+
+(defmethod sh/-render :builtin/rect
+  [{:keys [id x1 y1 x2 y2] :as shape}]
+  (let [key (str id)
+        props (select-keys shape [:x :y :width :height])
+        attrs (-> (extract-style-attrs shape)
+                  (merge {:id key :key key})
+                  (merge props))]
+    (html
+     [:rect attrs])))
+
 ;; FIXME: the impl should be more clear.
 
 (defmethod sh/-render :builtin/group

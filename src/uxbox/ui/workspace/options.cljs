@@ -16,6 +16,7 @@
 (def +menus-map+
   {:builtin/icon [:menu/icon-measures :menu/fill :menu/stroke]
    :builtin/line [:menu/stroke]
+   :builtin/rect [:menu/icon-measures :menu/stroke :menu/fill]
    :builtin/group []})
 
 (def +menus-by-id+
