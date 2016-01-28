@@ -14,12 +14,6 @@
 ;; Schemas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static +shape-props-schema+
-  {:x [v/integer]
-   :y [v/integer]
-   :width [v/integer]
-   :height [v/integer]})
-
 (def ^:static +shape-schema+
   {:x [v/integer]
    :y [v/integer]
@@ -41,8 +35,10 @@
    :opacity [v/number]})
 
 (def ^:static +shape-update-position-schema+
-  {:x [v/integer]
-   :y [v/integer]})
+  {:x1 [v/integer]
+   :y1 [v/integer]
+   :x2 [v/integer]
+   :y2 [v/integer]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (explicit)
@@ -125,16 +121,14 @@
 
 (defn add-shape
   "Create and add shape to the current selected page."
-  [shape props]
+  [shape]
   (sc/validate! +shape-schema+ shape)
-  (sc/validate! +shape-props-schema+ props)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [sid (random-uuid)
             pid (get-in state [:workspace :page])
-            shape (merge (sh/-initialize shape props)
-                         shape {:id sid :page pid})]
+            shape (merge shape {:id sid :page pid})]
         (as-> state $
           (update-in $ [:pages-by-id pid :shapes] conj sid)
           (assoc-in $ [:shapes-by-id sid] shape))))))
