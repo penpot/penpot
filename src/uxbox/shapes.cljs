@@ -45,6 +45,10 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+(defmulti -resize'
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
 (defmulti -rotate
   dispatch-by-type
   :hierarchy #'+hierarchy+)
@@ -70,20 +74,56 @@
 ;; Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Initialize
+
 (defmethod -initialize ::shape
-  [shape props]
-  (merge shape props))
+  [shape {:keys [x1 y1 x2 y2]}]
+  (merge shape
+         (when x1 {:x x1})
+         (when y1 {:y y1})
+         (when (and x2 x1) {:width (- x2 x1)})
+         (when (and y2 y1) {:height (- y2 y1)})))
 
 (defmethod -initialize :builtin/group
-  [shape {:keys [x y width height]}]
+  [shape {:keys [x1 y1 x2 y2]}]
   shape)
 
-;; (defmethod -initialize :builtin/line
-;;   [shape {:keys [x y width height]}]
-;;   (merge shape
-;;          {:x1 x :y1 y
-;;           :x2 (+ x width)
-;;           :y2 (+ y height)}))
+(defmethod -initialize :builtin/line
+  [shape {:keys [x1 y1 x2 y2]}]
+  (merge shape
+         (when x1 {:x1 x1})
+         (when y1 {:y1 y1})
+         (when x2 {:x2 x2})
+         (when y2 {:y2 y2})))
+
+;; Resize
+
+(defmethod -resize :builtin/line
+  [shape [x2 y2]]
+  (assoc shape
+         :x2 x2 :y2 y2))
+
+(defmethod -resize :default
+  [shape _]
+  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+
+(defmethod -resize' :builtin/icon
+  [shape [width height]]
+  (merge shape
+         (when width {:width width})
+         (when height {:height height})))
+
+(defmethod -resize' :builtin/group
+  [shape [width height]]
+  (merge shape
+         (when width {:width width})
+         (when height {:height height})))
+
+(defmethod -resize' :default
+  [shape _]
+  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+
+;; Move
 
 (defmethod -move ::shape
   [shape {:keys [dx dy] :as opts}]
@@ -97,23 +137,13 @@
          :dx (+ (:dx shape 0) dx)
          :dy (+ (:dy shape 0) dy)))
 
-;; (defmethod -move :builtin/line
-;;   [shape {:keys [dx dy] :as opts}]
-;;   (assoc shape
-;;          :x1 (+ (:x1 shape) dx)
-;;          :y1 (+ (:y1 shape) dy)
-;;          :x2 (+ (:x2 shape) dx)
-;;          :y2 (+ (:y2 shape) dy)))
-
-(defmethod -resize ::shape
-  [shape {:keys [width height] :as opts}]
+(defmethod -move :builtin/line
+  [shape {:keys [dx dy] :as opts}]
   (assoc shape
-         :width width
-         :height height))
-
-(defmethod -resize :builtin/line
-  [shape {:keys [width height] :as opts}]
-  (throw (ex-info "Not implemented" {})))
+         :x1 (+ (:x1 shape) dx)
+         :y1 (+ (:y1 shape) dy)
+         :x2 (+ (:x2 shape) dx)
+         :y2 (+ (:y2 shape) dy)))
 
 (defmethod -rotate ::shape
   [shape rotation]
@@ -129,8 +159,15 @@
       (assoc $ :y (+ (:y shape) (:dy group 0)))
       (container-rect $))))
 
+(defmethod -outer-rect :builtin/line
+  [shape]
+  (let [{:keys [x1 y1 x2 y2]} shape
+        props {:x x1 :y y1 :width (- x2 x1) :height (- y2 y1)}
+        shape (merge shape props)]
+    (container-rect shape)))
+
 (defmethod -outer-rect :builtin/group
-  [{:keys [id group rotation dx dy view-box] :as shape}]
+  [{:keys [id group rotation dx dy] :as shape}]
   (let [shapes (->> (:items shape)
                     (map #(get-in @st/state [:shapes-by-id %]))
                     (map -outer-rect))

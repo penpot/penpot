@@ -74,6 +74,7 @@
   [item]
   (case (:type item)
     :builtin/icon (shapes/-render-svg item)
+    :builtin/line i/line
     :builtin/rect i/box
     :builtin/group i/folder))
 

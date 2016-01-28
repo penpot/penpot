@@ -191,21 +191,22 @@
                  sh/-rotate rotation))))
 
 (defn update-shape-size
-  [sid {:keys [width height lock] :as opts}]
+  "A helper event just for update the position
+  of the shape using the width and heigt attrs
+  instread final point of coordinates.
+
+  WARN: only works with shapes that works
+  with height and width such are"
+  [sid {:keys [width height] :as opts}]
   (sc/validate! +shape-update-size-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id sid])
-            size (select-keys shape [:width :height])
-            size (merge size
-                        (when width {:width width})
-                        (when height {:height height}))]
-        (update-in state [:shapes-by-id sid]
-                   shapes/-resize size)))))
+      (let [size [width height]]
+        (update-in state [:shapes-by-id sid] sh/-resize' size)))))
 
 (defn update-shape-position
-  [sid {:keys [x y] :as opts}]
+  [sid {:keys [x1 y1 x2 y2] :as opts}]
   (sc/validate! +shape-update-position-schema+ opts)
   (reify
     rs/UpdateEvent

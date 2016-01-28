@@ -14,11 +14,9 @@
             [uxbox.util.data :refer (parse-int parse-float)]))
 
 (def +menus-map+
-  {:builtin/icon [:menu/measures :menu/fill :menu/stroke]
-   :builtin/rect [:menu/measures :menu/fill :menu/stroke]
-   :builtin/circle [:menu/measures :menu/fill :menu/stroke]
+  {:builtin/icon [:menu/icon-measures :menu/fill :menu/stroke]
    :builtin/line [:menu/stroke]
-   :builtin/group [:menu/measures]})
+   :builtin/group []})
 
 (def +menus-by-id+
   {:menu/measures
@@ -44,8 +42,8 @@
     [new-x new-y]))
 
 (defn- get-position
-  [{:keys [page width] :as shape}]
-  (let [{:keys [x y]} (sh/-outer-rect shape)
+  [{:keys [page] :as shape}]
+  (let [{:keys [x y width]} (sh/-outer-rect shape)
         vx (+ x width 50)
         vy (- y 50)]
     (viewportcoord->clientcoord page vx vy)))
@@ -162,26 +160,25 @@
           :step "0.0001"
           :on-change on-opacity-change}]]]])))
 
-(defmethod -render-menu :menu/measures
+(defmethod -render-menu :menu/icon-measures
   [menu own shape]
   (letfn [(on-size-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
-                  sid (:id shape)]
-              (-> (dw/update-shape-size sid {attr value})
-                  (rs/emit!))))
+                  sid (:id shape)
+                  props {attr value}]
+              (rs/emit! (dw/update-shape-size sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (-> (dw/update-shape-rotation sid value)
-                  (rs/emit!))))
+              (rs/emit! (dw/update-shape-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
-                  sid (:id shape)]
-              (-> (dw/update-shape-position sid {attr value})
-                  (rs/emit!))))]
+                  sid (:id shape)
+                  props {attr value}]
+              (rs/emit! (dw/update-shape-position sid props))))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
@@ -209,12 +206,12 @@
          {:placeholder "x"
           :type "number"
           :value (:x shape "")
-          :on-change (partial on-pos-change :x)}]
+          :on-change (partial on-pos-change :x1)}]
         [:input#width.input-text
          {:placeholder "y"
           :type "number"
           :value (:y shape "")
-          :on-change (partial on-pos-change :y)}]]
+          :on-change (partial on-pos-change :y1)}]]
 
        [:span "Rotation"]
        [:div.row-flex
@@ -234,19 +231,20 @@
         zoom 1
         menus (get +menus-map+ (:type shape))
         active-menu (:menu @local (first menus))]
-    (html
-     [:div#element-options.element-options
-      {:style {:left (* popup-x zoom) :top (- (* popup-y zoom) scroll)}}
-      [:ul.element-icons
-       (for [menu-id (get +menus-map+ (:type shape))
-             :let [menu (get +menus-by-id+ menu-id)
-                   selected? (= active-menu menu-id)]]
-         [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
-                      :key (str "menu-" (:id menu))
-                      :class (when selected? "selected")}
-          (:icon menu)])]
-      (let [menu (get +menus-by-id+ active-menu)]
-        (-render-menu menu own shape))])))
+    (when (seq menus)
+      (html
+       [:div#element-options.element-options
+        {:style {:left (* popup-x zoom) :top (- (* popup-y zoom) scroll)}}
+        [:ul.element-icons
+         (for [menu-id (get +menus-map+ (:type shape))
+               :let [menu (get +menus-by-id+ menu-id)
+                     selected? (= active-menu menu-id)]]
+           [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
+                        :key (str "menu-" (:id menu))
+                        :class (when selected? "selected")}
+            (:icon menu)])]
+        (let [menu (get +menus-by-id+ active-menu)]
+          (-render-menu menu own shape))]))))
 
 (def ^:static element-opts
   (mx/component
