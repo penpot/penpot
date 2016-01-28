@@ -8,7 +8,7 @@
             [uxbox.schema :as sc]
             [uxbox.time :as time]
             [uxbox.xforms :as xf]
-            [uxbox.shapes :as shapes]))
+            [uxbox.shapes :as sh]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Schemas
@@ -177,7 +177,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (update-in state [:shapes-by-id sid] shapes/-move {:dx dx :dy dy})))))
+        (update-in state [:shapes-by-id sid] sh/-move {:dx dx :dy dy})))))
 
 (defn update-shape-rotation
   [sid rotation]
@@ -188,7 +188,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
-                 shapes/-rotate rotation))))
+                 sh/-rotate rotation))))
 
 (defn update-shape-size
   [sid {:keys [width height lock] :as opts}]
@@ -210,10 +210,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid]
-                 merge
-                 (when x {:x x})
-                 (when y {:y y})))))
+      (update-in state [:shapes-by-id sid] sh/-initialize opts))))
 
 ;; TODO: rename fill to "color" for consistency.
 
