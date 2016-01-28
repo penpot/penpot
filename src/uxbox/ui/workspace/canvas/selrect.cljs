@@ -58,36 +58,27 @@
      :height (- current-y start-y)}))
 
 (define-once :selrect-subscriptions
-  (let [events #{:selrect/draw :nothing}
-        ss (as-> wb/interactions-b $
-             (rx/filter #(contains? events (:type %)) $)
-             (rx/dedupe $)
-             (rx/merge (rx/of {:type :nothing}) $)
-             (rx/map (fn [event]
-                       (case (:type event)
-                         :selrect/draw true
-                         :nothing false)) $)
-             (rx/buffer 2 1 $)
-             (rx/share $))]
-    (as-> ss $
-      (rx/filter #(= (vec %) [false true]) $)
-      (rx/with-latest-from vector wb/mouse-s $)
-      (rx/on-value $ (fn [[_ [x y :as pos]]]
-                       (let [scroll (or @wb/scroll-top 0)
-                             pos [x (+ y scroll)]]
-                         (swap! selrect-pos assoc
-                                :start pos
-                                :current pos)))))
-    (as-> ss $
-      (rx/filter #(= (vec %) [true false]) $)
-      (rx/on-value $ (fn []
-                       (let [selrect (selrect->rect @selrect-pos)]
-                         (rs/emit! (dw/select-shapes selrect))
-                         (reset! selrect-pos nil)))))
-    (as-> (rx/with-latest-from vector wb/interactions-b wb/mouse-s) $
-      (rx/filter #(= (:type (second %)) :selrect/draw) $)
-      (rx/map first $)
-      (rx/on-value $ (fn [[x y :as pos]]
-                       (let [scroll (or @wb/scroll-top 0)
-                             pos [x (+ y scroll)]]
-                         (swap! selrect-pos assoc :current pos)))))))
+  (letfn [(on-value [[x y :as pos]]
+            (let [scroll (or @wb/scroll-top 0)
+                  pos [x (+ y scroll)]]
+              (if (nil? @selrect-pos)
+                (reset! selrect-pos {:start pos :current pos})
+                (swap! selrect-pos assoc :current pos))))
+
+          (on-complete []
+            (let [selrect (selrect->rect @selrect-pos)]
+              (rs/emit! (dw/select-shapes selrect))
+              (reset! selrect-pos nil)))
+
+          (init []
+            (as-> wb/interactions-b $
+              (rx/filter #(not= % :draw/selrect) $)
+              (rx/take 1 $)
+              (rx/take-until $ wb/mouse-s)
+              (rx/subscribe $ on-value nil on-complete)))]
+
+    (as-> wb/interactions-b $
+      (rx/dedupe $)
+      (rx/filter #(= :draw/selrect %) $)
+      (rx/on-value $ init))))
+

@@ -80,10 +80,8 @@
 (defonce interactions-b (rx/bus))
 
 (defn emit-interaction!
-  ([type]
-   (rx/push! interactions-b {:type type}))
-  ([type payload]
-   (rx/push! interactions-b {:type type :payload payload})))
+  [type]
+  (rx/push! interactions-b type))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mouse Position Stream
