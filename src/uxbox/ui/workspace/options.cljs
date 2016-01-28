@@ -11,7 +11,7 @@
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.workspace.recent-colors :refer (recent-colors)]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.util.data :refer (parse-int parse-float)]))
+            [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
 (def +menus-map+
   {:builtin/icon [:menu/icon-measures :menu/fill :menu/stroke]
@@ -66,7 +66,11 @@
               (change-stroke {:opacity value})))
           (on-color-change [event]
             (let [value (dom/event->value event)]
-              (change-stroke {:color value})))]
+              (change-stroke {:color value})))
+          (on-stroke-style-change [event]
+            (let [value (dom/event->value event)
+                  value (read-string value)]
+              (change-stroke {:type value})))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
@@ -79,11 +83,11 @@
           :min "0"
           :value (:stroke-width shape "")
           :on-change on-width-change}]
-        [:select#style {:placeholder "Style"}
-         [:option {:value "none"} "None"]
-         [:option {:value "none"} "Solid"]
-         [:option {:value "none"} "Dotted"]
-         [:option {:value "none"} "Dashed"]]]
+        [:select#style {:placeholder "Style"
+                        :on-change on-stroke-style-change}
+         [:option {:value "nil"} "Solid"]
+         [:option {:value ":dotted"} "Dotted"]
+         [:option {:value ":dashed"} "Dashed"]]]
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]

@@ -227,13 +227,14 @@
                  (when opacity {:opacity opacity})))))
 
 (defn update-shape-stroke
-  [sid {:keys [color opacity width] :as opts}]
+  [sid {:keys [color opacity width type] :as opts}]
   (sc/validate! +shape-update-stroke-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
                  merge
+                 {:stroke-type type}
                  (when width {:stroke-width width})
                  (when color {:stroke color})
                  (when opacity {:stroke-opacity opacity})))))

@@ -18,7 +18,24 @@
 (defn- extract-style-attrs
   "Extract predefinet attrs from shapes."
   [shape]
-  (select-keys shape [:fill :opacity :stroke :stroke-opacity :stroke-width]))
+  (select-keys shape [:fill :opacity :stroke :stroke-opacity :stroke-width
+                      :stroke-type]))
+
+(defn- transform-stroke-type
+  [attrs]
+  (if-let [type (:stroke-type attrs)]
+    (let [value (case type
+                  :dotted "1,1"
+                  :dashed "10,10")]
+      (-> attrs
+          (assoc :stroke-dasharray value)
+          (dissoc :stroke-type)))
+    attrs))
+
+(defn- transform-attrs
+  [attrs]
+  (-> attrs
+      (transform-stroke-type)))
 
 (defn- make-debug-attrs
   [shape]
@@ -35,19 +52,25 @@
   [{:keys [data id] :as shape} _]
   (let [key (str id)
         rfm (svg/calculate-transform shape)
+        attrs (-> (extract-style-attrs shape)
+                  (transform-attrs))
         attrs (merge {:id key :key key :transform rfm}
                      ;; (select-keys shape [:x :y :width :height])
                      (make-debug-attrs shape)
-                     (extract-style-attrs shape))]
+                     attrs)]
     (html
      [:g attrs data])))
 
 (defmethod sh/-render :builtin/line
-  [{:keys [id x1 y1 x2 y2]}]
-  (html
-   [:line {:x1 x1 :y1 y1 :x2 x2 :y2 y2
-           :stroke "black"
-           :stroke-width "1"}]))
+  [{:keys [id x1 y1 x2 y2] :as shape}]
+  (let [key (str id)
+        props (select-keys shape [:x1 :x2 :y2 :y1])
+        attrs (-> (extract-style-attrs shape)
+                  (transform-attrs)
+                  (merge {:id key :key key})
+                  (merge props))]
+    (html
+     [:line attrs])))
 
 ;; FIXME: the impl should be more clear.
 
