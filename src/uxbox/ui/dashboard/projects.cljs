@@ -205,7 +205,7 @@
        [:div.project-th-icon.delete
         {:on-click #(do
                       (dom/stop-propagation %)
-                      ;; (actions/delete-project conn uuid)
+                      (rs/emit! (dp/delete-project project))
                       %)}
         i/trash]]])))
 

@@ -34,6 +34,13 @@
   (let [uuid (:id proj)]
     (update-in state [:projects-by-id] assoc uuid proj)))
 
+(defn dissoc-project
+  "A reduce function for dissoc the project
+  from the state map."
+  [state proj]
+  (let [uuid (:id proj)]
+    (update-in state [:projects-by-id] dissoc uuid)))
+
 (defn assoc-page
   "A reduce function for assoc the page
   to the state map."
@@ -121,6 +128,17 @@
       IPrintWithWriter
       (-pr-writer [mv writer _]
         (-write writer "#<event:u.s.p/create-project>")))))
+
+(defn delete-project
+  [proj]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (dissoc-project state proj))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.s.p/delete-project>"))))
 
 (defn go-to
   "A shortcut event that redirects the user to the
