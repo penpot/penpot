@@ -170,7 +170,7 @@
         shapes-by-id (rum/react wb/shapes-by-id)
         page (rum/react (focus-page (:page workspace)))
         close #(rs/emit! (dw/toggle-toolbox :layers))
-        copy #(rs/emit! (dw/copy-selected))
+        ;; copy #(rs/emit! (dw/copy-selected))
         group #(rs/emit! (dw/group-selected))
         delete #(rs/emit! (dw/delete-selected))]
     (html
@@ -190,7 +190,7 @@
                 (rum/with-key key))))]]
       [:div.layers-tools
        [:ul.layers-tools-content
-        [:li.clone-layer {:on-click copy} i/copy]
+        [:li.clone-layer #_{:on-click copy} i/copy]
         [:li.group-layer {:on-click group} i/folder]
         [:li.delete-layer {:on-click delete} i/trash]]]])))
 
