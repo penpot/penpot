@@ -36,16 +36,16 @@
     (set! (.-fillStyle context) color)
     (.fillRect context 0 0 width width)
 
-    ;;    Transparency gradient
-    (.addColorStop gradient2 0 "rgba(255,255,255,1)")
+    ;; White gradient
+    (.addColorStop gradient2 0.1 "rgba(255,255,255,1)")
     (.addColorStop gradient2 1 "rgba(0,0,0,0)")
 
     (set! (.-fillStyle context) gradient2)
     (.fillRect context 0 0 width width)
 
-    ;; Color gradient
-    (.addColorStop gradient1 0 "rgba(0,0,0,1)")
-    (.addColorStop gradient1 0.8 "rgba(0,0,0,0)")
+    ;; Black gradient
+    (.addColorStop gradient1 0.05 "rgba(0,0,0,1)")
+    (.addColorStop gradient1 1 "rgba(0,0,0,0)")
 
     (set! (.-fillStyle context) gradient1)
     (.fillRect context 0 0 width width)))
@@ -91,10 +91,9 @@
     (add-watch local ::key
                (fn [_ _ o v]
                  (when (not= (:color o) (:color v))
-                   (println "KAKAKA" v)
                    (draw-color-gradient context1 type (:color v)))))
+
     (reset! local {:color "#FF0000"})
-    ;; (draw-color-gradient context1 type "#FF0000")
 
     (set! (.-src img) img-path)
     (let [key1 (events/listen img EventType.LOAD #(.drawImage context2 img 0 0))]
