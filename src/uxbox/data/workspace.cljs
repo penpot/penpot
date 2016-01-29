@@ -157,6 +157,17 @@
               (into [] (remove #(= % id) $))
               (assoc-in state [:pages-by-id page :shapes] $)))
 
+          (clear-empty-groups [state {:keys [group] :as :shape}]
+            (if-let [group' (get-in state [:shapes-by-id group])]
+              (if (empty? (:items group'))
+                (as-> state $
+                  (dissoc-from-page $ group')
+                  (dissoc-from-group $ group')
+                  (dissoc-from-index $ group')
+                  (clear-empty-groups $ group'))
+                state)
+              state))
+
           (dissoc-from-index [state shape]
             (case (:type shape)
               :builtin/rect (dissoc-icon state shape)
@@ -171,7 +182,8 @@
           (as-> state $
             (dissoc-from-page $ shape)
             (dissoc-from-group $ shape)
-            (dissoc-from-index $ shape)))))))
+            (dissoc-from-index $ shape)
+            (clear-empty-groups $ shape)))))))
 
 (defn move-shape
   "Mark a shape selected for drawing in the canvas."
