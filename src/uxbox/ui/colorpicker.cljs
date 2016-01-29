@@ -17,6 +17,13 @@
    {:picker {:width 165 :height 165}
     :bar {:width 15 :height 165 :img "/images/color-bar-options.png"}}})
 
+(defn- get-mouse-pos
+  [own ref event]
+  (let [canvas (mx/get-ref-dom own ref)
+        brect (.getBoundingClientRect canvas)
+        x (- (.-clientX event) (.-left brect))
+        y (- (.-clientY event) (.-top brect))]
+    [x y]))
 
 (defn- draw-color-gradient
   [context type color]
@@ -43,6 +50,34 @@
     (set! (.-fillStyle context) gradient1)
     (.fillRect context 0 0 width width)))
 
+(defn- get-selection-border-color
+  [color]
+  (let [[r g b] (color/hex->rgb color)
+        x1 (+ (* 0.299 r) (* 0.587 g) (* 0.114 b))
+        darkness (- 1 (/ x1 255))]
+    (if (> darkness 0.5)
+      "#FFFFFF"
+      "#000000")))
+
+(defn- draw-current-selection
+  [own color type event]
+  (let [canvas (mx/get-ref-dom own "colorpicker")
+        context (.getContext canvas "2d")
+        local (:rum/local own)
+        [x y :as pos] (get-mouse-pos own "colorpicker" event)
+        border-color (get-selection-border-color color)]
+
+    (.clearRect context 0 0 (.-width canvas) (.-height canvas))
+    (draw-color-gradient context type (:color @local))
+
+    (.beginPath context)
+    (.arc context x y 5 0 (* js/Math.PI 2) false)
+    (set! (.-fillStyle context) color)
+    (.fill context)
+    (set! (.-lineWidth context) 1)
+    (set! (.-strokeStyle context) border-color)
+    (.stroke context)))
+
 (defn- initialize
   [own type]
   (let [canvas1 (mx/get-ref-dom own "colorpicker")
@@ -56,21 +91,14 @@
     (add-watch local ::key
                (fn [_ _ o v]
                  (when (not= (:color o) (:color v))
+                   (println "KAKAKA" v)
                    (draw-color-gradient context1 type (:color v)))))
-
-    (draw-color-gradient context1 type "#FF0000")
+    (reset! local {:color "#FF0000"})
+    ;; (draw-color-gradient context1 type "#FF0000")
 
     (set! (.-src img) img-path)
-    (let [key (events/listen img EventType.LOAD #(.drawImage context2 img 0 0))]
+    (let [key1 (events/listen img EventType.LOAD #(.drawImage context2 img 0 0))]
       {::key key})))
-
-(defn- get-mouse-pos
-  [own ref event]
-  (let [canvas (mx/get-ref-dom own ref)
-        brect (.getBoundingClientRect canvas)
-        x (- (.-clientX event) (.-left brect))
-        y (- (.-clientY event) (.-top brect))]
-    [x y]))
 
 (defn- get-color
   [own ref [x y]]
@@ -95,6 +123,7 @@
             (on-picker-click [event]
               (let [[x y :as pos] (get-mouse-pos own "colorpicker" event)
                     color (get-color own "colorpicker" pos)]
+                (draw-current-selection own color type event)
                 (callback {:hex color
                            :rgb (color/hex->rgb color)})))
             (on-bar-click [event]
