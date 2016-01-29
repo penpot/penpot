@@ -27,10 +27,10 @@
 
 (defn- calculate-colors
   [shapes]
-  (as-> (comp
-         #(count-color %1 %2 :fill)
-         #(count-color %1 %2 :stroke)) $
-    (reduce $ {} shapes)
+  (as-> {} $
+    (reduce #(count-color %1 %2 :fill) $ shapes)
+    (reduce #(count-color %1 %2 :stroke) $ shapes)
+    (remove nil? $)
     (sort-by second (into [] $))
     (take 5 (map first $))))
 
