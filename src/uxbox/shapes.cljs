@@ -83,23 +83,35 @@
 
 (defmethod -initialize ::shape
   [shape {:keys [x1 y1 x2 y2]}]
-  (merge shape
-         (when x1 {:x x1})
-         (when y1 {:y y1})
-         (when (and x2 x1) {:width (- x2 x1)})
-         (when (and y2 y1) {:height (- y2 y1)})))
+  (assoc shape
+         :x x1
+         :y y1
+         :width (- x2 x1)
+         :height (- y2 y1)))
 
 (defmethod -initialize :builtin/group
-  [shape {:keys [x1 y1 x2 y2]}]
-  shape)
+  [shape {:keys [x1 y1 x2 y2] :as props}]
+  (assoc shape ::initial props))
 
 (defmethod -initialize :builtin/line
   [shape {:keys [x1 y1 x2 y2]}]
-  (merge shape
-         (when x1 {:x1 x1})
-         (when y1 {:y1 y1})
-         (when x2 {:x2 x2})
-         (when y2 {:y2 y2})))
+  (assoc shape
+         :x1 x1
+         :y1 y1
+         :x2 x2
+         :y2 y2))
+
+(defmethod -initialize :builtin/circle
+  [shape {:keys [x1 y1 x2 y2]}]
+  (let [width (- x2 x1)
+        height (- y2 y1)
+
+        rx (/ width 2)
+        ry (/ height 2)
+
+        cx (+ x1 (/ width 2))
+        cy (+ y1 (/ height 2))]
+    (assoc shape :rx rx :ry ry :cx cx :cy cy)))
 
 ;; Resize
 
@@ -107,6 +119,21 @@
   [shape [x2 y2]]
   (assoc shape
          :x2 x2 :y2 y2))
+
+(defmethod -resize :builtin/circle
+  [{:keys [cx cy rx ry] :as shape} [x2 y2]]
+  (let [x1 (- cx rx)
+        y1 (- cy ry)
+
+        width (- x2 x1)
+        height (- y2 y1)
+
+        rx (/ width 2)
+        ry (/ height 2)
+
+        cx (+ x1 (/ width 2))
+        cy (+ y1 (/ height 2))]
+    (assoc shape :rx rx :ry ry :cx cx :cy cy)))
 
 (defmethod -resize :builtin/rect
   [shape [x2 y2]]
@@ -201,6 +228,16 @@
                :y (+ y1 (:dy group 0))
                :width (- x2 x1)
                :height (- y2 y1)}]
+    (-> (merge shape props)
+        (container-rect))))
+
+(defmethod -outer-rect :builtin/circle
+  [{:keys [cx cy rx ry group] :as shape}]
+  (let [group (get-in @st/state [:shapes-by-id group])
+        props {:x (+ (- cx rx) (:dx group 0))
+               :y (+ (- cy ry) (:dy group 0))
+               :width (* rx 2)
+               :height (* ry 2)}]
     (-> (merge shape props)
         (container-rect))))
 

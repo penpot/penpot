@@ -159,6 +159,9 @@
 
           (dissoc-from-index [state shape]
             (case (:type shape)
+              :builtin/rect (dissoc-icon state shape)
+              :builtin/circle (dissoc-icon state shape)
+              :builtin/line (dissoc-icon state shape)
               :builtin/icon (dissoc-icon state shape)
               :builtin/group (dissoc-group state shape)))]
     (reify
@@ -177,7 +180,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (update-in state [:shapes-by-id sid] sh/-move {:dx dx :dy dy})))))
+        (update-in state [:shapes-by-id sid] sh/-move delta)))))
 
 (defn update-shape-rotation
   [sid rotation]
@@ -206,12 +209,13 @@
         (update-in state [:shapes-by-id sid] sh/-resize' size)))))
 
 (defn update-shape-position
-  [sid {:keys [x1 y1 x2 y2] :as opts}]
+  "Update the start position coordenate of the shape."
+  [sid {:keys [x y] :as opts}]
   (sc/validate! +shape-update-position-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid] sh/-initialize opts))))
+      (update-in state [:shapes-by-id sid] sh/-move' [x y]))))
 
 ;; TODO: rename fill to "color" for consistency.
 

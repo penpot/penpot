@@ -69,6 +69,16 @@
      [:line attrs])))
 
 
+(defmethod sh/-render :builtin/circle
+  [{:keys [id] :as shape}]
+  (let [key (str id)
+        props (select-keys shape [:cx :cy :rx :ry])
+        attrs (-> (extract-style-attrs shape)
+                  (merge {:id key :key key})
+                  (merge props))]
+    (html
+     [:ellipse attrs])))
+
 (defmethod sh/-render :builtin/rect
   [{:keys [id x1 y1 x2 y2] :as shape}]
   (let [key (str id)
