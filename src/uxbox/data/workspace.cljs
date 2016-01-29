@@ -320,19 +320,23 @@
     (-apply-update [_ state]
       (assoc-in state [:workspace :selected] #{}))))
 
-;; ;; FIXME
+;; FIXME
 ;; (defn copy-selected
 ;;   "Copy the selected shapes."
 ;;   []
-;;   (reify
-;;     rs/WatchEvent
-;;     (-apply-watch [_ state]
-;;       (let [selected (get-in state [:workspace :selected])]
-;;         (as-> selected $
-;;           (map #(get-in state [:shapes-by-id %]) $)
-;;           (map #(assoc % :id (random-uuid)) $)
-;;           (map #(add-icon % %) $)
-;;           (rx/from-coll $))))))
+;;   (letfn [(valid-selection? [shapes]
+;;             (let [groups (into #{} (map :group shapes))]
+;;               (= 1 (count groups))))]
+;;     (reify
+;;       rs/WatchEvent
+;;       (-apply-watch [_ state]
+;;         (let [selected (get-in state [:workspace :selected])
+;;               selected (map #(get-in state [:shapes-by-id %]) selected)]
+;;           (if (valid-selection? selected)
+;;             (as-> selected $
+;;               (map #(assoc % :id (random-uuid)) $)
+;;               (map #(add-shape % %) $)
+;;               (rx/from-coll $))))))
 
 (defn group-selected
   []
