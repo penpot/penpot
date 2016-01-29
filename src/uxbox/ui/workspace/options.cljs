@@ -207,12 +207,12 @@
          {:placeholder "x"
           :type "number"
           :value (:x shape "")
-          :on-change (partial on-pos-change :x1)}]
+          :on-change (partial on-pos-change :x)}]
         [:input#width.input-text
          {:placeholder "y"
           :type "number"
           :value (:y shape "")
-          :on-change (partial on-pos-change :y1)}]]
+          :on-change (partial on-pos-change :y)}]]
 
        [:span "Rotation"]
        [:div.row-flex

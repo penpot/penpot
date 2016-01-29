@@ -37,35 +37,20 @@
     :help (tr "ds.help.rect")
     :shape {:type :builtin/rect
             :name "Rect"
-            :width 20
-            :height 20
-            :stroke "#000000"
-            :stroke-width "1"
-            :view-box [0 0 20 20]}
+            :stroke "#000000"}
     :priority 10}
    :circle
    {:icon i/circle
     :help (tr "ds.help.circle")
     :shape {:type :builtin/circle
-            :name "Circle"
-            :cx 60
-            :cy 60
-            :r 60
-            :stroke "#000000"
-            :stroke-width "1"
-            :view-box [0 0 120 120]}
+            :name "Circle"}
     :priority 20}
    :line
    {:icon i/line
     :help (tr "ds.help.line")
     :shape {:type :builtin/line
             :name "Line"
-            :x1 0
-            :y1 0
-            :x2 200
-            :y2 0
-            :stroke "#000000"
-            :view-box [0 0 10 200]}
+            :stroke "#000000"}
     :priority 30}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
