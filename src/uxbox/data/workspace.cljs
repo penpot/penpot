@@ -229,6 +229,17 @@
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid] sh/-move' [x y]))))
 
+(defn update-line
+  [sid props]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])
+            props (select-keys props [:x1 :y1 :x2 :y2])
+            props' (select-keys shape [:x1 :y1 :x2 :y2])]
+        (update-in state [:shapes-by-id sid] sh/-initialize
+                   (merge props' props))))))
+
 ;; TODO: rename fill to "color" for consistency.
 
 (defn update-shape-fill
