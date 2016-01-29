@@ -61,8 +61,11 @@
 (defn- toggle-blocking
   [item event]
   (dom/stop-propagation event)
-  (let [id (:id item)]
-    (rs/emit! (dw/toggle-shape-blocking id))))
+  (let [id (:id item)
+        blocked? (:blocked item)]
+    (if blocked?
+      (rs/emit! (dw/unblock-shape id))
+      (rs/emit! (dw/block-shape id)))))
 
 (defn- toggle-locking
   [item event]

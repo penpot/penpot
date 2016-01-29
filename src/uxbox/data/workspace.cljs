@@ -254,16 +254,36 @@
           (assoc-in state [:shapes-by-id sid] (assoc shape :hidden false))
           (assoc-in state [:shapes-by-id sid] (assoc shape :hidden true)))))))
 
-(defn toggle-shape-blocking
+
+(defn block-shape
   [sid]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id sid])
-            blocked? (:blocked shape false)]
-        (if blocked?
-          (assoc-in state [:shapes-by-id sid] (assoc shape :blocked false))
-          (assoc-in state [:shapes-by-id sid] (assoc shape :blocked true)))))))
+      (assoc-in state [:shapes-by-id sid :blocked] true))
+
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])]
+        (if-not (= (:type shape) :builtin/group)
+          (rx/empty)
+          (rx/from-coll
+           (map block-shape (:items shape))))))))
+
+(defn unblock-shape
+  [sid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:shapes-by-id sid :blocked] false))
+
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])]
+        (if-not (= (:type shape) :builtin/group)
+          (rx/empty)
+          (rx/from-coll
+           (map unblock-shape (:items shape))))))))
 
 (defn toggle-shape-locking
   [sid]
