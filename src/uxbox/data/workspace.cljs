@@ -352,8 +352,12 @@
                         (assoc $ :group group)
                         (assoc-in state [:shapes-by-id id] $)))
                     state
-                    shapes))]
-    (reify rs/UpdateEvent
+                    shapes))
+          (valid-selection? [shapes]
+            (let [groups (into #{} (map :group shapes))]
+              (= 1 (count groups))))]
+    (reify
+      rs/UpdateEvent
       (-apply-update [_ state]
         (let [shapes-by-id (get state :shapes-by-id)
               sid (random-uuid)
@@ -365,11 +369,13 @@
                     :items (into [] selected)
                     :id sid
                     :page pid}]
-          (as-> state $
-            (update-shapes-on-index $ selected' sid)
-            (update-shapes-on-page $ pid selected sid)
-            (update $ :shapes-by-id assoc sid group)
-            (update $ :workspace assoc :selected #{})))))))
+          (if (valid-selection? selected')
+            (as-> state $
+              (update-shapes-on-index $ selected' sid)
+              (update-shapes-on-page $ pid selected sid)
+              (update $ :shapes-by-id assoc sid group)
+              (update $ :workspace assoc :selected #{}))
+            state))))))
 
 (defn delete-selected
   "Deselect all and remove all selected shapes."
