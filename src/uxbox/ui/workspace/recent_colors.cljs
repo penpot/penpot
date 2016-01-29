@@ -12,14 +12,6 @@
             [uxbox.ui.workspace.base :as wb]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:static ^:private shapes-by-id
-  (as-> (l/key :shapes-by-id) $
-    (l/focus-atom $ st/state)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -48,7 +40,7 @@
 
 (defn- recent-colors-render
   [own {:keys [page id] :as shape} callback]
-  (let [shapes-by-id (rum/react shapes-by-id)
+  (let [shapes-by-id (rum/react wb/shapes-by-id-l)
         shapes (->> (vals shapes-by-id)
                     (filter #(= (:page %) page)))
         colors (calculate-colors shapes)]

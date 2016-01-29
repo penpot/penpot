@@ -11,7 +11,7 @@
   (letfn [(on-value [delta]
             (let [pageid (get-in @st/state [:workspace :page])
                   selected (get-in @st/state [:workspace :selected])
-                  shapes (->> (vals @wb/shapes-by-id)
+                  shapes (->> (vals @wb/shapes-by-id-l)
                               (filter #(= (:page %) pageid))
                               (filter (comp selected :id)))]
               (doseq [{:keys [id group]} shapes]

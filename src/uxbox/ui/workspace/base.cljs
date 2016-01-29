@@ -43,7 +43,7 @@
   (as-> (l/in [:workspace :flags]) $
     (l/focus-atom $ st/state)))
 
-(def ^:static shapes-by-id
+(def ^:static shapes-by-id-l
   (as-> (l/key :shapes-by-id) $
     (l/focus-atom $ st/state)))
 

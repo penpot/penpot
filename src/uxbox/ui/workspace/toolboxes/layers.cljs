@@ -125,7 +125,7 @@
         toggle-open (fn [event]
                       (dom/stop-propagation event)
                       (swap! local assoc :open (not open?)))
-        shapes-by-id (rum/react wb/shapes-by-id)]
+        shapes-by-id (rum/react wb/shapes-by-id-l)]
     (html
      [:li.group {:class (when open? "open")}
       [:div.element-list-body
@@ -168,7 +168,7 @@
   [own]
   (let [workspace (rum/react wb/workspace-l)
         selected (:selected workspace)
-        shapes-by-id (rum/react wb/shapes-by-id)
+        shapes-by-id (rum/react wb/shapes-by-id-l)
         page (rum/react (focus-page (:page workspace)))
         close #(rs/emit! (dw/toggle-toolbox :layers))
         ;; copy #(rs/emit! (dw/copy-selected))

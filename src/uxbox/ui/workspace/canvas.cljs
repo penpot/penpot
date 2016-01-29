@@ -139,7 +139,7 @@
 (defn- canvas-render
   [own {:keys [width height id] :as page}]
   (let [workspace (rum/react wb/workspace-l)
-        shapes-by-id (rum/react wb/shapes-by-id)
+        shapes-by-id (rum/react wb/shapes-by-id-l)
         workspace-selected (:selected workspace)
         xf (comp
             (map #(get shapes-by-id %))
