@@ -42,6 +42,10 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+(defmulti -move'
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
 (defmulti -resize
   dispatch-by-type
   :hierarchy #'+hierarchy+)
@@ -128,20 +132,51 @@
 ;; Move
 
 (defmethod -move ::rect
-  [shape {:keys [dx dy] :as opts}]
+  [shape [dx dy]]
   (assoc shape
          :x (+ (:x shape) dx)
          :y (+ (:y shape) dy)))
 
 (defmethod -move :builtin/line
-  [shape {:keys [dx dy] :as opts}]
+  [shape [dx dy]]
   (assoc shape
          :x1 (+ (:x1 shape) dx)
          :y1 (+ (:y1 shape) dy)
          :x2 (+ (:x2 shape) dx)
          :y2 (+ (:y2 shape) dy)))
 
+(defmethod -move :builtin/circle
+  [shape [dx dy]]
+  (assoc shape
+         :cx (+ (:cx shape) dx)
+         :cy (+ (:cy shape) dy)))
+
 (defmethod -move :default
+  [shape _]
+  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+
+(defmethod -move' ::rect
+  [shape [x y]]
+  (let [dx (if x (- (:x shape) x) 0)
+        dy (if y (- (:y shape) y) 0)]
+    (-move shape [dx dy])))
+
+(defmethod -move' :builtin/line
+  [shape [x y]]
+  (let [dx (if x (- (:x1 shape) x) 0)
+        dy (if y (- (:y1 shape) y) 0)]
+    (-move shape [dx dy])))
+
+(defmethod -move' :builtin/circle
+  [shape [x y]]
+  (let [{:keys [cx cy rx ry]} shape
+        x1 (- cx rx)
+        y1 (- cy ry)
+        dx (if x (- (:x1 shape) x) 0)
+        dy (if y (- (:y1 shape) y) 0)]
+    (-move shape [dx dy])))
+
+(defmethod -move' :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
