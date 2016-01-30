@@ -67,3 +67,11 @@
   "Converts radians to degrees."
   [^number radiants]
   (math/toDegrees radiants))
+
+(defn distance
+  "Calculate the distance between two points."
+  [[x1 y1] [x2 y2]]
+  (let [dx (- x1 x2)
+        dy (- y1 y2)]
+    (-> (sqrt (+ (pow dx 2) (pow dy 2)))
+        (precision 2))))
