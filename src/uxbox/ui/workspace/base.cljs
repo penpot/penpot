@@ -89,7 +89,12 @@
 (defonce mouse-s
   (->> mouse-b
        (rx/filter #(= (:id %) (:id @page-l)))
-       (rx/map :coords)))
+       (rx/map :canvas-coords)))
+
+(defonce mouse-absolute-s
+  (->> mouse-b
+       (rx/filter #(= (:id %) (:id @page-l)))
+       (rx/map :window-coords)))
 
 (defn- coords-delta
   [[old new]]

@@ -112,8 +112,9 @@
             (let [x (.-clientX event)
                   y (.-clientY event)
                   event {:id (:id page)
-                         :coords [(- x offset-x)
-                                  (- y offset-y)]}]
+                         :window-coords [x y]
+                         :canvas-coords [(- x offset-x)
+                                         (- y offset-y)]}]
               (rx/push! wb/mouse-b event)))]
     (let [[page] (:rum/props own)
           canvas (mx/get-ref-dom own (str "canvas" (:id page)))
