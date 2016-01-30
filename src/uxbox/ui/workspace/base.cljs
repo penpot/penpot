@@ -31,12 +31,12 @@
   (as-> (l/in [:workspace]) $
     (l/focus-atom $ st/state)))
 
-(def ^:static toolboxes-l
-  (as-> (l/in [:workspace :toolboxes]) $
-    (l/focus-atom $ st/state)))
-
 (def ^:static selected-shapes-l
   (as-> (l/in [:workspace :selected]) $
+    (l/focus-atom $ st/state)))
+
+(def ^:static toolboxes-l
+  (as-> (l/in [:workspace :toolboxes]) $
     (l/focus-atom $ st/state)))
 
 (def ^:static flags-l
@@ -75,8 +75,6 @@
 ;; Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (defonce shapes-dragging? (atom false))
-;; (defonce selrect-dragging? (atom false))
 (defonce interactions-b (rx/bus))
 
 (defn emit-interaction!
@@ -93,8 +91,6 @@
        (rx/filter #(= (:id %) (:id @page-l)))
        (rx/map :coords)))
 
-;; Deltas
-
 (defn- coords-delta
   [[old new]]
   (let [[oldx oldy] old
@@ -108,11 +104,9 @@
        (rx/buffer 2 1)
        (rx/map coords-delta)))
 
-;; Materialized views
-
 (defonce mouse-position
   (->> mouse-s
-       (rx/sample 50)
+       (rx/sample 10)
        (rx/to-atom)))
 
 (defonce bounding-rect (atom {}))
