@@ -74,7 +74,7 @@
   [menu own shape]
   (letfn [(change-stroke [value]
             (let [sid (:id shape)]
-              (rs/emit! (dw/update-shape-stroke sid value))))
+              (rs/emit! (dw/update-stroke-attrs sid value))))
           (on-width-change [event]
             (let [value (dom/event->value event)
                   value (parse-float value 1)]
@@ -136,8 +136,7 @@
   [menu own shape]
   (letfn [(change-fill [value]
             (let [sid (:id shape)]
-              (-> (dw/update-shape-fill sid value)
-                  (rs/emit!))))
+              (rs/emit! (dw/update-fill-attrs sid value))))
           (on-color-change [event]
             (let [value (dom/event->value event)]
               (change-fill {:fill value})))
@@ -146,7 +145,7 @@
                   value (parse-float value 1)]
               (change-fill {:opacity value})))
           (on-color-picker-event [{:keys [hex]}]
-            (change-fill {:fill hex}))]
+            (change-fill {:color hex}))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
@@ -181,18 +180,18 @@
                   value (parse-int value 0)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-shape-size sid props))))
+              (rs/emit! (dw/update-size sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (rs/emit! (dw/update-shape-rotation sid value))))
+              (rs/emit! (dw/update-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-shape-position sid props))))
+              (rs/emit! (dw/update-position sid props))))
           (on-border-change [attr event])]
     (html
      [:div.element-set {:key (str (:id menu))}
@@ -271,18 +270,18 @@
                   value (parse-int value 0)
                   sid (:id shape)
                   props {attr value}]
-              #_(rs/emit! (dw/update-shape-size sid props))))
+              #_(rs/emit! (dw/update-size sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              #_(rs/emit! (dw/update-shape-rotation sid value))))
+              #_(rs/emit! (dw/update-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              #_(rs/emit! (dw/update-shape-position sid props))))]
+              #_(rs/emit! (dw/update-position sid props))))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
@@ -346,7 +345,7 @@
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (rs/emit! (dw/update-shape-rotation sid value))))
+              (rs/emit! (dw/update-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)

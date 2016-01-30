@@ -53,8 +53,11 @@
 (defn- toggle-visibility
   [selected item event]
   (dom/stop-propagation event)
-  (let [id (:id item)]
-    (rs/emit! (dw/toggle-shape-visibility id))
+  (let [id (:id item)
+        hidden? (:hidden item)]
+    (if hidden?
+      (rs/emit! (dw/show-shape id))
+      (rs/emit! (dw/hide-shape id)))
     (when (contains? selected id)
       (rs/emit! (dw/select-shape id)))))
 
@@ -70,8 +73,11 @@
 (defn- toggle-locking
   [item event]
   (dom/stop-propagation event)
-  (let [id (:id item)]
-    (rs/emit! (dw/toggle-shape-locking id))))
+  (let [id (:id item)
+        locked? (:locked item)]
+    (if locked?
+      (rs/emit! (dw/unlock-shape id))
+      (rs/emit! (dw/lock-shape id)))))
 
 (defn- element-icon
   [item]

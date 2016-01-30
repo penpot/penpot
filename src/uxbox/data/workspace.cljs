@@ -27,7 +27,7 @@
    :lock [v/boolean]})
 
 (def ^:static +shape-update-fill-schema+
-  {:fill [sc/color]
+  {:color [sc/color]
    :opacity [v/number]})
 
 (def ^:static +shape-update-stroke-schema+
@@ -194,7 +194,18 @@
       (let [shape (get-in state [:shapes-by-id sid])]
         (update-in state [:shapes-by-id sid] sh/-move delta)))))
 
-(defn update-shape-rotation
+(defn update-line
+  [sid props]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])
+            props (select-keys props [:x1 :y1 :x2 :y2])
+            props' (select-keys shape [:x1 :y1 :x2 :y2])]
+        (update-in state [:shapes-by-id sid] sh/-initialize
+                   (merge props' props))))))
+
+(defn update-rotation
   [sid rotation]
   {:pre [(number? rotation)
          (>= rotation 0)
@@ -205,7 +216,7 @@
       (update-in state [:shapes-by-id sid]
                  sh/-rotate rotation))))
 
-(defn update-shape-size
+(defn update-size
   "A helper event just for update the position
   of the shape using the width and heigt attrs
   instread final point of coordinates.
@@ -220,7 +231,7 @@
       (let [size [width height]]
         (update-in state [:shapes-by-id sid] sh/-resize' size)))))
 
-(defn update-shape-position
+(defn update-position
   "Update the start position coordenate of the shape."
   [sid {:keys [x y] :as opts}]
   (sc/validate! +shape-update-position-schema+ opts)
@@ -229,31 +240,20 @@
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid] sh/-move' [x y]))))
 
-(defn update-line
-  [sid props]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id sid])
-            props (select-keys props [:x1 :y1 :x2 :y2])
-            props' (select-keys shape [:x1 :y1 :x2 :y2])]
-        (update-in state [:shapes-by-id sid] sh/-initialize
-                   (merge props' props))))))
-
 ;; TODO: rename fill to "color" for consistency.
 
-(defn update-shape-fill
-  [sid {:keys [fill opacity] :as opts}]
+(defn update-fill-attrs
+  [sid {:keys [color opacity] :as opts}]
   (sc/validate! +shape-update-fill-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
                  merge
-                 (when fill {:fill fill})
+                 (when color {:fill color})
                  (when opacity {:opacity opacity})))))
 
-(defn update-shape-stroke
+(defn update-stroke-attrs
   [sid {:keys [color opacity width type] :as opts}]
   (sc/validate! +shape-update-stroke-schema+ opts)
   (reify
@@ -266,17 +266,35 @@
                  (when color {:stroke color})
                  (when opacity {:stroke-opacity opacity})))))
 
-(defn toggle-shape-visibility
+(defn hide-shape
   [sid]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id sid])
-            hidden? (:hidden shape false)]
-        (if hidden?
-          (assoc-in state [:shapes-by-id sid] (assoc shape :hidden false))
-          (assoc-in state [:shapes-by-id sid] (assoc shape :hidden true)))))))
+      (assoc-in state [:shapes-by-id sid :hidden] true))
 
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])]
+        (if-not (= (:type shape) :builtin/group)
+          (rx/empty)
+          (rx/from-coll
+           (map hide-shape (:items shape))))))))
+
+(defn show-shape
+  [sid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:shapes-by-id sid :hidden] false))
+
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])]
+        (if-not (= (:type shape) :builtin/group)
+          (rx/empty)
+          (rx/from-coll
+           (map show-shape (:items shape))))))))
 
 (defn block-shape
   [sid]
@@ -308,16 +326,35 @@
           (rx/from-coll
            (map unblock-shape (:items shape))))))))
 
-(defn toggle-shape-locking
+(defn lock-shape
   [sid]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id sid])
-            locked? (:locked shape false)]
-        (if locked?
-          (assoc-in state [:shapes-by-id sid] (assoc shape :locked false))
-          (assoc-in state [:shapes-by-id sid] (assoc shape :locked true)))))))
+      (assoc-in state [:shapes-by-id sid :locked] true))
+
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])]
+        (if-not (= (:type shape) :builtin/group)
+          (rx/empty)
+          (rx/from-coll
+           (map lock-shape (:items shape))))))))
+
+(defn unlock-shape
+  [sid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:shapes-by-id sid :locked] false))
+
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [shape (get-in state [:shapes-by-id sid])]
+        (if-not (= (:type shape) :builtin/group)
+          (rx/empty)
+          (rx/from-coll
+           (map unlock-shape (:items shape))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)
@@ -424,5 +461,5 @@
     (-apply-watch [_ state]
       (rx/from-coll
        (->> (get-in state [:workspace :selected])
-            (map #(update-shape-fill % opts)))))))
+            (map #(update-fill-attrs % opts)))))))
 
