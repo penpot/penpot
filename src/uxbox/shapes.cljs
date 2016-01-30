@@ -164,6 +164,12 @@
          :x (+ (:x shape) dx)
          :y (+ (:y shape) dy)))
 
+(defmethod -move :builtin/group
+  [shape [dx dy]]
+  (assoc shape
+         :dx (+ (:dx shape 0) dx)
+         :dy (+ (:dy shape 0) dy)))
+
 (defmethod -move :builtin/line
   [shape [dx dy]]
   (assoc shape
