@@ -264,6 +264,10 @@
           width: 12px;
         }
 
+        &.inverse {
+          svg { transform: rotate(270deg); }
+        }
+
         &:hover {
 
           svg {

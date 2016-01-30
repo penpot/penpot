@@ -155,7 +155,9 @@
          i/chain]]
        [:div.element-icon i/folder]
        [:span (:name item "Unnamed group")]
-       [:span.toggle-content {:on-click toggle-open}
+       [:span.toggle-content
+        {:on-click toggle-open
+         :class (when open? "inverse")}
         i/arrow-slide]]
       (if open?
         [:ul
