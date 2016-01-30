@@ -89,12 +89,21 @@
 (defonce mouse-s
   (->> mouse-b
        (rx/filter #(= (:id %) (:id @page-l)))
-       (rx/map :canvas-coords)))
+       (rx/map :canvas-coords)
+       (rx/share)))
 
 (defonce mouse-absolute-s
   (->> mouse-b
        (rx/filter #(= (:id %) (:id @page-l)))
-       (rx/map :window-coords)))
+       (rx/map :window-coords)
+       (rx/share)))
+
+(defonce mouse-ctrl-s
+  (->> mouse-b
+       (rx/filter #(= (:id %) (:id @page-l)))
+       (rx/map :ctrl)
+       (rx/dedupe)
+       (rx/share)))
 
 (defn- coords-delta
   [[old new]]
@@ -107,7 +116,8 @@
   (->> mouse-s
        (rx/sample 10)
        (rx/buffer 2 1)
-       (rx/map coords-delta)))
+       (rx/map coords-delta)
+       (rx/share)))
 
 (defonce mouse-position
   (->> mouse-s

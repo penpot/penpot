@@ -15,6 +15,7 @@
             [uxbox.data.workspace :as dw]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dom :as dom]
+            [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.canvas.movement]
             [uxbox.ui.workspace.canvas.draw :refer (draw-area)]
@@ -112,6 +113,7 @@
             (let [x (.-clientX event)
                   y (.-clientY event)
                   event {:id (:id page)
+                         :ctrl (kbd/ctrl? event)
                          :window-coords [x y]
                          :canvas-coords [(- x offset-x)
                                          (- y offset-y)]}]
