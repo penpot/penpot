@@ -26,6 +26,16 @@
   [^number v]
   (- v))
 
+(defn sqrt
+  "Returns the square root of a number."
+  [v]
+  (js/Math.sqrt v))
+
+(defn pow
+  "Returns the base to the exponent power."
+  [b e]
+  (js/Math.pow b e))
+
 (defn floor
   "Returns the largest integer less than or
   equal to a given number."
