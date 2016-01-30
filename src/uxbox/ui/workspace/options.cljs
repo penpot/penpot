@@ -178,7 +178,7 @@
           :on-change on-opacity-change}]]]])))
 
 (defmethod -render-menu :menu/rect-measures
-  [menu own shape]
+  [menu own shape local]
   (letfn [(on-size-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
@@ -243,6 +243,7 @@
           :type "number"
           :value (:rx shape "")
           :on-change (partial on-border-change :rx)}]
+        [:div.lock-size i/lock]
         [:input#width.input-text
          {:placeholder "ry"
           :type "number"
@@ -516,7 +517,7 @@
             (:icon menu)])]
         (let [menu (get +menus-by-id+ active-menu)
               menu (assoc menu :id active-menu)]
-          (-render-menu menu own shape))]))))
+          (-render-menu menu own shape local))]))))
 
 (def ^:static element-opts
   (mx/component
