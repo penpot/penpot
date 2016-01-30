@@ -255,9 +255,14 @@
         y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
         width (- x' x)
         height (- y' y)]
-    (as-> shape $
-      (merge $ {:width width :height height :x x :y y})
-      (container-rect $))))
+    (let [group (get-in @st/state [:shapes-by-id group])]
+      (as-> shape $
+        (merge $ {:width width
+                  :height height
+                  :x (+ x (or (:dx group) 0))
+                  :y (+ y (or (:dy group) 0))
+                  })
+        (container-rect $)))))
 
 (defmethod -outer-rect :default
   [shape _]
