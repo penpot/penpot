@@ -16,7 +16,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:static ^:private +style-attrs+
-  #{:fill :opacity :stroke :stroke-opacity :stroke-width :stroke-type})
+  #{:fill :opacity :stroke :stroke-opacity :stroke-width :stroke-type :rx :ry})
 
 (defn- transform-stroke-type
   [attrs]

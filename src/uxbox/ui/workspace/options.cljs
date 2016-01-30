@@ -18,14 +18,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:static ^:private +menus-map+
-  {:builtin/icon [:menu/rect-measures :menu/fill :menu/stroke]
+  {:builtin/icon [:menu/icon-measures :menu/fill :menu/stroke]
    :builtin/rect [:menu/rect-measures :menu/fill :menu/stroke]
    :builtin/line [:menu/line-measures :menu/stroke]
    :builtin/circle [:menu/circle-measures :menu/fill :menu/stroke]
    :builtin/group []})
 
 (def ^:static ^:private +menus-by-id+
-  {:menu/rect-measures
+  {:menu/icon-measures
+   {:name "Size, position & rotation"
+    :icon i/infocard}
+
+   :menu/rect-measures
    {:name "Size, position & rotation"
     :icon i/infocard}
 
@@ -192,7 +196,12 @@
                   sid (:id shape)
                   props {attr value}]
               (rs/emit! (dw/update-position sid props))))
-          (on-border-change [attr event])]
+          (on-border-change [attr event]
+            (let [value (dom/event->value event)
+                  value (parse-int value nil)
+                  sid (:id shape)
+                  props {attr value}]
+              (rs/emit! (dw/update-radius-attrs sid props))))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
@@ -263,6 +272,83 @@
         ]]]
      )))
 
+
+(defmethod -render-menu :menu/icon-measures
+  [menu own shape]
+  (letfn [(on-size-change [attr event]
+            (let [value (dom/event->value event)
+                  value (parse-int value 0)
+                  sid (:id shape)
+                  props {attr value}]
+              (rs/emit! (dw/update-size sid props))))
+          (on-rotation-change [event]
+            (let [value (dom/event->value event)
+                  value (parse-int value 0)
+                  sid (:id shape)]
+              (rs/emit! (dw/update-rotation sid value))))
+          (on-pos-change [attr event]
+            (let [value (dom/event->value event)
+                  value (parse-int value nil)
+                  sid (:id shape)
+                  props {attr value}]
+              (rs/emit! (dw/update-position sid props))))]
+    (html
+     [:div.element-set {:key (str (:id menu))}
+      [:div.element-set-title (:name menu)]
+      [:div.element-set-content
+       ;; SLIDEBAR FOR ROTATION AND OPACITY
+       [:span "Size"]
+       [:div.row-flex
+        [:input#width.input-text
+         {:placeholder "Width"
+          :type "number"
+          :min "0"
+          :value (:width shape)
+          :on-change (partial on-size-change :width)}]
+        [:div.lock-size i/lock]
+        [:input#width.input-text
+         {:placeholder "Height"
+          :type "number"
+          :min "0"
+          :value (:height shape)
+          :on-change (partial on-size-change :height)}]]
+
+       [:span "Position"]
+       [:div.row-flex
+        [:input#width.input-text
+         {:placeholder "x"
+          :type "number"
+          :value (:x shape "")
+          :on-change (partial on-pos-change :x)}]
+        [:input#width.input-text
+         {:placeholder "y"
+          :type "number"
+          :value (:y shape "")
+          :on-change (partial on-pos-change :y)}]]
+
+       [:span "Rotation"]
+       [:div.row-flex
+        [:input.slidebar
+         {:type "range"
+          :min 0
+          :max 360
+          :value (:rotation shape 0)
+          :on-change on-rotation-change}]]
+
+       [:div.row-flex
+        [:input#width.input-text
+         {:placeholder ""
+          :type "number"
+          :min 0
+          :max 360
+          :value (:rotation shape "0")
+          :on-change on-rotation-change
+          }]
+        [:input.input-text
+         {:style {:visibility "hidden"}}]
+        ]]]
+     )))
+
 (defmethod -render-menu :menu/circle-measures
   [menu own shape]
   (letfn [(on-size-change [attr event]
@@ -270,18 +356,18 @@
                   value (parse-int value 0)
                   sid (:id shape)
                   props {attr value}]
-              #_(rs/emit! (dw/update-size sid props))))
+              (rs/emit! (dw/update-radius-attrs sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              #_(rs/emit! (dw/update-rotation sid value))))
+              (rs/emit! (dw/update-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              #_(rs/emit! (dw/update-position sid props))))]
+              (rs/emit! (dw/update-position sid props))))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
@@ -309,12 +395,12 @@
          {:placeholder "cx"
           :type "number"
           :value (:cx shape "")
-          :on-change (partial on-pos-change :cx)}]
+          :on-change (partial on-pos-change :x)}]
         [:input#width.input-text
          {:placeholder "cy"
           :type "number"
           :value (:cy shape "")
-          :on-change (partial on-pos-change :cy)}]]
+          :on-change (partial on-pos-change :y)}]]
 
        [:span "Rotation"]
        [:div.row-flex
@@ -351,7 +437,7 @@
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-line sid props))))]
+              (rs/emit! (dw/update-line-attrs sid props))))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]

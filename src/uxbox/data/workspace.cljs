@@ -15,30 +15,40 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:static +shape-schema+
-  {:x [v/integer]
-   :y [v/integer]
-   :width [v/integer]
-   :height [v/integer]
-   :type [v/required sc/shape-type]})
+  {:x [sc/integer]
+   :y [sc/integer]
+   :width [sc/integer]
+   :height [sc/integer]
+   :type [sc/required sc/shape-type]})
 
-(def ^:static +shape-update-size-schema+
-  {:width [v/integer]
-   :height [v/integer]
-   :lock [v/boolean]})
+(def ^:static +shape-size-schema+
+  {:width [sc/integer]
+   :height [sc/integer]
+   :lock [sc/boolean]})
 
-(def ^:static +shape-update-fill-schema+
+(def ^:static +shape-fill-attrs-schema+
   {:color [sc/color]
-   :opacity [v/number]})
+   :opacity [sc/number]})
 
-(def ^:static +shape-update-stroke-schema+
+(def ^:static +shape-stroke-attrs-schema+
   {:color [sc/color]
-   :opacity [v/number]})
+   :width [sc/integer]
+   :type [sc/keyword]
+   :opacity [sc/number]})
 
-(def ^:static +shape-update-position-schema+
-  {:x1 [v/integer]
-   :y1 [v/integer]
-   :x2 [v/integer]
-   :y2 [v/integer]})
+(def ^:static +shape-line-attrs-schema+
+  {:x1 [sc/integer]
+   :y1 [sc/integer]
+   :x2 [sc/integer]
+   :y2 [sc/integer]})
+
+(def ^:static +shape-radius-attrs-schema+
+  {:rx [sc/integer]
+   :ry [sc/integer]})
+
+(def ^:static +shape-position-schema+
+  {:x [sc/integer]
+   :y [sc/integer]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (explicit)
@@ -194,13 +204,14 @@
       (let [shape (get-in state [:shapes-by-id sid])]
         (update-in state [:shapes-by-id sid] sh/-move delta)))))
 
-(defn update-line
-  [sid props]
+(defn update-line-attrs
+  [sid {:keys [x1 y1 x2 y2] :as opts}]
+  (sc/validate! +shape-line-attrs-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])
-            props (select-keys props [:x1 :y1 :x2 :y2])
+            props (select-keys opts [:x1 :y1 :x2 :y2])
             props' (select-keys shape [:x1 :y1 :x2 :y2])]
         (update-in state [:shapes-by-id sid] sh/-initialize
                    (merge props' props))))))
@@ -224,7 +235,7 @@
   WARN: only works with shapes that works
   with height and width such are"
   [sid {:keys [width height] :as opts}]
-  (sc/validate! +shape-update-size-schema+ opts)
+  (sc/validate! +shape-size-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
@@ -234,17 +245,15 @@
 (defn update-position
   "Update the start position coordenate of the shape."
   [sid {:keys [x y] :as opts}]
-  (sc/validate! +shape-update-position-schema+ opts)
+  (sc/validate! +shape-position-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid] sh/-move' [x y]))))
 
-;; TODO: rename fill to "color" for consistency.
-
 (defn update-fill-attrs
   [sid {:keys [color opacity] :as opts}]
-  (sc/validate! +shape-update-fill-schema+ opts)
+  (sc/validate! +shape-fill-attrs-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
@@ -254,8 +263,8 @@
                  (when opacity {:opacity opacity})))))
 
 (defn update-stroke-attrs
-  [sid {:keys [color opacity width type] :as opts}]
-  (sc/validate! +shape-update-stroke-schema+ opts)
+  [sid {:keys [color opacity type width] :as opts}]
+  (sc/validate! +shape-stroke-attrs-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
@@ -265,6 +274,17 @@
                  (when width {:stroke-width width})
                  (when color {:stroke color})
                  (when opacity {:stroke-opacity opacity})))))
+
+(defn update-radius-attrs
+  [sid {:keys [rx ry] :as opts}]
+  (sc/validate! +shape-radius-attrs-schema+ opts)
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id sid]
+                 merge
+                 (when rx {:rx rx})
+                 (when ry {:ry ry})))))
 
 (defn hide-shape
   [sid]
@@ -455,7 +475,7 @@
   "Update the fill related attributed on
   selected shapes."
   [opts]
-  (sc/validate! +shape-update-fill-schema+ opts)
+  (sc/validate! +shape-fill-attrs-schema+ opts)
   (reify
     rs/WatchEvent
     (-apply-watch [_ state]

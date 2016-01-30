@@ -1,5 +1,5 @@
 (ns uxbox.schema
-  (:refer-clojure :exclude [keyword uuid vector])
+  (:refer-clojure :exclude [keyword uuid vector boolean])
   (:require [bouncer.core :as b]
             [bouncer.validators :as v]
             [cuerdas.core :as str]
@@ -49,6 +49,8 @@
 
 (def required v/required)
 (def number v/number)
+(def integer v/integer)
+(def boolean v/boolean)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api

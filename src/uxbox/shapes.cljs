@@ -196,11 +196,8 @@
 
 (defmethod -move' :builtin/circle
   [shape [x y]]
-  (let [{:keys [cx cy rx ry]} shape
-        x1 (- cx rx)
-        y1 (- cy ry)
-        dx (if x (- (:x1 shape) x) 0)
-        dy (if y (- (:y1 shape) y) 0)]
+  (let [dx (if x (- (:cx shape) x) 0)
+        dy (if y (- (:cy shape) y) 0)]
     (-move shape [dx dy])))
 
 (defmethod -move' :default
