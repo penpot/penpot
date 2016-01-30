@@ -64,12 +64,21 @@
 
 (defn- overlay-will-mount
   [own local]
-  (letfn [(on-value [pos]
-            (swap! local assoc :pos2 pos))]
+  (letfn [(on-value [[[x y :as pos] ctrl?]]
+            (if ctrl?
+              (let [[sx sy] (:pos1 @local)
+                    dx (- x sx)
+                    dy (- y sy)]
+                (cond
+                  (> dx dy) (swap! local assoc :pos2 [x sy])
+                  (> dy dx) (swap! local assoc :pos2 [sx y])
+                  :else     (swap! local assoc :pos2 pos)))
+              (swap! local assoc :pos2 pos)))]
     (as-> wb/mouse-absolute-s $
       (rx/dedupe $)
       (rx/filter #(:active @local) $)
       (rx/map #(resolve-position own %) $)
+      (rx/with-latest-from vector wb/mouse-ctrl-s $)
       (rx/on-value $ on-value)
       (assoc own ::sub $))))
 
