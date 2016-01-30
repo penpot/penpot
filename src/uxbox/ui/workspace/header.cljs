@@ -53,7 +53,9 @@
          i/image]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom
-         {:alt "Ruler (Ctrl + R)"}
+         {:alt "Ruler (Ctrl + R)"
+          :class (when (contains? flags :workspace/ruler) "selected")
+          :on-click (partial toggle :workspace/ruler)}
          i/ruler]
         [:li.tooltip.tooltip-bottom
          {:alt "Grid (Ctrl + G)"

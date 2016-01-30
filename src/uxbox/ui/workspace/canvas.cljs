@@ -18,6 +18,7 @@
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.canvas.movement]
             [uxbox.ui.workspace.canvas.draw :refer (draw-area)]
+            [uxbox.ui.workspace.canvas.ruler :refer (ruler)]
             [uxbox.ui.workspace.canvas.selection :refer (shapes-selection)]
             [uxbox.ui.workspace.canvas.selrect :refer (selrect)]
             [uxbox.ui.workspace.grid :refer (grid)]
@@ -202,7 +203,8 @@
                        :on-mouse-up on-mouse-up}
         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
          (if page
-           (canvas page))]]))))
+           (canvas page))
+         (ruler)]]))))
 
 (def viewport
   (mx/component

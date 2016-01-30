@@ -14,10 +14,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce ^:static +shortcuts+
-  {:ctrl+g #(rs/emit! (dw/toggle-tool :grid))
+  {:ctrl+g #(rs/emit! (dw/toggle-tool :workspace/grid))
    :ctrl+shift+f #(rs/emit! (dw/toggle-toolbox :draw))
    :ctrl+shift+i #(rs/emit! (dw/toggle-toolbox :icons))
    :ctrl+shift+l #(rs/emit! (dw/toggle-toolbox :layers))
+   :ctrl+r #(rs/emit! (dw/toggle-tool :workspace/ruler))
    :esc #(rs/emit! (dw/deselect-all))
    :backspace #(rs/emit! (dw/delete-selected))
    :delete #(rs/emit! (dw/delete-selected))
