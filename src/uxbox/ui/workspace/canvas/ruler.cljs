@@ -67,8 +67,8 @@
   (letfn [(on-value [[[x y :as pos] ctrl?]]
             (if ctrl?
               (let [[sx sy] (:pos1 @local)
-                    dx (- x sx)
-                    dy (- y sy)]
+                    dx (mth/abs (- x sx))
+                    dy (mth/abs (- y sy))]
                 (cond
                   (> dx dy) (swap! local assoc :pos2 [x sy])
                   (> dy dx) (swap! local assoc :pos2 [sx y])
