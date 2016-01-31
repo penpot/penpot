@@ -39,7 +39,7 @@
 (defn- on-mouse-up
   [own local event]
   (dom/stop-propagation event)
-  (reset! local {:active false}))
+  (swap! local assoc :active false))
 
 (defn- overlay-render
   [own local]
@@ -53,7 +53,7 @@
       [:rect {:style {:fill "transparent" :stroke "transparent" :cursor "cell"}
               :width wb/viewport-width
               :height wb/viewport-height}]
-      (if (and (:active @local) x1 x2)
+      (if (and x1 x2)
           [:g
            [:line {:x1 x1 :y1 y1 :x2 x2 :y2 y2
                    :style {:cursor "cell"}
