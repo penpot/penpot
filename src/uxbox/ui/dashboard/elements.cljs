@@ -4,7 +4,7 @@
             ;; [uxbox.ui.library-bar :as ui.library-bar]
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as lightbox]
-            [uxbox.ui.dom :as dom]
+            [uxbox.util.dom :as dom]
             [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

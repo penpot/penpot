@@ -10,7 +10,7 @@
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.dom :as dom]
+            [uxbox.util.dom :as dom]
             [uxbox.ui.dashboard.header :as dsh.header]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.mixins :as mx]))

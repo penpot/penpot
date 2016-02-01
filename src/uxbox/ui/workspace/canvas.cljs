@@ -14,7 +14,7 @@
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.dom :as dom]
+            [uxbox.util.dom :as dom]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.canvas.movement]

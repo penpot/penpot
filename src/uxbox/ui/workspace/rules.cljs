@@ -4,7 +4,7 @@
             [cuerdas.core :as str]
             [beicon.core :as rx]
             [uxbox.state :as s]
-            [uxbox.ui.dom :as dom]
+            [uxbox.util.dom :as dom]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]))
 

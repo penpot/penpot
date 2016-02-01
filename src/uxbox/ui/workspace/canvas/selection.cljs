@@ -8,7 +8,7 @@
             [uxbox.shapes :as sh]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.dom :as dom]))
+            [uxbox.util.dom :as dom]))
 
 (def ^:private selection-circle-style
   {:fillOpacity "0.5"

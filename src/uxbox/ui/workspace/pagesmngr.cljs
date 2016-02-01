@@ -9,7 +9,7 @@
             [uxbox.ui.keyboard :as k]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.dom :as dom]))
+            [uxbox.util.dom :as dom]))
 
 (defn- page-item-render
   [own parent page numpages]

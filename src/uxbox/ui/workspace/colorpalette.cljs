@@ -12,7 +12,7 @@
             [uxbox.util.color :refer (hex->rgb)]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.dom :as dom]
+            [uxbox.util.dom :as dom]
             [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

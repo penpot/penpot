@@ -11,7 +11,7 @@
             [uxbox.util.math :as mth]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.dom :as dom]))
+            [uxbox.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component

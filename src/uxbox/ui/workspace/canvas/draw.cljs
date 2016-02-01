@@ -10,7 +10,7 @@
             [uxbox.data.workspace :as dw]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.dom :as dom]))
+            [uxbox.util.dom :as dom]))
 
 (defonce +drawing-shape+ (atom nil))
 (defonce +drawing-position+ (atom nil))

@@ -5,7 +5,7 @@
             [uxbox.rstore :as rs]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.dom :as dom]
+            [uxbox.util.dom :as dom]
             [uxbox.data.dashboard :as dd]
             [uxbox.ui.library-bar :as ui.library-bar]
             [uxbox.ui.dashboard.header :refer (header)]
