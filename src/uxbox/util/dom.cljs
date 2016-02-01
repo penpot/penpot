@@ -24,16 +24,3 @@
 (defn event->target
   [e]
   (.-target e))
-
-(defn event->data-transfer
-  [e]
-  (.-dataTransfer e))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Drag & Drop helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (defn set-effect-allowed!
-;;   [e effect]
-;;   (let [dt (.-dataTransfer e)]
-;;     (set!
