@@ -377,11 +377,18 @@
           (rx/from-coll
            (map unlock-shape (:items shape))))))))
 
+;; FIXME: the impl can be maybe simplified.
+
 (defn transfer-shape
   "Event used in drag and drop for transfer shape
   from one position to an other."
   [sid tid type]
-  (letfn [(transfer-to-group [state target])
+  (letfn [(transfer-to-group [state {:keys [id] :as target}]
+            (let [shapes (get-in state [:shapes-by-id id :items])
+                  shapes (conj shapes sid)]
+              (as-> state $
+                (assoc-in $ [:shapes-by-id id :items] shapes)
+                (update-in $ [:shapes-by-id sid] assoc :group id))))
 
           (transfer-at [index shapes sid]
             (let [[fst snd] (split-at index shapes)]
@@ -426,18 +433,24 @@
     (reify
       rs/UpdateEvent
       (-apply-update [_ state]
-        (let [target (get-in state [:shapes-by-id tid])
-              source (get-in state [:shapes-by-id sid])
-              state (remove-source state source)]
-          (cond
-            (and (= type :inside) (:group target))
-            (transfer-to-group state target)
+        (if (= tid sid)
+          state
+          (let [target (get-in state [:shapes-by-id tid])
+                source (get-in state [:shapes-by-id sid])
+                state (remove-source state source)]
+            (cond
+              (and (= type :inside)
+                   (= (:type target) :builtin/group))
+              (transfer-to-group state target)
 
-            (= type :before)
-            (transfer-before state target)
+              (= type :before)
+              (transfer-before state target)
 
-            (= type :after)
-            (transfer-after state target)))))))
+              (= type :after)
+              (transfer-after state target)
+
+              :else
+              (throw (ex-info "Invalid data" {})))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)

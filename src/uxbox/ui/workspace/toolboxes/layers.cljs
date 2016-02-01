@@ -14,6 +14,7 @@
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
+            [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom])
   (:import goog.events.EventType))
 
@@ -115,36 +116,30 @@
         toggle-visibility #(toggle-visibility selected item %)
         toggle-blocking #(toggle-blocking item %)
         local (:rum/local own)
-
         classes (classnames
                  :selected selected?
                  :drag-top (= :top (:over @local))
                  :drag-bottom (= :bottom (:over @local))
                  :drag-inside (= :middle (:over @local)))]
     (letfn [(on-drag-start [event]
-              (let [target (.-target event)
-                    style (.-style target)
-                    dt (.-dataTransfer event)]
-                (set! (.-effectAllowed dt) "move")
-                (.setData dt "item/uuid" (pr-str (:id item)))
+              (let [target (dom/event->target event)]
+                (dnd/set-allowed-effect! event "move")
+                (dnd/set-data! event (:id item))
                 (swap! local assoc :dragging true)))
             (on-drag-end [event]
               (swap! local assoc :dragging false :over nil))
             (on-drop [event]
-              (let [dt (.-dataTransfer event)
-                    id (read-string (.getData dt "item/uuid"))
+              (dom/stop-propagation event)
+              (let [id (dnd/get-data event)
                     over (:over @local)]
                 (case (:over @local)
                   :top (rs/emit! (dw/transfer-shape id (:id item) :before))
-                  :bottom (rs/emit! (dw/transfer-shape id (:id item) :after))
-                  ;; :middle (rs/emit! (dw/transfer-inside id (:id item)))
-                  )
+                  :bottom (rs/emit! (dw/transfer-shape id (:id item) :after)))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
-              (let [dt (.-dataTransfer event)
-                    over (get-hover-position event false)]
-                (set! (.-dropEffect dt) "move")
+              (dnd/set-drop-effect! event "move")
+              (let [over (get-hover-position event false)]
                 (swap! local assoc :over over)))
             (on-drag-enter [event]
               (swap! local assoc :over true))
@@ -159,7 +154,6 @@
              :on-drag-over on-drag-over
              :on-drag-end on-drag-end
              :on-drop on-drop
-             :data-over (str (:over @local))
              :draggable true
              :class (when selected? "selected")}
         [:div.element-list-body
@@ -198,40 +192,78 @@
         toggle-open (fn [event]
                       (dom/stop-propagation event)
                       (swap! local assoc :open (not open?)))
-        shapes-by-id (rum/react wb/shapes-by-id-l)]
-    (html
-     [:li.group {:class (when open? "open") :draggable true}
-      [:div.element-list-body
-       {:class (when selected? "selected")
-        :on-click select}
-       [:div.element-actions
-        [:div.toggle-element
-         {:class (when-not (:hidden item) "selected")
-          :on-click toggle-visibility}
-         i/eye]
-        [:div.block-element
-         {:class (when (:blocked item) "selected")
-          :on-click toggle-blocking}
-         i/lock]
-        [:div.chain-element
-         {:class (when (:locked item) "selected")
-          :on-click toggle-locking}
-         i/chain]]
-       [:div.element-icon i/folder]
-       [:span (:name item "Unnamed group")]
-       [:span.toggle-content
-        {:on-click toggle-open
-         :class (when open? "inverse")}
-        i/arrow-slide]]
-      (if open?
-        [:ul
-         (for [shape (map #(get shapes-by-id %) (:items item))
-               :let [key (str (:id shape))]]
-           (if (= (:type shape) :builtin/group)
-             (-> (layer-group shape selected)
-                 (rum/with-key key))
-             (-> (layer-element shape selected)
-                 (rum/with-key key))))])])))
+        shapes-by-id (rum/react wb/shapes-by-id-l)
+        classes (classnames
+                 :selected selected?
+                 :drag-top (= :top (:over @local))
+                 :drag-bottom (= :bottom (:over @local))
+                 :drag-inside (= :middle (:over @local)))]
+    (letfn [(on-drag-start [event]
+              (let [target (dom/event->target event)]
+                (dnd/set-allowed-effect! event "move")
+                (dnd/set-data! event (:id item))
+                (swap! local assoc :dragging true)))
+            (on-drag-end [event]
+              (swap! local assoc :dragging false :over nil))
+            (on-drop [event]
+              (dom/stop-propagation event)
+              (let [id (dnd/get-data event)
+                    over (:over @local)]
+                (case (:over @local)
+                  :top (rs/emit! (dw/transfer-shape id (:id item) :before))
+                  :bottom (rs/emit! (dw/transfer-shape id (:id item) :after))
+                  :middle (rs/emit! (dw/transfer-shape id (:id item) :inside)))
+                (swap! local assoc :dragging false :over nil)))
+            (on-drag-over [event]
+              (dom/prevent-default event)
+              (dnd/set-drop-effect! event "move")
+              (let [over (get-hover-position event true)]
+                (swap! local assoc :over over)))
+            (on-drag-enter [event]
+              (swap! local assoc :over true))
+            (on-drag-leave [event]
+              (swap! local assoc :over false))]
+      (html
+       [:li.group {:class (when open? "open")
+                   :key (str (:id item))
+                   :draggable true}
+        [:div.element-list-body
+         {:class classes
+          :on-drag-start on-drag-start
+          :on-drag-enter on-drag-enter
+          :on-drag-leave on-drag-leave
+          :on-drag-over on-drag-over
+          :on-drag-end on-drag-end
+          :on-drop on-drop
+          :on-click select}
+         [:div.element-actions
+          [:div.toggle-element
+           {:class (when-not (:hidden item) "selected")
+            :on-click toggle-visibility}
+           i/eye]
+          [:div.block-element
+           {:class (when (:blocked item) "selected")
+            :on-click toggle-blocking}
+           i/lock]
+          [:div.chain-element
+           {:class (when (:locked item) "selected")
+            :on-click toggle-locking}
+           i/chain]]
+         [:div.element-icon i/folder]
+         [:span (:name item "Unnamed group")]
+         [:span.toggle-content
+          {:on-click toggle-open
+           :class (when open? "inverse")}
+          i/arrow-slide]]
+        (if open?
+          [:ul
+           (for [shape (map #(get shapes-by-id %) (:items item))
+                 :let [key (str (:id shape))]]
+             (if (= (:type shape) :builtin/group)
+               (-> (layer-group shape selected)
+                   (rum/with-key key))
+               (-> (layer-element shape selected)
+                   (rum/with-key key))))])]))))
 
 (def ^:static ^:private layer-group
   (mx/component
