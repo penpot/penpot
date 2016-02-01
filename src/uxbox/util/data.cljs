@@ -1,6 +1,7 @@
 (ns uxbox.util.data
   "A collection of data transformation utils."
-  (:require [cljs.reader :as r]))
+  (:require [cljs.reader :as r]
+            [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data structure manipulation
@@ -28,6 +29,14 @@
   [data keys]
   (persistent!
    (reduce #(dissoc! %1 %2) (transient data) keys)))
+
+(defn index-of
+  "Return the first index when appears the `v` value
+  in the `coll` collection."
+  [coll v]
+  (first (keep-indexed (fn [idx x]
+                         (when (= v x) idx))
+                       coll)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numbers Parsing
@@ -58,3 +67,17 @@
      (if (or (not v) (nan? v))
        default
        v))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Other
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn classnames
+  [& params]
+  {:pre [(even? (count params))]}
+  (str/join " " (reduce (fn [acc [k v]]
+                          (if (true? v)
+                            (conj acc (name k))
+                            acc))
+                        []
+                        (partition 2 params))))
