@@ -1,18 +1,21 @@
 (ns uxbox.ui.workspace.toolboxes.layers
+  (:require-macros [uxbox.util.syntax :refer (defer)])
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cats.labs.lens :as l]
+            [goog.events :as events]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.shapes :as shapes]
             [uxbox.library :as library]
-            [uxbox.util.data :refer (read-string)]
+            [uxbox.util.data :refer (read-string classnames)]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.dom :as dom]))
+            [uxbox.ui.dom :as dom])
+  (:import goog.events.EventType))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses
@@ -88,37 +91,98 @@
     :builtin/rect i/box
     :builtin/group i/folder))
 
+
+(defn- get-hover-position
+  [event group?]
+  (let [target (.-currentTarget event)
+        brect (.getBoundingClientRect target)
+        width (.-offsetHeight target)
+        y (- (.-clientY event) (.-top brect))
+        part (/ (* 30 width) 100)]
+    (if group?
+      (cond
+        (> part y) :top
+        (< (- width part) y) :bottom
+        :else :middle)
+      (if (>= y (/ width 2))
+        :bottom
+        :top))))
+
 (defn- layer-element-render
   [own item selected]
   (let [selected? (contains? selected (:id item))
         select #(select-shape selected item %)
         toggle-visibility #(toggle-visibility selected item %)
-        toggle-blocking #(toggle-blocking item %)]
-    (html
-     [:li {:key (str (:id item))
-           :on-click select
-           :class (when selected? "selected")}
-      [:div.element-list-body
-       {:class (when selected? "selected")}
-       [:div.element-actions
-        [:div.toggle-element
-         {:class (when-not (:hidden item) "selected")
-          :on-click toggle-visibility}
-         i/eye]
-        [:div.block-element
-         {:class (when (:blocked item) "selected")
-          :on-click toggle-blocking}
-         i/lock]]
-       (if (:group item)
-         [:div.sublevel-element i/sublevel])
-       [:div.element-icon (element-icon item)]
-       [:span (:name item "Unnamed")]]])))
+        toggle-blocking #(toggle-blocking item %)
+        local (:rum/local own)
+
+        classes (classnames
+                 :selected selected?
+                 :drag-top (= :top (:over @local))
+                 :drag-bottom (= :bottom (:over @local))
+                 :drag-inside (= :middle (:over @local)))]
+    (letfn [(on-drag-start [event]
+              (let [target (.-target event)
+                    style (.-style target)
+                    dt (.-dataTransfer event)]
+                (set! (.-effectAllowed dt) "move")
+                (.setData dt "item/uuid" (pr-str (:id item)))
+                (swap! local assoc :dragging true)))
+            (on-drag-end [event]
+              (swap! local assoc :dragging false :over nil))
+            (on-drop [event]
+              (let [dt (.-dataTransfer event)
+                    id (read-string (.getData dt "item/uuid"))
+                    over (:over @local)]
+                (case (:over @local)
+                  :top (rs/emit! (dw/transfer-before id (:id item)))
+                  :bottom (rs/emit! (dw/transfer-after id (:id item)))
+                  ;; :middle (rs/emit! (dw/transfer-inside id (:id item)))
+                  )
+                (swap! local assoc :dragging false :over nil)))
+            (on-drag-over [event]
+              (dom/prevent-default event)
+              (let [dt (.-dataTransfer event)
+                    over (get-hover-position event (:group item))]
+                (set! (.-dropEffect dt) "move")
+                (swap! local assoc :over over)))
+            (on-drag-enter [event]
+              (swap! local assoc :over true))
+            (on-drag-leave [event]
+              (swap! local assoc :over false))]
+      (html
+       [:li {:key (str (:id item))
+             :on-click select
+             :on-drag-start on-drag-start
+             :on-drag-enter on-drag-enter
+             :on-drag-leave on-drag-leave
+             :on-drag-over on-drag-over
+             :on-drag-end on-drag-end
+             :on-drop on-drop
+             :data-over (str (:over @local))
+             :draggable true
+             :class (when selected? "selected")}
+        [:div.element-list-body
+         {:class classes}
+         [:div.element-actions
+          [:div.toggle-element
+           {:class (when-not (:hidden item) "selected")
+            :on-click toggle-visibility}
+           i/eye]
+          [:div.block-element
+           {:class (when (:blocked item) "selected")
+            :on-click toggle-blocking}
+           i/lock]]
+         (if (:group item)
+           [:div.sublevel-element i/sublevel])
+         [:div.element-icon (element-icon item)]
+         [:span (:name item "Unnamed")]]]))))
 
 (def ^:static ^:private layer-element
   (mx/component
    {:render layer-element-render
     :name "layer-element"
-    :mixins [mx/static]}))
+    :mixins [mx/static (mx/local)]}))
 
 (declare layer-group)
 
@@ -136,7 +200,7 @@
                       (swap! local assoc :open (not open?)))
         shapes-by-id (rum/react wb/shapes-by-id-l)]
     (html
-     [:li.group {:class (when open? "open")}
+     [:li.group {:class (when open? "open") :draggable true}
       [:div.element-list-body
        {:class (when selected? "selected")
         :on-click select}
@@ -175,6 +239,63 @@
     :name "layer-group"
     :mixins [mx/static rum/reactive (mx/local)]}))
 
+
+;; (defn layers-did-mount
+;;   [own local]
+;;   (let [rootel (mx/get-ref-dom own "rootel")
+;;         dragel (volatile! nil)]
+;;     (letfn [(on-drag-start [event]
+;;               (println "on-drag-start")
+;;               (js/console.log (.getBrowserEvent event))
+;;               (let [event (.getBrowserEvent event)
+;;                     target (.-target event)
+;;                     dt (.-dataTransfer event)]
+;;                 (vreset! dragel target)
+;;                 (set! (.-effectAllowed dt) "move")
+
+;;                 (events/listen rootel EventType.DRAGOVER on-drag-over)
+;;                 (events/listen rootel EventType.DRAGEND on-drag-end)
+
+;;                 (.setData dt "Text" (.-textContent target))
+;;                 (defer
+;;                   (let [clist (.-classList target)]
+;;                     (.add clist "ghost")))))
+
+;;             (on-drag-over [event]
+;;               (dom/prevent-default event)
+;;               (let [event (.getBrowserEvent event)
+;;                     dt (.-dataTransfer event)
+;;                     target (.-target event)]
+;;                 (set! (.-dropEffect dt) "move")
+;;                 (println "kaka" (.-nodeName target))
+;;                 (when (and target (not= target @dragel))
+;;                   (.insertBefore rootel @dragel (or (.-nextSibling target)
+;;                                                     target)))))
+;;             (on-drag-end [event]
+;;               (println "drag end")
+;;               (dom/prevent-default event)
+
+;;               (events/unlisten rootel EventType.DRAGEND on-drag-end)
+;;               (events/unlisten rootel EventType.DRAGOVER on-drag-over)
+
+;;               (let [cl (.-classList @dragel)]
+;;                 (.remove cl "ghost")
+;;                 (println "on-drag-end")))]
+;;       (assoc own ::key
+;;              (events/listen rootel EventType.DRAGSTART on-drag-start)))))
+
+
+;; (defn layers-will-unmount
+;;   [own local]
+;;   (let [key (::key own)]
+;;     (events/unlistenByKey key)
+;;     (dissoc own ::key)))
+
+;; (defn layers-transfer-state
+;;   [old-own own]
+;;   (let [key (::key old-own)]
+;;     (assoc own ::key key)))
+
 (defn layers-render
   [own]
   (let [workspace (rum/react wb/workspace-l)
@@ -184,7 +305,8 @@
         close #(rs/emit! (dw/toggle-toolbox :layers))
         ;; copy #(rs/emit! (dw/copy-selected))
         group #(rs/emit! (dw/group-selected))
-        delete #(rs/emit! (dw/delete-selected))]
+        delete #(rs/emit! (dw/delete-selected))
+        dragel (volatile! nil)]
     (html
      [:div#layers.tool-window
       [:div.tool-window-bar
@@ -192,7 +314,10 @@
        [:span "Layers"]
        [:div.tool-window-close {:on-click close} i/close]]
       [:div.tool-window-content
-       [:ul.element-list
+       [:ul.element-list {;;:onDragStart on-drag-start
+                          ;;:onDragOver on-drag-over
+                          ;;:onDragEnd on-drag-end
+                          :ref "rootel"}
         (for [shape (map #(get shapes-by-id %) (:shapes page))
               :let [key (str (:id shape))]]
           (if (= (:type shape) :builtin/group)
@@ -209,6 +334,9 @@
 (def ^:static layers-toolbox
   (mx/component
    {:render layers-render
+    ;; :did-mount layers-did-mount
+    ;; :will-unmount layers-will-unmount
+    ;; :transfer-state layers-transfer-state
     :name "layers"
     :mixins [rum/reactive]}))
 

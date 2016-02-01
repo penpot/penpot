@@ -6,3 +6,8 @@
   (let [sym (symbol (str (namespace name') "-" (name name')))]
     `(cljs.core/defonce ~sym
        (do ~@body nil))))
+
+(defmacro defer
+  [& body]
+  `(let [func# (fn [] ~@body)]
+     (js/setTimeout func# 0)))

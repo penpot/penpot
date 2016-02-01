@@ -8,7 +8,8 @@
             [uxbox.schema :as sc]
             [uxbox.time :as time]
             [uxbox.xforms :as xf]
-            [uxbox.shapes :as sh]))
+            [uxbox.shapes :as sh]
+            [uxbox.util.data :refer (index-of)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Schemas
@@ -375,6 +376,40 @@
           (rx/empty)
           (rx/from-coll
            (map unlock-shape (:items shape))))))))
+
+(defn transfer-after
+  "Event used in drag and drop for transfer shape
+  from one position to an other."
+  [sid tid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [sitem (get-in state [:shapes-by-id sid])
+            titem (get-in state [:shapes-by-id tid])
+            page (get-in state [:pages-by-id (:page titem)])
+            index (index-of (:shapes page) tid)
+            [fst snd] (split-at (inc index) (:shapes page))
+
+            fst (remove #(= % sid) fst)
+            snd (remove #(= % sid) snd)
+
+            items (concat fst [sid] snd)]
+        (assoc-in state [:pages-by-id (:page titem) :shapes] items)))))
+
+(defn transfer-before
+  [sid tid]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [sitem (get-in state [:shapes-by-id sid])
+            titem (get-in state [:shapes-by-id tid])
+            page (get-in state [:pages-by-id (:page titem)])
+            index (index-of (:shapes page) tid)
+            [fst snd] (split-at index (:shapes page))
+            fst (remove #(= % sid) fst)
+            snd (remove #(= % sid) snd)
+            items (concat fst [sid] snd)]
+        (assoc-in state [:pages-by-id (:page titem) :shapes] items)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)
