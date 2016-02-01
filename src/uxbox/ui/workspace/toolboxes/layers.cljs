@@ -135,15 +135,15 @@
                     id (read-string (.getData dt "item/uuid"))
                     over (:over @local)]
                 (case (:over @local)
-                  :top (rs/emit! (dw/transfer-before id (:id item)))
-                  :bottom (rs/emit! (dw/transfer-after id (:id item)))
+                  :top (rs/emit! (dw/transfer-shape id (:id item) :before))
+                  :bottom (rs/emit! (dw/transfer-shape id (:id item) :after))
                   ;; :middle (rs/emit! (dw/transfer-inside id (:id item)))
                   )
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
               (let [dt (.-dataTransfer event)
-                    over (get-hover-position event (:group item))]
+                    over (get-hover-position event false)]
                 (set! (.-dropEffect dt) "move")
                 (swap! local assoc :over over)))
             (on-drag-enter [event]
@@ -239,63 +239,6 @@
     :name "layer-group"
     :mixins [mx/static rum/reactive (mx/local)]}))
 
-
-;; (defn layers-did-mount
-;;   [own local]
-;;   (let [rootel (mx/get-ref-dom own "rootel")
-;;         dragel (volatile! nil)]
-;;     (letfn [(on-drag-start [event]
-;;               (println "on-drag-start")
-;;               (js/console.log (.getBrowserEvent event))
-;;               (let [event (.getBrowserEvent event)
-;;                     target (.-target event)
-;;                     dt (.-dataTransfer event)]
-;;                 (vreset! dragel target)
-;;                 (set! (.-effectAllowed dt) "move")
-
-;;                 (events/listen rootel EventType.DRAGOVER on-drag-over)
-;;                 (events/listen rootel EventType.DRAGEND on-drag-end)
-
-;;                 (.setData dt "Text" (.-textContent target))
-;;                 (defer
-;;                   (let [clist (.-classList target)]
-;;                     (.add clist "ghost")))))
-
-;;             (on-drag-over [event]
-;;               (dom/prevent-default event)
-;;               (let [event (.getBrowserEvent event)
-;;                     dt (.-dataTransfer event)
-;;                     target (.-target event)]
-;;                 (set! (.-dropEffect dt) "move")
-;;                 (println "kaka" (.-nodeName target))
-;;                 (when (and target (not= target @dragel))
-;;                   (.insertBefore rootel @dragel (or (.-nextSibling target)
-;;                                                     target)))))
-;;             (on-drag-end [event]
-;;               (println "drag end")
-;;               (dom/prevent-default event)
-
-;;               (events/unlisten rootel EventType.DRAGEND on-drag-end)
-;;               (events/unlisten rootel EventType.DRAGOVER on-drag-over)
-
-;;               (let [cl (.-classList @dragel)]
-;;                 (.remove cl "ghost")
-;;                 (println "on-drag-end")))]
-;;       (assoc own ::key
-;;              (events/listen rootel EventType.DRAGSTART on-drag-start)))))
-
-
-;; (defn layers-will-unmount
-;;   [own local]
-;;   (let [key (::key own)]
-;;     (events/unlistenByKey key)
-;;     (dissoc own ::key)))
-
-;; (defn layers-transfer-state
-;;   [old-own own]
-;;   (let [key (::key old-own)]
-;;     (assoc own ::key key)))
-
 (defn layers-render
   [own]
   (let [workspace (rum/react wb/workspace-l)
@@ -314,10 +257,7 @@
        [:span "Layers"]
        [:div.tool-window-close {:on-click close} i/close]]
       [:div.tool-window-content
-       [:ul.element-list {;;:onDragStart on-drag-start
-                          ;;:onDragOver on-drag-over
-                          ;;:onDragEnd on-drag-end
-                          :ref "rootel"}
+       [:ul.element-list {}
         (for [shape (map #(get shapes-by-id %) (:shapes page))
               :let [key (str (:id shape))]]
           (if (= (:type shape) :builtin/group)
@@ -334,9 +274,6 @@
 (def ^:static layers-toolbox
   (mx/component
    {:render layers-render
-    ;; :did-mount layers-did-mount
-    ;; :will-unmount layers-will-unmount
-    ;; :transfer-state layers-transfer-state
     :name "layers"
     :mixins [rum/reactive]}))
 

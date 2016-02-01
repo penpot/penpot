@@ -377,39 +377,67 @@
           (rx/from-coll
            (map unlock-shape (:items shape))))))))
 
-(defn transfer-after
+(defn transfer-shape
   "Event used in drag and drop for transfer shape
   from one position to an other."
-  [sid tid]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [sitem (get-in state [:shapes-by-id sid])
-            titem (get-in state [:shapes-by-id tid])
-            page (get-in state [:pages-by-id (:page titem)])
-            index (index-of (:shapes page) tid)
-            [fst snd] (split-at (inc index) (:shapes page))
+  [sid tid type]
+  (letfn [(transfer-to-group [state target])
 
-            fst (remove #(= % sid) fst)
-            snd (remove #(= % sid) snd)
+          (transfer-at [index shapes sid]
+            (let [[fst snd] (split-at index shapes)]
+              (concat fst [sid] snd)))
 
-            items (concat fst [sid] snd)]
-        (assoc-in state [:pages-by-id (:page titem) :shapes] items)))))
+          (remove-source [state {:keys [id page group] :as source}]
+            (let [shapes (if group
+                           (get-in state [:shapes-by-id group :items])
+                           (get-in state [:pages-by-id page :shapes]))
+                  shapes (remove #(= % id) shapes)]
+              (if group
+                (assoc-in state [:shapes-by-id group :items] shapes)
+                (assoc-in state [:pages-by-id page :shapes] shapes))))
 
-(defn transfer-before
-  [sid tid]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [sitem (get-in state [:shapes-by-id sid])
-            titem (get-in state [:shapes-by-id tid])
-            page (get-in state [:pages-by-id (:page titem)])
-            index (index-of (:shapes page) tid)
-            [fst snd] (split-at index (:shapes page))
-            fst (remove #(= % sid) fst)
-            snd (remove #(= % sid) snd)
-            items (concat fst [sid] snd)]
-        (assoc-in state [:pages-by-id (:page titem) :shapes] items)))))
+          (transfer-after [state {:keys [page group] :as target}]
+            (let [shapes (if group
+                           (get-in state [:shapes-by-id group :items])
+                           (get-in state [:pages-by-id page :shapes]))
+                  shapes (-> (inc (index-of shapes tid))
+                             (transfer-at shapes sid))]
+              (if group
+                (as-> state $
+                  (assoc-in $ [:shapes-by-id group :items] shapes)
+                  (update-in $ [:shapes-by-id sid] assoc :group group))
+                (as-> state $
+                  (assoc-in $ [:pages-by-id page :shapes] shapes)
+                  (update-in $ [:shapes-by-id sid] dissoc :group)))))
+
+          (transfer-before [state {:keys [page group] :as target}]
+            (let [shapes (if group
+                           (get-in state [:shapes-by-id group :items])
+                           (get-in state [:pages-by-id page :shapes]))
+                  shapes (-> (index-of shapes tid)
+                             (transfer-at shapes sid))]
+              (if group
+                (as-> state $
+                  (assoc-in $ [:shapes-by-id group :items] shapes)
+                  (update-in $ [:shapes-by-id sid] assoc :group group))
+                (as-> state $
+                  (assoc-in $ [:pages-by-id page :shapes] shapes)
+                  (update-in $ [:shapes-by-id sid] dissoc :group)))))]
+    (reify
+      rs/UpdateEvent
+      (-apply-update [_ state]
+        (let [target (get-in state [:shapes-by-id tid])
+              source (get-in state [:shapes-by-id sid])
+              state (remove-source state source)]
+          (cond
+            (and (= type :inside) (:group target))
+            (transfer-to-group state target)
+
+            (= type :before)
+            (transfer-before state target)
+
+            (= type :after)
+            (transfer-after state target)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)
