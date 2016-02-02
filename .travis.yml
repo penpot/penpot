@@ -4,6 +4,7 @@ sudo: false
 
 script:
   - ./scripts/build
+  - node --version
   - node out/tests.js
 
 jdk:

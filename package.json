@@ -14,6 +14,7 @@
     "dist": "gulp dist",
     "figwheel": "./scripts/figwheel",
     "test-watch": "./scripts/watch",
+    "test-build": "./scripts/build",
     "docker": "sudo docker run -ti -v `pwd`:/home/uxbox/uxbox  -v $HOME/.m2:/home/uxbox/.m2 -p 3449:3449 uxbox tmux"
   },
 
