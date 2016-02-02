@@ -26,7 +26,7 @@
 ;; Implementation Api
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- dispatch-by-type
+(defn dispatch-by-type
   [shape & params]
   (:type shape))
 

@@ -5,6 +5,7 @@
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
+            [uxbox.state.shapes :as stsh]
             [uxbox.schema :as sc]
             [uxbox.time :as time]
             [uxbox.xforms :as xf]
@@ -147,54 +148,11 @@
 (defn delete-shape
   "Remove the shape using its id."
   [id]
-  (letfn [(dissoc-group [state {:keys [id] :as shape}]
-            (let [state (update-in state [:shapes-by-id] dissoc id)]
-              (->> (:items shape)
-                   (map #(get-in state [:shapes-by-id %]))
-                   (reduce dissoc-from-index state))))
-
-          (dissoc-icon [state {:keys [id] :as shape}]
-            (update-in state [:shapes-by-id] dissoc id))
-
-          (dissoc-from-group [state {:keys [id group] :as shape}]
-            (if-let [group' (get-in state [:shapes-by-id group])]
-              (as-> (:items group') $
-                (into [] (remove #(= % id) $))
-                (assoc-in state [:shapes-by-id group :items] $))
-              state))
-
-          (dissoc-from-page [state {:keys [page id] :as shape}]
-            (as-> (get-in state [:pages-by-id page :shapes]) $
-              (into [] (remove #(= % id) $))
-              (assoc-in state [:pages-by-id page :shapes] $)))
-
-          (clear-empty-groups [state {:keys [group] :as :shape}]
-            (if-let [group' (get-in state [:shapes-by-id group])]
-              (if (empty? (:items group'))
-                (as-> state $
-                  (dissoc-from-page $ group')
-                  (dissoc-from-group $ group')
-                  (dissoc-from-index $ group')
-                  (clear-empty-groups $ group'))
-                state)
-              state))
-
-          (dissoc-from-index [state shape]
-            (case (:type shape)
-              :builtin/rect (dissoc-icon state shape)
-              :builtin/circle (dissoc-icon state shape)
-              :builtin/line (dissoc-icon state shape)
-              :builtin/icon (dissoc-icon state shape)
-              :builtin/group (dissoc-group state shape)))]
-    (reify
-      rs/UpdateEvent
-      (-apply-update [_ state]
-        (let [shape (get-in state [:shapes-by-id id])]
-          (as-> state $
-            (dissoc-from-page $ shape)
-            (dissoc-from-group $ shape)
-            (dissoc-from-index $ shape)
-            (clear-empty-groups $ shape)))))))
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [shape (get-in state [:shapes-by-id id])]
+        (stsh/dissoc-shape state shape)))))
 
 (defn move-shape
   "Mark a shape selected for drawing in the canvas."
@@ -377,80 +335,22 @@
           (rx/from-coll
            (map unlock-shape (:items shape))))))))
 
-;; FIXME: the impl can be maybe simplified.
-
 (defn transfer-shape
   "Event used in drag and drop for transfer shape
   from one position to an other."
   [sid tid type]
-  (letfn [(transfer-to-group [state {:keys [id] :as target}]
-            (let [shapes (get-in state [:shapes-by-id id :items])
-                  shapes (conj shapes sid)]
-              (as-> state $
-                (assoc-in $ [:shapes-by-id id :items] shapes)
-                (update-in $ [:shapes-by-id sid] assoc :group id))))
-
-          (transfer-at [index shapes sid]
-            (let [[fst snd] (split-at index shapes)]
-              (concat fst [sid] snd)))
-
-          (remove-source [state {:keys [id page group] :as source}]
-            (let [shapes (if group
-                           (get-in state [:shapes-by-id group :items])
-                           (get-in state [:pages-by-id page :shapes]))
-                  shapes (remove #(= % id) shapes)]
-              (if group
-                (assoc-in state [:shapes-by-id group :items] shapes)
-                (assoc-in state [:pages-by-id page :shapes] shapes))))
-
-          (transfer-after [state {:keys [page group] :as target}]
-            (let [shapes (if group
-                           (get-in state [:shapes-by-id group :items])
-                           (get-in state [:pages-by-id page :shapes]))
-                  shapes (-> (inc (index-of shapes tid))
-                             (transfer-at shapes sid))]
-              (if group
-                (as-> state $
-                  (assoc-in $ [:shapes-by-id group :items] shapes)
-                  (update-in $ [:shapes-by-id sid] assoc :group group))
-                (as-> state $
-                  (assoc-in $ [:pages-by-id page :shapes] shapes)
-                  (update-in $ [:shapes-by-id sid] dissoc :group)))))
-
-          (transfer-before [state {:keys [page group] :as target}]
-            (let [shapes (if group
-                           (get-in state [:shapes-by-id group :items])
-                           (get-in state [:pages-by-id page :shapes]))
-                  shapes (-> (index-of shapes tid)
-                             (transfer-at shapes sid))]
-              (if group
-                (as-> state $
-                  (assoc-in $ [:shapes-by-id group :items] shapes)
-                  (update-in $ [:shapes-by-id sid] assoc :group group))
-                (as-> state $
-                  (assoc-in $ [:pages-by-id page :shapes] shapes)
-                  (update-in $ [:shapes-by-id sid] dissoc :group)))))]
-    (reify
-      rs/UpdateEvent
-      (-apply-update [_ state]
-        (if (= tid sid)
-          state
-          (let [target (get-in state [:shapes-by-id tid])
-                source (get-in state [:shapes-by-id sid])
-                state (remove-source state source)]
-            (cond
-              (and (= type :inside)
-                   (= (:type target) :builtin/group))
-              (transfer-to-group state target)
-
-              (= type :before)
-              (transfer-before state target)
-
-              (= type :after)
-              (transfer-after state target)
-
-              :else
-              (throw (ex-info "Invalid data" {})))))))))
+  {:pre [(not (nil? tid))
+         (not (nil? sid))]}
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (if (= tid sid)
+        state
+        (case type
+          :inside (stsh/drop-inside state tid sid)
+          :before (stsh/drop-before state tid sid)
+          :after (stsh/drop-after state tid sid)
+          (throw (ex-info "Invalid data" {})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)
