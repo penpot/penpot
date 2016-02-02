@@ -1,19 +1,28 @@
 {
-  "name": "uxbox-ui",
-  "version": "0.0.0",
-  "main": "app.js",
+  "name": "uxbox",
+  "version": "0.1.0",
   "author": "Uxbox",
-  "license": "BSD",
+  "license": "SEE LICENSE IN <LICENSE>",
+
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uxbox/uxbox"
+  },
+
   "scripts": {
     "watch": "gulp",
-    "dist": "gulp dist"
+    "dist": "gulp dist",
+    "figwheel": "./scripts/figwheel",
+    "test-watch": "./scripts/watch",
+    "docker": "sudo docker run -ti -v `pwd`:/home/uxbox/uxbox  -v $HOME/.m2:/home/uxbox/.m2 -p 3449:3449 uxbox tmux"
   },
-  "dependencies": {
-    "gulp": "3.8.11",
+
+  "devDependencies": {
+    "gulp": "3.9.0",
     "gulp-clean": "0.3.1",
-    "gulp-plumber": "0.6.2",
-    "gulp-sass": "2.0.4",
-    "gulp-autoprefixer": "2.3.1",
-    "gulp-watch": "4.2.5"
+    "gulp-plumber": "1.0.1",
+    "gulp-sass": "2.1.1",
+    "gulp-autoprefixer": "3.1.0",
+    "gulp-watch": "4.3.5"
   }
 }

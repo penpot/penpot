@@ -1,6 +1,6 @@
 {
-  "name": "uxbox-ui",
-  "version": "0.0.0",
+  "name": "uxbox",
+  "version": "0.1.0",
   "dependencies": {
     "abbrev": {
       "version": "1.0.7",
@@ -1557,7 +1557,8 @@
       "dependencies": {
         "glob": {
           "version": "5.0.14",
-          "from": "glob@>=5.0.5 <6.0.0"
+          "from": "glob@5.0.14",
+          "resolved": "https://registry.npmjs.org/glob/-/glob-5.0.14.tgz"
         },
         "lodash": {
           "version": "3.10.1",
@@ -1623,7 +1624,8 @@
       "dependencies": {
         "strip-bom": {
           "version": "2.0.0",
-          "from": "strip-bom@>=2.0.0 <3.0.0"
+          "from": "strip-bom@2.0.0",
+          "resolved": "https://registry.npmjs.org/strip-bom/-/strip-bom-2.0.0.tgz"
         }
       }
     },
