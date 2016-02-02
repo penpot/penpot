@@ -8,14 +8,13 @@
 
 (let [start (System/nanoTime)]
   (b/build
-   (b/inputs "src")
-   {:main 'uxbox.core
-    :output-to "resources/public/js/main.js"
-    :output-dir "resources/public/js"
+   (b/inputs "src" "test")
+   {:main 'uxbox.test-runner
+    :output-to "out/tests.js"
+    :output-dir "out"
     :parallel-build false
     :optimizations :advanced
     :language-in  :ecmascript5
     :language-out :ecmascript5
-    :asset-path "/js"
     :verbose true})
   (println "... done. Elapsed" (/ (- (System/nanoTime) start) 1e9) "seconds"))
