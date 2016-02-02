@@ -335,7 +335,7 @@
           (rx/from-coll
            (map unlock-shape (:items shape))))))))
 
-(defn transfer-shape
+(defn drop-shape
   "Event used in drag and drop for transfer shape
   from one position to an other."
   [sid tid type]

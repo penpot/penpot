@@ -133,8 +133,8 @@
               (let [id (dnd/get-data event)
                     over (:over @local)]
                 (case (:over @local)
-                  :top (rs/emit! (dw/transfer-shape id (:id item) :before))
-                  :bottom (rs/emit! (dw/transfer-shape id (:id item) :after)))
+                  :top (rs/emit! (dw/drop-shape id (:id item) :before))
+                  :bottom (rs/emit! (dw/drop-shape id (:id item) :after)))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
@@ -210,9 +210,9 @@
               (let [id (dnd/get-data event)
                     over (:over @local)]
                 (case (:over @local)
-                  :top (rs/emit! (dw/transfer-shape id (:id item) :before))
-                  :bottom (rs/emit! (dw/transfer-shape id (:id item) :after))
-                  :middle (rs/emit! (dw/transfer-shape id (:id item) :inside)))
+                  :top (rs/emit! (dw/drop-shape id (:id item) :before))
+                  :bottom (rs/emit! (dw/drop-shape id (:id item) :after))
+                  :middle (rs/emit! (dw/drop-shape id (:id item) :inside)))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)

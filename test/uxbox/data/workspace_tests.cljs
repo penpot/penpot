@@ -4,14 +4,14 @@
             [uxbox.rstore :as rs]
             [uxbox.data.workspace :as dw]))
 
-(t/deftest transfer-shape-test
+(t/deftest drop-shape-test
   (t/testing "case 1: move shape before other shape"
     (let [initial {:pages-by-id {1 {:id 1 :shapes [1 2 3]}}
                    :shapes-by-id {1 {:id 1 :page 1}
                                   2 {:id 2 :page 1}
                                   3 {:id 3 :page 1}}}
           expected (assoc-in initial [:pages-by-id 1 :shapes] [3 1 2])
-          event (dw/transfer-shape 3 1 :before)
+          event (dw/drop-shape 3 1 :before)
           result (rs/-apply-update event initial)]
       ;; (pprint expected)
       ;; (pprint result)
@@ -24,7 +24,7 @@
                                   2 {:id 2 :page 1}
                                   3 {:id 3 :page 1}}}
           expected (assoc-in initial [:pages-by-id 1 :shapes] [1 3 2])
-          event (dw/transfer-shape 3 1 :after)
+          event (dw/drop-shape 3 1 :after)
           result (rs/-apply-update event initial)]
       (t/is (= result expected))
       (t/is (vector? (get-in result [:pages-by-id 1 :shapes])))))
@@ -37,7 +37,7 @@
                                   2 {:id 2 :page 1 :group 1}
                                   3 {:id 3 :page 1}
                                   4 {:id 4 :page 1}}}
-          event (dw/transfer-shape 3 2 :before)
+          event (dw/drop-shape 3 2 :before)
           expected (-> initial
                        (assoc-in [:pages-by-id 1 :shapes] [1 4])
                        (assoc-in [:shapes-by-id 1 :items] [3 2])
@@ -54,7 +54,7 @@
                                   2 {:id 2 :page 1 :group 1}
                                   3 {:id 3 :page 1}
                                   4 {:id 4 :page 1}}}
-          event (dw/transfer-shape 3 1 :inside)
+          event (dw/drop-shape 3 1 :inside)
           expected (-> initial
                        (assoc-in [:pages-by-id 1 :shapes] [1 4])
                        (assoc-in [:shapes-by-id 1 :items] [2 3])
@@ -73,7 +73,7 @@
                                   2 {:id 2 :page 1 :group 1}
                                   3 {:id 3 :page 1 :group 1}
                                   4 {:id 4 :page 1}}}
-          event (dw/transfer-shape 3 4 :after)
+          event (dw/drop-shape 3 4 :after)
           expected (-> initial
                        (assoc-in [:pages-by-id 1 :shapes] [1 4 3])
                        (assoc-in [:shapes-by-id 1 :items] [2])
@@ -92,7 +92,7 @@
                                      :items [4]}
                                   3 {:id 3 :page 1 :group 1}
                                   4 {:id 4 :page 1 :group 2}}}
-          event (dw/transfer-shape 2 3 :after)
+          event (dw/drop-shape 2 3 :after)
           expected (-> initial
                        (assoc-in [:pages-by-id 1 :shapes] [1])
                        (assoc-in [:shapes-by-id 1 :items] [3 2])
@@ -115,7 +115,7 @@
                                      :items [4]}
                                   3 {:id 3 :page 1}
                                   4 {:id 4 :page 1 :group 2}}}
-          event (dw/transfer-shape 2 1 :after)
+          event (dw/drop-shape 2 1 :after)
           expected (-> initial
                        (assoc-in [:pages-by-id 1 :shapes] [2 3])
                        (update-in [:shapes-by-id] dissoc 1)
