@@ -3,8 +3,8 @@ lein: lein
 sudo: false
 
 script:
-  ./scripts/build
-  node out/tests.js
+  - ./scripts/build
+  - node out/tests.js
 
 jdk:
   - oraclejdk8
