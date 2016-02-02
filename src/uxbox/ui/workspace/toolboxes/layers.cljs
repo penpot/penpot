@@ -224,11 +224,10 @@
             (on-drag-leave [event]
               (swap! local assoc :over false))]
       (html
-       [:li.group {:class (when open? "open")
-                   :key (str (:id item))
-                   :draggable true}
+       [:li.group {:class (when open? "open")}
         [:div.element-list-body
          {:class classes
+          :draggable true
           :on-drag-start on-drag-start
           :on-drag-enter on-drag-enter
           :on-drag-leave on-drag-leave
