@@ -131,8 +131,6 @@
   [{:keys [data id view-box] :as shape}]
   (let [key (str "icon-svg-" id)
         view-box (apply str (interpose " " view-box))
-        props {:view-box view-box :id key :key key}
-        attrs (merge props
-                     (extract-style-attrs shape))]
+        props {:view-box view-box :id key :key key}]
     (html
-     [:svg attrs data])))
+     [:svg props data])))
