@@ -118,6 +118,7 @@
         local (:rum/local own)
         classes (classnames
                  :selected selected?
+                 :drag-active (:dragging @local)
                  :drag-top (= :top (:over @local))
                  :drag-bottom (= :bottom (:over @local))
                  :drag-inside (= :middle (:over @local)))]
@@ -125,6 +126,7 @@
               (let [target (dom/event->target event)]
                 (dnd/set-allowed-effect! event "move")
                 (dnd/set-data! event (:id item))
+                (dnd/set-image! event target 50 10)
                 (swap! local assoc :dragging true)))
             (on-drag-end [event]
               (swap! local assoc :dragging false :over nil))
@@ -147,17 +149,22 @@
               (swap! local assoc :over false))]
       (html
        [:li {:key (str (:id item))
-             :on-click select
-             :on-drag-start on-drag-start
-             :on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over on-drag-over
-             :on-drag-end on-drag-end
-             :on-drop on-drop
-             :draggable true
              :class (when selected? "selected")}
         [:div.element-list-body
-         {:class classes}
+         {:class classes
+          :style {:background-color "gray"
+                  :opacity (if (:dragging @local)
+                             "0.5"
+                             "1")}
+          :on-click select
+          :on-drag-start on-drag-start
+          :on-drag-enter on-drag-enter
+          :on-drag-leave on-drag-leave
+          :on-drag-over on-drag-over
+          :on-drag-end on-drag-end
+          :on-drop on-drop
+          :draggable true}
+
          [:div.element-actions
           [:div.toggle-element
            {:class (when-not (:hidden item) "selected")

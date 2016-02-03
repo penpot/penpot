@@ -25,6 +25,14 @@
    (let [dt (.-dataTransfer e)]
      (.setData dt (str key) (pr-str data)))))
 
+(defn set-image!
+  ([e data]
+   (set-image! e data 0 0))
+  ([e data x y]
+   (let [dt (.-dataTransfer e)
+         st (.-style data)]
+     (.setDragImage dt data x y))))
+
 (defn get-data
   ([e]
    (get-data e "uxbox/data"))
