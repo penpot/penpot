@@ -122,7 +122,8 @@
        [:g attrs
         (for [item (->> items
                         (map #(get shapes-by-id %))
-                        (remove :hidden))]
+                        (remove :hidden)
+                        (reverse))]
           (-> (factory item)
               (rum/with-key (str (:id item)))))]))))
 

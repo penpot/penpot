@@ -163,7 +163,7 @@
       [:svg.page-layout {}
        (shapes-selection shapes-selected)
        [:g.main {}
-        (for [item (sequence xf (:shapes page))]
+        (for [item (reverse (sequence xf (:shapes page)))]
           (-> (shape item workspace-selected)
               (rum/with-key (str (:id item)))))
         (selrect)
