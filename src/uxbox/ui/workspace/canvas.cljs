@@ -70,7 +70,7 @@
                   (do
                     (dom/stop-propagation event)
                     (swap! local assoc :init-coords [x y])
-                    (if (.-ctrlKey event)
+                    (if (kbd/shift? event)
                       (rs/emit! (dw/select-shape id))
                       (rs/emit! (dw/deselect-all)
                                 (dw/select-shape id))))
