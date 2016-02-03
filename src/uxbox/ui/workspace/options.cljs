@@ -143,7 +143,7 @@
               (rs/emit! (dw/update-fill-attrs sid value))))
           (on-color-change [event]
             (let [value (dom/event->value event)]
-              (change-fill {:fill value})))
+              (change-fill {:color value})))
           (on-opacity-change [event]
             (let [value (dom/event->value event)
                   value (parse-float value 1)]
@@ -164,7 +164,7 @@
           :value (:fill shape "")
           :on-change on-color-change}]]
 
-       (recent-colors shape #(change-fill {:fill %}))
+       (recent-colors shape #(change-fill {:color %}))
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]
