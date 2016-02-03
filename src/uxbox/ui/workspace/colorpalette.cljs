@@ -12,6 +12,7 @@
             [uxbox.util.color :refer (hex->rgb)]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
+            [uxbox.ui.keyboard :as kbd]
             [uxbox.util.dom :as dom]
             [uxbox.ui.mixins :as mx]))
 
@@ -37,7 +38,9 @@
 (defn- select-color
   [color event]
   (dom/prevent-default event)
-  (rs/emit! (dw/update-selected-shapes-fill {:fill color})))
+  (if (kbd/shift? event)
+    (rs/emit! (dw/update-selected-shapes-stroke {:color color}))
+    (rs/emit! (dw/update-selected-shapes-fill {:color color}))))
 
 (defn- colorpalette-render
   [own]
@@ -76,67 +79,6 @@
         [:span.right-arrow i/arrow-slide]
         [:span.close-palette {:on-click close}
          i/close]]))))
-
-;; [:div.color-cell.current
-;;  [:span.color {:style {:background "#dddddd"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#c4c4c4"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#909090"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#4f4f4f"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#8ce2b6"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#b8de71"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#a784e0"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#e49ce2"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#d97950"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#e73232"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#ebcd2f"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#6869de"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]]
-;; [:div.color-cell
-;;  [:span.color {:style {:background "#5ad5d9"}}]
-;;  [:span.color-text "#121212"]
-;;  [:span.color-text "rgb 21,21,21"]
-;;  [:div.color-tooltip
-;;   [:div.row-flex
-;;    [:input.input-text {:type "text" :placeholder "#Hex"}]
-;;    [:input.input-text {:type "text" :placeholder "RGB"}]
-;;    ]]]
-;; [:div.color-cell.add-color
-;;  [:span.color i/close]
-;;  [:span.color-text "+ Add color"]]]
 
 (def ^:static colorpalette
   (mx/component

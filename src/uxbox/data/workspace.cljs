@@ -453,3 +453,16 @@
        (->> (get-in state [:workspace :selected])
             (map #(update-fill-attrs % opts)))))))
 
+
+(defn update-selected-shapes-stroke
+  "Update the fill related attributed on
+  selected shapes."
+  [opts]
+  (sc/validate! +shape-stroke-attrs-schema+ opts)
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (rx/from-coll
+       (->> (get-in state [:workspace :selected])
+            (map #(update-stroke-attrs % opts)))))))
+
