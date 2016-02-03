@@ -117,3 +117,13 @@
         (assoc-in $ [:shapes-by-id tid :items] (conj shapes sid))
         (update-in $ [:shapes-by-id sid] assoc :group tid))
       state)))
+
+(defn drop-shape
+  [state tid sid loc]
+  (if (= tid sid)
+    state
+    (case loc
+      :inside (drop-inside state tid sid)
+      :before (drop-before state tid sid)
+      :after (drop-after state tid sid)
+      (throw (ex-info "Invalid data" {})))))

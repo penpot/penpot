@@ -338,19 +338,13 @@
 (defn drop-shape
   "Event used in drag and drop for transfer shape
   from one position to an other."
-  [sid tid type]
+  [sid tid loc]
   {:pre [(not (nil? tid))
          (not (nil? sid))]}
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (if (= tid sid)
-        state
-        (case type
-          :inside (stsh/drop-inside state tid sid)
-          :before (stsh/drop-before state tid sid)
-          :after (stsh/drop-after state tid sid)
-          (throw (ex-info "Invalid data" {})))))))
+      (stsh/drop-shape state tid sid loc))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)
