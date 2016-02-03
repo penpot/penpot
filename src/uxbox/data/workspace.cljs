@@ -198,7 +198,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [size [width height]]
+      (let [size {:width width :height height}]
         (update-in state [:shapes-by-id sid] sh/-resize' size)))))
 
 (defn update-position

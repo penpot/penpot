@@ -116,38 +116,46 @@
 ;; Resize
 
 (defmethod -resize :builtin/line
-  [shape [x2 y2]]
+  [shape {:keys [x2 y2] :as pos}]
   (assoc shape
          :x2 x2 :y2 y2))
 
 (defmethod -resize :builtin/circle
-  [{:keys [cx cy rx ry] :as shape} [x2 y2]]
+  [{:keys [cx cy rx ry] :as shape} {:keys [x2 y2 lock] :as pos}]
   (let [x1 (- cx rx)
         y1 (- cy ry)
 
         width (- x2 x1)
-        height (- y2 y1)
+        height (if lock
+                 width
+                 (- y2 y1))
 
         rx (/ width 2)
         ry (/ height 2)
 
         cx (+ x1 (/ width 2))
         cy (+ y1 (/ height 2))]
-    (assoc shape :rx rx :ry ry :cx cx :cy cy)))
+    (if lock
+      (assoc shape :rx rx :ry ry :cx cx :cy cy)
+      (assoc shape :rx rx :ry ry :cx cx :cy cy))))
 
 (defmethod -resize :builtin/rect
-  [shape [x2 y2]]
+  [shape {:keys [x2 y2 lock] :as pos}]
   (let [{:keys [x y]} shape]
-    (assoc shape
-           :width (- x2 x)
-           :height (- y2 y))))
+    (if lock
+      (assoc shape
+             :width (- x2 x)
+             :height (- x2 x))
+      (assoc shape
+             :width (- x2 x)
+             :height (- y2 y)))))
 
 (defmethod -resize :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
 (defmethod -resize' ::rect
-  [shape [width height]]
+  [shape {:keys [width height] :as size}]
   (merge shape
          (when width {:width width})
          (when height {:height height})))

@@ -22,9 +22,9 @@
 (defn- draw-area-render
   [own]
   (let [shape (rum/react +drawing-shape+)
-        [x y] (rum/react +drawing-position+)]
+        position (rum/react +drawing-position+)]
     (when shape
-      (-> (sh/-resize shape [x y])
+      (-> (sh/-resize shape position)
           (sh/-render identity)))))
 
 (def ^:static draw-area
@@ -43,19 +43,21 @@
                   stop @wb/scroll-top
                   y (+ stop y)
                   shape (sh/-initialize shape {:x1 x :y1 y :x2 x :y2 y})]
+
               (reset! +drawing-shape+ shape)
-              (reset! +drawing-position+ [x y])
+              (reset! +drawing-position+ {:x2 x :y2 y :lock false})
 
               (as-> wb/interactions-b $
                 (rx/filter #(not= % :shape/movement) $)
                 (rx/take 1 $)
                 (rx/take-until $ wb/mouse-s)
+                (rx/with-latest-from vector wb/mouse-ctrl-s $)
                 (rx/subscribe $ on-value nil on-complete))))
 
-          (on-value [[x y :as pos]]
+          (on-value [[[x y :as pos] ctrl?]]
             (let [stop @wb/scroll-top]
               (reset! +drawing-position+
-                      [x (+ y stop)])))
+                      {:x2 x :y2 (+ y stop) :lock ctrl?})))
 
           (on-complete []
             (let [shape @+drawing-shape+
