@@ -229,7 +229,7 @@
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
                  merge
-                 {:stroke-type type}
+                 (when type {:stroke-type type})
                  (when width {:stroke-width width})
                  (when color {:stroke color})
                  (when opacity {:stroke-opacity opacity})))))
