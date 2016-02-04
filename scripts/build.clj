@@ -13,7 +13,7 @@
     :output-to "out/tests.js"
     :output-dir "out"
     :parallel-build false
-    :optimizations :advanced
+    :optimizations :whitespace
     :language-in  :ecmascript5
     :language-out :ecmascript5
     :target :nodejs
