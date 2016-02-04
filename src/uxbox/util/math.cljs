@@ -16,10 +16,20 @@
   [^number v]
   (js/Math.cos v))
 
+(defn acos
+  "Returns the arccosine of a number."
+  [^number v]
+  (js/Math.acos v))
+
 (defn tan
   "Returns the tangent of a number."
   [^number v]
   (js/Math.tan v))
+
+(defn atan2
+  "Returns the arctangent of the quotient of its arguments."
+  [^number x ^number y]
+  (js/Math.atan2 x y))
 
 (defn neg
   "Negate the number"
