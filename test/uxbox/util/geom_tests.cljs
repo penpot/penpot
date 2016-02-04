@@ -81,5 +81,23 @@
     (t/is (= 4 (gpt/quadrant p4)))))
 
 
+(t/deftest matrix-constructors-test
+  (let [m (gmt/matrix)]
+    (t/is (= @m [1 0 0 1 0 0]))
+    (t/is (gmt/matrix? m)))
+  (let [m (gmt/matrix 1 1 1 2 2 2)]
+    (t/is (= @m [1 1 1 2 2 2]))
+    (t/is (gmt/matrix? m)))
+  (let [m (gmt/matrix [1 1 1 2 2 2])]
+    (t/is (= @m [1 1 1 2 2 2]))
+    (t/is (gmt/matrix? m))))
 
+(t/deftest matrix-rotate-test
+  (let [m (-> (gmt/matrix)
+              (gmt/rotate 10))]
 
+    (t/is (= @m [0.984807753012208
+                 -0.17364817766693033
+                 0.17364817766693033
+                 0.984807753012208
+                 0 0]))))
