@@ -1,6 +1,7 @@
 (ns uxbox.test-runner
   (:require [cljs.test :as test]
-            [uxbox.data.workspace-tests]))
+            [uxbox.data.workspace-tests]
+            [uxbox.util.geom-tests]))
 
 (enable-console-print!)
 
@@ -9,6 +10,7 @@
   (test/run-tests
    (test/empty-env)
    'uxbox.data.workspace-tests
+   'uxbox.util.geom-tests
    ))
 
 (defmethod test/report [:cljs.test/default :end-run-tests]
