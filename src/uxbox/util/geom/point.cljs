@@ -1,0 +1,115 @@
+(ns uxbox.util.geom.point
+  (:require [uxbox.util.math :as mth]))
+
+(defrecord Point [x y])
+
+(defprotocol ICoerce
+  "Point coersion protocol."
+  (-point [v] "Return a pont instance."))
+
+(extend-protocol ICoerce
+  nil
+  (-point [_]
+    (Point. 0 0))
+
+  number
+  (-point [v]
+    (Point. v v))
+
+  Point
+  (-point [v] v)
+
+  cljs.core/PersistentVector
+  (-point [v]
+    (Point. (first v) (second v)))
+
+  cljs.core/IndexedSeq
+  (-point [v]
+    (Point. (first v) (second v))))
+
+(defn point?
+  "Return true if `v` is Point instance."
+  [v]
+  (instance? Point v))
+
+(defn point
+  "Create a Point instance."
+  ([] (Point. 0 0))
+  ([v] (-point v))
+  ([x y] (Point. x y)))
+
+(defn rotate
+  "Apply rotation transformation to the point."
+  [p angle]
+  {:pre [(point? p)]}
+  (let [angle (mth/radians angle)
+        sin (mth/sin angle)
+        cos (mth/cos angle)]
+    (Point.
+     (-> (- (* (:x p) cos) (* (:y p) sin))
+         (mth/precision 6))
+     (-> (+ (* (:x p) sin) (* (:y p) cos))
+         (mth/precision 6)))))
+
+(defn add
+  "Returns the addition of the supplied value to both
+  coordinates of the point as a new point."
+  [p other]
+  {:pre [(point? p)]}
+  (let [other (-point other)]
+    (Point. (+ (:x p) (:x other))
+            (+ (:y p) (:y other)))))
+
+(defn substract
+  "Returns the subtraction of the supplied value to both
+  coordinates of the point as a new point."
+  [p other]
+  {:pre [(point? p)]}
+  (let [other (-point other)]
+    (Point. (- (:x p) (:x other))
+            (- (:y p) (:y other)))))
+
+(defn distance
+  "Calculate the distance between two points."
+  [p other]
+  {:pre [(point? p)]}
+  (let [other (-point other)
+        dx (- (:x p) (:x other))
+        dy (- (:y p) (:y other))]
+    (-> (mth/sqrt (+ (mth/pow dx 2)
+                     (mth/pow dy 2)))
+        (mth/precision 6))))
+
+(defn length
+  [p]
+  {:pre [(point? p)]}
+  (mth/sqrt (+ (mth/pow (:x p) 2)
+               (mth/pow (:y p) 2))))
+
+(defn angle
+  "Returns the smaller angle between two vectors.
+  If the second vector is not provided, the angle
+  will be measured from x-axis."
+  ([p]
+   {:pre [(point? p)]}
+   (-> (mth/atan2 (:y p) (:x p))
+       (mth/degrees)))
+  ([p other]
+   {:pre [(point? p)]}
+   (let [other (-point other)
+         a (/ (+ (* (:x p) (:x other))
+                 (* (:y p) (:y other)))
+              (* (length p) (length other)))
+         a (mth/acos (if (< a -1)
+                       -1
+                       (if (> a 1) 1 a)))]
+     (-> (mth/degrees a)
+         (mth/precision 6)))))
+
+(defn quadrant
+  "Return the quadrant of the angle of the point."
+  [{:keys [x y] :as p}]
+  {:pre [(point? p)]}
+  (if (>= x 0)
+    (if (>= y 0) 1 4)
+    (if (>= y 0) 2 3)))
