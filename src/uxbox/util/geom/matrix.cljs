@@ -78,7 +78,10 @@
 
 (defn translate
   "Apply translate transformation to the matrix."
-  [m pt]
-  (assoc m
-         :tx (+ (:tx m) (* (:x pt) (:a m)) (* (:y pt) (:b m)))
-         :ty (+ (:ty m) (* (:x pt) (:c m)) (* (:y pt) (:d m)))))
+  ([m pt]
+   (let [pt (gpt/-point pt)]
+     (assoc m
+            :tx (+ (:tx m) (* (:x pt) (:a m)) (* (:y pt) (:b m)))
+            :ty (+ (:ty m) (* (:x pt) (:c m)) (* (:y pt) (:d m))))))
+  ([m x y]
+   (translate m (gpt/point x y))))
