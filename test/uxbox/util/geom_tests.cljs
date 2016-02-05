@@ -101,3 +101,14 @@
                  0.17364817766693033
                  0.984807753012208
                  0 0]))))
+
+(t/deftest matrix-scale-test
+  (let [m (-> (gmt/matrix)
+              (gmt/scale 2))]
+    (t/is (= @m [2 0 0 2 0 0]))))
+
+(t/deftest matrix-translate-test
+  (let [m (-> (gmt/matrix)
+              (gmt/translate 2 10))]
+    (t/is (= @m [1 0 0 1 2 10]))))
+
