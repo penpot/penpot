@@ -194,13 +194,14 @@
   instread final point of coordinates.
 
   WARN: only works with shapes that works
-  with height and width such are"
+  with height and width such are ::rect"
   [sid {:keys [width height] :as opts}]
   (sc/validate! +shape-size-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [size {:width width :height height}]
+      (let [shape (get-in state [:shapes-by-id sid])
+            size (merge (sh/-size shape) opts)]
         (update-in state [:shapes-by-id sid] sh/-resize' size)))))
 
 (defn update-position
@@ -210,7 +211,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid] sh/-move' [x y]))))
+      (update-in state [:shapes-by-id sid] sh/-move' opts))))
 
 (defn update-fill-attrs
   [sid {:keys [color opacity] :as opts}]

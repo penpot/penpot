@@ -51,8 +51,8 @@
 (defmethod sh/-render :builtin/icon
   [{:keys [data id] :as shape} _]
   (let [key (str id)
-        rfm (svg/calculate-transform shape)
-        attrs (merge {:id key :key key :transform rfm}
+        rfm (sh/-transformation shape)
+        attrs (merge {:id key :key key :transform (str rfm)}
                      (extract-style-attrs shape)
                      (make-debug-attrs shape))]
     (html

@@ -1,5 +1,6 @@
 (ns uxbox.shapes
-  (:require [uxbox.util.matrix :as mtx]
+  (:require [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.math :as mth]
             [uxbox.state :as st]))
 
@@ -54,6 +55,10 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+(defmulti -size
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
 (defmulti -rotate
   dispatch-by-type
   :hierarchy #'+hierarchy+)
@@ -75,6 +80,10 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+(defmulti -transformation
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -84,10 +93,12 @@
 (defmethod -initialize ::shape
   [shape {:keys [x1 y1 x2 y2]}]
   (assoc shape
-         :x x1
-         :y y1
-         :width (- x2 x1)
-         :height (- y2 y1)))
+         :x1 x1
+         :y1 y1
+         :x2 x2
+         :y2 y2))
+         ;; :width (- x2 x1)
+         ;; :height (- y2 y1)))
 
 (defmethod -initialize :builtin/group
   [shape {:keys [x1 y1 x2 y2] :as props}]
@@ -103,53 +114,34 @@
 
 (defmethod -initialize :builtin/circle
   [shape {:keys [x1 y1 x2 y2]}]
-  (let [width (- x2 x1)
-        height (- y2 y1)
+  (assoc shape
+         :cx x1
+         :cy y1
+         :rx (mth/abs (- x2 x1))
+         :ry (mth/abs (- y2 y1))))
 
-        rx (/ width 2)
-        ry (/ height 2)
-
-        cx (+ x1 (/ width 2))
-        cy (+ y1 (/ height 2))]
-    (assoc shape :rx rx :ry ry :cx cx :cy cy)))
-
-;; Resize
+;; FIXME: lock mode
 
 (defmethod -resize :builtin/line
   [shape {:keys [x y] :as pos}]
-  (assoc shape
-         :x2 x :y2 x))
+  (assoc shape :x2 x :y2 y))
 
 (defmethod -resize :builtin/circle
-  [{:keys [cx cy rx ry] :as shape} {:keys [x y lock] :as pos}]
-  (let [x1 (- cx rx)
-        y1 (- cy ry)
-        x2 x
-        y2 y
+  [shape {:keys [x y lock] :as pos}]
+  (let [cx (:cx shape)
+        cy (:cy shape)
 
-        width (- x2 x1)
-        height (if lock
-                 width
-                 (- y2 y1))
-
-        rx (/ width 2)
-        ry (/ height 2)
-
-        cx (+ x1 (/ width 2))
-        cy (+ y1 (/ height 2))]
+        rx (mth/abs (- x cx))
+        ry (mth/abs (- y cy))]
     (if lock
-      (assoc shape :rx rx :ry ry :cx cx :cy cy)
-      (assoc shape :rx rx :ry ry :cx cx :cy cy))))
+      (assoc shape :rx rx :ry rx)
+      (assoc shape :rx rx :ry ry))))
 
 (defmethod -resize :builtin/rect
   [shape {:keys [x y lock] :as pos}]
   (if lock
-    (assoc shape
-           :width (- x (:x shape))
-           :height (- x (:x shape)))
-    (assoc shape
-           :width (- x (:x shape))
-           :height (- y (:y shape)))))
+    (assoc shape :x2 x :y2 x)
+    (assoc shape :x2 x :y2 y)))
 
 (defmethod -resize :default
   [shape _]
@@ -157,11 +149,26 @@
 
 (defmethod -resize' ::rect
   [shape {:keys [width height] :as size}]
-  (merge shape
-         (when width {:width width})
-         (when height {:height height})))
+  (let [x1 (:x1 shape)
+        y1 (:y1 shape)]
+    (assoc shape
+           :x2 (+ x1 width)
+           :y2 (+ y1 height))))
+
+  ;; (merge shape
+  ;;        (when width {:width width})
+  ;;        (when height {:height height})))
 
 (defmethod -resize' :default
+  [shape _]
+  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+
+(defmethod -size ::rect
+  [{:keys [x1 y1 x2 y2] :as shape}]
+  {:width (- x2 x1)
+   :height (- y2 y1)})
+
+(defmethod -size :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
@@ -170,8 +177,10 @@
 (defmethod -move ::rect
   [shape {dx :x dy :y}]
   (assoc shape
-         :x (+ (:x shape) dx)
-         :y (+ (:y shape) dy)))
+         :x1 (+ (:x1 shape) dx)
+         :y1 (+ (:y1 shape) dy)
+         :x2 (+ (:x2 shape) dx)
+         :y2 (+ (:y2 shape) dy)))
 
 (defmethod -move :builtin/group
   [shape {dx :x dy :y}]
@@ -198,22 +207,22 @@
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
 (defmethod -move' ::rect
-  [shape [x y]]
-  (let [dx (if x (- (:x shape) x) 0)
-        dy (if y (- (:y shape) y) 0)]
-    (-move shape [dx dy])))
-
-(defmethod -move' :builtin/line
-  [shape [x y]]
+  [shape {:keys [x y] :as pos}]
   (let [dx (if x (- (:x1 shape) x) 0)
         dy (if y (- (:y1 shape) y) 0)]
-    (-move shape [dx dy])))
+    (-move shape (gpt/point dx dy))))
+
+(defmethod -move' :builtin/line
+  [shape {:keys [x y] :as pos}]
+  (let [dx (if x (- (:x1 shape) x) 0)
+        dy (if y (- (:y1 shape) y) 0)]
+    (-move shape (gpt/point dx dy))))
 
 (defmethod -move' :builtin/circle
-  [shape [x y]]
+  [shape {:keys [x y] :as pos}]
   (let [dx (if x (- (:cx shape) x) 0)
         dy (if y (- (:cy shape) y) 0)]
-    (-move shape [dx dy])))
+    (-move shape (gpt/point dx dy))))
 
 (defmethod -move' :default
   [shape _]
@@ -229,8 +238,9 @@
   [{:keys [group] :as shape}]
   (let [group (get-in @st/state [:shapes-by-id group])]
     (as-> shape $
-      (assoc $ :x (+ (:x shape) (:dx group 0)))
-      (assoc $ :y (+ (:y shape) (:dy group 0)))
+      (assoc $ :x (+ (:x1 shape) (:dx group 0)))
+      (assoc $ :y (+ (:y1 shape) (:dy group 0)))
+      (merge $ (-size $))
       (container-rect $))))
 
 (defmethod -outer-rect :builtin/line
@@ -274,6 +284,26 @@
         (container-rect $)))))
 
 (defmethod -outer-rect :default
+  [shape _]
+  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+
+(defmethod -transformation :builtin/icon
+  [{:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
+  (let [{:keys [width height]} (-size shape)
+        orig-width (nth view-box 2)
+        orig-height (nth view-box 3)
+        scale-x (/ width orig-width)
+        scale-y (/ height orig-height)
+        center-x (- width (/ width 2))
+        center-y (- height (/ height 2))]
+    (as-> (gmt/matrix) $
+      (gmt/translate $ x1 y1)
+      (gmt/translate $ center-x center-y)
+      (gmt/rotate $ rotation)
+      (gmt/translate $ (- center-x) (- center-y))
+      (gmt/scale $ scale-x scale-y))))
+
+(defmethod -transformation :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
