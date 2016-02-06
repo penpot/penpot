@@ -62,25 +62,26 @@
          y (:y center)
          cos (mth/cos angle)
          sin (mth/sin angle)
-         nsin (mth/neg sin)
-         tx (+ (- x (* x cos)) (* y sin))
-         ty (- (- y (* x sin)) (* y cos))
+         nsin (- sin)
+         tx (- x (+ (* x cos)) (* y sin))
+         ty (- y (- (* x sin)) (* y cos))
          a (+ (* cos (:a m)) (* sin (:b m)))
          b (+ (* nsin (:a m)) (* cos (:b m)))
          c (+ (* cos (:c m)) (* sin (:d m)))
          d (+ (* nsin (:c m)) (* cos (:d m)))
-         tx' (+ (:tx m) (* tx (:a m)) (* tx (:b m)))
+         tx' (+ (:tx m) (* tx (:a m)) (* ty (:b m)))
          ty' (+ (:ty m) (* tx (:c m)) (* ty (:d m)))]
-     (Matrix. a b c d tx ty))))
+     (Matrix. a b c d tx' ty'))))
 
 (defn scale
   "Apply scale transformation to the matrix."
-  [m v]
-  (assoc m
-         :a (* (:a m) v)
-         :c (* (:c m) v)
-         :b (* (:b m) v)
-         :d (* (:d m) v)))
+  ([m v] (scale m v v))
+  ([m x y]
+   (assoc m
+          :a (* (:a m) x)
+          :c (* (:c m) x)
+          :b (* (:b m) y)
+          :d (* (:d m) y))))
 
 (defn translate
   "Apply translate transformation to the matrix."
