@@ -7,6 +7,7 @@
             [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.workspace.recent-colors :refer (recent-colors)]
@@ -53,19 +54,12 @@
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- viewportcoord->clientcoord
-  [pageid viewport-x viewport-y]
-  (let [[offset-x offset-y] (get @wb/bounding-rect pageid)
-        new-x (+ viewport-x offset-x)
-        new-y (+ viewport-y offset-y)]
-    [new-x new-y]))
-
 (defn- get-position
   [{:keys [page] :as shape}]
   (let [{:keys [x y width]} (sh/-outer-rect shape)
-        vx (+ x width 50)
-        vy (- y 50)]
-    (viewportcoord->clientcoord page vx vy)))
+        bpt (get @wb/bounding-rect page)
+        vpt (gpt/point (+ x width 50) (- y 50))]
+    (gpt/add vpt bpt)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
@@ -496,16 +490,17 @@
 (defn element-opts-render
   [own shape]
   (let [local (:rum/local own)
-        shape (rum/react shape)
-        [popup-x popup-y] (get-position shape)
-        scroll (or (rum/react wb/scroll-top) 0)
         zoom 1
+        shape (rum/react shape)
+        scroll (rum/react wb/scroll)
+        pos (-> (get-position shape)
+                (gpt/subtract scroll)) ;; and multiply by zoom in future
         menus (get +menus-map+ (:type shape))
         active-menu (:menu @local (first menus))]
     (when (seq menus)
       (html
        [:div#element-options.element-options
-        {:style {:left (* popup-x zoom) :top (- (* popup-y zoom) scroll)}}
+        {:style {:left (:x pos) :top (:y pos)}}
         [:ul.element-icons
          (for [menu-id (get +menus-map+ (:type shape))
                :let [menu (get +menus-by-id+ menu-id)

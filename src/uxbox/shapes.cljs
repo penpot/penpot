@@ -116,14 +116,16 @@
 ;; Resize
 
 (defmethod -resize :builtin/line
-  [shape {:keys [x2 y2] :as pos}]
+  [shape {:keys [x y] :as pos}]
   (assoc shape
-         :x2 x2 :y2 y2))
+         :x2 x :y2 x))
 
 (defmethod -resize :builtin/circle
-  [{:keys [cx cy rx ry] :as shape} {:keys [x2 y2 lock] :as pos}]
+  [{:keys [cx cy rx ry] :as shape} {:keys [x y lock] :as pos}]
   (let [x1 (- cx rx)
         y1 (- cy ry)
+        x2 x
+        y2 y
 
         width (- x2 x1)
         height (if lock
@@ -140,15 +142,14 @@
       (assoc shape :rx rx :ry ry :cx cx :cy cy))))
 
 (defmethod -resize :builtin/rect
-  [shape {:keys [x2 y2 lock] :as pos}]
-  (let [{:keys [x y]} shape]
-    (if lock
-      (assoc shape
-             :width (- x2 x)
-             :height (- x2 x))
-      (assoc shape
-             :width (- x2 x)
-             :height (- y2 y)))))
+  [shape {:keys [x y lock] :as pos}]
+  (if lock
+    (assoc shape
+           :width (- x (:x shape))
+           :height (- x (:x shape)))
+    (assoc shape
+           :width (- x (:x shape))
+           :height (- y (:y shape)))))
 
 (defmethod -resize :default
   [shape _]
@@ -167,19 +168,19 @@
 ;; Move
 
 (defmethod -move ::rect
-  [shape [dx dy]]
+  [shape {dx :x dy :y}]
   (assoc shape
          :x (+ (:x shape) dx)
          :y (+ (:y shape) dy)))
 
 (defmethod -move :builtin/group
-  [shape [dx dy]]
+  [shape {dx :x dy :y}]
   (assoc shape
          :dx (+ (:dx shape 0) dx)
          :dy (+ (:dy shape 0) dy)))
 
 (defmethod -move :builtin/line
-  [shape [dx dy]]
+  [shape {dx :x dy :y}]
   (assoc shape
          :x1 (+ (:x1 shape) dx)
          :y1 (+ (:y1 shape) dy)
@@ -187,7 +188,7 @@
          :y2 (+ (:y2 shape) dy)))
 
 (defmethod -move :builtin/circle
-  [shape [dx dy]]
+  [shape {dx :x dy :y}]
   (assoc shape
          :cx (+ (:cx shape) dx)
          :cy (+ (:cy shape) dy)))

@@ -25,7 +25,7 @@
 
 (defn- coordenates-render
   [own]
-  (let [[x y] (rum/react wb/mouse-position)]
+  (let [{:keys [x y]} (rum/react wb/mouse-position)]
     (html
      [:div {:style {:position "absolute" :left "80px" :top "20px"}}
       [:table

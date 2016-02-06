@@ -14,6 +14,7 @@
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.mixins :as mx]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.workspace.base :as wb]
@@ -109,19 +110,19 @@
 
 (defn- canvas-did-mount
   [own]
-  (letfn [(on-mousemove [event page [offset-x offset-y]]
-            (let [x (.-clientX event)
-                  y (.-clientY event)
+  (letfn [(on-mousemove [event page offset-pt]
+            (let [wpt (gpt/point (.-clientX event) (.-clientY event))
+                  cpt (gpt/subtract wpt offset-pt)
                   event {:id (:id page)
                          :ctrl (kbd/ctrl? event)
-                         :window-coords [x y]
-                         :canvas-coords [(- x offset-x)
-                                         (- y offset-y)]}]
+                         :shift (kbd/shift? event)
+                         :window-coords wpt
+                         :canvas-coords cpt}]
               (rx/push! wb/mouse-b event)))]
     (let [[page] (:rum/props own)
           canvas (mx/get-ref-dom own (str "canvas" (:id page)))
           brect (.getBoundingClientRect canvas)
-          brect [(.-left brect) (.-top brect)]
+          brect (gpt/point (.-left brect) (.-top brect))
           key (events/listen js/document EventType.MOUSEMOVE
                              #(on-mousemove % page brect))]
       (swap! wb/bounding-rect assoc (:id page) brect)

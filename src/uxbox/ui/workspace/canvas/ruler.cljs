@@ -11,6 +11,7 @@
             [uxbox.util.math :as mth]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -18,17 +19,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- resolve-position
-  [own [x y]]
+  [own pt]
   (let [overlay (mx/get-ref-dom own "overlay")
-        brect (.getBoundingClientRect overlay)]
-    [(- x (.-left brect))
-     (- y (.-top brect))]))
+        brect (.getBoundingClientRect overlay)
+        bpt (gpt/point (.-left brect) (.-top brect))]
+    (gpt/subtract pt bpt)))
 
 (defn- get-position
   [own event]
-  (let [x (.-clientX event)
-        y (.-clientY event)]
-    (resolve-position own [x y])))
+  (->> (gpt/point (.-clientX event)
+                  (.-clientY event))
+       (resolve-position own)))
 
 (defn- on-mouse-down
   [own local event]
@@ -41,41 +42,77 @@
   (dom/stop-propagation event)
   (swap! local assoc :active false))
 
+(defn- overlay-line-render
+  [own center pt]
+  (let [distance (-> (gpt/distance pt center)
+                     (mth/precision 4))
+        angle (-> (gpt/angle pt center)
+                  (mth/precision 4))
+        {x1 :x y1 :y} center
+        {x2 :x y2 :y} pt]
+    (html
+     [:g
+      [:line {:x1 x1 :y1 y1
+              :x2 x2 :y2 y2
+              :style {:cursor "cell"}
+              :stroke-width "2"
+              :stroke "red"}]
+      [:text
+       {:transform (str "translate(" (+ x2 15) "," (- y2 10) ")")}
+       [:tspan {:x "0" :dy="1.2em"}
+        (str "distance=" distance)]
+       [:tspan {:x "0" :y "20" :dy="1.2em"}
+        (str "angle=" angle)]]])))
+
 (defn- overlay-render
   [own local]
-  (let [[x1 y1 :as p1] (:pos1 @local)
-        [x2 y2 :as p2] (:pos2 @local)
-        distance (mth/distance p1 p2)]
+  (let [p1 (:pos1 @local)
+        p2 (:pos2 @local)]
     (html
      [:svg {:on-mouse-down #(on-mouse-down own local %)
             :on-mouse-up #(on-mouse-up own local %)
             :ref "overlay"}
-      [:rect {:style {:fill "transparent" :stroke "transparent" :cursor "cell"}
+      [:rect {:style {:fill "transparent"
+                      :stroke "transparent"
+                      :cursor "cell"}
               :width wb/viewport-width
               :height wb/viewport-height}]
-      (if (and x1 x2)
-          [:g
-           [:line {:x1 x1 :y1 y1 :x2 x2 :y2 y2
-                   :style {:cursor "cell"}
-                   :stroke-width "2"
-                   :stroke "red"}]
-           [:text {:x (+ x2 15) :y y2}
-            [:tspan (str distance)]]])])))
+      (if (and p1 p2)
+        (overlay-line-render own p1 p2))])))
+
+(def ^:private ^:static +immanted-zones+
+  (let [transform #(vector (- % 7) (+ % 7) %)]
+    (concat
+     (mapv transform (range 0 181 10))
+     (mapv (comp transform -) (range 0 181 10)))))
 
 (defn- overlay-will-mount
   [own local]
-  (letfn [(on-value [[[x y :as pos] ctrl?]]
+  (letfn [(align-position [angle pos]
+            (reduce (fn [pos [a1 a2 v]]
+                      (if (< a1 angle a2)
+                        (reduced (gpt/update-angle pos v))
+                        pos))
+                    pos
+                    +immanted-zones+))
+
+          (on-value-aligned [pos2]
+            (let [center (:pos1 @local)]
+              (as-> pos2 $
+                (gpt/subtract $ center)
+                (align-position (gpt/angle $) $)
+                (gpt/add $ center)
+                (swap! local assoc :pos2 $))))
+
+          (on-value-simple [pos2]
+            (swap! local assoc :pos2 pos2))
+
+          (on-value [[pos ctrl?]]
             (if ctrl?
-              (let [[sx sy] (:pos1 @local)
-                    dx (mth/abs (- x sx))
-                    dy (mth/abs (- y sy))]
-                (cond
-                  (> dx dy) (swap! local assoc :pos2 [x sy])
-                  (> dy dx) (swap! local assoc :pos2 [sx y])
-                  :else     (swap! local assoc :pos2 pos)))
-              (swap! local assoc :pos2 pos)))]
+              (on-value-aligned pos)
+              (on-value-simple pos)))]
+
     (as-> wb/mouse-absolute-s $
-      (rx/dedupe $)
       (rx/filter #(:active @local) $)
       (rx/map #(resolve-position own %) $)
       (rx/with-latest-from vector wb/mouse-ctrl-s $)

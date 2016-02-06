@@ -6,6 +6,7 @@
             [uxbox.state :as st]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.lens :as ul]
             [goog.events :as events])
   (:import goog.events.EventType))
@@ -51,25 +52,15 @@
 ;; Scroll Stream
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private scroll-b (rx/bus))
+(defonce scroll-b (rx/bus))
 
 (defonce scroll-s
   (as-> scroll-b $
-    (rx/merge $ (rx/of {:top 0 :left 0}))
+    (rx/merge $ (rx/of (gpt/point)))
     (rx/dedupe $)))
 
-(defonce scroll-top-s
-  (->> scroll-s
-       (rx/map :top)
-       (rx/dedupe)))
-
-(defonce scroll-left-s
-  (->> scroll-s
-       (rx/map :left)
-       (rx/dedupe)))
-
-(defonce scroll-top (rx/to-atom scroll-top-s))
-(defonce scroll-left (rx/to-atom scroll-left-s))
+(defonce scroll
+  (rx/to-atom scroll-s))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
@@ -107,10 +98,7 @@
 
 (defn- coords-delta
   [[old new]]
-  (let [[oldx oldy] old
-        [newx newy] new]
-    [(- newx oldx)
-     (- newy oldy)]))
+  (gpt/subtract new old))
 
 (defonce mouse-delta-s
   (->> mouse-s
@@ -135,4 +123,3 @@
 
 (def document-start-x 50)
 (def document-start-y 50)
-

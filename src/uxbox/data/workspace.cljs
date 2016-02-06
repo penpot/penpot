@@ -10,6 +10,7 @@
             [uxbox.time :as time]
             [uxbox.xforms :as xf]
             [uxbox.shapes :as sh]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -156,7 +157,8 @@
 
 (defn move-shape
   "Mark a shape selected for drawing in the canvas."
-  [sid [dx dy :as delta]]
+  [sid delta]
+  {:pre [(gpt/point? delta)]}
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]

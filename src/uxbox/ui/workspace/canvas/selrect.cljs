@@ -11,6 +11,7 @@
             [uxbox.data.workspace :as dw]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 
 (defonce selrect-pos (atom nil))
@@ -46,10 +47,10 @@
   [data]
   (let [start (:start data)
         current (:current data )
-        start-x (min (first start) (first current))
-        start-y (min (second start) (second current))
-        current-x (max (first start) (first current))
-        current-y (max (second start) (second current))
+        start-x (min (:x start) (:x current))
+        start-y (min (:y start) (:y current))
+        current-x (max (:x start) (:x current))
+        current-y (max (:y start) (:y current))
         width (- current-x start-x)
         height (- current-y start-y)]
     {:x start-x
@@ -58,9 +59,8 @@
      :height (- current-y start-y)}))
 
 (define-once :selrect-subscriptions
-  (letfn [(on-value [[x y :as pos]]
-            (let [scroll (or @wb/scroll-top 0)
-                  pos [x (+ y scroll)]]
+  (letfn [(on-value [pos]
+            (let [pos (gpt/subtract pos @wb/scroll)]
               (if (nil? @selrect-pos)
                 (reset! selrect-pos {:start pos :current pos})
                 (swap! selrect-pos assoc :current pos))))
