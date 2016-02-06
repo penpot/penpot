@@ -1,5 +1,6 @@
 (ns uxbox.util.geom.matrix
-  (:require [uxbox.util.math :as mth]
+  (:require [cuerdas.core :as str]
+            [uxbox.util.math :as mth]
             [uxbox.util.geom.point :as gpt]))
 
 (defrecord Matrix [a b c d tx ty])
@@ -11,7 +12,12 @@
 (extend-type Matrix
   cljs.core/IDeref
   (-deref [v]
-    (mapv #(get v %) [:a :b :c :d :tx :ty])))
+    (mapv #(get v %) [:a :c :b :d :tx :ty]))
+
+  Object
+  (toString [v]
+    (->> (str/join "," @v)
+         (str/format "matrix(%s)"))))
 
 (extend-protocol ICoerce
   nil
