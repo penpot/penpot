@@ -65,7 +65,7 @@
     (t/is (= angle 90)))
   (let [p1 (gpt/point 0 10)
         p2 (gpt/point 10 10)
-        angle (gpt/angle p1 p2)]
+        angle (gpt/angle-with-other p1 p2)]
     (t/is (number? angle))
     (t/is (= angle 45))))
 

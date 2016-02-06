@@ -60,7 +60,7 @@
     (Point. (+ (:x p) (:x other))
             (+ (:y p) (:y other)))))
 
-(defn substract
+(defn subtract
   "Returns the subtraction of the supplied value to both
   coordinates of the point as a new point."
   [p other]
@@ -94,17 +94,32 @@
    {:pre [(point? p)]}
    (-> (mth/atan2 (:y p) (:x p))
        (mth/degrees)))
-  ([p other]
-   {:pre [(point? p)]}
-   (let [other (-point other)
-         a (/ (+ (* (:x p) (:x other))
-                 (* (:y p) (:y other)))
-              (* (length p) (length other)))
-         a (mth/acos (if (< a -1)
-                       -1
-                       (if (> a 1) 1 a)))]
-     (-> (mth/degrees a)
-         (mth/precision 6)))))
+  ([p center]
+   (let [center (-point center)]
+     (angle (subtract p center)))))
+
+(defn angle-with-other
+  "Consider point as vector and calculate
+  the angle between two vectors."
+  [p other]
+  {:pre [(point? p)]}
+  (let [other (-point other)
+        a (/ (+ (* (:x p) (:x other))
+                (* (:y p) (:y other)))
+             (* (length p) (length other)))
+        a (mth/acos (if (< a -1)
+                      -1
+                      (if (> a 1) 1 a)))]
+    (-> (mth/degrees a)
+        (mth/precision 6))))
+
+(defn update-angle
+  "Update the angle of the point."
+  [p angle]
+  (let [len (length p)
+        angle (mth/radians angle)]
+    (Point. (* (mth/cos angle) len)
+            (* (mth/sin angle) len))))
 
 (defn quadrant
   "Return the quadrant of the angle of the point."
