@@ -92,3 +92,27 @@
             :ty (+ (:ty m) (* (:x pt) (:c m)) (* (:y pt) (:d m))))))
   ([m x y]
    (translate m (gpt/point x y))))
+
+(defn append
+  ([m om]
+   (let [a1 (:a m)
+         b1 (:b m)
+         c1 (:c m)
+         d1 (:d m)
+         a2 (:a om)
+         b2 (:b om)
+         c2 (:c om)
+         d2 (:d om)
+         tx1 (:tx m)
+         ty1 (:ty m)
+         tx2 (:tx om)
+         ty2 (:ty om)]
+     (Matrix.
+      (+ (* a2 a1) (* c2 b1))
+      (+ (* b2 a1) (* d2 b1))
+      (+ (* a2 c1) (* c2 d1))
+      (+ (* b2 c1) (* d2 d1))
+      (+ tx1 (* tx2 a1) (* ty2 b1))
+      (+ ty1 (* tx2 c1) (* ty2 d1)))))
+  ([m om & others]
+   (reduce append (append m om) others)))
