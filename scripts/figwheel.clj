@@ -16,6 +16,7 @@
                 :asset-path "js"
                 :parallel-build false
                 :optimizations :none
+                :warnings {:ns-var-clash false}
                 :pretty-print true
                 :language-in  :ecmascript5
                 :language-out :ecmascript5
