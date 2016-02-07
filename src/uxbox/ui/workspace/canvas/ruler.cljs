@@ -83,8 +83,8 @@
 (def ^:private ^:static +immanted-zones+
   (let [transform #(vector (- % 7) (+ % 7) %)]
     (concat
-     (mapv transform (range 0 181 10))
-     (mapv (comp transform -) (range 0 181 10)))))
+     (mapv transform (range 0 181 15))
+     (mapv (comp transform -) (range 0 181 15)))))
 
 (defn- overlay-will-mount
   [own local]
