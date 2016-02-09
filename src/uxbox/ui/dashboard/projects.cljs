@@ -3,6 +3,7 @@
             [rum.core :as rum]
             [cats.labs.lens :as l]
             [cuerdas.core :as str]
+            [uxbox.locales :as t :refer (tr)]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
@@ -149,9 +150,9 @@
 ;; Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (def ^:static menu-l
-;;   (as-> (l/select-keys [:projects]) $
-;;     (l/focus-atom $ s/state)))
+(def ^:static menu-l
+  (as-> (l/select-keys [:projects-by-id]) $
+    (l/focus-atom $ s/state)))
 
 (rum/defc project-sort-selector < rum/reactive
   [sort-order]
@@ -166,12 +167,12 @@
 
 (defn menu-render
   []
-  (let [state {:projects []} #_(rum/react menu-l)
-        pcount (count (:projects state))]
+  (let [projects (rum/react menu-l)
+        pcount (count (:projects-by-id projects))] ;; FIXME: redundant project-by-id key
     (html
      [:section#dashboard-bar.dashboard-bar
       [:div.dashboard-info
-       [:span.dashboard-projects pcount " projects"]
+       [:span.dashboard-projects (tr "ds.num-projects" (t/c pcount))]
        [:span "Sort by"]]
       [:div.dashboard-search
        i/search]])))

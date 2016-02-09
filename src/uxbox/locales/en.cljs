@@ -2,6 +2,10 @@
 
 (defonce +locales+
   {"ds.projects" "PROJECTS"
+   "ds.num-projects" ["No projects"
+                      "%s project"
+                      "%s projects"]
+
    "ds.elements" "ELEMENTS"
    "ds.icons" "ICONS"
    "ds.colors" "COLORS"
