@@ -57,6 +57,13 @@
        (sort-by :created)
        (into [])))
 
+(defn sort-projects-by
+  [ordering projs]
+  (case ordering
+    :name (sort-by :name projs)
+    :created (reverse (sort-by :created projs))
+    projs))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

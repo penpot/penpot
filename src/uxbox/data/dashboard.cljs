@@ -62,6 +62,17 @@
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.d.d/initialize>"))))
 
+(defn set-project-ordering
+  [order]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:dashboard :project-ordering] order))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.d.d/set-project-ordering>"))))
+
 (defn set-collection-type
   [type]
   {:pre [(contains? #{:builtin :own} type)]}
