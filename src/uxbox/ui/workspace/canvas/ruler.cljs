@@ -55,14 +55,14 @@
       [:line {:x1 x1 :y1 y1
               :x2 x2 :y2 y2
               :style {:cursor "cell"}
-              :stroke-width "2"
+              :stroke-width "1"
               :stroke "red"}]
       [:text
        {:transform (str "translate(" (+ x2 15) "," (- y2 10) ")")}
        [:tspan {:x "0" :dy="1.2em"}
-        (str "distance=" distance)]
+        (str distance " px")]
        [:tspan {:x "0" :y "20" :dy="1.2em"}
-        (str "angle=" angle)]]])))
+        (str angle "°")]]])))
 
 (defn- overlay-render
   [own local]
