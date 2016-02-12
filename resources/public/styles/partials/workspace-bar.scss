@@ -9,7 +9,7 @@
 
   .main-icon {
     align-items: center;
-    background-color: $color-gray-darker;
+    background-color: $color-gray-dark;
     cursor: pointer;
     display: flex;
     height: 100%;
@@ -23,7 +23,7 @@
       height: 35px;
 
       svg {
-        fill: $color-gray;
+        fill: darken($color-gray-darker, 7%);
         height: 35px;
         width: 35px;
 
