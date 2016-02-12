@@ -37,6 +37,15 @@
       [:div.workspace-options
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
+         i/shapes]
+        [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
+         i/puzzle]
+        [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
+         i/icon-set]
+        [:li.tooltip.tooltip-bottom {:alt "Redo (Ctrl + Shift + Z)"}
+         i/layers]]
+       [:ul.options-btn
+        [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
          i/undo]
         [:li.tooltip.tooltip-bottom {:alt "Redo (Ctrl + Shift + Z)"}
          i/redo]]
