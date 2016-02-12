@@ -142,7 +142,7 @@
 (defn- ruler-render
   [own]
   (let [flags (rum/react wb/flags-l)]
-    (when (contains? flags :workspace/ruler)
+    (when (contains? flags :ruler)
       (overlay))))
 
 (def ^:static ruler

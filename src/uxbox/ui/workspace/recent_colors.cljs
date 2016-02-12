@@ -16,7 +16,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private ^:static toggle-colorpalette
-  #(rs/emit! (dw/toggle-tool :workspace/colorpalette)))
+  #(rs/emit! (dw/toggle-flag :colorpalette)))
 
 (defn- count-color
   [state shape prop]

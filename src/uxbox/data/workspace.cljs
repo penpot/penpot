@@ -64,14 +64,13 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [s {:project projectid
-               :toolboxes #{:layers}
-               :flags #{}
+               :flags #{:layers}
                :drawing nil
                :selected #{}
                :page pageid}]
         (assoc state :workspace s)))))
 
-(defn toggle-tool
+(defn toggle-flag
   "Toggle the enabled flag of the specified tool."
   [key]
   (reify
@@ -81,18 +80,6 @@
         (if (contains? flags key)
           (assoc-in state [:workspace :flags] (disj flags key))
           (assoc-in state [:workspace :flags] (conj flags key)))))))
-
-(defn toggle-toolbox
-  "Toggle the visibility flag of the specified toolbox."
-  [toolname]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [toolboxes (get-in state [:workspace :toolboxes])]
-        (assoc-in state [:workspace :toolboxes]
-                  (if (contains? toolboxes toolname)
-                    (disj toolboxes toolname)
-                    (conj toolboxes toolname)))))))
 
 (defn select-for-drawing
   "Mark a shape selected for drawing in the canvas."

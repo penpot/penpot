@@ -59,7 +59,7 @@
         drawing (rum/react drawing-shape)
         collid (:collid @local)
         icons (get-in library/+icon-collections-by-id+ [collid :icons])
-        on-close #(rs/emit! (dw/toggle-toolbox :icons))
+        on-close #(rs/emit! (dw/toggle-flag :icons))
         on-select #(select-icon %)
         on-change #(change-icon-coll local %)]
     (html

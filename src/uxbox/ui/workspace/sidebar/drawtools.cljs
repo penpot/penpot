@@ -67,7 +67,7 @@
   [open-toolboxes]
   (let [workspace (rum/react wb/workspace-l)
         drawing (rum/react drawing-shape)
-        close #(rs/emit! (dw/toggle-toolbox :draw))
+        close #(rs/emit! (dw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))]
     (html

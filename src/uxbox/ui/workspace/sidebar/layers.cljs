@@ -283,7 +283,7 @@
         selected (:selected workspace)
         shapes-by-id (rum/react wb/shapes-by-id-l)
         page (rum/react (focus-page (:page workspace)))
-        close #(rs/emit! (dw/toggle-toolbox :layers))
+        close #(rs/emit! (dw/toggle-flag :layers))
         ;; copy #(rs/emit! (dw/copy-selected))
         group #(rs/emit! (dw/group-selected))
         delete #(rs/emit! (dw/delete-selected))

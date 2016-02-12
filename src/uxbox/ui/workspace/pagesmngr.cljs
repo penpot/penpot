@@ -119,7 +119,7 @@
         project (rum/react wb/project-l)]
     (html
      [:div#project-bar.project-bar
-      (when-not (contains? flags :workspace/pagesmngr)
+      (when-not (contains? flags :pagesmngr)
         {:class "toggle"})
       (if (:edit @local)
         (page-form local)

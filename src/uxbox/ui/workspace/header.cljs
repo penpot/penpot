@@ -25,24 +25,31 @@
   [own]
   (let [page (rum/react wb/page-l)
         flags (rum/react wb/flags-l)
-        toggle #(rs/emit! (dw/toggle-tool %))]
+        toggle #(rs/emit! (dw/toggle-flag %))]
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon
        (nav/link (r/route-for :dashboard/projects) i/logo-icon)]
       [:div.project-tree-btn
-       {:on-click (partial toggle :workspace/pagesmngr)}
+       {:on-click (partial toggle :pagesmngr)}
        i/project-tree
        [:span (:name page)]]
       [:div.workspace-options
        [:ul.options-btn
-        [:li.tooltip.tooltip-bottom {:alt "Shapes (Ctrl + Shift + S)"}
+        [:li.tooltip.tooltip-bottom
+         {:alt "Shapes (Ctrl + Shift + F)"
+          :class (when (contains? flags :drawtools) "current")
+          :on-click (partial toggle :drawtools)}
          i/shapes]
-        [:li.tooltip.tooltip-bottom {:alt "Elements (Ctrl + Shift + E)"}
-         i/puzzle]
-        [:li.tooltip.tooltip-bottom {:alt "Icons (Ctrl + Shift + I)"}
+        [:li.tooltip.tooltip-bottom
+         {:alt "Icons (Ctrl + Shift + I)"
+          :class (when (contains? flags :icons) "current")
+          :on-click (partial toggle :icons)}
          i/icon-set]
-        [:li.tooltip.tooltip-bottom {:alt "Layers (Ctrl + Shift + L)"}
+        [:li.tooltip.tooltip-bottom
+         {:alt "Elements (Ctrl + Shift + L)"
+          :class (when (contains? flags :layers) "current")
+          :on-click (partial toggle :layers)}
          i/layers]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
@@ -63,13 +70,13 @@
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom
          {:alt "Ruler (Ctrl + R)"
-          :class (when (contains? flags :workspace/ruler) "selected")
-          :on-click (partial toggle :workspace/ruler)}
+          :class (when (contains? flags :ruler) "selected")
+          :on-click (partial toggle :ruler)}
          i/ruler]
         [:li.tooltip.tooltip-bottom
          {:alt "Grid (Ctrl + G)"
-          :class (when (contains? flags :workspace/grid) "selected")
-          :on-click (partial toggle :workspace/grid)}
+          :class (when (contains? flags :grid) "selected")
+          :on-click (partial toggle :grid)}
          i/grid]
         [:li.tooltip.tooltip-bottom
          {:alt "Align (Ctrl + A)"}

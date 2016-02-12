@@ -52,8 +52,8 @@
                      (get collections-by-id collid)
                      (first collections))
         select-collection #(select-collection local %)
-        close #(rs/emit! (dw/toggle-tool :workspace/colorpalette))]
-    (when (contains? flags :workspace/colorpalette)
+        close #(rs/emit! (dw/toggle-flag :colorpalette))]
+    (when (contains? flags :colorpalette)
       (html
        [:div.color-palette
         [:div.color-palette-actions

@@ -57,7 +57,7 @@
           step-size (/ 10 zoom)
           flags (rum/react wb/flags-l)
           page (rum/react wb/page-l)
-          enabled? (contains? flags :workspace/grid)
+          enabled? (contains? flags :grid)
           vertical-ticks (range (- 0 wb/document-start-y)
                                 (- (:width page) wb/document-start-y)
                                 step-size)

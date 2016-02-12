@@ -17,16 +17,14 @@
 
 (defn right-sidebar-render
   [own]
-  (let [toolboxes (rum/react wb/toolboxes-l)]
+  (let [flags (rum/react wb/flags-l)]
     (html
      [:aside#settings-bar.settings-bar
       [:div.settings-bar-inside
-       (when (contains? toolboxes :draw)
+       (when (contains? flags :drawtools)
          (draw-toolbox))
-       (when (contains? toolboxes :icons)
-         (icons-toolbox))
-       (when (contains? toolboxes :layers)
-         (layers-toolbox))]])))
+       (when (contains? flags :icons)
+         (icons-toolbox))]])))
 
 (def right-sidebar
   (mx/component
@@ -40,15 +38,11 @@
 
 (defn left-sidebar-render
   [own]
-  (let [toolboxes (rum/react wb/toolboxes-l)]
+  (let [flags (rum/react wb/flags-l)]
     (html
      [:aside#settings-bar.settings-bar.settings-bar-left
       [:div.settings-bar-inside
-       (when (contains? toolboxes :draw)
-         (draw-toolbox))
-       (when (contains? toolboxes :icons)
-         (icons-toolbox))
-       (when (contains? toolboxes :layers)
+       (when (contains? flags :layers)
          (layers-toolbox))]])))
 
 (def left-sidebar
