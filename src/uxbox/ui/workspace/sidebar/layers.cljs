@@ -1,4 +1,4 @@
-(ns uxbox.ui.workspace.toolboxes.layers
+(ns uxbox.ui.workspace.sidebar.layers
   (:require-macros [uxbox.util.syntax :refer (defer)])
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]

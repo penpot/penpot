@@ -15,7 +15,7 @@
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (h-rule v-rule)]
-            [uxbox.ui.workspace.sidebar :refer (aside)]
+            [uxbox.ui.workspace.sidebar :refer (left-sidebar right-sidebar)]
             [uxbox.ui.workspace.colorpalette :refer (colorpalette)]
             [uxbox.ui.workspace.canvas :refer (viewport)]))
 
@@ -58,16 +58,18 @@
      [:div
       (header)
       [:main.main-content
+       (when-not no-toolbars?
+         (left-sidebar))
        [:section.workspace-content
         ;; Lateral Menu (left side)
-        (lateralmenu)
-
+        #_(lateralmenu)
         ;; Pages management lightbox
-        (pagesmngr)
+        ;; (pagesmngr)
 
         ;; Rules
         (h-rule)
         (v-rule)
+
 
         ;; Canvas
         [:section.workspace-canvas {:class (when no-toolbars? "no-tool-bar")
@@ -84,7 +86,8 @@
 
        ;; Aside
        (when-not no-toolbars?
-         (aside))]])))
+         (right-sidebar))
+       ]])))
 
 (defn- workspace-will-mount
   [own]

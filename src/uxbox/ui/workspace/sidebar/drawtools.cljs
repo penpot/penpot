@@ -1,4 +1,4 @@
-(ns uxbox.ui.workspace.toolboxes.drawtools
+(ns uxbox.ui.workspace.sidebar.drawtools
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cats.labs.lens :as l]

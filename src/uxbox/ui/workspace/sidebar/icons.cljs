@@ -1,4 +1,4 @@
-(ns uxbox.ui.workspace.toolboxes.icons
+(ns uxbox.ui.workspace.sidebar.icons
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cats.labs.lens :as l]

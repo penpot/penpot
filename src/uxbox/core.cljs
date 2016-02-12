@@ -34,4 +34,4 @@
   ;; During development, you can comment the
   ;; following call for disable temprary the
   ;; local persistence.
-  (main))
+  #_(main))
