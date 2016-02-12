@@ -36,13 +36,13 @@
        [:span (:name page)]]
       [:div.workspace-options
        [:ul.options-btn
-        [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
+        [:li.tooltip.tooltip-bottom {:alt "Shapes (Ctrl + Shift + S)"}
          i/shapes]
-        [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
+        [:li.tooltip.tooltip-bottom {:alt "Elements (Ctrl + Shift + E)"}
          i/puzzle]
-        [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
+        [:li.tooltip.tooltip-bottom {:alt "Icons (Ctrl + Shift + I)"}
          i/icon-set]
-        [:li.tooltip.tooltip-bottom {:alt "Redo (Ctrl + Shift + Z)"}
+        [:li.tooltip.tooltip-bottom {:alt "Layers (Ctrl + Shift + L)"}
          i/layers]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
