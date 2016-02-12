@@ -6,12 +6,12 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.data.workspace :as dw]
+            [uxbox.util.data :refer (classnames)]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.options :refer (element-opts)]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
-            [uxbox.ui.workspace.lateralmenu :refer (lateralmenu)]
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (h-rule v-rule)]
@@ -52,28 +52,32 @@
 
 (defn- workspace-render
   [own projectid]
-  (let [workspace (rum/react wb/workspace-l)
-        no-toolbars? (empty? (:toolboxes workspace))]
+  (let [{:keys [flags] :as workspace} (rum/react wb/workspace-l)
+        left-sidebar? (not (empty? (keep flags [:layers])))
+        right-sidebar? (not (empty? (keep flags [:icons :drawtools])))
+        classes (classnames
+                 :no-tool-bar-right (not right-sidebar?)
+                 :no-tool-bar-left (not left-sidebar?))]
+
+    (println left-sidebar? right-sidebar? classes)
+
     (html
      [:div
       (header)
       [:main.main-content
-       (when-not no-toolbars?
+       (when left-sidebar?
          (left-sidebar))
+
        [:section.workspace-content
-        ;; Lateral Menu (left side)
-        #_(lateralmenu)
         ;; Pages management lightbox
         ;; (pagesmngr)
 
         ;; Rules
-        (h-rule)
-        (v-rule)
-
+        (h-rule left-sidebar?)
+        (v-rule left-sidebar?)
 
         ;; Canvas
-        [:section.workspace-canvas {:class (when no-toolbars? "no-tool-bar")
-                                    :on-scroll on-scroll}
+        [:section.workspace-canvas {:class classes :on-scroll on-scroll}
          (when (and (:selected workspace)
                     (= (count (:selected workspace)) 1))
            (let [shape-id (first (:selected workspace))
@@ -85,7 +89,7 @@
        (colorpalette)
 
        ;; Aside
-       (when-not no-toolbars?
+       (when right-sidebar?
          (right-sidebar))
        ]])))
 
