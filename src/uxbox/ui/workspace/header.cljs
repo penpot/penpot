@@ -38,17 +38,17 @@
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom
          {:alt "Shapes (Ctrl + Shift + F)"
-          :class (when (contains? flags :drawtools) "current")
+          :class (when (contains? flags :drawtools) "selected")
           :on-click (partial toggle :drawtools)}
          i/shapes]
         [:li.tooltip.tooltip-bottom
          {:alt "Icons (Ctrl + Shift + I)"
-          :class (when (contains? flags :icons) "current")
+          :class (when (contains? flags :icons) "selected")
           :on-click (partial toggle :icons)}
          i/icon-set]
         [:li.tooltip.tooltip-bottom
          {:alt "Elements (Ctrl + Shift + L)"
-          :class (when (contains? flags :layers) "current")
+          :class (when (contains? flags :layers) "selected")
           :on-click (partial toggle :layers)}
          i/layers]]
        [:ul.options-btn
