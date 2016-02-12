@@ -5,6 +5,7 @@
   overflow: scroll;
   width: 100%;
   transition: none;
+  position: relative;
 
   &.no-tool-bar-right {
     margin-right: 0;

@@ -72,12 +72,12 @@
         ;; Pages management lightbox
         ;; (pagesmngr)
 
-        ;; Rules
-        (h-rule left-sidebar?)
-        (v-rule left-sidebar?)
-
         ;; Canvas
         [:section.workspace-canvas {:class classes :on-scroll on-scroll}
+         ;; Rules
+         (h-rule left-sidebar?)
+         (v-rule left-sidebar?)
+
          (when (and (:selected workspace)
                     (= (count (:selected workspace)) 1))
            (let [shape-id (first (:selected workspace))

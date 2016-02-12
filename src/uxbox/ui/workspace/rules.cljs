@@ -95,13 +95,11 @@
   [own sidebar?]
   (let [width wb/viewport-width
         ticks (concat (range (- step-padding start-width) 0 step-size)
-                      (range 0 (- width start-width step-padding) step-size))
-        padding (if sidebar? 250 0)]
+                      (range 0 (- width start-width step-padding) step-size))]
     (html
      [:svg.horizontal-rule
       {:width 3000
-       :height 3000
-       :style {:left (str padding "px")}}
+       :height 3000}
       [:g
        [:rect {:x step-padding :y 0 :width width :height step-padding :fill "#bab7b7"}]
        [:rect {:x 0 :y 0 :width step-padding :height step-padding :fill "#bab7b7"}]]
@@ -120,15 +118,11 @@
   [own sidebar?]
   (let [height wb/viewport-height
         ticks (concat (range (- step-padding start-height) 0 step-size)
-                      (range 0 (- height start-height step-padding) step-size))
-        padding (if sidebar?
-                  250
-                  0)]
+                      (range 0 (- height start-height step-padding) step-size))]
     (html
      [:svg.vertical-rule
       {:width 3000
-       :height 3000
-       :style {:left (str padding "px")}}
+       :height 3000}
       [:g
        [:rect {:x 0 :y step-padding :height height :width step-padding :fill "#bab7b7"}]
        (for [tick ticks
