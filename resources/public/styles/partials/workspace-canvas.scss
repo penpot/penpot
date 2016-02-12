@@ -1,13 +1,17 @@
 .workspace-canvas {
   box-sizing: border-box;
   height: calc(100vh - 50px);
-  margin: 0 250px 0 50px;
+  margin: 0 250px 0 250px;
   overflow: scroll;
   width: 100%;
   transition: none;
 
-  &.no-tool-bar {
+  &.no-tool-bar-right {
     margin-right: 0;
+  }
+
+  &.no-tool-bar-left {
+    margin-left: 0;
   }
 
   .viewport {

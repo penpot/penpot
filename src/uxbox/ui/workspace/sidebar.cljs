@@ -42,7 +42,7 @@
   [own]
   (let [toolboxes (rum/react wb/toolboxes-l)]
     (html
-     [:aside#settings-bar.settings-bar
+     [:aside#settings-bar.settings-bar.settings-bar-left
       [:div.settings-bar-inside
        (when (contains? toolboxes :draw)
          (draw-toolbox))
@@ -56,4 +56,3 @@
    {:render left-sidebar-render
     :name "aside"
     :mixins [rum/reactive mx/static]}))
-

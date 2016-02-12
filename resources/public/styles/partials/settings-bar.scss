@@ -5,6 +5,11 @@
   position: fixed;
   right: 0;
   width: 250px;
+  z-index: 10;
+
+  &.settings-bar-left {
+    left: 0
+  }
 
   .settings-bar-inside {
     align-items: center;
