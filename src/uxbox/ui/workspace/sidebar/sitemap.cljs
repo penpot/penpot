@@ -26,7 +26,7 @@
     (html
      [:div.sitemap.tool-window
       [:div.tool-window-bar
-       [:div.tool-window-icon i/window]
+       [:div.tool-window-icon i/project-tree]
        [:span (tr "ds.sitemap")]
        [:div.tool-window-close {:on-click close} i/close]]
       [:div.tool-window-content {:style {:color "white"}}
@@ -42,4 +42,3 @@
    {:render sitemap-toolbox-render
     :name "sitemap-toolbox"
     :mixins [mx/static rum/reactive]}))
-

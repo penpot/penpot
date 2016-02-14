@@ -65,7 +65,7 @@
     (html
      [:div#form-figures.tool-window
       [:div.tool-window-bar
-       [:div.tool-window-icon i/window]
+       [:div.tool-window-icon i/icon-set]
        [:span "Icons"]
        [:div.tool-window-close {:on-click on-close} i/close]]
       [:div.tool-window-content
