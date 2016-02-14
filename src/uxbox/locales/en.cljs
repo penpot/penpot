@@ -13,6 +13,7 @@
 
    "ds.recent-colors" "Recent colors"
    "ds.tools" "Tools"
+   "ds.sitemap" "Sitemap"
 
    "ds.help.rect" "Box (Ctrl + B)"
    "ds.help.circle" "Circle (Ctrl + E)"

@@ -50,6 +50,11 @@
          {:alt "Elements (Ctrl + Shift + L)"
           :class (when (contains? flags :layers) "selected")
           :on-click (partial toggle :layers)}
+         i/layers]
+        [:li.tooltip.tooltip-bottom
+         {:alt "Sitemap (Ctrl + Shift + S)"
+          :class (when (contains? flags :sitemap) "selected")
+          :on-click (partial toggle :sitemap)}
          i/layers]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}

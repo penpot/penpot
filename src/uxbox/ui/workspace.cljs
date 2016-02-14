@@ -53,7 +53,7 @@
 (defn- workspace-render
   [own projectid]
   (let [{:keys [flags] :as workspace} (rum/react wb/workspace-l)
-        left-sidebar? (not (empty? (keep flags [:layers])))
+        left-sidebar? (not (empty? (keep flags [:layers :sitemap])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools])))
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)

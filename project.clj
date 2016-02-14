@@ -10,12 +10,11 @@
 
                  ;; runtime
                  [rum "0.6.0" :exclusions [sablono]]
-                 [sablono "0.5.3"]
+                 [sablono "0.6.0"]
                  [cljsjs/react "0.14.3-0"]
                  [cljsjs/react-dom "0.14.3-1"]
-                 [cljsjs/react-dom-server "0.14.3-0"]
                  [cljsjs/moment "2.10.6-1"]
-                 [funcool/promesa "0.7.0"]
+                 [funcool/promesa "0.8.1"]
                  [funcool/beicon "0.6.1"]
                  [funcool/cuerdas "0.7.1"]
                  [funcool/hodgepodge "0.1.4"]
