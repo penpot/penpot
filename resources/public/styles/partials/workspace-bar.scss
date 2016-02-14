@@ -1,6 +1,7 @@
 .workspace-bar {
   align-items: center;
   background-color: $color-gray;
+  border-bottom: 1px solid $color-gray-dark;
   display: flex;
   height: 40px;
   padding: $x-small $medium $x-small 65px;
@@ -48,7 +49,7 @@
     box-sizing: border-box;
     cursor: pointer;
     display: flex;
-    min-width: 180px;
+    min-width: 164px;
     padding: $x-small $x-big+$x-small $x-small $medium;
 
     svg {

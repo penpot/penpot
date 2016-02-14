@@ -1,0 +1,31 @@
+.tool-btn {
+  align-items: center;
+  background-color: $color-gray-light;
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  height: 54px;
+  justify-content: center;
+  margin: $medium 0 0 $medium;
+  width: 54px;
+
+  svg {
+    fill: $color-gray-darker;
+    height: 35px;
+    width: 35px;
+  }
+
+  &:hover {
+    background-color: $color-white;
+  }
+
+  &.selected {
+    background-color: $color-gray-darker;
+
+    svg {
+      fill: $color-primary;
+    }
+
+  }
+
+}

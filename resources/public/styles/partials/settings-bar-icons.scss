@@ -1,0 +1,42 @@
+.figures-catalog {
+  width: 100%;
+  padding: $medium $medium 0 $medium;
+
+  select {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+}
+
+.figure-btn {
+  align-items: center;
+  background-color: $color-gray-light;
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  height: 54px;
+  justify-content: center;
+  margin: $medium 0 0 $medium;
+  width: 54px;
+
+  svg {
+    fill: $color-gray-darker;
+    height: 40px;
+    width: 40px;
+  }
+
+  &:hover {
+    background-color: $color-white;
+  }
+
+  &.selected {
+    background-color: $color-gray-darker;
+
+    svg {
+      fill: $color-primary;
+    }
+
+  }
+
+}
