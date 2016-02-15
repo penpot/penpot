@@ -6,6 +6,7 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.data.workspace :as dw]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
@@ -48,7 +49,7 @@
   (let [target (.-target event)
         top (.-scrollTop target)
         left (.-scrollLeft target)]
-    (rx/push! wb/scroll-b {:top top :left left})))
+    (rx/push! wb/scroll-b (gpt/point left top))))
 
 (defn- workspace-render
   [own projectid]
