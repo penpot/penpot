@@ -59,7 +59,7 @@
     (rx/merge $ (rx/of (gpt/point)))
     (rx/dedupe $)))
 
-(defonce scroll
+(defonce scroll-a
   (rx/to-atom scroll-s))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -82,6 +82,9 @@
        (rx/filter #(= (:id %) (:id @page-l)))
        (rx/map :canvas-coords)
        (rx/share)))
+
+(defonce mouse-a
+  (rx/to-atom mouse-s))
 
 (defonce mouse-absolute-s
   (->> mouse-b

@@ -494,7 +494,7 @@
   (let [local (:rum/local own)
         zoom 1
         shape (rum/react shape)
-        scroll (rum/react wb/scroll)
+        scroll (rum/react wb/scroll-a)
         pos (-> (get-position shape)
                 (gpt/subtract scroll)) ;; and multiply by zoom in future
         menus (get +menus-map+ (:type shape))
