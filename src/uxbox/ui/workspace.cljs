@@ -56,9 +56,6 @@
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?))]
-
-    (println left-sidebar? right-sidebar? classes)
-
     (html
      [:div
       (header)
