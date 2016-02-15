@@ -48,6 +48,14 @@
         left (.-scrollLeft target)]
     (rx/push! wb/scroll-b (gpt/point left top))))
 
+(defn- on-key-down
+  [event]
+  (js/console.log event))
+
+(defn- on-key-up
+  [event]
+  (js/console.log event))
+
 (defn- workspace-render
   [own projectid]
   (let [{:keys [flags] :as workspace} (rum/react wb/workspace-l)
@@ -63,7 +71,10 @@
        (when left-sidebar?
          (left-sidebar))
 
-       [:section.workspace-content {:class classes :on-scroll on-scroll}
+       [:section.workspace-content {:class classes
+                                    :on-scroll on-scroll
+                                    :on-key-up on-key-up
+                                    :on-key-down on-key-down}
         ;; Pages management lightbox
         ;; (pagesmngr)
 
@@ -109,8 +120,8 @@
   ;; that horrible hack.
   (let [el1 (mx/get-ref-dom own "viewport-container")
         el2 (mx/get-ref-dom own "workspace-canvas")]
-    (set! (.-scrollLeft el1) 600)
-    (set! (.-scrollLeft el2) 600)
+    (set! (.-scrollLeft el1) wb/document-start-scroll-x)
+    (set! (.-scrollLeft el2) wb/document-start-scroll-x)
     own))
 
 (defn- workspace-transfer-state

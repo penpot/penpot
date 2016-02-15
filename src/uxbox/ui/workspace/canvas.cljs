@@ -110,22 +110,28 @@
 
 (defn- canvas-did-mount
   [own]
-  (letfn [(on-mousemove [event page offset-pt]
+  (letfn [(on-mousemove [event page]
             (let [wpt (gpt/point (.-clientX event) (.-clientY event))
-                  cpt (gpt/subtract wpt offset-pt)
+                  canvas (mx/get-ref-dom own (str "canvas" (:id page)))
+                  brect (.getBoundingClientRect canvas)
+                  brect (gpt/point (.-left brect) (.-top brect))
+                  brect (gpt/add brect @wb/scroll-a)
+
+                  cpt (gpt/subtract wpt brect)
                   event {:id (:id page)
                          :ctrl (kbd/ctrl? event)
                          :shift (kbd/shift? event)
                          :window-coords wpt
                          :canvas-coords cpt}]
+
+              (println "brect:" brect)
+              (swap! wb/bounding-rect assoc (:id page) brect)
               (rx/push! wb/mouse-b event)))]
+
+    ;; TODO: update properly the bounding rect.
     (let [[page] (:rum/props own)
-          canvas (mx/get-ref-dom own (str "canvas" (:id page)))
-          brect (.getBoundingClientRect canvas)
-          brect (gpt/point (.-left brect) (.-top brect))
           key (events/listen js/document EventType.MOUSEMOVE
-                             #(on-mousemove % page brect))]
-      (swap! wb/bounding-rect assoc (:id page) brect)
+                             #(on-mousemove % page))]
       (assoc own ::eventkey key))))
 
 (defn- canvas-will-unmount

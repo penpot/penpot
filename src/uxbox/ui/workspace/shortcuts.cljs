@@ -13,7 +13,7 @@
 ;; Keyboard Shortcuts Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:static +shortcuts+
+(defonce ^:const +shortcuts+
   {:ctrl+g #(rs/emit! (dw/toggle-flag :grid))
    :ctrl+shift+f #(rs/emit! (dw/toggle-flag :drawtools))
    :ctrl+shift+i #(rs/emit! (dw/toggle-flag :icons))
@@ -31,10 +31,10 @@
 ;; Keyboard Shortcuts Watcher
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:static ^:private +bus+
+(defonce ^:const ^:private +bus+
   (rx/bus))
 
-(defonce ^:static +stream+
+(defonce ^:const +stream+
   (rx/to-observable +bus+))
 
 (defn- init-handler

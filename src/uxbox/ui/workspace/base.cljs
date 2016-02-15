@@ -57,6 +57,7 @@
 (defonce scroll-s
   (as-> scroll-b $
     (rx/merge $ (rx/of (gpt/point)))
+    (rx/pr-log "scroll: " $)
     (rx/dedupe $)))
 
 (defonce scroll-a
@@ -121,8 +122,10 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def viewport-width 4069)
-(def viewport-height 2048)
+(def ^:const viewport-width 4069)
+(def ^:const viewport-height 2048)
 
-(def document-start-x 630)
-(def document-start-y 30)
+(def ^:const document-start-x 600)
+(def ^:const document-start-y 30)
+
+(def ^:const document-start-scroll-x 550)
