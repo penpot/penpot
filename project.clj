@@ -22,7 +22,6 @@
                  [bouncer "1.0.0"]
                  [bidi "1.25.0"]]
   :plugins [[lein-ancient "0.6.7" :exclusions [org.clojure/tools.reader]]]
-
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
   )
 
