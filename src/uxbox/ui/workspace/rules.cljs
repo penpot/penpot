@@ -98,8 +98,8 @@
                       (range 0 (- width start-width step-padding) step-size))]
     (html
      [:svg.horizontal-rule
-      {:width 3000
-       :height 3000}
+      {:width wb/viewport-width
+       :height 20}
       [:g
        [:rect {:x step-padding :y 0 :width width :height step-padding :fill "#bab7b7"}]
        [:rect {:x 0 :y 0 :width step-padding :height step-padding :fill "#bab7b7"}]]
@@ -121,10 +121,14 @@
                       (range 0 (- height start-height step-padding) step-size))]
     (html
      [:svg.vertical-rule
-      {:width 3000
-       :height 3000}
+      {:width 20
+       :height wb/viewport-height}
       [:g
-       [:rect {:x 0 :y step-padding :height height :width step-padding :fill "#bab7b7"}]
+       [:rect {:x 0
+               :y step-padding
+               :height height
+               :width step-padding
+               :fill "#bab7b7"}]
        (for [tick ticks
              :let [pos (* (+ tick start-height) zoom)]]
          (v-line pos tick))]])))
