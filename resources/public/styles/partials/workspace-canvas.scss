@@ -1,11 +1,9 @@
-.workspace-canvas {
-  box-sizing: border-box;
-  height: calc(100vh - 50px);
-  margin: 0 230px 0 230px;
-  overflow: scroll;
+.workspace-content {
+  display: flex;
+  height: 100%;
   width: 100%;
-  transition: none;
   position: relative;
+  margin: 0 230px 0 230px;
 
   &.no-tool-bar-right {
     margin-right: 0;
@@ -15,33 +13,79 @@
     margin-left: 0;
   }
 
-  .viewport {
-    &.drawing {
-      cursor: cell;
+  .workspace-canvas {
+    box-sizing: border-box;
+    height: calc(100vh - 70px);
+
+    overflow: scroll;
+    width: 100%;
+
+    transition: none;
+    /* margin: 0 230px 0 230px; */
+
+    margin-top: 20px;
+    margin-left: 20px;
+    margin-right: 460px;
+
+    &.no-tool-bar-right.no-tool-bar-left{
+      margin-right: 0px;
     }
 
-    svg {
-      g.shape {
-        &.selected {
-          circle.top-left { cursor: nwse-resize; }
-          circle.bottom-right { cursor: nwse-resize; }
-          circle.top-right { cursor: nesw-resize; }
-          circle.bottom-left { cursor: nesw-resize; }
+    &.no-tool-bar-left {
+      margin-right: 230px;
+    }
+
+    &.no-tool-bar-right {
+      margin-right: 230px;
+    }
+
+    /* .viewport-container { */
+    /*   height: 4069px; */
+    /*   width: 4069px; */
+    /* } */
+
+    .viewport {
+      &.drawing {
+        cursor: cell;
+      }
+
+      svg {
+        g.shape {
+          &.selected {
+            circle.top-left { cursor: nwse-resize; }
+            circle.bottom-right { cursor: nwse-resize; }
+            circle.top-right { cursor: nesw-resize; }
+            circle.bottom-left { cursor: nesw-resize; }
+          }
+        }
+
+        rect.selection-rect {
+          fill: rgba(235, 215, 92, 0.1);
+          stroke: #000000;
+          stroke-width: 0.1px;
+
         }
       }
+    }
 
-      rect.selection-rect {
-        fill: rgba(235, 215, 92, 0.1);
-        stroke: #000000;
-        stroke-width: 0.1px;
-
-      }
+    .viewport, .page-canvas, .page-layout {
+      /* overflow: visible; */
     }
   }
 
-  .viewport, .page-canvas, .page-layout {
-    overflow: visible;
+  /* Rules */
+
+  .horizontal-rule {
+    transition: none;
+    position: absolute;
+    pointer-events: none;
+    top: 0px;
   }
 
-
+  .vertical-rule {
+    transition: none;
+    position: absolute;
+    pointer-events: none;
+    left: 0px;
+  }
 }
