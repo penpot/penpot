@@ -28,11 +28,8 @@
   [own]
   (let [{:keys [x y]} (rum/react wb/mouse-position)]
     (html
-     [:div {:style {:position "absolute" :left "80px" :top "20px"}}
-      [:table
-       [:tbody
-        [:tr [:td "x="] [:td x]]
-        [:tr [:td "y="] [:td y]]]]])))
+     [:div {:style {:position "absolute" :left "50px" :top "25px"}}
+      [:span (str "| x=" x " | y=" y " |")]])))
 
 (def coordinates
   (mx/component
