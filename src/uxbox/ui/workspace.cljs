@@ -63,23 +63,31 @@
        (when left-sidebar?
          (left-sidebar))
 
-       [:section.workspace-content
+       [:section.workspace-content {:class classes :on-scroll on-scroll}
         ;; Pages management lightbox
         ;; (pagesmngr)
 
-        ;; Canvas
-        [:section.workspace-canvas {:class classes :on-scroll on-scroll}
-         ;; Rules
-         (h-rule left-sidebar?)
-         (v-rule left-sidebar?)
+        ;; Rules
+        (h-rule left-sidebar?)
+        (v-rule left-sidebar?)
 
-         (when (and (:selected workspace)
+        (coordinates)
+
+        ;; Canvas
+        [:section.workspace-canvas
+         {:class classes
+          :ref "workspace-canvas"}
+         #_(when (and (:selected workspace)
                     (= (count (:selected workspace)) 1))
            (let [shape-id (first (:selected workspace))
                  shape (l/focus-atom (l/in [:shapes-by-id shape-id]) st/state)]
              (element-opts shape)))
-         (coordinates)
-         (viewport)]]
+
+         [:section.viewport-container
+          {:ref "viewport-container"
+           :width wb/viewport-width
+           :height wb/viewport-height}
+          (viewport)]]]
 
        (colorpalette)
 
@@ -94,6 +102,17 @@
     (rs/emit! (dw/initialize projectid pageid))
     own))
 
+(defn- workspace-did-mount
+  [own]
+  ;; FIXME: this is a hack. I don't know why I need setup
+  ;; scroll to both elements, but it does not works without
+  ;; that horrible hack.
+  (let [el1 (mx/get-ref-dom own "viewport-container")
+        el2 (mx/get-ref-dom own "workspace-canvas")]
+    (set! (.-scrollLeft el1) 600)
+    (set! (.-scrollLeft el2) 600)
+    own))
+
 (defn- workspace-transfer-state
   [old-state state]
   (let [[projectid pageid] (:rum/props state)]
@@ -104,6 +123,7 @@
   (mx/component
    {:render workspace-render
     :will-mount workspace-will-mount
+    :did-mount workspace-did-mount
     :transfer-state workspace-transfer-state
     :name "workspace"
     :mixins [mx/static rum/reactive wshortcuts/mixin]}))

@@ -200,8 +200,8 @@
               (dom/stop-propagation event)
               (wb/emit-interaction! :nothing))]
       (html
-       [:svg.viewport {:width wb/viewport-height
-                       :height wb/viewport-width
+       [:svg.viewport {:width wb/viewport-width
+                       :height wb/viewport-height
                        :class (when drawing? "drawing")
                        :on-mouse-down on-mouse-down
                        :on-mouse-up on-mouse-up}
