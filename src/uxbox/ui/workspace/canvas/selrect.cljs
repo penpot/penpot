@@ -69,11 +69,14 @@
               (reset! selrect-pos nil)))
 
           (init []
-            (as-> wb/interactions-b $
-              (rx/filter #(not= % :draw/selrect) $)
-              (rx/take 1 $)
-              (rx/take-until $ wb/mouse-s)
-              (rx/subscribe $ on-value nil on-complete)))]
+            (let [stoper (->> wb/interactions-b
+                              (rx/filter #(not= % :draw/selrect))
+                              (rx/take 1))
+                  pos (gpt/add @wb/mouse-a @wb/scroll-a)]
+              (reset! selrect-pos {:start pos :current pos})
+              (as-> wb/mouse-s $
+                (rx/take-until stoper $)
+                (rx/subscribe $ on-value nil on-complete))))]
 
     (as-> wb/interactions-b $
       (rx/dedupe $)
