@@ -88,12 +88,6 @@
         [:section.workspace-canvas
          {:class classes
           :ref "workspace-canvas"}
-         #_(when (and (:selected workspace)
-                    (= (count (:selected workspace)) 1))
-           (let [shape-id (first (:selected workspace))
-                 shape (l/focus-atom (l/in [:shapes-by-id shape-id]) st/state)]
-             (element-opts shape)))
-
          [:section.viewport-container
           {:ref "viewport-container"
            :width wb/viewport-width
