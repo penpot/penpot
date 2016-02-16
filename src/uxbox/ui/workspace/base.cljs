@@ -79,25 +79,32 @@
 
 (defonce mouse-b (rx/bus))
 (defonce mouse-s
-  (->> mouse-b
-       (rx/filter #(= (:id %) (:id @page-l)))
+  (rx/dedupe mouse-b))
+
+(defonce mouse-canvas-s
+  (->> mouse-s
        (rx/map :canvas-coords)
        (rx/share)))
 
-(defonce mouse-a
-  (rx/to-atom mouse-s))
+(defonce mouse-canvas-a
+  (rx/to-atom mouse-canvas-s))
+
+(defonce mouse-viewport-s
+  (->> mouse-s
+       (rx/map :viewport-coords)
+       (rx/share)))
+
+(defonce mouse-viewport-a
+  (rx/to-atom mouse-viewport-s))
 
 (defonce mouse-absolute-s
-  (->> mouse-b
-       (rx/filter #(= (:id %) (:id @page-l)))
+  (->> mouse-s
        (rx/map :window-coords)
        (rx/share)))
 
 (defonce mouse-ctrl-s
-  (->> mouse-b
-       (rx/filter #(= (:id %) (:id @page-l)))
+  (->> mouse-s
        (rx/map :ctrl)
-       (rx/dedupe)
        (rx/share)))
 
 (defn- coords-delta
@@ -105,18 +112,11 @@
   (gpt/subtract new old))
 
 (defonce mouse-delta-s
-  (->> mouse-s
+  (->> mouse-viewport-s
        (rx/sample 10)
        (rx/buffer 2 1)
        (rx/map coords-delta)
        (rx/share)))
-
-(defonce mouse-position
-  (->> mouse-s
-       (rx/sample 10)
-       (rx/to-atom)))
-
-(defonce bounding-rect (atom {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
