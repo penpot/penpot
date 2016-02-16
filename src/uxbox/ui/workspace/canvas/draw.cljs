@@ -43,23 +43,24 @@
 
 (define-once :drawing-subscriptions
   (letfn [(init-shape [shape]
-            (let [{:keys [x y] :as point} (gpt/subtract @wb/mouse-position
-                                                        @wb/scroll-a)
+            (let [{:keys [x y] :as point} @wb/mouse-canvas-a
                   shape (sh/-initialize shape {:x1 x :y1 y :x2 x :y2 y})]
 
+              (println "start" point)
               (reset! +drawing-shape+ shape)
               (reset! +drawing-position+ (assoc point :lock false))
 
-              (as-> wb/interactions-b $
-                (rx/filter #(not= % :shape/movement) $)
-                (rx/take 1 $)
-                (rx/take-until $ wb/mouse-s)
-                (rx/with-latest-from vector wb/mouse-ctrl-s $)
-                (rx/subscribe $ on-value nil on-complete))))
+              (let [stoper (->> wb/interactions-b
+                                (rx/filter #(not= % :shape/movement))
+                                (rx/take 1))]
+                (as-> wb/mouse-canvas-s $
+                  (rx/take-until stoper $)
+                  (rx/with-latest-from vector wb/mouse-ctrl-s $)
+                  (rx/subscribe $ on-value nil on-complete)))))
 
-          (on-value [[pos ctrl?]]
-            (let [point (gpt/subtract pos @wb/scroll-a)]
-              (reset! +drawing-position+ (assoc point :lock ctrl?))))
+          (on-value [[point ctrl?]]
+            (println "on-value" ctrl? point)
+            (reset! +drawing-position+ (assoc point :lock ctrl?)))
 
           (on-complete []
             (let [shape @+drawing-shape+
@@ -71,7 +72,7 @@
               (reset! +drawing-shape+ nil)))
 
           (init-icon [shape]
-            (let [{:keys [x y]} (gpt/subtract @wb/mouse-position @wb/scroll-a)
+            (let [{:keys [x y]} @wb/mouse-canvas-a
                   props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
                   shape (sh/-initialize shape props)]
               (rs/emit! (dw/add-shape shape)

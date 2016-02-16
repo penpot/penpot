@@ -108,44 +108,41 @@
 ;; Canvas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- canvas-did-mount
-  [own]
-  (letfn [(on-mousemove [event page]
-            (let [wpt (gpt/point (.-clientX event) (.-clientY event))
-                  canvas (mx/get-ref-dom own (str "canvas" (:id page)))
-                  brect (.getBoundingClientRect canvas)
-                  brect (gpt/point (.-left brect) (.-top brect))
-                  brect (gpt/add brect @wb/scroll-a)
+;; (defn- canvas-did-mount
+;;   [own]
+;;   (letfn [(translate-point [pt page]
+;;             (let [canvas (mx/get-ref-dom own (str "canvas" (:id page)))
+;;                   brect (.getBoundingClientRect canvas)
+;;                   brect (gpt/point (.-left brect) (.-top brect))]
+;;                   ;; brect (gpt/add brect @wb/scroll-a)]
+;;               (gpt/subtract pt brect)))
+;;           (on-mousemove [event page]
+;;             (let [wpt (gpt/point (.-clientX event)
+;;                                  (.-clientY event))
+;;                   cpt (translate-point wpt page)
+;;                   event {:id (:id page)
+;;                          :ctrl (kbd/ctrl? event)
+;;                          :shift (kbd/shift? event)
+;;                          :window-coords wpt
+;;                          :canvas-coords cpt}]
+;;               (println "on-mousemove" cpt)
+;;               (rx/push! wb/mouse-b event)))]
+;;     (let [[page] (:rum/props own)
+;;           key (events/listen js/document EventType.MOUSEMOVE
+;;                              #(on-mousemove % page))]
+;;       (assoc own ::eventkey key))))
 
-                  cpt (gpt/subtract wpt brect)
-                  event {:id (:id page)
-                         :ctrl (kbd/ctrl? event)
-                         :shift (kbd/shift? event)
-                         :window-coords wpt
-                         :canvas-coords cpt}]
+;; (defn- canvas-will-unmount
+;;   [own]
+;;   (let [key (::eventkey own)
+;;         [page] (:rum/props own)]
+;;     (events/unlistenByKey key)
+;;     (dissoc own ::eventkey)))
 
-              (println "brect:" brect)
-              (swap! wb/bounding-rect assoc (:id page) brect)
-              (rx/push! wb/mouse-b event)))]
-
-    ;; TODO: update properly the bounding rect.
-    (let [[page] (:rum/props own)
-          key (events/listen js/document EventType.MOUSEMOVE
-                             #(on-mousemove % page))]
-      (assoc own ::eventkey key))))
-
-(defn- canvas-will-unmount
-  [own]
-  (let [key (::eventkey own)
-        [page] (:rum/props own)]
-    (swap! wb/bounding-rect dissoc (:id page))
-    (events/unlistenByKey key)
-    (dissoc own ::eventkey)))
-
-(defn- canvas-transfer-state
-  [old-own own]
-  (let [key (::eventkey old-own)]
-    (assoc own ::eventkey key)))
+;; (defn- canvas-transfer-state
+;;   [old-own own]
+;;   (let [key (::eventkey old-own)]
+;;     (assoc own ::eventkey key)))
 
 (defn- canvas-render
   [own {:keys [width height id] :as page}]
@@ -160,11 +157,11 @@
         shapes-selected (filter (comp workspace-selected :id) shapes)
         shapes-notselected (filter (comp not workspace-selected :id) shapes)]
     (html
-     [:svg#page-canvas.page-canvas {:x wb/document-start-x
-                                    :y wb/document-start-y
-                                    :ref (str "canvas" id)
-                                    :width width
-                                    :height height}
+     [:svg.page-canvas {:x wb/document-start-x
+                        :y wb/document-start-y
+                        :ref (str "canvas" id)
+                        :width width
+                        :height height}
       (background)
       (grid 1)
       [:svg.page-layout {}
@@ -173,15 +170,14 @@
         (for [item (reverse (sequence xf (:shapes page)))]
           (-> (shape item workspace-selected)
               (rum/with-key (str (:id item)))))
-        (selrect)
         (draw-area)]]])))
 
 (def canvas
   (mx/component
    {:render canvas-render
-    :did-mount canvas-did-mount
-    :will-unmount canvas-will-unmount
-    :transfer-state canvas-transfer-state
+    ;; :did-mount canvas-did-mount
+    ;; :will-unmount canvas-will-unmount
+    ;; :transfer-state canvas-transfer-state
     :name "canvas"
     :mixins [mx/static rum/reactive]}))
 
@@ -208,16 +204,65 @@
       (html
        [:svg.viewport {:width wb/viewport-width
                        :height wb/viewport-height
+                       :ref "viewport"
                        :class (when drawing? "drawing")
                        :on-mouse-down on-mouse-down
                        :on-mouse-up on-mouse-up}
         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
          (if page
            (canvas page))
-         (ruler)]]))))
+         (ruler)
+         (selrect)]]))))
+
+(defn- viewport-did-mount
+  [own]
+  (letfn [(translate-point-to-viewport [pt]
+            (let [viewport (mx/get-ref-dom own "viewport")
+                  brect (.getBoundingClientRect viewport)
+                  brect (gpt/point (.-left brect) (.-top brect))]
+              (gpt/subtract pt brect)))
+
+          (translate-point-to-canvas [pt]
+            (let [viewport (mx/get-ref-dom own "viewport")
+                  canvas (dom/get-element-by-class "page-canvas" viewport)
+                  brect (.getBoundingClientRect canvas)
+                  brect (gpt/point (.-left brect) (.-top brect))]
+              (gpt/subtract pt brect)))
+
+          (on-mousemove [event page]
+            (let [wpt (gpt/point (.-clientX event)
+                                 (.-clientY event))
+                  vppt (translate-point-to-viewport wpt)
+                  cvpt (translate-point-to-canvas wpt)
+                  event {:ctrl (kbd/ctrl? event)
+                         :shift (kbd/shift? event)
+                         :window-coords wpt
+                         :viewport-coords vppt
+                         :canvas-coords cvpt}]
+              (rx/push! wb/mouse-b event)))]
+    (let [[page] (:rum/props own)
+          key (events/listen js/document EventType.MOUSEMOVE
+                             #(on-mousemove % page))]
+      (assoc own ::eventkey key))))
+
+(defn- viewport-will-unmount
+  [own]
+  (let [key (::eventkey own)
+        [page] (:rum/props own)]
+    (events/unlistenByKey key)
+    (dissoc own ::eventkey)))
+
+(defn- viewport-transfer-state
+  [old-own own]
+  (let [key (::eventkey old-own)]
+    (assoc own ::eventkey key)))
+
 
 (def viewport
   (mx/component
    {:render viewport-render
     :name "viewport"
+    :did-mount viewport-did-mount
+    :will-unmount viewport-will-unmount
+    :transfer-state viewport-transfer-state
     :mixins [rum/reactive]}))

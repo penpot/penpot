@@ -26,7 +26,7 @@
 
 (defn- coordenates-render
   [own]
-  (let [{:keys [x y]} (rum/react wb/mouse-position)]
+  (let [{:keys [x y]} (rum/react wb/mouse-canvas-a)]
     (html
      [:div {:style {:position "absolute" :left "50px" :top "25px"}}
       [:span (str "| x=" x " | y=" y " |")]])))

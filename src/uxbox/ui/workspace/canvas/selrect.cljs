@@ -60,7 +60,7 @@
 
 (define-once :selrect-subscriptions
   (letfn [(on-value [pos]
-            (let [pos (gpt/add pos @wb/scroll-a)]
+            (let [pos' (gpt/add pos @wb/scroll-a)]
               (swap! selrect-pos assoc :current pos)))
 
           (on-complete []
@@ -72,9 +72,10 @@
             (let [stoper (->> wb/interactions-b
                               (rx/filter #(not= % :draw/selrect))
                               (rx/take 1))
-                  pos (gpt/add @wb/mouse-a @wb/scroll-a)]
+                  pos @wb/mouse-viewport-a]
               (reset! selrect-pos {:start pos :current pos})
-              (as-> wb/mouse-s $
+
+              (as-> wb/mouse-viewport-s $
                 (rx/take-until stoper $)
                 (rx/subscribe $ on-value nil on-complete))))]
 

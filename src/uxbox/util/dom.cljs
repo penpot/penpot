@@ -2,8 +2,10 @@
   (:require [goog.dom :as dom]))
 
 (defn get-element-by-class
-  [^string classname]
-  (dom/getElementByClass classname))
+  ([classname]
+   (dom/getElementByClass classname))
+  ([classname node]
+   (dom/getElementByClass classname node)))
 
 (defn stop-propagation
   [e]
