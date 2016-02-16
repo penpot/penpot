@@ -58,21 +58,21 @@
           flags (rum/react wb/flags-l)
           page (rum/react wb/page-l)
           enabled? (contains? flags :grid)
-          vertical-ticks (range (- 0 wb/document-start-y)
-                                (- (:width page) wb/document-start-y)
+          vertical-ticks (range (- 0 wb/canvas-start-y)
+                                (- (:width page) wb/canvas-start-y)
                                 step-size)
-          horizontal-ticks (range (- 0 wb/document-start-x)
-                                  (- (:height page) wb/document-start-x)
+          horizontal-ticks (range (- 0 wb/canvas-start-x)
+                                  (- (:height page) wb/canvas-start-x)
                                   step-size)]
       (html
        [:g.grid
         {:style {:display (if enabled? "block" "none")}}
         (for [tick vertical-ticks]
-          (let [position (+ tick wb/document-start-x)
+          (let [position (+ tick wb/canvas-start-x)
                 line (vertical-line page position tick)]
             (rum/with-key line (str "tick-" tick))))
         (for [tick horizontal-ticks]
-          (let [position (+ tick wb/document-start-y)
+          (let [position (+ tick wb/canvas-start-y)
                 line (horizontal-line page position tick)]
             (rum/with-key line (str "tick-" tick))))]))))
 

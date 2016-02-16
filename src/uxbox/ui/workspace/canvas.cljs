@@ -157,8 +157,8 @@
         shapes-selected (filter (comp workspace-selected :id) shapes)
         shapes-notselected (filter (comp not workspace-selected :id) shapes)]
     (html
-     [:svg.page-canvas {:x wb/document-start-x
-                        :y wb/document-start-y
+     [:svg.page-canvas {:x wb/canvas-start-x
+                        :y wb/canvas-start-y
                         :ref (str "canvas" id)
                         :width width
                         :height height}

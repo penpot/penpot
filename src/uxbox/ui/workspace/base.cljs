@@ -125,7 +125,7 @@
 (def ^:const viewport-width 4069)
 (def ^:const viewport-height 2048)
 
-(def ^:const document-start-x 600)
-(def ^:const document-start-y 30)
+(def ^:const canvas-start-x 600)
+(def ^:const canvas-start-y 30)
 
-(def ^:const document-start-scroll-x 550)
+(def ^:const canvas-start-scroll-x 550)

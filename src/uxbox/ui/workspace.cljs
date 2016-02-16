@@ -120,8 +120,8 @@
   ;; that horrible hack.
   (let [el1 (mx/get-ref-dom own "viewport-container")
         el2 (mx/get-ref-dom own "workspace-canvas")]
-    (set! (.-scrollLeft el1) wb/document-start-scroll-x)
-    (set! (.-scrollLeft el2) wb/document-start-scroll-x)
+    (set! (.-scrollLeft el1) wb/canvas-start-scroll-x)
+    (set! (.-scrollLeft el2) wb/canvas-start-scroll-x)
     own))
 
 (defn- workspace-transfer-state

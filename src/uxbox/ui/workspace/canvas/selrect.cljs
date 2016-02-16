@@ -62,9 +62,15 @@
   (letfn [(on-value [pos]
             (swap! selrect-pos assoc :current pos))
 
+          (translate-selrect [selrect]
+            (assoc selrect
+                   :x (- (:x selrect) wb/canvas-start-x)
+                   :y (- (:y selrect) wb/canvas-start-y)))
+
           (on-complete []
-            (let [selrect (selrect->rect @selrect-pos)]
-              (rs/emit! (dw/select-shapes selrect))
+            (let [selrect (selrect->rect @selrect-pos)
+                  selrect' (translate-selrect selrect)]
+              (rs/emit! (dw/select-shapes selrect'))
               (reset! selrect-pos nil)))
 
           (init []
