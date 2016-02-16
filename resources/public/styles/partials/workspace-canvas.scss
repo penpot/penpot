@@ -21,7 +21,6 @@
     width: 100%;
 
     transition: none;
-    /* margin: 0 230px 0 230px; */
 
     margin-top: 20px;
     margin-left: 20px;
@@ -45,8 +44,15 @@
     /* } */
 
     .viewport {
+
       &.drawing {
         cursor: cell;
+      }
+
+      rect.selection-rect {
+        fill: rgba(235, 215, 92, 0.1);
+        stroke: #000000;
+        stroke-width: 0.1px;
       }
 
       svg {
@@ -59,17 +65,11 @@
           }
         }
 
-        rect.selection-rect {
-          fill: rgba(235, 215, 92, 0.1);
-          stroke: #000000;
-          stroke-width: 0.1px;
-
-        }
       }
     }
 
     .viewport, .page-canvas, .page-layout {
-      /* overflow: visible; */
+      overflow: visible;
     }
   }
 
