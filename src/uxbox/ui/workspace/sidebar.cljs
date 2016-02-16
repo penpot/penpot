@@ -7,6 +7,7 @@
             [uxbox.rstore :as rs]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.sidebar.options :refer (options-toolbox)]
             [uxbox.ui.workspace.sidebar.layers :refer (layers-toolbox)]
             [uxbox.ui.workspace.sidebar.sitemap :refer (sitemap-toolbox)]
             [uxbox.ui.workspace.sidebar.icons :refer (icons-toolbox)]
@@ -30,7 +31,7 @@
 (def left-sidebar
   (mx/component
    {:render left-sidebar-render
-    :name "aside"
+    :name "left-sidebar"
     :mixins [rum/reactive mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -43,6 +44,8 @@
     (html
      [:aside#settings-bar.settings-bar
       [:div.settings-bar-inside
+       (when (contains? flags :element-options)
+         (options-toolbox))
        (when (contains? flags :drawtools)
          (draw-toolbox))
        (when (contains? flags :icons)
@@ -51,5 +54,5 @@
 (def right-sidebar
   (mx/component
    {:render right-sidebar-render
-    :name "aside"
+    :name "right-sidebar"
     :mixins [rum/reactive mx/static]}))

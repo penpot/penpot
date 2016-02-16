@@ -64,7 +64,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [s {:project projectid
-               :flags #{:layers}
+               :flags #{:layers :element-options}
                :drawing nil
                :selected #{}
                :page pageid}]

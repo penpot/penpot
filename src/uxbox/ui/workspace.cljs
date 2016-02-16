@@ -11,7 +11,6 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.options :refer (element-opts)]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
             [uxbox.ui.workspace.header :refer (header)]
@@ -60,7 +59,8 @@
   [own projectid]
   (let [{:keys [flags] :as workspace} (rum/react wb/workspace-l)
         left-sidebar? (not (empty? (keep flags [:layers :sitemap])))
-        right-sidebar? (not (empty? (keep flags [:icons :drawtools])))
+        right-sidebar? (not (empty? (keep flags [:icons :drawtools
+                                                 :element-options])))
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?))]

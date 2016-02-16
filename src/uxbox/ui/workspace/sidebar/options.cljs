@@ -1,17 +1,21 @@
-(ns uxbox.ui.workspace.options
+(ns uxbox.ui.workspace.sidebar.options
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [cats.labs.lens :as l]
+            [uxbox.locales :refer (tr)]
+            [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.shapes :as sh]
+            [uxbox.library :as library]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.dom :as dom]
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.workspace.recent-colors :refer (recent-colors)]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -49,17 +53,6 @@
    :menu/stroke
    {:name "Stroke"
     :icon i/stroke}})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- get-position
-  [{:keys [page] :as shape}]
-  (let [{:keys [x y width]} (sh/-outer-rect shape)
-        bpt (get @wb/bounding-rect page)
-        vpt (gpt/point (+ x width 50) (- y 50))]
-    (gpt/add vpt bpt)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
@@ -489,35 +482,59 @@
 
 
 
-(defn element-opts-render
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Components
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn options-menus-render
   [own shape]
   (let [local (:rum/local own)
-        zoom 1
         shape (rum/react shape)
-        scroll (rum/react wb/scroll-a)
-        pos (-> (get-position shape)
-                (gpt/subtract scroll)) ;; and multiply by zoom in future
         menus (get +menus-map+ (:type shape))
         active-menu (:menu @local (first menus))]
-    (when (seq menus)
-      (html
-       [:div#element-options.element-options
-        {:style {:left (:x pos) :top (:y pos)}}
-        [:ul.element-icons
-         (for [menu-id (get +menus-map+ (:type shape))
-               :let [menu (get +menus-by-id+ menu-id)
-                     menu (assoc menu :id menu-id)
-                     selected? (= active-menu menu-id)]]
-           [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
-                        :key (str "menu-" (:id menu))
-                        :class (when selected? "selected")}
-            (:icon menu)])]
-        (let [menu (get +menus-by-id+ active-menu)
-              menu (assoc menu :id active-menu)]
-          (-render-menu menu own shape local))]))))
+    (html
+     [:div
+      [:ul.element-icons
+       (for [menu-id (get +menus-map+ (:type shape))
+             :let [menu (get +menus-by-id+ menu-id)
+                   menu (assoc menu :id menu-id)
+                   selected? (= active-menu menu-id)]]
+         [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
+                      :key (str "menu-" (:id menu))
+                      :class (when selected? "selected")}
+          (:icon menu)])]
+      (let [menu (get +menus-by-id+ active-menu)
+            menu (assoc menu :id active-menu)]
+        (-render-menu menu own shape local))])))
 
-(def ^:static element-opts
+(def ^:static ^:private options-menus
   (mx/component
-   {:render element-opts-render
-    :name "element-opts"
-    :mixins [rum/reactive (mx/local {})]}))
+   {:render options-menus-render
+    :name "options-menus"
+    :mixins [mx/static rum/reactive (mx/local)]}))
+
+(defn options-toolbox-render
+  [own shape]
+  (let [workspace (rum/react wb/workspace-l)
+        close #(rs/emit! (dw/toggle-flag :element-options))
+        shape (when (and (:selected workspace)
+                         (= (count (:selected workspace)) 1))
+                (let [shape-id (first (:selected workspace))]
+                  (l/focus-atom (l/in [:shapes-by-id shape-id]) st/state)))]
+    (html
+     [:div.elementa-options.tool-window
+      [:div.tool-window-bar
+       [:div.tool-window-icon i/project-tree]
+       [:span (tr "ds.element-options")]
+       [:div.tool-window-close {:on-click close} i/close]]
+      [:div.tool-window-content
+       [:div.element-options.tool-window
+        (if shape
+          (options-menus shape))]]])))
+
+(def ^:static options-toolbox
+  (mx/component
+   {:render options-toolbox-render
+    :name "options-toolbox"
+    :mixins [mx/static rum/reactive (mx/local)]}))

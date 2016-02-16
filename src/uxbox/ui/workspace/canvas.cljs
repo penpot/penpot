@@ -23,8 +23,7 @@
             [uxbox.ui.workspace.canvas.ruler :refer (ruler)]
             [uxbox.ui.workspace.canvas.selection :refer (shapes-selection)]
             [uxbox.ui.workspace.canvas.selrect :refer (selrect)]
-            [uxbox.ui.workspace.grid :refer (grid)]
-            [uxbox.ui.workspace.options :refer (element-opts)])
+            [uxbox.ui.workspace.grid :refer (grid)])
   (:import goog.events.EventType))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
