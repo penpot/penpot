@@ -45,8 +45,6 @@
   (letfn [(init-shape [shape]
             (let [{:keys [x y] :as point} @wb/mouse-canvas-a
                   shape (sh/-initialize shape {:x1 x :y1 y :x2 x :y2 y})]
-
-              (println "start" point)
               (reset! +drawing-shape+ shape)
               (reset! +drawing-position+ (assoc point :lock false))
 
@@ -59,7 +57,6 @@
                   (rx/subscribe $ on-value nil on-complete)))))
 
           (on-value [[point ctrl?]]
-            (println "on-value" ctrl? point)
             (reset! +drawing-position+ (assoc point :lock ctrl?)))
 
           (on-complete []
