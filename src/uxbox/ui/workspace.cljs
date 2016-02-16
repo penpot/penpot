@@ -113,28 +113,56 @@
     (rs/emit! (dw/initialize projectid pageid))
     own))
 
+(defn- workspace-handle-scroll
+  [el1 el2]
+  (letfn [(on-value [pt1 pt2]
+            (let [{:keys [x y]} (gpt/subtract pt1 pt2)
+                  cx (.-scrollLeft el2)
+                  cy (.-scrollTop el2)]
+              (set! (.-scrollLeft el2) (- cx x))
+              (set! (.-scrollTop el2) (- cy y))))]
+    (let [stoper (->> wb/interactions-b
+                      (rx/filter #(not= % :scroll/viewport))
+                      (rx/take 1))
+          initial @wb/mouse-viewport-a]
+      (as-> wb/mouse-viewport-s $
+        (rx/take-until stoper $)
+        (rx/subscribe $ #(on-value % initial))))))
+
 (defn- workspace-did-mount
   [own]
   ;; FIXME: this is a hack. I don't know why I need setup
   ;; scroll to both elements, but it does not works without
   ;; that horrible hack.
   (let [el1 (mx/get-ref-dom own "viewport-container")
-        el2 (mx/get-ref-dom own "workspace-canvas")]
+        el2 (mx/get-ref-dom own "workspace-canvas")
+        sub (as-> wb/interactions-b $
+              (rx/dedupe $)
+              (rx/filter #(= :scroll/viewport %) $)
+              (rx/on-value $ #(workspace-handle-scroll el1 el2)))]
     (set! (.-scrollLeft el1) wb/canvas-start-scroll-x)
     (set! (.-scrollLeft el2) wb/canvas-start-scroll-x)
-    own))
+    (assoc own ::sub sub)))
 
 (defn- workspace-transfer-state
   [old-state state]
-  (let [[projectid pageid] (:rum/props state)]
+  (let [[projectid pageid] (:rum/props state)
+        sub (::sub old-state)]
    (rs/emit! (dw/initialize projectid pageid))
-   state))
+   (assoc state ::sub sub)))
+
+(defn- workspace-will-unmount
+  [own]
+  (let [unsub (::sub own)]
+    (unsub)
+    (dissoc own ::sub)))
 
 (def ^:static workspace
   (mx/component
    {:render workspace-render
     :will-mount workspace-will-mount
     :did-mount workspace-did-mount
+    :will-unmount workspace-will-unmount
     :transfer-state workspace-transfer-state
     :name "workspace"
     :mixins [mx/static rum/reactive wshortcuts/mixin]}))

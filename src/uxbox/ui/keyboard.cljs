@@ -15,3 +15,4 @@
 
 (def esc? (is-keycode? 27))
 (def enter? (is-keycode? 13))
+(def space? (is-keycode? 32))
