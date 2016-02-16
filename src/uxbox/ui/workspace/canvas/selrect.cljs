@@ -60,8 +60,7 @@
 
 (define-once :selrect-subscriptions
   (letfn [(on-value [pos]
-            (let [pos' (gpt/add pos @wb/scroll-a)]
-              (swap! selrect-pos assoc :current pos)))
+            (swap! selrect-pos assoc :current pos))
 
           (on-complete []
             (let [selrect (selrect->rect @selrect-pos)]
