@@ -164,12 +164,13 @@
 
 (defn project-sort-render
   []
-  (let [ordering (rum/react project-ordering-l)]
+  (let [ordering (rum/react project-ordering-l)
+        change-order #(rs/emit! (dd/set-project-ordering (keyword (.-value (.-target %)))))]
     (html
      [:div
        [:span (tr "ds.project-ordering")]
        [:select.input-select
-        {:on-change #(rs/emit! (dd/set-project-ordering (keyword (.-value (.-target %)))))
+        {:on-change change-order
          :value (name ordering)}
         (for [option (keys +ordering-options+)
               :let [option-id (get +ordering-options+ option)
@@ -188,17 +189,19 @@
 
 (defn project-search-render
   []
-  (html
-    [:form
-     [:input
-      {:type "text"
-       :on-change #(rs/emit! (dd/set-project-filtering (.-value (.-target %))))
-       :auto-focus true
-       :value (rum/react project-filtering-l)}]
-     [:input
-      {:type "button"
-       :on-click #(rs/emit! (dd/clear-project-filtering))
-       :value "X"}]]))
+  (let [change-term #(rs/emit! (dd/set-project-filtering (.-value (.-target %))))
+        clear-term #(rs/emit! (dd/clear-project-filtering))]
+    (html
+     [:form
+      [:input
+       {:type "text"
+        :on-change change-term
+        :auto-focus true
+        :value (rum/react project-filtering-l)}]
+      [:input
+       {:type "button"
+        :on-click clear-term
+        :value "X"}]])))
 
 (def project-search
   (mx/component
