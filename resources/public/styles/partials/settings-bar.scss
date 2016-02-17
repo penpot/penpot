@@ -1,5 +1,5 @@
 .settings-bar {
-  background-color: $color-gray-dark;
+  background-color: $primary-ui-bg;
   bottom: 0;
   height: 100%;
   position: fixed;
@@ -21,29 +21,28 @@
     height: 100%;
 
     .tool-window {
-      border-bottom: 1px solid $color-gray-darker;
+      border-bottom: 1px solid $light-ui-border;
       display: flex;
       flex-direction: column;
-      height: 100%;
-      max-height: 40%;
+      height: 40%;
       //flex: 1;
       width: 100%;
 
       .tool-window-bar {
         align-items: center;
-        background-color: $color-gray-darker;
+        border-bottom: 1px solid $light-ui-border;
         display: flex;
         flex-shrink: 0;
         padding: 2px $x-small;
 
         svg {
-          fill: $color-gray;
+          fill: $dark-ui-icons;
           height: 12px;
           width: 12px;
         }
 
         span {
-          color: $color-gray-light;
+          color: $dark-ui-text;
           font-weight: bold;
         }
 
@@ -59,7 +58,7 @@
           &:hover {
 
             svg {
-              fill: $color-gray-lighter;
+              fill: $color-danger;
             }
 
           }

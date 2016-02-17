@@ -28,7 +28,7 @@
 .btn-primary {
   @extend %btn;
   align-items: center;
-  background: $color-primary;
+  background: $main-ui-color;
   color: $color-white;
   justify-content: center;
   display: flex;
@@ -763,11 +763,11 @@ input[type=range]:focus::-ms-fill-upper {
     background-color: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background-color: $color-gray;
+    background-color: $scrollbar-bg;
 
     &:hover {
-      background-color: $color-gray-darker;
-      outline: 2px solid $color-primary;
+      background-color: darken($scrollbar-bg, 14%);
+      outline: 2px solid $main-ui-color;
     }
 
 }

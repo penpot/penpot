@@ -109,10 +109,10 @@
         border-bottom: 2px solid lighten($color-gray-light, 12%);
 
         &:hover {
-          border-color: $color-primary;
+          border-color: $main-ui-color;
 
           h3 {
-            color: $color-primary;
+            color: $main-ui-color;
           }
 
         }

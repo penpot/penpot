@@ -31,7 +31,7 @@
   }
   &.fade-out-down {
     @include animation(0,.5s,fadeOutDown);
-  }  
+  }
 }
 
 .color-palette-actions {
@@ -68,7 +68,7 @@
     }
   }
   &.current {
-    background-color: $color-primary;
+    background-color: $main-ui-color;
     border-color: $color-white;
     svg {
       fill: $color-white;

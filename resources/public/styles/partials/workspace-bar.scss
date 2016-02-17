@@ -1,7 +1,7 @@
 .workspace-bar {
   align-items: center;
-  background-color: $color-gray;
-  border-bottom: 1px solid $color-gray-dark;
+  background-color: $primary-ui-bg;
+  border-bottom: 1px solid  $bright-ui-border;
   display: flex;
   height: 40px;
   padding: $x-small $medium $x-small 65px;
@@ -10,7 +10,7 @@
 
   .main-icon {
     align-items: center;
-    background-color: $color-gray-dark;
+    background-color: $secondary-ui-bg;
     cursor: pointer;
     display: flex;
     height: 100%;
@@ -24,7 +24,7 @@
       height: 35px;
 
       svg {
-        fill: darken($color-gray-darker, 7%);
+        fill: $light-ui-icons;
         height: 35px;
         width: 35px;
 
@@ -33,7 +33,7 @@
       &:hover {
 
         svg {
-          fill: $color-primary;
+          fill: $main-ui-color;
         }
 
       }
@@ -44,7 +44,7 @@
 
   .project-tree-btn {
     align-items: center;
-    background-color: $color-gray-dark;
+    background-color: $secondary-ui-bg;
     border-radius: $br-small;
     box-sizing: border-box;
     cursor: pointer;
@@ -53,18 +53,30 @@
     padding: $x-small $x-big+$x-small $x-small $medium;
 
     svg {
-      fill: $color-primary;
+      fill: $dark-ui-icons;
       height: 20px;
       margin-right: $small;
       width: 20px;
     }
 
     span {
-      color: $color-primary;
+      color: $color-gray-light;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     &:hover {
-      background-color: $color-gray-darker;
+      background-color: $main-ui-color;
+
+      svg {
+        fill: $color-white;
+      }
+
+      span {
+        color: $color-white;
+      }
+
     }
 
   }
@@ -74,7 +86,7 @@
 
     .options-btn {
       align-items: center;
-      border-right: 1px solid $color-gray-dark;
+      border-right: 1px solid $bright-ui-border;
       display: flex;
       margin: 0;
 
@@ -85,6 +97,7 @@
       li {
         align-items: center;
         background-color: $color-gray-lighter;
+        border: 1px solid transparent;
         border-radius: $br-small;
         cursor: pointer;
         display: flex;
@@ -99,22 +112,18 @@
         }
 
         svg {
-          fill: $color-gray-dark;
+          fill: $dark-ui-icons;
           height: 18px;
           width: 18px;
         }
 
         &:hover {
           background-color: $color-white;
-
-          svg {
-            fill: $color-gray-darker;
-          }
-
+          border-color: $bright-ui-border;
         }
 
         &.selected {
-          background-color: $color-primary;
+          background-color: $main-ui-color;
 
           svg {
             fill: $color-white;

@@ -30,10 +30,10 @@
               :x2 position
               :y1 5
               :y2 step-padding
-              :stroke "#7f7f7f"}]
+              :stroke "#9da2a6"}]
       [:text {:x (+ position 2)
               :y 13
-              :fill "#7f7f7f"
+              :fill "#9da2a6"
               :style {:font-size "12px"}}
        value]])
 
@@ -44,7 +44,7 @@
              :x2 position
              :y1 10
              :y2 step-padding
-             :stroke "#7f7f7f"}])
+             :stroke "#9da2a6"}])
 
     :else
     (html
@@ -53,7 +53,7 @@
              :x2 position
              :y1 15
              :y2 step-padding
-             :stroke "#7f7f7f"}])))
+             :stroke "#9da2a6"}])))
 
 (defn v-line
   [position value]
@@ -65,11 +65,11 @@
               :y2 position
               :x1 5
               :x2 step-padding
-              :stroke "#7f7f7f"}]
+              :stroke "#9da2a6"}]
       [:text {:y position
               :x 5
               :transform (str/format "rotate(90 0 %s)" position)
-              :fill "#7f7f7f"
+              :fill "#9da2a6"
               :style {:font-size "12px"}}
        value]])
 
@@ -80,7 +80,7 @@
              :y2 position
              :x1 10
              :x2 step-padding
-             :stroke "#7f7f7f"}])
+             :stroke "#9da2a6"}])
 
     :else
     (html
@@ -89,7 +89,7 @@
              :y2 position
              :x1 15
              :x2 step-padding
-             :stroke "#7f7f7f"}])))
+             :stroke "#9da2a6"}])))
 
 (defn h-rule-render
   [own sidebar?]
@@ -101,8 +101,8 @@
       {:width wb/viewport-width
        :height 20}
       [:g
-       [:rect {:x step-padding :y 0 :width width :height step-padding :fill "#bab7b7"}]
-       [:rect {:x 0 :y 0 :width step-padding :height step-padding :fill "#bab7b7"}]]
+       [:rect {:x step-padding :y 0 :width width :height step-padding :fill "rgb(233, 234, 235)"}]
+       [:rect {:x 0 :y 0 :width step-padding :height step-padding :fill "rgb(233, 234, 235)"}]]
       [:g
        (for [tick ticks
              :let [pos (* (+ tick start-width) zoom)]]
@@ -128,7 +128,7 @@
                :y step-padding
                :height height
                :width step-padding
-               :fill "#bab7b7"}]
+               :fill "rgb(233, 234, 235)"}]
        (for [tick ticks
              :let [pos (* (+ tick start-height) zoom)]]
          (v-line pos tick))]])))

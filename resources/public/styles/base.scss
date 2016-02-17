@@ -1,6 +1,6 @@
 body {
-  background-color: $color-gray-lighter;
-  color: $color-gray-dark;
+  background-color: $secondary-ui-bg;
+  color: $light-ui-text;
   display: flex;
   flex-direction: column;
   font-family: "sourcesanspro", sans-serif;
@@ -46,7 +46,7 @@ svg {
 
 
 a {
-  color: $color-primary;
+  color: $main-ui-color;
 
   &:hover {
     color: $color-primary-dark;

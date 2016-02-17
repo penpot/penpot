@@ -1,5 +1,4 @@
 .layers-tools {
-  background-color: $color-gray-darker;
   bottom: 0;
   display: flex;
   height: 30px;
@@ -18,12 +17,12 @@
       cursor: pointer;
 
       svg {
-        fill: $color-gray;
+        fill: $light-ui-icons;
         height: 16px;
         width: 16px;
 
         &:hover {
-          fill: $color-white;
+          fill: $dark-ui-text;
         }
 
       }
@@ -79,15 +78,14 @@
 
     .element-list-body {
       align-items: center;
-      border-bottom: 1px solid $color-gray-darker;
+      border-bottom: 1px solid $bright-ui-border;
       box-sizing: border-box;
-      background-color: $color-gray-dark;
       display: flex;
       padding: $small;
       width: 100%;
 
       svg {
-        fill: $color-gray;
+        fill: $bright-ui-icons;
         height: 13px;
         margin-right: 8px;
         width: 13px;
@@ -104,7 +102,7 @@
       .sublevel-element {
 
         svg {
-          fill: $color-gray-darker;
+          fill: $light-ui-icons;
         }
 
       }
@@ -114,7 +112,7 @@
         width: 12px;
 
         svg {
-          fill: $color-gray-darker;
+          fill: $dark-ui-icons;
           transform: rotate(90deg);
           width: 12px;
         }
@@ -126,7 +124,7 @@
         &:hover {
 
           svg {
-            fill: $color-white;
+            fill: $light-ui-icons;
           }
 
         }
@@ -151,25 +149,25 @@
       }
 
       span {
-        color: darken($color-gray-darker, 8%);
+        color: $light-ui-text;
         font-size: $fs13;
         overflow-x: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       &.selected {
-        background-color: lighten($color-gray-darker, 5%);
 
         .element-icon {
 
           svg {
-            fill: $color-primary;
+            fill: $main-ui-color;
           }
 
         }
 
         span {
-          color: $color-primary;
+          color: $main-ui-color;
         }
 
       }
@@ -177,38 +175,38 @@
       .selected {
 
         svg {
-          fill: $color-gray-lighter;
+          fill: $dark-ui-icons;
         }
 
       }
 
       &:hover {
-        border-color: $color-gray-light;
+        border-color: $main-ui-color;
 
         .element-icon {
 
           svg {
-            fill: $color-gray-lighter;
+            fill: $dark-ui-icons;
           }
 
         }
 
         span {
-          color: $color-gray-lighter;
+          color: $dark-ui-text;
         }
 
       }
 
       &.drag-top {
-        border-top: 2px solid $color-primary;
+        border-top: 2px solid $main-ui-color;
       }
 
       &.drag-bottom {
-        border-bottom: 2px solid $color-primary;
+        border-bottom: 2px solid $main-ui-color;
       }
 
       &.drag-inside {
-        border: 2px solid $color-primary;
+        border: 2px solid $main-ui-color;
       }
 
     }

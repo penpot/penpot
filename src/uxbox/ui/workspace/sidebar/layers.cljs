@@ -152,8 +152,7 @@
              :class (when selected? "selected")}
         [:div.element-list-body
          {:class classes
-          :style {:background-color "gray"
-                  :opacity (if (:dragging @local)
+          :style {:opacity (if (:dragging @local)
                              "0.5"
                              "1")}
           :on-click select
@@ -314,4 +313,3 @@
    {:render layers-render
     :name "layers"
     :mixins [rum/reactive]}))
-

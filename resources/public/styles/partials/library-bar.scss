@@ -35,7 +35,7 @@
 
         &.current {
           background-color: $color-white;
-          color: $color-primary;
+          color: $main-ui-color;
         }
 
       }
@@ -69,7 +69,7 @@
 
         &:hover,
         &.current {
-          background-color: $color-primary;
+          background-color: $main-ui-color;
 
           .element-title,
           .element-subtitle {

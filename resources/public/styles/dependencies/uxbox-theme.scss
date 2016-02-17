@@ -1,0 +1,30 @@
+// This is a standard color scheme for UXBOX UI
+// Hope you like ir and feel free to create your own one!
+
+// Main color
+$main-ui-color: $color-primary;
+$dark-main-ui-color: mix($main-ui-color, $color-black, $mix-percentage-dark);
+
+// Background colors
+$primary-ui-bg: $color-white;
+$secondary-ui-bg: $color-gray-lighter;
+$dark-ui-bg: $color-gray-light;
+
+// Border color
+$dark-ui-border: $color-gray;
+$light-ui-border: $color-gray-light;
+$bright-ui-border: lighten($light-ui-border, 18%);
+
+// Icon colors
+$dark-ui-icons: $color-gray-dark;
+$light-ui-icons: $color-gray-light;
+$bright-ui-icons: $color-gray-lighter;
+
+// Text colors
+$dark-ui-text: $color-gray-darker;
+$light-ui-text: $color-gray;
+$bright-ui-text: $color-gray-light;
+
+// Canvas colors
+$canvas-bg: $color-gray-lighter;
+$scrollbar-bg: $color-gray-light;

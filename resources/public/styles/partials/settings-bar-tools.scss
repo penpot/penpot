@@ -1,6 +1,11 @@
+.drawing-tools {
+  max-height: 115px;
+}
+
 .tool-btn {
   align-items: center;
-  background-color: $color-gray-light;
+  background-color: $secondary-ui-bg;
+  border-radius: 3px;
   cursor: pointer;
   display: flex;
   flex-shrink: 0;
@@ -10,7 +15,7 @@
   width: 54px;
 
   svg {
-    fill: $color-gray-darker;
+    fill: $dark-ui-icons;
     height: 35px;
     width: 35px;
   }
@@ -20,10 +25,10 @@
   }
 
   &.selected {
-    background-color: $color-gray-darker;
+    background-color: $main-ui-color;
 
     svg {
-      fill: $color-primary;
+      fill: $color-white;
     }
 
   }

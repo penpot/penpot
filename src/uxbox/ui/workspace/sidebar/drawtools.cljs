@@ -71,7 +71,7 @@
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))]
     (html
-     [:div#form-tools.tool-window
+     [:div#form-tools.tool-window.drawing-tools
       [:div.tool-window-bar
        [:div.tool-window-icon i/window]
        [:span (tr "ds.tools")]

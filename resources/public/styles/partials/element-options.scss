@@ -29,7 +29,7 @@
       &:hover {
 
         svg {
-          fill: $color-primary;
+          fill: $main-ui-color;
         }
 
       }
@@ -38,7 +38,7 @@
         background-color: $color-gray-darker;
 
         svg {
-          fill: $color-primary;
+          fill: $main-ui-color;
         }
 
       }
@@ -117,7 +117,7 @@
       width: 15px;
 
       &:hover {
-        fill: $color-primary;
+        fill: $main-ui-color;
       }
 
     }
@@ -154,9 +154,9 @@
       width: 18px;
     }
     &:hover {
-      border-color: $color-primary;
+      border-color: $main-ui-color;
       svg {
-        fill: $color-primary;
+        fill: $main-ui-color;
       }
     }
   }
@@ -200,7 +200,7 @@
   &:hover,
   &.current {
     svg {
-      fill: $color-primary;
+      fill: $main-ui-color;
     }
   }
 }
