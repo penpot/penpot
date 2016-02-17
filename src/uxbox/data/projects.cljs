@@ -67,11 +67,11 @@
 
 (defn contains-term?
   [phrase term]
-  (str/contains? (str/lower phrase) (str/lower term)))
+  (str/contains? (str/lower phrase) (str/trim (str/lower term))))
 
 (defn filter-projects-by
   [term projs]
-  (if (= term "")
+  (if (str/blank? term)
     projs
     (filter #(contains-term? (:name %) term) projs)))
 
