@@ -67,7 +67,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:dashboard :project-ordering] order))
+      (assoc-in state [:dashboard :project-order] order))
 
     IPrintWithWriter
     (-pr-writer [mv writer _]
