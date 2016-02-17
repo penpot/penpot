@@ -68,8 +68,6 @@
      [:div
       (header)
       [:main.main-content
-       (when left-sidebar?
-         (left-sidebar))
 
        [:section.workspace-content {:class classes
                                     :on-scroll on-scroll
@@ -85,18 +83,17 @@
         (coordinates)
 
         ;; Canvas
-        [:section.workspace-canvas
-         {:class classes
-          :ref "workspace-canvas"}
-         [:section.viewport-container
-          {:ref "viewport-container"
-           :width wb/viewport-width
-           :height wb/viewport-height}
-          (viewport)]]]
+        [:section.workspace-canvas {:class classes
+                                    :ref "workspace-canvas"}
+         (viewport)]]
 
        (colorpalette)
 
        ;; Aside
+
+       (when left-sidebar?
+         (left-sidebar))
+
        (when right-sidebar?
          (right-sidebar))
        ]])))
@@ -107,43 +104,33 @@
     (rs/emit! (dw/initialize projectid pageid))
     own))
 
-(defn- workspace-handle-scroll
-  [el1 el2]
-  (letfn [(on-value [pt1 pt2]
-            (let [{:keys [x y]} (gpt/subtract pt1 pt2)
-                  cx (.-scrollLeft el2)
-                  cy (.-scrollTop el2)]
-              (set! (.-scrollLeft el2) (- cx x))
-              (set! (.-scrollTop el2) (- cy y))))]
-    (let [stoper (->> wb/interactions-b
-                      (rx/filter #(not= % :scroll/viewport))
-                      (rx/take 1))
-          initial @wb/mouse-viewport-a]
-      (as-> wb/mouse-viewport-s $
-        (rx/take-until stoper $)
-        (rx/subscribe $ #(on-value % initial))))))
-
 (defn- workspace-did-mount
   [own]
-  ;; FIXME: this is a hack. I don't know why I need setup
-  ;; scroll to both elements, but it does not works without
-  ;; that horrible hack.
-  (let [el1 (mx/get-ref-dom own "viewport-container")
-        el2 (mx/get-ref-dom own "workspace-canvas")
+  (letfn [(handle-scroll-interaction []
+            (let [stoper (->> wb/interactions-b
+                              (rx/filter #(not= % :scroll/viewport))
+                              (rx/take 1))
+                  initial @wb/mouse-viewport-a]
+              (as-> wb/mouse-viewport-s $
+                (rx/take-until stoper $)
+                (rx/subscribe $ #(handle-scroll % initial)))))
+
+          (handle-scroll [pt initial]
+            (let [{:keys [x y]} (gpt/subtract pt initial)
+                  el (mx/get-ref-dom own "workspace-canvas")
+                  cx (.-scrollLeft el)
+                  cy (.-scrollTop el)]
+              (set! (.-scrollLeft el) (- cx x))
+              (set! (.-scrollTop el) (- cy y))))]
+
+  (let [el (mx/get-ref-dom own "workspace-canvas")
         sub (as-> wb/interactions-b $
               (rx/dedupe $)
               (rx/filter #(= :scroll/viewport %) $)
-              (rx/on-value $ #(workspace-handle-scroll el1 el2)))]
-    (set! (.-scrollLeft el1) wb/canvas-start-scroll-x)
-    (set! (.-scrollLeft el2) wb/canvas-start-scroll-x)
-    (assoc own ::sub sub)))
-
-(defn- workspace-transfer-state
-  [old-state state]
-  (let [[projectid pageid] (:rum/props state)
-        sub (::sub old-state)]
-   (rs/emit! (dw/initialize projectid pageid))
-   (assoc state ::sub sub)))
+              (rx/on-value $ handle-scroll-interaction))]
+    (set! (.-scrollLeft el) wb/canvas-start-scroll-x)
+    (set! (.-scrollTop el) wb/canvas-start-scroll-y)
+    (assoc own ::sub sub))))
 
 (defn- workspace-will-unmount
   [own]
@@ -151,12 +138,17 @@
     (unsub)
     (dissoc own ::sub)))
 
+(defn- workspace-transfer-state
+  [old-state state]
+  (let [[projectid pageid] (:rum/props state)]
+    (rs/emit! (dw/initialize projectid pageid))
+    state))
+
 (def ^:static workspace
   (mx/component
    {:render workspace-render
+    :transfer-state workspace-transfer-state
     :will-mount workspace-will-mount
     :did-mount workspace-did-mount
-    :will-unmount workspace-will-unmount
-    :transfer-state workspace-transfer-state
     :name "workspace"
     :mixins [mx/static rum/reactive wshortcuts/mixin]}))

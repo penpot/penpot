@@ -1,48 +1,26 @@
 .workspace-content {
   background-color: $canvas-bg;
+  box-sizing: border-box;
   display: flex;
   height: 100%;
   width: 100%;
+  padding: 0 230px 0 230px;
   position: relative;
-  margin: 0 230px 0 230px;
 
   &.no-tool-bar-right {
-    margin-right: 0;
+    padding-right: 0;
   }
 
   &.no-tool-bar-left {
-    margin-left: 0;
+    padding-left: 0;
   }
 
   .workspace-canvas {
     box-sizing: border-box;
-    height: calc(100vh - 70px);
-
+    height: calc(100vh - 50px);
     overflow: scroll;
-    width: 100%;
-
     transition: none;
-
-    margin-top: 20px;
-    margin-left: 20px;
-    margin-right: 460px;
-
-    &.no-tool-bar-right.no-tool-bar-left{
-      margin-right: 0px;
-    }
-
-    &.no-tool-bar-left {
-      margin-right: 230px;
-    }
-
-    &.no-tool-bar-right {
-      margin-right: 230px;
-    }
-
-    /* .viewport-container { */
-    /*   height: 4069px; */
-    /*   width: 4069px; */
-    /* } */
+    width: 100%;
 
     .viewport {
 
@@ -85,8 +63,8 @@
 
   .vertical-rule {
     transition: none;
-    position: absolute;
     pointer-events: none;
     left: 0px;
   }
+
 }

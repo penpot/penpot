@@ -57,7 +57,6 @@
 (defonce scroll-s
   (as-> scroll-b $
     (rx/merge $ (rx/of (gpt/point)))
-    (rx/pr-log "scroll: " $)
     (rx/dedupe $)))
 
 (defonce scroll-a
@@ -126,6 +125,7 @@
 (def ^:const viewport-height 2048)
 
 (def ^:const canvas-start-x 600)
-(def ^:const canvas-start-y 30)
+(def ^:const canvas-start-y 600)
 
 (def ^:const canvas-start-scroll-x 550)
+(def ^:const canvas-start-scroll-y 550)

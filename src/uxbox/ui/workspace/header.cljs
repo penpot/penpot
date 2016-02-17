@@ -31,7 +31,7 @@
       [:div.main-icon
        (nav/link (r/route-for :dashboard/projects) i/logo-icon)]
       [:div.project-tree-btn
-       {:on-click (partial toggle :pagesmngr)}
+       {:on-click (partial toggle :sitemap)}
        i/project-tree
        [:span (:name page)]]
       [:div.workspace-options
@@ -50,11 +50,6 @@
          {:alt "Elements (Ctrl + Shift + L)"
           :class (when (contains? flags :layers) "selected")
           :on-click (partial toggle :layers)}
-         i/layers]
-        [:li.tooltip.tooltip-bottom
-         {:alt "Sitemap (Ctrl + Shift + S)"
-          :class (when (contains? flags :sitemap) "selected")
-          :on-click (partial toggle :sitemap)}
          i/layers]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}

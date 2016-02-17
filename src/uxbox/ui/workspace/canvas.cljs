@@ -197,7 +197,7 @@
             (when (kbd/space? event)
               (wb/emit-interaction! :nothing)))
 
-          (on-mousemove [event page]
+          (on-mousemove [event]
             (let [wpt (gpt/point (.-clientX event)
                                  (.-clientY event))
                   vppt (translate-point-to-viewport wpt)
@@ -208,9 +208,8 @@
                          :viewport-coords vppt
                          :canvas-coords cvpt}]
               (rx/push! wb/mouse-b event)))]
-    (let [[page] (:rum/props own)
-          key1 (events/listen js/document EventType.MOUSEMOVE
-                              #(on-mousemove % page))
+
+    (let [key1 (events/listen js/document EventType.MOUSEMOVE on-mousemove)
           key2 (events/listen js/document EventType.KEYDOWN on-key-down)
           key3 (events/listen js/document EventType.KEYUP on-key-up)]
       (assoc own ::key1 key1 ::key2 key2 ::key3 key3))))
