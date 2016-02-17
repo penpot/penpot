@@ -9,21 +9,25 @@ $dark-main-ui-color: mix($main-ui-color, $color-black, $mix-percentage-dark);
 $primary-ui-bg: $color-white;
 $secondary-ui-bg: $color-gray-lighter;
 $dark-ui-bg: $color-gray-light;
+$bg-ui-color:;
 
 // Border color
 $dark-ui-border: $color-gray;
 $light-ui-border: $color-gray-light;
 $bright-ui-border: lighten($light-ui-border, 18%);
+$border-ui-color:;
 
 // Icon colors
 $dark-ui-icons: $color-gray-dark;
 $light-ui-icons: $color-gray-light;
 $bright-ui-icons: $color-gray-lighter;
+$icons-ui-color:;
 
 // Text colors
 $dark-ui-text: $color-gray-darker;
 $light-ui-text: $color-gray;
 $bright-ui-text: $color-gray-light;
+$text-ui-color:;
 
 // Canvas colors
 $canvas-bg: $color-gray-lighter;
