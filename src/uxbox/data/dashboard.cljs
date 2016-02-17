@@ -73,6 +73,28 @@
     (-pr-writer [mv writer _]
       (-write writer "#<event:u.d.d/set-project-ordering>"))))
 
+(defn set-project-filtering
+  [term]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:dashboard :project-filter] term))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.d.d/set-project-filtering>"))))
+
+(defn clear-project-filtering
+  []
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:dashboard :project-filter] ""))
+
+    IPrintWithWriter
+    (-pr-writer [mv writer _]
+      (-write writer "#<event:u.d.d/clear-project-filtering>"))))
+
 (defn set-collection-type
   [type]
   {:pre [(contains? #{:builtin :own} type)]}

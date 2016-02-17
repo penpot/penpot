@@ -155,7 +155,11 @@
     (l/focus-atom $ s/state)))
 
 (def ^:static project-ordering-l
-  (as-> (l/in [:dashboard :project-ordering]) $
+  (as-> (l/in [:dashboard :project-order]) $
+    (l/focus-atom $ s/state)))
+
+(def ^:static project-filtering-l
+  (as-> (l/in [:dashboard :project-filter]) $
     (l/focus-atom $ s/state)))
 
 (defn project-sort-render
@@ -176,10 +180,30 @@
             :value option-value}
            option-text])]])))
 
-(def project-sort-selector
+(def project-sorting
   (mx/component
    {:render project-sort-render
     :name "project-sort-order"
+    :mixins [rum/reactive]}))
+
+(defn project-search-render
+  []
+  (html
+    [:form
+     [:input
+      {:type "text"
+       :on-change #(rs/emit! (dd/set-project-filtering (.-value (.-target %))))
+       :auto-focus true
+       :value (rum/react project-filtering-l)}]
+     [:input
+      {:type "button"
+       :on-click #(rs/emit! (dd/clear-project-filtering))
+       :value "X"}]]))
+
+(def project-search
+  (mx/component
+   {:render project-search-render
+    :name "project-search"
     :mixins [rum/reactive]}))
 
 (defn menu-render
@@ -190,7 +214,8 @@
      [:section#dashboard-bar.dashboard-bar
       [:div.dashboard-info
        [:span.dashboard-projects (tr "ds.num-projects" (t/c pcount))]
-       (project-sort-selector)]
+       (project-sorting)
+       (project-search)]
       [:div.dashboard-search
        i/search]])))
 
@@ -254,14 +279,16 @@
             (dom/prevent-default e)
             (lightbox/open! :new-project))]
     (let [state (rum/react grid-l)
-          ordering (rum/react project-ordering-l)]
+          ordering (rum/react project-ordering-l)
+          filtering (rum/react project-filtering-l)
+          projects (dp/filter-projects-by filtering (vals (:projects-by-id state)))]
       (html
        [:section.dashboard-grid
         [:h2 "Your projects"]
          [:div.dashboard-grid-content
           [:div.grid-item.add-project {:on-click on-click}
            [:span "+ New project"]]
-          (for [item (dp/sort-projects-by ordering (vals (:projects-by-id state)))]
+          (for [item (dp/sort-projects-by ordering projects)]
             (rum/with-key (project-item item) (:id item)))]]))))
 
 (def grid

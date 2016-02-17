@@ -1,5 +1,6 @@
 (ns uxbox.data.projects
   (:require [bouncer.validators :as v]
+            [cuerdas.core :as str]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
@@ -63,6 +64,16 @@
     :name (sort-by :name projs)
     :created (reverse (sort-by :created projs))
     projs))
+
+(defn contains-term?
+  [phrase term]
+  (str/contains? (str/lower phrase) (str/lower term)))
+
+(defn filter-projects-by
+  [term projs]
+  (if (= term "")
+    projs
+    (filter #(contains-term? (:name %) term) projs)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
