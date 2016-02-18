@@ -61,9 +61,11 @@
         left-sidebar? (not (empty? (keep flags [:layers :sitemap])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools
                                                  :element-options])))
+        local (:rum/local own)
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
-                 :no-tool-bar-left (not left-sidebar?))]
+                 :no-tool-bar-left (not left-sidebar?)
+                 :scrolling (:scrolling @local false))]
     (html
      [:div
       (header)
@@ -80,20 +82,17 @@
         (horizontal-rule)
         (vertical-rule)
 
-        (coordinates)
+        #_(coordinates)
 
         ;; Canvas
-        [:section.workspace-canvas {:class classes
-                                    :ref "workspace-canvas"}
+        [:section.workspace-canvas {:ref "workspace-canvas"}
          (viewport)]]
 
        (colorpalette)
 
        ;; Aside
-
        (when left-sidebar?
          (left-sidebar))
-
        (when right-sidebar?
          (right-sidebar))
        ]])))
@@ -110,12 +109,18 @@
             (let [stoper (->> wb/interactions-b
                               (rx/filter #(not= % :scroll/viewport))
                               (rx/take 1))
+                  local (:rum/local own)
                   initial @wb/mouse-viewport-a]
+              (swap! local assoc :scrolling true)
               (as-> wb/mouse-viewport-s $
                 (rx/take-until stoper $)
-                (rx/subscribe $ #(handle-scroll % initial)))))
+                (rx/subscribe $ #(on-scroll % initial) nil on-scroll-end))))
 
-          (handle-scroll [pt initial]
+          (on-scroll-end []
+            (let [local (:rum/local own)]
+              (swap! local assoc :scrolling false)))
+
+          (on-scroll [pt initial]
             (let [{:keys [x y]} (gpt/subtract pt initial)
                   el (mx/get-ref-dom own "workspace-canvas")
                   cx (.-scrollLeft el)
@@ -152,4 +157,5 @@
     :will-unmount workspace-will-unmount
     :did-mount workspace-did-mount
     :name "workspace"
-    :mixins [mx/static rum/reactive wshortcuts/mixin]}))
+    :mixins [mx/static rum/reactive wshortcuts/mixin
+             (mx/local)]}))

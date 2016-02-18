@@ -123,7 +123,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const viewport-width 4000)
-(def ^:const viewport-height 2000)
+(def ^:const viewport-height 4000)
 
 (def ^:const canvas-start-x 600)
 (def ^:const canvas-start-y 600)
