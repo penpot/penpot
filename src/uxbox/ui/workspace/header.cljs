@@ -73,7 +73,12 @@
          {:alt "Elements (Ctrl + Shift + L)"
           :class (when (contains? flags :layers) "selected")
           :on-click (partial toggle :layers)}
-         i/layers]]
+         i/layers]
+        [:li.tooltip.tooltip-bottom
+         {:alt "Element options"
+          :class (when (contains? flags :element-options) "selected")
+          :on-click (partial toggle :element-options)}
+         i/logo-icon]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
          i/undo]
