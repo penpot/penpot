@@ -7,7 +7,8 @@
 (defonce stream
   (rs/init {:user {:fullname "Cirilla Fiona"
                    :avatar "http://lorempixel.com/50/50/"}
-            :dashboard {}
+            :dashboard {:project-order :name
+                        :project-filter ""}
             :workspace {}
             :shapes-by-id {}
             :elements-by-id {}

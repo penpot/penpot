@@ -3,10 +3,12 @@
             [rum.core :as rum]
             [cats.labs.lens :as l]
             [cuerdas.core :as str]
+            [uxbox.locales :as t :refer (tr)]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.time :as time]
+            [uxbox.data.dashboard :as dd]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
@@ -20,9 +22,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; FIXME rename
-(def +ordering-options+ {:name "name"
-                         :last-updated "date updated"
-                         :created "date created"})
+(def +ordering-options+ {:name "ds.project-ordering.by-name"
+                         :created "ds.project-ordering.by-creation-date"})
 
 (def +layouts+ {:mobile {:name "Mobile"
                          :id "mobile"
@@ -149,32 +150,75 @@
 ;; Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (def ^:static menu-l
-;;   (as-> (l/select-keys [:projects]) $
-;;     (l/focus-atom $ s/state)))
+(def ^:static menu-l
+  (as-> (l/select-keys [:projects-by-id]) $
+    (l/focus-atom $ s/state)))
 
-(rum/defc project-sort-selector < rum/reactive
-  [sort-order]
-  nil)
-  ;; (let [sort-name (get project-orderings (rum/react sort-order))]
-  ;;   [:select.input-select
-  ;;    {:on-change #(reset! sort-order (name->order (.-value (.-target %))))
-  ;;     :value sort-name}
-  ;;    (for [order (keys project-orderings)
-  ;;          :let [name (get project-orderings order)]]
-  ;;      [:option {:key name} name])]))
+(def ^:static project-ordering-l
+  (as-> (l/in [:dashboard :project-order]) $
+    (l/focus-atom $ s/state)))
+
+(def ^:static project-filtering-l
+  (as-> (l/in [:dashboard :project-filter]) $
+    (l/focus-atom $ s/state)))
+
+(defn project-sort-render
+  []
+  (let [ordering (rum/react project-ordering-l)
+        change-order #(rs/emit! (dd/set-project-ordering (keyword (.-value (.-target %)))))]
+    (html
+     [:div
+       [:span (tr "ds.project-ordering")]
+       [:select.input-select
+        {:on-change change-order
+         :value (name ordering)}
+        (for [option (keys +ordering-options+)
+              :let [option-id (get +ordering-options+ option)
+                    option-value (name option)
+                    option-text (tr option-id)]]
+          [:option
+           {:key option-id
+            :value option-value}
+           option-text])]])))
+
+(def project-sorting
+  (mx/component
+   {:render project-sort-render
+    :name "project-sort-order"
+    :mixins [rum/reactive]}))
+
+(defn project-search-render
+  []
+  (let [change-term #(rs/emit! (dd/set-project-filtering (.-value (.-target %))))
+        clear-term #(rs/emit! (dd/clear-project-filtering))]
+    (html
+     [:form.dashboard-search
+      [:input.input-text
+       {:type "text"
+        :on-change change-term
+        :auto-focus true
+        :placeholder (tr "ds.project-search.placeholder")
+        :value (rum/react project-filtering-l)}]
+      [:div.clear-search
+        {:on-click clear-term}
+       i/close]])))
+
+(def project-search
+  (mx/component
+   {:render project-search-render
+    :name "project-search"
+    :mixins [rum/reactive]}))
 
 (defn menu-render
   []
-  (let [state {:projects []} #_(rum/react menu-l)
-        pcount (count (:projects state))]
+  (let [projects (rum/react menu-l)
+        pcount (count (:projects-by-id projects))] ;; FIXME: redundant project-by-id key
     (html
      [:section#dashboard-bar.dashboard-bar
       [:div.dashboard-info
-       [:span.dashboard-projects pcount " projects"]
-       [:span "Sort by"]]
-      [:div.dashboard-search
-       i/search]])))
+       [:span.dashboard-projects (tr "ds.num-projects" (t/c pcount))]
+       (project-sorting)
+       (project-search)]])))
 
 (def menu
   (mx/component
@@ -235,14 +279,17 @@
   (letfn [(on-click [e]
             (dom/prevent-default e)
             (lightbox/open! :new-project))]
-    (let [state (rum/react grid-l)]
+    (let [state (rum/react grid-l)
+          ordering (rum/react project-ordering-l)
+          filtering (rum/react project-filtering-l)
+          projects (dp/filter-projects-by filtering (vals (:projects-by-id state)))]
       (html
        [:section.dashboard-grid
         [:h2 "Your projects"]
          [:div.dashboard-grid-content
           [:div.grid-item.add-project {:on-click on-click}
            [:span "+ New project"]]
-          (for [item (vals (:projects-by-id state))]
+          (for [item (dp/sort-projects-by ordering projects)]
             (rum/with-key (project-item item) (:id item)))]]))))
 
 (def grid
@@ -250,4 +297,3 @@
    {:render grid-render
     :name "grid"
     :mixins [rum/reactive]}))
-

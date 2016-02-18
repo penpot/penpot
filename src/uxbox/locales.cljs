@@ -34,7 +34,14 @@
    (let [value (get-in +locales+ [+locale+ t] (name t))
          plural (first (filter c? args))
          args (mapv #(if (c? %) @% %) args)
-         value (if vector?
+         value (cond
+                 (and (vector? value)
+                      (= 3 (count value)))
+                 (nth value (min 2 @plural))
+
+                 (vector? value)
                  (if (= @plural 1) (first value) (second value))
+
+                 :else
                  value)]
      (apply str/format value args))))

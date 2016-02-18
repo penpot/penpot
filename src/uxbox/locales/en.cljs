@@ -2,6 +2,15 @@
 
 (defonce +locales+
   {"ds.projects" "PROJECTS"
+   "ds.num-projects" ["No projects"
+                      "%s project"
+                      "%s projects"]
+   "ds.project-ordering" "Sort by"
+   "ds.project-ordering.by-name" "name"
+   "ds.project-ordering.by-last-update" "last update"
+   "ds.project-ordering.by-creation-date" "creation date"
+   "ds.project-search.placeholder" "Search..."
+
    "ds.elements" "ELEMENTS"
    "ds.icons" "ICONS"
    "ds.colors" "COLORS"
