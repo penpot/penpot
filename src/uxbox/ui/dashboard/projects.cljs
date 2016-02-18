@@ -192,16 +192,16 @@
   (let [change-term #(rs/emit! (dd/set-project-filtering (.-value (.-target %))))
         clear-term #(rs/emit! (dd/clear-project-filtering))]
     (html
-     [:form
-      [:input
+     [:form.dashboard-search
+      [:input.input-text
        {:type "text"
         :on-change change-term
         :auto-focus true
+        :placeholder "Search..."
         :value (rum/react project-filtering-l)}]
-      [:input
-       {:type "button"
-        :on-click clear-term
-        :value "X"}]])))
+      [:div.clear-search
+        {:on-click clear-term}
+       i/close]])))
 
 (def project-search
   (mx/component
@@ -218,9 +218,7 @@
       [:div.dashboard-info
        [:span.dashboard-projects (tr "ds.num-projects" (t/c pcount))]
        (project-sorting)
-       (project-search)]
-      [:div.dashboard-search
-       i/search]])))
+       (project-search)]])))
 
 (def menu
   (mx/component
@@ -299,4 +297,3 @@
    {:render grid-render
     :name "grid"
     :mixins [rum/reactive]}))
-

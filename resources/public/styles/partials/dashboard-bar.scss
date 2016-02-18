@@ -28,21 +28,43 @@
   }
 
   .dashboard-search {
-    cursor: pointer;
-    margin-left: $big;
+    align-items: center;
+    display: flex;
+    margin-left: $small;
 
-    svg {
-      fill: $color-gray-dark;
-      height: 20px;
-      width: 20px;
+    .input-text {
+      background: rgba(255,255,255,.4);
+      border: 0;
+      color: $dark-ui-text;
+      padding: 4px 8px;
+      margin: 0;
+      max-width: 160px;
+    }
 
-      &:hover {
-        fill: $color-gray-darker;
+    .clear-search {
+      align-items: center;
+      background: rgba(255,255,255,.4);
+      cursor: pointer;
+      display: flex;
+      height: 28px;
+      padding: 0 5px;
+
+      svg {
+        fill: $light-ui-icons;
+        height: 15px;
+        transform: rotate(45deg);
+        width: 15px;
+
+        &:hover {
+          fill: $color-danger;
+        }
+
       }
 
     }
 
   }
+
 
   &.library-gap {
     padding: $small $medium $small 270px;
