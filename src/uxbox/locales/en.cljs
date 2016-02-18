@@ -9,6 +9,7 @@
    "ds.project-ordering.by-name" "name"
    "ds.project-ordering.by-last-update" "last update"
    "ds.project-ordering.by-creation-date" "creation date"
+   "ds.project-search.placeholder" "Search..."
 
    "ds.elements" "ELEMENTS"
    "ds.icons" "ICONS"

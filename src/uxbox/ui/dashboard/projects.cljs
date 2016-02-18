@@ -197,7 +197,7 @@
        {:type "text"
         :on-change change-term
         :auto-focus true
-        :placeholder "Search..."
+        :placeholder (tr "ds.project-search.placeholder")
         :value (rum/react project-filtering-l)}]
       [:div.clear-search
         {:on-click clear-term}
