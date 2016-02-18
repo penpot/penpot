@@ -504,9 +504,9 @@
                       :key (str "menu-" (:id menu))
                       :class (when selected? "selected")}
           (:icon menu)])]
-      (let [menu (get +menus-by-id+ active-menu)
-            menu (assoc menu :id active-menu)]
-        (-render-menu menu own shape local))])))
+      (when-let [menu (get +menus-by-id+ active-menu)]
+        (let [menu (assoc menu :id active-menu)]
+          (-render-menu menu own shape local)))])))
 
 (def ^:static ^:private options-menus
   (mx/component
