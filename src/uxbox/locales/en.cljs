@@ -22,7 +22,7 @@
 
    "ds.recent-colors" "Recent colors"
    "ds.element-options" "Element options"
-   "ds.tools" "Tools"
+   "ds.draw-tools" "Draw tools"
    "ds.sitemap" "Sitemap"
 
    "ds.help.rect" "Box (Ctrl + B)"
