@@ -382,12 +382,12 @@ input[type="checkbox"]:focus {
   @extend .input-text;
   background-image: url("/images/svg/arrow-down.svg");
   background-repeat: no-repeat;
-  background-position: 92% 48%;
+  background-position: 95% 48%;
   background-size: 10px;
   cursor: pointer;
 
   &.small {
-    padding: $x-small $small
+    padding: $x-small $big $x-small $x-small;
   }
 
 }
