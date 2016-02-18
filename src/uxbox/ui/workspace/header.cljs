@@ -9,7 +9,32 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.users :as ui.u]
             [uxbox.ui.navigation :as nav]
-            [uxbox.ui.mixins :as mx]))
+            [uxbox.ui.mixins :as mx]
+            [uxbox.util.math :as mth]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Coordinates Debug
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- coordenates-render
+  [own]
+  (let [{:keys [x y]} (rum/react wb/mouse-canvas-a)
+        x (mth/precision x 1)
+        y (mth/precision y 1)]
+    (html
+     [:ul.options-btn
+      [:li.tooltip.tooltip-bottom {:alt "x"} x]
+      [:li.tooltip.tooltip-bottom {:alt "y"} y]])))
+
+(def coordinates
+  (mx/component
+   {:render coordenates-render
+    :name "coordenates"
+    :mixins [rum/reactive]}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Header
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn on-download-clicked
   [event page]
@@ -87,7 +112,8 @@
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom
          {:alt "Multi-canvas (Ctrl + M)"}
-         i/multicanvas]]]
+         i/multicanvas]]
+       (coordinates)]
       (ui.u/user)])))
 
 (def header

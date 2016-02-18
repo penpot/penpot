@@ -20,23 +20,6 @@
             [uxbox.ui.workspace.canvas :refer (viewport)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Coordinates Debug
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- coordenates-render
-  [own]
-  (let [{:keys [x y]} (rum/react wb/mouse-canvas-a)]
-    (html
-     [:div {:style {:position "absolute" :left "50px" :top "25px"}}
-      [:span (str "| x=" x " | y=" y " |")]])))
-
-(def coordinates
-  (mx/component
-   {:render coordenates-render
-    :name "coordenates"
-    :mixins [rum/reactive]}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
