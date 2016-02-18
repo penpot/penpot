@@ -82,12 +82,10 @@
     :name "vertical-tick-render"
     :mixins [mx/static]}))
 
-
 (defn horizontal-rule-render
   [own sidebar?]
   (let [scroll (rum/react wb/scroll-a)
         scroll-x (:x scroll)
-        scroll-y (:y scroll)
         translate-x (- (- wb/canvas-scroll-padding) (:x scroll))]
     (html
      [:svg.horizontal-rule
@@ -105,60 +103,79 @@
     :mixins [mx/static rum/reactive]}))
 
 
-(defn v-line
-  [position value]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Horizontal Rule
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn horizontal-tick-render
+  [own value]
+  (let [big-ticks-mod (big-ticks-mod 1)
+        mid-ticks-mod (mid-ticks-mod 1)
+        big-step? (< (mod value big-ticks-mod) step-size)
+        mid-step? (< (mod value mid-ticks-mod) step-size)
+        pos (+ value
+               wb/canvas-start-x
+               wb/canvas-scroll-padding)
+        pos (* pos zoom)]
   (cond
-    (< (mod value big-ticks-mod) step-size)
+    big-step?
     (html
-     [:g {:key position}
-      [:line {:y1 position
-              :y2 position
+     [:g {:key pos}
+      [:line {:y1 pos
+              :y2 pos
               :x1 5
               :x2 step-padding
               :stroke "#9da2a6"}]
-      [:text {:y position
+      [:text {:y pos
               :x 5
-              :transform (str/format "rotate(90 0 %s)" position)
+              :transform (str/format "rotate(90 0 %s)" pos)
               :fill "#9da2a6"
               :style {:font-size "12px"}}
        value]])
 
-    (< (mod value mid-ticks-mod) step-size)
+    mid-step?
     (html
-     [:line {:key position
-             :y1 position
-             :y2 position
+     [:line {:key pos
+             :y1 pos
+             :y2 pos
              :x1 10
              :x2 step-padding
              :stroke "#9da2a6"}])
 
     :else
     (html
-     [:line {:key position
-             :y1 position
-             :y2 position
+     [:line {:key pos
+             :y1 pos
+             :y2 pos
              :x1 15
              :x2 step-padding
-             :stroke "#9da2a6"}])))
+             :stroke "#9da2a6"}]))))
+
+(def ^:const horizontal-tick
+  (mx/component
+   {:render horizontal-tick-render
+    :name "horizontal-tick-render"
+    :mixins [mx/static]}))
 
 (defn vertical-rule-render
   [own sidebar?]
-  (let [height wb/viewport-height
-        ticks (concat (range (- step-padding start-height) 0 step-size)
-                      (range 0 (- height start-height step-padding) step-size))]
+  (let [scroll (rum/react wb/scroll-a)
+        scroll-y (:y scroll)
+        translate-y (- (- wb/canvas-scroll-padding) (:y scroll))]
     (html
      [:svg.vertical-rule
       {:width 20
        :height wb/viewport-height}
-      [:g
-       [:rect {:x 0
-               :y step-padding
-               :height height
-               :width step-padding
-               :fill "rgb(233, 234, 235)"}]
-       (for [tick ticks
-             :let [pos (* (+ tick start-height) zoom)]]
-         (v-line pos tick))]])))
+
+      [:g {:transform (str  "translate(0, " translate-y ")")}
+       (for [value +ticks+]
+         (-> (horizontal-tick value)
+             (rum/with-key value)))]
+      [:rect {:x 0
+              :y 0
+              :height 20
+              :width 20
+              :fill "rgb(233, 234, 235)"}]])))
 
 (def vertical-rule
   (mx/component
