@@ -56,6 +56,7 @@
 
 (defonce scroll-s
   (as-> scroll-b $
+    (rx/sample 10 $)
     (rx/merge $ (rx/of (gpt/point)))
     (rx/dedupe $)))
 
@@ -121,11 +122,11 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:const viewport-width 4069)
-(def ^:const viewport-height 2048)
+(def ^:const viewport-width 4000)
+(def ^:const viewport-height 2000)
 
 (def ^:const canvas-start-x 600)
 (def ^:const canvas-start-y 600)
-
-(def ^:const canvas-start-scroll-x 550)
-(def ^:const canvas-start-scroll-y 550)
+(def ^:const canvas-scroll-padding 50)
+(def ^:const canvas-start-scroll-x (- canvas-start-x canvas-scroll-padding))
+(def ^:const canvas-start-scroll-y (- canvas-start-y canvas-scroll-padding))

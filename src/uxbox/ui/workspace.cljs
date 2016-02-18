@@ -142,13 +142,14 @@
   [old-state state]
   (let [[projectid pageid] (:rum/props state)]
     (rs/emit! (dw/initialize projectid pageid))
-    state))
+    (assoc state ::sub (::sub old-state))))
 
 (def ^:static workspace
   (mx/component
    {:render workspace-render
     :transfer-state workspace-transfer-state
     :will-mount workspace-will-mount
+    :will-unmount workspace-will-unmount
     :did-mount workspace-did-mount
     :name "workspace"
     :mixins [mx/static rum/reactive wshortcuts/mixin]}))

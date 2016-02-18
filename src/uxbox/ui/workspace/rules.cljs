@@ -13,47 +13,81 @@
 (def ^:static step-size 10)
 (def ^:static start-width wb/canvas-start-x)
 (def ^:static start-height wb/canvas-start-y)
-(def ^:static big-ticks-mod (/ 100 zoom))
-(def ^:static mid-ticks-mod (/ 50 zoom))
 (def ^:static scroll-left 0)
 (def ^:static scroll-top 0)
 
-;; TODO: refactor
+(defn big-ticks-mod [zoom] (/ 100 zoom))
+(defn mid-ticks-mod [zoom] (/ 50 zoom))
 
 (defn h-line
   [position value]
-  (cond
-    (< (mod value big-ticks-mod) step-size)
-    (html
-     [:g {:key position}
-      [:line {:x1 position
-              :x2 position
-              :y1 5
-              :y2 step-padding
-              :stroke "#9da2a6"}]
-      [:text {:x (+ position 2)
-              :y 13
-              :fill "#9da2a6"
-              :style {:font-size "12px"}}
-       value]])
+  (let [big-ticks-mod (big-ticks-mod 1)
+        mid-ticks-mod (mid-ticks-mod 1)
+        big-step? (< (mod value big-ticks-mod) step-size)
+        mid-step? (< (mod value mid-ticks-mod) step-size)]
+    (cond
+      big-step?
+      (html
+       [:g {:key position}
+        [:line {:x1 position
+                :x2 position
+                :y1 5
+                :y2 step-padding
+                :stroke "#9da2a6"}]
+        [:text {:x (+ position 2)
+                :y 13
+                :fill "#9da2a6"
+                :style {:font-size "12px"}}
+         value]])
 
-    (< (mod value mid-ticks-mod) step-size)
-    (html
-     [:line {:key position
-             :x1 position
-             :x2 position
-             :y1 10
-             :y2 step-padding
-             :stroke "#9da2a6"}])
+      mid-step?
+      (html
+       [:line {:key position
+               :x1 position
+               :x2 position
+               :y1 10
+               :y2 step-padding
+               :stroke "#9da2a6"}])
 
-    :else
+      :else
+      (html
+       [:line {:key position
+               :x1 position
+               :x2 position
+               :y1 15
+               :y2 step-padding
+               :stroke "#9da2a6"}]))))
+
+(def ^:const +ticks+
+  (concat (range (- (/ wb/viewport-width 2)) 0 step-size)
+          (range 0 (/ wb/viewport-width 2) step-size)))
+
+(def ^:const +rule-padding+ 20)
+
+
+(defn h-rule-render
+  [own sidebar?]
+  (println "h-rule-render")
+  (let [scroll (rum/react wb/scroll-a)
+        scroll-x (:x scroll)
+        scroll-y (:y scroll)
+        translate-x (- (- wb/canvas-scroll-padding) (:x scroll))]
+    (println (count +ticks+))
     (html
-     [:line {:key position
-             :x1 position
-             :x2 position
-             :y1 15
-             :y2 step-padding
-             :stroke "#9da2a6"}])))
+     [:svg.horizontal-rule
+      {:width wb/viewport-width
+       :height 20}
+      [:g {:transform (str "translate(" translate-x ", 0)")}
+       (for [tick +ticks+
+             :let [pos (* (+ tick wb/canvas-start-x wb/canvas-scroll-padding +rule-padding+) zoom)]]
+         (h-line pos tick))]])))
+
+(def h-rule
+  (mx/component
+   {:render h-rule-render
+    :name "h-rule"
+    :mixins [mx/static rum/reactive]}))
+
 
 (defn v-line
   [position value]
@@ -90,29 +124,6 @@
              :x1 15
              :x2 step-padding
              :stroke "#9da2a6"}])))
-
-(defn h-rule-render
-  [own sidebar?]
-  (let [width wb/viewport-width
-        ticks (concat (range (- step-padding start-width) 0 step-size)
-                      (range 0 (- width start-width step-padding) step-size))]
-    (html
-     [:svg.horizontal-rule
-      {:width wb/viewport-width
-       :height 20}
-      [:g
-       [:rect {:x step-padding :y 0 :width width :height step-padding :fill "rgb(233, 234, 235)"}]
-       [:rect {:x 0 :y 0 :width step-padding :height step-padding :fill "rgb(233, 234, 235)"}]]
-      [:g
-       (for [tick ticks
-             :let [pos (* (+ tick start-width) zoom)]]
-         (h-line pos tick))]])))
-
-(def h-rule
-  (mx/component
-   {:render h-rule-render
-    :name "h-rule"
-    :mixins [mx/static rum/reactive]}))
 
 (defn v-rule-render
   [own sidebar?]
