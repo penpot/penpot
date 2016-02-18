@@ -3,6 +3,19 @@
   (:require [uxbox.shapes :as sh]
             [uxbox.util.data :refer (index-of)]))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shape Creation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn assoc-shape-to-page
+  [state shape page]
+  (let [sid (random-uuid)
+        shape (merge shape {:id sid :page page})]
+    (as-> state $
+      (update-in $ [:pages-by-id page :shapes] conj sid)
+      (assoc-in $ [:shapes-by-id sid] shape))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Delete Shapes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

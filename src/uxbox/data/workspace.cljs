@@ -126,12 +126,8 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [sid (random-uuid)
-            pid (get-in state [:workspace :page])
-            shape (merge shape {:id sid :page pid})]
-        (as-> state $
-          (update-in $ [:pages-by-id pid :shapes] conj sid)
-          (assoc-in $ [:shapes-by-id sid] shape))))))
+      (let [page (get-in state [:workspace :page])]
+        (stsh/assoc-shape-to-page state shape page)))))
 
 (defn delete-shape
   "Remove the shape using its id."
@@ -348,24 +344,6 @@
     (-apply-update [_ state]
       (assoc-in state [:workspace :selected] #{}))))
 
-;; FIXME
-;; (defn copy-selected
-;;   "Copy the selected shapes."
-;;   []
-;;   (letfn [(valid-selection? [shapes]
-;;             (let [groups (into #{} (map :group shapes))]
-;;               (= 1 (count groups))))]
-;;     (reify
-;;       rs/WatchEvent
-;;       (-apply-watch [_ state]
-;;         (let [selected (get-in state [:workspace :selected])
-;;               selected (map #(get-in state [:shapes-by-id %]) selected)]
-;;           (if (valid-selection? selected)
-;;             (as-> selected $
-;;               (map #(assoc % :id (random-uuid)) $)
-;;               (map #(add-shape % %) $)
-;;               (rx/from-coll $))))))
-
 (defn group-selected
   []
   (letfn [(update-shapes-on-page [state pid selected group]
@@ -404,6 +382,25 @@
               (update $ :shapes-by-id assoc sid group)
               (update $ :workspace assoc :selected #{}))
             state))))))
+
+(defn duplicate-selected
+  []
+  (letfn [(all-toplevel? [coll]
+            (every? #(nil? (:parent %)) coll))]
+    (reify
+      rs/UpdateEvent
+      (-apply-update [_ state]
+        (let [selected (->> (get-in state [:workspace :selected])
+                            (mapv #(get-in state [:shapes-by-id %])))
+              page (get-in state [:workspace :page])]
+          (cond
+            (all-toplevel? selected)
+            (reduce #(stsh/assoc-shape-to-page %1 %2 page) state selected)
+
+            :else
+            (do
+              (println "Not implemented")
+              state)))))))
 
 (defn delete-selected
   "Deselect all and remove all selected shapes."

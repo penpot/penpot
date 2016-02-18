@@ -19,6 +19,7 @@
    :ctrl+shift+i #(rs/emit! (dw/toggle-flag :icons))
    :ctrl+shift+l #(rs/emit! (dw/toggle-flag :layers))
    :ctrl+r #(rs/emit! (dw/toggle-flag :ruler))
+   :ctrl+d #(rs/emit! (dw/duplicate-selected))
    :esc #(rs/emit! (dw/deselect-all))
    :backspace #(rs/emit! (dw/delete-selected))
    :delete #(rs/emit! (dw/delete-selected))
