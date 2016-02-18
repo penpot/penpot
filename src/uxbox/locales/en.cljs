@@ -21,6 +21,7 @@
                       "%s elements"]
 
    "ds.recent-colors" "Recent colors"
+   "ds.element-options" "Element options"
    "ds.tools" "Tools"
    "ds.sitemap" "Sitemap"
 
