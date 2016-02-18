@@ -1,6 +1,7 @@
 .settings-bar {
   background-color: $primary-ui-bg;
   bottom: 0;
+  box-sizing: border-box;
   height: 100%;
   position: fixed;
   right: 0;
@@ -13,10 +14,11 @@
 
   .settings-bar-inside {
     align-items: center;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding-bottom: 30px;
+    overflow-x: hidden;
     padding-top: 50px;
     height: 100%;
 
@@ -24,8 +26,7 @@
       border-bottom: 1px solid $light-ui-border;
       display: flex;
       flex-direction: column;
-      height: 40%;
-      //flex: 1;
+      flex: 1;
       width: 100%;
 
       .tool-window-bar {
@@ -72,6 +73,10 @@
         flex-wrap: wrap;
         overflow-y: auto;
         padding-bottom: $medium;
+      }
+
+      &#layers {
+        padding-bottom: 30px;
       }
 
     }
