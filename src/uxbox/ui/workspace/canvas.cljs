@@ -16,6 +16,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]
+            [uxbox.util.data :refer (parse-int)]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.canvas.movement]
@@ -179,14 +180,16 @@
   (letfn [(translate-point-to-viewport [pt]
             (let [viewport (mx/get-ref-dom own "viewport")
                   brect (.getBoundingClientRect viewport)
-                  brect (gpt/point (.-left brect) (.-top brect))]
+                  brect (gpt/point (parse-int (.-left brect))
+                                   (parse-int (.-top brect)))]
               (gpt/subtract pt brect)))
 
           (translate-point-to-canvas [pt]
             (let [viewport (mx/get-ref-dom own "viewport")
                   canvas (dom/get-element-by-class "page-canvas" viewport)
                   brect (.getBoundingClientRect canvas)
-                  brect (gpt/point (.-left brect) (.-top brect))]
+                  brect (gpt/point (parse-int (.-left brect))
+                                   (parse-int (.-top brect)))]
               (gpt/subtract pt brect)))
 
           (on-key-down [event]

@@ -19,12 +19,10 @@
 (defn- coordenates-render
   [own]
   (when-let [{:keys [x y]} (rum/react wb/mouse-canvas-a)]
-    (let [x (mth/precision x 1)
-          y (mth/precision y 1)]
-      (html
-       [:ul.options-btn
-        [:li.tooltip.tooltip-bottom {:alt "x"} x]
-        [:li.tooltip.tooltip-bottom {:alt "y"} y]]))))
+    (html
+     [:ul.options-btn
+      [:li.tooltip.tooltip-bottom {:alt "x"} x]
+      [:li.tooltip.tooltip-bottom {:alt "y"} y]])))
 
 (def coordinates
   (mx/component
