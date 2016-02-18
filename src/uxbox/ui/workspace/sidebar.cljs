@@ -44,10 +44,10 @@
     (html
      [:aside#settings-bar.settings-bar
       [:div.settings-bar-inside
-       (when (contains? flags :element-options)
-         (options-toolbox))
        (when (contains? flags :drawtools)
          (draw-toolbox))
+       (when (contains? flags :element-options)
+         (options-toolbox))
        (when (contains? flags :icons)
          (icons-toolbox))]])))
 
