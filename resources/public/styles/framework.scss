@@ -676,7 +676,7 @@ input[type=range]::-webkit-slider-runnable-track {
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
-  background: darken($color-gray-darker, 12%);
+  background: $secondary-ui-bg;
   border-radius: 25px;
   border: 0px solid #000101;
 }
@@ -686,13 +686,13 @@ input[type=range]::-webkit-slider-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $color-gray-lighter;
+  background: $dark-ui-icons;
   cursor: pointer;
   -webkit-appearance: none;
   margin-top: -8px;
 }
 input[type=range]:focus::-webkit-slider-runnable-track {
-  background: darken($color-gray-darker, 12%);
+  background: $secondary-ui-bg;
 }
 input[type=range]::-moz-range-track {
   width: 100%;
@@ -700,7 +700,7 @@ input[type=range]::-moz-range-track {
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
-  background: darken($color-gray-darker, 12%);
+  background: $secondary-ui-bg;
   border-radius: 25px;
   border: 0px solid #000101;
 }
@@ -710,7 +710,7 @@ input[type=range]::-moz-range-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $color-gray-lighter;
+  background: $dark-ui-icons;
   cursor: pointer;
 }
 input[type=range]::-ms-track {
@@ -724,13 +724,13 @@ input[type=range]::-ms-track {
   color: transparent;
 }
 input[type=range]::-ms-fill-lower {
-  background: darken($color-gray-darker, 12%);
+  background: $secondary-ui-bg;
   border: 0px solid #000101;
   border-radius: 50px;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
 }
 input[type=range]::-ms-fill-upper {
-  background: darken($color-gray-darker, 12%);
+  background: $secondary-ui-bg;
   border: 0px solid #000101;
   border-radius: 50px;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
@@ -741,14 +741,14 @@ input[type=range]::-ms-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $color-gray-lighter;
+  background: $dark-ui-icons;
   cursor: pointer;
 }
 input[type=range]:focus::-ms-fill-lower {
-  background: darken($color-gray-darker, 12%);
+  background: $secondary-ui-bg;
 }
 input[type=range]:focus::-ms-fill-upper {
-  background: darken($color-gray-darker, 12%);
+  background: $secondary-ui-bg;
 }
 
 // Scroll bar (chrome)
@@ -782,7 +782,7 @@ input[type=range]:focus::-ms-fill-upper {
     &::after {
       background-color: $color-white;
       border-radius: $br-small;
-      color: $color-gray-dark;
+      color: $light-ui-text;
       content: attr(alt);
       font-size: $fs11;
       font-weight: bold;
@@ -820,7 +820,7 @@ input[type=range]:focus::-ms-fill-upper {
         background-color: rgba(255,255,255,.7);
         box-sizing: border-box;
         border-radius: 0;
-        color: $color-gray-darker;
+        color: $dark-ui-text;
         display: flex;
         height: 100%;
         justify-content: center;

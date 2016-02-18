@@ -525,11 +525,11 @@
     (html
      [:div.elementa-options.tool-window
       [:div.tool-window-bar
-       [:div.tool-window-icon i/project-tree]
+       [:div.tool-window-icon i/shapes]
        [:span (tr "ds.element-options")]
        [:div.tool-window-close {:on-click close} i/close]]
       [:div.tool-window-content
-       [:div.element-options.tool-window
+       [:div.element-options
         (if shape
           (options-menus shape))]]])))
 

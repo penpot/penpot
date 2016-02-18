@@ -1,27 +1,26 @@
 .element-options {
   display: flex;
-  position: absolute;
-  transition: all .1s ease;
 
   .element-icons {
-    background-color: $color-white;
-    border: 1px solid darken($color-gray-lighter, 5%);
+    background-color: $primary-ui-bg;
+    border: 1px solid $bright-ui-border;
     border-radius: $br-small;
     display: flex;
-    flex-direction: column;
     height: 100%;
-    margin: 0;
+    margin: $x-small 0 $x-small $x-small;
 
     li {
       align-items: center;
-      border-bottom: 1px solid $color-gray-lighter;
+      border-right: 1px solid $bright-ui-border;
       border-radius: $br-small;
       cursor: pointer;
       display: flex;
+      flex: 1;
+      justify-content: center;
       padding: $small;
 
       svg {
-        fill: $color-gray;
+        fill: $dark-ui-icons;
         height: 15px;
         width: 15px;
       }
@@ -35,10 +34,10 @@
       }
 
       &.selected {
-        background-color: $color-gray-darker;
+        background-color: $main-ui-color;
 
         svg {
-          fill: $main-ui-color;
+          fill: $color-white;
         }
 
       }
@@ -52,18 +51,13 @@
   }
 
   .element-set {
-    background-color: $color-gray-darker;
-    border-radius: $br-small;
-    color: $color-gray-light;
+    color: $light-ui-text;
     margin-left: $x-small;
-    width: 220px;
 
     .element-set-title {
-      background-color: $color-gray-dark;
-      border-top-left-radius: $br-small;
-      border-top-right-radius: $br-small;
       box-sizing: border-box;
-      color: $color-gray-lighter;
+      border-bottom: 1px dashed $bright-ui-border;
+      color: $light-ui-text;
       font-weight: bold;
       padding: 2px $x-small;
       width: 100%;
@@ -80,30 +74,32 @@
 
   .input-text {
     background-color: transparent;
-    border-color: $color-gray;
+    border-color: $bright-ui-border;
     box-sizing: border-box;
+    color: $dark-ui-text;
     font-size: $fs13;
     margin: $x-small;
     padding: $x-small;
     width: 100%;
 
     &:focus {
-      color: $color-white;
-      border-color: $color-white;
+      color: darken($dark-ui-text, 8%);
+      border-color: $dark-ui-border;
     }
 
   }
 
   .input-select {
+    color: $dark-ui-text;
 
     &:focus {
-      color: $color-gray;
+      color: darken($dark-ui-text, 8%);
     }
 
   }
 
   span {
-    color: darken($color-gray-darker, 20%);
+    color: $light-ui-text;
     font-size: $fs12;
   }
 
@@ -112,7 +108,7 @@
     width: 20%;
 
     svg {
-      fill: $color-gray-light;
+      fill: $light-ui-text;
       height: 15px;
       width: 15px;
 
@@ -135,74 +131,57 @@
 }
 
 .color-th {
-  background-color: $color-gray-light;
+  background-color: $color-gray-lighter;
   border-radius: 50%;
   cursor: pointer;
   flex-shrink: 0;
   height: 25px;
   margin: 5px 4px 0 4px;
   width: 25px;
+
   &.palette-th {
     align-items: center;
-    background-color: $color-gray-darker;
-    border: 2px solid $color-gray-light;
+    border: 2px solid $light-ui-icons;
     display: flex;
     justify-content: center;
+
     svg {
-      fill: $color-gray-light;
+      fill: $light-ui-icons;
       height: 18px;
       width: 18px;
     }
+
     &:hover {
       border-color: $main-ui-color;
       svg {
         fill: $main-ui-color;
       }
-    }
-  }
-}
 
-// .border-element {
-//   align-items: center;
-//   display: flex;
-//   flex-direction: column;
-//   margin: 5px 2% 0 2%;
-//   svg {
-//     fill: $color-gray-light;
-//     height: 12px;
-//     width: 12px;
-//   }
-//   &.top-left {
-//     svg {
-//       transform: rotate(270deg);
-//     }
-//   }
-//   &.bottom-left {
-//     svg {
-//       transform: rotate(180deg);
-//     }
-//   }
-//   &.bottom-right {
-//     svg {
-//       transform: rotate(90deg);
-//     }
-//   }
-// }
+    }
+
+  }
+
+}
 
 .align-icons {
   cursor: pointer;
+
   svg {
-    fill: $color-gray-light;
+    fill: $light-ui-icons;
     height: 20px;
     margin: 5px 7px 0 7px;
     width: 20px;
   }
+
   &:hover,
   &.current {
+
     svg {
       fill: $main-ui-color;
     }
+
   }
+
 }
 
 .element-color-picker {
@@ -216,6 +195,7 @@
     height: 100%;
     margin-right: 15px;
   }
+
   .color-picker-bar {
     height: 165px;
     position: relative;
@@ -229,5 +209,7 @@
       width: 23px;
       top: 30%;
     }
+
   }
+
 }
