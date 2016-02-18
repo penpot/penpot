@@ -8,33 +8,51 @@
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]))
 
-(def ^:static zoom 1)
-(def ^:static step-padding 20)
-(def ^:static step-size 10)
-(def ^:static start-width wb/canvas-start-x)
-(def ^:static start-height wb/canvas-start-y)
-(def ^:static scroll-left 0)
-(def ^:static scroll-top 0)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Constants & Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:const zoom 1)
+(def ^:const step-padding 20)
+(def ^:const step-size 10)
+(def ^:const start-width wb/canvas-start-x)
+(def ^:const start-height wb/canvas-start-y)
+(def ^:const scroll-left 0)
+(def ^:const scroll-top 0)
 
 (defn big-ticks-mod [zoom] (/ 100 zoom))
 (defn mid-ticks-mod [zoom] (/ 50 zoom))
 
-(defn h-line
-  [position value]
+(def ^:const +ticks+
+  (concat (range (- (/ wb/viewport-width 1)) 0 step-size)
+          (range 0 (/ wb/viewport-width 1) step-size)))
+
+(def ^:const +rule-padding+ 20)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Horizontal Rule
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn vertical-tick-render
+  [own value]
   (let [big-ticks-mod (big-ticks-mod 1)
         mid-ticks-mod (mid-ticks-mod 1)
         big-step? (< (mod value big-ticks-mod) step-size)
-        mid-step? (< (mod value mid-ticks-mod) step-size)]
+        mid-step? (< (mod value mid-ticks-mod) step-size)
+        pos (+ value +rule-padding+
+               wb/canvas-start-x
+               wb/canvas-scroll-padding)
+        pos (* pos zoom)]
     (cond
       big-step?
       (html
-       [:g {:key position}
-        [:line {:x1 position
-                :x2 position
+       [:g {:key value}
+        [:line {:x1 pos
+                :x2 pos
                 :y1 5
                 :y2 step-padding
                 :stroke "#9da2a6"}]
-        [:text {:x (+ position 2)
+        [:text {:x (+ pos 2)
                 :y 13
                 :fill "#9da2a6"
                 :style {:font-size "12px"}}
@@ -42,50 +60,48 @@
 
       mid-step?
       (html
-       [:line {:key position
-               :x1 position
-               :x2 position
+       [:line {:key pos
+               :x1 pos
+               :x2 pos
                :y1 10
                :y2 step-padding
                :stroke "#9da2a6"}])
 
       :else
       (html
-       [:line {:key position
-               :x1 position
-               :x2 position
+       [:line {:key pos
+               :x1 pos
+               :x2 pos
                :y1 15
                :y2 step-padding
                :stroke "#9da2a6"}]))))
 
-(def ^:const +ticks+
-  (concat (range (- (/ wb/viewport-width 2)) 0 step-size)
-          (range 0 (/ wb/viewport-width 2) step-size)))
+(def ^:const vertical-tick
+  (mx/component
+   {:render vertical-tick-render
+    :name "vertical-tick-render"
+    :mixins [mx/static]}))
 
-(def ^:const +rule-padding+ 20)
 
-
-(defn h-rule-render
+(defn horizontal-rule-render
   [own sidebar?]
-  (println "h-rule-render")
   (let [scroll (rum/react wb/scroll-a)
         scroll-x (:x scroll)
         scroll-y (:y scroll)
         translate-x (- (- wb/canvas-scroll-padding) (:x scroll))]
-    (println (count +ticks+))
     (html
      [:svg.horizontal-rule
       {:width wb/viewport-width
        :height 20}
       [:g {:transform (str "translate(" translate-x ", 0)")}
-       (for [tick +ticks+
-             :let [pos (* (+ tick wb/canvas-start-x wb/canvas-scroll-padding +rule-padding+) zoom)]]
-         (h-line pos tick))]])))
+       (for [value +ticks+]
+         (-> (vertical-tick value)
+             (rum/with-key value)))]])))
 
-(def h-rule
+(def horizontal-rule
   (mx/component
-   {:render h-rule-render
-    :name "h-rule"
+   {:render horizontal-rule-render
+    :name "horizontal-rule"
     :mixins [mx/static rum/reactive]}))
 
 
@@ -125,7 +141,7 @@
              :x2 step-padding
              :stroke "#9da2a6"}])))
 
-(defn v-rule-render
+(defn vertical-rule-render
   [own sidebar?]
   (let [height wb/viewport-height
         ticks (concat (range (- step-padding start-height) 0 step-size)
@@ -144,8 +160,8 @@
              :let [pos (* (+ tick start-height) zoom)]]
          (v-line pos tick))]])))
 
-(def v-rule
+(def vertical-rule
   (mx/component
-   {:render v-rule-render
-    :name "v-rule"
+   {:render vertical-rule-render
+    :name "vertical-rule"
     :mixins [mx/static rum/reactive]}))

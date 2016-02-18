@@ -14,7 +14,7 @@
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
             [uxbox.ui.workspace.header :refer (header)]
-            [uxbox.ui.workspace.rules :refer (h-rule v-rule)]
+            [uxbox.ui.workspace.rules :refer (horizontal-rule vertical-rule)]
             [uxbox.ui.workspace.sidebar :refer (left-sidebar right-sidebar)]
             [uxbox.ui.workspace.colorpalette :refer (colorpalette)]
             [uxbox.ui.workspace.canvas :refer (viewport)]))
@@ -77,8 +77,8 @@
         ;; (pagesmngr)
 
         ;; Rules
-        (h-rule left-sidebar?)
-        (v-rule left-sidebar?)
+        (horizontal-rule)
+        (vertical-rule)
 
         (coordinates)
 
