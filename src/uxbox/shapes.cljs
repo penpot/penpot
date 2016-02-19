@@ -155,10 +155,6 @@
            :x2 (+ x1 width)
            :y2 (+ y1 height))))
 
-  ;; (merge shape
-  ;;        (when width {:width width})
-  ;;        (when height {:height height})))
-
 (defmethod -resize' :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
@@ -302,6 +298,23 @@
         (gmt/rotate rotation)
         (gmt/translate (- center-x) (- center-y))
         (gmt/scale scale-x scale-y))))
+
+(defmethod -transformation :builtin/rect
+  [{:keys [x1 y1 rotation] :or {rotation 0} :as shape}]
+  (let [{:keys [width height]} (-size shape)
+        center-x (+ x1 (/ width 2))
+        center-y (+ y1 (/ height 2))]
+    (-> (gmt/matrix)
+        (gmt/translate center-x center-y)
+        (gmt/rotate rotation)
+        (gmt/translate (- center-x) (- center-y)))))
+
+(defmethod -transformation :builtin/circle
+  [{:keys [cx cy rx ry rotation] :or {rotation 0} :as shape}]
+  (-> (gmt/matrix)
+      (gmt/translate cx cy)
+      (gmt/rotate rotation)
+      (gmt/translate (- cx) (- cy))))
 
 (declare outer-rect)
 

@@ -70,9 +70,10 @@
 (defmethod sh/-render :builtin/circle
   [{:keys [id] :as shape}]
   (let [key (str id)
+        rfm (sh/-transformation shape)
         props (select-keys shape [:cx :cy :rx :ry])
         attrs (-> (extract-style-attrs shape)
-                  (merge {:id key :key key})
+                  (merge {:id key :key key :transform (str rfm)})
                   (merge props))]
     (html
      [:ellipse attrs])))
@@ -80,8 +81,9 @@
 (defmethod sh/-render :builtin/rect
   [{:keys [id x1 y1 x2 y2] :as shape}]
   (let [key (str id)
-        props {:x x1 :y y1 :id key :key key}
+        rfm (sh/-transformation shape)
         size (sh/-size shape)
+        props {:x x1 :y y1 :id key :key key :transform (str rfm)}
         attrs (-> (extract-style-attrs shape)
                   (merge props size))]
     (html

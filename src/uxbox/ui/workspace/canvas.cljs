@@ -102,7 +102,7 @@
   (mx/component
    {:render shape-render
     :name "shape"
-    :mixins [(mx/local {}) rum/reactive mx/static]}))
+    :mixins [(mx/local {}) rum/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas
