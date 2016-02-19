@@ -168,5 +168,3 @@
     ;; (pprint result)
     (t/is (= result expected))
     (t/is (vector? (get-in result [:pages-by-id 1 :shapes])))))
-
-

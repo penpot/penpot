@@ -385,22 +385,11 @@
 
 (defn duplicate-selected
   []
-  (letfn [(all-toplevel? [coll]
-            (every? #(nil? (:parent %)) coll))]
-    (reify
-      rs/UpdateEvent
-      (-apply-update [_ state]
-        (let [selected (->> (get-in state [:workspace :selected])
-                            (mapv #(get-in state [:shapes-by-id %])))
-              page (get-in state [:workspace :page])]
-          (cond
-            (all-toplevel? selected)
-            (reduce #(stsh/assoc-shape-to-page %1 %2 page) state selected)
-
-            :else
-            (do
-              (println "Not implemented")
-              state)))))))
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [selected (get-in state [:workspace :selected])]
+        (stsh/duplicate-shapes state selected)))))
 
 (defn delete-selected
   "Deselect all and remove all selected shapes."

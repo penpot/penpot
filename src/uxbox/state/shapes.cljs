@@ -3,7 +3,6 @@
   (:require [uxbox.shapes :as sh]
             [uxbox.util.data :refer (index-of)]))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape Creation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -15,6 +14,60 @@
     (as-> state $
       (update-in $ [:pages-by-id page :shapes] conj sid)
       (assoc-in $ [:shapes-by-id sid] shape))))
+
+(defn duplicate-shapes'
+  ([state shapes page]
+   (duplicate-shapes' state shapes page nil))
+  ([state shapes page group]
+   (letfn [(duplicate-shape [state shape page group]
+             (if (= (:type shape) :builtin/group)
+               (let [id (random-uuid)
+                     items (:items shape)
+                     shape (assoc shape :id id :page page :items [])
+                     state (if (nil? group)
+                             (as-> state $
+                               (update-in $ [:pages-by-id page :shapes] conj id)
+                               (assoc-in $ [:shapes-by-id id] shape))
+                             (as-> state $
+                               (update-in $ [:shapes-by-id group :items] conj id)
+                               (assoc-in $ [:shapes-by-id id] shape)))]
+                 (->> (map #(get-in state [:shapes-by-id %]) items)
+                      (reduce #(duplicate-shape %1 %2 page id) state)))
+               (let [id (random-uuid)
+                     shape (-> (dissoc shape :group)
+                               (assoc :id id :page page)
+                               (merge (when group {:group group})))]
+                 (if (nil? group)
+                   (as-> state $
+                     (update-in $ [:pages-by-id page :shapes] conj id)
+                     (assoc-in $ [:shapes-by-id id] shape))
+                   (as-> state $
+                     (update-in $ [:shapes-by-id group :items] conj id)
+                     (assoc-in $ [:shapes-by-id id] shape))))))]
+
+     (reduce #(duplicate-shape %1 %2 page group) state shapes))))
+
+(defn duplicate-shapes
+  [state shapes]
+  (letfn [(all-toplevel? [coll]
+            (every? #(nil? (:group %)) coll))
+          (all-same-group? [coll]
+            (let [group (:group (first coll))]
+              (every? #(= group (:group %)) coll)))]
+    (let [shapes (mapv #(get-in state [:shapes-by-id %]) shapes)]
+      (cond
+        (all-toplevel? shapes)
+        (let [page (:page (first shapes))]
+          (duplicate-shapes' state shapes page))
+
+        (all-same-group? shapes)
+        (let [page (:page (first shapes))
+              group (:group (first shapes))]
+          (duplicate-shapes' state shapes page group))
+
+        :else
+        (let [page (:page (first shapes))]
+          (duplicate-shapes' state shapes page))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Delete Shapes
