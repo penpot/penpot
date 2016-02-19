@@ -188,9 +188,12 @@
             (let [viewport (mx/get-ref-dom own "viewport")]
               (when-let [canvas (dom/get-element-by-class "page-canvas" viewport)]
                 (let [brect (.getBoundingClientRect canvas)
+                      bbox (.getBBox canvas)
                       brect (gpt/point (parse-int (.-left brect))
-                                       (parse-int (.-top brect)))]
-                  (gpt/subtract pt brect)))))
+                                       (parse-int (.-top brect)))
+                      bbox (gpt/point (.-x bbox) (.-y bbox))]
+                  (-> (gpt/add pt bbox)
+                      (gpt/subtract brect))))))
 
           (on-key-down [event]
             (when (kbd/space? event)
