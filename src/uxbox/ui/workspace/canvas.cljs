@@ -185,12 +185,12 @@
               (gpt/subtract pt brect)))
 
           (translate-point-to-canvas [pt]
-            (let [viewport (mx/get-ref-dom own "viewport")
-                  canvas (dom/get-element-by-class "page-canvas" viewport)
-                  brect (.getBoundingClientRect canvas)
-                  brect (gpt/point (parse-int (.-left brect))
-                                   (parse-int (.-top brect)))]
-              (gpt/subtract pt brect)))
+            (let [viewport (mx/get-ref-dom own "viewport")]
+              (when-let [canvas (dom/get-element-by-class "page-canvas" viewport)]
+                (let [brect (.getBoundingClientRect canvas)
+                      brect (gpt/point (parse-int (.-left brect))
+                                       (parse-int (.-top brect)))]
+                  (gpt/subtract pt brect)))))
 
           (on-key-down [event]
             (when (kbd/space? event)
