@@ -37,10 +37,10 @@
     (t/is (= (:y p3) 3))
     (t/is (gpt/point? p3))))
 
-(t/deftest point-substract-test
+(t/deftest point-subtract-test
   (let [p1 (gpt/point 3 3)
         p2 (gpt/point 2 2)
-        p3 (gpt/substract p1 p2)]
+        p3 (gpt/subtract p1 p2)]
     (t/is (= (:x p3) 1))
     (t/is (= (:y p3) 1))
     (t/is (gpt/point? p3))))
@@ -97,8 +97,8 @@
               (gmt/rotate 10))]
 
     (t/is (= @m [0.984807753012208
-                 -0.17364817766693033
                  0.17364817766693033
+                 -0.17364817766693033
                  0.984807753012208
                  0 0]))))
 
