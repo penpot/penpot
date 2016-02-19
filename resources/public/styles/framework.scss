@@ -686,7 +686,7 @@ input[type=range]::-webkit-slider-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $dark-ui-icons;
+  background: $intense-ui-icons;
   cursor: pointer;
   -webkit-appearance: none;
   margin-top: -8px;
@@ -710,7 +710,7 @@ input[type=range]::-moz-range-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $dark-ui-icons;
+  background: $intense-ui-icons;
   cursor: pointer;
 }
 input[type=range]::-ms-track {
@@ -741,7 +741,7 @@ input[type=range]::-ms-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $dark-ui-icons;
+  background: $intense-ui-icons;
   cursor: pointer;
 }
 input[type=range]:focus::-ms-fill-lower {
@@ -782,7 +782,7 @@ input[type=range]:focus::-ms-fill-upper {
     &::after {
       background-color: $color-white;
       border-radius: $br-small;
-      color: $light-ui-text;
+      color: $medium-ui-text;
       content: attr(alt);
       font-size: $fs11;
       font-weight: bold;
@@ -820,7 +820,7 @@ input[type=range]:focus::-ms-fill-upper {
         background-color: rgba(255,255,255,.7);
         box-sizing: border-box;
         border-radius: 0;
-        color: $dark-ui-text;
+        color: $intense-ui-text;
         display: flex;
         height: 100%;
         justify-content: center;

@@ -1,5 +1,5 @@
 .layers-tools {
-  border-top: 1px solid $light-ui-border;
+  border-top: 1px solid $medium-ui-border;
   bottom: 0;
   display: flex;
   height: 30px;
@@ -18,12 +18,12 @@
       cursor: pointer;
 
       svg {
-        fill: $light-ui-icons;
+        fill: $medium-ui-icons;
         height: 16px;
         width: 16px;
 
         &:hover {
-          fill: $dark-ui-text;
+          fill: $intense-ui-text;
         }
 
       }
@@ -79,14 +79,14 @@
 
     .element-list-body {
       align-items: center;
-      border-bottom: 1px solid $bright-ui-border;
+      border-bottom: 1px solid $soft-ui-border;
       box-sizing: border-box;
       display: flex;
       padding: $small;
       width: 100%;
 
       svg {
-        fill: $bright-ui-icons;
+        fill: $soft-ui-icons;
         height: 13px;
         margin-right: 8px;
         width: 13px;
@@ -103,7 +103,7 @@
       .sublevel-element {
 
         svg {
-          fill: $light-ui-icons;
+          fill: $medium-ui-icons;
         }
 
       }
@@ -113,7 +113,7 @@
         width: 12px;
 
         svg {
-          fill: $dark-ui-icons;
+          fill: $intense-ui-icons;
           transform: rotate(90deg);
           width: 12px;
         }
@@ -125,7 +125,7 @@
         &:hover {
 
           svg {
-            fill: $light-ui-icons;
+            fill: $medium-ui-icons;
           }
 
         }
@@ -150,7 +150,7 @@
       }
 
       span {
-        color: $light-ui-text;
+        color: $medium-ui-text;
         font-size: $fs13;
         overflow-x: hidden;
         text-overflow: ellipsis;
@@ -176,7 +176,7 @@
       .selected {
 
         svg {
-          fill: $dark-ui-icons;
+          fill: $intense-ui-icons;
         }
 
       }
@@ -187,13 +187,13 @@
         .element-icon {
 
           svg {
-            fill: $dark-ui-icons;
+            fill: $intense-ui-icons;
           }
 
         }
 
         span {
-          color: $dark-ui-text;
+          color: $intense-ui-text;
         }
 
       }

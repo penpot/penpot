@@ -10,7 +10,7 @@
   .main-logo {
 
     svg {
-      fill: $light-ui-icons;
+      fill: $medium-ui-icons;
       height: 40px;
       width: 120px;
     }
@@ -28,11 +28,11 @@
   li {
 
     a {
-      color: $bright-ui-text;
+      color: $soft-ui-text;
       padding: 1rem;
 
       &:hover {
-        color: $dark-ui-text;
+        color: $intense-ui-text;
       }
 
     }
@@ -40,7 +40,7 @@
     &.current {
 
       a {
-        color: $dark-ui-text;
+        color: $intense-ui-text;
       }
 
     }
@@ -57,7 +57,7 @@
   position: relative;
 
   span {
-    color: $light-ui-text;
+    color: $medium-ui-text;
     margin: $small;
   }
 
@@ -70,7 +70,7 @@
   .dropdown {
     background-color: $color-white;
     border-radius: $br-small;
-    border: 1px solid $bright-ui-border;
+    border: 1px solid $soft-ui-border;
     box-sizing: border-box;
     min-width: 150px;
     padding: 0 $small;
@@ -86,23 +86,23 @@
       padding: $small 0;
 
       svg {
-        fill: $light-ui-text;
+        fill: $medium-ui-text;
         height: 12px;
         width: 12px;
       }
 
       span {
-        color: $light-ui-text;
+        color: $medium-ui-text;
       }
 
       &:hover {
 
         span {
-          color: $dark-ui-text;
+          color: $intense-ui-text;
         }
 
         svg {
-          fill: $dark-ui-text;
+          fill: $intense-ui-text;
         }
 
       }

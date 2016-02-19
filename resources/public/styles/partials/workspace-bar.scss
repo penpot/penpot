@@ -1,7 +1,7 @@
 .workspace-bar {
   align-items: center;
   background-color: $primary-ui-bg;
-  border-bottom: 1px solid  $bright-ui-border;
+  border-bottom: 1px solid  $soft-ui-border;
   display: flex;
   height: 40px;
   padding: $x-small $medium $x-small 65px;
@@ -24,7 +24,7 @@
       height: 35px;
 
       svg {
-        fill: $light-ui-icons;
+        fill: $medium-ui-icons;
         height: 35px;
         width: 35px;
 
@@ -53,14 +53,14 @@
     padding: $x-small $x-big+$x-small $x-small $medium;
 
     svg {
-      fill: $dark-ui-icons;
+      fill: $intense-ui-icons;
       height: 20px;
       margin-right: $small;
       width: 20px;
     }
 
     span {
-      color: $dark-ui-text;
+      color: $intense-ui-text;
       overflow-x: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -86,7 +86,7 @@
 
     .options-btn {
       align-items: center;
-      border-right: 1px solid $bright-ui-border;
+      border-right: 1px solid $soft-ui-border;
       display: flex;
       margin: 0;
 
@@ -112,14 +112,14 @@
         }
 
         svg {
-          fill: $dark-ui-icons;
+          fill: $intense-ui-icons;
           height: 18px;
           width: 18px;
         }
 
         &:hover {
           background-color: $color-white;
-          border-color: $bright-ui-border;
+          border-color: $soft-ui-border;
         }
 
         &.selected {

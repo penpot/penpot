@@ -23,14 +23,14 @@
   width: 54px;
 
   svg {
-    fill: $dark-ui-icons;
+    fill: $intense-ui-icons;
     height: 40px;
     width: 40px;
   }
 
   &:hover {
     background-color: $color-white;
-    border-color: $bright-ui-border;
+    border-color: $soft-ui-border;
   }
 
   &.selected {

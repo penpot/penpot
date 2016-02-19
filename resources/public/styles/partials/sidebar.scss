@@ -23,7 +23,7 @@
     height: 100%;
 
     .tool-window {
-      border-bottom: 1px solid $light-ui-border;
+      border-bottom: 1px solid $medium-ui-border;
       display: flex;
       flex-direction: column;
       flex: 1;
@@ -31,19 +31,19 @@
 
       .tool-window-bar {
         align-items: center;
-        border-bottom: 1px solid $light-ui-border;
+        border-bottom: 1px solid $medium-ui-border;
         display: flex;
         flex-shrink: 0;
         padding: 2px $x-small;
 
         svg {
-          fill: $dark-ui-icons;
+          fill: $intense-ui-icons;
           height: 12px;
           width: 12px;
         }
 
         span {
-          color: $dark-ui-text;
+          color: $intense-ui-text;
           font-weight: bold;
         }
 

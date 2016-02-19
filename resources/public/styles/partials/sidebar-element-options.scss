@@ -3,7 +3,7 @@
 
   .element-icons {
     background-color: $primary-ui-bg;
-    border: 1px solid $bright-ui-border;
+    border: 1px solid $soft-ui-border;
     border-radius: $br-small;
     display: flex;
     height: 100%;
@@ -11,7 +11,7 @@
 
     li {
       align-items: center;
-      border-right: 1px solid $bright-ui-border;
+      border-right: 1px solid $soft-ui-border;
       border-radius: $br-small;
       cursor: pointer;
       display: flex;
@@ -20,7 +20,7 @@
       padding: $small;
 
       svg {
-        fill: $dark-ui-icons;
+        fill: $intense-ui-icons;
         height: 15px;
         width: 15px;
       }
@@ -51,13 +51,13 @@
   }
 
   .element-set {
-    color: $light-ui-text;
+    color: $medium-ui-text;
     margin-left: $x-small;
 
     .element-set-title {
       box-sizing: border-box;
-      border-bottom: 1px dashed $bright-ui-border;
-      color: $light-ui-text;
+      border-bottom: 1px dashed $soft-ui-border;
+      color: $medium-ui-text;
       font-weight: bold;
       padding: 2px $x-small;
       width: 100%;
@@ -74,32 +74,32 @@
 
   .input-text {
     background-color: transparent;
-    border-color: $bright-ui-border;
+    border-color: $soft-ui-border;
     box-sizing: border-box;
-    color: $dark-ui-text;
+    color: $intense-ui-text;
     font-size: $fs13;
     margin: $x-small;
     padding: $x-small;
     width: 100%;
 
     &:focus {
-      color: darken($dark-ui-text, 8%);
-      border-color: $dark-ui-border;
+      color: darken($intense-ui-text, 8%);
+      border-color: $intense-ui-border;
     }
 
   }
 
   .input-select {
-    color: $dark-ui-text;
+    color: $intense-ui-text;
 
     &:focus {
-      color: darken($dark-ui-text, 8%);
+      color: darken($intense-ui-text, 8%);
     }
 
   }
 
   span {
-    color: $light-ui-text;
+    color: $medium-ui-text;
     font-size: $fs12;
   }
 
@@ -108,7 +108,7 @@
     width: 20%;
 
     svg {
-      fill: $light-ui-text;
+      fill: $medium-ui-text;
       height: 15px;
       width: 15px;
 
@@ -141,12 +141,12 @@
 
   &.palette-th {
     align-items: center;
-    border: 2px solid $light-ui-icons;
+    border: 2px solid $medium-ui-icons;
     display: flex;
     justify-content: center;
 
     svg {
-      fill: $light-ui-icons;
+      fill: $medium-ui-icons;
       height: 18px;
       width: 18px;
     }
@@ -167,7 +167,7 @@
   cursor: pointer;
 
   svg {
-    fill: $light-ui-icons;
+    fill: $medium-ui-icons;
     height: 20px;
     margin: 5px 7px 0 7px;
     width: 20px;
