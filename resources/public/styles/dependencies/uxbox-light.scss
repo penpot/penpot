@@ -1,14 +1,16 @@
 // This is a standard color scheme for UXBOX UI
 // Hope you like ir and feel free to create your own one!
 
-// Main color
+// Main interaction color
 $main-ui-color: $color-primary;
 $intense-main-ui-color: darken($main-ui-color, 25%);
 
+// Set the UI flavour
 $ui-flavour: #90969d;
 
+// Change next colors for more customization
 // Background colors
-$primary-ui-bg: #ffffff;
+$primary-ui-bg: $color-white;
 $secondary-ui-bg: mix($ui-flavour, $color-white, $mix-percentage-lighter);
 $dark-ui-bg: mix($ui-flavour, $color-white, $mix-percentage-light);
 
