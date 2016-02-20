@@ -60,7 +60,7 @@
       [:div.workspace-options
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom
-         {:alt "Shapes (Ctrl + Shift + F)"
+         {:alt "Shapes (Ctrl + Shift + S)"
           :class (when (contains? flags :drawtools) "selected")
           :on-click (partial toggle :drawtools)}
          i/shapes]
@@ -70,15 +70,20 @@
           :on-click (partial toggle :icons)}
          i/icon-set]
         [:li.tooltip.tooltip-bottom
-         {:alt "Elements (Ctrl + Shift + L)"
+         {:alt "Layers (Ctrl + Shift + L)"
           :class (when (contains? flags :layers) "selected")
           :on-click (partial toggle :layers)}
          i/layers]
         [:li.tooltip.tooltip-bottom
-         {:alt "Element options"
+         {:alt "Element options (Ctrl + Shift + O)"
           :class (when (contains? flags :element-options) "selected")
           :on-click (partial toggle :element-options)}
-         i/logo-icon]]
+         i/options]
+        [:li.tooltip.tooltip-bottom
+         {:alt "History (Ctrl + Shift + H)"
+          :class (when (contains? flags :element-options))
+          :on-click (partial toggle :element-options)}
+         i/undo-history]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
          i/undo]
