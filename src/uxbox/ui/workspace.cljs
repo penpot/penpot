@@ -41,7 +41,7 @@
 (defn- workspace-render
   [own projectid]
   (let [{:keys [flags] :as workspace} (rum/react wb/workspace-l)
-        left-sidebar? (not (empty? (keep flags [:layers :sitemap])))
+        left-sidebar? (not (empty? (keep flags [:layers :sitemap :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools
                                                  :element-options])))
         local (:rum/local own)

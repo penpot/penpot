@@ -24,6 +24,7 @@
    "ds.element-options" "Element options"
    "ds.draw-tools" "Draw tools"
    "ds.sitemap" "Sitemap"
+   "ds.document-history" "Document history"
 
    "ds.help.rect" "Box (Ctrl + B)"
    "ds.help.circle" "Circle (Ctrl + E)"

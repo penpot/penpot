@@ -81,8 +81,8 @@
          i/options]
         [:li.tooltip.tooltip-bottom
          {:alt "History (Ctrl + Shift + H)"
-          :class (when (contains? flags :element-options))
-          :on-click (partial toggle :element-options)}
+          :class (when (contains? flags :document-history))
+          :on-click (partial toggle :document-history)}
          i/undo-history]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
