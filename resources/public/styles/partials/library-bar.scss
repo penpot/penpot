@@ -61,6 +61,9 @@
           color: $color-gray-dark;
           font-weight: bold;
           margin-bottom: 5px;
+          overflow-x: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .element-subtitle {
