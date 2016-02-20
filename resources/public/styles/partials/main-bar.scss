@@ -2,7 +2,7 @@
   align-items: center;
   background-color: $primary-ui-bg;
   display: flex;
-  height: 50px;
+  height: 60px;
   padding: $x-small $medium;
   position: relative;
   z-index: 10;
@@ -71,7 +71,6 @@
     background-color: $color-white;
     border-radius: $br-small;
     border: 1px solid $soft-ui-border;
-    box-sizing: border-box;
     min-width: 150px;
     padding: 0 $small;
     position: absolute;

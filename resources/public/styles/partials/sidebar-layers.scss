@@ -55,7 +55,6 @@
   }
 
   li {
-    box-sizing: border-box;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -80,7 +79,6 @@
     .element-list-body {
       align-items: center;
       border-bottom: 1px solid $soft-ui-border;
-      box-sizing: border-box;
       display: flex;
       padding: $small;
       width: 100%;

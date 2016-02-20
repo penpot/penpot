@@ -21,7 +21,6 @@
 
     .project-name {
       border-bottom: 1px solid $color-gray-lighter;
-      box-sizing: border-box;
       font-size: $fs14;
       font-weight: bold;
       padding: 0 $small;
@@ -45,7 +44,6 @@
 
   li {
     align-items: center;
-    box-sizing: border-box;
     cursor: pointer;
     display: flex;
     padding: $x-small $small;

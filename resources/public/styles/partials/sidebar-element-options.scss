@@ -55,7 +55,6 @@
     margin-left: $x-small;
 
     .element-set-title {
-      box-sizing: border-box;
       border-bottom: 1px dashed $soft-ui-border;
       color: $medium-ui-text;
       font-weight: bold;
@@ -75,7 +74,6 @@
   .input-text {
     background-color: transparent;
     border-color: $soft-ui-border;
-    box-sizing: border-box;
     color: $intense-ui-text;
     font-size: $fs13;
     margin: $x-small;

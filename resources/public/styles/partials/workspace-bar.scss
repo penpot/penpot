@@ -3,7 +3,7 @@
   background-color: $primary-ui-bg;
   border-bottom: 1px solid  $soft-ui-border;
   display: flex;
-  height: 40px;
+  height: 50px;
   padding: $x-small $medium $x-small 65px;
   position: relative;
   z-index: 11;
@@ -46,7 +46,6 @@
     align-items: center;
     background-color: $secondary-ui-bg;
     border-radius: $br-small;
-    box-sizing: border-box;
     cursor: pointer;
     display: flex;
     min-width: 164px;

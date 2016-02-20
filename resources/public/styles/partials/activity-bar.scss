@@ -23,7 +23,6 @@
 
   .date-ribbon {
     background-color: lighten($color-gray-light, 12%);
-    box-sizing: border-box;
     color: $color-white;
     font-size: $fs12;
     font-weight: bold;
@@ -34,7 +33,6 @@
 
   .activity-input {
     border-bottom: 1px solid $color-gray-lighter;
-    box-sizing: border-box;
     display: flex;
     font-size: $fs13;
     padding: $small;

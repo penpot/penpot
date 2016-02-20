@@ -3,7 +3,6 @@
   .project-title {
     align-items: center;
     border-bottom: 1px solid $soft-ui-border;
-    box-sizing: border-box;
     display: flex;
     padding: $x-small;
     width: 100%;
@@ -49,7 +48,6 @@
     li {
       align-items: center;
       border-bottom: 1px solid $soft-ui-border;
-      box-sizing: border-box;
       display: flex;
       flex-direction: row;
       padding: $x-small;

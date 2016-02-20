@@ -54,6 +54,7 @@
         cursor: pointer;
         display: flex;
         flex-direction: column;
+        flex-shrink: 0;
         padding: 10px;
 
         .element-title {

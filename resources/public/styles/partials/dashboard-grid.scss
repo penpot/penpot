@@ -3,9 +3,13 @@
   display: flex;
   flex-direction: column;
   font-size: $fs14;
-  padding: $medium 250px $medium $medium;
+  height: 100%;
+  padding: $medium;
+  // ACTIVITY BAR PADDING
+  //padding: $medium 250px $medium $medium;
 
   .dashboard-title {
+    margin: $medium 0;
     position: relative;
     width: 100%;
 
@@ -47,16 +51,12 @@
 
   .dashboard-grid-content {
     align-items: center;
-    box-sizing: border-box;
     display: flex;
     flex-wrap: wrap;
     height: 100%;
     justify-content: center;
-    margin: $big;
-    max-height: 77vh;
     min-height: 60vh;
     overflow: scroll;
-    padding-bottom: 30px;
     width: 100%;
 
     .grid-item {
@@ -72,11 +72,11 @@
       padding: $medium;
       position: relative;
       text-align: center;
-      width: 20%;
+      width: 18%;
 
       &.small-item {
         max-width: 12%;
-        min-width: 150px;
+        min-width: 190px;
       }
 
       &.add-project {
@@ -128,7 +128,6 @@
 
         .project-th-actions {
           align-items: center;
-          box-sizing: border-box;
           bottom: 0;
           display: flex;
           left: 0;
