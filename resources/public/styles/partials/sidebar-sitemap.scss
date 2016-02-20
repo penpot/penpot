@@ -20,7 +20,7 @@
 
     .add-page {
       align-items: center;
-      background-color: $main-ui-color;
+      background-color: $medium-ui-icons;
       border-radius: $br-small;
       cursor: pointer;
       display: flex;
@@ -35,7 +35,7 @@
       }
 
       &:hover {
-        background-color: $intense-main-ui-color;
+        background-color: $intense-ui-icons;
       }
 
     }
@@ -119,7 +119,7 @@
           svg {
             fill: $main-ui-color;
           }
-          
+
         }
 
         span {
