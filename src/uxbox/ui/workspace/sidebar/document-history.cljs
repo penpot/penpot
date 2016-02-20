@@ -30,7 +30,67 @@
        [:span (tr "ds.document-history")]
        [:div.tool-window-close {:on-click close} i/close]]
       [:div.tool-window-content
-       [:span "DOCUMENT HISTORY CONTENT"]
+       [:ul.history-tabs
+        [:li.selected "History"]
+        [:li "Pinned"]]
+       [:ul.history-content
+        [:li.current
+         [:div.pin-icon i/pin]
+         [:span "Current version"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]
+        [:li
+         [:div.pin-icon i/pin]
+         [:span "Version 02/02/2016 12:33h"]]]
         ]])))
 
 (def ^:static document-history-toolbox
