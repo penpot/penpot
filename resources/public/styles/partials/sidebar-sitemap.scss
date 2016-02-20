@@ -1,0 +1,136 @@
+.sitemap {
+
+  .project-title {
+    align-items: center;
+    border-bottom: 1px solid $soft-ui-border;
+    box-sizing: border-box;
+    display: flex;
+    padding: $x-small;
+    width: 100%;
+
+    span {
+      color: $intense-ui-text;
+      font-size: $fs14;
+      font-weight: bold;
+      max-width: 80%;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .add-page {
+      align-items: center;
+      background-color: $main-ui-color;
+      border-radius: $br-small;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      margin-left: auto;
+      padding: $x-small;
+
+      svg {
+        fill: $color-white;
+        height: 16px;
+        width: 16px;
+      }
+
+      &:hover {
+        background-color: $intense-main-ui-color;
+      }
+
+    }
+
+  }
+
+  .element-list {
+
+    li {
+      align-items: center;
+      border-bottom: 1px solid $soft-ui-border;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: row;
+      padding: $x-small;
+      width: 100%;
+
+      .page-icon {
+
+        svg {
+          fill: $medium-ui-icons;
+          height: 15px;
+          margin-right: $x-small;
+          width: 15px;
+        }
+
+      }
+
+      span {
+        color: $medium-ui-text;
+        font-size: $fs14;
+        max-width: 75%;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .page-actions {
+        align-items: center;
+        display: flex;
+        margin-left: auto;
+
+        a {
+
+          svg {
+            fill: $medium-ui-icons;
+            height: 15px;
+            margin-left: $x-small;
+            width: 15px;
+
+            &:hover {
+              fill: $intense-ui-icons;
+            }
+
+          }
+
+        }
+
+      }
+
+      &:hover {
+
+        .page-icon {
+
+          svg {
+            fill: $main-ui-color;
+          }
+
+        }
+
+        span {
+          color: $main-ui-color;
+        }
+
+      }
+
+      &.selected {
+
+        .page-icon {
+
+          svg {
+            fill: $main-ui-color;
+          }
+          
+        }
+
+        span {
+          color: $main-ui-color;
+          font-weight: bold;
+        }
+
+      }
+
+    }
+
+  }
+
+}

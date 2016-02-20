@@ -29,12 +29,18 @@
        [:div.tool-window-icon i/project-tree]
        [:span (tr "ds.sitemap")]
        [:div.tool-window-close {:on-click close} i/close]]
-      [:div.tool-window-content {:style {:color "white"}}
-       [:div "Project name"]
+      [:div.tool-window-content
+       [:div.project-title
+        [:span "Project name"]
+        [:div.add-page i/close]]
        [:ul.element-list
         (for [i (range 10)]
           [:li {:key i :class (when (= i 2) "selected")}
-           (str "Page " i)])
+           [:div.page-icon i/page]
+           [:span (str "Page " i)]
+           [:div.page-actions
+            [:a i/pencil]
+            [:a i/trash]]])
         ]]])))
 
 (def ^:static sitemap-toolbox
