@@ -20,8 +20,9 @@
 
     .add-page {
       align-items: center;
-      background-color: $medium-ui-icons;
+      background-color: $soft-ui-icons;
       border-radius: $br-small;
+      border: 1px solid transparent;
       cursor: pointer;
       display: flex;
       justify-content: center;
@@ -29,13 +30,14 @@
       padding: $x-small;
 
       svg {
-        fill: $color-white;
+        fill: $intense-ui-icons;
         height: 16px;
         width: 16px;
       }
 
       &:hover {
-        background-color: $intense-ui-icons;
+        background-color: $color-white;
+        border-color: $soft-ui-border;
       }
 
     }
