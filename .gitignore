@@ -13,6 +13,7 @@ pom.xml
 .repl
 .nrepl-port
 /hicv/
+/dist/
 node_modules
 /resources/public/css
 /resources/public/js

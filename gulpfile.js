@@ -1,37 +1,58 @@
 // Main Gulp
 var gulp = require("gulp");
-
+var runseq = require('run-sequence');
 var clean = require("gulp-clean");
 var scss = require("gulp-sass");
 var plumber = require("gulp-plumber");
 var autoprefixer = require('gulp-autoprefixer');
 var watch = require("gulp-watch");
+var cssmin = require("gulp-cssmin");
 
 // Paths
 var paths = {};
-paths.app = "resources/public/";
-paths.dist = "resources/public/";
-
+paths.app = "./resources/";
+paths.output = "./resources/public/";
+paths.dist = "./dist";
 paths.scss = paths.app + "styles/**/*.scss";
 
-gulp.task("scss", function () {
+gulp.task("scss", function() {
     return gulp.src(paths.app + "styles/main.scss")
-    .pipe(plumber())
-    .pipe(scss({ style: "expanded" }))
-    .pipe(gulp.dest(paths.dist + "css/"));
+                .pipe(plumber())
+                .pipe(scss({ style: "expanded" }))
+                .pipe(gulp.dest(paths.output + "css/"));
 });
 
-gulp.task("autoprefixer", ["scss"], function () {
-    return gulp.src(paths.dist + "css/main.css")
-    .pipe(autoprefixer('last 2 version', 'safari 5', 'ie 8', 'ie 9', 'opera 12.1', 'ios 6', 'android 4'))
-    .pipe(gulp.dest(paths.dist + "css/"));
+gulp.task("autoprefixer", function() {
+    return gulp.src(paths.output + "css/main.css")
+               .pipe(autoprefixer('last 2 version', 'safari 5', 'ie 8', 'ie 9', 'opera 12.1', 'ios 6', 'android 4'))
+               .pipe(gulp.dest(paths.output + "css/"));
 });
 
+gulp.task("cssmin", function() {
+  return gulp.src(paths.output + "css/main.css")
+             .pipe(cssmin())
+             .pipe(gulp.dest(paths.output + "css/"));
+});
+
+gulp.task("styles:dev", function(next) {
+  runseq("scss", "autoprefixer", next);
+});
+
+gulp.task("styles:dist", function(next) {
+  runseq("scss", "autoprefixer", next);
+});
+
+gulp.task("copy", function() {
+  return gulp.src(paths.output + "/**/*.*")
+             .pipe(gulp.dest(paths.dist));
+});
 
 // Default
-gulp.task("dist", ["autoprefixer"]);
+gulp.task("dist", function(next) {
+  runseq("styles:dist", "cssmin", "copy", next);
+});
 
 // Watch
-gulp.task("default", ["dist"], function () {
+gulp.task("default", ["styles:dev"], function () {
     gulp.watch(paths.scss, ["autoprefixer"]);
 });

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "watch": "gulp",
-    "dist": "gulp dist",
+    "dist": "./scripts/dist && gulp dist",
     "figwheel": "./scripts/figwheel",
     "test-watch": "./scripts/watch",
     "test-build": "./scripts/build",
@@ -17,11 +17,13 @@
   },
   "devDependencies": {
     "gulp": "3.9.1",
+    "gulp-autoprefixer": "3.1.0",
     "gulp-clean": "0.3.1",
+    "gulp-cssmin": "0.1.7",
     "gulp-plumber": "1.1.0",
     "gulp-sass": "2.2.0",
-    "gulp-autoprefixer": "3.1.0",
-    "gulp-watch": "4.3.5"
+    "gulp-watch": "4.3.5",
+    "run-sequence": "1.1.5"
   },
   "dependencies": {
     "source-map-support": "0.4.0"
