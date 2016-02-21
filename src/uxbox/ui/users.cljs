@@ -45,7 +45,7 @@
 
 ;; FIXME this is a temporal
 (def current-user (atom {:user/fullname "Cirilla"
-                         :user/avatar "//lorempixel.com/50/50/"}))
+                         :user/avatar "/images/favicon.png"}))
 (def menu-open? (atom false))
 
 (def ^:static user-l

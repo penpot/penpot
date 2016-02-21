@@ -6,7 +6,7 @@
 
 (defonce stream
   (rs/init {:user {:fullname "Cirilla Fiona"
-                   :avatar "http://lorempixel.com/50/50/"}
+                   :avatar "/images/favicon.png"}
             :dashboard {:project-order :name
                         :project-filter ""}
             :workspace {}
