@@ -6,57 +6,37 @@
             [uxbox.state :as st]
             [uxbox.schema :as sc]
             [uxbox.time :as time]
+            [uxbox.state.project :as stpr]
             [uxbox.util.data :refer (without-keys)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Schemas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; FIXME use only one ns for validators
+
 (def ^:static +project-schema+
   {:name [v/required v/string]
    :width [v/required v/integer]
    :height [v/required v/integer]
-   :layout [v/required sc/keyword]})
+   :layout [sc/keyword]})
 
-(def ^:static +page-schema+
+(def ^:static +create-page-schema+
   {:name [v/required v/string]
+   :layout [sc/keyword]
    :width [v/required v/integer]
    :height [v/required v/integer]
    :project [v/required sc/uuid]})
 
+(def ^:static +update-page-schema+
+  {:name [v/required v/string]
+   :width [v/required v/integer]
+   :height [v/required v/integer]
+   :layout [sc/keyword]})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn assoc-project
-  "A reduce function for assoc the project
-  to the state map."
-  [state proj]
-  (let [uuid (:id proj)]
-    (update-in state [:projects-by-id] assoc uuid proj)))
-
-(defn dissoc-project
-  "A reduce function for dissoc the project
-  from the state map."
-  [state proj]
-  (let [uuid (:id proj)]
-    (update-in state [:projects-by-id] dissoc uuid)))
-
-(defn assoc-page
-  "A reduce function for assoc the page
-  to the state map."
-  [state page]
-  (let [uuid (:id page)]
-    (update-in state [:pages-by-id] assoc uuid page)))
-
-(defn project-pages
-  "Get a ordered list of pages that
-  belongs to a specified project."
-  [state projectid]
-  (->> (vals (:pages-by-id state))
-       (filter #(= projectid (:project %)))
-       (sort-by :created)
-       (into [])))
 
 (defn sort-projects-by
   [ordering projs]
