@@ -9,7 +9,7 @@
   },
   "scripts": {
     "watch": "gulp",
-    "dist": "./scripts/dist && gulp dist",
+    "dist": "gulp clean && ./scripts/dist && gulp dist",
     "clean": "gulp clean",
     "figwheel": "./scripts/figwheel",
     "test-watch": "./scripts/watch",

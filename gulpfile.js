@@ -12,12 +12,13 @@ var paths = {};
 paths.app = "./resources/";
 paths.output = "./resources/public/";
 paths.dist = "./dist/";
+paths.target = "./target/";
 paths.scss = paths.app + "styles/**/*.scss";
 
 gulp.task("scss", function() {
     return gulp.src(paths.app + "styles/main.scss")
                 .pipe(plumber())
-                .pipe(scss({ style: "expanded" }))
+                .pipe(scss({style: "expanded"}))
                 .pipe(gulp.dest(paths.output + "css/"));
 });
 
@@ -33,21 +34,23 @@ gulp.task("cssmin", function() {
              .pipe(gulp.dest(paths.output + "css/"));
 });
 
-gulp.task("styles:dev", function(next) {
+gulp.task("styles-dev", function(next) {
   runseq("scss", "autoprefixer", next);
 });
 
-gulp.task("styles:dist", function(next) {
+gulp.task("styles-dist", function(next) {
   runseq("scss", "autoprefixer", next);
 });
 
-gulp.task("clean:dist", function(next) {
-  rimraf(paths.dist + "**/*", next);
+gulp.task("clean-dist", function(next) {
+  rimraf(paths.dist, next);
 });
 
-gulp.task("clean:public", function(next) {
+gulp.task("clean", function(next) {
   rimraf(paths.output + "css/", function() {
-    rimraf(paths.output + "js/", next);
+    rimraf(paths.output + "js/", function() {
+      rimraf(paths.target, next);
+    });
   });
 });
 
@@ -58,10 +61,10 @@ gulp.task("copy", function() {
 
 // Default
 gulp.task("dist", function(next) {
-  runseq("clean:public", "styles:dist", "cssmin", "clean:dist", "copy", next);
+  runseq("styles-dist", "cssmin", "clean-dist", "copy", next);
 });
 
 // Watch
-gulp.task("default", ["styles:dev"], function () {
+gulp.task("default", ["styles-dev"], function () {
     gulp.watch(paths.scss, ["autoprefixer"]);
 });
