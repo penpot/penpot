@@ -59,16 +59,22 @@
 
 (defn initialize
   "Initialize the workspace state."
-  [projectid pageid]
+  [project page]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [s {:project projectid
-               :flags #{:layers :element-options}
-               :drawing nil
-               :selected #{}
-               :page pageid}]
-        (assoc state :workspace s)))))
+      (if-let [workspace (:workspace state)]
+        (update state :workspace merge
+                {:project project
+                 :page page
+                 :selected #{}
+                 :drawing nil})
+        (update state :workspace merge
+                {:project project
+                 :page page
+                 :flags #{:layers :element-options}
+                 :selected #{}
+                 :drawing nil})))))
 
 (defn toggle-flag
   "Toggle the enabled flag of the specified tool."
