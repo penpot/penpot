@@ -20,9 +20,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn document-history-toolbox-render
-  [open-toolboxes]
+  [own]
   (let [workspace (rum/react wb/workspace-l)
-        close #(rs/emit! (dw/toggle-flag :document-history))]
+        local (:rum/local own)
+        section (:section @local :main)
+        close #(rs/emit! (dw/toggle-flag :document-history))
+        main? (= section :main)
+        pinned? (= section :pinned)
+        show-main #(swap! local assoc :section :main)
+        show-pinned #(swap! local assoc :section :pinned)]
     (html
      [:div.document-history.tool-window
       [:div.tool-window-bar
@@ -31,70 +37,83 @@
        [:div.tool-window-close {:on-click close} i/close]]
       [:div.tool-window-content
        [:ul.history-tabs
-        [:li.selected "History"]
-        [:li "Pinned"]]
-       [:ul.history-content
-        [:li.current
-         [:div.pin-icon i/pin]
-         [:span "Current version"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]
-        [:li
-         [:div.pin-icon i/pin]
-         [:span "Version 02/02/2016 12:33h"]]]
-        ]])))
+        [:li {:on-click show-main
+              :class (when main? "selected")}
+         "History"]
+        [:li {:on-click show-pinned
+              :class (when pinned? "selected")}
+         "Pinned"]]
+       (if (= section :pinned)
+         [:ul.history-content
+          [:li.current
+           [:div.pin-icon i/pin]
+           [:span "Current version"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]])
+       (if (= section :main)
+         [:ul.history-content
+          [:li.current
+           [:div.pin-icon i/pin]
+           [:span "Current version"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]
+          [:li
+           [:div.pin-icon i/pin]
+           [:span "Version 02/02/2016 12:33h"]]])]])))
+
 
 (def ^:static document-history-toolbox
   (mx/component
    {:render document-history-toolbox-render
     :name "document-history-toolbox"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static rum/reactive (mx/local)]}))
