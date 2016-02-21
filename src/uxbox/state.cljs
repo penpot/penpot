@@ -9,7 +9,7 @@
                    :avatar "/images/favicon.png"}
             :dashboard {:project-order :name
                         :project-filter ""}
-            :workspace {}
+            :workspace nil
             :shapes-by-id {}
             :elements-by-id {}
             :colors-by-id {}
