@@ -11,7 +11,7 @@ var rimraf = require("rimraf");
 var paths = {};
 paths.app = "./resources/";
 paths.output = "./resources/public/";
-paths.dist = "./dist";
+paths.dist = "./dist/";
 paths.scss = paths.app + "styles/**/*.scss";
 
 gulp.task("scss", function() {
@@ -41,9 +41,13 @@ gulp.task("styles:dist", function(next) {
   runseq("scss", "autoprefixer", next);
 });
 
-gulp.task("clean", function(next) {
+gulp.task("clean:dist", function(next) {
+  rimraf(paths.dist + "**/*", next);
+});
+
+gulp.task("clean:public", function(next) {
   rimraf(paths.output + "css/", function() {
-    rimraf(paths.output + "js/", next)
+    rimraf(paths.output + "js/", next);
   });
 });
 
@@ -54,7 +58,7 @@ gulp.task("copy", function() {
 
 // Default
 gulp.task("dist", function(next) {
-  runseq("clean", "styles:dist", "cssmin", "copy", next);
+  runseq("clean:public", "styles:dist", "cssmin", "clean:dist", "copy", next);
 });
 
 // Watch
