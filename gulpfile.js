@@ -14,11 +14,6 @@ paths.dist = "resources/public/";
 
 paths.scss = paths.app + "styles/**/*.scss";
 
-// Delete the dist directory
-gulp.task("clean", function () {
-    return gulp.src(paths.dist).pipe(clean());
-});
-
 gulp.task("scss", function () {
     return gulp.src(paths.app + "styles/main.scss")
     .pipe(plumber())
