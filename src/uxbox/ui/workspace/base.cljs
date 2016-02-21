@@ -4,7 +4,7 @@
             [cats.labs.lens :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.data.projects :as dp]
+            [uxbox.state.project :as stpr]
             [uxbox.data.workspace :as dw]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.lens :as ul]
@@ -16,17 +16,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:static project-l
-  (as-> (ul/dep-in [:projects-by-id] [:workspace :project]) $
-    (l/focus-atom $ st/state)))
+  (letfn [(getter [state]
+            (let [project (get-in state [:workspace :project])]
+              (get-in state [:projects-by-id project])))]
+    (as-> (ul/getter getter) $
+      (l/focus-atom $ st/state))))
 
 (def ^:static page-l
-  (as-> (ul/dep-in [:pages-by-id] [:workspace :page]) $
-    (l/focus-atom $ st/state)))
+  (letfn [(getter [state]
+            (let [page (get-in state [:workspace :page])]
+              (get-in state [:pages-by-id page])))]
+    (as-> (ul/getter getter) $
+      (l/focus-atom $ st/state))))
 
 (def ^:static pages-l
-  (as-> (ul/getter #(let [pid (get-in % [:workspace :project])]
-                      (dp/project-pages % pid))) $
-    (l/focus-atom $ st/state)))
+  (letfn [(getter [state]
+            (let [project (get-in state [:workspace :project])]
+              (stpr/project-pages state project)))]
+    (as-> (ul/getter getter) $
+      (l/focus-atom $ st/state))))
 
 (def ^:static workspace-l
   (as-> (l/in [:workspace]) $
