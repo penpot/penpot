@@ -10,6 +10,7 @@
   "scripts": {
     "watch": "gulp",
     "dist": "./scripts/dist && gulp dist",
+    "clean": "gulp clean",
     "figwheel": "./scripts/figwheel",
     "test-watch": "./scripts/watch",
     "test-build": "./scripts/build",
@@ -23,6 +24,7 @@
     "gulp-plumber": "1.1.0",
     "gulp-sass": "2.2.0",
     "gulp-watch": "4.3.5",
+    "rimraf": "2.5.2",
     "run-sequence": "1.1.5"
   },
   "dependencies": {

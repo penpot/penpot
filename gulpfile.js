@@ -1,4 +1,3 @@
-// Main Gulp
 var gulp = require("gulp");
 var runseq = require('run-sequence');
 var clean = require("gulp-clean");
@@ -7,8 +6,8 @@ var plumber = require("gulp-plumber");
 var autoprefixer = require('gulp-autoprefixer');
 var watch = require("gulp-watch");
 var cssmin = require("gulp-cssmin");
+var rimraf = require("rimraf");
 
-// Paths
 var paths = {};
 paths.app = "./resources/";
 paths.output = "./resources/public/";
@@ -42,6 +41,12 @@ gulp.task("styles:dist", function(next) {
   runseq("scss", "autoprefixer", next);
 });
 
+gulp.task("clean", function(next) {
+  rimraf(paths.output + "css/", function() {
+    rimraf(paths.output + "js/", next)
+  });
+});
+
 gulp.task("copy", function() {
   return gulp.src(paths.output + "/**/*.*")
              .pipe(gulp.dest(paths.dist));
@@ -49,7 +54,7 @@ gulp.task("copy", function() {
 
 // Default
 gulp.task("dist", function(next) {
-  runseq("styles:dist", "cssmin", "copy", next);
+  runseq("clean", "styles:dist", "cssmin", "copy", next);
 });
 
 // Watch
