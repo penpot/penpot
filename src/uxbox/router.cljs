@@ -6,7 +6,7 @@
 
 (enable-console-print!)
 
-(declare +router+)
+(def +router+ nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
@@ -15,12 +15,6 @@
 (defn update-location
   [{:keys [handler route-params] :as params}]
   (reify
-    IPrintWithWriter
-    (-pr-writer [mv writer x]
-      (-write writer "#<event:router/update-location ")
-      (-pr-writer params writer x)
-      (-write writer ">"))
-
     rs/UpdateEvent
     (-apply-update [_ state]
       (merge state
@@ -33,10 +27,6 @@
   ([name params]
    {:pre [(keyword? name)]}
    (reify
-     IPrintWithWriter
-     (-pr-writer [mv writer _]
-       (-write writer "#<event:router/navigate>"))
-
      rs/EffectEvent
      (-apply-effect [_ state]
        (let [loc (merge {:handler name}
@@ -60,8 +50,6 @@
                               ["icons" :dashboard/icons]
                               ["colors" :dashboard/colors]]]
                ["workspace/" [[page-route :workspace/page]]]]])
-
-(def ^:static ^:private +router+ nil)
 
 (defn init
   []
