@@ -60,34 +60,32 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-page
-  [{:keys [name width height project] :as data}]
-  (sc/validate! +page-schema+ data)
+  [{:keys [name width height project layout] :as data}]
+  (sc/validate! +create-page-schema+ data)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [page {:id (random-uuid)
                   :project project
                   :created (time/now :unix)
+                  :layout layout
                   :shapes []
                   :name name
                   :width width
                   :height height}]
-        (assoc-page state page)))
+        (stpr/assoc-page state page)))))
 
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/create-page>"))))
-
-(defn update-page-name
-  [pageid name]
+(defn update-page
+  [{:keys [id name width height layout] :as data}]
+  (sc/validate! +create-page-schema+ data)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:pages-by-id pageid] assoc :name name))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/update-page-name>"))))
+      (let [page (merge (get-in state [:pages-by-id id])
+                        (when width {:width width})
+                        (when height {:height height})
+                        (when name {:name name}))]
+        (assoc-in state [:pages-by-id id] page)))))
 
 (defn delete-page
   [pageid]
@@ -97,11 +95,7 @@
       (let [shapeids (get-in state [:pages-by-id pageid :shapes])]
         (as-> state $
           (update $ :shapes-by-id without-keys shapeids)
-          (update $ :pages-by-id dissoc pageid))))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/edit-page>"))))
+          (update $ :pages-by-id dissoc pageid))))))
 
 (defn create-project
   [{:keys [name width height layout] :as data}]
@@ -112,31 +106,22 @@
       (-apply-update [_ state]
         (let [proj {:id uuid
                     :name name
-                    :width width
-                    :created (time/now :unix)
-                    :height height}]
-          (assoc-project state proj)))
+                    :created (time/now :unix)}]
+          (stpr/assoc-project state proj)))
 
       rs/EffectEvent
       (-apply-effect [_ state]
         (rs/emit! (create-page {:name "Page 1"
+                                :layout layout
                                 :width width
                                 :height height
-                                :project uuid})))
-      IPrintWithWriter
-      (-pr-writer [mv writer _]
-        (-write writer "#<event:u.s.p/create-project>")))))
-
+                                :project uuid}))))))
 (defn delete-project
   [proj]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (dissoc-project state proj))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.s.p/delete-project>"))))
+      (stpr/dissoc-project state proj))))
 
 (defn go-to
   "A shortcut event that redirects the user to the
@@ -150,10 +135,8 @@
        (if pageid
          (rs/emit! (r/navigate :workspace/page {:project-uuid projectid
                                                 :page-uuid pageid}))
-         (let [pages (project-pages state projectid)
+         (let [pages (stpr/project-pages state projectid)
                pageid (:id (first pages))]
+           (println "selected" pageid "projectid" projectid)
            (rs/emit! (r/navigate :workspace/page {:project-uuid projectid
-                                                  :page-uuid pageid})))))
-     IPrintWithWriter
-     (-pr-writer [mv writer _]
-       (-write writer "#<event:u.s.p/go-to")))))
+                                                  :page-uuid pageid}))))))))
