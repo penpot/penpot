@@ -14,7 +14,7 @@
     :warnings {:ns-var-clash false}
     :output-to "resources/public/js/main.js"
     :output-dir "resources/public/js"
-    :optimizations :simple
+    :optimizations :advanced
     :language-in  :ecmascript5
     :language-out :ecmascript5
     :verbose true})
