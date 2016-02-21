@@ -12,7 +12,6 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
-            [uxbox.ui.workspace.pagesmngr :refer (pagesmngr)]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (horizontal-rule vertical-rule)]
             [uxbox.ui.workspace.sidebar :refer (left-sidebar right-sidebar)]
@@ -58,9 +57,6 @@
                                     :on-scroll on-scroll
                                     :on-key-up on-key-up
                                     :on-key-down on-key-down}
-        ;; Pages management lightbox
-        ;; (pagesmngr)
-
         ;; Rules
         (horizontal-rule)
         (vertical-rule)
