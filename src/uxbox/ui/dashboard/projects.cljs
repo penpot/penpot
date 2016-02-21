@@ -259,13 +259,6 @@
     :name "project"
     :mixins [rum/static]}))
 
-;; (defn sorted-projects
-;;   [projects sort-order]
-;;   (let [project-cards (map (partial project-card conn) (sort-by sort-order projects))]
-;;     (if (= sort-order :project/name)
-;;       project-cards
-;;       (reverse project-cards))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
