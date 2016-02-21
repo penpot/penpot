@@ -4,6 +4,7 @@
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
+            [uxbox.state.project :as stpr]
             [uxbox.data.projects :as dp]
             [bouncer.validators :as v]))
 
@@ -47,8 +48,8 @@
     (-apply-update [_ state]
       (if-let [data (get local-storage :data nil)]
         (as-> state $
-          (reduce dp/assoc-project $ (:projects data))
-          (reduce dp/assoc-page $ (:pages data))
+          (reduce stpr/assoc-project $ (:projects data))
+          (reduce stpr/assoc-page $ (:pages data))
           (reduce assoc-color $ (:color-collections data))
           (reduce assoc-shape $ (:shapes data)))
         state))))
