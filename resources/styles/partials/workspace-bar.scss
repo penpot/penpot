@@ -48,8 +48,8 @@
     border-radius: $br-small;
     cursor: pointer;
     display: flex;
-    min-width: 164px;
-    padding: $x-small $x-big+$x-small $x-small $medium;
+    padding: $x-small $x-small $x-small $medium;
+    width: 164px;
 
     svg {
       fill: $intense-ui-icons;
