@@ -5,11 +5,13 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.workspace.clipboard]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.users :as ui.u]
             [uxbox.ui.navigation :as nav]
             [uxbox.ui.mixins :as mx]
+            [uxbox.ui.lightbox :as lightbox]
             [uxbox.util.math :as mth]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,7 +50,9 @@
   [own]
   (let [page (rum/react wb/page-l)
         flags (rum/react wb/flags-l)
-        toggle #(rs/emit! (dw/toggle-flag %))]
+        toggle #(rs/emit! (dw/toggle-flag %))
+        ;; TODO: temporary
+        open-clipboard-dialog #(lightbox/open! :clipboard)]
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon
@@ -85,7 +89,9 @@
           :on-click (partial toggle :document-history)}
          i/undo-history]]
        [:ul.options-btn
-        [:li.tooltip.tooltip-bottom {:alt "Undo (Ctrl + Z)"}
+        [:li.tooltip.tooltip-bottom
+         {:alt "Undo (Ctrl + Z)"
+          :on-click open-clipboard-dialog}
          i/undo]
         [:li.tooltip.tooltip-bottom {:alt "Redo (Ctrl + Shift + Z)"}
          i/redo]]
