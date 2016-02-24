@@ -66,5 +66,5 @@ gulp.task("dist", function(next) {
 
 // Watch
 gulp.task("default", ["styles-dev"], function () {
-    gulp.watch(paths.scss, ["autoprefixer"]);
+    gulp.watch(paths.scss, ["styles-dev"]);
 });
