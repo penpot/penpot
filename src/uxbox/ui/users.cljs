@@ -3,8 +3,10 @@
             [cats.labs.lens :as l]
             [rum.core :as rum]
             [uxbox.router :as r]
+            [uxbox.rstore :as rs]
             [uxbox.state :as s]
-            [uxbox.ui.icons :as icons]
+            [uxbox.data.auth :as da]
+            [uxbox.ui.icons :as i]
             [uxbox.ui.navigation :as nav]
             [uxbox.ui.mixins :as mx]))
 
@@ -18,20 +20,20 @@
    [:ul.dropdown {:class (when-not open?
                            "hide")}
     [:li
-     icons/page
+     i/page
      [:span "Page settings"]]
     [:li
-     icons/grid
+     i/grid
      [:span "Grid settings"]]
     [:li
-     icons/eye
+     i/eye
      [:span "Preview"]]
     [:li
-     icons/user
+     i/user
      [:span "Your account"]]
-    [:li
-     icons/exit
-     [:span "Save & Exit"]]]))
+    [:li {:on-click #(rs/emit! (da/logout))}
+     i/exit
+     [:span "Exit"]]]))
 
 (def user-menu
   (mx/component
