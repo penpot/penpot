@@ -10,16 +10,9 @@
 
 (enable-console-print!)
 
-(def ^:const ^:private +persistent-keys+
-  [:auth
-   :pages-by-id
-   :shapes-by-id
-   :colors-by-id
-   :projects-by-id])
-
 (defn- main
   []
-  (let [lens (l/select-keys +persistent-keys+)
+  (let [lens (l/select-keys dl/+persistent-keys+)
         stream (->> (l/focus-atom lens st/state)
                     (rx/from-atom)
                     (rx/dedupe)

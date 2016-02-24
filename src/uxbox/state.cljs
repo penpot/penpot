@@ -8,7 +8,7 @@
   (rs/init {:dashboard {:project-order :name
                         :project-filter ""}
             :route nil
-            :auth nil
+            :auth {}
             :workspace nil
             :shapes-by-id {}
             :elements-by-id {}

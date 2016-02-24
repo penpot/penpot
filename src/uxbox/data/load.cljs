@@ -24,14 +24,21 @@
   (let [id (:id shape)]
     (update state :shapes-by-id assoc id shape)))
 
+(def ^:const ^:private +persistent-keys+
+  [:auth
+   :pages-by-id
+   :shapes-by-id
+   :colors-by-id
+   :projects-by-id])
+
 (defn persist-state
   [state]
   (let [pages (into #{} (vals (:pages-by-id state)))
         projects (into #{} (vals (:projects-by-id state)))
         shapes (into #{} (vals (:shapes-by-id state)))
         color-colls (into #{} (vals (:colors-by-id state)))]
-
     (assoc! local-storage :data {:pages pages
+                                 :auth (:auth state)
                                  :shapes shapes
                                  :projects projects
                                  :color-collections color-colls})))

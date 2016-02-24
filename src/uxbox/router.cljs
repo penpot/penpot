@@ -23,6 +23,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
+      ;; (println "update-location" handler route-params)
       (let [route (merge {:id handler}
                           (when route-params
                             {:params route-params}))]
@@ -35,6 +36,7 @@
    (reify
      rs/EffectEvent
      (-apply-effect [_ state]
+       ;; (println "navigate" id params)
        (let [loc (merge {:handler id}
                         (when params
                           {:route-params params}))]
