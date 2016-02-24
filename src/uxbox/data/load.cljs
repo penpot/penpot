@@ -51,6 +51,7 @@
           (reduce stpr/assoc-project $ (:projects data))
           (reduce stpr/assoc-page $ (:pages data))
           (reduce assoc-color $ (:color-collections data))
-          (reduce assoc-shape $ (:shapes data)))
+          (reduce assoc-shape $ (:shapes data))
+          (assoc $ :auth (:auth data)))
         state))))
 
