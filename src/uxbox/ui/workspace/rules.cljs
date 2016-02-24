@@ -82,6 +82,20 @@
     :name "vertical-tick-render"
     :mixins [mx/static]}))
 
+(defn vertical-ticks-render
+  [own]
+  (html
+   [:g
+    (for [value +ticks+]
+      (-> (vertical-tick value)
+          (rum/with-key value)))]))
+
+(def ^:const vertical-ticks
+  (mx/component
+   {:render vertical-ticks-render
+    :name "vertical-ticks-render"
+    :mixins [mx/static]}))
+
 (defn horizontal-rule-render
   [own sidebar?]
   (let [scroll (rum/react wb/scroll-a)
@@ -92,9 +106,7 @@
       {:width wb/viewport-width
        :height 20}
       [:g {:transform (str "translate(" translate-x ", 0)")}
-       (for [value +ticks+]
-         (-> (vertical-tick value)
-             (rum/with-key value)))]])))
+       (vertical-ticks)]])))
 
 (def horizontal-rule
   (mx/component
@@ -157,6 +169,20 @@
     :name "horizontal-tick-render"
     :mixins [mx/static]}))
 
+(defn- horizontal-ticks-render
+  [own]
+  (html
+   [:g
+    (for [value +ticks+]
+      (-> (horizontal-tick value)
+          (rum/with-key value)))]))
+
+(def ^:const horizontal-ticks
+  (mx/component
+   {:render horizontal-ticks-render
+    :name "horizontal-ticks-render"
+    :mixins [mx/static]}))
+
 (defn vertical-rule-render
   [own sidebar?]
   (let [scroll (rum/react wb/scroll-a)
@@ -168,9 +194,7 @@
        :height wb/viewport-height}
 
       [:g {:transform (str  "translate(0, " translate-y ")")}
-       (for [value +ticks+]
-         (-> (horizontal-tick value)
-             (rum/with-key value)))]
+       (horizontal-ticks)]
       [:rect {:x 0
               :y 0
               :height 20
