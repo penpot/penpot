@@ -14,6 +14,7 @@
                  [cljsjs/react "0.14.3-0"]
                  [cljsjs/react-dom "0.14.3-1"]
                  [cljsjs/moment "2.10.6-2"]
+                 [funcool/postal "0.3.0"]
                  [funcool/cats "1.2.1"]
                  [funcool/promesa "0.8.1"]
                  [funcool/beicon "0.6.1"]
