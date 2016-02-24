@@ -17,8 +17,8 @@
             :projects-by-id {}
             :pages-by-id {}}))
 
-
 (defn init
   "Initialize the state materialization."
   []
-  (rx/to-atom stream state))
+  (as-> stream $
+    (rx/to-atom $ state)))
