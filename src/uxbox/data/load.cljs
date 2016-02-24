@@ -37,11 +37,11 @@
         projects (into #{} (vals (:projects-by-id state)))
         shapes (into #{} (vals (:shapes-by-id state)))
         color-colls (into #{} (vals (:colors-by-id state)))]
-    (assoc! local-storage :data {:pages pages
-                                 :auth (:auth state)
-                                 :shapes shapes
-                                 :projects projects
-                                 :color-collections color-colls})))
+    (assoc! local-storage ::auth (:auth state))
+    (assoc! local-storage ::data {:pages pages
+                                  :shapes shapes
+                                  :projects projects
+                                  :color-collections color-colls})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
@@ -53,12 +53,14 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (if-let [data (get local-storage :data nil)]
-        (as-> state $
-          (reduce stpr/assoc-project $ (:projects data))
-          (reduce stpr/assoc-page $ (:pages data))
-          (reduce assoc-color $ (:color-collections data))
-          (reduce assoc-shape $ (:shapes data))
-          (assoc $ :auth (:auth data)))
-        state))))
+      (let [auth (::auth local-storage)
+            data (::data local-storage)
+            state (assoc state :auth auth)]
+        (if data
+          (as-> state $
+            (reduce stpr/assoc-project $ (:projects data))
+            (reduce stpr/assoc-page $ (:pages data))
+            (reduce assoc-color $ (:color-collections data))
+            (reduce assoc-shape $ (:shapes data)))
+          state)))))
 
