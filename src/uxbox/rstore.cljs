@@ -44,6 +44,11 @@
   [e]
   (satisfies? EffectEvent e))
 
+(extend-protocol UpdateEvent
+  function
+  (-apply-update [func state]
+    (func state)))
+
 (defonce bus (rx/bus))
 
 (defn emit!
