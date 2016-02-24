@@ -5,10 +5,10 @@
 (defonce state (atom {}))
 
 (defonce stream
-  (rs/init {:user {:fullname "Cirilla Fiona"
-                   :avatar "/images/favicon.png"}
-            :dashboard {:project-order :name
+  (rs/init {:dashboard {:project-order :name
                         :project-filter ""}
+            :route nil
+            :auth nil
             :workspace nil
             :shapes-by-id {}
             :elements-by-id {}
