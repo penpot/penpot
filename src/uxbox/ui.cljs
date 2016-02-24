@@ -1,45 +1,60 @@
 (ns uxbox.ui
   (:require [sablono.core :as html :refer-macros [html]]
+            [promesa.core :as p]
             [goog.dom :as gdom]
             [rum.core :as rum]
             [cats.labs.lens :as l]
             [uxbox.state :as s]
+            [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.data.projects :as dp]
-            [uxbox.ui.lightbox :as ui.lb]
-            [uxbox.ui.users :as users]
-            [uxbox.ui.dashboard :as dashboard]
+            [uxbox.ui.lightbox :as ui-lightbox]
+            [uxbox.ui.auth :as ui-auth]
+            [uxbox.ui.dashboard :as ui-dashboard]
             [uxbox.ui.workspace :refer (workspace)]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.shapes]))
 
-(def ^:static state
-  (as-> (l/select-keys [:location :location-params]) $
+(def ^:const auth-data
+  (as-> (l/key :auth) $
     (l/focus-atom $ s/state)))
+
+(def ^:const +unrestricted+
+  #{:auth/login})
+
+(def ^:const restricted?
+  (complement +unrestricted+))
 
 (defn app-render
   [own]
-  (let [{:keys [location location-params] :as state} (rum/react state)]
-    (case location
-      :auth/login (users/login)
-      :dashboard/projects (dashboard/projects-page)
-      :dashboard/elements (dashboard/elements-page)
-      :dashboard/icons (dashboard/icons-page)
-      :dashboard/colors (dashboard/colors-page)
-      :workspace/page (let [projectid (:project-uuid location-params)
-                            pageid (:page-uuid location-params)]
-                        (workspace projectid pageid))
-      nil
-      )))
+  (let [route (rum/react r/route-l)
+        auth (rum/react auth-data)
+        location (:id route)
+        params (:params route)]
+    (if (and (restricted? location) (not auth))
+      (do (p/schedule 0 #(r/go :auth/login)) nil)
+      (case location
+        :auth/login (ui-auth/login)
+        :dashboard/projects (ui-dashboard/projects-page)
+        :dashboard/elements (ui-dashboard/elements-page)
+        :dashboard/icons (ui-dashboard/icons-page)
+        :dashboard/colors (ui-dashboard/colors-page)
+        :workspace/page (let [projectid (:project-uuid params)
+                              pageid (:page-uuid params)]
+                          (workspace projectid pageid))
+        nil
+        ))))
 
 (def app
-  (mx/component {:render app-render
-                 :mixins [rum/reactive]
-                 :name "app"}))
+  (mx/component
+   {:render app-render
+    :mixins [rum/reactive]
+    :name "app"}))
+
 (defn init
   []
   (println "ui/init")
   (let [app-dom (gdom/getElement "app")
         lb-dom (gdom/getElement "lightbox")]
     (rum/mount (app) app-dom)
-    (rum/mount (ui.lb/lightbox) lb-dom)))
+    (rum/mount (ui-lightbox/lightbox) lb-dom)))
