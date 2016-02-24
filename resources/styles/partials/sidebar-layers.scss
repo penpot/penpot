@@ -197,15 +197,15 @@
       }
 
       &.drag-top {
-        border-top: 2px solid $main-ui-color;
+        border-top: 2px solid $main-ui-color !important;
       }
 
       &.drag-bottom {
-        border-bottom: 2px solid $main-ui-color;
+        border-bottom: 2px solid $main-ui-color !important;
       }
 
       &.drag-inside {
-        border: 2px solid $main-ui-color;
+        border: 2px solid $main-ui-color !important;
       }
 
     }
