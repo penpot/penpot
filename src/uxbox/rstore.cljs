@@ -66,23 +66,13 @@
   (reify
     UpdateEvent
     (-apply-update [_ state]
-      (f state))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:rstore/swap-state>"))))
+      (f state))))
 
 (defn reset-state
   "A event that resets the internal state with
   the provided value."
   [state]
   (reify
-    IPrintWithWriter
-    (-pr-writer [_ writer x]
-      (-write writer "#<event:rstore/reset-state ")
-      (-pr-writer state writer x)
-      (-write writer ">"))
-
     UpdateEvent
     (-apply-update [_ _]
       state)))
