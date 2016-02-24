@@ -87,17 +87,18 @@
       [:div.element-set-content
        [:span "Style"]
        [:div.row-flex
-        [:input#width.input-text
-         {:placeholder "Width"
-          :type "number"
-          :min "0"
-          :value (:stroke-width shape "")
-          :on-change on-width-change}]
-        [:select#style {:placeholder "Style"
+        [:select#style.input-select {:placeholder "Style"
                         :on-change on-stroke-style-change}
+         [:option {:value "nil"} "None"]
          [:option {:value "nil"} "Solid"]
          [:option {:value ":dotted"} "Dotted"]
-         [:option {:value ":dashed"} "Dashed"]]]
+         [:option {:value ":dashed"} "Dashed"]]
+        [:input#width.input-text
+        {:placeholder "Width"
+        :type "number"
+        :min "0"
+        :value (:stroke-width shape "")
+        :on-change on-width-change}]]
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
