@@ -42,6 +42,28 @@
       width: 100%;
       padding: $small;
 
+      .page-actions {
+        align-items: center;
+        display: flex;
+        margin-left: auto;
+
+        a {
+
+          svg {
+            fill: $soft-ui-icons;
+            height: 15px;
+            margin-left: $x-small;
+            width: 15px;
+
+            &:hover {
+              fill: $intense-ui-icons;
+            }
+
+          }
+
+        }
+
+      }
       .pin-icon {
         cursor: pointer;
 
@@ -92,6 +114,7 @@
         }
 
       }
+
 
     }
 

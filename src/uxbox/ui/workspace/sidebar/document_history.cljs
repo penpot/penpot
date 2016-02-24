@@ -46,11 +46,12 @@
        (if (= section :pinned)
          [:ul.history-content
           [:li.current
-           [:div.pin-icon i/pin]
            [:span "Current version"]]
           [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]])
+           [:span "Version 02/02/2016 12:33h"]
+           [:div.page-actions
+            [:a i/pencil]
+            [:a i/trash]]]])
        (if (= section :main)
          [:ul.history-content
           [:li.current
