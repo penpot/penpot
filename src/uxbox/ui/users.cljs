@@ -45,13 +45,8 @@
 ;; User Widget
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; FIXME this is a temporal
-(def current-user (atom {:user/fullname "Cirilla"
-                         :user/avatar "/images/favicon.png"}))
-(def menu-open? (atom false))
-
 (def ^:static user-l
-  (as-> (l/in [:user]) $
+  (as-> (l/in [:auth]) $
     (l/focus-atom $ s/state)))
 
 (defn user-render
@@ -63,7 +58,7 @@
                       :on-mouse-leave #(swap! local assoc :open false)}
       [:span (:fullname user)]
       [:img {:border "0"
-             :src (:avatar user)}]
+             :src (:photo user)}]
       (user-menu (:open @local))])))
 
 (def user
@@ -76,96 +71,62 @@
 ;; Register
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(rum/defc register-form < rum/static
-  []
-  [:div.login-content
-   [:input.input-text
-     {:name "name"
-      :placeholder "Name"
-      :type "text"}]
-   [:input.input-text
-     {:name "email"
-      :placeholder "Email"
-      :type "email"}]
-   [:input.input-text
-    {:name "password"
-     :placeholder "Password"
-     :type "password"}]
-   [:input.btn-primary
-    {:name "login"
-     :value "Continue"
-     :type "submit"
-     :on-click #(r/go :dashboard/projects)}]
-   [:div.login-links
-    [:a
-     {:on-click #(r/go :auth/login)}
-     "You already have an account?"]]])
+;; (rum/defc register-form < rum/static
+;;   []
+;;   [:div.login-content
+;;    [:input.input-text
+;;      {:name "name"
+;;       :placeholder "Name"
+;;       :type "text"}]
+;;    [:input.input-text
+;;      {:name "email"
+;;       :placeholder "Email"
+;;       :type "email"}]
+;;    [:input.input-text
+;;     {:name "password"
+;;      :placeholder "Password"
+;;      :type "password"}]
+;;    [:input.btn-primary
+;;     {:name "login"
+;;      :value "Continue"
+;;      :type "submit"
+;;      :on-click #(r/go :dashboard/projects)}]
+;;    [:div.login-links
+;;     [:a
+;;      {:on-click #(r/go :auth/login)}
+;;      "You already have an account?"]]])
 
-(rum/defc register < rum/static
-  []
-  [:div.login
-   [:div.login-body
-    [:a icons/logo]
-    (register-form)]])
+;; (rum/defc register < rum/static
+;;   []
+;;   [:div.login
+;;    [:div.login-body
+;;     [:a i/logo]
+;;     (register-form)]])
 
-(rum/defc recover-password-form < rum/static
-  []
-  [:div.login-content
-   [:input.input-text
-     {:name "email"
-      :placeholder "Email"
-      :type "email"}]
-   [:input.btn-primary
-    {:name "login"
-     :value "Continue"
-     :type "submit"
-     :on-click #(r/go :dashboard/projects)}]
-   [:div.login-links
-    [:a
-     {:on-click #(r/go :auth/login)}
-     "You have remembered your password?"]
-    [:a
-     {:on-click #(r/go :auth/register)}
-     "Don't have an account?"]]])
+;; (rum/defc recover-password-form < rum/static
+;;   []
+;;   [:div.login-content
+;;    [:input.input-text
+;;      {:name "email"
+;;       :placeholder "Email"
+;;       :type "email"}]
+;;    [:input.btn-primary
+;;     {:name "login"
+;;      :value "Continue"
+;;      :type "submit"
+;;      :on-click #(r/go :dashboard/projects)}]
+;;    [:div.login-links
+;;     [:a
+;;      {:on-click #(r/go :auth/login)}
+;;      "You have remembered your password?"]
+;;     [:a
+;;      {:on-click #(r/go :auth/register)}
+;;      "Don't have an account?"]]])
 
-(rum/defc recover-password < rum/static
-  []
-  [:div.login
-    [:div.login-body
-     [:a icons/logo]
-     (recover-password-form)]])
+;; (rum/defc recover-password < rum/static
+;;   []
+;;   [:div.login
+;;     [:div.login-body
+;;      [:a i/logo]
+;;      (recover-password-form)]])
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Login
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(rum/defc login-form < rum/static
-  []
-  [:div.login-content
-   [:input.input-text
-     {:name "email"
-      :placeholder "Email"
-      :type "email"}]
-   [:input.input-text
-    {:name "password"
-     :placeholder "Password"
-     :type "password"}]
-   [:div.input-checkbox.check-primary
-    [:input#checkbox1 {:value "1"
-                       :type "checkbox"}]
-    [:label {:for "checkbox1"} "Keep Me Signed in"]]
-   [:input.btn-primary
-    {:name "login"
-     :value "Continue"
-     :type "submit"
-     :on-click #(r/go :dashboard/projects)}]
-   [:div.login-links
-    [:a {:on-click #(r/go :auth/recover-password)} "Forgot your password?"]
-    [:a {:on-click #(r/go :auth/register)} "Don't have an account?"]]])
-
-(rum/defc login
-  []
-  [:div.login
-    [:div.login-body
-     [:a icons/logo]
-     (login-form)]])
