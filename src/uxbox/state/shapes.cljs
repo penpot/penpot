@@ -185,7 +185,7 @@
       state)))
 
 (defn drop-shape
-  [state tid sid loc]
+  [state sid tid loc]
   (if (= tid sid)
     state
     (case loc

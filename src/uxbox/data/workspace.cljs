@@ -336,7 +336,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (stsh/drop-shape state tid sid loc))))
+      (stsh/drop-shape state sid tid loc))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events (for selected)
