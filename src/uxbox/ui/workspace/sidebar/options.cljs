@@ -481,9 +481,6 @@
         ]]]
      )))
 
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -516,7 +513,7 @@
     :mixins [mx/static rum/reactive (mx/local)]}))
 
 (defn options-toolbox-render
-  [own shape]
+  [own]
   (let [workspace (rum/react wb/workspace-l)
         close #(rs/emit! (dw/toggle-flag :element-options))
         shape (when (and (:selected workspace)
