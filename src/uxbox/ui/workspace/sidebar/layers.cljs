@@ -173,8 +173,6 @@
            {:class (when (:blocked item) "selected")
             :on-click toggle-blocking}
            i/lock]]
-         (if (:group item)
-           [:div.sublevel-element i/sublevel])
          [:div.element-icon (element-icon item)]
          [:span (:name item "Unnamed")]]]))))
 
