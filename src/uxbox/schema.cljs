@@ -47,10 +47,20 @@
   [v]
   (fn? v))
 
+(def ^:const +email-re+
+  #"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+
+(v/defvalidator email
+  "Validate if `v` is a valid email."
+  {:default-message-format "% must be a valid email."}
+  [v]
+  (clojure.core/boolean (re-seq +email-re+ v)))
+
 (def required v/required)
 (def number v/number)
 (def integer v/integer)
 (def boolean v/boolean)
+(def string v/string)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api
