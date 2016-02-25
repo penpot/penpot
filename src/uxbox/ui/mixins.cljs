@@ -119,8 +119,9 @@
       (let [local-state (atom initial)
             component   (:rum/react-component state)]
         (add-watch local-state key
-                   (fn [_ _ _ _]
-                     (rum/request-render component)))
+                   (fn [_ _ oldv newv]
+                     (when (not= oldv newv)
+                       (rum/request-render component))))
         (assoc state key local-state)))
     }))
 
