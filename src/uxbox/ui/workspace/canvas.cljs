@@ -56,7 +56,7 @@
       (background)
       (grid 1)
       [:svg.page-layout {}
-       #_(shapes-selection shapes-selected)
+       (shapes-selection)
        [:g.main {}
         (for [item (:shapes page)]
           (-> (uus/shape item)

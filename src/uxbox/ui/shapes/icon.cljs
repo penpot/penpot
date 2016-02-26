@@ -79,7 +79,7 @@
                 :on-mouse-down on-mouse-down
                 :on-mouse-up on-mouse-up}
       (uusc/render-shape shape #(uusc/shape %))
-      (when selected?
+      (when (and selected? (= (count selected) 1))
         (handlers shape))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
