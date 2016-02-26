@@ -88,7 +88,7 @@
 
 (defn- handlers-render
   [own shape]
-  (let [{:keys [x y width height]} (sh/-outer-rect shape)]
+  (let [{:keys [x y width height]} (sh/outer-rect' shape)]
     (html
      [:g.controls
       [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"

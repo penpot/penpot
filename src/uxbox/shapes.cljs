@@ -31,27 +31,27 @@
   [shape & params]
   (:type shape))
 
-(defmulti -move
+(defmulti move
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
-(defmulti -move'
+(defmulti move'
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
-(defmulti -resize
+(defmulti resize
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
-(defmulti -resize'
+(defmulti resize'
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
-(defmulti -size
+(defmulti size
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
-(defmulti -rotate
+(defmulti rotate
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
@@ -60,7 +60,7 @@
 ;; for calculate the shape or shapes selection
 ;; rectangle.
 
-(defmulti -outer-rect
+(defmulti outer-rect'
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
@@ -68,7 +68,7 @@
 ;; from initial shape data structure and final
 ;; canvas position.
 
-(defmulti -initialize
+(defmulti initialize
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
@@ -82,7 +82,7 @@
 
 ;; Initialize
 
-(defmethod -initialize ::shape
+(defmethod initialize ::shape
   [shape {:keys [x1 y1 x2 y2]}]
   (assoc shape
          :x1 x1
@@ -92,11 +92,11 @@
          ;; :width (- x2 x1)
          ;; :height (- y2 y1)))
 
-(defmethod -initialize :builtin/group
+(defmethod initialize :builtin/group
   [shape {:keys [x1 y1 x2 y2] :as props}]
   (assoc shape ::initial props))
 
-(defmethod -initialize :builtin/line
+(defmethod initialize :builtin/line
   [shape {:keys [x1 y1 x2 y2]}]
   (assoc shape
          :x1 x1
@@ -104,7 +104,7 @@
          :x2 x2
          :y2 y2))
 
-(defmethod -initialize :builtin/circle
+(defmethod initialize :builtin/circle
   [shape {:keys [x1 y1 x2 y2]}]
   (assoc shape
          :cx x1
@@ -114,11 +114,11 @@
 
 ;; FIXME: lock mode
 
-(defmethod -resize :builtin/line
+(defmethod resize :builtin/line
   [shape {:keys [x y] :as pos}]
   (assoc shape :x2 x :y2 y))
 
-(defmethod -resize :builtin/circle
+(defmethod resize :builtin/circle
   [shape {:keys [x y lock] :as pos}]
   (let [cx (:cx shape)
         cy (:cy shape)
@@ -129,17 +129,17 @@
       (assoc shape :rx rx :ry rx)
       (assoc shape :rx rx :ry ry))))
 
-(defmethod -resize :builtin/rect
+(defmethod resize :builtin/rect
   [shape {:keys [x y lock] :as pos}]
   (if lock
     (assoc shape :x2 x :y2 x)
     (assoc shape :x2 x :y2 y)))
 
-(defmethod -resize :default
+(defmethod resize :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
-(defmethod -resize' ::rect
+(defmethod resize' ::rect
   [shape {:keys [width height] :as size}]
   (let [x1 (:x1 shape)
         y1 (:y1 shape)]
@@ -147,22 +147,22 @@
            :x2 (+ x1 width)
            :y2 (+ y1 height))))
 
-(defmethod -resize' :default
+(defmethod resize' :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
-(defmethod -size ::rect
+(defmethod size ::rect
   [{:keys [x1 y1 x2 y2] :as shape}]
   {:width (- x2 x1)
    :height (- y2 y1)})
 
-(defmethod -size :default
+(defmethod size :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
 ;; Move
 
-(defmethod -move ::rect
+(defmethod move ::rect
   [shape {dx :x dy :y}]
   (assoc shape
          :x1 (+ (:x1 shape) dx)
@@ -170,13 +170,13 @@
          :x2 (+ (:x2 shape) dx)
          :y2 (+ (:y2 shape) dy)))
 
-(defmethod -move :builtin/group
+(defmethod move :builtin/group
   [shape {dx :x dy :y}]
   (assoc shape
          :dx (+ (:dx shape 0) dx)
          :dy (+ (:dy shape 0) dy)))
 
-(defmethod -move :builtin/line
+(defmethod move :builtin/line
   [shape {dx :x dy :y}]
   (assoc shape
          :x1 (+ (:x1 shape) dx)
@@ -184,54 +184,54 @@
          :x2 (+ (:x2 shape) dx)
          :y2 (+ (:y2 shape) dy)))
 
-(defmethod -move :builtin/circle
+(defmethod move :builtin/circle
   [shape {dx :x dy :y}]
   (assoc shape
          :cx (+ (:cx shape) dx)
          :cy (+ (:cy shape) dy)))
 
-(defmethod -move :default
+(defmethod move :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
-(defmethod -move' ::rect
+(defmethod move' ::rect
   [shape {:keys [x y] :as pos}]
   (let [dx (if x (- (:x1 shape) x) 0)
         dy (if y (- (:y1 shape) y) 0)]
-    (-move shape (gpt/point dx dy))))
+    (move shape (gpt/point dx dy))))
 
-(defmethod -move' :builtin/line
+(defmethod move' :builtin/line
   [shape {:keys [x y] :as pos}]
   (let [dx (if x (- (:x1 shape) x) 0)
         dy (if y (- (:y1 shape) y) 0)]
-    (-move shape (gpt/point dx dy))))
+    (move shape (gpt/point dx dy))))
 
-(defmethod -move' :builtin/circle
+(defmethod move' :builtin/circle
   [shape {:keys [x y] :as pos}]
   (let [dx (if x (- (:cx shape) x) 0)
         dy (if y (- (:cy shape) y) 0)]
-    (-move shape (gpt/point dx dy))))
+    (move shape (gpt/point dx dy))))
 
-(defmethod -move' :default
+(defmethod move' :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
-(defmethod -rotate ::shape
+(defmethod rotate ::shape
   [shape rotation]
   (assoc shape :rotation rotation))
 
 (declare container-rect)
 
-(defmethod -outer-rect ::shape
+(defmethod outer-rect' ::shape
   [{:keys [group] :as shape}]
   (let [group (get-in @st/state [:shapes-by-id group])]
     (as-> shape $
       (assoc $ :x (+ (:x1 shape) (:dx group 0)))
       (assoc $ :y (+ (:y1 shape) (:dy group 0)))
-      (merge $ (-size $))
+      (merge $ (size $))
       (container-rect $))))
 
-(defmethod -outer-rect :builtin/line
+(defmethod outer-rect' :builtin/line
   [{:keys [x1 y1 x2 y2 group] :as shape}]
   (let [group (get-in @st/state [:shapes-by-id group])
         props {:x (+ x1 (:dx group 0))
@@ -241,7 +241,7 @@
     (-> (merge shape props)
         (container-rect))))
 
-(defmethod -outer-rect :builtin/circle
+(defmethod outer-rect' :builtin/circle
   [{:keys [cx cy rx ry group] :as shape}]
   (let [group (get-in @st/state [:shapes-by-id group])
         props {:x (+ (- cx rx) (:dx group 0))
@@ -251,11 +251,11 @@
     (-> (merge shape props)
         (container-rect))))
 
-(defmethod -outer-rect :builtin/group
+(defmethod outer-rect' :builtin/group
   [{:keys [id group rotation dx dy] :as shape}]
   (let [shapes (->> (:items shape)
                     (map #(get-in @st/state [:shapes-by-id %]))
-                    (map -outer-rect))
+                    (map outer-rect'))
         x (apply min (map :x shapes))
         y (apply min (map :y shapes))
         x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
@@ -271,13 +271,13 @@
                   })
         (container-rect $)))))
 
-(defmethod -outer-rect :default
+(defmethod outer-rect' :default
   [shape _]
   (throw (ex-info "Not implemented" (select-keys shape [:type]))))
 
 (defmethod -transformation :builtin/icon
   [{:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
-  (let [{:keys [width height]} (-size shape)
+  (let [{:keys [width height]} (size shape)
         orig-width (nth view-box 2)
         orig-height (nth view-box 3)
         scale-x (/ width orig-width)
@@ -293,7 +293,7 @@
 
 (defmethod -transformation :builtin/rect
   [{:keys [x1 y1 rotation] :or {rotation 0} :as shape}]
-  (let [{:keys [width height]} (-size shape)
+  (let [{:keys [width height]} (size shape)
         center-x (+ x1 (/ width 2))
         center-y (+ y1 (/ height 2))]
     (-> (gmt/matrix)
@@ -408,7 +408,7 @@
 (defn outer-rect
   [shapes]
   {:pre [(seq shapes)]}
-  (let [shapes (map -outer-rect shapes)
+  (let [shapes (map outer-rect' shapes)
         x (apply min (map :x shapes))
         y (apply min (map :y shapes))
         x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))

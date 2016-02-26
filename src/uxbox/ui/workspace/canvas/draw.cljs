@@ -26,7 +26,7 @@
   (let [shape (rum/react +drawing-shape+)
         position (rum/react +drawing-position+)]
     (when shape
-      (-> (ush/-resize shape position)
+      (-> (ush/resize shape position)
           (uusc/render-shape identity)))))
 
 (def ^:static draw-area
@@ -45,7 +45,7 @@
 (define-once :drawing-subscriptions
   (letfn [(init-shape [shape]
             (let [{:keys [x y] :as point} @wb/mouse-canvas-a
-                  shape (ush/-initialize shape {:x1 x :y1 y :x2 x :y2 y})]
+                  shape (ush/initialize shape {:x1 x :y1 y :x2 x :y2 y})]
               (reset! +drawing-shape+ shape)
               (reset! +drawing-position+ (assoc point :lock false))
 
@@ -63,7 +63,7 @@
           (on-complete []
             (let [shape @+drawing-shape+
                   shpos @+drawing-position+
-                  shape (ush/-resize shape shpos)]
+                  shape (ush/resize shape shpos)]
               (rs/emit! (dw/add-shape shape)
                         (dw/select-for-drawing nil))
               (reset! +drawing-position+ nil)
@@ -72,7 +72,7 @@
           (init-icon [shape]
             (let [{:keys [x y]} @wb/mouse-canvas-a
                   props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
-                  shape (ush/-initialize shape props)]
+                  shape (ush/initialize shape props)]
               (rs/emit! (dw/add-shape shape)
                         (dw/select-for-drawing nil))))
           (init []

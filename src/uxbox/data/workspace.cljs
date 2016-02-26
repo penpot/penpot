@@ -119,7 +119,7 @@
                 (filter #(= (:page %) pageid))
                 (remove :hidden)
                 (remove :blocked)
-                (map sh/-outer-rect)
+                (map sh/outer-rect')
                 (filter #(sh/contained-in? % selrect))
                 (map :id))]
         (->> (into #{} xf (vals (:shapes-by-id state)))
@@ -152,7 +152,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (update-in state [:shapes-by-id sid] sh/-move delta)))))
+        (update-in state [:shapes-by-id sid] sh/move delta)))))
 
 (defn update-line-attrs
   [sid {:keys [x1 y1 x2 y2] :as opts}]
@@ -163,7 +163,7 @@
       (let [shape (get-in state [:shapes-by-id sid])
             props (select-keys opts [:x1 :y1 :x2 :y2])
             props' (select-keys shape [:x1 :y1 :x2 :y2])]
-        (update-in state [:shapes-by-id sid] sh/-initialize
+        (update-in state [:shapes-by-id sid] sh/initialize
                    (merge props' props))))))
 
 (defn update-rotation
@@ -175,7 +175,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
-                 sh/-rotate rotation))))
+                 sh/rotate rotation))))
 
 (defn update-size
   "A helper event just for update the position
@@ -190,8 +190,8 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])
-            size (merge (sh/-size shape) opts)]
-        (update-in state [:shapes-by-id sid] sh/-resize' size)))))
+            size (merge (sh/size shape) opts)]
+        (update-in state [:shapes-by-id sid] sh/resize' size)))))
 
 (defn update-position
   "Update the start position coordenate of the shape."
@@ -200,7 +200,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid] sh/-move' opts))))
+      (update-in state [:shapes-by-id sid] sh/move' opts))))
 
 (defn update-fill-attrs
   [sid {:keys [color opacity] :as opts}]

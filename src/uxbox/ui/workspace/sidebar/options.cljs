@@ -190,7 +190,7 @@
                   sid (:id shape)
                   props {attr value}]
               (rs/emit! (dw/update-radius-attrs sid props))))]
-    (let [size (sh/-size shape)]
+    (let [size (sh/size shape)]
       (html
        [:div.element-set {:key (str (:id menu))}
         [:div.element-set-title (:name menu)]
@@ -282,7 +282,7 @@
                   sid (:id shape)
                   props {attr value}]
               (rs/emit! (dw/update-position sid props))))]
-    (let [size (sh/-size shape)]
+    (let [size (sh/size shape)]
       (html
        [:div.element-set {:key (str (:id menu))}
         [:div.element-set-title (:name menu)]
