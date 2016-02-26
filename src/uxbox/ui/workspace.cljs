@@ -8,9 +8,10 @@
             [uxbox.data.workspace :as dw]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
+            [uxbox.ui.core :as uuc]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.base :as uuwb]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (horizontal-rule vertical-rule)]
@@ -27,7 +28,7 @@
   (let [target (.-target event)
         top (.-scrollTop target)
         left (.-scrollLeft target)]
-    (rx/push! wb/scroll-b (gpt/point left top))))
+    (rx/push! uuwb/scroll-b (gpt/point left top))))
 
 (defn- on-key-down
   [event]
@@ -39,7 +40,7 @@
 
 (defn- workspace-render
   [own projectid]
-  (let [{:keys [flags] :as workspace} (rum/react wb/workspace-l)
+  (let [{:keys [flags] :as workspace} (rum/react uuwb/workspace-l)
         left-sidebar? (not (empty? (keep flags [:layers :sitemap :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools
                                                  :element-options])))
@@ -85,13 +86,13 @@
 (defn- workspace-did-mount
   [own]
   (letfn [(handle-scroll-interaction []
-            (let [stoper (->> wb/interactions-b
+            (let [stoper (->> uuc/actions-s
                               (rx/filter #(not= % :scroll/viewport))
                               (rx/take 1))
                   local (:rum/local own)
-                  initial @wb/mouse-viewport-a]
+                  initial @uuwb/mouse-viewport-a]
               (swap! local assoc :scrolling true)
-              (as-> wb/mouse-viewport-s $
+              (as-> uuwb/mouse-viewport-s $
                 (rx/take-until stoper $)
                 (rx/subscribe $ #(on-scroll % initial) nil on-scroll-end))))
 
@@ -108,12 +109,12 @@
               (set! (.-scrollTop el) (- cy y))))]
 
   (let [el (mx/get-ref-dom own "workspace-canvas")
-        sub (as-> wb/interactions-b $
+        sub (as-> uuc/actions-s $
               (rx/dedupe $)
               (rx/filter #(= :scroll/viewport %) $)
               (rx/on-value $ handle-scroll-interaction))]
-    (set! (.-scrollLeft el) wb/canvas-start-scroll-x)
-    (set! (.-scrollTop el) wb/canvas-start-scroll-y)
+    (set! (.-scrollLeft el) uuwb/canvas-start-scroll-x)
+    (set! (.-scrollTop el) uuwb/canvas-start-scroll-y)
     (assoc own ::sub sub))))
 
 (defn- workspace-will-unmount

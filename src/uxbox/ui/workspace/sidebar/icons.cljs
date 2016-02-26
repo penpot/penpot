@@ -5,20 +5,20 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as shapes]
             [uxbox.library :as library]
-            [uxbox.util.data :refer (read-string)]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.util.dom :as dom]))
+            [uxbox.util.dom :as dom]
+            [uxbox.util.data :refer (read-string)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private ^:static drawing-shape
+(def ^:private ^:const drawing-shape
   "A focused vision of the drawing property
   of the workspace status. This avoids
   rerender the whole toolbox on each workspace
@@ -45,7 +45,7 @@
 
 (defn- icon-wrapper-render
   [own icon]
-  (shapes/-render-svg icon nil))
+  (uusc/render-shape-svg icon nil))
 
 (def ^:static ^:private icon-wrapper
   (mx/component

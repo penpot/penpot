@@ -9,6 +9,7 @@
             [uxbox.state :as st]
             [uxbox.shapes :as sh]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.core :as uuc]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.geom.point :as gpt]
@@ -74,7 +75,7 @@
               (reset! selrect-pos nil)))
 
           (init []
-            (let [stoper (->> wb/interactions-b
+            (let [stoper (->> uuc/actions-s
                               (rx/filter #(not= % :draw/selrect))
                               (rx/take 1))
                   pos @wb/mouse-viewport-a]
@@ -84,7 +85,7 @@
                 (rx/take-until stoper $)
                 (rx/subscribe $ on-value nil on-complete))))]
 
-    (as-> wb/interactions-b $
+    (as-> uuc/actions-s $
       (rx/dedupe $)
       (rx/filter #(= :draw/selrect %) $)
       (rx/on-value $ init))))

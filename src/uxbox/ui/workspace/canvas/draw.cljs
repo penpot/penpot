@@ -5,9 +5,10 @@
             [beicon.core :as rx]
             [cats.labs.lens :as l]
             [uxbox.rstore :as rs]
-            [uxbox.state :as st]
-            [uxbox.shapes :as sh]
+            [uxbox.shapes :as ush]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.core :as uuc]
+            [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.geom.point :as gpt]
@@ -25,8 +26,8 @@
   (let [shape (rum/react +drawing-shape+)
         position (rum/react +drawing-position+)]
     (when shape
-      (-> (sh/-resize shape position)
-          (sh/-render identity)))))
+      (-> (ush/-resize shape position)
+          (uusc/render-shape identity)))))
 
 (def ^:static draw-area
   (mx/component
@@ -44,11 +45,11 @@
 (define-once :drawing-subscriptions
   (letfn [(init-shape [shape]
             (let [{:keys [x y] :as point} @wb/mouse-canvas-a
-                  shape (sh/-initialize shape {:x1 x :y1 y :x2 x :y2 y})]
+                  shape (ush/-initialize shape {:x1 x :y1 y :x2 x :y2 y})]
               (reset! +drawing-shape+ shape)
               (reset! +drawing-position+ (assoc point :lock false))
 
-              (let [stoper (->> wb/interactions-b
+              (let [stoper (->> uuc/actions-s
                                 (rx/filter #(not= % :shape/movement))
                                 (rx/take 1))]
                 (as-> wb/mouse-canvas-s $
@@ -62,7 +63,7 @@
           (on-complete []
             (let [shape @+drawing-shape+
                   shpos @+drawing-position+
-                  shape (sh/-resize shape shpos)]
+                  shape (ush/-resize shape shpos)]
               (rs/emit! (dw/add-shape shape)
                         (dw/select-for-drawing nil))
               (reset! +drawing-position+ nil)
@@ -71,7 +72,7 @@
           (init-icon [shape]
             (let [{:keys [x y]} @wb/mouse-canvas-a
                   props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
-                  shape (sh/-initialize shape props)]
+                  shape (ush/-initialize shape props)]
               (rs/emit! (dw/add-shape shape)
                         (dw/select-for-drawing nil))))
           (init []
@@ -82,7 +83,7 @@
                 :builtin/circle (init-shape shape)
                 :builtin/line (init-shape shape))))]
 
-    (as-> wb/interactions-b $
+    (as-> uuc/actions-s $
       (rx/dedupe $)
       (rx/filter #(= :draw/shape %) $)
       (rx/on-value $ init))))
