@@ -132,6 +132,13 @@
    :style {:stroke "#333" :fill "transparent"
            :stroke-opacity "0.4"}})
 
+(def ^:const +style-attrs+
+  [:font-size])
+
+(defn- build-style
+  [{:keys [font-size]}]
+  (merge {} (when font-size {:fontSize (str font-size "px")})))
+
 (defmethod uusc/render-shape :builtin/text
   [{:keys [id x1 y1 x2 y2 content drawing? editing?] :as shape}]
   (let [key (str id)
@@ -139,12 +146,14 @@
         size (ush/size shape)
         props {:x x1 :y y1
                :transform (str rfm)}
-        attrs (merge props size)]
+        attrs (merge props size)
+        style (build-style shape)]
+
     (html
      [:g
       (if (or drawing? editing?)
         [:g
          [:rect (merge attrs +select-rect-attrs+)]])
       [:foreignObject attrs
-       [:p {:ref "container"} content]]])))
+       [:p {:ref "container" :style style} content]]])))
 
