@@ -44,7 +44,8 @@
   [own id]
   (let [shape-l (focus-shape id)
         shape (rum/react shape-l)]
-    (render-component own shape)))
+    (when-not (:hidden shape)
+      (render-component own shape))))
 
 (def ^:const shape
   (mx/component
