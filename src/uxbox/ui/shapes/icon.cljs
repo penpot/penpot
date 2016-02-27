@@ -38,7 +38,7 @@
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
-          (uuc/emit-action! :shape/movement)
+          (uuc/acquire-action! :shape/movement)
           (rs/emit! (dw/select-shape id)))
 
         (and (not selected?) (not (empty? selected)))
@@ -52,7 +52,7 @@
         :else
         (do
           (dom/stop-propagation event)
-          (uuc/emit-action! :shape/movement))))))
+          (uuc/acquire-action! :shape/movement))))))
 
 (defn on-mouse-up
   [event {:keys [id group] :as shape}]
@@ -63,7 +63,7 @@
     :else
     (do
       (dom/stop-propagation event)
-      (uuc/emit-action! :nothing))))
+      (uuc/release-action! :shape/movement))))
 
 (declare handlers)
 

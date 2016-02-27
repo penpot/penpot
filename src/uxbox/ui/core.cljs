@@ -5,9 +5,17 @@
 ;; Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce actions-lock (atom :nothing))
 (defonce actions-s (rx/bus))
 
-(defn emit-action!
+(defn acquire-action!
   [type]
-  (rx/push! actions-s type))
+  (when-let [result (compare-and-set! actions-lock :nothing type)]
+    ;; (println "acquire-action!" type)
+    (rx/push! actions-s type)))
 
+(defn release-action!
+  [type]
+  (when-let [result (compare-and-set! actions-lock type :nothing)]
+    ;; (println "release-action!" type)
+    (rx/push! actions-s :nothing)))

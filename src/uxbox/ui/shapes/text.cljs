@@ -31,7 +31,7 @@
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
-          (uuc/emit-action! :shape/movement)
+          (uuc/acquire-action! :shape/movement)
           (rs/emit! (dw/select-shape id)))
 
         (and (not selected?) (not (empty? selected)))
@@ -45,7 +45,7 @@
         :else
         (do
           (dom/stop-propagation event)
-          (uuc/emit-action! :shape/movement))))))
+          (uuc/acquire-action! :shape/movement))))))
 
 (defn on-mouse-up
   [event {:keys [id group] :as shape}]
@@ -56,7 +56,7 @@
     :else
     (do
       (dom/stop-propagation event)
-      (uuc/emit-action! :nothing))))
+      (uuc/release-action! :shape/movement))))
 
 (defn- text-component-did-mount
   [own]
@@ -64,12 +64,14 @@
             (let [container (mx/get-ref-dom own "container")
                   local (:rum/local own)]
               (swap! local assoc :edition true)
+              (uuc/acquire-action! ::edition)
               (set! (.-contentEditable container) true)
               (.setAttribute container "contenteditable" "true")
               (.focus container)))
           (on-blur [ev]
             (let [container (mx/get-ref-dom own "container")
                   local (:rum/local own)]
+              (uuc/release-action! ::edition)
               (swap! local assoc :edition false)
               (set! (.-contentEditable container) false)
               (.removeAttribute container "contenteditable")))]
