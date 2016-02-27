@@ -409,19 +409,20 @@
 
 (defn move-selected
   "Move a minimal position unit the selected shapes."
-  [dir]
-  {:pre [(contains? #{:up :down :right :left} dir)]}
-  (reify
-    rs/WatchEvent
-    (-apply-watch [_ state]
-      (let [selected (get-in state [:workspace :selected])
-            delta (case dir
-                    :up [0 -1]
-                    :down [0 +1]
-                    :right [+1 0]
-                    :left [-1 0])]
-        (rx/from-coll
-         (map #(move-shape % delta) selected))))))
+  ([dir] (move-selected dir 1))
+  ([dir n]
+   {:pre [(contains? #{:up :down :right :left} dir)]}
+   (reify
+     rs/WatchEvent
+     (-apply-watch [_ state]
+       (let [selected (get-in state [:workspace :selected])
+             delta (case dir
+                    :up (gpt/point 0 (- n))
+                    :down (gpt/point 0 n)
+                    :right (gpt/point n 0)
+                    :left (gpt/point (- n) 0))]
+         (rx/from-coll
+          (map #(move-shape % delta) selected)))))))
 
 (defn update-selected-shapes-fill
   "Update the fill related attributed on

@@ -13,6 +13,12 @@
 ;; Keyboard Shortcuts Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn move-selected
+  [dir speed]
+  (case speed
+    :std (rs/emit! (dw/move-selected dir 1))
+    :fast (rs/emit! (dw/move-selected dir 20))))
+
 (defonce ^:const +shortcuts+
   {:ctrl+g #(rs/emit! (dw/toggle-flag :grid))
    :ctrl+shift+f #(rs/emit! (dw/toggle-flag :drawtools))
@@ -23,10 +29,14 @@
    :esc #(rs/emit! (dw/deselect-all))
    :backspace #(rs/emit! (dw/delete-selected))
    :delete #(rs/emit! (dw/delete-selected))
-   :up #(rs/emit! (dw/move-selected :up))
-   :down #(rs/emit! (dw/move-selected :down))
-   :right #(rs/emit! (dw/move-selected :right))
-   :left #(rs/emit! (dw/move-selected :left))})
+   :shift+up #(move-selected :up :fast)
+   :shift+down #(move-selected :down :fast)
+   :shift+right #(move-selected :right :fast)
+   :shift+left #(move-selected :left :fast)
+   :up #(move-selected :up :std)
+   :down #(move-selected :down :std)
+   :right #(move-selected :right :std)
+   :left #(move-selected :left :std)})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Keyboard Shortcuts Watcher
