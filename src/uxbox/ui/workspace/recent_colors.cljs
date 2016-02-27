@@ -50,9 +50,10 @@
       [:div.row-flex
        (for [color colors]
          [:span.color-th {:style {:background color}
+                          :key color
                           :on-click (partial callback color)}])
        (for [i (range (- 5 (count colors)))]
-         [:span.color-th])
+         [:span.color-th {:key (str "empty" i)}])
 
        [:span.color-th.palette-th {:on-click toggle-colorpalette}
         i/palette]]])))
