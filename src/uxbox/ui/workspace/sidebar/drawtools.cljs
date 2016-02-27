@@ -31,27 +31,34 @@
 ;; Draw Tools
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:staric +draw-tools+
+(def ^:const +draw-tools+
   {:rect
    {:icon i/box
     :help (tr "ds.help.rect")
     :shape {:type :builtin/rect
             :name "Rect"
             :stroke "#000000"}
-    :priority 10}
+    :priority 1}
    :circle
    {:icon i/circle
     :help (tr "ds.help.circle")
     :shape {:type :builtin/circle
             :name "Circle"}
-    :priority 20}
+    :priority 2}
    :line
    {:icon i/line
     :help (tr "ds.help.line")
     :shape {:type :builtin/line
             :name "Line"
             :stroke "#000000"}
-    :priority 30}})
+    :priority 3}
+   :text
+   {:icon i/text
+    :help (tr "ds.help.text")
+    :shape {:type :builtin/text
+            :name "Text"
+            :content "Hello world"}
+    :priority 4}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Draw Tool Box

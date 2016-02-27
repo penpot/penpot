@@ -15,7 +15,7 @@
     (derive $ :builtin/rect ::rect)
     (derive $ :builtin/line ::shape)
     (derive $ :builtin/circle ::shape)
-    (derive $ :builtin/text ::shape)
+    (derive $ :builtin/text ::rect)
     (derive $ :builtin/group ::rect)))
 
 (defn shape?
@@ -135,9 +135,15 @@
     (assoc shape :x2 x :y2 x)
     (assoc shape :x2 x :y2 y)))
 
+(defmethod resize :builtin/text
+  [shape {:keys [x y lock] :as pos}]
+  (if lock
+    (assoc shape :x2 x :y2 x)
+    (assoc shape :x2 x :y2 y)))
+
 (defmethod resize :default
   [shape _]
-  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+  (throw (ex-info "Not implemented (resize)" (select-keys shape [:type]))))
 
 (defmethod resize' ::rect
   [shape {:keys [width height] :as size}]
@@ -149,7 +155,7 @@
 
 (defmethod resize' :default
   [shape _]
-  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+  (throw (ex-info "Not implemented (resize')" (select-keys shape [:type]))))
 
 (defmethod size ::rect
   [{:keys [x1 y1 x2 y2] :as shape}]
@@ -158,7 +164,7 @@
 
 (defmethod size :default
   [shape _]
-  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+  (throw (ex-info "Not implemented (size)" (select-keys shape [:type]))))
 
 ;; Move
 
@@ -192,7 +198,7 @@
 
 (defmethod move :default
   [shape _]
-  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+  (throw (ex-info "Not implemented (move)" (select-keys shape [:type]))))
 
 (defmethod move' ::rect
   [shape {:keys [x y] :as pos}]
@@ -214,7 +220,7 @@
 
 (defmethod move' :default
   [shape _]
-  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+  (throw (ex-info "Not implemented (move')" (select-keys shape [:type]))))
 
 (defmethod rotate ::shape
   [shape rotation]
@@ -273,7 +279,7 @@
 
 (defmethod outer-rect' :default
   [shape _]
-  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+  (throw (ex-info "Not implemented (outer-rect')" (select-keys shape [:type]))))
 
 (defmethod -transformation :builtin/icon
   [{:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
@@ -301,6 +307,18 @@
         (gmt/rotate rotation)
         (gmt/translate (- center-x) (- center-y)))))
 
+
+(defmethod -transformation :builtin/text
+  [{:keys [x1 y1 rotation] :or {rotation 0} :as shape}]
+  (let [{:keys [width height]} (size shape)
+        center-x (+ x1 (/ width 2))
+        center-y (+ y1 (/ height 2))]
+    (-> (gmt/matrix)
+        (gmt/translate center-x center-y)
+        (gmt/rotate rotation)
+        (gmt/translate (- center-x) (- center-y)))))
+
+
 (defmethod -transformation :builtin/circle
   [{:keys [cx cy rx ry rotation] :or {rotation 0} :as shape}]
   (-> (gmt/matrix)
@@ -325,7 +343,7 @@
 
 (defmethod -transformation :default
   [shape _]
-  (throw (ex-info "Not implemented" (select-keys shape [:type]))))
+  (throw (ex-info "Not implemented (-transformation)" (select-keys shape [:type]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers

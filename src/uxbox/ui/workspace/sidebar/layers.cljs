@@ -90,6 +90,7 @@
     :builtin/line i/line
     :builtin/circle i/circle
     :builtin/rect i/box
+    :builtin/text i/text
     :builtin/group i/folder))
 
 

@@ -32,11 +32,11 @@
 
 (defn- on-key-down
   [event]
-  (js/console.log event))
+  #_(js/console.log event))
 
 (defn- on-key-up
   [event]
-  (js/console.log event))
+  #_(js/console.log event))
 
 (defn- workspace-render
   [own projectid]

@@ -26,6 +26,12 @@
                  (rum/element cls state nil))))]
     (with-meta ctr {:rum/class cls})))
 
+(defn ref-html
+  [own ref]
+  (let [component (-> own :rum/react-component)
+        node (aget (.-refs component) ref)]
+    (.-innerHTML node)))
+
 (defn ref-value
   [own ref]
   (let [component (-> own :rum/react-component)

@@ -26,7 +26,8 @@
   (let [shape (rum/react +drawing-shape+)
         position (rum/react +drawing-position+)]
     (when shape
-      (-> (ush/resize shape position)
+      (-> (assoc shape :drawing? true)
+          (ush/resize position)
           (uusc/render-shape identity)))))
 
 (def ^:static draw-area
@@ -79,6 +80,7 @@
             (when-let [shape (:drawing @wb/workspace-l)]
               (case (:type shape)
                 :builtin/icon (init-icon shape)
+                :builtin/text (init-shape shape)
                 :builtin/rect (init-shape shape)
                 :builtin/circle (init-shape shape)
                 :builtin/line (init-shape shape))))]
