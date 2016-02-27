@@ -22,14 +22,15 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static ^:private +menus-map+
+(def ^:const ^:private +menus-map+
   {:builtin/icon [:menu/icon-measures :menu/fill :menu/stroke]
    :builtin/rect [:menu/rect-measures :menu/fill :menu/stroke]
    :builtin/line [:menu/line-measures :menu/stroke]
    :builtin/circle [:menu/circle-measures :menu/fill :menu/stroke]
+   :builtin/text [:menu/text]
    :builtin/group []})
 
-(def ^:static ^:private +menus-by-id+
+(def ^:const ^:private +menus-by-id+
   {:menu/icon-measures
    {:name "Size, position & rotation"
     :icon i/infocard}
@@ -52,7 +53,11 @@
 
    :menu/stroke
    {:name "Stroke"
-    :icon i/stroke}})
+    :icon i/stroke}
+
+   :menu/text
+   {:name "Text"
+    :icon i/text}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
@@ -95,7 +100,7 @@
          [:option {:value ":dotted"} "Dotted"]
          [:option {:value ":dashed"} "Dashed"]
          [:option {:value ":mixed"} "Mixed"]]
-        [:input#width.input-text
+        [:input.input-text
         {:placeholder "Width"
         :type "number"
         :min "0"
@@ -107,7 +112,7 @@
        (colorpicker :options #(change-stroke {:color (:hex %)}))
 
        [:div.row-flex
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "#"
           :type "text"
           :value (:stroke shape "")
@@ -148,7 +153,7 @@
        [:span "Color"]
        (colorpicker :options on-color-picker-event)
        [:div.row-flex
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "#"
           :type "text"
           :value (:fill shape "")
@@ -200,14 +205,14 @@
          ;; SLIDEBAR FOR ROTATION AND OPACITY
          [:span "Size"]
          [:div.row-flex
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "Width"
             :type "number"
             :min "0"
             :value (:width size)
             :on-change (partial on-size-change :width)}]
           [:div.lock-size i/lock]
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "Height"
             :type "number"
             :min "0"
@@ -216,12 +221,12 @@
 
          [:span "Position"]
          [:div.row-flex
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "x"
             :type "number"
             :value (:x1 shape "")
             :on-change (partial on-pos-change :x)}]
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "y"
             :type "number"
             :value (:y1 shape "")
@@ -229,13 +234,13 @@
 
          [:span "Border radius"]
          [:div.row-flex
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "rx"
             :type "number"
             :value (:rx shape "")
             :on-change (partial on-border-change :rx)}]
           [:div.lock-size i/lock]
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "ry"
             :type "number"
             :value (:ry shape "")
@@ -251,7 +256,7 @@
             :on-change on-rotation-change}]]
 
          [:div.row-flex
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder ""
             :type "number"
             :min 0
@@ -292,14 +297,14 @@
          ;; SLIDEBAR FOR ROTATION AND OPACITY
          [:span "Size"]
          [:div.row-flex
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "Width"
             :type "number"
             :min "0"
             :value (:width size)
             :on-change (partial on-size-change :width)}]
           [:div.lock-size i/lock]
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "Height"
             :type "number"
             :min "0"
@@ -308,12 +313,12 @@
 
          [:span "Position"]
          [:div.row-flex
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "x"
             :type "number"
             :value (:x1 shape "")
             :on-change (partial on-pos-change :x)}]
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder "y"
             :type "number"
             :value (:y1 shape "")
@@ -329,7 +334,7 @@
             :on-change on-rotation-change}]]
 
          [:div.row-flex
-          [:input#width.input-text
+          [:input.input-text
            {:placeholder ""
             :type "number"
             :min 0
@@ -368,14 +373,14 @@
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Size"]
        [:div.row-flex
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "Width"
           :type "number"
           :min "0"
           :value (:rx shape)
           :on-change (partial on-size-change :rx)}]
         [:div.lock-size i/lock]
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "Height"
           :type "number"
           :min "0"
@@ -384,12 +389,12 @@
 
        [:span "Position"]
        [:div.row-flex
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "cx"
           :type "number"
           :value (:cx shape "")
           :on-change (partial on-pos-change :x)}]
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "cy"
           :type "number"
           :value (:cy shape "")
@@ -405,7 +410,7 @@
           :on-change on-rotation-change}]]
 
        [:div.row-flex
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder ""
           :type "number"
           :min 0
@@ -437,24 +442,24 @@
       [:div.element-set-content
        [:span "Position"]
        [:div.row-flex
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "x1"
           :type "number"
           :value (:x1 shape "")
           :on-change (partial on-pos-change :x1)}]
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "y1"
           :type "number"
           :value (:y1 shape "")
           :on-change (partial on-pos-change :y1)}]]
 
        [:div.row-flex
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "x2"
           :type "number"
           :value (:x2 shape "")
           :on-change (partial on-pos-change :x2)}]
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder "y2"
           :type "number"
           :value (:y2 shape "")
@@ -470,7 +475,7 @@
           :on-change on-rotation-change}]]
 
        [:div.row-flex
-        [:input#width.input-text
+        [:input.input-text
          {:placeholder ""
           :type "number"
           :min 0
@@ -482,6 +487,47 @@
          {:style {:visibility "hidden"}}]
         ]]]
      )))
+
+(defmethod -render-menu :menu/text
+  [menu own shape]
+  (letfn [(on-font-family-change [event]
+            (let [value (dom/event->value event)
+                  sid (:id shape)]
+              (println "on-font-family-change" value)))
+          (on-font-size-change [event]
+            (let [value (dom/event->value event)
+                  value (parse-int value)
+                  sid (:id shape)]
+              (println "on-font-size-change" value)))
+          (on-font-weight-change [event]
+            (let [value (dom/event->value event)
+                  value (read-string value)
+                  sid (:id shape)]
+              (println "on-font-size-change" value)))]
+    (html
+     [:div.element-set {:key (str (:id menu))}
+      [:div.element-set-title (:name menu)]
+      [:div.element-set-content
+       [:span "Font family"]
+       [:div.row-flex
+        [:select.input-select {:value (:font-family shape "sans-serif")
+                                     :on-change on-font-family-change}
+         [:option {:value "sans-serif"} "Sans Serif"]
+         [:option {:value "monospace"} "Monospace"]]]
+
+       [:span "Size and Weight"]
+       [:div.row-flex
+        [:input.input-text
+         {:placeholder "Font Size"
+          :type "number"
+          :min "0"
+          :max "200"
+          :value (:font-size shape "16")
+          :on-change on-font-size-change}]
+        [:select.input-select {:value (:font-weight shape ":normal")
+                                     :on-change on-font-weight-change}
+         [:option {:value ":normal"} "Normal"]
+         [:option {:value ":bold"} "Solid"]]]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
