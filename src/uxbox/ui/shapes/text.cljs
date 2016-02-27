@@ -130,7 +130,7 @@
 (def ^:const +select-rect-attrs+
   {:stroke-dasharray "5,5"
    :style {:stroke "#333" :fill "transparent"
-           :stroke-opacity "1"}})
+           :stroke-opacity "0.4"}})
 
 (defmethod uusc/render-shape :builtin/text
   [{:keys [id x1 y1 x2 y2 content drawing? editing?] :as shape}]
