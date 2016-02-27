@@ -56,6 +56,7 @@
     :else
     (do
       (dom/stop-propagation event)
+      (uuc/release-action! :draw/selrect)
       (uuc/release-action! :shape/movement))))
 
 (defn- text-component-did-mount
