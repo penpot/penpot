@@ -72,7 +72,7 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
-(defmulti -transformation
+(defmulti transformation
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
@@ -281,7 +281,7 @@
   [shape _]
   (throw (ex-info "Not implemented (outer-rect')" (select-keys shape [:type]))))
 
-(defmethod -transformation :builtin/icon
+(defmethod transformation :builtin/icon
   [{:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
   (let [{:keys [width height]} (size shape)
         orig-width (nth view-box 2)
@@ -297,7 +297,7 @@
         (gmt/translate (- center-x) (- center-y))
         (gmt/scale scale-x scale-y))))
 
-(defmethod -transformation :builtin/rect
+(defmethod transformation :builtin/rect
   [{:keys [x1 y1 rotation] :or {rotation 0} :as shape}]
   (let [{:keys [width height]} (size shape)
         center-x (+ x1 (/ width 2))
@@ -308,7 +308,7 @@
         (gmt/translate (- center-x) (- center-y)))))
 
 
-(defmethod -transformation :builtin/text
+(defmethod transformation :builtin/text
   [{:keys [x1 y1 rotation] :or {rotation 0} :as shape}]
   (let [{:keys [width height]} (size shape)
         center-x (+ x1 (/ width 2))
@@ -319,7 +319,7 @@
         (gmt/translate (- center-x) (- center-y)))))
 
 
-(defmethod -transformation :builtin/circle
+(defmethod transformation :builtin/circle
   [{:keys [cx cy rx ry rotation] :or {rotation 0} :as shape}]
   (-> (gmt/matrix)
       (gmt/translate cx cy)
@@ -328,7 +328,7 @@
 
 (declare outer-rect)
 
-(defmethod -transformation :builtin/group
+(defmethod transformation :builtin/group
   [{:keys [dx dy rotation items] :or {rotation 0} :as shape}]
   (let [shapes-by-id (get @st/state :shapes-by-id)
         shapes (map #(get shapes-by-id %) items)
@@ -341,9 +341,9 @@
         (gmt/rotate rotation)
         (gmt/translate (- center-x) (- center-y)))))
 
-(defmethod -transformation :default
+(defmethod transformation :default
   [shape _]
-  (throw (ex-info "Not implemented (-transformation)" (select-keys shape [:type]))))
+  (throw (ex-info "Not implemented (transformation)" (select-keys shape [:type]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers

@@ -135,7 +135,7 @@
 (defmethod uusc/render-shape :builtin/text
   [{:keys [id x1 y1 x2 y2 content drawing? editing?] :as shape}]
   (let [key (str id)
-        rfm (ush/-transformation shape)
+        rfm (ush/transformation shape)
         size (ush/size shape)
         props {:x x1 :y y1
                :transform (str rfm)}

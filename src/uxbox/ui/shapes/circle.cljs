@@ -15,7 +15,7 @@
 (defmethod uusc/render-shape :builtin/circle
   [{:keys [id] :as shape}]
   (let [key (str id)
-        rfm (ush/-transformation shape)
+        rfm (ush/transformation shape)
         props (select-keys shape [:cx :cy :rx :ry])
         attrs (-> (uusc/extract-style-attrs shape)
                   (merge {:id key :key key :transform (str rfm)})

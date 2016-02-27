@@ -117,7 +117,7 @@
 (defmethod uusc/render-shape :builtin/icon
   [{:keys [data id] :as shape} _]
   (let [key (str id)
-        rfm (sh/-transformation shape)
+        rfm (sh/transformation shape)
         attrs (merge {:id key :key key :transform (str rfm)}
                      (uusc/extract-style-attrs shape)
                      (uusc/make-debug-attrs shape))]

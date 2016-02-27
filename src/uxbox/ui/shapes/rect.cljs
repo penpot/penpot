@@ -15,7 +15,7 @@
 (defmethod uusc/render-shape :builtin/rect
   [{:keys [id x1 y1 x2 y2] :as shape}]
   (let [key (str id)
-        rfm (ush/-transformation shape)
+        rfm (ush/transformation shape)
         size (ush/size shape)
         props {:x x1 :y y1 :id key :key key :transform (str rfm)}
         attrs (-> (uusc/extract-style-attrs shape)

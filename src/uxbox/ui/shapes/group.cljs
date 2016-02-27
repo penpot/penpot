@@ -15,7 +15,7 @@
 (defmethod uusc/render-shape :builtin/group
   [{:keys [items id dx dy rotation] :as shape} factory]
   (let [key (str "group-" id)
-        rfm (ush/-transformation shape)
+        rfm (ush/transformation shape)
         attrs (merge {:id key :key key :transform (str rfm)}
                      (uusc/extract-style-attrs shape)
                      (uusc/make-debug-attrs shape))
