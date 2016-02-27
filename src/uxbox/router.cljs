@@ -2,7 +2,7 @@
   (:require [bidi.router]
             [bidi.bidi :as bidi]
             [goog.events :as events]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [uxbox.state :as s]
             [uxbox.rstore :as rs]))
 

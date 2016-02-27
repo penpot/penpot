@@ -1,7 +1,7 @@
 (ns uxbox.ui.mixins
   (:refer-clojure :exclude [derive])
   (:require [rum.core :as rum]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [goog.dom.forms :as gforms]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

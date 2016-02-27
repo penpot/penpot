@@ -1,6 +1,6 @@
 (ns uxbox.ui.users
   (:require [sablono.core :as html :refer-macros [html]]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [rum.core :as rum]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]

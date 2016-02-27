@@ -2,7 +2,7 @@
   (:require [sablono.core :refer-macros [html]]
             [cuerdas.core :as str]
             [rum.core :as rum]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.shapes :as sh]

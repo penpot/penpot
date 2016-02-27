@@ -1,7 +1,7 @@
 (ns uxbox.ui.workspace.sidebar
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [uxbox.state :as st]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]

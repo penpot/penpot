@@ -1,6 +1,6 @@
 (ns uxbox.util.lens
   (:refer-clojure :exclude [derive merge])
-  (:require [cats.labs.lens :as l]))
+  (:require [lentes.core :as l]))
 
 (defn getter
   [f]

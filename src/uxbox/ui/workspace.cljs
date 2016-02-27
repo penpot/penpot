@@ -2,7 +2,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.data.workspace :as dw]

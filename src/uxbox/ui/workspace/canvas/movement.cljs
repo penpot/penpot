@@ -1,7 +1,7 @@
 (ns uxbox.ui.workspace.canvas.movement
   (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [beicon.core :as rx]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as ust]
             [uxbox.ui.core :as uuc]

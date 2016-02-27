@@ -3,7 +3,7 @@
             [promesa.core :as p]
             [goog.dom :as gdom]
             [rum.core :as rum]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [uxbox.state :as s]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]

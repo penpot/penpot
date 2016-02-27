@@ -1,5 +1,5 @@
 (ns uxbox.ui.shapes.core
-  (:require [cats.labs.lens :as l]
+  (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [rum.core :as rum]
             [beicon.core :as rx]

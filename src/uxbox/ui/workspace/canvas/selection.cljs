@@ -1,7 +1,7 @@
 (ns uxbox.ui.workspace.canvas.selection
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [uxbox.state :as ust]
             [uxbox.shapes :as ush]
             [uxbox.util.lens :as ul]

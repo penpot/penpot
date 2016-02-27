@@ -1,7 +1,7 @@
 (ns uxbox.ui.colorpicker
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [goog.events :as events]
             [uxbox.schema :as sc]
             [uxbox.util.color :as color]

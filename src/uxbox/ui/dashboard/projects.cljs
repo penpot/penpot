@@ -1,7 +1,7 @@
 (ns uxbox.ui.dashboard.projects
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.locales :as t :refer (tr)]
             [uxbox.router :as r]

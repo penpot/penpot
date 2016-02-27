@@ -2,7 +2,7 @@
   (:require-macros [uxbox.util.syntax :refer (defer)])
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [cats.labs.lens :as l]
+            [lentes.core :as l]
             [goog.events :as events]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
