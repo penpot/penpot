@@ -15,6 +15,7 @@
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.workspace.recent-colors :refer (recent-colors)]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.util.lens :as ul]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
@@ -101,11 +102,11 @@
          [:option {:value ":dashed"} "Dashed"]
          [:option {:value ":mixed"} "Mixed"]]
         [:input.input-text
-        {:placeholder "Width"
-        :type "number"
-        :min "0"
-        :value (:stroke-width shape "1")
-        :on-change on-width-change}]]
+         {:placeholder "Width"
+          :type "number"
+          :min "0"
+          :value (:stroke-width shape "1")
+          :on-change on-width-change}]]
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
@@ -536,7 +537,6 @@
 (defn options-menus-render
   [own shape]
   (let [local (:rum/local own)
-        shape (rum/react shape)
         menus (get +menus-map+ (:type shape))
         active-menu (:menu @local (first menus))]
     (html
@@ -558,16 +558,20 @@
   (mx/component
    {:render options-menus-render
     :name "options-menus"
-    :mixins [mx/static rum/reactive (mx/local)]}))
+    :mixins [mx/static (mx/local)]}))
+
+(def ^:const selected-shape-l
+  (letfn [(getter [state]
+            (let [selected (get-in state [:workspace :selected])]
+              (when (= 1 (count selected))
+                (get-in state [:shapes-by-id (first selected)]))))]
+    (as-> (ul/getter getter) $
+      (l/focus-atom $ st/state))))
 
 (defn options-toolbox-render
   [own]
-  (let [workspace (rum/react wb/workspace-l)
-        close #(rs/emit! (dw/toggle-flag :element-options))
-        shape (when (and (:selected workspace)
-                         (= (count (:selected workspace)) 1))
-                (let [shape-id (first (:selected workspace))]
-                  (l/focus-atom (l/in [:shapes-by-id shape-id]) st/state)))]
+  (let [shape (rum/react selected-shape-l)
+        close #(rs/emit! (dw/toggle-flag :element-options))]
     (html
      [:div.elementa-options.tool-window
       [:div.tool-window-bar
