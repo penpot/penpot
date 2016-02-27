@@ -58,7 +58,7 @@
       [:svg.page-layout {}
        (shapes-selection)
        [:g.main {}
-        (for [item (:shapes page)]
+        (for [item (reverse (:shapes page))]
           (-> (uus/shape item)
               (rum/with-key (str item))))
         (draw-area)]]])))
