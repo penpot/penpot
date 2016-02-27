@@ -50,6 +50,7 @@
     :help (tr "ds.help.line")
     :shape {:type :builtin/line
             :name "Line"
+            :stroke-type :solid
             :stroke "#000000"}
     :priority 3}
    :text
