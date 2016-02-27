@@ -63,19 +63,29 @@
   [attrs]
   (if-let [type (:stroke-type attrs)]
     (let [value (case type
-                  :dotted "1,1"
-                  :dashed "10,10")]
-      (-> attrs
-          (assoc! :stroke-dasharray value)
-          (dissoc! :stroke-type)))
+                  :mixed "5,5,1,5"
+                  :dotted "5,5"
+                  :dashed "10,10"
+                  nil)]
+      (if value
+        (-> attrs
+            (assoc! :stroke-dasharray value)
+            (dissoc! :stroke-type))
+        (dissoc! attrs :stroke-type)))
     attrs))
+
+(defn- transform-stroke-attrs
+  [attrs]
+  (if (= (:stroke-type attrs :none) :none)
+    (dissoc! attrs :stroke-type :stroke-width :stroke-opacity :stroke)
+    (transform-stroke-type attrs)))
 
 (defn- extract-style-attrs
   "Extract predefinet attrs from shapes."
   [shape]
   (let [attrs (select-keys shape +style-attrs+)]
     (-> (transient attrs)
-        (transform-stroke-type)
+        (transform-stroke-attrs)
         (persistent!))))
 
 (defn- make-debug-attrs
