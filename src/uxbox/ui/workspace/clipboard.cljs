@@ -3,6 +3,25 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.lightbox :as lightbox]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ^:private state (atom #queue []))
+(defonce ^:private ^:const +max-items+ 5)
+
+(defn add
+  [item]
+  (swap! state (fn [v]
+                 (let [v (conj v item)]
+                   (if (> (count v) +max-items+)
+                     (pop v)
+                     v)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Component
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn- clipboard-dialog-render
   [own]
   (html
