@@ -17,4 +17,5 @@ pom.xml
 node_modules
 /resources/public/css
 /resources/public/js
+/resources/public/index.html
 /*-init.clj
