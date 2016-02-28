@@ -8,7 +8,8 @@
             [uxbox.state :as st]
             [uxbox.shapes :as sh]
             [uxbox.library :as library]
-            [uxbox.data.workspace :as dw]
+            [uxbox.data.workspace :as udw]
+            [uxbox.data.shapes :as uds]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
@@ -71,7 +72,7 @@
   [menu own shape]
   (letfn [(change-stroke [value]
             (let [sid (:id shape)]
-              (rs/emit! (dw/update-stroke-attrs sid value))))
+              (rs/emit! (uds/update-stroke-attrs sid value))))
           (on-width-change [event]
             (let [value (dom/event->value event)
                   value (parse-float value 1)]
@@ -136,7 +137,7 @@
   [menu own shape]
   (letfn [(change-fill [value]
             (let [sid (:id shape)]
-              (rs/emit! (dw/update-fill-attrs sid value))))
+              (rs/emit! (uds/update-fill-attrs sid value))))
           (on-color-change [event]
             (let [value (dom/event->value event)]
               (change-fill {:color value})))
@@ -180,24 +181,24 @@
                   value (parse-int value 0)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-size sid props))))
+              (rs/emit! (uds/update-size sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (rs/emit! (dw/update-rotation sid value))))
+              (rs/emit! (uds/update-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-position sid props))))
+              (rs/emit! (uds/update-position sid props))))
           (on-border-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-radius-attrs sid props))))]
+              (rs/emit! (uds/update-radius-attrs sid props))))]
     (let [size (sh/size shape)]
       (html
        [:div.element-set {:key (str (:id menu))}
@@ -278,18 +279,18 @@
                   value (parse-int value 0)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-size sid props))))
+              (rs/emit! (uds/update-size sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (rs/emit! (dw/update-rotation sid value))))
+              (rs/emit! (uds/update-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-position sid props))))]
+              (rs/emit! (uds/update-position sid props))))]
     (let [size (sh/size shape)]
       (html
        [:div.element-set {:key (str (:id menu))}
@@ -355,18 +356,18 @@
                   value (parse-int value 0)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-radius-attrs sid props))))
+              (rs/emit! (uds/update-radius-attrs sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (rs/emit! (dw/update-rotation sid value))))
+              (rs/emit! (uds/update-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-position sid props))))]
+              (rs/emit! (uds/update-position sid props))))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
@@ -430,13 +431,13 @@
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (rs/emit! (dw/update-rotation sid value))))
+              (rs/emit! (uds/update-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (dw/update-line-attrs sid props))))]
+              (rs/emit! (uds/update-line-attrs sid props))))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
@@ -578,7 +579,7 @@
 (defn options-toolbox-render
   [own]
   (let [shape (rum/react selected-shape-l)
-        close #(rs/emit! (dw/toggle-flag :element-options))]
+        close #(rs/emit! (udw/toggle-flag :element-options))]
     (html
      [:div.elementa-options.tool-window
       [:div.tool-window-bar

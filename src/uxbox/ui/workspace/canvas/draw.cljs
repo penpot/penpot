@@ -6,7 +6,8 @@
             [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.shapes :as ush]
-            [uxbox.data.workspace :as dw]
+            [uxbox.data.workspace :as udw]
+            [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.workspace.base :as wb]
@@ -65,8 +66,8 @@
             (let [shape @+drawing-shape+
                   shpos @+drawing-position+
                   shape (ush/resize shape shpos)]
-              (rs/emit! (dw/add-shape shape)
-                        (dw/select-for-drawing nil))
+              (rs/emit! (uds/add-shape shape)
+                        (udw/select-for-drawing nil))
               (reset! +drawing-position+ nil)
               (reset! +drawing-shape+ nil)))
 
@@ -74,8 +75,8 @@
             (let [{:keys [x y]} @wb/mouse-canvas-a
                   props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
                   shape (ush/initialize shape props)]
-              (rs/emit! (dw/add-shape shape)
-                        (dw/select-for-drawing nil))))
+              (rs/emit! (uds/add-shape shape)
+                        (udw/select-for-drawing nil))))
           (init []
             (when-let [shape (:drawing @wb/workspace-l)]
               (case (:type shape)

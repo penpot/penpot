@@ -9,7 +9,8 @@
             [uxbox.state :as st]
             [uxbox.library :as library]
             [uxbox.util.data :refer (read-string classnames)]
-            [uxbox.data.workspace :as dw]
+            [uxbox.data.workspace :as udw]
+            [uxbox.data.shapes :as uds]
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
@@ -41,18 +42,18 @@
       nil
 
       (.-ctrlKey event)
-      (rs/emit! (dw/select-shape id))
+      (rs/emit! (udw/select-shape id))
 
       (> (count selected) 1)
-      (rs/emit! (dw/deselect-all)
-                (dw/select-shape id))
+      (rs/emit! (udw/deselect-all)
+                (udw/select-shape id))
 
       (contains? selected id)
-      (rs/emit! (dw/select-shape id))
+      (rs/emit! (udw/select-shape id))
 
       :else
-      (rs/emit! (dw/deselect-all)
-                (dw/select-shape id)))))
+      (rs/emit! (udw/deselect-all)
+                (udw/select-shape id)))))
 
 (defn- toggle-visibility
   [selected item event]
@@ -60,10 +61,10 @@
   (let [id (:id item)
         hidden? (:hidden item)]
     (if hidden?
-      (rs/emit! (dw/show-shape id))
-      (rs/emit! (dw/hide-shape id)))
+      (rs/emit! (uds/show-shape id))
+      (rs/emit! (uds/hide-shape id)))
     (when (contains? selected id)
-      (rs/emit! (dw/select-shape id)))))
+      (rs/emit! (udw/select-shape id)))))
 
 (defn- toggle-blocking
   [item event]
@@ -71,8 +72,8 @@
   (let [id (:id item)
         blocked? (:blocked item)]
     (if blocked?
-      (rs/emit! (dw/unblock-shape id))
-      (rs/emit! (dw/block-shape id)))))
+      (rs/emit! (uds/unblock-shape id))
+      (rs/emit! (uds/block-shape id)))))
 
 (defn- toggle-locking
   [item event]
@@ -80,8 +81,8 @@
   (let [id (:id item)
         locked? (:locked item)]
     (if locked?
-      (rs/emit! (dw/unlock-shape id))
-      (rs/emit! (dw/lock-shape id)))))
+      (rs/emit! (uds/unlock-shape id))
+      (rs/emit! (uds/lock-shape id)))))
 
 (defn- element-icon
   [item]
@@ -136,8 +137,8 @@
               (let [id (dnd/get-data event)
                     over (:over @local)]
                 (case (:over @local)
-                  :top (rs/emit! (dw/drop-shape id (:id item) :before))
-                  :bottom (rs/emit! (dw/drop-shape id (:id item) :after)))
+                  :top (rs/emit! (uds/drop-shape id (:id item) :before))
+                  :bottom (rs/emit! (uds/drop-shape id (:id item) :after)))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
@@ -215,9 +216,9 @@
               (let [id (dnd/get-data event)
                     over (:over @local)]
                 (case (:over @local)
-                  :top (rs/emit! (dw/drop-shape id (:id item) :before))
-                  :bottom (rs/emit! (dw/drop-shape id (:id item) :after))
-                  :middle (rs/emit! (dw/drop-shape id (:id item) :inside)))
+                  :top (rs/emit! (uds/drop-shape id (:id item) :before))
+                  :bottom (rs/emit! (uds/drop-shape id (:id item) :after))
+                  :middle (rs/emit! (uds/drop-shape id (:id item) :inside)))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
@@ -281,10 +282,10 @@
         selected (:selected workspace)
         shapes-by-id (rum/react wb/shapes-by-id-l)
         page (rum/react (focus-page (:page workspace)))
-        close #(rs/emit! (dw/toggle-flag :layers))
-        duplicate #(rs/emit! (dw/duplicate-selected))
-        group #(rs/emit! (dw/group-selected))
-        delete #(rs/emit! (dw/delete-selected))
+        close #(rs/emit! (udw/toggle-flag :layers))
+        duplicate #(rs/emit! (udw/duplicate-selected))
+        group #(rs/emit! (udw/group-selected))
+        delete #(rs/emit! (udw/delete-selected))
         dragel (volatile! nil)]
     (html
      [:div#layers.tool-window

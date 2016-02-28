@@ -6,7 +6,7 @@
             [uxbox.state :as ust]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.workspace.base :as uuwb]
-            [uxbox.data.workspace :as dw]))
+            [uxbox.data.shapes :as uds]))
 
 (define-once :movement-subscription
   (letfn [(on-value [delta]
@@ -16,7 +16,7 @@
                               (filter #(= (:page %) pageid))
                               (filter (comp selected :id)))]
               (doseq [{:keys [id group]} shapes]
-                (rs/emit! (dw/move-shape id delta)))))
+                (rs/emit! (uds/move-shape id delta)))))
 
           (init []
             (as-> uuc/actions-s $
