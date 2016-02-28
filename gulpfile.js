@@ -7,6 +7,8 @@ var autoprefixer = require('gulp-autoprefixer');
 var watch = require("gulp-watch");
 var cssmin = require("gulp-cssmin");
 var rimraf = require("rimraf");
+var mustache = require("gulp-mustache");
+var rename = require("gulp-rename");
 
 var paths = {};
 paths.app = "./resources/";
@@ -32,6 +34,19 @@ gulp.task("cssmin", function() {
   return gulp.src(paths.output + "css/main.css")
              .pipe(cssmin())
              .pipe(gulp.dest(paths.output + "css/"));
+});
+
+gulp.task("template", function() {
+  var ts = Math.floor(new Date());
+  var tmpl = mustache({
+    jsfile: "/js/main.js?v=" + ts,
+    cssfile: "/css/main.css?v=" + ts
+  })
+
+  return gulp.src(paths.app + "index.mustache")
+             .pipe(tmpl)
+             .pipe(rename("index.html"))
+             .pipe(gulp.dest(paths.output));
 });
 
 gulp.task("styles-dev", function(next) {
@@ -61,10 +76,10 @@ gulp.task("copy", function() {
 
 // Default
 gulp.task("dist", function(next) {
-  runseq("styles-dist", "cssmin", "clean-dist", "copy", next);
+  runseq("styles-dist", "cssmin", "template", "clean-dist", "copy", next);
 });
 
 // Watch
-gulp.task("default", ["styles-dev"], function () {
+gulp.task("default", ["styles-dev", "template"], function () {
     gulp.watch(paths.scss, ["styles-dev"]);
 });
