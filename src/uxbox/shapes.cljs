@@ -230,12 +230,9 @@
 
 (defmethod outer-rect' ::shape
   [{:keys [group] :as shape}]
-  (let [group (get-in @st/state [:shapes-by-id group])]
-    (as-> shape $
-      (assoc $ :x (+ (:x1 shape) (:dx group 0)))
-      (assoc $ :y (+ (:y1 shape) (:dy group 0)))
-      (merge $ (size $))
-      (container-rect $))))
+  (as-> shape $
+    (assoc $ :x (:x1 shape) :y (:y1 shape))
+    (merge $ (size $))))
 
 (defmethod outer-rect' :builtin/line
   [{:keys [x1 y1 x2 y2 group] :as shape}]
@@ -267,15 +264,15 @@
         x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
         y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
         width (- x' x)
-        height (- y' y)]
-    (let [group (get-in @st/state [:shapes-by-id group])]
-      (as-> shape $
-        (merge $ {:width width
-                  :height height
-                  :x (+ x (or (:dx group) 0))
-                  :y (+ y (or (:dy group) 0))
-                  })
-        (container-rect $)))))
+        height (- y' y)
+        x (+ x dx)
+        y (+ y dy)]
+    (as-> shape $
+      (merge $ {:width width
+                :height height
+                :x x
+                :y y})
+      (container-rect $))))
 
 (defmethod outer-rect' :default
   [shape _]
