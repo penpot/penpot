@@ -1,4 +1,4 @@
-(ns uxbox.time
+(ns uxbox.util.time
   (:require [cljsjs.moment]))
 
 (defn parse
