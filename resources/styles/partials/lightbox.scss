@@ -127,3 +127,51 @@
   }
 
 }
+
+// Clipboard
+.clipboard {
+  max-width: 350px;
+
+  .clipboard-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    .clipboard-item {
+      align-items: center;
+      border-bottom: 1px solid $soft-ui-border;
+      cursor: pointer;
+      display: flex;
+      padding: $small;
+      width: 100%;
+
+
+      span {
+
+        svg {
+          height: 20px;
+          fill: $medium-ui-border;
+          margin-right: $medium;
+          width: 20px;
+        }
+
+      }
+
+      &:hover {
+
+        span {
+          color: $main-ui-color;
+
+          svg {
+            fill: $main-ui-color
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+}

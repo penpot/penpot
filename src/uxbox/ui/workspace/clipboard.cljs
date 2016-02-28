@@ -1,5 +1,6 @@
 (ns uxbox.ui.workspace.clipboard
   (:require [sablono.core :as html :refer-macros [html]]
+            [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.lightbox :as lightbox]))
 
@@ -10,10 +11,11 @@
 (defn- clipboard-dialog-render
   [own]
   (html
-   [:div.lightbox-body
-    [:div.clipboard-items
+   [:div.lightbox-body.clipboard
+    [:div.clipboard-list
      (for [i (range 5)]
-       [:div {:key i}
+       [:div.clipboard-item {:key i}
+        [:span.clipboard-icon i/box]
         [:span (str "shape " i)]])]]))
 
 (def clipboard-dialog
