@@ -3,7 +3,7 @@
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
-            [uxbox.time :as time]
+            [uxbox.util.time :as time]
             [bouncer.validators :as v]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

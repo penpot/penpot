@@ -7,7 +7,7 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
-            [uxbox.time :as time]
+            [uxbox.util.time :as time]
             [uxbox.data.dashboard :as dd]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
