@@ -1,12 +1,17 @@
 .element-options {
   display: flex;
+  width: 100%;
+
+  > div {
+    width: 100%;
+  }
 
   .element-icons {
     background-color: $primary-ui-bg;
     border: 1px solid $soft-ui-border;
     border-radius: $br-small;
     display: flex;
-    margin: $x-small 0 $x-small $x-small;
+    margin: $x-small;
 
     li {
       align-items: center;
@@ -51,7 +56,7 @@
 
   .element-set {
     color: $medium-ui-text;
-    margin-left: $x-small;
+    margin: 0 $x-small;
 
     .element-set-title {
       border-bottom: 1px dashed $soft-ui-border;
@@ -68,7 +73,7 @@
 .element-set-content {
   display: flex;
   flex-direction: column;
-  padding: $small;
+  padding: $small $x-small;
 
   .input-text {
     background-color: transparent;
@@ -163,18 +168,22 @@
 .align-icons {
   cursor: pointer;
 
-  svg {
-    fill: $medium-ui-icons;
-    height: 20px;
-    margin: 5px 7px 0 7px;
-    width: 20px;
-  }
-
-  &:hover,
-  &.current {
+  span {
 
     svg {
-      fill: $main-ui-color;
+      fill: $medium-ui-icons;
+      height: 20px;
+      margin: $x-small $small;
+      width: 20px;
+    }
+
+    &:hover,
+    &.current {
+
+      svg {
+        fill: $main-ui-color;
+      }
+
     }
 
   }

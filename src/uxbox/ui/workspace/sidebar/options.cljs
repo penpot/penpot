@@ -528,7 +528,14 @@
         [:select.input-select {:value (:font-weight shape ":normal")
                                      :on-change on-font-weight-change}
          [:option {:value ":normal"} "Normal"]
-         [:option {:value ":bold"} "Solid"]]]]])))
+         [:option {:value ":bold"} "Solid"]]]
+       [:span "Text align"]
+       [:div.row-flex.align-icons
+        [:span.current i/align-left]
+        [:span i/align-right]
+        [:span i/align-center]
+        [:span i/align-justify]
+         ]]])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
