@@ -5,23 +5,13 @@
             [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as sh]
+            [uxbox.shapes :as ush]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.util.dom :as dom]))
-
-(def ^:private ^:const selection-circle-style
-  {:fillOpacity "0.5"
-   :strokeWidth "1px"
-   :vectorEffect "non-scaling-stroke"})
-
-(def ^:private ^:const default-selection-props
-  {:r 5 :style selection-circle-style
-   :fill "#333"
-   :stroke "#333"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Icon Component
@@ -32,7 +22,7 @@
   (let [selected? (contains? selected id)]
     (when-not (:blocked shape)
       (cond
-        (and group (:locked (sh/resolve-parent shape)))
+        (and group (:locked (ush/resolve-parent shape)))
         nil
 
         (and (not selected?) (empty? selected))
@@ -57,7 +47,7 @@
 (defn on-mouse-up
   [event {:keys [id group] :as shape}]
   (cond
-    (and group (:locked (sh/resolve-parent shape)))
+    (and group (:locked (ush/resolve-parent shape)))
     nil
 
     :else
@@ -88,20 +78,45 @@
 
 (defn- handlers-render
   [own shape]
-  (let [{:keys [x y width height]} (sh/outer-rect' shape)]
-    (html
-     [:g.controls
-      [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
-              :style {:stroke "#333" :fill "transparent"
-                      :stroke-opacity "1"}}]
-      [:circle.top-left (merge default-selection-props
-                                    {:cx x :cy y})]
-      [:circle.top-right (merge default-selection-props
-                                {:cx (+ x width) :cy y})]
-      [:circle.bottom-left (merge default-selection-props
-                                  {:cx x :cy (+ y height)})]
-      [:circle.bottom-right (merge default-selection-props
-                                   {:cx (+ x width) :cy (+ y height)})]])))
+  (letfn [(on-mouse-down [vid event]
+            (println "on-mouse-down" vid)
+            (dom/stop-propagation event)
+            (uuc/acquire-action! :resize/shape {:vid vid :shape (:id shape)}))
+
+          (on-mouse-up [vid event]
+            (println "on-mouse-up" vid)
+            (dom/stop-propagation event)
+            (uuc/release-action! :resize/shape))]
+    (let [{:keys [x y width height]} (ush/outer-rect' shape)]
+      (html
+       [:g.controls
+        [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
+                :style {:stroke "#333" :fill "transparent"
+                        :stroke-opacity "1"}}]
+        [:circle.top-left
+         (merge uusc/+circle-props+
+                {:on-mouse-up #(on-mouse-up 1 %)
+                 :on-mouse-down #(on-mouse-down 1 %)
+                 :cx x
+                 :cy y})]
+        [:circle.top-right
+         (merge uusc/+circle-props+
+                {:on-mouse-up #(on-mouse-up 2 %)
+                 :on-mouse-down #(on-mouse-down 2 %)
+                 :cx (+ x width)
+                 :cy y})]
+        [:circle.bottom-left
+         (merge uusc/+circle-props+
+                {:on-mouse-up #(on-mouse-up 3 %)
+                 :on-mouse-down #(on-mouse-down 3 %)
+                 :cx x
+                 :cy (+ y height)})]
+        [:circle.bottom-right
+         (merge uusc/+circle-props+
+                {:on-mouse-up #(on-mouse-up 4 %)
+                 :on-mouse-down #(on-mouse-down 4 %)
+                 :cx (+ x width)
+                 :cy (+ y height)})]]))))
 
 (def ^:const handlers
   (mx/component
@@ -116,7 +131,7 @@
 (defmethod uusc/render-shape :builtin/icon
   [{:keys [data id] :as shape} _]
   (let [key (str id)
-        rfm (sh/transformation shape)
+        rfm (ush/transformation shape)
         attrs (merge {:id key :key key :transform (str rfm)}
                      (uusc/extract-style-attrs shape)
                      (uusc/make-debug-attrs shape))]

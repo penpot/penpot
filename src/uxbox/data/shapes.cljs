@@ -125,6 +125,13 @@
             size (merge (sh/size shape) opts)]
         (update-in state [:shapes-by-id sid] sh/resize' size)))))
 
+(defn update-vertex-position
+  [id {:keys [vid delta]}]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id id] sh/move-vertex vid delta))))
+
 (defn update-position
   "Update the start position coordenate of the shape."
   [sid {:keys [x y] :as opts}]

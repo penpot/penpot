@@ -17,6 +17,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as uuwb]
             [uxbox.ui.workspace.canvas.movement]
+            [uxbox.ui.workspace.canvas.resize]
             [uxbox.ui.workspace.canvas.draw :refer (draw-area)]
             [uxbox.ui.workspace.canvas.ruler :refer (ruler)]
             [uxbox.ui.workspace.canvas.selection :refer (shapes-selection)]

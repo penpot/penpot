@@ -39,6 +39,10 @@
   dispatch-by-type
   :hierarchy #'+hierarchy+)
 
+(defmulti move-vertex
+  dispatch-by-type
+  :hierarchy #'+hierarchy+)
+
 (defmulti resize
   dispatch-by-type
   :hierarchy #'+hierarchy+)
@@ -111,6 +115,38 @@
          :cy y1
          :rx (mth/abs (- x2 x1))
          :ry (mth/abs (- y2 y1))))
+
+(defmethod move-vertex ::rect
+  [shape vid {dx :x dy :y}]
+  (case vid
+    1 (assoc shape
+             :x1 (+ (:x1 shape) dx)
+             :y1 (+ (:y1 shape) dy))
+    2 (assoc shape
+             :x2 (+ (:x2 shape) dx)
+             :y1 (+ (:y1 shape) dy))
+    3 (assoc shape
+             :x1 (+ (:x1 shape) dx)
+             :y2 (+ (:y2 shape) dy))
+    4 (assoc shape
+             :x2 (+ (:x2 shape) dx)
+             :y2 (+ (:y2 shape) dy))))
+
+(defmethod move-vertex :builtin/circle
+  [shape vid {dx :x dy :y}]
+  (case vid
+    1 (assoc shape
+             :rx (- (:rx shape) dx)
+             :ry (- (:ry shape) dy))
+    2 (assoc shape
+             :rx (+ (:rx shape) dx)
+             :ry (- (:ry shape) dy))
+    3 (assoc shape
+             :rx (- (:rx shape) dx)
+             :ry (+ (:ry shape) dy))
+    4 (assoc shape
+             :rx (+ (:rx shape) dx)
+             :ry (+ (:ry shape) dy))))
 
 ;; FIXME: lock mode
 

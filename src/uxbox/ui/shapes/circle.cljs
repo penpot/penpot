@@ -8,9 +8,88 @@
             [uxbox.shapes :as ush]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.core :as uuc]
+            [uxbox.ui.mixins :as mx]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.shapes.core :as uusc]
+            [uxbox.ui.shapes.icon :as uusi]
             [uxbox.util.dom :as dom]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Circle Component
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare handlers)
+
+(defmethod uusc/render-component :default ;; :builtin/icon
+  [own shape]
+  (let [{:keys [id x y width height group]} shape
+        selected (rum/react uusc/selected-shapes-l)
+        selected? (contains? selected id)
+        on-mouse-down #(uusi/on-mouse-down % shape selected)
+        on-mouse-up #(uusi/on-mouse-up % shape)]
+    (html
+     [:g.shape {:class (when selected? "selected")
+                :on-mouse-down on-mouse-down
+                :on-mouse-up on-mouse-up}
+      (uusc/render-shape shape #(uusc/shape %))
+      (when (and selected? (= (count selected) 1))
+        (handlers shape))])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Circle Handlers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- handlers-render
+  [own shape]
+  (letfn [(on-mouse-down [vid event]
+            (println "on-mouse-down" vid)
+            (dom/stop-propagation event)
+            (uuc/acquire-action! :resize/shape {:vid vid :shape (:id shape)}))
+
+          (on-mouse-up [vid event]
+            (println "on-mouse-up" vid)
+            (dom/stop-propagation event)
+            (uuc/release-action! :resize/shape))]
+    (let [{:keys [x y width height]} (ush/outer-rect' shape)]
+      (html
+       [:g.controls
+        [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
+                :style {:stroke "#333" :fill "transparent"
+                        :stroke-opacity "1"}}]
+        [:circle.top-left
+         (merge uusc/+circle-props+
+                {:on-mouse-up #(on-mouse-up 1 %)
+                 :on-mouse-down #(on-mouse-down 1 %)
+                 :cx x
+                 :cy y})]
+        [:circle.top-right
+         (merge uusc/+circle-props+
+                {:on-mouse-up #(on-mouse-up 2 %)
+                 :on-mouse-down #(on-mouse-down 2 %)
+                 :cx (+ x width)
+                 :cy y})]
+        [:circle.bottom-left
+         (merge uusc/+circle-props+
+                {:on-mouse-up #(on-mouse-up 3 %)
+                 :on-mouse-down #(on-mouse-down 3 %)
+                 :cx x
+                 :cy (+ y height)})]
+        [:circle.bottom-right
+         (merge uusc/+circle-props+
+                {:on-mouse-up #(on-mouse-up 4 %)
+                 :on-mouse-down #(on-mouse-down 4 %)
+                 :cx (+ x width)
+                 :cy (+ y height)})]]))))
+
+(def ^:const handlers
+  (mx/component
+   {:render handlers-render
+    :name "handlers"
+    :mixins [mx/static]}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shape
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod uusc/render-shape :builtin/circle
   [{:keys [id] :as shape}]
