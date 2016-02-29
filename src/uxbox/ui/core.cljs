@@ -8,14 +8,22 @@
 (defonce actions-lock (atom :nothing))
 (defonce actions-s (rx/bus))
 
+;; TODO: implement that as multimethod for add specific validation
+;; layer for different kind of action payloads
+
 (defn acquire-action!
-  [type]
-  (when-let [result (compare-and-set! actions-lock :nothing type)]
-    ;; (println "acquire-action!" type)
-    (rx/push! actions-s type)))
+  ([type]
+   (acquire-action! type nil))
+  ([type payload]
+   (when-let [result (compare-and-set! actions-lock :nothing type)]
+     (rx/push! actions-s {:type type :payload payload}))))
 
 (defn release-action!
   [type]
   (when-let [result (compare-and-set! actions-lock type :nothing)]
-    ;; (println "release-action!" type)
-    (rx/push! actions-s :nothing)))
+    (rx/push! actions-s {:type :nothing})))
+
+(defn release-all-actions!
+  []
+  (reset! actions-lock :nothing)
+  (rx/push! actions-s {:type :nothing}))
