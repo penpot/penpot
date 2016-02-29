@@ -123,8 +123,8 @@
 (def ^:const viewport-width 4000)
 (def ^:const viewport-height 4000)
 
-(def ^:const canvas-start-x 600)
-(def ^:const canvas-start-y 600)
+(def ^:const canvas-start-x 1200)
+(def ^:const canvas-start-y 1200)
 (def ^:const canvas-scroll-padding 50)
 (def ^:const canvas-start-scroll-x (- canvas-start-x canvas-scroll-padding))
 (def ^:const canvas-start-scroll-y (- canvas-start-y canvas-scroll-padding))
