@@ -87,6 +87,7 @@
   [own]
   (letfn [(handle-scroll-interaction []
             (let [stoper (->> uuc/actions-s
+                              (rx/map :type)
                               (rx/filter #(not= % :scroll/viewport))
                               (rx/take 1))
                   local (:rum/local own)
@@ -110,6 +111,7 @@
 
   (let [el (mx/get-ref-dom own "workspace-canvas")
         sub (as-> uuc/actions-s $
+              (rx/map :type $)
               (rx/dedupe $)
               (rx/filter #(= :scroll/viewport %) $)
               (rx/on-value $ handle-scroll-interaction))]

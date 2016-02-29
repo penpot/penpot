@@ -63,8 +63,7 @@
     :else
     (do
       (dom/stop-propagation event)
-      (uuc/release-action! :draw/selrect)
-      (uuc/release-action! :shape/movement))))
+      (uuc/release-all-actions!))))
 
 (declare handlers)
 

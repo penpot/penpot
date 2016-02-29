@@ -76,6 +76,7 @@
 
           (init []
             (let [stoper (->> uuc/actions-s
+                              (rx/map :type)
                               (rx/filter #(not= % :draw/selrect))
                               (rx/take 1))
                   pos @wb/mouse-viewport-a]
@@ -86,6 +87,7 @@
                 (rx/subscribe $ on-value nil on-complete))))]
 
     (as-> uuc/actions-s $
+      (rx/map :type $)
       (rx/dedupe $)
       (rx/filter #(= :draw/selrect %) $)
       (rx/on-value $ init))))

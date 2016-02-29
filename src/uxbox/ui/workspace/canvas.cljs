@@ -88,8 +88,7 @@
                 (uuc/acquire-action! :draw/selrect)))
             (on-mouse-up [event]
               (dom/stop-propagation event)
-              (uuc/release-action! :draw/shape)
-              (uuc/release-action! :draw/selrect))]
+              (uuc/release-all-actions!))]
       (html
        [:svg.viewport {:width uuwb/viewport-width
                        :height uuwb/viewport-height

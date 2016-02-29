@@ -52,6 +52,7 @@
               (reset! +drawing-position+ (assoc point :lock false))
 
               (let [stoper (->> uuc/actions-s
+                                (rx/map :type)
                                 (rx/filter #(not= % :shape/movement))
                                 (rx/take 1))]
                 (as-> wb/mouse-canvas-s $
@@ -87,6 +88,7 @@
                 :builtin/line (init-shape shape))))]
 
     (as-> uuc/actions-s $
+      (rx/map :type $)
       (rx/dedupe $)
       (rx/filter #(= :draw/shape %) $)
       (rx/on-value $ init))))

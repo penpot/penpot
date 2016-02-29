@@ -20,12 +20,14 @@
 
           (init []
             (as-> uuc/actions-s $
+              (rx/map :type $)
               (rx/filter #(not= % :shape/movement) $)
               (rx/take 1 $)
               (rx/take-until $ uuwb/mouse-delta-s)
               (rx/on-value $ on-value)))]
 
     (as-> uuc/actions-s $
+      (rx/map :type $)
       (rx/dedupe $)
       (rx/filter #(= :shape/movement %) $)
       (rx/on-value $ init))))
