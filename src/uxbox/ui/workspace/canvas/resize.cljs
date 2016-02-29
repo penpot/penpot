@@ -20,7 +20,6 @@
             (let [payload (:payload event)
                   stoper (->> uuc/actions-s
                               (rx/map :type)
-                              (rx/pr-log "kaka:")
                               (rx/filter #(= :nothing %))
                               (rx/take 1))]
               (as-> uuwb/mouse-delta-s $

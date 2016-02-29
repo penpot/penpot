@@ -79,12 +79,10 @@
 (defn- handlers-render
   [own shape]
   (letfn [(on-mouse-down [vid event]
-            (println "on-mouse-down" vid)
             (dom/stop-propagation event)
             (uuc/acquire-action! :resize/shape {:vid vid :shape (:id shape)}))
 
           (on-mouse-up [vid event]
-            (println "on-mouse-up" vid)
             (dom/stop-propagation event)
             (uuc/release-action! :resize/shape))]
     (let [{:keys [x y width height]} (ush/outer-rect' shape)]
