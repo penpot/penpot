@@ -16,23 +16,20 @@
             [uxbox.util.dom :as dom]))
 
 (define-once :resize-subscriptions
-  (letfn [(init [{:keys [payload]}]
-            (println payload)
-            (let [stoper (->> uuc/actions-s
+  (letfn [(init [event]
+            (let [payload (:payload event)
+                  stoper (->> uuc/actions-s
                               (rx/map :type)
                               (rx/pr-log "kaka:")
                               (rx/filter #(= :nothing %))
                               (rx/take 1))]
               (as-> uuwb/mouse-delta-s $
                 (rx/take-until stoper $)
-                (rx/subscribe
-                 $ #(on-value payload %) nil on-complete))))
+                (rx/with-latest-from vector uuwb/mouse-ctrl-s $)
+                (rx/subscribe $ #(on-value payload %)))))
 
-          (on-complete []
-            (println "on-complete"))
-
-          (on-value [{:keys [vid shape]} delta]
-            (let [params {:vid vid :delta delta}]
+          (on-value [{:keys [vid shape]} [delta ctrl?]]
+            (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
               (rs/emit! (uds/update-vertex-position shape params))))]
 
     (as-> uuc/actions-s $
