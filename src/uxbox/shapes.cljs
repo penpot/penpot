@@ -268,7 +268,8 @@
   [{:keys [group] :as shape}]
   (as-> shape $
     (assoc $ :x (:x1 shape) :y (:y1 shape))
-    (merge $ (size $))))
+    (merge $ (size $))
+    (container-rect $)))
 
 (defmethod outer-rect' :builtin/line
   [{:keys [x1 y1 x2 y2 group] :as shape}]
