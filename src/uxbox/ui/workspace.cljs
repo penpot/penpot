@@ -30,14 +30,6 @@
         left (.-scrollLeft target)]
     (rx/push! uuwb/scroll-b (gpt/point left top))))
 
-(defn- on-key-down
-  [event]
-  #_(js/console.log event))
-
-(defn- on-key-up
-  [event]
-  #_(js/console.log event))
-
 (defn- workspace-render
   [own projectid]
   (let [{:keys [flags] :as workspace} (rum/react uuwb/workspace-l)
@@ -55,9 +47,7 @@
       [:main.main-content
 
        [:section.workspace-content {:class classes
-                                    :on-scroll on-scroll
-                                    :on-key-up on-key-up
-                                    :on-key-down on-key-down}
+                                    :on-scroll on-scroll}
         ;; Rules
         (horizontal-rule)
         (vertical-rule)
