@@ -1,4 +1,8 @@
-(ns uxbox.library.icons.material-design-device
+;; This work is licensed under CC BY 4.0.
+;; The original source can be found here:
+;; https://github.com/google/material-design-icons
+
+(ns uxbox.library.icons.material.device
   (:require [sablono.core :as html :refer-macros [html]]))
 
 (def +icons+

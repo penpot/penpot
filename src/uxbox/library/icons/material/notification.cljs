@@ -1,4 +1,8 @@
-(ns uxbox.library.icons.material-design-notification)
+;; This work is licensed under CC BY 4.0.
+;; The original source can be found here:
+;; https://github.com/google/material-design-icons
+
+(ns uxbox.library.icons.material.notification)
 
 (def +icons+
   [{:name "ADB"

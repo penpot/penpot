@@ -1,4 +1,8 @@
-(ns uxbox.library.icons.material-design-navigation)
+;; This work is licensed under CC BY 4.0.
+;; The original source can be found here:
+;; https://github.com/google/material-design-icons
+
+(ns uxbox.library.icons.material.navigation)
 
 (def +icons+
   [{:name "Apps"
