@@ -3,62 +3,88 @@
 [![Travis Badge](https://img.shields.io/travis/uxbox/uxbox/master.svg)](https://travis-ci.org/uxbox/uxbox "Travis Badge")
 
 
+## Development Environment ##
 
-## Development ##
+### Introduction ###
 
-Grab the code and run:
+The development environment consists in a docker container that mounts your local
+copy of the uxbox souce code directory tree and executes a tmux inside the container
+in order to facilitate execute multiple processes inside.
 
-```
-$ ./scripts/figwheel
-```
 
-This will compile ClojureScript whenever you make changes and serve the application in [localhost](http://localhost:3449/).
-Open the page.
+### System requirements ###
 
-### ClojureScript browser-connected REPL ###
+You should have `docker` installed in your system in order to set up properly
+the uxbox development enviroment.
 
-The aforementioned command also starts a [nrepl](https://github.com/clojure/tools.nrepl) (network REPL) in the port 7888.
+In debian like linux distributions you can install it executing:
 
-You can connect to it from a shell using the following command:
-
-```
-$ lein repl :connect 7888
+```bash
+sudo apt-get install docker
 ```
 
-In Emacs you can use [cider's](https://github.com/clojure-emacs/cider) `M-x cider-connect` command and tell it that nREPL is
-running on `localhost:7888` to connect.
+### Build the docker image ###
 
-After connecting to nREPL, run the following Clojure code in it:
+In order to build the docker image, you should clone **uxbox-docker** repository:
 
-```
-user> (use 'figwheel-sidecar.repl-api)
-user> (cljs-repl)
+```bash
+git clone git@github.com:uxbox/uxbox-docker.git
 ```
 
-After that, a figwheel message will appear and the prompt will change to `cljs.user>`. We can now evaluate ClojureScript in the
-browser from the REPL.
+And build the image executing that:
 
-
-### Static resources generation ###
-
-The project's static resources are processed using [gulp](http://gulpjs.com/). First of all, install the npm dependencies running:
-
-```
-npm install
+```bash
+cd uxbox-docker
+sudo docker build --rm=true -t uxbox .
 ```
 
-To start watching the files and process them with each change, run:
+### Start the docker image ###
 
+The docker development environment consists in a tmux executed inside the docker
+container giving you the ability to execute multiple processes like one virtual
+machine.
+
+**Requires a minimum knowledge of tmux usage in order to use that development
+environment.**
+
+For start it, staying in this repository, execte:
+
+```bash
+./scripts/docker
 ```
+
+This command will start a new named container, if you stops it and starts again
+the data is conserved because the same container will be resumed again.
+
+
+### First steps inside ###
+
+Now having the the container running and tmux open inside the container, you are
+free to execute any commands and open many shells as you want. The basic frontend
+development requires at least *two shells*.
+
+In the first shell (the defaul one) execute:
+
+```bash
 npm run watch
 ```
 
-To process the resources just once, run:
+That command will launch the gulp process that compiles sass and template file
+and will keep watching for recomplie the sass files when they are changed.
 
-```
-npm run dist
+For create a new shell just press the following key shortcut: **Ctr+b c**.
+
+Once the new shell is created, execute the clojurescript compiler process:
+
+```bash
+npm run figwheel
 ```
 
+You can use **Ctrl+b w** for switch between the existing shells and **Ctrl+b &** for
+kill the current shell.
+
+
+## Other topics ##
 
 ### Transformation from HTML to hiccup ###
 

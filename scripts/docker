@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+if $(sudo docker ps |grep -q "uxbox"); then
+    sudo docker kill uxbox
+fi
+
+if ! $(sudo docker ps |grep -q "uxbox"); then
+    if ! $(sudo docker ps -a |grep -q "uxbox"); then
+        sudo docker run -ti -v `pwd`:/home/uxbox/uxbox \
+             -v $HOME/.m2:/home/uxbox/.m2 -p 3449:3449 \
+             --name uxbox uxbox tmux
+    else
+        sudo docker start uxbox
+        sudo docker attach uxbox
+    fi
+fi
