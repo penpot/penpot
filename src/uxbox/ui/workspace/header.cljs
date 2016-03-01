@@ -6,6 +6,7 @@
             [uxbox.rstore :as rs]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.workspace.clipboard]
+            [uxbox.ui.workspace.settings]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.users :as ui.u]
@@ -52,7 +53,8 @@
         flags (rum/react wb/flags-l)
         toggle #(rs/emit! (dw/toggle-flag %))
         ;; TODO: temporary
-        open-clipboard-dialog #(lightbox/open! :clipboard)]
+        open-clipboard-dialog #(lightbox/open! :clipboard)
+        open-settings-dialog #(lightbox/open! :settings)]
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon
@@ -93,7 +95,9 @@
          {:alt "Undo (Ctrl + Z)"
           :on-click open-clipboard-dialog}
          i/undo]
-        [:li.tooltip.tooltip-bottom {:alt "Redo (Ctrl + Shift + Z)"}
+        [:li.tooltip.tooltip-bottom
+         {:alt "Redo (Ctrl + Shift + Z)"
+          :on-click open-settings-dialog}
          i/redo]]
        [:ul.options-btn
         ;; TODO: refactor
