@@ -105,7 +105,6 @@
         local (:rum/local own)]
     (html
      [:g.shape {:class (when selected? "selected")
-                ;; :on-double-click #(on-double-click own %)
                 :ref "main"
                 :on-mouse-down on-mouse-down
                 :on-mouse-up on-mouse-up}
@@ -135,8 +134,16 @@
   [:font-size])
 
 (defn- build-style
-  [{:keys [font-size]}]
-  (merge {} (when font-size {:fontSize (str font-size "px")})))
+  [{:keys [font]}]
+  (let [{:keys [family weight style size]
+         :or {family "sourcesanspro"
+              weight "normal"
+              style "normal"
+              size 16}} font]
+    {:fontSize (str size "px")
+     :fontFamily family
+     :fontWeight weight
+     :fontStyle style}))
 
 (defmethod uusc/render-shape :builtin/text
   [{:keys [id x1 y1 x2 y2 content drawing? editing?] :as shape}]

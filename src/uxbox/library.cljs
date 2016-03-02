@@ -8,24 +8,35 @@
 (ns uxbox.library
   (:require [uxbox.library.colors :as colors]
             [uxbox.library.icons :as icons]
+            [uxbox.library.fonts :as fonts]
             [uxbox.util.data :refer (index-by-id)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Colors
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static +color-collections+
+(def ^:const +color-collections+
   colors/+collections+)
 
-(def ^:static +color-collections-by-id+
+(def ^:const +color-collections-by-id+
   (index-by-id colors/+collections+))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Icons
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static +icon-collections+
+(def ^:const +icon-collections+
   icons/+collections+)
 
-(def ^:static +icon-collections-by-id+
+(def ^:const +icon-collections-by-id+
   (index-by-id icons/+collections+))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fonts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:const +fonts+
+  fonts/+collections+)
+
+(def ^:const +fonts-by-id+
+  (index-by-id fonts/+collections+))

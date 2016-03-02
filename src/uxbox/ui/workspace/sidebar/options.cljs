@@ -498,52 +498,66 @@
      )))
 
 (defmethod -render-menu :menu/text
-  [menu own shape]
+  [menu own {:keys [font] :as shape}]
   (letfn [(on-font-family-change [event]
             (let [value (dom/event->value event)
-                  sid (:id shape)]
-              (println "on-font-family-change" value)))
+                  sid (:id shape)
+                  params {:family (read-string value)
+                          :weight "normal"
+                          :style "normal"}]
+              (rs/emit! (uds/update-font-attrs sid params))))
           (on-font-size-change [event]
             (let [value (dom/event->value event)
-                  value (parse-int value)
+                  params {:size (parse-int value)}
                   sid (:id shape)]
-              (println "on-font-size-change" value)))
-          (on-font-weight-change [event]
+              (rs/emit! (uds/update-font-attrs sid params))))
+          (on-font-style-change [event]
             (let [value (dom/event->value event)
-                  value (read-string value)
-                  sid (:id shape)]
-              (println "on-font-size-change" value)))]
-    (html
-     [:div.element-set {:key (str (:id menu))}
-      [:div.element-set-title (:name menu)]
-      [:div.element-set-content
-       [:span "Font family"]
-       [:div.row-flex
-        [:select.input-select {:value (:font-family shape "sans-serif")
-                                     :on-change on-font-family-change}
-         [:option {:value "sans-serif"} "Sans Serif"]
-         [:option {:value "monospace"} "Monospace"]]]
+                  [weight style] (read-string value)
+                  sid (:id shape)
+                  params {:style style
+                          :weight weight}]
+              (rs/emit! (uds/update-font-attrs sid params))))]
+    (let [{:keys [family style weight size]
+           :or {family "sourcesanspro"
+                style "normal"
+                weight "normal"
+                size 16}} font
+          styles (:styles (first (filter #(= (:id %) family) library/+fonts+)))]
+      (html
+       [:div.element-set {:key (str (:id menu))}
+        [:div.element-set-title (:name menu)]
+        [:div.element-set-content
+         [:span "Font family"]
+         [:div.row-flex
+          [:select.input-select {:value (pr-str family)
+                                 :on-change on-font-family-change}
+           (for [font library/+fonts+]
+             [:option {:value (pr-str (:id font))
+                       :key (:id font)} (:name font)])]]
+         [:span "Size and Weight"]
+         [:div.row-flex
+          [:input.input-text
+           {:placeholder "Font Size"
+            :type "number"
+            :min "0"
+            :max "200"
+            :value size
+            :on-change on-font-size-change}]
+          [:select.input-select {:value (pr-str [weight style])
+                                 :on-change on-font-style-change}
+           (for [style styles
+                 :let [data (mapv #(get style %) [:weight :style])]]
+             [:option {:value (pr-str data)
+                       :key (:name style)} (:name style)])]]
 
-       [:span "Size and Weight"]
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "Font Size"
-          :type "number"
-          :min "0"
-          :max "200"
-          :value (:font-size shape "16")
-          :on-change on-font-size-change}]
-        [:select.input-select {:value (:font-weight shape ":normal")
-                                     :on-change on-font-weight-change}
-         [:option {:value ":normal"} "Normal"]
-         [:option {:value ":bold"} "Solid"]]]
-       [:span "Text align"]
-       [:div.row-flex.align-icons
-        [:span.current i/align-left]
-        [:span i/align-right]
-        [:span i/align-center]
-        [:span i/align-justify]
-         ]]])))
+         [:span "Text align"]
+         [:div.row-flex.align-icons
+          [:span.current i/align-left]
+          [:span i/align-right]
+          [:span i/align-center]
+          [:span i/align-justify]
+          ]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components

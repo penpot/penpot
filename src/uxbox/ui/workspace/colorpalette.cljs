@@ -27,6 +27,8 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; TODO: move this lense under library ns.
+
 (def ^:static ^:private collections-by-id-l
   (-> (comp (l/in [:colors-by-id])
             (ul/merge library/+color-collections-by-id+))

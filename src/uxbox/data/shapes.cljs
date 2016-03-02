@@ -52,6 +52,12 @@
    :x2 [sc/integer]
    :y2 [sc/integer]})
 
+(def ^:static +shape-font-attrs-schema+
+  {:family [sc/string]
+   :style [sc/string]
+   :weight [sc/string]
+   :size [sc/number]})
+
 (def ^:static +shape-radius-attrs-schema+
   {:rx [sc/integer]
    :ry [sc/integer]})
@@ -158,6 +164,19 @@
                  merge
                  (when color {:fill color})
                  (when opacity {:opacity opacity})))))
+
+(defn update-font-attrs
+  [sid {:keys [family style weight size] :as opts}]
+  (sc/validate! +shape-font-attrs-schema+ opts)
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id sid :font]
+                 merge
+                 (when family {:family family})
+                 (when style {:style style})
+                 (when weight {:weight weight})
+                 (when size {:size size})))))
 
 (defn update-stroke-attrs
   [sid {:keys [color opacity type width] :as opts}]
