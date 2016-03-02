@@ -533,6 +533,7 @@
        [:div.element-set {:key (str (:id menu))}
         [:div.element-set-title (:name menu)]
         [:div.element-set-content
+
          [:span "Font family"]
          [:div.row-flex
           [:select.input-select {:value (pr-str family)
@@ -540,6 +541,7 @@
            (for [font library/+fonts+]
              [:option {:value (pr-str (:id font))
                        :key (:id font)} (:name font)])]]
+
          [:span "Size and Weight"]
          [:div.row-flex
           [:input.input-text
@@ -556,6 +558,23 @@
              [:option {:value (pr-str data)
                        :key (:name style)} (:name style)])]]
 
+         [:span "Line height and Letter spacing"]
+         [:div.row-flex
+          [:input.input-text
+           {:placeholder "Line height"
+            :type "number"
+            :step "0.1"
+            :min "0"
+            :max "200"
+            :defaultValue "1.5"}]
+          [:input.input-text
+           {:placeholder "Letter spacing"
+            :type "number"
+            :step "0.1"
+            :min "0"
+            :max "200"
+            :defaultValue "1"}]]
+
          [:span "Text align"]
          [:div.row-flex.align-icons
           [:span {:class (when (= align "left") "current")
@@ -569,8 +588,7 @@
            i/align-center]
           [:span {:class (when (= align "justify") "current")
                   :on-click #(on-font-align-change % "justify")}
-           i/align-justify]
-          ]]]))))
+           i/align-justify]]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
