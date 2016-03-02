@@ -8,6 +8,7 @@
             [uxbox.data.auth :as da]
             [uxbox.ui.icons :as i]
             [uxbox.ui.navigation :as nav]
+            [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -16,6 +17,7 @@
 
 (defn menu-render
   [own open?]
+  (let [open-settings-dialog #(lightbox/open! :settings)]
   (html
    [:ul.dropdown {:class (when-not open?
                            "hide")}
@@ -24,7 +26,7 @@
      [:span "Page settings"]]
     [:li
      i/grid
-     [:span "Grid settings"]]
+     [:span {:on-click open-settings-dialog} "Grid settings"]]
     [:li
      i/eye
      [:span "Preview"]]
@@ -33,7 +35,7 @@
      [:span "Your account"]]
     [:li {:on-click #(rs/emit! (da/logout))}
      i/exit
-     [:span "Exit"]]]))
+     [:span "Exit"]]])))
 
 (def user-menu
   (mx/component
@@ -129,4 +131,3 @@
 ;;     [:div.login-body
 ;;      [:a i/logo]
 ;;      (recover-password-form)]])
-

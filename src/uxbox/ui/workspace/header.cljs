@@ -60,8 +60,7 @@
         flags (rum/react wb/flags-l)
         toggle #(rs/emit! (dw/toggle-flag %))
         ;; TODO: temporary
-        open-clipboard-dialog #(lightbox/open! :clipboard)
-        open-settings-dialog #(lightbox/open! :settings)]
+        open-clipboard-dialog #(lightbox/open! :clipboard)]
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon
@@ -103,8 +102,7 @@
           :on-click open-clipboard-dialog}
          i/undo]
         [:li.tooltip.tooltip-bottom
-         {:alt "Redo (Ctrl + Shift + Z)"
-          :on-click open-settings-dialog}
+         {:alt "Redo (Ctrl + Shift + Z)"}
          i/redo]]
        [:ul.options-btn
         ;; TODO: refactor

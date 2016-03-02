@@ -28,6 +28,17 @@
     width: 500px;
     @include animation(.1s,1s,fadeInDown);
 
+    .lightbox-label {
+      display: flex;
+      font-weight: bold;
+      margin: $medium 0;
+      width: 100%;
+    }
+
+    form {
+      width: 100%;
+    }
+
     .input-text {
       margin: 1rem 0;
       width: 100%;
@@ -80,7 +91,8 @@
     }
 
     .btn-primary {
-      margin-top: 10px;
+      margin: $big auto 0 auto;
+      min-width: 120px;
     }
 
   }
@@ -180,5 +192,10 @@
     }
 
   }
+
+}
+
+// Project Settings
+.settings {
 
 }

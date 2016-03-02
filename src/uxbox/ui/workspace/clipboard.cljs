@@ -9,6 +9,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
+            [uxbox.util.dom :as dom]
             [uxbox.ui.lightbox :as lightbox]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -23,7 +24,10 @@
      (for [i (range 5)]
        [:div.clipboard-item {:key i}
         [:span.clipboard-icon i/box]
-        [:span (str "shape " i)]])]]))
+        [:span (str "shape " i)]])]
+    [:a.close {:href "#"
+            :on-click #(do (dom/prevent-default %)
+                           (lightbox/close!))} i/close]]))
 
 (def clipboard-dialog
   (mx/component
