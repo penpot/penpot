@@ -13,6 +13,7 @@
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.shapes.icon :as uusi]
+            [uxbox.util.color :as color]
             [uxbox.util.dom :as dom])
   (:import goog.events.EventType))
 
@@ -134,14 +135,18 @@
   [:font-size])
 
 (defn- build-style
-  [{:keys [font]}]
+  [{:keys [font fill opacity] :or {fill "#000000" opacity 1}}]
   (let [{:keys [family weight style size align]
          :or {family "sourcesanspro"
               weight "normal"
               style "normal"
               align "left"
-              size 16}} font]
+              size 16}} font
+        color (-> fill
+                  (color/hex->rgba opacity)
+                  (color/rgb->str))]
     {:fontSize (str size "px")
+     :color color
      :textAlign align
      :fontFamily family
      :fontWeight weight

@@ -36,7 +36,7 @@
    :builtin/rect [:menu/rect-measures :menu/fill :menu/stroke]
    :builtin/line [:menu/line-measures :menu/stroke]
    :builtin/circle [:menu/circle-measures :menu/fill :menu/stroke]
-   :builtin/text [:menu/text]
+   :builtin/text [:menu/fill :menu/text]
    :builtin/group []})
 
 (def ^:const ^:private +menus-by-id+

@@ -6,13 +6,26 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.util.color
-  "Color conversion utils.")
+  "Color conversion utils."
+  (:require [cuerdas.core :as str]))
 
 (defn hex->rgb
   [^string data]
   (some->> (re-find #"^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$" data)
            (rest)
            (mapv #(js/parseInt % 16))))
+
+(defn hex->rgba
+  [^string data ^number opacity]
+  (-> (hex->rgb data)
+      (conj opacity)))
+
+(defn rgb->str
+  [color]
+  {:pre [(vector? color)]}
+  (if (= (count color) 3)
+    (apply str/format "rgb(%s,%s,%s)" color)
+    (apply str/format "rgba(%s,%s,%s,%s)" color)))
 
 (defn rgb->hex
   [[r g b]]
