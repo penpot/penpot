@@ -7,6 +7,7 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.shapes :as ush]
+            [uxbox.data.shapes :as ds]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.mixins :as mx]
@@ -75,25 +76,31 @@
               (uuc/release-action! ::edition)
               (swap! local assoc :edition false)
               (set! (.-contentEditable container) false)
-              (.removeAttribute container "contenteditable")))]
-
+              (.removeAttribute container "contenteditable")))
+          (on-input [ev]
+            (let [content (dom/event->inner-text ev)
+                  sid (:id (first (:rum/props own)))]
+              (rs/emit! (ds/update-text sid {:content content}))))]
     (let [dom (mx/get-ref-dom own "main")
           dom2 (mx/get-ref-dom own "container")
           key1 (events/listen dom EventType.DBLCLICK on-double-click)
-          key2 (events/listen dom2 EventType.BLUR on-blur)]
-      (assoc own ::key1 key1))))
+          key2 (events/listen dom2 EventType.BLUR on-blur)
+          key3 (events/listen dom2 EventType.INPUT on-input)]
+      (assoc own ::key1 key1 ::key2 key2 ::key3 key3))))
 
 (defn- text-component-will-unmount
   [own]
   (let [key1 (::key1 own)
-        key2 (::key2 own)]
+        key2 (::key2 own)
+        key3 (::key3 own)]
     (events/unlistenByKey key1)
     (events/unlistenByKey key2)
-    (dissoc own ::key1 ::key2)))
+    (events/unlistenByKey key3)
+    (dissoc own ::key1 ::key2 ::key3)))
 
 (defn- text-component-transfer-state
   [old-own own]
-  (let [data (select-keys old-own [::key1 ::key2])]
+  (let [data (select-keys old-own [::key1 ::key2 ::key3])]
     (merge own data)))
 
 (defn- text-component-render
@@ -136,21 +143,26 @@
 
 (defn- build-style
   [{:keys [font fill opacity] :or {fill "#000000" opacity 1}}]
-  (let [{:keys [family weight style size align]
+  (let [{:keys [family weight style size align line-height letter-spacing]
          :or {family "sourcesanspro"
               weight "normal"
               style "normal"
+              line-height 1.4
+              letter-spacing 1
               align "left"
               size 16}} font
         color (-> fill
                   (color/hex->rgba opacity)
                   (color/rgb->str))]
-    {:fontSize (str size "px")
-     :color color
-     :textAlign align
-     :fontFamily family
-     :fontWeight weight
-     :fontStyle style}))
+    (merge
+     {:fontSize (str size "px")
+      :color color
+      :textAlign align
+      :fontFamily family
+      :fontWeight weight
+      :fontStyle style}
+     (when line-height {:lineHeight line-height})
+     (when letter-spacing {:letterSpacing letter-spacing}))))
 
 (defmethod uusc/render-shape :builtin/text
   [{:keys [id x1 y1 x2 y2 content drawing? editing?] :as shape}]
@@ -161,7 +173,6 @@
                :transform (str rfm)}
         attrs (merge props size)
         style (build-style shape)]
-
     (html
      [:g
       (if (or drawing? editing?)

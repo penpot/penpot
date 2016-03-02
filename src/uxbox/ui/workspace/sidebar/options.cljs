@@ -511,10 +511,21 @@
                   params {:size (parse-int value)}
                   sid (:id shape)]
               (rs/emit! (uds/update-font-attrs sid params))))
+          (on-font-letter-spacing-change [event]
+            (let [value (dom/event->value event)
+                  params {:letter-spacing (parse-float value)}
+                  sid (:id shape)]
+              (rs/emit! (uds/update-font-attrs sid params))))
+          (on-font-line-height-change [event]
+            (let [value (dom/event->value event)
+                  params {:line-height (parse-float value)}
+                  sid (:id shape)]
+              (rs/emit! (uds/update-font-attrs sid params))))
           (on-font-align-change [event value]
             (let [params {:align value}
                   sid (:id shape)]
               (rs/emit! (uds/update-font-attrs sid params))))
+
           (on-font-style-change [event]
             (let [value (dom/event->value event)
                   [weight style] (read-string value)
@@ -522,11 +533,13 @@
                   params {:style style
                           :weight weight}]
               (rs/emit! (uds/update-font-attrs sid params))))]
-    (let [{:keys [family style weight size align]
+    (let [{:keys [family style weight size align line-height letter-spacing]
            :or {family "sourcesanspro"
                 align "left"
                 style "normal"
                 weight "normal"
+                letter-spacing 1
+                line-height 1.4
                 size 16}} font
           styles (:styles (first (filter #(= (:id %) family) library/+fonts+)))]
       (html
@@ -566,14 +579,17 @@
             :step "0.1"
             :min "0"
             :max "200"
-            :defaultValue "1.5"}]
+            :value line-height
+            :on-change on-font-line-height-change}]
           [:input.input-text
            {:placeholder "Letter spacing"
             :type "number"
             :step "0.1"
             :min "0"
             :max "200"
-            :defaultValue "1"}]]
+            :value letter-spacing
+            :on-change on-font-letter-spacing-change}]]
+
 
          [:span "Text align"]
          [:div.row-flex.align-icons

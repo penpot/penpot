@@ -57,7 +57,9 @@
    :style [sc/string]
    :weight [sc/string]
    :align [sc/string]
-   :size [sc/number]})
+   :size [sc/number]
+   :letter-spacing [sc/number]
+   :line-height [sc/number]})
 
 (def ^:static +shape-radius-attrs-schema+
   {:rx [sc/integer]
@@ -155,6 +157,15 @@
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid] sh/move' opts))))
 
+(defn update-text
+  "Update the start position coordenate of the shape."
+  [sid {:keys [content]}]
+  {:pre [(string? content)]}
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:shapes-by-id sid :content] content))))
+
 (defn update-fill-attrs
   [sid {:keys [color opacity] :as opts}]
   (sc/validate! +shape-fill-attrs-schema+ opts)
@@ -167,13 +178,16 @@
                  (when opacity {:opacity opacity})))))
 
 (defn update-font-attrs
-  [sid {:keys [family style weight size align] :as opts}]
+  [sid {:keys [family style weight size align
+               letter-spacing line-height] :as opts}]
   (sc/validate! +shape-font-attrs-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid :font]
                  merge
+                 (when line-height {:line-height line-height})
+                 (when letter-spacing {:letter-spacing letter-spacing})
                  (when align {:align align})
                  (when family {:family family})
                  (when style {:style style})
