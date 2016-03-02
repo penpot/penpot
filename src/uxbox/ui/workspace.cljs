@@ -44,21 +44,17 @@
     (html
      [:div
       (header)
+      (colorpalette)
       [:main.main-content
 
-       [:section.workspace-content {:class classes
-                                    :on-scroll on-scroll}
+       [:section.workspace-content {:class classes :on-scroll on-scroll}
         ;; Rules
         (horizontal-rule)
         (vertical-rule)
 
-        #_(coordinates)
-
         ;; Canvas
         [:section.workspace-canvas {:ref "workspace-canvas"}
          (viewport)]]
-
-       (colorpalette)
 
        ;; Aside
        (when left-sidebar?
