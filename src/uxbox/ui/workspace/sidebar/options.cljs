@@ -511,6 +511,10 @@
                   params {:size (parse-int value)}
                   sid (:id shape)]
               (rs/emit! (uds/update-font-attrs sid params))))
+          (on-font-align-change [event value]
+            (let [params {:align value}
+                  sid (:id shape)]
+              (rs/emit! (uds/update-font-attrs sid params))))
           (on-font-style-change [event]
             (let [value (dom/event->value event)
                   [weight style] (read-string value)
@@ -518,8 +522,9 @@
                   params {:style style
                           :weight weight}]
               (rs/emit! (uds/update-font-attrs sid params))))]
-    (let [{:keys [family style weight size]
+    (let [{:keys [family style weight size align]
            :or {family "sourcesanspro"
+                align "left"
                 style "normal"
                 weight "normal"
                 size 16}} font
@@ -553,10 +558,18 @@
 
          [:span "Text align"]
          [:div.row-flex.align-icons
-          [:span.current i/align-left]
-          [:span i/align-right]
-          [:span i/align-center]
-          [:span i/align-justify]
+          [:span {:class (when (= align "left") "current")
+                  :on-click #(on-font-align-change % "left")}
+           i/align-left]
+          [:span {:class (when (= align "right") "current")
+                  :on-click #(on-font-align-change % "right")}
+           i/align-right]
+          [:span {:class (when (= align "center") "current")
+                  :on-click #(on-font-align-change % "center")}
+           i/align-center]
+          [:span {:class (when (= align "justify") "current")
+                  :on-click #(on-font-align-change % "justify")}
+           i/align-justify]
           ]]]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

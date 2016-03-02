@@ -135,12 +135,14 @@
 
 (defn- build-style
   [{:keys [font]}]
-  (let [{:keys [family weight style size]
+  (let [{:keys [family weight style size align]
          :or {family "sourcesanspro"
               weight "normal"
               style "normal"
+              align "left"
               size 16}} font]
     {:fontSize (str size "px")
+     :textAlign align
      :fontFamily family
      :fontWeight weight
      :fontStyle style}))

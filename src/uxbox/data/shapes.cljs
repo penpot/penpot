@@ -56,6 +56,7 @@
   {:family [sc/string]
    :style [sc/string]
    :weight [sc/string]
+   :align [sc/string]
    :size [sc/number]})
 
 (def ^:static +shape-radius-attrs-schema+
@@ -166,13 +167,14 @@
                  (when opacity {:opacity opacity})))))
 
 (defn update-font-attrs
-  [sid {:keys [family style weight size] :as opts}]
+  [sid {:keys [family style weight size align] :as opts}]
   (sc/validate! +shape-font-attrs-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid :font]
                  merge
+                 (when align {:align align})
                  (when family {:family family})
                  (when style {:style style})
                  (when weight {:weight weight})
