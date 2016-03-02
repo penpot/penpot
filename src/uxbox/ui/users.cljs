@@ -17,7 +17,9 @@
 
 (defn menu-render
   [own open?]
-  (let [open-settings-dialog #(lightbox/open! :settings)]
+  (let [open-settings-dialog #(lightbox/open! :settings)
+        ;;open-user-settings #(dashboard/user-settings-page/open! :user-settings)
+        ]
   (html
    [:ul.dropdown {:class (when-not open?
                            "hide")}

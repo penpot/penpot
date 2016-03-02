@@ -62,6 +62,7 @@
         ["auth/recover" :auth/recover-password]
         ["dashboard/" [["projects" :dashboard/projects]
                        ["elements" :dashboard/elements]
+                       ["user-settings" :dashboard/user-settings]
                        ["icons" :dashboard/icons]
                        ["colors" :dashboard/colors]]]
         ["workspace/" [[page-route :workspace/page]]]]])

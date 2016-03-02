@@ -46,6 +46,7 @@
         :dashboard/elements (ui-dashboard/elements-page)
         :dashboard/icons (ui-dashboard/icons-page)
         :dashboard/colors (ui-dashboard/colors-page)
+        :dashboard/user-settings (ui-dashboard/user-settings-page)
         :workspace/page (let [projectid (:project-uuid params)
                               pageid (:page-uuid params)]
                           (workspace projectid pageid))
