@@ -1,4 +1,4 @@
-# UXBox #
+# UXBox UI #
 
 [![Travis Badge](https://img.shields.io/travis/uxbox/uxbox/master.svg)](https://travis-ci.org/uxbox/uxbox "Travis Badge")
 
