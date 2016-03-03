@@ -5,7 +5,7 @@
 
 ## Development Environment ##
 
-Read the documentation found on [uxbox-docker][1] repository.
+Read the documentation on [uxbox-docker][1] repository.
 
 
 ## License ##
