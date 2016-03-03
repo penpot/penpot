@@ -1,7 +1,7 @@
 (defproject uxbox "0.1.0-SNAPSHOT"
-  :description "UXBox client"
+  :description "UXBox UI"
   :url "http://uxbox.github.io"
-  :license {:name "" :url ""}
+  :license {:name "MPL 2.0" :url "https://www.mozilla.org/en-US/MPL/2.0/"}
   :jvm-opts ["-Dclojure.compiler.direct-linking=true"]
 
   :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
