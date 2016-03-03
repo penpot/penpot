@@ -139,36 +139,3 @@
     :transfer-state colors-page-transfer-state
     :name "colors"
     :mixins [mx/static]}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Page: User settings
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn user-settings-page-render
-  [own]
-  (html
-   [:main.dashboard-main
-    (header)
-    [:section.dashboard-content
-     (ui.library-bar/library-bar)
-     [:section.dashboard-grid.library
-      (elements/page-title)
-      (elements/grid)]]]))
-
-(defn user-settings-page-will-mount
-  [own]
-  (rs/emit! (dd/initialize :dashboard/user-settings))
-  own)
-
-(defn user-settings-page-transfer-state
-  [old-state state]
-  (rs/emit! (dd/initialize :dashboard/user-settings))
-  state)
-
-(def ^:static user-settings-page
-  (mx/component
-   {:render user-settings-page-render
-    :will-mount user-settings-page-will-mount
-    :transfer-state user-settings-page-transfer-state
-    :name "user-settings-page"
-    :mixins [mx/static]}))

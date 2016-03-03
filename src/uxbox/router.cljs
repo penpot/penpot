@@ -60,9 +60,13 @@
   ["/" [["auth/login" :auth/login]
         ["auth/register" :auth/register]
         ["auth/recover" :auth/recover-password]
+
+        ["settings/" [["profile" :settings/profile]
+                      ["password" :settings/password]
+                      ["notifications" :settings/notifications]]]
+
         ["dashboard/" [["projects" :dashboard/projects]
                        ["elements" :dashboard/elements]
-                       ["user-settings" :dashboard/user-settings]
                        ["icons" :dashboard/icons]
                        ["colors" :dashboard/colors]]]
         ["workspace/" [[page-route :workspace/page]]]]])

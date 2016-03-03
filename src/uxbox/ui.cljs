@@ -18,6 +18,7 @@
             [uxbox.ui.lightbox :as ui-lightbox]
             [uxbox.ui.auth :as ui-auth]
             [uxbox.ui.dashboard :as ui-dashboard]
+            [uxbox.ui.settings :as ui-settings]
             [uxbox.ui.workspace :refer (workspace)]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.shapes]))
@@ -46,7 +47,9 @@
         :dashboard/elements (ui-dashboard/elements-page)
         :dashboard/icons (ui-dashboard/icons-page)
         :dashboard/colors (ui-dashboard/colors-page)
-        :dashboard/user-settings (ui-dashboard/user-settings-page)
+        :settings/profile (ui-settings/profile-page)
+        :settings/password (ui-settings/password-page)
+        :settings/notifications (ui-settings/notifications-page)
         :workspace/page (let [projectid (:project-uuid params)
                               pageid (:page-uuid params)]
                           (workspace projectid pageid))

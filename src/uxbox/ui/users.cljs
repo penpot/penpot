@@ -17,27 +17,25 @@
 
 (defn menu-render
   [own open?]
-  (let [open-settings-dialog #(lightbox/open! :settings)
-        ;;open-user-settings #(dashboard/user-settings-page/open! :user-settings)
-        ]
-  (html
-   [:ul.dropdown {:class (when-not open?
-                           "hide")}
-    [:li
-     i/page
-     [:span "Page settings"]]
-    [:li
-     i/grid
-     [:span {:on-click open-settings-dialog} "Grid settings"]]
-    [:li
-     i/eye
-     [:span "Preview"]]
-    [:li
-     i/user
-     [:span "Your account"]]
-    [:li {:on-click #(rs/emit! (da/logout))}
-     i/exit
-     [:span "Exit"]]])))
+  (let [open-settings-dialog #(lightbox/open! :settings)]
+    (html
+     [:ul.dropdown {:class (when-not open?
+                             "hide")}
+      [:li
+       i/page
+       [:span "Page settings"]]
+      [:li {:on-click open-settings-dialog}
+       i/grid
+       [:span "Grid settings"]]
+      [:li
+       i/eye
+       [:span "Preview"]]
+      [:li {:on-click #(r/go :settings/profile)}
+       i/user
+       [:span "Your account"]]
+      [:li {:on-click #(rs/emit! (da/logout))}
+       i/exit
+       [:span "Exit"]]])))
 
 (def user-menu
   (mx/component
