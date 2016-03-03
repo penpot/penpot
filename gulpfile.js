@@ -1,6 +1,5 @@
 var gulp = require("gulp");
 var runseq = require('run-sequence');
-var clean = require("gulp-clean");
 var scss = require("gulp-sass");
 var plumber = require("gulp-plumber");
 var autoprefixer = require('gulp-autoprefixer');

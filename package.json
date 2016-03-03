@@ -13,13 +13,11 @@
     "clean": "gulp clean",
     "figwheel": "./scripts/figwheel",
     "test-watch": "./scripts/watch",
-    "test-build": "./scripts/build",
-    "docker": "sudo docker run -ti -v `pwd`:/home/uxbox/uxbox  -v $HOME/.m2:/home/uxbox/.m2 -p 3449:3449 uxbox tmux"
+    "test-build": "./scripts/build"
   },
   "devDependencies": {
     "gulp": "3.9.1",
     "gulp-autoprefixer": "3.1.0",
-    "gulp-clean": "0.3.1",
     "gulp-cssmin": "0.1.7",
     "gulp-mustache": "2.2.0",
     "gulp-plumber": "1.1.0",
