@@ -1,0 +1,69 @@
+.user-settings {
+  flex-direction: column;
+}
+
+.user-settings-nav {
+  display: flex;
+
+  .user-settings-nav-inside {
+    align-items: center;
+    display: flex;
+    margin: 0 auto;
+
+    li {
+      background-color: transparent;
+      border: 1px solid $medium-ui-border;
+      border-radius: $br-small;
+      cursor: pointer;
+      margin: $medium;
+      padding: $small $medium;
+
+      &:hover {
+        background-color: $primary-ui-bg;
+        border-color: transparent;
+      }
+
+      &.current {
+        background-color: $main-ui-color;
+        border: 0;
+        color: $color-white;
+      }
+
+    }
+
+  }
+
+}
+
+.user-settings-content {
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  width: 500px;
+
+  .user-settings-label {
+    border-bottom: 1px solid $soft-ui-border;
+    font-weight: bold;
+    margin: $x-small 0 $medium 0;
+    padding: $medium;
+  }
+
+  .input-text {
+    color: $intense-ui-text;
+  }
+
+}
+
+.avatar-form {
+  align-items: center;
+  display: flex;
+
+  img {
+    border-radius: 50%;
+    flex-shrink: 0;
+    height: 120px;
+    margin-right: $medium;
+    width: 120px;
+  }
+
+}
