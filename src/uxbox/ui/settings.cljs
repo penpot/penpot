@@ -94,13 +94,25 @@
   (html
    [:main.dashboard-main
     (header)
-    [:section.dashboard-content
-     [:ul
-      [:li {:on-click #(r/go :settings/profile)} "Profile"]
-      [:li {:on-click #(r/go :settings/password)} "Password"]
-      [:li {:on-click #(r/go :settings/notifications)} "Notifications"]]
-     [:section.dashboard-grid.library
-      [:span "TODO 3"]]]]))
+    [:section.dashboard-content.user-settings
+     [:div.user-settings-nav
+      [:ul.user-settings-nav-inside
+       [:li {:on-click #(r/go :settings/profile)} "Profile"]
+       [:li {:on-click #(r/go :settings/password)} "Password"]
+       [:li.current {:on-click #(r/go :settings/notifications)} "Notifications"]]]
+
+     [:section.user-settings-content
+      [:span.user-settings-label "Prototype notifications"]
+      [:p "Get a roll up of prototype changes in your inbox."]
+     [:div.input-radio.radio-primary
+      [:input {:type "radio" :id "notification-1" :name "notification-1" :value "none"}]
+      [:label {:for "notification-1" :value "None"} "None"]
+      [:input {:type "radio" :id "notification-2" :name "notification-2" :value "every-hour"}]
+      [:label {:for "notification-2" :value "Every hour"} "Every hour"]
+      [:input {:type "radio" :id "notification-3" :name "notification-3" :value "every-day"}]
+      [:label {:for "notification-3" :value "Every day"} "Every day"]]
+     [:input.btn-primary {:type "submit" :value "Update settings"}]
+     ]]]))
 
 (def ^:static notifications-page
   (mx/component
