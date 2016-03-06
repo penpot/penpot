@@ -24,9 +24,9 @@
       }
 
       &.current {
-        background-color: $main-ui-color;
+        background-color: $primary-ui-bg;
         border: 0;
-        color: $color-white;
+        color: $main-ui-color;
       }
 
     }

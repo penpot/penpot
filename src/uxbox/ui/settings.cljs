@@ -64,13 +64,20 @@
   (html
    [:main.dashboard-main
     (header)
-    [:section.dashboard-content
-     [:ul
-      [:li {:on-click #(r/go :settings/profile)} "Profile"]
-      [:li {:on-click #(r/go :settings/password)} "Password"]
-      [:li {:on-click #(r/go :settings/notifications)} "Notifications"]]
-     [:section.dashboard-grid.library
-      [:span "TODO 2"]]]]))
+    [:section.dashboard-content.user-settings
+     [:div.user-settings-nav
+      [:ul.user-settings-nav-inside
+       [:li {:on-click #(r/go :settings/profile)} "Profile"]
+       [:li.current {:on-click #(r/go :settings/password)} "Password"]
+       [:li {:on-click #(r/go :settings/notifications)} "Notifications"]]]
+
+     [:section.user-settings-content
+      [:span.user-settings-label "Change password"]
+      [:input.input-text {:type "password" :placeholder "Old password"}]
+      [:input.input-text {:type "password" :placeholder "New password"}]
+      [:input.input-text {:type "password" :placeholder "Confirm password"}]
+      [:input.btn-primary {:type "submit" :value "Update settings"}]
+     ]]]))
 
 (def ^:static password-page
   (mx/component
