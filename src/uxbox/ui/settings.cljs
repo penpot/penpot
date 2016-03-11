@@ -38,15 +38,19 @@
       [:form.avatar-form
        [:img {:src "images/favicon.png" :border "0"}]
        [:input {:type "file"}]]
-      [:span.user-settings-label "Name"]
+      [:span.user-settings-label "Name, username and email"]
       [:input.input-text {:type "text" :placeholder "Your name"}]
-      [:span.user-settings-label "Username"]
       [:input.input-text {:type "text" :placeholder "Your username"}]
-      [:span.user-settings-label "Email"]
       [:input.input-text {:type "email" :placeholder "Your email"}]
       [:span.user-settings-label "Choose a color theme"]
-      [:span "TODO RADIO BUTTONS"]
-      [:input.btn-primary {:type "submit" :value "Update settings"}]
+       [:div.input-radio.radio-primary
+        [:input {:type "radio" :id "light-theme" :name "light theme" :value "none"}]
+        [:label {:for "light-theme" :value "None"} "Light theme"]
+        [:input {:type "radio" :id "dark-theme" :name "dark theme" :value "every-hour"}]
+        [:label {:for "dark-theme" :value "Every hour"} "Dark theme"]
+        [:input {:type "radio" :id "contrast-theme" :name "contrast theme" :value "every-day"}]
+        [:label {:for "contrast-theme" :value "Every day"} "High-contrast theme"]]
+        [:input.btn-primary {:type "submit" :value "Update settings"}]
      ]]]))
 
 (def ^:static profile-page

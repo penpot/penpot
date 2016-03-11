@@ -20,7 +20,7 @@
 (defn messages-render
   []
   (html
-   [:div.message.error
+   [:div.message.error.hide
     [:div.message-body
      [:span.close i/close]
      [:span "Something wrong has happened"]]]))
