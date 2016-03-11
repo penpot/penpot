@@ -128,10 +128,7 @@
          i/grid]
         [:li.tooltip.tooltip-bottom
          {:alt "Align (Ctrl + A)"}
-         i/alignment]
-        [:li.tooltip.tooltip-bottom
-         {:alt "Organize (Ctrl + O)"}
-         i/organize]]
+         i/alignment]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom
          {:alt "Multi-canvas (Ctrl + M)"}

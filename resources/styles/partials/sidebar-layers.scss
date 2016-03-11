@@ -19,15 +19,15 @@
     display: flex;
     justify-content: space-between;
     margin: 0;
-    width: 80px;
+    width: 88%;
 
     li {
       cursor: pointer;
 
       svg {
         fill: $medium-ui-icons;
-        height: 16px;
-        width: 16px;
+        height: 14px;
+        width: 14px;
 
         &:hover {
           fill: $intense-ui-text;
@@ -43,6 +43,30 @@
             fill: $color-danger;
           }
 
+        }
+
+      }
+
+      &.layer-up {
+
+        svg {
+          transform: rotate(270deg);
+        }
+
+      }
+
+      &.layer-down {
+
+        svg {
+          transform: rotate(90deg);
+        }
+
+      }
+
+      &.layer-top {
+
+        svg {
+          transform: rotate(180deg);
         }
 
       }
