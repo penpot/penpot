@@ -842,3 +842,97 @@ input[type=range]:focus::-ms-fill-upper {
   }
 
 }
+
+// Messages
+.message {
+  position: fixed;
+  top: 20px;
+  width: 100%;
+  z-index: 12;
+  @include animation(0, 1s, fadeInDown);
+
+  .message-body {
+    align-items: center;
+    border-radius: $br-small;
+    border-bottom: 3px solid transparent;
+    color: $color-white;
+    display: flex;
+    min-height: 100px;
+    margin: 0 auto;
+    padding: $medium $big;
+    position: relative;
+    width: 600px;
+
+    span {
+      font-size: $fs18;
+      text-align: center;
+      width: 100%;
+    }
+
+    .close {
+      cursor: pointer;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      opacity: .3;
+      width: 18px;
+
+      svg {
+        fill: $color-black;
+        height: 18px;
+        width: 18px;
+        transform: rotate(45deg);
+      }
+
+      &:hover {
+        opacity: .8;
+      }
+
+    }
+
+  }
+
+  &.error {
+
+    .message-body {
+      background-color: $color-danger;
+      border-color: $color-danger-dark;
+    }
+
+  }
+
+  &.success {
+
+    .message-body {
+      background-color: $color-success;
+      border-color: $color-success-dark;
+    }
+
+  }
+
+  &.info {
+
+    .message-body {
+      background-color: $color-info;
+      border-color: $color-info-dark;
+    }
+
+  }
+
+  &.quick {
+
+    .message-body {
+
+      .close {
+        display: none;
+      }
+
+    }
+
+  }
+
+  &.hide-message {
+    @include animation(0, .6s, fadeOutUp);
+  }
+
+}
