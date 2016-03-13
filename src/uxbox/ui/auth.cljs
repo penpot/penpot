@@ -7,6 +7,7 @@
             [uxbox.rstore :as rs]
             [uxbox.data.auth :as da]
             [uxbox.ui.icons :as i]
+            [uxbox.ui.messages :as uum]
             [uxbox.ui.navigation :as nav]
             [uxbox.ui.mixins :as mx]))
 
@@ -22,6 +23,7 @@
     (html
      [:div.login
       [:div.login-body
+       (uum/messages)
        [:a i/logo]
        [:div.login-content
         [:input.input-text
