@@ -847,6 +847,7 @@ input[type=range]:focus::-ms-fill-upper {
 .message {
   position: fixed;
   top: 20px;
+  left: 0px;
   width: 100%;
   z-index: 12;
   @include animation(0, 1s, fadeInDown);
