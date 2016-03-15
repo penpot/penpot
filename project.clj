@@ -9,6 +9,7 @@
                  [figwheel-sidecar "0.5.0-6" :scope "test"]
 
                  ;; runtime
+                 [com.cognitect/transit-cljs "0.8.237"]
                  [rum "0.6.0" :exclusions [sablono]]
                  [sablono "0.6.2"]
                  [cljsjs/react "0.14.3-0"]
