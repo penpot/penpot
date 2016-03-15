@@ -28,11 +28,11 @@
   {:name [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
-   :layout [sc/keyword]})
+   :layout [sc/required sc/string]})
 
 (def ^:static +create-page-schema+
   {:name [sc/required sc/string]
-   :layout [sc/keyword]
+   :layout [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
    :project [sc/required sc/uuid]})
@@ -41,7 +41,7 @@
   {:name [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
-   :layout [sc/keyword]})
+   :layout [sc/required sc/string]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers

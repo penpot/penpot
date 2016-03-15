@@ -167,10 +167,10 @@
             :on-change #(update-size :height %)}]]
 
          [:div.input-radio.radio-primary
-          (layout-input local page :mobile)
-          (layout-input local page :tablet)
-          (layout-input local page :notebook)
-          (layout-input local page :desktop)]
+          (layout-input local page "mobile")
+          (layout-input local page "tablet")
+          (layout-input local page "notebook")
+          (layout-input local page "desktop")]
 
          (when valid?
            [:input#project-btn.btn-primary

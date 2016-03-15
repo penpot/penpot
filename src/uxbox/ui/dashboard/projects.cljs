@@ -32,28 +32,33 @@
 (def +ordering-options+ {:name "ds.project-ordering.by-name"
                          :created "ds.project-ordering.by-creation-date"})
 
-(def +layouts+ {:mobile {:name "Mobile"
-                         :id "mobile"
-                         :width 320
-                         :height 480}
-                :tablet {:name "Tablet"
-                         :id "tablet"
-                         :width 1024
-                         :height 768}
-                :notebook {:name "Notebook"
-                           :id "notebook"
-                           :width 1366
-                           :height 768}
-                :desktop {:name "Desktop"
-                          :id "desktop"
-                          :width 1920
-                          :height 1080}})
+(def +layouts+
+  {"mobile"
+   {:name "Mobile"
+    :id "mobile"
+    :width 320
+    :height 480}
+   "tablet"
+   {:name "Tablet"
+    :id "tablet"
+    :width 1024
+    :height 768}
+   "notebook"
+   {:name "Notebook"
+    :id "notebook"
+    :width 1366
+    :height 768}
+   "desktop"
+   {:name "Desktop"
+    :id "desktop"
+    :width 1920
+    :height 1080}})
 
 (def ^:static ^:private
   +project-defaults+ {:name ""
                       :width 1920
                       :height 1080
-                      :layout :desktop})
+                      :layout "desktop"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Top Menu
