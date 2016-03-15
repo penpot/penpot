@@ -40,18 +40,9 @@
                         :timeout timeout
                         :content message}))))
 
-;; (set-timeout! 1000 #(error "Something wrong has happened 1"))
-;; (set-timeout! 2000 #(error "Something wrong has happened 2"))
-;; (set-timeout! 3000 #(error "Something wrong has happened 3"))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn messages-will-update
-  [own]
-  (println "messages-will-update")
-  own)
 
 (defn messages-render
   [own]
@@ -69,6 +60,5 @@
 (def ^:const messages
   (mx/component
    {:render messages-render
-    :will-update messages-will-update
     :name "messages"
     :mixins [mx/static rum/reactive]}))
