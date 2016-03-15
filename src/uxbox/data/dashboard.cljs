@@ -63,44 +63,28 @@
         (assoc-in $ [:dashboard :section] section)
         (update $ :dashboard merge-if-not-exists
                 {:collection-type :builtin
-                 :collection-id 1})))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/initialize>"))))
+                 :collection-id 1})))))
 
 (defn set-project-ordering
   [order]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:dashboard :project-order] order))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/set-project-ordering>"))))
+      (assoc-in state [:dashboard :project-order] order))))
 
 (defn set-project-filtering
   [term]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:dashboard :project-filter] term))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/set-project-filtering>"))))
+      (assoc-in state [:dashboard :project-filter] term))))
 
 (defn clear-project-filtering
   []
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:dashboard :project-filter] ""))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/clear-project-filtering>"))))
+      (assoc-in state [:dashboard :project-filter] ""))))
 
 (defn set-collection-type
   [type]
@@ -115,22 +99,14 @@
       (-apply-update [_ state]
         (as-> state $
           (assoc-in $ [:dashboard :collection-type] type)
-          (select-first $)))
-
-      IPrintWithWriter
-      (-pr-writer [mv writer _]
-        (-write writer "#<event:u.d.d/set-collection-type>")))))
+          (select-first $))))))
 
 (defn set-collection
   [id]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:dashboard :collection-id] id))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/set-collection>"))))
+      (assoc-in state [:dashboard :collection-id] id))))
 
 (defn mk-color-collection
   []
@@ -143,22 +119,14 @@
         (-> state
             (assoc-in [:colors-by-id id] coll)
             (assoc-in [:dashboard :collection-id] id)
-            (assoc-in [:dashboard :collection-type] :own))))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/mk-color-collection>"))))
+            (assoc-in [:dashboard :collection-type] :own))))))
 
 (defn rename-color-collection
   [id name]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:colors-by-id id :name] name))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/rename-color-collection>"))))
+      (assoc-in state [:colors-by-id id :name] name))))
 
 (defn delete-color-collection
   [id]
@@ -167,11 +135,7 @@
     (-apply-update [_ state]
       (let [state (update state :colors-by-id dissoc id)
             colls (sort-by :id (vals (:colors-by-id state)))]
-        (assoc-in state [:dashboard :collection-id] (:id (first colls)))))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/rename-color-collection>"))))
+        (assoc-in state [:dashboard :collection-id] (:id (first colls)))))))
 
 (defn replace-color
   "Add or replace color in a collection."
@@ -185,11 +149,7 @@
           (disj $ from)
           (conj $ to)
           (assoc-in state [:colors-by-id id :colors] $))
-        state))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/replace-color>"))))
+        state))))
 
 (defn remove-color
   "Remove color in a collection."
@@ -202,9 +162,5 @@
         (as-> colors $
           (disj $ color)
           (assoc-in state [:colors-by-id id :colors] $))
-        state))
-
-    IPrintWithWriter
-    (-pr-writer [mv writer _]
-      (-write writer "#<event:u.d.d/remove-color>"))))
+        state))))
 
