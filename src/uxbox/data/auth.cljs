@@ -13,12 +13,12 @@
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
-            [uxbox.util.time :as time]))
+            [uxbox.locales :refer (tr)]
+            [uxbox.ui.messages :as uum]))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Schemas
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Schema
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const +login-schema+
   {:username [sc/required sc/string]
@@ -30,33 +30,24 @@
    :photo [sc/required sc/string]
    :fullname [sc/required sc/string]})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- login-success
-  [{:keys [full photo username email] :as params}]
-  (sc/validate! +user-schema+ params)
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc state :auth params))
-
-    rs/EffectEvent
-    (-apply-effect [_ state]
-      (r/go :dashboard/projects))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn login
   [{:keys [username password] :as params}]
   (sc/validate! +login-schema+ params)
   (letfn [(on-error [err]
-            (rx/of (login-success {})))
+            (uum/error (tr "errors.auth"))
+            (rx/empty))
           (on-success [value]
-            (rx/of (login-success value)))]
+            (rx/of (rs/swap #(assoc % :auth value))
+                   (r/navigate :dashboard/projects)))]
     (reify
       rs/WatchEvent
       (-apply-watch [_ state]
-        (->> (rp/do :login params)
+        (->> (rp/do :login (merge params {:scope "webapp"}))
+             (rx/from-promise)
              (rx/flat-map on-success)
              (rx/catch on-error))))))
 
