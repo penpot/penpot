@@ -75,7 +75,7 @@
    (let [vm (js/moment v)]
      (case fmt
        :unix (.unix vm)
-       :offset (.valueOf v)
+       :offset (.valueOf vm)
        :iso (.toISOString vm)
        (.format vm fmt)))))
 
