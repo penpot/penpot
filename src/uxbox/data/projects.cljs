@@ -161,16 +161,20 @@
   "A shortcut event that redirects the user to the
   first page of the project."
   ([projectid]
-   (go-to projectid nil))
+   (reify
+     rs/WatchEvent
+     (-apply-watch [_ state]
+       (println "go-to" projectid)
+       (let [pages (stpr/project-pages state projectid)
+             pageid (:id (first pages))
+             params {:project-uuid projectid
+                     :page-uuid pageid}]
+         (rx/of (r/navigate :workspace/page params))))))
+
   ([projectid pageid]
    (reify
-     rs/EffectEvent
-     (-apply-effect [_ state]
-       (if pageid
-         (rs/emit! (r/navigate :workspace/page {:project-uuid projectid
-                                                :page-uuid pageid}))
-         (let [pages (stpr/project-pages state projectid)
-               pageid (:id (first pages))]
-           (println "selected" pageid "projectid" projectid)
-           (rs/emit! (r/navigate :workspace/page {:project-uuid projectid
-                                                  :page-uuid pageid}))))))))
+     rs/WatchEvent
+     (-apply-watch [_ state]
+       (let [params {:project-uuid projectid
+                     :page-uuid pageid}]
+         (rx/of (r/navigate :workspace/page params)))))))
