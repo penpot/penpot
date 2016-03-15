@@ -6,13 +6,15 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.data.projects
-  (:require [bouncer.validators :as v]
-            [cuerdas.core :as str]
+  (:require [cuerdas.core :as str]
+            [promesa.core :as p]
+            [beicon.core :as rx]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
-            [uxbox.util.time :as time]
+            [uxbox.repo :as rp]
+            [uxbox.util.datetime :as dt]
             [uxbox.state.project :as stpr]
             [uxbox.util.data :refer (without-keys)]))
 
@@ -66,6 +68,31 @@
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn load-projects
+  []
+  (letfn [(transform [state projects]
+            (reduce stpr/assoc-project state projects))
+          (on-loaded [projects]
+            #(transform % projects))]
+    (reify
+      rs/WatchEvent
+      (-apply-watch [_ state]
+        (-> (rp/do :fetch/projects)
+            (p/then on-loaded))))))
+
+(defn load-pages
+  []
+  (letfn [(transform [state pages]
+            (reduce stpr/assoc-page state pages))
+          (on-loaded [pages]
+            #(transform % pages))]
+    (reify
+      rs/WatchEvent
+      (-apply-watch [_ state]
+        (println "load-pages")
+        (-> (rp/do :fetch/pages)
+            (p/then on-loaded))))))
+
 (defn create-page
   [{:keys [name width height project layout] :as data}]
   (sc/validate! +create-page-schema+ data)
@@ -74,7 +101,7 @@
     (-apply-update [_ state]
       (let [page {:id (random-uuid)
                   :project project
-                  :created (time/now :unix)
+                  :created (dt/now)
                   :layout layout
                   :shapes []
                   :name name
@@ -113,7 +140,7 @@
       (-apply-update [_ state]
         (let [proj {:id uuid
                     :name name
-                    :created (time/now :unix)}]
+                    :created (dt/now)}]
           (stpr/assoc-project state proj)))
 
       rs/EffectEvent
