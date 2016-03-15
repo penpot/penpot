@@ -25,3 +25,17 @@
 (defmethod urc/-do :fetch/pages
   [type data]
   (urc/req! {:url (str urc/+uri+ "/pages") :method :get}))
+
+(defmethod urc/-do :create/page
+  [type {:keys [id] :as data}]
+  (let [params {:url (str urc/+uri+ "/pages")
+                :method :post
+                :body data}]
+    (urc/req! params)))
+
+(defmethod urc/-do :update/page
+  [type {:keys [id] :as data}]
+  (let [params {:url (str urc/+uri+ "/pages/" id)
+                :method :put
+                :body data}]
+    (urc/req! params)))
