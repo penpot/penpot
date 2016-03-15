@@ -113,7 +113,6 @@
   [own local page]
   (let [edition? (:id page)
         page (merge page @local)
-        ;; {:keys [name width height] :or {name ""} :as page} (merge page @local)
         valid? (and (not (str/empty? (str/trim (:name page ""))))
                     (pos? (:width page))
                     (pos? (:height page)))]

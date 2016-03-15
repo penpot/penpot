@@ -11,11 +11,13 @@
             [beicon.core :as rx]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
-            [uxbox.state :as st]
-            [uxbox.schema :as sc]
             [uxbox.repo :as rp]
-            [uxbox.util.datetime :as dt]
+            [uxbox.locales :refer (tr)]
+            [uxbox.schema :as sc]
+            [uxbox.state :as st]
             [uxbox.state.project :as stpr]
+            [uxbox.ui.messages :as uum]
+            [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -103,18 +105,24 @@
 (defn create-page
   [{:keys [name width height project layout] :as data}]
   (sc/validate! +create-page-schema+ data)
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [page {:id (random-uuid)
-                  :project project
-                  :created (dt/now)
-                  :layout layout
-                  :shapes []
-                  :name name
-                  :width width
-                  :height height}]
-        (stpr/assoc-page state page)))))
+  (letfn [(create []
+            (rp/do :create/page {:project project
+                                 :layout layout
+                                 :data []
+                                 :name name
+                                 :width width
+                                 :height height}))
+          (on-created [page]
+            #(stpr/assoc-page % page))
+
+          (on-failed [page]
+            (uum/error (tr "errors.auth")))]
+    (reify
+      rs/WatchEvent
+      (-apply-watch [_ state]
+        (-> (create)
+            (p/then on-created)
+            (p/catch on-failed))))))
 
 (defn update-page
   [{:keys [id name width height layout] :as data}]
@@ -126,7 +134,15 @@
                         (when width {:width width})
                         (when height {:height height})
                         (when name {:name name}))]
-        (assoc-in state [:pages-by-id id] page)))))
+        (assoc-in state [:pages-by-id id] page)))
+
+    rs/WatchEvent
+    (-apply-watch [_ state]
+      (let [page (get-in state [:pages-by-id id])
+            on-success (fn [{:keys [version]}]
+                         #(assoc-in % [:pages-by-id id :version] version))]
+        (-> (rp/do :update/page page)
+            (p/then on-success))))))
 
 (defn delete-page
   [pageid]
@@ -171,7 +187,6 @@
    (reify
      rs/WatchEvent
      (-apply-watch [_ state]
-       (println "go-to" projectid)
        (let [pages (stpr/project-pages state projectid)
              pageid (:id (first pages))
              params {:project-uuid projectid
