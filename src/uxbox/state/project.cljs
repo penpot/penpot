@@ -5,8 +5,8 @@
   "A reduce function for assoc the project
   to the state map."
   [state proj]
-  (let [uuid (:id proj)]
-    (update-in state [:projects-by-id] assoc uuid proj)))
+  (let [id (:id proj)]
+    (update-in state [:projects-by-id id] merge proj)))
 
 (defn dissoc-project
   "A reduce function for dissoc the project
