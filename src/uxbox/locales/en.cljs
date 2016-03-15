@@ -37,4 +37,6 @@
    "ds.help.circle" "Circle (Ctrl + E)"
    "ds.help.line" "Line (Ctrl + L)"
 
+   "errors.auth" "Username or passwords seems to be wrong."
+
    })
