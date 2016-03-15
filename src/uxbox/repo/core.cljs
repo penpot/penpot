@@ -15,8 +15,7 @@
             [uxbox.transit :as t]
             [uxbox.state :as ust]))
 
-(def ^:private ^:const +uri+
-  "http://127.0.0.1:5050/api")
+(goog-define url "http://127.0.0.1:5050/api")
 
 (def ^:private +storage+
   local-storage)

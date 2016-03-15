@@ -16,6 +16,8 @@
                 :asset-path "js"
                 :parallel-build false
                 :optimizations :none
+                :closure-defines {"uxbox.repo.core.url"
+                                  "https://test.uxbox.io/api"}
                 :warnings {:ns-var-clash false}
                 :pretty-print true
                 :language-in  :ecmascript5

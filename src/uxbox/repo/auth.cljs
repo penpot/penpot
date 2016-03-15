@@ -20,7 +20,7 @@
 
 (defn- request-token
   [params]
-  (urc/req! {:url (str urc/+uri+ "/auth/token")
+  (urc/req! {:url (str urc/url "/auth/token")
              :method :post
              :auth false
              :body params}))
