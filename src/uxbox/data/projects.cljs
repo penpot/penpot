@@ -23,22 +23,22 @@
 ;; FIXME use only one ns for validators
 
 (def ^:static +project-schema+
-  {:name [v/required v/string]
-   :width [v/required v/integer]
-   :height [v/required v/integer]
+  {:name [sc/required sc/string]
+   :width [sc/required sc/integer]
+   :height [sc/required sc/integer]
    :layout [sc/keyword]})
 
 (def ^:static +create-page-schema+
-  {:name [v/required v/string]
+  {:name [sc/required sc/string]
    :layout [sc/keyword]
-   :width [v/required v/integer]
-   :height [v/required v/integer]
-   :project [v/required sc/uuid]})
+   :width [sc/required sc/integer]
+   :height [sc/required sc/integer]
+   :project [sc/required sc/uuid]})
 
 (def ^:static +update-page-schema+
-  {:name [v/required v/string]
-   :width [v/required v/integer]
-   :height [v/required v/integer]
+  {:name [sc/required sc/string]
+   :width [sc/required sc/integer]
+   :height [sc/required sc/integer]
    :layout [sc/keyword]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
