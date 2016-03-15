@@ -71,27 +71,34 @@
 (defn load-projects
   []
   (letfn [(transform [state projects]
-            (reduce stpr/assoc-project state projects))
+            (as-> state $
+              (reduce stpr/assoc-project $ projects)
+              (assoc $ ::projects-loaded true)))
           (on-loaded [projects]
             #(transform % projects))]
     (reify
       rs/WatchEvent
       (-apply-watch [_ state]
-        (-> (rp/do :fetch/projects)
-            (p/then on-loaded))))))
+        (if (::projects-loaded state)
+          (rx/empty)
+          (-> (rp/do :fetch/projects)
+              (p/then on-loaded)))))))
 
 (defn load-pages
   []
   (letfn [(transform [state pages]
-            (reduce stpr/assoc-page state pages))
+            (as-> state $
+              (reduce stpr/assoc-page $ pages)
+              (assoc $ ::pages-loaded true)))
           (on-loaded [pages]
             #(transform % pages))]
     (reify
       rs/WatchEvent
       (-apply-watch [_ state]
-        (println "load-pages")
-        (-> (rp/do :fetch/pages)
-            (p/then on-loaded))))))
+        (if (::pages-loaded state)
+          (rx/empty)
+          (-> (rp/do :fetch/pages)
+              (p/then on-loaded)))))))
 
 (defn create-page
   [{:keys [name width height project layout] :as data}]
