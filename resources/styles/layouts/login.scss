@@ -40,7 +40,7 @@
       .input-text {
         background-color: transparent;
         border-color: $color-gray;
-        color: $color-gray-darker;
+        color: $color-gray-lighter;
         font-size: $fs18;
 
         @include placeholder {
