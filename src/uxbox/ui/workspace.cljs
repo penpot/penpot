@@ -6,6 +6,7 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.projects :as dp]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
             [uxbox.ui.core :as uuc]
@@ -66,7 +67,9 @@
 (defn- workspace-will-mount
   [own]
   (let [[projectid pageid] (:rum/props own)]
-    (rs/emit! (dw/initialize projectid pageid))
+    (rs/emit! (dw/initialize projectid pageid)
+              (dp/load-projects)
+              (dp/load-pages))
     own))
 
 (defn- workspace-did-mount

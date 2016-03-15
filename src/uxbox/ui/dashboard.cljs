@@ -7,6 +7,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.util.dom :as dom]
             [uxbox.data.dashboard :as dd]
+            [uxbox.data.projects :as dp]
             [uxbox.ui.messages :as uum]
             [uxbox.ui.library-bar :as ui.library-bar]
             [uxbox.ui.dashboard.header :refer (header)]
@@ -31,7 +32,9 @@
 
 (defn projects-page-will-mount
   [own]
-  (rs/emit! (dd/initialize :dashboard/projects))
+  (rs/emit! (dd/initialize :dashboard/projects)
+            (dp/load-projects)
+            (dp/load-pages))
   own)
 
 (defn projects-page-transfer-state
