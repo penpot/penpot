@@ -31,7 +31,7 @@
    "m" datetime-read-handler})
 
 (def ^:privare +write-handlers+
-  {js/moment datetime-write-handler})
+  {dt/DateTime datetime-write-handler})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Api
