@@ -52,8 +52,7 @@
 (defonce ^:const ^:private +bus+
   (rx/bus))
 
-(defonce ^:const +stream+
-  (rx/to-observable +bus+))
+(defonce ^:const +stream+ +bus+)
 
 (defn- init-handler
   []
