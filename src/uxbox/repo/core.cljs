@@ -43,7 +43,7 @@
 (defn- send!
   [{:keys [body headers auth method] :or {auth true} :as request}]
   (let [headers (merge {}
-                       (when (not= method :get) +headers+)
+                       (when body +headers+)
                        headers
                        (when auth (auth-headers)))
         request (merge (assoc request :headers headers)
