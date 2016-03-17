@@ -230,10 +230,10 @@
   [local]
   (html
    [:div.input-radio.radio-primary
-    (layout-input local :mobile)
-    (layout-input local :tablet)
-    (layout-input local :notebook)
-    (layout-input local :desktop)]))
+    (layout-input local "mobile")
+    (layout-input local "tablet")
+    (layout-input local "notebook")
+    (layout-input local "desktop")]))
 
 (defn- new-project-lightbox-render
   [own]
