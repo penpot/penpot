@@ -37,9 +37,17 @@
    :layout [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
+   :data [sc/required]
    :project [sc/required sc/uuid]})
 
 (def ^:static +update-page-schema+
+  {:name [sc/required sc/string]
+   :width [sc/required sc/integer]
+   :height [sc/required sc/integer]
+   :data [sc/required]
+   :layout [sc/required sc/string]})
+
+(def ^:static +update-page-metadata-schema+
   {:name [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
@@ -126,7 +134,7 @@
 
 (defn update-page
   [{:keys [id name width height layout] :as data}]
-  (sc/validate! +create-page-schema+ data)
+  (sc/validate! +update-page-schema+ data)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
@@ -157,28 +165,35 @@
 (defn create-project
   [{:keys [name width height layout] :as data}]
   (sc/validate! +project-schema+ data)
-  (let [uuid (random-uuid)]
+  (letfn [(on-success [project]
+            (rx/of (rs/swap #(stpr/assoc-project % project))
+                   (create-page (assoc data
+                                       :project (:id project)
+                                       :name "Page 1"
+                                       :data []))))
+          (on-failure [err]
+            (println "on-failure" err)
+            (uum/error (tr "errors.create-project")))]
     (reify
-      rs/UpdateEvent
-      (-apply-update [_ state]
-        (let [proj {:id uuid
-                    :name name
-                    :created (dt/now)}]
-          (stpr/assoc-project state proj)))
+      rs/WatchEvent
+      (-apply-watch [_ state]
+        (->> (rp/do :create/project {:name name})
+             (rx/from-promise)
+             (rx/mapcat on-success)
+             (rx/catch on-failure))))))
 
-      rs/EffectEvent
-      (-apply-effect [_ state]
-        (rs/emit! (create-page {:name "Page 1"
-                                :layout layout
-                                :width width
-                                :height height
-                                :project uuid}))))))
 (defn delete-project
   [proj]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (stpr/dissoc-project state proj))))
+  (letfn [(on-success [_]
+            (rs/swap #(stpr/dissoc-project % proj)))
+          (on-failure [e]
+            (uum/error (tr "errors.delete-project")))]
+    (reify
+      rs/WatchEvent
+      (-apply-watch [_ state]
+        (->> (rp/do :delete/project proj)
+             (p/map on-success)
+             (p/err on-failure))))))
 
 (defn go-to
   "A shortcut event that redirects the user to the
