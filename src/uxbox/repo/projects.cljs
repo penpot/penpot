@@ -26,6 +26,19 @@
   [type data]
   (urc/req! {:url (str urc/url "/pages") :method :get}))
 
+(defmethod urc/-do :create/project
+  [_ data]
+  (let [params {:url (str urc/url "/projects")
+                :method :post
+                :body data}]
+    (urc/req! params)))
+
+(defmethod urc/-do :delete/project
+  [_ {:keys [id]}]
+  (let [params {:url (str urc/url "/projects/" id)
+                :method :delete}]
+    (urc/req! params)))
+
 (defmethod urc/-do :create/page
   [type {:keys [id] :as data}]
   (let [params {:url (str urc/url "/pages")
