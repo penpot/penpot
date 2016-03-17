@@ -79,7 +79,8 @@
 (defn project-sort-render
   []
   (let [ordering (rum/react project-ordering-l)
-        change-order #(rs/emit! (dd/set-project-ordering (keyword (.-value (.-target %)))))]
+        change-order #(rs/emit! (dd/set-project-ordering
+                                 (keyword (.-value (.-target %)))))]
     (html
      [:div
        [:span (tr "ds.project-ordering")]

@@ -112,7 +112,7 @@
 (defn- page-form-lightbox-render
   [own local page]
   (let [edition? (:id page)
-        page (merge page @local)
+        page (merge page @local {:data []})
         valid? (and (not (str/empty? (str/trim (:name page ""))))
                     (pos? (:width page))
                     (pos? (:height page)))]
