@@ -27,7 +27,7 @@
             (let [payload (:payload event)
                   stoper (->> uuc/actions-s
                               (rx/map :type)
-                              (rx/filter #(= :nothing %))
+                              (rx/filter #(empty? %))
                               (rx/take 1))]
               (as-> uuwb/mouse-delta-s $
                 (rx/take-until stoper $)
@@ -40,5 +40,5 @@
 
     (as-> uuc/actions-s $
       (rx/dedupe $)
-      (rx/filter #(= (:type %) :resize/shape) $)
+      (rx/filter #(= (:type %) "ui.shape.resize") $)
       (rx/on-value $ init))))

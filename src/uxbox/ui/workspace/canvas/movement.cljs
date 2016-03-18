@@ -26,15 +26,14 @@
                 (rs/emit! (uds/move-shape id delta)))))
 
           (init []
-            (as-> uuc/actions-s $
-              (rx/map :type $)
-              (rx/filter #(not= % :shape/movement) $)
-              (rx/take 1 $)
-              (rx/take-until $ uuwb/mouse-delta-s)
-              (rx/on-value $ on-value)))]
+            (let [stoper (->> uuc/actions-s
+                              (rx/map :type)
+                              (rx/filter empty?)
+                              (rx/take 1))]
+              (as-> uuwb/mouse-delta-s $
+                (rx/take-until stoper $)
+                (rx/on-value $ on-value))))]
 
     (as-> uuc/actions-s $
-      (rx/map :type $)
-      (rx/dedupe $)
-      (rx/filter #(= :shape/movement %) $)
+      (rx/filter #(= "ui.shape.move" (:type %)) $)
       (rx/on-value $ init))))

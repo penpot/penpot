@@ -60,7 +60,7 @@
 
               (let [stoper (->> uuc/actions-s
                                 (rx/map :type)
-                                (rx/filter #(not= % :shape/movement))
+                                (rx/filter #(empty? %))
                                 (rx/take 1))]
                 (as-> wb/mouse-canvas-s $
                   (rx/take-until stoper $)
@@ -97,5 +97,5 @@
     (as-> uuc/actions-s $
       (rx/map :type $)
       (rx/dedupe $)
-      (rx/filter #(= :draw/shape %) $)
+      (rx/filter #(= "ui.shape.draw" %) $)
       (rx/on-value $ init))))

@@ -28,7 +28,7 @@
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
-          (uuc/acquire-action! :shape/movement)
+          (uuc/acquire-action! "ui.shape.move")
           (rs/emit! (dw/select-shape id)))
 
         (and (not selected?) (not (empty? selected)))
@@ -42,7 +42,7 @@
         :else
         (do
           (dom/stop-propagation event)
-          (uuc/acquire-action! :shape/movement))))))
+          (uuc/acquire-action! "ui.shape.move"))))))
 
 (defn on-mouse-up
   [event {:keys [id group] :as shape}]
@@ -53,7 +53,7 @@
     :else
     (do
       (dom/stop-propagation event)
-      (uuc/release-all-actions!))))
+      (uuc/release-action! "ui.shape"))))
 
 (declare handlers)
 
@@ -80,11 +80,12 @@
   [own shape]
   (letfn [(on-mouse-down [vid event]
             (dom/stop-propagation event)
-            (uuc/acquire-action! :resize/shape {:vid vid :shape (:id shape)}))
+            (uuc/acquire-action! "ui.shape.resize"
+                                 {:vid vid :shape (:id shape)}))
 
           (on-mouse-up [vid event]
             (dom/stop-propagation event)
-            (uuc/release-action! :resize/shape))]
+            (uuc/release-action! "ui.shape.resize"))]
     (let [{:keys [x y width height]} (ush/outer-rect' shape)]
       (html
        [:g.controls

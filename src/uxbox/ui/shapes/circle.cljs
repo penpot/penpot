@@ -43,11 +43,12 @@
   [own shape]
   (letfn [(on-mouse-down [vid event]
             (dom/stop-propagation event)
-            (uuc/acquire-action! :resize/shape {:vid vid :shape (:id shape)}))
+            (uuc/acquire-action! "ui.shape.resize"
+                                 {:vid vid :shape (:id shape)}))
 
           (on-mouse-up [vid event]
             (dom/stop-propagation event)
-            (uuc/release-action! :resize/shape))]
+            (uuc/release-action! "ui.shape.resize"))]
     (let [{:keys [x y width height]} (ush/outer-rect' shape)]
       (html
        [:g.controls

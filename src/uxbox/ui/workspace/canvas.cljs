@@ -92,11 +92,12 @@
               (when-not (empty? (:selected workspace))
                 (rs/emit! (dw/deselect-all)))
               (if-let [shape (:drawing workspace)]
-                (uuc/acquire-action! :draw/shape)
-                (uuc/acquire-action! :draw/selrect)))
+                (uuc/acquire-action! "ui.shape.draw")
+                (uuc/acquire-action! "ui.selrect")))
             (on-mouse-up [event]
               (dom/stop-propagation event)
-              (uuc/release-all-actions!))]
+              (uuc/release-action! "ui.shape"
+                                   "ui.selrect"))]
       (html
        [:svg.viewport {:width uuwb/viewport-width
                        :height uuwb/viewport-height
@@ -132,11 +133,11 @@
 
           (on-key-down [event]
             (when (kbd/space? event)
-              (uuc/acquire-action! :scroll/viewport)))
+              (uuc/acquire-action! "ui.workspace.scroll")))
 
           (on-key-up [event]
             (when (kbd/space? event)
-              (uuc/release-action! :scroll/viewport)))
+              (uuc/release-action! "ui.workspace.scroll")))
 
           (on-mousemove [event]
             (let [wpt (gpt/point (.-clientX event)

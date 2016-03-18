@@ -84,7 +84,7 @@
           (init []
             (let [stoper (->> uuc/actions-s
                               (rx/map :type)
-                              (rx/filter #(not= % :draw/selrect))
+                              (rx/filter #(empty? %))
                               (rx/take 1))
                   pos @wb/mouse-viewport-a]
               (reset! selrect-pos {:start pos :current pos})
@@ -96,6 +96,6 @@
     (as-> uuc/actions-s $
       (rx/map :type $)
       (rx/dedupe $)
-      (rx/filter #(= :draw/selrect %) $)
+      (rx/filter #(= "ui.selrect"  %) $)
       (rx/on-value $ init))))
 
