@@ -6,7 +6,8 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.data.auth
-  (:require [beicon.core :as rx]
+  (:require [hodgepodge.core :refer [local-storage]]
+            [beicon.core :as rx]
             [promesa.core :as p]
             [uxbox.repo :as rp]
             [uxbox.rstore :as rs]
@@ -15,6 +16,21 @@
             [uxbox.schema :as sc]
             [uxbox.locales :refer (tr)]
             [uxbox.ui.messages :as uum]))
+
+;; --- Logged In
+
+(defrecord LoggedIn [data]
+  rs/UpdateEvent
+  (-apply-update [this state]
+    (assoc state :auth data))
+
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (rx/of (r/navigate :dashboard/projects)))
+
+  rs/EffectEvent
+  (-apply-effect [this state]
+    (assoc! local-storage ::auth data)))
 
 ;; --- Login
 
@@ -25,11 +41,9 @@
               (uum/error (tr "errors.auth"))
               (rx/empty))
             (on-success [{value :payload}]
-              (rx/of (rs/swap #(assoc % :auth value))
-                     (r/navigate :dashboard/projects)))]
-
+              (->LoggedIn value))]
       (->> (rp/do :login (merge (into {} this) {:scope "webapp"}))
-           (rx/mapcat on-success)
+           (rx/map on-success)
            (rx/catch on-error)))))
 
 (def ^:const ^:private +login-schema+
