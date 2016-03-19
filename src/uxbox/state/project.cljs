@@ -69,5 +69,5 @@
   [state projectid]
   (->> (vals (:pages-by-id state))
        (filter #(= projectid (:project %)))
-       (sort-by :created)))
+       (sort-by :created-at)))
 
