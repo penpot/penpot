@@ -24,7 +24,7 @@
 ;; of `UpdateEvent`, `WatchEvent` or `EffectEvent`.
 
 (defprotocol WatchEvent
-  (-apply-watch [event state]))
+  (-apply-watch [event state s]))
 
 ;; An abstraction for perform just side effects. It
 ;; receives state and its return value is completly
@@ -90,9 +90,10 @@
   "Initializes the stream event loop and
   return a stream with model changes."
   [state]
-  (let [watch-s  (rx/filter watch? bus)
-        effect-s (rx/filter effect? bus)
-        update-s (rx/filter update? bus)
+  (let [stream (rx/map identity bus)
+        watch-s  (rx/filter watch? stream)
+        effect-s (rx/filter effect? stream)
+        update-s (rx/filter update? stream)
         state-s (->> update-s
                      (rx/scan #(-apply-update %2 %1) state)
                      (rx/share))]
@@ -101,7 +102,7 @@
     ;; pushed to the event-stream bus
     (as-> watch-s $
       (rx/with-latest-from vector state-s $)
-      (rx/flat-map (fn [[event model]] (-apply-watch event model)) $)
+      (rx/flat-map (fn [[event model]] (-apply-watch event model stream)) $)
       (rx/on-value $ emit!))
 
     ;; Process effects: combine with the latest model to process the new effect
