@@ -20,12 +20,6 @@
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys)]))
 
-;; (def ^:static +update-page-metadata-schema+
-;;   {:name [sc/required sc/string]
-;;    :width [sc/required sc/integer]
-;;    :height [sc/required sc/integer]
-;;    :layout [sc/required sc/string]})
-
 ;; --- Pages Fetched
 
 (defrecord PagesFetched [pages]
@@ -86,11 +80,12 @@
 
 ;; --- Update Page
 
-(defrecord UpdatePage [id name width height layout]
+(defrecord UpdatePage [id name width height layout data]
   rs/UpdateEvent
   (-apply-update [_ state]
     (letfn [(updater [page]
               (merge page
+                     (when data {:data data})
                      (when width {:width width})
                      (when height {:height height})
                      (when name {:name name})))]
@@ -119,6 +114,45 @@
   (sc/validate! +update-page-schema+ data)
   (map->UpdatePage data))
 
+;; --- Update Page Metadata
+
+;; This is a simplified version of `UpdatePage` event
+;; that does not sends the heavyweiht `:data` attribute
+;; and only serves for update other page data.
+
+(defrecord UpdatePageMetadata [id name width height layout]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (letfn [(updater [page]
+              (merge page
+                     (when width {:width width})
+                     (when height {:height height})
+                     (when name {:name name})))]
+      (update-in state [:pages-by-id id] updater)))
+
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (println "UpdatePageMetadata" "-apply-watch")
+    (letfn [(on-success [{page :payload}]
+              (println "on-success")
+              #(assoc-in % [:pages-by-id id :version] (:version page)))
+            (on-failure [e]
+              (println "on-failure" e)
+              (uum/error (tr "errors.page-update"))
+              (rx/empty))]
+      (->> (rp/do :update/page-metadata (into {} this))
+           (rx/map on-success)
+           (rx/catch on-failure)))))
+
+(def ^:static +update-page-metadata-schema+
+  (dissoc +update-page-schema+ :data))
+
+(defn update-page-metadata
+  [data]
+  (sc/validate! +update-page-metadata-schema+ data)
+  (map->UpdatePageMetadata (dissoc data :data)))
+
+
 ;; --- Delete Page (by id)
 
 (defrecord DeletePage [id]
@@ -127,7 +161,6 @@
     (letfn [(on-success [_]
               (rs/swap #(stpr/dissoc-page % id)))
             (on-failure [e]
-              (println "ERROR" e)
               (uum/error (tr "errors.delete-page"))
               (rx/empty))]
       (->> (rp/do :delete/page id)

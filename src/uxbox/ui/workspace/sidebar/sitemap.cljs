@@ -135,7 +135,7 @@
               (dom/prevent-default e)
               (lightbox/close!)
               (if edition?
-                (rs/emit! (udp/update-page page))
+                (rs/emit! (udp/update-page-metadata page))
                 (rs/emit! (udp/create-page page))))]
       (html
        [:div.lightbox-body
