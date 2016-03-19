@@ -86,6 +86,12 @@
 
 (enable-console-print!)
 
+(defn- on-error
+  "A default error handler."
+  [e]
+  (println "Unexpected error: " e)
+  (rx/empty))
+
 (defn init
   "Initializes the stream event loop and
   return a stream with model changes."
@@ -95,6 +101,7 @@
         update-s (rx/filter update? stream)
         state-s (->> update-s
                      (rx/scan #(-apply-update %2 %1) state)
+                     (rx/catch on-error)
                      (rx/share))]
 
     ;; Process event sources: combine with the latest model and the result will be
@@ -102,6 +109,7 @@
     (as-> watch-s $
       (rx/with-latest-from vector state-s $)
       (rx/flat-map (fn [[event model]] (-apply-watch event model stream)) $)
+      (rx/catch on-error $)
       (rx/on-value $ emit!))
 
     ;; Process effects: combine with the latest model to process the new effect
