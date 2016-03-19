@@ -7,15 +7,16 @@
 (ns uxbox.repo
   "A main interface for access to remote resources."
   (:refer-clojure :exclude [do])
-  (:require [uxbox.repo.core :as urc]
+  (:require [uxbox.repo.core :refer (-do)]
             [uxbox.repo.auth]
             [uxbox.repo.projects]
+            [uxbox.repo.pages]
             [beicon.core :as rx]))
 
 (defn do
   "Perform a side effectfull action accesing
   remote resources."
   ([type]
-   (urc/-do type nil))
+   (-do type nil))
   ([type data]
-   (urc/-do type data)))
+   (-do type data)))

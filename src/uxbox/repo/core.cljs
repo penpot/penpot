@@ -65,10 +65,11 @@
     (->> (http/send! request)
          (rx/from-promise)
          (rx/map conditional-decode)
-         (rx/mapcat handle-http-status)
-         (rx/tap #(println "tt:" %)))))
- ;; "tt: "))))
+         (rx/mapcat handle-http-status))))
 
 (defmulti -do
   (fn [type data] type))
 
+(defmethod -do :default
+  [type data]
+  (throw (ex-info (str "No implementation found for " type) {:data data})))

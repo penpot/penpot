@@ -19,15 +19,6 @@
   (let [url (str url "/projects")]
     (send! {:url url :method :get})))
 
-(defmethod -do :fetch/pages
-  [type data]
-  (send! {:url (str url "/pages") :method :get}))
-
-(defmethod -do :fetch/pages-by-project
-  [type {:keys [project] :as params}]
-  (let [url (str url "/projects/" project "/pages")]
-    (send! {:method :get :url url})))
-
 (defmethod -do :create/project
   [_ data]
   (let [params {:url (str url "/projects")
@@ -39,22 +30,3 @@
   [_ id]
   (let [url (str url "/projects/" id)]
     (send! {:url url :method :delete})))
-
-(defmethod -do :delete/page
-  [_ id]
-  (let [url (str url "/pages/" id)]
-    (send! {:url url :method :delete})))
-
-(defmethod -do :create/page
-  [type {:keys [id] :as data}]
-  (let [params {:url (str url "/pages")
-                :method :post
-                :body data}]
-    (send! params)))
-
-(defmethod -do :update/page
-  [type {:keys [id] :as data}]
-  (let [params {:url (str url "/pages/" id)
-                :method :put
-                :body data}]
-    (send! params)))
