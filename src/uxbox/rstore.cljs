@@ -90,7 +90,7 @@
   "A default error handler."
   [e]
   (println "Unexpected error: " e)
-  (rx/empty))
+  (rx/throw e))
 
 (defn init
   "Initializes the stream event loop and
@@ -102,6 +102,7 @@
         state-s (->> update-s
                      (rx/scan #(-apply-update %2 %1) state)
                      (rx/catch on-error)
+                     (rx/retry 1024)
                      (rx/share))]
 
     ;; Process event sources: combine with the latest model and the result will be
@@ -110,6 +111,7 @@
       (rx/with-latest-from vector state-s $)
       (rx/flat-map (fn [[event model]] (-apply-watch event model stream)) $)
       (rx/catch on-error $)
+      (rx/retry 1024 $)
       (rx/on-value $ emit!))
 
     ;; Process effects: combine with the latest model to process the new effect
