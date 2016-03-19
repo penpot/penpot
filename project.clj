@@ -15,7 +15,7 @@
                  [cljsjs/react "15.0.0-rc.2-0"]
                  [cljsjs/react-dom "15.0.0-rc.2-0"]
                  [cljsjs/moment "2.10.6-3"]
-                 [funcool/lentes "1.0.0"]
+                 [funcool/lentes "1.0.1"]
                  [funcool/httpurr "0.5.0-20160314.065111-4"]
                  [funcool/promesa "1.1.1"]
                  [funcool/beicon "1.1.1"]
