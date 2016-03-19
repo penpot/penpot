@@ -6,49 +6,55 @@
 
 (ns uxbox.repo.projects
   "A main interface for access to remote resources."
-  (:refer-clojure :exclude [do])
-  (:require [httpurr.client.xhr :as http]
-            [httpurr.status :as http.status]
-            [promesa.core :as p :include-macros true]
-            [beicon.core :as rx]
-            [uxbox.repo.core :as urc]
+  (:require [beicon.core :as rx]
+            [uxbox.repo.core :refer (-do url send!)]
             [uxbox.state :as ust]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Login
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod urc/-do :fetch/projects
+(defmethod -do :fetch/projects
   [type data]
-  (urc/req! {:url (str urc/url "/projects") :method :get}))
+  (let [url (str url "/projects")]
+    (send! {:url url :method :get})))
 
-(defmethod urc/-do :fetch/pages
+(defmethod -do :fetch/pages
   [type data]
-  (urc/req! {:url (str urc/url "/pages") :method :get}))
+  (send! {:url (str url "/pages") :method :get}))
 
-(defmethod urc/-do :create/project
+(defmethod -do :fetch/pages-by-project
+  [type {:keys [project] :as params}]
+  (let [url (str url "/projects/" project "/pages")]
+    (send! {:method :get :url url})))
+
+(defmethod -do :create/project
   [_ data]
-  (let [params {:url (str urc/url "/projects")
+  (let [params {:url (str url "/projects")
                 :method :post
                 :body data}]
-    (urc/req! params)))
+    (send! params)))
 
-(defmethod urc/-do :delete/project
-  [_ {:keys [id]}]
-  (let [params {:url (str urc/url "/projects/" id)
-                :method :delete}]
-    (urc/req! params)))
+(defmethod -do :delete/project
+  [_ id]
+  (let [url (str url "/projects/" id)]
+    (send! {:url url :method :delete})))
 
-(defmethod urc/-do :create/page
+(defmethod -do :delete/page
+  [_ id]
+  (let [url (str url "/pages/" id)]
+    (send! {:url url :method :delete})))
+
+(defmethod -do :create/page
   [type {:keys [id] :as data}]
-  (let [params {:url (str urc/url "/pages")
+  (let [params {:url (str url "/pages")
                 :method :post
                 :body data}]
-    (urc/req! params)))
+    (send! params)))
 
-(defmethod urc/-do :update/page
+(defmethod -do :update/page
   [type {:keys [id] :as data}]
-  (let [params {:url (str urc/url "/pages/" id)
+  (let [params {:url (str url "/pages/" id)
                 :method :put
                 :body data}]
-    (urc/req! params)))
+    (send! params)))

@@ -7,11 +7,8 @@
 (ns uxbox.repo.auth
   "A main interface for access to remote resources."
   (:refer-clojure :exclude [do])
-  (:require [httpurr.client.xhr :as http]
-            [httpurr.status :as http.status]
-            [promesa.core :as p :include-macros true]
-            [beicon.core :as rx]
-            [uxbox.repo.core :as urc]
+  (:require [beicon.core :as rx]
+            [uxbox.repo.core :refer (-do url send!)]
             [uxbox.state :as ust]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -20,20 +17,24 @@
 
 (defn- request-token
   [params]
-  (urc/req! {:url (str urc/url "/auth/token")
-             :method :post
-             :auth false
-             :body params}))
+  (let [url (str url "/auth/token")]
+    (send! {:url url
+                :method :post
+                :auth false
+                :body params})))
 
 (defn- request-profile
   []
-  (p/resolved {:fullname "Cirilla Fiona"
-               :photo "/images/favicon.png"
-               :username "cirilla"
-               :email "cirilla@uxbox.io"}))
+  (rx/of {:fullname "Cirilla Fiona"
+          :photo "/images/favicon.png"
+          :username "cirilla"
+          :email "cirilla@uxbox.io"}))
 
-(defmethod urc/-do :login
+(defmethod -do :login
   [type data]
-  (p/alet [authdata (p/await (request-token data))
-           profile (p/await (request-profile))]
-    (merge profile authdata)))
+  (->> (rx/zip (request-token data)
+               (request-profile))
+       (rx/map (fn [[authdata profile]]
+                 (println authdata profile)
+                 (println authdata profile)
+                 (merge authdata profile)))))
