@@ -17,6 +17,7 @@
             [uxbox.shapes :as shapes]
             [uxbox.library :as library]
             [uxbox.data.projects :as dp]
+            [uxbox.data.pages :as udp]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.dashboard.projects :refer (+layouts+)]
             [uxbox.ui.workspace.base :as wb]
@@ -38,7 +39,7 @@
         delete (fn [e]
                  (dom/prevent-default e)
                  (dom/stop-propagation e)
-                 (rs/emit! (dp/delete-page (:id page))
+                 (rs/emit! (udp/delete-page (:id page))
                            (dp/go-to (:project page))))]
     (html
      [:li {:class (when active? "selected")
@@ -112,7 +113,7 @@
 (defn- page-form-lightbox-render
   [own local page]
   (let [edition? (:id page)
-        page (merge page @local {:data []})
+        page (merge page @local {:data nil})
         valid? (and (not (str/empty? (str/trim (:name page ""))))
                     (pos? (:width page))
                     (pos? (:height page)))]
@@ -134,8 +135,8 @@
               (dom/prevent-default e)
               (lightbox/close!)
               (if edition?
-                (rs/emit! (dp/update-page page))
-                (rs/emit! (dp/create-page page))))]
+                (rs/emit! (udp/update-page page))
+                (rs/emit! (udp/create-page page))))]
       (html
        [:div.lightbox-body
         (if edition?

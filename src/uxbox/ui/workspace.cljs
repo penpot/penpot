@@ -7,6 +7,7 @@
             [uxbox.state :as st]
             [uxbox.data.workspace :as dw]
             [uxbox.data.projects :as dp]
+            [uxbox.data.pages :as udp]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
             [uxbox.ui.core :as uuc]
@@ -70,7 +71,7 @@
   (let [[projectid pageid] (:rum/props own)]
     (rs/emit! (dw/initialize projectid pageid)
               (dp/fetch-projects)
-              (dp/fetch-pages projectid))
+              (udp/fetch-pages projectid))
     own))
 
 (defn- workspace-did-mount

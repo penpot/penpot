@@ -7,61 +7,25 @@
 
 (ns uxbox.data.projects
   (:require [cuerdas.core :as str]
-            [promesa.core :as p]
             [beicon.core :as rx]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.repo :as rp]
             [uxbox.locales :refer (tr)]
             [uxbox.schema :as sc]
-            [uxbox.state :as st]
             [uxbox.state.project :as stpr]
-            [uxbox.ui.messages :as uum]
-            [uxbox.util.datetime :as dt]
-            [uxbox.util.data :refer (without-keys)]))
+            [uxbox.data.pages :as udp]
+            [uxbox.ui.messages :as uum]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Schemas
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; FIXME use only one ns for validators
-
-(def ^:static +project-schema+
-  {:name [sc/required sc/string]
-   :width [sc/required sc/integer]
-   :height [sc/required sc/integer]
-   :layout [sc/required sc/string]})
-
-(def ^:static +create-page-schema+
-  {:name [sc/required sc/string]
-   :layout [sc/required sc/string]
-   :width [sc/required sc/integer]
-   :height [sc/required sc/integer]
-   :data [sc/required]
-   :project [sc/required sc/uuid]})
-
-(def ^:static +update-page-schema+
-  {:name [sc/required sc/string]
-   :width [sc/required sc/integer]
-   :height [sc/required sc/integer]
-   :data [sc/required]
-   :layout [sc/required sc/string]})
-
-(def ^:static +update-page-metadata-schema+
-  {:name [sc/required sc/string]
-   :width [sc/required sc/integer]
-   :height [sc/required sc/integer]
-   :layout [sc/required sc/string]})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn sort-projects-by
   [ordering projs]
   (case ordering
     :name (sort-by :name projs)
-    :created (reverse (sort-by :created projs))
+    :created (reverse (sort-by :created-at projs))
     projs))
 
 (defn contains-term?
@@ -74,18 +38,22 @@
     projs
     (filter #(contains-term? (:name %) term) projs)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defrecord LoadProjects [projects]
+;; --- Projects Fetched
+
+(defrecord ProjectsFetched [projects]
   rs/UpdateEvent
   (-apply-update [_ state]
     (reduce stpr/assoc-project state projects)))
 
-(defn load-projects
+(defn projects-fetched
   [projects]
-  (LoadProjects. projects))
+  (ProjectsFetched. projects))
+
+;; --- Fetch Projects
 
 (defrecord FetchProjects []
   rs/WatchEvent
@@ -103,112 +71,35 @@
   []
   (FetchProjects.))
 
-(defrecord LoadPages [pages]
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (reduce stpr/assoc-page state pages)))
-
-(defn load-pages
-  [pages]
-  (LoadPages. pages))
-
-(defrecord FetchPages [projectid]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (letfn [(on-loaded [{pages :payload}]
-              (load-pages pages))
-            (on-error [err]
-              (js/console.error err)
-              (rx/empty))]
-      (->> (rp/do :fetch/pages-by-project {:project projectid})
-           (rx/map on-loaded)
-           (rx/catch on-error)))))
-
-(defn fetch-pages
-  [projectid]
-  (FetchPages. projectid))
-
-(defrecord CreatePage [name width height project layout]
-  rs/WatchEvent
-  (-apply-watch [this state s]
-    (letfn [(on-created [{page :payload}]
-              #(stpr/assoc-page % page))
-            (on-failed [page]
-              (uum/error (tr "errors.auth"))
-              (rx/empty))]
-      (let [params (-> (into {} this)
-                       (assoc :data {}))]
-        (->> (rp/do :create/page params)
-             (rx/map on-created)
-             (rx/catch on-failed))))))
-
-(defn create-page
-  [data]
-  (sc/validate! +create-page-schema+ data)
-  (map->CreatePage data))
-
-(defrecord UpdatePage [id name width height layout]
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (letfn [(updater [page]
-              (merge page
-                     (when width {:width width})
-                     (when height {:height height})
-                     (when name {:name name})))]
-      (update-in state [:pages-by-id id] updater)))
-
-  rs/WatchEvent
-  (-apply-watch [this state s]
-    (letfn [(on-success [{page :payload}]
-              #(assoc-in % [:pages-by-id id :version] (:version page)))
-            (on-failure [e]
-              (uum/error (tr "errors.page-update"))
-              (rx/empty))]
-      (->> (rp/do :update/page (into {} this))
-           (rx/map on-success)
-           (rx/catch on-failure)))))
-
-(defn update-page
-  [data]
-  (sc/validate! +update-page-schema+ data)
-  (map->UpdatePage data))
-
-(defrecord DeletePage [id]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (letfn [(on-success [_]
-              (rs/swap #(stpr/dissoc-page % id)))
-            (on-failure [e]
-              (println "ERROR" e)
-              (uum/error (tr "errors.delete-page"))
-              (rx/empty))]
-      (->> (rp/do :delete/page id)
-           (rx/map on-success)
-           (rx/catch on-failure)))))
-
-(defn delete-page
-  [id]
-  (DeletePage. id))
+;; --- Create Project
 
 (defrecord CreateProject [name width height layout]
   rs/WatchEvent
   (-apply-watch [this state s]
     (letfn [(on-success [project]
               (rx/of (rs/swap #(stpr/assoc-project % project))
-                     (create-page (assoc (into {} this)
-                                         :project (:id project)
-                                         :name "Page 1"
-                                         :data []))))
+                     (udp/create-page (assoc (into {} this)
+                                             :project (:id project)
+                                             :name "Page 1"
+                                             :data nil))))
             (on-failure [err]
               (uum/error (tr "errors.create-project")))]
       (->> (rp/do :create/project {:name name})
            (rx/mapcat on-success)
            (rx/catch on-failure)))))
 
+(def ^:static +project-schema+
+  {:name [sc/required sc/string]
+   :width [sc/required sc/integer]
+   :height [sc/required sc/integer]
+   :layout [sc/required sc/string]})
+
 (defn create-project
   [{:keys [name width height layout] :as data}]
   (sc/validate! +project-schema+ data)
   (map->CreateProject data))
+
+;; --- Delete Project (by id)
 
 (defrecord DeleteProject [id]
   rs/WatchEvent
@@ -227,6 +118,8 @@
     (DeleteProject. (:id id))
     (DeleteProject. id)))
 
+;; --- Go To & Go To Page
+
 (defrecord GoTo [projectid]
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -236,8 +129,8 @@
                            :page-uuid pageid}]
                 (r/navigate :workspace/page params)))]
       (rx/merge
-       (rx/of (fetch-pages projectid))
-       (->> (rx/filter #(instance? LoadPages %) s)
+       (rx/of (udp/fetch-pages projectid))
+       (->> (rx/filter udp/pages-fetched? s)
             (rx/take 1)
             (rx/map :pages)
             (rx/map navigate))))))
