@@ -56,7 +56,8 @@
   (-apply-update [func state]
     (func state)))
 
-(defonce bus (rx/bus))
+(defonce ^:private bus (rx/bus))
+(defonce stream (rx/map identity bus))
 
 (defn emit!
   "Emits an event or a collection of them.
@@ -64,25 +65,24 @@
   ([event]
    (rx/push! bus event))
   ([event & events]
-   (run! #(rx/push! bus %) (into [event] events))))
+   (run! emit! (cons event events))))
+
+(defrecord SwapState [f]
+  UpdateEvent
+  (-apply-update [_ state]
+    (f state)))
 
 (defn swap
   "A helper for just apply some function to state
   without a need to declare additional event."
   [f]
-  (reify
-    UpdateEvent
-    (-apply-update [_ state]
-      (f state))))
+  (->SwapState f))
 
 (defn reset
   "A event that resets the internal state with
   the provided value."
-  [state]
-  (reify
-    UpdateEvent
-    (-apply-update [_ _]
-      state)))
+  [v]
+  (->SwapState (fn [_] v)))
 
 (enable-console-print!)
 
@@ -90,8 +90,7 @@
   "Initializes the stream event loop and
   return a stream with model changes."
   [state]
-  (let [stream (rx/map identity bus)
-        watch-s  (rx/filter watch? stream)
+  (let [watch-s  (rx/filter watch? stream)
         effect-s (rx/filter effect? stream)
         update-s (rx/filter update? stream)
         state-s (->> update-s
