@@ -26,11 +26,25 @@
     (assoc response :body (t/decode body))
     response))
 
+(defrecord Ok [status payload])
+(defrecord ServerError [status paylpad])
+(defrecord ClientError [status payload])
+(defrecord NotFound [payload])
+
 (defn- handle-http-status
-  [response]
-  (if (http.status/success? response)
-    (p/resolved response)
-    (p/rejected response)))
+  [{:keys [body status] :as response}]
+  (cond
+    (http.status/success? response)
+    (rx/of (->Ok status body))
+
+    (http.status/client-error? response)
+    (rx/throw
+     (if (= status 404)
+       (->NotFound body)
+       (->ClientError status body)))
+
+    (http.status/server-error? response)
+    (rx/throw (->ServerError status body))))
 
 (def ^:private ^:const +headers+
   {"content-type" "application/transit+json"})
@@ -48,23 +62,12 @@
                        (when auth (auth-headers)))
         request (merge (assoc request :headers headers)
                        (when body {:body (t/encode body)}))]
-    (-> (http/send! request)
-        (p/catch (fn [err]
-                   (println "[error]:" err)
-                   (throw err)))
-        (p/then conditional-decode)
-        (p/then handle-http-status))))
-
-(defn- req!
-  [request]
-  (let [on-success #(p/resolved (:body %))
-        on-error #(if (map? %)
-                    (p/rejected (:body %))
-                    (p/rejected %))]
-
-    (-> (send! request)
-        (p/then on-success)
-        (p/catch on-error))))
+    (->> (http/send! request)
+         (rx/from-promise)
+         (rx/map conditional-decode)
+         (rx/mapcat handle-http-status)
+         (rx/tap #(println "tt:" %)))))
+ ;; "tt: "))))
 
 (defmulti -do
   (fn [type data] type))
