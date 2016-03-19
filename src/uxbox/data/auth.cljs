@@ -16,48 +16,42 @@
             [uxbox.locales :refer (tr)]
             [uxbox.ui.messages :as uum]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Schema
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Login
 
-(def ^:const +login-schema+
+(defrecord Login [username password]
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (letfn [(on-error [err]
+              (uum/error (tr "errors.auth"))
+              (rx/empty))
+            (on-success [{value :payload}]
+              (rx/of (rs/swap #(assoc % :auth value))
+                     (r/navigate :dashboard/projects)))]
+
+      (->> (rp/do :login (merge (into {} this) {:scope "webapp"}))
+           (rx/mapcat on-success)
+           (rx/catch on-error)))))
+
+(def ^:const ^:private +login-schema+
   {:username [sc/required sc/string]
    :password [sc/required sc/string]})
 
-(def ^:const +user-schema+
-  {:username [sc/required sc/string]
-   :email [sc/required sc/email]
-   :photo [sc/required sc/string]
-   :fullname [sc/required sc/string]})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn login
-  [{:keys [username password] :as params}]
+  [params]
   (sc/validate! +login-schema+ params)
-  (letfn [(on-error [err]
-            (uum/error (tr "errors.auth"))
-            (rx/empty))
-          (on-success [value]
-            (rx/of (rs/swap #(assoc % :auth value))
-                   (r/navigate :dashboard/projects)))]
-    (reify
-      rs/WatchEvent
-      (-apply-watch [_ state]
-        (->> (rp/do :login (merge params {:scope "webapp"}))
-             (rx/from-promise)
-             (rx/flat-map on-success)
-             (rx/catch on-error))))))
+  (map->Login params))
+
+;; --- Logout
+
+(defrecord Logout []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc state :auth nil))
+
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (rx/of (r/navigate :auth/login))))
 
 (defn logout
   []
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc state :auth nil))
-
-    rs/WatchEvent
-    (-apply-watch [_ state]
-      (rx/of (r/navigate :auth/login)))))
+  (->Logout))

@@ -69,8 +69,8 @@
   [own]
   (let [[projectid pageid] (:rum/props own)]
     (rs/emit! (dw/initialize projectid pageid)
-              (dp/load-projects)
-              (dp/load-pages))
+              (dp/fetch-projects)
+              (dp/fetch-pages projectid))
     own))
 
 (defn- workspace-did-mount

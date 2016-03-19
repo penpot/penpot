@@ -33,8 +33,7 @@
 (defn projects-page-will-mount
   [own]
   (rs/emit! (dd/initialize :dashboard/projects)
-            (dp/load-projects)
-            (dp/load-pages))
+            (dp/fetch-projects))
   own)
 
 (defn projects-page-transfer-state

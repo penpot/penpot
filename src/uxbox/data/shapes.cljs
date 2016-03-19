@@ -225,7 +225,7 @@
       (assoc-in state [:shapes-by-id sid :hidden] true))
 
     rs/WatchEvent
-    (-apply-watch [_ state]
+    (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
         (if-not (= (:type shape) :builtin/group)
           (rx/empty)
@@ -240,7 +240,7 @@
       (assoc-in state [:shapes-by-id sid :hidden] false))
 
     rs/WatchEvent
-    (-apply-watch [_ state]
+    (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
         (if-not (= (:type shape) :builtin/group)
           (rx/empty)
@@ -255,7 +255,7 @@
       (assoc-in state [:shapes-by-id sid :blocked] true))
 
     rs/WatchEvent
-    (-apply-watch [_ state]
+    (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
         (if-not (= (:type shape) :builtin/group)
           (rx/empty)
@@ -270,7 +270,7 @@
       (assoc-in state [:shapes-by-id sid :blocked] false))
 
     rs/WatchEvent
-    (-apply-watch [_ state]
+    (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
         (if-not (= (:type shape) :builtin/group)
           (rx/empty)
@@ -285,7 +285,7 @@
       (assoc-in state [:shapes-by-id sid :locked] true))
 
     rs/WatchEvent
-    (-apply-watch [_ state]
+    (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
         (if-not (= (:type shape) :builtin/group)
           (rx/empty)
@@ -300,7 +300,7 @@
       (assoc-in state [:shapes-by-id sid :locked] false))
 
     rs/WatchEvent
-    (-apply-watch [_ state]
+    (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
         (if-not (= (:type shape) :builtin/group)
           (rx/empty)

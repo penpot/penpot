@@ -157,7 +157,7 @@
   []
   (reify
     rs/WatchEvent
-    (-apply-watch [_ state]
+    (-apply-watch [_ state s]
       (let [selected (get-in state [:workspace :selected])]
         (rx/from-coll
          (into [(deselect-all)] (map #(uds/delete-shape %) selected)))))))
@@ -169,7 +169,7 @@
    {:pre [(contains? #{:up :down :right :left} dir)]}
    (reify
      rs/WatchEvent
-     (-apply-watch [_ state]
+     (-apply-watch [_ state s]
        (let [selected (get-in state [:workspace :selected])
              delta (case dir
                     :up (gpt/point 0 (- n))
@@ -186,7 +186,7 @@
   (sc/validate! uds/+shape-fill-attrs-schema+ opts)
   (reify
     rs/WatchEvent
-    (-apply-watch [_ state]
+    (-apply-watch [_ state s]
       (rx/from-coll
        (->> (get-in state [:workspace :selected])
             (map #(uds/update-fill-attrs % opts)))))))
@@ -199,7 +199,7 @@
   (sc/validate! uds/+shape-stroke-attrs-schema+ opts)
   (reify
     rs/WatchEvent
-    (-apply-watch [_ state]
+    (-apply-watch [_ state s]
       (rx/from-coll
        (->> (get-in state [:workspace :selected])
             (map #(uds/update-stroke-attrs % opts)))))))

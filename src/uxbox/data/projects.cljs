@@ -78,140 +78,179 @@
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defrecord LoadProjects [projects]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (reduce stpr/assoc-project state projects)))
+
 (defn load-projects
+  [projects]
+  (LoadProjects. projects))
+
+(defrecord FetchProjects []
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (letfn [(on-loaded [{projects :payload}]
+              #(reduce stpr/assoc-project % projects))
+            (on-error [err]
+              (println err)
+              (rx/empty))]
+      (->> (rp/do :fetch/projects)
+           (rx/map on-loaded)
+           (rx/catch on-error)))))
+
+(defn fetch-projects
   []
-  (letfn [(transform [state projects]
-            (as-> state $
-              (reduce stpr/assoc-project $ projects)
-              (assoc $ ::projects-loaded true)))
-          (on-loaded [projects]
-            #(transform % projects))]
-    (reify
-      rs/WatchEvent
-      (-apply-watch [_ state]
-        (if (::projects-loaded state)
-          (rx/empty)
-          (-> (rp/do :fetch/projects)
-              (p/then on-loaded)))))))
+  (FetchProjects.))
+
+(defrecord LoadPages [pages]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (reduce stpr/assoc-page state pages)))
 
 (defn load-pages
-  []
-  (letfn [(transform [state pages]
-            (as-> state $
-              (reduce stpr/assoc-page $ pages)
-              (assoc $ ::pages-loaded true)))
-          (on-loaded [pages]
-            #(transform % pages))]
-    (reify
-      rs/WatchEvent
-      (-apply-watch [_ state]
-        (if (::pages-loaded state)
-          (rx/empty)
-          (-> (rp/do :fetch/pages)
-              (p/then on-loaded)))))))
+  [pages]
+  (LoadPages. pages))
+
+(defrecord FetchPages [projectid]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (letfn [(on-loaded [{pages :payload}]
+              (load-pages pages))
+            (on-error [err]
+              (js/console.error err)
+              (rx/empty))]
+      (->> (rp/do :fetch/pages-by-project {:project projectid})
+           (rx/map on-loaded)
+           (rx/catch on-error)))))
+
+(defn fetch-pages
+  [projectid]
+  (FetchPages. projectid))
+
+(defrecord CreatePage [name width height project layout]
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (letfn [(on-created [{page :payload}]
+              #(stpr/assoc-page % page))
+            (on-failed [page]
+              (uum/error (tr "errors.auth"))
+              (rx/empty))]
+      (let [params (-> (into {} this)
+                       (assoc :data {}))]
+        (->> (rp/do :create/page params)
+             (rx/map on-created)
+             (rx/catch on-failed))))))
 
 (defn create-page
-  [{:keys [name width height project layout] :as data}]
+  [data]
   (sc/validate! +create-page-schema+ data)
-  (letfn [(create []
-            (rp/do :create/page {:project project
-                                 :layout layout
-                                 :data []
-                                 :name name
-                                 :width width
-                                 :height height}))
-          (on-created [page]
-            #(stpr/assoc-page % page))
+  (map->CreatePage data))
 
-          (on-failed [page]
-            (uum/error (tr "errors.auth")))]
-    (reify
-      rs/WatchEvent
-      (-apply-watch [_ state]
-        (-> (create)
-            (p/then on-created)
-            (p/catch on-failed))))))
+(defrecord UpdatePage [id name width height layout]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (letfn [(updater [page]
+              (merge page
+                     (when width {:width width})
+                     (when height {:height height})
+                     (when name {:name name})))]
+      (update-in state [:pages-by-id id] updater)))
+
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (letfn [(on-success [{page :payload}]
+              #(assoc-in % [:pages-by-id id :version] (:version page)))
+            (on-failure [e]
+              (uum/error (tr "errors.page-update"))
+              (rx/empty))]
+      (->> (rp/do :update/page (into {} this))
+           (rx/map on-success)
+           (rx/catch on-failure)))))
 
 (defn update-page
-  [{:keys [id name width height layout] :as data}]
+  [data]
   (sc/validate! +update-page-schema+ data)
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [page (merge (get-in state [:pages-by-id id])
-                        (when width {:width width})
-                        (when height {:height height})
-                        (when name {:name name}))]
-        (assoc-in state [:pages-by-id id] page)))
+  (map->UpdatePage data))
 
-    rs/WatchEvent
-    (-apply-watch [_ state]
-      (let [page (get-in state [:pages-by-id id])
-            on-success (fn [{:keys [version]}]
-                         #(assoc-in % [:pages-by-id id :version] version))]
-        (-> (rp/do :update/page page)
-            (p/then on-success))))))
+(defrecord DeletePage [id]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (letfn [(on-success [_]
+              (rs/swap #(stpr/dissoc-page % id)))
+            (on-failure [e]
+              (println "ERROR" e)
+              (uum/error (tr "errors.delete-page"))
+              (rx/empty))]
+      (->> (rp/do :delete/page id)
+           (rx/map on-success)
+           (rx/catch on-failure)))))
 
 (defn delete-page
-  [pageid]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [shapeids (get-in state [:pages-by-id pageid :shapes])]
-        (as-> state $
-          (update $ :shapes-by-id without-keys shapeids)
-          (update $ :pages-by-id dissoc pageid))))))
+  [id]
+  (DeletePage. id))
+
+(defrecord CreateProject [name width height layout]
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (letfn [(on-success [project]
+              (rx/of (rs/swap #(stpr/assoc-project % project))
+                     (create-page (assoc (into {} this)
+                                         :project (:id project)
+                                         :name "Page 1"
+                                         :data []))))
+            (on-failure [err]
+              (uum/error (tr "errors.create-project")))]
+      (->> (rp/do :create/project {:name name})
+           (rx/mapcat on-success)
+           (rx/catch on-failure)))))
 
 (defn create-project
   [{:keys [name width height layout] :as data}]
   (sc/validate! +project-schema+ data)
-  (letfn [(on-success [project]
-            (rx/of (rs/swap #(stpr/assoc-project % project))
-                   (create-page (assoc data
-                                       :project (:id project)
-                                       :name "Page 1"
-                                       :data []))))
-          (on-failure [err]
-            (println "on-failure" err)
-            (uum/error (tr "errors.create-project")))]
-    (reify
-      rs/WatchEvent
-      (-apply-watch [_ state]
-        (->> (rp/do :create/project {:name name})
-             (rx/from-promise)
-             (rx/mapcat on-success)
-             (rx/catch on-failure))))))
+  (map->CreateProject data))
+
+(defrecord DeleteProject [id]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (letfn [(on-success [_]
+              (rs/swap #(stpr/dissoc-project % id)))
+            (on-failure [e]
+              (uum/error (tr "errors.delete-project")))]
+      (->> (rp/do :delete/project id)
+           (rx/map on-success)
+           (rx/catch on-failure)))))
 
 (defn delete-project
-  [proj]
-  (letfn [(on-success [_]
-            (rs/swap #(stpr/dissoc-project % proj)))
-          (on-failure [e]
-            (uum/error (tr "errors.delete-project")))]
-    (reify
-      rs/WatchEvent
-      (-apply-watch [_ state]
-        (->> (rp/do :delete/project proj)
-             (p/map on-success)
-             (p/err on-failure))))))
+  [id]
+  (if (map? id)
+    (DeleteProject. (:id id))
+    (DeleteProject. id)))
+
+(defrecord GoTo [projectid]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (letfn [(navigate [pages]
+              (let [pageid (:id (first pages))
+                    params {:project-uuid projectid
+                           :page-uuid pageid}]
+                (r/navigate :workspace/page params)))]
+      (rx/merge
+       (rx/of (fetch-pages projectid))
+       (->> (rx/filter #(instance? LoadPages %) s)
+            (rx/take 1)
+            (rx/map :pages)
+            (rx/map navigate))))))
+
+(defrecord GoToPage [projectid pageid]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [params {:project-uuid projectid
+                  :page-uuid pageid}]
+      (rx/of (r/navigate :workspace/page params)))))
 
 (defn go-to
   "A shortcut event that redirects the user to the
   first page of the project."
-  ([projectid]
-   (reify
-     rs/WatchEvent
-     (-apply-watch [_ state]
-       (let [pages (stpr/project-pages state projectid)
-             pageid (:id (first pages))
-             params {:project-uuid projectid
-                     :page-uuid pageid}]
-         (rx/of (r/navigate :workspace/page params))))))
-
-  ([projectid pageid]
-   (reify
-     rs/WatchEvent
-     (-apply-watch [_ state]
-       (let [params {:project-uuid projectid
-                     :page-uuid pageid}]
-         (rx/of (r/navigate :workspace/page params)))))))
+  ([projectid] (GoTo. projectid))
+  ([projectid pageid] (GoToPage. projectid pageid)))
