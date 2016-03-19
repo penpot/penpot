@@ -18,7 +18,7 @@
                  [funcool/lentes "1.0.0"]
                  [funcool/httpurr "0.5.0-20160314.065111-4"]
                  [funcool/promesa "1.1.1"]
-                 [funcool/beicon "1.1.0"]
+                 [funcool/beicon "1.1.1"]
                  [funcool/cuerdas "0.7.1"]
                  [funcool/hodgepodge "0.1.4"]
                  [bouncer "1.0.0"]
