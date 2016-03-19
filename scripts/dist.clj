@@ -14,6 +14,8 @@
     :warnings {:ns-var-clash false}
     :output-to "resources/public/js/main.js"
     :output-dir "resources/public/js"
+    :closure-defines {"uxbox.repo.core.url"
+                      "https://test.uxbox.io/api"}
     :optimizations :simple
     :static-fns true
     :language-in  :ecmascript5
