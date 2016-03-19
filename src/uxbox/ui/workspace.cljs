@@ -41,7 +41,6 @@
   [pageid]
   (as-> (focus-page pageid) $
     (rx/from-atom $)
-    (rx/skip 1 $)
     (rx/dedupe #(dissoc % :version) $)
     (rx/debounce 1000 $)
     (rx/subscribe $ on-page-change #(throw %))))
