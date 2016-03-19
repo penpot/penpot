@@ -30,6 +30,31 @@
                                               acc))
                                           shapes
                                           shapes))))
+(defn pack-page
+  "Return a packed version of page object ready
+  for send to remore storage service."
+  [state id]
+  (let [page (get-in state [:pages-by-id id])
+        xf (filter #(= (:page (second %)) id))
+        shapes (into {} xf (:shapes-by-id state))]
+    (-> page
+        (assoc-in [:data :shapes] (into [] (:shapes page)))
+        (assoc-in [:data :shapes-by-id] shapes)
+        (update-in [:data] dissoc :items)
+        (dissoc :shapes))))
+
+(defn unpack-page
+  "Unpacks packed page object and assocs it to the
+  provided state."
+  [state page]
+  (let [shapes (get-in page [:data :shapes])
+        shapes-by-id (get-in page [:data :shapes-by-id])
+        page (-> page
+                 (dissoc page :data)
+                 (assoc :shapes shapes))]
+    (-> state
+        (update :shapes-by-id merge shapes-by-id)
+        (assoc-page page))))
 
 (defn dissoc-page
   "Remove page and all related stuff from the state."

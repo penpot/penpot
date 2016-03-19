@@ -25,7 +25,7 @@
 (defrecord PagesFetched [pages]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (reduce stpr/assoc-page state pages)))
+    (reduce stpr/unpack-page state pages)))
 
 (defn pages-fetched?
   [v]
@@ -70,7 +70,6 @@
    :layout [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
-   :data [sc/required]
    :project [sc/required sc/uuid]})
 
 (defn create-page
@@ -106,7 +105,6 @@
   {:name [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
-   :data [sc/required]
    :layout [sc/required sc/string]})
 
 (defn update-page
@@ -132,7 +130,6 @@
 
   rs/WatchEvent
   (-apply-watch [this state s]
-    (println "UpdatePageMetadata" "-apply-watch")
     (letfn [(on-success [{page :payload}]
               (println "on-success")
               #(assoc-in % [:pages-by-id id :version] (:version page)))
@@ -144,12 +141,9 @@
            (rx/map on-success)
            (rx/catch on-failure)))))
 
-(def ^:static +update-page-metadata-schema+
-  (dissoc +update-page-schema+ :data))
-
 (defn update-page-metadata
   [data]
-  (sc/validate! +update-page-metadata-schema+ data)
+  (sc/validate! +update-page-schema+ data)
   (map->UpdatePageMetadata (dissoc data :data)))
 
 
