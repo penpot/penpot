@@ -29,4 +29,6 @@
 (defn init
   "Initialize the state materialization."
   []
-  (rx/to-atom stream state))
+  (as-> stream $
+    (rx/dedupe $)
+    (rx/to-atom $ state)))

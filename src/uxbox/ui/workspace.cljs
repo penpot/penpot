@@ -34,8 +34,9 @@
     (l/focus-atom $ st/state)))
 
 (defn on-page-change
-  [page]
-  (rs/emit! (udp/update-page page)))
+  [buffer]
+  (let [page (second buffer)]
+    (rs/emit! (udp/update-page page))))
 
 (defn subscribe-to-page-changes
   [pageid]
@@ -43,6 +44,7 @@
     (rx/from-atom $)
     (rx/dedupe #(dissoc % :version) $)
     (rx/debounce 1000 $)
+    (rx/buffer 2 1 $)
     (rx/subscribe $ on-page-change #(throw %))))
 
 (defn- workspace-will-mount
