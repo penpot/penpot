@@ -11,9 +11,8 @@
 (defn dissoc-project
   "A reduce function for dissoc the project
   from the state map."
-  [state proj]
-  (let [uuid (:id proj)]
-    (update-in state [:projects-by-id] dissoc uuid)))
+  [state id]
+  (update-in state [:projects-by-id] dissoc id))
 
 (defn assoc-page
   "A reduce function for assoc the page
@@ -21,6 +20,23 @@
   [state page]
   (let [uuid (:id page)]
     (update-in state [:pages-by-id] assoc uuid page)))
+
+(defn dissoc-page-shapes
+  [state id]
+  (let [shapes (get-in state [:shapes-by-id])]
+    (assoc state :shapes-by-id (reduce-kv (fn [acc k v]
+                                            (if (= (:page v) id)
+                                              (dissoc acc k)
+                                              acc))
+                                          shapes
+                                          shapes))))
+
+(defn dissoc-page
+  "Remove page and all related stuff from the state."
+  [state id]
+  (-> state
+      (update :pages-by-id dissoc id)
+      (dissoc-page-shapes id)))
 
 (defn project-pages
   "Get a ordered list of pages that
