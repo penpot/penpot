@@ -22,42 +22,35 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static project-l
+(def ^:const workspace-l
+  (as-> (l/in [:workspace]) $
+    (l/focus-atom $ st/state)))
+
+(def ^:const project-l
   (letfn [(getter [state]
             (let [project (get-in state [:workspace :project])]
               (get-in state [:projects-by-id project])))]
     (as-> (ul/getter getter) $
       (l/focus-atom $ st/state))))
 
-(def ^:static page-l
+(def ^:const page-l
   (letfn [(getter [state]
             (let [page (get-in state [:workspace :page])]
               (get-in state [:pages-by-id page])))]
     (as-> (ul/getter getter) $
       (l/focus-atom $ st/state))))
 
-(def ^:static pages-l
-  (letfn [(getter [state]
-            (let [project (get-in state [:workspace :project])]
-              (stpr/project-pages state project)))]
-    (as-> (ul/getter getter) $
-      (l/focus-atom $ st/state))))
-
-(def ^:static workspace-l
-  (as-> (l/in [:workspace]) $
-    (l/focus-atom $ st/state)))
-
 (def ^:static selected-shapes-l
-  (as-> (l/in [:workspace :selected]) $
-    (l/focus-atom $ st/state)))
+  (as-> (l/in [:selected]) $
+    (l/focus-atom $ workspace-l)))
 
 (def ^:static toolboxes-l
-  (as-> (l/in [:workspace :toolboxes]) $
-    (l/focus-atom $ st/state)))
+  (as-> (l/in [:toolboxes]) $
+    (l/focus-atom $ workspace-l)))
 
 (def ^:static flags-l
-  (as-> (l/in [:workspace :flags]) $
-    (l/focus-atom $ st/state)))
+  (as-> (l/in [:flags]) $
+    (l/focus-atom $ workspace-l)))
 
 (def ^:static shapes-by-id-l
   (as-> (l/key :shapes-by-id) $

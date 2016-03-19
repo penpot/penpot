@@ -14,6 +14,7 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
+            [uxbox.state.project :as stpr]
             [uxbox.shapes :as shapes]
             [uxbox.library :as library]
             [uxbox.data.projects :as dp]
@@ -24,12 +25,24 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.lightbox :as lightbox]
+            [uxbox.util.lens :as ul]
             [uxbox.util.data :refer (read-string parse-int)]
             [uxbox.util.dom :as dom]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lenses
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:static pages-l
+  (letfn [(getter [state]
+            (let [project (get-in state [:workspace :project])]
+              (stpr/project-pages state project)))]
+    (as-> (ul/getter getter) $
+      (l/focus-atom $ st/state))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn page-item-render
   [own page total active?]
@@ -60,7 +73,7 @@
 (defn sitemap-toolbox-render
   [own]
   (let [project (rum/react wb/project-l)
-        pages (rum/react wb/pages-l)
+        pages (rum/react pages-l)
         current (rum/react wb/page-l)
         create #(lightbox/open! :page-form {:page {:project (:id project)}})
         close #(rs/emit! (dw/toggle-flag :sitemap))]
