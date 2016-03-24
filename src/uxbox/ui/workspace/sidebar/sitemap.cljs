@@ -33,7 +33,7 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static pages-l
+(def ^:const pages-l
   (letfn [(getter [state]
             (let [project (get-in state [:workspace :project])]
               (stpr/project-pages state project)))]

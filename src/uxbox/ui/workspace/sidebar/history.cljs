@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.ui.workspace.sidebar.document-history
+(ns uxbox.ui.workspace.sidebar.history
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [lentes.core :as l]
@@ -15,21 +15,51 @@
             [uxbox.state :as st]
             [uxbox.shapes :as shapes]
             [uxbox.library :as library]
+            [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (read-string)]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.pages :as dpg]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.dom :as dom]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lenses
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:const history-l
+  (as-> (l/in [:workspace :history]) $
+    (l/focus-atom $ st/state)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn document-history-toolbox-render
+(defn- history-toolbox-will-mount
   [own]
-  (let [workspace (rum/react wb/workspace-l)
-        local (:rum/local own)
+  (let [page @wb/page-l]
+    (rs/emit! (dpg/fetch-page-history (:id page)))
+    (add-watch wb/page-l ::key (fn [_ _ ov nv]
+                                 (when (> (:version nv) (:version ov))
+                                   (rs/emit! (dpg/fetch-page-history (:id nv))))))
+    own))
+
+(defn- history-toolbox-will-unmount
+  [own]
+  (rs/emit! (dpg/clean-page-history))
+  (remove-watch wb/page-l ::key)
+  own)
+
+(defn- history-toolbox-transfer-state
+  [oldown own]
+  own)
+
+(defn history-toolbox-render
+  [own]
+  (let [local (:rum/local own)
+        page (rum/react wb/page-l)
+        history (rum/react history-l)
         section (:section @local :main)
         close #(rs/emit! (dw/toggle-flag :document-history))
         main? (= section :main)
@@ -63,65 +93,19 @@
          [:ul.history-content
           [:li.current
            [:div.pin-icon i/pin]
-           [:span "Current version"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]
-          [:li
-           [:div.pin-icon i/pin]
-           [:span "Version 02/02/2016 12:33h"]]])]])))
+           [:span (str "Version " (:version page) " (current)")]]
+          (for [item (:items history)]
+            [:li {:key (str (:id item))}
+             [:div.pin-icon i/pin]
+             [:span (str "Version " (:version item)
+                         " (" (dt/timeago (:created-at item)) ")")]])
+          ])]])))
 
-
-(def ^:static document-history-toolbox
+(def ^:static history-toolbox
   (mx/component
-   {:render document-history-toolbox-render
+   {:render history-toolbox-render
     :name "document-history-toolbox"
+    :will-mount history-toolbox-will-mount
+    :will-unmount history-toolbox-will-unmount
+    :transfer-state history-toolbox-transfer-state
     :mixins [mx/static rum/reactive (mx/local)]}))

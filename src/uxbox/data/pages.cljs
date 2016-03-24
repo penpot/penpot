@@ -164,3 +164,49 @@
 (defn delete-page
   [id]
   (DeletePage. id))
+
+;; --- Page History Fetched
+
+(defrecord PageHistoryFetched [history]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (-> state
+        (assoc-in [:workspace :history :items] history)
+        (assoc-in [:workspace :history :selected] nil))))
+
+;; --- Fetch Page History
+
+(defrecord FetchPageHistory [id]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (println "FetchPageHistory" id)
+    (letfn [(on-success [{history :payload}]
+              (->PageHistoryFetched history))
+            (on-failure [e]
+              (uum/error (tr "errors.fetch-page-history"))
+              (rx/empty))]
+      (->> (rp/do :fetch/page-history {:page id})
+           (rx/map on-success)
+           (rx/catch on-failure))))
+
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    ))
+
+(defn fetch-page-history
+  [id]
+  (FetchPageHistory. id))
+
+;; --- Clean Page History
+
+(defrecord CleanPageHistory []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (println "CleanPageHistory")
+    (-> state
+        (assoc-in [:workspace :history :items] nil)
+        (assoc-in [:workspace :history :selected] nil))))
+
+(defn clean-page-history
+  []
+  (CleanPageHistory.))

@@ -23,6 +23,11 @@
   (let [url (str url "/projects/" project "/pages")]
     (send! {:method :get :url url})))
 
+(defmethod -do :fetch/page-history
+  [type {:keys [page] :as params}]
+  (let [url (str url "/pages/" page "/history")]
+    (send! {:method :get :url url})))
+
 (defmethod -do :delete/page
   [_ id]
   (let [url (str url "/pages/" id)]

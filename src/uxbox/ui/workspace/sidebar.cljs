@@ -17,7 +17,7 @@
             [uxbox.ui.workspace.sidebar.options :refer (options-toolbox)]
             [uxbox.ui.workspace.sidebar.layers :refer (layers-toolbox)]
             [uxbox.ui.workspace.sidebar.sitemap :refer (sitemap-toolbox)]
-            [uxbox.ui.workspace.sidebar.document-history :refer (document-history-toolbox)]
+            [uxbox.ui.workspace.sidebar.history :refer (history-toolbox)]
             [uxbox.ui.workspace.sidebar.icons :refer (icons-toolbox)]
             [uxbox.ui.workspace.sidebar.drawtools :refer (draw-toolbox)]))
 
@@ -34,7 +34,7 @@
        (when (contains? flags :sitemap)
          (sitemap-toolbox))
        (when (contains? flags :document-history)
-         (document-history-toolbox))
+         (history-toolbox))
        (when (contains? flags :layers)
          (layers-toolbox))]])))
 
