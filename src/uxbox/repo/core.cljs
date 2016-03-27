@@ -7,13 +7,15 @@
 (ns uxbox.repo.core
   "A main interface for access to remote resources."
   (:refer-clojure :exclude [do])
-  (:require [httpurr.client.xhr :as http]
+  (:require [clojure.walk :as walk]
+            [httpurr.client.xhr :as http]
             [httpurr.status :as http.status]
             [hodgepodge.core :refer (local-storage)]
             [promesa.core :as p :include-macros true]
             [beicon.core :as rx]
             [uxbox.transit :as t]
-            [uxbox.state :as ust]))
+            [uxbox.state :as ust])
+  (:import [goog.Uri QueryData]))
 
 (goog-define url "http://127.0.0.1:5050/api")
 
@@ -49,19 +51,28 @@
 (def ^:private ^:const +headers+
   {"content-type" "application/transit+json"})
 
-(defn auth-headers
+(defn- auth-headers
   []
   (when-let [auth (:auth @ust/state)]
     {"authorization" (str "Token " (:token auth "no-token"))}))
 
+(defn- encode-query
+  [params]
+  (let [data (QueryData.)]
+    (.extend data (clj->js params))
+    (.toString data)))
+
 (defn- send!
-  [{:keys [body headers auth method] :or {auth true} :as request}]
+  [{:keys [body headers auth method query url] :or {auth true} :as request}]
   (let [headers (merge {}
                        (when body +headers+)
                        headers
                        (when auth (auth-headers)))
-        request (merge (assoc request :headers headers)
-                       (when body {:body (t/encode body)}))]
+        request {:method method
+                 :url url
+                 :headers headers
+                 :query-string (when query (encode-query query))
+                 :body (when body (t/encode body))}]
     (->> (http/send! request)
          (rx/from-promise)
          (rx/map conditional-decode)
