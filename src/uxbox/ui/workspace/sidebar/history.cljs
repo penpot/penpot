@@ -99,7 +99,8 @@
              [:div.pin-icon i/pin]
              [:span (str "Version " (:version item)
                          " (" (dt/timeago (:created-at item)) ")")]])
-          ])]])))
+          [:li
+           [:a.btn-primary.btn-small "view more"]]])]])))
 
 (def ^:static history-toolbox
   (mx/component
