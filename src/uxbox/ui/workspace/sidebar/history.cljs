@@ -52,9 +52,48 @@
   (remove-watch wb/page-l ::key)
   own)
 
-(defn- history-toolbox-transfer-state
-  [oldown own]
-  own)
+(defn history-list-render
+  [own page history]
+  (let [select #(rs/emit! (dpg/select-page-history (:id page) %))]
+    (html
+     [:ul.history-content
+      [:li {:class (when-not (:selected history) "current")}
+       [:div.pin-icon i/pin]
+       [:span (str "Version " (:version page) " (current)")]]
+      (for [item (:items history)]
+        [:li {:key (str (:id item))
+              :class (when (= (:id item) (:selected history)) "current")
+              :on-click (partial select item)}
+         [:div.pin-icon i/pin]
+         [:span (str "Version " (:version item)
+                     " (" (dt/timeago (:created-at item)) ")")]])
+
+      [:li
+       [:a.btn-primary.btn-small "view more"]]])))
+
+(def history-list
+  (mx/component
+   {:render history-list-render
+    :name "history-list"
+    :mixins [mx/static]}))
+
+(defn history-pinned-list-render
+  [own history]
+  (html
+   [:ul.history-content
+    [:li.current
+     [:span "Current version"]]
+    [:li
+     [:span "Version 02/02/2016 12:33h"]
+     [:div.page-actions
+      [:a i/pencil]
+      [:a i/trash]]]]))
+
+(def history-pinned-list
+  (mx/component
+   {:render history-pinned-list-render
+    :name "history-pinned-list"
+    :mixins [mx/static]}))
 
 (defn history-toolbox-render
   [own]
@@ -82,26 +121,8 @@
               :class (when pinned? "selected")}
          "Pinned"]]
        (if (= section :pinned)
-         [:ul.history-content
-          [:li.current
-           [:span "Current version"]]
-          [:li
-           [:span "Version 02/02/2016 12:33h"]
-           [:div.page-actions
-            [:a i/pencil]
-            [:a i/trash]]]])
-       (if (= section :main)
-         [:ul.history-content
-          [:li.current
-           [:div.pin-icon i/pin]
-           [:span (str "Version " (:version page) " (current)")]]
-          (for [item (:items history)]
-            [:li {:key (str (:id item))}
-             [:div.pin-icon i/pin]
-             [:span (str "Version " (:version item)
-                         " (" (dt/timeago (:created-at item)) ")")]])
-          [:li
-           [:a.btn-primary.btn-small "view more"]]])]])))
+         (history-pinned-list history)
+         (history-list page history))]])))
 
 (def ^:static history-toolbox
   (mx/component
@@ -109,5 +130,4 @@
     :name "document-history-toolbox"
     :will-mount history-toolbox-will-mount
     :will-unmount history-toolbox-will-unmount
-    :transfer-state history-toolbox-transfer-state
     :mixins [mx/static rum/reactive (mx/local)]}))
