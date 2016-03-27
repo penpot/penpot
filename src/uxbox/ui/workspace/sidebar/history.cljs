@@ -41,7 +41,8 @@
   (let [page @wb/page-l]
     (rs/emit! (dpg/fetch-page-history (:id page)))
     (add-watch wb/page-l ::key (fn [_ _ ov nv]
-                                 (when (> (:version nv) (:version ov))
+                                 (when (and (> (:version nv) (:version ov))
+                                            (not (:history nv)))
                                    (rs/emit! (dpg/fetch-page-history (:id nv))))))
     own))
 
