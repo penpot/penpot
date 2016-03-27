@@ -6,12 +6,12 @@
 
   :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
                  [org.clojure/clojurescript "1.8.34" :scope "provided"]
-                 [figwheel-sidecar "0.5.0-6" :scope "test"]
+                 [figwheel-sidecar "0.5.1" :scope "test"]
 
                  ;; runtime
                  [com.cognitect/transit-cljs "0.8.237"]
                  [rum "0.6.0" :exclusions [sablono]]
-                 [sablono "0.6.2"]
+                 [sablono "0.6.3"]
                  [cljsjs/react "15.0.0-rc.2-0"]
                  [cljsjs/react-dom "15.0.0-rc.2-0"]
                  [cljsjs/moment "2.10.6-3"]
