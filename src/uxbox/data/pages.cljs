@@ -213,22 +213,30 @@
 
 ;; --- Select Page History
 
-(defrecord SelectPageHistory [page history]
+;; TODO: seems like it is inefficient packing the current
+;; page every time, but a this moment it works. Maybe in
+;; future it will need some refactor.
+
+(defrecord SelectPageHistory [id history]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [page (get-in state [:pages-by-id page])
-          page' (assoc page
-                       :history true
-                       :data (:data history)
-                       :version (:version history))]
-      (-> state
-          (stpr/unpack-page page')
-          (assoc-in [:workspace :history :selected] (:id history))
-          (update-in [:workspace :history]
-                     (fn [v]
-                       (if (:current-version v)
-                         v
-                         (assoc v :current-version (:version page)))))))))
+    (if (nil? history)
+      (let [packed (get-in state [:workspace :history :current])]
+        (-> state
+            (stpr/unpack-page packed)
+            (assoc-in [:workspace :history :selected] nil)
+            (assoc-in [:workspace :history :current] nil)))
+
+      (let [packed (stpr/pack-page state id)
+            page (get-in state [:pages-by-id id])
+            page' (assoc page
+                         :history true
+                         :data (:data history)
+                         :version (:version history))]
+        (-> state
+            (stpr/unpack-page page')
+            (assoc-in [:workspace :history :selected] (:id history))
+            (update-in [:workspace :history :current] (fnil identity packed)))))))
 
 (defn select-page-history
   [id history]

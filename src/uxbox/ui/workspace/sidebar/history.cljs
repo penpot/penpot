@@ -57,7 +57,8 @@
   (let [select #(rs/emit! (dpg/select-page-history (:id page) %))]
     (html
      [:ul.history-content
-      [:li {:class (when-not (:selected history) "current")}
+      [:li {:class (when-not (:selected history) "current")
+            :on-click (partial select nil)}
        [:div.pin-icon i/pin]
        [:span (str "Version " (:version page) " (current)")]]
       (for [item (:items history)]
