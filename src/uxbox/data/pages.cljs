@@ -171,8 +171,8 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (-> state
-        (assoc-in [:workspace :history :items] history)
-        (assoc-in [:workspace :history :selected] nil))))
+        (assoc-in [:workspace :history :items] history))))
+        ;; (assoc-in [:workspace :history :selected] nil))))
 
 ;; --- Fetch Page History
 
