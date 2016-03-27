@@ -28,22 +28,32 @@
 ;; Workspace
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn focus-page
+(defn- focus-page
   [id]
   (as-> (ul/getter #(stpr/pack-page % id)) $
     (l/focus-atom $ st/state)))
 
-(defn on-page-change
+;; TODO: move out of UI.
+
+(defn- on-page-change
   [buffer]
+  #_(println "on-page-change" buffer)
   (let [page (second buffer)]
     (rs/emit! (udp/update-page page))))
 
-(defn subscribe-to-page-changes
+(defn- subscribe-to-page-changes
   [pageid]
   (as-> (focus-page pageid) $
     (rx/from-atom $)
-    (rx/dedupe #(dissoc % :version) $)
     (rx/debounce 1000 $)
+    (rx/scan (fn [acc page]
+               #_(println "change:" (:version acc) "->" (:version page))
+               (let [result (if (>= (:version page) (:version acc))
+                              page
+                              acc)]
+                 ;; (println "!!!" (:version result))
+                 result)) $)
+    (rx/dedupe #(dissoc % :version) $)
     (rx/buffer 2 1 $)
     (rx/subscribe $ on-page-change #(throw %))))
 
