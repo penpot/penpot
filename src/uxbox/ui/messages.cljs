@@ -26,7 +26,7 @@
 
 (defn error
   ([message] (error message nil))
-  ([message {:keys [timeout] :or {timeout 3000}}]
+  ([message {:keys [timeout] :or {timeout 30000}}]
    (when-let [prev-message @+message+]
      (abort-timeout! (:timeout-total prev-message))
      (abort-timeout! (:timeout prev-message)))
@@ -55,7 +55,11 @@
        [:div.message {:class classes}
         [:div.message-body
          [:span.close i/close]
-         [:span (:content message)]]]))))
+         [:span (:content message)]
+         [:div.message-action
+          [:a.btn-transparent.btn-small "Accept"]
+          [:a.btn-transparent.btn-small "Cancel"]
+          ]]]))))
 
 (def ^:const messages
   (mx/component

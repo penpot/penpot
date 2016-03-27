@@ -93,7 +93,7 @@
   color: $color-white;
   &:hover {
     background: $color-white;
-    color: $color-complete;;
+    color: $color-info-dark;
   }
 }
 .btn-large {
@@ -858,6 +858,7 @@ input[type=range]:focus::-ms-fill-upper {
     border-bottom: 3px solid transparent;
     color: $color-white;
     display: flex;
+    flex-wrap: wrap;
     min-height: 100px;
     margin: 0 auto;
     padding: $medium $big;
@@ -889,6 +890,14 @@ input[type=range]:focus::-ms-fill-upper {
         opacity: .8;
       }
 
+    }
+
+    .message-action {
+      align-items: center;
+      display: flex;
+      justify-content: space-around;
+      margin-top: $medium;
+      width: 100%;
     }
 
   }
