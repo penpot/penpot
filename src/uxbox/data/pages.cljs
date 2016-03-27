@@ -9,6 +9,7 @@
   (:require [cuerdas.core :as str]
             [promesa.core :as p]
             [beicon.core :as rx]
+            [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.repo :as rp]
@@ -55,7 +56,7 @@
   rs/WatchEvent
   (-apply-watch [this state s]
     (letfn [(on-created [{page :payload}]
-              #(stpr/assoc-page % page))
+              #(stpr/unpack-page % page))
             (on-failed [page]
               (uum/error (tr "errors.auth"))
               (rx/empty))]
@@ -101,7 +102,7 @@
            (rx/map on-success)
            (rx/catch on-failure)))))
 
-(def ^:static +update-page-schema+
+(def ^:const +update-page-schema+
   {:name [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
@@ -111,6 +112,22 @@
   [data]
   (sc/validate! +update-page-schema+ data)
   (map->UpdatePage data))
+
+(defn watch-page-changes
+  [id]
+  (letfn [(on-page-change [buffer]
+            #_(println "on-page-change" buffer)
+            (let [page (second buffer)]
+              (rs/emit! (update-page page))))]
+    (let [lens (l/getter #(stpr/pack-page % id))]
+      (as-> (l/focus-atom lens st/state) $
+        (rx/from-atom $)
+        (rx/debounce 1000 $)
+        (rx/scan (fn [acc page]
+                   (if (>= (:version page) (:version acc)) page acc)) $)
+        (rx/dedupe #(dissoc % :version) $)
+        (rx/buffer 2 1 $)
+        (rx/subscribe $ on-page-change #(throw %))))))
 
 ;; --- Update Page Metadata
 
@@ -145,7 +162,6 @@
   [data]
   (sc/validate! +update-page-schema+ data)
   (map->UpdatePageMetadata (dissoc data :data)))
-
 
 ;; --- Delete Page (by id)
 

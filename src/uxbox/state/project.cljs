@@ -14,13 +14,6 @@
   [state id]
   (update-in state [:projects-by-id] dissoc id))
 
-(defn assoc-page
-  "A reduce function for assoc the page
-  to the state map."
-  [state page]
-  (let [uuid (:id page)]
-    (update-in state [:pages-by-id] assoc uuid page)))
-
 (defn dissoc-page-shapes
   [state id]
   (let [shapes (get-in state [:shapes-by-id])]
@@ -47,14 +40,15 @@
   "Unpacks packed page object and assocs it to the
   provided state."
   [state page]
-  (let [shapes (get-in page [:data :shapes])
-        shapes-by-id (get-in page [:data :shapes-by-id])
+  (let [data (:data page)
+        shapes (:shapes data)
+        shapes-by-id (:shapes-by-id data)
         page (-> page
                  (dissoc page :data)
                  (assoc :shapes shapes))]
     (-> state
         (update :shapes-by-id merge shapes-by-id)
-        (assoc-page page))))
+        (update-in [:pages-by-id] assoc (:id page) page))))
 
 (defn dissoc-page
   "Remove page and all related stuff from the state."

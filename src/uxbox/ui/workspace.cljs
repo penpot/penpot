@@ -28,35 +28,6 @@
 ;; Workspace
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- focus-page
-  [id]
-  (as-> (ul/getter #(stpr/pack-page % id)) $
-    (l/focus-atom $ st/state)))
-
-;; TODO: move out of UI.
-
-(defn- on-page-change
-  [buffer]
-  #_(println "on-page-change" buffer)
-  (let [page (second buffer)]
-    (rs/emit! (udp/update-page page))))
-
-(defn- subscribe-to-page-changes
-  [pageid]
-  (as-> (focus-page pageid) $
-    (rx/from-atom $)
-    (rx/debounce 1000 $)
-    (rx/scan (fn [acc page]
-               #_(println "change:" (:version acc) "->" (:version page))
-               (let [result (if (>= (:version page) (:version acc))
-                              page
-                              acc)]
-                 ;; (println "!!!" (:version result))
-                 result)) $)
-    (rx/dedupe #(dissoc % :version) $)
-    (rx/buffer 2 1 $)
-    (rx/subscribe $ on-page-change #(throw %))))
-
 (defn- workspace-will-mount
   [own]
   (let [[projectid pageid] (:rum/props own)]
@@ -97,7 +68,7 @@
               (rx/dedupe $)
               (rx/filter #(= :scroll/viewport %) $)
               (rx/on-value $ handle-scroll-interaction))
-        sub2 (subscribe-to-page-changes pageid)]
+        sub2 (udp/watch-page-changes pageid)]
     (set! (.-scrollLeft el) uuwb/canvas-start-scroll-x)
     (set! (.-scrollTop el) uuwb/canvas-start-scroll-y)
     (assoc own ::sub1 sub1 ::sub2 sub2))))
@@ -120,7 +91,7 @@
         (.close (::sub2 old-state))
         (assoc state
                ::sub1 (::sub1 old-state)
-               ::sub2 (subscribe-to-page-changes pageid)))
+               ::sub2 (udp/watch-page-changes pageid)))
       (assoc state
              ::sub1 (::sub1 old-state)
              ::sub2 (::sub2 old-state)))))
