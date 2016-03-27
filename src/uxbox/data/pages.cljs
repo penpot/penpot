@@ -210,3 +210,26 @@
 (defn clean-page-history
   []
   (CleanPageHistory.))
+
+;; --- Select Page History
+
+(defrecord SelectPageHistory [page history]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [page (get-in state [:pages-by-id page])
+          page' (assoc page
+                       :history true
+                       :data (:data history)
+                       :version (:version history))]
+      (-> state
+          (stpr/unpack-page page')
+          (assoc-in [:workspace :history :selected] (:id history))
+          (update-in [:workspace :history]
+                     (fn [v]
+                       (if (:current-version v)
+                         v
+                         (assoc v :current-version (:version page)))))))))
+
+(defn select-page-history
+  [id history]
+  (SelectPageHistory. id history))
