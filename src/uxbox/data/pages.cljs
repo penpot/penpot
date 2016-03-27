@@ -185,7 +185,7 @@
             (on-failure [e]
               (uum/error (tr "errors.fetch-page-history"))
               (rx/empty))]
-      (->> (rp/do :fetch/page-history {:page id})
+      (->> (rp/do :fetch/page-history {:page id :max 15})
            (rx/map on-success)
            (rx/catch on-failure))))
 
