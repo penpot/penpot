@@ -122,7 +122,6 @@
 (defn watch-page-changes
   [id]
   (letfn [(on-page-change [buffer]
-            #_(println "on-page-change" buffer)
             (let [page (second buffer)]
               (rs/emit! (update-page page))))]
     (let [lens (l/getter #(stpr/pack-page % id))]
@@ -154,10 +153,8 @@
   rs/WatchEvent
   (-apply-watch [this state s]
     (letfn [(on-success [{page :payload}]
-              (println "on-success")
               #(assoc-in % [:pages-by-id id :version] (:version page)))
             (on-failure [e]
-              (println "on-failure" e)
               (uum/error (tr "errors.page-update"))
               (rx/empty))]
       (->> (rp/do :update/page-metadata (into {} this))
@@ -175,7 +172,7 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [_]
-              (rs/swap #(stpr/dissoc-page % id)))
+              (rs/swap #(stpr/purge-page % id)))
             (on-failure [e]
               (uum/error (tr "errors.delete-page"))
               (rx/empty))]
@@ -199,7 +196,6 @@
 (defrecord FetchPinnedPageHistory [id]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (println "FetchPinnedPageHistory" id)
     (letfn [(on-success [{history :payload}]
               (->PinnedPageHistoryFetched history))
             (on-failure [e]
@@ -219,7 +215,6 @@
 (defrecord PageHistoryFetched [history append?]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (println "PageHistoryFetched" "append=" append?)
     (let [items (into [] history)
           minv (apply min (map :version history))
           state (assoc-in state [:workspace :history :min-version] minv)]
@@ -232,7 +227,6 @@
 (defrecord FetchPageHistory [id since max]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (println "FetchPageHistory" id)
     (letfn [(on-success [{history :payload}]
               (->PageHistoryFetched history (not (nil? since))))
             (on-failure [e]
@@ -254,7 +248,6 @@
 (defrecord CleanPageHistory []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (println "CleanPageHistory")
     (-> state
         (assoc-in [:workspace :history :items] nil)
         (assoc-in [:workspace :history :selected] nil))))

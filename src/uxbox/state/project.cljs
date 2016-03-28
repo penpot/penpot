@@ -35,7 +35,6 @@
   "Return a packed version of page object ready
   for send to remore storage service."
   [state id]
-  (time
   (let [page (get-in state [:pages-by-id id])
         xf (filter #(= (:page (second %)) id))
         shapes (into {} xf (:shapes-by-id state))]
@@ -43,7 +42,7 @@
         (assoc-in [:data :shapes] (into [] (:shapes page)))
         (assoc-in [:data :shapes-by-id] shapes)
         (update-in [:data] dissoc :items)
-        (dissoc :shapes)))))
+        (dissoc :shapes))))
 
 (defn unpack-page
   "Unpacks packed page object and assocs it to the
