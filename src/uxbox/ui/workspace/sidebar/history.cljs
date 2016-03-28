@@ -39,7 +39,8 @@
 (defn- history-toolbox-will-mount
   [own]
   (let [page @wb/page-l]
-    (rs/emit! (dpg/fetch-page-history (:id page)))
+    (rs/emit! (dpg/fetch-page-history (:id page))
+              (dpg/fetch-pinned-page-history (:id page)))
     (add-watch wb/page-l ::key (fn [_ _ ov nv]
                                  (when (and (> (:version nv) (:version ov))
                                             (not (:history nv)))
@@ -54,7 +55,8 @@
 
 (defn history-list-render
   [own page history]
-  (let [select #(rs/emit! (dpg/select-page-history (:id page) %))]
+  (let [select #(rs/emit! (dpg/select-page-history (:id page) %))
+        show-more? (> (count (:items history)) 15)]
     (html
      [:ul.history-content
       [:li {:class (when-not (:selected history) "current")
@@ -68,9 +70,9 @@
          [:div.pin-icon i/pin]
          [:span (str "Version " (:version item)
                      " (" (dt/timeago (:created-at item)) ")")]])
-
-      [:li
-       [:a.btn-primary.btn-small "view more"]]])))
+      (if show-more?
+        [:li
+         [:a.btn-primary.btn-small "view more"]])])))
 
 (def history-list
   (mx/component

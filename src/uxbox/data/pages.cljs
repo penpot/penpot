@@ -26,7 +26,9 @@
 (defrecord PagesFetched [pages]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (reduce stpr/unpack-page state pages)))
+    (as-> state $
+      (reduce stpr/unpack-page $ pages)
+      (reduce stpr/assoc-page $ pages))))
 
 (defn pages-fetched?
   [v]
@@ -56,14 +58,16 @@
   rs/WatchEvent
   (-apply-watch [this state s]
     (letfn [(on-created [{page :payload}]
-              #(stpr/unpack-page % page))
+              (rx/of
+               #(stpr/unpack-page % page)
+               #(stpr/assoc-page % page)))
             (on-failed [page]
               (uum/error (tr "errors.auth"))
               (rx/empty))]
       (let [params (-> (into {} this)
                        (assoc :data {}))]
         (->> (rp/do :create/page params)
-             (rx/map on-created)
+             (rx/mapcat on-created)
              (rx/catch on-failed))))))
 
 (def ^:static +create-page-schema+
@@ -80,12 +84,11 @@
 
 ;; --- Update Page
 
-(defrecord UpdatePage [id name width height layout data]
+(defrecord UpdatePage [id name width height layout]
   rs/UpdateEvent
   (-apply-update [_ state]
     (letfn [(updater [page]
               (merge page
-                     (when data {:data data})
                      (when width {:width width})
                      (when height {:height height})
                      (when name {:name name})))]
@@ -94,13 +97,16 @@
   rs/WatchEvent
   (-apply-watch [this state s]
     (letfn [(on-success [{page :payload}]
-              #(assoc-in % [:pages-by-id id :version] (:version page)))
+              (rx/of
+               #(assoc-in % [:pages-by-id id :version] (:version page))
+               #(stpr/assoc-page % page)))
             (on-failure [e]
               (uum/error (tr "errors.page-update"))
               (rx/empty))]
-      (->> (rp/do :update/page (into {} this))
-           (rx/map on-success)
-           (rx/catch on-failure)))))
+      (let [page (stpr/pack-page state id)]
+        (->> (rp/do :update/page page)
+             (rx/mapcat on-success)
+             (rx/catch on-failure))))))
 
 (def ^:const +update-page-schema+
   {:name [sc/required sc/string]
@@ -181,37 +187,67 @@
   [id]
   (DeletePage. id))
 
-;; --- Page History Fetched
+;; --- Pinned Page History Fetched
 
-(defrecord PageHistoryFetched [history]
+(defrecord PinnedPageHistoryFetched [history]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (-> state
-        (assoc-in [:workspace :history :items] history))))
-        ;; (assoc-in [:workspace :history :selected] nil))))
+    (assoc-in state [:workspace :history :pinned-items] history)))
+
+;; --- Fetch Pinned Page History
+
+(defrecord FetchPinnedPageHistory [id]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (println "FetchPinnedPageHistory" id)
+    (letfn [(on-success [{history :payload}]
+              (->PinnedPageHistoryFetched history))
+            (on-failure [e]
+              (uum/error (tr "errors.fetch-page-history"))
+              (rx/empty))]
+      (let [params {:page id :pinned true}]
+        (->> (rp/do :fetch/page-history params)
+             (rx/map on-success)
+             (rx/catch on-failure))))))
+
+(defn fetch-pinned-page-history
+  [id]
+  (->FetchPinnedPageHistory id))
+
+;; --- Page History Fetched
+
+(defrecord PageHistoryFetched [history append?]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (println "PageHistoryFetched" "append=" append?)
+    (let [items (into [] history)
+          minv (apply min (map :version history))
+          state (assoc-in state [:workspace :history :min-version] minv)]
+      (if-not append?
+        (assoc-in state [:workspace :history :items] items)
+        (update-in state [:workspace :history :items] #(reduce conj % items))))))
 
 ;; --- Fetch Page History
 
-(defrecord FetchPageHistory [id]
+(defrecord FetchPageHistory [id since max]
   rs/WatchEvent
   (-apply-watch [_ state s]
     (println "FetchPageHistory" id)
     (letfn [(on-success [{history :payload}]
-              (->PageHistoryFetched history))
+              (->PageHistoryFetched history (not (nil? since))))
             (on-failure [e]
               (uum/error (tr "errors.fetch-page-history"))
               (rx/empty))]
-      (->> (rp/do :fetch/page-history {:page id :max 15})
-           (rx/map on-success)
-           (rx/catch on-failure))))
-
-  rs/EffectEvent
-  (-apply-effect [_ state]
-    ))
+      (let [params {:page id  :max (or max 15)}]
+        (->> (rp/do :fetch/page-history params)
+             (rx/map on-success)
+             (rx/catch on-failure))))))
 
 (defn fetch-page-history
-  [id]
-  (FetchPageHistory. id))
+  ([id]
+   (fetch-page-history id nil))
+  ([id params]
+   (map->FetchPageHistory (assoc params :id id))))
 
 ;; --- Clean Page History
 
@@ -229,30 +265,22 @@
 
 ;; --- Select Page History
 
-;; TODO: seems like it is inefficient packing the current
-;; page every time, but a this moment it works. Maybe in
-;; future it will need some refactor.
-
 (defrecord SelectPageHistory [id history]
   rs/UpdateEvent
   (-apply-update [_ state]
     (if (nil? history)
-      (let [packed (get-in state [:workspace :history :current])]
+      (let [packed (get-in state [:pagedata-by-id id])]
         (-> state
             (stpr/unpack-page packed)
-            (assoc-in [:workspace :history :selected] nil)
-            (assoc-in [:workspace :history :current] nil)))
-
-      (let [packed (stpr/pack-page state id)
-            page (get-in state [:pages-by-id id])
+            (assoc-in [:workspace :history :selected] nil)))
+      (let [page (get-in state [:pages-by-id id])
             page' (assoc page
                          :history true
                          :data (:data history)
                          :version (:version history))]
         (-> state
             (stpr/unpack-page page')
-            (assoc-in [:workspace :history :selected] (:id history))
-            (update-in [:workspace :history :current] (fnil identity packed)))))))
+            (assoc-in [:workspace :history :selected] (:id history)))))))
 
 (defn select-page-history
   [id history]

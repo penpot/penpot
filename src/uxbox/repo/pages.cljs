@@ -26,7 +26,7 @@
 (defmethod -do :fetch/page-history
   [type {:keys [page] :as params}]
   (let [url (str url "/pages/" page "/history")
-        query (select-keys params [:max :since])]
+        query (select-keys params [:max :since :pinned])]
     (send! {:method :get :url url :query query })))
 
 (defmethod -do :delete/page
