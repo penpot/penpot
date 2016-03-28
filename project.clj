@@ -5,8 +5,8 @@
   :jvm-opts ["-Dclojure.compiler.direct-linking=true"]
 
   :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.8.34" :scope "provided"]
-                 [figwheel-sidecar "0.5.1" :scope "test"]
+                 [org.clojure/clojurescript "1.8.40" :scope "provided"]
+                 [figwheel-sidecar "0.5.2" :scope "test"]
 
                  ;; runtime
                  [com.cognitect/transit-cljs "0.8.237"]
@@ -16,7 +16,7 @@
                  [cljsjs/react-dom "15.0.0-rc.2-0"]
                  [cljsjs/moment "2.10.6-3"]
                  [funcool/lentes "1.0.1"]
-                 [funcool/httpurr "0.5.0-20160314.065111-4"]
+                 [funcool/httpurr "0.5.0"]
                  [funcool/promesa "1.1.1"]
                  [funcool/beicon "1.1.1"]
                  [funcool/cuerdas "0.7.1"]
