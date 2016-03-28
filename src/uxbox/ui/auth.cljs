@@ -18,7 +18,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- login-submit
-  [local]
+  [event local]
+  (dom/prevent-default event)
   (let [form (:form @local)]
     (rs/emit! (da/login {:username (:email form)
                          :password (:password form)}))))
@@ -32,49 +33,43 @@
 (defn- login-field-change
   [local field event]
   (let [value (str/trim (dom/event->value event))]
-    (println @local value)
     (swap! local assoc-in [:form field] value)))
 
 (defn- login-render
   [own local]
-  (let [on-submit #(login-submit local)
+  (let [on-submit #(login-submit % local)
         submit-enabled? (login-submit-enabled? local)
         form (:form @local)]
-    (println "submit-enabled?" submit-enabled?)
     (html
      [:div.login
       [:div.login-body
        (uum/messages)
        [:a i/logo]
-       [:div.login-content
-        [:input.input-text
-         {:name "email"
-          :ref "email"
-          :value (:email form "")
-          :on-change #(login-field-change local :email %)
-          :placeholder "Email or Username"
-          :type "text"}]
-        [:input.input-text
-         {:name "password"
-          :ref "password"
-          :value (:password form "")
-          :on-change #(login-field-change local :password %)
-          :placeholder "Password"
-          :type "password"}]
-        #_[:div.input-checkbox.check-primary
-         [:input#checkbox1 {:value "1"
-                            :type "checkbox"}]
-         [:label {:for "checkbox1"} "Keep Me Signed in"]]
-        [:input.btn-primary
-         {:name "login"
-          :class (when-not submit-enabled? "btn-disabled")
-          :disabled (not submit-enabled?)
-          :value "Continue"
-          :type "submit"
-          :on-click on-submit}]
-        [:div.login-links
-         [:a {:on-click #(r/go :auth/recover-password)} "Forgot your password?"]
-         [:a {:on-click #(r/go :auth/register)} "Don't have an account?"]]]]])))
+       [:form {:on-submit on-submit}
+        [:div.login-content
+         [:input.input-text
+          {:name "email"
+           :ref "email"
+           :value (:email form "")
+           :on-change #(login-field-change local :email %)
+           :placeholder "Email or Username"
+           :type "text"}]
+         [:input.input-text
+          {:name "password"
+           :ref "password"
+           :value (:password form "")
+           :on-change #(login-field-change local :password %)
+           :placeholder "Password"
+           :type "password"}]
+         [:input.btn-primary
+          {:name "login"
+           :class (when-not submit-enabled? "btn-disabled")
+           :disabled (not submit-enabled?)
+           :value "Continue"
+           :type "submit"}]
+         [:div.login-links
+          [:a {:on-click #(r/go :auth/recover-password)} "Forgot your password?"]
+          [:a {:on-click #(r/go :auth/register)} "Don't have an account?"]]]]]])))
 
 (def ^:const login
   (mx/component
