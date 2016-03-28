@@ -71,6 +71,7 @@
   img {
     border: 2px solid $dark-ui-bg;
     border-radius: 50%;
+    flex-shrink: 0;
     width: 32px;
   }
 
