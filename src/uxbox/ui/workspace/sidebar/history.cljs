@@ -36,27 +36,11 @@
 ;; Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- history-toolbox-will-mount
-  [own]
-  (let [page @wb/page-l]
-    (rs/emit! (dpg/fetch-page-history (:id page))
-              (dpg/fetch-pinned-page-history (:id page)))
-    (add-watch wb/page-l ::key (fn [_ _ ov nv]
-                                 (when (and (> (:version nv) (:version ov))
-                                            (not (:history nv)))
-                                   (rs/emit! (dpg/fetch-page-history (:id nv))))))
-    own))
-
-(defn- history-toolbox-will-unmount
-  [own]
-  (rs/emit! (dpg/clean-page-history))
-  (remove-watch wb/page-l ::key)
-  own)
-
 (defn history-list-render
   [own page history]
   (let [select #(rs/emit! (dpg/select-page-history (:id page) %))
-        show-more? (> (count (:items history)) 15)]
+        min-version (apply min (map :version (:items history)))
+        show-more? (pos? min-version)]
     (html
      [:ul.history-content
       [:li {:class (when-not (:selected history) "current")
@@ -97,6 +81,27 @@
    {:render history-pinned-list-render
     :name "history-pinned-list"
     :mixins [mx/static]}))
+
+
+(defn- history-toolbox-will-mount
+  [own]
+  (let [page @wb/page-l]
+    (rs/emit! (dpg/fetch-page-history (:id page))
+              (dpg/fetch-pinned-page-history (:id page)))
+    (add-watch wb/page-l ::key
+               (fn [_ _ ov nv]
+                 (when (or (and (> (:version nv) (:version ov))
+                                (not (:history nv)))
+                           (not= (:id ov) (:id nv)))
+                   (rs/emit! (dpg/fetch-page-history (:id nv))
+                             (dpg/fetch-pinned-page-history (:id nv))))))
+    own))
+
+(defn- history-toolbox-will-unmount
+  [own]
+  (rs/emit! (dpg/clean-page-history))
+  (remove-watch wb/page-l ::key)
+  own)
 
 (defn history-toolbox-render
   [own]

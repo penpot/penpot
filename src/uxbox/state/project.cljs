@@ -58,11 +58,12 @@
         (update :shapes-by-id merge shapes-by-id)
         (update-in [:pages-by-id] assoc (:id page) page))))
 
-(defn dissoc-page
+(defn purge-page
   "Remove page and all related stuff from the state."
   [state id]
   (-> state
       (update :pages-by-id dissoc id)
+      (update :pagedata-by-id dissoc id)
       (dissoc-page-shapes id)))
 
 (defn project-pages
