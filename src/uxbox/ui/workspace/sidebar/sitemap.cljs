@@ -46,15 +46,18 @@
 
 (defn page-item-render
   [own page total active?]
-  (let [deletable? (> total 1)
-        navigate #(rs/emit! (dp/go-to (:project page) (:id page)))
-        edit #(lightbox/open! :page-form {:page page})
-        delete (fn [e]
-                 (dom/prevent-default e)
-                 (dom/stop-propagation e)
-                 (let [next (dp/go-to (:project page))
-                       event (udp/delete-page (:id page) next)]
-                   (rs/emit! event)))]
+  (letfn [(edit [event]
+            (lightbox/open! :page-form {:page page}))
+
+          (navigate [event]
+            (rs/emit! (dp/go-to (:project page) (:id page))))
+
+          (delete [event]
+            (dom/prevent-default event)
+            (dom/stop-propagation event)
+            (let [next (dp/go-to (:project page))
+                  event (udp/delete-page (:id page) next)]
+              (rs/emit! event)))]
     (html
      [:li {:class (when active? "selected")
            :on-click navigate}
@@ -62,7 +65,7 @@
       [:span (:name page)]
       [:div.page-actions
        [:a {:on-click edit} i/pencil]
-       (if deletable?
+       (if (> total 1)
          [:a {:on-click delete} i/trash])]])))
 
 (def ^:const page-item
