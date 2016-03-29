@@ -45,7 +45,7 @@
   (letfn [(handle-scroll-interaction []
             (let [stoper (->> uuc/actions-s
                               (rx/map :type)
-                              (rx/filter #(not= % :scroll/viewport))
+                              (rx/filter #(empty? %))
                               (rx/take 1))
                   local (:rum/local own)
                   initial @uuwb/mouse-viewport-a]
@@ -70,7 +70,7 @@
         sub1 (as-> uuc/actions-s $
               (rx/map :type $)
               (rx/dedupe $)
-              (rx/filter #(= :scroll/viewport %) $)
+              (rx/filter #(= "ui.workspace.scroll" %) $)
               (rx/on-value $ handle-scroll-interaction))
         sub2 (udp/watch-page-changes pageid)]
     (set! (.-scrollLeft el) uuwb/canvas-start-scroll-x)
