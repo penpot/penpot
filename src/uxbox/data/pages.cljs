@@ -88,20 +88,29 @@
 
 ;; --- Sync Page
 
+(defrecord PageSynced [page]
+  rs/UpdateEvent
+  (-apply-update [this state]
+    (-> state
+        (assoc-in [:pages-by-id (:id page) :version] (:version page))
+        (stpr/assoc-page page))))
+
+(defn- page-synced?
+  [event]
+  (instance? PageSynced event))
+
 (defrecord SyncPage [id]
   rs/WatchEvent
   (-apply-watch [this state s]
     (println "SyncPage")
     (letfn [(on-success [{page :payload}]
-              (rx/of
-               #(assoc-in % [:pages-by-id id :version] (:version page))
-               #(stpr/assoc-page % page)))
+              (->PageSynced page))
             (on-failure [e]
               (uum/error (tr "errors.page-update"))
               (rx/empty))]
       (let [page (stpr/pack-page state id)]
         (->> (rp/do :update/page page)
-             (rx/mapcat on-success)
+             (rx/map on-success)
              (rx/catch on-failure))))))
 
 (defn sync-page
@@ -120,9 +129,13 @@
     (let [page (get-in state [:pages-by-id id])]
       (if (:history page)
         (rx/empty)
-        (rx/of (sync-page id)
-               (fetch-page-history id)
-               (fetch-pinned-page-history id))))))
+
+        (rx/merge
+         (rx/of (sync-page id))
+         (->> (rx/filter page-synced? s)
+              (rx/take 1)
+              (rx/mapcat #(rx/of (fetch-page-history id)
+                                 (fetch-pinned-page-history id)))))))))
 
 (defn update-page
   [id]
