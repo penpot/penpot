@@ -21,6 +21,10 @@
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys)]))
 
+(defprotocol IPageUpdate
+  "A marker protocol for mark events that alters the
+  page and is subject to perform a backend synchronization.")
+
 ;; --- Pages Fetched
 
 (defrecord PagesFetched [pages]
@@ -82,20 +86,12 @@
   (sc/validate! +create-page-schema+ data)
   (map->CreatePage data))
 
-;; --- Update Page
+;; --- Sync Page
 
-(defrecord UpdatePage [id name width height layout]
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (letfn [(updater [page]
-              (merge page
-                     (when width {:width width})
-                     (when height {:height height})
-                     (when name {:name name})))]
-      (update-in state [:pages-by-id id] updater)))
-
+(defrecord SyncPage [id]
   rs/WatchEvent
   (-apply-watch [this state s]
+    (println "SyncPage")
     (letfn [(on-success [{page :payload}]
               (rx/of
                #(assoc-in % [:pages-by-id id :version] (:version page))
@@ -108,31 +104,38 @@
              (rx/mapcat on-success)
              (rx/catch on-failure))))))
 
-(def ^:const +update-page-schema+
-  {:name [sc/required sc/string]
-   :width [sc/required sc/integer]
-   :height [sc/required sc/integer]
-   :layout [sc/required sc/string]})
+(defn sync-page
+  [id]
+  (SyncPage. id))
+
+;; --- Update Page
+
+(declare fetch-page-history)
+(declare fetch-pinned-page-history)
+
+(defrecord UpdatePage [id]
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (println "UpdatePage")
+    (let [page (get-in state [:pages-by-id id])]
+      (if (:history page)
+        (rx/empty)
+        (rx/of (sync-page id)
+               (fetch-page-history id)
+               (fetch-pinned-page-history id))))))
 
 (defn update-page
-  [data]
-  (sc/validate! +update-page-schema+ data)
-  (map->UpdatePage data))
+  [id]
+  (UpdatePage. id))
 
 (defn watch-page-changes
   [id]
-  (letfn [(on-page-change [buffer]
-            (let [page (second buffer)]
-              (rs/emit! (update-page page))))]
-    (let [lens (l/getter #(stpr/pack-page % id))]
-      (as-> (l/focus-atom lens st/state) $
-        (rx/from-atom $)
-        (rx/debounce 1000 $)
-        (rx/scan (fn [acc page]
-                   (if (>= (:version page) (:version acc)) page acc)) $)
-        (rx/dedupe #(dissoc % :version) $)
-        (rx/buffer 2 1 $)
-        (rx/subscribe $ on-page-change #(throw %))))))
+  (letfn [(on-value []
+            (rs/emit! (update-page id)))]
+    (as-> rs/stream $
+      (rx/filter #(satisfies? IPageUpdate %) $)
+      (rx/debounce 2000 $)
+      (rx/on-next $ on-value))))
 
 ;; --- Update Page Metadata
 
@@ -160,6 +163,12 @@
       (->> (rp/do :update/page-metadata (into {} this))
            (rx/map on-success)
            (rx/catch on-failure)))))
+
+(def ^:const +update-page-schema+
+  {:name [sc/required sc/string]
+   :width [sc/required sc/integer]
+   :height [sc/required sc/integer]
+   :layout [sc/required sc/string]})
 
 (defn update-page-metadata
   [data]
@@ -269,8 +278,7 @@
       (let [page (get-in state [:pages-by-id id])
             page' (assoc page
                          :history true
-                         :data (:data history)
-                         :version (:version history))]
+                         :data (:data history))]
         (-> state
             (stpr/unpack-page page')
             (assoc-in [:workspace :history :selected] (:id history)))))))
@@ -278,3 +286,35 @@
 (defn select-page-history
   [id history]
   (SelectPageHistory. id history))
+
+;; --- Apply selected history
+
+(defrecord ApplySelectedHistory [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (println "ApplySelectedHistory" id)
+    (-> state
+        (update-in [:pages-by-id id] dissoc :history)
+        (assoc-in [:workspace :history :selected] nil)))
+
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (rx/of (update-page id))))
+
+(defn apply-selected-history
+  [id]
+  (ApplySelectedHistory. id))
+
+;; --- Discard Selected History
+
+(defrecord DiscardSelectedHistory [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [packed (get-in state [:pagedata-by-id id])]
+      (-> state
+          (stpr/unpack-page packed)
+          (assoc-in [:workspace :history :selected] nil)))))
+
+(defn discard-selected-history
+  [id]
+  (DiscardSelectedHistory. id))

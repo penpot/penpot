@@ -15,13 +15,14 @@
             [uxbox.state :as st]
             [uxbox.shapes :as shapes]
             [uxbox.library :as library]
-            [uxbox.util.datetime :as dt]
-            [uxbox.util.data :refer (read-string)]
             [uxbox.data.workspace :as dw]
-            [uxbox.data.pages :as dpg]
+            [uxbox.data.pages :as udp]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.messages :as msg]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
+            [uxbox.util.datetime :as dt]
+            [uxbox.util.data :refer (read-string)]
             [uxbox.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -38,7 +39,7 @@
 
 (defn history-list-render
   [own page history]
-  (let [select #(rs/emit! (dpg/select-page-history (:id page) %))
+  (let [select #(rs/emit! (udp/select-page-history (:id page) %))
         min-version (apply min (map :version (:items history)))
         show-more? (pos? min-version)]
     (html
@@ -58,9 +59,24 @@
         [:li
          [:a.btn-primary.btn-small "view more"]])])))
 
+(defn history-list-will-update
+  [own]
+  (let [[page history] (:rum/props own)]
+    (if (:selected history)
+      (let [selected (->> (:items history)
+                          (filter #(= (:selected history) (:id %)))
+                          (first))]
+        (msg/dialog
+         :message (tr "history.alert-message" (:version selected))
+         :on-accept #(rs/emit! (udp/apply-selected-history (:id page)))
+         :on-cancel #(rs/emit! (udp/discard-selected-history (:id page)))))
+      (msg/close))
+    own))
+
 (def history-list
   (mx/component
    {:render history-list-render
+    :will-update history-list-will-update
     :name "history-list"
     :mixins [mx/static]}))
 
@@ -81,27 +97,6 @@
    {:render history-pinned-list-render
     :name "history-pinned-list"
     :mixins [mx/static]}))
-
-
-(defn- history-toolbox-will-mount
-  [own]
-  (let [page @wb/page-l]
-    (rs/emit! (dpg/fetch-page-history (:id page))
-              (dpg/fetch-pinned-page-history (:id page)))
-    (add-watch wb/page-l ::key
-               (fn [_ _ ov nv]
-                 (when (or (and (> (:version nv) (:version ov))
-                                (not (:history nv)))
-                           (not= (:id ov) (:id nv)))
-                   (rs/emit! (dpg/fetch-page-history (:id nv))
-                             (dpg/fetch-pinned-page-history (:id nv))))))
-    own))
-
-(defn- history-toolbox-will-unmount
-  [own]
-  (rs/emit! (dpg/clean-page-history))
-  (remove-watch wb/page-l ::key)
-  own)
 
 (defn history-toolbox-render
   [own]
@@ -136,6 +131,4 @@
   (mx/component
    {:render history-toolbox-render
     :name "document-history-toolbox"
-    :will-mount history-toolbox-will-mount
-    :will-unmount history-toolbox-will-unmount
     :mixins [mx/static rum/reactive (mx/local)]}))

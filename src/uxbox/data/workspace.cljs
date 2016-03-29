@@ -16,6 +16,7 @@
             [uxbox.schema :as sc]
             [uxbox.xforms :as xf]
             [uxbox.shapes :as sh]
+            [uxbox.data.pages :as udp]
             [uxbox.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
@@ -123,6 +124,7 @@
             (let [groups (into #{} (map :group shapes))]
               (= 1 (count groups))))]
     (reify
+      udp/IPageUpdate
       rs/UpdateEvent
       (-apply-update [_ state]
         (let [shapes-by-id (get state :shapes-by-id)
@@ -147,6 +149,7 @@
 (defn duplicate-selected
   []
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [selected (get-in state [:workspace :selected])]

@@ -16,6 +16,7 @@
             [uxbox.schema :as sc]
             [uxbox.xforms :as xf]
             [uxbox.shapes :as sh]
+            [uxbox.data.pages :as udp]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
 
@@ -77,6 +78,7 @@
   [shape]
   (sc/validate! +shape-schema+ shape)
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [page (get-in state [:workspace :page])]
@@ -86,6 +88,7 @@
   "Remove the shape using its id."
   [id]
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id id])]
@@ -96,6 +99,7 @@
   [sid delta]
   {:pre [(gpt/point? delta)]}
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])]
@@ -105,6 +109,7 @@
   [sid {:keys [x1 y1 x2 y2] :as opts}]
   (sc/validate! +shape-line-attrs-schema+ opts)
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])
@@ -119,6 +124,7 @@
          (>= rotation 0)
          (>= 360 rotation)]}
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
@@ -134,6 +140,7 @@
   [sid {:keys [width height] :as opts}]
   (sc/validate! +shape-size-schema+ opts)
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])
@@ -143,6 +150,7 @@
 (defn update-vertex-position
   [id {:keys [vid delta]}]
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id id] sh/move-vertex vid delta))))
@@ -161,6 +169,7 @@
   [sid {:keys [content]}]
   {:pre [(string? content)]}
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:shapes-by-id sid :content] content))))
@@ -169,6 +178,7 @@
   [sid {:keys [color opacity] :as opts}]
   (sc/validate! +shape-fill-attrs-schema+ opts)
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
@@ -181,6 +191,7 @@
                letter-spacing line-height] :as opts}]
   (sc/validate! +shape-font-attrs-schema+ opts)
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid :font]
@@ -197,6 +208,7 @@
   [sid {:keys [color opacity type width] :as opts}]
   (sc/validate! +shape-stroke-attrs-schema+ opts)
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
@@ -210,6 +222,7 @@
   [sid {:keys [rx ry] :as opts}]
   (sc/validate! +shape-radius-attrs-schema+ opts)
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
@@ -220,6 +233,7 @@
 (defn hide-shape
   [sid]
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:shapes-by-id sid :hidden] true))
@@ -235,6 +249,7 @@
 (defn show-shape
   [sid]
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:shapes-by-id sid :hidden] false))
@@ -250,6 +265,7 @@
 (defn block-shape
   [sid]
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:shapes-by-id sid :blocked] true))
@@ -265,6 +281,7 @@
 (defn unblock-shape
   [sid]
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:shapes-by-id sid :blocked] false))
@@ -280,6 +297,7 @@
 (defn lock-shape
   [sid]
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:shapes-by-id sid :locked] true))
@@ -295,6 +313,7 @@
 (defn unlock-shape
   [sid]
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:shapes-by-id sid :locked] false))
@@ -314,6 +333,7 @@
   {:pre [(not (nil? tid))
          (not (nil? sid))]}
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (stsh/drop-shape state sid tid loc))))

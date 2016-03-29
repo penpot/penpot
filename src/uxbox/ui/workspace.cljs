@@ -16,6 +16,7 @@
             [uxbox.ui.core :as uuc]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
+            [uxbox.ui.messages :as uum]
             [uxbox.ui.workspace.base :as uuwb]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.header :refer (header)]
@@ -33,7 +34,10 @@
   (let [[projectid pageid] (:rum/props own)]
     (rs/emit! (dw/initialize projectid pageid)
               (dp/fetch-projects)
-              (udp/fetch-pages projectid))
+              (udp/fetch-pages projectid)
+              (udp/fetch-page-history pageid)
+              (udp/fetch-pinned-page-history pageid))
+
     own))
 
 (defn- workspace-did-mount
@@ -119,6 +123,8 @@
      [:div
       (header)
       (colorpalette)
+      (uum/messages)
+
       [:main.main-content
 
        [:section.workspace-content {:class classes :on-scroll on-scroll}

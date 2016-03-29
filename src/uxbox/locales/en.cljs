@@ -37,6 +37,8 @@
    "ds.help.circle" "Circle (Ctrl + E)"
    "ds.help.line" "Line (Ctrl + L)"
 
+   "history.alert-message" "You are seeng version %s"
+
    "errors.auth" "Username or passwords seems to be wrong."
 
    })
