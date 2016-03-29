@@ -52,8 +52,9 @@
         delete (fn [e]
                  (dom/prevent-default e)
                  (dom/stop-propagation e)
-                 (rs/emit! (udp/delete-page (:id page))
-                           (dp/go-to (:project page))))]
+                 (let [next (dp/go-to (:project page))
+                       event (udp/delete-page (:id page) next)]
+                   (rs/emit! event)))]
     (html
      [:li {:class (when active? "selected")
            :on-click navigate}
