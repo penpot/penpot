@@ -129,7 +129,6 @@
     (let [page (get-in state [:pages-by-id id])]
       (if (:history page)
         (rx/empty)
-
         (rx/merge
          (rx/of (sync-page id))
          (->> (rx/filter page-synced? s)
