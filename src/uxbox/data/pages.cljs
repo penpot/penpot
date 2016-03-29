@@ -177,24 +177,23 @@
 
 ;; --- Delete Page (by id)
 
-(defrecord DeletePage [id next]
+(defrecord DeletePage [id callback]
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [_]
-              (rx/of
-               (rs/swap #(stpr/purge-page % id))
-               next))
+              (rs/swap #(stpr/purge-page % id)))
             (on-failure [e]
               (uum/error (tr "errors.delete-page"))
               (rx/empty))]
       (->> (rp/do :delete/page id)
-           (rx/mapcat on-success)
+           (rx/map on-success)
+           (rx/tap callback)
            (rx/filter identity)
            (rx/catch on-failure)))))
 
 (defn delete-page
-  ([id] (DeletePage. id nil))
-  ([id next] (DeletePage. id next)))
+  ([id] (DeletePage. id (constantly nil)))
+  ([id callback] (DeletePage. id callback)))
 
 ;; --- Pinned Page History Fetched
 
