@@ -45,6 +45,14 @@
                          (when (= v x) idx))
                        coll)))
 
+(defn replace-by-id
+  [coll value]
+  {:pre [(vector? coll)]}
+  (mapv (fn [item]
+          (if (= (:id item) (:id value))
+            value
+            item)) coll))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numbers Parsing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

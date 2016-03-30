@@ -10,6 +10,7 @@
             [uxbox.data.workspace :as dw]
             [uxbox.data.projects :as dp]
             [uxbox.data.pages :as udp]
+            [uxbox.data.history :as udh]
             [uxbox.util.lens :as ul]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
@@ -35,8 +36,8 @@
     (rs/emit! (dw/initialize projectid pageid)
               (dp/fetch-projects)
               (udp/fetch-pages projectid)
-              (udp/fetch-page-history pageid)
-              (udp/fetch-pinned-page-history pageid))
+              (udh/fetch-page-history pageid)
+              (udh/fetch-pinned-page-history pageid))
 
     own))
 

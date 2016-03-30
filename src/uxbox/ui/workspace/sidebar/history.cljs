@@ -17,6 +17,7 @@
             [uxbox.library :as library]
             [uxbox.data.workspace :as dw]
             [uxbox.data.pages :as udp]
+            [uxbox.data.history :as udh]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.messages :as msg]
             [uxbox.ui.icons :as i]
@@ -25,39 +26,68 @@
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.dom :as dom]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Lenses
 
 (def ^:const history-l
   (as-> (l/in [:workspace :history]) $
     (l/focus-atom $ st/state)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Component
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Components
+
+(defn history-item-render
+  [own item selected]
+  (letfn [(on-select [event]
+            (dom/prevent-default event)
+            (rs/emit! (udh/select-page-history item)))
+          (on-pinned [event]
+            (dom/prevent-default event)
+            (dom/stop-propagation event)
+            (let [item (assoc item
+                              :label "no label"
+                              :pinned (not (:pinned item)))]
+              (rs/emit! (udh/update-history-item item))))]
+    (let [selected? (= (:id item) selected)]
+      (html
+       [:li {:class (when selected? "current") :on-click on-select}
+        [:div.pin-icon {:on-click on-pinned
+                        :class (when (:pinned item) "selected")}
+         i/pin]
+        [:span (str "Version " (:version item)
+                    " (" (dt/timeago (:created-at item)) ")")]]))))
+
+(def history-item
+  (mx/component
+   {:render history-item-render
+    :name "history-item"
+    :mixins [mx/static]}))
 
 (defn history-list-render
   [own page history]
-  (let [select #(rs/emit! (udp/select-page-history (:id page) %))
-        min-version (apply min (map :version (:items history)))
-        show-more? (pos? min-version)]
-    (html
-     [:ul.history-content
-      [:li {:class (when-not (:selected history) "current")
-            :on-click (partial select nil)}
-       [:div.pin-icon i/pin]
-       [:span (str "Version " (:version page) " (current)")]]
-      (for [item (:items history)]
-        [:li {:key (str (:id item))
-              :class (when (= (:id item) (:selected history)) "current")
-              :on-click (partial select item)}
+  (letfn [(on-select [event]
+            (dom/prevent-default event)
+            (rs/emit! (udh/discard-selected-history (:id page))))
+
+          (on-load-more [event]
+            (dom/prevent-default event)
+            (println "kaka")
+            (let [since (:min-version history)
+                  params {:since since}]
+              (rs/emit! (udh/fetch-page-history (:id page) params))))]
+
+    (let [selected (:selected history)
+          show-more? (pos? (:min-version history))]
+      (html
+       [:ul.history-content
+        [:li {:class (when-not selected "current")
+              :on-click on-select}
          [:div.pin-icon i/pin]
-         [:span (str "Version " (:version item)
-                     " (" (dt/timeago (:created-at item)) ")")]])
-      (if show-more?
-        [:li
-         [:a.btn-primary.btn-small "view more"]])])))
+         [:span (str "Version " (:version page) " (current)")]]
+        (for [item (:items history)]
+          (-> (history-item item selected)
+              (rum/with-key (str (:id item)))))
+        (if show-more?
+          [:li {:on-click on-load-more}
+           [:a.btn-primary.btn-small "view more"]])]))))
 
 (defn history-list-will-update
   [own]
@@ -68,8 +98,8 @@
                           (first))]
         (msg/dialog
          :message (tr "history.alert-message" (:version selected))
-         :on-accept #(rs/emit! (udp/apply-selected-history (:id page)))
-         :on-cancel #(rs/emit! (udp/discard-selected-history (:id page)))))
+         :on-accept #(rs/emit! (udh/apply-selected-history (:id page)))
+         :on-cancel #(rs/emit! (udh/discard-selected-history (:id page)))))
       (msg/close))
     own))
 
@@ -84,13 +114,15 @@
   [own history]
   (html
    [:ul.history-content
-    [:li.current
-     [:span "Current version"]]
-    [:li
-     [:span "Version 02/02/2016 12:33h"]
-     [:div.page-actions
-      [:a i/pencil]
-      [:a i/trash]]]]))
+    (for [item (:pinned-items history)]
+      (-> (history-item item (:selected history))
+          (rum/with-key (str (:id item)))))]))
+
+    ;; [:li
+    ;;  [:span "Version 02/02/2016 12:33h"]
+    ;;  [:div.page-actions
+    ;;   [:a i/pencil]
+    ;;   [:a i/trash]]]]))
 
 (def history-pinned-list
   (mx/component

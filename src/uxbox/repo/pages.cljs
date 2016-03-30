@@ -48,6 +48,13 @@
                 :body data}]
     (send! params)))
 
+(defmethod -do :update/page-history
+  [type {:keys [id page] :as data}]
+  (let [params {:url (str url "/pages/" page "/history/" id)
+                :method :put
+                :body data}]
+    (send! params)))
+
 (defmethod -do :update/page-metadata
   [type {:keys [id] :as data}]
   (let [params {:url (str url "/pages/" id "/metadata")
