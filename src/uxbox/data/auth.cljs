@@ -30,7 +30,11 @@
 
   rs/EffectEvent
   (-apply-effect [this state]
-    (assoc! local-storage ::auth data)))
+    (assoc! local-storage :uxbox/auth data)))
+
+(defn logged-in
+  [data]
+  (LoggedIn. data))
 
 ;; --- Login
 
@@ -39,12 +43,15 @@
   (-apply-watch [this state s]
     (letfn [(on-error [err]
               (uum/error (tr "errors.auth"))
-              (rx/empty))
-            (on-success [{value :payload}]
-              (->LoggedIn value))]
-      (->> (rp/do :login (merge (into {} this) {:scope "webapp"}))
-           (rx/map on-success)
-           (rx/catch on-error)))))
+              (rx/empty))]
+      (let [params {:username username
+                    :password password
+                    :scope "webapp"}]
+        (println "login:params:" params)
+        (->> (rp/do :login params)
+             (rx/map :payload)
+             (rx/map logged-in)
+             (rx/catch on-error))))))
 
 (def ^:const ^:private +login-schema+
   {:username [sc/required sc/string]
@@ -64,7 +71,11 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (r/navigate :auth/login))))
+    (rx/of (r/navigate :auth/login)))
+
+  rs/EffectEvent
+  (-apply-effect [this state]
+    (dissoc! local-storage :uxbox/auth)))
 
 (defn logout
   []

@@ -17,7 +17,7 @@
   (rs/init {:dashboard {:project-order :name
                         :project-filter ""}
             :route nil
-            :auth (::auth local-storage)
+            :auth (:uxbox/auth local-storage)
             :workspace nil
             :shapes-by-id {}
             :elements-by-id {}
