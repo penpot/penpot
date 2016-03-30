@@ -47,7 +47,6 @@
       (let [params {:username username
                     :password password
                     :scope "webapp"}]
-        (println "login:params:" params)
         (->> (rp/do :login params)
              (rx/map :payload)
              (rx/map logged-in)
