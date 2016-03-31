@@ -61,7 +61,6 @@
     (letfn [(on-loaded [{projects :payload}]
               #(reduce stpr/assoc-project % projects))
             (on-error [err]
-              (println err)
               (rx/empty))]
       (->> (rp/do :fetch/projects)
            (rx/map on-loaded)

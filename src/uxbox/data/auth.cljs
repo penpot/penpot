@@ -33,7 +33,6 @@
 (defrecord FetchProfile []
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (println "FetchProfile")
     (letfn [(on-error [err]
               (uum/error (tr "errors.profile-fetch"))
               (rx/empty))]
