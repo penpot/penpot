@@ -11,30 +11,15 @@
             [uxbox.repo.core :refer (-do url send!)]
             [uxbox.state :as ust]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Login
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defmethod -do :fetch/profile
+  [type _]
+  (let [url (str url "/profile/me")]
+    (send! {:method :get :url url})))
 
-(defn- request-token
-  [params]
+(defmethod -do :fetch/token
+  [type data]
   (let [url (str url "/auth/token")]
     (send! {:url url
                 :method :post
                 :auth false
-                :body params})))
-
-(defn- request-profile
-  []
-  (rx/of {:fullname "Cirilla Fiona"
-          :photo "/images/favicon.png"
-          :username "cirilla"
-          :email "cirilla@uxbox.io"}))
-
-(defmethod -do :login
-  [type data]
-  (->> (rx/zip (request-token data)
-               (request-profile))
-       (rx/map (fn [[authdata profile]]
-                 (println authdata profile)
-                 (println authdata profile)
-                 (merge authdata profile)))))
+                :body data})))

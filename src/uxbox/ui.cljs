@@ -15,6 +15,7 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.data.projects :as dp]
+            [uxbox.data.auth :as uda]
             [uxbox.ui.lightbox :as ui-lightbox]
             [uxbox.ui.auth :as ui-auth]
             [uxbox.ui.dashboard :as ui-dashboard]
@@ -56,9 +57,16 @@
         nil
         ))))
 
+(defn app-will-mount
+  [own]
+  (rs/emit! (uda/fetch-profile)
+            (dp/fetch-projects))
+  own)
+
 (def app
   (mx/component
    {:render app-render
+    :will-mount app-will-mount
     :mixins [rum/reactive]
     :name "app"}))
 

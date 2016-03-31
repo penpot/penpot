@@ -47,20 +47,21 @@
 ;; User Widget
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static user-l
-  (as-> (l/in [:auth]) $
+(def ^:static profile-l
+  (as-> (l/key :profile) $
     (l/focus-atom $ s/state)))
 
 (defn user-render
   [own]
-  (let [user (rum/react user-l)
+  (let [profile (rum/react profile-l)
         local (:rum/local own)]
+    (println "user-render" profile)
     (html
      [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)
                       :on-mouse-leave #(swap! local assoc :open false)}
-      [:span (:fullname user)]
+      [:span (:fullname profile)]
       [:img {:border "0"
-             :src (:photo user)}]
+             :src (:photo profile "/images/favicon.png")}]
       (user-menu (:open @local))])))
 
 (def user

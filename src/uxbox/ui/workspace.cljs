@@ -34,11 +34,9 @@
   [own]
   (let [[projectid pageid] (:rum/props own)]
     (rs/emit! (dw/initialize projectid pageid)
-              (dp/fetch-projects)
               (udp/fetch-pages projectid)
               (udh/fetch-page-history pageid)
               (udh/fetch-pinned-page-history pageid))
-
     own))
 
 (defn- workspace-did-mount

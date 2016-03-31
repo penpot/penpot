@@ -18,6 +18,7 @@
                         :project-filter ""}
             :route nil
             :auth (:uxbox/auth local-storage)
+            :profile nil
             :workspace nil
             :shapes-by-id {}
             :elements-by-id {}

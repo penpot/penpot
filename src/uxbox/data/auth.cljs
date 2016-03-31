@@ -17,6 +17,35 @@
             [uxbox.locales :refer (tr)]
             [uxbox.ui.messages :as uum]))
 
+;; --- Profile Fetched
+
+(defrecord ProfileFetched [data]
+  rs/UpdateEvent
+  (-apply-update [this state]
+    (assoc state :profile data)))
+
+(defn profile-fetched
+  [data]
+  (ProfileFetched. data))
+
+;; --- Fetch Profile
+
+(defrecord FetchProfile []
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (println "FetchProfile")
+    (letfn [(on-error [err]
+              (uum/error (tr "errors.profile-fetch"))
+              (rx/empty))]
+      (->> (rp/do :fetch/profile)
+           (rx/catch on-error)
+           (rx/map :payload)
+           (rx/map profile-fetched)))))
+
+(defn fetch-profile
+  []
+  (FetchProfile.))
+
 ;; --- Logged In
 
 (defrecord LoggedIn [data]
@@ -31,6 +60,10 @@
   rs/EffectEvent
   (-apply-effect [this state]
     (assoc! local-storage :uxbox/auth data)))
+
+(defn logged-in?
+  [v]
+  (instance? LoggedIn v))
 
 (defn logged-in
   [data]
@@ -47,10 +80,12 @@
       (let [params {:username username
                     :password password
                     :scope "webapp"}]
-        (->> (rp/do :login params)
+        (->> (rp/do :fetch/token params)
+             (rx/catch on-error)
              (rx/map :payload)
-             (rx/map logged-in)
-             (rx/catch on-error))))))
+             (rx/mapcat #(rx/of (logged-in %)
+                                (fetch-profile))))))))
+
 
 (def ^:const ^:private +login-schema+
   {:username [sc/required sc/string]
