@@ -55,7 +55,6 @@
   [own]
   (let [profile (rum/react profile-l)
         local (:rum/local own)]
-    (println "user-render" profile)
     (html
      [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)
                       :on-mouse-leave #(swap! local assoc :open false)}

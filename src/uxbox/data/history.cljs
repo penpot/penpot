@@ -89,13 +89,36 @@
 (defrecord CleanPageHistory []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (-> state
-        (assoc-in [:workspace :history :items] nil)
-        (assoc-in [:workspace :history :selected] nil))))
+    (println "CleanPageHistory")
+    (assoc-in state [:workspace :history] {})))
 
 (defn clean-page-history
   []
   (CleanPageHistory.))
+
+(defn clean-page-history?
+  [v]
+  (instance? CleanPageHistory v))
+
+;; --- Watch Page Changes
+
+(defrecord WatchPageChanges []
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (println "WatchPageChanges")
+    (let [stoper (->> (rx/filter clean-page-history? s)
+                      (rx/take 1))]
+      (->> (rx/filter udp/page-synced? s)
+           (rx/take-until stoper)
+           (rx/map (comp :id :page))
+           (rx/pr-log "watcher:")
+           (rx/mapcat #(rx/of
+                        (fetch-page-history %)
+                        (fetch-pinned-page-history %)))))))
+
+(defn watch-page-changes
+  []
+  (WatchPageChanges.))
 
 ;; --- Select Page History
 

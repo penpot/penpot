@@ -119,9 +119,6 @@
 
 ;; --- Update Page
 
-(declare fetch-page-history)
-(declare fetch-pinned-page-history)
-
 (defrecord UpdatePage [id]
   rs/WatchEvent
   (-apply-watch [this state s]
@@ -129,12 +126,11 @@
     (let [page (get-in state [:pages-by-id id])]
       (if (:history page)
         (rx/empty)
-        (rx/merge
-         (rx/of (sync-page id))
-         (->> (rx/filter page-synced? s)
-              (rx/take 1)
-              (rx/mapcat #(rx/of (fetch-page-history id)
-                                 (fetch-pinned-page-history id)))))))))
+        (rx/of (sync-page id))))))
+
+(defn update-page?
+  [v]
+  (instance? UpdatePage v))
 
 (defn update-page
   [id]

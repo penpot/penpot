@@ -35,6 +35,7 @@
   (let [[projectid pageid] (:rum/props own)]
     (rs/emit! (dw/initialize projectid pageid)
               (udp/fetch-pages projectid)
+              (udh/watch-page-changes)
               (udh/fetch-page-history pageid)
               (udh/fetch-pinned-page-history pageid))
     own))
@@ -78,6 +79,7 @@
 
 (defn- workspace-will-unmount
   [own]
+  (rs/emit! (udh/clean-page-history))
   (let [sub1 (::sub1 own)
         sub2 (::sub2 own)]
     (.close sub1)
