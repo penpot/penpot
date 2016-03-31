@@ -90,6 +90,7 @@
   "A default error handler."
   [e]
   (println "Unexpected error: " e)
+  (js/console.error e.stack)
   (rx/throw e))
 
 (defn init
