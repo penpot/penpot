@@ -102,7 +102,6 @@
 (defrecord SyncPage [id]
   rs/WatchEvent
   (-apply-watch [this state s]
-    (println "SyncPage")
     (letfn [(on-success [{page :payload}]
               (->PageSynced page))
             (on-failure [e]
@@ -122,7 +121,6 @@
 (defrecord UpdatePage [id]
   rs/WatchEvent
   (-apply-watch [this state s]
-    (println "UpdatePage")
     (let [page (get-in state [:pages-by-id id])]
       (if (:history page)
         (rx/empty)
