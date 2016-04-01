@@ -59,8 +59,9 @@
 
 (defn app-will-mount
   [own]
-  (rs/emit! (uda/fetch-profile)
-            (dp/fetch-projects))
+  (when @auth-data
+    (rs/emit! (uda/fetch-profile)
+              (dp/fetch-projects)))
   own)
 
 (def app

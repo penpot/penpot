@@ -15,6 +15,7 @@
             [uxbox.state :as st]
             [uxbox.schema :as sc]
             [uxbox.locales :refer (tr)]
+            [uxbox.data.projects :as dp]
             [uxbox.ui.messages :as uum]))
 
 ;; --- Profile Fetched
@@ -83,6 +84,7 @@
              (rx/catch on-error)
              (rx/map :payload)
              (rx/mapcat #(rx/of (logged-in %)
+                                (dp/fetch-projects)
                                 (fetch-profile))))))))
 
 
