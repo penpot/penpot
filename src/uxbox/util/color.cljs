@@ -7,18 +7,9 @@
 
 (ns uxbox.util.color
   "Color conversion utils."
-  (:require [cuerdas.core :as str]))
-
-(defn hex->rgb
-  [^string data]
-  (some->> (re-find #"^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$" data)
-           (rest)
-           (mapv #(js/parseInt % 16))))
-
-(defn hex->rgba
-  [^string data ^number opacity]
-  (-> (hex->rgb data)
-      (conj opacity)))
+  (:require [cuerdas.core :as str]
+            [uxbox.util.math :as math]
+            [goog.color :as gcolor]))
 
 (defn rgb->str
   [color]
@@ -27,11 +18,32 @@
     (apply str/format "rgb(%s,%s,%s)" color)
     (apply str/format "rgba(%s,%s,%s,%s)" color)))
 
+(defn rgb->hsv
+  [[r g b]]
+  (into [] (gcolor/rgbToHsv r g b)))
+
+(defn hsv->rgb
+  [[h s v]]
+  (into [] (gcolor/hsvToRgb h s v)))
+
+(defn hex->rgb
+  [v]
+  (into [] (gcolor/hexToRgb v)))
+
 (defn rgb->hex
   [[r g b]]
-  (letfn [(to-hex [c]
-            (let [hexdata (.toString c 16)]
-              (if (= (count hexdata) 1)
-                (str "0" hexdata)
-                hexdata)))]
-    (str "#" (to-hex r) (to-hex g) (to-hex b))))
+  (gcolor/rgbToHex r g b))
+
+(defn hex->hsv
+  [v]
+  (into [] (gcolor/hexToHsv v)))
+
+(defn hsv->hex
+  [[h s v]]
+  (gcolor/hsvToHex h s v))
+
+(defn hex->rgba
+  [^string data ^number opacity]
+  (-> (hex->rgb data)
+      (conj opacity)))
+
