@@ -58,6 +58,12 @@
 
 }
 
+.profile-form,
+.password-form {
+  display: flex;
+  flex-direction: column;
+}
+
 .avatar-form {
   align-items: center;
   display: flex;
