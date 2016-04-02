@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.repo.auth
+(ns uxbox.repo.users
   "A main interface for access to remote resources."
   (:refer-clojure :exclude [do])
   (:require [beicon.core :as rx]
@@ -15,14 +15,6 @@
   [type _]
   (let [url (str url "/profile/me")]
     (send! {:method :get :url url})))
-
-(defmethod request :fetch/token
-  [type data]
-  (let [url (str url "/auth/token")]
-    (send! {:url url
-                :method :post
-                :auth false
-                :body data})))
 
 (defmethod request :update/profile
   [type data]

@@ -53,7 +53,7 @@
       (let [params {:username username
                     :password password
                     :scope "webapp"}]
-        (->> (rp/do :fetch/token params)
+        (->> (rp/req :fetch/token params)
              (rx/catch on-error)
              (rx/map :payload)
              (rx/mapcat #(rx/of (logged-in %)

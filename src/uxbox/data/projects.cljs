@@ -62,7 +62,7 @@
               #(reduce stpr/assoc-project % projects))
             (on-error [err]
               (rx/empty))]
-      (->> (rp/do :fetch/projects)
+      (->> (rp/req :fetch/projects)
            (rx/map on-loaded)
            (rx/catch on-error)))))
 
@@ -83,7 +83,7 @@
                                              :data nil))))
             (on-failure [err]
               (uum/error (tr "errors.create-project")))]
-      (->> (rp/do :create/project {:name name})
+      (->> (rp/req :create/project {:name name})
            (rx/mapcat on-success)
            (rx/catch on-failure)))))
 
@@ -107,7 +107,7 @@
               (rs/swap #(stpr/dissoc-project % id)))
             (on-failure [e]
               (uum/error (tr "errors.delete-project")))]
-      (->> (rp/do :delete/project id)
+      (->> (rp/req :delete/project id)
            (rx/map on-success)
            (rx/catch on-failure)))))
 

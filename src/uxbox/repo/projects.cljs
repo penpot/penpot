@@ -7,26 +7,26 @@
 (ns uxbox.repo.projects
   "A main interface for access to remote resources."
   (:require [beicon.core :as rx]
-            [uxbox.repo.core :refer (-do url send!)]
+            [uxbox.repo.core :refer (request url send!)]
             [uxbox.state :as ust]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Login
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod -do :fetch/projects
+(defmethod request :fetch/projects
   [type data]
   (let [url (str url "/projects")]
     (send! {:url url :method :get})))
 
-(defmethod -do :create/project
+(defmethod request :create/project
   [_ data]
   (let [params {:url (str url "/projects")
                 :method :post
                 :body data}]
     (send! params)))
 
-(defmethod -do :delete/project
+(defmethod request :delete/project
   [_ id]
   (let [url (str url "/projects/" id)]
     (send! {:url url :method :delete})))

@@ -39,7 +39,7 @@
               (uum/error (tr "errors.fetch-page-history"))
               (rx/empty))]
       (let [params {:page id :pinned true}]
-        (->> (rp/do :fetch/page-history params)
+        (->> (rp/req :fetch/page-history params)
              (rx/map on-success)
              (rx/catch on-failure))))))
 
@@ -74,7 +74,7 @@
       (let [params (merge
                     {:page id :max (or max 15)}
                     (when since {:since since}))]
-        (->> (rp/do :fetch/page-history params)
+        (->> (rp/req :fetch/page-history params)
              (rx/map on-success)
              (rx/catch on-failure))))))
 
@@ -211,7 +211,7 @@
               (uum/error (tr "errors.page-history-update"))
               (rx/empty))]
       (rx/merge
-       (->> (rp/do :update/page-history item)
+       (->> (rp/req :update/page-history item)
             (rx/map on-success)
             (rx/catch on-failure))
        (->> (rx/filter history-updated? s)

@@ -78,9 +78,9 @@
          (rx/map conditional-decode)
          (rx/mapcat handle-http-status))))
 
-(defmulti -do
+(defmulti request
   (fn [type data] type))
 
-(defmethod -do :default
+(defmethod request :default
   [type data]
   (throw (ex-info (str "No implementation found for " type) {:data data})))

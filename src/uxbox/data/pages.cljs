@@ -48,7 +48,7 @@
             (on-error [err]
               (js/console.error err)
               (rx/empty))]
-      (->> (rp/do :fetch/pages-by-project {:project projectid})
+      (->> (rp/req :fetch/pages-by-project {:project projectid})
            (rx/map on-loaded)
            (rx/catch on-error)))))
 
@@ -70,7 +70,7 @@
               (rx/empty))]
       (let [params (-> (into {} this)
                        (assoc :data {}))]
-        (->> (rp/do :create/page params)
+        (->> (rp/req :create/page params)
              (rx/mapcat on-created)
              (rx/catch on-failed))))))
 
@@ -108,7 +108,7 @@
               (uum/error (tr "errors.page-update"))
               (rx/empty))]
       (let [page (stpr/pack-page state id)]
-        (->> (rp/do :update/page page)
+        (->> (rp/req :update/page page)
              (rx/map on-success)
              (rx/catch on-failure))))))
 
@@ -166,7 +166,7 @@
             (on-failure [e]
               (uum/error (tr "errors.page-update"))
               (rx/empty))]
-      (->> (rp/do :update/page-metadata (into {} this))
+      (->> (rp/req :update/page-metadata (into {} this))
            (rx/map on-success)
            (rx/catch on-failure)))))
 
@@ -191,7 +191,7 @@
             (on-failure [e]
               (uum/error (tr "errors.delete-page"))
               (rx/empty))]
-      (->> (rp/do :delete/page id)
+      (->> (rp/req :delete/page id)
            (rx/map on-success)
            (rx/tap callback)
            (rx/filter identity)

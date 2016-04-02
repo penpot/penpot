@@ -33,7 +33,7 @@
     (letfn [(on-error [err]
               (uum/error (tr "errors.profile-fetch"))
               (rx/empty))]
-      (->> (rp/do :fetch/profile)
+      (->> (rp/req :fetch/profile)
            (rx/catch on-error)
            (rx/map :payload)
            (rx/map profile-fetched)))))
@@ -50,7 +50,7 @@
     (letfn [(on-error [err]
               (uum/error (tr "errors.update-profile"))
               (rx/empty))]
-      (->> (rp/do :update/profile data)
+      (->> (rp/req :update/profile data)
            (rx/catch on-error)
            (rx/map :payload)
            (rx/map profile-fetched)))))
@@ -67,7 +67,7 @@
     ;; (letfn [(on-error [err]
     ;;           (uum/error (tr "errors.update-password"))
     ;;           (rx/empty))]
-    ;;   (->> (rp/do :update/password data)
+    ;;   (->> (rp/req :update/password data)
     ;;        (rx/catch on-error)))))
     (js/alert "Not implemented")
     (rx/empty)))
