@@ -18,6 +18,7 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.messages :as uum]
+            [uxbox.ui.confirm]
             [uxbox.ui.workspace.base :as uuwb]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.header :refer (header)]
