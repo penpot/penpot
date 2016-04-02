@@ -16,11 +16,13 @@
 
 (defn stop-propagation
   [e]
-  (.stopPropagation e))
+  (when e
+    (.stopPropagation e)))
 
 (defn prevent-default
   [e]
-  (.preventDefault e))
+  (when e
+    (.preventDefault e)))
 
 (defn event->inner-text
   [e]
