@@ -23,3 +23,10 @@
                 :method :post
                 :auth false
                 :body data})))
+
+(defmethod -do :update/profile
+  [type data]
+  (let [params {:url (str url "/profile/me")
+                :method :put
+                :body data}]
+    (send! params)))

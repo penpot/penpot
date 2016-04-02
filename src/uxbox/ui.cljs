@@ -15,7 +15,7 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.data.projects :as dp]
-            [uxbox.data.auth :as uda]
+            [uxbox.data.users :as udu]
             [uxbox.ui.lightbox :as ui-lightbox]
             [uxbox.ui.auth :as ui-auth]
             [uxbox.ui.dashboard :as ui-dashboard]
@@ -60,7 +60,7 @@
 (defn app-will-mount
   [own]
   (when @auth-data
-    (rs/emit! (uda/fetch-profile)
+    (rs/emit! (udu/fetch-profile)
               (dp/fetch-projects)))
   own)
 

@@ -16,35 +16,8 @@
             [uxbox.schema :as sc]
             [uxbox.locales :refer (tr)]
             [uxbox.data.projects :as dp]
+            [uxbox.data.users :as udu]
             [uxbox.ui.messages :as uum]))
-
-;; --- Profile Fetched
-
-(defrecord ProfileFetched [data]
-  rs/UpdateEvent
-  (-apply-update [this state]
-    (assoc state :profile data)))
-
-(defn profile-fetched
-  [data]
-  (ProfileFetched. data))
-
-;; --- Fetch Profile
-
-(defrecord FetchProfile []
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (letfn [(on-error [err]
-              (uum/error (tr "errors.profile-fetch"))
-              (rx/empty))]
-      (->> (rp/do :fetch/profile)
-           (rx/catch on-error)
-           (rx/map :payload)
-           (rx/map profile-fetched)))))
-
-(defn fetch-profile
-  []
-  (FetchProfile.))
 
 ;; --- Logged In
 
@@ -85,8 +58,7 @@
              (rx/map :payload)
              (rx/mapcat #(rx/of (logged-in %)
                                 (dp/fetch-projects)
-                                (fetch-profile))))))))
-
+                                (udu/fetch-profile))))))))
 
 (def ^:const ^:private +login-schema+
   {:username [sc/required sc/string]
