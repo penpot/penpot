@@ -194,7 +194,11 @@
             :on-change on-change
             :value (or (:hex @local) color "")
             :type "text"}]]
-         (colorpicker :library #(swap! local merge %))
+         [:div.row-flex.center.color-picker-default
+          (colorpicker
+           :value (or (:hex @local) color "#00ccff")
+           :on-change #(swap! local assoc :hex %))]
+
          [:input#project-btn.btn-primary
           {:value "+ Add color"
            :on-click submit

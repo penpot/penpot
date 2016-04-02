@@ -5,11 +5,96 @@
 // Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-.colorpicker {
+.color-picker {
+  display: flex;
 
-  canvas {
-    border: 1px solid #111111;
-    cursor: cell;
+  /* Common stuff */
+  .picker-wrapper,
+  .slide-wrapper {
+    position: relative;
+  }
+  .picker-indicator,
+  .slide-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+  }
+  .picker,
+  .slide {
+    cursor: crosshair;
+  }
+}
+
+/* Default skin */
+
+.color-picker-default {
+  padding: 4px;
+  border-radius: 2px;
+
+  .picker {
+    width: 200px;
+    height: 200px;
   }
 
+  .slide {
+    width: 20px;
+    height: 200px;
+  }
+  .slide-wrapper {
+    margin-left: 4px;
+  }
+  .picker-indicator {
+    width: 5px;
+    height: 5px;
+    border: 2px solid darkblue;
+    border-radius: 4px;
+    opacity: .5;
+    background-color: white;
+  }
+  .slide-indicator {
+    width: 28px;
+    height: 10px;
+    left: -4px;
+    opacity: .6;
+    border: 4px solid lightblue;
+    border-radius: 4px;
+    background-color: white;
+  }
+}
+
+/* Small skin */
+
+.color-picker-small {
+  border-radius: 2px;
+
+  .picker {
+    width: 170px;
+    height: 170px;
+  }
+
+  .slide {
+    width: 20px;
+    height: 170px;
+  }
+  .slide-wrapper {
+    margin-left: 4px;
+  }
+  .picker-indicator {
+    width: 5px;
+    height: 5px;
+    border: 2px solid darkblue;
+    border-radius: 4px;
+    opacity: .5;
+    background-color: white;
+  }
+  .slide-indicator {
+    width: 28px;
+    height: 10px;
+    left: -4px;
+    opacity: .6;
+    border: 4px solid lightblue;
+    border-radius: 4px;
+    background-color: white;
+  }
 }

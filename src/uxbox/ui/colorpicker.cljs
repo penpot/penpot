@@ -9,168 +9,142 @@
             [uxbox.ui.mixins :as mx])
   (:import goog.events.EventType))
 
-(def ^:static ^:private +types+
-  {:library
-   {:picker {:width 205 :height 205}
-    :bar {:width 15 :height 205 :img "/images/color-bar-library.png"}}
-   :options
-   {:picker {:width 165 :height 165}
-    :bar {:width 15 :height 165 :img "/images/color-bar-options.png"}}})
+;; --- Picker Box
 
-(defn- get-mouse-pos
-  [own ref event]
-  (let [canvas (mx/get-ref-dom own ref)
-        brect (.getBoundingClientRect canvas)
-        x (- (.-clientX event) (.-left brect))
-        y (- (.-clientY event) (.-top brect))]
-    [x y]))
+(defn- picker-box-render
+  [own]
+  (html
+   [:svg {:width "100%" :height "100%" :version "1.1"}
+    [:defs
+     [:linearGradient {:id "gradient-black"
+                       :x1 "0%" :y1 "100%"
+                       :x2 "0%" :y2 "0%"}
+      [:stop {:offset "0%" :stopColor "#000000" :stopOpacity "1"}]
+      [:stop {:offset "100%" :stopColor "#CC9A81" :stopOpacity "0"}]]
+     [:linearGradient {:id "gradient-white"
+                       :x1 "0%" :y1 "100%"
+                       :x2 "100%" :y2 "100%"}
+      [:stop {:offset "0%" :stopColor "#FFFFFF" :stopOpacity "1"}]
+      [:stop {:offset "100%" :stopColor "#CC9A81" :stopOpacity "0"}]]]
+    [:rect {:x "0" :y "0" :width "100%" :height "100%"
+            :fill "url(#gradient-white)"}]
+    [:rect {:x "0" :y "0" :width "100%" :height "100%"
+            :fill "url(#gradient-black)"}]]))
 
-(defn- draw-color-gradient
-  [context type color]
-  (let [width (get-in +types+ [type :picker :width])
-        halfwidth (/ width 2)
-        gradient1 (.createLinearGradient context 0 halfwidth width halfwidth)
-        gradient2 (.createLinearGradient context halfwidth width halfwidth 0)]
+(def picker-box
+  (mx/component
+   {:render picker-box-render
+    :name "picker-box"
+    :mixins []}))
 
-    ;; Draw plain color
-    (set! (.-fillStyle context) color)
-    (.fillRect context 0 0 width width)
+;; --- Slider Box
 
-    ;; White gradient
-    (.addColorStop gradient2 0.1 "rgba(255,255,255,1)")
-    (.addColorStop gradient2 1 "rgba(0,0,0,0)")
+(defn slider-box-render
+  [own]
+  (html
+   [:svg {:width "100%" :height "100%" :version "1.1"}
+    [:defs
+     [:linearGradient {:id "gradient-hsv"
+                       :x1 "0%" :y1 "100%"
+                       :x2 "0%" :y2 "0%"}
+      [:stop {:offset "0%" :stopColor "#FF0000" :stopOpacity "1"}]
+      [:stop {:offset "13%" :stopColor "#FF00FF" :stopOpacity "1"}]
+      [:stop {:offset "25%" :stopColor "#8000FF" :stopOpacity "1"}]
+      [:stop {:offset "38%" :stopColor "#0040FF" :stopOpacity "1"}]
+      [:stop {:offset "50%" :stopColor "#00FFFF" :stopOpacity "1"}]
+      [:stop {:offset "63%" :stopColor "#00FF40" :stopOpacity "1"}]
+      [:stop {:offset "75%" :stopColor "#0BED00" :stopOpacity "1"}]
+      [:stop {:offset "88%" :stopColor "#FFFF00" :stopOpacity "1"}]
+      [:stop {:offset "100%" :stopColor "#FF0000" :stopOpacity "1"}]]]
+    [:rect {:x 0 :y 0 :width "100%" :height "100%"
+            :fill "url(#gradient-hsv)"}]]))
 
-    (set! (.-fillStyle context) gradient2)
-    (.fillRect context 0 0 width width)
+(def slider-box
+  (mx/component
+   {:render slider-box-render
+    :name "slider-box"
+    :mixins []}))
 
-    ;; Black gradient
-    (.addColorStop gradient1 0.05 "rgba(0,0,0,1)")
-    (.addColorStop gradient1 1 "rgba(0,0,0,0)")
+;; --- Color Picker
 
-    (set! (.-fillStyle context) gradient1)
-    (.fillRect context 0 0 width width)))
+(defn- on-picker-click
+  [local on-change color event]
+  (let [event (.-nativeEvent event)
+        my (.-offsetY event)
+        height (:p-height @local)
+        width (:p-width @local)
+        mx (.-offsetX event)
+        my (.-offsetY event)
+        [h] color
+        s (/ mx width)
+        v (/ (- height my) height)]
+    (on-change (color/hsv->hex [(+ h 15) s (* v 255)]))
+    (swap! local dissoc :color)))
 
-(defn- get-selection-border-color
-  [color]
-  (let [[r g b] (color/hex->rgb color)
-        x1 (+ (* 0.299 r) (* 0.587 g) (* 0.114 b))
-        darkness (- 1 (/ x1 255))]
-    (if (> darkness 0.5)
-      "#FFFFFF"
-      "#000000")))
-
-(defn- draw-current-selection
-  [own color type event]
-  (let [canvas (mx/get-ref-dom own "colorpicker")
-        context (.getContext canvas "2d")
-        local (:rum/local own)
-        [x y :as pos] (get-mouse-pos own "colorpicker" event)
-        border-color (get-selection-border-color color)]
-
-    (.clearRect context 0 0 (.-width canvas) (.-height canvas))
-    (draw-color-gradient context type (:color @local))
-
-    (.beginPath context)
-    (.arc context x y 5 0 (* js/Math.PI 2) false)
-    (set! (.-fillStyle context) color)
-    (.fill context)
-    (set! (.-lineWidth context) 1)
-    (set! (.-strokeStyle context) border-color)
-    (.stroke context)))
-
-(defn- initialize
-  [own type]
-  (let [canvas1 (mx/get-ref-dom own "colorpicker")
-        context1 (.getContext canvas1 "2d")
-        canvas2 (mx/get-ref-dom own "colorbar")
-        context2 (.getContext canvas2 "2d")
-        img (js/Image.)
-        img-path (get-in +types+ [type :bar :img])
-        local (:rum/local own)]
-
-    (add-watch local ::key
-               (fn [_ _ o v]
-                 (when (not= (:color o) (:color v))
-                   (draw-color-gradient context1 type (:color v)))))
-
-    (reset! local {:color "#FF0000"})
-
-    (set! (.-src img) img-path)
-    (let [key1 (events/listen img EventType.LOAD #(.drawImage context2 img 0 0))]
-      {::key key})))
-
-(defn- get-color
-  [own ref [x y]]
-  (let [canvas (mx/get-ref-dom own ref)
-        context (.getContext canvas "2d")
-        image (.getImageData context x y 1 1)
-        r (aget (.-data image) 0)
-        g (aget (.-data image) 1)
-        b (aget (.-data image) 2)]
-    (color/rgb->hex [r g b])))
+(defn- on-slide-click
+  [local event]
+  (let [event (.-nativeEvent event)
+        my (.-offsetY event)
+        h  (* (/ my (:s-height @local)) 360)]
+    (println "on-slide-click")
+    (swap! local assoc :color [h 1 255])))
 
 (defn- colorpicker-render
-  [own type callback]
+  [own & {:keys [value on-change] :or {value "#d4edfb"}}]
   (let [local (:rum/local own)
-        cp-width (get-in +types+ [type :picker :width])
-        cp-height (get-in +types+ [type :picker :height])
-        cb-width (get-in +types+ [type :bar :width])
-        cb-height (get-in +types+ [type :bar :height])
-        bar-pos (:pos @local 0)]
-    (letfn [(on-bar-mouse-down [event])
-            (on-bar-mouse-up [event])
-            (on-picker-click [event]
-              (let [[x y :as pos] (get-mouse-pos own "colorpicker" event)
-                    color (get-color own "colorpicker" pos)]
-                (draw-current-selection own color type event)
-                (callback {:hex color
-                           :rgb (color/hex->rgb color)})))
-            (on-bar-click [event]
-              (let [[x y :as pos] (get-mouse-pos own "colorbar" event)
-                    color (get-color own "colorbar" pos)
-                    pos (/ (* 100 y) cb-height)]
-                (swap! local assoc :pos pos :color color)))]
-      (html
-       [:div.element-color-picker
-        [:div.color-picker-body
-         [:canvas {:ref "colorpicker"
-                   :on-click on-picker-click
-                   :style {:border "1px solid #AAA"}
-                   :width cp-width
-                   :height cp-height
-                   :id "colorpicker"}]]
-        [:div.color-picker-bar
-         [:div.color-bar-select {:style {:top (str bar-pos "%")}
-                                 :on-mouse-down on-bar-mouse-down
-                                 :on-mouse-up on-bar-mouse-up}]
-         [:canvas {:ref "colorbar"
-                   :on-click on-bar-click
-                   :width cb-width
-                   :height cb-height}]]]))))
+        [h s v :as color] (if (:color @local)
+                            (:color @local)
+                            (let [[h s v] (color/hex->hsv value)]
+                              [(if (pos? h) (- h 15) h) s v]))
+        bg (color/hsv->hex [(+ h 15) 1 255])
+        sit (- (/ (* h (:s-height @local)) 360)
+               (/ (:si-height @local) 2))
+        pit (- (* s (:p-width @local))
+               (/ (:pi-height @local) 2))
+        pil (- (- (:p-height @local) (* (/ v 255) (:p-height @local)))
+               (/ (:pi-width @local) 2))]
+    (html
+     [:div.color-picker
+      [:div.picker-wrapper
+       [:div.picker
+        {:ref "picker"
+         :on-click (partial on-picker-click local on-change color)
+         :style {:backgroundColor bg}}
+        (picker-box)]
+       [:div.picker-indicator
+        {:ref "picker-indicator"
+         :style {:top (str pil "px")
+                 :left (str pit "px")
+                 :pointerEvents "none"}}]]
+      [:div.slide-wrapper
+       [:div.slide
+        {:ref "slide"
+         :on-click (partial on-slide-click local)}
+        (slider-box)]
+       [:div.slide-indicator
+        {:ref "slide-indicator"
+         :style {:top (str sit "px")
+                 :pointerEvents "none"}}]]])))
 
-(defn colorpicker-did-mount
+(defn- colorpicker-did-mount
   [own]
-  (let [type (first (:rum/props own))]
-    (->> (initialize own type)
-         (merge own))))
-
-(defn colorpicker-will-unmout
-  [own]
-  (let [key (::key own)
-        local (:rum/local own)]
-    (remove-watch local ::key)
-    (events/unlistenByKey key)))
-
-(defn- colorpicker-transfer-state
-  [old-own own]
-  (let [data (select-keys old-own [::key])]
-    (merge own data)))
+  (let [local (:rum/local own)
+        picker (mx/get-ref-dom own "picker")
+        slide (mx/get-ref-dom own "slide")
+        picker-ind (mx/get-ref-dom own "picker-indicator")
+        slide-ind (mx/get-ref-dom own "slide-indicator")]
+    (swap! local assoc
+           :pi-height (.-offsetHeight picker-ind)
+           :pi-width (.-offsetWidth picker-ind)
+           :si-height (.-offsetHeight slide-ind)
+           :p-height (.-offsetHeight picker)
+           :p-width (.-offsetWidth picker)
+           :s-height (.-offsetHeight slide))
+    own))
 
 (def ^:static colorpicker
   (mx/component
    {:render colorpicker-render
     :did-mount colorpicker-did-mount
-    :will-unmout colorpicker-will-unmout
-    :transfer-state colorpicker-transfer-state
     :name "colorpicker"
     :mixins [mx/static (mx/local)]}))

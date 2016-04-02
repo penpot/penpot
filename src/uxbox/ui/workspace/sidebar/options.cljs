@@ -118,7 +118,10 @@
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
-       (colorpicker :options #(change-stroke {:color (:hex %)}))
+       [:div.color-picker-small
+        (colorpicker
+         :value (:stroke shape "#000000")
+         :on-change #(change-stroke {:color %}))]
 
        [:div.row-flex
         [:input.input-text
@@ -152,15 +155,20 @@
             (let [value (dom/event->value event)
                   value (parse-float value 1)]
               (change-fill {:opacity value})))
-          (on-color-picker-event [{:keys [hex]}]
-            (change-fill {:color hex}))]
+          (on-color-picker-event [color]
+            (change-fill {:color color}))]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
       [:div.element-set-content
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
-       (colorpicker :options on-color-picker-event)
+
+       [:div.color-picker-small
+        (colorpicker
+         :value (:fill shape "#000000")
+         :on-change #(on-color-picker-event %))]
+
        [:div.row-flex
         [:input.input-text
          {:placeholder "#"
