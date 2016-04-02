@@ -153,9 +153,11 @@
   [own project]
   (letfn [(on-navigate [event]
             (rs/emit! (dp/go-to (:id project))))
+          (delete []
+            (rs/emit! (dp/delete-project project)))
           (on-delete [event]
             (dom/stop-propagation event)
-            (rs/emit! (dp/delete-project project)))]
+            (lightbox/open! :confirm {:on-accept delete}))]
     (html
      [:div.grid-item.project-th {:on-click on-navigate
                                  :key (:id project)}
