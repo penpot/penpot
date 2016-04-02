@@ -13,13 +13,27 @@
             [uxbox.ui.lightbox :as lightbox]))
 
 (defn- confirm-dialog-render
-  [own]
-  (html
-   [:div.lightbox-body.confirm-dialog
-    [:span "HERE"]
-    [:a.close {:href "#"
-               :on-click #(do (dom/prevent-default %)
-                              (lightbox/close!))} i/close]]))
+  [own {:keys [on-accept on-cancel] :as ctx}]
+  (letfn [(accept [event]
+            (dom/prevent-default event)
+            (lightbox/close!)
+            (on-accept (dissoc ctx :on-accept :on-cancel)))
+          (cancel [event]
+            (dom/prevent-default event)
+            (lightbox/close!)
+            (when on-cancel
+              (on-cancel (dissoc ctx :on-accept :on-cancel))))]
+    (html
+     [:div.lightbox-body.confirm-dialog
+      [:span "HERE"]
+      [:input
+       {:type "button"
+        :value "Ok"
+        :on-click accept}]
+      [:input
+       {:type "button"
+        :value "Cancel"
+        :on-click cancel}]])))
 
 (def confirm-dialog
   (mx/component
@@ -28,5 +42,5 @@
     :mixins []}))
 
 (defmethod lightbox/render-lightbox :confirm
-  [_]
-  (confirm-dialog))
+  [context]
+  (confirm-dialog context))
