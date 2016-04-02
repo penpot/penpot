@@ -86,7 +86,6 @@
   (let [event (.-nativeEvent event)
         my (.-offsetY event)
         h  (* (/ my (:s-height @local)) 360)]
-    (println "on-slide-click")
     (swap! local assoc :color [h 1 255])))
 
 (defn- colorpicker-render
@@ -102,13 +101,23 @@
         pit (- (* s (:p-width @local))
                (/ (:pi-height @local) 2))
         pil (- (- (:p-height @local) (* (/ v 255) (:p-height @local)))
-               (/ (:pi-width @local) 2))]
+               (/ (:pi-width @local) 2))
+        on-mouse-down #(swap! local assoc :mousedown true)
+        on-mouse-up #(swap! local assoc :mousedown false)
+
+        on-mouse-move-slide #(when (:mousedown @local)
+                               (on-slide-click local %))
+        on-mouse-move-picker #(when (:mousedown @local)
+                                (on-picker-click local on-change color %))]
     (html
      [:div.color-picker
       [:div.picker-wrapper
        [:div.picker
         {:ref "picker"
          :on-click (partial on-picker-click local on-change color)
+         :on-mouse-down on-mouse-down
+         :on-mouse-up on-mouse-up
+         :on-mouse-move on-mouse-move-picker
          :style {:backgroundColor bg}}
         (picker-box)]
        [:div.picker-indicator
@@ -119,6 +128,9 @@
       [:div.slide-wrapper
        [:div.slide
         {:ref "slide"
+         :on-mouse-down on-mouse-down
+         :on-mouse-up on-mouse-up
+         :on-mouse-move on-mouse-move-slide
          :on-click (partial on-slide-click local)}
         (slider-box)]
        [:div.slide-indicator
