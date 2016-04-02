@@ -101,7 +101,6 @@
     :builtin/text i/text
     :builtin/group i/folder))
 
-
 (defn- get-hover-position
   [event group?]
   (let [target (.-currentTarget event)

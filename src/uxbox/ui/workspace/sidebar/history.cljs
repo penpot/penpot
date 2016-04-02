@@ -69,7 +69,6 @@
 
           (on-load-more [event]
             (dom/prevent-default event)
-            (println "kaka")
             (let [since (:min-version history)
                   params {:since since}]
               (rs/emit! (udh/fetch-page-history (:id page) params))))]

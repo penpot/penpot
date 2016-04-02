@@ -18,6 +18,7 @@
                         :project-filter ""}
             :route nil
             :auth (:uxbox/auth local-storage)
+            :clipboard #queue []
             :profile nil
             :workspace nil
             :shapes-by-id {}

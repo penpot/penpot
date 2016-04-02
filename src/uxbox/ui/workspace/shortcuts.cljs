@@ -10,6 +10,7 @@
   (:require [goog.events :as events]
             [beicon.core :as rx]
             [uxbox.rstore :as rs]
+            [uxbox.ui.lightbox :as lightbox]
             [uxbox.data.workspace :as dw])
   (:import goog.events.EventType
            goog.events.KeyCodes
@@ -33,6 +34,9 @@
    :ctrl+shift+l #(rs/emit! (dw/toggle-flag :layers))
    :ctrl+r #(rs/emit! (dw/toggle-flag :ruler))
    :ctrl+d #(rs/emit! (dw/duplicate-selected))
+   :ctrl+c #(rs/emit! (dw/copy-to-clipboard))
+   :ctrl+v #(rs/emit! (dw/paste-from-clipboard))
+   :ctrl+shift+v #(lightbox/open! :clipboard)
    :esc #(rs/emit! (dw/deselect-all))
    :backspace #(rs/emit! (dw/delete-selected))
    :delete #(rs/emit! (dw/delete-selected))

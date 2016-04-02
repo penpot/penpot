@@ -3,9 +3,7 @@
   (:require [uxbox.shapes :as sh]
             [uxbox.util.data :refer (index-of)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Shape Creation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Shape Creation
 
 (defn assoc-shape-to-page
   [state shape page]
@@ -48,30 +46,30 @@
      (reduce #(duplicate-shape %1 %2 page group) state shapes))))
 
 (defn duplicate-shapes
-  [state shapes]
-  (letfn [(all-toplevel? [coll]
-            (every? #(nil? (:group %)) coll))
-          (all-same-group? [coll]
-            (let [group (:group (first coll))]
-              (every? #(= group (:group %)) coll)))]
-    (let [shapes (mapv #(get-in state [:shapes-by-id %]) shapes)]
-      (cond
-        (all-toplevel? shapes)
-        (let [page (:page (first shapes))]
-          (duplicate-shapes' state shapes page))
+  ([state shapes]
+   (duplicate-shapes state shapes nil))
+  ([state shapes page]
+   (letfn [(all-toplevel? [coll]
+             (every? #(nil? (:group %)) coll))
+           (all-same-group? [coll]
+             (let [group (:group (first coll))]
+               (every? #(= group (:group %)) coll)))]
+     (let [shapes (mapv #(get-in state [:shapes-by-id %]) shapes)]
+       (cond
+         (all-toplevel? shapes)
+         (let [page (or page (:page (first shapes)))]
+           (duplicate-shapes' state shapes page))
 
-        (all-same-group? shapes)
-        (let [page (:page (first shapes))
-              group (:group (first shapes))]
-          (duplicate-shapes' state shapes page group))
+         (all-same-group? shapes)
+         (let [page (or page (:page (first shapes)))
+               group (:group (first shapes))]
+           (duplicate-shapes' state shapes page group))
 
-        :else
-        (let [page (:page (first shapes))]
-          (duplicate-shapes' state shapes page))))))
+         :else
+         (let [page (or page (:page (first shapes)))]
+           (duplicate-shapes' state shapes page)))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Delete Shapes
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Delete Shapes
 
 (defn dissoc-from-index
   "A function that dissoc shape from the indexed
@@ -127,9 +125,7 @@
     (dissoc-from-index $ shape)
     (clear-empty-groups $ shape)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Shape Movements
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Shape Movements
 
 (defn- drop-at-index
   [index coll v]
@@ -193,3 +189,26 @@
       :before (drop-before state tid sid)
       :after (drop-after state tid sid)
       (throw (ex-info "Invalid data" {})))))
+
+;; --- Shape Packing
+
+;; (defn- deep-scan-shape-ids
+;;   [state acc id]
+;;   (let [shape (get-in state [:shapes-by-id id])]
+;;     (if (= (:type shape) :builtin/group)
+;;       (reduce (partial deep-scan-shape-ids state)
+;;               (conj acc id)
+;;               (:items shape))
+;;       (conj acc id))))
+
+;; (defn pack-shape
+;;   [state id]
+;;   (let [ids (deep-scan-shape-ids state #{} id)
+;;         index (reduce (fn [acc id]
+;;                         (let [shape (get-in state [:shapes-by-id id])]
+;;                           (assoc acc id shape)))
+;;                       {} ids)]
+;;     {:type :builtin/packed-shape
+;;      :index index
+;;      :id id}))
+

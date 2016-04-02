@@ -18,12 +18,11 @@
             [uxbox.shapes :as sh]
             [uxbox.data.pages :as udp]
             [uxbox.data.shapes :as uds]
+            [uxbox.util.datetime :as dt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Events (explicit)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Events (concrete)
 
 (defn initialize
   "Initialize the workspace state."
@@ -93,9 +92,7 @@
         (->> (into #{} xf (vals (:shapes-by-id state)))
              (assoc-in state [:workspace :selected]))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Events (for selected)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Events (implicit) (for selected)
 
 (defn deselect-all
   "Mark a shape selected for drawing in the canvas."
@@ -207,3 +204,41 @@
        (->> (get-in state [:workspace :selected])
             (map #(uds/update-stroke-attrs % opts)))))))
 
+;; --- Copy to Clipboard
+
+(defrecord CopyToClipboard []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [selected (get-in state [:workspace :selected])
+          item {:id (random-uuid)
+                :created-at (dt/now)
+                :items selected}
+          clipboard (-> (:clipboard state)
+                        (conj item))]
+      (assoc state :clipboard
+             (if (> (count clipboard) 5)
+               (pop clipboard)
+               clipboard)))))
+
+(defn copy-to-clipboard
+  "Copy selected shapes to clipboard."
+  []
+  (CopyToClipboard.))
+
+;; --- Paste from Clipboard
+
+(defrecord PasteFromClipboard [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [page (get-in state [:workspace :page])
+          selected (if (nil? id)
+                     (first (:clipboard state))
+                     (->> (:clipboard state)
+                          (filter #(= id (:id %)))
+                          (first)))]
+      (stsh/duplicate-shapes state (:items selected) page))))
+
+(defn paste-from-clipboard
+  "Copy selected shapes to clipboard."
+  ([] (PasteFromClipboard. nil))
+  ([id] (PasteFromClipboard. id)))
