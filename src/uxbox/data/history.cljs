@@ -64,7 +64,6 @@
 (defrecord FetchPageHistory [id since max]
   rs/WatchEvent
   (-apply-watch [this state s]
-    (println "FetchPageHistory" this)
     (letfn [(on-success [{history :payload}]
               (let [history (into [] history)]
                 (->PageHistoryFetched history (not (nil? since)))))
@@ -89,7 +88,6 @@
 (defrecord CleanPageHistory []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (println "CleanPageHistory")
     (assoc-in state [:workspace :history] {})))
 
 (defn clean-page-history
@@ -105,7 +103,6 @@
 (defrecord WatchPageChanges []
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (println "WatchPageChanges")
     (let [stoper (->> (rx/filter clean-page-history? s)
                       (rx/take 1))]
       (->> (rx/filter udp/page-synced? s)
@@ -142,7 +139,6 @@
 (defrecord ApplySelectedHistory [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (println "ApplySelectedHistory" id)
     (-> state
         (update-in [:pages-by-id id] dissoc :history)
         (assoc-in [:workspace :history :selected] nil)))
