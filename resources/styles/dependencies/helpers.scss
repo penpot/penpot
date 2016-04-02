@@ -35,6 +35,9 @@ $br-big: 8px;
     flex-direction: column;
   }
 
+  &.center {
+    justify-content: center;
+  }
 }
 
 &.half {
