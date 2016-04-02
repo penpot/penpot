@@ -16,7 +16,9 @@
     :output-dir "resources/public/js"
     :closure-defines {"uxbox.repo.core.url"
                       "https://test.uxbox.io/api"}
-    :optimizations :simple
+    :optimizations :advanced
+    :externs ["externs/main.js"]
+    :source-map "resources/public/js/main.js.map"
     :static-fns true
     :language-in  :ecmascript5
     :language-out :ecmascript5
