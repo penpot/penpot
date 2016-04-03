@@ -13,20 +13,24 @@
 
 (defonce state (atom {}))
 
+(defn get-initial-state
+  []
+  {:dashboard {:project-order :name
+               :project-filter ""}
+   :route nil
+   :auth (:uxbox/auth local-storage)
+   :clipboard #queue []
+   :profile nil
+   :workspace nil
+   :shapes-by-id {}
+   :elements-by-id {}
+   :colors-by-id {}
+   :icons-by-id {}
+   :projects-by-id {}
+   :pages-by-id {}})
+
 (defonce stream
-  (rs/init {:dashboard {:project-order :name
-                        :project-filter ""}
-            :route nil
-            :auth (:uxbox/auth local-storage)
-            :clipboard #queue []
-            :profile nil
-            :workspace nil
-            :shapes-by-id {}
-            :elements-by-id {}
-            :colors-by-id {}
-            :icons-by-id {}
-            :projects-by-id {}
-            :pages-by-id {}}))
+  (rs/init (get-initial-state)))
 
 (defn init
   "Initialize the state materialization."

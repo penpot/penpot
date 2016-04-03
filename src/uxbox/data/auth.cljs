@@ -74,7 +74,7 @@
 (defrecord Logout []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc state :auth nil))
+    (st/get-initial-state))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
