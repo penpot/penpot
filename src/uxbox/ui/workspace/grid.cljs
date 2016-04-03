@@ -15,14 +15,22 @@
 ;; Grid
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static grid-color "#cccccc")
-
 (defn grid-render
   [own zoom]
-  (letfn [(vertical-line [page position value]
-            (let [ticks-mod (/ 100 zoom)
-                  step-size (/ 10 zoom)]
-              (if (< (mod value ticks-mod) step-size)
+  (let [page (rum/react wb/page-l)
+        opts (:options page)
+        step-size-x (/ (:grid/x-axis opts 10) zoom)
+        step-size-y (/ (:grid/y-axis opts 10) zoom)
+        grid-color (:grid/color opts "#cccccc")
+        ticks-mod (/ 100 zoom)
+        vertical-ticks (range (- 0 wb/canvas-start-y)
+                              (- (:width page) wb/canvas-start-y)
+                              step-size-x)
+        horizontal-ticks (range (- 0 wb/canvas-start-x)
+                                (- (:height page) wb/canvas-start-x)
+                                step-size-y)]
+    (letfn [(vertical-line [position value]
+              (if (< (mod value ticks-mod) step-size-x)
                 (html [:line {:key position
                               :y1 0
                               :y2 (:height page)
@@ -38,11 +46,9 @@
                               :x2 position
                               :stroke grid-color
                               :stroke-width (/ 0.5 zoom)
-                              :opacity 0.25}]))))
-          (horizontal-line [page position value]
-            (let [ticks-mod (/ 100 zoom)
-                  step-size (/ 10 zoom)]
-              (if (< (mod value ticks-mod) step-size)
+                              :opacity 0.25}])))
+            (horizontal-line [position value]
+              (if (< (mod value ticks-mod) step-size-y)
                 (html [:line {:key position
                               :y1 position
                               :y2 position
@@ -58,29 +64,16 @@
                               :x2 (:width page)
                               :stroke grid-color
                               :stroke-width (/ 0.5 zoom)
-                              :opacity 0.25}]))))]
-    (let [padding (* 0 zoom)
-          ticks-mod (/ 100 zoom)
-          step-size (/ 10 zoom)
-          flags (rum/react wb/flags-l)
-          page (rum/react wb/page-l)
-          enabled? (contains? flags :grid)
-          vertical-ticks (range (- 0 wb/canvas-start-y)
-                                (- (:width page) wb/canvas-start-y)
-                                step-size)
-          horizontal-ticks (range (- 0 wb/canvas-start-x)
-                                  (- (:height page) wb/canvas-start-x)
-                                  step-size)]
+                              :opacity 0.25}])))]
       (html
        [:g.grid
-        {:style {:display (if enabled? "block" "none")}}
         (for [tick vertical-ticks]
           (let [position (+ tick wb/canvas-start-x)
-                line (vertical-line page position tick)]
+                line (vertical-line position tick)]
             (rum/with-key line (str "tick-" tick))))
         (for [tick horizontal-ticks]
           (let [position (+ tick wb/canvas-start-y)
-                line (horizontal-line page position tick)]
+                line (horizontal-line position tick)]
             (rum/with-key line (str "tick-" tick))))]))))
 
 (def grid

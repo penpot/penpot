@@ -54,7 +54,8 @@
 
 (defn- canvas-render
   [own {:keys [width height id] :as page}]
-  (let [workspace (rum/react uuwb/workspace-l)]
+  (let [workspace (rum/react uuwb/workspace-l)
+        flags (:flags workspace)]
     (html
      [:svg.page-canvas {:x uuwb/canvas-start-x
                         :y uuwb/canvas-start-y
@@ -62,7 +63,8 @@
                         :width width
                         :height height}
       (background)
-      (grid 1)
+      (when (contains? flags :grid)
+        (grid 1))
       [:svg.page-layout {}
        (shapes-selection)
        [:g.main {}
