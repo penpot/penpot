@@ -12,6 +12,7 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.history :as udh]
             [uxbox.ui.workspace.clipboard]
             [uxbox.ui.workspace.settings]
             [uxbox.ui.workspace.base :as wb]
@@ -59,8 +60,9 @@
   (let [page (rum/react wb/page-l)
         flags (rum/react wb/flags-l)
         toggle #(rs/emit! (dw/toggle-flag %))
+        on-undo #(rs/emit! (udh/backwards-to-previous-version))
+        on-redo #(rs/emit! (udh/forward-to-next-version))
         ;; TODO: temporary
-        open-clipboard-dialog #(lightbox/open! :clipboard)
         open-confirm-dialog #(lightbox/open! :confirm)]
     (html
      [:header#workspace-bar.workspace-bar
@@ -100,11 +102,11 @@
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom
          {:alt "Undo (Ctrl + Z)"
-          :on-click open-clipboard-dialog}
+          :on-click on-undo}
          i/undo]
         [:li.tooltip.tooltip-bottom
          {:alt "Redo (Ctrl + Shift + Z)"
-         :on-click open-confirm-dialog}
+         :on-click on-redo}
          i/redo]]
        [:ul.options-btn
         ;; TODO: refactor
@@ -115,7 +117,8 @@
               :href "#" :on-click on-download-clicked}
           i/export]]
         [:li.tooltip.tooltip-bottom
-         {:alt "Image (Ctrl + I)"}
+         {:alt "Image (Ctrl + I)"
+          :on-click open-confirm-dialog}
          i/image]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom

@@ -38,7 +38,7 @@
   [own item selected]
   (letfn [(on-select [event]
             (dom/prevent-default event)
-            (rs/emit! (udh/select-page-history item)))
+            (rs/emit! (udh/select-page-history (:version item))))
           (on-pinned [event]
             (dom/prevent-default event)
             (dom/stop-propagation event)
@@ -46,7 +46,7 @@
                               :label "no label"
                               :pinned (not (:pinned item)))]
               (rs/emit! (udh/update-history-item item))))]
-    (let [selected? (= (:id item) selected)]
+    (let [selected? (= (:version item) selected)]
       (html
        [:li {:class (when selected? "current") :on-click on-select}
         [:div.pin-icon {:on-click on-pinned
@@ -92,12 +92,10 @@
 (defn history-list-will-update
   [own]
   (let [[page history] (:rum/props own)]
-    (if (:selected history)
-      (let [selected (->> (:items history)
-                          (filter #(= (:selected history) (:id %)))
-                          (first))]
+    (if-let [version (:selected history)]
+      (let [selected (get-in history [:by-version version])]
         (msg/dialog
-         :message (tr "history.alert-message" (:version selected))
+         :message (tr "history.alert-message" version)
          :on-accept #(rs/emit! (udh/apply-selected-history (:id page)))
          :on-cancel #(rs/emit! (udh/discard-selected-history (:id page)))))
       (msg/close))

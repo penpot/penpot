@@ -135,20 +135,21 @@
 
 ;; --- Select Page History
 
-(defrecord SelectPageHistory [item]
+(defrecord SelectPageHistory [version]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [page (get-in state [:pages-by-id (:page item)])
-          page' (assoc page
-                       :history true
-                       :data (:data item))]
+    (let [item (get-in state [:workspace :history :by-version version])
+          page (get-in state [:pages-by-id (:page item)])
+          page (assoc page
+                      :history true
+                      :data (:data item))]
       (-> state
-          (stpr/unpack-page page')
-          (assoc-in [:workspace :history :selected] (:id item))))))
+          (stpr/unpack-page page)
+          (assoc-in [:workspace :history :selected] version)))))
 
 (defn select-page-history
-  [item]
-  (SelectPageHistory. item))
+  [version]
+  (SelectPageHistory. version))
 
 ;; --- Apply selected history
 
@@ -233,6 +234,60 @@
 (defn update-history-item
   [item]
   (UpdateHistoryItem. item))
+
+;; --- Forward to Next Version
+
+(defrecord ForwardToNextVersion []
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [workspace (:workspace state)
+          history (:history workspace)
+          version (:selected history)]
+      (cond
+        (nil? version)
+        (rx/empty)
+
+        (>= (:max-version history) (inc version))
+        (rx/of (select-page-history (inc version)))
+
+        (> (inc version) (:max-version history))
+        (rx/of (discard-selected-history (:page workspace)))
+
+        :else
+        (rx/empty)))))
+
+(defn forward-to-next-version
+  []
+  (ForwardToNextVersion.))
+
+;; --- Backwards to Previous Version
+
+(defrecord BackwardsToPreviousVersion []
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [workspace (:workspace state)
+          history (:history workspace)
+          version (:selected history)]
+      (cond
+        (nil? version)
+        (let [maxv (:max-version history)]
+          (rx/of (select-page-history maxv)))
+
+        (pos? (dec version))
+        (if (contains? (:by-version history) (dec version))
+          (rx/of (select-page-history (dec version)))
+          (let [since (:min-version history)
+                page (:page workspace)
+                params {:since since}]
+            (rx/of (fetch-page-history page params)
+                   (select-page-history (dec version)))))
+
+        :else
+        (rx/empty)))))
+
+(defn backwards-to-previous-version
+  []
+  (BackwardsToPreviousVersion.))
 
 ;; --- Helpers
 

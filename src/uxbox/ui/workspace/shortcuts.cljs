@@ -11,7 +11,8 @@
             [beicon.core :as rx]
             [uxbox.rstore :as rs]
             [uxbox.ui.lightbox :as lightbox]
-            [uxbox.data.workspace :as dw])
+            [uxbox.data.workspace :as dw]
+            [uxbox.data.history :as udh])
   (:import goog.events.EventType
            goog.events.KeyCodes
            goog.ui.KeyboardShortcutHandler
@@ -36,6 +37,8 @@
    :ctrl+d #(rs/emit! (dw/duplicate-selected))
    :ctrl+c #(rs/emit! (dw/copy-to-clipboard))
    :ctrl+v #(rs/emit! (dw/paste-from-clipboard))
+   :ctrl+z #(rs/emit! (udh/backwards-to-previous-version))
+   :ctrl+shift+z #(rs/emit! (udh/forward-to-next-version))
    :ctrl+shift+v #(lightbox/open! :clipboard)
    :esc #(rs/emit! (dw/deselect-all))
    :backspace #(rs/emit! (dw/delete-selected))
