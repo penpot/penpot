@@ -11,9 +11,7 @@
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.mixins :as mx]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Menu
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- User Menu
 
 (defn menu-render
   [own open?]
@@ -43,9 +41,7 @@
     :name "user-menu"
     :mixins []}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; User Widget
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- User Widget
 
 (def ^:static profile-l
   (as-> (l/key :profile) $
@@ -68,66 +64,3 @@
    {:render user-render
     :name "user"
     :mixins [rum/reactive (rum/local {:open false})]}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Register
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (rum/defc register-form < rum/static
-;;   []
-;;   [:div.login-content
-;;    [:input.input-text
-;;      {:name "name"
-;;       :placeholder "Name"
-;;       :type "text"}]
-;;    [:input.input-text
-;;      {:name "email"
-;;       :placeholder "Email"
-;;       :type "email"}]
-;;    [:input.input-text
-;;     {:name "password"
-;;      :placeholder "Password"
-;;      :type "password"}]
-;;    [:input.btn-primary
-;;     {:name "login"
-;;      :value "Continue"
-;;      :type "submit"
-;;      :on-click #(r/go :dashboard/projects)}]
-;;    [:div.login-links
-;;     [:a
-;;      {:on-click #(r/go :auth/login)}
-;;      "You already have an account?"]]])
-
-;; (rum/defc register < rum/static
-;;   []
-;;   [:div.login
-;;    [:div.login-body
-;;     [:a i/logo]
-;;     (register-form)]])
-
-;; (rum/defc recover-password-form < rum/static
-;;   []
-;;   [:div.login-content
-;;    [:input.input-text
-;;      {:name "email"
-;;       :placeholder "Email"
-;;       :type "email"}]
-;;    [:input.btn-primary
-;;     {:name "login"
-;;      :value "Continue"
-;;      :type "submit"
-;;      :on-click #(r/go :dashboard/projects)}]
-;;    [:div.login-links
-;;     [:a
-;;      {:on-click #(r/go :auth/login)}
-;;      "You have remembered your password?"]
-;;     [:a
-;;      {:on-click #(r/go :auth/register)}
-;;      "Don't have an account?"]]])
-
-;; (rum/defc recover-password < rum/static
-;;   []
-;;   [:div.login
-;;     [:div.login-body
-;;      [:a i/logo]
-;;      (recover-password-form)]])
