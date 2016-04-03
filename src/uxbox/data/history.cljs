@@ -19,14 +19,20 @@
             [uxbox.state.project :as stpr]
             [uxbox.ui.messages :as uum]
             [uxbox.util.datetime :as dt]
-            [uxbox.util.data :refer (without-keys replace-by-id)]))
+            [uxbox.util.data :refer (without-keys
+                                     replace-by-id
+                                     index-by)]))
 
 ;; --- Pinned Page History Fetched
+
+(declare update-history-index)
 
 (defrecord PinnedPageHistoryFetched [history]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:workspace :history :pinned-items] history)))
+    (-> state
+        (assoc-in [:workspace :history :pinned-items] (mapv :version history))
+        (update-history-index history true))))
 
 ;; --- Fetch Pinned Page History
 
@@ -52,12 +58,22 @@
 (defrecord PageHistoryFetched [history append?]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [items (into [] history)
-          minv (apply min (map :version history))
-          state (assoc-in state [:workspace :history :min-version] minv)]
-      (if-not append?
-        (assoc-in state [:workspace :history :items] items)
-        (update-in state [:workspace :history :items] #(reduce conj % items))))))
+    (letfn [(update-counters [state items]
+              (-> (assoc state :min-version (apply min items))
+                  (assoc :max-version (apply max items))))
+
+            (update-lists [state items]
+              (if append?
+                (update state :items #(reduce conj %1 items))
+                (assoc state :items items)))]
+
+      (let [items (mapv :version history)
+            hstate (-> (get-in state [:workspace :history] {})
+                       (update-counters items)
+                       (update-lists items))]
+        (-> state
+            (assoc-in [:workspace :history] hstate)
+            (update-history-index history append?))))))
 
 ;; --- Fetch Page History
 
@@ -217,3 +233,13 @@
 (defn update-history-item
   [item]
   (UpdateHistoryItem. item))
+
+;; --- Helpers
+
+(defn- update-history-index
+  [state history append?]
+  (let [index (index-by history :version)]
+    (if append?
+      (update-in state [:workspace :history :by-version] merge index)
+      (assoc-in state [:workspace :history :by-version] index))))
+

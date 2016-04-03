@@ -81,7 +81,8 @@
               :on-click on-select}
          [:div.pin-icon i/pin]
          [:span (str "Version " (:version page) " (current)")]]
-        (for [item (:items history)]
+        (for [version (:items history)
+              :let [item (get-in history [:by-version version])]]
           (-> (history-item item selected)
               (rum/with-key (str (:id item)))))
         (if show-more?
@@ -113,15 +114,10 @@
   [own history]
   (html
    [:ul.history-content
-    (for [item (:pinned-items history)]
+    (for [version (:pinned-items history)
+          :let [item (get-in history [:by-version version])]]
       (-> (history-item item (:selected history))
           (rum/with-key (str (:id item)))))]))
-
-    ;; [:li
-    ;;  [:span "Version 02/02/2016 12:33h"]
-    ;;  [:div.page-actions
-    ;;   [:a i/pencil]
-    ;;   [:a i/trash]]]]))
 
 (def history-pinned-list
   (mx/component
