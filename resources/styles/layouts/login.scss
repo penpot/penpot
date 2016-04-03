@@ -42,6 +42,7 @@
         border-color: $color-gray;
         color: $color-gray-lighter;
         font-size: $fs18;
+        margin-bottom: $big*2;
 
         @include placeholder {
           color: $color-gray;

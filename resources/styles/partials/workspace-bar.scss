@@ -107,6 +107,7 @@
         border-radius: $br-small;
         cursor: pointer;
         display: flex;
+        flex-shrink: 0;
         height: 30px;
         justify-content: center;
         margin: 0 $small;
