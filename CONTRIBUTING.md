@@ -45,9 +45,21 @@ Please, use your real name (sorry, no pseudonyms or anonymous contributions
 are allowed).
 
 
-## The contribution process ##
+## How to contribute ##
 
-TBD
+> **WARNING**
+>
+> The project is still in a **design phase of the development** and
+> pull-requests with new functionality without previous chat are very
+> discouraged.
+
+If you have an idea and think that it would be awesome to have implemented in
+_uxbox_ or you have some time and you want contribute doing some bugfixing or
+implementing some small task, **please open an issue and discuss it**.
+
+No pull-request will be accepted without previous chat about the changes;
+independently if it is a new feature, already planned feature, small task or
+bug fix. The coordination is key for avoid doing double work.
 
 
 ## Code of conduct ##
