@@ -8,6 +8,22 @@
 (ns uxbox.util.dom
   (:require [goog.dom :as dom]))
 
+;; --- Deprecated methods
+
+(defn event->inner-text
+  [e]
+  (.-innerText (.-target e)))
+
+(defn event->value
+  [e]
+  (.-value (.-target e)))
+
+(defn event->target
+  [e]
+  (.-target e))
+
+;; --- New methods
+
 (defn get-element-by-class
   ([classname]
    (dom/getElementByClass classname))
@@ -24,14 +40,18 @@
   (when e
     (.preventDefault e)))
 
-(defn event->inner-text
-  [e]
-  (.-innerText (.-target e)))
+(defn get-target
+  "Extract the target from event instance."
+  [event]
+  (.-target event))
 
-(defn event->value
-  [e]
-  (.-value (.-target e)))
+(defn get-value
+  "Extract the value from dom node."
+  [node]
+  (.-value node))
 
-(defn event->target
-  [e]
-  (.-target e))
+(defn checked?
+  "Check if the node that reprsents a radio
+  or checkbox is checked or not."
+  [node]
+  (.-checked node))

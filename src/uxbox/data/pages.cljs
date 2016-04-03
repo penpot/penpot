@@ -149,11 +149,12 @@
 ;; that does not sends the heavyweiht `:data` attribute
 ;; and only serves for update other page data.
 
-(defrecord UpdatePageMetadata [id name width height layout]
+(defrecord UpdatePageMetadata [id name width height layout options]
   rs/UpdateEvent
   (-apply-update [_ state]
     (letfn [(updater [page]
               (merge page
+                     (when options {:options options})
                      (when width {:width width})
                      (when height {:height height})
                      (when name {:name name})))]
