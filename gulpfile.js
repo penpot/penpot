@@ -16,20 +16,42 @@ paths.dist = "./dist/";
 paths.target = "./target/";
 paths.scss = paths.app + "styles/**/*.scss";
 
-gulp.task("scss", function() {
-    return gulp.src(paths.app + "styles/main.scss")
-                .pipe(plumber())
-                .pipe(scss({style: "expanded"}))
-                .pipe(gulp.dest(paths.output + "css/"));
+function makeAutoprefixer() {
+  return autoprefixer('last 2 version',
+                      'safari 5',
+                      'ios 6',
+                      'android 4');
+}
+
+function scssPipeline(options) {
+  var input = options.input;
+  var output = options.output;
+
+  return gulp.src(input)
+             .pipe(plumber())
+             .pipe(scss({style: "expanded"}))
+             .pipe(makeAutoprefixer())
+             .pipe(gulp.dest(output));
+}
+
+gulp.task("scss:theme-light", function() {
+  return scssPipeline({
+    input: paths.app + "styles/main.scss",
+    output: paths.output + "css/"
+  });
 });
 
-gulp.task("autoprefixer", function() {
-    return gulp.src(paths.output + "css/main.css")
-               .pipe(autoprefixer('last 2 version', 'safari 5', 'ie 8', 'ie 9', 'opera 12.1', 'ios 6', 'android 4'))
-               .pipe(gulp.dest(paths.output + "css/"));
-});
+// gulp.task("scss:theme-dark", function() {
+//   return scssPipeline({
+//     input: paths.app + "styles/main-theme-dark.scss",
+//     output: paths.output + "css/"
+//   });
+// });
 
-gulp.task("cssmin", function() {
+gulp.task("scss:all", [ // "scss:theme-dark",
+                       "scss:theme-light"]);
+
+gulp.task("dist:cssmin", function() {
   return gulp.src(paths.output + "css/main.css")
              .pipe(cssmin())
              .pipe(gulp.dest(paths.output + "css/"));
@@ -40,7 +62,7 @@ gulp.task("template", function() {
   var tmpl = mustache({
     jsfile: "/js/main.js?v=" + ts,
     cssfile: "/css/main.css?v=" + ts
-  })
+  });
 
   return gulp.src(paths.app + "index.mustache")
              .pipe(tmpl)
@@ -48,15 +70,11 @@ gulp.task("template", function() {
              .pipe(gulp.dest(paths.output));
 });
 
-gulp.task("styles-dev", function(next) {
-  runseq("scss", "autoprefixer", next);
+gulp.task("dist:scss", function(next) {
+  runseq("scss:all", "dist:cssmin", next);
 });
 
-gulp.task("styles-dist", function(next) {
-  runseq("scss", "autoprefixer", next);
-});
-
-gulp.task("clean-dist", function(next) {
+gulp.task("dist:clean", function(next) {
   rimraf(paths.dist, next);
 });
 
@@ -68,17 +86,17 @@ gulp.task("clean", function(next) {
   });
 });
 
-gulp.task("copy", function() {
+gulp.task("dist:copy", function() {
   return gulp.src(paths.output + "/**/*.*")
              .pipe(gulp.dest(paths.dist));
 });
 
 // Default
 gulp.task("dist", function(next) {
-  runseq("styles-dist", "cssmin", "template", "clean-dist", "copy", next);
+  runseq("template", "dist:scss", "dist:clean", "dist:copy", next);
 });
 
 // Watch
-gulp.task("default", ["styles-dev", "template"], function () {
-    gulp.watch(paths.scss, ["styles-dev"]);
+gulp.task("default", ["scss:all", "template"], function () {
+    gulp.watch(paths.scss, ["scss:all"]);
 });
