@@ -45,6 +45,10 @@
 ;; --- Login
 
 (defrecord Login [username password]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (merge state (dissoc (st/get-initial-state) :route)))
+
   rs/WatchEvent
   (-apply-watch [this state s]
     (letfn [(on-error [err]
@@ -74,7 +78,7 @@
 (defrecord Logout []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (st/get-initial-state))
+    (merge state (dissoc (st/get-initial-state) :route)))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
