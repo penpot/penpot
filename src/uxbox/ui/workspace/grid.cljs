@@ -64,9 +64,9 @@
                               :x2 (:width page)
                               :stroke grid-color
                               :stroke-width (/ 0.5 zoom)
-                              :opacity 0.25}])))]
+                              :opacity 0.50}])))]
       (html
-       [:g.grid
+       [:g.grid {:style {:pointer-events "none"}}
         (for [tick vertical-ticks]
           (let [position (+ tick wb/canvas-start-x)
                 line (vertical-line position tick)]
