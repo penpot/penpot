@@ -46,7 +46,7 @@
                               :x2 position
                               :stroke grid-color
                               :stroke-width (/ 0.5 zoom)
-                              :opacity 0.25}])))
+                              :opacity 0.50}])))
             (horizontal-line [position value]
               (if (< (mod value ticks-mod) step-size-y)
                 (html [:line {:key position
