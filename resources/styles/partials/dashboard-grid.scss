@@ -158,7 +158,8 @@
             display: flex;
             margin-right: $small;
 
-            &.delete {
+            &.delete,
+            &.edit {
               margin-left: auto;
               margin-right: 0;
 

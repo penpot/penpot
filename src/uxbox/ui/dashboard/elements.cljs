@@ -8,15 +8,16 @@
 (ns uxbox.ui.dashboard.elements
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            ;; [uxbox.ui.library-bar :as ui.library-bar]
+            [uxbox.rstore :as rs]
             [uxbox.ui.icons :as i]
+            [uxbox.ui.mixins :as mx]
             [uxbox.ui.lightbox :as lightbox]
-            [uxbox.util.dom :as dom]
-            [uxbox.ui.mixins :as mx]))
+            [uxbox.ui.library-bar :as ui.library-bar]
+            [uxbox.data.dashboard :as dd]
+            [uxbox.ui.dashboard.header :refer (header)]
+            [uxbox.util.dom :as dom]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Page Title
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Page Title
 
 (defn page-title-render
   []
@@ -27,15 +28,13 @@
      [:span i/pencil]
      [:span i/trash]]]))
 
-(def ^:static page-title
+(def ^:const ^:private page-title
   (mx/component
    {:render page-title-render
     :name "page-title"
     :mixins [mx/static]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Grid
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Grid
 
 (defn grid-render
   [own]
@@ -123,15 +122,44 @@
       [:div.project-th-icon.edit i/pencil]
       [:div.project-th-icon.delete i/trash]]]]))
 
-(def ^:static grid
+(def ^:const ^:private grid
   (mx/component
    {:render grid-render
     :name "grid"
     :mixins [mx/static]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lightbox
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Elements Page
+
+(defn elements-page-render
+  [own]
+  (html
+   [:main.dashboard-main
+    (header)
+    [:section.dashboard-content
+     (ui.library-bar/library-bar)
+     [:section.dashboard-grid.library
+      (page-title)
+      (grid)]]]))
+
+(defn elements-page-will-mount
+  [own]
+  (rs/emit! (dd/initialize :dashboard/elements))
+  own)
+
+(defn elements-page-transfer-state
+  [old-state state]
+  (rs/emit! (dd/initialize :dashboard/elements))
+  state)
+
+(def elements-page
+  (mx/component
+   {:render elements-page-render
+    :will-mount elements-page-will-mount
+    :transfer-state elements-page-transfer-state
+    :name "elements-page"
+    :mixins [mx/static]}))
+
+;; --- New Element Lightbox (TODO)
 
 (defn- new-element-lightbox-render
   [own]
@@ -150,7 +178,7 @@
                               (lightbox/close!))}
      i/close]]))
 
-(def new-element-lightbox
+(def ^:const ^:private new-element-lightbox
   (mx/component
    {:render new-element-lightbox-render
     :name "new-element-lightbox"}))

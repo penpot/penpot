@@ -8,34 +8,29 @@
 (ns uxbox.ui.dashboard.icons
   (:require [sablono.core :refer-macros [html]]
             [rum.core :as rum]
-            [cuerdas.core :as str]
             [lentes.core :as l]
             [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.schema :as sc]
             [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
-            [uxbox.util.lens :as ul]
             [uxbox.ui.icons :as i]
             [uxbox.ui.form :as form]
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.lightbox :as lightbox]
-            [uxbox.util.dom :as dom]
-            [uxbox.ui.mixins :as mx]))
+            [uxbox.ui.mixins :as mx]
+            [uxbox.ui.dashboard.header :refer (header)]
+            [uxbox.util.dom :as dom]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Lenses
 
 (def ^:static dashboard-l
   (as-> (l/in [:dashboard]) $
     (l/focus-atom $ st/state)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Page Title
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Page Title
 
-(defn page-title-render
+(defn- page-title-render
   [own coll]
   (let [dashboard (rum/react dashboard-l)
         own? (:builtin coll false)]
@@ -51,15 +46,13 @@
          [:span {:on-click (constantly nil)}
           i/trash]])])))
 
-(def ^:static page-title
+(def ^:const ^:private page-title
   (mx/component
    {:render page-title-render
     :name "page-title"
     :mixins [mx/static rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Nav
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Nav
 
 (defn nav-render
   [own]
@@ -94,15 +87,13 @@
            [:span.element-subtitle
             (str (count (:icons props)) " elements")]])]]])))
 
-(def ^:static nav
+(def ^:const ^:private nav
   (mx/component
    {:render nav-render
     :name "nav"
     :mixins [rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Grid
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Grid
 
 (defn grid-render
   [own]
@@ -130,9 +121,36 @@
     :name "grid"
     :mixins [mx/static rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lightbox
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Icons Page
+
+(defn icons-page-render
+  [own]
+  (html
+   [:main.dashboard-main
+    (header)
+    [:section.dashboard-content
+     (nav)
+     (grid)]]))
+
+(defn icons-page-will-mount
+  [own]
+  (rs/emit! (dd/initialize :dashboard/icons))
+  own)
+
+(defn icons-page-transfer-state
+  [old-state state]
+  (rs/emit! (dd/initialize :dashboard/icons))
+  state)
+
+(def icons-page
+  (mx/component
+   {:render icons-page-render
+    :will-mount icons-page-will-mount
+    :transfer-state icons-page-transfer-state
+    :name "icons-page"
+    :mixins [mx/static]}))
+
+;; --- New Icon Lightbox (TODO)
 
 (defn- new-icon-lightbox-render
   [own]
@@ -158,3 +176,7 @@
   (mx/component
    {:render new-icon-lightbox-render
     :name "new-icon-lightbox"}))
+
+(defmethod lightbox/render-lightbox :new-icon
+  [_]
+  (new-icon-lightbox))

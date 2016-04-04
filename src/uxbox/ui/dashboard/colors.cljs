@@ -16,25 +16,24 @@
             [uxbox.schema :as sc]
             [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
-            [uxbox.util.lens :as ul]
-            [uxbox.util.color :refer (hex->rgb)]
             [uxbox.ui.icons :as i]
             [uxbox.ui.form :as form]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.colorpicker :refer (colorpicker)]
+            [uxbox.ui.mixins :as mx]
+            [uxbox.ui.dashboard.header :refer (header)]
             [uxbox.util.dom :as dom]
-            [uxbox.ui.mixins :as mx]))
+            [uxbox.util.lens :as ul]
+            [uxbox.util.color :refer (hex->rgb)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Lenses
 
-(def ^:static ^:private dashboard-l
-  (-> (l/in [:dashboard])
+(def ^:const ^:private dashboard-l
+  (-> (l/key :dashboard)
       (l/focus-atom st/state)))
 
-(def ^:static ^:private collections-by-id-l
-  (-> (comp (l/in [:colors-by-id])
+(def ^:const ^:private collections-by-id-l
+  (-> (comp (l/key :colors-by-id)
             (ul/merge library/+color-collections-by-id+))
       (l/focus-atom st/state)))
 
@@ -43,9 +42,7 @@
   (-> (l/key collid)
       (l/focus-atom collections-by-id-l)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Page Title
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Page Title
 
 (defn page-title-render
   [own coll]
@@ -69,15 +66,13 @@
            #_[:span i/pencil]
            [:span {:on-click on-delete} i/trash]])]))))
 
-(def ^:static page-title
+(def ^:const ^:private page-title
   (mx/component
    {:render page-title-render
     :name "page-title"
     :mixins [mx/static rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Nav
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Nav
 
 (defn nav-render
   [own]
@@ -115,15 +110,13 @@
            [:span.element-subtitle
             (tr "ds.num-elements" (t/c num))]])]]])))
 
-(def ^:static nav
+(def ^:const ^:private nav
   (mx/component
    {:render nav-render
     :name "nav"
     :mixins [rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Grid
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Grid
 
 (defn grid-render
   [own]
@@ -157,17 +150,44 @@
                 {:on-click #(remove-cb color)}
                 i/trash]])])]]))))
 
-(def grid
+(def ^:const ^:private grid
   (mx/component
    {:render grid-render
     :name "grid"
     :mixins [mx/static rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lightbox
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Colors Page
 
-(def ^:static +color-form-schema+
+(defn colors-page-render
+  [own]
+  (html
+   [:main.dashboard-main
+    (header)
+    [:section.dashboard-content
+     (nav)
+     (grid)]]))
+
+(defn colors-page-will-mount
+  [own]
+  (rs/emit! (dd/initialize :dashboard/colors))
+  own)
+
+(defn colors-page-transfer-state
+  [old-state state]
+  (rs/emit! (dd/initialize :dashboard/colors))
+  state)
+
+(def colors-page
+  (mx/component
+   {:render colors-page-render
+    :will-mount colors-page-will-mount
+    :transfer-state colors-page-transfer-state
+    :name "colors"
+    :mixins [mx/static]}))
+
+;; --- Colors Create / Edit Lightbox
+
+(def ^:const ^:private +color-form-schema+
   {:hex [sc/required sc/color]})
 
 (defn- color-lightbox-render

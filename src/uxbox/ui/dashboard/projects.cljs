@@ -14,25 +14,26 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
-            [uxbox.util.datetime :as dt]
             [uxbox.data.dashboard :as dd]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.icons :as i]
             [uxbox.util.dom :as dom]
-            [uxbox.ui.dashboard.header :as dsh.header]
+            [uxbox.ui.dashboard.header :refer (header)]
             [uxbox.ui.lightbox :as lightbox]
-            [uxbox.ui.mixins :as mx]))
+            [uxbox.ui.messages :as uum]
+            [uxbox.ui.mixins :as mx]
+            [uxbox.util.datetime :as dt]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpers & Constants
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Helpers & Constants
 
-;; FIXME rename
-(def +ordering-options+ {:name "ds.project-ordering.by-name"
-                         :created "ds.project-ordering.by-creation-date"})
+(def ^:const ^:private
+  +project-defaults+ {:name ""
+                      :width 1920
+                      :height 1080
+                      :layout "desktop"})
 
-(def +layouts+
+(def ^:const +layouts+
   {"mobile"
    {:name "Mobile"
     :id "mobile"
@@ -54,18 +55,14 @@
     :width 1920
     :height 1080}})
 
-(def ^:static ^:private
-  +project-defaults+ {:name ""
-                      :width 1920
-                      :height 1080
-                      :layout "desktop"})
+(def ^:const +ordering-options+
+  {:name "ds.project-ordering.by-name"
+   :created "ds.project-ordering.by-creation-date"})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Top Menu
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Lenses
 
-(def ^:const menu-l
-  (as-> (l/select-keys [:projects-by-id]) $
+(def ^:const projects-by-id-l
+  (as-> (l/key :projects-by-id) $
     (l/focus-atom $ s/state)))
 
 (def ^:const project-ordering-l
@@ -76,80 +73,84 @@
   (as-> (l/in [:dashboard :project-filter]) $
     (l/focus-atom $ s/state)))
 
-(defn project-sort-render
+;; --- Sort Widget
+
+(defn sort-widget-render
   []
   (let [ordering (rum/react project-ordering-l)
-        change-order #(rs/emit! (dd/set-project-ordering
-                                 (keyword (.-value (.-target %)))))]
+        on-change #(rs/emit! (dd/set-project-ordering
+                              (keyword (.-value (.-target %)))))]
     (html
      [:div
-       [:span (tr "ds.project-ordering")]
-       [:select.input-select
-        {:on-change change-order
-         :value (name ordering)}
-        (for [option (keys +ordering-options+)
-              :let [option-id (get +ordering-options+ option)
-                    option-value (name option)
-                    option-text (tr option-id)]]
-          [:option
-           {:key option-id
-            :value option-value}
-           option-text])]])))
+      [:span (tr "ds.project-ordering")]
+      [:select.input-select
+       {:on-change on-change
+        :value (name ordering)}
+       (for [option (keys +ordering-options+)
+             :let [option-id (get +ordering-options+ option)
+                   option-value (name option)
+                   option-text (tr option-id)]]
+         [:option
+          {:key option-id
+           :value option-value}
+          option-text])]])))
 
-(def project-sorting
+(def ^:const ^:private sort-widget
   (mx/component
-   {:render project-sort-render
-    :name "project-sort-order"
-    :mixins [rum/reactive]}))
+   {:render sort-widget-render
+    :name "sort-widget-render"
+    :mixins [rum/reactive mx/static]}))
 
-(defn project-search-render
+;; --- Filtering Widget
+
+(defn search-widget-render
   []
-  (let [change-term #(rs/emit! (dd/set-project-filtering (.-value (.-target %))))
-        clear-term #(rs/emit! (dd/clear-project-filtering))]
+  (letfn [(on-term-change [event]
+            (-> (dom/get-target event)
+                (dom/get-value)
+                (dd/set-project-filtering)))
+          (on-clear [event]
+            (rs/emit! (dd/clear-project-filtering)))]
     (html
      [:form.dashboard-search
       [:input.input-text
        {:type "text"
-        :on-change change-term
+        :on-change on-term-change
         :auto-focus true
         :placeholder (tr "ds.project-search.placeholder")
         :value (rum/react project-filtering-l)}]
       [:div.clear-search
-        {:on-click clear-term}
+       {:on-click on-clear}
        i/close]])))
 
-(def project-search
+(def ^:const ^:private search-widget
   (mx/component
-   {:render project-search-render
-    :name "project-search"
-    :mixins [rum/reactive]}))
+   {:render search-widget-render
+    :name "search-widget"
+    :mixins [rum/reactive mx/static]}))
+
+;; --- Sort & Search Menu
 
 (defn menu-render
   []
-  (let [projects (rum/react menu-l)
-        pcount (count (:projects-by-id projects))] ;; FIXME: redundant project-by-id key
+  (let [projects (rum/react projects-by-id-l)
+        pcount (count projects)]
     (html
      [:section.dashboard-bar
       [:div.dashboard-info
        [:span.dashboard-projects (tr "ds.num-projects" (t/c pcount))]
-       (project-sorting)
-       (project-search)]])))
+       (sort-widget)
+       (search-widget)]])))
 
 (def menu
   (mx/component
    {:render menu-render
-    :name "projects-menu"
-    :mixins [rum/reactive]}))
+    :name "menu"
+    :mixins [rum/reactive mx/static]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Grid
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Grid Item
 
-(def ^:static grid-l
-  (as-> (l/select-keys [:projects-by-id]) $
-    (l/focus-atom $ s/state)))
-
-(defn project-item-render
+(defn grid-item-render
   [own project]
   (letfn [(on-navigate [event]
             (rs/emit! (dp/go-to (:id project))))
@@ -168,36 +169,42 @@
        [:div.project-th-icon.pages
         i/page
         [:span "0"]]
-       [:div.project-th-icon.comments
+       #_[:div.project-th-icon.comments
         i/chat
         [:span "0"]]
+       #_[:div.project-th-icon.edit
+          i/pencil]
        [:div.project-th-icon.delete
         {:on-click on-delete}
         i/trash]]])))
 
-(def project-item
+(def ^:const ^:private grid-item
   (mx/component
-   {:render project-item-render
-    :name "project"
+   {:render grid-item-render
+    :name "grid-item"
     :mixins [rum/static]}))
+
+;; --- Grid
 
 (defn grid-render
   [own]
-  (letfn [(on-click [e]
-            (dom/prevent-default e)
-            (lightbox/open! :new-project))]
-    (let [state (rum/react grid-l)
-          ordering (rum/react project-ordering-l)
-          filtering (rum/react project-filtering-l)
-          projects (dp/filter-projects-by filtering (vals (:projects-by-id state)))]
+  (let [projects (rum/react projects-by-id-l)
+        ordering (rum/react project-ordering-l)
+        filtering (rum/react project-filtering-l)]
+    (letfn [(on-click [e]
+              (dom/prevent-default e)
+              (lightbox/open! :new-project))]
       (html
        [:section.dashboard-grid
         [:h2 "Your projects"]
          [:div.dashboard-grid-content
-          [:div.grid-item.add-project {:on-click on-click}
+          [:div.grid-item.add-project
+           {:on-click on-click}
            [:span "+ New project"]]
-          (for [item (dp/sort-projects-by ordering projects)]
-            (-> (project-item item)
+          (for [item (->> (vals projects)
+                          (dp/filter-projects-by filtering)
+                          (dp/sort-projects-by ordering))]
+            (-> (grid-item item)
                 (rum/with-key (:id item))))]]))))
 
 (def grid
@@ -206,11 +213,39 @@
     :name "grid"
     :mixins [rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lightbox
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Page
 
-(defn layout-input
+(defn projects-page-render
+  [own]
+  (html
+   [:main.dashboard-main
+    (uum/messages)
+    (header)
+    [:section.dashboard-content
+     (menu)
+     (grid)]]))
+
+(defn projects-page-will-mount
+  [own]
+  (rs/emit! (dd/initialize :dashboard/projects))
+  own)
+
+(defn projects-page-transfer-state
+  [old-state state]
+  (rs/emit! (dd/initialize :dashboard/projects))
+  state)
+
+(def projects-page
+  (mx/component
+   {:render projects-page-render
+    :will-mount projects-page-will-mount
+    :transfer-state projects-page-transfer-state
+    :name "projects-page"
+    :mixins [rum/static]}))
+
+;; --- Lightbox: Layout input
+
+(defn- layout-input
   [local layout-id]
   (let [layout (get-in +layouts+ [layout-id])
         id (:id layout)
@@ -226,8 +261,12 @@
         :name "project-layout"
         :value name
         :checked (= layout-id (:layout @local))
-        :on-change #(swap! local merge {:layout layout-id :width width :height height})}]
+        :on-change #(swap! local merge {:layout layout-id
+                                        :width width
+                                        :height height})}]
       [:label {:value (:name @local) :for id} name]])))
+
+;; --- Lightbox: Layout selector
 
 (defn- layout-selector
   [local]
@@ -237,6 +276,8 @@
     (layout-input local "tablet")
     (layout-input local "notebook")
     (layout-input local "desktop")]))
+
+;; -- New Project Lightbox
 
 (defn- new-project-lightbox-render
   [own]
