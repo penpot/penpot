@@ -16,14 +16,13 @@
 ;; --- Icon Component
 
 (defn on-mouse-down
-  [event {:keys [id group] :as shape} selected drawing?]
-  (let [selected? (contains? selected id)]
+  [event {:keys [id group] :as shape} selected]
+  (let [selected? (contains? selected id)
+        drawing? @uusc/drawing-state-l]
     (when-not (:blocked shape)
       (cond
-        drawing?
-        nil
-
-        (and group (:locked (ush/resolve-parent shape)))
+        (or drawing?
+            (and group (:locked (ush/resolve-parent shape))))
         nil
 
         (and (not selected?) (empty? selected))
@@ -62,9 +61,8 @@
   [own shape]
   (let [{:keys [id x y width height group]} shape
         selected (rum/react uusc/selected-shapes-l)
-        drawing? (rum/react uusc/drawing-state-l)
         selected? (contains? selected id)
-        on-mouse-down #(on-mouse-down % shape selected drawing?)
+        on-mouse-down #(on-mouse-down % shape selected)
         on-mouse-up #(on-mouse-up % shape)]
     (html
      [:g.shape {:class (when selected? "selected")
