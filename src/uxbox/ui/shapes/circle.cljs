@@ -25,7 +25,8 @@
   (let [{:keys [id x y width height group]} shape
         selected (rum/react uusc/selected-shapes-l)
         selected? (contains? selected id)
-        on-mouse-down #(uusi/on-mouse-down % shape selected)
+        drawing? (rum/react uusc/drawing-state-l)
+        on-mouse-down #(uusi/on-mouse-down % shape selected drawing?)
         on-mouse-up #(uusi/on-mouse-up % shape)]
     (html
      [:g.shape {:class (when selected? "selected")

@@ -13,15 +13,16 @@
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.util.dom :as dom]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Icon Component
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Icon Component
 
 (defn on-mouse-down
-  [event {:keys [id group] :as shape} selected]
+  [event {:keys [id group] :as shape} selected drawing?]
   (let [selected? (contains? selected id)]
     (when-not (:blocked shape)
       (cond
+        drawing?
+        nil
+
         (and group (:locked (ush/resolve-parent shape)))
         nil
 
@@ -61,8 +62,9 @@
   [own shape]
   (let [{:keys [id x y width height group]} shape
         selected (rum/react uusc/selected-shapes-l)
+        drawing? (rum/react uusc/drawing-state-l)
         selected? (contains? selected id)
-        on-mouse-down #(on-mouse-down % shape selected)
+        on-mouse-down #(on-mouse-down % shape selected drawing?)
         on-mouse-up #(on-mouse-up % shape)]
     (html
      [:g.shape {:class (when selected? "selected")
@@ -72,9 +74,7 @@
       (when (and selected? (= (count selected) 1))
         (handlers shape))])))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Icon Handlers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Icon Handlers
 
 (defn- handlers-render
   [own shape]
@@ -123,9 +123,7 @@
     :name "handlers"
     :mixins [mx/static]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Shape & Shape Svg
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Shape & Shape Svg
 
 (defmethod uusc/render-shape :builtin/icon
   [{:keys [data id] :as shape} _]

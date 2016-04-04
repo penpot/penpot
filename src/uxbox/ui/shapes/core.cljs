@@ -40,8 +40,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const selected-shapes-l
-  (as-> (l/in [:workspace :selected]) $
-    (l/focus-atom $ st/state)))
+  (-> (l/in [:workspace :selected])
+      (l/focus-atom st/state)))
+
+(def ^:const drawing-state-l
+  (-> (l/in [:workspace :drawing])
+      (l/focus-atom st/state)))
 
 (defn- focus-shape
   [id]

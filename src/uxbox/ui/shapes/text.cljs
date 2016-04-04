@@ -19,11 +19,14 @@
   (:import goog.events.EventType))
 
 (defn on-mouse-down
-  [event own {:keys [id group] :as shape} selected]
+  [event own {:keys [id group] :as shape} selected drawing?]
   (let [selected? (contains? selected id)
         local (:rum/local own)]
     (when-not (:blocked shape)
       (cond
+        drawing?
+        nil
+
         (:edition @local)
         nil
 
@@ -108,7 +111,8 @@
   (let [{:keys [id x1 y1 content group]} shape
         selected (rum/react uusc/selected-shapes-l)
         selected? (and (contains? selected id) (= (count selected) 1))
-        on-mouse-down #(on-mouse-down % own shape selected)
+        drawing? (rum/react uusc/drawing-state-l)
+        on-mouse-down #(on-mouse-down % own shape selected drawing?)
         on-mouse-up #(on-mouse-up % shape)
         local (:rum/local own)]
     (html
