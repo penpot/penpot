@@ -184,7 +184,7 @@
       (update-in state [:shapes-by-id sid]
                  merge
                  (when color {:fill color})
-                 (when opacity {:opacity opacity})))))
+                 (when opacity {:fill-opacity opacity})))))
 
 (defn update-font-attrs
   [sid {:keys [family style weight size align

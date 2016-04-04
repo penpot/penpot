@@ -185,7 +185,7 @@
          {:type "range"
           :min "0"
           :max "1"
-          :value (:opacity shape "1")
+          :value (:fill-opacity shape "1")
           :step "0.0001"
           :on-change on-opacity-change}]]]])))
 
