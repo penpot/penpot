@@ -63,15 +63,16 @@
                         :width width
                         :height height}
       (background)
-      (when (contains? flags :grid)
-        (grid 1))
       [:svg.page-layout {}
        (shapes-selection)
        [:g.main {}
         (for [item (reverse (:shapes page))]
           (-> (uus/shape item)
               (rum/with-key (str item))))
-        (draw-area)]]])))
+        (draw-area)]]
+      (when (contains? flags :grid)
+        (grid 1))])))
+
 
 (def canvas
   (mx/component
