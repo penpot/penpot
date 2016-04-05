@@ -22,7 +22,7 @@
             [uxbox.ui.confirm]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.workspace.canvas.scroll :as scroll]
-            [uxbox.ui.workspace.base :as uuwb]
+            [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (horizontal-rule vertical-rule)]
@@ -50,8 +50,8 @@
         dom (mx/get-ref-dom own "workspace-canvas")]
 
     ;; Set initial scroll position
-    (set! (.-scrollLeft dom) uuwb/canvas-start-scroll-x)
-    (set! (.-scrollTop dom) uuwb/canvas-start-scroll-y)
+    (set! (.-scrollLeft dom) (* wb/canvas-start-scroll-x @wb/zoom-l))
+    (set! (.-scrollTop dom) (* wb/canvas-start-scroll-y @wb/zoom-l))
 
     (assoc own ::sub1 sub1 ::sub2 sub2)))
 
@@ -85,12 +85,7 @@
   (let [target (.-target event)
         top (.-scrollTop target)
         left (.-scrollLeft target)]
-    (rx/push! uuwb/scroll-b (gpt/point left top))))
-
-
-(def ^:const ^:private zoom-l
-  (-> (l/in [:workspace :zoom])
-      (l/focus-atom st/state)))
+    (rx/push! wb/scroll-b (gpt/point left top))))
 
 (defn- on-wheel
   [own event]
@@ -102,12 +97,12 @@
       (rs/emit! (dw/decrease-zoom)))
 
     (let [dom (mx/get-ref-dom own "workspace-canvas")]
-      (set! (.-scrollLeft dom) (* uuwb/canvas-start-scroll-x (or @zoom-l 1)))
-      (set! (.-scrollTop dom) (* uuwb/canvas-start-scroll-y (or @zoom-l 1))))))
+      (set! (.-scrollLeft dom) (* wb/canvas-start-scroll-x @wb/zoom-l))
+      (set! (.-scrollTop dom) (* wb/canvas-start-scroll-y @wb/zoom-l)))))
 
 (defn- workspace-render
   [own projectid]
-  (let [{:keys [flags zoom] :as workspace} (rum/react uuwb/workspace-l)
+  (let [{:keys [flags zoom] :as workspace} (rum/react wb/workspace-l)
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools

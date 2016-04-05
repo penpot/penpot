@@ -10,18 +10,20 @@
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.rstore :as rs]
-            [uxbox.state :as ust]
+            [uxbox.state :as st]
             [uxbox.ui.core :as uuc]
-            [uxbox.ui.workspace.base :as uuwb]
-            [uxbox.data.shapes :as uds]))
+            [uxbox.ui.workspace.base :as wb]
+            [uxbox.data.shapes :as uds]
+            [uxbox.util.geom.point :as gpt]))
 
 (define-once :movement-subscription
   (letfn [(on-value [delta]
-            (let [pageid (get-in @ust/state [:workspace :page])
-                  selected (get-in @ust/state [:workspace :selected])
-                  shapes (->> (vals @uuwb/shapes-by-id-l)
+            (let [pageid (get-in @st/state [:workspace :page])
+                  selected (get-in @st/state [:workspace :selected])
+                  shapes (->> (vals @wb/shapes-by-id-l)
                               (filter #(= (:page %) pageid))
-                              (filter (comp selected :id)))]
+                              (filter (comp selected :id)))
+                  delta (gpt/divide delta @wb/zoom-l)]
               (doseq [{:keys [id group]} shapes]
                 (rs/emit! (uds/move-shape id delta)))))
 
@@ -30,7 +32,7 @@
                               (rx/map :type)
                               (rx/filter empty?)
                               (rx/take 1))]
-              (as-> uuwb/mouse-delta-s $
+              (as-> wb/mouse-delta-s $
                 (rx/take-until stoper $)
                 (rx/on-value $ on-value))))]
 

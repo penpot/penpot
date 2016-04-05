@@ -25,10 +25,6 @@
 
 (defonce selrect-pos (atom nil))
 
-(def ^:const ^:private zoom-l
-  (-> (l/in [:workspace :zoom])
-      (l/focus-atom st/state)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,21 +52,11 @@
 ;; Subscriptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn selrect->rect
+(defn- selrect->rect
   ([data] (selrect->rect data false))
   ([data translate?]
    (let [start (:start data)
-         current (:current data )
-
-         zoom (or @zoom-l 1)
-         start (if translate?
-                 (gpt/multiply start (- zoom (- zoom 1)))
-                 start)
-
-         current (if translate?
-                   (gpt/multiply current (- zoom (- zoom 1)))
-                   current)
-
+         current (:current data)
          start-x (min (:x start) (:x current))
          start-y (min (:y start) (:y current))
          current-x (max (:x start) (:x current))
@@ -82,27 +68,24 @@
       :width (- current-x start-x)
       :height (- current-y start-y)})))
 
+(defn- translate-to-canvas
+  [selrect]
+  (let [startx (* wb/canvas-start-x @wb/zoom-l)
+        starty (* wb/canvas-start-y @wb/zoom-l)]
+    (assoc selrect
+           :x (- (:x selrect) startx)
+           :y (- (:y selrect) starty)
+           :width (/ (:width selrect) @wb/zoom-l)
+           :height (/ (:height selrect) @wb/zoom-l))))
+
 (define-once :selrect-subscriptions
   (letfn [(on-value [pos]
-            (let [pos' (as-> (gmx/matrix) $
-                         (gmx/scale $ (or @zoom-l 1))
-                         (gpt/transform-point pos $))]
-              ;; (println "on-value" pos pos')
-              (swap! selrect-pos assoc :current pos)))
-
-          (translate-selrect [selrect]
-            (let [zoom (or @zoom-l 1)
-                  startx (* wb/canvas-start-x zoom)
-                  starty (* wb/canvas-start-y zoom)]
-              (assoc selrect
-                     :x (- (:x selrect) startx)
-                     :y (- (:y selrect) starty))))
+            (swap! selrect-pos assoc :current pos))
 
           (on-complete []
-            (let [selrect (selrect->rect @selrect-pos true)
-                  selrect' (translate-selrect selrect)]
-              ;; (println selrect "---" selrect2)
-              (rs/emit! (dw/select-shapes selrect'))
+            (let [selrect (selrect->rect @selrect-pos)
+                  selrect (translate-to-canvas selrect)]
+              (rs/emit! (dw/select-shapes selrect))
               (reset! selrect-pos nil)))
 
           (init []

@@ -13,6 +13,7 @@
             [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.shapes :as ush]
+            [uxbox.state :as st]
             [uxbox.data.workspace :as udw]
             [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]
@@ -53,10 +54,11 @@
 
 (define-once :drawing-subscriptions
   (letfn [(init-shape [shape]
-            (let [{:keys [x y] :as point} @wb/mouse-canvas-a
+            (let [{:keys [x y] :as pt} (gpt/divide @wb/mouse-canvas-a @wb/zoom-l)
                   shape (ush/initialize shape {:x1 x :y1 y :x2 x :y2 y})]
+
               (reset! +drawing-shape+ shape)
-              (reset! +drawing-position+ (assoc point :lock false))
+              (reset! +drawing-position+ (assoc pt :lock false))
 
               (let [stoper (->> uuc/actions-s
                                 (rx/map :type)
@@ -67,8 +69,16 @@
                   (rx/with-latest-from vector wb/mouse-ctrl-s $)
                   (rx/subscribe $ on-value nil on-complete)))))
 
-          (on-value [[point ctrl?]]
-            (reset! +drawing-position+ (assoc point :lock ctrl?)))
+          (init-icon [shape]
+            (let [{:keys [x y]} (gpt/divide @wb/mouse-canvas-a @wb/zoom-l)
+                  props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
+                  shape (ush/initialize shape props)]
+              (rs/emit! (uds/add-shape shape)
+                        (udw/select-for-drawing nil))))
+
+          (on-value [[pt ctrl?]]
+            (let [pt (gpt/divide pt @wb/zoom-l)]
+              (reset! +drawing-position+ (assoc pt :lock ctrl?))))
 
           (on-complete []
             (let [shape @+drawing-shape+
@@ -79,12 +89,6 @@
               (reset! +drawing-position+ nil)
               (reset! +drawing-shape+ nil)))
 
-          (init-icon [shape]
-            (let [{:keys [x y]} @wb/mouse-canvas-a
-                  props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
-                  shape (ush/initialize shape props)]
-              (rs/emit! (uds/add-shape shape)
-                        (udw/select-for-drawing nil))))
           (init []
             (when-let [shape (:drawing @wb/workspace-l)]
               (case (:type shape)

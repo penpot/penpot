@@ -40,21 +40,25 @@
     (as-> (ul/getter getter) $
       (l/focus-atom $ st/state))))
 
-(def ^:static selected-shapes-l
+(def ^:const selected-shapes-l
   (as-> (l/in [:selected]) $
     (l/focus-atom $ workspace-l)))
 
-(def ^:static toolboxes-l
+(def ^:const toolboxes-l
   (as-> (l/in [:toolboxes]) $
     (l/focus-atom $ workspace-l)))
 
-(def ^:static flags-l
+(def ^:const flags-l
   (as-> (l/in [:flags]) $
     (l/focus-atom $ workspace-l)))
 
-(def ^:static shapes-by-id-l
+(def ^:const shapes-by-id-l
   (as-> (l/key :shapes-by-id) $
     (l/focus-atom $ st/state)))
+
+(def ^:const zoom-l
+  (-> (l/in [:workspace :zoom])
+      (l/focus-atom st/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scroll Stream

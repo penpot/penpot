@@ -119,7 +119,6 @@
         path (reduce (partial make-vertical-tick zoom) [] +ticks+)
         labels (->> (map (partial horizontal-text-label zoom) +ticks+)
                     (filterv identity))]
-    (println (count labels))
     (html
      [:g
       [:path {:d (str/join " " path) :stroke "#9da2a6"}]
