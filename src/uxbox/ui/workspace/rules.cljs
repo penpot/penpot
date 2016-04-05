@@ -38,13 +38,10 @@
   [zoom acc value]
   (let [big-ticks-mod (big-ticks-mod zoom)
         mid-ticks-mod (mid-ticks-mod zoom)
-        big-step? (< (mod value big-ticks-mod) step-size)
-        mid-step? (< (mod value mid-ticks-mod) step-size)
         pos (+ value
                rule-padding
-               wb/canvas-start-x
-               wb/canvas-scroll-padding)
-        pos (* pos zoom)]
+               (* wb/canvas-start-x zoom)
+               wb/canvas-scroll-padding)]
     (cond
       (< (mod value big-ticks-mod) step-size)
       (conj acc (str/format "M %s %s L %s %s" pos 5 pos step-padding))
@@ -60,9 +57,8 @@
   (let [big-ticks-mod (big-ticks-mod zoom)
         mid-ticks-mod (mid-ticks-mod zoom)
         pos (+ value
-               wb/canvas-start-x
-               wb/canvas-scroll-padding)
-        pos (* pos zoom)]
+               (* wb/canvas-start-x zoom)
+               wb/canvas-scroll-padding)]
     (cond
       (< (mod value big-ticks-mod) step-size)
       (conj acc (str/format "M %s %s L %s %s" 5 pos step-padding pos))
@@ -80,9 +76,8 @@
   (let [big-ticks-mod (big-ticks-mod zoom)
         pos (+ value
                rule-padding
-               wb/canvas-start-x
-               wb/canvas-scroll-padding)
-        pos (* pos zoom)]
+               (* wb/canvas-start-x zoom)
+               wb/canvas-scroll-padding)]
     (when (< (mod value big-ticks-mod) step-size)
       (html
        [:text {:x (+ pos 2)
@@ -98,9 +93,9 @@
   [zoom value]
   (let [big-ticks-mod (big-ticks-mod zoom)
         pos (+ value
-               wb/canvas-start-x
-               wb/canvas-scroll-padding)
-        pos (* pos zoom)]
+               (* wb/canvas-start-x zoom)
+               ;; wb/canvas-start-x
+               wb/canvas-scroll-padding)]
     (when (< (mod value big-ticks-mod) step-size)
       (html
        [:text {:y (- pos 3)
