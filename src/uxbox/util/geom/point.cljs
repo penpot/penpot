@@ -147,10 +147,9 @@
 
 (defn transform-point
   [pt mx]
-  (let [other (-point other)]
-    (Point. (+ (* (:x pt) (:a mx))
-               (* (:y pt) (:c mx))
-               (:tx mx))
-            (+ (* (:x pt) (:b mx))
-               (* (:y pt) (:d mx))
-               (:ty mx)))))
+  (Point. (+ (* (:x pt) (:a mx))
+             (* (:y pt) (:c mx))
+             (:tx mx))
+          (+ (* (:x pt) (:b mx))
+             (* (:y pt) (:d mx))
+             (:ty mx))))
