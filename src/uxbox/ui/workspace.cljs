@@ -87,14 +87,23 @@
         left (.-scrollLeft target)]
     (rx/push! uuwb/scroll-b (gpt/point left top))))
 
+
+(def ^:const ^:private zoom-l
+  (-> (l/in [:workspace :zoom])
+      (l/focus-atom st/state)))
+
 (defn- on-wheel
-  [event]
+  [own event]
   (when (kbd/ctrl? event)
     (dom/prevent-default event)
     (dom/stop-propagation event)
     (if (pos? (.-deltaY event))
       (rs/emit! (dw/increase-zoom))
-      (rs/emit! (dw/decrease-zoom)))))
+      (rs/emit! (dw/decrease-zoom)))
+
+    (let [dom (mx/get-ref-dom own "workspace-canvas")]
+      (set! (.-scrollLeft dom) (* uuwb/canvas-start-scroll-x (or @zoom-l 1)))
+      (set! (.-scrollTop dom) (* uuwb/canvas-start-scroll-y (or @zoom-l 1))))))
 
 (defn- workspace-render
   [own projectid]
@@ -119,7 +128,7 @@
        [:section.workspace-content
         {:class classes
          :on-scroll on-scroll
-         :on-wheel on-wheel}
+         :on-wheel (partial on-wheel own)}
 
         ;; Rules
         (horizontal-rule zoom)

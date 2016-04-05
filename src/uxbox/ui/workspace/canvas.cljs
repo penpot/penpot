@@ -88,7 +88,7 @@
   (let [workspace (rum/react uuwb/workspace-l)
         page (rum/react uuwb/page-l)
         drawing? (:drawing workspace)
-        zoom (:zoom workspace 1)]
+        zoom (or (:zoom workspace) 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
               (when-not (empty? (:selected workspace))
@@ -101,8 +101,8 @@
               (uuc/release-action! "ui.shape"
                                    "ui.selrect"))]
       (html
-       [:svg.viewport {:width uuwb/viewport-width
-                       :height uuwb/viewport-height
+       [:svg.viewport {:width (* uuwb/viewport-width zoom)
+                       :height (* uuwb/viewport-height zoom)
                        :ref "viewport"
                        :class (when drawing? "drawing")
                        :on-mouse-down on-mouse-down
