@@ -20,9 +20,14 @@
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.geom.point :as gpt]
+            [uxbox.util.geom.matrix :as gmx]
             [uxbox.util.dom :as dom]))
 
 (defonce selrect-pos (atom nil))
+
+(def ^:const ^:private zoom-l
+  (-> (l/in [:workspace :zoom])
+      (l/focus-atom st/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component
@@ -41,7 +46,7 @@
          :width width
          :height height}]))))
 
-(def ^:static selrect
+(def ^:const ^:private selrect
   (mx/component
    {:render selrect-render
     :name "selrect"
@@ -52,32 +57,51 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn selrect->rect
-  [data]
-  (let [start (:start data)
-        current (:current data )
-        start-x (min (:x start) (:x current))
-        start-y (min (:y start) (:y current))
-        current-x (max (:x start) (:x current))
-        current-y (max (:y start) (:y current))
-        width (- current-x start-x)
-        height (- current-y start-y)]
-    {:x start-x
-     :y start-y
-     :width (- current-x start-x)
-     :height (- current-y start-y)}))
+  ([data] (selrect->rect data false))
+  ([data translate?]
+   (let [start (:start data)
+         current (:current data )
+
+         zoom (or @zoom-l 1)
+         start (if translate?
+                 (gpt/multiply start (- zoom (- zoom 1)))
+                 start)
+
+         current (if translate?
+                   (gpt/multiply current (- zoom (- zoom 1)))
+                   current)
+
+         start-x (min (:x start) (:x current))
+         start-y (min (:y start) (:y current))
+         current-x (max (:x start) (:x current))
+         current-y (max (:y start) (:y current))
+         width (- current-x start-x)
+         height (- current-y start-y)]
+     {:x start-x
+      :y start-y
+      :width (- current-x start-x)
+      :height (- current-y start-y)})))
 
 (define-once :selrect-subscriptions
   (letfn [(on-value [pos]
-            (swap! selrect-pos assoc :current pos))
+            (let [pos' (as-> (gmx/matrix) $
+                         (gmx/scale $ (or @zoom-l 1))
+                         (gpt/transform-point pos $))]
+              ;; (println "on-value" pos pos')
+              (swap! selrect-pos assoc :current pos)))
 
           (translate-selrect [selrect]
-            (assoc selrect
-                   :x (- (:x selrect) wb/canvas-start-x)
-                   :y (- (:y selrect) wb/canvas-start-y)))
+            (let [zoom (or @zoom-l 1)
+                  startx (* wb/canvas-start-x zoom)
+                  starty (* wb/canvas-start-y zoom)]
+              (assoc selrect
+                     :x (- (:x selrect) startx)
+                     :y (- (:y selrect) starty))))
 
           (on-complete []
-            (let [selrect (selrect->rect @selrect-pos)
+            (let [selrect (selrect->rect @selrect-pos true)
                   selrect' (translate-selrect selrect)]
+              ;; (println selrect "---" selrect2)
               (rs/emit! (dw/select-shapes selrect'))
               (reset! selrect-pos nil)))
 
