@@ -86,6 +86,13 @@
     (Point. (* (:x p) (:x other))
             (* (:y p) (:y other)))))
 
+(defn divide
+  [p other]
+  {:pre [(point? p)]}
+  (let [other (-point other)]
+    (Point. (/ (:x p) (:x other))
+            (/ (:y p) (:y other)))))
+
 (defn distance
   "Calculate the distance between two points."
   [p other]
