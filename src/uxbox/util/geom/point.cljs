@@ -76,10 +76,19 @@
     (Point. (- (:x p) (:x other))
             (- (:y p) (:y other)))))
 
+
+(defn multiply
+  "Returns the subtraction of the supplied value to both
+  coordinates of the point as a new point."
+  [p other]
+  {:pre [(point? p)]}
+  (let [other (-point other)]
+    (Point. (* (:x p) (:x other))
+            (* (:y p) (:y other)))))
+
 (defn distance
   "Calculate the distance between two points."
   [p other]
-  {:pre [(point? p)]}
   (let [other (-point other)
         dx (- (:x p) (:x other))
         dy (- (:y p) (:y other))]
@@ -135,3 +144,13 @@
   (if (>= x 0)
     (if (>= y 0) 1 4)
     (if (>= y 0) 2 3)))
+
+(defn transform-point
+  [pt mx]
+  (let [other (-point other)]
+    (Point. (+ (* (:x pt) (:a mx))
+               (* (:y pt) (:c mx))
+               (:tx mx))
+            (+ (* (:x pt) (:b mx))
+               (* (:y pt) (:d mx))
+               (:ty mx)))))
