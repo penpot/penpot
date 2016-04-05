@@ -99,12 +99,20 @@
             (on-mouse-up [event]
               (dom/stop-propagation event)
               (uuc/release-action! "ui.shape"
-                                   "ui.selrect"))]
+                                   "ui.selrect"))
+            (on-wheel [event]
+              (when (kbd/ctrl? event)
+                (dom/prevent-default event)
+                (dom/stop-propagation event)
+                (if (pos? (.-deltaY event))
+                  (rs/emit! (dw/increase-zoom))
+                  (rs/emit! (dw/decrease-zoom)))))]
       (html
        [:svg.viewport {:width uuwb/viewport-width
                        :height uuwb/viewport-height
                        :ref "viewport"
                        :class (when drawing? "drawing")
+                       :on-wheel on-wheel
                        :on-mouse-down on-mouse-down
                        :on-mouse-up on-mouse-up}
         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
