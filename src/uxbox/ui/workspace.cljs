@@ -12,6 +12,7 @@
             [uxbox.data.pages :as udp]
             [uxbox.data.history :as udh]
             [uxbox.util.lens :as ul]
+            [uxbox.util.dom :as dom]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
             [uxbox.ui.core :as uuc]
@@ -19,6 +20,8 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.messages :as uum]
             [uxbox.ui.confirm]
+            [uxbox.ui.keyboard :as kbd]
+            [uxbox.ui.workspace.canvas.scroll :as scroll]
             [uxbox.ui.workspace.base :as uuwb]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.header :refer (header)]
@@ -27,9 +30,7 @@
             [uxbox.ui.workspace.colorpalette :refer (colorpalette)]
             [uxbox.ui.workspace.canvas :refer (viewport)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Workspace
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Workspace
 
 (defn- workspace-will-mount
   [own]
@@ -43,49 +44,26 @@
 
 (defn- workspace-did-mount
   [own]
-  (letfn [(handle-scroll-interaction []
-            (let [stoper (->> uuc/actions-s
-                              (rx/map :type)
-                              (rx/filter #(empty? %))
-                              (rx/take 1))
-                  local (:rum/local own)
-                  initial @uuwb/mouse-viewport-a]
-              (swap! local assoc :scrolling true)
-              (as-> uuwb/mouse-viewport-s $
-                (rx/take-until stoper $)
-                (rx/subscribe $ #(on-scroll % initial) nil on-scroll-end))))
-
-          (on-scroll-end []
-            (let [local (:rum/local own)]
-              (swap! local assoc :scrolling false)))
-
-          (on-scroll [pt initial]
-            (let [{:keys [x y]} (gpt/subtract pt initial)
-                  el (mx/get-ref-dom own "workspace-canvas")
-                  cx (.-scrollLeft el)
-                  cy (.-scrollTop el)]
-              (set! (.-scrollLeft el) (- cx x))
-              (set! (.-scrollTop el) (- cy y))))]
   (let [[projectid pageid] (:rum/props own)
-        el (mx/get-ref-dom own "workspace-canvas")
-        sub1 (as-> uuc/actions-s $
-              (rx/map :type $)
-              (rx/dedupe $)
-              (rx/filter #(= "ui.workspace.scroll" %) $)
-              (rx/on-value $ handle-scroll-interaction))
-        sub2 (udp/watch-page-changes pageid)]
-    (set! (.-scrollLeft el) uuwb/canvas-start-scroll-x)
-    (set! (.-scrollTop el) uuwb/canvas-start-scroll-y)
-    (assoc own ::sub1 sub1 ::sub2 sub2))))
+        sub1 (scroll/watch-scroll-interactions own)
+        sub2 (udp/watch-page-changes pageid)
+        dom (mx/get-ref-dom own "workspace-canvas")]
+
+    ;; Set initial scroll position
+    (set! (.-scrollLeft dom) uuwb/canvas-start-scroll-x)
+    (set! (.-scrollTop dom) uuwb/canvas-start-scroll-y)
+
+    (assoc own ::sub1 sub1 ::sub2 sub2)))
 
 (defn- workspace-will-unmount
   [own]
   (rs/emit! (udh/clean-page-history))
-  (let [sub1 (::sub1 own)
-        sub2 (::sub2 own)]
-    (.close sub1)
-    (.close sub2)
-    (dissoc own ::sub1 ::sub2)))
+
+  ;; Close subscriptions
+  (.close (::sub1 own))
+  (.close (::sub2 own))
+
+  (dissoc own ::sub1 ::sub2))
 
 (defn- workspace-transfer-state
   [old-state state]
@@ -109,6 +87,15 @@
         left (.-scrollLeft target)]
     (rx/push! uuwb/scroll-b (gpt/point left top))))
 
+(defn- on-wheel
+  [event]
+  (when (kbd/ctrl? event)
+    (dom/prevent-default event)
+    (dom/stop-propagation event)
+    (if (pos? (.-deltaY event))
+      (rs/emit! (dw/increase-zoom))
+      (rs/emit! (dw/decrease-zoom)))))
+
 (defn- workspace-render
   [own projectid]
   (let [{:keys [flags zoom] :as workspace} (rum/react uuwb/workspace-l)
@@ -129,21 +116,25 @@
 
       [:main.main-content
 
-       [:section.workspace-content {:class classes :on-scroll on-scroll}
+       [:section.workspace-content
+        {:class classes
+         :on-scroll on-scroll
+         :on-wheel on-wheel}
+
         ;; Rules
         (horizontal-rule zoom)
         (vertical-rule zoom)
 
         ;; Canvas
-        [:section.workspace-canvas {:ref "workspace-canvas"}
+        [:section.workspace-canvas
+         {:ref "workspace-canvas"}
          (viewport)]]
 
        ;; Aside
        (when left-sidebar?
          (left-sidebar))
        (when right-sidebar?
-         (right-sidebar))
-       ]])))
+         (right-sidebar))]])))
 
 (def ^:static workspace
   (mx/component
