@@ -242,3 +242,39 @@
   "Copy selected shapes to clipboard."
   ([] (PasteFromClipboard. nil))
   ([id] (PasteFromClipboard. id)))
+
+;; --- Increase Zoom
+
+(defrecord IncreaseZoom []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [increase #(+ % 0.1)]
+      (update-in state [:workspace :zoom] (fnil increase 1)))))
+
+(defn increase-zoom
+  []
+  (IncreaseZoom.))
+
+;; --- Decrease Zoom
+
+(defrecord DecreaseZoom []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [decrease #(if (> % 0) (- % 0.1) 0)]
+      (update-in state [:workspace :zoom] (fnil decrease 1)))))
+
+(defn decrease-zoom
+  []
+  (DecreaseZoom.))
+
+;; --- Reset Zoom
+
+(defrecord ResetZoom []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:workspace :zoom] 1)))
+
+(defn reset-zoom
+  []
+  (ResetZoom.))
+
