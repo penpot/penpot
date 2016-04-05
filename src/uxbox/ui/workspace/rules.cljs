@@ -15,9 +15,7 @@
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Constants & Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Constants & Helpers
 
 (def ^:const zoom 1)
 (def ^:const step-padding 20)
@@ -34,77 +32,128 @@
   (concat (range (- (/ wb/viewport-width 1)) 0 step-size)
           (range 0 (/ wb/viewport-width 1) step-size)))
 
-(def ^:const +rule-padding+ 20)
+(def ^:const rule-padding 20)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Horizontal Rule
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn vertical-tick-render
-  [own value]
-  (let [big-ticks-mod (big-ticks-mod 1)
-        mid-ticks-mod (mid-ticks-mod 1)
+(defn- make-vertical-tick
+  [zoom acc value]
+  (let [big-ticks-mod (big-ticks-mod zoom)
+        mid-ticks-mod (mid-ticks-mod zoom)
         big-step? (< (mod value big-ticks-mod) step-size)
         mid-step? (< (mod value mid-ticks-mod) step-size)
-        pos (+ value +rule-padding+
+        pos (+ value
+               rule-padding
                wb/canvas-start-x
                wb/canvas-scroll-padding)
         pos (* pos zoom)]
     (cond
-      big-step?
-      (html
-       [:g {:key value}
-        [:line {:x1 pos
-                :x2 pos
-                :y1 5
-                :y2 step-padding
-                :stroke "#9da2a6"}]
-        [:text {:x (+ pos 2)
-                :y 13
-                :fill "#9da2a6"
-                :style {:font-size "12px"}}
-         value]])
+      (< (mod value big-ticks-mod) step-size)
+      (conj acc (str/format "M %s %s L %s %s" pos 5 pos step-padding))
 
-      mid-step?
-      (html
-       [:line {:key pos
-               :x1 pos
-               :x2 pos
-               :y1 10
-               :y2 step-padding
-               :stroke "#9da2a6"}])
+      (< (mod value mid-ticks-mod) step-size)
+      (conj acc (str/format "M %s %s L %s %s" pos 10 pos step-padding))
 
       :else
+      (conj acc (str/format "M %s %s L %s %s" pos 15 pos step-padding)))))
+
+(defn- make-horizontal-tick
+  [zoom acc value]
+  (let [big-ticks-mod (big-ticks-mod zoom)
+        mid-ticks-mod (mid-ticks-mod zoom)
+        pos (+ value
+               wb/canvas-start-x
+               wb/canvas-scroll-padding)
+        pos (* pos zoom)]
+    (cond
+      (< (mod value big-ticks-mod) step-size)
+      (conj acc (str/format "M %s %s L %s %s" 5 pos step-padding pos))
+
+      (< (mod value mid-ticks-mod) step-size)
+      (conj acc (str/format "M %s %s L %s %s" 10 pos step-padding pos))
+
+      :else
+      (conj acc (str/format "M %s %s L %s %s" 15 pos step-padding pos)))))
+
+;; --- Horizontal Text Label
+
+(defn- horizontal-text-label
+  [zoom value]
+  (let [big-ticks-mod (big-ticks-mod zoom)
+        pos (+ value
+               rule-padding
+               wb/canvas-start-x
+               wb/canvas-scroll-padding)
+        pos (* pos zoom)]
+    (when (< (mod value big-ticks-mod) step-size)
       (html
-       [:line {:key pos
-               :x1 pos
-               :x2 pos
-               :y1 15
-               :y2 step-padding
-               :stroke "#9da2a6"}]))))
+       [:text {:x (+ pos 2)
+               :y 13
+               :key (str pos)
+               :fill "#9da2a6"
+               :style {:font-size "12px"}}
+        value]))))
 
-(def ^:const vertical-tick
+;; --- Horizontal Text Label
+
+(defn- vertical-text-label
+  [zoom value]
+  (let [big-ticks-mod (big-ticks-mod zoom)
+        pos (+ value
+               wb/canvas-start-x
+               wb/canvas-scroll-padding)
+        pos (* pos zoom)]
+    (when (< (mod value big-ticks-mod) step-size)
+      (html
+       [:text {:y (- pos 3)
+               :x 5
+               :key (str pos)
+               :fill "#9da2a6"
+               :transform (str/format "rotate(90 0 %s)" pos)
+               :style {:font-size "12px"}}
+        value]))))
+
+;; --- Horizontal Rule Ticks (Component)
+
+(defn- horizontal-rule-ticks-render
+  [own zoom]
+  (let [zoom (or zoom 1)
+        path (reduce (partial make-vertical-tick zoom) [] +ticks+)
+        labels (->> (map (partial horizontal-text-label zoom) +ticks+)
+                    (filterv identity))]
+    (println (count labels))
+    (html
+     [:g
+      [:path {:d (str/join " " path) :stroke "#9da2a6"}]
+      labels])))
+
+(def ^:const ^:private horizontal-rule-ticks
   (mx/component
-   {:render vertical-tick-render
-    :name "vertical-tick-render"
+   {:render horizontal-rule-ticks-render
+    :name "horizontal-rule-ticks"
     :mixins [mx/static]}))
 
-(defn vertical-ticks-render
-  [own]
-  (html
-   [:g
-    (for [value +ticks+]
-      (-> (vertical-tick value)
-          (rum/with-key value)))]))
+;; --- Vertical Rule Ticks (Component)
 
-(def ^:const vertical-ticks
+(defn- vertical-rule-ticks-render
+  [own zoom]
+  (let [zoom (or zoom 1)
+        path (reduce (partial make-horizontal-tick zoom) [] +ticks+)
+        labels (->> (map (partial vertical-text-label zoom) +ticks+)
+                    (filterv identity))]
+    (html
+     [:g
+      [:path {:d (str/join " " path) :stroke "#9da2a6"}]
+      labels])))
+
+(def ^:const ^:private vertical-rule-ticks
   (mx/component
-   {:render vertical-ticks-render
-    :name "vertical-ticks-render"
+   {:render vertical-rule-ticks-render
+    :name "vertical-rule-ticks"
     :mixins [mx/static]}))
+
+;; --- Horizontal Rule (Component)
 
 (defn horizontal-rule-render
-  [own sidebar?]
+  [own zoom]
   (let [scroll (rum/react wb/scroll-a)
         scroll-x (:x scroll)
         translate-x (- (- wb/canvas-scroll-padding) (:x scroll))]
@@ -113,7 +162,7 @@
       {:width wb/viewport-width
        :height 20}
       [:g {:transform (str "translate(" translate-x ", 0)")}
-       (vertical-ticks)]])))
+       (horizontal-rule-ticks zoom)]])))
 
 (def horizontal-rule
   (mx/component
@@ -121,77 +170,10 @@
     :name "horizontal-rule"
     :mixins [mx/static rum/reactive]}))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Horizontal Rule
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn horizontal-tick-render
-  [own value]
-  (let [big-ticks-mod (big-ticks-mod 1)
-        mid-ticks-mod (mid-ticks-mod 1)
-        big-step? (< (mod value big-ticks-mod) step-size)
-        mid-step? (< (mod value mid-ticks-mod) step-size)
-        pos (+ value
-               wb/canvas-start-x
-               wb/canvas-scroll-padding)
-        pos (* pos zoom)]
-  (cond
-    big-step?
-    (html
-     [:g {:key pos}
-      [:line {:y1 pos
-              :y2 pos
-              :x1 5
-              :x2 step-padding
-              :stroke "#9da2a6"}]
-      [:text {:y pos
-              :x 5
-              :transform (str/format "rotate(90 0 %s)" pos)
-              :fill "#9da2a6"
-              :style {:font-size "12px"}}
-       value]])
-
-    mid-step?
-    (html
-     [:line {:key pos
-             :y1 pos
-             :y2 pos
-             :x1 10
-             :x2 step-padding
-             :stroke "#9da2a6"}])
-
-    :else
-    (html
-     [:line {:key pos
-             :y1 pos
-             :y2 pos
-             :x1 15
-             :x2 step-padding
-             :stroke "#9da2a6"}]))))
-
-(def ^:const horizontal-tick
-  (mx/component
-   {:render horizontal-tick-render
-    :name "horizontal-tick-render"
-    :mixins [mx/static]}))
-
-(defn- horizontal-ticks-render
-  [own]
-  (html
-   [:g
-    (for [value +ticks+]
-      (-> (horizontal-tick value)
-          (rum/with-key value)))]))
-
-(def ^:const horizontal-ticks
-  (mx/component
-   {:render horizontal-ticks-render
-    :name "horizontal-ticks-render"
-    :mixins [mx/static]}))
+;; --- Vertical Rule (Component)
 
 (defn vertical-rule-render
-  [own sidebar?]
+  [own zoom]
   (let [scroll (rum/react wb/scroll-a)
         scroll-y (:y scroll)
         translate-y (- (- wb/canvas-scroll-padding) (:y scroll))]
@@ -201,7 +183,7 @@
        :height wb/viewport-height}
 
       [:g {:transform (str  "translate(0, " translate-y ")")}
-       (horizontal-ticks)]
+       (vertical-rule-ticks zoom)]
       [:rect {:x 0
               :y 0
               :height 20
