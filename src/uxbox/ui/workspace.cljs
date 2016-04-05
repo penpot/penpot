@@ -145,7 +145,7 @@
        (when right-sidebar?
          (right-sidebar))]])))
 
-(def ^:static workspace
+(def workspace
   (mx/component
    {:render workspace-render
     :transfer-state workspace-transfer-state
