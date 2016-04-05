@@ -73,7 +73,6 @@
       (when (contains? flags :grid)
         (grid 1))])))
 
-
 (def canvas
   (mx/component
    {:render canvas-render
@@ -89,7 +88,7 @@
   (let [workspace (rum/react uuwb/workspace-l)
         page (rum/react uuwb/page-l)
         drawing? (:drawing workspace)
-        zoom 1]
+        zoom (:zoom workspace 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
               (when-not (empty? (:selected workspace))
@@ -110,9 +109,9 @@
                        :on-mouse-up on-mouse-up}
         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
          (if page
-           (canvas page))
+           (canvas page))]
          (ruler)
-         (selrect)]]))))
+         (selrect)]))))
 
 (defn- viewport-did-mount
   [own]

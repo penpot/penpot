@@ -111,7 +111,7 @@
 
 (defn- workspace-render
   [own projectid]
-  (let [{:keys [flags] :as workspace} (rum/react uuwb/workspace-l)
+  (let [{:keys [flags zoom] :as workspace} (rum/react uuwb/workspace-l)
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools
@@ -131,8 +131,8 @@
 
        [:section.workspace-content {:class classes :on-scroll on-scroll}
         ;; Rules
-        (horizontal-rule)
-        (vertical-rule)
+        (horizontal-rule zoom)
+        (vertical-rule zoom)
 
         ;; Canvas
         [:section.workspace-canvas {:ref "workspace-canvas"}
