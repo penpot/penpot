@@ -21,9 +21,11 @@
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Component
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def ^:private ^:const immanted-zones
+  (let [transform #(vector (- % 7) (+ % 7) %)]
+    (concat
+     (mapv transform (range 0 181 15))
+     (mapv (comp transform -) (range 0 181 15)))))
 
 (defn- resolve-position
   [own pt]
@@ -49,9 +51,83 @@
   (dom/stop-propagation event)
   (swap! local assoc :active false))
 
+(defn- align-position
+  [angle pos]
+  (reduce (fn [pos [a1 a2 v]]
+            (if (< a1 angle a2)
+              (reduced (gpt/update-angle pos v))
+              pos))
+          pos
+          immanted-zones))
+
+(defn- overlay-will-mount
+  [own local]
+  (letfn [(on-value-aligned [pos2]
+            (let [center (:pos1 @local)]
+              (as-> pos2 $
+                (gpt/subtract $ center)
+                (align-position (gpt/angle $) $)
+                (gpt/add $ center)
+                (swap! local assoc :pos2 $))))
+
+          (on-value-simple [pos2]
+            (swap! local assoc :pos2 pos2))
+
+          (on-value [[pos ctrl?]]
+            (if ctrl?
+              (on-value-aligned pos)
+              (on-value-simple pos)))]
+
+    (let [stream (->> wb/mouse-absolute-s
+                      (rx/filter #(:active @local))
+                      (rx/map #(resolve-position own %))
+                      (rx/with-latest-from vector wb/mouse-ctrl-s))
+          sub (rx/on-value stream on-value)]
+      (assoc own ::sub sub))))
+
+(defn- overlay-will-unmount
+  [own]
+  (let [subscription (::sub own)]
+    (subscription)
+    (dissoc own ::sub)))
+
+(defn- overlay-transfer-state
+  [old-own own]
+  (let [sub (::sub old-own)]
+    (assoc own ::sub sub)))
+
+(declare overlay-line-render)
+
+(defn- overlay-render
+  [own local]
+  (let [p1 (:pos1 @local)
+        p2 (:pos2 @local)]
+    (html
+     [:svg {:on-mouse-down #(on-mouse-down own local %)
+            :on-mouse-up #(on-mouse-up own local %)
+            :ref "overlay"}
+      [:rect {:style {:fill "transparent"
+                      :stroke "transparent"
+                      :cursor "cell"}
+              :width wb/viewport-width
+              :height wb/viewport-height}]
+      (if (and p1 p2)
+        (overlay-line-render own p1 p2))])))
+
+(def ^:const overlay
+  (mx/component
+   {:render #(overlay-render % (:rum/local %))
+    :will-mount #(overlay-will-mount % (:rum/local %))
+    :will-unmount overlay-will-unmount
+    :transfer-state overlay-transfer-state
+    :name "overlay"
+    :mixins [mx/static (mx/local) rum/reactive]}))
+
 (defn- overlay-line-render
   [own center pt]
-  (let [distance (-> (gpt/distance pt center)
+  (let [distance (-> (gpt/distance
+                      (gpt/divide pt @wb/zoom-l)
+                      (gpt/divide center @wb/zoom-l))
                      (mth/precision 4))
         angle (-> (gpt/angle pt center)
                   (mth/precision 4))
@@ -70,81 +146,6 @@
         (str distance " px")]
        [:tspan {:x "0" :y "20" :dy="1.2em"}
         (str angle "°")]]])))
-
-(defn- overlay-render
-  [own local]
-  (let [p1 (:pos1 @local)
-        p2 (:pos2 @local)]
-    (html
-     [:svg {:on-mouse-down #(on-mouse-down own local %)
-            :on-mouse-up #(on-mouse-up own local %)
-            :ref "overlay"}
-      [:rect {:style {:fill "transparent"
-                      :stroke "transparent"
-                      :cursor "cell"}
-              :width wb/viewport-width
-              :height wb/viewport-height}]
-      (if (and p1 p2)
-        (overlay-line-render own p1 p2))])))
-
-(def ^:private ^:static +immanted-zones+
-  (let [transform #(vector (- % 7) (+ % 7) %)]
-    (concat
-     (mapv transform (range 0 181 15))
-     (mapv (comp transform -) (range 0 181 15)))))
-
-(defn- overlay-will-mount
-  [own local]
-  (letfn [(align-position [angle pos]
-            (reduce (fn [pos [a1 a2 v]]
-                      (if (< a1 angle a2)
-                        (reduced (gpt/update-angle pos v))
-                        pos))
-                    pos
-                    +immanted-zones+))
-
-          (on-value-aligned [pos2]
-            (let [center (:pos1 @local)]
-              (as-> pos2 $
-                (gpt/subtract $ center)
-                (align-position (gpt/angle $) $)
-                (gpt/add $ center)
-                (swap! local assoc :pos2 $))))
-
-          (on-value-simple [pos2]
-            (swap! local assoc :pos2 pos2))
-
-          (on-value [[pos ctrl?]]
-            (if ctrl?
-              (on-value-aligned pos)
-              (on-value-simple pos)))]
-
-    (as-> wb/mouse-absolute-s $
-      (rx/filter #(:active @local) $)
-      (rx/map #(resolve-position own %) $)
-      (rx/with-latest-from vector wb/mouse-ctrl-s $)
-      (rx/on-value $ on-value)
-      (assoc own ::sub $))))
-
-(defn- overlay-will-unmount
-  [own]
-  (let [subscription (::sub own)]
-    (subscription)
-    (dissoc own ::sub)))
-
-(defn- overlay-transfer-state
-  [old-own own]
-  (let [sub (::sub old-own)]
-    (assoc own ::sub sub)))
-
-(def ^:static overlay
-  (mx/component
-   {:render #(overlay-render % (:rum/local %))
-    :will-mount #(overlay-will-mount % (:rum/local %))
-    :will-unmount overlay-will-unmount
-    :transfer-state overlay-transfer-state
-    :name "overlay"
-    :mixins [mx/static (mx/local)]}))
 
 (defn- ruler-render
   [own]
