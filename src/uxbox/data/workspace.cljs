@@ -30,18 +30,19 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (if-let [workspace (:workspace state)]
+      (if (:workspace state)
         (update state :workspace merge
                 {:project project
                  :page page
                  :selected #{}
                  :drawing nil})
-        (update state :workspace merge
-                {:project project
-                 :page page
-                 :flags #{:layers :element-options}
-                 :selected #{}
-                 :drawing nil})))))
+        (assoc state :workspace
+               {:project project
+                :zoom 1
+                :page page
+                :flags #{:layers :element-options}
+                :selected #{}
+                :drawing nil})))))
 
 (defn toggle-flag
   "Toggle the enabled flag of the specified tool."
