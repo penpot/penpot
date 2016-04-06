@@ -45,14 +45,14 @@
   [own]
   (assoc own ::sub (watch-draw-actions)))
 
+(defn- draw-area-transfer-state
+  [oldown own]
+  (assoc own ::sub (::sub oldown)))
+
 (defn- draw-area-will-unmount
   [own]
   (.close (::sub own))
   (dissoc own ::sub))
-
-(defn- draw-area-transfer-state
-  [oldown own]
-  (assoc own ::sub (::sub oldown)))
 
 (def draw-area
   (mx/component
@@ -60,6 +60,7 @@
     :name "draw-area"
     :will-mount draw-area-will-mount
     :will-unmount draw-area-will-unmount
+    :transfer-state draw-area-transfer-state
     :mixins [mx/static rum/reactive]}))
 
 ;; --- Drawing Logic
