@@ -44,25 +44,3 @@
   [{:keys [vid shape]} [delta ctrl?]]
   (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
     (rs/emit! (uds/update-vertex-position shape params))))
-
-
-;; (define-once :resize-subscriptions
-;;   (letfn [(init [event]
-;;             (let [payload (:payload event)
-;;                   stoper (->> uuc/actions-s
-;;                               (rx/map :type)
-;;                               (rx/filter #(empty? %))
-;;                               (rx/take 1))]
-;;               (as-> uuwb/mouse-delta-s $
-;;                 (rx/take-until stoper $)
-;;                 (rx/with-latest-from vector uuwb/mouse-ctrl-s $)
-;;                 (rx/subscribe $ #(on-value payload %)))))
-
-;;           (on-value [{:keys [vid shape]} [delta ctrl?]]
-;;             (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
-;;               (rs/emit! (uds/update-vertex-position shape params))))]
-
-;;     (as-> uuc/actions-s $
-;;       (rx/dedupe $)
-;;       (rx/filter #(= (:type %) "ui.shape.resize") $)
-;;       (rx/on-value $ init))))
