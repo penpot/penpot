@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.ui.workspace.canvas.scroll
+(ns uxbox.ui.workspace.scroll
   (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [beicon.core :as rx]
             [lentes.core :as l]

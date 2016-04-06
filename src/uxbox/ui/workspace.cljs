@@ -21,7 +21,7 @@
             [uxbox.ui.messages :as uum]
             [uxbox.ui.confirm]
             [uxbox.ui.keyboard :as kbd]
-            [uxbox.ui.workspace.canvas.scroll :as scroll]
+            [uxbox.ui.workspace.scroll :as scroll]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.shortcuts :as wshortcuts]
             [uxbox.ui.workspace.header :refer (header)]
