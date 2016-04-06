@@ -5,16 +5,11 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.ui.workspace.canvas.ruler
-  (:require-macros [uxbox.util.syntax :refer [define-once]])
+(ns uxbox.ui.workspace.ruler
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
-            [lentes.core :as l]
             [uxbox.rstore :as rs]
-            [uxbox.state :as st]
-            [uxbox.shapes :as sh]
-            [uxbox.data.workspace :as dw]
             [uxbox.util.math :as mth]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
