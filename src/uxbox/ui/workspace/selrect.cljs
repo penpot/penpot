@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.ui.workspace.canvas.selrect
+(ns uxbox.ui.workspace.selrect
   "Components for indicate the user selection and selected shapes group."
   (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [sablono.core :as html :refer-macros [html]]
@@ -23,17 +23,16 @@
             [uxbox.util.geom.matrix :as gmx]
             [uxbox.util.dom :as dom]))
 
-(defonce selrect-pos (atom nil))
+(defonce position (atom nil))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Component
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Selrect (Component)
 
 (declare selrect->rect)
+(declare watch-selrect-actions)
 
-(defn selrect-render
+(defn- selrect-render
   [own]
-  (when-let [data (rum/react selrect-pos)]
+  (when-let [data (rum/react position)]
     (let [{:keys [x y width height]} (selrect->rect data)]
       (html
        [:rect.selection-rect
@@ -42,51 +41,67 @@
          :width width
          :height height}]))))
 
-(def ^:const ^:private selrect
+(defn- selrect-will-mount
+  [own]
+  (assoc own ::sub (watch-selrect-actions)))
+
+(defn- selrect-will-unmount
+  [own]
+  (.close (::sub own))
+  (dissoc own ::sub))
+
+(defn- selrect-transfer-state
+  [oldown own]
+  (assoc own ::sub (::sub oldown)))
+
+(def selrect
   (mx/component
    {:render selrect-render
     :name "selrect"
+    :will-mount selrect-will-mount
+    :will-unmount selrect-will-unmount
+    :transfer-state selrect-transfer-state
     :mixins [mx/static rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Subscriptions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Implementation
 
 (defn- selrect->rect
-  ([data] (selrect->rect data false))
-  ([data translate?]
-   (let [start (:start data)
-         current (:current data)
-         start-x (min (:x start) (:x current))
-         start-y (min (:y start) (:y current))
-         current-x (max (:x start) (:x current))
-         current-y (max (:y start) (:y current))
-         width (- current-x start-x)
-         height (- current-y start-y)]
-     {:x start-x
-      :y start-y
-      :width (- current-x start-x)
-      :height (- current-y start-y)})))
+  [data]
+  (let [start (:start data)
+        current (:current data)
+        start-x (min (:x start) (:x current))
+        start-y (min (:y start) (:y current))
+        current-x (max (:x start) (:x current))
+        current-y (max (:y start) (:y current))
+        width (- current-x start-x)
+        height (- current-y start-y)]
+    {:x start-x
+     :y start-y
+     :width (- current-x start-x)
+     :height (- current-y start-y)}))
 
 (defn- translate-to-canvas
-  [selrect]
-  (let [startx (* wb/canvas-start-x @wb/zoom-l)
-        starty (* wb/canvas-start-y @wb/zoom-l)]
-    (assoc selrect
-           :x (- (:x selrect) startx)
-           :y (- (:y selrect) starty)
-           :width (/ (:width selrect) @wb/zoom-l)
-           :height (/ (:height selrect) @wb/zoom-l))))
+  "Translate the given rect to the canvas coordinates system."
+  [rect]
+  (let [zoom @wb/zoom-l
+        startx (* wb/canvas-start-x zoom)
+        starty (* wb/canvas-start-y zoom)]
+    (assoc rect
+           :x (- (:x rect) startx)
+           :y (- (:y rect) starty)
+           :width (/ (:width rect) zoom)
+           :height (/ (:height rect) zoom))))
 
-(define-once :selrect-subscriptions
+(defn- watch-selrect-actions
+  []
   (letfn [(on-value [pos]
-            (swap! selrect-pos assoc :current pos))
+            (swap! position assoc :current pos))
 
           (on-complete []
-            (let [selrect (selrect->rect @selrect-pos)
-                  selrect (translate-to-canvas selrect)]
-              (rs/emit! (dw/select-shapes selrect))
-              (reset! selrect-pos nil)))
+            (rs/emit! (-> (selrect->rect @position)
+                          (translate-to-canvas)
+                          (dw/select-shapes)))
+            (reset! position nil))
 
           (init []
             (let [stoper (->> uuc/actions-s
@@ -94,7 +109,7 @@
                               (rx/filter #(empty? %))
                               (rx/take 1))
                   pos @wb/mouse-viewport-a]
-              (reset! selrect-pos {:start pos :current pos})
+              (reset! position {:start pos :current pos})
 
               (as-> wb/mouse-viewport-s $
                 (rx/take-until stoper $)
@@ -105,4 +120,3 @@
       (rx/dedupe $)
       (rx/filter #(= "ui.selrect"  %) $)
       (rx/on-value $ init))))
-
