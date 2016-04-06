@@ -5,24 +5,27 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.ui.workspace.canvas.selection
+(ns uxbox.ui.workspace.selection
+  "Multiple selection handlers component."
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [lentes.core :as l]
-            [uxbox.state :as ust]
+            [uxbox.state :as st]
             [uxbox.shapes :as ush]
-            [uxbox.util.lens :as ul]
-            [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]))
+
+;; --- Lenses
 
 (def ^:const selected-shapes-l
   (letfn [(getter [state]
             (let [selected (get-in state [:workspace :selected])]
               (mapv #(get-in state [:shapes-by-id %]) selected)))]
-    (as-> (ul/getter getter) $
-      (l/focus-atom $ ust/state))))
+    (-> (l/getter getter)
+        (l/focus-atom  st/state))))
 
-(defn shapes-selection-render
+;; --- Selection Handlers (Component)
+
+(defn selection-handlers-render
   [own]
   (let [shapes (rum/react selected-shapes-l)]
     (when (> (count shapes) 1)
@@ -34,8 +37,8 @@
                   :style {:stroke "#333" :fill "transparent"
                           :stroke-opacity "1"}}]])))))
 
-(def ^:const shapes-selection
+(def selection-handlers
   (mx/component
-   {:render shapes-selection-render
-    :name "shapes-selection"
+   {:render selection-handlers-render
+    :name "selection-handlers"
     :mixins [rum/reactive mx/static]}))

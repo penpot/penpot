@@ -27,7 +27,7 @@
             [uxbox.ui.workspace.movement :as cmov]
             [uxbox.ui.workspace.resize :as cres]
             [uxbox.ui.workspace.ruler :refer (ruler)]
-            [uxbox.ui.workspace.canvas.selection :refer (shapes-selection)]
+            [uxbox.ui.workspace.selection :refer (selection-handlers)]
             [uxbox.ui.workspace.selrect :refer (selrect)]
             [uxbox.ui.workspace.grid :refer (grid)])
   (:import goog.events.EventType))
@@ -64,7 +64,7 @@
                         :height height}
       (background)
       [:svg.page-layout {}
-       (shapes-selection)
+       (selection-handlers)
        [:g.main {}
         (for [item (reverse (:shapes page))]
           (-> (uus/shape item)
