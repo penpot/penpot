@@ -7,9 +7,7 @@
 
 (ns uxbox.ui.workspace.movement
   "Shape movement in workspace logic."
-  (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [beicon.core :as rx]
-            [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.ui.core :as uuc]
