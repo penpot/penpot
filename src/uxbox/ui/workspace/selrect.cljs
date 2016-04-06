@@ -7,21 +7,15 @@
 
 (ns uxbox.ui.workspace.selrect
   "Components for indicate the user selection and selected shapes group."
-  (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
-            [lentes.core :as l]
             [uxbox.rstore :as rs]
-            [uxbox.state :as st]
             [uxbox.shapes :as sh]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.core :as uuc]
-            [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.geom.matrix :as gmx]
-            [uxbox.util.dom :as dom]))
+            [uxbox.ui.workspace.base :as wb]))
 
 (defonce position (atom nil))
 
