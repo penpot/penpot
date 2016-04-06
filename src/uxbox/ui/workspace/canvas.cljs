@@ -71,7 +71,7 @@
               (rum/with-key (str item))))
         (draw-area)]]
       (when (contains? flags :grid)
-        (grid 1))])))
+        (grid))])))
 
 (def canvas
   (mx/component

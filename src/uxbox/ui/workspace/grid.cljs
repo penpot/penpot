@@ -8,77 +8,49 @@
 (ns uxbox.ui.workspace.grid
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [cuerdas.core :as str]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Grid
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Grid (Component)
 
-(defn grid-render
-  [own zoom]
-  (let [page (rum/react wb/page-l)
-        opts (:options page)
-        step-size-x (/ (:grid/x-axis opts 10) zoom)
-        step-size-y (/ (:grid/y-axis opts 10) zoom)
-        grid-color (:grid/color opts "#cccccc")
-        ticks-mod (/ 100 zoom)
-        vertical-ticks (range (- 0 wb/canvas-start-y)
-                              (- (:width page) wb/canvas-start-y)
-                              step-size-x)
-        horizontal-ticks (range (- 0 wb/canvas-start-x)
-                                (- (:height page) wb/canvas-start-x)
-                                step-size-y)]
-    (letfn [(vertical-line [position value]
-              (if (< (mod value ticks-mod) step-size-x)
-                (html [:line {:key position
-                              :y1 0
-                              :y2 (:height page)
-                              :x1 position
-                              :x2 position
-                              :stroke grid-color
-                              :stroke-width (/ 0.5 zoom)
-                              :opacity 0.75}])
-                (html [:line {:key position
-                              :y1 0
-                              :y2 (:height page)
-                              :x1 position
-                              :x2 position
-                              :stroke grid-color
-                              :stroke-width (/ 0.5 zoom)
-                              :opacity 0.50}])))
-            (horizontal-line [position value]
-              (if (< (mod value ticks-mod) step-size-y)
-                (html [:line {:key position
-                              :y1 position
-                              :y2 position
-                              :x1 0
-                              :x2 (:width page)
-                              :stroke grid-color
-                              :stroke-width (/ 0.5 zoom)
-                              :opacity 0.75}])
-                (html [:line {:key position
-                              :y1 position
-                              :y2 position
-                              :x1 0
-                              :x2 (:width page)
-                              :stroke grid-color
-                              :stroke-width (/ 0.5 zoom)
-                              :opacity 0.50}])))]
-      (html
-       [:g.grid {:style {:pointer-events "none"}}
-        (for [tick vertical-ticks]
-          (let [position (+ tick wb/canvas-start-x)
-                line (vertical-line position tick)]
-            (rum/with-key line (str "tick-" tick))))
-        (for [tick horizontal-ticks]
-          (let [position (+ tick wb/canvas-start-y)
-                line (horizontal-line position tick)]
-            (rum/with-key line (str "tick-" tick))))]))))
+(declare ticks-range)
+(declare vertical-line)
+(declare horizontal-line)
+
+(defn- grid-render
+  [own]
+  (let [{:keys [width height options]} (deref wb/page-l)
+        color (:grid/color options "#cccccc")
+        x-ticks (ticks-range width (:grid/x-axis options 10))
+        y-ticks (ticks-range height (:grid/y-axis options 10))
+        path (as-> [] $
+               (reduce (partial vertical-line height) $ x-ticks)
+               (reduce (partial horizontal-line width) $ y-ticks))]
+    (html
+     [:g.grid {:style {:pointer-events "none"}}
+      [:path {:d (str/join " " path) :stroke color :opacity "0.3"}]])))
 
 (def grid
   (mx/component
    {:render grid-render
     :name "grid"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static]}))
 
+;; --- Helpers
+
+(defn- horizontal-line
+  [width acc value]
+  (let [pos (+ value wb/canvas-start-y)]
+    (conj acc (str/format "M %s %s L %s %s" 0 pos width pos))))
+
+(defn- vertical-line
+  [height acc value]
+  (let [pos (+ value wb/canvas-start-y)]
+    (conj acc (str/format "M %s %s L %s %s" pos 0 pos height))))
+
+(defn- ticks-range
+  [size step]
+  (range (- 0 wb/canvas-start-y)
+         (- size wb/canvas-start-y)
+         step))
