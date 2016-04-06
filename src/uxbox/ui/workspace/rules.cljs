@@ -17,13 +17,8 @@
 
 ;; --- Constants & Helpers
 
-(def ^:const zoom 1)
 (def ^:const step-padding 20)
 (def ^:const step-size 10)
-(def ^:const start-width wb/canvas-start-x)
-(def ^:const start-height wb/canvas-start-y)
-(def ^:const scroll-left 0)
-(def ^:const scroll-top 0)
 
 (defn big-ticks-mod [zoom] (/ 100 zoom))
 (defn mid-ticks-mod [zoom] (/ 50 zoom))
