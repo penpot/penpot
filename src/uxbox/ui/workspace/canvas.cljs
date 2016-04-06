@@ -24,7 +24,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as uuwb]
             [uxbox.ui.workspace.drawarea :refer (draw-area)]
-            [uxbox.ui.workspace.canvas.movement]
+            [uxbox.ui.workspace.movement :as cmov]
             [uxbox.ui.workspace.canvas.resize]
             [uxbox.ui.workspace.canvas.ruler :refer (ruler)]
             [uxbox.ui.workspace.canvas.selection :refer (shapes-selection)]
@@ -155,23 +155,28 @@
 
     (let [key1 (events/listen js/document EventType.MOUSEMOVE on-mousemove)
           key2 (events/listen js/document EventType.KEYDOWN on-key-down)
-          key3 (events/listen js/document EventType.KEYUP on-key-up)]
-      (assoc own ::key1 key1 ::key2 key2 ::key3 key3))))
+          key3 (events/listen js/document EventType.KEYUP on-key-up)
+          sub1 (cmov/watch-move-actions)]
+      (assoc own
+             ::sub1 sub1
+             ::key1 key1
+             ::key2 key2
+             ::key3 key3))))
 
 (defn- viewport-will-unmount
   [own]
-  (let [key1 (::key1 own)
-        key2 (::key2 own)
-        key3 (::key3 own)]
-    (events/unlistenByKey key1)
-    (events/unlistenByKey key2)
-    (events/unlistenByKey key3)
-    (dissoc own ::key1 ::key2 ::key3)))
+  (events/unlistenByKey (::key1 own))
+  (events/unlistenByKey (::key2 own))
+  (events/unlistenByKey (::key3 own))
+  (.close (::sub1 own))
+  (dissoc own ::key1 ::key2 ::key3 ::sub1))
 
 (defn- viewport-transfer-state
   [old-own own]
-  (let [data (select-keys old-own [::key1 ::key2 ::key3])]
-    (merge own data)))
+  (->> [::key1 ::key2 ::key3
+        ::sub1]
+       (select-keys old-own)
+       (merge own)))
 
 (def viewport
   (mx/component
