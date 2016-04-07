@@ -11,13 +11,15 @@
    :all-builds
    [{:id "dev"
      :figwheel {:on-jsload "uxbox.ui/init"}
-     :source-paths ["src"]
+     :source-paths ["src" "vendor"]
      :compiler {:main 'uxbox.core
                 :asset-path "js"
                 :parallel-build false
                 :optimizations :none
+                ;; :closure-defines {"uxbox.repo.core.url"
+                ;;                   "https://test.uxbox.io/api"}
                 :closure-defines {"uxbox.repo.core.url"
-                                  "https://test.uxbox.io/api"}
+                                  "http://localhost:6060/api"}
                 :warnings {:ns-var-clash false}
                 :pretty-print true
                 :language-in  :ecmascript5

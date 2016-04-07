@@ -4,7 +4,7 @@
 (alter-var-root #'cljs.tagged-literals/*cljs-data-readers*
                 assoc 'ux/tr (fn [v] `(uxbox.locales/tr ~v)))
 
-(b/watch (b/inputs "src" "test")
+(b/watch (b/inputs "src" "vendor" "test")
   {:main 'uxbox.test-runner
    :output-to "out/tests.js"
    :output-dir "out"

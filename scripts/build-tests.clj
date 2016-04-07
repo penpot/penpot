@@ -8,7 +8,7 @@
 
 (let [start (System/nanoTime)]
   (b/build
-   (b/inputs "src" "test")
+   (b/inputs "src" "vendor" "test")
    {:main 'uxbox.test-runner
     :output-to "out/tests.js"
     :output-dir "out"
