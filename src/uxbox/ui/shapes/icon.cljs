@@ -28,8 +28,8 @@
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
-          (uuc/acquire-action! "ui.shape.move")
-          (rs/emit! (dw/select-shape id)))
+          (rs/emit! (dw/select-shape id))
+          (uuc/acquire-action! "ui.shape.move"))
 
         (and (not selected?) (not (empty? selected)))
         (do
