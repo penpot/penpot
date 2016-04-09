@@ -4,9 +4,8 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.transit
+(ns uxbox.util.transit
   "A lightweight abstraction for transit serialization."
-  (:refer-clojure :exclude [do])
   (:require [cognitect.transit :as t]
             [uxbox.util.data :refer (parse-int)]
             [uxbox.util.datetime :as dt]))
