@@ -249,7 +249,7 @@
 (defrecord IncreaseZoom []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [increase #(+ % 0.1)]
+    (let [increase #(* % 1.05)]
       (update-in state [:workspace :zoom] (fnil increase 1)))))
 
 (defn increase-zoom
@@ -261,7 +261,7 @@
 (defrecord DecreaseZoom []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [decrease #(if (> % 0) (- % 0.1) 0)]
+    (let [decrease #(* % 0.95)]
       (update-in state [:workspace :zoom] (fnil decrease 1)))))
 
 (defn decrease-zoom
