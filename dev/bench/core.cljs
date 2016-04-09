@@ -1,5 +1,6 @@
 (ns bench.core
-  (:require [kdtree :as k]))
+  (:require [kdtree :as k]
+            [cljs.nodejs :as node]))
 
 (enable-console-print!)
 
@@ -7,65 +8,67 @@
   [n]
   (for [x (range 0 n)
         y (range 0 n)]
-    (k/point2d x y)))
+    #js [x y]))
 
 (defn bench-init-100
   []
+  (js/console.time "init:100")
   (let [points (into-array (generate-points 10))]
-    (time
-     (k/create2d points))))
-
-(defn bench-init-1000
-  []
-  (let [points (into-array (generate-points 100))]
-    (time
-     (k/create2d points))))
+    (k/create2d points)
+    (js/console.timeEnd "init:100")))
 
 (defn bench-init-10000
   []
-  (let [points (into-array (generate-points 1000))]
-    (time
-     (k/create2d points))))
+  (js/console.time "init:10000")
+  (let [points (into-array (generate-points 100))]
+    (k/create2d points)
+    (js/console.timeEnd "init:10000")))
+
+(defn bench-init-160000
+  []
+  (js/console.time "init:160000")
+  (let [points (into-array (generate-points 400))]
+    (k/create2d points)
+    (js/console.timeEnd "init:160000")))
 
 (defn bench-init
   []
-  (println "init:100")
   (bench-init-100)
-  (println "init:1000")
-  (bench-init-1000)
-  (println "init:10000")
-  (bench-init-10000))
+  (bench-init-10000)
+  (bench-init-160000))
 
-(defn bench-knn-100000-2
+(defn bench-knn-160000
   []
-  (let [tree (-> (into-array (generate-points 10000))
-                 (k/create2d points))
-        pt (k/point2d (rand-int 10000)
-                      (rand-int 10000))]
-
+  (let [tree (-> (into-array (generate-points 400))
+                 (k/create2d))]
     (dotimes [i 100]
-      (time
-       (.nearest tree pt 2)))))
+      (js/console.time "knn:160000")
+      (let [pt #js [(rand-int 400)
+                    (rand-int 400)]]
+        (.nearest tree pt 2))
+      (js/console.timeEnd "knn:160000"))))
 
-(defn bench-knn-10000-2
+(defn bench-knn-360000
   []
-  (let [tree (-> (into-array (generate-points 1000))
-                 (k/create2d points))
-        pt (k/point2d (rand-int 1000)
-                      (rand-int 1000))]
-
+  (let [tree (-> (into-array (generate-points 600))
+                 (k/create2d))]
     (dotimes [i 100]
-      (time
-       (.nearest tree pt 2)))))
+      (js/console.time "knn:360000")
+      (let [pt #js [(rand-int 600)
+                    (rand-int 600)]]
+        (.nearest tree pt 2))
+      (js/console.timeEnd "knn:360000"))))
 
 (defn bench-knn
   []
-  (println "knn:10000:2")
-  (bench-knn-10000-2))
+  (bench-knn-160000)
+  (bench-knn-360000))
 
 (defn main
   [& [type]]
-  (cond
+  (bench-init)
+  (bench-knn)
+  #_(cond
     (= type "init")
     (bench-init)
 
