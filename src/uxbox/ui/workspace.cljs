@@ -1,5 +1,4 @@
 (ns uxbox.ui.workspace
-  (:refer-clojure :exclude [dedupe])
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
