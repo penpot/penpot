@@ -12,7 +12,7 @@
   z-index: 999;
 }
 
-// Loader CSS
+// full with loader CSS
 svg#loader-icon {
   height: 100px;
   width: 100px;
@@ -29,4 +29,14 @@ svg#loader-icon {
 
 #loader-pen3 {
   animation: pen3 2s infinite ease;
+}
+
+// btn prncil loader
+svg#loader-pencil {
+  fill: $color-primary-darker;
+  width: 60px;
+}
+
+#loader-line {
+  animation: linePencil .8s infinite linear;
 }
