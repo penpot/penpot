@@ -211,7 +211,7 @@
   [shape _]
   (throw (ex-info "Not implemented (size)" (select-keys shape [:type]))))
 
-;; Move
+;; Move (with deltas)
 
 (defmethod move ::rect
   [shape {dx :x dy :y}]
