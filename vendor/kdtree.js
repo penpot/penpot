@@ -12,7 +12,6 @@
  */
 
 goog.provide("kdtree");
-goog.provide("kdtree.Point2d");
 goog.provide("kdtree.KDTree");
 
 goog.require('goog.array');
@@ -24,36 +23,6 @@ goog.scope(function() {
   const assert = goog.asserts.assert;
   const assertNumber = goog.asserts.assertNumber;
   const every = goog.array.every;
-
-  class Point2d  {
-    constructor(x, y, data) {
-      this.type = Point2d;
-      this.x = x;
-      this.y = y;
-      this.data = data;
-    }
-
-    static empty() {
-      return new Point2d(0, 0, null);
-    }
-
-    get(index) {
-      if (index === 0) {
-        return this.x;
-      } else {
-        return this.y;
-      }
-    }
-
-    set(index, value) {
-      if (index === 0) {
-        this.x = value;
-      } else {
-        this.y = value;
-      }
-      return this;
-    }
-  }
 
   class Node {
     constructor(obj, dimension, parent) {
@@ -77,7 +46,7 @@ goog.scope(function() {
     }
 
     points.sort((a, b) => {
-      return a.get(dim) - b.get(dim);
+      return a[dim] - b[dim];
     });
 
     const median = Math.floor(points.length / 2);
@@ -102,15 +71,15 @@ goog.scope(function() {
       return node;
     }
 
-    own = node.obj.get(dim);
+    own = node.obj[dim];
     left = findMin(node.left, dim);
     right = findMin(node.right, dim);
     min = node;
 
-    if (left !== null && left.obj.get(dim) < own) {
+    if (left !== null && left.obj[dim] < own) {
       min = left;
     }
-    if (right !== null && right.obj.get(dim) < min.obj.get(dim)) {
+    if (right !== null && right.obj[dim] < min.obj[dim]) {
       min = right;
     }
     return min;
@@ -121,7 +90,7 @@ goog.scope(function() {
       return parent;
     }
 
-    if (point.get(dim) < node.obj.get(dim)) {
+    if (point[dim] < node.obj[dim]) {
       return innerSearch(point, node.left, node);
     } else {
       return innerSearch(point, node.right, node);
@@ -137,7 +106,7 @@ goog.scope(function() {
       return node;
     }
 
-    if (point.get(node.dimension) < node.obj.get(node.dimension)) {
+    if (point[node.dimension] < node.obj[node.dimension]) {
       return nodeSearch(point, node.left);
     } else {
       return nodeSearch(point, node.right);
@@ -167,7 +136,7 @@ goog.scope(function() {
                                insertPosition);
 
       const dimension = insertPosition.dimension;
-      if (point.get(dimension) < insertPosition.obj.get(dimension)) {
+      if (point[dimension] < insertPosition.obj[dimension]) {
         insertPosition.left = newNode;
       } else {
         insertPosition.right = newNode;
@@ -188,7 +157,7 @@ goog.scope(function() {
 
         const pdim = node.parent.dimension;
 
-        if (node.obj.get(pdim) < node.parent.obj.get(pdim)) {
+        if (node.obj[pdim] < node.parent.obj[pdim]) {
           node.parent.left = null;
         } else {
           node.parent.right = null;
@@ -227,10 +196,9 @@ goog.scope(function() {
       bestNodes = new BinaryHeap(function (e) { return -e[1]; });
 
       const nearestSearch = (node) => {
-        const ownDistance = self.metric(point, node.obj);
+        const ownDistance = this.metric(point, node.obj);
         const dimension = node.dimension;
-        const pointType = node.obj.type;
-        const linearPoint = pointType.empty();
+        const linearPoint = [null, null];
 
         let otherChild, linearDistance, bestChild, i;
 
@@ -243,9 +211,9 @@ goog.scope(function() {
 
         for (i = 0; i < this.dimensions; i += 1) {
           if (i === node.dimension) {
-            linearPoint.set(i, point.get(i));
+            linearPoint[i] = point[i];
           } else {
-            linearPoint.set(i, node.obj.get(i));
+            linearPoint[i] = node.obj[i]
           }
         }
 
@@ -263,7 +231,7 @@ goog.scope(function() {
         } else if (node.left === null) {
           bestChild = node.right;
         } else {
-          if (point.get(dimension) < node.obj.get(dimension)) {
+          if (point[dimension] < node.obj[dimension]) {
             bestChild = node.left;
           } else {
             bestChild = node.right;
@@ -454,11 +422,7 @@ goog.scope(function() {
   };
 
   function distance2d(a, b){
-    return Math.pow(a.x - b.x, 2) +  Math.pow(a.y - b.y, 2);
-  }
-
-  function point2d(x, y, data) {
-    return new Point2d(x, y, data);
+    return Math.pow(a[0] - b[0], 2) +  Math.pow(a[1] - b[1], 2);
   }
 
   function create2d(points) {
@@ -469,6 +433,5 @@ goog.scope(function() {
   kdtree.KDTree = KDTree;
 
   // Factory functions
-  kdtree.point2d = point2d;
   kdtree.create2d = create2d;
 });
