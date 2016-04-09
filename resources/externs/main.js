@@ -25,5 +25,8 @@ var TopLevel = {
   "value": function() {},
   "identifier": function() {},
   "getBoundingClientRect": function() {},
-  "getBBox": function() {}
+  "getBBox": function() {},
+  "addEventListener": function() {},
+  "postMessage": function() {},
+  "data": function() {}
 };
