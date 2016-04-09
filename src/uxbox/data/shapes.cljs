@@ -103,9 +103,8 @@
       (update-in state [:shapes-by-id id] merge shape))))
 
 (defn move-shape
-  "Mark a shape selected for drawing in the canvas."
+  "Move shape using relative position (delta)."
   [sid delta]
-  {:pre [(gpt/point? delta)]}
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
