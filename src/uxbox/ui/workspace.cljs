@@ -15,7 +15,7 @@
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.workspace.scroll :as scroll]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.shortcuts :as shortcuts]
+            [uxbox.ui.workspace.shortcuts :refer (shortcuts-mixin)]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (horizontal-rule vertical-rule)]
             [uxbox.ui.workspace.sidebar :refer (left-sidebar right-sidebar)]
@@ -142,5 +142,5 @@
     :name "workspace"
     :mixins [mx/static
              rum/reactive
-             shortcuts/mixin
+             shortcuts-mixin
              (mx/local)]}))
