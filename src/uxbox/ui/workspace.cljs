@@ -3,20 +3,13 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
-            [lentes.core :as l]
             [uxbox.rstore :as rs]
-            [uxbox.state :as st]
-            [uxbox.state.project :as stpr]
             [uxbox.data.workspace :as dw]
-            [uxbox.data.projects :as dp]
             [uxbox.data.pages :as udp]
             [uxbox.data.history :as udh]
-            [uxbox.util.lens :as ul]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
-            [uxbox.ui.core :as uuc]
-            [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.messages :as uum]
             [uxbox.ui.confirm]
@@ -148,5 +141,7 @@
     :will-unmount workspace-will-unmount
     :did-mount workspace-did-mount
     :name "workspace"
-    :mixins [mx/static rum/reactive wshortcuts/mixin
+    :mixins [mx/static
+             rum/reactive
+             wshortcuts/mixin
              (mx/local)]}))
