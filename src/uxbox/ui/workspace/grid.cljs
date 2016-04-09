@@ -20,8 +20,10 @@
 
 (defn- grid-render
   [own]
-  (let [{:keys [width height options]} (deref wb/page-l)
+  (let [options (:options @wb/page-l)
         color (:grid/color options "#cccccc")
+        width wb/viewport-width
+        height wb/viewport-height
         x-ticks (ticks-range width (:grid/x-axis options 10))
         y-ticks (ticks-range height (:grid/y-axis options 10))
         path (as-> [] $
