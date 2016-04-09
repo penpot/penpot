@@ -8,15 +8,30 @@
 (ns uxbox.ui.workspace.movement
   "Shape movement in workspace logic."
   (:require [beicon.core :as rx]
+            [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
+            [uxbox.shapes :as sh]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.align :as align]
             [uxbox.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]))
 
 (declare initialize)
 (declare handle-movement)
+
+;; --- Lenses
+
+(defn- resolve-selected
+  [state]
+  (let [selected (get-in state [:workspace :selected])
+        xf (map #(get-in state [:shapes-by-id %]))]
+    (into #{} xf selected)))
+
+(def ^:const ^:private selected-shapes-l
+  (-> (l/getter resolve-selected)
+      (l/focus-atom st/state)))
 
 ;; --- Public Api
 
@@ -30,22 +45,19 @@
 
 (defn- initialize
   []
-  (let [stoper (->> uuc/actions-s
+  (let [shapes @selected-shapes-l
+        stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter empty?)
                     (rx/take 1))]
     (as-> wb/mouse-delta-s $
       (rx/take-until stoper $)
-      (rx/on-value $ handle-movement))))
+      (rx/scan (fn [acc delta]
+                 (mapv #(sh/move % delta) acc)) shapes $)
+      (rx/subscribe $ handle-movement))))
 
 (defn- handle-movement
   [delta]
-  (let [pageid (get-in @st/state [:workspace :page])
-        selected (get-in @st/state [:workspace :selected])
-        shapes (->> (vals @wb/shapes-by-id-l)
-                    (filter #(= (:page %) pageid))
-                    (filter (comp selected :id)))
-        delta (gpt/divide delta @wb/zoom-l)]
-    (doseq [{:keys [id group]} shapes]
-      (rs/emit! (uds/move-shape id delta)))))
+  (doseq [shape delta]
+    (rs/emit! (uds/update-shape shape))))
 
