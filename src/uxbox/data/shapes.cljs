@@ -94,6 +94,14 @@
       (let [shape (get-in state [:shapes-by-id id])]
         (stsh/dissoc-shape state shape)))))
 
+(defn update-shape
+  "Just updates in place the shape."
+  [{:keys [id] :as shape}]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id id] merge shape))))
+
 (defn move-shape
   "Mark a shape selected for drawing in the canvas."
   [sid delta]
