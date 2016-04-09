@@ -15,6 +15,7 @@ goog.provide("kdtree");
 goog.provide("kdtree.KDTree");
 
 goog.require('goog.array');
+goog.require('goog.structs.Heap');
 goog.require('goog.asserts');
 
 goog.scope(function() {
@@ -186,43 +187,38 @@ goog.scope(function() {
 
     }
 
-    nearest(point, maxNodes, maxDistance) {
-      let i, result, bestNodes;
-
+    nearest(point, maxNodes) {
       if (maxNodes === undefined) {
         maxNodes = 1;
       }
 
-      bestNodes = new BinaryHeap(function (e) { return -e[1]; });
+      let best = new goog.structs.Heap();
 
       const nearestSearch = (node) => {
-        const ownDistance = this.metric(point, node.obj);
+        let bestChild;
+        const distance = this.metric(point, node.obj);
         const dimension = node.dimension;
-        const linearPoint = [null, null];
 
-        let otherChild, linearDistance, bestChild, i;
-
-        function saveNode(node, distance) {
-          bestNodes.push([node, distance]);
-          if (bestNodes.size() > maxNodes) {
-            bestNodes.pop();
+        if (best.getCount() < maxNodes ||  distance < best.peek()[1]) {
+          best.insert(-distance, [node.obj, distance]);
+          if (best.getCount() > maxNodes) {
+            best.remove();
           }
         }
 
-        for (i = 0; i < this.dimensions; i += 1) {
-          if (i === node.dimension) {
-            linearPoint[i] = point[i];
-          } else {
-            linearPoint[i] = node.obj[i]
+        if (best.isEmpty()) {
+          best.insert(-distance, [node.obj, distance]);
+        } else {
+          if (distance < best.peek()[1]) {
+            best.insert(-distance, [node.obj, distance]);
+
+            if (best.getCount() > maxNodes) {
+              best.remove();
+            }
           }
         }
-
-        linearDistance = this.metric(linearPoint, node.obj);
 
         if (node.right === null && node.left === null) {
-          if (bestNodes.size() < maxNodes || ownDistance < bestNodes.peek()[1]) {
-            saveNode(node, ownDistance);
-          }
           return;
         }
 
@@ -232,47 +228,21 @@ goog.scope(function() {
           bestChild = node.right;
         } else {
           if (point[dimension] < node.obj[dimension]) {
-            bestChild = node.left;
+              bestChild = node.left;
           } else {
-            bestChild = node.right;
+              bestChild = node.right;
           }
         }
 
         nearestSearch(bestChild);
-
-        if (bestNodes.size() < maxNodes || ownDistance < bestNodes.peek()[1]) {
-          saveNode(node, ownDistance);
-        }
-
-        if (bestNodes.size() < maxNodes || Math.abs(linearDistance) < bestNodes.peek()[1]) {
-          if (bestChild === node.left) {
-            otherChild = node.right;
-          } else {
-            otherChild = node.left;
-          }
-          if (otherChild !== null) {
-            nearestSearch(otherChild);
-          }
-        }
-      }
-
-      if (maxDistance) {
-        for (i = 0; i < maxNodes; i += 1) {
-          bestNodes.push([null, maxDistance]);
-        }
       }
 
       if(this.root) {
         nearestSearch(this.root);
       }
 
-      result = [];
-
-      for (i = 0; i < Math.min(maxNodes, bestNodes.content.length); i += 1) {
-        if (bestNodes.content[i][0]) {
-          result.push([bestNodes.content[i][0].obj, bestNodes.content[i][1]]);
-        }
-      }
+      result = best.getValues();
+      result.sort((x) => x[1]);
       return result;
     }
 
@@ -295,134 +265,8 @@ goog.scope(function() {
     }
   }
 
-  // Binary heap implementation from:
-  // http://eloquentjavascript.net/appendix2.html
-
-  function BinaryHeap(scoreFunction){
-    this.content = [];
-    this.scoreFunction = scoreFunction;
-  }
-
-  BinaryHeap.prototype = {
-    push: function(element) {
-      // Add the new element to the end of the array.
-      this.content.push(element);
-      // Allow it to bubble up.
-      this.bubbleUp(this.content.length - 1);
-    },
-
-    pop: function() {
-      // Store the first element so we can return it later.
-      var result = this.content[0];
-      // Get the element at the end of the array.
-      var end = this.content.pop();
-      // If there are any elements left, put the end element at the
-      // start, and let it sink down.
-      if (this.content.length > 0) {
-        this.content[0] = end;
-        this.sinkDown(0);
-      }
-      return result;
-    },
-
-    peek: function() {
-      return this.content[0];
-    },
-
-    remove: function(node) {
-      var len = this.content.length;
-      // To remove a value, we must search through the array to find
-      // it.
-      for (var i = 0; i < len; i++) {
-        if (this.content[i] == node) {
-          // When it is found, the process seen in 'pop' is repeated
-          // to fill up the hole.
-          var end = this.content.pop();
-          if (i != len - 1) {
-            this.content[i] = end;
-            if (this.scoreFunction(end) < this.scoreFunction(node))
-              this.bubbleUp(i);
-            else
-              this.sinkDown(i);
-          }
-          return;
-        }
-      }
-      throw new Error("Node not found.");
-    },
-
-    size: function() {
-      return this.content.length;
-    },
-
-    bubbleUp: function(n) {
-      // Fetch the element that has to be moved.
-      var element = this.content[n];
-      // When at 0, an element can not go up any further.
-      while (n > 0) {
-        // Compute the parent element's index, and fetch it.
-        var parentN = Math.floor((n + 1) / 2) - 1,
-            parent = this.content[parentN];
-        // Swap the elements if the parent is greater.
-        if (this.scoreFunction(element) < this.scoreFunction(parent)) {
-          this.content[parentN] = element;
-          this.content[n] = parent;
-          // Update 'n' to continue at the new position.
-          n = parentN;
-        }
-        // Found a parent that is less, no need to move it further.
-        else {
-          break;
-        }
-      }
-    },
-
-    sinkDown: function(n) {
-      // Look up the target element and its score.
-      var length = this.content.length,
-          element = this.content[n],
-          elemScore = this.scoreFunction(element);
-
-      while(true) {
-        // Compute the indices of the child elements.
-        var child2N = (n + 1) * 2, child1N = child2N - 1;
-        // This is used to store the new position of the element,
-        // if any.
-        var swap = null;
-        // If the first child exists (is inside the array)...
-        if (child1N < length) {
-          // Look it up and compute its score.
-          var child1 = this.content[child1N],
-              child1Score = this.scoreFunction(child1);
-          // If the score is less than our element's, we need to swap.
-          if (child1Score < elemScore)
-            swap = child1N;
-        }
-        // Do the same checks for the other child.
-        if (child2N < length) {
-          var child2 = this.content[child2N],
-              child2Score = this.scoreFunction(child2);
-          if (child2Score < (swap == null ? elemScore : child1Score)){
-            swap = child2N;
-          }
-        }
-
-        // If the element needs to be moved, swap it, and continue.
-        if (swap != null) {
-          this.content[n] = this.content[swap];
-          this.content[swap] = element;
-          n = swap;
-        }
-        // Otherwise, we are done.
-        else {
-          break;
-        }
-      }
-    }
-  };
-
   function distance2d(a, b){
-    return Math.pow(a[0] - b[0], 2) +  Math.pow(a[1] - b[1], 2);
+    return Math.sqrt(Math.pow(a[0] - b[0], 2) +  Math.pow(a[1] - b[1], 2));
   }
 
   function create2d(points) {
