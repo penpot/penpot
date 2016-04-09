@@ -33,7 +33,7 @@
   [zoom acc value]
   (let [big-ticks-mod (big-ticks-mod zoom)
         mid-ticks-mod (mid-ticks-mod zoom)
-        pos (+ value
+        pos (+ (* value zoom)
                rule-padding
                (* wb/canvas-start-x zoom)
                wb/canvas-scroll-padding)]
@@ -51,7 +51,7 @@
   [zoom acc value]
   (let [big-ticks-mod (big-ticks-mod zoom)
         mid-ticks-mod (mid-ticks-mod zoom)
-        pos (+ value
+        pos (+ (* value zoom)
                (* wb/canvas-start-x zoom)
                wb/canvas-scroll-padding)]
     (cond
@@ -69,7 +69,7 @@
 (defn- horizontal-text-label
   [zoom value]
   (let [big-ticks-mod (big-ticks-mod zoom)
-        pos (+ value
+        pos (+ (* value zoom)
                rule-padding
                (* wb/canvas-start-x zoom)
                wb/canvas-scroll-padding)]
@@ -87,7 +87,7 @@
 (defn- vertical-text-label
   [zoom value]
   (let [big-ticks-mod (big-ticks-mod zoom)
-        pos (+ value
+        pos (+ (* value zoom)
                (* wb/canvas-start-x zoom)
                ;; wb/canvas-start-x
                wb/canvas-scroll-padding)]
