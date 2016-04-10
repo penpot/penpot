@@ -41,9 +41,13 @@
       [:li.coordinates {:alt "y"}
        (str "Y: " (:y coords "-"))]
       [:li.zoom-input
-       [:span.add-zoom "+"]
-       [:span "100%"]
-       [:span.remove-zoom "-"]]])))
+       [:span.add-zoom
+        {:on-click #(rs/emit! (dw/increase-zoom))}
+        "+"]
+       [:span (str (mth/round (* 100 zoom)) "%")]
+       [:span.remove-zoom
+        {:on-click #(rs/emit! (dw/decrease-zoom))}
+        "-"]]])))
 
 (def coordinates
   (mx/component
