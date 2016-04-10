@@ -142,6 +142,69 @@
 
     }
 
+    .options-view {
+      align-items: center;
+      display: flex;
+      justify-content: content;
+      margin: 0;
+      margin-left: 30%;
+
+      li {
+        align-items: center;
+        display: flex;
+        flex-shrink: 0;
+        height: 30px;
+        margin: 0 $small;
+        position: relative;
+        width: 50px;
+
+        &.zoom-input {
+          width: 85px;
+          padding: 0 25px;
+          position: relative;
+
+          .add-zoom,
+          .remove-zoom {
+            align-items: center;
+            border-radius: 50%;
+            border: 1px solid $color-primary;
+            cursor: pointer;
+            color: $color-primary;
+            display: none;
+            flex-shrink: 0;
+            font-size: $fs20;
+            font-weight: bold;
+            height: 20px;
+            justify-content: center;
+            position: absolute;
+            top: 5px;
+            width: 20px;
+          }
+
+          .add-zoom {
+            left: -5px;
+          }
+
+          .remove-zoom {
+            right: -5px;
+          }
+
+          &:hover {
+
+            .add-zoom,
+            .remove-zoom {
+              display: flex;
+              @include animation(0s,.3s,fadeIn);
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
   }
 
 }

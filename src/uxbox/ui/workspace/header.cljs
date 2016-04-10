@@ -31,9 +31,13 @@
   [own]
   (when-let [{:keys [x y]} (rum/react wb/mouse-canvas-a)]
     (html
-     [:ul.options-btn
-      [:li.tooltip.tooltip-bottom {:alt "x"} x]
-      [:li.tooltip.tooltip-bottom {:alt "y"} y]])))
+     [:ul.options-view
+      [:li.coordinates {:alt "x"} "X: " x]
+      [:li.coordinates {:alt "y"} "Y: " y]
+      [:li.zoom-input
+       [:span.add-zoom "+"]
+       [:span "100%"]
+       [:span.remove-zoom "-"]]])))
 
 (def coordinates
   (mx/component
