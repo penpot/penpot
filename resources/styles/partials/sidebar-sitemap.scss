@@ -82,7 +82,7 @@
 
       .page-actions {
         align-items: center;
-        display: flex;
+        display: none;
         margin-left: auto;
 
         a {
@@ -134,6 +134,15 @@
           font-weight: bold;
         }
 
+      }
+
+    }
+
+    &:hover {
+
+      .page-actions {
+        display: flex;
+        @include animation(0s,.3s,fadeIn);
       }
 
     }
