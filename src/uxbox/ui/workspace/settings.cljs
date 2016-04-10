@@ -9,6 +9,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [lentes.core :as l]
             [rum.core :as rum]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.data.pages :as udp]
             [uxbox.ui.icons :as i]
@@ -55,15 +56,14 @@
          [:input#grid-x.input-text
           {:placeholder "X px"
            :type "number"
-           ;; TODO: put here the default from constants
-           :value (:grid/x-axis opts "10")
+           :value (:grid/x-axis opts c/grid-x-axis)
            :on-change (partial on-field-change :grid/x-axis)
-           :min 1 ;;TODO check this value
+           :min 1
            :max 100}]
          [:input#grid-y.input-text
           {:placeholder "Y px"
            :type "number"
-           :value (:grid/y-axis opts "10")
+           :value (:grid/y-axis opts c/grid-y-axis)
            :on-change (partial on-field-change :grid/y-axis)
            :min 1
            :max 100}]]
