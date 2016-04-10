@@ -16,6 +16,7 @@
             [uxbox.data.shapes :as uds]
             [uxbox.data.worker :as wrk]
             [uxbox.util.datetime :as dt]
+            [uxbox.util.math :as mth]
             [uxbox.util.geom.point :as gpt]))
 
 ;; --- Workspace Initialization
@@ -115,7 +116,7 @@
 (defrecord IncreaseZoom []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [increase #(* % 1.05)]
+    (let [increase #(min (mth/precision (* % 1.05) 2) 3)]
       (update-in state [:workspace :zoom] (fnil increase 1)))))
 
 (defn increase-zoom
@@ -127,7 +128,7 @@
 (defrecord DecreaseZoom []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [decrease #(* % 0.95)]
+    (let [decrease #(max (mth/precision (* % 0.95) 2) 0.15)]
       (update-in state [:workspace :zoom] (fnil decrease 1)))))
 
 (defn decrease-zoom
