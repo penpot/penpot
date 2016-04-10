@@ -167,9 +167,9 @@
           .remove-zoom {
             align-items: center;
             border-radius: 50%;
-            border: 1px solid $color-primary;
+            border: 1px solid $medium-ui-border;
             cursor: pointer;
-            color: $color-primary;
+            color: $medium-ui-border;
             display: none;
             flex-shrink: 0;
             font-size: $fs20;
@@ -179,6 +179,12 @@
             position: absolute;
             top: 5px;
             width: 20px;
+
+            &:hover {
+              border-color: $color-primary;
+              color: $color-primary;
+            }
+
           }
 
           .add-zoom {
