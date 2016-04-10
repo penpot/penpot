@@ -13,6 +13,7 @@
             [uxbox.rstore :as rs]
             [uxbox.shapes :as sh]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]))
@@ -94,7 +95,7 @@
           (on-complete []
             (rs/emit! (-> (selrect->rect @position)
                           (translate-to-canvas)
-                          (dw/select-shapes)))
+                          (uds/select-shapes)))
             (reset! position nil))
 
           (init []

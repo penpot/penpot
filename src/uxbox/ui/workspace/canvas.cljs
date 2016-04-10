@@ -15,6 +15,7 @@
             [uxbox.shapes :as sh]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int)]
@@ -91,7 +92,7 @@
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
               (when-not (empty? (:selected workspace))
-                (rs/emit! (dw/deselect-all)))
+                (rs/emit! (uds/deselect-all)))
               (if-let [shape (:drawing workspace)]
                 (uuc/acquire-action! "ui.shape.draw")
                 (uuc/acquire-action! "ui.selrect")))

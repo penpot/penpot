@@ -49,18 +49,18 @@
       nil
 
       (.-ctrlKey event)
-      (rs/emit! (udw/select-shape id))
+      (rs/emit! (uds/select-shape id))
 
       (> (count selected) 1)
-      (rs/emit! (udw/deselect-all)
-                (udw/select-shape id))
+      (rs/emit! (uds/deselect-all)
+                (uds/select-shape id))
 
       (contains? selected id)
-      (rs/emit! (udw/select-shape id))
+      (rs/emit! (uds/select-shape id))
 
       :else
-      (rs/emit! (udw/deselect-all)
-                (udw/select-shape id)))))
+      (rs/emit! (uds/deselect-all)
+                (uds/select-shape id)))))
 
 (defn- toggle-visibility
   [selected item event]
@@ -71,7 +71,7 @@
       (rs/emit! (uds/show-shape id))
       (rs/emit! (uds/hide-shape id)))
     (when (contains? selected id)
-      (rs/emit! (udw/select-shape id)))))
+      (rs/emit! (uds/select-shape id)))))
 
 (defn- toggle-blocking
   [item event]
@@ -289,9 +289,9 @@
         shapes-by-id (rum/react wb/shapes-by-id-l)
         page (rum/react (focus-page (:page workspace)))
         close #(rs/emit! (udw/toggle-flag :layers))
-        duplicate #(rs/emit! (udw/duplicate-selected))
-        group #(rs/emit! (udw/group-selected))
-        delete #(rs/emit! (udw/delete-selected))
+        duplicate #(rs/emit! (uds/duplicate-selected))
+        group #(rs/emit! (uds/group-selected))
+        delete #(rs/emit! (uds/delete-selected))
         dragel (volatile! nil)]
     (html
      [:div#layers.tool-window
