@@ -12,6 +12,9 @@
 }
 
 .dashboard-content {
+  background-image: url("../images/dashboard-img.svg");
+  background-size: 100%;
+  background-position: bottom center;
   display: flex;
   flex-direction: column;
   height: calc(100vh - 60px);
