@@ -21,6 +21,7 @@
             [uxbox.ui.navigation :as nav]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.lightbox :as lightbox]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.math :as mth]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -29,11 +30,16 @@
 
 (defn- coordenates-render
   [own]
-  (when-let [{:keys [x y]} (rum/react wb/mouse-canvas-a)]
+  (let [zoom (rum/react wb/zoom-l)
+        coords (some-> (rum/react wb/mouse-canvas-a)
+                       (gpt/divide zoom)
+                       (gpt/round 1))]
     (html
      [:ul.options-view
-      [:li.coordinates {:alt "x"} "X: " x]
-      [:li.coordinates {:alt "y"} "Y: " y]
+      [:li.coordinates {:alt "x"}
+       (str "X: " (:x coords "-"))]
+      [:li.coordinates {:alt "y"}
+       (str "Y: " (:y coords "-"))]
       [:li.zoom-input
        [:span.add-zoom "+"]
        [:span "100%"]

@@ -6,6 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.util.geom.point
+  (:refer-clojure :exclude [divide])
   (:require [uxbox.util.math :as mth]))
 
 (defrecord Point [x y])
@@ -152,11 +153,8 @@
     (if (>= y 0) 1 4)
     (if (>= y 0) 2 3)))
 
-(defn transform-point
-  [pt mx]
-  (Point. (+ (* (:x pt) (:a mx))
-             (* (:y pt) (:c mx))
-             (:tx mx))
-          (+ (* (:x pt) (:b mx))
-             (* (:y pt) (:d mx))
-             (:ty mx))))
+(defn round
+  "Change the precision of the point coordinates."
+  [{:keys [x y]} decimanls]
+  (Point. (mth/precision x decimanls)
+          (mth/precision y decimanls)))
