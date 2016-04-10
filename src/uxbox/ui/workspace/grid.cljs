@@ -14,7 +14,6 @@
 
 ;; --- Grid (Component)
 
-(declare ticks-range)
 (declare vertical-line)
 (declare horizontal-line)
 
@@ -24,8 +23,14 @@
         color (:grid/color options "#cccccc")
         width wb/viewport-width
         height wb/viewport-height
-        x-ticks (ticks-range width (:grid/x-axis options 10))
-        y-ticks (ticks-range height (:grid/y-axis options 10))
+        x-ticks (range (- 0 wb/canvas-start-x)
+                       (- width wb/canvas-start-x)
+                       (:grid/x-axis options 10))
+
+        y-ticks (range (- 0 wb/canvas-start-x)
+                       (- height wb/canvas-start-x)
+                       (:grid/y-axis options 10))
+
         path (as-> [] $
                (reduce (partial vertical-line height) $ x-ticks)
                (reduce (partial horizontal-line width) $ y-ticks))]
@@ -50,9 +55,3 @@
   [height acc value]
   (let [pos (+ value wb/canvas-start-y)]
     (conj acc (str/format "M %s %s L %s %s" pos 0 pos height))))
-
-(defn- ticks-range
-  [size step]
-  (range (- 0 wb/canvas-start-y)
-         (- size wb/canvas-start-y)
-         step))
