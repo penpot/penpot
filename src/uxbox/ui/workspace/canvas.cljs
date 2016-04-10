@@ -11,6 +11,7 @@
             [beicon.core :as rx]
             [lentes.core :as l]
             [goog.events :as events]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.shapes :as sh]
             [uxbox.data.projects :as dp]
@@ -58,8 +59,8 @@
   (let [workspace (rum/react uuwb/workspace-l)
         flags (:flags workspace)]
     (html
-     [:svg.page-canvas {:x uuwb/canvas-start-x
-                        :y uuwb/canvas-start-y
+     [:svg.page-canvas {:x c/canvas-start-x
+                        :y c/canvas-start-y
                         :ref (str "canvas" id)
                         :width width
                         :height height}
@@ -101,8 +102,8 @@
               (uuc/release-action! "ui.shape"
                                    "ui.selrect"))]
       (html
-       [:svg.viewport {:width (* uuwb/viewport-width zoom)
-                       :height (* uuwb/viewport-height zoom)
+       [:svg.viewport {:width (* c/viewport-width zoom)
+                       :height (* c/viewport-height zoom)
                        :ref "viewport"
                        :class (when drawing? "drawing")
                        :on-mouse-down on-mouse-down

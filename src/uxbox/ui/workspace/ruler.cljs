@@ -9,6 +9,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.util.math :as mth]
             [uxbox.ui.workspace.base :as wb]
@@ -104,8 +105,8 @@
       [:rect {:style {:fill "transparent"
                       :stroke "transparent"
                       :cursor "cell"}
-              :width wb/viewport-width
-              :height wb/viewport-height}]
+              :width c/viewport-width
+              :height c/viewport-height}]
       (if (and p1 p2)
         (overlay-line-render own p1 p2))])))
 

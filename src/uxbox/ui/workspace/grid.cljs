@@ -9,6 +9,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cuerdas.core :as str]
+            [uxbox.constants :as c]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]))
 
@@ -21,14 +22,14 @@
   [own]
   (let [options (:options @wb/page-l)
         color (:grid/color options "#cccccc")
-        width wb/viewport-width
-        height wb/viewport-height
-        x-ticks (range (- 0 wb/canvas-start-x)
-                       (- width wb/canvas-start-x)
+        width c/viewport-width
+        height c/viewport-height
+        x-ticks (range (- 0 c/canvas-start-x)
+                       (- width c/canvas-start-x)
                        (:grid/x-axis options 10))
 
-        y-ticks (range (- 0 wb/canvas-start-x)
-                       (- height wb/canvas-start-x)
+        y-ticks (range (- 0 c/canvas-start-x)
+                       (- height c/canvas-start-x)
                        (:grid/y-axis options 10))
 
         path (as-> [] $
@@ -48,10 +49,10 @@
 
 (defn- horizontal-line
   [width acc value]
-  (let [pos (+ value wb/canvas-start-y)]
+  (let [pos (+ value c/canvas-start-y)]
     (conj acc (str/format "M %s %s L %s %s" 0 pos width pos))))
 
 (defn- vertical-line
   [height acc value]
-  (let [pos (+ value wb/canvas-start-y)]
+  (let [pos (+ value c/canvas-start-y)]
     (conj acc (str/format "M %s %s L %s %s" pos 0 pos height))))

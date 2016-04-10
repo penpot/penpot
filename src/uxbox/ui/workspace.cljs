@@ -1,7 +1,15 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
 (ns uxbox.ui.workspace
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.data.workspace :as dw]
             [uxbox.data.pages :as udp]
@@ -42,8 +50,8 @@
         dom (mx/get-ref-dom own "workspace-canvas")]
 
     ;; Set initial scroll position
-    (set! (.-scrollLeft dom) (* wb/canvas-start-scroll-x @wb/zoom-l))
-    (set! (.-scrollTop dom) (* wb/canvas-start-scroll-y @wb/zoom-l))
+    (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-l))
+    (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-l))
 
     (assoc own ::sub1 sub1 ::sub2 sub2)))
 
@@ -89,8 +97,8 @@
       (rs/emit! (dw/decrease-zoom)))
 
     (let [dom (mx/get-ref-dom own "workspace-canvas")]
-      (set! (.-scrollLeft dom) (* wb/canvas-start-scroll-x @wb/zoom-l))
-      (set! (.-scrollTop dom) (* wb/canvas-start-scroll-y @wb/zoom-l)))))
+      (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-l))
+      (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-l)))))
 
 (defn- workspace-render
   [own projectid]
