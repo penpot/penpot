@@ -14,31 +14,41 @@
             [uxbox.schema :as sc]
             [uxbox.data.pages :as udp]
             [uxbox.data.shapes :as uds]
-            ;; [uxbox.data.worker :as wrk]
+            [uxbox.data.worker :as wrk]
             [uxbox.util.datetime :as dt]
             [uxbox.util.geom.point :as gpt]))
 
 ;; --- Workspace Initialization
 
+(defrecord InitializeWorkspace [project page]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (if (:workspace state)
+      (update state :workspace merge
+              {:project project
+               :page page
+               :selected #{}
+               :drawing nil})
+      (assoc state :workspace
+             {:project project
+              :zoom 1
+              :page page
+              :flags #{:layers :element-options}
+              :selected #{}
+              :drawing nil})))
+
+    rs/WatchEvent
+    (-apply-watch [_ state s]
+      (if (get-in state [:pages-by-id page])
+        (rx/of (wrk/initialize page))
+        (->> (rx/filter udp/pages-fetched? s)
+             (rx/take 1)
+             (rx/map #(wrk/initialize page))))))
+
 (defn initialize
   "Initialize the workspace state."
   [project page]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (if (:workspace state)
-        (update state :workspace merge
-                {:project project
-                 :page page
-                 :selected #{}
-                 :drawing nil})
-        (assoc state :workspace
-               {:project project
-                :zoom 1
-                :page page
-                :flags #{:layers :element-options}
-                :selected #{}
-                :drawing nil})))))
+  (InitializeWorkspace. project page))
 
 (defn toggle-flag
   "Toggle the enabled flag of the specified tool."
