@@ -22,3 +22,10 @@
                 :method :put
                 :body data}]
     (send! params)))
+
+(defmethod request :update/password
+  [type data]
+  (let [params {:url (str url "/profile/me/password")
+                :method :put
+                :body data}]
+    (send! params)))

@@ -61,18 +61,15 @@
 
 ;; --- Update Password
 
-(defrecord UpdatePassword [password]
+(defrecord UpdatePassword [old-password password]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    ;; (letfn [(on-error [err]
-    ;;           (uum/error (tr "errors.update-password"))
-    ;;           (rx/empty))]
-    ;;   (->> (rp/req :update/password data)
-    ;;        (rx/catch on-error)))))
-    (js/alert "Not implemented")
-    (rx/empty)))
+    (letfn [(on-error [err]
+              (uum/error (tr "errors.update-password"))
+              (rx/empty))]
+      (->> (rp/req :update/password {:old-password old-password :password password})
+           (rx/catch on-error)))))
 
 (defn update-password
-  [password]
-  {:pre [(string? password)]}
-  (UpdatePassword. password))
+  [old-password password]
+  (UpdatePassword. old-password password))
