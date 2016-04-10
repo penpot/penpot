@@ -14,6 +14,7 @@
             [uxbox.state :as st]
             [uxbox.library :as library]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.shapes :as uds]
             [uxbox.util.lens :as ul]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.color :refer (hex->rgb)]
@@ -48,8 +49,8 @@
   [color event]
   (dom/prevent-default event)
   (if (kbd/shift? event)
-    (rs/emit! (dw/update-selected-shapes-stroke {:color color}))
-    (rs/emit! (dw/update-selected-shapes-fill {:color color}))))
+    (rs/emit! (uds/update-selected-shapes-stroke {:color color}))
+    (rs/emit! (uds/update-selected-shapes-fill {:color color}))))
 
 (defn- colorpalette-render
   [own]

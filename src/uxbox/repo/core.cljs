@@ -13,7 +13,7 @@
             [hodgepodge.core :refer (local-storage)]
             [promesa.core :as p :include-macros true]
             [beicon.core :as rx]
-            [uxbox.transit :as t]
+            [uxbox.util.transit :as t]
             [uxbox.state :as ust])
   (:import [goog.Uri QueryData]))
 

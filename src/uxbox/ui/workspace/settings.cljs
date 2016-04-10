@@ -9,6 +9,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [lentes.core :as l]
             [rum.core :as rum]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.data.pages :as udp]
             [uxbox.ui.icons :as i]
@@ -16,7 +17,8 @@
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.colorpicker :as uucp]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.util.dom :as dom]))
+            [uxbox.util.dom :as dom]
+            [uxbox.util.data :refer (parse-int)]))
 
 ;; --- Lentes
 
@@ -33,7 +35,8 @@
         opts (merge (:options page)
                     (deref local))]
     (letfn [(on-field-change [field event]
-              (let [value (dom/event->value event)]
+              (let [value (dom/event->value event)
+                    value (parse-int value)]
                 (swap! local assoc field value)))
             (on-color-change [color]
               (swap! local assoc :grid/color color))
@@ -42,6 +45,7 @@
                                  (dom/checked?))]
                 (swap! local assoc :grid/align checked?)))
             (on-submit [event]
+              (dom/prevent-default event)
               (let [page (assoc page :options opts)]
                 (rs/emit! (udp/update-page-metadata page))
                 (lightbox/close!)))]
@@ -52,14 +56,14 @@
          [:input#grid-x.input-text
           {:placeholder "X px"
            :type "number"
-           :value (:grid/x-axis opts "2")
+           :value (:grid/x-axis opts c/grid-x-axis)
            :on-change (partial on-field-change :grid/x-axis)
-           :min 1 ;;TODO check this value
+           :min 1
            :max 100}]
          [:input#grid-y.input-text
           {:placeholder "Y px"
            :type "number"
-           :value (:grid/y-axis opts "2")
+           :value (:grid/y-axis opts c/grid-y-axis)
            :on-change (partial on-field-change :grid/y-axis)
            :min 1
            :max 100}]]

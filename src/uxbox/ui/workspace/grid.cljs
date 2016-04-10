@@ -9,21 +9,29 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cuerdas.core :as str]
+            [uxbox.constants :as c]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]))
 
 ;; --- Grid (Component)
 
-(declare ticks-range)
 (declare vertical-line)
 (declare horizontal-line)
 
 (defn- grid-render
   [own]
-  (let [{:keys [width height options]} (deref wb/page-l)
+  (let [options (:options @wb/page-l)
         color (:grid/color options "#cccccc")
-        x-ticks (ticks-range width (:grid/x-axis options 10))
-        y-ticks (ticks-range height (:grid/y-axis options 10))
+        width c/viewport-width
+        height c/viewport-height
+        x-ticks (range (- 0 c/canvas-start-x)
+                       (- width c/canvas-start-x)
+                       (:grid/x-axis options 10))
+
+        y-ticks (range (- 0 c/canvas-start-x)
+                       (- height c/canvas-start-x)
+                       (:grid/y-axis options 10))
+
         path (as-> [] $
                (reduce (partial vertical-line height) $ x-ticks)
                (reduce (partial horizontal-line width) $ y-ticks))]
@@ -41,16 +49,10 @@
 
 (defn- horizontal-line
   [width acc value]
-  (let [pos (+ value wb/canvas-start-y)]
+  (let [pos (+ value c/canvas-start-y)]
     (conj acc (str/format "M %s %s L %s %s" 0 pos width pos))))
 
 (defn- vertical-line
   [height acc value]
-  (let [pos (+ value wb/canvas-start-y)]
+  (let [pos (+ value c/canvas-start-y)]
     (conj acc (str/format "M %s %s L %s %s" pos 0 pos height))))
-
-(defn- ticks-range
-  [size step]
-  (range (- 0 wb/canvas-start-y)
-         (- size wb/canvas-start-y)
-         step))

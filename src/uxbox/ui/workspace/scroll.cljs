@@ -9,6 +9,7 @@
   (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [beicon.core :as rx]
             [lentes.core :as l]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.state :as ust]
             [uxbox.data.shapes :as uds]

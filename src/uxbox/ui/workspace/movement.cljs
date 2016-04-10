@@ -8,15 +8,39 @@
 (ns uxbox.ui.workspace.movement
   "Shape movement in workspace logic."
   (:require [beicon.core :as rx]
+            [lentes.core :as l]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
+            [uxbox.shapes :as sh]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.align :as align]
             [uxbox.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]))
 
 (declare initialize)
 (declare handle-movement)
+
+;; --- Lenses
+
+(declare translate-to-viewport)
+
+(defn- resolve-selected
+  [state]
+  (let [selected (get-in state [:workspace :selected])
+        xf (comp
+            (map #(get-in state [:shapes-by-id %]))
+            (map translate-to-viewport))]
+    (into #{} xf selected)))
+
+(def ^:const ^:private selected-shapes-l
+  (-> (l/getter resolve-selected)
+      (l/focus-atom st/state)))
+
+(def ^:const ^:privae page-options-l
+  (-> (l/key :options)
+      (l/focus-atom wb/page-l)))
 
 ;; --- Public Api
 
@@ -28,24 +52,63 @@
 
 ;; --- Implementation
 
+(def coords
+  (gpt/point c/canvas-start-x
+             c/canvas-start-y))
+
+(defn- translate-to-viewport
+  [shape]
+  (let [dx (- (:x2 shape) (:x1 shape))
+        dy (- (:y2 shape) (:y1 shape))
+        p1 (gpt/point (:x1 shape) (:y1 shape))
+        p2 (gpt/add p1 coords)
+        p3 (gpt/add p2 [dx dy])]
+    (assoc shape
+           :x1 (:x p2)
+           :y1 (:y p2)
+           :x2 (:x p3)
+           :y2 (:y p3))))
+
+(defn- translate-to-canvas
+  [shape]
+  (let [dx (- (:x2 shape) (:x1 shape))
+        dy (- (:y2 shape) (:y1 shape))
+        p1 (gpt/point (:x1 shape) (:y1 shape))
+        p2 (gpt/subtract p1 coords)
+        p3 (gpt/add p2 [dx dy])]
+    (assoc shape
+           :x1 (:x p2)
+           :y1 (:y p2)
+           :x2 (:x p3)
+           :y2 (:y p3))))
+
 (defn- initialize
   []
-  (let [stoper (->> uuc/actions-s
+  (let [shapes @selected-shapes-l
+        options @page-options-l
+        stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter empty?)
                     (rx/take 1))]
     (as-> wb/mouse-delta-s $
       (rx/take-until stoper $)
-      (rx/on-value $ handle-movement))))
+      (rx/scan (fn [acc delta]
+                 (let [xf (map #(sh/move % delta))]
+                   (into [] xf acc))) shapes $)
+      (rx/mapcat (fn [items]
+                   (if (:grid/align options)
+                     (->> (apply rx/of items)
+                          (rx/mapcat align/translate)
+                          (rx/reduce conj []))
+                     (rx/of items))) $)
+      (rx/map (fn [items]
+                (mapv translate-to-canvas items)) $)
+
+      (rx/subscribe $ handle-movement))))
 
 (defn- handle-movement
   [delta]
-  (let [pageid (get-in @st/state [:workspace :page])
-        selected (get-in @st/state [:workspace :selected])
-        shapes (->> (vals @wb/shapes-by-id-l)
-                    (filter #(= (:page %) pageid))
-                    (filter (comp selected :id)))
-        delta (gpt/divide delta @wb/zoom-l)]
-    (doseq [{:keys [id group]} shapes]
-      (rs/emit! (uds/move-shape id delta)))))
+  (doseq [shape delta]
+    (rs/emit! (uds/update-shape shape))))
+
 

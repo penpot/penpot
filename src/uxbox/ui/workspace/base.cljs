@@ -18,9 +18,7 @@
             [goog.events :as events])
   (:import goog.events.EventType))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Lenses
 
 (def ^:const workspace-l
   (as-> (l/in [:workspace]) $
@@ -60,9 +58,7 @@
   (-> (l/in [:workspace :zoom])
       (l/focus-atom st/state)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Scroll Stream
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Scroll Stream
 
 (defonce scroll-b (rx/bus))
 
@@ -75,9 +71,7 @@
 (defonce scroll-a
   (rx/to-atom scroll-s))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mouse Position Stream
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Mouse Position Stream
 
 (defonce mouse-b (rx/bus))
 (defonce mouse-s
@@ -119,16 +113,3 @@
        (rx/buffer 2 1)
        (rx/map coords-delta)
        (rx/share)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Constants
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:const viewport-width 4000)
-(def ^:const viewport-height 4000)
-
-(def ^:const canvas-start-x 1200)
-(def ^:const canvas-start-y 1200)
-(def ^:const canvas-scroll-padding 50)
-(def ^:const canvas-start-scroll-x (- canvas-start-x canvas-scroll-padding))
-(def ^:const canvas-start-scroll-y (- canvas-start-y canvas-scroll-padding))

@@ -11,10 +11,12 @@
             [beicon.core :as rx]
             [lentes.core :as l]
             [goog.events :as events]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.shapes :as sh]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int)]
@@ -57,8 +59,8 @@
   (let [workspace (rum/react uuwb/workspace-l)
         flags (:flags workspace)]
     (html
-     [:svg.page-canvas {:x uuwb/canvas-start-x
-                        :y uuwb/canvas-start-y
+     [:svg.page-canvas {:x c/canvas-start-x
+                        :y c/canvas-start-y
                         :ref (str "canvas" id)
                         :width width
                         :height height}
@@ -69,9 +71,7 @@
         (for [item (reverse (:shapes page))]
           (-> (uus/shape item)
               (rum/with-key (str item))))
-        (draw-area)]]
-      (when (contains? flags :grid)
-        (grid))])))
+        (draw-area)]]])))
 
 (def canvas
   (mx/component
@@ -87,12 +87,13 @@
   [own]
   (let [workspace (rum/react uuwb/workspace-l)
         page (rum/react uuwb/page-l)
+        flags (:flags workspace)
         drawing? (:drawing workspace)
         zoom (or (:zoom workspace) 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
               (when-not (empty? (:selected workspace))
-                (rs/emit! (dw/deselect-all)))
+                (rs/emit! (uds/deselect-all)))
               (if-let [shape (:drawing workspace)]
                 (uuc/acquire-action! "ui.shape.draw")
                 (uuc/acquire-action! "ui.selrect")))
@@ -101,17 +102,19 @@
               (uuc/release-action! "ui.shape"
                                    "ui.selrect"))]
       (html
-       [:svg.viewport {:width (* uuwb/viewport-width zoom)
-                       :height (* uuwb/viewport-height zoom)
+       [:svg.viewport {:width (* c/viewport-width zoom)
+                       :height (* c/viewport-height zoom)
                        :ref "viewport"
                        :class (when drawing? "drawing")
                        :on-mouse-down on-mouse-down
                        :on-mouse-up on-mouse-up}
         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
          (if page
-           (canvas page))]
-         (ruler)
-         (selrect)]))))
+           (canvas page))
+         (if (contains? flags :grid)
+           (grid))]
+        (ruler)
+        (selrect)]))))
 
 (defn- viewport-did-mount
   [own]

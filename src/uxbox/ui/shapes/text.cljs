@@ -7,7 +7,7 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.shapes :as ush]
-            [uxbox.data.shapes :as ds]
+            [uxbox.data.shapes :as uds]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.mixins :as mx]
@@ -34,15 +34,15 @@
         (do
           (dom/stop-propagation event)
           (uuc/acquire-action! "ui.shape.move")
-          (rs/emit! (dw/select-shape id)))
+          (rs/emit! (uds/select-shape id)))
 
         (and (not selected?) (not (empty? selected)))
         (do
           (dom/stop-propagation event)
           (if (kbd/shift? event)
-            (rs/emit! (dw/select-shape id))
-            (rs/emit! (dw/deselect-all)
-                      (dw/select-shape id))))
+            (rs/emit! (uds/select-shape id))
+            (rs/emit! (uds/deselect-all)
+                      (uds/select-shape id))))
 
         :else
         (do
@@ -80,7 +80,7 @@
           (on-input [ev]
             (let [content (dom/event->inner-text ev)
                   sid (:id (first (:rum/props own)))]
-              (rs/emit! (ds/update-text sid {:content content}))))]
+              (rs/emit! (uds/update-text sid {:content content}))))]
     (let [dom (mx/get-ref-dom own "main")
           dom2 (mx/get-ref-dom own "container")
           key1 (events/listen dom EventType.DBLCLICK on-double-click)

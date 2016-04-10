@@ -20,20 +20,20 @@
 
 (declare handlers)
 
-(defmethod uusc/render-component :default ;; :builtin/icon
-  [own shape]
-  (let [{:keys [id x y width height group]} shape
-        selected (rum/react uusc/selected-shapes-l)
-        selected? (contains? selected id)
-        on-mouse-down #(uusi/on-mouse-down % shape selected)
-        on-mouse-up #(uusi/on-mouse-up % shape)]
-    (html
-     [:g.shape {:class (when selected? "selected")
-                :on-mouse-down on-mouse-down
-                :on-mouse-up on-mouse-up}
-      (uusc/render-shape shape #(uusc/shape %))
-      (when (and selected? (= (count selected) 1))
-        (handlers shape))])))
+;; (defmethod uusc/render-component :default ;; :builtin/icon
+;;   [own shape]
+;;   (let [{:keys [id x y width height group]} shape
+;;         selected (rum/react uusc/selected-shapes-l)
+;;         selected? (contains? selected id)
+;;         on-mouse-down #(uusi/on-mouse-down % shape selected)
+;;         on-mouse-up #(uusi/on-mouse-up % shape)]
+;;     (html
+;;      [:g.shape {:class (when selected? "selected")
+;;                 :on-mouse-down on-mouse-down
+;;                 :on-mouse-up on-mouse-up}
+;;       (uusc/render-shape shape #(uusc/shape %))
+;;       (when (and selected? (= (count selected) 1))
+;;         (handlers shape))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Circle Handlers

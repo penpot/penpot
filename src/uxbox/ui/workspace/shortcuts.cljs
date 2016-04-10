@@ -11,6 +11,7 @@
             [uxbox.rstore :as rs]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.shapes :as uds]
             [uxbox.data.history :as udh])
   (:import goog.events.EventType
            goog.events.KeyCodes
@@ -28,15 +29,15 @@
    :ctrl+shift+l #(rs/emit! (dw/toggle-flag :layers))
    :ctrl+0 #(rs/emit! (dw/reset-zoom))
    :ctrl+r #(rs/emit! (dw/toggle-flag :ruler))
-   :ctrl+d #(rs/emit! (dw/duplicate-selected))
+   :ctrl+d #(rs/emit! (uds/duplicate-selected))
    :ctrl+c #(rs/emit! (dw/copy-to-clipboard))
    :ctrl+v #(rs/emit! (dw/paste-from-clipboard))
    :ctrl+z #(rs/emit! (udh/backwards-to-previous-version))
    :ctrl+shift+z #(rs/emit! (udh/forward-to-next-version))
    :ctrl+shift+v #(lightbox/open! :clipboard)
-   :esc #(rs/emit! (dw/deselect-all))
-   :backspace #(rs/emit! (dw/delete-selected))
-   :delete #(rs/emit! (dw/delete-selected))
+   :esc #(rs/emit! (uds/deselect-all))
+   :backspace #(rs/emit! (uds/delete-selected))
+   :delete #(rs/emit! (uds/delete-selected))
    :shift+up #(move-selected :up :fast)
    :shift+down #(move-selected :down :fast)
    :shift+right #(move-selected :right :fast)
@@ -78,8 +79,8 @@
 (defn- move-selected
   [dir speed]
   (case speed
-    :std (rs/emit! (dw/move-selected dir 1))
-    :fast (rs/emit! (dw/move-selected dir 20))))
+    :std (rs/emit! (uds/move-selected dir 1))
+    :fast (rs/emit! (uds/move-selected dir 20))))
 
 ;; --- Mixin
 

@@ -4,38 +4,47 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.transit
+(ns uxbox.util.transit
   "A lightweight abstraction for transit serialization."
-  (:refer-clojure :exclude [do])
   (:require [cognitect.transit :as t]
+            [com.cognitect.transit :as tr]
             [uxbox.util.data :refer (parse-int)]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.datetime :as dt]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Read/Write Transit handlers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Transit Handlers
 
-(def ^:private datetime-write-handler
-  (reify
-    Object
-    (tag [_ v] "m")
-    (rep [_ v] (dt/format v :offset))
-    (stringRep [this v] (str (dt/format v :offset)))))
+(def datetime-write-handler
+  (t/write-handler (constantly "m")
+                   #(str (dt/format % :offset))))
 
-(defn- datetime-read-handler
-  [v]
-  (dt/datetime (parse-int v)))
+(def datetime-read-handler
+  (t/read-handler
+   #(dt/datetime (parse-int %))))
+
+(def point-write-handler
+  (t/write-handler
+   (constantly "point")
+   (fn [v]
+     (let [ret #js []]
+       (.push ret (:x v))
+       (.push ret (:y v))
+       ret))))
+
+(def point-read-handler
+  (t/read-handler
+   #(gpt/point (js->clj %))))
 
 (def ^:privare +read-handlers+
   {"u" uuid
-   "m" datetime-read-handler})
+   "m" datetime-read-handler
+   "point" point-read-handler})
 
 (def ^:privare +write-handlers+
-  {dt/DateTime datetime-write-handler})
+  {dt/DateTime datetime-write-handler
+   gpt/Point point-write-handler})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Public Api
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Public Api
 
 (defn decode
   [data]

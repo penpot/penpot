@@ -10,9 +10,11 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.shapes :as sh]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.base :as wb]))
@@ -78,8 +80,8 @@
   "Translate the given rect to the canvas coordinates system."
   [rect]
   (let [zoom @wb/zoom-l
-        startx (* wb/canvas-start-x zoom)
-        starty (* wb/canvas-start-y zoom)]
+        startx (* c/canvas-start-x zoom)
+        starty (* c/canvas-start-y zoom)]
     (assoc rect
            :x (- (:x rect) startx)
            :y (- (:y rect) starty)
@@ -94,7 +96,7 @@
           (on-complete []
             (rs/emit! (-> (selrect->rect @position)
                           (translate-to-canvas)
-                          (dw/select-shapes)))
+                          (uds/select-shapes)))
             (reset! position nil))
 
           (init []

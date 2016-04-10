@@ -7,6 +7,7 @@
             [uxbox.state :as st]
             [uxbox.shapes :as ush]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.keyboard :as kbd]
@@ -28,16 +29,16 @@
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
-          (uuc/acquire-action! "ui.shape.move")
-          (rs/emit! (dw/select-shape id)))
+          (rs/emit! (uds/select-shape id))
+          (uuc/acquire-action! "ui.shape.move"))
 
         (and (not selected?) (not (empty? selected)))
         (do
           (dom/stop-propagation event)
           (if (kbd/shift? event)
-            (rs/emit! (dw/select-shape id))
-            (rs/emit! (dw/deselect-all)
-                      (dw/select-shape id))))
+            (rs/emit! (uds/select-shape id))
+            (rs/emit! (uds/deselect-all)
+                      (uds/select-shape id))))
 
         :else
         (do

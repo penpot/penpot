@@ -10,6 +10,7 @@
             [rum.core :as rum]
             [cuerdas.core :as str]
             [beicon.core :as rx]
+            [uxbox.constants :as c]
             [uxbox.state :as s]
             [uxbox.util.dom :as dom]
             [uxbox.ui.workspace.base :as wb]
@@ -24,8 +25,8 @@
 (defn mid-ticks-mod [zoom] (/ 50 zoom))
 
 (def ^:const +ticks+
-  (concat (range (- (/ wb/viewport-width 1)) 0 step-size)
-          (range 0 (/ wb/viewport-width 1) step-size)))
+  (concat (range (- (/ c/viewport-width 1)) 0 step-size)
+          (range 0 (/ c/viewport-width 1) step-size)))
 
 (def ^:const rule-padding 20)
 
@@ -35,8 +36,8 @@
         mid-ticks-mod (mid-ticks-mod zoom)
         pos (+ (* value zoom)
                rule-padding
-               (* wb/canvas-start-x zoom)
-               wb/canvas-scroll-padding)]
+               (* c/canvas-start-x zoom)
+               c/canvas-scroll-padding)]
     (cond
       (< (mod value big-ticks-mod) step-size)
       (conj acc (str/format "M %s %s L %s %s" pos 5 pos step-padding))
@@ -52,8 +53,8 @@
   (let [big-ticks-mod (big-ticks-mod zoom)
         mid-ticks-mod (mid-ticks-mod zoom)
         pos (+ (* value zoom)
-               (* wb/canvas-start-x zoom)
-               wb/canvas-scroll-padding)]
+               (* c/canvas-start-x zoom)
+               c/canvas-scroll-padding)]
     (cond
       (< (mod value big-ticks-mod) step-size)
       (conj acc (str/format "M %s %s L %s %s" 5 pos step-padding pos))
@@ -71,8 +72,8 @@
   (let [big-ticks-mod (big-ticks-mod zoom)
         pos (+ (* value zoom)
                rule-padding
-               (* wb/canvas-start-x zoom)
-               wb/canvas-scroll-padding)]
+               (* c/canvas-start-x zoom)
+               c/canvas-scroll-padding)]
     (when (< (mod value big-ticks-mod) step-size)
       (html
        [:text {:x (+ pos 2)
@@ -88,9 +89,9 @@
   [zoom value]
   (let [big-ticks-mod (big-ticks-mod zoom)
         pos (+ (* value zoom)
-               (* wb/canvas-start-x zoom)
-               ;; wb/canvas-start-x
-               wb/canvas-scroll-padding)]
+               (* c/canvas-start-x zoom)
+               ;; c/canvas-start-x
+               c/canvas-scroll-padding)]
     (when (< (mod value big-ticks-mod) step-size)
       (html
        [:text {:y (- pos 3)
@@ -145,10 +146,10 @@
   [own zoom]
   (let [scroll (rum/react wb/scroll-a)
         scroll-x (:x scroll)
-        translate-x (- (- wb/canvas-scroll-padding) (:x scroll))]
+        translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
     (html
      [:svg.horizontal-rule
-      {:width wb/viewport-width
+      {:width c/viewport-width
        :height 20}
       [:g {:transform (str "translate(" translate-x ", 0)")}
        (horizontal-rule-ticks zoom)]])))
@@ -165,11 +166,11 @@
   [own zoom]
   (let [scroll (rum/react wb/scroll-a)
         scroll-y (:y scroll)
-        translate-y (- (- wb/canvas-scroll-padding) (:y scroll))]
+        translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
     (html
      [:svg.vertical-rule
       {:width 20
-       :height wb/viewport-height}
+       :height c/viewport-height}
 
       [:g {:transform (str  "translate(0, " translate-y ")")}
        (vertical-rule-ticks zoom)]
