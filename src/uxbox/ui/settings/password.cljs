@@ -32,13 +32,18 @@
               (let [value (dom/event->value event)]
                 (swap! local assoc field value)))
             (on-submit [event]
-              (let [password (:password-1 @local)]
-                (rs/emit! (udu/update-password password))))]
+              (let [password (:password-1 @local)
+                    old-password (:old-password @local)]
+                (rs/emit! (udu/update-password old-password password))))]
 
       (html
        [:form.password-form
         [:span.user-settings-label "Change password"]
-        #_[:input.input-text {:type "password" :placeholder "Old password"}]
+        [:input.input-text
+         {:type "password"
+          :value (:old-password @local "")
+          :on-change (partial on-field-change :old-password)
+          :placeholder "Old password"}]
         [:input.input-text
          {:type "password"
           :value (:password-1 @local "")
@@ -53,6 +58,7 @@
          {:type "button"
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
+          :on-click on-submit
           :value "Update settings"}]]))))
 
 (def password-form
