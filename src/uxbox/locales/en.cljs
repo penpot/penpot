@@ -40,5 +40,9 @@
    "history.alert-message" "You are seeng version %s"
 
    "errors.auth" "Username or passwords seems to be wrong."
-
+   "errors.update-password" "Error updating password, probably your old password is wrong."
+   "old-password-needed" "Old password needed."
+   "new-password-needed" "New password needed."
+   "password-too-short" "The new password is too short."
+   "password-doesnt-match" "The passwords doesn't match."
    })

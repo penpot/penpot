@@ -9,9 +9,11 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cuerdas.core :as str]
+            [uxbox.locales :as t :refer (tr)]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.ui.icons :as i]
+            [uxbox.ui.messages :as uum]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.dom :as dom]
             [uxbox.data.users :as udu]
@@ -22,12 +24,13 @@
 (defn password-form-render
   [own]
   (let [local (:rum/local own)
-        valid? (and (not (str/empty? (:password-1 @local)))
-                    (not (str/empty? (:password-2 @local)))
-                    (= 6 (count (:password-1 @local "")))
-                    (= (:password-1 @local)
-                       (:password-2 @local)))]
-    (println "valid?" valid?)
+        invalid-reason (cond
+                         (= 0 (count (:old-password @local))) "old-password-needed"
+                         (= 0 (count (:password-1 @local))) "new-password-needed"
+                         (> 6 (count (:password-1 @local ""))) "password-too-short"
+                         (not= (:password-1 @local) (:password-2 @local)) "password-doesnt-match"
+                         :else nil)
+        valid? (nil? invalid-reason)]
     (letfn [(on-field-change [field event]
               (let [value (dom/event->value event)]
                 (swap! local assoc field value)))
@@ -38,6 +41,7 @@
 
       (html
        [:form.password-form
+        (uum/messages)
         [:span.user-settings-label "Change password"]
         [:input.input-text
          {:type "password"
@@ -54,6 +58,7 @@
           :value (:password-2 @local "")
           :on-change (partial on-field-change :password-2)
           :placeholder "Confirm password"}]
+        (when-not valid? [:span (tr invalid-reason)])
         [:input.btn-primary
          {:type "button"
           :class (when-not valid? "btn-disabled")
