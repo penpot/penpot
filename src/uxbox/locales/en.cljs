@@ -38,11 +38,16 @@
    "ds.help.line" "Line (Ctrl + L)"
 
    "history.alert-message" "You are seeng version %s"
+   "errors.form.required" "This field is mandatory"
+   "errors.form.string" "Should be string"
+   "errors.form.number" "Invalid number"
+   "errors.form.integer" "Invalid integer"
+   "errors.form.bool" "Should be bool"
+   "errors.form.min-len" "Should be great than %s"
+   "errors.form.max-len" "Should be less than %s"
+   "errors.form.color" "Should be a valid color string"
+   "errors.form.password-not-match" "Password does not match"
 
    "errors.auth" "Username or passwords seems to be wrong."
-   "errors.update-password" "Error updating password, probably your old password is wrong."
-   "old-password-needed" "Old password needed."
-   "new-password-needed" "New password needed."
-   "password-too-short" "The new password is too short."
-   "password-doesnt-match" "The passwords doesn't match."
+   "errors.profile.update-password" "Error updating password, probably your old password is wrong."
    })

@@ -9,56 +9,72 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cuerdas.core :as str]
+            [uxbox.schema :as sc]
             [uxbox.locales :as t :refer (tr)]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
+            [uxbox.data.users :as udu]
             [uxbox.ui.icons :as i]
+            [uxbox.ui.form :as form]
             [uxbox.ui.messages :as uum]
             [uxbox.ui.mixins :as mx]
-            [uxbox.util.dom :as dom]
-            [uxbox.data.users :as udu]
-            [uxbox.ui.dashboard.header :refer (header)]))
+            [uxbox.ui.dashboard.header :refer (header)]
+            [uxbox.util.dom :as dom]))
 
 ;; --- Password Form
+
+(def password-form-schema
+  [[:password-1 sc/required sc/string [sc/min-len 6]]
+   [:password-2 sc/required sc/string
+    [sc/identical-to :password-1 :message "errors.form.password-not-match"]]
+   [:old-password sc/required sc/string]])
+
+(defn field-errors
+  [errors field]
+  (when-let [errors (get errors field)]
+    (html
+     [:ul
+      (for [error errors]
+        [:li {:key error} error])])))
 
 (defn password-form-render
   [own]
   (let [local (:rum/local own)
-        invalid-reason (cond
-                         (= 0 (count (:old-password @local))) "old-password-needed"
-                         (= 0 (count (:password-1 @local))) "new-password-needed"
-                         (> 6 (count (:password-1 @local ""))) "password-too-short"
-                         (not= (:password-1 @local) (:password-2 @local)) "password-doesnt-match"
-                         :else nil)
-        valid? (nil? invalid-reason)]
+        form (:form @local)
+        errors (:errors @local)
+        valid? true #_(nil? invalid-reason)]
     (letfn [(on-field-change [field event]
               (let [value (dom/event->value event)]
-                (swap! local assoc field value)))
+                (swap! local assoc-in [:form field] value)))
             (on-submit [event]
-              (let [password (:password-1 @local)
-                    old-password (:old-password @local)]
-                (rs/emit! (udu/update-password old-password password))))]
-
+              (when-let [data (form/validate! local password-form-schema)]
+                (let [params {:password (:password-1 form)
+                              :old-password (:old-password form)}]
+                  (rs/emit! (udu/update-password params)))))]
       (html
        [:form.password-form
-        (uum/messages)
         [:span.user-settings-label "Change password"]
         [:input.input-text
          {:type "password"
-          :value (:old-password @local "")
+          :class (form/error-class local :old-password)
+          :value (:old-password form "")
           :on-change (partial on-field-change :old-password)
           :placeholder "Old password"}]
+        (form/input-error local :old-password)
         [:input.input-text
          {:type "password"
-          :value (:password-1 @local "")
+          :class (form/error-class local :password-1)
+          :value (:password-1 form "")
           :on-change (partial on-field-change :password-1)
           :placeholder "New password"}]
+        (form/input-error local :password-1)
         [:input.input-text
          {:type "password"
-          :value (:password-2 @local "")
+          :class (form/error-class local :password-2)
+          :value (:password-2 form "")
           :on-change (partial on-field-change :password-2)
           :placeholder "Confirm password"}]
-        (when-not valid? [:span (tr invalid-reason)])
+        (form/input-error local :password-2)
         [:input.btn-primary
          {:type "button"
           :class (when-not valid? "btn-disabled")
@@ -79,6 +95,7 @@
   (html
    [:main.dashboard-main
     (header)
+    (uum/messages)
     [:section.dashboard-content.user-settings
      [:div.user-settings-nav
       [:ul.user-settings-nav-inside

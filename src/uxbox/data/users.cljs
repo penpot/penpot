@@ -65,11 +65,11 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-error [err]
-              (uum/error (tr "errors.update-password"))
+              (uum/error (tr "errors.profile.update-password"))
               (rx/empty))]
       (->> (rp/req :update/password {:old-password old-password :password password})
            (rx/catch on-error)))))
 
 (defn update-password
-  [old-password password]
+  [{:keys [old-password password]}]
   (UpdatePassword. old-password password))
