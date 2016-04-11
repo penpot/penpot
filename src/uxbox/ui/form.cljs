@@ -4,17 +4,21 @@
 
 (defn validate!
   [local schema]
-  (if-let [errors (sc/validate schema @local)]
-    (swap! local assoc :errors errors)
-    (swap! local assoc :errors nil)))
+  (let [[errors data] (sc/validate (:form @local) schema)]
+    (if errors
+      (do
+        (swap! local assoc :errors errors)
+        nil)
+      (do
+        (swap! local assoc :errors nil)
+        data))))
 
 (defn input-error
   [local name]
   (when-let [errors (get-in @local [:errors name])]
-     [:div.errors
-      [:ul {}
-       (for [error errors]
-         [:li error])]]))
+    [:ul.form-errors
+     (for [error errors]
+       [:li {:key error} error])]))
 
 (defn error-class
   [local name]
