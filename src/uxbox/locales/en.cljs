@@ -37,6 +37,8 @@
    "ds.help.circle" "Circle (Ctrl + E)"
    "ds.help.line" "Line (Ctrl + L)"
 
+   "profile.password-saved" "Password saved successfully!"
+
    "history.alert-message" "You are seeng version %s"
    "errors.form.required" "This field is mandatory"
    "errors.form.string" "Should be string"
