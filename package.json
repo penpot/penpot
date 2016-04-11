@@ -11,7 +11,7 @@
     "watch": "gulp",
     "dist": "gulp clean && ./scripts/dist && gulp dist",
     "clean": "gulp clean",
-    "figwheel": "./scripts/figwheel",
+    "figwheel": "./scripts/build-worker && ./scripts/figwheel",
     "test-watch": "./scripts/watch",
     "test-build": "./scripts/build"
   },
