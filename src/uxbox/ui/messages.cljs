@@ -54,6 +54,20 @@
                         :tsem tsem
                         :content message}))))
 
+(defn info
+  ([message] (info message nil))
+  ([message {:keys [timeout] :or {timeout 6000}}]
+   (when-let [prev @+message+]
+     (clean-prev-msgstate! prev))
+   (let [timeout' (+ timeout +animation-timeout+)
+         tsem-main (set-timeout! timeout' #(reset! +message+ nil))
+         tsem (set-timeout! timeout #(swap! +message+ assoc :state :hide))]
+     (reset! +message+ {:type :notification/info
+                        :state :normal
+                        :tsem-main tsem-main
+                        :tsem tsem
+                        :content message}))))
+
 (defn dialog
   [& {:keys [message on-accept on-cancel]
       :or {on-cancel (constantly nil)}
