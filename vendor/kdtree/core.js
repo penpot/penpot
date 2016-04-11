@@ -8,15 +8,15 @@
  * @author Mircea Pricop <pricop@ubilabs.net>, 2012
  * @author Martin Kleppe <kleppe@ubilabs.net>, 2012
  * @author Ubilabs http://ubilabs.net, 2012
- * @license MIT License <http://www.opensource.org/licenses/mit-license.php>
+ * @license MIT License <https://opensource.org/licenses/MIT>
  */
 
-goog.provide("kdtree");
-goog.provide("kdtree.KDTree");
+goog.provide("kdtree.core");
+goog.provide("kdtree.core.KDTree");
 
-goog.require('goog.array');
-goog.require('goog.structs.Heap');
-goog.require('goog.asserts');
+goog.require("kdtree.heap");
+goog.require("goog.array");
+goog.require("goog.asserts");
 
 goog.scope(function() {
   "use strict";
@@ -33,6 +33,10 @@ goog.scope(function() {
       this.parent = parent;
       this.dimension = dimension;
     }
+  }
+
+  function precision(v) {
+    return parseFloat(v.toFixed(6));
   }
 
   function buildTree(points, depth, parent, dimensions) {
@@ -184,7 +188,6 @@ goog.scope(function() {
         node.left = null;
         node.obj = nextObj;
       }
-
     }
 
     nearest(point, maxNodes) {
@@ -192,29 +195,19 @@ goog.scope(function() {
         maxNodes = 1;
       }
 
-      let best = new goog.structs.Heap();
+      let best = new kdtree.heap.MinHeap((x, y) => {
+        let res = x[1] - y[1];
+        return res;
+      });
 
       const nearestSearch = (node) => {
-        let bestChild;
-        const distance = this.metric(point, node.obj);
-        const dimension = node.dimension;
-
-        if (best.getCount() < maxNodes ||  distance < best.peek()[1]) {
-          best.insert(-distance, [node.obj, distance]);
-          if (best.getCount() > maxNodes) {
-            best.remove();
-          }
-        }
+        let distance = precision(this.metric(point, node.obj));
 
         if (best.isEmpty()) {
-          best.insert(-distance, [node.obj, distance]);
+          best.insert([node.obj, distance]);
         } else {
           if (distance < best.peek()[1]) {
-            best.insert(-distance, [node.obj, distance]);
-
-            if (best.getCount() > maxNodes) {
-              best.remove();
-            }
+            best.insert([node.obj, distance]);
           }
         }
 
@@ -222,12 +215,13 @@ goog.scope(function() {
           return;
         }
 
+        let bestChild = null;
         if (node.right === null) {
           bestChild = node.left;
         } else if (node.left === null) {
           bestChild = node.right;
         } else {
-          if (point[dimension] < node.obj[dimension]) {
+          if (point[node.dimension] < node.obj[node.dimension]) {
               bestChild = node.left;
           } else {
               bestChild = node.right;
@@ -235,14 +229,41 @@ goog.scope(function() {
         }
 
         nearestSearch(bestChild);
+
+        let candidate = [null, null];
+        for (let i = 0; i < this.dimensions; i += 1) {
+          if (i === node.dimension) {
+            candidate[i] = point[i];
+          } else {
+            candidate[i] = node.obj[i];
+          }
+        }
+
+        distance = Math.abs(this.metric(candidate, node.obj));
+
+        if (best.size < maxNodes || distance < best.peek()[1]) {
+          let otherChild;
+          if (bestChild === node.left) {
+            otherChild = node.right;
+          } else {
+            otherChild = node.left;
+          }
+          if (otherChild !== null) {
+            nearestSearch(otherChild);
+          }
+        }
       }
 
       if(this.root) {
         nearestSearch(this.root);
       }
 
-      result = best.getValues();
-      result.sort((x) => x[1]);
+      const result = [];
+
+      for (let i=0; i < (Math.min(maxNodes, best.size)); i++) {
+        result.push(best.removeHead());
+      }
+
       return result;
     }
 
@@ -274,8 +295,8 @@ goog.scope(function() {
   };
 
   // Types
-  kdtree.KDTree = KDTree;
+  kdtree.core.KDTree = KDTree;
 
   // Factory functions
-  kdtree.create2d = create2d;
+  kdtree.core.create2d = create2d;
 });
