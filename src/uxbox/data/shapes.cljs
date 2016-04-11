@@ -6,8 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.data.shapes
-  (:require [bouncer.validators :as v]
-            [beicon.core :as rx]
+  (:require [beicon.core :as rx]
             [uxbox.shapes :as sh]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]

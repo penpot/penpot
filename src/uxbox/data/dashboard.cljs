@@ -10,21 +10,20 @@
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
-            [uxbox.repo :as rp]
-            [bouncer.validators :as v]))
+            [uxbox.repo :as rp]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Schemas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:static +color-replace-schema+
-  {:id [v/required sc/uuid]
+  {:id [sc/required sc/uuid]
    :from [sc/color]
-   :to [v/required sc/color]})
+   :to [sc/required sc/color]})
 
 (def ^:static +remove-color-schema+
-  {:id [v/required sc/uuid]
-   :color [v/required sc/color]})
+  {:id [sc/required sc/uuid]
+   :color [sc/required sc/color]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
