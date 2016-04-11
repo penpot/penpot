@@ -33,7 +33,9 @@
   (let [zoom (rum/react wb/zoom-l)
         coords (some-> (rum/react wb/mouse-canvas-a)
                        (gpt/divide zoom)
-                       (gpt/round 1))]
+                       (gpt/round 1))
+        increase #(rs/emit! (dw/increase-zoom))
+        decrease #(rs/emit! (dw/decrease-zoom))]
     (html
      [:ul.options-view
       [:li.coordinates {:alt "x"}
@@ -41,13 +43,9 @@
       [:li.coordinates {:alt "y"}
        (str "Y: " (:y coords "-"))]
       [:li.zoom-input
-       [:span.add-zoom
-        {:on-click #(rs/emit! (dw/increase-zoom))}
-        "+"]
+       [:span.add-zoom {:on-click increase} "+"]
        [:span (str (mth/round (* 100 zoom)) "%")]
-       [:span.remove-zoom
-        {:on-click #(rs/emit! (dw/decrease-zoom))}
-        "-"]]])))
+       [:span.remove-zoom {:on-click decrease} "-"]]])))
 
 (def coordinates
   (mx/component
