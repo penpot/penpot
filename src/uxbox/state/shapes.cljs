@@ -132,6 +132,43 @@
   (let [[fst snd] (split-at index coll)]
     (into [] (concat fst [v] snd))))
 
+(defn drop-relative
+  [state loc sid]
+  {:pre [(not (nil? sid))]}
+  (let [shape (get-in state [:shapes-by-id (first sid)])
+        {:keys [page group]} shape
+        sid (:id shape)
+
+        shapes (if group
+                 (get-in state [:shapes-by-id group :items])
+                 (get-in state [:pages-by-id page :shapes]))
+
+        index (case loc
+                :first 0
+                :after (min (- (count shapes) 1) (inc (index-of shapes sid)))
+                :before (max 0 (- (index-of shapes sid) 1))
+                :last (- (count shapes) 1))
+
+        state (-> state
+                  (dissoc-from-page shape)
+                  (dissoc-from-group shape))
+
+        shapes (if group
+                 (get-in state [:shapes-by-id group :items])
+                 (get-in state [:pages-by-id page :shapes]))
+
+        shapes (drop-at-index index shapes sid)]
+
+    (if group
+      (as-> state $
+        (assoc-in $ [:shapes-by-id group :items] shapes)
+        (update-in $ [:shapes-by-id sid] assoc :group group)
+        (clear-empty-groups $ shape))
+      (as-> state $
+        (assoc-in $ [:pages-by-id page :shapes] shapes)
+        (update-in $ [:shapes-by-id sid] dissoc :group)
+        (clear-empty-groups $ shape)))))
+
 (defn drop-aside
   [state loc tid sid]
   {:pre [(not= tid sid)
@@ -190,6 +227,15 @@
       :after (drop-after state tid sid)
       (throw (ex-info "Invalid data" {})))))
 
+(defn move-layer
+  [state shape loc]
+  (case loc
+    :up (drop-relative state :before shape)
+    :down (drop-relative state :after shape)
+    :top (drop-relative state :first shape)
+    :bottom (drop-relative state :last shape)
+    (throw (ex-info "Invalid data" {}))))
+
 ;; --- Shape Packing
 
 ;; (defn- deep-scan-shape-ids
@@ -211,4 +257,3 @@
 ;;     {:type :builtin/packed-shape
 ;;      :index index
 ;;      :id id}))
-
