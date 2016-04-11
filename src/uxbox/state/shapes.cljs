@@ -10,7 +10,7 @@
   (let [sid (random-uuid)
         shape (merge shape {:id sid :page page})]
     (as-> state $
-      (update-in $ [:pages-by-id page :shapes] conj sid)
+      (update-in $ [:pages-by-id page :shapes] #(into [] (cons sid %)))
       (assoc-in $ [:shapes-by-id sid] shape))))
 
 (defn duplicate-shapes'
