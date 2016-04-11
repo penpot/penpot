@@ -86,17 +86,20 @@
   []
   (let [shapes @selected-shapes-l
         options @page-options-l
+        flags @wb/flags-l
+        indexed? (:alignment/indexed flags)
         stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter empty?)
                     (rx/take 1))]
     (as-> wb/mouse-delta-s $
       (rx/take-until stoper $)
+      (rx/map #(gpt/divide % @wb/zoom-l) $)
       (rx/scan (fn [acc delta]
                  (let [xf (map #(sh/move % delta))]
                    (into [] xf acc))) shapes $)
       (rx/mapcat (fn [items]
-                   (if (:grid/align options)
+                   (if (and (:grid/align options) indexed?)
                      (->> (apply rx/of items)
                           (rx/mapcat align/translate)
                           (rx/reduce conj []))

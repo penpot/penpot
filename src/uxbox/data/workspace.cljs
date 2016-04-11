@@ -8,18 +8,22 @@
 (ns uxbox.data.workspace
   (:require [bouncer.validators :as v]
             [beicon.core :as rx]
+            [uxbox.constants :as c]
             [uxbox.shapes :as sh]
             [uxbox.rstore :as rs]
             [uxbox.state.shapes :as stsh]
             [uxbox.schema :as sc]
+            [uxbox.data.core :refer (worker)]
             [uxbox.data.pages :as udp]
             [uxbox.data.shapes :as uds]
-            [uxbox.data.worker :as wrk]
             [uxbox.util.datetime :as dt]
             [uxbox.util.math :as mth]
-            [uxbox.util.geom.point :as gpt]))
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.workers :as uw]))
 
-;; --- Workspace Initialization
+;; --- Initialize Workspace
+
+(declare initialize-alignment-index)
 
 (defrecord InitializeWorkspace [project page]
   rs/UpdateEvent
@@ -41,10 +45,10 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (if (get-in state [:pages-by-id page])
-        (rx/of (wrk/initialize page))
+        (rx/of (initialize-alignment-index page))
         (->> (rx/filter udp/pages-fetched? s)
              (rx/take 1)
-             (rx/map #(wrk/initialize page))))))
+             (rx/map #(initialize-alignment-index page))))))
 
 (defn initialize
   "Initialize the workspace state."
@@ -145,4 +149,23 @@
 (defn reset-zoom
   []
   (ResetZoom.))
+
+;; --- Initialize Alignment Index
+
+(defrecord InitializeAlignmentIndex [id]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [page (get-in state [:pages-by-id id])
+          opts (:options page)
+          message {:cmd :grid/init
+                   :width c/viewport-width
+                   :height c/viewport-height
+                   :x-axis (:grid/x-axis opts c/grid-x-axis)
+                   :y-axis (:grid/y-axis opts c/grid-y-axis)}]
+      (->> (uw/send! worker message)
+           (rx/map #(toggle-flag :alignment/indexed))))))
+
+(defn initialize-alignment-index
+  [id]
+  (InitializeAlignmentIndex. id))
 

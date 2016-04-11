@@ -10,7 +10,7 @@
             [lentes.core :as l]
             [uxbox.state :as st]
             [uxbox.shapes :as sh]
-            [uxbox.data.worker :refer (worker)]
+            [uxbox.data.core :refer (worker)]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.workers :as uw]))

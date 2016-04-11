@@ -27,5 +27,4 @@
 (defn reply!
   [sender message]
   (let [message (assoc message :reply-to sender)]
-    (println "replying " message)
     (.postMessage js/self (t/encode message))))

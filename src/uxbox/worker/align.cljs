@@ -7,28 +7,28 @@
 (ns uxbox.worker.align
   "Workspace aligment indexes worker."
   (:require [beicon.core :as rx]
-            [kdtree :as kd]
+            [kdtree.core :as kd]
             [uxbox.worker.core :as wrk]
             [uxbox.util.geom.point :as gpt]))
 
 (defonce state (volatile! nil))
 
 (defmethod wrk/handler :grid/init
-  [{:keys [width height x-axis y-axis] :as opts}]
-  (println ":grid/init" opts)
-  (let [points (into-array
-                (for [x (range 0 width (or x-axis 10))
-                      y (range 0 height (or y-axis 10))]
+  [{:keys [sender width height x-axis y-axis] :as opts}]
+  (time
+   (let [points (into-array
+                 (for [x (range 0 width (or x-axis 10))
+                       y (range 0 height (or y-axis 10))]
                    #js [x y]))
-        tree (kd/create2d points)]
-     (vreset! state tree)))
+         tree (kd/create2d points)]
+     (vreset! state tree)
+     (wrk/reply! sender nil))))
+
 
 (defmethod wrk/handler :grid/align
   [{:keys [sender point] :as message}]
-  (println "request" point)
   (let [point #js [(:x point) (:y point)]
         results (js->clj (.nearest @state point 1))
         [[x y] d] (first results)
         result (gpt/point x y)]
-    (println "result:" result)
     (wrk/reply! sender {:point (gpt/point x y)})))
