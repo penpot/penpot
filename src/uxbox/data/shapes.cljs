@@ -486,3 +486,11 @@
             (map #(update-stroke-attrs % opts)))))))
 
 
+(defn move-selected-layer
+  [loc]
+  (reify
+    udp/IPageUpdate
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [selected (get-in state [:workspace :selected])]
+        (stsh/move-layer state selected loc)))))
