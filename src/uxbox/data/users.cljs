@@ -12,6 +12,7 @@
             [uxbox.state :as st]
             [uxbox.schema :as sc]
             [uxbox.locales :refer (tr)]
+            [uxbox.data.forms :as forms]
             [uxbox.ui.messages :as uum]))
 
 ;; --- Profile Fetched
@@ -59,17 +60,41 @@
   [data]
   (UpdateProfile. data))
 
+;; --- Password Updated
+
+(defrecord PasswordUpdated []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:forms :profile/password] {}))
+
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    (uum/info (tr "profile.password-saved"))))
+
 ;; --- Update Password
 
-(defrecord UpdatePassword [old-password password]
+(defrecord UpdatePassword [data]
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-error [err]
-              (uum/error (tr "errors.profile.update-password"))
+              (uum/error (tr "errors.profile.update-password") {:timeout 3000})
               (rx/empty))]
-      (->> (rp/req :update/password {:old-password old-password :password password})
-           (rx/catch on-error)))))
+      (let [params {:old-password (:old-password data)
+                    :password (:password-1 data)}]
+        (->> (rp/req :update/password params)
+             (rx/map #(->PasswordUpdated))
+             (rx/catch on-error))))))
+
+(def update-password-schema
+  [[:password-1 sc/required sc/string [sc/min-len 6]]
+   [:password-2 sc/required sc/string
+    [sc/identical-to :password-1 :message "errors.form.password-not-match"]]
+   [:old-password sc/required sc/string]])
 
 (defn update-password
-  [{:keys [old-password password]}]
-  (UpdatePassword. old-password password))
+  [data]
+  (let [[errors data] (sc/validate data update-password-schema)]
+    (println errors)
+    (if errors
+      (forms/assign-errors :profile/password errors)
+      (UpdatePassword. data))))

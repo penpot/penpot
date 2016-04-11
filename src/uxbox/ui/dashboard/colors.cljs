@@ -17,7 +17,7 @@
             [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.form :as form]
+            [uxbox.ui.forms :as form]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.mixins :as mx]

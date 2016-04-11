@@ -15,7 +15,6 @@
             [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.form :as form]
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.mixins :as mx]

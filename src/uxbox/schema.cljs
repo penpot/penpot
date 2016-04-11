@@ -80,12 +80,7 @@
   (when-let [errors (first (validate schema data))]
     (throw (ex-info "Invalid data" errors))))
 
-;; (defn valid?
-;;   [validator data]
-;;   (let [result (validator data)]
-;;     (if result
-;;       result
-;;       (let [message (:default-message-format (meta validator))
-;;             message (str/format message data)]
-;;         (throw (ex-info message {}))))))
-
+(defn valid?
+  [data schema]
+  (let [[errors data] (validate data schema)]
+    (not errors)))
