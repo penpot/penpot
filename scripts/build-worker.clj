@@ -12,7 +12,7 @@
     :parallel-build false
     :optimizations :simple
     :static-fns true
-    :language-in  :ecmascript5
+    :language-in  :ecmascript6
     :language-out :ecmascript5
     :verbose true})
   (println "... done. Elapsed" (/ (- (System/nanoTime) start) 1e9) "seconds"))
