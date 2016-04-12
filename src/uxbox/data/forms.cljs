@@ -24,7 +24,7 @@
 (defn assign-errors
   ([type] (assign-errors type nil))
   ([type errors]
-   (FormErrors. type errors)))
+   (AssignErrors. type errors)))
 
 ;; --- Assign Field Value
 
