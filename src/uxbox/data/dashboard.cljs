@@ -10,25 +10,9 @@
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
-            [uxbox.repo :as rp]
-            [bouncer.validators :as v]))
+            [uxbox.repo :as rp]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Schemas
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:static +color-replace-schema+
-  {:id [v/required sc/uuid]
-   :from [sc/color]
-   :to [v/required sc/color]})
-
-(def ^:static +remove-color-schema+
-  {:id [v/required sc/uuid]
-   :color [v/required sc/color]})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Helpers
 
 (defn assoc-page
   "A reduce function for assoc the page
@@ -37,9 +21,7 @@
   (let [uuid (:id page)]
     (update-in state [:pages-by-id] assoc uuid page)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Events
 
 (defn merge-if-not-exists
   [map & maps]
@@ -140,7 +122,6 @@
 (defn replace-color
   "Add or replace color in a collection."
   [{:keys [id from to] :as params}]
-  (sc/validate! +color-replace-schema+ params)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
@@ -154,7 +135,6 @@
 (defn remove-color
   "Remove color in a collection."
   [{:keys [id color] :as params}]
-  (sc/validate! +remove-color-schema+ params)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]

@@ -74,7 +74,7 @@
              (rx/mapcat on-created)
              (rx/catch on-failed))))))
 
-(def ^:static +create-page-schema+
+(def ^:private create-page-schema
   {:name [sc/required sc/string]
    :layout [sc/required sc/string]
    :width [sc/required sc/integer]
@@ -83,8 +83,8 @@
 
 (defn create-page
   [data]
-  (sc/validate! +create-page-schema+ data)
-  (map->CreatePage data))
+  (-> (sc/validate! data create-page-schema)
+      (map->CreatePage)))
 
 ;; --- Sync Page
 
@@ -171,16 +171,20 @@
            (rx/map on-success)
            (rx/catch on-failure)))))
 
-(def ^:const +update-page-schema+
-  {:name [sc/required sc/string]
+(def ^:private update-page-schema
+  {:id [sc/required]
+   :project [sc/required]
+   :version [sc/required]
+   :name [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
    :layout [sc/required sc/string]})
 
 (defn update-page-metadata
   [data]
-  (sc/validate! +update-page-schema+ data)
-  (map->UpdatePageMetadata (dissoc data :data)))
+  (-> (sc/validate! data update-page-schema {:strip false})
+      (dissoc data :data)
+      (map->UpdatePageMetadata)))
 
 ;; --- Delete Page (by id)
 

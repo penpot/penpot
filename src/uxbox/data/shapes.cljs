@@ -6,8 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.data.shapes
-  (:require [bouncer.validators :as v]
-            [beicon.core :as rx]
+  (:require [beicon.core :as rx]
             [uxbox.shapes :as sh]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
@@ -20,63 +19,9 @@
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Schemas
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:static +shape-schema+
-  {:x [sc/integer]
-   :y [sc/integer]
-   :width [sc/integer]
-   :height [sc/integer]
-   :type [sc/required sc/shape-type]})
-
-(def ^:static +shape-size-schema+
-  {:width [sc/integer]
-   :height [sc/integer]
-   :lock [sc/boolean]})
-
-(def ^:static +shape-fill-attrs-schema+
-  {:color [sc/color]
-   :opacity [sc/number]})
-
-(def ^:static +shape-stroke-attrs-schema+
-  {:color [sc/color]
-   :width [sc/integer]
-   :type [sc/keyword]
-   :opacity [sc/number]})
-
-(def ^:static +shape-line-attrs-schema+
-  {:x1 [sc/integer]
-   :y1 [sc/integer]
-   :x2 [sc/integer]
-   :y2 [sc/integer]})
-
-(def ^:static +shape-font-attrs-schema+
-  {:family [sc/string]
-   :style [sc/string]
-   :weight [sc/string]
-   :align [sc/string]
-   :size [sc/number]
-   :letter-spacing [sc/number]
-   :line-height [sc/number]})
-
-(def ^:static +shape-radius-attrs-schema+
-  {:rx [sc/integer]
-   :ry [sc/integer]})
-
-(def ^:static +shape-position-schema+
-  {:x [sc/integer]
-   :y [sc/integer]})
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Events (explicit)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn add-shape
   "Create and add shape to the current selected page."
   [shape]
-  (sc/validate! +shape-schema+ shape)
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
@@ -114,7 +59,6 @@
 
 (defn update-line-attrs
   [sid {:keys [x1 y1 x2 y2] :as opts}]
-  (sc/validate! +shape-line-attrs-schema+ opts)
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
@@ -145,7 +89,6 @@
   WARN: only works with shapes that works
   with height and width such are ::rect"
   [sid {:keys [width height] :as opts}]
-  (sc/validate! +shape-size-schema+ opts)
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
@@ -165,7 +108,6 @@
 (defn update-position
   "Update the start position coordenate of the shape."
   [sid {:keys [x y] :as opts}]
-  (sc/validate! +shape-position-schema+ opts)
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
@@ -183,7 +125,6 @@
 
 (defn update-fill-attrs
   [sid {:keys [color opacity] :as opts}]
-  (sc/validate! +shape-fill-attrs-schema+ opts)
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
@@ -196,7 +137,6 @@
 (defn update-font-attrs
   [sid {:keys [family style weight size align
                letter-spacing line-height] :as opts}]
-  (sc/validate! +shape-font-attrs-schema+ opts)
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
@@ -213,7 +153,6 @@
 
 (defn update-stroke-attrs
   [sid {:keys [color opacity type width] :as opts}]
-  (sc/validate! +shape-stroke-attrs-schema+ opts)
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
@@ -227,7 +166,6 @@
 
 (defn update-radius-attrs
   [sid {:keys [rx ry] :as opts}]
-  (sc/validate! +shape-radius-attrs-schema+ opts)
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
@@ -464,7 +402,6 @@
   "Update the fill related attributed on
   selected shapes."
   [opts]
-  (sc/validate! +shape-fill-attrs-schema+ opts)
   (reify
     rs/WatchEvent
     (-apply-watch [_ state s]
@@ -477,7 +414,6 @@
   "Update the fill related attributed on
   selected shapes."
   [opts]
-  (sc/validate! +shape-stroke-attrs-schema+ opts)
   (reify
     rs/WatchEvent
     (-apply-watch [_ state s]

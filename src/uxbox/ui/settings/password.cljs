@@ -8,52 +8,69 @@
 (ns uxbox.ui.settings.password
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [lentes.core :as l]
             [cuerdas.core :as str]
+            [uxbox.schema :as sc]
+            [uxbox.state :as st]
+            [uxbox.locales :as t :refer (tr)]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
-            [uxbox.ui.icons :as i]
-            [uxbox.ui.mixins :as mx]
-            [uxbox.util.dom :as dom]
             [uxbox.data.users :as udu]
-            [uxbox.ui.dashboard.header :refer (header)]))
+            [uxbox.data.forms :as udf]
+            [uxbox.ui.icons :as i]
+            [uxbox.ui.forms :as forms]
+            [uxbox.ui.messages :as uum]
+            [uxbox.ui.mixins :as mx]
+            [uxbox.ui.dashboard.header :refer (header)]
+            [uxbox.util.dom :as dom]))
 
 ;; --- Password Form
 
+(def formdata
+  (-> (l/in [:forms :profile/password])
+      (l/focus-atom st/state)))
+
+(def formerrors
+  (-> (l/in [:errors :profile/password])
+      (l/focus-atom st/state)))
+
+(def assign-field-value
+  (partial udf/assign-field-value :profile/password))
+
 (defn password-form-render
   [own]
-  (let [local (:rum/local own)
-        valid? (and (not (str/empty? (:password-1 @local)))
-                    (not (str/empty? (:password-2 @local)))
-                    (= 6 (count (:password-1 @local "")))
-                    (= (:password-1 @local)
-                       (:password-2 @local)))]
-    (println "valid?" valid?)
+  (let [form (rum/react formdata)
+        errors (rum/react formerrors)
+        valid? (sc/valid? form udu/update-password-schema)]
     (letfn [(on-field-change [field event]
               (let [value (dom/event->value event)]
-                (swap! local assoc field value)))
+                (rs/emit! (assign-field-value field value))))
             (on-submit [event]
-              (let [password (:password-1 @local)
-                    old-password (:old-password @local)]
-                (rs/emit! (udu/update-password old-password password))))]
-
+              (rs/emit! (udu/update-password form)))]
       (html
        [:form.password-form
         [:span.user-settings-label "Change password"]
         [:input.input-text
          {:type "password"
-          :value (:old-password @local "")
+          :class (forms/error-class errors :old-password)
+          :value (:old-password form "")
           :on-change (partial on-field-change :old-password)
           :placeholder "Old password"}]
+        (forms/input-error errors :old-password)
         [:input.input-text
          {:type "password"
-          :value (:password-1 @local "")
+          :class (forms/error-class errors :password-1)
+          :value (:password-1 form "")
           :on-change (partial on-field-change :password-1)
           :placeholder "New password"}]
+        (forms/input-error errors :password-1)
         [:input.input-text
          {:type "password"
-          :value (:password-2 @local "")
+          :class (forms/error-class errors :password-2)
+          :value (:password-2 form "")
           :on-change (partial on-field-change :password-2)
           :placeholder "Confirm password"}]
+        (forms/input-error errors :password-2)
         [:input.btn-primary
          {:type "button"
           :class (when-not valid? "btn-disabled")
@@ -65,7 +82,7 @@
   (mx/component
    {:render password-form-render
     :name "password-form"
-    :mixins [mx/static (mx/local)]}))
+    :mixins [mx/static (mx/local) rum/reactive]}))
 
 ;; --- Password Page
 
@@ -74,6 +91,7 @@
   (html
    [:main.dashboard-main
     (header)
+    (uum/messages)
     [:section.dashboard-content.user-settings
      [:div.user-settings-nav
       [:ul.user-settings-nav-inside

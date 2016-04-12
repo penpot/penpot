@@ -37,8 +37,22 @@
    "ds.help.circle" "Circle (Ctrl + E)"
    "ds.help.line" "Line (Ctrl + L)"
 
+   "profile.password-saved" "Password saved successfully!"
+
    "history.alert-message" "You are seeng version %s"
 
-   "errors.auth" "Username or passwords seems to be wrong."
+   "errors.api.form.old-password-not-match" "Incorrect old password"
 
+   "errors.form.required" "This field is mandatory"
+   "errors.form.string" "Should be string"
+   "errors.form.number" "Invalid number"
+   "errors.form.integer" "Invalid integer"
+   "errors.form.bool" "Should be bool"
+   "errors.form.min-len" "Should be great than %s"
+   "errors.form.max-len" "Should be less than %s"
+   "errors.form.color" "Should be a valid color string"
+   "errors.form.password-not-match" "Password does not match"
+
+   "errors.auth" "Username or passwords seems to be wrong."
+   "errors.profile.update-password" "Error updating password, probably your old password is wrong."
    })

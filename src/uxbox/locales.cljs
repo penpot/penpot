@@ -17,6 +17,9 @@
 (defonce +locale+
   (get local-storage ::locale :en))
 
+;; A marker type that is used just for mark
+;; a parameter that reprsentes the counter.
+
 (deftype C [val]
   IDeref
   (-deref [o] val))
@@ -28,6 +31,8 @@
 (defn ^boolean c?
   [r]
   (instance? C r))
+
+;; A main public api for translate strings.
 
 (defn tr
   "Translate the string."
