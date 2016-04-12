@@ -70,17 +70,22 @@
    :validate #(shape? %)})
 
 (defn validate
-  [data schema]
-  (let [opts {:strip true
-              :translate tr}]
-    (st/validate data schema opts)))
+  ([data schema]
+   (validate data schema nil))
+  ([data schema opts]
+   (let [opts (merge {:strip true
+                     :translate tr}
+                     opts)]
+     (st/validate data schema opts))))
 
 (defn validate!
-  [data schema]
-  (let [[errors data] (validate data schema)]
-    (if errors
-      (throw (ex-info "Invalid data" errors))
-      data)))
+  ([data schema]
+   (validate! data schema nil))
+  ([data schema opts]
+   (let [[errors data] (validate data schema opts)]
+     (if errors
+       (throw (ex-info "Invalid data" errors))
+       data))))
 
 (defn valid?
   [data schema]

@@ -172,15 +172,18 @@
            (rx/catch on-failure)))))
 
 (def ^:private update-page-schema
-  {:name [sc/required sc/string]
+  {:id [sc/required]
+   :project [sc/required]
+   :version [sc/required]
+   :name [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
    :layout [sc/required sc/string]})
 
 (defn update-page-metadata
   [data]
-  (-> (sc/validate! data update-page-schema)
-      (dissoc :data)
+  (-> (sc/validate! data update-page-schema {:strip false})
+      (dissoc data :data)
       (map->UpdatePageMetadata)))
 
 ;; --- Delete Page (by id)
