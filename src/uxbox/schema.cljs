@@ -73,8 +73,7 @@
   ([data schema]
    (validate data schema nil))
   ([data schema opts]
-   (let [opts (merge {:strip true
-                     :translate tr}
+   (let [opts (merge {:strip true}
                      opts)]
      (st/validate data schema opts))))
 

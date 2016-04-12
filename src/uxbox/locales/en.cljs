@@ -40,6 +40,9 @@
    "profile.password-saved" "Password saved successfully!"
 
    "history.alert-message" "You are seeng version %s"
+
+   "errors.api.form.old-password-not-match" "Incorrect old password"
+
    "errors.form.required" "This field is mandatory"
    "errors.form.string" "Should be string"
    "errors.form.number" "Invalid number"

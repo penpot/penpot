@@ -1,5 +1,6 @@
 (ns uxbox.ui.forms
   (:require [sablono.core :refer-macros [html]]
+            [uxbox.locales :refer (tr)]
             [uxbox.schema :as sc]))
 
 (defn input-error
@@ -8,7 +9,7 @@
     (html
      [:ul.form-errors
       (for [error errors]
-        [:li {:key error} error])])))
+        [:li {:key error} (tr error)])])))
 
 (defn error-class
   [errors field]

@@ -42,7 +42,6 @@
   (let [form (rum/react formdata)
         errors (rum/react formerrors)
         valid? (sc/valid? form udu/update-password-schema)]
-    (println valid?)
     (letfn [(on-field-change [field event]
               (let [value (dom/event->value event)]
                 (rs/emit! (assign-field-value field value))))

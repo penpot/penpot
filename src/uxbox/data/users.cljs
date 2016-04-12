@@ -76,9 +76,13 @@
 (defrecord UpdatePassword [data]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (letfn [(on-error [err]
-              (uum/error (tr "errors.profile.update-password") {:timeout 3000})
-              (rx/empty))]
+    (letfn [(on-error [{payload :payload :as data}]
+              (if (= (:type payload) :form/validation)
+                (rx/of
+                 (forms/assign-errors :profile/password (:payload payload)))
+                (do
+                  (uum/error (tr "errors.profile.update-password") {:timeout 3000})
+                  (rx/empty))))]
       (let [params {:old-password (:old-password data)
                     :password (:password-1 data)}]
         (->> (rp/req :update/password params)
