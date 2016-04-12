@@ -70,33 +70,48 @@
   []
   (FetchProjects.))
 
+;; --- Project Created
+
+(defrecord ProjectCreated [project]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (stpr/assoc-project state project)))
+
+(defn project-created
+  [data]
+  (ProjectCreated. data))
+
 ;; --- Create Project
 
 (defrecord CreateProject [name width height layout]
   rs/WatchEvent
   (-apply-watch [this state s]
-    (letfn [(on-success [project]
-              (rx/of (rs/swap #(stpr/assoc-project % project))
-                     (udp/create-page (assoc (into {} this)
-                                             :project (:id project)
-                                             :name "Page 1"
-                                             :data nil))))
+    (letfn [(on-success [{project :payload}]
+              (rx/of
+               (project-created project)
+               (udp/create-page {:width width
+                                 :height height
+                                 :layout layout
+                                 :project (:id project)
+                                 :name "Page 1"
+                                 :data nil})))
             (on-failure [err]
-              (uum/error (tr "errors.create-project")))]
+              (uum/error (tr "errors.create-project"))
+              (rx/empty))]
       (->> (rp/req :create/project {:name name})
-           (rx/mapcat on-success)
-           (rx/catch on-failure)))))
+           (rx/catch on-failure)
+           (rx/mapcat on-success)))))
 
-(def ^:static +project-schema+
+(def ^:private create-project-schema
   {:name [sc/required sc/string]
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
    :layout [sc/required sc/string]})
 
 (defn create-project
-  [{:keys [name width height layout] :as data}]
-  (sc/validate! +project-schema+ data)
-  (map->CreateProject data))
+  [params]
+  (-> (sc/validate! params create-project-schema)
+      (map->CreateProject)))
 
 ;; --- Delete Project (by id)
 

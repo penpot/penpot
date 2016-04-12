@@ -77,8 +77,10 @@
 
 (defn validate!
   [data schema]
-  (when-let [errors (first (validate schema data))]
-    (throw (ex-info "Invalid data" errors))))
+  (let [[errors data] (validate data schema)]
+    (if errors
+      (throw (ex-info "Invalid data" errors))
+      data)))
 
 (defn valid?
   [data schema]

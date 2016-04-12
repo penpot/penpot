@@ -64,13 +64,8 @@
                                 (dp/fetch-projects)
                                 (udu/fetch-profile))))))))
 
-(def ^:const ^:private +login-schema+
-  {:username [sc/required sc/string]
-   :password [sc/required sc/string]})
-
 (defn login
   [params]
-  (sc/validate! +login-schema+ params)
   (map->Login params))
 
 ;; --- Logout

@@ -187,44 +187,43 @@
 
 ;; --- Colors Create / Edit Lightbox
 
-(def ^:const ^:private +color-form-schema+
-  {:hex [sc/required sc/color]})
-
 (defn- color-lightbox-render
   [own {:keys [coll color]}]
-  (let [local (:rum/local own)]
-    (letfn [(submit [e]
-              (if-let [errors (sc/validate +color-form-schema+ @local)]
-                (swap! local assoc :errors errors)
-                (let [params {:id (:id coll) :from color
-                              :to (:hex @local)}]
-                  (rs/emit! (dd/replace-color params))
-                  (lightbox/close!))))
-            (on-change [e]
-              (let [value (str/trim (dom/event->value e))]
-                (swap! local assoc :hex value)))]
-      (html
-       [:div.lightbox-body
-        [:h3 "New color"]
-        [:form
-         [:div.row-flex
-          [:input#color-hex.input-text
-           {:placeholder "#"
-            :class (form/error-class local :hex)
-            :on-change on-change
-            :value (or (:hex @local) color "")
-            :type "text"}]]
-         [:div.row-flex.center.color-picker-default
-          (colorpicker
-           :value (or (:hex @local) color "#00ccff")
-           :on-change #(swap! local assoc :hex %))]
+  (html
+   [:p "TODO"]))
+  ;; (let [local (:rum/local own)]
+  ;;   (letfn [(submit [e]
+  ;;             (if-let [errors (sc/validate +color-form-schema+ @local)]
+  ;;               (swap! local assoc :errors errors)
+  ;;               (let [params {:id (:id coll) :from color
+  ;;                             :to (:hex @local)}]
+  ;;                 (rs/emit! (dd/replace-color params))
+  ;;                 (lightbox/close!))))
+  ;;           (on-change [e]
+  ;;             (let [value (str/trim (dom/event->value e))]
+  ;;               (swap! local assoc :hex value)))]
+  ;;     (html
+  ;;      [:div.lightbox-body
+  ;;       [:h3 "New color"]
+  ;;       [:form
+  ;;        [:div.row-flex
+  ;;         [:input#color-hex.input-text
+  ;;          {:placeholder "#"
+  ;;           :class (form/error-class local :hex)
+  ;;           :on-change on-change
+  ;;           :value (or (:hex @local) color "")
+  ;;           :type "text"}]]
+  ;;        [:div.row-flex.center.color-picker-default
+  ;;         (colorpicker
+  ;;          :value (or (:hex @local) color "#00ccff")
+  ;;          :on-change #(swap! local assoc :hex %))]
 
-         [:input#project-btn.btn-primary
-          {:value "+ Add color"
-           :on-click submit
-           :type "button"}]]
-        [:a.close {:on-click #(lightbox/close!)}
-       i/close]]))))
+  ;;        [:input#project-btn.btn-primary
+  ;;         {:value "+ Add color"
+  ;;          :on-click submit
+  ;;          :type "button"}]]
+  ;;       [:a.close {:on-click #(lightbox/close!)}
+  ;;      i/close]]))))
 
 (def color-lightbox
   (mx/component

@@ -94,7 +94,6 @@
 (defn update-password
   [data]
   (let [[errors data] (sc/validate data update-password-schema)]
-    (println errors)
     (if errors
       (forms/assign-errors :profile/password errors)
       (UpdatePassword. data))))
