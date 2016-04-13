@@ -38,9 +38,19 @@
   (-> (l/getter resolve-selected)
       (l/focus-atom st/state)))
 
-(def ^:const ^:privae page-options-l
-  (-> (l/key :options)
-      (l/focus-atom wb/page-l)))
+;; (def ^:const ^:privae page-options-l
+;;   (-> (l/key :options)
+;;       (l/focus-atom wb/page-l)))
+
+(def ^:const ^:private alignment-l
+  (letfn [(getter [state]
+            (let [{:keys [page flags]} (:workspace state)
+                  {:keys [options]} (get-in state [:pages-by-id page])]
+              (and (contains? flags :alignment/indexed)
+                   (contains? flags :grid)
+                   (:grid/align options false))))]
+    (-> (l/getter getter)
+        (l/focus-atom st/state))))
 
 ;; --- Public Api
 
@@ -85,9 +95,7 @@
 (defn- initialize
   []
   (let [shapes @selected-shapes-l
-        options @page-options-l
-        flags @wb/flags-l
-        indexed? (:alignment/indexed flags)
+        align? @alignment-l
         stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter empty?)
@@ -99,7 +107,7 @@
                  (let [xf (map #(sh/move % delta))]
                    (into [] xf acc))) shapes $)
       (rx/mapcat (fn [items]
-                   (if (and (:grid/align options) indexed?)
+                   (if align?
                      (->> (apply rx/of items)
                           (rx/mapcat align/translate)
                           (rx/reduce conj []))
