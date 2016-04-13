@@ -108,7 +108,8 @@
   (letfn [(on-term-change [event]
             (-> (dom/get-target event)
                 (dom/get-value)
-                (dd/set-project-filtering)))
+                (dd/set-project-filtering)
+                (rs/emit!)))
           (on-clear [event]
             (rs/emit! (dd/clear-project-filtering)))]
     (html
