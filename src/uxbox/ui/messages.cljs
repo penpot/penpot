@@ -1,9 +1,7 @@
 (ns uxbox.ui.messages
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [promesa.core :as p]
             [cuerdas.core :as str]
-            [uxbox.rstore :as rs]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.data :refer (classnames)]

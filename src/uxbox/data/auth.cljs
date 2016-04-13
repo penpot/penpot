@@ -51,14 +51,15 @@
 
   rs/WatchEvent
   (-apply-watch [this state s]
-    (letfn [(on-error [err]
-              (uum/error (tr "errors.auth"))
+    (letfn [(on-error [{:keys [status payload]}]
+              (println status payload)
+              (uum/error (tr "errors.auth.unauthorized"))
               (rx/empty))]
       (let [params {:username username
                     :password password
                     :scope "webapp"}]
         (->> (rp/req :fetch/token params)
-             (rx/catch on-error)
+             (rx/catch rp/client-error? on-error)
              (rx/map :payload)
              (rx/mapcat #(rx/of (logged-in %)
                                 (dp/fetch-projects)

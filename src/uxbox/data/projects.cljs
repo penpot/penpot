@@ -17,31 +17,6 @@
             [uxbox.data.pages :as udp]
             [uxbox.ui.messages :as uum]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn sort-projects-by
-  [ordering projs]
-  (case ordering
-    :name (sort-by :name projs)
-    :created (reverse (sort-by :created-at projs))
-    projs))
-
-(defn contains-term?
-  [phrase term]
-  (str/contains? (str/lower phrase) (str/trim (str/lower term))))
-
-(defn filter-projects-by
-  [term projs]
-  (if (str/blank? term)
-    projs
-    (filter #(contains-term? (:name %) term) projs)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;; --- Projects Fetched
 
 (defrecord ProjectsFetched [projects]
@@ -59,12 +34,9 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-loaded [{projects :payload}]
-              #(reduce stpr/assoc-project % projects))
-            (on-error [err]
-              (rx/empty))]
+              #(reduce stpr/assoc-project % projects))]
       (->> (rp/req :fetch/projects)
-           (rx/map on-loaded)
-           (rx/catch on-error)))))
+           (rx/map on-loaded)))))
 
 (defn fetch-projects
   []
@@ -94,12 +66,8 @@
                                  :layout layout
                                  :project (:id project)
                                  :name "Page 1"
-                                 :data nil})))
-            (on-failure [err]
-              (uum/error (tr "errors.create-project"))
-              (rx/empty))]
+                                 :data nil})))]
       (->> (rp/req :create/project {:name name})
-           (rx/catch on-failure)
            (rx/mapcat on-success)))))
 
 (def ^:private create-project-schema
@@ -119,12 +87,9 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [_]
-              (rs/swap #(stpr/dissoc-project % id)))
-            (on-failure [e]
-              (uum/error (tr "errors.delete-project")))]
+              (rs/swap #(stpr/dissoc-project % id)))]
       (->> (rp/req :delete/project id)
-           (rx/map on-success)
-           (rx/catch on-failure)))))
+           (rx/map on-success)))))
 
 (defn delete-project
   [id]
@@ -161,3 +126,23 @@
   first page of the project."
   ([projectid] (GoTo. projectid))
   ([projectid pageid] (GoToPage. projectid pageid)))
+
+;; --- Helpers
+
+(defn sort-projects-by
+  [ordering projs]
+  (case ordering
+    :name (sort-by :name projs)
+    :created (reverse (sort-by :created-at projs))
+    projs))
+
+(defn contains-term?
+  [phrase term]
+  (str/contains? (str/lower phrase) (str/trim (str/lower term))))
+
+(defn filter-projects-by
+  [term projs]
+  (if (str/blank? term)
+    projs
+    (filter #(contains-term? (:name %) term) projs)))
+

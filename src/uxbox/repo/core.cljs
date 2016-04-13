@@ -28,25 +28,11 @@
     (assoc response :body (t/decode body))
     response))
 
-(defrecord Ok [status payload])
-(defrecord ServerError [status paylpad])
-(defrecord ClientError [status payload])
-(defrecord NotFound [payload])
-
 (defn- handle-http-status
   [{:keys [body status] :as response}]
-  (cond
-    (http.status/success? response)
-    (rx/of (->Ok status body))
-
-    (http.status/client-error? response)
-    (rx/throw
-     (if (= status 404)
-       (->NotFound body)
-       (->ClientError status body)))
-
-    (http.status/server-error? response)
-    (rx/throw (->ServerError status body))))
+  (if (http.status/success? response)
+    (rx/of {:status status :payload body})
+    (rx/throw {:status status :payload body})))
 
 (def ^:private ^:const +headers+
   {"content-type" "application/transit+json"})

@@ -40,14 +40,10 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [{history :payload}]
-              (->PinnedPageHistoryFetched (into [] history)))
-            (on-failure [e]
-              (uum/error (tr "errors.fetch-page-history"))
-              (rx/empty))]
+              (->PinnedPageHistoryFetched (into [] history)))]
       (let [params {:page id :pinned true}]
         (->> (rp/req :fetch/page-history params)
-             (rx/map on-success)
-             (rx/catch on-failure))))))
+             (rx/map on-success))))))
 
 (defn fetch-pinned-page-history
   [id]
@@ -82,16 +78,12 @@
   (-apply-watch [this state s]
     (letfn [(on-success [{history :payload}]
               (let [history (into [] history)]
-                (->PageHistoryFetched history (not (nil? since)))))
-            (on-failure [e]
-              (uum/error (tr "errors.fetch-page-history"))
-              (rx/empty))]
+                (->PageHistoryFetched history (not (nil? since)))))]
       (let [params (merge
                     {:page id :max (or max 15)}
                     (when since {:since since}))]
         (->> (rp/req :fetch/page-history params)
-             (rx/map on-success)
-             (rx/catch on-failure))))))
+             (rx/map on-success))))))
 
 (defn fetch-page-history
   ([id]
@@ -219,14 +211,10 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [{item :payload}]
-              (->HistoryItemUpdated item))
-            (on-failure [e]
-              (uum/error (tr "errors.page-history-update"))
-              (rx/empty))]
+              (->HistoryItemUpdated item))]
       (rx/merge
        (->> (rp/req :update/page-history item)
-            (rx/map on-success)
-            (rx/catch on-failure))
+            (rx/map on-success))
        (->> (rx/filter history-updated? s)
             (rx/take 1)
             (rx/map #(refres-page-history (:page item))))))))

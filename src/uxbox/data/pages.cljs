@@ -43,14 +43,8 @@
 (defrecord FetchPages [projectid]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (letfn [(on-loaded [{pages :payload}]
-              (->PagesFetched pages))
-            (on-error [err]
-              (js/console.error err)
-              (rx/empty))]
-      (->> (rp/req :fetch/pages-by-project {:project projectid})
-           (rx/map on-loaded)
-           (rx/catch on-error)))))
+    (->> (rp/req :fetch/pages-by-project {:project projectid})
+         (rx/map (comp ->PagesFetched :payload)))))
 
 (defn fetch-pages
   [projectid]
@@ -64,15 +58,11 @@
     (letfn [(on-created [{page :payload}]
               (rx/of
                #(stpr/unpack-page % page)
-               #(stpr/assoc-page % page)))
-            (on-failed [page]
-              (uum/error (tr "errors.auth"))
-              (rx/empty))]
+               #(stpr/assoc-page % page)))]
       (let [params (-> (into {} this)
                        (assoc :data {}))]
         (->> (rp/req :create/page params)
-             (rx/mapcat on-created)
-             (rx/catch on-failed))))))
+             (rx/mapcat on-created))))))
 
 (def ^:private create-page-schema
   {:name [sc/required sc/string]
@@ -102,15 +92,9 @@
 (defrecord SyncPage [id]
   rs/WatchEvent
   (-apply-watch [this state s]
-    (letfn [(on-success [{page :payload}]
-              (->PageSynced page))
-            (on-failure [e]
-              (uum/error (tr "errors.page-update"))
-              (rx/empty))]
-      (let [page (stpr/pack-page state id)]
-        (->> (rp/req :update/page page)
-             (rx/map on-success)
-             (rx/catch on-failure))))))
+    (let [page (stpr/pack-page state id)]
+      (->> (rp/req :update/page page)
+           (rx/map (comp ->PageSynced :payload))))))
 
 (defn sync-page
   [id]
@@ -163,13 +147,9 @@
   rs/WatchEvent
   (-apply-watch [this state s]
     (letfn [(on-success [{page :payload}]
-              #(assoc-in % [:pages-by-id id :version] (:version page)))
-            (on-failure [e]
-              (uum/error (tr "errors.page-update"))
-              (rx/empty))]
+              #(assoc-in % [:pages-by-id id :version] (:version page)))]
       (->> (rp/req :update/page-metadata (into {} this))
-           (rx/map on-success)
-           (rx/catch on-failure)))))
+           (rx/map on-success)))))
 
 (def ^:private update-page-schema
   {:id [sc/required]
@@ -192,15 +172,11 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [_]
-              (rs/swap #(stpr/purge-page % id)))
-            (on-failure [e]
-              (uum/error (tr "errors.delete-page"))
-              (rx/empty))]
+              (rs/swap #(stpr/purge-page % id)))]
       (->> (rp/req :delete/page id)
            (rx/map on-success)
            (rx/tap callback)
-           (rx/filter identity)
-           (rx/catch on-failure)))))
+           (rx/filter identity)))))
 
 (defn delete-page
   ([id] (DeletePage. id (constantly nil)))
