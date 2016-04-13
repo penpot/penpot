@@ -34,11 +34,12 @@
 (def identical-to
   (assoc st/identical-to :message "errors.form.identical-to"))
 
-;; (def in-range st/in-range)
+(def in-range st/in-range)
 ;; (def uuid-like st/uuid-like)
 (def uuid st/uuid)
 (def keyword st/keyword)
-;; (def integer-like st/integer-like)
+(def integer-str st/integer-str)
+(def number-str st/number-str)
 ;; (def boolean-like st/boolean-like)
 ;; (def email st/email)
 ;; (def function st/function)
