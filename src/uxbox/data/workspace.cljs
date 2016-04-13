@@ -140,7 +140,9 @@
 (defrecord IncreaseZoom []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [increase #(nth zoom-levels (+ (index-of zoom-levels %) 1) (last zoom-levels))]
+    (let [increase #(nth zoom-levels
+                         (+ (index-of zoom-levels %) 1)
+                         (last zoom-levels))]
       (update-in state [:workspace :zoom] (fnil increase 1)))))
 
 (defn increase-zoom
@@ -152,7 +154,9 @@
 (defrecord DecreaseZoom []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [decrease #(nth zoom-levels (- (index-of zoom-levels %) 1) (first zoom-levels))]
+    (let [decrease #(nth zoom-levels
+                         (- (index-of zoom-levels %) 1)
+                         (first zoom-levels))]
       (update-in state [:workspace :zoom] (fnil decrease 1)))))
 
 (defn decrease-zoom
