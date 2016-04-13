@@ -7,6 +7,7 @@
 (ns uxbox.data.forms
   (:require [beicon.core :as rx]
             [promesa.core :as p]
+            [lentes.core :as l]
             [uxbox.repo :as rp]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
@@ -31,10 +32,58 @@
 (defrecord AssignFieldValue [type field value]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:forms type field] value)))
+    (-> state
+        (assoc-in [:forms type field] value)
+        (update-in [:errors type] dissoc field))))
 
 (defn assign-field-value
   [type field value]
   (AssignFieldValue. type field value))
+
+;; --- Clean Errors
+
+(defrecord CleanErrors [type]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:errors type] nil)))
+
+(defn clean-errors
+  [type]
+  (CleanErrors. type))
+
+;; --- Clean Form
+
+(defrecord CleanForm [type]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:form type] nil)))
+
+(defn clean-form
+  [type]
+  (CleanForm. type))
+
+;; --- Clean
+
+(defrecord Clean [type]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (rx/of (clean-form type)
+           (clean-errors type))))
+
+(defn clean
+  [type]
+  (Clean. type))
+
+;; --- Helpers
+
+(defn focus-form-data
+  [type]
+  (-> (l/in [:forms type])
+      (l/focus-atom st/state)))
+
+(defn focus-form-errors
+  [type]
+  (-> (l/in [:errors type])
+      (l/focus-atom st/state)))
 
 
