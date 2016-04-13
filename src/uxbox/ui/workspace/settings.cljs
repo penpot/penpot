@@ -81,7 +81,7 @@
          [:input
           {:type "checkbox"
            :on-change on-align-change
-           :checked (:grid/align opts)
+           :checked (:grid/alignment opts)
            :id "magnet"
            :value "Yes"}]
          [:label {:for "magnet"} "Activate magnet"]]
