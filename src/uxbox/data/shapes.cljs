@@ -43,6 +43,7 @@
   "Just updates in place the shape."
   [{:keys [id] :as shape}]
   (reify
+    udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id id] merge shape))))
