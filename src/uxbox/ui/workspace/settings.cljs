@@ -57,7 +57,7 @@
                 (rs/emit! (assign-field-value :grid/alignment checked?))))
             (on-submit [event]
               (dom/prevent-default event)
-              (rs/emit! (udw/update-workspace-settings (:id page) form)))]
+              (rs/emit! (udw/submit-workspace-settings (:id page) form)))]
       (html
        [:form {:on-submit on-submit}
         [:span.lightbox-label "Grid size"]

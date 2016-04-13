@@ -200,7 +200,7 @@
 
 ;; --- Update Workspace Settings (Form)
 
-(defrecord UpdateWorkspaceSettings [id options]
+(defrecord SubmitWorkspaceSettings [id options]
   rs/WatchEvent
   (-apply-watch [_ state s]
     (rx/of (udp/update-page-options id options)
@@ -211,16 +211,16 @@
   (-apply-effect [_ state]
     (lightbox/close!)))
 
-(def update-workspace-settings-schema
+(def submit-workspace-settings-schema
   {:grid/y-axis [sc/required sc/integer [sc/in-range 2 100]]
    :grid/x-axis [sc/required sc/integer [sc/in-range 2 100]]
    :grid/alignment [sc/boolean]
    :grid/color [sc/required sc/color]})
 
-(defn update-workspace-settings
+(defn submit-workspace-settings
   [id data]
-  (let [schema update-workspace-settings-schema
+  (let [schema submit-workspace-settings-schema
         [errors data] (sc/validate data schema)]
     (if errors
       (udf/assign-errors :workspace/settings errors)
-      (UpdateWorkspaceSettings. id data))))
+      (SubmitWorkspaceSettings. id data))))
