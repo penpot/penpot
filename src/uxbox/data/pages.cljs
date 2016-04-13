@@ -133,6 +133,8 @@
 ;; that does not sends the heavyweiht `:data` attribute
 ;; and only serves for update other page data.
 
+;; TODO: sync also with the pagedata-by-id index.
+
 (defrecord UpdatePageMetadata [id name width height layout options]
   rs/UpdateEvent
   (-apply-update [_ state]
