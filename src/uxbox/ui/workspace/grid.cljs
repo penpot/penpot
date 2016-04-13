@@ -20,7 +20,7 @@
 
 (defn- grid-render
   [own]
-  (let [options (:options @wb/page-l)
+  (let [options (:options (rum/react wb/page-l))
         color (:grid/color options "#cccccc")
         width c/viewport-width
         height c/viewport-height
@@ -43,7 +43,7 @@
   (mx/component
    {:render grid-render
     :name "grid"
-    :mixins [mx/static]}))
+    :mixins [mx/static rum/reactive]}))
 
 ;; --- Helpers
 
