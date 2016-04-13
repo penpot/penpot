@@ -15,6 +15,8 @@
             [uxbox.data.core :refer (worker)]
             [uxbox.data.pages :as udp]
             [uxbox.data.shapes :as uds]
+            [uxbox.data.forms :as udf]
+            [uxbox.ui.lightbox :as lightbox]
             [uxbox.util.datetime :as dt]
             [uxbox.util.math :as mth]
             [uxbox.util.data :refer (index-of)]
@@ -196,3 +198,32 @@
   [id]
   (InitializeAlignmentIndex. id))
 
+;; --- Update Workspace Settings (Form)
+
+(defrecord UpdateWorkspaceSettings [id options]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [page (get-in state [:pages-by-id id])
+          page (assoc page :options options)]
+      (rx/of
+       (udp/update-page-metadata page)
+       (initialize-alignment-index id)
+       (udf/clean :workspace/settings))))
+
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    (lightbox/close!)))
+
+(def update-workspace-settings-schema
+  {:grid/y-axis [sc/required sc/integer [sc/in-range 2 100]]
+   :grid/x-axis [sc/required sc/integer [sc/in-range 2 100]]
+   :grid/alignment [sc/boolean]
+   :grid/color [sc/required sc/color]})
+
+(defn update-workspace-settings
+  [id data]
+  (let [schema update-workspace-settings-schema
+        [errors data] (sc/validate data schema)]
+    (if errors
+      (udf/assign-errors :workspace/settings errors)
+      (UpdateWorkspaceSettings. id data))))

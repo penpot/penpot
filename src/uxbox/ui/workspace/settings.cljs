@@ -10,11 +10,14 @@
             [lentes.core :as l]
             [rum.core :as rum]
             [uxbox.constants :as c]
+            [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.data.pages :as udp]
+            [uxbox.data.forms :as udf]
             [uxbox.data.workspace :as udw]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
+            [uxbox.ui.forms :as forms]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.colorpicker :as uucp]
             [uxbox.ui.workspace.base :as wb]
@@ -23,36 +26,38 @@
 
 ;; --- Lentes
 
-(def page-metadata-l
-  (-> (l/key :metadata)
-      (l/focus-atom wb/page-l)))
+(def formdata (udf/focus-form-data :workspace/settings))
+(def formerrors (udf/focus-form-errors :workspace/settings))
+(def assign-field-value (partial udf/assign-field-value :workspace/settings))
 
 ;; --- Form Component
 
-;; TODO: proper implement form validation
+(def settings-form-defaults
+  {:grid/x-axis c/grid-x-axis
+   :grid/y-axis c/grid-y-axis
+   :grid/color "#0000ff"
+   :grid/alignment false})
 
 (defn- settings-form-render
   [own]
-  (let [local (:rum/local own)
-        page (rum/react wb/page-l)
-        opts (merge (:options page)
-                    (deref local))]
+  (let [page (rum/react wb/page-l)
+        form (merge settings-form-defaults
+                    (:options page)
+                    (rum/react formdata))
+        errors (rum/react formerrors)]
     (letfn [(on-field-change [field event]
               (let [value (dom/event->value event)
-                    value (parse-int value)]
-                (swap! local assoc field value)))
+                    value (parse-int value "")]
+                (rs/emit! (assign-field-value field value))))
             (on-color-change [color]
-              (swap! local assoc :grid/color color))
+              (rs/emit! (assign-field-value :grid/color color)))
             (on-align-change [event]
               (let [checked? (-> (dom/get-target event)
                                  (dom/checked?))]
-                (swap! local assoc :grid/alignment checked?)))
+                (rs/emit! (assign-field-value :grid/alignment checked?))))
             (on-submit [event]
               (dom/prevent-default event)
-              (let [page (assoc page :options opts)]
-                (rs/emit! (udp/update-page-metadata page)
-                          (udw/initialize-alignment-index (:id page)))
-                (lightbox/close!)))]
+              (rs/emit! (udw/update-workspace-settings (:id page) form)))]
       (html
        [:form {:on-submit on-submit}
         [:span.lightbox-label "Grid size"]
@@ -60,28 +65,30 @@
          [:input#grid-x.input-text
           {:placeholder "X px"
            :type "number"
-           :value (:grid/x-axis opts c/grid-x-axis)
+           :class (forms/error-class errors :grid/x-axis)
+           :value (:grid/x-axis form "")
            :on-change (partial on-field-change :grid/x-axis)
            :min 1
            :max 100}]
          [:input#grid-y.input-text
           {:placeholder "Y px"
            :type "number"
-           :value (:grid/y-axis opts c/grid-y-axis)
+           :class (forms/error-class errors :grid/y-axis)
+           :value (:grid/y-axis form "")
            :on-change (partial on-field-change :grid/y-axis)
            :min 1
            :max 100}]]
         [:span.lightbox-label "Grid color"]
         [:div.color-picker-default
          (uucp/colorpicker
-          :value (:grid/color opts "#0000ff")
+          :value (:grid/color form)
           :on-change on-color-change)]
         [:span.lightbox-label "Grid magnet option"]
         [:div.input-checkbox.check-primary
          [:input
           {:type "checkbox"
            :on-change on-align-change
-           :checked (:grid/alignment opts)
+           :checked (:grid/alignment form)
            :id "magnet"
            :value "Yes"}]
          [:label {:for "magnet"} "Activate magnet"]]
