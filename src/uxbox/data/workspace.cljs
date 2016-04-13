@@ -189,7 +189,7 @@
       (rx/merge
        (->> (uw/send! worker message)
             (rx/map #(activate-flag :grid/indexed)))
-       (when (:grid/align opts)
+       (when (:grid/alignment opts)
          (rx/of (activate-flag :grid/alignment)))))))
 
 (defn initialize-alignment-index
