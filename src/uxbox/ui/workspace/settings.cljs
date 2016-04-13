@@ -12,6 +12,7 @@
             [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.data.pages :as udp]
+            [uxbox.data.workspace :as udw]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.lightbox :as lightbox]
@@ -27,6 +28,8 @@
       (l/focus-atom wb/page-l)))
 
 ;; --- Form Component
+
+;; TODO: proper implement form validation
 
 (defn- settings-form-render
   [own]
@@ -47,7 +50,8 @@
             (on-submit [event]
               (dom/prevent-default event)
               (let [page (assoc page :options opts)]
-                (rs/emit! (udp/update-page-metadata page))
+                (rs/emit! (udp/update-page-metadata page)
+                          (udw/initialize-alignment-index (:id page)))
                 (lightbox/close!)))]
       (html
        [:form {:on-submit on-submit}
