@@ -186,8 +186,11 @@
                    :height c/viewport-height
                    :x-axis (:grid/x-axis opts c/grid-x-axis)
                    :y-axis (:grid/y-axis opts c/grid-y-axis)}]
-      (->> (uw/send! worker message)
-           (rx/map #(activate-flag :alignment/indexed))))))
+      (rx/merge
+       (->> (uw/send! worker message)
+            (rx/map #(activate-flag :grid/indexed)))
+       (when (:grid/align opts)
+         (rx/of (activate-flag :grid/alignment)))))))
 
 (defn initialize-alignment-index
   [id]

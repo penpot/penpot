@@ -46,7 +46,7 @@
             (on-align-change [event]
               (let [checked? (-> (dom/get-target event)
                                  (dom/checked?))]
-                (swap! local assoc :grid/align checked?)))
+                (swap! local assoc :grid/alignment checked?)))
             (on-submit [event]
               (dom/prevent-default event)
               (let [page (assoc page :options opts)]

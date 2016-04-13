@@ -38,19 +38,13 @@
   (-> (l/getter resolve-selected)
       (l/focus-atom st/state)))
 
-;; (def ^:const ^:privae page-options-l
-;;   (-> (l/key :options)
-;;       (l/focus-atom wb/page-l)))
-
 (def ^:const ^:private alignment-l
-  (letfn [(getter [state]
-            (let [{:keys [page flags]} (:workspace state)
-                  {:keys [options]} (get-in state [:pages-by-id page])]
-              (and (contains? flags :alignment/indexed)
-                   (contains? flags :grid)
-                   (:grid/align options false))))]
+  (letfn [(getter [flags]
+            (and (contains? flags :grid/indexed)
+                 (contains? flags :grid/alignment)
+                 (contains? flags :grid)))]
     (-> (l/getter getter)
-        (l/focus-atom st/state))))
+        (l/focus-atom wb/flags-l))))
 
 ;; --- Public Api
 
@@ -121,5 +115,3 @@
   [delta]
   (doseq [shape delta]
     (rs/emit! (uds/update-shape shape))))
-
-
