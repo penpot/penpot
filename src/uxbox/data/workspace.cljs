@@ -85,6 +85,17 @@
         (assoc-in state [:workspace :drawing] shape)
         (update-in state [:workspace] dissoc :drawing)))))
 
+;; --- Activate Workspace Flag
+
+(defrecord ActivateFlag [flag]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:workspace :flags] conj flag)))
+
+(defn activate-flag
+  [flag]
+  (ActivateFlag. flag))
+
 ;; --- Copy to Clipboard
 
 (defrecord CopyToClipboard []
@@ -172,7 +183,7 @@
                    :x-axis (:grid/x-axis opts c/grid-x-axis)
                    :y-axis (:grid/y-axis opts c/grid-y-axis)}]
       (->> (uw/send! worker message)
-           (rx/map #(toggle-flag :alignment/indexed))))))
+           (rx/map #(activate-flag :alignment/indexed))))))
 
 (defn initialize-alignment-index
   [id]
