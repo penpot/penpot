@@ -203,12 +203,9 @@
 (defrecord UpdateWorkspaceSettings [id options]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [page (get-in state [:pages-by-id id])
-          page (assoc page :options options)]
-      (rx/of
-       (udp/update-page-metadata page)
-       (initialize-alignment-index id)
-       (udf/clean :workspace/settings))))
+    (rx/of (udp/update-page-options id options)
+           (initialize-alignment-index id)
+           (udf/clean :workspace/settings)))
 
   rs/EffectEvent
   (-apply-effect [_ state]

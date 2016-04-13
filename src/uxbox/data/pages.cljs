@@ -168,6 +168,19 @@
       (dissoc data :data)
       (map->UpdatePageMetadata)))
 
+;; --- Update Page Options
+
+(defrecord UpdatePageOptions [id options]
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (let [page (get-in state [:pages-by-id id])
+          page (assoc page :options options)]
+      (rx/of (map->UpdatePageMetadata page)))))
+
+(defn update-page-options
+  [id options]
+  (UpdatePageOptions. id options))
+
 ;; --- Delete Page (by id)
 
 (defrecord DeletePage [id callback]
