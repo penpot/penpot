@@ -35,7 +35,7 @@
 (def settings-form-defaults
   {:grid/x-axis c/grid-x-axis
    :grid/y-axis c/grid-y-axis
-   :grid/color "#0000ff"
+   :grid/color "#b5bdb9"
    :grid/alignment false})
 
 (defn- settings-form-render

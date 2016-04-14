@@ -65,6 +65,22 @@
     [:rect {:x 0 :y 0 :width "100%" :height "100%"
             :fill "url(#gradient-hsv)"}]]))
 
+(def ^:const default-dimensions
+  {:pi-height 5
+   :pi-width 5
+   :si-height 10
+   :p-height 200
+   :p-width 200
+   :s-height 200})
+
+(def ^:const small-dimensions
+  {:pi-height 5
+   :pi-width 5
+   :si-height 10
+   :p-height 170
+   :p-width 170
+   :s-height 170})
+
 (def slider-box
   (mx/component
    {:render slider-box-render
@@ -74,53 +90,63 @@
 ;; --- Color Picker
 
 (defn- on-picker-click
-  [local on-change color event]
+  [local dimensions on-change color event]
   (let [event (.-nativeEvent event)
         my (.-offsetY event)
-        height (:p-height @local)
-        width (:p-width @local)
+        height (:p-height dimensions)
+        width (:p-width dimensions)
         mx (.-offsetX event)
         my (.-offsetY event)
         [h] color
         s (/ mx width)
-        v (/ (- height my) height)]
-    (on-change (color/hsv->hex [(+ h 15) s (* v 255)]))
-    (swap! local dissoc :color)))
+        v (/ (- height my) height)
+        hex (color/hsv->hex [h s (* v 255)])]
+    (swap! local assoc :color [h s (* v 255)])
+    (on-change hex)))
 
 (defn- on-slide-click
-  [local event]
+  [local dimensions event]
   (let [event (.-nativeEvent event)
         my (.-offsetY event)
-        h  (* (/ my (:s-height @local)) 360)]
-    (swap! local assoc :color [h 1 255])))
+        h  (* (/ my (:s-height dimensions)) 360)]
+    (swap! local assoc :color [(+ h 15) 1 255])))
 
 (defn- colorpicker-render
-  [own & {:keys [value on-change] :or {value "#d4edfb"}}]
+  [own & {:keys [value on-change theme]
+          :or {value "#d4edfb" theme :default}}]
   (let [local (:rum/local own)
-        [h s v :as color] (if (:color @local)
-                            (:color @local)
-                            (let [[h s v] (color/hex->hsv value)]
-                              [(if (pos? h) (- h 15) h) s v]))
-        bg (color/hsv->hex [(+ h 15) 1 255])
-        sit (- (/ (* h (:s-height @local)) 360)
-               (/ (:si-height @local) 2))
-        pit (- (* s (:p-width @local))
-               (/ (:pi-height @local) 2))
-        pil (- (- (:p-height @local) (* (/ v 255) (:p-height @local)))
-               (/ (:pi-width @local) 2))
+        dimensions (case theme
+                     :default default-dimensions
+                     :small small-dimensions
+                     default-dimensions)
+        [h s v :as color] (or (:color @local)
+                              (color/hex->hsv value))
+        bg (color/hsv->hex [h 1 255])
+        pit (- (* s (:p-width dimensions))
+               (/ (:pi-height dimensions) 2))
+        pil (- (- (:p-height dimensions) (* (/ v 255) (:p-height dimensions)))
+               (/ (:pi-width dimensions) 2))
+
+        sit (- (/ (* (- h 15) (:s-height dimensions)) 360)
+               (/ (:si-height dimensions) 2))
+
         on-mouse-down #(swap! local assoc :mousedown true)
         on-mouse-up #(swap! local assoc :mousedown false)
 
         on-mouse-move-slide #(when (:mousedown @local)
-                               (on-slide-click local %))
+                               (on-slide-click local dimensions %))
         on-mouse-move-picker #(when (:mousedown @local)
-                                (on-picker-click local on-change color %))]
+                                (on-picker-click local dimensions on-change color %))]
     (html
      [:div.color-picker
-      [:div.picker-wrapper
+      #_[:div.tester {:style {:width "100px" :height "100px"
+                            :border "1px solid black"
+                            :position "fixed" :top "50px" :left "50px"
+                            :backgroundColor (color/hsv->hex color)}}]
+       [:div.picker-wrapper
        [:div.picker
         {:ref "picker"
-         :on-click (partial on-picker-click local on-change color)
+         :on-click (partial on-picker-click local dimensions on-change color)
          :on-mouse-down on-mouse-down
          :on-mouse-up on-mouse-up
          :on-mouse-move on-mouse-move-picker
@@ -137,32 +163,15 @@
          :on-mouse-down on-mouse-down
          :on-mouse-up on-mouse-up
          :on-mouse-move on-mouse-move-slide
-         :on-click (partial on-slide-click local)}
+         :on-click (partial on-slide-click local dimensions)}
         (slider-box)]
        [:div.slide-indicator
         {:ref "slide-indicator"
          :style {:top (str sit "px")
                  :pointerEvents "none"}}]]])))
 
-(defn- colorpicker-did-mount
-  [own]
-  (let [local (:rum/local own)
-        picker (mx/get-ref-dom own "picker")
-        slide (mx/get-ref-dom own "slide")
-        picker-ind (mx/get-ref-dom own "picker-indicator")
-        slide-ind (mx/get-ref-dom own "slide-indicator")]
-    (swap! local assoc
-           :pi-height (.-offsetHeight picker-ind)
-           :pi-width (.-offsetWidth picker-ind)
-           :si-height (.-offsetHeight slide-ind)
-           :p-height (.-offsetHeight picker)
-           :p-width (.-offsetWidth picker)
-           :s-height (.-offsetHeight slide))
-    own))
-
 (def ^:static colorpicker
   (mx/component
    {:render colorpicker-render
-    :did-mount colorpicker-did-mount
     :name "colorpicker"
     :mixins [mx/static (mx/local)]}))

@@ -120,6 +120,7 @@
        [:span "Color"]
        [:div.color-picker-small
         (colorpicker
+         :theme :small
          :value (:stroke shape "#000000")
          :on-change #(change-stroke {:color %}))]
 
@@ -166,6 +167,7 @@
 
        [:div.color-picker-small
         (colorpicker
+         :theme :small
          :value (:fill shape "#000000")
          :on-change #(on-color-picker-event %))]
 
