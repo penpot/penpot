@@ -90,11 +90,19 @@
 
 (defn- on-error
   "A default error handler."
-  [e]
-  (uum/error (tr "errors.generic"))
-  (println "Unexpected error: " e)
-  (js/console.log (.-stack e))
-  (rx/throw e))
+  [error]
+  (cond
+    (and (:status error)
+         (:payload error)
+         (= (:status error) 403))
+    (emit! (uxbox.data.auth/logout))
+
+    :else
+    (do
+      (uum/error (tr "errors.generic"))
+      (println "Unexpected error: " error)
+      (js/console.log (.-stack error))
+      (rx/throw error))))
 
 (defn init
   "Initializes the stream event loop and
