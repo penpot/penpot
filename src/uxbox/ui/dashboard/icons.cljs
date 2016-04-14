@@ -12,6 +12,7 @@
             [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.schema :as sc]
+            [uxbox.locales :refer (tr)]
             [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
             [uxbox.ui.icons :as i]
@@ -36,7 +37,7 @@
     (html
      [:div.dashboard-title {}
       [:h2 {}
-       [:span #ux/tr "ds.library-title"]
+       [:span (tr "ds.library-title")]
        [:span {:content-editable ""
                :on-key-up (constantly nil)}
         (:name coll)]]
@@ -68,10 +69,10 @@
        [:ul.library-tabs
         [:li {:class-name (when builtin? "current")
               :on-click #(rs/emit! (dd/set-collection-type :builtin))}
-         #ux/tr "ds.standard-title"]
+         (tr "ds.standard-title")]
         [:li {:class-name (when own? "current")
               :on-click #(rs/emit! (dd/set-collection-type :own))}
-         #ux/tr "ds.your-libraries-title"]]
+         (tr "ds.your-libraries-title")]]
        [:ul.library-elements
         (when own?
           [:li

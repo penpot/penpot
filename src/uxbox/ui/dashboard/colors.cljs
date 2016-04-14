@@ -57,7 +57,7 @@
       (html
        [:div.dashboard-title {}
         [:h2 {}
-         [:span #ux/tr "ds.library-title"]
+         [:span (tr "ds.library-title")]
          [:span {:content-editable ""
                  :on-key-up on-title-edited}
           (:name coll)]]

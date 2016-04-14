@@ -9,7 +9,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [lentes.core :as l]
-            [uxbox.locales]
+            [uxbox.locales :refer (tr)]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
@@ -42,13 +42,13 @@
        (header-link :dashboard/projects i/logo)]
       [:ul.main-nav
        [:li {:class (when projects? "current")}
-        (header-link :dashboard/projects #ux/tr "ds.projects")]
+        (header-link :dashboard/projects (tr "ds.projects"))]
        [:li {:class (when elements? "current")}
-        (header-link :dashboard/elements #ux/tr "ds.elements")]
+        (header-link :dashboard/elements (tr "ds.elements"))]
        [:li {:class (when icons? "current")}
-        (header-link :dashboard/icons #ux/tr "ds.icons")]
+        (header-link :dashboard/icons (tr "ds.icons"))]
        [:li {:class (when colors? "current")}
-        (header-link :dashboard/colors #ux/tr "ds.colors")]]
+        (header-link :dashboard/colors (tr "ds.colors"))]]
       (ui.u/user)])))
 
 (def ^:static header
