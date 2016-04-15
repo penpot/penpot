@@ -320,7 +320,9 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:workspace :selected] #{}))))
+      (-> state
+          (assoc-in [:workspace :selected] #{})
+          (assoc-in [:workspace :drawing] nil)))))
 
 (defn group-selected
   []
