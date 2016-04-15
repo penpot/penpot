@@ -31,13 +31,9 @@
 (defrecord FetchProfile []
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (letfn [(on-error [err]
-              (uum/error (tr "errors.profile-fetch"))
-              (rx/empty))]
-      (->> (rp/req :fetch/profile)
-           (rx/catch on-error)
-           (rx/map :payload)
-           (rx/map profile-fetched)))))
+    (->> (rp/req :fetch/profile)
+         (rx/map :payload)
+         (rx/map profile-fetched))))
 
 (defn fetch-profile
   []
@@ -48,13 +44,9 @@
 (defrecord UpdateProfile [data]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (letfn [(on-error [err]
-              (uum/error (tr "errors.update-profile"))
-              (rx/empty))]
-      (->> (rp/req :update/profile data)
-           (rx/catch on-error)
-           (rx/map :payload)
-           (rx/map profile-fetched)))))
+    (->> (rp/req :update/profile data)
+         (rx/map :payload)
+         (rx/map profile-fetched))))
 
 (defn update-profile
   [data]
@@ -69,27 +61,24 @@
 
   rs/EffectEvent
   (-apply-effect [_ state]
-    (uum/info (tr "profile.password-saved"))))
+    (udm/info! (tr "profile.password-saved"))))
 
 ;; --- Update Password
 
 (defrecord UpdatePassword [data]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (letfn [(on-error [{payload :payload :as data}]
-              (if (= (:type payload) :form/validation)
-                (rx/of
-                 (forms/assign-errors :profile/password (:payload payload)))
-                (do
-                  (uum/error (tr "errors.profile.update-password") {:timeout 3000})
-                  (rx/empty))))]
+    (letfn [(on-error [{payload :payload}]
+              (->> (:payload payload)
+                   (udf/assign-errors :profile/password)
+                   (rx/of)))]
       (let [params {:old-password (:old-password data)
                     :password (:password-1 data)}]
         (->> (rp/req :update/password params)
-             (rx/map #(->PasswordUpdated))
-             (rx/catch on-error))))))
+             (rx/catch rp/client-error? on-error)
+             (rx/map #(->PasswordUpdated)))))))
 
-(def update-password-schema
+(def ^:private update-password-schema
   [[:password-1 sc/required sc/string [sc/min-len 6]]
    [:password-2 sc/required sc/string
     [sc/identical-to :password-1 :message "errors.form.password-not-match"]]
@@ -99,5 +88,5 @@
   [data]
   (let [[errors data] (sc/validate data update-password-schema)]
     (if errors
-      (forms/assign-errors :profile/password errors)
+      (udf/assign-errors :profile/password errors)
       (UpdatePassword. data))))
