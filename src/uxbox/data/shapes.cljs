@@ -14,7 +14,6 @@
             [uxbox.state.shapes :as stsh]
             [uxbox.schema :as sc]
             [uxbox.xforms :as xf]
-            [uxbox.shapes :as sh]
             [uxbox.data.pages :as udp]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
@@ -305,7 +304,8 @@
             xf (comp
                 (filter #(= (:page %) pageid))
                 (remove :hidden)
-                (remove :blocked)
+                (remove #(and (not (:blocked %)) (= (:type %) :builtin/group)))
+                (remove #(and (not= % (sh/resolve-parent %)) (:blocked (sh/resolve-parent %))))
                 (map sh/outer-rect')
                 (filter #(sh/contained-in? % selrect))
                 (map :id))]
