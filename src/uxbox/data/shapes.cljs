@@ -372,43 +372,23 @@
 
 (defn group-selected
   []
-  (letfn [(update-shapes-on-page [state pid selected group]
-            (as-> (get-in state [:pages-by-id pid :shapes]) $
-              (remove selected $)
-              (into [group] $)
-              (assoc-in state [:pages-by-id pid :shapes] $)))
+  (reify
+    udp/IPageUpdate
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [pid (get-in state [:workspace :page])
+            selected (get-in state [:workspace :selected])]
+        (stsh/group-shapes state selected pid)))))
 
-          (update-shapes-on-index [state shapes group]
-            (reduce (fn [state {:keys [id] :as shape}]
-                      (as-> shape $
-                        (assoc $ :group group)
-                        (assoc-in state [:shapes-by-id id] $)))
-                    state
-                    shapes))
-          (valid-selection? [shapes]
-            (let [groups (into #{} (map :group shapes))]
-              (= 1 (count groups))))]
-    (reify
-      udp/IPageUpdate
-      rs/UpdateEvent
-      (-apply-update [_ state]
-        (let [shapes-by-id (get state :shapes-by-id)
-              sid (uuid/random)
-              pid (get-in state [:workspace :page])
-              selected (get-in state [:workspace :selected])
-              selected' (map #(get shapes-by-id %) selected)
-              group {:type :group
-                    :name (str "Group " (rand-int 1000))
-                    :items (into [] selected)
-                    :id sid
-                    :page pid}]
-          (if (valid-selection? selected')
-            (as-> state $
-              (update-shapes-on-index $ selected' sid)
-              (update-shapes-on-page $ pid selected sid)
-              (update $ :shapes-by-id assoc sid group)
-              (update $ :workspace assoc :selected #{}))
-            state))))))
+(defn degroup-selected
+  []
+  (reify
+    udp/IPageUpdate
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [pid (get-in state [:workspace :page])
+            selected (get-in state [:workspace :selected])]
+        (stsh/degroup-shapes state selected pid)))))
 
 ;; TODO: maybe split in two separate events
 (defn duplicate-selected

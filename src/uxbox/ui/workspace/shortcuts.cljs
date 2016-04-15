@@ -24,7 +24,9 @@
 ;; --- Shortcuts
 
 (defonce ^:const +shortcuts+
-  {:ctrl+g #(rs/emit! (dw/toggle-flag :grid))
+  {:shift+g #(rs/emit! (dw/toggle-flag :grid))
+   :ctrl+g #(rs/emit! (uds/group-selected))
+   :ctrl+shift+g #(rs/emit! (uds/degroup-selected))
    :ctrl+shift+m #(rs/emit! (dw/toggle-flag :sitemap))
    :ctrl+shift+f #(rs/emit! (dw/toggle-flag :drawtools))
    :ctrl+shift+i #(rs/emit! (dw/toggle-flag :icons))
