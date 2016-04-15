@@ -114,8 +114,8 @@
                       (rx/take 1))]
       (->> (rx/filter udp/page-synced? s)
            (rx/take-until stoper)
+           (rx/delay 1000)
            (rx/map (comp :id :page))
-           (rx/pr-log "watcher:")
            (rx/mapcat #(rx/of
                         (fetch-page-history %)
                         (fetch-pinned-page-history %)))))))
