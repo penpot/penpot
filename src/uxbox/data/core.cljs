@@ -11,5 +11,9 @@
             [uxbox.constants :as c]
             [uxbox.util.workers :as uw]))
 
-(defonce worker (uw/init "/js/worker.js"))
+;; This excludes webworker instantiation on nodejs where
+;; the tests are run.
+
+(when (not= *target* "nodejs")
+  (defonce worker (uw/init "/js/worker.js")))
 
