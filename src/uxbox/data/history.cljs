@@ -17,7 +17,6 @@
             [uxbox.data.pages :as udp]
             [uxbox.state :as st]
             [uxbox.state.project :as stpr]
-            [uxbox.ui.messages :as uum]
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys
                                      replace-by-id

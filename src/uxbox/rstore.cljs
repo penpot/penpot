@@ -8,8 +8,7 @@
 (ns uxbox.rstore
   "Reactive storage management architecture helpers."
   (:require [beicon.core :as rx]
-            [uxbox.locales :refer (tr)]
-            [uxbox.ui.messages :as uum]))
+            [uxbox.locales :refer (tr)]))
 
 ;; An abstraction for implement a simple state
 ;; transition. The `-apply-update` function receives
@@ -99,7 +98,7 @@
 
     :else
     (do
-      (uum/error (tr "errors.generic"))
+      (uxbox.data.messages/error! (tr "errors.generic"))
       (println "Unexpected error: " error)
       (js/console.log (.-stack error))
       (rx/throw error))))

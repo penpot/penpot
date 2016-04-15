@@ -1,106 +1,35 @@
 (ns uxbox.ui.messages
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [cuerdas.core :as str]
+            [promesa.core :as p]
+            [lentes.core :as l]
+            [uxbox.state :as st]
+            [uxbox.data.messages :as udm]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.data :refer (classnames)]
             [uxbox.util.dom :as dom]))
 
-;; --- Constants
+;; --- Lenses
 
-(defonce +message+ (atom nil))
-
-(def ^:const +animation-timeout+ 600)
-
-;; --- Helpers
-
-(defn set-timeout!
-  [ms callback]
-  (js/setTimeout callback ms))
-
-(defn abort-timeout!
-  [v]
-  (when v
-    (js/clearTimeout v)))
-
-;; --- Public Api
-
-(defn- clean-prev-msgstate!
-  [message]
-  (let [type (namespace (:type message))]
-    (case type
-      "notification"
-      (do
-        (abort-timeout! (:tsem-main message))
-        (abort-timeout! (:tsem message)))
-
-      "dialog"
-      (abort-timeout! (:tsem message)))))
-
-(defn error
-  ([message] (error message nil))
-  ([message {:keys [timeout] :or {timeout 6000}}]
-   (when-let [prev @+message+]
-     (clean-prev-msgstate! prev))
-   (let [timeout' (+ timeout +animation-timeout+)
-         tsem-main (set-timeout! timeout' #(reset! +message+ nil))
-         tsem (set-timeout! timeout #(swap! +message+ assoc :state :hide))]
-     (reset! +message+ {:type :notification/error
-                        :state :normal
-                        :tsem-main tsem-main
-                        :tsem tsem
-                        :content message}))))
-
-(defn info
-  ([message] (info message nil))
-  ([message {:keys [timeout] :or {timeout 6000}}]
-   (when-let [prev @+message+]
-     (clean-prev-msgstate! prev))
-   (let [timeout' (+ timeout +animation-timeout+)
-         tsem-main (set-timeout! timeout' #(reset! +message+ nil))
-         tsem (set-timeout! timeout #(swap! +message+ assoc :state :hide))]
-     (reset! +message+ {:type :notification/info
-                        :state :normal
-                        :tsem-main tsem-main
-                        :tsem tsem
-                        :content message}))))
-
-(defn dialog
-  [& {:keys [message on-accept on-cancel]
-      :or {on-cancel (constantly nil)}
-      :as opts}]
-  {:pre [(ifn? on-accept)
-         (string? message)]}
-   (when-let [prev @+message+]
-     (clean-prev-msgstate! prev))
-  (reset! +message+ {:type :dialog/simple
-                     :state :normal
-                     :content message
-                     :on-accept on-accept
-                     :on-cancel on-cancel}))
-(defn close
-  []
-  (when @+message+
-    (let [timeout +animation-timeout+
-          tsem (set-timeout! timeout #(reset! +message+ nil))]
-      (swap! +message+ assoc
-             :state :hide
-             :tsem tsem))))
+(def ^:const ^:private message-l
+  (-> (l/key :message)
+      (l/focus-atom st/state)))
 
 ;; --- Notification Component
 
 (defn notification-render
-  [own message]
-  (let [msgtype (name (:type message))
-        classes (classnames :error (= msgtype "error")
-                            :info (= msgtype "info")
+  [own {:keys [type] :as message}]
+  (let [classes (classnames :error (= type :error)
+                            :info (= type :info)
                             :hide-message (= (:state message) :hide)
-                            :quick true)]
+                            :quick true)
+        close #(udm/close!)]
     (html
      [:div.message {:class classes}
       [:div.message-body
-       [:span.close i/close]
+       [:span.close {:on-clock close}
+        i/close]
        [:span (:content message)]]])))
 
 (def ^:private notification-box
@@ -114,21 +43,21 @@
 (defn dialog-render
   [own {:keys [on-accept on-cancel] :as message}]
   (let [classes (classnames :info true
-                            :hide-message (= (:state message) :hide))
-        local (:rum/local own)]
+                            :hide-message (= (:state message) :hide))]
     (letfn [(accept [event]
               (dom/prevent-default event)
-              (close)
-              (on-accept))
+              (on-accept)
+              (p/schedule 0 udm/close!))
+
             (cancel [event]
               (dom/prevent-default event)
-              (close)
               (when on-cancel
-                (on-cancel)))]
+                (on-cancel))
+              (p/schedule 0 udm/close!))]
       (html
        [:div.message {:class classes}
         [:div.message-body
-         [:span.close i/close]
+         [:span.close {:on-click cancel} i/close]
          [:span (:content message)]
          [:div.message-action
           [:a.btn-transparent.btn-small
@@ -148,11 +77,11 @@
 
 (defn messages-render
   [own]
-  (when-let [message (rum/react +message+)]
-    (case (namespace (:type message))
-      "notification" (notification-box message)
-      "dialog"       (dialog-box message)
-      (throw (ex-info "Invalid message type" message)))))
+  (let [message (rum/react message-l)]
+    (case (:type message)
+      :error (notification-box message)
+      :dialog (dialog-box message)
+      nil)))
 
 (def ^:const messages
   (mx/component

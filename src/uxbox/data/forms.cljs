@@ -12,8 +12,7 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
-            [uxbox.locales :refer (tr)]
-            [uxbox.ui.messages :as uum]))
+            [uxbox.locales :refer (tr)]))
 
 ;; --- Assign Errors
 

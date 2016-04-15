@@ -7,15 +7,14 @@
             [uxbox.state :as s]
             [uxbox.rstore :as rs]
             [uxbox.data.auth :as da]
+            [uxbox.data.messages :as udm]
             [uxbox.util.dom :as dom]
             [uxbox.ui.icons :as i]
             [uxbox.ui.messages :as uum]
             [uxbox.ui.navigation :as nav]
             [uxbox.ui.mixins :as mx]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Login
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Login
 
 (defn- login-submit
   [event local]

@@ -15,9 +15,9 @@
             [uxbox.state :as st]
             [uxbox.schema :as sc]
             [uxbox.locales :refer (tr)]
-            [uxbox.data.projects :as dp]
+            [uxbox.data.projects :as udp]
             [uxbox.data.users :as udu]
-            [uxbox.ui.messages :as uum]))
+            [uxbox.data.messages :as udm]))
 
 ;; --- Logged In
 

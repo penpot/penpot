@@ -12,8 +12,8 @@
             [uxbox.state :as st]
             [uxbox.schema :as sc]
             [uxbox.locales :refer (tr)]
-            [uxbox.data.forms :as forms]
-            [uxbox.ui.messages :as uum]))
+            [uxbox.data.forms :as udf]
+            [uxbox.data.messages :as udm]))
 
 ;; --- Profile Fetched
 

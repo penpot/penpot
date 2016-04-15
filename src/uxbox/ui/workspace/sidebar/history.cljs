@@ -18,8 +18,8 @@
             [uxbox.data.workspace :as dw]
             [uxbox.data.pages :as udp]
             [uxbox.data.history :as udh]
+            [uxbox.data.messages :as udm]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.messages :as msg]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.datetime :as dt]
@@ -94,11 +94,11 @@
   (let [[page history] (:rum/props own)]
     (if-let [version (:selected history)]
       (let [selected (get-in history [:by-version version])]
-        (msg/dialog
-         :message (tr "history.alert-message" version)
+        (udm/dialog!
+         (tr "history.alert-message" version)
          :on-accept #(rs/emit! (udh/apply-selected-history (:id page)))
          :on-cancel #(rs/emit! (udh/discard-selected-history (:id page)))))
-      (msg/close))
+      (udm/close!))
     own))
 
 (def history-list

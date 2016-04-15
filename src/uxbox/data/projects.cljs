@@ -14,8 +14,7 @@
             [uxbox.locales :refer (tr)]
             [uxbox.schema :as sc]
             [uxbox.state.project :as stpr]
-            [uxbox.data.pages :as udp]
-            [uxbox.ui.messages :as uum]))
+            [uxbox.data.pages :as udp]))
 
 ;; --- Projects Fetched
 

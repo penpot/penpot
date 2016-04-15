@@ -17,7 +17,6 @@
             [uxbox.schema :as sc]
             [uxbox.state :as st]
             [uxbox.state.project :as stpr]
-            [uxbox.ui.messages :as uum]
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys replace-by-id)]))
 
@@ -76,7 +75,7 @@
   (-> (sc/validate! data create-page-schema)
       (map->CreatePage)))
 
-;; --- Sync Page
+;; --- Page Synced
 
 (defrecord PageSynced [page]
   rs/UpdateEvent
@@ -88,6 +87,8 @@
 (defn- page-synced?
   [event]
   (instance? PageSynced event))
+
+;; --- Sync Page
 
 (defrecord SyncPage [id]
   rs/WatchEvent
