@@ -17,7 +17,6 @@
 
 (defn- load
   [alias]
-  (println "load" *target*)
   (if (= *target* "nodejs")
     {}
     (when-let [data (.getItem js/localStorage (name alias))]
