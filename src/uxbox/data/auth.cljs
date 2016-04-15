@@ -6,8 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.data.auth
-  (:require [hodgepodge.core :refer [local-storage]]
-            [beicon.core :as rx]
+  (:require [beicon.core :as rx]
             [promesa.core :as p]
             [uxbox.repo :as rp]
             [uxbox.rstore :as rs]
@@ -17,7 +16,8 @@
             [uxbox.locales :refer (tr)]
             [uxbox.data.projects :as udp]
             [uxbox.data.users :as udu]
-            [uxbox.data.messages :as udm]))
+            [uxbox.data.messages :as udm]
+            [uxbox.util.storage :refer (storage)]))
 
 ;; --- Logged In
 
@@ -32,7 +32,7 @@
 
   rs/EffectEvent
   (-apply-effect [this state]
-    (assoc! local-storage :uxbox/auth data)))
+    (swap! storage assoc :uxbox/auth data)))
 
 (defn logged-in?
   [v]
@@ -82,7 +82,7 @@
 
   rs/EffectEvent
   (-apply-effect [this state]
-    (dissoc! local-storage :uxbox/auth)))
+    (swap! storage dissoc :uxbox/auth)))
 
 (defn logout
   []

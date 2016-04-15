@@ -6,10 +6,10 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.state
-  (:require [hodgepodge.core :refer [local-storage]]
-            [beicon.core :as rx]
+  (:require [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.rstore :as rs]))
+            [uxbox.rstore :as rs]
+            [uxbox.util.storage :refer (storage)]))
 
 (defonce state (atom {}))
 
@@ -18,7 +18,7 @@
   {:dashboard {:project-order :name
                :project-filter ""}
    :route nil
-   :auth (:uxbox/auth local-storage)
+   :auth (:auth storage nil)
    :clipboard #queue []
    :profile nil
    :workspace nil

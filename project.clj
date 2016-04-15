@@ -26,7 +26,6 @@
                  [funcool/promesa "1.1.1"]
                  [funcool/beicon "1.2.0"]
                  [funcool/cuerdas "0.7.2"]
-                 [funcool/hodgepodge "0.1.4"]
                  [bidi "2.0.6"]]
   :plugins [[lein-ancient "0.6.7"]]
   :clean-targets ^{:protect false} ["resources/public/js" "target"]

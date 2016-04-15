@@ -7,15 +7,15 @@
 
 (ns uxbox.locales
   "A i18n foundation."
-  (:require [hodgepodge.core :refer [local-storage]]
-            [cuerdas.core :as str]
-            [uxbox.locales.en :as locales-en]))
+  (:require [cuerdas.core :as str]
+            [uxbox.locales.en :as locales-en]
+            [uxbox.util.storage :refer (storage)]))
 
 (defonce +locales+
   {:en locales-en/+locales+})
 
 (defonce +locale+
-  (get local-storage ::locale :en))
+  (get storage ::locale :en))
 
 ;; A marker type that is used just for mark
 ;; a parameter that reprsentes the counter.

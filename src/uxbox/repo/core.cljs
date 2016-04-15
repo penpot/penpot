@@ -10,7 +10,6 @@
   (:require [clojure.walk :as walk]
             [httpurr.client.xhr :as http]
             [httpurr.status :as http.status]
-            [hodgepodge.core :refer (local-storage)]
             [promesa.core :as p :include-macros true]
             [beicon.core :as rx]
             [uxbox.util.transit :as t]
@@ -18,9 +17,6 @@
   (:import [goog.Uri QueryData]))
 
 (goog-define url "http://127.0.0.1:5050/api")
-
-(def ^:private +storage+
-  local-storage)
 
 (defn- conditional-decode
   [{:keys [body headers] :as response}]
