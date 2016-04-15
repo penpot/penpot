@@ -18,7 +18,7 @@
   {:dashboard {:project-order :name
                :project-filter ""}
    :route nil
-   :auth (:auth storage nil)
+   :auth (:uxbox/auth storage nil)
    :clipboard #queue []
    :profile nil
    :workspace nil

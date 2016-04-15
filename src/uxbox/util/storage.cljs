@@ -11,7 +11,7 @@
 
 (defn- persist
   [alias value]
-  (let [key (name value)
+  (let [key (name alias)
         value (t/encode value)]
     (.setItem js/localStorage key value)))
 
@@ -19,12 +19,10 @@
   [alias]
   (if (= *target* "nodejs")
     {}
-    (when-let [data (.getItem js/localStorage (name alias))]
-      (try
+    (let [data (.getItem js/localStorage (name alias))]
+      (if data
         (t/decode data)
-        (catch js/Error e
-          (js/console.log (.-stack e))
-          {})))))
+        {}))))
 
 (defn make-storage
   [alias]
@@ -46,13 +44,13 @@
 
       ISwap
       (-swap! [self f]
-        (-swap! data f))
+        (swap! data f))
       (-swap! [self f x]
-        (-swap! data f x))
+        (swap! data f x))
       (-swap! [self f x y]
-        (-swap! data f x y))
+        (swap! data f x y))
       (-swap! [self f x y more]
-        (-swap! data f x y more))
+        (apply swap! data f x y more))
 
       ILookup
       (-lookup [_ key]
