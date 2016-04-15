@@ -75,7 +75,6 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (println "HideMessage.-apply-watch" canceled?)
     (if canceled?
       (rx/empty)
       (->> (rx/of #(dissoc state :message))
