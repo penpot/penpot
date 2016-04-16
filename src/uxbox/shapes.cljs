@@ -125,20 +125,20 @@
 
 (defmethod move-vertex ::rect
   [shape vid {dx :x dy :y lock :lock}]
-  (let [[dx dy] (if lock [dx dx] [dx dy])]
+  (let [{:keys [x1 x2 y1 y2]} shape]
     (case vid
       1 (assoc shape
-               :x1 (+ (:x1 shape) dx)
-               :y1 (+ (:y1 shape) dy))
+               :x1 (min x2 (+ x1 dx))
+               :y1 (min y2 (+ y1 dy)))
       2 (assoc shape
-               :x2 (+ (:x2 shape) dx)
-               :y1 (+ (:y1 shape) dy))
+               :x2 (max x1 (+ x2 dx))
+               :y1 (min y2 (+ y1 dy)))
       3 (assoc shape
-               :x1 (+ (:x1 shape) dx)
-               :y2 (+ (:y2 shape) dy))
+               :x1 (min x2 (+ x1 dx))
+               :y2 (max y1 (+ y2 dy)))
       4 (assoc shape
-               :x2 (+ (:x2 shape) dx)
-               :y2 (+ (:y2 shape) dy)))))
+               :x2 (max x1 (+ x2 dx))
+               :y2 (max y1 (+ y2 dy))))))
 
 (defmethod move-vertex :builtin/circle
   [shape vid {dx :x dy :y lock :lock}]
