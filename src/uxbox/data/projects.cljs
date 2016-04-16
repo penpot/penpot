@@ -27,15 +27,18 @@
   [projects]
   (ProjectsFetched. projects))
 
+(defn projects-fetched?
+  [v]
+  (instance? ProjectsFetched v))
+
 ;; --- Fetch Projects
 
 (defrecord FetchProjects []
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (letfn [(on-loaded [{projects :payload}]
-              #(reduce stpr/assoc-project % projects))]
-      (->> (rp/req :fetch/projects)
-           (rx/map on-loaded)))))
+    (->> (rp/req :fetch/projects)
+         (rx/map :payload)
+         (rx/map projects-fetched))))
 
 (defn fetch-projects
   []
