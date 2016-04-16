@@ -13,8 +13,6 @@
             [uxbox.state :as st]
             [uxbox.state.shapes :as stsh]
             [uxbox.schema :as sc]
-            [uxbox.xforms :as xf]
-            [uxbox.shapes :as sh]
             [uxbox.data.pages :as udp]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
@@ -295,22 +293,43 @@
           (update-in state [:workspace :selected] disj id)
           (update-in state [:workspace :selected] conj id))))))
 
+;; --- Select Shapes
+
+(defn- not-blocked-group?
+  "Check if the shape is a blocked group."
+  [shape]
+  (and (not (:blocked shape))
+       (= :builtin/group (:type shape))))
+
+(defn- has-blocked-parent?
+  "Check if shape has blocked parent."
+  [shape]
+  (sh/parent-satisfies? shape :blocked))
+
+(defn- has-locked-parent?
+  [shape]
+  (sh/parent-satisfies? shape :locked))
+
+(defrecord SelectShapes [selrect]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [pageid (get-in state [:workspace :page])
+          xform (comp (filter #(= (:page %) pageid))
+                      (remove :hidden)
+                      (remove :blocked)
+                      (remove not-blocked-group?)
+                      (remove has-locked-parent?)
+                      (remove has-blocked-parent?)
+                      (map sh/outer-rect')
+                      (filter #(sh/contained-in? % selrect))
+                      (map :id))]
+      (->> (into #{} xform (vals (:shapes-by-id state)))
+           (assoc-in state [:workspace :selected])))))
+
 (defn select-shapes
   "Select shapes that matches the select rect."
   [selrect]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [pageid (get-in state [:workspace :page])
-            xf (comp
-                (filter #(= (:page %) pageid))
-                (remove :hidden)
-                (remove :blocked)
-                (map sh/outer-rect')
-                (filter #(sh/contained-in? % selrect))
-                (map :id))]
-        (->> (into #{} xf (vals (:shapes-by-id state)))
-             (assoc-in state [:workspace :selected]))))))
+  (SelectShapes. selrect))
 
 ;; --- Events (implicit) (for selected)
 

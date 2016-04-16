@@ -498,6 +498,18 @@
     (resolve-parent (get-in @st/state [:shapes-by-id group]))
     shape))
 
+(defn parent-satisfies?
+  "Resolve the first parent that satisfies a condition."
+  [{:keys [group] :as shape} pred]
+  (let [shapes-by-id (:shapes-by-id @st/state)]
+    (if group
+      (loop [parent (get shapes-by-id group)]
+        (cond
+          (pred parent) true
+          (:group parent) (recur (get shapes-by-id (:group parent)))
+          :else false))
+      false)))
+
 (defn contained-in?
   "Check if a shape is contained in the
   provided selection rect."
