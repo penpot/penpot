@@ -80,6 +80,7 @@
   (let [message (rum/react message-l)]
     (case (:type message)
       :error (notification-box message)
+      :info (notification-box message)
       :dialog (dialog-box message)
       nil)))
 
