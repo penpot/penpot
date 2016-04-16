@@ -198,11 +198,6 @@
               (udl/open! :new-project))]
       (html
        [:section.dashboard-grid
-        ;; LOADER WIP
-        [:div.loader-content
-         i/loader
-         [:div.btn-primary i/loader-pencil]]
-        ;; LOADER WIP
         [:h2 "Your projects"]
          [:div.dashboard-grid-content
           [:div.grid-item.add-project

@@ -6,46 +6,53 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.data.dashboard
-  (:require [uxbox.rstore :as rs]
+  (:require [beicon.core :as rx]
+            [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.schema :as sc]
-            [uxbox.repo :as rp]))
-
-;; --- Helpers
-
-(defn assoc-page
-  "A reduce function for assoc the page
-  to the state map."
-  [state page]
-  (let [uuid (:id page)]
-    (update-in state [:pages-by-id] assoc uuid page)))
+            [uxbox.repo :as rp]
+            [uxbox.data.projects :as dp]
+            [uxbox.util.data :refer (deep-merge)]))
 
 ;; --- Events
 
-(defn merge-if-not-exists
-  [map & maps]
-  (let [result (transient map)]
-    (loop [maps maps]
-      (if-let [nextval (first maps)]
-        (do
-          (run! (fn [[key value]]
-                  (when-not (contains? result key)
-                    (assoc! result key value)))
-                nextval)
-          (recur (rest maps)))
-        (persistent! result)))))
+(defn- setup-dashboard-state
+  [state section]
+  (update state :dashboard assoc
+          :section section
+          :collection-type :builtin
+          :collection-id 1))
+
+(defrecord InitializeDashboard [section]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [state (setup-dashboard-state state section)]
+      (if (seq (:projects-by-id state))
+        state
+        (assoc state :loader true))))
+
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [projects (seq (:projects-by-id state))]
+      (rx/merge
+       ;; Load projects if needed
+       (if projects
+         (rx/empty)
+         (rx/of (dp/fetch-projects)))
+
+       (when (:loader state)
+         (if projects
+           (rx/of #(assoc % :loader false))
+           (->> (rx/filter dp/projects-fetched? s)
+                (rx/take 1)
+                (rx/delay 1000)
+                (rx/map (fn [_] #(assoc % :loader false))))))))))
 
 (defn initialize
   [section]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (as-> state $
-        (assoc-in $ [:dashboard :section] section)
-        (update $ :dashboard merge-if-not-exists
-                {:collection-type :builtin
-                 :collection-id 1})))))
+  (InitializeDashboard. section))
+
 
 (defn set-project-ordering
   [order]
