@@ -1,7 +1,6 @@
 (ns uxbox.test-runner
   (:require [cljs.test :as test]
             [uxbox.state.shapes-tests]
-            [uxbox.data.workspace-tests]
             [uxbox.util.geom-tests]))
 
 (enable-console-print!)
@@ -10,7 +9,6 @@
   []
   (test/run-tests
    (test/empty-env)
-   'uxbox.data.workspace-tests
    'uxbox.util.geom-tests
    'uxbox.state.shapes-tests
    ))
