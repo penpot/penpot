@@ -63,6 +63,10 @@
   (-apply-effect [_ state]
     (udm/info! (tr "profile.password-saved"))))
 
+(defn password-updated
+  []
+  (PasswordUpdated.))
+
 ;; --- Update Password
 
 (defrecord UpdatePassword [data]
@@ -75,8 +79,9 @@
       (let [params {:old-password (:old-password data)
                     :password (:password-1 data)}]
         (->> (rp/req :update/password params)
-             (rx/catch rp/client-error? on-error)
-             (rx/map #(->PasswordUpdated)))))))
+             (rx/map password-updated)
+             (rx/catch rp/client-error? on-error))))))
+
 
 (def ^:private update-password-schema
   [[:password-1 sc/required sc/string [sc/min-len 6]]
