@@ -36,10 +36,7 @@
   [own]
   (let [[projectid pageid] (:rum/props own)]
     (rs/emit! (dw/initialize projectid pageid)
-              (udp/fetch-pages projectid)
-              (udh/watch-page-changes)
-              (udh/fetch-page-history pageid)
-              (udh/fetch-pinned-page-history pageid))
+              (udh/watch-page-changes))
     own))
 
 (defn- workspace-did-mount
