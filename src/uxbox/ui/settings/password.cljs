@@ -107,4 +107,3 @@
    {:render password-page-render
     :name "password-page"
     :mixins [mx/static]}))
-

@@ -344,6 +344,10 @@ input[type="checkbox"]:focus {
   outline: none;
 }
 
+.form-errors {
+  color: $color-danger;
+}
+
 // Input text
 
 .input-text {
@@ -846,7 +850,7 @@ input[type=range]:focus::-ms-fill-upper {
 // Messages
 .message {
   position: fixed;
-  top: 20px;
+  top: 0;
   left: 0px;
   width: 100%;
   z-index: 12;
@@ -859,14 +863,15 @@ input[type=range]:focus::-ms-fill-upper {
     color: $color-white;
     display: flex;
     flex-wrap: wrap;
-    min-height: 100px;
+    justify-content: center;
     margin: 0 auto;
     padding: $medium $big;
     position: relative;
-    width: 600px;
+    width: 100%;
 
     span {
       font-size: $fs18;
+      max-width: 60%;
       text-align: center;
       width: 100%;
     }
@@ -897,6 +902,7 @@ input[type=range]:focus::-ms-fill-upper {
       display: flex;
       justify-content: space-around;
       margin-top: $medium;
+      max-width: 60%;
       width: 100%;
     }
 
@@ -937,6 +943,45 @@ input[type=range]:focus::-ms-fill-upper {
         display: none;
       }
 
+    }
+
+  }
+
+  &.hide-message {
+    @include animation(0, .6s, fadeOutUp);
+  }
+
+}
+
+.message-version {
+  align-items: center;
+  background-color: rgba(27, 170, 214, .6);
+  border-radius: $br-small;
+  color: $color-white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: $small;
+  position: absolute;
+  right: 250px;
+  top: 40px;
+  @include animation(0, 1s, fadeInDown);
+
+  span {
+    font-size: $fs13;
+    font-weight: bold;
+  }
+
+  .message-action {
+    align-items: center;
+    display: flex;
+    justify-content: space-around;
+    margin-top: $small;
+    width: 100%;
+
+    .btn-transparent {
+      font-size: $fs12;
+      padding: .3rem .5rem;
     }
 
   }
