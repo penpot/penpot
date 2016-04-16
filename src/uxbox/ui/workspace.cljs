@@ -122,13 +122,13 @@
          :on-scroll on-scroll
          :on-wheel (partial on-wheel own)}
 
-         ;; WIP message version
-         [:div.message-version
-          [:span "Continue working with version 22?"]
-          [:div.message-action
-           [:a.btn-transparent "Accept"]
-           [:a.btn-transparent "Cancel"]
-         ]]
+        ;; WIP message version
+        #_[:div.message-version
+         [:span "Continue working with version 22?"]
+         [:div.message-action
+          [:a.btn-transparent "Accept"]
+          [:a.btn-transparent "Cancel"]
+          ]]
 
         ;; Rules
         (horizontal-rule zoom)
