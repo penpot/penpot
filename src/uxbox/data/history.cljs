@@ -159,19 +159,24 @@
   [id]
   (ApplySelectedHistory. id))
 
-;; --- Discard Selected History
+;; --- Deselect Page History
 
-(defrecord DiscardSelectedHistory [id]
+(defrecord DeselectPageHistory [id]
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [packed (get-in state [:pagedata-by-id id])]
-      (-> state
-          (stpr/unpack-page packed)
-          (assoc-in [:workspace :history :selected] nil)))))
+      (-> (stpr/unpack-page state packed)
+          (assoc-in [:workspace :history :deselecting] true)
+          (assoc-in [:workspace :history :selected] nil))))
 
-(defn discard-selected-history
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (->> (rx/of #(assoc-in % [:workspace :history :deselecting] false))
+         (rx/delay 500))))
+
+(defn deselect-page-history
   [id]
-  (DiscardSelectedHistory. id))
+  (DeselectPageHistory. id))
 
 ;; --- History Item Updated
 
@@ -238,7 +243,7 @@
         (rx/of (select-page-history (inc version)))
 
         (> (inc version) (:max-version history))
-        (rx/of (discard-selected-history (:page workspace)))
+        (rx/of (deselect-page-history (:page workspace)))
 
         :else
         (rx/empty)))))

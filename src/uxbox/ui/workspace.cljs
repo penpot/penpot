@@ -26,6 +26,7 @@
             [uxbox.ui.workspace.shortcuts :refer (shortcuts-mixin)]
             [uxbox.ui.workspace.header :refer (header)]
             [uxbox.ui.workspace.rules :refer (horizontal-rule vertical-rule)]
+            [uxbox.ui.workspace.sidebar.history :refer (history-dialog)]
             [uxbox.ui.workspace.sidebar :refer (left-sidebar right-sidebar)]
             [uxbox.ui.workspace.colorpalette :refer (colorpalette)]
             [uxbox.ui.workspace.canvas :refer (viewport)]))
@@ -99,7 +100,7 @@
 
 (defn- workspace-render
   [own projectid]
-  (let [{:keys [flags zoom] :as workspace} (rum/react wb/workspace-l)
+  (let [{:keys [flags zoom page] :as workspace} (rum/react wb/workspace-l)
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools
@@ -122,13 +123,8 @@
          :on-scroll on-scroll
          :on-wheel (partial on-wheel own)}
 
-        ;; WIP message version
-        #_[:div.message-version
-         [:span "Continue working with version 22?"]
-         [:div.message-action
-          [:a.btn-transparent "Accept"]
-          [:a.btn-transparent "Cancel"]
-          ]]
+
+        (history-dialog page)
 
         ;; Rules
         (horizontal-rule zoom)

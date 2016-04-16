@@ -32,7 +32,7 @@
   (as-> (l/in [:workspace :history]) $
     (l/focus-atom $ st/state)))
 
-;; --- Components
+;; --- History Item (Component)
 
 (defn history-item-render
   [own item selected]
@@ -61,11 +61,13 @@
     :name "history-item"
     :mixins [mx/static]}))
 
+;; --- History List (Component)
+
 (defn history-list-render
   [own page history]
   (letfn [(on-select [event]
             (dom/prevent-default event)
-            (rs/emit! (udh/discard-selected-history (:id page))))
+            (rs/emit! (udh/deselect-page-history (:id page))))
 
           (on-load-more [event]
             (dom/prevent-default event)
@@ -90,24 +92,13 @@
            [:a.btn-primary.btn-small
             "view more"]])]))))
 
-(defn history-list-will-update
-  [own]
-  (let [[page history] (:rum/props own)]
-    (if-let [version (:selected history)]
-      (let [selected (get-in history [:by-version version])]
-        (udm/dialog!
-         (tr "history.alert-message" version)
-         :on-accept #(rs/emit! (udh/apply-selected-history (:id page)))
-         :on-cancel #(rs/emit! (udh/discard-selected-history (:id page)))))
-      (udm/close!))
-    own))
-
 (def history-list
   (mx/component
    {:render history-list-render
-    :will-update history-list-will-update
     :name "history-list"
     :mixins [mx/static]}))
+
+;; --- History Pinned List (Component)
 
 (defn history-pinned-list-render
   [own history]
@@ -123,6 +114,8 @@
    {:render history-pinned-list-render
     :name "history-pinned-list"
     :mixins [mx/static]}))
+
+;; --- History Toolbox (Component)
 
 (defn history-toolbox-render
   [own]
@@ -158,3 +151,27 @@
    {:render history-toolbox-render
     :name "document-history-toolbox"
     :mixins [mx/static rum/reactive (mx/local)]}))
+
+;; --- History Dialog
+
+(defn history-dialog-render
+  [own page]
+  (let [history (rum/react history-l)
+        version (:selected history)
+        on-accept #(rs/emit! (udh/apply-selected-history page))
+        on-cancel #(rs/emit! (udh/deselect-page-history page))]
+    (when (or version (:deselecting history))
+      (html
+       [:div.message-version
+        {:class (when (:deselecting history) "hide-message")}
+        [:span (tr "history.alert-message" (or version "00"))
+         [:div.message-action
+          [:a.btn-transparent {:on-click on-accept} "Accept"]
+          [:a.btn-transparent {:on-click on-cancel} "Cancel"]]]]))))
+
+(def history-dialog
+  (mx/component
+   {:render history-dialog-render
+    :name "history-dialog"
+    :mixins [mx/static rum/reactive]}))
+
