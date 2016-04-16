@@ -16,6 +16,7 @@
             [uxbox.rstore :as rs]
             [uxbox.data.projects :as dp]
             [uxbox.data.users :as udu]
+            [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as ui-lightbox]
             [uxbox.ui.auth :as ui-auth]
             [uxbox.ui.dashboard :as ui-dashboard]
@@ -24,20 +25,27 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.shapes]))
 
-(def ^:const auth-data
-  (as-> (l/key :auth) $
-    (l/focus-atom $ s/state)))
+;; --- Lentes
 
-(def ^:const +unrestricted+
-  #{:auth/login})
+(def ^:const auth-data-l
+  (-> (l/key :auth)
+      (l/focus-atom s/state)))
 
-(def ^:const restricted?
-  (complement +unrestricted+))
+(def ^:const loader-l
+  (-> (l/key :loader)
+      (l/focus-atom s/state)))
+
+;; --- Constants
+
+(def ^:const +unrestricted+ #{:auth/login})
+(def ^:const restricted? (complement +unrestricted+))
+
+;; --- Main App (Component)
 
 (defn app-render
   [own]
   (let [route (rum/react r/route-l)
-        auth (rum/react auth-data)
+        auth (rum/react auth-data-l)
         location (:id route)
         params (:params route)]
     (if (and (restricted? location) (not auth))
@@ -59,9 +67,8 @@
 
 (defn app-will-mount
   [own]
-  (when @auth-data
-    (rs/emit! (udu/fetch-profile)
-              (dp/fetch-projects)))
+  (when @auth-data-l
+    (rs/emit! (udu/fetch-profile)))
   own)
 
 (def app
@@ -71,10 +78,27 @@
     :mixins [rum/reactive]
     :name "app"}))
 
+;; --- Loader
+
+(defn loader-render
+  [own]
+  (when (rum/react loader-l)
+    (html
+     [:div.loader-content i/loader])))
+
+(def loader
+  (mx/component
+   {:render loader-render
+    :name "loader"
+    :mixins [rum/reactive mx/static]}))
+
+;; --- Main Entry Point
+
 (defn init
   []
-  (println "ui/init")
   (let [app-dom (gdom/getElement "app")
-        lb-dom (gdom/getElement "lightbox")]
+        lightbox-dom (gdom/getElement "lightbox")
+        loader-dom (gdom/getElement "loader")]
     (rum/mount (app) app-dom)
-    (rum/mount (ui-lightbox/lightbox) lb-dom)))
+    (rum/mount (ui-lightbox/lightbox) lightbox-dom)
+    (rum/mount (loader) loader-dom)))
