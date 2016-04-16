@@ -1,0 +1,15 @@
+language: clojure
+lein: lein
+sudo: false
+
+script:
+  - ./scripts/build
+  - node --version
+  - node out/tests.js
+
+jdk:
+  - oraclejdk8
+
+node_js:
+  - "5.4.1"
+
