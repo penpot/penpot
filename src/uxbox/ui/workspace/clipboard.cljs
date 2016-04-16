@@ -11,10 +11,11 @@
             [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
+            [uxbox.data.lightbox :as udl]
+            [uxbox.data.workspace :as udw]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.lightbox :as lightbox]
-            [uxbox.data.workspace :as udw]
+            [uxbox.ui.lightbox :as lbx]
             [uxbox.util.dom :as dom]
             [uxbox.util.datetime :as dt]))
 
@@ -29,7 +30,7 @@
 (defn- on-paste
   [item]
   (rs/emit! (udw/paste-from-clipboard (:id item)))
-  (lightbox/close!))
+  (udl/close!))
 
 (defn- clipboard-dialog-render
   [own]
@@ -45,7 +46,7 @@
           [:span (str "Copied (" (dt/timeago (:created-at item)) ")")]])]
       [:a.close {:href "#"
                  :on-click #(do (dom/prevent-default %)
-                                (lightbox/close!))} i/close]])))
+                                (udl/close!))} i/close]])))
 
 (def clipboard-dialog
   (mx/component
@@ -53,6 +54,6 @@
     :name "clipboard-dialog"
     :mixins [mx/static rum/reactive]}))
 
-(defmethod lightbox/render-lightbox :clipboard
+(defmethod lbx/render-lightbox :clipboard
   [_]
   (clipboard-dialog))

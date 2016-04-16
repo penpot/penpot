@@ -7,20 +7,21 @@
 
 (ns uxbox.ui.confirm
   (:require [sablono.core :as html :refer-macros [html]]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.dom :as dom]
-            [uxbox.ui.lightbox :as lightbox]))
+            [uxbox.ui.lightbox :as lbx]))
 
 (defn- confirm-dialog-render
   [own {:keys [on-accept on-cancel] :as ctx}]
   (letfn [(accept [event]
             (dom/prevent-default event)
-            (lightbox/close!)
+            (udl/close!)
             (on-accept (dissoc ctx :on-accept :on-cancel)))
           (cancel [event]
             (dom/prevent-default event)
-            (lightbox/close!)
+            (udl/close!)
             (when on-cancel
               (on-cancel (dissoc ctx :on-accept :on-cancel))))]
     (html
@@ -41,6 +42,6 @@
     :name "confirm-dialog"
     :mixins []}))
 
-(defmethod lightbox/render-lightbox :confirm
+(defmethod lbx/render-lightbox :confirm
   [context]
   (confirm-dialog context))

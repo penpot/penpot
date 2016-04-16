@@ -9,11 +9,12 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [uxbox.rstore :as rs]
+            [uxbox.data.dashboard :as dd]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.ui.lightbox :as lbx]
             [uxbox.ui.library-bar :as ui.library-bar]
-            [uxbox.data.dashboard :as dd]
             [uxbox.ui.dashboard.header :refer (header)]
             [uxbox.util.dom :as dom]))
 
@@ -41,7 +42,7 @@
   (html
    [:div.dashboard-grid-content
     [:div.grid-item.add-project
-     {on-click #(lightbox/open! :new-element)}
+     {on-click #(udl/open! :new-element)}
      [:span "+ New element"]]
     [:div.grid-item.project-th
      [:span.grid-item-image i/image]
@@ -175,7 +176,7 @@
       [:span.text "Upload file"]]]
     [:a.close {:href "#"
                :on-click #(do (dom/prevent-default %)
-                              (lightbox/close!))}
+                              (udl/close!))}
      i/close]]))
 
 (def ^:const ^:private new-element-lightbox
@@ -183,6 +184,6 @@
    {:render new-element-lightbox-render
     :name "new-element-lightbox"}))
 
-(defmethod lightbox/render-lightbox :new-element
+(defmethod lbx/render-lightbox :new-element
   [_]
   (new-element-lightbox))

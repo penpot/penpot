@@ -15,10 +15,11 @@
             [uxbox.data.pages :as udp]
             [uxbox.data.forms :as udf]
             [uxbox.data.workspace :as udw]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.forms :as forms]
-            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.ui.lightbox :as lbx]
             [uxbox.ui.colorpicker :as uucp]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.util.dom :as dom]
@@ -110,7 +111,7 @@
     (settings-form)
     [:a.close {:href "#"
                :on-click #(do (dom/prevent-default %)
-                              (lightbox/close!))} i/close]]))
+                              (udl/close!))} i/close]]))
 
 (def settings-dialog
   (mx/component
@@ -118,6 +119,6 @@
     :name "settings-dialog"
     :mixins []}))
 
-(defmethod lightbox/render-lightbox :settings
+(defmethod lbx/render-lightbox :settings
   [_]
   (settings-dialog))

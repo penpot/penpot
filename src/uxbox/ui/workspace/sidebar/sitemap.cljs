@@ -20,18 +20,17 @@
             [uxbox.data.projects :as dp]
             [uxbox.data.pages :as udp]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.dashboard.projects :refer (+layouts+)]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.ui.lightbox :as lbx]
             [uxbox.util.lens :as ul]
             [uxbox.util.data :refer (read-string parse-int)]
             [uxbox.util.dom :as dom]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Lenses
 
 (def ^:const pages-l
   (letfn [(getter [state]
@@ -40,14 +39,12 @@
     (as-> (ul/getter getter) $
       (l/focus-atom $ st/state))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Component
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Component
 
 (defn page-item-render
   [own page total active?]
   (letfn [(on-edit [event]
-            (lightbox/open! :page-form {:page page}))
+            (udl/open! :page-form {:page page}))
 
           (on-navigate [event]
             (rs/emit! (dp/go-to (:project page) (:id page))))
@@ -59,7 +56,7 @@
           (on-delete [event]
             (dom/prevent-default event)
             (dom/stop-propagation event)
-            (lightbox/open! :confirm {:on-accept delete}))]
+            (udl/open! :confirm {:on-accept delete}))]
     (html
      [:li {:class (when active? "selected")
            :on-click on-navigate}
@@ -81,7 +78,7 @@
   (let [project (rum/react wb/project-l)
         pages (rum/react pages-l)
         current (rum/react wb/page-l)
-        create #(lightbox/open! :page-form {:page {:project (:id project)}})
+        create #(udl/open! :page-form {:page {:project (:id project)}})
         close #(rs/emit! (dw/toggle-flag :sitemap))]
     (html
      [:div.sitemap.tool-window
@@ -105,9 +102,7 @@
     :name "sitemap-toolbox"
     :mixins [mx/static rum/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lightbox
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Lightbox
 
 (def ^:const +page-defaults+
   {:width 1920
@@ -149,10 +144,10 @@
                      :height (:width page)))
             (cancel [e]
               (dom/prevent-default e)
-              (lightbox/close!))
+              (udl/close!))
             (persist [e]
               (dom/prevent-default e)
-              (lightbox/close!)
+              (udl/close!)
               (if edition?
                 (rs/emit! (udp/update-page-metadata page))
                 (rs/emit! (udp/create-page page))))]
@@ -204,6 +199,6 @@
     :name "page-form-lightbox"
     :mixins [(mx/local)]}))
 
-(defmethod lightbox/render-lightbox :page-form
+(defmethod lbx/render-lightbox :page-form
   [{:keys [page]}]
   (page-form-lightbox page))

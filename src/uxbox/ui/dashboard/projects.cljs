@@ -17,10 +17,11 @@
             [uxbox.data.dashboard :as dd]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.util.dom :as dom]
             [uxbox.ui.dashboard.header :refer (header)]
-            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.ui.lightbox :as lbx]
             [uxbox.ui.messages :as uum]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.datetime :as dt]))
@@ -159,7 +160,7 @@
             (rs/emit! (dp/delete-project project)))
           (on-delete [event]
             (dom/stop-propagation event)
-            (lightbox/open! :confirm {:on-accept delete}))]
+            (udl/open! :confirm {:on-accept delete}))]
     (html
      [:div.grid-item.project-th {:on-click on-navigate
                                  :key (:id project)}
@@ -194,7 +195,7 @@
         filtering (rum/react project-filtering-l)]
     (letfn [(on-click [e]
               (dom/prevent-default e)
-              (lightbox/open! :new-project))]
+              (udl/open! :new-project))]
       (html
        [:section.dashboard-grid
         [:h2 "Your projects"]
@@ -324,12 +325,12 @@
           :on-click #(do
                        (dom/prevent-default %)
                        (rs/emit! (dp/create-project @local))
-                       (lightbox/close!))
+                       (udl/close!))
 
           :type "submit"}])]
      [:a.close {:href "#"
                 :on-click #(do (dom/prevent-default %)
-                               (lightbox/close!))}
+                               (udl/close!))}
       i/close]])))
 
 (def new-project-lightbox
@@ -338,6 +339,6 @@
     :name "new-project-lightbox"
     :mixins [(rum/local +project-defaults+)]}))
 
-(defmethod lightbox/render-lightbox :new-project
+(defmethod lbx/render-lightbox :new-project
   [_]
   (new-project-lightbox))

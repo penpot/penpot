@@ -16,7 +16,7 @@
             [uxbox.data.pages :as udp]
             [uxbox.data.shapes :as uds]
             [uxbox.data.forms :as udf]
-            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.data.lightbox :as udl]
             [uxbox.util.datetime :as dt]
             [uxbox.util.math :as mth]
             [uxbox.util.data :refer (index-of)]
@@ -209,7 +209,7 @@
 
   rs/EffectEvent
   (-apply-effect [_ state]
-    (lightbox/close!)))
+    (udl/close!)))
 
 (def submit-workspace-settings-schema
   {:grid/y-axis [sc/required sc/integer [sc/in-range 2 100]]

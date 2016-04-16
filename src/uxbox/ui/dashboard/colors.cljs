@@ -16,9 +16,10 @@
             [uxbox.schema :as sc]
             [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.ui.forms :as form]
-            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.ui.lightbox :as lbx]
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dashboard.header :refer (header)]
@@ -125,7 +126,7 @@
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
         coll (rum/react (focus-collection coll-id))
-        edit-cb #(lightbox/open! :color-form {:coll coll :color %})
+        edit-cb #(udl/open! :color-form {:coll coll :color %})
         remove-cb #(rs/emit! (dd/remove-color {:id (:id coll) :color %}))]
     (when coll
       (html
@@ -134,7 +135,7 @@
         [:div.dashboard-grid-content
          (when own?
            [:div.grid-item.small-item.add-project
-            {:on-click #(lightbox/open! :color-form {:coll coll})}
+            {:on-click #(udl/open! :color-form {:coll coll})}
             [:span "+ New color"]])
          (for [color (remove nil? (:colors coll))
                :let [color-rgb (hex->rgb color)]]
@@ -232,6 +233,6 @@
     :mixins [(rum/local {})
              mx/static]}))
 
-(defmethod lightbox/render-lightbox :color-form
+(defmethod lbx/render-lightbox :color-form
   [params]
   (color-lightbox params))

@@ -6,16 +6,16 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
             [uxbox.data.auth :as da]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.ui.navigation :as nav]
-            [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.mixins :as mx]))
 
 ;; --- User Menu
 
 (defn menu-render
   [own open?]
-  (let [open-settings-dialog #(lightbox/open! :settings)]
+  (let [open-settings-dialog #(udl/open! :settings)]
     (html
      [:ul.dropdown {:class (when-not open?
                              "hide")}

@@ -13,6 +13,7 @@
             [uxbox.rstore :as rs]
             [uxbox.data.workspace :as dw]
             [uxbox.data.history :as udh]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.workspace.clipboard]
             [uxbox.ui.workspace.settings]
             [uxbox.ui.workspace.base :as wb]
@@ -20,7 +21,6 @@
             [uxbox.ui.users :as ui.u]
             [uxbox.ui.navigation :as nav]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.lightbox :as lightbox]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.math :as mth]))
 
@@ -75,7 +75,7 @@
         on-undo #(rs/emit! (udh/backwards-to-previous-version))
         on-redo #(rs/emit! (udh/forward-to-next-version))
         ;; TODO: temporary
-        open-confirm-dialog #(lightbox/open! :confirm)]
+        open-confirm-dialog #(udl/open! :confirm)]
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon

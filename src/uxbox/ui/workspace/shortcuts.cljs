@@ -9,7 +9,7 @@
   (:require [goog.events :as events]
             [beicon.core :as rx]
             [uxbox.rstore :as rs]
-            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.data.lightbox :as udl]
             [uxbox.data.workspace :as dw]
             [uxbox.data.shapes :as uds]
             [uxbox.data.history :as udh])
@@ -34,7 +34,7 @@
    :ctrl+v #(rs/emit! (dw/paste-from-clipboard))
    :ctrl+z #(rs/emit! (udh/backwards-to-previous-version))
    :ctrl+shift+z #(rs/emit! (udh/forward-to-next-version))
-   :ctrl+shift+v #(lightbox/open! :clipboard)
+   :ctrl+shift+v #(udl/open! :clipboard)
    :esc #(rs/emit! (uds/deselect-all))
    :backspace #(rs/emit! (uds/delete-selected))
    :delete #(rs/emit! (uds/delete-selected))

@@ -15,9 +15,10 @@
             [uxbox.locales :refer (tr)]
             [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.ui.shapes.core :as uusc]
-            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.ui.lightbox :as lbx]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dashboard.header :refer (header)]
             [uxbox.util.dom :as dom]))
@@ -169,7 +170,7 @@
      ]
     [:a.close {:href "#"
                :on-click #(do (dom/prevent-default %)
-                              (lightbox/close!))}
+                              (udl/close!))}
      i/close]]))
 
 (def new-icon-lightbox
@@ -177,6 +178,6 @@
    {:render new-icon-lightbox-render
     :name "new-icon-lightbox"}))
 
-(defmethod lightbox/render-lightbox :new-icon
+(defmethod lbx/render-lightbox :new-icon
   [_]
   (new-icon-lightbox))
