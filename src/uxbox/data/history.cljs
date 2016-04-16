@@ -74,7 +74,7 @@
 
 (defrecord FetchPageHistory [id since max]
   rs/WatchEvent
-  (-apply-watch [this state s]
+  (-apply-watch [_ state s]
     (letfn [(on-success [{history :payload}]
               (let [history (into [] history)]
                 (->PageHistoryFetched history (not (nil? since)))))]
