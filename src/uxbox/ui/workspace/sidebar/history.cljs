@@ -87,7 +87,8 @@
               (rum/with-key (str (:id item)))))
         (if show-more?
           [:li {:on-click on-load-more}
-           [:a.btn-primary.btn-small "view more"]])]))))
+           [:a.btn-primary.btn-small
+            "view more"]])]))))
 
 (defn history-list-will-update
   [own]
