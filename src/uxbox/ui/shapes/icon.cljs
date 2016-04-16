@@ -37,8 +37,10 @@
           (dom/stop-propagation event)
           (if (kbd/shift? event)
             (rs/emit! (uds/select-shape id))
-            (rs/emit! (uds/deselect-all)
-                      (uds/select-shape id))))
+            (do
+              (rs/emit! (uds/deselect-all)
+                        (uds/select-shape id))
+              (uuc/acquire-action! "ui.shape.move"))))
 
         :else
         (do
