@@ -169,7 +169,7 @@
       [:div.project-th-actions
        [:div.project-th-icon.pages
         i/page
-        [:span "0"]]
+        [:span (:total-pages project)]]
        #_[:div.project-th-icon.comments
         i/chat
         [:span "0"]]
