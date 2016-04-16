@@ -10,10 +10,9 @@
     :output-dir "out"
     :parallel-build false
     :optimizations :none
-    :closure-defines {"uxbox.repo.core.url"
-                      "https://test.uxbox.io/api"}
-    :language-in  :ecmascript5
-    :language-out :ecmascript5
+    :pretty-print true
     :target :nodejs
+    :language-in  :ecmascript6
+    :language-out :ecmascript5
     :verbose true})
   (println "... done. Elapsed" (/ (- (System/nanoTime) start) 1e9) "seconds"))
