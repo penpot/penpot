@@ -107,14 +107,15 @@
     (letfn [(navigate [pages]
               (let [pageid (:id (first pages))
                     params {:project-uuid projectid
-                           :page-uuid pageid}]
-                (r/navigate :workspace/page params)))]
+                            :page-uuid pageid}]
+                (rx/of (r/navigate :workspace/page params))))]
       (rx/merge
-       (rx/of (udp/fetch-pages projectid))
+       (rx/of #(assoc % :loader true)
+              (udp/fetch-pages projectid))
        (->> (rx/filter udp/pages-fetched? s)
             (rx/take 1)
             (rx/map :pages)
-            (rx/map navigate))))))
+            (rx/flat-map navigate))))))
 
 (defrecord GoToPage [projectid pageid]
   rs/WatchEvent

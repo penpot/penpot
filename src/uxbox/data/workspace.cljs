@@ -17,6 +17,7 @@
             [uxbox.data.shapes :as uds]
             [uxbox.data.forms :as udf]
             [uxbox.data.lightbox :as udl]
+            [uxbox.data.history :as udh]
             [uxbox.util.datetime :as dt]
             [uxbox.util.math :as mth]
             [uxbox.util.data :refer (index-of)]
@@ -36,30 +37,59 @@
 
 (declare initialize-alignment-index)
 
+(defn- setup-workspace-state
+  [state project page]
+  (if (:workspace state)
+    (update state :workspace merge
+            {:project project
+             :page page
+             :selected #{}
+             :drawing nil})
+    (assoc state :workspace
+           {:project project
+            :zoom 1
+            :page page
+            :flags #{:layers :element-options}
+            :selected #{}
+            :drawing nil})))
+
 (defrecord InitializeWorkspace [project page]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (if (:workspace state)
-      (update state :workspace merge
-              {:project project
-               :page page
-               :selected #{}
-               :drawing nil})
-      (assoc state :workspace
-             {:project project
-              :zoom 1
-              :page page
-              :flags #{:layers :element-options}
-              :selected #{}
-              :drawing nil})))
+    (let [state (setup-workspace-state state project page)]
+      (if (get-in state [:pages-by-id page])
+        state
+        (assoc state :loader true))))
 
     rs/WatchEvent
     (-apply-watch [_ state s]
-      (if (get-in state [:pages-by-id page])
-        (rx/of (initialize-alignment-index page))
-        (->> (rx/filter udp/pages-fetched? s)
-             (rx/take 1)
-             (rx/map #(initialize-alignment-index page))))))
+      (let [page' (get-in state [:pages-by-id page])]
+        (rx/merge
+         ;; Alignment index initialization
+         (if page'
+           (rx/of (initialize-alignment-index page))
+           (->> (rx/filter udp/pages-fetched? s)
+                (rx/take 1)
+                (rx/map #(initialize-alignment-index page))))
+
+         ;; Disable loader if it is enabled
+         (when (:loader state)
+           (if page'
+             (->> (rx/of #(assoc % :loader false))
+                  (rx/delay 1000))
+             (->> (rx/filter udp/pages-fetched? s)
+                  (rx/take 1)
+                  (rx/delay 2000)
+                  (rx/map (fn [_] #(assoc % :loader false))))))
+
+         ;; Page fetching if does not fetched
+         (when-not page'
+           (rx/of (udp/fetch-pages project)))
+
+         ;; Initial history loading
+         (rx/of
+          (udh/fetch-page-history page)
+          (udh/fetch-pinned-page-history page))))))
 
 (defn initialize
   "Initialize the workspace state."
