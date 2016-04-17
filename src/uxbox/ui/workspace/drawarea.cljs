@@ -89,7 +89,9 @@
   (let [{:keys [x y]} (gpt/divide @wb/mouse-canvas-a @wb/zoom-l)
         props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
         shape (ush/initialize shape props)]
-    (rs/emit! (uds/add-shape shape))))
+    (rs/emit! (uds/add-shape shape)
+              (udw/select-for-drawing nil)
+              (uds/select-first-shape))))
 
 (defn- initialize-shape-drawing
   "A drawing handler for generic shapes such as rect, circle, text, etc."
@@ -102,7 +104,9 @@
             (let [shape @drawing-shape
                   shpos @drawing-position
                   shape (ush/resize shape shpos)]
-              (rs/emit! (uds/add-shape shape))
+              (rs/emit! (uds/add-shape shape)
+                        (udw/select-for-drawing nil)
+                        (uds/select-first-shape))
               (reset! drawing-position nil)
               (reset! drawing-shape nil)))]
 
