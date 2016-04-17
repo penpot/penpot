@@ -12,6 +12,7 @@
             [uxbox.data.lightbox :as udl]
             [uxbox.data.workspace :as dw]
             [uxbox.data.shapes :as uds]
+            [uxbox.ui.workspace.sidebar.drawtools :as wsd]
             [uxbox.data.history :as udh])
   (:import goog.events.EventType
            goog.events.KeyCodes
@@ -33,6 +34,10 @@
    :ctrl+c #(rs/emit! (dw/copy-to-clipboard))
    :ctrl+v #(rs/emit! (dw/paste-from-clipboard))
    :ctrl+z #(rs/emit! (udh/backwards-to-previous-version))
+   :ctrl+b #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-rect+))
+   :ctrl+e #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-circle+))
+   :ctrl+l #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-line+))
+   :ctrl+t #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-text+))
    :ctrl+shift+z #(rs/emit! (udh/forward-to-next-version))
    :ctrl+shift+v #(udl/open! :clipboard)
    :esc #(rs/emit! (uds/deselect-all))

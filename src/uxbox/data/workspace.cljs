@@ -113,9 +113,9 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (if shape
-        (assoc-in state [:workspace :drawing] shape)
-        (update-in state [:workspace] dissoc :drawing)))))
+      (if (or (nil? shape) (= (get-in state [:workspace :drawing]) shape))
+        (update-in state [:workspace] dissoc :drawing)
+        (assoc-in state [:workspace :drawing] shape)))))
 
 ;; --- Activate Workspace Flag
 

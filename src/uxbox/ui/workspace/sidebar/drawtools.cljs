@@ -37,34 +37,46 @@
 ;; Draw Tools
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:const +draw-tool-rect+
+  {:type :rect
+   :name "Rect"
+   :stroke "#000000"})
+
+(def ^:const +draw-tool-circle+
+  {:type :circle
+   :name "Circle"})
+
+(def ^:const +draw-tool-line+
+  {:type :line
+   :name "Line"
+   :stroke-type :solid
+   :stroke "#000000"})
+
+(def ^:const +draw-tool-text+
+  {:type :text
+   :name "Text"
+   :content "Hello world"})
+
 (def ^:const +draw-tools+
   {:rect
    {:icon i/box
     :help (tr "ds.help.rect")
-    :shape {:type :rect
-            :name "Rect"
-            :stroke "#000000"}
+    :shape +draw-tool-rect+
     :priority 1}
    :circle
    {:icon i/circle
     :help (tr "ds.help.circle")
-    :shape {:type :circle
-            :name "Circle"}
+    :shape +draw-tool-circle+
     :priority 2}
    :line
    {:icon i/line
     :help (tr "ds.help.line")
-    :shape {:type :line
-            :name "Line"
-            :stroke-type :solid
-            :stroke "#000000"}
+    :shape +draw-tool-line+
     :priority 3}
    :text
    {:icon i/text
     :help (tr "ds.help.text")
-    :shape {:type :text
-            :name "Text"
-            :content "Hello world"}
+    :shape +draw-tool-text+
     :priority 4}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -72,10 +84,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- select-for-draw
-  [icon]
-  (if (= (:drawing @wb/workspace-l) icon)
-    (rs/emit! (dw/select-for-drawing nil))
-    (rs/emit! (dw/select-for-drawing icon))))
+  [shape]
+  (rs/emit! (dw/select-for-drawing shape)))
 
 (defn draw-tools-render
   [open-toolboxes]

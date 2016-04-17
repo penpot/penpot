@@ -39,9 +39,7 @@
 
 (defn- select-icon
   [icon]
-  (if (= (:drawing @wb/workspace-l) icon)
-    (rs/emit! (dw/select-for-drawing nil))
-    (rs/emit! (dw/select-for-drawing icon))))
+  (rs/emit! (dw/select-for-drawing icon)))
 
 (defn- change-icon-coll
   [local event]
