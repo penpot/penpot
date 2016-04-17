@@ -125,20 +125,20 @@
 
 (defmethod move-vertex ::rect
   [shape vid {dx :x dy :y lock :lock}]
-  (let [[dx dy] (if lock [dx dx] [dx dy])]
+  (let [{:keys [x1 x2 y1 y2]} shape]
     (case vid
       1 (assoc shape
-               :x1 (+ (:x1 shape) dx)
-               :y1 (+ (:y1 shape) dy))
+               :x1 (min x2 (+ x1 dx))
+               :y1 (min y2 (+ y1 dy)))
       2 (assoc shape
-               :x2 (+ (:x2 shape) dx)
-               :y1 (+ (:y1 shape) dy))
+               :x2 (max x1 (+ x2 dx))
+               :y1 (min y2 (+ y1 dy)))
       3 (assoc shape
-               :x1 (+ (:x1 shape) dx)
-               :y2 (+ (:y2 shape) dy))
+               :x1 (min x2 (+ x1 dx))
+               :y2 (max y1 (+ y2 dy)))
       4 (assoc shape
-               :x2 (+ (:x2 shape) dx)
-               :y2 (+ (:y2 shape) dy)))))
+               :x2 (max x1 (+ x2 dx))
+               :y2 (max y1 (+ y2 dy))))))
 
 (defmethod move-vertex :builtin/circle
   [shape vid {dx :x dy :y lock :lock}]
@@ -174,17 +174,51 @@
       (assoc shape :rx rx :ry rx)
       (assoc shape :rx rx :ry ry))))
 
+(defn correct-shape
+  [shape]
+    (let [x1 (min (:x1 shape) (:x2 shape))
+          y1 (min (:y1 shape) (:y2 shape))
+          x2 (max (:x1 shape) (:x2 shape))
+          y2 (max (:y1 shape) (:y2 shape))]
+      (assoc shape :x1 x1 :x2 x2 :y1 y1 :y2 y2)))
+
+(defn equalize-sides
+  [shape]
+    (let [{:keys [x1 x2 y1 y2]} shape
+          x-side (mth/abs (- x2 x1))
+          y-side (mth/abs (- y2 y1))
+          max-side (max x-side y-side)]
+      (cond
+        (and (> x1 x2) (> y1 y2))
+          (assoc shape :x2 (- x1 max-side) :y2 (- y1 max-side))
+
+        (and (< x1 x2) (< y1 y2))
+          (assoc shape :x2 (+ x1 max-side) :y2 (+ y1 max-side))
+
+        (and (> x1 x2) (< y1 y2))
+          (assoc shape :x2 (- x1 max-side) :y2 (+ y1 max-side))
+
+        (and (< x1 x2) (> y1 y2))
+          (assoc shape :x2 (+ x1 max-side) :y2 (- y1 max-side)))))
+
+
 (defmethod resize :builtin/rect
   [shape {:keys [x y lock] :as pos}]
   (if lock
-    (assoc shape :x2 x :y2 x)
-    (assoc shape :x2 x :y2 y)))
+    (-> shape
+        (assoc :x2 x :y2 y)
+        equalize-sides
+        correct-shape)
+    (correct-shape (assoc shape :x2 x :y2 y))))
 
 (defmethod resize :builtin/text
   [shape {:keys [x y lock] :as pos}]
   (if lock
-    (assoc shape :x2 x :y2 x)
-    (assoc shape :x2 x :y2 y)))
+    (-> shape
+        (assoc :x2 x :y2 y)
+        equalize-sides
+        correct-shape)
+    (correct-shape (assoc shape :x2 x :y2 y))))
 
 (defmethod resize :default
   [shape _]
