@@ -282,6 +282,16 @@
     (-apply-update [_ state]
       (stsh/drop-shape state sid tid loc))))
 
+(defn select-first-shape
+  "Mark a shape selected for drawing in the canvas."
+  []
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [page (get-in state [:workspace :page])
+            id (first (get-in state [:pages-by-id page :shapes]))]
+        (assoc-in state [:workspace :selected] #{id})))))
+
 (defn select-shape
   "Mark a shape selected for drawing in the canvas."
   [id]
