@@ -5,13 +5,13 @@
             [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as ush]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.shapes.icon :as uusi]
+            [uxbox.util.geom :as geom]
             [uxbox.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -49,7 +49,7 @@
           (on-mouse-up [vid event]
             (dom/stop-propagation event)
             (uuc/release-action! "ui.shape.resize"))]
-    (let [{:keys [x y width height]} (ush/outer-rect' shape)]
+    (let [{:keys [x y width height]} (geom/outer-rect shape)]
       (html
        [:g.controls
         [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
@@ -93,7 +93,7 @@
 (defmethod uusc/render-shape :builtin/circle
   [{:keys [id] :as shape}]
   (let [key (str id)
-        rfm (ush/transformation shape)
+        rfm (geom/transformation-matrix shape)
         props (select-keys shape [:cx :cy :rx :ry])
         attrs (-> (uusc/extract-style-attrs shape)
                   (merge {:id key :key key :transform (str rfm)})

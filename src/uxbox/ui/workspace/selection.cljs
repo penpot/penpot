@@ -11,8 +11,8 @@
             [rum.core :as rum]
             [lentes.core :as l]
             [uxbox.state :as st]
-            [uxbox.shapes :as ush]
-            [uxbox.ui.mixins :as mx]))
+            [uxbox.ui.mixins :as mx]
+            [uxbox.util.geom :as geom]))
 
 ;; --- Lenses
 
@@ -29,7 +29,7 @@
   [own]
   (let [shapes (rum/react selected-shapes-l)]
     (when (> (count shapes) 1)
-      (let [{:keys [width height x y]} (ush/outer-rect shapes)]
+      (let [{:keys [width height x y]} (geom/outer-rect-coll shapes)]
         (html
          [:g.controls
           [:rect {:x x :y y :width width :height height

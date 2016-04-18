@@ -1,7 +1,6 @@
 (ns uxbox.state.shapes
   "A collection of functions for manage shapes insinde the state."
-  (:require [uxbox.shapes :as sh]
-            [uxbox.util.data :refer (index-of)]))
+  (:require [uxbox.util.data :refer (index-of)]))
 
 ;; --- Shape Creation
 

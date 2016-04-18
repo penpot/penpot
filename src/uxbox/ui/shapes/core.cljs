@@ -2,10 +2,9 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [rum.core :as rum]
-            [beicon.core :as rx]
             [uxbox.state :as st]
-            [uxbox.shapes :as sh]
-            [uxbox.ui.mixins :as mx]))
+            [uxbox.ui.mixins :as mx]
+            [uxbox.util.geom :as geom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Common constants
@@ -23,17 +22,21 @@
 ;; Implementation Api
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn dispatch-by-type
+  [shape & params]
+  (:type shape))
+
 (defmulti render-component
   (fn [own shape] (:type shape))
-  :hierarchy #'sh/+hierarchy+)
+  :hierarchy #'geom/+hierarchy+)
 
 (defmulti render-shape
-  sh/dispatch-by-type
-  :hierarchy #'sh/+hierarchy+)
+  dispatch-by-type
+  :hierarchy #'geom/+hierarchy+)
 
 (defmulti render-shape-svg
-  sh/dispatch-by-type
-  :hierarchy #'sh/+hierarchy+)
+  dispatch-by-type
+  :hierarchy #'geom/+hierarchy+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses

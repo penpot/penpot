@@ -12,11 +12,11 @@
             [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as sh]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.align :as align]
             [uxbox.data.shapes :as uds]
+            [uxbox.util.geom :as geom]
             [uxbox.util.geom.point :as gpt]))
 
 (declare initialize)
@@ -98,7 +98,7 @@
       (rx/take-until stoper $)
       (rx/map #(gpt/divide % @wb/zoom-l) $)
       (rx/scan (fn [acc delta]
-                 (let [xf (map #(sh/move % delta))]
+                 (let [xf (map #(geom/move % delta))]
                    (into [] xf acc))) shapes $)
       (rx/mapcat (fn [items]
                    (if align?

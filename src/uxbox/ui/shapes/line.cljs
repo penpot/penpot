@@ -5,7 +5,6 @@
             [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as ush]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.keyboard :as kbd]
