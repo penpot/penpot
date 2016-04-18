@@ -79,7 +79,7 @@
 (defn sort-widget-render
   []
   (let [ordering (rum/react project-ordering-l)
-        on-change #(rs/emit! (dd/set-project-ordering
+        on-change #(rs/emit! (dp/set-project-ordering
                               (keyword (.-value (.-target %)))))]
     (html
      [:div
@@ -109,10 +109,10 @@
   (letfn [(on-term-change [event]
             (-> (dom/get-target event)
                 (dom/get-value)
-                (dd/set-project-filtering)
+                (dp/set-project-filtering)
                 (rs/emit!)))
           (on-clear [event]
-            (rs/emit! (dd/clear-project-filtering)))]
+            (rs/emit! (dp/clear-project-filtering)))]
     (html
      [:form.dashboard-search
       [:input.input-text

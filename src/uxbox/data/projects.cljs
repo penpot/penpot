@@ -149,3 +149,23 @@
     projs
     (filter #(contains-term? (:name %) term) projs)))
 
+(defn set-project-ordering
+  [order]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:dashboard :project-order] order))))
+
+(defn set-project-filtering
+  [term]
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state s]
+      (assoc-in state [:dashboard :project-filter] term))))
+
+(defn clear-project-filtering
+  []
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (assoc-in state [:dashboard :project-filter] ""))))

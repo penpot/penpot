@@ -14,7 +14,6 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.dom :as dom]
-            [uxbox.data.dashboard :as dd]
             [uxbox.ui.settings.profile :as profile]
             [uxbox.ui.settings.password :as password]
             [uxbox.ui.settings.notifications :as notifications]

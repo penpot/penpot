@@ -12,6 +12,7 @@
             [uxbox.repo.users]
             [uxbox.repo.projects]
             [uxbox.repo.pages]
+            [uxbox.repo.colors]
             [httpurr.status :as status]
             [beicon.core :as rx]))
 

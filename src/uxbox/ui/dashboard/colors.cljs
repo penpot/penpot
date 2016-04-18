@@ -16,6 +16,7 @@
             [uxbox.schema :as sc]
             [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
+            [uxbox.data.colors :as dc]
             [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.ui.forms :as form]
@@ -23,6 +24,7 @@
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.dashboard.header :refer (header)]
+            [uxbox.ui.keyboard :as k]
             [uxbox.util.dom :as dom]
             [uxbox.util.lens :as ul]
             [uxbox.util.color :refer (hex->rgb)]))
@@ -47,31 +49,48 @@
 
 (defn page-title-render
   [own coll]
-  (letfn [(on-title-edited [e]
-            (let [content (dom/event->inner-text e)
-                  collid (:id coll)]
-              (rs/emit! (dd/rename-color-collection collid content))))
-          (on-delete [e]
-            (rs/emit! (dd/delete-color-collection (:id coll))))]
-    (let [dashboard (rum/react dashboard-l)
-          own? (:builtin coll false)]
-      (html
-       [:div.dashboard-title {}
-        [:h2 {}
-         [:span (tr "ds.library-title")]
-         [:span {:content-editable ""
-                 :on-key-up on-title-edited}
-          (:name coll)]]
-        (if (and (not own?) coll)
-          [:div.edition {}
-           #_[:span i/pencil]
-           [:span {:on-click on-delete} i/trash]])]))))
+  (let [local (:rum/local own)]
+    (letfn [(on-title-save [e]
+              (rs/emit! (dc/rename-color-collection coll (:coll-name @local)))
+              (swap! local assoc :edit false))
+            (on-title-edited [e]
+              (cond
+                (k/esc? e) (swap! local assoc :edit false)
+                (k/enter? e) (on-title-save e)
+                :else (let [content (dom/event->inner-text e)]
+                        (swap! local assoc :coll-name content))))
+            (on-title-edit [e]
+              (swap! local assoc :edit true :coll-name (:name coll)))
+            (on-delete [e]
+              (rs/emit! (dc/delete-color-collection (:id coll))))]
+      (let [dashboard (rum/react dashboard-l)
+            own? (:builtin coll false)]
+        (html
+         [:div.dashboard-title {}
+          [:h2 {}
+            (if (:edit @local)
+              [:div.dashboard-title-field
+                [:span.edit
+                   {:content-editable ""
+                    :on-key-up on-title-edited}
+                   (:name coll)]
+                [:span.close
+                  {:on-click #(swap! local assoc :edit false)}
+                  i/close]]
+              [:span.dashboard-title-field
+                 (:name coll)])]
+          (if (and (not own?) coll)
+            [:div.edition {}
+             (if (:edit @local)
+               [:span {:on-click on-title-save} i/save]
+               [:span {:on-click on-title-edit} i/pencil])
+             [:span {:on-click on-delete} i/trash]])])))))
 
 (def ^:const ^:private page-title
   (mx/component
    {:render page-title-render
     :name "page-title"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [(rum/local {}) mx/static rum/reactive]}))
 
 ;; --- Nav
 
@@ -100,10 +119,10 @@
         (when own?
           [:li
            [:a.btn-primary
-            {:on-click #(rs/emit! (dd/mk-color-collection))}
+            {:on-click #(rs/emit! (dc/create-color-collection))}
             "+ New library"]])
         (for [props collections
-              :let [num (count (:colors props))]]
+              :let [num (count (:data props))]]
           [:li {:key (str (:id props))
                 :on-click #(rs/emit! (dd/set-collection (:id props)))
                 :class-name (when (= (:id props) collid) "current")}
@@ -121,13 +140,15 @@
 
 (defn grid-render
   [own]
-  (let [dashboard (rum/react dashboard-l)
+  (let [local (:rum/local own)
+        dashboard (rum/react dashboard-l)
         coll-type (:collection-type dashboard)
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
         coll (rum/react (focus-collection coll-id))
-        edit-cb #(udl/open! :color-form {:coll coll :color %})
-        remove-cb #(rs/emit! (dd/remove-color {:id (:id coll) :color %}))]
+        toggle-color-check (fn [color]
+                             (swap! local update :selected #(if (% color) (disj % color) (conj % color))))
+        delete-selected-colors #(rs/emit! (dc/remove-colors {:colors (:selected @local) :coll coll}))]
     (when coll
       (html
        [:section.dashboard-grid.library
@@ -138,25 +159,63 @@
              [:div.grid-item.small-item.add-project
               {:on-click #(udl/open! :color-form {:coll coll})}
               [:span "+ New color"]])
-           (for [color (remove nil? (:colors coll))
+           (for [color (remove nil? (:data coll))
                  :let [color-rgb (hex->rgb color)]]
-             [:div.grid-item.small-item.project-th {:key color}
+             [:div.grid-item.small-item.project-th
+              {:key color :on-click #(when (k/shift? %) (toggle-color-check color))}
               [:span.color-swatch {:style {:background-color color}}]
+              [:div.input-checkbox.check-primary
+               [:input {:type "checkbox"
+                        :id color
+                        :on-click #(toggle-color-check color)
+                        :checked ((:selected @local) color)}]
+               [:label {:for color}]]
               [:span.color-data color]
-              [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]
-              (if own?
-                [:div.project-th-actions
-                 [:div.project-th-icon.edit
-                  {:on-click #(edit-cb color)} i/pencil]
-                 [:div.project-th-icon.delete
-                  {:on-click #(remove-cb color)}
-                  i/trash]])])]]]))))
+              [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]])]]
+
+        (when (not (empty? (:selected @local)))
+          ;; MULTISELECT OPTIONS BAR
+          [:div.multiselect-bar
+           (if own?
+             [:div.multiselect-nav
+              [:span.move-item.tooltip.tooltip-top
+               {:alt "Move to"}
+               i/organize]
+              [:span.delete.tooltip.tooltip-top
+               {:alt "Delete" :on-click delete-selected-colors}
+               i/trash]]
+             [:div.multiselect-nav
+              [:span.move-item.tooltip.tooltip-top
+               {:alt "Copy to"}
+               i/organize]])])]))))
 
 (def ^:const ^:private grid
   (mx/component
    {:render grid-render
     :name "grid"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [(rum/local {:selected #{}})
+             mx/static
+             rum/reactive]}))
+
+;; --- Menu
+
+(defn menu-render
+  []
+  (let [dashboard (rum/react dashboard-l)
+        coll-id (:collection-id dashboard)
+        coll (rum/react (focus-collection coll-id))
+        ccount (count (:data coll)) ]
+    (html
+     [:section.dashboard-bar.library-gap
+      [:div.dashboard-info
+       [:span.dashboard-colors (tr "ds.num-colors" (t/c ccount))]]])))
+
+(def menu
+  (mx/component
+   {:render menu-render
+    :name "menu"
+    :mixins [rum/reactive mx/static]}))
+
 
 ;; --- Colors Page
 
@@ -167,6 +226,7 @@
     (header)
     [:section.dashboard-content
      (nav)
+     (menu)
      (grid)]]))
 
 (defn colors-page-will-mount
@@ -192,40 +252,37 @@
 (defn- color-lightbox-render
   [own {:keys [coll color]}]
   (html
-   [:p "TODO"]))
-  ;; (let [local (:rum/local own)]
-  ;;   (letfn [(submit [e]
-  ;;             (if-let [errors (sc/validate +color-form-schema+ @local)]
-  ;;               (swap! local assoc :errors errors)
-  ;;               (let [params {:id (:id coll) :from color
-  ;;                             :to (:hex @local)}]
-  ;;                 (rs/emit! (dd/replace-color params))
-  ;;                 (lightbox/close!))))
-  ;;           (on-change [e]
-  ;;             (let [value (str/trim (dom/event->value e))]
-  ;;               (swap! local assoc :hex value)))]
-  ;;     (html
-  ;;      [:div.lightbox-body
-  ;;       [:h3 "New color"]
-  ;;       [:form
-  ;;        [:div.row-flex
-  ;;         [:input#color-hex.input-text
-  ;;          {:placeholder "#"
-  ;;           :class (form/error-class local :hex)
-  ;;           :on-change on-change
-  ;;           :value (or (:hex @local) color "")
-  ;;           :type "text"}]]
-  ;;        [:div.row-flex.center.color-picker-default
-  ;;         (colorpicker
-  ;;          :value (or (:hex @local) color "#00ccff")
-  ;;          :on-change #(swap! local assoc :hex %))]
+  (let [local (:rum/local own)]
+    (letfn [(submit [e]
+              (let [params {:id (:id coll) :from color
+                            :to (:hex @local) :coll coll}]
+                (rs/emit! (dc/replace-color params))
+                (udl/close!)))
+            (on-change [e]
+              (let [value (str/trim (dom/event->value e))]
+                (swap! local assoc :hex value)))]
+      (html
+       [:div.lightbox-body
+        [:h3 "New color"]
+        [:form
+         [:div.row-flex
+          [:input#color-hex.input-text
+           {:placeholder "#"
+            :class (form/error-class local :hex)
+            :on-change on-change
+            :value (or (:hex @local) color "")
+            :type "text"}]]
+         [:div.row-flex.center.color-picker-default
+          (colorpicker
+           :value (or (:hex @local) color "#00ccff")
+           :on-change #(swap! local assoc :hex %))]
 
-  ;;        [:input#project-btn.btn-primary
-  ;;         {:value "+ Add color"
-  ;;          :on-click submit
-  ;;          :type "button"}]]
-  ;;       [:a.close {:on-click #(lightbox/close!)}
-  ;;      i/close]]))))
+         [:input#project-btn.btn-primary
+          {:value "+ Add color"
+           :on-click submit
+           :type "button"}]]
+        [:a.close {:on-click #(udl/close!)}
+       i/close]])))))
 
 (def color-lightbox
   (mx/component

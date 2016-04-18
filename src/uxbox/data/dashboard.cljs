@@ -14,6 +14,7 @@
             [uxbox.schema :as sc]
             [uxbox.repo :as rp]
             [uxbox.data.projects :as dp]
+            [uxbox.data.colors :as dc]
             [uxbox.util.data :refer (deep-merge)]))
 
 ;; --- Events
@@ -35,12 +36,15 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [projects (seq (:projects-by-id state))]
+    (let [projects (seq (:projects-by-id state))
+          color-collections (seq (:colors-by-id state))]
       (rx/merge
        ;; Load projects if needed
        (if projects
          (rx/empty)
          (rx/of (dp/fetch-projects)))
+
+       (rx/of (dc/fetch-color-collections))
 
        (when (:loader state)
          (if projects
@@ -53,28 +57,6 @@
 (defn initialize
   [section]
   (InitializeDashboard. section))
-
-
-(defn set-project-ordering
-  [order]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:dashboard :project-order] order))))
-
-(defn set-project-filtering
-  [term]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:dashboard :project-filter] term))))
-
-(defn clear-project-filtering
-  []
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:dashboard :project-filter] ""))))
 
 (defn set-collection-type
   [type]
@@ -97,58 +79,3 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:dashboard :collection-id] id))))
-
-(defn mk-color-collection
-  []
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [id (uuid/random)
-            coll {:name "Unnamed collection"
-                  :id id :colors #{}}]
-        (-> state
-            (assoc-in [:colors-by-id id] coll)
-            (assoc-in [:dashboard :collection-id] id)
-            (assoc-in [:dashboard :collection-type] :own))))))
-
-(defn rename-color-collection
-  [id name]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:colors-by-id id :name] name))))
-
-(defn delete-color-collection
-  [id]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [state (update state :colors-by-id dissoc id)
-            colls (sort-by :id (vals (:colors-by-id state)))]
-        (assoc-in state [:dashboard :collection-id] (:id (first colls)))))))
-
-(defn replace-color
-  "Add or replace color in a collection."
-  [{:keys [id from to] :as params}]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (if-let [colors (get-in state [:colors-by-id id :colors])]
-        (as-> colors $
-          (disj $ from)
-          (conj $ to)
-          (assoc-in state [:colors-by-id id :colors] $))
-        state))))
-
-(defn remove-color
-  "Remove color in a collection."
-  [{:keys [id color] :as params}]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (if-let [colors (get-in state [:colors-by-id id :colors])]
-        (as-> colors $
-          (disj $ color)
-          (assoc-in state [:colors-by-id id :colors] $))
-        state))))
-

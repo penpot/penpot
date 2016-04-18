@@ -77,7 +77,7 @@
             [:div.btn-palette.create i/close]]]
         [:span.left-arrow i/arrow-slide]
         [:div.color-palette-content
-         (for [hex-color (:colors collection)
+         (for [hex-color (:data collection)
                :let [rgb-vec (hex->rgb hex-color)
                      rgb-color (apply str "" (interpose ", " rgb-vec))]]
            [:div.color-cell {:key (str hex-color)
