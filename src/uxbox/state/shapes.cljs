@@ -17,7 +17,7 @@
    (duplicate-shapes' state shapes page nil))
   ([state shapes page group]
    (letfn [(duplicate-shape [state shape page group]
-             (if (= (:type shape) :builtin/group)
+             (if (= (:type shape) :group)
                (let [id (random-uuid)
                      items (:items shape)
                      shape (assoc shape :id id :page page :items [])
@@ -74,7 +74,7 @@
   "A function that dissoc shape from the indexed
   data structure of shapes from the state."
   [state {:keys [id type] :as shape}]
-  (if (= :builtin/group type)
+  (if (= :group type)
     (let [items (map #(get-in state [:shapes-by-id %]) (:items shape))]
       (as-> state $
         (update-in $ [:shapes-by-id] dissoc id)
@@ -240,7 +240,7 @@
 ;; (defn- deep-scan-shape-ids
 ;;   [state acc id]
 ;;   (let [shape (get-in state [:shapes-by-id id])]
-;;     (if (= (:type shape) :builtin/group)
+;;     (if (= (:type shape) :group)
 ;;       (reduce (partial deep-scan-shape-ids state)
 ;;               (conj acc id)
 ;;               (:items shape))
@@ -253,6 +253,6 @@
 ;;                         (let [shape (get-in state [:shapes-by-id id])]
 ;;                           (assoc acc id shape)))
 ;;                       {} ids)]
-;;     {:type :builtin/packed-shape
+;;     {:type :packed-shape
 ;;      :index index
 ;;      :id id}))

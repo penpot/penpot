@@ -71,7 +71,7 @@
   []
   (letfn [(initialize [shape]
             (println "initialize" shape)
-            (if (= (:type shape) :builtin/icon)
+            (if (= (:type shape) :icon)
               (initialize-icon-drawing shape)
               (initialize-shape-drawing shape)))]
     (as-> uuc/actions-s $

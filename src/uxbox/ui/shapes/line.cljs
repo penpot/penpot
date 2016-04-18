@@ -11,7 +11,7 @@
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.util.dom :as dom]))
 
-(defmethod uusc/render-shape :builtin/line
+(defmethod uusc/render-shape :line
   [{:keys [id x1 y1 x2 y2] :as shape}]
   (let [key (str id)
         props (select-keys shape [:x1 :x2 :y2 :y1])

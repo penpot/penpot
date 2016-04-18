@@ -129,7 +129,7 @@
     :transfer-state text-component-transfer-state
     :mixins [mx/static rum/reactive (mx/local)]}))
 
-(defmethod uusc/render-component :builtin/text
+(defmethod uusc/render-component :text
   [own shape]
   (text-component shape))
 
@@ -164,7 +164,7 @@
      (when line-height {:lineHeight line-height})
      (when letter-spacing {:letterSpacing letter-spacing}))))
 
-(defmethod uusc/render-shape :builtin/text
+(defmethod uusc/render-shape :text
   [{:keys [id x1 y1 x2 y2 content drawing? editing?] :as shape}]
   (let [key (str id)
         rfm (geom/transformation-matrix shape)

@@ -20,7 +20,7 @@
 
 (declare handlers)
 
-;; (defmethod uusc/render-component :default ;; :builtin/icon
+;; (defmethod uusc/render-component :default ;; :icon
 ;;   [own shape]
 ;;   (let [{:keys [id x y width height group]} shape
 ;;         selected (rum/react uusc/selected-shapes-l)
@@ -90,7 +90,7 @@
 ;; Shape
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod uusc/render-shape :builtin/circle
+(defmethod uusc/render-shape :circle
   [{:keys [id] :as shape}]
   (let [key (str id)
         rfm (geom/transformation-matrix shape)

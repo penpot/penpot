@@ -191,7 +191,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map hide-shape (:items shape))))))))
@@ -207,7 +207,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map show-shape (:items shape))))))))
@@ -223,7 +223,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map block-shape (:items shape))))))))
@@ -239,7 +239,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map unblock-shape (:items shape))))))))
@@ -255,7 +255,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map lock-shape (:items shape))))))))
@@ -271,7 +271,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map unlock-shape (:items shape))))))))
@@ -315,7 +315,7 @@
   "Check if the shape is a blocked group."
   [shape]
   (and (not (:blocked shape))
-       (= :builtin/group (:type shape))))
+       (= :group (:type shape))))
 
 (defn- has-blocked-parent?
   "Check if shape has blocked parent."
@@ -386,7 +386,7 @@
               pid (get-in state [:workspace :page])
               selected (get-in state [:workspace :selected])
               selected' (map #(get shapes-by-id %) selected)
-              group {:type :builtin/group
+              group {:type :group
                     :name (str "Group " (rand-int 1000))
                     :items (into [] selected)
                     :id sid

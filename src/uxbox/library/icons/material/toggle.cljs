@@ -7,7 +7,7 @@
 (def +icons+
   [{:name "Check Box"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -16,7 +16,7 @@
 
    {:name "Check Box Outline Blank"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -25,7 +25,7 @@
 
    {:name "Radio Button Off"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -34,7 +34,7 @@
 
    {:name "Radio Button On"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -43,7 +43,7 @@
 
    {:name "Star"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -52,7 +52,7 @@
 
    {:name "Star Half"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -61,7 +61,7 @@
 
    {:name "Star Outline"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

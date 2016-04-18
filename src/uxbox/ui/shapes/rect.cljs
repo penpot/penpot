@@ -12,7 +12,7 @@
             [uxbox.util.geom :as geom]
             [uxbox.util.dom :as dom]))
 
-(defmethod uusc/render-shape :builtin/rect
+(defmethod uusc/render-shape :rect
   [{:keys [id x1 y1 x2 y2] :as shape}]
   (let [key (str id)
         rfm (geom/transformation-matrix shape)

@@ -7,7 +7,7 @@
 (def +icons+
   [{:name "Been Here"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -16,7 +16,7 @@
 
     {:name "Direction"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -25,7 +25,7 @@
 
     {:name "Direction Bike"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -34,7 +34,7 @@
 
     {:name "Direction Bus"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -43,7 +43,7 @@
 
     {:name "Direction Car"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -52,7 +52,7 @@
 
     {:name "Direction Ferry"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -61,7 +61,7 @@
 
     {:name "Direction Subway"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -70,7 +70,7 @@
 
     {:name "Direction Train"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -79,7 +79,7 @@
 
     {:name "Direction Transit"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -88,7 +88,7 @@
 
     {:name "Direction Walk"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -97,7 +97,7 @@
 
     {:name "Flight"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:g
      [:path {:d "M20.36 18"}]
@@ -108,7 +108,7 @@
 
     {:name "Hotel"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -117,7 +117,7 @@
 
     {:name "Layers"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -126,7 +126,7 @@
 
     {:name "Layers Clear"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -135,7 +135,7 @@
 
     {:name "Local Airport"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -144,7 +144,7 @@
 
     {:name "Local ATM"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -153,7 +153,7 @@
 
     {:name "Local Attraction"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -162,7 +162,7 @@
 
     {:name "Local Bar"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -171,7 +171,7 @@
 
     {:name "Local Cafe"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -180,7 +180,7 @@
 
     {:name "Local Car Wash"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -189,7 +189,7 @@
 
     {:name "Local Convenience Store"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -198,7 +198,7 @@
 
     {:name "Local Drink"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -207,7 +207,7 @@
 
     {:name "Local Florist"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -216,7 +216,7 @@
 
     {:name "Local Gas Station"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -225,7 +225,7 @@
 
     {:name "Local Grocery Store"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -234,7 +234,7 @@
 
     {:name "Local Hospital"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -243,7 +243,7 @@
 
     {:name "Local Hotel"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -252,7 +252,7 @@
 
     {:name "Local Laundry Service"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -261,7 +261,7 @@
 
     {:name "Local Library"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -270,7 +270,7 @@
 
     {:name "Local Mall"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -279,7 +279,7 @@
 
     {:name "Local Movies"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -288,7 +288,7 @@
 
     {:name "Local Offer"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -297,7 +297,7 @@
 
     {:name "Local Parking"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -306,7 +306,7 @@
 
     {:name "Local Pharmacy"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -315,7 +315,7 @@
 
     {:name "Local Phone"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -324,7 +324,7 @@
 
     {:name "Local Pizza"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -333,7 +333,7 @@
 
     {:name "Local Play"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -342,7 +342,7 @@
 
     {:name "Local Post Office"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -351,7 +351,7 @@
 
     {:name "Local Print Shop"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -360,7 +360,7 @@
 
     {:name "Local Restaurant"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -369,7 +369,7 @@
 
     {:name "Local See"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:g
      [:circle {:r "6.4"
@@ -382,7 +382,7 @@
 
     {:name "Local Shipping"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -391,7 +391,7 @@
 
     {:name "Local Taxi"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -400,7 +400,7 @@
 
     {:name "Location History"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -409,7 +409,7 @@
 
     {:name "Map"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -418,7 +418,7 @@
 
     {:name "My Location"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -427,7 +427,7 @@
 
     {:name "Navigation"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -435,7 +435,7 @@
 
     {:name "Pin Drop"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -444,7 +444,7 @@
 
     {:name "Place"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -453,7 +453,7 @@
 
     {:name "Rate Review"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -462,7 +462,7 @@
 
     {:name "Restaurant Menu"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -471,7 +471,7 @@
 
     {:name "Satellite"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -480,7 +480,7 @@
 
     {:name "Store Mall Directory"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -489,7 +489,7 @@
 
     {:name "Terrain"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -498,7 +498,7 @@
 
     {:name "Traffic"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}

@@ -12,7 +12,7 @@
             [uxbox.util.geom :as geom]
             [uxbox.util.dom :as dom]))
 
-(defmethod uusc/render-shape :builtin/group
+(defmethod uusc/render-shape :group
   [{:keys [items id dx dy rotation] :as shape} factory]
   (let [key (str "group-" id)
         rfm (geom/transformation-matrix shape)

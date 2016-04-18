@@ -94,12 +94,12 @@
 (defn- element-icon
   [item]
   (case (:type item)
-    :builtin/icon (uusc/render-shape-svg item)
-    :builtin/line i/line
-    :builtin/circle i/circle
-    :builtin/rect i/box
-    :builtin/text i/text
-    :builtin/group i/folder))
+    :icon (uusc/render-shape-svg item)
+    :line i/line
+    :circle i/circle
+    :rect i/box
+    :text i/text
+    :group i/folder))
 
 (defn- get-hover-position
   [event group?]
@@ -270,7 +270,7 @@
           [:ul
            (for [shape (map #(get shapes-by-id %) (:items item))
                  :let [key (str (:id shape))]]
-             (if (= (:type shape) :builtin/group)
+             (if (= (:type shape) :group)
                (-> (layer-group shape selected)
                    (rum/with-key key))
                (-> (layer-element shape selected)
@@ -307,7 +307,7 @@
        [:ul.element-list {}
         (for [shape (map #(get shapes-by-id %) (:shapes page))
               :let [key (str (:id shape))]]
-          (if (= (:type shape) :builtin/group)
+          (if (= (:type shape) :group)
             (-> (layer-group shape selected)
                 (rum/with-key key))
             (-> (layer-element shape selected)

@@ -35,7 +35,7 @@
 (t/deftest duplicate-shapes-test2
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2 3]}
                                 2 {:id 2 :page 1 :group 1}
                                 3 {:id 3 :page 1 :group 1}}}
@@ -55,7 +55,7 @@
 (t/deftest duplicate-shapes-test3
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 4]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2 3]}
                                 2 {:id 2 :page 1 :group 1}
                                 3 {:id 3 :page 1 :group 1}
@@ -76,14 +76,14 @@
 (t/deftest duplicate-shapes-test4
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2]}
                                 2 {:id 3 :page 1 :group 1}}}
 
         expected (-> initial
                      (assoc-in [:pages-by-id 1 :shapes] [1 3])
                      (assoc-in [:shapes-by-id 3] {:id 3 :page 1
-                                                  :type :builtin/group
+                                                  :type :group
                                                   :items [4]})
                      (assoc-in [:shapes-by-id 4] {:id 4 :page 1 :group 3}))]
     (with-redefs [cljs.core/random-uuid (constantly-inc 3)]
@@ -124,7 +124,7 @@
 (t/deftest drop-shape-test3
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 3 4]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2]}
                                 2 {:id 2 :page 1 :group 1}
                                 3 {:id 3 :page 1}
@@ -141,7 +141,7 @@
 (t/deftest drop-shape-test4
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 3 4]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2]}
                                 2 {:id 2 :page 1 :group 1}
                                 3 {:id 3 :page 1}
@@ -160,7 +160,7 @@
 (t/deftest drop-shape-test5
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 4]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2 3]}
                                 2 {:id 2 :page 1 :group 1}
                                 3 {:id 3 :page 1 :group 1}
@@ -177,10 +177,10 @@
 (t/deftest drop-shape-test6
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 2]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [3]}
                                 2 {:id 2 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [4]}
                                 3 {:id 3 :page 1 :group 1}
                                 4 {:id 4 :page 1 :group 2}}}
@@ -198,11 +198,11 @@
 (t/deftest drop-shape-test7
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 3]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2]}
                                 2 {:id 2 :page 1
                                    :group 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [4]}
                                 3 {:id 3 :page 1}
                                 4 {:id 4 :page 1 :group 2}}}
@@ -220,11 +220,11 @@
 (t/deftest drop-shape-test8
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 5 6]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2]}
                                 2 {:id 2 :page 1
                                    :group 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [3 4]}
                                 3 {:id 3 :page 1 :group 2}
                                 4 {:id 4 :page 1 :group 2}
@@ -243,11 +243,11 @@
 (t/deftest drop-shape-test9
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2 5 6]}
                                 2 {:id 2 :page 1
                                    :group 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [3 4]}
                                 3 {:id 3 :page 1 :group 2}
                                 4 {:id 4 :page 1 :group 2}
@@ -272,7 +272,7 @@
 (t/deftest delete-shape-test1
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 3 4]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2]}
                                 2 {:id 2 :page 1 :group 1}
                                 3 {:id 3 :page 1}
@@ -291,7 +291,7 @@
 (t/deftest delete-shape-test2
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 3 4]}}
                  :shapes-by-id {1 {:id 1 :page 1
-                                   :type :builtin/group
+                                   :type :group
                                    :items [2]}
                                 2 {:id 2 :page 1 :group 1}
                                 3 {:id 3 :page 1}

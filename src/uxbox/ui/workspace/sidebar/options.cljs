@@ -32,12 +32,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const ^:private +menus-map+
-  {:builtin/icon [:menu/icon-measures :menu/fill :menu/stroke]
-   :builtin/rect [:menu/rect-measures :menu/fill :menu/stroke]
-   :builtin/line [:menu/line-measures :menu/stroke]
-   :builtin/circle [:menu/circle-measures :menu/fill :menu/stroke]
-   :builtin/text [:menu/fill :menu/text]
-   :builtin/group []})
+  {:icon [:menu/icon-measures :menu/fill :menu/stroke]
+   :rect [:menu/rect-measures :menu/fill :menu/stroke]
+   :line [:menu/line-measures :menu/stroke]
+   :circle [:menu/circle-measures :menu/fill :menu/stroke]
+   :text [:menu/fill :menu/text]
+   :group []})
 
 (def ^:const ^:private +menus-by-id+
   {:menu/icon-measures
