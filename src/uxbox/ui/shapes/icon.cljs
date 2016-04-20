@@ -87,7 +87,7 @@
           (on-mouse-up [vid event]
             (dom/stop-propagation event)
             (uuc/release-action! "ui.shape.resize"))]
-    (let [{:keys [x y width height]} (geom/outer-rect shape)]
+    (let [{:keys [x y width height]} (geom/inner-rect shape)]
       (html
        [:g.controls
         [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
