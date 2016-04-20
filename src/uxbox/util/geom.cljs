@@ -39,6 +39,7 @@
   (case (:type shape)
     :icon (move-rect shape dpoint)
     :rect (move-rect shape dpoint)
+    :text (move-rect shape dpoint)
     :line (move-rect shape dpoint)
     :circle (move-circle shape dpoint)
     :group (move-group shape dpoint)))
@@ -125,6 +126,7 @@
   "Calculate the size of the shape."
   [shape]
   (case (:type shape)
+    :text (rect-size shape)
     :rect (rect-size shape)
     :icon (rect-size shape)
     :line (rect-size shape)))
@@ -147,6 +149,7 @@
   [shape vid dpoint]
   (case (:type shape)
     :rect (move-rect-vertex shape vid dpoint)
+    :text (move-rect-vertex shape vid dpoint)
     :icon (move-rect-vertex shape vid dpoint)
     :circle (move-circle-vertex shape vid dpoint)))
 
