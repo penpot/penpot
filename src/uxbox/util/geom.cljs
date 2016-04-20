@@ -492,6 +492,19 @@
       (gmt/rotate rotation)
       (gmt/translate (- cx) (- cy))))
 
+(defn- group-transformation-matrix
+  [state {:keys [dx dy rotation items] :or {rotation 0} :as shape}]
+  (let [shapes-by-id (get state :shapes-by-id)
+        shapes (map #(get shapes-by-id %) items)
+        {:keys [x y width height]} (outer-rect shapes)
+        center-x (+ x (/ width 2))
+        center-y (+ y (/ height 2))]
+    (-> (gmt/matrix)
+        (gmt/translate (or dx 0) (or dy 0))
+        (gmt/translate center-x center-y)
+        (gmt/rotate rotation)
+        (gmt/translate (- center-x) (- center-y)))))
+
 ;; --- Helpers
 
 (defn apply-rotation
