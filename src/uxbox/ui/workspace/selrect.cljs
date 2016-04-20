@@ -12,7 +12,6 @@
             [beicon.core :as rx]
             [uxbox.constants :as c]
             [uxbox.rstore :as rs]
-            [uxbox.shapes :as sh]
             [uxbox.data.workspace :as dw]
             [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]

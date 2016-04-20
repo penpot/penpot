@@ -15,7 +15,6 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.state.project :as stpr]
-            [uxbox.shapes :as shapes]
             [uxbox.library :as library]
             [uxbox.data.projects :as dp]
             [uxbox.data.pages :as udp]

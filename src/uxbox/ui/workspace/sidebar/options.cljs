@@ -13,7 +13,6 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as sh]
             [uxbox.library :as library]
             [uxbox.data.workspace :as udw]
             [uxbox.data.shapes :as uds]
@@ -23,6 +22,7 @@
             [uxbox.ui.colorpicker :refer (colorpicker)]
             [uxbox.ui.workspace.recent-colors :refer (recent-colors)]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.util.geom :as geom]
             [uxbox.util.lens :as ul]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
@@ -32,12 +32,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const ^:private +menus-map+
-  {:builtin/icon [:menu/icon-measures :menu/fill :menu/stroke]
-   :builtin/rect [:menu/rect-measures :menu/fill :menu/stroke]
-   :builtin/line [:menu/line-measures :menu/stroke]
-   :builtin/circle [:menu/circle-measures :menu/fill :menu/stroke]
-   :builtin/text [:menu/fill :menu/text]
-   :builtin/group []})
+  {:icon [:menu/icon-measures :menu/fill :menu/stroke]
+   :rect [:menu/rect-measures :menu/fill :menu/stroke]
+   :line [:menu/line-measures :menu/stroke]
+   :circle [:menu/circle-measures :menu/fill :menu/stroke]
+   :text [:menu/fill :menu/text]
+   :group []})
 
 (def ^:const ^:private +menus-by-id+
   {:menu/icon-measures
@@ -216,7 +216,7 @@
                   sid (:id shape)
                   props {attr value}]
               (rs/emit! (uds/update-radius-attrs sid props))))]
-    (let [size (sh/size shape)]
+    (let [size (geom/size shape)]
       (html
        [:div.element-set {:key (str (:id menu))}
         [:div.element-set-title (:name menu)]
@@ -308,7 +308,7 @@
                   sid (:id shape)
                   props {attr value}]
               (rs/emit! (uds/update-position sid props))))]
-    (let [size (sh/size shape)]
+    (let [size (geom/size shape)]
       (html
        [:div.element-set {:key (str (:id menu))}
         [:div.element-set-title (:name menu)]

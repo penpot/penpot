@@ -13,7 +13,6 @@
             [goog.events :as events]
             [uxbox.constants :as c]
             [uxbox.rstore :as rs]
-            [uxbox.shapes :as sh]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
             [uxbox.data.shapes :as uds]

@@ -5,13 +5,13 @@
             [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as ush]
             [uxbox.data.workspace :as dw]
             [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.shapes.core :as uusc]
+            [uxbox.util.geom :as geom]
             [uxbox.util.dom :as dom]))
 
 ;; --- Icon Component
@@ -23,7 +23,7 @@
     (when-not (:blocked shape)
       (cond
         (or drawing?
-            (and group (:locked (ush/resolve-parent shape))))
+            (and group (:locked (geom/resolve-parent shape))))
         nil
 
         (and (not selected?) (empty? selected))
@@ -50,7 +50,7 @@
 (defn on-mouse-up
   [event {:keys [id group] :as shape}]
   (cond
-    (and group (:locked (ush/resolve-parent shape)))
+    (and group (:locked (geom/resolve-parent shape)))
     nil
 
     :else
@@ -60,7 +60,7 @@
 
 (declare handlers)
 
-(defmethod uusc/render-component :default ;; :builtin/icon
+(defmethod uusc/render-component :default ;; :icon
   [own shape]
   (let [{:keys [id x y width height group]} shape
         selected (rum/react uusc/selected-shapes-l)
@@ -87,7 +87,7 @@
           (on-mouse-up [vid event]
             (dom/stop-propagation event)
             (uuc/release-action! "ui.shape.resize"))]
-    (let [{:keys [x y width height]} (ush/outer-rect' shape)]
+    (let [{:keys [x y width height]} (geom/inner-rect shape)]
       (html
        [:g.controls
         [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
@@ -126,17 +126,17 @@
 
 ;; --- Shape & Shape Svg
 
-(defmethod uusc/render-shape :builtin/icon
+(defmethod uusc/render-shape :icon
   [{:keys [data id] :as shape} _]
   (let [key (str id)
-        rfm (ush/transformation shape)
+        rfm (geom/transformation-matrix shape)
         attrs (merge {:id key :key key :transform (str rfm)}
                      (uusc/extract-style-attrs shape)
                      (uusc/make-debug-attrs shape))]
     (html
      [:g attrs data])))
 
-(defmethod uusc/render-shape-svg :builtin/icon
+(defmethod uusc/render-shape-svg :icon
   [{:keys [data id view-box] :as shape}]
   (let [key (str "icon-svg-" id)
         view-box (apply str (interpose " " view-box))

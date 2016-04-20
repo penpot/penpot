@@ -13,7 +13,6 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as shapes]
             [uxbox.library :as library]
             [uxbox.util.data :refer (read-string)]
             [uxbox.data.workspace :as dw]
@@ -42,20 +41,20 @@
   {:rect
    {:icon i/box
     :help (tr "ds.help.rect")
-    :shape {:type :builtin/rect
+    :shape {:type :rect
             :name "Rect"
             :stroke "#000000"}
     :priority 1}
    :circle
    {:icon i/circle
     :help (tr "ds.help.circle")
-    :shape {:type :builtin/circle
+    :shape {:type :circle
             :name "Circle"}
     :priority 2}
    :line
    {:icon i/line
     :help (tr "ds.help.line")
-    :shape {:type :builtin/line
+    :shape {:type :line
             :name "Line"
             :stroke-type :solid
             :stroke "#000000"}
@@ -63,7 +62,7 @@
    :text
    {:icon i/text
     :help (tr "ds.help.text")
-    :shape {:type :builtin/text
+    :shape {:type :text
             :name "Text"
             :content "Hello world"}
     :priority 4}})

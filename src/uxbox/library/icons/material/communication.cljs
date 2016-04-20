@@ -7,7 +7,7 @@
 (def +icons+
   [{:name "Business"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -16,7 +16,7 @@
 
    {:name "Call"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -25,7 +25,7 @@
 
    {:name "Call End"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -34,7 +34,7 @@
 
    {:name "Call Made"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -43,7 +43,7 @@
 
    {:name "Call Merge"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -52,7 +52,7 @@
 
    {:name "Call Missed"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -61,7 +61,7 @@
 
    {:name "Call Received"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -70,7 +70,7 @@
 
    {:name "Call Split"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -79,7 +79,7 @@
 
    {:name "Chat"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -88,7 +88,7 @@
 
    {:name "Contacts"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -97,7 +97,7 @@
 
    {:name "Dialer Sip"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -106,7 +106,7 @@
 
    {:name "Dialpad"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -115,7 +115,7 @@
 
    {:name "Dnd On"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -124,7 +124,7 @@
 
    {:name "Email"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -133,7 +133,7 @@
 
    {:name "Forum"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -142,7 +142,7 @@
 
    {:name "Import Export"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -151,7 +151,7 @@
 
    {:name "Invert Colors Off"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -160,7 +160,7 @@
 
    {:name "Invert Colors On"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -169,7 +169,7 @@
 
    {:name "Live Help"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -178,7 +178,7 @@
 
    {:name "Location Off"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -187,7 +187,7 @@
 
    {:name "Location On"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -196,7 +196,7 @@
 
    {:name "Message"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -205,7 +205,7 @@
 
    {:name "Messenger"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -214,7 +214,7 @@
 
    {:name "No Sim"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -223,7 +223,7 @@
 
    {:name "Phone"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -232,7 +232,7 @@
 
    {:name "Portable Wifi off"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -241,7 +241,7 @@
 
    {:name "Quick Contacts Dialer"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -250,7 +250,7 @@
 
    {:name "Ring Volume"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -259,7 +259,7 @@
 
    {:name "Stay Current Landscape"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -268,7 +268,7 @@
 
    {:name "Stay Current Portrait"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -277,7 +277,7 @@
 
    {:name "Stay Primary Landscape"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -286,7 +286,7 @@
 
    {:name "Stay Primary Portrait"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -295,7 +295,7 @@
 
    {:name "Swap Calls"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -304,7 +304,7 @@
 
    {:name "Textsms"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -313,7 +313,7 @@
 
    {:name "Voicemail"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -322,7 +322,7 @@
 
    {:name "VPN Key"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

@@ -5,17 +5,17 @@
             [lentes.core :as l]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as ush]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.shapes.core :as uusc]
+            [uxbox.util.geom :as geom]
             [uxbox.util.dom :as dom]))
 
-(defmethod uusc/render-shape :builtin/group
+(defmethod uusc/render-shape :group
   [{:keys [items id dx dy rotation] :as shape} factory]
   (let [key (str "group-" id)
-        rfm (ush/transformation shape)
+        rfm (geom/transformation-matrix shape)
         attrs (merge {:id key :key key :transform (str rfm)}
                      (uusc/extract-style-attrs shape)
                      (uusc/make-debug-attrs shape))

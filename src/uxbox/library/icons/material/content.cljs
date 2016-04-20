@@ -7,7 +7,7 @@
 (def +icons+
   [{:name "Add"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -15,7 +15,7 @@
 
    {:name "Add Box"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -24,7 +24,7 @@
 
    {:name "Add Circle"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -33,7 +33,7 @@
 
    {:name "Add Circle Outline"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -42,7 +42,7 @@
 
    {:name "Archive"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -51,7 +51,7 @@
 
    {:name "Archive"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -60,7 +60,7 @@
 
    {:name "Block"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -69,7 +69,7 @@
 
    {:name "Clear"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -78,7 +78,7 @@
 
    {:name "Content Copy"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -87,7 +87,7 @@
 
    {:name "Content Cut"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -96,7 +96,7 @@
 
    {:name "Content Paste"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -105,7 +105,7 @@
 
    {:name "Create"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -114,7 +114,7 @@
 
    {:name "Drafts"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -123,7 +123,7 @@
 
    {:name "Filter List"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -131,7 +131,7 @@
 
    {:name "Flag"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -139,7 +139,7 @@
 
    {:name "Forward"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -147,7 +147,7 @@
 
    {:name "Gesture"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -156,7 +156,7 @@
 
    {:name "Inbox"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -165,7 +165,7 @@
 
    {:name "Link"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -174,7 +174,7 @@
 
    {:name "Mail"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -183,7 +183,7 @@
 
    {:name "Redo"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -192,14 +192,14 @@
 
    {:name "Remove"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil}
                   :d "M38 26h-28v-4h28v4z"}]}
 
    {:name "Remove Outline"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -208,7 +208,7 @@
 
    {:name "Remove Outline Circle"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -217,7 +217,7 @@
 
    {:name "Reply"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -226,7 +226,7 @@
 
    {:name "Reply All"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -235,7 +235,7 @@
 
    {:name "Report"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -244,7 +244,7 @@
 
    {:name "Save"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -253,7 +253,7 @@
 
    {:name "Select All"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -262,7 +262,7 @@
 
    {:name "Send"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -270,7 +270,7 @@
 
    {:name "Sort"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -278,7 +278,7 @@
 
    {:name "Text Format"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -287,7 +287,7 @@
 
    {:name "Undo"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

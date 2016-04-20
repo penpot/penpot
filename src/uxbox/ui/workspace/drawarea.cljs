@@ -6,13 +6,11 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.ui.workspace.drawarea
-  (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.rstore :as rs]
-            [uxbox.shapes :as ush]
             [uxbox.state :as st]
             [uxbox.data.workspace :as udw]
             [uxbox.data.shapes :as uds]
@@ -20,6 +18,7 @@
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
+            [uxbox.util.geom :as geom]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 
@@ -38,7 +37,7 @@
         position (rum/react drawing-position)]
     (when shape
       (-> (assoc shape :drawing? true)
-          (ush/resize position)
+          (geom/resize position)
           (uusc/render-shape identity)))))
 
 (defn- draw-area-will-mount
@@ -72,7 +71,7 @@
   []
   (letfn [(initialize [shape]
             (println "initialize" shape)
-            (if (= (:type shape) :builtin/icon)
+            (if (= (:type shape) :icon)
               (initialize-icon-drawing shape)
               (initialize-shape-drawing shape)))]
     (as-> uuc/actions-s $
@@ -88,7 +87,7 @@
   [shape]
   (let [{:keys [x y]} (gpt/divide @wb/mouse-canvas-a @wb/zoom-l)
         props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
-        shape (ush/initialize shape props)]
+        shape (geom/setup shape props)]
     (rs/emit! (uds/add-shape shape)
               (udw/select-for-drawing nil)
               (uds/select-first-shape))))
@@ -103,7 +102,7 @@
           (on-complete []
             (let [shape @drawing-shape
                   shpos @drawing-position
-                  shape (ush/resize shape shpos)]
+                  shape (geom/resize shape shpos)]
               (rs/emit! (uds/add-shape shape)
                         (udw/select-for-drawing nil)
                         (uds/select-first-shape))
@@ -111,7 +110,7 @@
               (reset! drawing-shape nil)))]
 
   (let [{:keys [x y] :as pt} (gpt/divide @wb/mouse-canvas-a @wb/zoom-l)
-        shape (ush/initialize shape {:x1 x :y1 y :x2 x :y2 y})
+        shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})
         stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter #(empty? %))

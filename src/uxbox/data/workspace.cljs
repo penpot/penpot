@@ -8,7 +8,6 @@
 (ns uxbox.data.workspace
   (:require [beicon.core :as rx]
             [uxbox.constants :as c]
-            [uxbox.shapes :as sh]
             [uxbox.rstore :as rs]
             [uxbox.state.shapes :as stsh]
             [uxbox.schema :as sc]

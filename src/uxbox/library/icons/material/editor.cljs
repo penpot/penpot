@@ -7,7 +7,7 @@
 (def +icons+
   [{:name "Attach File"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -16,7 +16,7 @@
 
    {:name "Attach Money"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -25,7 +25,7 @@
 
    {:name "Border All"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -34,7 +34,7 @@
 
    {:name "Border Bottom"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -43,7 +43,7 @@
 
    {:name "Border Clear"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -52,7 +52,7 @@
 
    {:name "Border Color"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -66,7 +66,7 @@
 
    {:name "Border Horizontal"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -75,7 +75,7 @@
 
    {:name "Border Inner"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -84,7 +84,7 @@
 
    {:name "Border Left"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -93,7 +93,7 @@
 
    {:name "Border Outer"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -102,7 +102,7 @@
 
    {:name "Border Right"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -111,7 +111,7 @@
 
    {:name "Border Style"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -120,7 +120,7 @@
 
    {:name "Border Top"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -129,7 +129,7 @@
 
    {:name "Border Vertical"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -138,7 +138,7 @@
 
    {:name "Format Align Center"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -147,7 +147,7 @@
 
    {:name "Format Align Justify"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -156,7 +156,7 @@
 
    {:name "Format Align Left"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -165,7 +165,7 @@
 
    {:name "Format Align Right"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -174,7 +174,7 @@
 
    {:name "Format Bold"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -183,7 +183,7 @@
 
    {:name "Format Clear"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -192,7 +192,7 @@
 
    {:name "Format Color Fill"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -201,7 +201,7 @@
 
    {:name "Format Color Reset"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -210,7 +210,7 @@
 
    {:name "Format Color Text"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -219,7 +219,7 @@
 
    {:name "Format Indent Decrease"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -228,7 +228,7 @@
 
    {:name "Format Italic"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -237,7 +237,7 @@
 
    {:name "Format Line Spacing"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -246,7 +246,7 @@
 
    {:name "Format List Bulleted"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -255,7 +255,7 @@
 
    {:name "Format List Numbered"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -264,7 +264,7 @@
 
    {:name "Format Paint"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -273,7 +273,7 @@
 
    {:name "Format Quote"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -281,7 +281,7 @@
 
    {:name "Format Size"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -290,7 +290,7 @@
 
    {:name "Format Strikethrough"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -299,7 +299,7 @@
 
    {:name "Format Text Direction l To r"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -307,7 +307,7 @@
 
    {:name "Format Underline"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -316,7 +316,7 @@
 
    {:name "Functions"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -325,7 +325,7 @@
 
    {:name "Insert Chart"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -334,7 +334,7 @@
 
    {:name "Insert Comment"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -343,7 +343,7 @@
 
    {:name "Insert Drive File"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -352,7 +352,7 @@
 
    {:name "Insert Emoticon"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -361,7 +361,7 @@
 
    {:name "Insert Invitation"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -370,7 +370,7 @@
 
    {:name "Insert Link"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -379,7 +379,7 @@
 
    {:name "Insert Photo"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -388,7 +388,7 @@
 
    {:name "Merge Type"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -397,7 +397,7 @@
 
    {:name "Mode Comment"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -406,7 +406,7 @@
 
    {:name "Publish"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -414,7 +414,7 @@
 
    {:name "Vertical Align Bottom"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -422,7 +422,7 @@
 
    {:name "Vertical Align Center"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -431,7 +431,7 @@
 
    {:name "Vertical Align Top"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -439,7 +439,7 @@
 
    {:name "Wrap Text"
     :id (gensym "icon")
-    :type :builtin/icon
+    :type :icon
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

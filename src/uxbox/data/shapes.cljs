@@ -7,13 +7,13 @@
 
 (ns uxbox.data.shapes
   (:require [beicon.core :as rx]
-            [uxbox.shapes :as sh]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.state.shapes :as stsh]
             [uxbox.schema :as sc]
             [uxbox.data.pages :as udp]
+            [uxbox.util.geom :as geom]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
 
@@ -54,7 +54,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (update-in state [:shapes-by-id sid] sh/move delta)))))
+        (update-in state [:shapes-by-id sid] geom/move delta)))))
 
 (defn update-line-attrs
   [sid {:keys [x1 y1 x2 y2] :as opts}]
@@ -65,7 +65,7 @@
       (let [shape (get-in state [:shapes-by-id sid])
             props (select-keys opts [:x1 :y1 :x2 :y2])
             props' (select-keys shape [:x1 :y1 :x2 :y2])]
-        (update-in state [:shapes-by-id sid] sh/initialize
+        (update-in state [:shapes-by-id sid] geom/setup
                    (merge props' props))))))
 
 (defn update-rotation
@@ -78,7 +78,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid]
-                 sh/rotate rotation))))
+                 geom/rotate rotation))))
 
 (defn update-size
   "A helper event just for update the position
@@ -92,9 +92,15 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id sid])
-            size (merge (sh/size shape) opts)]
-        (update-in state [:shapes-by-id sid] sh/resize' size)))))
+      (letfn [(resize [shape {:keys [width height] :as size}]
+                (let [x1 (:x1 shape)
+                      y1 (:y1 shape)]
+                  (assoc shape
+                         :x2 (+ x1 width)
+                         :y2 (+ y1 height))))]
+        (let [shape (get-in state [:shapes-by-id sid])
+              size (merge (geom/size shape) opts)]
+          (update-in state [:shapes-by-id sid] resize size))))))
 
 (defn update-vertex-position
   [id {:keys [vid delta]}]
@@ -102,7 +108,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id id] sh/move-vertex vid delta))))
+      (update-in state [:shapes-by-id id] geom/move-vertex vid delta))))
 
 (defn update-position
   "Update the start position coordenate of the shape."
@@ -110,7 +116,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid] sh/move' opts))))
+      (update-in state [:shapes-by-id sid] geom/absolute-move opts))))
 
 (defn update-text
   "Update the start position coordenate of the shape."
@@ -185,7 +191,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map hide-shape (:items shape))))))))
@@ -201,7 +207,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map show-shape (:items shape))))))))
@@ -217,7 +223,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map block-shape (:items shape))))))))
@@ -233,7 +239,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map unblock-shape (:items shape))))))))
@@ -249,7 +255,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map lock-shape (:items shape))))))))
@@ -265,7 +271,7 @@
     rs/WatchEvent
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id sid])]
-        (if-not (= (:type shape) :builtin/group)
+        (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
            (map unlock-shape (:items shape))))))))
@@ -305,36 +311,12 @@
 
 ;; --- Select Shapes
 
-(defn- not-blocked-group?
-  "Check if the shape is a blocked group."
-  [shape]
-  (and (not (:blocked shape))
-       (= :builtin/group (:type shape))))
-
-(defn- has-blocked-parent?
-  "Check if shape has blocked parent."
-  [shape]
-  (sh/parent-satisfies? shape :blocked))
-
-(defn- has-locked-parent?
-  [shape]
-  (sh/parent-satisfies? shape :locked))
-
 (defrecord SelectShapes [selrect]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [pageid (get-in state [:workspace :page])
-          xform (comp (filter #(= (:page %) pageid))
-                      (remove :hidden)
-                      (remove :blocked)
-                      (remove not-blocked-group?)
-                      (remove has-locked-parent?)
-                      (remove has-blocked-parent?)
-                      (map sh/outer-rect')
-                      (filter #(sh/contained-in? % selrect))
-                      (map :id))]
-      (->> (into #{} xform (vals (:shapes-by-id state)))
-           (assoc-in state [:workspace :selected])))))
+    (let [page (get-in state [:workspace :page])
+          shapes (stsh/match-by-selrect state page selrect)]
+      (assoc-in state [:workspace :selected] shapes))))
 
 (defn select-shapes
   "Select shapes that matches the select rect."
@@ -380,7 +362,7 @@
               pid (get-in state [:workspace :page])
               selected (get-in state [:workspace :selected])
               selected' (map #(get shapes-by-id %) selected)
-              group {:type :builtin/group
+              group {:type :group
                     :name (str "Group " (rand-int 1000))
                     :items (into [] selected)
                     :id sid

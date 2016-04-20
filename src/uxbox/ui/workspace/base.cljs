@@ -28,7 +28,7 @@
   (letfn [(getter [state]
             (let [project (get-in state [:workspace :project])]
               (get-in state [:projects-by-id project])))]
-    (as-> (ul/getter getter) $
+    (as-> (l/getter getter) $
       (l/focus-atom $ st/state))))
 
 (def ^:const page-l

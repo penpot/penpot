@@ -6,7 +6,6 @@
             [goog.events :as events]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as ush]
             [uxbox.data.shapes :as uds]
             [uxbox.data.workspace :as dw]
             [uxbox.ui.core :as uuc]
@@ -14,6 +13,7 @@
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.shapes.icon :as uusi]
+            [uxbox.util.geom :as geom]
             [uxbox.util.color :as color]
             [uxbox.util.dom :as dom])
   (:import goog.events.EventType))
@@ -27,7 +27,7 @@
       (cond
         (or drawing?
             (:edition @local)
-            (and group (:locked (ush/resolve-parent shape))))
+            (and group (:locked (geom/resolve-parent shape))))
         nil
 
         (and (not selected?) (empty? selected))
@@ -52,7 +52,7 @@
 (defn on-mouse-up
   [event {:keys [id group] :as shape}]
   (cond
-    (and group (:locked (ush/resolve-parent shape)))
+    (and group (:locked (geom/resolve-parent shape)))
     nil
 
     :else
@@ -129,7 +129,7 @@
     :transfer-state text-component-transfer-state
     :mixins [mx/static rum/reactive (mx/local)]}))
 
-(defmethod uusc/render-component :builtin/text
+(defmethod uusc/render-component :text
   [own shape]
   (text-component shape))
 
@@ -164,11 +164,11 @@
      (when line-height {:lineHeight line-height})
      (when letter-spacing {:letterSpacing letter-spacing}))))
 
-(defmethod uusc/render-shape :builtin/text
+(defmethod uusc/render-shape :text
   [{:keys [id x1 y1 x2 y2 content drawing? editing?] :as shape}]
   (let [key (str id)
-        rfm (ush/transformation shape)
-        size (ush/size shape)
+        rfm (geom/transformation-matrix shape)
+        size (geom/size shape)
         props {:x x1 :y y1
                :transform (str rfm)}
         attrs (merge props size)
