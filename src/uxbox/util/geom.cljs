@@ -306,48 +306,88 @@
          :rx (mth/abs (- x2 x1))
          :ry (mth/abs (- y2 y1))))
 
-;; --- Outer Rect
+;; --- Inner Rect
 
-(declare generic-outer-rect)
-(declare line-outer-rect)
-(declare circle-outer-rect)
-(declare group-outer-rect)
 (declare apply-rotation-transformation)
+(declare generic-inner-rect)
+(declare circle-inner-rect)
+(declare group-inner-rect)
 
-(defn outer-rect
-  ([shape]
-   (outer-rect @st/state shape))
+(defn inner-rect
+  ([shape] (inner-rect @st/state shape))
   ([state shape]
    (case (:type shape)
-     :rect (generic-outer-rect state shape)
-     :text (generic-outer-rect state shape)
-     :icon (generic-outer-rect state shape)
-     :line (line-outer-rect state shape)
-     :circle (circle-outer-rect state shape)
-     :group (group-outer-rect state shape))))
+     :icon (generic-inner-rect state shape)
+     :rect (generic-inner-rect state shape)
+     :text (generic-inner-rect shape shape)
+     :line (generic-inner-rect state shape)
+     :circle (circle-inner-rect state shape)
+     :group (group-inner-rect state shape))))
 
-(defn outer-rect-coll
-  [shapes]
-  {:pre [(seq shapes)]}
-  (let [shapes (map outer-rect shapes)
-        x (apply min (map :x shapes))
-        y (apply min (map :y shapes))
-        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
-        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
-        width (- x' x)
-        height (- y' y)]
-    {:width width
-     :height height
-     :x x
-     :y y}))
-
-(defn- generic-outer-rect
+(defn- generic-inner-rect
   [state {:keys [x1 y1] :as shape}]
   (-> (assoc shape :x x1 :y y1)
       (merge (size shape))
       (apply-rotation-transformation)))
 
-(defn- line-outer-rect
+(defn- circle-inner-rect
+  [state {:keys [cx cy rx ry group] :as shape}]
+  (let [props {:x (- cx rx)
+               :y (- cy ry)
+               :width (* rx 2)
+               :height (* ry 2)}]
+    (-> (merge shape props)
+        (apply-rotation-transformation))))
+
+(defn- group-inner-rect
+  [state {:keys [id group rotation dx dy] :as shape}]
+  (let [shapes (->> (:items shape)
+                    (map #(get-in state [:shapes-by-id %]))
+                    (map #(inner-rect state %)))
+        x (apply min (map :x shapes))
+        y (apply min (map :y shapes))
+        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
+        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
+        width (- x' x)
+        height (- y' y)
+        x (+ x dx)
+        y (+ y dy)]
+    (-> (merge shape {:width width :height height :x x :y y})
+        (apply-rotation-transformation))))
+
+;; --- Outer Rect
+
+(declare generic-outer-rect)
+(declare circle-outer-rect)
+(declare group-outer-rect)
+(declare apply-rotation-transformation)
+(declare apply-parent-deltas)
+
+(defn outer-rect
+  ([shape]
+   (outer-rect @st/state shape))
+  ([state shape]
+   (let [shape (case (:type shape)
+                 :rect (generic-outer-rect state shape)
+                 :text (generic-outer-rect state shape)
+                 :icon (generic-outer-rect state shape)
+                 :line (generic-outer-rect state shape)
+                 :circle (circle-outer-rect state shape)
+                 :group (group-outer-rect state shape))]
+     (if (:group shape)
+       (let [group (get-in state [:shapes-by-id (:group shape)])]
+         (apply-parent-deltas state shape (:group group)))
+       shape))))
+
+(defn- apply-parent-deltas
+  [state {:keys [x y] :as shape} id]
+  (if-let [group (get-in state [:shapes-by-id id])]
+    (let [props {:x (+ x (:dx group 0))
+                 :y (+ y (:dy group 0))}]
+      (apply-parent-deltas state (merge shape props) (:group group)))
+    shape))
+
+(defn- generic-outer-rect
   [state {:keys [x1 y1 x2 y2 group] :as shape}]
   (let [group (get-in state [:shapes-by-id group])
         props {:x (+ x1 (:dx group 0))
@@ -370,16 +410,14 @@
 (defn- group-outer-rect
   [state {:keys [id group rotation dx dy] :as shape}]
   (let [shapes (->> (:items shape)
-                    (map #(get-in @st/state [:shapes-by-id %]))
-                    (map (partial outer-rect state)))
+                    (map #(get-in state [:shapes-by-id %]))
+                    (map #(outer-rect state %)))
         x (apply min (map :x shapes))
         y (apply min (map :y shapes))
         x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
         y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
         width (- x' x)
-        height (- y' y)
-        x (+ x dx)
-        y (+ y dy)]
+        height (- y' y)]
     (-> (merge shape {:width width :height height :x x :y y})
         (apply-rotation-transformation))))
 
@@ -429,6 +467,23 @@
             :y final-y
             :width final-width
             :height final-height})))
+
+;; --- Outer Rect Coll
+
+(defn outer-rect-coll
+  [shapes]
+  {:pre [(seq shapes)]}
+  (let [shapes (map outer-rect shapes)
+        x (apply min (map :x shapes))
+        y (apply min (map :y shapes))
+        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
+        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
+        width (- x' x)
+        height (- y' y)]
+    {:width width
+     :height height
+     :x x
+     :y y}))
 
 ;; --- Transformation Matrix
 
@@ -496,7 +551,7 @@
   [state {:keys [dx dy rotation items] :or {rotation 0} :as shape}]
   (let [shapes-by-id (get state :shapes-by-id)
         shapes (map #(get shapes-by-id %) items)
-        {:keys [x y width height]} (outer-rect shapes)
+        {:keys [x y width height]} (outer-rect-coll shapes)
         center-x (+ x (/ width 2))
         center-y (+ y (/ height 2))]
     (-> (gmt/matrix)
