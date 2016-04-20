@@ -39,52 +39,52 @@
 ;; Circle Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handlers-render
-  [own shape]
-  (letfn [(on-mouse-down [vid event]
-            (dom/stop-propagation event)
-            (uuc/acquire-action! "ui.shape.resize"
-                                 {:vid vid :shape (:id shape)}))
+;; (defn- handlers-render
+;;   [own shape]
+;;   (letfn [(on-mouse-down [vid event]
+;;             (dom/stop-propagation event)
+;;             (uuc/acquire-action! "ui.shape.resize"
+;;                                  {:vid vid :shape (:id shape)}))
 
-          (on-mouse-up [vid event]
-            (dom/stop-propagation event)
-            (uuc/release-action! "ui.shape.resize"))]
-    (let [{:keys [x y width height]} (geom/outer-rect shape)]
-      (html
-       [:g.controls
-        [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
-                :style {:stroke "#333" :fill "transparent"
-                        :stroke-opacity "1"}}]
-        [:circle.top-left
-         (merge uusc/+circle-props+
-                {:on-mouse-up #(on-mouse-up 1 %)
-                 :on-mouse-down #(on-mouse-down 1 %)
-                 :cx x
-                 :cy y})]
-        [:circle.top-right
-         (merge uusc/+circle-props+
-                {:on-mouse-up #(on-mouse-up 2 %)
-                 :on-mouse-down #(on-mouse-down 2 %)
-                 :cx (+ x width)
-                 :cy y})]
-        [:circle.bottom-left
-         (merge uusc/+circle-props+
-                {:on-mouse-up #(on-mouse-up 3 %)
-                 :on-mouse-down #(on-mouse-down 3 %)
-                 :cx x
-                 :cy (+ y height)})]
-        [:circle.bottom-right
-         (merge uusc/+circle-props+
-                {:on-mouse-up #(on-mouse-up 4 %)
-                 :on-mouse-down #(on-mouse-down 4 %)
-                 :cx (+ x width)
-                 :cy (+ y height)})]]))))
+;;           (on-mouse-up [vid event]
+;;             (dom/stop-propagation event)
+;;             (uuc/release-action! "ui.shape.resize"))]
+;;     (let [{:keys [x y width height]} (geom/outer-rect shape)]
+;;       (html
+;;        [:g.controls
+;;         [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
+;;                 :style {:stroke "#333" :fill "transparent"
+;;                         :stroke-opacity "1"}}]
+;;         [:circle.top-left
+;;          (merge uusc/+circle-props+
+;;                 {:on-mouse-up #(on-mouse-up 1 %)
+;;                  :on-mouse-down #(on-mouse-down 1 %)
+;;                  :cx x
+;;                  :cy y})]
+;;         [:circle.top-right
+;;          (merge uusc/+circle-props+
+;;                 {:on-mouse-up #(on-mouse-up 2 %)
+;;                  :on-mouse-down #(on-mouse-down 2 %)
+;;                  :cx (+ x width)
+;;                  :cy y})]
+;;         [:circle.bottom-left
+;;          (merge uusc/+circle-props+
+;;                 {:on-mouse-up #(on-mouse-up 3 %)
+;;                  :on-mouse-down #(on-mouse-down 3 %)
+;;                  :cx x
+;;                  :cy (+ y height)})]
+;;         [:circle.bottom-right
+;;          (merge uusc/+circle-props+
+;;                 {:on-mouse-up #(on-mouse-up 4 %)
+;;                  :on-mouse-down #(on-mouse-down 4 %)
+;;                  :cx (+ x width)
+;;                  :cy (+ y height)})]]))))
 
-(def ^:const handlers
-  (mx/component
-   {:render handlers-render
-    :name "handlers"
-    :mixins [mx/static]}))
+;; (def ^:const handlers
+;;   (mx/component
+;;    {:render handlers-render
+;;     :name "handlers"
+;;     :mixins [mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape
