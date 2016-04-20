@@ -1,6 +1,7 @@
 (ns uxbox.state.shapes
   "A collection of functions for manage shapes insinde the state."
-  (:require [uxbox.util.data :refer (index-of)]))
+  (:require [uxbox.util.data :refer (index-of)]
+            [uxbox.util.geom :as geom]))
 
 ;; --- Shape Creation
 
@@ -235,24 +236,30 @@
     :bottom (drop-relative state :last shape)
     (throw (ex-info "Invalid data" {}))))
 
-;; --- Shape Packing
+;; --- Shape Selection
 
-;; (defn- deep-scan-shape-ids
-;;   [state acc id]
-;;   (let [shape (get-in state [:shapes-by-id id])]
-;;     (if (= (:type shape) :group)
-;;       (reduce (partial deep-scan-shape-ids state)
-;;               (conj acc id)
-;;               (:items shape))
-;;       (conj acc id))))
+(defn- try-match-shape
+  [xf selrect acc {:keys [type id items] :as shape}]
+  (cond
+    (geom/contained-in? shape selrect)
+    (conj acc id)
 
-;; (defn pack-shape
-;;   [state id]
-;;   (let [ids (deep-scan-shape-ids state #{} id)
-;;         index (reduce (fn [acc id]
-;;                         (let [shape (get-in state [:shapes-by-id id])]
-;;                           (assoc acc id shape)))
-;;                       {} ids)]
-;;     {:type :packed-shape
-;;      :index index
-;;      :id id}))
+    (:locked shape)
+    acc
+
+    (= type :group)
+    (reduce (partial try-match-shape xf selrect)
+            acc (sequence xf items))
+
+    :else
+    acc))
+
+(defn match-by-selrect
+  [state page selrect]
+  (let [xf (comp (map #(get-in state [:shapes-by-id %]))
+                 (remove :hidden)
+                 (remove :blocked)
+                 (map geom/outer-rect))
+        match (partial try-match-shape xf selrect)
+        shapes (get-in state [:pages-by-id page :shapes])]
+    (reduce match #{} (sequence xf shapes))))

@@ -311,36 +311,12 @@
 
 ;; --- Select Shapes
 
-(defn- not-blocked-group?
-  "Check if the shape is a blocked group."
-  [shape]
-  (and (not (:blocked shape))
-       (= :group (:type shape))))
-
-(defn- has-blocked-parent?
-  "Check if shape has blocked parent."
-  [shape]
-  (geom/parent-satisfies? shape :blocked))
-
-(defn- has-locked-parent?
-  [shape]
-  (geom/parent-satisfies? shape :locked))
-
 (defrecord SelectShapes [selrect]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [pageid (get-in state [:workspace :page])
-          xform (comp (filter #(= (:page %) pageid))
-                      (remove :hidden)
-                      (remove :blocked)
-                      (remove not-blocked-group?)
-                      (remove has-locked-parent?)
-                      (remove has-blocked-parent?)
-                      (map geom/outer-rect)
-                      (filter #(geom/contained-in? % selrect))
-                      (map :id))]
-      (->> (into #{} xform (vals (:shapes-by-id state)))
-           (assoc-in state [:workspace :selected])))))
+    (let [page (get-in state [:workspace :page])
+          shapes (stsh/match-by-selrect state page selrect)]
+      (assoc-in state [:workspace :selected] shapes))))
 
 (defn select-shapes
   "Select shapes that matches the select rect."
