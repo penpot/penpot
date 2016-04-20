@@ -19,19 +19,23 @@
             [uxbox.util.geom :as geom]
             [uxbox.util.geom.point :as gpt]))
 
-(declare initialize)
-(declare handle-movement)
 
 ;; --- Lenses
 
-(declare translate-to-viewport)
+;; (declare translate-to-viewport)
+
+;; (defn- resolve-selected
+;;   [state]
+;;   (let [selected (get-in state [:workspace :selected])
+;;         xf (comp
+;;             (map #(get-in state [:shapes-by-id %]))
+;;             (map translate-to-viewport))]
+;;     (into #{} xf selected)))
 
 (defn- resolve-selected
   [state]
   (let [selected (get-in state [:workspace :selected])
-        xf (comp
-            (map #(get-in state [:shapes-by-id %]))
-            (map translate-to-viewport))]
+        xf (map #(get-in state [:shapes-by-id %]))]
     (into #{} xf selected)))
 
 (def ^:const ^:private selected-shapes-l
@@ -48,6 +52,8 @@
 
 ;; --- Public Api
 
+(declare initialize)
+
 (defn watch-move-actions
   []
   (as-> uuc/actions-s $
@@ -56,62 +62,77 @@
 
 ;; --- Implementation
 
-(def coords
-  (gpt/point c/canvas-start-x
-             c/canvas-start-y))
+;; (def coords
+;;   (gpt/point c/canvas-start-x
+;;              c/canvas-start-y))
 
-(defn- translate-to-viewport
-  [shape]
-  (let [dx (- (:x2 shape) (:x1 shape))
-        dy (- (:y2 shape) (:y1 shape))
-        p1 (gpt/point (:x1 shape) (:y1 shape))
-        p2 (gpt/add p1 coords)
-        p3 (gpt/add p2 [dx dy])]
-    (assoc shape
-           :x1 (:x p2)
-           :y1 (:y p2)
-           :x2 (:x p3)
-           :y2 (:y p3))))
+;; (defn- translate-to-viewport
+;;   [shape]
+;;   (let [dx (- (:x2 shape) (:x1 shape))
+;;         dy (- (:y2 shape) (:y1 shape))
+;;         p1 (gpt/point (:x1 shape) (:y1 shape))
+;;         p2 (gpt/add p1 coords)
+;;         p3 (gpt/add p2 [dx dy])]
+;;     (assoc shape
+;;            :x1 (:x p2)
+;;            :y1 (:y p2)
+;;            :x2 (:x p3)
+;;            :y2 (:y p3))))
 
-(defn- translate-to-canvas
-  [shape]
-  (let [dx (- (:x2 shape) (:x1 shape))
-        dy (- (:y2 shape) (:y1 shape))
-        p1 (gpt/point (:x1 shape) (:y1 shape))
-        p2 (gpt/subtract p1 coords)
-        p3 (gpt/add p2 [dx dy])]
-    (assoc shape
-           :x1 (:x p2)
-           :y1 (:y p2)
-           :x2 (:x p3)
-           :y2 (:y p3))))
+;; (defn- translate-to-canvas
+;;   [shape]
+;;   (let [dx (- (:x2 shape) (:x1 shape))
+;;         dy (- (:y2 shape) (:y1 shape))
+;;         p1 (gpt/point (:x1 shape) (:y1 shape))
+;;         p2 (gpt/subtract p1 coords)
+;;         p3 (gpt/add p2 [dx dy])]
+;;     (assoc shape
+;;            :x1 (:x p2)
+;;            :y1 (:y p2)
+;;            :x2 (:x p3)
+;;            :y2 (:y p3))))
+
+;; (defn- initialize
+;;   []
+;;   (let [shapes @selected-shapes-l
+;;         align? @alignment-l
+;;         stoper (->> uuc/actions-s
+;;                     (rx/map :type)
+;;                     (rx/filter empty?)
+;;                     (rx/take 1))]
+;;     (as-> wb/mouse-delta-s $
+;;       (rx/take-until stoper $)
+;;       (rx/map #(gpt/divide % @wb/zoom-l) $)
+;;       (rx/scan (fn [acc delta]
+;;                  (let [xf (map #(geom/move % delta))]
+;;                    (into [] xf acc))) shapes $)
+;;       (rx/mapcat (fn [items]
+;;                    (if align?
+;;                      (->> (apply rx/of items)
+;;                           (rx/mapcat align/translate)
+;;                           (rx/reduce conj []))
+;;                      (rx/of items))) $)
+;;       (rx/map (fn [items]
+;;                 (mapv translate-to-canvas items)) $)
+;;       (rx/subscribe $ handle-movement))))
+
+(defn- handle-movement
+  [{:keys [id] :as shape} delta]
+  (rs/emit! (uds/move-shape id delta)))
+
+(defn- watch-movement
+  [stoper shape]
+  (as-> wb/mouse-delta-s $
+    (rx/take-until stoper $)
+    (rx/map #(gpt/divide % @wb/zoom-l) $)
+    (rx/subscribe $ (partial handle-movement shape))))
 
 (defn- initialize
   []
-  (let [shapes @selected-shapes-l
-        align? @alignment-l
+  (let [;; align? @alignment-l
         stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter empty?)
                     (rx/take 1))]
-    (as-> wb/mouse-delta-s $
-      (rx/take-until stoper $)
-      (rx/map #(gpt/divide % @wb/zoom-l) $)
-      (rx/scan (fn [acc delta]
-                 (let [xf (map #(geom/move % delta))]
-                   (into [] xf acc))) shapes $)
-      (rx/mapcat (fn [items]
-                   (if align?
-                     (->> (apply rx/of items)
-                          (rx/mapcat align/translate)
-                          (rx/reduce conj []))
-                     (rx/of items))) $)
-      (rx/map (fn [items]
-                (mapv translate-to-canvas items)) $)
-
-      (rx/subscribe $ handle-movement))))
-
-(defn- handle-movement
-  [delta]
-  (doseq [shape delta]
-    (rs/emit! (uds/update-shape shape))))
+    (run! (partial watch-movement stoper)
+          (deref selected-shapes-l))))
