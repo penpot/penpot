@@ -10,7 +10,8 @@
             [uxbox.rstore :as rs]
             [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]
-            [uxbox.ui.workspace.base :as uuwb]
+            [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.align :as align]
             [uxbox.util.geom.point :as gpt]))
 
 (declare initialize)
@@ -33,11 +34,21 @@
         stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter #(empty? %))
-                    (rx/take 1))]
-    (as-> uuwb/mouse-delta-s $
-      (rx/take-until stoper $)
-      (rx/with-latest-from vector uuwb/mouse-ctrl-s $)
-      (rx/subscribe $ #(handle-resize payload %)))))
+                    (rx/take 1))
+
+        align? @wb/alignment-l
+        stream (->> wb/mouse-viewport-s
+                    (rx/sample 10)
+                    (rx/mapcat (fn [point]
+                                 (if align?
+                                   (align/translate point)
+                                   (rx/of point))))
+                    (rx/buffer 2 1)
+                    (rx/map wb/coords-delta)
+                    (rx/take-until stoper)
+                    (rx/map #(gpt/divide % @wb/zoom-l))
+                    (rx/with-latest-from vector wb/mouse-ctrl-s))]
+    (rx/subscribe stream #(handle-resize payload %))))
 
 (defn- handle-resize
   [{:keys [vid shape]} [delta ctrl?]]
