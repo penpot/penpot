@@ -138,6 +138,24 @@
   {:width (- x2 x1)
    :height (- y2 y1)})
 
+;; --- Vertex Access
+
+(declare get-rect-vertext-point)
+
+(defn get-vertex-point
+  [shape id]
+  (case (:type shape)
+    :icon (get-rect-vertext-point shape id)
+    :rect (get-rect-vertext-point shape id)))
+
+(defn- get-rect-vertext-point
+  [{:keys [x1 y1 x2 y2]} id]
+  (case id
+    1 (gpt/point x1 y1)
+    2 (gpt/point x2 y1)
+    3 (gpt/point x1 y2)
+    4 (gpt/point x2 y2)))
+
 ;; --- Vertex Movement (Relative)
 
 (declare move-rect-vertex)

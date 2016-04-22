@@ -7,15 +7,18 @@
 
 (ns uxbox.data.shapes
   (:require [beicon.core :as rx]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
             [uxbox.state.shapes :as stsh]
             [uxbox.schema :as sc]
+            [uxbox.data.core :refer (worker)]
             [uxbox.data.pages :as udp]
             [uxbox.util.geom :as geom]
             [uxbox.util.geom.point :as gpt]
-            [uxbox.util.data :refer (index-of)]))
+            [uxbox.util.data :refer (index-of)]
+            [uxbox.util.workers :as uw]))
 
 (defn add-shape
   "Create and add shape to the current selected page."
@@ -55,6 +58,25 @@
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id sid])]
         (update-in state [:shapes-by-id sid] geom/move delta)))))
+
+(declare align-point)
+
+(def coords
+  (gpt/point c/canvas-start-x
+             c/canvas-start-y))
+
+(defn initial-align-shape
+  [id]
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state s]
+      (let [shape (get-in state [:shapes-by-id id])
+            shape (geom/outer-rect state shape)
+            point (gpt/point (:x shape) (:y shape))
+            point (gpt/add point coords)]
+        (->> (align-point point)
+             (rx/map #(gpt/subtract % point))
+             (rx/map #(move-shape id %)))))))
 
 (defn update-line-attrs
   [sid {:keys [x1 y1 x2 y2] :as opts}]
@@ -109,6 +131,18 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id id] geom/move-vertex vid delta))))
+
+(defn initial-vertext-align
+  [id vid]
+  (reify
+    rs/WatchEvent
+    (-apply-watch [_ state s]
+      (let [shape (get-in state [:shapes-by-id id])
+            point (geom/get-vertex-point shape vid)
+            point (gpt/add point coords)]
+        (->> (align-point point)
+             (rx/map #(gpt/subtract % point))
+             (rx/map #(update-vertex-position id {:vid vid :delta %})))))))
 
 (defn update-position
   "Update the start position coordenate of the shape."
@@ -444,3 +478,11 @@
     (-apply-update [_ state]
       (let [selected (get-in state [:workspace :selected])]
         (stsh/move-layer state selected loc)))))
+
+;; --- Point Alignment (with Grid)
+
+(defn align-point
+  [point]
+  (let [message {:cmd :grid/align :point point}]
+    (->> (uw/ask! worker message)
+         (rx/map :point))))

@@ -11,7 +11,6 @@
             [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.align :as align]
             [uxbox.util.geom.point :as gpt]))
 
 (declare initialize)
@@ -30,7 +29,7 @@
 
 (defn- initialize
   [event]
-  (let [payload (:payload event)
+  (let [{:keys [vid shape] :as payload} (:payload event)
         stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter #(empty? %))
@@ -41,13 +40,15 @@
                     (rx/sample 10)
                     (rx/mapcat (fn [point]
                                  (if align?
-                                   (align/translate point)
+                                   (uds/align-point point)
                                    (rx/of point))))
                     (rx/buffer 2 1)
                     (rx/map wb/coords-delta)
                     (rx/take-until stoper)
                     (rx/map #(gpt/divide % @wb/zoom-l))
                     (rx/with-latest-from vector wb/mouse-ctrl-s))]
+    (when align?
+      (rs/emit! (uds/initial-vertext-align shape vid)))
     (rx/subscribe stream #(handle-resize payload %))))
 
 (defn- handle-resize

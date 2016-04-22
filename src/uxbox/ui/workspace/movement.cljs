@@ -14,11 +14,9 @@
             [uxbox.state :as st]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.workspace.base :as wb]
-            [uxbox.ui.workspace.align :as align]
             [uxbox.data.shapes :as uds]
             [uxbox.util.geom :as geom]
             [uxbox.util.geom.point :as gpt]))
-
 
 ;; --- Lenses
 
@@ -61,12 +59,13 @@
   (rs/emit! (uds/move-shape id delta)))
 
 (defn- watch-movement
-  [stoper align? shape]
+  [stoper align? {:keys [id] :as shape}]
+  (when align? (rs/emit! (uds/initial-align-shape id)))
   (let [stream (->> wb/mouse-viewport-s
                     (rx/sample 10)
                     (rx/mapcat (fn [point]
                                  (if align?
-                                   (align/translate point)
+                                   (uds/align-point point)
                                    (rx/of point))))
                     (rx/buffer 2 1)
                     (rx/map wb/coords-delta)
