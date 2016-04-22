@@ -15,18 +15,17 @@
 
                  ;; runtime
                  [com.cognitect/transit-cljs "0.8.237"]
-                 [rum "0.7.0" :exclusions [sablono]]
-                 [sablono "0.7.0"]
-                 [cljsjs/react "15.0.1-0"]
-                 [cljsjs/react-dom "15.0.1-0"]
+                 [rum "0.8.1"]
+                 [cljsjs/react "15.0.1-1"]
+                 [cljsjs/react-dom "15.0.1-1"]
                  [cljsjs/moment "2.10.6-4"]
-                 [funcool/struct "0.1.0-SNAPSHOT"]
+                 [funcool/struct "0.1.0"]
                  [funcool/lentes "1.0.1"]
                  [funcool/httpurr "0.6.0-SNAPSHOT"]
                  [funcool/promesa "1.1.1"]
                  [funcool/beicon "1.2.0"]
                  [funcool/cuerdas "0.7.2"]
-                 [bidi "2.0.6"]]
+                 [bidi "2.0.7"]]
   :plugins [[lein-ancient "0.6.7"]]
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
   )
