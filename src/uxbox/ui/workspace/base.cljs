@@ -126,4 +126,3 @@
        (rx/buffer 2 1)
        (rx/map coords-delta)
        (rx/share)))
-

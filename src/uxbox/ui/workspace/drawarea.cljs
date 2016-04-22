@@ -10,6 +10,7 @@
             [rum.core :as rum]
             [beicon.core :as rx]
             [lentes.core :as l]
+            [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.data.workspace :as udw]
@@ -64,23 +65,26 @@
 
 ;; --- Drawing Logic
 
-(declare initialize-icon-drawing)
-(declare initialize-shape-drawing)
+(declare initialize)
 
 (defn- watch-draw-actions
   []
-  (letfn [(initialize [shape]
-            (println "initialize" shape)
-            (if (= (:type shape) :icon)
-              (initialize-icon-drawing shape)
-              (initialize-shape-drawing shape)))]
-    (as-> uuc/actions-s $
-      (rx/map :type $)
-      (rx/dedupe $)
-      (rx/filter #(= "ui.shape.draw" %) $)
-      (rx/map #(:drawing @wb/workspace-l) $)
-      (rx/filter identity $)
-      (rx/on-value $ initialize))))
+  (let [stream (->> uuc/actions-s
+                    (rx/map :type)
+                    (rx/dedupe)
+                    (rx/filter #(= "ui.shape.draw" %))
+                    (rx/map #(:drawing @wb/workspace-l))
+                    (rx/filter identity))]
+    (rx/subscribe stream initialize)))
+
+(declare initialize-icon-drawing)
+(declare initialize-shape-drawing)
+
+(defn- initialize
+  [shape]
+  (if (= (:type shape) :icon)
+    (initialize-icon-drawing shape)
+    (initialize-shape-drawing shape)))
 
 (defn- initialize-icon-drawing
   "A drawing handler for icons."
@@ -92,34 +96,52 @@
               (udw/select-for-drawing nil)
               (uds/select-first-shape))))
 
+(def ^:private canvas-coords
+  (gpt/point c/canvas-start-x
+             c/canvas-start-y))
+
+(declare on-draw)
+(declare on-draw-complete)
+(declare on-first-draw)
+
 (defn- initialize-shape-drawing
-  "A drawing handler for generic shapes such as rect, circle, text, etc."
   [shape]
-  (letfn [(on-value [[pt ctrl?]]
-            (let [pt (gpt/divide pt @wb/zoom-l)]
-              (reset! drawing-position (assoc pt :lock ctrl?))))
-
-          (on-complete []
-            (let [shape @drawing-shape
-                  shpos @drawing-position
-                  shape (geom/resize shape shpos)]
-              (rs/emit! (uds/add-shape shape)
-                        (udw/select-for-drawing nil)
-                        (uds/select-first-shape))
-              (reset! drawing-position nil)
-              (reset! drawing-shape nil)))]
-
-  (let [{:keys [x y] :as pt} (gpt/divide @wb/mouse-canvas-a @wb/zoom-l)
-        shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})
+  (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
+                   (rx/mapcat (fn [point]
+                                (if @wb/alignment-l
+                                  (uds/align-point point)
+                                  (rx/of point))))
+                   (rx/map #(gpt/subtract % canvas-coords)))
         stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter #(empty? %))
-                    (rx/take 1))]
+                    (rx/take 1))
+        firstpos (rx/take 1 mouse)
+        stream (->> mouse
+                    (rx/take-until stoper)
+                    (rx/skip-while #(nil? @drawing-shape))
+                    (rx/with-latest-from vector wb/mouse-ctrl-s))]
 
-    (reset! drawing-shape shape)
-    (reset! drawing-position (assoc pt :lock false))
+    (rx/subscribe firstpos #(on-first-draw shape %))
+    (rx/subscribe stream on-draw nil on-draw-complete)))
 
-    (as-> wb/mouse-canvas-s $
-      (rx/take-until stoper $)
-      (rx/with-latest-from vector wb/mouse-ctrl-s $)
-      (rx/subscribe $ on-value nil on-complete)))))
+(defn- on-first-draw
+  [shape {:keys [x y] :as pt}]
+  (let [shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})]
+    (reset! drawing-shape shape)))
+
+(defn- on-draw
+  [[pt ctrl?]]
+  (let [pt (gpt/divide pt @wb/zoom-l)]
+    (reset! drawing-position (assoc pt :lock ctrl?))))
+
+(defn- on-draw-complete
+  []
+  (let [shape @drawing-shape
+        shpos @drawing-position
+                  shape (geom/resize shape shpos)]
+    (rs/emit! (uds/add-shape shape)
+              (udw/select-for-drawing nil)
+              (uds/select-first-shape))
+    (reset! drawing-position nil)
+    (reset! drawing-shape nil)))

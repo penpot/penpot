@@ -61,7 +61,7 @@
 
 (declare align-point)
 
-(def coords
+(def ^:private canvas-coords
   (gpt/point c/canvas-start-x
              c/canvas-start-y))
 
@@ -73,7 +73,7 @@
       (let [shape (get-in state [:shapes-by-id id])
             shape (geom/outer-rect state shape)
             point (gpt/point (:x shape) (:y shape))
-            point (gpt/add point coords)]
+            point (gpt/add point canvas-coords)]
         (->> (align-point point)
              (rx/map #(gpt/subtract % point))
              (rx/map #(move-shape id %)))))))
@@ -139,7 +139,7 @@
     (-apply-watch [_ state s]
       (let [shape (get-in state [:shapes-by-id id])
             point (geom/get-vertex-point shape vid)
-            point (gpt/add point coords)]
+            point (gpt/add point canvas-coords)]
         (->> (align-point point)
              (rx/map #(gpt/subtract % point))
              (rx/map #(update-vertex-position id {:vid vid :delta %})))))))
