@@ -14,7 +14,6 @@
             [uxbox.util.geom.point :as gpt]))
 
 (declare initialize)
-(declare handle-resize)
 
 ;; --- Public Api
 
@@ -27,6 +26,8 @@
 
 ;; --- Implementation
 
+(declare handle-resize)
+
 (defn- initialize
   [event]
   (let [{:keys [vid shape] :as payload} (:payload event)
@@ -34,24 +35,15 @@
                     (rx/map :type)
                     (rx/filter #(empty? %))
                     (rx/take 1))
-
-        align? @wb/alignment-l
-        stream (->> wb/mouse-viewport-s
-                    (rx/sample 10)
-                    (rx/mapcat (fn [point]
-                                 (if align?
-                                   (uds/align-point point)
-                                   (rx/of point))))
-                    (rx/buffer 2 1)
-                    (rx/map wb/coords-delta)
+        stream (->> wb/mouse-delta-s
                     (rx/take-until stoper)
                     (rx/map #(gpt/divide % @wb/zoom-l))
                     (rx/with-latest-from vector wb/mouse-ctrl-s))]
-    (when align?
+    (when @wb/alignment-l
       (rs/emit! (uds/initial-vertext-align shape vid)))
-    (rx/subscribe stream #(handle-resize payload %))))
+    (rx/subscribe stream #(handle-resize shape vid %))))
 
 (defn- handle-resize
-  [{:keys [vid shape]} [delta ctrl?]]
+  [shape vid [delta ctrl?]]
   (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
     (rs/emit! (uds/update-vertex-position shape params))))

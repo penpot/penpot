@@ -18,57 +18,27 @@
             [uxbox.util.geom :as geom]
             [uxbox.util.geom.point :as gpt]))
 
-;; --- Lenses
-
-(defn- resolve-selected
-  [state]
-  (let [selected (get-in state [:workspace :selected])
-        xf (map #(get-in state [:shapes-by-id %]))]
-    (into #{} xf selected)))
-
-(def ^:const ^:private selected-shapes-l
-  (-> (l/getter resolve-selected)
-      (l/focus-atom st/state)))
-
 ;; --- Public Api
-
-(declare initialize)
-
-(defn watch-move-actions
-  []
-  (as-> uuc/actions-s $
-    (rx/filter #(= "ui.shape.move" (:type %)) $)
-    (rx/on-value $ initialize)))
-
-;; --- Implementation
 
 (declare watch-movement)
 
-(defn- initialize
+(defn watch-move-actions
   []
-  (let [align? @wb/alignment-l
-        stoper (->> uuc/actions-s
-                    (rx/map :type)
-                    (rx/filter empty?)
-                    (rx/take 1))]
-    (run! (partial watch-movement stoper align?)
-          (deref selected-shapes-l))))
+  (let [initialize #(run! watch-movement @wb/selected-shapes-l)
+        stream (rx/filter #(= "ui.shape.move" (:type %)) uuc/actions-s)]
+    (rx/subscribe stream initialize)))
 
-(defn- handle-movement
-  [{:keys [id] :as shape} delta]
-  (rs/emit! (uds/move-shape id delta)))
+;; --- Implementation
 
 (defn- watch-movement
-  [stoper align? {:keys [id] :as shape}]
-  (when align? (rs/emit! (uds/initial-align-shape id)))
-  (let [stream (->> wb/mouse-viewport-s
-                    (rx/sample 10)
-                    (rx/mapcat (fn [point]
-                                 (if align?
-                                   (uds/align-point point)
-                                   (rx/of point))))
-                    (rx/buffer 2 1)
-                    (rx/map wb/coords-delta)
+  [shape]
+  (let [stoper (->> uuc/actions-s
+                    (rx/map :type)
+                    (rx/filter empty?)
+                    (rx/take 1))
+        stream (->> wb/mouse-delta-s
                     (rx/take-until stoper)
                     (rx/map #(gpt/divide % @wb/zoom-l)))]
-    (rx/subscribe stream (partial handle-movement shape))))
+    (when @wb/alignment-l
+      (rs/emit! (uds/initial-align-shape shape)))
+    (rx/subscribe stream #(rs/emit! (uds/move-shape shape %)))))

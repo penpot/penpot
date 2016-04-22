@@ -13,6 +13,7 @@
             [uxbox.state :as st]
             [uxbox.state.project :as stpr]
             [uxbox.data.workspace :as dw]
+            [uxbox.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.lens :as ul]
             [goog.events :as events])
@@ -118,6 +119,10 @@
 (defonce mouse-delta-s
   (->> mouse-viewport-s
        (rx/sample 10)
+       (rx/mapcat (fn [point]
+                    (if @alignment-l
+                      (uds/align-point point)
+                      (rx/of point))))
        (rx/buffer 2 1)
        (rx/map coords-delta)
        (rx/share)))
