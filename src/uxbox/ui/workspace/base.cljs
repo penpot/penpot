@@ -58,6 +58,14 @@
   (-> (l/in [:workspace :zoom])
       (l/focus-atom st/state)))
 
+(def ^:const alignment-l
+  (letfn [(getter [flags]
+            (and (contains? flags :grid/indexed)
+                 (contains? flags :grid/alignment)
+                 (contains? flags :grid)))]
+    (-> (l/getter getter)
+        (l/focus-atom flags-l))))
+
 ;; --- Scroll Stream
 
 (defonce scroll-b (rx/bus))
@@ -113,3 +121,4 @@
        (rx/buffer 2 1)
        (rx/map coords-delta)
        (rx/share)))
+

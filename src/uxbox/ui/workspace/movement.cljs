@@ -22,16 +22,6 @@
 
 ;; --- Lenses
 
-;; (declare translate-to-viewport)
-
-;; (defn- resolve-selected
-;;   [state]
-;;   (let [selected (get-in state [:workspace :selected])
-;;         xf (comp
-;;             (map #(get-in state [:shapes-by-id %]))
-;;             (map translate-to-viewport))]
-;;     (into #{} xf selected)))
-
 (defn- resolve-selected
   [state]
   (let [selected (get-in state [:workspace :selected])
@@ -41,14 +31,6 @@
 (def ^:const ^:private selected-shapes-l
   (-> (l/getter resolve-selected)
       (l/focus-atom st/state)))
-
-(def ^:const ^:private alignment-l
-  (letfn [(getter [flags]
-            (and (contains? flags :grid/indexed)
-                 (contains? flags :grid/alignment)
-                 (contains? flags :grid)))]
-    (-> (l/getter getter)
-        (l/focus-atom wb/flags-l))))
 
 ;; --- Public Api
 
@@ -62,77 +44,32 @@
 
 ;; --- Implementation
 
-;; (def coords
-;;   (gpt/point c/canvas-start-x
-;;              c/canvas-start-y))
+(declare watch-movement)
 
-;; (defn- translate-to-viewport
-;;   [shape]
-;;   (let [dx (- (:x2 shape) (:x1 shape))
-;;         dy (- (:y2 shape) (:y1 shape))
-;;         p1 (gpt/point (:x1 shape) (:y1 shape))
-;;         p2 (gpt/add p1 coords)
-;;         p3 (gpt/add p2 [dx dy])]
-;;     (assoc shape
-;;            :x1 (:x p2)
-;;            :y1 (:y p2)
-;;            :x2 (:x p3)
-;;            :y2 (:y p3))))
-
-;; (defn- translate-to-canvas
-;;   [shape]
-;;   (let [dx (- (:x2 shape) (:x1 shape))
-;;         dy (- (:y2 shape) (:y1 shape))
-;;         p1 (gpt/point (:x1 shape) (:y1 shape))
-;;         p2 (gpt/subtract p1 coords)
-;;         p3 (gpt/add p2 [dx dy])]
-;;     (assoc shape
-;;            :x1 (:x p2)
-;;            :y1 (:y p2)
-;;            :x2 (:x p3)
-;;            :y2 (:y p3))))
-
-;; (defn- initialize
-;;   []
-;;   (let [shapes @selected-shapes-l
-;;         align? @alignment-l
-;;         stoper (->> uuc/actions-s
-;;                     (rx/map :type)
-;;                     (rx/filter empty?)
-;;                     (rx/take 1))]
-;;     (as-> wb/mouse-delta-s $
-;;       (rx/take-until stoper $)
-;;       (rx/map #(gpt/divide % @wb/zoom-l) $)
-;;       (rx/scan (fn [acc delta]
-;;                  (let [xf (map #(geom/move % delta))]
-;;                    (into [] xf acc))) shapes $)
-;;       (rx/mapcat (fn [items]
-;;                    (if align?
-;;                      (->> (apply rx/of items)
-;;                           (rx/mapcat align/translate)
-;;                           (rx/reduce conj []))
-;;                      (rx/of items))) $)
-;;       (rx/map (fn [items]
-;;                 (mapv translate-to-canvas items)) $)
-;;       (rx/subscribe $ handle-movement))))
+(defn- initialize
+  []
+  (let [align? @wb/alignment-l
+        stoper (->> uuc/actions-s
+                    (rx/map :type)
+                    (rx/filter empty?)
+                    (rx/take 1))]
+    (run! (partial watch-movement stoper align?)
+          (deref selected-shapes-l))))
 
 (defn- handle-movement
   [{:keys [id] :as shape} delta]
   (rs/emit! (uds/move-shape id delta)))
 
 (defn- watch-movement
-  [stoper shape]
-  (as-> wb/mouse-delta-s $
-    (rx/take-until stoper $)
-    (rx/map #(gpt/divide % @wb/zoom-l) $)
-    (rx/subscribe $ (partial handle-movement shape))))
-
-(defn- initialize
-  []
-  (let [;; align? @alignment-l
-        stoper (->> uuc/actions-s
-                    (rx/map :type)
-                    (rx/filter empty?)
-                    (rx/take 1))]
-    (run! (partial watch-movement stoper)
-          (deref selected-shapes-l))))
+  [stoper align? shape]
+  (let [stream (->> wb/mouse-viewport-s
+                    (rx/sample 10)
+                    (rx/mapcat (fn [point]
+                                 (if align?
+                                   (align/translate point)
+                                   (rx/of point))))
+                    (rx/buffer 2 1)
+                    (rx/map wb/coords-delta)
+                    (rx/take-until stoper)
+                    (rx/map #(gpt/divide % @wb/zoom-l)))]
+    (rx/subscribe stream (partial handle-movement shape))))

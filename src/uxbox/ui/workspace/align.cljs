@@ -14,23 +14,19 @@
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.workers :as uw]))
 
-(defn- move
-  [shape p1]
-  (let [dx (- (:x2 shape) (:x1 shape))
-        dy (- (:y2 shape) (:y1 shape))
-        p2 (gpt/add p1 [dx dy])]
-    (assoc shape
-           :x1 (:x p1)
-           :y1 (:y p1)
-           :x2 (:x p2)
-           :y2 (:y p2))))
+;; (defn- move
+;;   [shape p1]
+;;   (let [dx (- (:x2 shape) (:x1 shape))
+;;         dy (- (:y2 shape) (:y1 shape))
+;;         p2 (gpt/add p1 [dx dy])]
+;;     (assoc shape
+;;            :x1 (:x p1)
+;;            :y1 (:y p1)
+;;            :x2 (:x p2)
+;;            :y2 (:y p2))))
 
 (defn translate
-  [{:keys [x1 y1] :as shape}]
-  (let [message {:cmd :grid/align
-                 :point (gpt/point x1 y1)}]
+  [point]
+  (let [message {:cmd :grid/align :point point}]
     (->> (uw/ask! worker message)
-         (rx/map (fn [{:keys [point]}]
-                   (if point
-                     (move shape point)
-                     shape))))))
+         (rx/map :point))))
