@@ -141,12 +141,15 @@
 ;; --- Vertex Access
 
 (declare get-rect-vertext-point)
+(declare get-circle-vertext-point)
 
 (defn get-vertex-point
   [shape id]
   (case (:type shape)
     :icon (get-rect-vertext-point shape id)
-    :rect (get-rect-vertext-point shape id)))
+    :rect (get-rect-vertext-point shape id)
+    :circle (get-circle-vertext-point shape id)
+    :text (get-rect-vertext-point shape id)))
 
 (defn- get-rect-vertext-point
   [{:keys [x1 y1 x2 y2]} id]
@@ -155,6 +158,10 @@
     2 (gpt/point x2 y1)
     3 (gpt/point x1 y2)
     4 (gpt/point x2 y2)))
+
+(defn- get-circle-vertext-point
+  [{:keys [rx ry]} id]
+  (gpt/point rx ry))
 
 ;; --- Vertex Movement (Relative)
 
