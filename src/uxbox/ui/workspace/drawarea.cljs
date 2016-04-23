@@ -36,7 +36,7 @@
   [own]
   (let [shape (rum/react drawing-shape)
         position (rum/react drawing-position)]
-    (when shape
+    (when (and shape position)
       (-> (assoc shape :drawing? true)
           (geom/resize position)
           (uusc/render-shape identity)))))
