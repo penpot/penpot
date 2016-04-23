@@ -132,6 +132,13 @@
           :value (:stroke shape "")
           :on-change on-color-change}]]
 
+       ;; NEW COLOR PICKER
+       [:div.row-flex.color-data
+        [:span.color-th]
+        [:div.color-info
+         [:span.type "#"]
+         [:span.number "F1F1F1"]]]
+
        (recent-colors shape #(change-stroke {:color %}))
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY

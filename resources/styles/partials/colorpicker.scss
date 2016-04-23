@@ -98,3 +98,28 @@
     background-color: white;
   }
 }
+
+/* NEW COLOR PICKER */
+/* color th */
+.color-data {
+  align-items: center;
+  display: flex;
+  margin-bottom: $x-small;
+  position: relative;
+
+  .color-info {
+    border: 1px solid $soft-ui-border;
+    border-radius: $br-small;
+    margin: 3px 0 0 $x-small;
+    padding: 0 $x-small;
+  }
+
+  .type {
+    color: $soft-ui-text;
+    margin-right: $x-small;
+  }
+
+  .number {
+    color: $intense-ui-text;
+  }
+}
