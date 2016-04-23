@@ -128,7 +128,7 @@
          [:span.number "F1F1F1"]]
 
         ;; COLOR PICKER TOOLTIP
-        [:div.colorpicker-tooltip
+        [:div.colorpicker-tooltip.hide
          [:div.color-picker-small
           (colorpicker
            :theme :small
