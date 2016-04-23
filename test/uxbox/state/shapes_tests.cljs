@@ -22,7 +22,7 @@
                  :shapes-by-id {1 {:id 1 :page 1}}}
 
         expected (-> initial
-                     (assoc-in [:pages-by-id 1 :shapes] [1 2])
+                     (assoc-in [:pages-by-id 1 :shapes] [2 1])
                      (assoc-in [:shapes-by-id 2] {:id 2 :page 1}))]
 
     (with-redefs [uuid.core/random (constantly 2)]
@@ -34,16 +34,16 @@
 ;; duplicate shape: duplicate inside group
 (t/deftest duplicate-shapes-test2
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1]}}
-                 :shapes-by-id {1 {:id 1 :page 1
+                 :shapes-by-id {1 {:id 1 :name "1" :page 1
                                    :type :group
                                    :items [2 3]}
-                                2 {:id 2 :page 1 :group 1}
-                                3 {:id 3 :page 1 :group 1}}}
+                                2 {:id 2 :name "2" :page 1 :group 1}
+                                3 {:id 3 :name "3" :page 1 :group 1}}}
 
         expected (-> initial
-                     (assoc-in [:shapes-by-id 1 :items] [2 3 4 5])
-                     (assoc-in [:shapes-by-id 4] {:id 4 :page 1 :group 1})
-                     (assoc-in [:shapes-by-id 5] {:id 5 :page 1 :group 1}))]
+                     (assoc-in [:shapes-by-id 1 :items] [5 4 2 3])
+                     (assoc-in [:shapes-by-id 4] {:id 4 :name "3" :page 1 :group 1})
+                     (assoc-in [:shapes-by-id 5] {:id 5 :name "2" :page 1 :group 1}))]
     (with-redefs [uuid.core/random (constantly-inc 4)]
       (let [result (ssh/duplicate-shapes initial [2 3])]
         ;; (pprint expected)
@@ -54,17 +54,17 @@
 ;; duplicate shape: duplicate mixed bag
 (t/deftest duplicate-shapes-test3
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 4]}}
-                 :shapes-by-id {1 {:id 1 :page 1
+                 :shapes-by-id {1 {:id 1 :name "1" :page 1
                                    :type :group
                                    :items [2 3]}
-                                2 {:id 2 :page 1 :group 1}
-                                3 {:id 3 :page 1 :group 1}
-                                4 {:id 4 :page 1}}}
+                                2 {:id 2 :name "2" :page 1 :group 1}
+                                3 {:id 3 :name "3" :page 1 :group 1}
+                                4 {:id 4 :name "4" :page 1}}}
 
         expected (-> initial
-                     (assoc-in [:pages-by-id 1 :shapes] [1 4 5 6])
-                     (assoc-in [:shapes-by-id 5] {:id 5 :page 1})
-                     (assoc-in [:shapes-by-id 6] {:id 6 :page 1}))]
+                     (assoc-in [:pages-by-id 1 :shapes] [6 5 1 4])
+                     (assoc-in [:shapes-by-id 5] {:id 5 :name "4" :page 1})
+                     (assoc-in [:shapes-by-id 6] {:id 6 :name "3" :page 1}))]
     (with-redefs [uuid.core/random (constantly-inc 5)]
       (let [result (ssh/duplicate-shapes initial [3 4])]
         ;; (pprint expected)
@@ -81,7 +81,7 @@
                                 2 {:id 3 :page 1 :group 1}}}
 
         expected (-> initial
-                     (assoc-in [:pages-by-id 1 :shapes] [1 3])
+                     (assoc-in [:pages-by-id 1 :shapes] [3 1])
                      (assoc-in [:shapes-by-id 3] {:id 3 :page 1
                                                   :type :group
                                                   :items [4]})
