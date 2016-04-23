@@ -150,14 +150,14 @@
 
   &.palette-th {
     align-items: center;
-    border: 2px solid $medium-ui-icons;
+    border: 1px solid $medium-ui-icons;
     display: flex;
     justify-content: center;
 
     svg {
       fill: $medium-ui-icons;
-      height: 18px;
-      width: 18px;
+      height: 16px;
+      width: 16px;
     }
 
     &:hover {
