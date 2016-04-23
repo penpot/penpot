@@ -145,12 +145,12 @@
            {:placeholder "RGB"
             :type "text"}]]
 
+         (recent-colors shape #(change-stroke {:color %}))
+
          [:span "Color options"]
          [:div.row-flex
-          [:span.color-th.palette-th i/picker]
-          [:span.color-th.palette-th i/palette]]
-
-         (recent-colors shape #(change-stroke {:color %}))]]
+         [:span.color-th.palette-th i/picker]
+         [:span.color-th.palette-th i/palette]]]]
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]
