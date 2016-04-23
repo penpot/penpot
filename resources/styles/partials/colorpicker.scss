@@ -104,7 +104,6 @@
 .color-data {
   align-items: center;
   display: flex;
-  margin-bottom: $x-small;
   position: relative;
 
   .color-info {
@@ -122,4 +121,16 @@
   .number {
     color: $intense-ui-text;
   }
+}
+
+.colorpicker-tooltip {
+  background: $color-white;
+  border-radius: $br-small;
+  display: flex;
+  flex-direction: column;
+  left: 0;
+  padding: $small;
+  position: absolute;
+  top: -20px;
+  z-index: 11;
 }

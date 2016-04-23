@@ -119,27 +119,33 @@
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Color"]
-       [:div.color-picker-small
-        (colorpicker
-         :theme :small
-         :value (:stroke shape "#000000")
-         :on-change #(change-stroke {:color %}))]
-
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "#"
-          :type "text"
-          :value (:stroke shape "")
-          :on-change on-color-change}]]
 
        ;; NEW COLOR PICKER
        [:div.row-flex.color-data
         [:span.color-th]
         [:div.color-info
          [:span.type "#"]
-         [:span.number "F1F1F1"]]]
+         [:span.number "F1F1F1"]]
 
-       (recent-colors shape #(change-stroke {:color %}))
+        ;; COLOR PICKER TOOLTIP
+        [:div.colorpicker-tooltip
+         [:div.color-picker-small
+          (colorpicker
+           :theme :small
+           :value (:stroke shape "#000000")
+           :on-change #(change-stroke {:color %}))]
+
+         [:div.row-flex
+          [:input.input-text
+           {:placeholder "#"
+            :type "text"
+            :value (:stroke shape "")
+            :on-change on-color-change}]
+          [:input.input-text
+           {:placeholder "RGB"
+            :type "text"}]]
+
+          (recent-colors shape #(change-stroke {:color %}))]]
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]
