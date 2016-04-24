@@ -25,10 +25,10 @@
                      shape (assoc shape :id id :page page :items [])
                      state (if (nil? group)
                              (as-> state $
-                               (update-in $ [:pages-by-id page :shapes] conj id)
+                               (update-in $ [:pages-by-id page :shapes] #(into [] (cons id %)))
                                (assoc-in $ [:shapes-by-id id] shape))
                              (as-> state $
-                               (update-in $ [:shapes-by-id group :items] conj id)
+                               (update-in $ [:shapes-by-id group :items] #(into [] (cons id %)))
                                (assoc-in $ [:shapes-by-id id] shape)))]
                  (->> (map #(get-in state [:shapes-by-id %]) items)
                       (reduce #(duplicate-shape %1 %2 page id) state)))
@@ -38,10 +38,10 @@
                                (merge (when group {:group group})))]
                  (if (nil? group)
                    (as-> state $
-                     (update-in $ [:pages-by-id page :shapes] conj id)
+                     (update-in $ [:pages-by-id page :shapes] #(into [] (cons id %)))
                      (assoc-in $ [:shapes-by-id id] shape))
                    (as-> state $
-                     (update-in $ [:shapes-by-id group :items] conj id)
+                     (update-in $ [:shapes-by-id group :items] #(into [] (cons id %)))
                      (assoc-in $ [:shapes-by-id id] shape))))))]
 
      (reduce #(duplicate-shape %1 %2 page group) state shapes))))
@@ -55,7 +55,7 @@
            (all-same-group? [coll]
              (let [group (:group (first coll))]
                (every? #(= group (:group %)) coll)))]
-     (let [shapes (mapv #(get-in state [:shapes-by-id %]) shapes)]
+     (let [shapes (reverse (mapv #(get-in state [:shapes-by-id %]) shapes))]
        (cond
          (all-toplevel? shapes)
          (let [page (or page (:page (first shapes)))]
