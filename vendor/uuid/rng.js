@@ -9,23 +9,25 @@
 "use strict";
 
 goog.provide("uuid.rng");
+goog.require("cljs.core");
 
 goog.scope(function() {
-  uuid.rng.getBytes = null;
+  const global = goog.global;
 
   // Check if nodejs rng is available (high quality);
-  if (goog.global.require !== undefined) {
-    const crypto = goog.global.require("crypto");
+  if (cljs.core._STAR_target_STAR_ === "nodejs") {
+    const crypto = require("crypto");
 
     uuid.rng.getBytes = function(n) {
       return crypto.randomBytes(n);
     };
   }
   // Check if whatwg rng is available (high quality);
-  else if (goog.global.crypto.getRandomValues !== undefined) {
+  else if (global.crypto !== undefined &&
+           global.crypto.getRandomValues !== undefined) {
     uuid.rng.getBytes = function(n) {
       const buf = new Uint8Array(16);
-      goog.global.crypto.getRandomValues(buf);
+      global.crypto.getRandomValues(buf);
       return buf;
     };
   }
