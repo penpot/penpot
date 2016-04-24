@@ -91,11 +91,12 @@
         zoom (or (:zoom workspace) 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
-              (when-not (empty? (:selected workspace))
-                (rs/emit! (uds/deselect-all)))
               (if-let [shape (:drawing workspace)]
                 (uuc/acquire-action! "ui.shape.draw")
-                (uuc/acquire-action! "ui.selrect")))
+                (do
+                  (when-not (empty? (:selected workspace))
+                    (rs/emit! (uds/deselect-all)))
+                  (uuc/acquire-action! "ui.selrect"))))
             (on-mouse-up [event]
               (dom/stop-propagation event)
               (uuc/release-action! "ui.shape"
