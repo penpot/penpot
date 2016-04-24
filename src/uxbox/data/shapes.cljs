@@ -7,6 +7,7 @@
 
 (ns uxbox.data.shapes
   (:require [beicon.core :as rx]
+            [uuid.core :as uuid]
             [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
@@ -392,7 +393,7 @@
       rs/UpdateEvent
       (-apply-update [_ state]
         (let [shapes-by-id (get state :shapes-by-id)
-              sid (random-uuid)
+              sid (uuid/random)
               pid (get-in state [:workspace :page])
               selected (get-in state [:workspace :selected])
               selected' (map #(get shapes-by-id %) selected)

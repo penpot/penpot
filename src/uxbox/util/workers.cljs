@@ -7,6 +7,7 @@
 (ns uxbox.util.workers
   "A lightweight layer on top of webworkers api."
   (:require [beicon.core :as rx]
+            [uuid.core :as uuid]
             [uxbox.util.transit :as t]))
 
 ;; --- Implementation
@@ -18,7 +19,7 @@
 (deftype WebWorker [stream wrk]
   IWorker
   (-ask [this message]
-    (let [sender (random-uuid)
+    (let [sender (uuid/random)
           data (assoc message :sender sender)
           data (t/encode data)]
       (.postMessage wrk data)
@@ -27,7 +28,7 @@
            (rx/take 1))))
 
   (-send [this message]
-    (let [sender (random-uuid)
+    (let [sender (uuid/random)
           data (assoc message :sender sender)
           data (t/encode data)]
       (.postMessage wrk data)

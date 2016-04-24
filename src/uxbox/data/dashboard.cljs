@@ -7,6 +7,7 @@
 
 (ns uxbox.data.dashboard
   (:require [beicon.core :as rx]
+            [uuid.core :as uuid]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
@@ -102,7 +103,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [id (random-uuid)
+      (let [id (uuid/random)
             coll {:name "Unnamed collection"
                   :id id :colors #{}}]
         (-> state

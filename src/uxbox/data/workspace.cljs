@@ -7,6 +7,7 @@
 
 (ns uxbox.data.workspace
   (:require [beicon.core :as rx]
+            [uuid.core :as uuid]
             [uxbox.constants :as c]
             [uxbox.rstore :as rs]
             [uxbox.state.shapes :as stsh]
@@ -133,7 +134,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [selected (get-in state [:workspace :selected])
-          item {:id (random-uuid)
+          item {:id (uuid/random)
                 :created-at (dt/now)
                 :items selected}
           clipboard (-> (:clipboard state)

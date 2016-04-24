@@ -1,13 +1,14 @@
 (ns uxbox.state.shapes
   "A collection of functions for manage shapes insinde the state."
-  (:require [uxbox.util.data :refer (index-of)]
+  (:require [uuid.core :as uuid]
+            [uxbox.util.data :refer (index-of)]
             [uxbox.util.geom :as geom]))
 
 ;; --- Shape Creation
 
 (defn assoc-shape-to-page
   [state shape page]
-  (let [sid (random-uuid)
+  (let [sid (uuid/random)
         shape (merge shape {:id sid :page page})]
     (as-> state $
       (update-in $ [:pages-by-id page :shapes] #(into [] (cons sid %)))
@@ -19,7 +20,7 @@
   ([state shapes page group]
    (letfn [(duplicate-shape [state shape page group]
              (if (= (:type shape) :group)
-               (let [id (random-uuid)
+               (let [id (uuid/random)
                      items (:items shape)
                      shape (assoc shape :id id :page page :items [])
                      state (if (nil? group)
@@ -31,7 +32,7 @@
                                (assoc-in $ [:shapes-by-id id] shape)))]
                  (->> (map #(get-in state [:shapes-by-id %]) items)
                       (reduce #(duplicate-shape %1 %2 page id) state)))
-               (let [id (random-uuid)
+               (let [id (uuid/random)
                      shape (-> (dissoc shape :group)
                                (assoc :id id :page page)
                                (merge (when group {:group group})))]
