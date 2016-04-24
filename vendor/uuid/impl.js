@@ -42,6 +42,6 @@ goog.scope(function() {
     const buf = rng.getBytes(16);
     buf[6] = (buf[6] & 0x0f) | 0x40;
     buf[8] = (buf[8] & 0x3f) | 0x80;
-    return cljs.core.uuid(toHexString(buf));
+    return toHexString(buf);
   };
 })
