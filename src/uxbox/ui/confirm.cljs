@@ -26,15 +26,20 @@
               (on-cancel (dissoc ctx :on-accept :on-cancel))))]
     (html
      [:div.lightbox-body.confirm-dialog
-      [:span "HERE"]
-      [:input
-       {:type "button"
-        :value "Ok"
-        :on-click accept}]
-      [:input
-       {:type "button"
-        :value "Cancel"
-        :on-click cancel}]])))
+      [:h3 "Are you sure?"]
+      [:span "You're going to delete __PAGENAME__"]
+      [:div.row-flex
+       [:input.btn-success.btn-small
+        {:type "button"
+         :value "Ok"
+         :on-click accept}]
+       [:input.btn-delete.btn-small
+        {:type "button"
+         :value "Cancel"
+         :on-click cancel}]]
+         [:a.close {:href "#"
+                :on-click #(do (dom/prevent-default %)
+                               (udl/close!))} i/close]])))
 
 (def confirm-dialog
   (mx/component

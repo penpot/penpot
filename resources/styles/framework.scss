@@ -69,10 +69,9 @@
 .btn-gray {
   @extend %btn;
   background: $color-gray;
-  color: $color-gray-dark;
+  color: $color-white;
   &:hover {
     background: $color-gray-dark;
-    color: $color-gray-darker;
   }
 }
 
