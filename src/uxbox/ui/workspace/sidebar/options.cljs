@@ -86,7 +86,8 @@
               (change-stroke {:width value})))
           (on-opacity-change [event]
             (let [value (dom/event->value event)
-                  value (parse-float value 1)]
+                  value (parse-float value 1)
+                  value (/ value 10000)]
               (change-stroke {:opacity value})))
           (on-color-change [event]
             (let [value (dom/event->value event)]
@@ -139,9 +140,9 @@
         [:input.slidebar
          {:type "range"
           :min "0"
-          :max "1"
-          :value (:stroke-opacity shape "1")
-          :step "0.0001"
+          :max "10000"
+          :value (* 10000 (:stroke-opacity shape 1))
+          :step "1"
           :on-change on-opacity-change}]]]])))
 
 (defmethod -render-menu :menu/fill
@@ -154,7 +155,8 @@
               (change-fill {:color value})))
           (on-opacity-change [event]
             (let [value (dom/event->value event)
-                  value (parse-float value 1)]
+                  value (parse-float value 1)
+                  value (/ value 10000)]
               (change-fill {:opacity value})))
           (on-color-picker-event [color]
             (change-fill {:color color}))]
@@ -186,9 +188,9 @@
         [:input.slidebar
          {:type "range"
           :min "0"
-          :max "1"
-          :value (:fill-opacity shape "1")
-          :step "0.0001"
+          :max "10000"
+          :value (* 10000 (:fill-opacity shape 1))
+          :step "1"
           :on-change on-opacity-change}]]]])))
 
 (defmethod -render-menu :menu/rect-measures
