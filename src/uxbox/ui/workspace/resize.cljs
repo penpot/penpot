@@ -37,7 +37,6 @@
                     (rx/take 1))
         stream (->> wb/mouse-delta-s
                     (rx/take-until stoper)
-                    (rx/map #(gpt/divide % @wb/zoom-l))
                     (rx/with-latest-from vector wb/mouse-ctrl-s))]
     (when @wb/alignment-l
       (rs/emit! (uds/initial-vertext-align shape vid)))

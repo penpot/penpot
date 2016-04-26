@@ -49,26 +49,26 @@
   for rect-like shapes."
   [shape {dx :x dy :y}]
   (assoc shape
-         :x1 (+ (:x1 shape) dx)
-         :y1 (+ (:y1 shape) dy)
-         :x2 (+ (:x2 shape) dx)
-         :y2 (+ (:y2 shape) dy)))
+         :x1 (mth/round (+ (:x1 shape) dx))
+         :y1 (mth/round (+ (:y1 shape) dy))
+         :x2 (mth/round (+ (:x2 shape) dx))
+         :y2 (mth/round (+ (:y2 shape) dy))))
 
 (defn- move-circle
   "A specialized function for relative movement
   for circle shapes."
   [shape {dx :x dy :y}]
   (assoc shape
-         :cx (+ (:cx shape) dx)
-         :cy (+ (:cy shape) dy)))
+         :cx (mth/round (+ (:cx shape) dx))
+         :cy (mth/round (+ (:cy shape) dy))))
 
 (defn- move-group
   "A specialized function for relative movement
   for group shapes."
   [shape {dx :x dy :y}]
   (assoc shape
-         :dx (+ (:dx shape 0) dx)
-         :dy (+ (:dy shape 0) dy)))
+         :dx (mth/round (+ (:dx shape 0) dx))
+         :dy (mth/round (+ (:dy shape 0) dy))))
 
 ;; --- Absolute Movement
 

@@ -119,6 +119,7 @@
 (defonce mouse-delta-s
   (->> mouse-viewport-s
        (rx/sample 10)
+       (rx/map #(gpt/divide % @zoom-l))
        (rx/mapcat (fn [point]
                     (if @alignment-l
                       (uds/align-point point)

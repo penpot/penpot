@@ -37,8 +37,7 @@
                     (rx/filter empty?)
                     (rx/take 1))
         stream (->> wb/mouse-delta-s
-                    (rx/take-until stoper)
-                    (rx/map #(gpt/divide % @wb/zoom-l)))]
+                    (rx/take-until stoper))]
     (when @wb/alignment-l
       (rs/emit! (uds/initial-align-shape shape)))
     (rx/subscribe stream #(rs/emit! (uds/move-shape shape %)))))
