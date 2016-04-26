@@ -3,8 +3,8 @@
             [lentes.core :as l]
             [cuerdas.core :as str]
             [rum.core :as rum]
-            [uxbox.router :as r]
-            [uxbox.state :as s]
+            [uxbox.router :as rt]
+            [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.data.auth :as da]
             [uxbox.data.messages :as udm]
@@ -67,11 +67,18 @@
            :value "Continue"
            :type "submit"}]
          [:div.login-links
-          [:a {:on-click #(r/go :auth/recover-password)} "Forgot your password?"]
-          [:a {:on-click #(r/go :auth/register)} "Don't have an account?"]]]]]])))
+          [:a {:on-click #(rt/go :auth/recover-password)} "Forgot your password?"]
+          [:a {:on-click #(rt/go :auth/register)} "Don't have an account?"]]]]]])))
+
+(defn- login-will-mount
+  [own]
+  (when @st/auth-l
+    (rt/go :dashboard/projects))
+  own)
 
 (def ^:const login
   (mx/component
    {:render #(login-render % (:rum/local %))
+    :will-mount login-will-mount
     :name "login"
     :mixins [(mx/local)]}))

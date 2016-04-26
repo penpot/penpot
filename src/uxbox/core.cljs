@@ -7,7 +7,8 @@
 
 (ns uxbox.core
   (:require-macros [uxbox.util.syntax :refer [define-once]])
-  (:require [uxbox.state :as st]
+  (:require [beicon.core :as rx]
+            [uxbox.state :as st]
             [uxbox.router :as rt]
             [uxbox.rstore :as rs]
             [uxbox.ui :as ui]))

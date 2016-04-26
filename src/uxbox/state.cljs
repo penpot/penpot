@@ -13,6 +13,14 @@
 
 (defonce state (atom {}))
 
+(def ^:const auth-l
+  (-> (l/key :auth)
+      (l/focus-atom state)))
+
+(def ^:const loader-l
+  (-> (l/key :loader)
+      (l/focus-atom state)))
+
 (defn get-initial-state
   []
   {:dashboard {:project-order :name

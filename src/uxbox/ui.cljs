@@ -11,7 +11,7 @@
             [goog.dom :as gdom]
             [rum.core :as rum]
             [lentes.core :as l]
-            [uxbox.state :as s]
+            [uxbox.state :as st]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.data.projects :as dp]
@@ -25,16 +25,6 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.shapes]))
 
-;; --- Lentes
-
-(def ^:const auth-data-l
-  (-> (l/key :auth)
-      (l/focus-atom s/state)))
-
-(def ^:const loader-l
-  (-> (l/key :loader)
-      (l/focus-atom s/state)))
-
 ;; --- Constants
 
 (def ^:const +unrestricted+ #{:auth/login})
@@ -45,7 +35,7 @@
 (defn app-render
   [own]
   (let [route (rum/react r/route-l)
-        auth (rum/react auth-data-l)
+        auth (rum/react st/auth-l)
         location (:id route)
         params (:params route)]
     (if (and (restricted? location) (not auth))
@@ -67,7 +57,7 @@
 
 (defn app-will-mount
   [own]
-  (when @auth-data-l
+  (when @st/auth-l
     (rs/emit! (udu/fetch-profile)))
   own)
 
@@ -82,7 +72,7 @@
 
 (defn loader-render
   [own]
-  (when (rum/react loader-l)
+  (when (rum/react st/loader-l)
     (html
      [:div.loader-content i/loader])))
 

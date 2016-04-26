@@ -21,33 +21,40 @@
   (as-> (l/in [:route]) $
     (l/focus-atom $ s/state)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Update Location (Event)
+
+(defrecord UpdateLocation [id params]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [route (merge {:id id}
+                       (when params
+                         {:params params}))]
+      (assoc state :route route))))
+
+(defn update-location?
+  [v]
+  (instance? UpdateLocation v))
 
 (defn update-location
   [{:keys [handler route-params] :as params}]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      ;; (println "update-location" handler route-params)
-      (let [route (merge {:id handler}
-                          (when route-params
-                            {:params route-params}))]
-        (assoc state :route route)))))
+  (UpdateLocation. handler route-params))
+
+;; --- Navigate (Event)
+
+(defrecord Navigate [id params]
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    ;; (println "navigate" id params)
+    (let [loc (merge {:handler id}
+                     (when params
+                       {:route-params params}))]
+      (bidi.router/set-location! @+router+ loc))))
 
 (defn navigate
   ([id] (navigate id nil))
   ([id params]
    {:pre [(keyword? id)]}
-   (reify
-     rs/EffectEvent
-     (-apply-effect [_ state]
-       ;; (println "navigate" id params)
-       (let [loc (merge {:handler id}
-                        (when params
-                          {:route-params params}))]
-         (bidi.router/set-location! @+router+ loc))))))
+   (Navigate. id params)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Router declaration
