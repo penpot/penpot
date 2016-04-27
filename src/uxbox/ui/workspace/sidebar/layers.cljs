@@ -290,11 +290,8 @@
         page (rum/react (focus-page (:page workspace)))
         close #(rs/emit! (udw/toggle-flag :layers))
         duplicate #(rs/emit! (uds/duplicate-selected))
-        move-up #(rs/emit! (uds/move-selected-layer :up))
-        move-down #(rs/emit! (uds/move-selected-layer :down))
-        move-top #(rs/emit! (uds/move-selected-layer :top))
-        move-bottom #(rs/emit! (uds/move-selected-layer :bottom))
         group #(rs/emit! (uds/group-selected))
+        degroup #(rs/emit! (uds/degroup-selected))
         delete #(rs/emit! (uds/delete-selected))
         dragel (volatile! nil)]
     (html
@@ -314,12 +311,9 @@
                 (rum/with-key key))))]]
       [:div.layers-tools
        [:ul.layers-tools-content
-        [:li.layer-up {:on-click move-up} i/arrow-slide]
-        [:li.layer-top {:on-click move-top} i/arrow-end]
-        [:li.layer-down {:on-click move-down} i/arrow-slide]
-        [:li.layer-end {:on-click move-bottom} i/arrow-end]
         [:li.clone-layer {:on-click duplicate} i/copy]
         [:li.group-layer {:on-click group} i/folder]
+        [:li.degroup-layer {:on-click degroup} i/ungroup]
         [:li.delete-layer {:on-click delete} i/trash]]]])))
 
 (def ^:static layers-toolbox

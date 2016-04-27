@@ -305,3 +305,206 @@
     ;; (pprint expected)
     ;; (pprint result)
     (t/is (= result expected))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Group Shapes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; group a shape
+
+(t/deftest group-shapes-1
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [1 2 3]}}
+                 :shapes-by-id {1 {:id 1 :page 1}
+                                2 {:id 2 :page 1}
+                                3 {:id 3 :page 1}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{4})
+                     (assoc-in [:pages-by-id 1 :shapes] [1 4 3])
+                     (assoc-in [:shapes-by-id 2 :group] 4)
+                     (assoc-in [:shapes-by-id 4] {:type :group :name "Group 10"
+                                                  :items [2] :id 4 :page 1}))]
+    (with-redefs [uuid.core/random (constantly 4)
+                  cljs.core/rand-int (constantly 10)]
+      (let [result (ssh/group-shapes initial [2] 1)]
+        (t/is (= result expected))))))
+
+
+;; group two shapes
+
+(t/deftest group-shapes-2
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [1 2 3]}}
+                 :shapes-by-id {1 {:id 1 :page 1}
+                                2 {:id 2 :page 1}
+                                3 {:id 3 :page 1}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{4})
+                     (assoc-in [:pages-by-id 1 :shapes] [1 4])
+                     (assoc-in [:shapes-by-id 2 :group] 4)
+                     (assoc-in [:shapes-by-id 3 :group] 4)
+                     (assoc-in [:shapes-by-id 4] {:type :group :name "Group 10"
+                                                  :items [2 3] :id 4 :page 1}))]
+    (with-redefs [uuid.core/random (constantly 4)
+                  cljs.core/rand-int (constantly 10)]
+      (let [result (ssh/group-shapes initial [2 3] 1)]
+        (t/is (= result expected))))))
+
+
+;; group group
+
+(t/deftest group-shapes-3
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [1 2 3]}}
+                 :shapes-by-id {1 {:id 1 :page 1}
+                                2 {:id 2 :page 1}
+                                3 {:id 3 :page 1 :type :group}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{4})
+                     (assoc-in [:pages-by-id 1 :shapes] [1 4])
+                     (assoc-in [:shapes-by-id 2 :group] 4)
+                     (assoc-in [:shapes-by-id 3 :group] 4)
+                     (assoc-in [:shapes-by-id 4] {:type :group :name "Group 10"
+                                                  :items [2 3] :id 4 :page 1}))]
+    (with-redefs [uuid.core/random (constantly 4)
+                  cljs.core/rand-int (constantly 10)]
+      (let [result (ssh/group-shapes initial [2 3] 1)]
+        (t/is (= result expected))))))
+
+
+;; group shapes inside a group
+
+(t/deftest group-shapes-3
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [1 3]}}
+                 :shapes-by-id {1 {:id 1 :page 1}
+                                2 {:id 2 :page 1 :group 3}
+                                3 {:id 3 :page 1 :type :group}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{4})
+                     (assoc-in [:pages-by-id 1 :shapes] [1 3])
+                     (assoc-in [:shapes-by-id 2 :group] 4)
+                     (assoc-in [:shapes-by-id 3 :items] [4])
+                     (assoc-in [:shapes-by-id 4] {:type :group :name "Group 10"
+                                                  :items [2] :id 4 :page 1 :group 3}))]
+    (with-redefs [uuid.core/random (constantly 4)
+                  cljs.core/rand-int (constantly 10)]
+      (let [result (ssh/group-shapes initial [2] 1)]
+        (t/is (= result expected))))))
+
+;; group shapes in multiple groups
+
+(t/deftest group-shapes-4
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [3 4]}}
+                 :shapes-by-id {1 {:id 1 :page 1 :group 4}
+                                2 {:id 2 :page 1 :group 3}
+                                3 {:id 3 :page 1 :type :group :items [2]}
+                                4 {:id 4 :page 1 :type :group :imtes [3]}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{5})
+                     (assoc-in [:pages-by-id 1 :shapes] [5])
+                     (assoc-in [:shapes-by-id 1 :group] 5)
+                     (assoc-in [:shapes-by-id 2 :group] 5)
+                     (assoc-in [:shapes-by-id 5] {:type :group :name "Group 10"
+                                                  :items [1 2] :id 5 :page 1})
+                     (update-in [:shapes-by-id] dissoc 3)
+                     (update-in [:shapes-by-id] dissoc 4))]
+    (with-redefs [uuid.core/random (constantly 5)
+                  cljs.core/rand-int (constantly 10)]
+      (let [result (ssh/group-shapes initial [1 2] 1)]
+        (t/is (= result expected))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Degroups
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; degroup a single group
+
+;; degroup group
+
+(t/deftest degroup-shapes-1
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [3]}}
+                 :shapes-by-id {1 {:id 1 :page 1 :group 3}
+                                2 {:id 2 :page 1 :group 3}
+                                3 {:id 3 :page 1 :type :group :items [1 2]}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{1 2})
+                     (assoc-in [:pages-by-id 1 :shapes] [1 2])
+                     (update-in [:shapes-by-id 1] dissoc :group)
+                     (update-in [:shapes-by-id 2] dissoc :group)
+                     (update-in [:shapes-by-id] dissoc 3))]
+    (let [result (ssh/degroup-shapes initial [3] 1)]
+      (t/is (= result expected)))))
+
+
+;; degroup group inside a group
+
+(t/deftest degroup-shapes-2
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [1]}}
+                 :shapes-by-id {1 {:id 1 :page 1 :type :group :items [2]}
+                                2 {:id 2 :page 1 :type :group :items [3] :group 1}
+                                3 {:id 3 :page 1 :group 2}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{3})
+                     (assoc-in [:pages-by-id 1 :shapes] [1])
+                     (update-in [:shapes-by-id] dissoc 2)
+                     (assoc-in [:shapes-by-id 1 :items] [3])
+                     (assoc-in [:shapes-by-id 3 :group] 1))]
+    (let [result (ssh/degroup-shapes initial [2] 1)]
+      (t/is (= result expected)))))
+
+;; degroup multiple groups not nested
+
+(t/deftest degroup-shapes-3
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [1 2]}}
+                 :shapes-by-id {1 {:id 1 :page 1 :type :group :items [3]}
+                                2 {:id 2 :page 1 :type :group :items [4]}
+                                3 {:id 3 :page 1 :group 1}
+                                4 {:id 4 :page 1 :group 2}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{3 4})
+                     (assoc-in [:pages-by-id 1 :shapes] [3 4])
+                     (update :shapes-by-id dissoc 1)
+                     (update :shapes-by-id dissoc 2)
+                     (update-in [:shapes-by-id 3] dissoc :group)
+                     (update-in [:shapes-by-id 4] dissoc :group))]
+    (let [result (ssh/degroup-shapes initial [1 2] 1)]
+      (t/is (= result expected)))))
+
+;; degroup multiple groups nested (child first)
+
+(t/deftest degroup-shapes-4
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [1]}}
+                 :shapes-by-id {1 {:id 1 :page 1 :type :group :items [2]}
+                                2 {:id 2 :page 1 :type :group :items [3] :group 1}
+                                3 {:id 3 :page 1 :group 2}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{3})
+                     (assoc-in [:pages-by-id 1 :shapes] [3])
+                     (update :shapes-by-id dissoc 1)
+                     (update :shapes-by-id dissoc 2)
+                     (update-in [:shapes-by-id 3] dissoc :group))]
+    (let [result (ssh/degroup-shapes initial [2 1] 1)]
+      (t/is (= result expected)))))
+
+;; degroup multiple groups nested (parent first)
+
+(t/deftest degroup-shapes-5
+  (let [initial {:pages-by-id {1 {:id 1 :shapes [1]}}
+                 :shapes-by-id {1 {:id 1 :page 1 :type :group :items [2]}
+                                2 {:id 2 :page 1 :type :group :items [3] :group 1}
+                                3 {:id 3 :page 1 :group 2}}}
+
+        expected (-> initial
+                     (assoc-in [:workspace :selected] #{3})
+                     (assoc-in [:pages-by-id 1 :shapes] [3])
+                     (update :shapes-by-id dissoc 1)
+                     (update :shapes-by-id dissoc 2)
+                     (update-in [:shapes-by-id 3] dissoc :group))]
+    (let [result (ssh/degroup-shapes initial [1 2] 1)]
+      (t/is (= result expected)))))
