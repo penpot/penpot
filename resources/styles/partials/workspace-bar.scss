@@ -53,6 +53,7 @@
     align-items: center;
     background-color: $secondary-ui-bg;
     border-radius: $br-small;
+    border: 1px solid transparent;
     cursor: pointer;
     display: flex;
     padding: $x-small $x-small $x-small $medium;
@@ -73,6 +74,11 @@
     }
 
     &:hover {
+      background-color: $color-white;
+      border-color: $soft-ui-border;
+    }
+
+    &.selected {
       background-color: $main-ui-color;
 
       svg {
@@ -84,7 +90,6 @@
       }
 
     }
-
   }
 
   .workspace-options {

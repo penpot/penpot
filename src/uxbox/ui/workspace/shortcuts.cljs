@@ -25,6 +25,7 @@
 
 (defonce ^:const +shortcuts+
   {:ctrl+g #(rs/emit! (dw/toggle-flag :grid))
+   :ctrl+shift+m #(rs/emit! (dw/toggle-flag :sitemap))
    :ctrl+shift+f #(rs/emit! (dw/toggle-flag :drawtools))
    :ctrl+shift+i #(rs/emit! (dw/toggle-flag :icons))
    :ctrl+shift+l #(rs/emit! (dw/toggle-flag :layers))
