@@ -81,7 +81,9 @@
       [:div.main-icon
        (nav/link (r/route-for :dashboard/projects) i/logo-icon)]
       [:div.project-tree-btn
-       {:on-click (partial toggle :sitemap)}
+       {:alt "Sitemap (Ctrl + Shift + M)"
+        :class (when (contains? flags :sitemap) "selected")
+        :on-click (partial toggle :sitemap)}
        i/project-tree
        [:span (:name page)]]
       [:div.workspace-options
