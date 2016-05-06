@@ -31,9 +31,11 @@
 (defrecord AssignFieldValue [type field value]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (-> state
-        (assoc-in [:forms type field] value)
-        (update-in [:errors type] dissoc field))))
+    (let [form-path (into [:forms type] (if (coll? field) field [field]))
+          errors-path (into [:errors type] (if (coll? field) field [field]))]
+      (-> state
+          (assoc-in form-path value)
+          (update-in errors-path dissoc field)))))
 
 (defn assign-field-value
   [type field value]

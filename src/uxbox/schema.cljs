@@ -41,7 +41,7 @@
 (def integer-str st/integer-str)
 (def number-str st/number-str)
 ;; (def boolean-like st/boolean-like)
-;; (def email st/email)
+(def email st/email)
 ;; (def function st/function)
 ;; (def positive st/positive)
 ;; (def validate st/validate)
@@ -74,9 +74,7 @@
   ([data schema]
    (validate data schema nil))
   ([data schema opts]
-   (let [opts (merge {:strip true}
-                     opts)]
-     (st/validate data schema opts))))
+   (st/validate data schema opts)))
 
 (defn validate!
   ([data schema]

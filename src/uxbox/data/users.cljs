@@ -44,13 +44,26 @@
 (defrecord UpdateProfile [data]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (->> (rp/req :update/profile data)
-         (rx/map :payload)
-         (rx/map profile-fetched))))
+    (letfn [(on-error [{payload :payload}]
+              (->> (:payload payload)
+                   (udf/assign-errors :profile/main)
+                   (rx/of)))]
+      (->> (rp/req :update/profile data)
+           (rx/map :payload)
+           (rx/map profile-fetched)
+           (rx/catch rp/client-error? on-error)))))
+
+(def update-profile-schema
+  {:fullname [sc/required sc/string]
+   :email [sc/required sc/email]
+   :username [sc/required sc/string]})
 
 (defn update-profile
   [data]
-  (UpdateProfile. data))
+  (let [[errors data] (sc/validate data update-profile-schema)]
+    (if errors
+      (udf/assign-errors :profile/main errors)
+      (UpdateProfile. data))))
 
 ;; --- Password Updated
 
@@ -67,7 +80,7 @@
   []
   (PasswordUpdated.))
 
-;; --- Update Password
+;; --- Update Password (Form)
 
 (defrecord UpdatePassword [data]
   rs/WatchEvent
@@ -82,8 +95,7 @@
              (rx/map password-updated)
              (rx/catch rp/client-error? on-error))))))
 
-
-(def ^:private update-password-schema
+(def update-password-schema
   [[:password-1 sc/required sc/string [sc/min-len 6]]
    [:password-2 sc/required sc/string
     [sc/identical-to :password-1 :message "errors.form.password-not-match"]]
