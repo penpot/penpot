@@ -39,6 +39,21 @@
   []
   (FetchProfile.))
 
+;; --- Profile Updated
+
+(defrecord ProfileUpdated [data]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (rx/of (profile-fetched data)))
+
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    (udm/info! (tr "settings.profile-saved"))))
+
+(defn profile-updated
+  [data]
+  (ProfileUpdated. data))
+
 ;; --- Update Profile
 
 (defrecord UpdateProfile [data]
@@ -50,7 +65,7 @@
                    (rx/of)))]
       (->> (rp/req :update/profile data)
            (rx/map :payload)
-           (rx/map profile-fetched)
+           (rx/map profile-updated)
            (rx/catch rp/client-error? on-error)))))
 
 (def update-profile-schema
