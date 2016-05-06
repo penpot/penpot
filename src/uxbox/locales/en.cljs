@@ -55,7 +55,6 @@
    "errors.form.max-len" "Should be less than %s"
    "errors.form.color" "Should be a valid color string"
    "errors.form.password-not-match" "Password does not match"
-
    "errors.generic" "Something work has happened."
    "errors.auth.unauthorized" "Username or passwords seems to be wrong."
    "errors.profile.update-password" "Error updating password, probably your old password is wrong."
