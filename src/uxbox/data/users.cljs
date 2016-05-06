@@ -89,7 +89,7 @@
 
   rs/EffectEvent
   (-apply-effect [_ state]
-    (udm/info! (tr "profile.password-saved"))))
+    (udm/info! (tr "settings.password-saved"))))
 
 (defn password-updated
   []
