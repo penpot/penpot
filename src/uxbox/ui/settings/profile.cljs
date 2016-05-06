@@ -114,7 +114,7 @@
      [:section.user-settings-content
       [:span.user-settings-label "Your avatar"]
       [:form.avatar-form
-       [:img {:src "images/favicon.png" :border "0"}]
+       [:img {:src "images/avatar.jpg" :border "0"}]
        [:input {:type "file"}]]
       (profile-form)
       ]]]))
@@ -124,4 +124,3 @@
    {:render profile-page-render
     :name "profile-page"
     :mixins [mx/static]}))
-
