@@ -6,22 +6,31 @@
 
 (ns uxbox.repo.users
   "A main interface for access to remote resources."
-  (:refer-clojure :exclude [do])
   (:require [beicon.core :as rx]
             [uxbox.repo.core :refer (request url send!)]
-            [uxbox.state :as ust]))
+            [uxbox.util.transit :as t]))
+
+(defn- decode-payload
+  [{:keys [payload] :as rsp}]
+  (let [metadata (:metadata payload)]
+    (assoc rsp :payload
+           (assoc payload :metadata (t/decode metadata)))))
 
 (defmethod request :fetch/profile
   [type _]
-  (let [url (str url "/profile/me")]
-    (send! {:method :get :url url})))
+  (let [url (str url "/profile/me")
+        params {:method :get :url url}]
+    (->> (send! params)
+         (rx/map decode-payload))))
 
 (defmethod request :update/profile
-  [type data]
-  (let [params {:url (str url "/profile/me")
+  [type {:keys [metadata id] :as body}]
+  (let [body (assoc body :metadata (t/encode metadata))
+        params {:url (str url "/profile/me")
                 :method :put
-                :body data}]
-    (send! params)))
+                :body body}]
+    (->> (send! params)
+         (rx/map decode-payload))))
 
 (defmethod request :update/password
   [type data]
