@@ -66,6 +66,14 @@
     overflow: scroll;
     width: 100%;
 
+    .dashboard-grid-row {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
     .grid-item {
       align-items: center;
       border-radius: $br-medium;

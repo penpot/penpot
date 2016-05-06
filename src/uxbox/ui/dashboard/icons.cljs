@@ -108,13 +108,14 @@
        [:section.dashboard-grid.library
         (page-title coll)
         [:div.dashboard-grid-content
-         (for [icon (:icons coll)]
-           [:div.grid-item.small-item.project-th {}
-            [:span.grid-item-image #_i/toggle (uusc/render-shape-svg icon nil)]
-            [:h3 (:name icon)]
-            #_[:div.project-th-actions
-             [:div.project-th-icon.edit i/pencil]
-             [:div.project-th-icon.delete i/trash]]])]]))))
+          [:div.dashboard-grid-row
+           (for [icon (:icons coll)]
+             [:div.grid-item.small-item.project-th {}
+              [:span.grid-item-image #_i/toggle (uusc/render-shape-svg icon nil)]
+              [:h3 (:name icon)]
+              #_[:div.project-th-actions
+               [:div.project-th-icon.edit i/pencil]
+               [:div.project-th-icon.delete i/trash]]])]]]))))
 
 (def grid
   (mx/component

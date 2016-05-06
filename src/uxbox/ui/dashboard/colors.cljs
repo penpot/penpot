@@ -133,23 +133,24 @@
        [:section.dashboard-grid.library
         (page-title coll)
         [:div.dashboard-grid-content
-         (when own?
-           [:div.grid-item.small-item.add-project
-            {:on-click #(udl/open! :color-form {:coll coll})}
-            [:span "+ New color"]])
-         (for [color (remove nil? (:colors coll))
-               :let [color-rgb (hex->rgb color)]]
-           [:div.grid-item.small-item.project-th {:key color}
-            [:span.color-swatch {:style {:background-color color}}]
-            [:span.color-data color]
-            [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]
-            (if own?
-              [:div.project-th-actions
-               [:div.project-th-icon.edit
-                {:on-click #(edit-cb color)} i/pencil]
-               [:div.project-th-icon.delete
-                {:on-click #(remove-cb color)}
-                i/trash]])])]]))))
+          [:div.dashboard-grid-row
+           (when own?
+             [:div.grid-item.small-item.add-project
+              {:on-click #(udl/open! :color-form {:coll coll})}
+              [:span "+ New color"]])
+           (for [color (remove nil? (:colors coll))
+                 :let [color-rgb (hex->rgb color)]]
+             [:div.grid-item.small-item.project-th {:key color}
+              [:span.color-swatch {:style {:background-color color}}]
+              [:span.color-data color]
+              [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]
+              (if own?
+                [:div.project-th-actions
+                 [:div.project-th-icon.edit
+                  {:on-click #(edit-cb color)} i/pencil]
+                 [:div.project-th-icon.delete
+                  {:on-click #(remove-cb color)}
+                  i/trash]])])]]]))))
 
 (def ^:const ^:private grid
   (mx/component
