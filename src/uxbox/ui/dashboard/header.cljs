@@ -35,6 +35,7 @@
         projects? (= (:section local) :dashboard/projects)
         elements? (= (:section local) :dashboard/elements)
         icons? (= (:section local) :dashboard/icons)
+        images? (= (:section local) :dashboard/images)
         colors? (= (:section local) :dashboard/colors)]
     (html
      [:header#main-bar.main-bar
@@ -47,11 +48,13 @@
         (header-link :dashboard/elements (tr "ds.elements"))]
        [:li {:class (when icons? "current")}
         (header-link :dashboard/icons (tr "ds.icons"))]
+       [:li {:class (when images? "current")}
+        (header-link :dashboard/images (tr "ds.images"))]
        [:li {:class (when colors? "current")}
         (header-link :dashboard/colors (tr "ds.colors"))]]
       (ui.u/user)])))
 
-(def ^:static header
+(def header
   (mx/component
    {:render header-render
     :name "header"

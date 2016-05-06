@@ -45,6 +45,7 @@
         :dashboard/projects (ui-dashboard/projects-page)
         :dashboard/elements (ui-dashboard/elements-page)
         :dashboard/icons (ui-dashboard/icons-page)
+        :dashboard/images (ui-dashboard/images-page)
         :dashboard/colors (ui-dashboard/colors-page)
         :settings/profile (ui-settings/profile-page)
         :settings/password (ui-settings/password-page)

@@ -61,8 +61,7 @@
 (defonce stream (rx/map identity bus))
 
 (defn emit!
-  "Emits an event or a collection of them.
-  The order of events does not matters."
+  "Emits an event or a collection of them."
   ([event]
    (rx/push! bus event))
   ([event & events]

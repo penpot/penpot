@@ -75,6 +75,7 @@
         ["dashboard/" [["projects" :dashboard/projects]
                        ["elements" :dashboard/elements]
                        ["icons" :dashboard/icons]
+                       ["images" :dashboard/images]
                        ["colors" :dashboard/colors]]]
         ["workspace/" [[page-route :workspace/page]]]]])
 
