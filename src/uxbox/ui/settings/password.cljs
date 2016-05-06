@@ -21,7 +21,7 @@
             [uxbox.ui.forms :as forms]
             [uxbox.ui.messages :as uum]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.dashboard.header :refer (header)]
+            [uxbox.ui.settings.header :refer (header)]
             [uxbox.util.dom :as dom]))
 
 ;; --- Password Form
@@ -93,12 +93,6 @@
     (header)
     (uum/messages)
     [:section.dashboard-content.user-settings
-     [:div.user-settings-nav
-      [:ul.user-settings-nav-inside
-       [:li {:on-click #(r/go :settings/profile)} "Profile"]
-       [:li.current {:on-click #(r/go :settings/password)} "Password"]
-       [:li {:on-click #(r/go :settings/notifications)} "Notifications"]]]
-
      [:section.user-settings-content
       (password-form)]]]))
 

@@ -17,7 +17,7 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.forms :as forms]
-            [uxbox.ui.dashboard.header :refer (header)]
+            [uxbox.ui.settings.header :refer (header)]
             [uxbox.ui.messages :as uum]
             [uxbox.data.users :as udu]
             [uxbox.data.forms :as udf]
@@ -53,15 +53,7 @@
     (letfn [(on-change [field event]
               (let [value (dom/event->value event)]
                 (rs/emit! (assign-field-value field value))))
-
-            ;; (on-theme-change [event]
-            ;;   (let [value (dom/event->value event)]
-            ;;     (println "on-theme-change" value)
-            ;;     (swap! local assoc-in [:metadata :theme] value)))
-
-
             (on-submit [event]
-              ;; (println form)
               (rs/emit! (udu/update-profile form)))]
       (html
        [:form.profile-form
@@ -134,11 +126,6 @@
     (header)
     (uum/messages)
     [:section.dashboard-content.user-settings
-     [:div.user-settings-nav
-      [:ul.user-settings-nav-inside
-       [:li.current {:on-click #(r/go :settings/profile)} "Profile"]
-       [:li {:on-click #(r/go :settings/password)} "Password"]
-       [:li {:on-click #(r/go :settings/notifications)} "Notifications"]]]
      [:section.user-settings-content
       [:span.user-settings-label "Your avatar"]
       [:form.avatar-form

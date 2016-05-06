@@ -15,7 +15,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.util.dom :as dom]
             [uxbox.data.dashboard :as dd]
-            [uxbox.ui.dashboard.header :refer (header)]))
+            [uxbox.ui.settings.header :refer (header)]))
 
 (defn notifications-page-render
   [own]
@@ -23,12 +23,6 @@
    [:main.dashboard-main
     (header)
     [:section.dashboard-content.user-settings
-     [:div.user-settings-nav
-      [:ul.user-settings-nav-inside
-       [:li {:on-click #(r/go :settings/profile)} "Profile"]
-       [:li {:on-click #(r/go :settings/password)} "Password"]
-       [:li.current {:on-click #(r/go :settings/notifications)} "Notifications"]]]
-
      [:section.user-settings-content
       [:span.user-settings-label "Prototype notifications"]
       [:p "Get a roll up of prototype changes in your inbox."]
