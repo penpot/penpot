@@ -20,6 +20,7 @@
 
    "ds.elements" "ELEMENTS"
    "ds.icons" "ICONS"
+   "ds.images" "IMAGES"
    "ds.colors" "COLORS"
    "ds.library-title" "Library: "
    "ds.standard-title" "STANDARD"
