@@ -59,15 +59,11 @@
   .dashboard-grid-content {
     align-items: center;
     display: flex;
-    flex-wrap: wrap;
-    height: 100%;
-    justify-content: center;
     min-height: 60vh;
     overflow: scroll;
     width: 100%;
 
     .dashboard-grid-row {
-      align-items: center;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
@@ -119,6 +115,7 @@
 
       }
 
+      // PROJECTS, ELEMENTS & ICONS GRID
       &.project-th {
         background-color: $color-white;
         border-bottom: 2px solid lighten($color-gray-light, 12%);
@@ -195,6 +192,40 @@
 
       }
 
+      // IMAGES SECTION
+      &.images-th {
+        background-color: $color-white;
+        border-bottom: 2px solid lighten($color-gray-light, 12%);
+        justify-content: flex-start;
+        padding: 0;
+
+        &:hover {
+          border-color: $main-ui-color;
+
+          span {
+            color: $main-ui-color;
+          }
+
+        }
+
+        span {
+          padding: $small;
+          text-align: left;
+          width: 100%;
+          @include text-ellipsis;
+        }
+
+        .grid-item-th {
+          background-position: center;
+          background-size: cover;
+          border-top-left-radius: $br-medium;
+          border-top-right-radius: $br-medium;
+          height: 70%;
+          width: 100%;
+        }
+
+      }
+
       .grid-item-image {
         svg {
           height: 20%;
@@ -221,6 +252,7 @@
     }
 
   }
+
   // STYLES FOR LIBRARIES
   &.library {
     padding: $medium $medium $medium 250px;
