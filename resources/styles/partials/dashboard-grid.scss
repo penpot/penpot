@@ -291,6 +291,7 @@
 
 // MULTISELECT OPTIONS BAR
 .multiselect-bar {
+  @include animation(0,.5s,fadeInUp);
   align-items: center;
   background-color: $color-white;
   display: flex;
