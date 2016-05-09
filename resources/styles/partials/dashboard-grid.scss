@@ -221,17 +221,21 @@
           border-top-left-radius: $br-medium;
           border-top-right-radius: $br-medium;
           height: 70%;
+          position: relative;
           width: 100%;
+
         }
 
       }
 
       .grid-item-image {
+
         svg {
           height: 20%;
           max-width: 120px;
           width: 40%;
         }
+
       }
 
       .color-swatch {
@@ -247,6 +251,18 @@
       .color-data {
         color: $color-gray;
         margin-top: 15px;
+      }
+
+      .input-checkbox {
+        margin: 0;
+        position: absolute;
+        top: 10px;
+        right: 5px;
+
+        label {
+          margin: 0;
+        }
+
       }
 
     }

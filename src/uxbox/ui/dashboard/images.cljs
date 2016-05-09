@@ -49,37 +49,55 @@
       [:div.grid-item.images-th
        [:div.grid-item-th
         {:style
-          {:background-image "url('https://images.unsplash.com/photo-1455098934982-64c622c5e066?crop=entropy&fit=crop&fm=jpg&h=1025&ixjsv=2.1.0&ixlib=rb-0.3.5&q=80&w=1400')"}}]
+          {:background-image "url('https://images.unsplash.com/photo-1455098934982-64c622c5e066?crop=entropy&fit=crop&fm=jpg&h=1025&ixjsv=2.1.0&ixlib=rb-0.3.5&q=80&w=1400')"}}
+          [:div.input-checkbox.check-primary
+           [:input {:type "checkbox" :id "item-1" :value "Yes"}]
+           [:label {:for "item-1"}]]]
        [:span "image_name.jpg"]]
 
       [:div.grid-item.images-th
        [:div.grid-item-th
         {:style
-          {:background-image "url('https://images.unsplash.com/photo-1422393462206-207b0fbd8d6b?crop=entropy&fit=crop&fm=jpg&h=1025&ixjsv=2.1.0&ixlib=rb-0.3.5&q=80&w=1925')"}}]
+          {:background-image "url('https://images.unsplash.com/photo-1422393462206-207b0fbd8d6b?crop=entropy&fit=crop&fm=jpg&h=1025&ixjsv=2.1.0&ixlib=rb-0.3.5&q=80&w=1925')"}}
+          [:div.input-checkbox.check-primary
+           [:input {:type "checkbox" :id "item-2" :value "Yes"}]
+           [:label {:for "item-2"}]]]
        [:span "image_name_long_name.jpg"]]
 
       [:div.grid-item.images-th
        [:div.grid-item-th
         {:style
-          {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
+          {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}
+          [:div.input-checkbox.check-primary
+           [:input {:type "checkbox" :id "item-3" :value "Yes"}]
+           [:label {:for "item-3"}]]]
        [:span "image_name.jpg"]]
 
       [:div.grid-item.images-th
        [:div.grid-item-th
         {:style
-          {:background-image "url('https://images.unsplash.com/photo-1423768164017-3f27c066407f?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=712b919f3a2f6fc34f29040e8082b6d9')"}}]
+          {:background-image "url('https://images.unsplash.com/photo-1423768164017-3f27c066407f?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=712b919f3a2f6fc34f29040e8082b6d9')"}}
+          [:div.input-checkbox.check-primary
+           [:input {:type "checkbox" :id "item-4" :value "Yes"}]
+           [:label {:for "item-4"}]]]
        [:span "image_name_big_long_name.jpg"]]
 
       [:div.grid-item.images-th
        [:div.grid-item-th
         {:style
-          {:background-image "url('https://images.unsplash.com/photo-1456428199391-a3b1cb5e93ab?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=765abd6dc931b7184e9795d8494966ed')"}}]
+          {:background-image "url('https://images.unsplash.com/photo-1456428199391-a3b1cb5e93ab?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=765abd6dc931b7184e9795d8494966ed')"}}
+          [:div.input-checkbox.check-primary
+           [:input {:type "checkbox" :id "item-5" :value "Yes"}]
+           [:label {:for "item-5"}]]]
        [:span "image_name.jpg"]]
 
       [:div.grid-item.images-th
        [:div.grid-item-th
         {:style
-          {:background-image "url('https://images.unsplash.com/photo-1447678523326-1360892abab8?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=91663afcd23da14f76cc8229c1780d47')"}}]
+          {:background-image "url('https://images.unsplash.com/photo-1447678523326-1360892abab8?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=91663afcd23da14f76cc8229c1780d47')"}}
+          [:div.input-checkbox.check-primary
+           [:input {:type "checkbox" :id "item-6" :value "Yes"}]
+           [:label {:for "item-6"}]]]
        [:span "image_name.jpg"]]]]))
 
 (def ^:const ^:private grid
