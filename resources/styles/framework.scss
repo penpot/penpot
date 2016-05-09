@@ -821,6 +821,19 @@ input[type=range]:focus::-ms-fill-upper {
 
   }
 
+  &.tooltip-top {
+
+    &:hover {
+
+      &::after {
+        top: -165%;
+        left: -60%;
+      }
+
+    }
+
+  }
+
   &.tooltip-hover {
 
     &:hover {

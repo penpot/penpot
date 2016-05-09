@@ -98,7 +98,20 @@
           [:div.input-checkbox.check-primary
            [:input {:type "checkbox" :id "item-6" :value "Yes"}]
            [:label {:for "item-6"}]]]
-       [:span "image_name.jpg"]]]]))
+       [:span "image_name.jpg"]]]
+
+    ;; MULTISELECT OPTIONS BAR
+    [:div.multiselect-bar
+     [:div.multiselect-nav
+      [:span.move-item.tooltip.tooltip-top
+       {:alt "Move to"}
+       i/organize]
+      [:span.copy.tooltip.tooltip-top
+       {:alt "Duplicate"}
+       i/copy]
+      [:span.delete.tooltip.tooltip-top
+       {:alt "Delete"}
+       i/trash]]]]))
 
 (def ^:const ^:private grid
   (mx/component

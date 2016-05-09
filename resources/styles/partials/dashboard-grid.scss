@@ -288,3 +288,49 @@
   }
 
 }
+
+// MULTISELECT OPTIONS BAR
+.multiselect-bar {
+  align-items: center;
+  background-color: $color-white;
+  display: flex;
+  left: 0;
+  justify-content: center;
+  padding: $medium;
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+
+  .multiselect-nav {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    width: 110px;
+
+    svg {
+      cursor: pointer;
+      fill: $medium-ui-icons;
+      height: 20px;
+      width: 20px;
+
+      &:hover {
+        fill: $intense-ui-icons;
+      }
+
+    }
+
+    span.delete {
+
+      &:hover {
+
+        svg{
+          fill: $color-danger-light;
+        }
+
+      }
+
+    }
+
+  }
+
+}
