@@ -93,6 +93,38 @@
         [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
                 :style {:stroke "#333" :fill "transparent"
                         :stroke-opacity "1"}}]
+        [:rect.top
+         {:fill "#333"
+          :on-mouse-up #(on-mouse-up 5 %)
+          :on-mouse-down #(on-mouse-down 5 %)
+          :x (- (+ x (/ width 2)) 7)
+          :width 14
+          :height 3
+          :y (- y 5)}]
+        [:rect.right
+         {:fill "#333"
+          :on-mouse-up #(on-mouse-up 6 %)
+          :on-mouse-down #(on-mouse-down 6 %)
+          :y (- (+ y (/ height 2)) 7)
+          :width 3
+          :height 14
+          :x (+ x width 2)}]
+        [:rect.bottom
+         {:fill "#333"
+          :on-mouse-up #(on-mouse-up 7 %)
+          :on-mouse-down #(on-mouse-down 7 %)
+          :x (- (+ x (/ width 2)) 7)
+          :width 14
+          :height 3
+          :y (+ y height 2)}]
+        [:rect.left
+         {:fill "#333"
+          :on-mouse-up #(on-mouse-up 8 %)
+          :on-mouse-down #(on-mouse-down 8 %)
+          :y (- (+ y (/ height 2)) 7)
+          :width 3
+          :height 14
+          :x (- x 5)}]
         [:circle.top-left
          (merge uusc/+circle-props+
                 {:on-mouse-up #(on-mouse-up 1 %)

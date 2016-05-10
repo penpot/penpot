@@ -195,7 +195,15 @@
                :y2 (max y1 (+ y2 dy)))
       4 (assoc shape
                :x2 (max x1 (+ x2 dx))
-               :y2 (max y1 (+ y2 dy))))))
+               :y2 (max y1 (+ y2 dy)))
+      5 (assoc shape
+               :y1 (min y2 (+ y1 dy)))
+      6 (assoc shape
+               :x2 (max x1 (+ x2 dx)))
+      7 (assoc shape
+               :y2 (max y1 (+ y2 dy)))
+      8 (assoc shape
+               :x1 (min x2 (+ x1 dx))))))
 
 (defn- move-circle-vertex
   "A specialized function for vertex movement
@@ -204,17 +212,21 @@
   (let [[dx dy] (if lock [dx dx] [dx dy])]
     (case vid
       1 (assoc shape
-               :rx (- (:rx shape) dx)
-               :ry (- (:ry shape) dy))
+               :rx (max 0 (- (:rx shape) dx))
+               :ry (max 0 (- (:ry shape) dy)))
       2 (assoc shape
-               :rx (+ (:rx shape) dx)
-               :ry (- (:ry shape) dy))
+               :rx (max 0 (+ (:rx shape) dx))
+               :ry (max 0 (- (:ry shape) dy)))
       3 (assoc shape
-               :rx (- (:rx shape) dx)
-               :ry (+ (:ry shape) dy))
+               :rx (max 0 (- (:rx shape) dx))
+               :ry (max 0 (+ (:ry shape) dy)))
       4 (assoc shape
-               :rx (+ (:rx shape) dx)
-               :ry (+ (:ry shape) dy)))))
+               :rx (max 0 (+ (:rx shape) dx))
+               :ry (max 0 (+ (:ry shape) dy)))
+      5 (assoc shape :ry (max 0 (- (:ry shape) dy)))
+      6 (assoc shape :rx (max 0 (+ (:rx shape) dx)))
+      7 (assoc shape :ry (max 0 (+ (:ry shape) dy)))
+      8 (assoc shape :rx (max 0 (+ (:rx shape) dx))))))
 
 ;; --- Resize (Absolute)
 
