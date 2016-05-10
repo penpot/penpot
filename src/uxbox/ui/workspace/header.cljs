@@ -59,7 +59,8 @@
 
 (defn on-download-clicked
   [event page]
-  (let [content (.-innerHTML (.getElementById js/document "page-layout"))
+  (udl/open! :download)
+  #_(let [content (.-innerHTML (.getElementById js/document "page-layout"))
         width (:width page)
         height (:height page)
         html (str "<svg width='" width  "' height='" height  "'>" content "</svg>")
@@ -125,11 +126,9 @@
        [:ul.options-btn
         ;; TODO: refactor
         [:li.tooltip.tooltip-bottom
-         {:alt "Export (Ctrl + E)"}
-         ;; page-title
-         [:a {:download (str (:name page) ".svg")
-              :href "#" :on-click on-download-clicked}
-          i/export]]
+         {:alt "Export (Ctrl + E)"
+          :on-click on-download-clicked}
+         i/export]
         [:li.tooltip.tooltip-bottom
          {:alt "Image (Ctrl + I)"
           :on-click open-confirm-dialog}

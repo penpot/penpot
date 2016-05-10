@@ -22,6 +22,7 @@
             [uxbox.ui.confirm]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.workspace.scroll :as scroll]
+            [uxbox.ui.workspace.download]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.workspace.shortcuts :refer (shortcuts-mixin)]
             [uxbox.ui.workspace.header :refer (header)]
