@@ -2,7 +2,9 @@
          '[figwheel-sidecar.repl-api :as ra])
 
 (ra/start-figwheel!
-  {:figwheel-options {:css-dirs ["resources/public/css"]}
+  {:figwheel-options {:css-dirs ["resources/public/css"]
+                      :server-port 3449
+                      :server-ip   "0.0.0.0"}
    :build-ids ["dev"]
    :all-builds
    [{:id "dev"
