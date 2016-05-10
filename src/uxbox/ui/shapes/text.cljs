@@ -116,9 +116,7 @@
                 :ref "main"
                 :on-mouse-down on-mouse-down
                 :on-mouse-up on-mouse-up}
-      (uusc/render-shape (assoc shape :editing? (:edition @local false)) nil)
-      (when (and selected? (not (:edition @local false)))
-        (uusi/handlers shape))])))
+      (uusc/render-shape (assoc shape :editing? (:edition @local false)) nil)])))
 
 (def ^:const text-component
   (mx/component

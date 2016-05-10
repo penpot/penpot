@@ -65,11 +65,11 @@
                         :height height}
       (background)
       [:svg.page-layout {}
-       (selection-handlers)
        [:g.main {}
         (for [item (reverse (:shapes page))]
           (-> (uus/shape item)
               (rum/with-key (str item))))
+        (selection-handlers)
         (draw-area)]]])))
 
 (def canvas

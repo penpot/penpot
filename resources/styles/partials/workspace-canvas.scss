@@ -44,17 +44,16 @@
       }
 
       svg {
-        g.shape {
-          &.selected {
-            circle.top-left { cursor: nwse-resize; }
-            circle.bottom-right { cursor: nwse-resize; }
-            circle.top-right { cursor: nesw-resize; }
-            circle.bottom-left { cursor: nesw-resize; }
-            rect.top { cursor: ns-resize; }
-            rect.bottom { cursor: ns-resize; }
-            rect.left { cursor: ew-resize; }
-            rect.right { cursor: ew-resize; }
-          }
+        g.controls {
+          rect.main { pointer-events: none; }
+          circle.top-left { cursor: nwse-resize; }
+          circle.bottom-right { cursor: nwse-resize; }
+          circle.top-right { cursor: nesw-resize; }
+          circle.bottom-left { cursor: nesw-resize; }
+          rect.top { cursor: ns-resize; }
+          rect.bottom { cursor: ns-resize; }
+          rect.left { cursor: ew-resize; }
+          rect.right { cursor: ew-resize; }
         }
 
       }
