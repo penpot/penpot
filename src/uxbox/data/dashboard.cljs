@@ -15,6 +15,7 @@
             [uxbox.repo :as rp]
             [uxbox.data.projects :as dp]
             [uxbox.data.colors :as dc]
+            [uxbox.data.images :as di]
             [uxbox.util.data :refer (deep-merge)]))
 
 ;; --- Events

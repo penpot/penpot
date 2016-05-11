@@ -50,6 +50,16 @@
   [node]
   (.-value node))
 
+(defn click
+  "Click a node"
+  [node]
+  (.click node))
+
+(defn get-files
+  "Extract the files from dom node."
+  [node]
+  (.-files node))
+
 (defn checked?
   "Check if the node that reprsents a radio
   or checkbox is checked or not."
@@ -59,3 +69,8 @@
 (defn ^boolean equals?
   [node-a node-b]
   (.isEqualNode node-a node-b))
+
+(defn get-event-files
+  "Extract the files from event instance."
+  [event]
+  (get-files (get-target event)))
