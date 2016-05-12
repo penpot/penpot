@@ -14,70 +14,82 @@
 
 ;; --- Collections Fetched
 
+(defrecord CollectionFetched [items]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (reduce stc/assoc-collection state items)))
+
 (defn collections-fetched
   [items]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (reduce stc/assoc-collection state items))))
+  (CollectionFetched. items))
 
 ;; --- Fetch Collections
 
+(defrecord FetchCollections []
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (->> (rp/req :fetch/color-collections)
+         (rx/map :payload)
+         (rx/map collections-fetched))))
+
 (defn fetch-collections
   []
-  (reify
-    rs/WatchEvent
-    (-apply-watch [_ state s]
-      (->> (rp/req :fetch/color-collections)
-           (rx/map :payload)
-           (rx/map collections-fetched)))))
+  (FetchCollections.))
 
 ;; --- Collection Created
 
+(defrecord CollectionCreated [item]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (-> state
+        (stc/assoc-collection item)
+        (assoc-in [:dashboard :collection-id] (:id item))
+        (assoc-in [:dashboard :collection-type] :own))))
+
 (defn collection-created
   [item]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (-> state
-          (stc/assoc-collection item)
-          (assoc-in [:dashboard :collection-id] (:id item))
-          (assoc-in [:dashboard :collection-type] :own)))))
+  (CollectionCreated. item))
 
 ;; --- Create Collection
 
+(defrecord CreateCollection []
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (letfn [(on-success [{coll :payload}]
+              (rx/of
+               (collection-created coll)))]
+      (->> (rp/req :create/color-collection {:name "Unnamed collection" :id (uuid/random) :data #{}})
+           (rx/mapcat on-success)))))
+
 (defn create-collection
   []
-  (reify
-    rs/WatchEvent
-    (-apply-watch [this state s]
-      (letfn [(on-success [{coll :payload}]
-                (rx/of
-                 (collection-created coll)))]
-        (->> (rp/req :create/color-collection {:name "Unnamed collection" :id (uuid/random) :data #{}})
-             (rx/mapcat on-success))))))
+  (CreateCollection.))
 
 ;; --- Collection Changed
 
+(defrecord CollectionChanged [item]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (stc/assoc-collection state item)))
+
 (defn collection-changed
   [item]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (stc/assoc-collection state item))))
+  (CollectionChanged. item))
 
 ;; --- Rename Collection
 
+(defrecord RenameCollection [item name]
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (letfn [(on-success [{coll :payload}]
+              (rx/of
+               (collection-changed coll)))]
+      (->> (rp/req :update/color-collection (assoc item :name name))
+           (rx/mapcat on-success)))))
+
 (defn rename-collection
-  [coll name]
-  (reify
-    rs/WatchEvent
-    (-apply-watch [this state s]
-      (letfn [(on-success [{coll :payload}]
-                (rx/of
-                 (collection-changed coll)))]
-        (->> (rp/req :update/color-collection (assoc coll :name name))
-             (rx/mapcat on-success))))))
+  [item name]
+  (RenameCollection. item name))
 
 ;; --- Delete Collection
 
@@ -97,29 +109,33 @@
 
 ;; --- Replace Color
 
+(defrecord ReplaceColor [coll from to]
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (letfn [(on-success [{coll :payload}]
+              (rx/of
+               (collection-changed coll)))]
+      (->> (rp/req :update/color-collection (update coll :data
+                                                    #(-> % (disj from) (conj to))))
+           (rx/mapcat on-success)))))
+
 (defn replace-color
   "Add or replace color in a collection."
-  [{:keys [id from to coll] :as params}]
-  (reify
-    rs/WatchEvent
-    (-apply-watch [this state s]
-      (letfn [(on-success [{coll :payload}]
-                (rx/of
-                 (collection-changed coll)))]
-        (->> (rp/req :update/color-collection (update coll :data
-                                                      #(-> % (disj from) (conj to))))
-             (rx/mapcat on-success))))))
+  [{:keys [from to coll] :as params}]
+  (ReplaceColor. coll from to))
 
 ;; --- Remove Color
+
+(defrecord RemoveColors [colors coll]
+  rs/WatchEvent
+  (-apply-watch [this state s]
+    (letfn [(on-success [{coll :payload}]
+              (rx/of
+               (collection-changed coll)))]
+      (->> (rp/req :update/color-collection (update coll :data #(clojure.set/difference % colors)))
+           (rx/mapcat on-success)))))
 
 (defn remove-colors
   "Remove color in a collection."
   [{:keys [colors coll] :as params}]
-  (reify
-    rs/WatchEvent
-    (-apply-watch [this state s]
-      (letfn [(on-success [{coll :payload}]
-                (rx/of
-                 (collection-changed coll)))]
-        (->> (rp/req :update/color-collection (update coll :data #(clojure.set/difference % colors)))
-             (rx/mapcat on-success))))))
+  (RemoveColors. colors coll))
