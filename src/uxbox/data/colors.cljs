@@ -40,9 +40,9 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (-> state
-        (stc/assoc-color-collection color-collection)
-        (assoc-in [:dashboard :collection-id] (:id color-collection))
-        (assoc-in [:dashboard :collection-type] :own)))))
+          (stc/assoc-color-collection color-collection)
+          (assoc-in [:dashboard :collection-id] (:id color-collection))
+          (assoc-in [:dashboard :collection-type] :own)))))
 
 ;; --- Create Color Collection
 
@@ -105,7 +105,7 @@
                 (rx/of
                  (color-collection-changed coll)))]
         (->> (rp/req :update/color-collection (update coll :data
-                                                #(-> % (disj from) (conj to))))
+                                                      #(-> % (disj from) (conj to))))
              (rx/mapcat on-success))))))
 
 (defn remove-colors
