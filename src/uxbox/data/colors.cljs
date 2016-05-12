@@ -95,6 +95,8 @@
   ([id] (DeleteCollection. id (constantly nil)))
   ([id callback] (DeleteCollection. id callback)))
 
+;; --- Replace Color
+
 (defn replace-color
   "Add or replace color in a collection."
   [{:keys [id from to coll] :as params}]
@@ -107,6 +109,8 @@
         (->> (rp/req :update/color-collection (update coll :data
                                                       #(-> % (disj from) (conj to))))
              (rx/mapcat on-success))))))
+
+;; --- Remove Color
 
 (defn remove-colors
   "Remove color in a collection."
