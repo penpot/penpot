@@ -12,88 +12,88 @@
             [uxbox.state.colors :as stc]
             [uxbox.repo :as rp]))
 
-;; --- Color Collections Fetched
+;; --- Collections Fetched
 
-(defn color-collections-fetched
-  [color-collections]
+(defn collections-fetched
+  [items]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (reduce stc/assoc-color-collection state color-collections))))
+      (reduce stc/assoc-collection state items))))
 
-;; --- Fetch Color Collections
+;; --- Fetch Collections
 
-(defn fetch-color-collections
+(defn fetch-collections
   []
   (reify
     rs/WatchEvent
     (-apply-watch [_ state s]
       (->> (rp/req :fetch/color-collections)
            (rx/map :payload)
-           (rx/map color-collections-fetched)))))
+           (rx/map collections-fetched)))))
 
-;; --- Color Collection Created
+;; --- Collection Created
 
-(defn color-collection-created
-  [color-collection]
+(defn collection-created
+  [item]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
       (-> state
-          (stc/assoc-color-collection color-collection)
-          (assoc-in [:dashboard :collection-id] (:id color-collection))
+          (stc/assoc-collection item)
+          (assoc-in [:dashboard :collection-id] (:id item))
           (assoc-in [:dashboard :collection-type] :own)))))
 
-;; --- Create Color Collection
+;; --- Create Collection
 
-(defn create-color-collection
+(defn create-collection
   []
   (reify
     rs/WatchEvent
     (-apply-watch [this state s]
       (letfn [(on-success [{coll :payload}]
                 (rx/of
-                 (color-collection-created coll)))]
+                 (collection-created coll)))]
         (->> (rp/req :create/color-collection {:name "Unnamed collection" :id (uuid/random) :data #{}})
              (rx/mapcat on-success))))))
 
-;; --- Color Collection Changed
+;; --- Collection Changed
 
-(defn color-collection-changed
-  [color-collection]
+(defn collection-changed
+  [item]
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (stc/assoc-color-collection state color-collection))))
+      (stc/assoc-collection state item))))
 
-;; --- Rename Color Collection
+;; --- Rename Collection
 
-(defn rename-color-collection
+(defn rename-collection
   [coll name]
   (reify
     rs/WatchEvent
     (-apply-watch [this state s]
       (letfn [(on-success [{coll :payload}]
                 (rx/of
-                 (color-collection-changed coll)))]
+                 (collection-changed coll)))]
         (->> (rp/req :update/color-collection (assoc coll :name name))
              (rx/mapcat on-success))))))
 
-;; --- Delete Color Collection
+;; --- Delete Collection
 
-(defrecord DeleteColorCollection [id callback]
+(defrecord DeleteCollection [id callback]
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [_]
-              (rs/swap #(stc/dissoc-color-collection % id)))]
+              (rs/swap #(stc/dissoc-collection % id)))]
       (->> (rp/req :delete/color-collection id)
            (rx/map on-success)
            (rx/tap callback)
            (rx/filter identity)))))
 
-(defn delete-color-collection
-  ([id] (DeleteColorCollection. id (constantly nil)))
-  ([id callback] (DeleteColorCollection. id callback)))
+(defn delete-collection
+  ([id] (DeleteCollection. id (constantly nil)))
+  ([id callback] (DeleteCollection. id callback)))
 
 (defn replace-color
   "Add or replace color in a collection."
@@ -103,7 +103,7 @@
     (-apply-watch [this state s]
       (letfn [(on-success [{coll :payload}]
                 (rx/of
-                 (color-collection-changed coll)))]
+                 (collection-changed coll)))]
         (->> (rp/req :update/color-collection (update coll :data
                                                       #(-> % (disj from) (conj to))))
              (rx/mapcat on-success))))))
@@ -116,6 +116,6 @@
     (-apply-watch [this state s]
       (letfn [(on-success [{coll :payload}]
                 (rx/of
-                 (color-collection-changed coll)))]
+                 (collection-changed coll)))]
         (->> (rp/req :update/color-collection (update coll :data #(clojure.set/difference % colors)))
              (rx/mapcat on-success))))))

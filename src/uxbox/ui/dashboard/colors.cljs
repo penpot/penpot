@@ -51,7 +51,7 @@
   [own coll]
   (let [local (:rum/local own)]
     (letfn [(on-title-save [e]
-              (rs/emit! (dc/rename-color-collection coll (:coll-name @local)))
+              (rs/emit! (dc/rename-collection coll (:coll-name @local)))
               (swap! local assoc :edit false))
             (on-title-edited [e]
               (cond
@@ -62,7 +62,7 @@
             (on-title-edit [e]
               (swap! local assoc :edit true :coll-name (:name coll)))
             (on-delete [e]
-              (rs/emit! (dc/delete-color-collection (:id coll))))]
+              (rs/emit! (dc/delete-collection (:id coll))))]
       (let [dashboard (rum/react dashboard-l)
             own? (:builtin coll false)]
         (html
@@ -119,7 +119,7 @@
         (when own?
           [:li
            [:a.btn-primary
-            {:on-click #(rs/emit! (dc/create-color-collection))}
+            {:on-click #(rs/emit! (dc/create-collection))}
             "+ New library"]])
         (for [props collections
               :let [num (count (:data props))]]

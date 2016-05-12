@@ -44,7 +44,7 @@
          (rx/empty)
          (rx/of (dp/fetch-projects)))
 
-       (rx/of (dc/fetch-color-collections))
+       (rx/of (dc/fetch-collections))
 
        (when (:loader state)
          (if projects
