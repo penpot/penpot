@@ -51,7 +51,7 @@
   [own coll]
   (let [local (:rum/local own)]
     (letfn [(on-title-save [e]
-              (rs/emit! (dc/rename-collection coll (:coll-name @local)))
+              (rs/emit! (dc/rename-collection (:id coll) (:coll-name @local)))
               (swap! local assoc :edit false))
             (on-title-edited [e]
               (cond
@@ -148,7 +148,7 @@
         coll (rum/react (focus-collection coll-id))
         toggle-color-check (fn [color]
                              (swap! local update :selected #(if (% color) (disj % color) (conj % color))))
-        delete-selected-colors #(rs/emit! (dc/remove-colors {:colors (:selected @local) :coll coll}))]
+        delete-selected #(rs/emit! (dc/remove-colors (:id coll) (:selected @local)))]
     (when coll
       (html
        [:section.dashboard-grid.library
@@ -182,7 +182,7 @@
                {:alt "Move to"}
                i/organize]
               [:span.delete.tooltip.tooltip-top
-               {:alt "Delete" :on-click delete-selected-colors}
+               {:alt "Delete" :on-click delete-selected}
                i/trash]]
              [:div.multiselect-nav
               [:span.move-item.tooltip.tooltip-top
@@ -254,8 +254,7 @@
   (html
   (let [local (:rum/local own)]
     (letfn [(submit [e]
-              (let [params {:id (:id coll) :from color
-                            :to (:hex @local) :coll coll}]
+              (let [params {:id (:id coll) :from color :to (:hex @local)}]
                 (rs/emit! (dc/replace-color params))
                 (udl/close!)))
             (on-change [e]

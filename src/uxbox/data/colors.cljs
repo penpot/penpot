@@ -6,7 +6,8 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.data.colors
-  (:require [beicon.core :as rx]
+  (:require [clojure.set :as set]
+            [beicon.core :as rx]
             [uuid.core :as uuid]
             [uxbox.rstore :as rs]
             [uxbox.state.colors :as stc]
@@ -48,13 +49,14 @@
 
 (defn collection-created
   [item]
+  (println "collection-created" item)
   (CollectionCreated. item))
 
 ;; --- Create Collection
 
 (defrecord CreateCollection []
   rs/WatchEvent
-  (-apply-watch [this state s]
+  (-apply-watch [_ state s]
     (let [coll {:name "Unnamed collection"
                 :id (uuid/random)}]
       (->> (rp/req :create/color-collection coll)
@@ -65,25 +67,42 @@
   []
   (CreateCollection.))
 
-;; --- Collection Changed
+;; --- Collection Updated
 
-(defrecord CollectionChanged [item]
+(defrecord CollectionUpdated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
     (stc/assoc-collection state item)))
 
-(defn collection-changed
+(defn collection-updated
   [item]
-  (CollectionChanged. item))
+  (CollectionUpdated. item))
+
+
+;; --- Update Collection
+
+(defrecord UpdateCollection [id]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [item (get-in state [:colors-by-id id])]
+      (->> (rp/req :update/color-collection item)
+           (rx/map :payload)
+           (rx/map collection-updated)))))
+
+(defn update-collection
+  [id]
+  (UpdateCollection. id))
 
 ;; --- Rename Collection
 
-(defrecord RenameCollection [item name]
+(defrecord RenameCollection [id name]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:colors-by-id id :name] name))
+
   rs/WatchEvent
-  (-apply-watch [this state s]
-    (->> (rp/req :update/color-collection (assoc item :name name))
-         (rx/map :payload)
-         (rx/map collection-changed))))
+  (-apply-watch [_ state s]
+    (rx/of (update-collection id))))
 
 (defn rename-collection
   [item name]
@@ -91,44 +110,50 @@
 
 ;; --- Delete Collection
 
-(defrecord DeleteCollection [id callback]
+(defrecord DeleteCollection [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (stc/dissoc-collection state id))
+
   rs/WatchEvent
   (-apply-watch [_ state s]
     (->> (rp/req :delete/color-collection id)
-         (rx/map (constantly #(stc/dissoc-collection % id)))
-         (rx/tap callback)
-         (rx/filter identity))))
+         (rx/ignore))))
 
 (defn delete-collection
-  ([id] (DeleteCollection. id (constantly nil)))
-  ([id callback] (DeleteCollection. id callback)))
+  [id]
+  (DeleteCollection. id))
 
 ;; --- Replace Color
 
-(defrecord ReplaceColor [coll from to]
+(defrecord ReplaceColor [id from to]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [replacer #(-> (disj % from) (conj to))]
+      (update-in state [:colors-by-id id :data] (fnil replacer #{}))))
+
   rs/WatchEvent
-  (-apply-watch [this state s]
-    (let [coll (update coll :data #(-> % (disj from) (conj to)))]
-      (->> (rp/req :update/color-collection coll)
-           (rx/map :payload)
-           (rx/map collection-changed)))))
+  (-apply-watch [_ state s]
+    (rx/of (update-collection id))))
 
 (defn replace-color
   "Add or replace color in a collection."
-  [{:keys [from to coll] :as params}]
-  (ReplaceColor. coll from to))
+  [{:keys [id from to] :as params}]
+  (ReplaceColor. id from to))
 
 ;; --- Remove Color
 
-(defrecord RemoveColors [colors coll]
+(defrecord RemoveColors [id colors]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:colors-by-id id :data]
+               #(set/difference % colors)))
+
   rs/WatchEvent
-  (-apply-watch [this state s]
-    (let [coll (update coll :data #(clojure.set/difference % colors))]
-      (->> (rp/req :update/color-collection coll)
-           (rx/map :payload)
-           (rx/map collection-changed)))))
+  (-apply-watch [_ state s]
+    (rx/of (update-collection id))))
 
 (defn remove-colors
   "Remove color in a collection."
-  [{:keys [colors coll] :as params}]
-  (RemoveColors. colors coll))
+  [id colors]
+  (RemoveColors. id colors))
