@@ -28,13 +28,13 @@
 
 ;; --- Helpers & Constants
 
-(def ^:const ^:private
-  +project-defaults+ {:name ""
-                      :width 1920
-                      :height 1080
-                      :layout "desktop"})
+(def ^:private +project-defaults+
+  {:name ""
+   :width 1920
+   :height 1080
+   :layout "desktop"})
 
-(def ^:const +layouts+
+(def +layouts+
   {"mobile"
    {:name "Mobile"
     :id "mobile"
@@ -56,21 +56,21 @@
     :width 1920
     :height 1080}})
 
-(def ^:const +ordering-options+
+(def +ordering-options+
   {:name "ds.project-ordering.by-name"
    :created "ds.project-ordering.by-creation-date"})
 
 ;; --- Lenses
 
-(def ^:const projects-by-id-l
+(def projects-by-id-l
   (as-> (l/key :projects-by-id) $
     (l/focus-atom $ s/state)))
 
-(def ^:const project-ordering-l
+(def project-ordering-l
   (as-> (l/in [:dashboard :project-order]) $
     (l/focus-atom $ s/state)))
 
-(def ^:const project-filtering-l
+(def project-filtering-l
   (as-> (l/in [:dashboard :project-filter]) $
     (l/focus-atom $ s/state)))
 
@@ -96,7 +96,7 @@
            :value option-value}
           option-text])]])))
 
-(def ^:const ^:private sort-widget
+(def ^:private sort-widget
   (mx/component
    {:render sort-widget-render
     :name "sort-widget-render"
@@ -125,7 +125,7 @@
        {:on-click on-clear}
        i/close]])))
 
-(def ^:const ^:private search-widget
+(def ^:private search-widget
   (mx/component
    {:render search-widget-render
     :name "search-widget"
@@ -180,7 +180,7 @@
         {:on-click on-delete}
         i/trash]]])))
 
-(def ^:const ^:private grid-item
+(def ^:private grid-item
   (mx/component
    {:render grid-item-render
     :name "grid-item"
