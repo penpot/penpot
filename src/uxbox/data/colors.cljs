@@ -49,7 +49,6 @@
 
 (defn collection-created
   [item]
-  (println "collection-created" item)
   (CollectionCreated. item))
 
 ;; --- Create Collection
