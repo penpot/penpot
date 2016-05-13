@@ -17,7 +17,7 @@
 
 (defonce +router+ (volatile! nil))
 
-(def ^:const route-l
+(def route-l
   (as-> (l/in [:route]) $
     (l/focus-atom $ s/state)))
 
@@ -63,7 +63,7 @@
 (def ^:private page-route
   [[bidi/uuid :project-uuid] "/" [bidi/uuid :page-uuid]])
 
-(def ^:const routes
+(def routes
   ["/" [["auth/login" :auth/login]
         ["auth/register" :auth/register]
         ["auth/recover" :auth/recover-password]
