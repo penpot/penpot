@@ -23,6 +23,23 @@
     h2 {
       text-align: center;
       width: 100%;
+      .edit {
+          padding: 5px 10px;
+          background: $color-white;
+          border: none;
+          height: 100%;
+      }
+      .close {
+          padding: 5px 10px;
+          background: $color-white;
+          cursor: pointer;
+          svg {
+            transform: rotate(45deg);
+            fill: $color-gray;
+            height: 20px;
+            width: 20px;
+          }
+      }
     }
 
     .edition {

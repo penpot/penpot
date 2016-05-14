@@ -14,7 +14,6 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.dom :as dom]
-            [uxbox.data.dashboard :as dd]
             [uxbox.ui.settings.header :refer (header)]))
 
 (defn notifications-page-render

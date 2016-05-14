@@ -12,6 +12,9 @@
    "ds.num-projects" ["No projects"
                       "%s project"
                       "%s projects"]
+   "ds.num-colors" ["No colors"
+                      "%s color"
+                      "%s colors"]
    "ds.project-ordering" "Sort by"
    "ds.project-ordering.by-name" "name"
    "ds.project-ordering.by-last-update" "last update"
