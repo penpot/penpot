@@ -116,7 +116,7 @@
               :on-click #(rs/emit! (dd/set-collection-type :own))}
          "YOUR LIBRARIES"]]
        [:ul.library-elements
-        (when own?
+        (if own?
           [:li
            [:a.btn-primary
             {:on-click #(rs/emit! (dc/create-collection))}
@@ -155,7 +155,7 @@
         (page-title coll)
         [:div.dashboard-grid-content
           [:div.dashboard-grid-row
-           (when own?
+           (if own?
              [:div.grid-item.small-item.add-project
               {:on-click #(udl/open! :color-form {:coll coll})}
               [:span "+ New color"]])
