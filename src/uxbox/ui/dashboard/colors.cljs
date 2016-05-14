@@ -49,7 +49,9 @@
 
 (defn page-title-render
   [own coll]
-  (let [local (:rum/local own)]
+  (let [local (:rum/local own)
+        dashboard (rum/react dashboard-l)
+        own? (:builtin coll false)]
     (letfn [(on-title-save [e]
               (rs/emit! (dc/rename-collection (:id coll) (:coll-name @local)))
               (swap! local assoc :edit false))
@@ -63,28 +65,26 @@
               (swap! local assoc :edit true :coll-name (:name coll)))
             (on-delete [e]
               (rs/emit! (dc/delete-collection (:id coll))))]
-      (let [dashboard (rum/react dashboard-l)
-            own? (:builtin coll false)]
-        (html
-         [:div.dashboard-title {}
-          [:h2 {}
-            (if (:edit @local)
-              [:div.dashboard-title-field
-                [:span.edit
-                   {:content-editable ""
-                    :on-key-up on-title-edited}
-                   (:name coll)]
-                [:span.close
-                  {:on-click #(swap! local assoc :edit false)}
-                  i/close]]
-              [:span.dashboard-title-field
-                 (:name coll)])]
-          (if (and (not own?) coll)
-            [:div.edition {}
-             (if (:edit @local)
-               [:span {:on-click on-title-save} i/save]
-               [:span {:on-click on-title-edit} i/pencil])
-             [:span {:on-click on-delete} i/trash]])])))))
+      (html
+       [:div.dashboard-title {}
+        [:h2 {}
+         (if (:edit @local)
+           [:div.dashboard-title-field
+            [:span.edit
+             {:content-editable ""
+              :on-key-up on-title-edited}
+             (:name coll)]
+            [:span.close
+             {:on-click #(swap! local assoc :edit false)}
+             i/close]]
+           [:span.dashboard-title-field
+            (:name coll)])]
+        (if (and (not own?) coll)
+          [:div.edition
+           (if (:edit @local)
+             [:span {:on-click on-title-save} i/save]
+             [:span {:on-click on-title-edit} i/pencil])
+           [:span {:on-click on-delete} i/trash]])]))))
 
 (def ^:private page-title
   (mx/component
