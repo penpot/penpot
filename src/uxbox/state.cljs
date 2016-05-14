@@ -13,11 +13,11 @@
 
 (defonce state (atom {}))
 
-(def ^:const auth-l
+(def auth-l
   (-> (l/key :auth)
       (l/focus-atom state)))
 
-(def ^:const loader-l
+(def loader-l
   (-> (l/key :loader)
       (l/focus-atom state)))
 
