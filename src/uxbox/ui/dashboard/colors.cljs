@@ -31,11 +31,11 @@
 
 ;; --- Lenses
 
-(def ^:const ^:private dashboard-l
+(def ^:private dashboard-l
   (-> (l/key :dashboard)
       (l/focus-atom st/state)))
 
-(def ^:const ^:private collections-by-id-l
+(def ^:private collections-by-id-l
   (-> (comp (l/key :colors-by-id)
             (ul/merge library/+color-collections-by-id+))
       (l/focus-atom st/state)))
@@ -86,7 +86,7 @@
                [:span {:on-click on-title-edit} i/pencil])
              [:span {:on-click on-delete} i/trash]])])))))
 
-(def ^:const ^:private page-title
+(def ^:private page-title
   (mx/component
    {:render page-title-render
     :name "page-title"
@@ -130,7 +130,7 @@
            [:span.element-subtitle
             (tr "ds.num-elements" (t/c num))]])]]])))
 
-(def ^:const ^:private nav
+(def ^:private nav
   (mx/component
    {:render nav-render
     :name "nav"
@@ -189,7 +189,7 @@
                {:alt "Copy to"}
                i/organize]])])]))))
 
-(def ^:const ^:private grid
+(def ^:private grid
   (mx/component
    {:render grid-render
     :name "grid"
