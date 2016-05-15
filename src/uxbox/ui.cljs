@@ -30,11 +30,15 @@
 (def ^:const +unrestricted+ #{:auth/login})
 (def ^:const restricted? (complement +unrestricted+))
 
+(def route-l
+  (as-> (l/key :route) $
+    (l/focus-atom $ st/state)))
+
 ;; --- Main App (Component)
 
 (defn app-render
   [own]
-  (let [route (rum/react r/route-l)
+  (let [route (rum/react route-l)
         auth (rum/react st/auth-l)
         location (:id route)
         params (:params route)]

@@ -10,16 +10,11 @@
             [bidi.bidi :as bidi]
             [goog.events :as events]
             [lentes.core :as l]
-            [uxbox.state :as s]
             [uxbox.rstore :as rs]))
 
 (enable-console-print!)
 
 (defonce +router+ (volatile! nil))
-
-(def route-l
-  (as-> (l/in [:route]) $
-    (l/focus-atom $ s/state)))
 
 ;; --- Update Location (Event)
 
