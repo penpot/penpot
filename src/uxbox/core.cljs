@@ -16,7 +16,6 @@
 (enable-console-print!)
 
 (define-once :setup
-  (println "bootstrap")
   (st/init)
   (rt/init)
   (ui/init))
