@@ -88,15 +88,15 @@
 
 (defn error!
   [& args]
-  (rs/emit! (apply show-error args)))
+  (p/schedule 0 #(rs/emit! (apply show-error args))))
 
 (defn info!
   [& args]
-  (rs/emit! (apply show-info args)))
+  (p/schedule 0 #(rs/emit! (apply show-info args))))
 
 (defn dialog!
   [& args]
-  (rs/emit! (apply show-dialog args)))
+  (p/schedule 0 #(rs/emit! (apply show-dialog args))))
 
 (defn close!
   []
