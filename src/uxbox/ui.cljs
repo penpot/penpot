@@ -8,14 +8,18 @@
 (ns uxbox.ui
   (:require [sablono.core :as html :refer-macros [html]]
             [promesa.core :as p]
+            [beicon.core :as rx]
             [goog.dom :as gdom]
             [rum.core :as rum]
             [lentes.core :as l]
             [uxbox.state :as st]
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
+            [uxbox.locales :refer (tr)]
             [uxbox.data.projects :as dp]
             [uxbox.data.users :as udu]
+            [uxbox.data.auth :as dauth]
+            [uxbox.data.messages :as dmsg]
             [uxbox.ui.icons :as i]
             [uxbox.ui.lightbox :as ui-lightbox]
             [uxbox.ui.auth :as ui-auth]
@@ -33,6 +37,33 @@
 (def route-l
   (as-> (l/key :route) $
     (l/focus-atom $ st/state)))
+
+;; --- Error Handling
+
+(defn- on-error
+  "A default error handler."
+  [error]
+  (cond
+    ;; Unauthorized or Auth timeout
+    (and (:status error)
+         (:payload error)
+         (or (= (:status error) 403)
+             (= (:status error) 419)))
+    (rs/emit! (dauth/logout))
+
+    ;; Network error
+    (= (:status error) 0)
+    (do
+      (dmsg/error! (tr "errors.network"))
+      (js/console.error "Stack:" (.-stack error)))
+
+    ;; Something else
+    :else
+    (do
+      (dmsg/error! (tr "errors.generic"))
+      (js/console.error "Stack:" (.-stack error)))))
+
+(rs/add-error-watcher :ui on-error)
 
 ;; --- Main App (Component)
 
