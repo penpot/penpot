@@ -9,7 +9,10 @@
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.rstore :as rs]
+            [uxbox.locales :refer (tr)]
             [uxbox.util.storage :refer (storage)]))
+
+(enable-console-print!)
 
 (defonce state (atom {}))
 
@@ -19,7 +22,7 @@
 
 (def loader (atom false))
 
-(defn get-initial-state
+(defn- get-initial-state
   []
   {:dashboard {:project-order :name
                :project-filter ""}
@@ -34,6 +37,13 @@
    :icons-by-id {}
    :projects-by-id {}
    :pages-by-id {}})
+
+(defn- on-error
+  [error]
+  ;; Disable loader in case of error.
+  (reset! loader false))
+
+(rs/add-error-watcher :test on-error)
 
 (defonce stream
   (rs/init (get-initial-state)))
