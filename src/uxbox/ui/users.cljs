@@ -56,7 +56,7 @@
                       :on-mouse-leave #(swap! local assoc :open false)}
       [:span (:fullname profile)]
       [:img {:border "0"
-             :src (:photo profile "/images/avatar.jpg")}]
+             :src "/images/avatar.jpg"}]
       (user-menu (:open @local))])))
 
 (def user
