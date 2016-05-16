@@ -17,9 +17,7 @@
   (-> (l/key :auth)
       (l/focus-atom state)))
 
-(def loader-l
-  (-> (l/key :loader)
-      (l/focus-atom state)))
+(def loader (atom false))
 
 (defn get-initial-state
   []
