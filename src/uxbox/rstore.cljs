@@ -86,21 +86,21 @@
 
 (enable-console-print!)
 
-(defn- on-error
-  "A default error handler."
-  [error]
-  (cond
-    (and (:status error)
-         (:payload error)
-         (= (:status error) 403))
-    (emit! (uxbox.data.auth/logout))
+(defonce ^:private error-handlers (atom {}))
 
-    :else
-    (do
-      (uxbox.data.messages/error! (tr "errors.generic"))
-      (println "Unexpected error: " error)
-      (js/console.log (.-stack error))
-      (rx/throw error))))
+(defn add-error-watcher
+  [key callable]
+  (swap! error-handlers assoc key callable))
+
+(defn remove-error-watcher
+  [key]
+  (swap! error-handlers dissoc key))
+
+(defn- on-error
+  [error]
+  (doseq [[key value] @error-handlers]
+    (value error))
+  (throw error))
 
 (defn init
   "Initializes the stream event loop and
