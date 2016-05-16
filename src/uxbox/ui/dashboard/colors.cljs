@@ -231,7 +231,8 @@
 
 (defn colors-page-will-mount
   [own]
-  (rs/emit! (dd/initialize :dashboard/colors))
+  (rs/emit! (dd/initialize :dashboard/colors)
+            (dc/initialize))
   own)
 
 (defn colors-page-transfer-state

@@ -9,9 +9,37 @@
   (:require [clojure.set :as set]
             [beicon.core :as rx]
             [uuid.core :as uuid]
+            [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.state.colors :as stc]
             [uxbox.repo :as rp]))
+
+;; --- Initialize
+
+(declare fetch-collections)
+(declare collections-fetched?)
+
+(defrecord Initialize []
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    (when-not (seq (:colors-by-id state))
+      (reset! st/loader true)))
+
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [colors (seq (:colors-by-id state))]
+      (if colors
+        (rx/empty)
+        (rx/merge
+         (rx/of (fetch-collections))
+         (->> (rx/filter collections-fetched? s)
+              (rx/take 1)
+              (rx/do #(reset! st/loader false))
+              (rx/ignore)))))))
+
+(defn initialize
+  []
+  (Initialize.))
 
 ;; --- Collections Fetched
 
@@ -23,6 +51,10 @@
 (defn collections-fetched
   [items]
   (CollectionFetched. items))
+
+(defn collections-fetched?
+  [v]
+  (instance? CollectionFetched v))
 
 ;; --- Fetch Collections
 

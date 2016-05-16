@@ -10,11 +10,39 @@
             [beicon.core :as rx]
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
+            [uxbox.state :as st]
             [uxbox.repo :as rp]
             [uxbox.locales :refer (tr)]
             [uxbox.schema :as sc]
             [uxbox.state.project :as stpr]
             [uxbox.data.pages :as udp]))
+
+;; --- Initialize
+
+(declare fetch-projects)
+(declare projects-fetched?)
+
+(defrecord Initialize []
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    (when-not (seq (:projects-by-id state))
+      (reset! st/loader true)))
+
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [projects (seq (:projects-by-id state))]
+      (if projects
+        (rx/empty)
+        (rx/merge
+         (rx/of (fetch-projects))
+         (->> (rx/filter projects-fetched? s)
+              (rx/take 1)
+              (rx/do #(reset! st/loader false))
+              (rx/ignore)))))))
+
+(defn initialize
+  []
+  (Initialize.))
 
 ;; --- Projects Fetched
 
@@ -102,20 +130,25 @@
 ;; --- Go To & Go To Page
 
 (defrecord GoTo [projectid]
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    (reset! st/loader true))
+
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(navigate [pages]
               (let [pageid (:id (first pages))
                     params {:project-uuid projectid
                             :page-uuid pageid}]
-                (rx/of (r/navigate :workspace/page params))))]
+                (r/navigate :workspace/page params)))]
       (rx/merge
        (rx/of #(assoc % :loader true)
               (udp/fetch-pages projectid))
        (->> (rx/filter udp/pages-fetched? s)
             (rx/take 1)
             (rx/map :pages)
-            (rx/flat-map navigate))))))
+            (rx/do #(reset! st/loader false))
+            (rx/map navigate))))))
 
 (defrecord GoToPage [projectid pageid]
   rs/WatchEvent

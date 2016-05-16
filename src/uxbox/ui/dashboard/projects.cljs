@@ -230,7 +230,8 @@
 
 (defn projects-page-will-mount
   [own]
-  (rs/emit! (dd/initialize :dashboard/projects))
+  (rs/emit! (dd/initialize :dashboard/projects)
+            (dp/initialize))
   own)
 
 (defn projects-page-transfer-state

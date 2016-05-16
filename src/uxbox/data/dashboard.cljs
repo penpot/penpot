@@ -19,40 +19,13 @@
 
 ;; --- Events
 
-(defn- setup-dashboard-state
-  [state section]
-  (update state :dashboard assoc
-          :section section
-          :collection-type :builtin
-          :collection-id 1))
-
 (defrecord InitializeDashboard [section]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [state (setup-dashboard-state state section)]
-      (if (seq (:projects-by-id state))
-        state
-        (assoc state :loader true))))
-
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (let [projects (seq (:projects-by-id state))
-          color-collections (seq (:colors-by-id state))]
-      (rx/merge
-       ;; Load projects if needed
-       (if projects
-         (rx/empty)
-         (rx/of (dp/fetch-projects)))
-
-       (rx/of (dc/fetch-collections))
-
-       (when (:loader state)
-         (if projects
-           (rx/of #(assoc % :loader false))
-           (->> (rx/filter dp/projects-fetched? s)
-                (rx/take 1)
-                (rx/delay 1000)
-                (rx/map (fn [_] #(assoc % :loader false))))))))))
+    (update state :dashboard assoc
+            :section section
+            :collection-type :builtin
+            :collection-id 1)))
 
 (defn initialize
   [section]
