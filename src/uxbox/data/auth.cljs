@@ -28,7 +28,8 @@
 
   rs/WatchEvent
   (-apply-watch [this state s]
-    (rx/of (r/navigate :dashboard/projects)))
+    (rx/of (udu/fetch-profile)
+           (r/navigate :dashboard/projects)))
 
   rs/EffectEvent
   (-apply-effect [this state]
@@ -53,13 +54,12 @@
   (-apply-watch [this state s]
     (let [params {:username username
                   :password password
-                  :scope "webapp"}]
+                  :scope "webapp"}
+          on-error #(udm/error (tr "errors.auth.unauthorized"))]
       (->> (rp/req :fetch/token params)
            (rx/map :payload)
-           (rx/mapcat #(rx/of (logged-in %)
-                              (udp/fetch-projects)
-                              (udu/fetch-profile)))
-           (rx/catch rp/client-error? #(udm/error (tr "errors.auth.unauthorized")))))))
+           (rx/map logged-in)
+           (rx/catch rp/client-error? on-error)))))
 
 (defn login
   [params]
