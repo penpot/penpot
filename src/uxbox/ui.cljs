@@ -108,7 +108,7 @@
 
 (defn loader-render
   [own]
-  (when (rum/react st/loader-l)
+  (when (rum/react st/loader)
     (html
      [:div.loader-content i/loader])))
 
