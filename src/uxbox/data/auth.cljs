@@ -70,15 +70,12 @@
 (defrecord Logout []
   rs/UpdateEvent
   (-apply-update [_ state]
+    (swap! storage dissoc :uxbox/auth)
     (merge state (dissoc (st/get-initial-state) :route)))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (r/navigate :auth/login)))
-
-  rs/EffectEvent
-  (-apply-effect [this state]
-    (swap! storage dissoc :uxbox/auth)))
+    (rx/of (r/navigate :auth/login))))
 
 (defn logout
   []
