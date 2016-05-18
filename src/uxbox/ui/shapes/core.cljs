@@ -11,12 +11,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const +circle-props+
-  {:r 5
-   :style {:fillOpacity "0.5"
+  {:r 6
+   :style {:fillOpacity "1"
            :strokeWidth "1px"
            :vectorEffect "non-scaling-stroke"}
-   :fill "#333"
-   :stroke "#333"})
+   :fill "#78dbbe"
+   :stroke "#3f9d81"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation Api
