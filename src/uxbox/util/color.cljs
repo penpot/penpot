@@ -47,3 +47,6 @@
   (-> (hex->rgb data)
       (conj opacity)))
 
+(defn hex?
+  [v]
+  (not (nil? (re-find #"^#[0-9A-Fa-f]{6}$" v))))

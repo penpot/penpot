@@ -80,10 +80,9 @@
            :min 1
            :max 100}]]
         [:span.lightbox-label "Grid color"]
-        [:div.color-picker-default
-         (uucp/colorpicker
-          :value (:grid/color form)
-          :on-change on-color-change)]
+        (uucp/colorpicker
+         :value (:grid/color form)
+         :on-change on-color-change)
         [:span.lightbox-label "Grid magnet option"]
         [:div.input-checkbox.check-primary
          [:input

@@ -10,9 +10,11 @@
             [lentes.core :as l]
             [goog.events :as events]
             [uxbox.schema :as sc]
+            [uxbox.ui.mixins :as mx]
             [uxbox.util.color :as color]
             [uxbox.util.math :as mth]
-            [uxbox.ui.mixins :as mx])
+            [uxbox.util.dom :as dom]
+            [uxbox.util.color :as color])
   (:import goog.events.EventType))
 
 ;; --- Picker Box
@@ -115,6 +117,9 @@
   [own & {:keys [value on-change theme]
           :or {value "#d4edfb" theme :default}}]
   (let [local (:rum/local own)
+        classes (case theme
+                  :default "theme-default"
+                  :small "theme-small")
         dimensions (case theme
                      :default default-dimensions
                      :small small-dimensions
@@ -128,47 +133,67 @@
                (/ (:pi-width dimensions) 2))
 
         sit (- (/ (* (- h 15) (:s-height dimensions)) 360)
-               (/ (:si-height dimensions) 2))
+               (/ (:si-height dimensions) 2))]
+    (letfn [(on-mouse-down [event]
+              (swap! local assoc :mousedown true))
+            (on-mouse-up [event]
+              (swap! local assoc :mousedown false))
+            (on-mouse-move-slide [event]
+              (when (:mousedown @local)
+                (on-slide-click local dimensions event)))
+            (on-mouse-move-picker [event]
+              (when (:mousedown @local)
+                (on-picker-click local dimensions on-change color event)))
+            (on-hex-changed [event]
+              (let [value (-> (dom/get-target event)
+                              (dom/get-value))]
+                (when (color/hex? value)
+                  (on-change value))))]
+      (html
+       [:div.color-picker {:class classes}
+        [:div.picker-area
+         #_[:div.tester {:style {:width "100px" :height "100px"
+                                 :border "1px solid black"
+                                 :position "fixed" :top "50px" :left "50px"
+                                 :backgroundColor (color/hsv->hex color)}}]
+         [:div.picker-wrapper
+          [:div.picker
+           {:ref "picker"
+            :on-click (partial on-picker-click local dimensions on-change color)
+            :on-mouse-down on-mouse-down
+            :on-mouse-up on-mouse-up
+            :on-mouse-move on-mouse-move-picker
+            :style {:backgroundColor bg}}
+           (picker-box)]
+          [:div.picker-indicator
+           {:ref "picker-indicator"
+            :style {:top (str pil "px")
+                    :left (str pit "px")
+                    :pointerEvents "none"}}]]
+         [:div.slide-wrapper
+          [:div.slide
+           {:ref "slide"
+            :on-mouse-down on-mouse-down
+            :on-mouse-up on-mouse-up
+            :on-mouse-move on-mouse-move-slide
+            :on-click (partial on-slide-click local dimensions)}
+           (slider-box)]
+          [:div.slide-indicator
+           {:ref "slide-indicator"
+            :style {:top (str sit "px")
+                    :pointerEvents "none"}}]]]
 
-        on-mouse-down #(swap! local assoc :mousedown true)
-        on-mouse-up #(swap! local assoc :mousedown false)
+        [:div.inputs-area
+         [:input.input-text
+          {:placeholder "#"
+           :type "text"
+           :value value
+           :on-change on-hex-changed}]
+         [:input.input-text
+          {:placeholder "RGB"
+           :type "text"}]]]))))
 
-        on-mouse-move-slide #(when (:mousedown @local)
-                               (on-slide-click local dimensions %))
-        on-mouse-move-picker #(when (:mousedown @local)
-                                (on-picker-click local dimensions on-change color %))]
-    (html
-     [:div.color-picker
-      #_[:div.tester {:style {:width "100px" :height "100px"
-                            :border "1px solid black"
-                            :position "fixed" :top "50px" :left "50px"
-                            :backgroundColor (color/hsv->hex color)}}]
-       [:div.picker-wrapper
-       [:div.picker
-        {:ref "picker"
-         :on-click (partial on-picker-click local dimensions on-change color)
-         :on-mouse-down on-mouse-down
-         :on-mouse-up on-mouse-up
-         :on-mouse-move on-mouse-move-picker
-         :style {:backgroundColor bg}}
-        (picker-box)]
-       [:div.picker-indicator
-        {:ref "picker-indicator"
-         :style {:top (str pil "px")
-                 :left (str pit "px")
-                 :pointerEvents "none"}}]]
-      [:div.slide-wrapper
-       [:div.slide
-        {:ref "slide"
-         :on-mouse-down on-mouse-down
-         :on-mouse-up on-mouse-up
-         :on-mouse-move on-mouse-move-slide
-         :on-click (partial on-slide-click local dimensions)}
-        (slider-box)]
-       [:div.slide-indicator
-        {:ref "slide-indicator"
-         :style {:top (str sit "px")
-                 :pointerEvents "none"}}]]])))
+
 
 (def ^:static colorpicker
   (mx/component
