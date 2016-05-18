@@ -16,6 +16,7 @@
             [uxbox.library :as library]
             [uxbox.data.workspace :as udw]
             [uxbox.data.shapes :as uds]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.workspace.colorpicker :refer (colorpicker)]
@@ -44,7 +45,11 @@
           (on-stroke-style-change [event]
             (let [value (dom/event->value event)
                   value (read-string value)]
-              (change-stroke {:type value})))]
+              (change-stroke {:type value})))
+          (show-color-picker [event]
+            (let [x (.-screenX event)
+                  y (.-screenY event)]
+              (udl/open! :workspace/colorpicker {:x x :y y :shape shape})))]
     (let [local (:rum/local own)]
       (html
        [:div.element-set {:key (str (:id menu))}
@@ -70,13 +75,12 @@
          ;; SLIDEBAR FOR ROTATION AND OPACITY
          [:span "Color"]
 
-         ;; ;; HERE COLOR PICKER
-
          [:div.row-flex.color-data
-          [:span.color-th]
+          [:span.color-th
+           {:style {:background-color (:stroke shape)}
+            :on-click show-color-picker}]
           [:div.color-info
-           [:span.type "#"]
-           [:span.number "F1F1F1"]]]
+           [:span (:stroke shape)]]]
 
          ;; SLIDEBAR FOR ROTATION AND OPACITY
          [:span "Opacity"]
