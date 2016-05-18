@@ -6,6 +6,7 @@
             [uxbox.data.lightbox :as udl]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.keyboard :as k]
+            [uxbox.util.dom :as dom]
             [goog.events :as events])
   (:import goog.events.EventType))
 
@@ -21,9 +22,17 @@
 (defmethod render-lightbox :default [_] nil)
 
 (defn- on-esc-clicked
-  [e]
-  (when (k/esc? e)
-    (udl/close!)))
+  [event]
+  (when (k/esc? event)
+    (udl/close!)
+    (dom/stop-propagation event)))
+
+(defn- on-out-clicked
+  [own event]
+  (let [parent (mx/get-ref-dom own "parent")
+        current (dom/get-target event)]
+    (when (dom/equals? parent current)
+      (udl/close!))))
 
 (defn- lightbox-will-mount
   [own]
@@ -46,7 +55,9 @@
   (let [data (rum/react lightbox-l)]
     (html
      [:div.lightbox
-      {:class (when (nil? data) "hide")}
+      {:class (when (nil? data) "hide")
+       :ref "parent"
+       :on-click (partial on-out-clicked own)}
       (render-lightbox data)])))
 
 (def lightbox
