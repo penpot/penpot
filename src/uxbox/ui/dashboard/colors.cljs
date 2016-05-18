@@ -265,14 +265,7 @@
        [:div.lightbox-body
         [:h3 "New color"]
         [:form
-         [:div.row-flex
-          [:input#color-hex.input-text
-           {:placeholder "#"
-            :class (form/error-class local :hex)
-            :on-change on-change
-            :value (or (:hex @local) color "")
-            :type "text"}]]
-         [:div.row-flex.center.color-picker-default
+         [:div.row-flex.center
           (colorpicker
            :value (or (:hex @local) color "#00ccff")
            :on-change #(swap! local assoc :hex %))]
