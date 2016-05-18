@@ -33,6 +33,10 @@
   .inputs-area {
     display: flex;
     justify-content: space-around;
+
+    > input {
+      width: 50%;
+    }
   }
 
   /* Default skin */
@@ -110,6 +114,10 @@
       border-radius: 4px;
       background-color: white;
     }
+    .inputs-area {
+      width: 170px;
+    }
+
   }
 }
 
@@ -142,9 +150,10 @@
   border-radius: $br-small;
   display: flex;
   flex-direction: column;
-  left: 0;
+  left: 1400px;
+  top: 100px;
   padding: $small;
   position: absolute;
-  top: -20px;
   z-index: 11;
+  width: 210px;
 }
