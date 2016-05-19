@@ -41,88 +41,87 @@
   [own]
   (html
    [:div.dashboard-grid-content
-    [:div.dashboard-grid-row
-      [:div.grid-item.add-project
-       {on-click #(udl/open! :new-element)}
-       [:span "+ New element"]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-              [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-              [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]
-      [:div.grid-item.project-th
-       [:span.grid-item-image i/image]
-       [:h3 "Custom element"]
-       [:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]]]))
+    [:div.grid-item.add-project
+     {on-click #(udl/open! :new-element)}
+     [:span "+ New element"]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]
+    [:div.grid-item.project-th
+     [:span.grid-item-image i/image]
+     [:h3 "Custom element"]
+     [:div.project-th-actions
+      [:div.project-th-icon.edit i/pencil]
+      [:div.project-th-icon.delete i/trash]]]]))
 
 (def ^:const ^:private grid
   (mx/component
