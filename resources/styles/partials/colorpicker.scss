@@ -33,11 +33,31 @@
   .inputs-area {
     display: flex;
     justify-content: space-around;
+    width: 200px;
+
+    .row-flex{
+      margin: 0;
+    }
 
     > input {
       width: 50%;
     }
+
+    .input-text {
+      color: $intense-ui-text;
+      font-size: $fs13;
+      margin: 5px;
+      padding: 5px;
+      width: 100%;
+    }
+
   }
+
+  span {
+    color: $medium-ui-text;
+    font-size: $fs12;
+  }
+
 
   /* Default skin */
 
@@ -75,9 +95,11 @@
       border-radius: 4px;
       background-color: white;
     }
+
     .inputs-area {
       width: 230px;
     }
+
   }
 
   /* Small skin */
@@ -114,11 +136,9 @@
       border-radius: 4px;
       background-color: white;
     }
-    .inputs-area {
-      width: 170px;
-    }
 
   }
+
 }
 
 /* NEW COLOR PICKER */
@@ -155,5 +175,23 @@
   padding: $small;
   position: absolute;
   z-index: 11;
-  width: 210px;
+  width: auto;
+
+  span {
+    color: $medium-ui-text;
+    font-size: $fs12;
+  }
+
+  .inputs-area {
+
+    .input-text {
+      color: $intense-ui-text;
+      font-size: $fs13;
+      margin: 5px;
+      padding: 5px;
+      width: 100%;
+    }
+
+  }
+
 }

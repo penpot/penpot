@@ -189,9 +189,16 @@
            :type "text"
            :value value
            :on-change on-hex-changed}]
-         [:input.input-text
-          {:placeholder "RGB"
-           :type "text"}]]]))))
+         [:div.row-flex
+          [:input.input-text
+           {:placeholder "R"
+            :type "text"}]
+          [:input.input-text
+           {:placeholder "G"
+            :type "text"}]
+          [:input.input-text
+           {:placeholder "B"
+            :type "text"}]]]]))))
 
 
 
