@@ -19,19 +19,22 @@
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.colorpicker :refer (colorpicker)]
+            [uxbox.ui.workspace.colorpicker :refer (colorpicker)]
             [uxbox.ui.workspace.recent-colors :refer (recent-colors)]
-            [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.sidebar.options.icon-measures :as options-iconm]
+            [uxbox.ui.workspace.sidebar.options.circle-measures :as options-circlem]
+            [uxbox.ui.workspace.sidebar.options.rect-measures :as options-rectm]
+            [uxbox.ui.workspace.sidebar.options.line-measures :as options-linem]
+            [uxbox.ui.workspace.sidebar.options.fill :as options-fill]
+            [uxbox.ui.workspace.sidebar.options.text :as options-text]
+            [uxbox.ui.workspace.sidebar.options.stroke :as options-stroke]
             [uxbox.util.geom :as geom]
-            [uxbox.util.lens :as ul]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Constants
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Constants
 
-(def ^:const ^:private +menus-map+
+(def ^:private +menus-map+
   {:icon [:menu/icon-measures :menu/fill :menu/stroke]
    :rect [:menu/rect-measures :menu/fill :menu/stroke]
    :line [:menu/line-measures :menu/stroke]
@@ -39,590 +42,42 @@
    :text [:menu/fill :menu/text]
    :group []})
 
-(def ^:const ^:private +menus-by-id+
-  {:menu/icon-measures
+(def ^:private +menus+
+  [{:name "Size, position & rotation"
+    :id :menu/icon-measures
+    :icon i/infocard
+    :comp options-iconm/icon-measures-menu}
    {:name "Size, position & rotation"
-    :icon i/infocard}
-
-   :menu/rect-measures
+    :id :menu/rect-measures
+    :icon i/infocard
+    :comp options-rectm/rect-measures-menu}
    {:name "Size, position & rotation"
-    :icon i/infocard}
-
-   :menu/line-measures
+    :id :menu/line-measures
+    :icon i/infocard
+    :comp options-linem/line-measures-menu}
    {:name "Size, position & rotation"
-    :icon i/infocard}
-
-   :menu/circle-measures
-   {:name "Size, position & rotation"
-    :icon i/infocard}
-
-   :menu/fill
+    :id :menu/circle-measures
+    :icon i/infocard
+    :comp options-circlem/circle-measures-menu}
    {:name "Fill"
-    :icon i/fill}
-
-   :menu/stroke
+    :id :menu/fill
+    :icon i/fill
+    :comp options-fill/fill-menu}
    {:name "Stroke"
-    :icon i/stroke}
-
-   :menu/text
+    :id :menu/stroke
+    :icon i/stroke
+    :comp options-stroke/stroke-menu}
    {:name "Text"
-    :icon i/text}})
+    :id :menu/text
+    :icon i/text
+    :comp options-text/text-menu}])
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Implementation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def ^:private +menus-by-id+
+  (into {} (map #(vector (:id %) %)) +menus+))
 
-(defmulti -render-menu
-  (fn [menu own shape] (:id menu)))
+;; --- Options
 
-(defmethod -render-menu :menu/stroke
-  [menu own shape]
-  (letfn [(change-stroke [value]
-            (let [sid (:id shape)]
-              (rs/emit! (uds/update-stroke-attrs sid value))))
-          (on-width-change [event]
-            (let [value (dom/event->value event)
-                  value (parse-float value 1)]
-              (change-stroke {:width value})))
-          (on-opacity-change [event]
-            (let [value (dom/event->value event)
-                  value (parse-float value 1)
-                  value (/ value 10000)]
-              (change-stroke {:opacity value})))
-          (on-color-change [event]
-            (let [value (dom/event->value event)]
-              (change-stroke {:color value})))
-          (on-stroke-style-change [event]
-            (let [value (dom/event->value event)
-                  value (read-string value)]
-              (change-stroke {:type value})))]
-    (html
-     [:div.element-set {:key (str (:id menu))}
-      [:div.element-set-title (:name menu)]
-      [:div.element-set-content
-       [:span "Style"]
-       [:div.row-flex
-        [:select#style.input-select {:placeholder "Style"
-                                     :value (:stroke-type shape)
-                                     :on-change on-stroke-style-change}
-         [:option {:value ":none"} "None"]
-         [:option {:value ":solid"} "Solid"]
-         [:option {:value ":dotted"} "Dotted"]
-         [:option {:value ":dashed"} "Dashed"]
-         [:option {:value ":mixed"} "Mixed"]]
-        [:input.input-text
-         {:placeholder "Width"
-          :type "number"
-          :min "0"
-          :value (:stroke-width shape "1")
-          :on-change on-width-change}]]
-
-       ;; SLIDEBAR FOR ROTATION AND OPACITY
-       [:span "Color"]
-       [:div.color-picker-small
-        (colorpicker
-         :theme :small
-         :value (:stroke shape "#000000")
-         :on-change #(change-stroke {:color %}))]
-
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "#"
-          :type "text"
-          :value (:stroke shape "")
-          :on-change on-color-change}]]
-
-       (recent-colors shape #(change-stroke {:color %}))
-
-       ;; SLIDEBAR FOR ROTATION AND OPACITY
-       [:span "Opacity"]
-       [:div.row-flex
-        [:input.slidebar
-         {:type "range"
-          :min "0"
-          :max "10000"
-          :value (* 10000 (:stroke-opacity shape 1))
-          :step "1"
-          :on-change on-opacity-change}]]]])))
-
-(defmethod -render-menu :menu/fill
-  [menu own shape]
-  (letfn [(change-fill [value]
-            (let [sid (:id shape)]
-              (rs/emit! (uds/update-fill-attrs sid value))))
-          (on-color-change [event]
-            (let [value (dom/event->value event)]
-              (change-fill {:color value})))
-          (on-opacity-change [event]
-            (let [value (dom/event->value event)
-                  value (parse-float value 1)
-                  value (/ value 10000)]
-              (change-fill {:opacity value})))
-          (on-color-picker-event [color]
-            (change-fill {:color color}))]
-    (html
-     [:div.element-set {:key (str (:id menu))}
-      [:div.element-set-title (:name menu)]
-      [:div.element-set-content
-       ;; SLIDEBAR FOR ROTATION AND OPACITY
-       [:span "Color"]
-
-       [:div.color-picker-small
-        (colorpicker
-         :theme :small
-         :value (:fill shape "#000000")
-         :on-change #(on-color-picker-event %))]
-
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "#"
-          :type "text"
-          :value (:fill shape "")
-          :on-change on-color-change}]]
-
-       (recent-colors shape #(change-fill {:color %}))
-
-       ;; SLIDEBAR FOR ROTATION AND OPACITY
-       [:span "Opacity"]
-       [:div.row-flex
-        [:input.slidebar
-         {:type "range"
-          :min "0"
-          :max "10000"
-          :value (* 10000 (:fill-opacity shape 1))
-          :step "1"
-          :on-change on-opacity-change}]]]])))
-
-(defmethod -render-menu :menu/rect-measures
-  [menu own shape local]
-  (letfn [(on-size-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
-                  sid (:id shape)
-                  props {attr value}]
-              (rs/emit! (uds/update-size sid props))))
-          (on-rotation-change [event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
-                  sid (:id shape)]
-              (rs/emit! (uds/update-rotation sid value))))
-          (on-pos-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value nil)
-                  sid (:id shape)
-                  props {attr value}]
-              (rs/emit! (uds/update-position sid props))))
-          (on-border-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value nil)
-                  sid (:id shape)
-                  props {attr value}]
-              (rs/emit! (uds/update-radius-attrs sid props))))]
-    (let [size (geom/size shape)]
-      (html
-       [:div.element-set {:key (str (:id menu))}
-        [:div.element-set-title (:name menu)]
-        [:div.element-set-content
-         ;; SLIDEBAR FOR ROTATION AND OPACITY
-         [:span "Size"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "Width"
-            :type "number"
-            :min "0"
-            :value (:width size)
-            :on-change (partial on-size-change :width)}]
-          [:div.lock-size i/lock]
-          [:input.input-text
-           {:placeholder "Height"
-            :type "number"
-            :min "0"
-            :value (:height size)
-            :on-change (partial on-size-change :height)}]]
-
-         [:span "Position"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "x"
-            :type "number"
-            :value (:x1 shape "")
-            :on-change (partial on-pos-change :x)}]
-          [:input.input-text
-           {:placeholder "y"
-            :type "number"
-            :value (:y1 shape "")
-            :on-change (partial on-pos-change :y)}]]
-
-         [:span "Border radius"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "rx"
-            :type "number"
-            :value (:rx shape "")
-            :on-change (partial on-border-change :rx)}]
-          [:div.lock-size i/lock]
-          [:input.input-text
-           {:placeholder "ry"
-            :type "number"
-            :value (:ry shape "")
-            :on-change (partial on-border-change :ry)}]]
-
-         [:span "Rotation"]
-         [:div.row-flex
-          [:input.slidebar
-           {:type "range"
-            :min 0
-            :max 360
-            :value (:rotation shape 0)
-            :on-change on-rotation-change}]]
-
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder ""
-            :type "number"
-            :min 0
-            :max 360
-            :value (:rotation shape "0")
-            :on-change on-rotation-change
-            }]
-          [:input.input-text
-           {:style {:visibility "hidden"}}]
-          ]]]
-       ))))
-
-
-(defmethod -render-menu :menu/icon-measures
-  [menu own shape]
-  (letfn [(on-size-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
-                  sid (:id shape)
-                  props {attr value}]
-              (rs/emit! (uds/update-size sid props))))
-          (on-rotation-change [event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
-                  sid (:id shape)]
-              (rs/emit! (uds/update-rotation sid value))))
-          (on-pos-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value nil)
-                  sid (:id shape)
-                  props {attr value}]
-              (rs/emit! (uds/update-position sid props))))]
-    (let [size (geom/size shape)]
-      (html
-       [:div.element-set {:key (str (:id menu))}
-        [:div.element-set-title (:name menu)]
-        [:div.element-set-content
-         ;; SLIDEBAR FOR ROTATION AND OPACITY
-         [:span "Size"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "Width"
-            :type "number"
-            :min "0"
-            :value (:width size)
-            :on-change (partial on-size-change :width)}]
-          [:div.lock-size i/lock]
-          [:input.input-text
-           {:placeholder "Height"
-            :type "number"
-            :min "0"
-            :value (:height size)
-            :on-change (partial on-size-change :height)}]]
-
-         [:span "Position"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "x"
-            :type "number"
-            :value (:x1 shape "")
-            :on-change (partial on-pos-change :x)}]
-          [:input.input-text
-           {:placeholder "y"
-            :type "number"
-            :value (:y1 shape "")
-            :on-change (partial on-pos-change :y)}]]
-
-         [:span "Rotation"]
-         [:div.row-flex
-          [:input.slidebar
-           {:type "range"
-            :min 0
-            :max 360
-            :value (:rotation shape 0)
-            :on-change on-rotation-change}]]
-
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder ""
-            :type "number"
-            :min 0
-            :max 360
-            :value (:rotation shape "0")
-            :on-change on-rotation-change
-            }]
-          [:input.input-text
-           {:style {:visibility "hidden"}}]
-          ]]]
-       ))))
-
-(defmethod -render-menu :menu/circle-measures
-  [menu own shape]
-  (letfn [(on-size-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
-                  sid (:id shape)
-                  props {attr value}]
-              (rs/emit! (uds/update-radius-attrs sid props))))
-          (on-rotation-change [event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
-                  sid (:id shape)]
-              (rs/emit! (uds/update-rotation sid value))))
-          (on-pos-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value nil)
-                  sid (:id shape)
-                  props {attr value}]
-              (rs/emit! (uds/update-position sid props))))]
-    (html
-     [:div.element-set {:key (str (:id menu))}
-      [:div.element-set-title (:name menu)]
-      [:div.element-set-content
-       ;; SLIDEBAR FOR ROTATION AND OPACITY
-       [:span "Size"]
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "Width"
-          :type "number"
-          :min "0"
-          :value (:rx shape)
-          :on-change (partial on-size-change :rx)}]
-        [:div.lock-size i/lock]
-        [:input.input-text
-         {:placeholder "Height"
-          :type "number"
-          :min "0"
-          :value (:ry shape)
-          :on-change (partial on-size-change :ry)}]]
-
-       [:span "Position"]
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "cx"
-          :type "number"
-          :value (:cx shape "")
-          :on-change (partial on-pos-change :x)}]
-        [:input.input-text
-         {:placeholder "cy"
-          :type "number"
-          :value (:cy shape "")
-          :on-change (partial on-pos-change :y)}]]
-
-       [:span "Rotation"]
-       [:div.row-flex
-        [:input.slidebar
-         {:type "range"
-          :min 0
-          :max 360
-          :value (:rotation shape 0)
-          :on-change on-rotation-change}]]
-
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder ""
-          :type "number"
-          :min 0
-          :max 360
-          :value (:rotation shape "0")
-          :on-change on-rotation-change
-          }]
-        [:input.input-text
-         {:style {:visibility "hidden"}}]
-        ]]]
-     )))
-
-(defmethod -render-menu :menu/line-measures
-  [menu own shape]
-  (letfn [(on-rotation-change [event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
-                  sid (:id shape)]
-              (rs/emit! (uds/update-rotation sid value))))
-          (on-pos-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value nil)
-                  sid (:id shape)
-                  props {attr value}]
-              (rs/emit! (uds/update-line-attrs sid props))))]
-    (html
-     [:div.element-set {:key (str (:id menu))}
-      [:div.element-set-title (:name menu)]
-      [:div.element-set-content
-       [:span "Position"]
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "x1"
-          :type "number"
-          :value (:x1 shape "")
-          :on-change (partial on-pos-change :x1)}]
-        [:input.input-text
-         {:placeholder "y1"
-          :type "number"
-          :value (:y1 shape "")
-          :on-change (partial on-pos-change :y1)}]]
-
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "x2"
-          :type "number"
-          :value (:x2 shape "")
-          :on-change (partial on-pos-change :x2)}]
-        [:input.input-text
-         {:placeholder "y2"
-          :type "number"
-          :value (:y2 shape "")
-          :on-change (partial on-pos-change :y2)}]]
-
-       [:span "Rotation"]
-       [:div.row-flex
-        [:input.slidebar
-         {:type "range"
-          :min 0
-          :max 360
-          :value (:rotation shape 0)
-          :on-change on-rotation-change}]]
-
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder ""
-          :type "number"
-          :min 0
-          :max 360
-          :value (:rotation shape "0")
-          :on-change on-rotation-change
-          }]
-        [:input.input-text
-         {:style {:visibility "hidden"}}]
-        ]]]
-     )))
-
-(defmethod -render-menu :menu/text
-  [menu own {:keys [font] :as shape}]
-  (letfn [(on-font-family-change [event]
-            (let [value (dom/event->value event)
-                  sid (:id shape)
-                  params {:family (read-string value)
-                          :weight "normal"
-                          :style "normal"}]
-              (rs/emit! (uds/update-font-attrs sid params))))
-          (on-font-size-change [event]
-            (let [value (dom/event->value event)
-                  params {:size (parse-int value)}
-                  sid (:id shape)]
-              (rs/emit! (uds/update-font-attrs sid params))))
-          (on-font-letter-spacing-change [event]
-            (let [value (dom/event->value event)
-                  params {:letter-spacing (parse-float value)}
-                  sid (:id shape)]
-              (rs/emit! (uds/update-font-attrs sid params))))
-          (on-font-line-height-change [event]
-            (let [value (dom/event->value event)
-                  params {:line-height (parse-float value)}
-                  sid (:id shape)]
-              (rs/emit! (uds/update-font-attrs sid params))))
-          (on-font-align-change [event value]
-            (let [params {:align value}
-                  sid (:id shape)]
-              (rs/emit! (uds/update-font-attrs sid params))))
-
-          (on-font-style-change [event]
-            (let [value (dom/event->value event)
-                  [weight style] (read-string value)
-                  sid (:id shape)
-                  params {:style style
-                          :weight weight}]
-              (rs/emit! (uds/update-font-attrs sid params))))]
-    (let [{:keys [family style weight size align line-height letter-spacing]
-           :or {family "sourcesanspro"
-                align "left"
-                style "normal"
-                weight "normal"
-                letter-spacing 1
-                line-height 1.4
-                size 16}} font
-          styles (:styles (first (filter #(= (:id %) family) library/+fonts+)))]
-      (html
-       [:div.element-set {:key (str (:id menu))}
-        [:div.element-set-title (:name menu)]
-        [:div.element-set-content
-
-         [:span "Font family"]
-         [:div.row-flex
-          [:select.input-select {:value (pr-str family)
-                                 :on-change on-font-family-change}
-           (for [font library/+fonts+]
-             [:option {:value (pr-str (:id font))
-                       :key (:id font)} (:name font)])]]
-
-         [:span "Size and Weight"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "Font Size"
-            :type "number"
-            :min "0"
-            :max "200"
-            :value size
-            :on-change on-font-size-change}]
-          [:select.input-select {:value (pr-str [weight style])
-                                 :on-change on-font-style-change}
-           (for [style styles
-                 :let [data (mapv #(get style %) [:weight :style])]]
-             [:option {:value (pr-str data)
-                       :key (:name style)} (:name style)])]]
-
-         [:span "Line height and Letter spacing"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "Line height"
-            :type "number"
-            :step "0.1"
-            :min "0"
-            :max "200"
-            :value line-height
-            :on-change on-font-line-height-change}]
-          [:input.input-text
-           {:placeholder "Letter spacing"
-            :type "number"
-            :step "0.1"
-            :min "0"
-            :max "200"
-            :value letter-spacing
-            :on-change on-font-letter-spacing-change}]]
-
-
-         [:span "Text align"]
-         [:div.row-flex.align-icons
-          [:span {:class (when (= align "left") "current")
-                  :on-click #(on-font-align-change % "left")}
-           i/align-left]
-          [:span {:class (when (= align "right") "current")
-                  :on-click #(on-font-align-change % "right")}
-           i/align-right]
-          [:span {:class (when (= align "center") "current")
-                  :on-click #(on-font-align-change % "center")}
-           i/align-center]
-          [:span {:class (when (= align "justify") "current")
-                  :on-click #(on-font-align-change % "justify")}
-           i/align-justify]]]]))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Components
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn options-menus-render
+(defn- options-render
   [own shape]
   (let [local (:rum/local own)
         menus (get +menus-map+ (:type shape))
@@ -632,20 +87,18 @@
       [:ul.element-icons
        (for [menu-id (get +menus-map+ (:type shape))
              :let [menu (get +menus-by-id+ menu-id)
-                   menu (assoc menu :id menu-id)
                    selected? (= active-menu menu-id)]]
          [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
                       :key (str "menu-" (:id menu))
                       :class (when selected? "selected")}
           (:icon menu)])]
       (when-let [menu (get +menus-by-id+ active-menu)]
-        (let [menu (assoc menu :id active-menu)]
-          (-render-menu menu own shape local)))])))
+        ((:comp menu) menu shape))])))
 
-(def ^:static ^:private options-menus
+(def ^:private options
   (mx/component
-   {:render options-menus-render
-    :name "options-menus"
+   {:render options-render
+    :name "options"
     :mixins [mx/static (mx/local)]}))
 
 (def ^:const selected-shape-l
@@ -653,7 +106,7 @@
             (let [selected (get-in state [:workspace :selected])]
               (when (= 1 (count selected))
                 (get-in state [:shapes-by-id (first selected)]))))]
-    (as-> (ul/getter getter) $
+    (as-> (l/getter getter) $
       (l/focus-atom $ st/state))))
 
 (defn options-toolbox-render
@@ -669,7 +122,7 @@
       [:div.tool-window-content
        [:div.element-options
         (if shape
-          (options-menus shape))]]])))
+          (options shape))]]])))
 
 (def ^:static options-toolbox
   (mx/component

@@ -55,3 +55,7 @@
   or checkbox is checked or not."
   [node]
   (.-checked node))
+
+(defn ^boolean equals?
+  [node-a node-b]
+  (.isEqualNode node-a node-b))

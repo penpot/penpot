@@ -17,6 +17,10 @@
   width: 100%;
   z-index: 1000;
 
+  &.transparent {
+    background-color: rgba(0,0,0,0);
+  }
+
   .lightbox-body {
     align-items: center;
     background-color: $color-white;

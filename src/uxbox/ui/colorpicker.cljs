@@ -10,9 +10,11 @@
             [lentes.core :as l]
             [goog.events :as events]
             [uxbox.schema :as sc]
-            [uxbox.util.color :as color]
+            [uxbox.ui.mixins :as mx]
             [uxbox.util.math :as mth]
-            [uxbox.ui.mixins :as mx])
+            [uxbox.util.data :as data]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.color :as color])
   (:import goog.events.EventType))
 
 ;; --- Picker Box
@@ -115,6 +117,10 @@
   [own & {:keys [value on-change theme]
           :or {value "#d4edfb" theme :default}}]
   (let [local (:rum/local own)
+        value-rgb (color/hex->rgb value)
+        classes (case theme
+                  :default "theme-default"
+                  :small "theme-small")
         dimensions (case theme
                      :default default-dimensions
                      :small small-dimensions
@@ -128,47 +134,88 @@
                (/ (:pi-width dimensions) 2))
 
         sit (- (/ (* (- h 15) (:s-height dimensions)) 360)
-               (/ (:si-height dimensions) 2))
+               (/ (:si-height dimensions) 2))]
+    (letfn [(on-mouse-down [event]
+              (swap! local assoc :mousedown true))
+            (on-mouse-up [event]
+              (swap! local assoc :mousedown false))
+            (on-mouse-move-slide [event]
+              (when (:mousedown @local)
+                (on-slide-click local dimensions event)))
+            (on-mouse-move-picker [event]
+              (when (:mousedown @local)
+                (on-picker-click local dimensions on-change color event)))
+            (on-hex-changed [event]
+              (let [value (-> (dom/get-target event)
+                              (dom/get-value))]
+                (when (color/hex? value)
+                  (on-change value))))
+            (on-rgb-change [rgb id event]
+              (let [value (-> (dom/get-target event)
+                              (dom/get-value)
+                              (data/parse-int 0))
+                    rgb (assoc rgb id value)
+                    hex (color/rgb->hex rgb)]
+                (when (color/hex? hex)
+                  (on-change hex))))]
+      (html
+       [:div.color-picker {:class classes}
+        [:div.picker-area
+         #_[:div.tester {:style {:width "100px" :height "100px"
+                                 :border "1px solid black"
+                                 :position "fixed" :top "50px" :left "50px"
+                                 :backgroundColor (color/hsv->hex color)}}]
+         [:div.picker-wrapper
+          [:div.picker
+           {:ref "picker"
+            :on-click (partial on-picker-click local dimensions on-change color)
+            :on-mouse-down on-mouse-down
+            :on-mouse-up on-mouse-up
+            :on-mouse-move on-mouse-move-picker
+            :style {:backgroundColor bg}}
+           (picker-box)]
+          [:div.picker-indicator
+           {:ref "picker-indicator"
+            :style {:top (str pil "px")
+                    :left (str pit "px")
+                    :pointerEvents "none"}}]]
+         [:div.slide-wrapper
+          [:div.slide
+           {:ref "slide"
+            :on-mouse-down on-mouse-down
+            :on-mouse-up on-mouse-up
+            :on-mouse-move on-mouse-move-slide
+            :on-click (partial on-slide-click local dimensions)}
+           (slider-box)]
+          [:div.slide-indicator
+           {:ref "slide-indicator"
+            :style {:top (str sit "px")
+                    :pointerEvents "none"}}]]]
 
-        on-mouse-down #(swap! local assoc :mousedown true)
-        on-mouse-up #(swap! local assoc :mousedown false)
+        [:div.inputs-area
+         [:input.input-text
+          {:placeholder "#"
+           :type "text"
+           :value value
+           :on-change on-hex-changed}]
+         [:div.row-flex
+          [:input.input-text
+           {:placeholder "R"
+            :on-change (partial on-rgb-change value-rgb 0)
+            :value (nth value-rgb 0)
+            :type "number"}]
+          [:input.input-text
+           {:placeholder "G"
+            :on-change (partial on-rgb-change value-rgb 1)
+            :value (nth value-rgb 1)
+            :type "number"}]
+          [:input.input-text
+           {:placeholder "B"
+            :on-change (partial on-rgb-change value-rgb 2)
+            :value (nth value-rgb 2)
+            :type "number"}]]]]))))
 
-        on-mouse-move-slide #(when (:mousedown @local)
-                               (on-slide-click local dimensions %))
-        on-mouse-move-picker #(when (:mousedown @local)
-                                (on-picker-click local dimensions on-change color %))]
-    (html
-     [:div.color-picker
-      #_[:div.tester {:style {:width "100px" :height "100px"
-                            :border "1px solid black"
-                            :position "fixed" :top "50px" :left "50px"
-                            :backgroundColor (color/hsv->hex color)}}]
-       [:div.picker-wrapper
-       [:div.picker
-        {:ref "picker"
-         :on-click (partial on-picker-click local dimensions on-change color)
-         :on-mouse-down on-mouse-down
-         :on-mouse-up on-mouse-up
-         :on-mouse-move on-mouse-move-picker
-         :style {:backgroundColor bg}}
-        (picker-box)]
-       [:div.picker-indicator
-        {:ref "picker-indicator"
-         :style {:top (str pil "px")
-                 :left (str pit "px")
-                 :pointerEvents "none"}}]]
-      [:div.slide-wrapper
-       [:div.slide
-        {:ref "slide"
-         :on-mouse-down on-mouse-down
-         :on-mouse-up on-mouse-up
-         :on-mouse-move on-mouse-move-slide
-         :on-click (partial on-slide-click local dimensions)}
-        (slider-box)]
-       [:div.slide-indicator
-        {:ref "slide-indicator"
-         :style {:top (str sit "px")
-                 :pointerEvents "none"}}]]])))
+
 
 (def ^:static colorpicker
   (mx/component
