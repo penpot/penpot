@@ -154,24 +154,23 @@
        [:section.dashboard-grid.library
         (page-title coll)
         [:div.dashboard-grid-content
-          [:div.dashboard-grid-row
-           (if own?
-             [:div.grid-item.small-item.add-project
-              {:on-click #(udl/open! :color-form {:coll coll})}
-              [:span "+ New color"]])
-           (for [color (remove nil? (:data coll))
-                 :let [color-rgb (hex->rgb color)]]
-             [:div.grid-item.small-item.project-th
-              {:key color :on-click #(when (k/shift? %) (toggle-color-check color))}
-              [:span.color-swatch {:style {:background-color color}}]
-              [:div.input-checkbox.check-primary
-               [:input {:type "checkbox"
-                        :id color
-                        :on-click #(toggle-color-check color)
-                        :checked ((:selected @local) color)}]
-               [:label {:for color}]]
-              [:span.color-data color]
-              [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]])]]
+         (if own?
+           [:div.grid-item.small-item.add-project
+            {:on-click #(udl/open! :color-form {:coll coll})}
+            [:span "+ New color"]])
+         (for [color (remove nil? (:data coll))
+               :let [color-rgb (hex->rgb color)]]
+           [:div.grid-item.small-item.project-th
+            {:key color :on-click #(when (k/shift? %) (toggle-color-check color))}
+            [:span.color-swatch {:style {:background-color color}}]
+            [:div.input-checkbox.check-primary
+             [:input {:type "checkbox"
+                      :id color
+                      :on-click #(toggle-color-check color)
+                      :checked ((:selected @local) color)}]
+             [:label {:for color}]]
+            [:span.color-data color]
+            [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]])]
 
         (when (not (empty? (:selected @local)))
           ;; MULTISELECT OPTIONS BAR

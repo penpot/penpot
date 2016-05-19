@@ -200,15 +200,14 @@
        [:section.dashboard-grid
         [:h2 "Your projects"]
          [:div.dashboard-grid-content
-          [:div.dashboard-grid-row
-            [:div.grid-item.add-project
-             {:on-click on-click}
-             [:span "+ New project"]]
-            (for [item (->> (vals projects)
-                            (dp/filter-projects-by filtering)
-                            (dp/sort-projects-by ordering))]
-              (-> (grid-item item)
-                  (rum/with-key (:id item))))]]]))))
+          [:div.grid-item.add-project
+           {:on-click on-click}
+           [:span "+ New project"]]
+          (for [item (->> (vals projects)
+                          (dp/filter-projects-by filtering)
+                          (dp/sort-projects-by ordering))]
+            (-> (grid-item item)
+                (rum/with-key (:id item))))]]))))
 
 (def grid
   (mx/component

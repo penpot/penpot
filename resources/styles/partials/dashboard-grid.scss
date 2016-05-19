@@ -79,11 +79,12 @@
     min-height: 60vh;
     overflow: scroll;
     width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
 
     .dashboard-grid-row {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
       width: 100%;
     }
 
