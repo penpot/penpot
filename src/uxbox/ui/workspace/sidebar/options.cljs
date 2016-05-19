@@ -19,7 +19,6 @@
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.floating :as float]
             [uxbox.ui.workspace.colorpicker :refer (colorpicker)]
             [uxbox.ui.workspace.recent-colors :refer (recent-colors)]
             [uxbox.ui.workspace.sidebar.options.icon-measures :as options-iconm]
