@@ -14,13 +14,10 @@
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
             [uxbox.library :as library]
-            [uxbox.data.workspace :as udw]
             [uxbox.data.shapes :as uds]
+            [uxbox.data.lightbox :as udl]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.workspace.colorpicker :refer (colorpicker)]
-            [uxbox.ui.workspace.recent-colors :refer (recent-colors)]
-            [uxbox.util.geom :as geom]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
@@ -38,19 +35,28 @@
                   value (/ value 10000)]
               (change-fill {:opacity value})))
           (on-color-picker-event [color]
-            (change-fill {:color color}))]
+            (change-fill {:color color}))
+          (show-color-picker [event]
+            (let [x (.-clientX event)
+                  y (.-clientY event)
+                  opts {:x x :y y
+                        :shape (:id shape)
+                        :attr :fill
+                        :transparent? true}]
+              (udl/open! :workspace/colorpicker opts)))]
+
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
       [:div.element-set-content
-       ;; SLIDEBAR FOR ROTATION AND OPACITY
-       [:span "Color"]
 
-       ;; [:div.color-picker-small
-       ;;  (colorpicker
-       ;;   :theme :small
-       ;;   :value (:fill shape "#000000")
-       ;;   :on-change #(on-color-picker-event %))]
+       [:span "Color"]
+       [:div.row-flex.color-data
+        [:span.color-th
+         {:style {:background-color (:fill shape)}
+          :on-click show-color-picker}]
+        [:div.color-info
+         [:span (:fill shape)]]]
 
        [:div.row-flex
         [:input.input-text
@@ -58,8 +64,6 @@
           :type "text"
           :value (:fill shape "")
           :on-change on-color-change}]]
-
-       (recent-colors shape #(change-fill {:color %}))
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]

@@ -18,12 +18,7 @@
             [uxbox.util.dom :as dom]
             [uxbox.ui.workspace.base :as wb]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:private ^:static toggle-colorpalette
-  #(rs/emit! (dw/toggle-flag :colorpalette)))
+;; --- Helpers
 
 (defn- count-color
   [state shape prop]
@@ -41,9 +36,7 @@
     (sort-by second (into [] $))
     (take 5 (map first $))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Component
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Component
 
 (defn- recent-colors-render
   [own {:keys [page id] :as shape} callback]
@@ -56,16 +49,14 @@
       [:span (tr "ds.recent-colors")]
       [:div.row-flex
        (for [color colors]
-         [:span.color-th {:style {:background color}
+         [:span.color-th {:style {:background-color color}
                           :key color
                           :on-click (partial callback color)}])
        (for [i (range (- 5 (count colors)))]
          [:span.color-th {:key (str "empty" i)}])
+       [:span.color-th.palette-th i/picker]]])))
 
-       [:span.color-th.palette-th {:on-click toggle-colorpalette}
-        i/palette]]])))
-
-(def ^:static recent-colors
+(def recent-colors
   (mx/component
    {:render recent-colors-render
     :name "recent-colors"

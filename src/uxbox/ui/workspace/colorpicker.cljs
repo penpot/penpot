@@ -26,18 +26,26 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
+(defn- focus-shape
+  [id]
+  (as-> (l/in [:shapes-by-id id]) $
+    (l/focus-atom $ st/state)))
+
 (defn- colorpicker-render
-  [own {:keys [x y shape] :as opts}]
-  (println opts)
-  (let [shape {}
-        on-change (constantly nil)
+  [own {:keys [x y shape attr] :as opts}]
+  (let [shape (rum/react (focus-shape shape))
         left (- x 260)
-        top (- y 150)]
-    (letfn [(on-color-change [event]
-              (let [value (dom/event->value event)]
-                (on-change {:color value})))]
+        top (- y 50)]
+    (letfn [(change-color [color]
+              (let [attrs {:color color}]
+                (rs/emit!
+                 (case attr
+                   :stroke (uds/update-stroke-attrs (:id shape) attrs)
+                   :fill (uds/update-fill-attrs (:id shape) attrs)))))
+            (on-change-color [event]
+              (let [color (dom/event->value event)]
+                (change-color color)))]
       (html
-       ;; COLOR PICKER TOOLTIP
        [:div.colorpicker-tooltip
         {:style {:left (str left "px")
                  :top (str top "px")}}
@@ -45,20 +53,15 @@
         (cp/colorpicker
          :theme :small
          :value (:stroke shape "#000000")
-         :on-change (constantly nil))
+         :on-change change-color)
 
-        (recent-colors shape (constantly nil) #_#(change-stroke {:color %}))
-
-        #_[:span "Color options"]
-        #_[:div.row-flex
-         [:span.color-th.palette-th i/picker]
-         [:span.color-th.palette-th i/palette]]]))))
+        (recent-colors shape change-color)]))))
 
 (def colorpicker
   (mx/component
    {:render colorpicker-render
     :name "colorpicker"
-    :mixins []}))
+    :mixins [rum/reactive mx/static]}))
 
 (defmethod lbx/render-lightbox :workspace/colorpicker
   [params]

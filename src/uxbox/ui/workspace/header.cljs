@@ -95,6 +95,11 @@
           :on-click (partial toggle :drawtools)}
          i/shapes]
         [:li.tooltip.tooltip-bottom
+         {:alt "Color Palette (---)"
+          :class (when (contains? flags :colorpalette) "selected")
+          :on-click (partial toggle :colorpalette)}
+         i/palette]
+        [:li.tooltip.tooltip-bottom
          {:alt "Icons (Ctrl + Shift + I)"
           :class (when (contains? flags :icons) "selected")
           :on-click (partial toggle :icons)}

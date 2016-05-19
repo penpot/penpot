@@ -11,8 +11,8 @@
             [goog.events :as events]
             [uxbox.schema :as sc]
             [uxbox.ui.mixins :as mx]
-            [uxbox.util.color :as color]
             [uxbox.util.math :as mth]
+            [uxbox.util.data :as data]
             [uxbox.util.dom :as dom]
             [uxbox.util.color :as color])
   (:import goog.events.EventType))
@@ -117,6 +117,7 @@
   [own & {:keys [value on-change theme]
           :or {value "#d4edfb" theme :default}}]
   (let [local (:rum/local own)
+        value-rgb (color/hex->rgb value)
         classes (case theme
                   :default "theme-default"
                   :small "theme-small")
@@ -148,7 +149,15 @@
               (let [value (-> (dom/get-target event)
                               (dom/get-value))]
                 (when (color/hex? value)
-                  (on-change value))))]
+                  (on-change value))))
+            (on-rgb-change [rgb id event]
+              (let [value (-> (dom/get-target event)
+                              (dom/get-value)
+                              (data/parse-int 0))
+                    rgb (assoc rgb id value)
+                    hex (color/rgb->hex rgb)]
+                (when (color/hex? hex)
+                  (on-change hex))))]
       (html
        [:div.color-picker {:class classes}
         [:div.picker-area
@@ -192,13 +201,19 @@
          [:div.row-flex
           [:input.input-text
            {:placeholder "R"
-            :type "text"}]
+            :on-change (partial on-rgb-change value-rgb 0)
+            :value (nth value-rgb 0)
+            :type "number"}]
           [:input.input-text
            {:placeholder "G"
-            :type "text"}]
+            :on-change (partial on-rgb-change value-rgb 1)
+            :value (nth value-rgb 1)
+            :type "number"}]
           [:input.input-text
            {:placeholder "B"
-            :type "text"}]]]]))))
+            :on-change (partial on-rgb-change value-rgb 2)
+            :value (nth value-rgb 2)
+            :type "number"}]]]]))))
 
 
 

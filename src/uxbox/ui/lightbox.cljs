@@ -7,6 +7,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.keyboard :as k]
             [uxbox.util.dom :as dom]
+            [uxbox.util.data :refer (classnames)]
             [goog.events :as events])
   (:import goog.events.EventType))
 
@@ -52,10 +53,13 @@
 
 (defn- lightbox-render
   [own]
-  (let [data (rum/react lightbox-l)]
+  (let [data (rum/react lightbox-l)
+        classes (classnames
+                 :hide (nil? data)
+                 :transparent (:transparent? data))]
     (html
      [:div.lightbox
-      {:class (when (nil? data) "hide")
+      {:class classes
        :ref "parent"
        :on-click (partial on-out-clicked own)}
       (render-lightbox data)])))
