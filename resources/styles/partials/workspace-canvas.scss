@@ -50,10 +50,10 @@
           circle.bottom-right { cursor: nwse-resize; }
           circle.top-right { cursor: nesw-resize; }
           circle.bottom-left { cursor: nesw-resize; }
-          rect.top { cursor: ns-resize; }
-          rect.bottom { cursor: ns-resize; }
-          rect.left { cursor: ew-resize; }
-          rect.right { cursor: ew-resize; }
+          circle.top { cursor: ns-resize; }
+          circle.bottom { cursor: ns-resize; }
+          circle.left { cursor: ew-resize; }
+          circle.right { cursor: ew-resize; }
         }
 
       }

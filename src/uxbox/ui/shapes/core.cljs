@@ -15,8 +15,8 @@
    :style {:fillOpacity "1"
            :strokeWidth "1px"
            :vectorEffect "non-scaling-stroke"}
-   :fill "#78dbbe"
-   :stroke "#3f9d81"})
+   :fill "#31e6e0"
+   :stroke "#28c4d4"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation Api
