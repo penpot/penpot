@@ -52,7 +52,7 @@
 
         (cp/colorpicker
          :theme :small
-         :value (:stroke shape "#000000")
+         :value (get shape attr "#000000")
          :on-change change-color)
 
         (recent-colors shape change-color)]))))
