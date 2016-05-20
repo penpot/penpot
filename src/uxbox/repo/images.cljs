@@ -11,25 +11,12 @@
             [uxbox.state :as ust]
             [uxbox.util.transit :as t]))
 
-(defn- decode-image-collection
-  [{:keys [data] :as coll}]
-  coll)
-  ;; (merge coll
-  ;;        (when data {:data (t/decode data)})))
-
-(defn- decode-payload
-  [{:keys [payload] :as rsp}]
-  rsp)
-  ;; (if (sequential? payload)
-  ;;   (assoc rsp :payload (mapv decode-image-collection payload))
-  ;;   (assoc rsp :payload (decode-image-collection payload))))
 
 (defmethod request :fetch/image-collections
   [_]
   (let [params {:url (str url "/library/image-collections")
                 :method :get}]
-    (->> (send! params)
-         (rx/map decode-payload))))
+    (send! params)))
 
 (defmethod request :delete/image-collection
   [_ id]
@@ -42,8 +29,7 @@
         params {:url (str url "/library/image-collections")
                 :method :post
                 :body body}]
-    (->> (send! params)
-         (rx/map decode-payload))))
+    (send! params)))
 
 (defmethod request :update/image-collection
   [_ {:keys [id data] :as body}]
@@ -51,15 +37,13 @@
         params {:url (str url "/library/image-collections/" id)
                 :method :put
                 :body body}]
-    (->> (send! params)
-         (rx/map decode-payload))))
+    (send! params)))
 
 (defmethod request :fetch/images
   [_ {:keys [coll]}]
   (let [params {:url (str url "/library/images/" coll)
                 :method :get}]
-    (->> (send! params)
-         (rx/map decode-payload))))
+    (send! params)))
 
 (defmethod request :create/image
   [_ {:keys [coll id files] :as body}]
@@ -71,8 +55,7 @@
         params {:url (str url "/library/images/" coll)
                 :method :post
                 :body (build-body)}]
-    (->> (send! params)
-         (rx/map decode-payload))))
+    (send! params)))
 
 (defmethod request :delete/image
   [_ id]
