@@ -41,7 +41,7 @@
 
 (defmethod request :fetch/images
   [_ {:keys [coll]}]
-  (let [params {:url (str url "/library/images/" coll)
+  (let [params {:url (str url "/library/image-collections/" coll "/images")
                 :method :get}]
     (send! params)))
 
@@ -50,7 +50,7 @@
   (let [body (doto (js/FormData.)
                (.append "file" (aget files 0))
                (.append "id" id))
-        params {:url (str url "/library/images/" coll)
+        params {:url (str url "/library/image-collections/" coll "/images")
                 :method :post
                 :body body}]
     (send! params)))
