@@ -74,7 +74,6 @@
   }
 
   .dashboard-grid-content {
-    align-items: center;
     display: flex;
     min-height: 60vh;
     overflow: scroll;
@@ -84,6 +83,7 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
+      margin: auto;
       width: 100%;
     }
 
