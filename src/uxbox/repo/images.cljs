@@ -47,14 +47,12 @@
 
 (defmethod request :create/image
   [_ {:keys [coll id files] :as body}]
-  (let [build-body (fn []
-                     (let [data (js/FormData.)]
-                       (.append data "file" (aget files 0))
-                       (.append data "id" id)
-                       data))
+  (let [body (doto (js/FormData.)
+               (.append "file" (aget files 0))
+               (.append "id" id))
         params {:url (str url "/library/images/" coll)
                 :method :post
-                :body (build-body)}]
+                :body body}]
     (send! params)))
 
 (defmethod request :delete/image
