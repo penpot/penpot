@@ -333,31 +333,3 @@
     :transfer-state images-page-transfer-state
     :name "images-page"
     :mixins [mx/static]}))
-
-;; --- New Element Lightbox (TODO)
-
-(defn- new-image-lightbox-render
-  [own]
-  (html
-   [:div.lightbox-body
-    [:h3 "New image"]
-    [:div.row-flex
-     [:div.lightbox-big-btn
-      [:span.big-svg i/shapes]
-      [:span.text "Go to workspace"]]
-     [:div.lightbox-big-btn
-      [:span.big-svg.upload i/exit]
-      [:span.text "Upload file"]]]
-    [:a.close {:href "#"
-               :on-click #(do (dom/prevent-default %)
-                              (udl/close!))}
-     i/close]]))
-
-(def ^:private new-image-lightbox
-  (mx/component
-   {:render new-image-lightbox-render
-    :name "new-image-lightbox"}))
-
-(defmethod lbx/render-lightbox :new-image
-  [_]
-  (new-image-lightbox))

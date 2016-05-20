@@ -75,6 +75,7 @@
         toggle #(rs/emit! (dw/toggle-flag %))
         on-undo #(rs/emit! (udh/backwards-to-previous-version))
         on-redo #(rs/emit! (udh/forward-to-next-version))
+        on-image #(udl/open! :new-image)
         ;; TODO: temporary
         open-confirm-dialog #(udl/open! :confirm)]
     (html
@@ -136,7 +137,7 @@
          i/export]
         [:li.tooltip.tooltip-bottom
          {:alt "Image (Ctrl + I)"
-          :on-click open-confirm-dialog}
+          :on-click on-image}
          i/image]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom

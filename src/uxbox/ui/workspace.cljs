@@ -20,6 +20,7 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.messages :as uum]
             [uxbox.ui.confirm]
+            [uxbox.ui.workspace.images]
             [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.workspace.scroll :as scroll]
             [uxbox.ui.workspace.download]
