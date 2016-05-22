@@ -12,10 +12,19 @@
             [lentes.core :as l]
             [uxbox.state :as st]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.core :as uuc]
             [uxbox.util.geom :as geom]
             [uxbox.util.dom :as dom]))
+
+;; --- Constants
+
+(def ^:const +circle-props+
+  {:r 6
+   :style {:fillOpacity "1"
+           :strokeWidth "1px"
+           :vectorEffect "non-scaling-stroke"}
+   :fill "#31e6e0"
+   :stroke "#28c4d4"})
 
 ;; --- Lenses
 
@@ -53,49 +62,49 @@
         [:rect.main {:x x :y y :width width :height height :stroke-dasharray "5,5"
                      :style {:stroke "#333" :fill "transparent" :stroke-opacity "1"}}]
         [:circle.top
-         (merge uusc/+circle-props+
+         (merge +circle-props+
          {:on-mouse-up #(on-mouse-up 5 %)
           :on-mouse-down #(on-mouse-down 5 %)
           :cx (+ x (/ width 2))
           :cy (- y 2)})]
         [:circle.right
-         (merge uusc/+circle-props+
+         (merge +circle-props+
            {:on-mouse-up #(on-mouse-up 6 %)
             :on-mouse-down #(on-mouse-down 6 %)
             :cy (+ y (/ height 2))
             :cx (+ x width 1)})]
         [:circle.bottom
-         (merge uusc/+circle-props+
+         (merge +circle-props+
            {:on-mouse-up #(on-mouse-up 7 %)
             :on-mouse-down #(on-mouse-down 7 %)
             :cx (+ x (/ width 2))
             :cy (+ y height 2)})]
         [:circle.left
-         (merge uusc/+circle-props+
+         (merge +circle-props+
            {:on-mouse-up #(on-mouse-up 8 %)
             :on-mouse-down #(on-mouse-down 8 %)
             :cy (+ y (/ height 2))
             :cx (- x 3)})]
         [:circle.top-left
-         (merge uusc/+circle-props+
+         (merge +circle-props+
                 {:on-mouse-up #(on-mouse-up 1 %)
                  :on-mouse-down #(on-mouse-down 1 %)
                  :cx x
                  :cy y})]
         [:circle.top-right
-         (merge uusc/+circle-props+
+         (merge +circle-props+
                 {:on-mouse-up #(on-mouse-up 2 %)
                  :on-mouse-down #(on-mouse-down 2 %)
                  :cx (+ x width)
                  :cy y})]
         [:circle.bottom-left
-         (merge uusc/+circle-props+
+         (merge +circle-props+
                 {:on-mouse-up #(on-mouse-up 3 %)
                  :on-mouse-down #(on-mouse-down 3 %)
                  :cx x
                  :cy (+ y height)})]
         [:circle.bottom-right
-         (merge uusc/+circle-props+
+         (merge +circle-props+
                 {:on-mouse-up #(on-mouse-up 4 %)
                  :on-mouse-down #(on-mouse-down 4 %)
                  :cx (+ x width)
