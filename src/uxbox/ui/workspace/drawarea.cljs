@@ -16,7 +16,7 @@
             [uxbox.data.workspace :as udw]
             [uxbox.data.shapes :as uds]
             [uxbox.ui.core :as uuc]
-            [uxbox.ui.shapes.core :as uusc]
+            [uxbox.ui.shapes :as shapes]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.geom :as geom]
@@ -39,7 +39,7 @@
     (when (and shape position)
       (-> (assoc shape :drawing? true)
           (geom/resize position)
-          (uusc/render-shape identity)))))
+          (shapes/render-component)))))
 
 (defn- draw-area-will-mount
   [own]

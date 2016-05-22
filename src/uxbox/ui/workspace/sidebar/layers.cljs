@@ -18,7 +18,7 @@
             [uxbox.util.data :refer (read-string classnames)]
             [uxbox.data.workspace :as udw]
             [uxbox.data.shapes :as uds]
-            [uxbox.ui.shapes.core :as uusc]
+            [uxbox.ui.shapes.icon :as icon]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
@@ -94,7 +94,7 @@
 (defn- element-icon
   [item]
   (case (:type item)
-    :icon (uusc/render-shape-svg item)
+    :icon (icon/icon-svg item)
     :line i/line
     :circle i/circle
     :rect i/box

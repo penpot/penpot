@@ -14,7 +14,7 @@
             [uxbox.state :as st]
             [uxbox.library :as library]
             [uxbox.data.workspace :as dw]
-            [uxbox.ui.shapes.core :as uusc]
+            [uxbox.ui.shapes.icon :as icon]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
@@ -50,7 +50,7 @@
 
 (defn- icon-wrapper-render
   [own icon]
-  (uusc/render-shape-svg icon nil))
+  (icon/icon-svg icon))
 
 (def ^:static ^:private icon-wrapper
   (mx/component

@@ -1,91 +1,70 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+
 (ns uxbox.ui.shapes.icon
   (:require [sablono.core :refer-macros [html]]
-            [cuerdas.core :as str]
             [rum.core :as rum]
-            [lentes.core :as l]
-            [uxbox.rstore :as rs]
-            [uxbox.state :as st]
-            [uxbox.data.workspace :as dw]
-            [uxbox.data.shapes :as uds]
-            [uxbox.ui.core :as uuc]
             [uxbox.ui.mixins :as mx]
-            [uxbox.ui.keyboard :as kbd]
-            [uxbox.ui.shapes.core :as uusc]
-            [uxbox.util.geom :as geom]
-            [uxbox.util.dom :as dom]))
+            [uxbox.ui.shapes.common :as common]
+            [uxbox.ui.shapes.attrs :as attrs]
+            [uxbox.util.geom :as geom]))
 
 ;; --- Icon Component
 
-(defn on-mouse-down
-  [event {:keys [id group] :as shape} selected]
-  (let [selected? (contains? selected id)
-        drawing? @uusc/drawing-state-l]
-    (when-not (:blocked shape)
-      (cond
-        (or drawing?
-            (and group (:locked (geom/resolve-parent shape))))
-        nil
+(declare icon-shape)
 
-        (and (not selected?) (empty? selected))
-        (do
-          (dom/stop-propagation event)
-          (rs/emit! (uds/select-shape id))
-          (uuc/acquire-action! "ui.shape.move"))
-
-        (and (not selected?) (not (empty? selected)))
-        (do
-          (dom/stop-propagation event)
-          (if (kbd/shift? event)
-            (rs/emit! (uds/select-shape id))
-            (do
-              (rs/emit! (uds/deselect-all)
-                        (uds/select-shape id))
-              (uuc/acquire-action! "ui.shape.move"))))
-
-        :else
-        (do
-          (dom/stop-propagation event)
-          (uuc/acquire-action! "ui.shape.move"))))))
-
-(defn on-mouse-up
-  [event {:keys [id group] :as shape}]
-  (cond
-    (and group (:locked (geom/resolve-parent shape)))
-    nil
-
-    :else
-    (do
-      (dom/stop-propagation event)
-      (uuc/release-action! "ui.shape"))))
-
-(defmethod uusc/render-component :default ;; :icon
+(defn- icon-component-render
   [own shape]
   (let [{:keys [id x y width height group]} shape
-        selected (rum/react uusc/selected-shapes-l)
+        selected (rum/react common/selected-shapes-l)
         selected? (contains? selected id)
-        on-mouse-down #(on-mouse-down % shape selected)
-        on-mouse-up #(on-mouse-up % shape)]
+        on-mouse-down #(common/on-mouse-down % shape selected)
+        on-mouse-up #(common/on-mouse-up % shape)]
     (html
      [:g.shape {:class (when selected? "selected")
                 :on-mouse-down on-mouse-down
                 :on-mouse-up on-mouse-up}
-      (uusc/render-shape shape #(uusc/shape %))])))
-;; --- Shape & Shape Svg
+      (icon-shape shape identity)])))
 
-(defmethod uusc/render-shape :icon
-  [{:keys [data id] :as shape} _]
+(def icon-component
+  (mx/component
+   {:render icon-component-render
+    :name "icon-component"
+    :mixins [mx/static rum/reactive]}))
+
+;; --- Icon Shape
+
+(defn- icon-shape-render
+  [own {:keys [data id] :as shape} factory]
   (let [key (str id)
         rfm (geom/transformation-matrix shape)
         attrs (merge {:id key :key key :transform (str rfm)}
-                     (uusc/extract-style-attrs shape)
-                     (uusc/make-debug-attrs shape))]
+                     (attrs/extract-style-attrs shape)
+                     (attrs/make-debug-attrs shape))]
     (html
      [:g attrs data])))
 
-(defmethod uusc/render-shape-svg :icon
-  [{:keys [data id view-box] :as shape}]
+(def icon-shape
+  (mx/component
+   {:render icon-shape-render
+    :name "icon-shape"
+    :mixins [mx/static]}))
+
+;; --- Icon SVG
+
+(defn- icon-svg-render
+  [own {:keys [data id view-box] :as shape}]
   (let [key (str "icon-svg-" id)
         view-box (apply str (interpose " " view-box))
         props {:view-box view-box :id key :key key}]
     (html
      [:svg props data])))
+
+(def icon-svg
+  (mx/component
+   {:render icon-svg-render
+    :name "icon-svg"
+    :mixins [mx/static]}))
