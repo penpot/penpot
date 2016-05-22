@@ -8,116 +8,300 @@
 (ns uxbox.ui.dashboard.images
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [lentes.core :as l]
+            [uxbox.locales :as t :refer (tr)]
+            [uxbox.state :as st]
             [uxbox.rstore :as rs]
+            [uxbox.library :as library]
             [uxbox.data.dashboard :as dd]
             [uxbox.data.lightbox :as udl]
+            [uxbox.data.images :as di]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.lightbox :as lbx]
+            [uxbox.ui.keyboard :as k]
             [uxbox.ui.library-bar :as ui.library-bar]
             [uxbox.ui.dashboard.header :refer (header)]
+            [uxbox.util.lens :as ul]
             [uxbox.util.dom :as dom]))
+
+;; --- Helpers & Constants
+
+(def +ordering-options+
+  {:name "ds.project-ordering.by-name"
+   :created "ds.project-ordering.by-creation-date"})
+
+;; --- Lenses
+
+(def ^:const ^:private dashboard-l
+  (-> (l/key :dashboard)
+      (l/focus-atom st/state)))
+
+(def ^:const ^:private collections-by-id-l
+  (-> (comp (l/key :images-by-id)
+            (ul/merge library/+image-collections-by-id+))
+      (l/focus-atom st/state)))
+
+(def images-ordering-l
+  (as-> (l/in [:dashboard :images-order]) $
+    (l/focus-atom $ st/state)))
+
+(def images-filtering-l
+  (as-> (l/in [:dashboard :images-filter]) $
+    (l/focus-atom $ st/state)))
+
+
+(defn- focus-collection
+  [collid]
+  (-> (l/key collid)
+      (l/focus-atom collections-by-id-l)))
+
 
 ;; --- Page Title
 
 (defn page-title-render
-  []
-  (html
-   [:div.dashboard-title
-    [:h2 "Element library name"]
-    [:div.edition
-     [:span i/pencil]
-     [:span i/trash]]]))
+  [own coll]
+  (let [local (:rum/local own)
+        dashboard (rum/react dashboard-l)
+        own? (:builtin coll false)]
+    (letfn [(on-title-save [e]
+              (rs/emit! (di/rename-collection (:id coll) (:coll-name @local)))
+              (swap! local assoc :edit false))
+            (on-title-edited [e]
+              (cond
+                (k/esc? e) (swap! local assoc :edit false)
+                (k/enter? e) (on-title-save e)
+                :else (let [content (dom/event->inner-text e)]
+                        (swap! local assoc :coll-name content))))
+            (on-title-edit [e]
+              (swap! local assoc :edit true :coll-name (:name coll)))
+            (on-delete [e]
+              (rs/emit! (di/delete-collection (:id coll))))]
+      (html
+       [:div.dashboard-title {}
+        [:h2 {}
+         (if (:edit @local)
+           [:div.dashboard-title-field
+            [:span.edit
+             {:content-editable ""
+              :on-key-up on-title-edited}
+             (:name coll)]
+            [:span.close
+             {:on-click #(swap! local assoc :edit false)}
+             i/close]]
+           [:span.dashboard-title-field
+            (:name coll)])]
+        (if (and (not own?) coll)
+          [:div.edition
+           (if (:edit @local)
+             [:span {:on-click on-title-save} i/save]
+             [:span {:on-click on-title-edit} i/pencil])
+           [:span {:on-click on-delete} i/trash]])]))))
 
-(def ^:const ^:private page-title
+(def ^:private page-title
   (mx/component
    {:render page-title-render
     :name "page-title"
-    :mixins [mx/static]}))
+    :mixins [(rum/local {}) mx/static rum/reactive]}))
+
+;; --- Nav
+
+(defn nav-render
+  [own]
+  (let [dashboard (rum/react dashboard-l)
+        collections-by-id (rum/react collections-by-id-l)
+        collid (:collection-id dashboard)
+        own? (= (:collection-type dashboard) :own)
+        builtin? (= (:collection-type dashboard) :builtin)
+        collections (as-> (vals collections-by-id) $
+                      (if own?
+                        (filter (comp not :builtin) $)
+                        (filter :builtin $)))]
+    (html
+     [:div.library-bar
+      [:div.library-bar-inside
+       [:ul.library-tabs
+        [:li {:class-name (when builtin? "current")
+              :on-click #(rs/emit! (di/set-collection-type :builtin))}
+         "STANDARD"]
+        [:li {:class-name (when own? "current")
+              :on-click #(rs/emit! (di/set-collection-type :own))}
+         "YOUR LIBRARIES"]]
+       [:ul.library-elements
+        (when own?
+          [:li
+           [:a.btn-primary
+            {:on-click #(rs/emit! (di/create-collection))}
+            "+ New library"]])
+        (for [props collections
+              :let [num (count (:images props))]]
+          [:li {:key (str (:id props))
+                :on-click #(rs/emit! (di/set-collection (:id props)))
+                :class-name (when (= (:id props) collid) "current")}
+           [:span.element-title (:name props)]
+           [:span.element-subtitle
+            (tr "ds.num-elements" (t/c num))]])]]])))
+
+(def ^:const ^:private nav
+  (mx/component
+   {:render nav-render
+    :name "nav"
+    :mixins [rum/reactive]}))
+
 
 ;; --- Grid
 
 (defn grid-render
   [own]
-  (html
-   [:div.dashboard-grid-content
-    [:div.dashboard-grid-row
-      [:div.grid-item.add-project
-       {on-click #(udl/open! :new-element)}
-       [:span "+ New image"]]
+  (let [local (:rum/local own)
+        dashboard (rum/react dashboard-l)
+        coll-type (:collection-type dashboard)
+        coll-id (:collection-id dashboard)
+        own? (= coll-type :own)
+        coll (rum/react (focus-collection coll-id))
+        images-filtering (rum/react images-filtering-l)
+        images-ordering (rum/react images-ordering-l)
+        coll-images (->> (:images coll)
+                         (remove nil?)
+                         (di/filter-images-by images-filtering)
+                         (di/sort-images-by images-ordering))
+        toggle-image-check (fn [image]
+                             (swap! local update :selected #(if (% image) (disj % image) (conj % image))))
+        delete-selected-images #(doseq [image (:selected @local)]
+                                   (rs/emit! (di/delete-image coll-id image)))]
+    (when coll
+      (html
+       [:section.dashboard-grid.library
+        (page-title coll)
+        [:div.dashboard-grid-content
+         [:div.dashboard-grid-row
+           (if own?
+             [:div.grid-item.add-project
+              {:on-click #(dom/click (dom/get-element-by-class "upload-image-input"))}
+              [:span "+ New image"]
+              [:input.upload-image-input {:style {:display "none"}
+                                          :type "file"
+                                          :on-change #(rs/emit! (di/create-images coll-id (dom/get-event-files %)))}]])
 
-      [:div.grid-item.images-th
-       [:div.grid-item-th
-        {:style
-          {:background-image "url('https://images.unsplash.com/photo-1455098934982-64c622c5e066?crop=entropy&fit=crop&fm=jpg&h=1025&ixjsv=2.1.0&ixlib=rb-0.3.5&q=80&w=1400')"}}
-          [:div.input-checkbox.check-primary
-           [:input {:type "checkbox" :id "item-1" :value "Yes"}]
-           [:label {:for "item-1"}]]]
-       [:span "image_name.jpg"]]
+           (for [image coll-images]
+             [:div.grid-item.images-th
+              {:key (:id image) :on-click #(when (k/shift? %) (toggle-image-check image))}
+              [:div.grid-item-th
+               {:style
+                 {:background-image (str "url('" (:thumbnail image) "')")}}
+                 [:div.input-checkbox.check-primary
+                  [:input {:type "checkbox"
+                           :id (:id image)
+                           :on-click #(toggle-image-check image)
+                           :checked ((:selected @local) image)}]
+                  [:label {:for (:id image)}]]]
+              [:span (:name image)]])]
 
-      [:div.grid-item.images-th
-       [:div.grid-item-th
-        {:style
-          {:background-image "url('https://images.unsplash.com/photo-1422393462206-207b0fbd8d6b?crop=entropy&fit=crop&fm=jpg&h=1025&ixjsv=2.1.0&ixlib=rb-0.3.5&q=80&w=1925')"}}
-          [:div.input-checkbox.check-primary
-           [:input {:type "checkbox" :id "item-2" :value "Yes"}]
-           [:label {:for "item-2"}]]]
-       [:span "image_name_long_name.jpg"]]
-
-      [:div.grid-item.images-th
-       [:div.grid-item-th
-        {:style
-          {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}
-          [:div.input-checkbox.check-primary
-           [:input {:type "checkbox" :id "item-3" :value "Yes"}]
-           [:label {:for "item-3"}]]]
-       [:span "image_name.jpg"]]
-
-      [:div.grid-item.images-th
-       [:div.grid-item-th
-        {:style
-          {:background-image "url('https://images.unsplash.com/photo-1423768164017-3f27c066407f?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=712b919f3a2f6fc34f29040e8082b6d9')"}}
-          [:div.input-checkbox.check-primary
-           [:input {:type "checkbox" :id "item-4" :value "Yes"}]
-           [:label {:for "item-4"}]]]
-       [:span "image_name_big_long_name.jpg"]]
-
-      [:div.grid-item.images-th
-       [:div.grid-item-th
-        {:style
-          {:background-image "url('https://images.unsplash.com/photo-1456428199391-a3b1cb5e93ab?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=765abd6dc931b7184e9795d8494966ed')"}}
-          [:div.input-checkbox.check-primary
-           [:input {:type "checkbox" :id "item-5" :value "Yes"}]
-           [:label {:for "item-5"}]]]
-       [:span "image_name.jpg"]]
-
-      [:div.grid-item.images-th
-       [:div.grid-item-th
-        {:style
-          {:background-image "url('https://images.unsplash.com/photo-1447678523326-1360892abab8?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=91663afcd23da14f76cc8229c1780d47')"}}
-          [:div.input-checkbox.check-primary
-           [:input {:type "checkbox" :id "item-6" :value "Yes"}]
-           [:label {:for "item-6"}]]]
-       [:span "image_name.jpg"]]]
-
-    ;; MULTISELECT OPTIONS BAR
-    [:div.multiselect-bar
-     [:div.multiselect-nav
-      [:span.move-item.tooltip.tooltip-top
-       {:alt "Move to"}
-       i/organize]
-      [:span.copy.tooltip.tooltip-top
-       {:alt "Duplicate"}
-       i/copy]
-      [:span.delete.tooltip.tooltip-top
-       {:alt "Delete"}
-       i/trash]]]]))
+         (when (not (empty? (:selected @local)))
+           ;; MULTISELECT OPTIONS BAR
+           [:div.multiselect-bar
+            [:div.multiselect-nav
+             [:span.move-item.tooltip.tooltip-top
+              {:alt "Copy to"}
+              i/organize]
+             (if own?
+               [:span.copy.tooltip.tooltip-top
+                {:alt "Duplicate"}
+                i/copy])
+             (if own?
+               [:span.delete.tooltip.tooltip-top
+                {:alt "Delete"
+                 :on-click #(delete-selected-images)}
+                i/trash])]])]]))))
 
 (def ^:const ^:private grid
   (mx/component
    {:render grid-render
     :name "grid"
-    :mixins [mx/static]}))
+    :mixins [(rum/local {:selected #{}})
+             mx/static
+             rum/reactive]}))
+
+;; --- Sort Widget
+
+(defn sort-widget-render
+  []
+  (let [ordering (rum/react images-ordering-l)
+        on-change #(rs/emit! (di/set-images-ordering
+                              (keyword (.-value (.-target %)))))]
+    (html
+     [:div
+      [:span (tr "ds.project-ordering")]
+      [:select.input-select
+       {:on-change on-change
+        :value (:name ordering)}
+       (for [option (keys +ordering-options+)
+             :let [option-id (get +ordering-options+ option)
+                   option-value (:name option)
+                   option-text (tr option-id)]]
+         [:option
+          {:key option-id
+           :value option-value}
+          option-text])]])))
+
+(def ^:private sort-widget
+  (mx/component
+   {:render sort-widget-render
+    :name "sort-widget-render"
+    :mixins [rum/reactive mx/static]}))
+
+;; --- Filtering Widget
+
+(defn search-widget-render
+  []
+  (letfn [(on-term-change [event]
+            (-> (dom/get-target event)
+                (dom/get-value)
+                (di/set-images-filtering)
+                (rs/emit!)))
+          (on-clear [event]
+            (rs/emit! (di/clear-images-filtering)))]
+    (html
+     [:form.dashboard-search
+      [:input.input-text
+       {:key :images-search-box
+        :type "text"
+        :on-change on-term-change
+        :auto-focus true
+        :placeholder (tr "ds.project-search.placeholder")
+        :value (rum/react images-filtering-l)}]
+      [:div.clear-search
+       {:on-click on-clear}
+       i/close]])))
+
+(def ^:private search-widget
+  (mx/component
+   {:render search-widget-render
+    :name "search-widget"
+    :mixins [rum/reactive mx/static]}))
+
+
+;; --- Menu
+
+(defn menu-render
+  []
+  (let [dashboard (rum/react dashboard-l)
+        coll-id (:collection-id dashboard)
+        coll (rum/react (focus-collection coll-id))
+        icount (count (:images coll)) ]
+    (html
+     [:section.dashboard-bar.library-gap
+      [:div.dashboard-info
+       [:span.dashboard-images (tr "ds.num-images" (t/c icount))]
+       (sort-widget)
+       (search-widget)]])))
+
+(def menu
+  (mx/component
+   {:render menu-render
+    :name "menu"
+    :mixins [rum/reactive mx/static]}))
+
 
 ;; --- Images Page
 
@@ -127,14 +311,14 @@
    [:main.dashboard-main
     (header)
     [:section.dashboard-content
-     (ui.library-bar/library-bar)
-     [:section.dashboard-grid.library
-      (page-title)
-      (grid)]]]))
+     (nav)
+     (menu)
+     (grid)]]))
 
 (defn images-page-will-mount
   [own]
-  (rs/emit! (dd/initialize :dashboard/images))
+  (rs/emit! (dd/initialize :dashboard/images)
+            (di/initialize))
   own)
 
 (defn images-page-transfer-state
@@ -149,31 +333,3 @@
     :transfer-state images-page-transfer-state
     :name "images-page"
     :mixins [mx/static]}))
-
-;; --- New Element Lightbox (TODO)
-
-(defn- new-image-lightbox-render
-  [own]
-  (html
-   [:div.lightbox-body
-    [:h3 "New image"]
-    [:div.row-flex
-     [:div.lightbox-big-btn
-      [:span.big-svg i/shapes]
-      [:span.text "Go to workspace"]]
-     [:div.lightbox-big-btn
-      [:span.big-svg.upload i/exit]
-      [:span.text "Upload file"]]]
-    [:a.close {:href "#"
-               :on-click #(do (dom/prevent-default %)
-                              (udl/close!))}
-     i/close]]))
-
-(def ^:private new-image-lightbox
-  (mx/component
-   {:render new-image-lightbox-render
-    :name "new-image-lightbox"}))
-
-(defmethod lbx/render-lightbox :new-image
-  [_]
-  (new-image-lightbox))

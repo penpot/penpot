@@ -47,14 +47,14 @@
 (defn- send!
   [{:keys [body headers auth method query url] :or {auth true} :as request}]
   (let [headers (merge {}
-                       (when body +headers+)
+                       (when (map? body) +headers+)
                        headers
                        (when auth (auth-headers)))
         request {:method method
                  :url url
                  :headers headers
                  :query-string (when query (encode-query query))
-                 :body (when body (t/encode body))}]
+                 :body (if (map? body) (t/encode body) body)}]
     (->> (http/send! request)
          (rx/from-promise)
          (rx/map conditional-decode)

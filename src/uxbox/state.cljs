@@ -25,7 +25,9 @@
 (defn- get-initial-state
   []
   {:dashboard {:project-order :name
-               :project-filter ""}
+               :project-filter ""
+               :images-order :name
+               :images-filter ""}
    :route nil
    :auth (:uxbox/auth storage nil)
    :clipboard #queue []
