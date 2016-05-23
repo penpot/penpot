@@ -171,10 +171,16 @@
 (defrecord CreateImages [coll-id files]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [image-data {:coll coll-id
-                      :id (uuid/random)
-                      :files files}]
-      (->> (rp/req :create/image image-data)
+    (let [files-to-array (fn [js-col]
+                           (-> (clj->js [])
+                               (.-slice)
+                               (.call js-col)
+                               (js->clj)))
+          images-data (map (fn [file] {:coll coll-id
+                                       :id (uuid/random)
+                                       :file file}) (files-to-array files))]
+      (->> (rx/from-coll images-data)
+           (rx/flat-map #(rp/req :create/image %))
            (rx/map :payload)
            (rx/map image-created)))))
 

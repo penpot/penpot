@@ -46,9 +46,9 @@
     (send! params)))
 
 (defmethod request :create/image
-  [_ {:keys [coll id files] :as body}]
+  [_ {:keys [coll id file] :as body}]
   (let [body (doto (js/FormData.)
-               (.append "file" (aget files 0))
+               (.append "file" file)
                (.append "id" id))
         params {:url (str url "/library/image-collections/" coll "/images")
                 :method :post
