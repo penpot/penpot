@@ -130,8 +130,7 @@
         builtin? (= (:collection-type dashboard) :builtin)
         collections (if builtin?
                       (vals library/+image-collections-by-id+)
-                      (rum/react collections-by-id-l))
-
+                      (vals (rum/react collections-by-id-l)))
         show-builtin #(rs/emit! (di/set-collection-type :builtin))
         show-own #(rs/emit! (di/set-collection-type :own))
         new-coll #(rs/emit! (di/create-collection))
