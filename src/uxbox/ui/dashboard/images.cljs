@@ -80,23 +80,28 @@
   (let [local (:rum/local own)
         dashboard (rum/react dashboard-l)
         own? (:builtin coll false)]
-    (letfn [(on-title-save [e]
-              (rs/emit! (di/rename-collection (:id coll) (:coll-name @local)))
-              (swap! local assoc :edit false))
-            (on-title-edited [e]
+    (letfn [(persist [event]
+              (let [name (:coll-name @local)]
+                (rs/emit! (di/rename-collection (:id coll) name))
+                (swap! local assoc :edit false)))
+
+            (on-key-down [event]
               (cond
-                (kbd/esc? e)
+                (kbd/esc? event)
                 (swap! local assoc :edit false)
 
-                (kbd/enter? e)
-                (do (dom/stop-propagation e)
-                    (on-title-save e))
+                (kbd/enter? event)
+                (do
+                  (dom/stop-propagation event)
+                  (persist event))))
 
-                :else
-                (let [content (dom/event->inner-text e)]
-                  (swap! local assoc :coll-name content))))
-            (on-title-edit [e]
+            (on-input [event]
+              (let [content (dom/event->inner-text event)]
+                (swap! local assoc :coll-name content)))
+
+            (on-edit [e]
               (swap! local assoc :edit true :coll-name (:name coll)))
+
             (on-delete [e]
               (rs/emit! (di/delete-collection (:id coll))))]
       (html
@@ -106,7 +111,8 @@
            [:div.dashboard-title-field
             [:span.edit
              {:content-editable ""
-              :on-key-down on-title-edited}
+              :on-input on-input
+              :on-key-down on-key-down}
              (:name coll)]
             [:span.close
              {:on-click #(swap! local assoc :edit false)}
@@ -116,8 +122,8 @@
         (if (and (not own?) coll)
           [:div.edition
            (if (:edit @local)
-             [:span {:on-click on-title-save} i/save]
-             [:span {:on-click on-title-edit} i/pencil])
+             [:span {:on-click persist} i/save]
+             [:span {:on-click on-edit} i/pencil])
            [:span {:on-click on-delete} i/trash]])]))))
 
 (def ^:private page-title
