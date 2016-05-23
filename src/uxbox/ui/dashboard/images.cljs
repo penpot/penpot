@@ -8,6 +8,7 @@
 (ns uxbox.ui.dashboard.images
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [cuerdas.core :as str]
             [lentes.core :as l]
             [uxbox.locales :as t :refer (tr)]
             [uxbox.state :as st]
@@ -19,9 +20,10 @@
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.lightbox :as lbx]
-            [uxbox.ui.keyboard :as k]
+            [uxbox.ui.keyboard :as kbd]
             [uxbox.ui.library-bar :as ui.library-bar]
             [uxbox.ui.dashboard.header :refer (header)]
+            [uxbox.util.data :as data]
             [uxbox.util.lens :as ul]
             [uxbox.util.dom :as dom]))
 
@@ -31,31 +33,46 @@
   {:name "ds.project-ordering.by-name"
    :created "ds.project-ordering.by-creation-date"})
 
+(defn- sort-images-by
+  [ordering projs]
+  (case ordering
+    :name (sort-by :name projs)
+    :created (reverse (sort-by :created-at projs))
+    projs))
+
+(defn- contains-term?
+  [phrase term]
+  (str/contains? (str/lower phrase) (str/trim (str/lower term))))
+
+(defn- filter-images-by
+  [term projs]
+  (if (str/blank? term)
+    projs
+    (filter #(contains-term? (:name %) term) projs)))
+
 ;; --- Lenses
 
-(def ^:const ^:private dashboard-l
+(def ^:private dashboard-l
   (-> (l/key :dashboard)
       (l/focus-atom st/state)))
 
-(def ^:const ^:private collections-by-id-l
+(def ^:private collections-by-id-l
   (-> (comp (l/key :images-by-id)
             (ul/merge library/+image-collections-by-id+))
       (l/focus-atom st/state)))
 
-(def images-ordering-l
-  (as-> (l/in [:dashboard :images-order]) $
-    (l/focus-atom $ st/state)))
+(def ^:private images-ordering-l
+  (-> (l/in [:dashboard :images-order])
+      (l/focus-atom st/state)))
 
-(def images-filtering-l
-  (as-> (l/in [:dashboard :images-filter]) $
-    (l/focus-atom $ st/state)))
-
+(def ^:private images-filtering-l
+  (-> (l/in [:dashboard :images-filter])
+      (l/focus-atom st/state)))
 
 (defn- focus-collection
   [collid]
   (-> (l/key collid)
       (l/focus-atom collections-by-id-l)))
-
 
 ;; --- Page Title
 
@@ -69,8 +86,8 @@
               (swap! local assoc :edit false))
             (on-title-edited [e]
               (cond
-                (k/esc? e) (swap! local assoc :edit false)
-                (k/enter? e) (on-title-save e)
+                (kbd/esc? e) (swap! local assoc :edit false)
+                (kbd/enter? e) (on-title-save e)
                 :else (let [content (dom/event->inner-text e)]
                         (swap! local assoc :coll-name content))))
             (on-title-edit [e]
@@ -78,8 +95,8 @@
             (on-delete [e]
               (rs/emit! (di/delete-collection (:id coll))))]
       (html
-       [:div.dashboard-title {}
-        [:h2 {}
+       [:div.dashboard-title
+        [:h2
          (if (:edit @local)
            [:div.dashboard-title-field
             [:span.edit
@@ -102,7 +119,7 @@
   (mx/component
    {:render page-title-render
     :name "page-title"
-    :mixins [(rum/local {}) mx/static rum/reactive]}))
+    :mixins [(mx/local) mx/static rum/reactive]}))
 
 ;; --- Nav
 
@@ -113,45 +130,45 @@
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
-        collections (as-> (vals collections-by-id) $
-                      (if own?
-                        (filter (comp not :builtin) $)
-                        (filter :builtin $)))]
+        collections (cond->> (vals collections-by-id)
+                      (true? own?) (filter (comp not :builtin))
+                      (false? own?) (filter :builtin))
+        show-builtin #(rs/emit! (di/set-collection-type :builtin))
+        show-own #(rs/emit! (di/set-collection-type :own))
+        new-coll #(rs/emit! (di/create-collection))
+        select-coll #(rs/emit! (di/set-collection %))]
     (html
      [:div.library-bar
       [:div.library-bar-inside
        [:ul.library-tabs
         [:li {:class-name (when builtin? "current")
-              :on-click #(rs/emit! (di/set-collection-type :builtin))}
+              :on-click show-builtin}
          "STANDARD"]
         [:li {:class-name (when own? "current")
-              :on-click #(rs/emit! (di/set-collection-type :own))}
+              :on-click show-own}
          "YOUR LIBRARIES"]]
        [:ul.library-elements
         (when own?
           [:li
-           [:a.btn-primary
-            {:on-click #(rs/emit! (di/create-collection))}
-            "+ New library"]])
-        (for [props collections
-              :let [num (count (:images props))]]
-          [:li {:key (str (:id props))
-                :on-click #(rs/emit! (di/set-collection (:id props)))
-                :class-name (when (= (:id props) collid) "current")}
-           [:span.element-title (:name props)]
+           [:a.btn-primary {:on-click new-coll} "+ New library"]])
+        (for [{:keys [id images name]} collections
+              :let [num (count images)]]
+          [:li {:key (str id)
+                :on-click (partial select-coll id)
+                :class (when (= id collid) "current")}
+           [:span.element-title name]
            [:span.element-subtitle
             (tr "ds.num-elements" (t/c num))]])]]])))
 
-(def ^:const ^:private nav
+(def ^:private nav
   (mx/component
    {:render nav-render
     :name "nav"
-    :mixins [rum/reactive]}))
-
+    :mixins [rum/reactive mx/static]}))
 
 ;; --- Grid
 
-(defn grid-render
+(defn- grid-render
   [own]
   (let [local (:rum/local own)
         dashboard (rum/react dashboard-l)
@@ -161,70 +178,76 @@
         coll (rum/react (focus-collection coll-id))
         images-filtering (rum/react images-filtering-l)
         images-ordering (rum/react images-ordering-l)
-        coll-images (->> (:images coll)
-                         (remove nil?)
-                         (di/filter-images-by images-filtering)
-                         (di/sort-images-by images-ordering))
-        toggle-image-check (fn [image]
-                             (swap! local update :selected #(if (% image) (disj % image) (conj % image))))
-        delete-selected-images #(doseq [image (:selected @local)]
-                                   (rs/emit! (di/delete-image coll-id image)))]
-    (when coll
-      (html
-       [:section.dashboard-grid.library
-        (page-title coll)
-        [:div.dashboard-grid-content
-         [:div.dashboard-grid-row
-           (if own?
-             [:div.grid-item.add-project
-              {:on-click #(dom/click (dom/get-element-by-class "upload-image-input"))}
-              [:span "+ New image"]
-              [:input.upload-image-input {:style {:display "none"}
-                                          :type "file"
-                                          :on-change #(rs/emit! (di/create-images coll-id (dom/get-event-files %)))}]])
+        images (->> (:images coll)
+                    (remove nil?)
+                    (filter-images-by images-filtering)
+                    (sort-images-by images-ordering))
+        show-menu? (not (empty? (:selected @local)))]
+    (letfn [(toggle-check [image]
+              (swap! local update :selected #(data/conj-or-disj % image)))
+            (toggle-check-card [image event]
+              (when (kbd/shift? event)
+                (toggle-check image)))
+            (forward-click [event]
+              (dom/click (mx/get-ref-dom own "file-input")))
+            (delete-selected []
+              (->> (:selected @local)
+                   (run! #(rs/emit! (di/delete-image coll-id %)))))
+            (on-file-selected [event]
+              (let [files (dom/get-event-files event)]
+                (rs/emit! (di/create-images coll-id files))))]
+      (when coll
+        (html
+         [:section.dashboard-grid.library
+          (page-title coll)
+          [:div.dashboard-grid-content
+           [:div.dashboard-grid-row
+            (if own?
+              [:div.grid-item.add-project {:on-click forward-click}
+               [:span "+ New image"]
+               [:input.upload-image-input
+                {:style {:display "none"}
+                 :ref "file-input"
+                 :type "file"
+                 :on-change on-file-selected}]])
 
-           (for [image coll-images]
-             [:div.grid-item.images-th
-              {:key (:id image) :on-click #(when (k/shift? %) (toggle-image-check image))}
-              [:div.grid-item-th
-               {:style
-                 {:background-image (str "url('" (:thumbnail image) "')")}}
-                 [:div.input-checkbox.check-primary
-                  [:input {:type "checkbox"
-                           :id (:id image)
-                           :on-click #(toggle-image-check image)
-                           :checked ((:selected @local) image)}]
-                  [:label {:for (:id image)}]]]
-              [:span (:name image)]])]
+            (for [image images
+                  :let [selected? (contains? (:selected @local) image)]]
+              [:div.grid-item.images-th
+               {:key (:id image)
+                :on-click (partial toggle-check-card image)}
+               [:div.grid-item-th
+                {:style {:background-image (str "url('" (:thumbnail image) "')")}}
+                [:div.input-checkbox.check-primary
+                 [:input {:type "checkbox"
+                          :id (:id image)
+                          :on-click (partial toggle-check image)
+                          :checked selected?}]
+                 [:label {:for (:id image)}]]]
+               [:span (:name image)]])]
 
-         (when (not (empty? (:selected @local)))
-           ;; MULTISELECT OPTIONS BAR
-           [:div.multiselect-bar
-            [:div.multiselect-nav
-             [:span.move-item.tooltip.tooltip-top
-              {:alt "Copy to"}
-              i/organize]
-             (if own?
-               [:span.copy.tooltip.tooltip-top
-                {:alt "Duplicate"}
-                i/copy])
-             (if own?
-               [:span.delete.tooltip.tooltip-top
-                {:alt "Delete"
-                 :on-click #(delete-selected-images)}
-                i/trash])]])]]))))
+           (when show-menu?
+             ;; MULTISELECT OPTIONS BAR
+             [:div.multiselect-bar
+              [:div.multiselect-nav
+               [:span.move-item.tooltip.tooltip-top {:alt "Copy to"} i/organize]
+               (if own?
+                 [:span.copy.tooltip.tooltip-top {:alt "Duplicate"} i/copy])
+               (if own?
+                 [:span.delete.tooltip.tooltip-top
+                  {:alt "Delete"
+                   :on-click delete-selected}
+                  i/trash])]])]])))))
 
-(def ^:const ^:private grid
+(def ^:private grid
   (mx/component
    {:render grid-render
     :name "grid"
-    :mixins [(rum/local {:selected #{}})
-             mx/static
-             rum/reactive]}))
+    :mixins [(rum/local {:selected #{}}) mx/static rum/reactive]}))
 
 ;; --- Sort Widget
 
-(defn sort-widget-render
+(defn- sort-widget-render
   []
   (let [ordering (rum/react images-ordering-l)
         on-change #(rs/emit! (di/set-images-ordering
@@ -234,7 +257,7 @@
       [:span (tr "ds.project-ordering")]
       [:select.input-select
        {:on-change on-change
-        :value (:name ordering)}
+        :value (:name ordering "")}
        (for [option (keys +ordering-options+)
              :let [option-id (get +ordering-options+ option)
                    option-value (:name option)
@@ -252,7 +275,7 @@
 
 ;; --- Filtering Widget
 
-(defn search-widget-render
+(defn- search-widget-render
   []
   (letfn [(on-term-change [event]
             (-> (dom/get-target event)
@@ -270,9 +293,7 @@
         :auto-focus true
         :placeholder (tr "ds.project-search.placeholder")
         :value (rum/react images-filtering-l)}]
-      [:div.clear-search
-       {:on-click on-clear}
-       i/close]])))
+      [:div.clear-search {:on-click on-clear} i/close]])))
 
 (def ^:private search-widget
   (mx/component
@@ -280,10 +301,9 @@
     :name "search-widget"
     :mixins [rum/reactive mx/static]}))
 
-
 ;; --- Menu
 
-(defn menu-render
+(defn- menu-render
   []
   (let [dashboard (rum/react dashboard-l)
         coll-id (:collection-id dashboard)
@@ -296,7 +316,7 @@
        (sort-widget)
        (search-widget)]])))
 
-(def menu
+(def ^:private menu
   (mx/component
    {:render menu-render
     :name "menu"
@@ -305,7 +325,7 @@
 
 ;; --- Images Page
 
-(defn images-page-render
+(defn- images-page-render
   [own]
   (html
    [:main.dashboard-main
@@ -315,13 +335,13 @@
      (menu)
      (grid)]]))
 
-(defn images-page-will-mount
+(defn- images-page-will-mount
   [own]
   (rs/emit! (dd/initialize :dashboard/images)
             (di/initialize))
   own)
 
-(defn images-page-transfer-state
+(defn- images-page-transfer-state
   [old-state state]
   (rs/emit! (dd/initialize :dashboard/images))
   state)

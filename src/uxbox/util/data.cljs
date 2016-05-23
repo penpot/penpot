@@ -61,6 +61,14 @@
     (apply merge-with deep-merge maps)
     (last maps)))
 
+(defn conj-or-disj
+  "Given a set, and an element remove that element from set
+  if it exists or add it if it does not exists."
+  [s v]
+  (if (contains? s v)
+    (disj s v)
+    (conj s v)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numbers Parsing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

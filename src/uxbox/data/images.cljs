@@ -43,14 +43,14 @@
 
 ;; --- Color Collections Fetched
 
-(defrecord CollectionFetched [items]
+(defrecord CollectionsFetched [items]
   rs/UpdateEvent
   (-apply-update [_ state]
     (reduce sti/assoc-collection state items)))
 
 (defn collections-fetched
   [items]
-  (CollectionFetched. items))
+  (CollectionsFetched. items))
 
 ;; --- Fetch Color Collections
 
@@ -259,23 +259,6 @@
   (SetCollectionType. type))
 
 ;; --- Helpers
-
-(defn sort-images-by
-  [ordering projs]
-  (case ordering
-    :name (sort-by :name projs)
-    :created (reverse (sort-by :created-at projs))
-    projs))
-
-(defn contains-term?
-  [phrase term]
-  (str/contains? (str/lower phrase) (str/trim (str/lower term))))
-
-(defn filter-images-by
-  [term projs]
-  (if (str/blank? term)
-    projs
-    (filter #(contains-term? (:name %) term) projs)))
 
 (defn set-images-ordering
   [order]

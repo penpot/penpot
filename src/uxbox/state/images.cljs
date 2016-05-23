@@ -1,5 +1,4 @@
-(ns uxbox.state.images
-  "A collection of functions for manage dashboard data insinde the state.")
+(ns uxbox.state.images)
 
 (defn assoc-collection
   "A reduce function for assoc the image collection
@@ -25,4 +24,6 @@
   "A reduce function for dissoc the image collection
   to the state map."
   [state coll-id image]
-  (update-in state [:images-by-id coll-id :images] disj image))
+  (let [images (get-in state [:images-by-id coll-id :images])
+        images (filterv #(not= (:id image) (:id %)) images)]
+    (assoc-in state [:images-by-id coll-id images] images)))
