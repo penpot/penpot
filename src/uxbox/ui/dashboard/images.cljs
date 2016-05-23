@@ -85,10 +85,16 @@
               (swap! local assoc :edit false))
             (on-title-edited [e]
               (cond
-                (kbd/esc? e) (swap! local assoc :edit false)
-                (kbd/enter? e) (on-title-save e)
-                :else (let [content (dom/event->inner-text e)]
-                        (swap! local assoc :coll-name content))))
+                (kbd/esc? e)
+                (swap! local assoc :edit false)
+
+                (kbd/enter? e)
+                (do (dom/stop-propagation e)
+                    (on-title-save e))
+
+                :else
+                (let [content (dom/event->inner-text e)]
+                  (swap! local assoc :coll-name content))))
             (on-title-edit [e]
               (swap! local assoc :edit true :coll-name (:name coll)))
             (on-delete [e]
@@ -100,7 +106,7 @@
            [:div.dashboard-title-field
             [:span.edit
              {:content-editable ""
-              :on-key-up on-title-edited}
+              :on-key-down on-title-edited}
              (:name coll)]
             [:span.close
              {:on-click #(swap! local assoc :edit false)}
