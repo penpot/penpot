@@ -57,8 +57,7 @@
       (l/focus-atom st/state)))
 
 (def ^:private collections-by-id-l
-  (-> (comp (l/key :images-by-id)
-            (ul/merge library/+image-collections-by-id+))
+  (-> (l/key :images-by-id)
       (l/focus-atom st/state)))
 
 (def ^:private images-ordering-l
@@ -126,17 +125,17 @@
 (defn nav-render
   [own]
   (let [dashboard (rum/react dashboard-l)
-        collections-by-id (rum/react collections-by-id-l)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
-        collections (cond->> (vals collections-by-id)
-                      (true? own?) (filter (comp not :builtin))
-                      (false? own?) (filter :builtin))
+        collections (if builtin?
+                      (vals library/+image-collections-by-id+)
+                      (rum/react collections-by-id-l))
+
         show-builtin #(rs/emit! (di/set-collection-type :builtin))
         show-own #(rs/emit! (di/set-collection-type :own))
         new-coll #(rs/emit! (di/create-collection))
-        select-coll #(rs/emit! (di/set-collection %))]
+        select-coll #(rs/emit! (di/set-collection % builtin?))]
     (html
      [:div.library-bar
       [:div.library-bar-inside
@@ -175,7 +174,10 @@
         coll-type (:collection-type dashboard)
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
-        coll (rum/react (focus-collection coll-id))
+        builtin? (= coll-type :builtin)
+        coll (if builtin?
+               (get library/+image-collections-by-id+ coll-id)
+               (rum/react (focus-collection coll-id)))
         images-filtering (rum/react images-filtering-l)
         images-ordering (rum/react images-ordering-l)
         images (->> (:images coll)

@@ -96,7 +96,7 @@
 
 (defn collections-fetched?
   [v]
-  (instance? CollectionFetched v))
+  (instance? CollectionsFetched v))
 
 ;; --- Collection Updated
 
@@ -182,30 +182,30 @@
   [coll-id files]
   (CreateImages. coll-id files))
 
-;; --- Images Loaded
+;; --- Images Fetched
 
-(defrecord ImagesLoaded [coll-id items]
+(defrecord ImagesFetched [coll-id items]
   rs/UpdateEvent
   (-apply-update [_ state]
     (assoc-in state [:images-by-id coll-id :images] (set items))))
 
-(defn images-loaded
+(defn images-fetched
   [coll-id items]
-  (ImagesLoaded. coll-id items))
+  (ImagesFetched. coll-id items))
 
 ;; --- Load Images
 
-(defrecord LoadImages [coll-id]
+(defrecord FetchImages [coll-id]
   rs/WatchEvent
   (-apply-watch [_ state s]
     (let [params {:coll coll-id}]
       (->> (rp/req :fetch/images params)
            (rx/map :payload)
-           (rx/map #(images-loaded coll-id %))))))
+           (rx/map #(images-fetched coll-id %))))))
 
-(defn load-images
+(defn fetch-images
   [coll-id]
-  (LoadImages. coll-id))
+  (FetchImages. coll-id))
 
 ;; --- Delete Images
 
@@ -225,18 +225,21 @@
 
 ;; --- Set Collection
 
-(defrecord SetCollection [id]
+(defrecord SetCollection [id builtin?]
   rs/UpdateEvent
   (-apply-update [_ state]
     (assoc-in state [:dashboard :collection-id] id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (load-images id))))
+    (cond
+      builtin? (rx/empty)
+      (nil? id) (rx/empty)
+      :else (rx/of (fetch-images id)))))
 
 (defn set-collection
-  [id]
-  (SetCollection. id))
+  [id builtin?]
+  (SetCollection. id builtin?))
 
 ;; --- Set Collection Type
 
@@ -244,9 +247,9 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (if (= type :builtin)
-      (rx/of (set-collection 1))
+      (rx/of (set-collection 1 true))
       (let [colls (sort-by :id (vals (:images-by-id state)))]
-        (rx/of (set-collection (:id (first colls)))))))
+        (rx/of (set-collection (:id (first colls)) false)))))
 
   rs/UpdateEvent
   (-apply-update [_ state]

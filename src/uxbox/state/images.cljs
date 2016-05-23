@@ -24,6 +24,4 @@
   "A reduce function for dissoc the image collection
   to the state map."
   [state coll-id image]
-  (let [images (get-in state [:images-by-id coll-id :images])
-        images (filterv #(not= (:id image) (:id %)) images)]
-    (assoc-in state [:images-by-id coll-id images] images)))
+  (update-in state [:images-by-id coll-id :images] disj image))
