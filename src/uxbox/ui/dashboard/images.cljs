@@ -208,6 +208,7 @@
                [:span "+ New image"]
                [:input.upload-image-input
                 {:style {:display "none"}
+                 :multiple true
                  :ref "file-input"
                  :type "file"
                  :on-change on-file-selected}]])
