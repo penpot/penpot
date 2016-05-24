@@ -6,6 +6,7 @@
 
 (ns uxbox.ui.users
   (:require [sablono.core :as html :refer-macros [html]]
+            [cuerdas.core :as str]
             [lentes.core :as l]
             [rum.core :as rum]
             [uxbox.router :as r]
@@ -56,13 +57,16 @@
 (defn user-render
   [own]
   (let [profile (rum/react profile-l)
-        local (:rum/local own)]
+        local (:rum/local own)
+        photo (if (str/empty? (:photo profile))
+                "/images/avatar.jpg"
+                (:photo profile))]
+
     (html
      [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)
                       :on-mouse-leave #(swap! local assoc :open false)}
       [:span (:fullname profile)]
-      [:img {:border "0"
-             :src "/images/avatar.jpg"}]
+      [:img {:border "0" :src photo}]
       (user-menu (:open @local))])))
 
 (def user

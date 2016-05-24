@@ -106,7 +106,7 @@
                    (rx/of)))]
       (let [params {:old-password (:old-password data)
                     :password (:password-1 data)}]
-        (->> (rp/req :update/password params)
+        (->> (rp/req :update/profile-password params)
              (rx/map password-updated)
              (rx/catch rp/client-error? on-error))))))
 
@@ -122,3 +122,18 @@
     (if errors
       (udf/assign-errors :profile/password errors)
       (UpdatePassword. data))))
+
+;; --- Update Photo
+
+(defrecord UpdatePhoto [file done]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (->> (rp/req :update/profile-photo {:file file})
+         (rx/do done)
+         (rx/map fetch-profile))))
+
+(defn update-photo
+  ([file]
+   (UpdatePhoto. file (constantly nil)))
+  ([file done]
+   (UpdatePhoto. file done)))

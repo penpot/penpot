@@ -24,7 +24,7 @@
          (rx/map decode-payload))))
 
 (defmethod request :update/profile
-  [type {:keys [metadata id] :as body}]
+  [type {:keys [metadata] :as body}]
   (let [body (assoc body :metadata (t/encode metadata))
         params {:url (str url "/profile/me")
                 :method :put
@@ -32,9 +32,18 @@
     (->> (send! params)
          (rx/map decode-payload))))
 
-(defmethod request :update/password
+(defmethod request :update/profile-password
   [type data]
   (let [params {:url (str url "/profile/me/password")
                 :method :put
                 :body data}]
+    (send! params)))
+
+(defmethod request :update/profile-photo
+  [_ {:keys [file] :as body}]
+  (let [body (doto (js/FormData.)
+               (.append "file" file))
+        params {:url (str url "/profile/me/photo")
+                :method :post
+                :body body}]
     (send! params)))

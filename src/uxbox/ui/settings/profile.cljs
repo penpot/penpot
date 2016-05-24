@@ -21,9 +21,10 @@
             [uxbox.ui.messages :as uum]
             [uxbox.data.users :as udu]
             [uxbox.data.forms :as udf]
+            [uxbox.util.interop :refer (iterable->seq)]
             [uxbox.util.dom :as dom]))
 
-;; --- Profile Form
+;; --- Constants
 
 (def formdata
   (-> (l/in [:forms :profile/main])
@@ -117,6 +118,34 @@
     :name "profile-form"
     :mixins [(mx/local) rum/reactive mx/static]}))
 
+;; --- Profile Photo Form
+
+(defn- profile-photo-form-render
+  [own]
+  (letfn [(on-change [event]
+            (let [target (dom/get-target event)
+                  file (-> (dom/get-files target)
+                           (iterable->seq)
+                           (first))]
+              (rs/emit! (udu/update-photo file))
+              (dom/clean-value! target)))]
+    (let [{:keys [photo]} (rum/react profile-l)
+          photo (if (str/empty? photo)
+                  "images/avatar.jpg"
+                  photo)]
+    (html
+     [:form.avatar-form
+      [:img {:src photo :border "0"}]
+      [:input {:type "file"
+               :value ""
+               :on-change on-change}]]))))
+
+(def profile-photo-form
+  (mx/component
+   {:render profile-photo-form-render
+    :name  profile-photo-form
+    :mixins [mx/static rum/reactive]}))
+
 ;; --- Profile Page
 
 (defn profile-page-render
@@ -128,9 +157,7 @@
     [:section.dashboard-content.user-settings
      [:section.user-settings-content
       [:span.user-settings-label "Your avatar"]
-      [:form.avatar-form
-       [:img {:src "images/avatar.jpg" :border "0"}]
-       [:input {:type "file"}]]
+      (profile-photo-form)
       (profile-form)
       ]]]))
 

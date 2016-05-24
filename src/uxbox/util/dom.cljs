@@ -66,6 +66,10 @@
   [node]
   (.-checked node))
 
+(defn clean-value!
+  [node]
+  (set! (.-value node) ""))
+
 (defn ^boolean equals?
   [node-a node-b]
   (.isEqualNode node-a node-b))
