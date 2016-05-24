@@ -103,7 +103,7 @@
 (defrecord CollectionUpdated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (sti/assoc-collection state item)))
+    (update-in state [:images-by-id (:id item)]  merge item)))
 
 (defn collection-updated
   [item]
