@@ -222,6 +222,7 @@
                 {:style {:display "none"}
                  :multiple true
                  :ref "file-input"
+                 :value ""
                  :type "file"
                  :on-change on-file-selected}]])
 
