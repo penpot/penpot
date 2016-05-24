@@ -11,9 +11,15 @@
   font-size: $fs14;
   padding: $small $medium $small $x-big*2;
 
+  .dashboard-images {
+    flex-basis: 70px;
+  }
+
   .dashboard-info {
     align-items: center;
     display: flex;
+    width: 500px;
+    justify-content: space-around;
 
     .dashboard-projects {
       font-weight: bold;
