@@ -11,7 +11,6 @@
             [uuid.core :as uuid]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.state.images :as sti]
             [uxbox.repo :as rp]))
 
 ;; --- Initialize
@@ -46,7 +45,10 @@
 (defrecord CollectionsFetched [items]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (reduce sti/assoc-collection state items)))
+    (reduce (fn [acc {:keys [id] :as item}]
+               (assoc-in acc [:images-by-id id] item))
+            state
+            items)))
 
 (defn collections-fetched
   [items]
@@ -71,7 +73,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (-> state
-        (sti/assoc-collection item)
+        (assoc-in [:images-by-id (:id item)] item)
         (assoc-in [:dashboard :collection-id] (:id item))
         (assoc-in [:dashboard :collection-type] :own))))
 
@@ -143,7 +145,7 @@
 (defrecord DeleteCollection [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (sti/dissoc-collection state id))
+    (update state :images-by-id dissoc id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -218,7 +220,7 @@
 (defrecord DeleteImage [coll-id image]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (sti/dissoc-image state coll-id image))
+    (update-in state [:images-by-id coll-id :images] disj image))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
