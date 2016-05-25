@@ -28,6 +28,7 @@
             [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
             [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
             [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
+            [uxbox.main.ui.workspace.sidebar.options.interactions :as options-interactions]
             [uxbox.common.geom :as geom]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
@@ -35,11 +36,11 @@
 ;; --- Constants
 
 (def ^:private +menus-map+
-  {:icon [:menu/icon-measures :menu/fill :menu/stroke]
-   :rect [:menu/rect-measures :menu/fill :menu/stroke]
-   :line [:menu/line-measures :menu/stroke]
-   :circle [:menu/circle-measures :menu/fill :menu/stroke]
-   :text [:menu/fill :menu/text]
+  {:icon [:menu/icon-measures :menu/fill :menu/stroke :menu/interactions]
+   :rect [:menu/rect-measures :menu/fill :menu/stroke :menu/interactions]
+   :line [:menu/line-measures :menu/stroke :menu/interactions]
+   :circle [:menu/circle-measures :menu/fill :menu/stroke :menu/interactions]
+   :text [:menu/fill :menu/text :menu/interactions]
    :group []})
 
 (def ^:private +menus+
@@ -70,7 +71,11 @@
    {:name "Text"
     :id :menu/text
     :icon i/text
-    :comp options-text/text-menu}])
+    :comp options-text/text-menu}
+   {:name "Interactions"
+    :id :menu/interactions
+    :icon i/action
+    :comp options-interactions/interactions-menu}])
 
 (def ^:private +menus-by-id+
   (into {} (map #(vector (:id %) %)) +menus+))

@@ -75,6 +75,107 @@
 
   }
 
+  .element-list {
+    margin-bottom: $small;
+
+    li {
+      align-items: center;
+      border-bottom: 1px solid $soft-ui-border;
+      display: flex;
+      flex-direction: row;
+      padding: $small;
+      width: 100%;
+
+      .list-icon {
+
+        svg {
+          fill: $medium-ui-icons;
+          height: 15px;
+          margin-right: $x-small;
+          width: 15px;
+        }
+
+      }
+
+      span {
+        color: $medium-ui-text;
+        font-size: $fs14;
+        max-width: 75%;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .list-actions {
+        align-items: center;
+        cursor: pointer;
+        display: none;
+        margin-left: auto;
+
+        a {
+
+          svg {
+            fill: $soft-ui-icons;
+            height: 15px;
+            margin-left: $x-small;
+            width: 15px;
+
+            &:hover {
+              fill: $intense-ui-icons;
+            }
+
+          }
+
+        }
+
+      }
+
+      &:hover {
+
+        .list-icon {
+
+          svg {
+            fill: $main-ui-color;
+          }
+
+        }
+
+        span {
+          color: $main-ui-color;
+        }
+
+      }
+
+      &.selected {
+
+        .list-icon {
+
+          svg {
+            fill: $main-ui-color;
+          }
+
+        }
+
+        span {
+          color: $main-ui-color;
+          font-weight: bold;
+        }
+
+      }
+
+    }
+
+    &:hover {
+
+      .list-actions {
+        display: flex;
+        @include animation(0s,.3s,fadeIn);
+      }
+
+    }
+
+  }
+
 }
 
 .element-set-content {
@@ -137,6 +238,16 @@
 
   }
 
+  .save-btn {
+    width: 100%;
+  }
+
+  .cancel-btn {
+    color: $color-danger;
+    text-align: center;
+    width: 100%;
+  }
+
 }
 
 .color-th {
@@ -194,6 +305,7 @@
     }
 
   }
+
 
 }
 
