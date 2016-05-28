@@ -30,3 +30,10 @@
                 :method :put
                 :body data}]
     (send! params)))
+
+(defmethod request :auth/register
+  [_ data]
+  (let [params {:url (str url "/auth/register")
+                :method :post
+                :body data}]
+    (send! params)))

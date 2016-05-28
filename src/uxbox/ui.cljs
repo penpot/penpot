@@ -31,7 +31,7 @@
 
 ;; --- Constants
 
-(def ^:const +unrestricted+ #{:auth/login})
+(def ^:const +unrestricted+ #{:auth/login :auth/register})
 (def ^:const restricted? (complement +unrestricted+))
 
 (def route-l
@@ -76,7 +76,8 @@
     (if (and (restricted? location) (not auth))
       (do (p/schedule 0 #(r/go :auth/login)) nil)
       (case location
-        :auth/login (auth/login)
+        :auth/login (auth/login-page)
+        :auth/register (auth/register-page)
         :dashboard/projects (dashboard/projects-page)
         :dashboard/elements (dashboard/elements-page)
         :dashboard/icons (dashboard/icons-page)

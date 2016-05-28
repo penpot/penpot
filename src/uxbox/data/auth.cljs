@@ -12,11 +12,12 @@
             [uxbox.rstore :as rs]
             [uxbox.router :as r]
             [uxbox.state :as st]
-            [uxbox.schema :as sc]
+            [uxbox.schema :as us]
             [uxbox.locales :refer (tr)]
             [uxbox.data.projects :as udp]
             [uxbox.data.users :as udu]
             [uxbox.data.messages :as udm]
+            [uxbox.data.forms :as udf]
             [uxbox.util.storage :refer (storage)]))
 
 ;; --- Logged In
@@ -80,3 +81,40 @@
 (defn logout
   []
   (->Logout))
+
+;; --- Register
+
+(defrecord Register [data]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (letfn [(on-error [{payload :payload}]
+              (->> (:payload payload)
+                   (udf/assign-errors :register)
+                   (rx/of)))]
+      (rx/merge
+       (->> (rp/req :auth/register data)
+            (rx/map :payload)
+            (rx/map (constantly ::registered))
+            (rx/catch rp/client-error? on-error))
+       (->> stream
+            (rx/filter #(= % ::registered))
+            (rx/take 1)
+            (rx/map #(login data)))
+       (->> stream
+            (rx/filter logged-in?)
+            (rx/take 1)
+            (rx/map #(udf/clean :register)))))))
+
+(def register-schema
+  {:username [us/required us/string]
+   :fullname [us/required us/string]
+   :email [us/required us/email]
+   :password [us/required us/string]})
+
+(defn register
+  "Create a register event instance."
+  [data]
+  (let [[errors data] (us/validate data register-schema)]
+    (if errors
+      (udf/assign-errors :register errors)
+      (Register. data))))
