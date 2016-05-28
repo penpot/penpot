@@ -58,10 +58,9 @@
   [own]
   (let [profile (rum/react profile-l)
         local (:rum/local own)
-        photo (if (str/empty? (:photo profile))
+        photo (if (str/empty? (:photo profile ""))
                 "/images/avatar.jpg"
                 (:photo profile))]
-
     (html
      [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)
                       :on-mouse-leave #(swap! local assoc :open false)}

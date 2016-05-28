@@ -130,7 +130,7 @@
               (rs/emit! (udu/update-photo file))
               (dom/clean-value! target)))]
     (let [{:keys [photo]} (rum/react profile-l)
-          photo (if (str/empty? photo)
+          photo (if (or (str/empty? photo) (nil? photo))
                   "images/avatar.jpg"
                   photo)]
     (html
