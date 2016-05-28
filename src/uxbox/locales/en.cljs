@@ -52,6 +52,8 @@
 
    "history.alert-message" "You are seeng version %s"
    "errors.api.form.old-password-not-match" "Incorrect old password"
+   "errors.api.form.email-already-exists" "The email is already in use by other user."
+   "errors.api.form.username-already-exists" "The username is already in use by other user."
    "errors.form.required" "This field is mandatory"
    "errors.form.string" "Should be string"
    "errors.form.number" "Invalid number"
