@@ -57,7 +57,7 @@
 (defrecord CleanForm [type]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:form type] nil)))
+    (assoc-in state [:forms type] nil)))
 
 (defn clean-form
   [type]
