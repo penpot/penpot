@@ -35,7 +35,7 @@
           errors-path (into [:errors type] (if (coll? field) field [field]))]
       (-> state
           (assoc-in form-path value)
-          (update-in errors-path dissoc field)))))
+          (update-in (butlast errors-path) dissoc (last errors-path))))))
 
 (defn assign-field-value
   [type field value]
