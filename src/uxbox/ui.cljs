@@ -21,10 +21,10 @@
             [uxbox.data.auth :as dauth]
             [uxbox.data.messages :as dmsg]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.lightbox :as ui-lightbox]
-            [uxbox.ui.auth :as ui-auth]
-            [uxbox.ui.dashboard :as ui-dashboard]
-            [uxbox.ui.settings :as ui-settings]
+            [uxbox.ui.lightbox :as lightbox]
+            [uxbox.ui.auth :as auth]
+            [uxbox.ui.dashboard :as dashboard]
+            [uxbox.ui.settings :as settings]
             [uxbox.ui.workspace :refer (workspace)]
             [uxbox.ui.mixins :as mx]
             [uxbox.ui.shapes]))
@@ -76,15 +76,15 @@
     (if (and (restricted? location) (not auth))
       (do (p/schedule 0 #(r/go :auth/login)) nil)
       (case location
-        :auth/login (ui-auth/login)
-        :dashboard/projects (ui-dashboard/projects-page)
-        :dashboard/elements (ui-dashboard/elements-page)
-        :dashboard/icons (ui-dashboard/icons-page)
-        :dashboard/images (ui-dashboard/images-page)
-        :dashboard/colors (ui-dashboard/colors-page)
-        :settings/profile (ui-settings/profile-page)
-        :settings/password (ui-settings/password-page)
-        :settings/notifications (ui-settings/notifications-page)
+        :auth/login (auth/login)
+        :dashboard/projects (dashboard/projects-page)
+        :dashboard/elements (dashboard/elements-page)
+        :dashboard/icons (dashboard/icons-page)
+        :dashboard/images (dashboard/images-page)
+        :dashboard/colors (dashboard/colors-page)
+        :settings/profile (settings/profile-page)
+        :settings/password (settings/password-page)
+        :settings/notifications (settings/notifications-page)
         :workspace/page (let [projectid (:project-uuid params)
                               pageid (:page-uuid params)]
                           (workspace projectid pageid))
@@ -126,5 +126,5 @@
         lightbox-dom (gdom/getElement "lightbox")
         loader-dom (gdom/getElement "loader")]
     (rum/mount (app) app-dom)
-    (rum/mount (ui-lightbox/lightbox) lightbox-dom)
+    (rum/mount (lightbox/lightbox) lightbox-dom)
     (rum/mount (loader) loader-dom)))
