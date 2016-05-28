@@ -71,7 +71,7 @@
            :value "Continue"
            :type "submit"}]
          [:div.login-links
-          [:a {:on-click #(rt/go :auth/recover-password)} "Forgot your password?"]
+          [:a {:on-click #(rt/go :auth/recovery-request)} "Forgot your password?"]
           [:a {:on-click #(rt/go :auth/register)} "Don't have an account?"]]]]]])))
 
 (defn- login-page-will-mount

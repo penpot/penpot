@@ -23,7 +23,6 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.util.dom :as dom]))
 
-
 ;; --- Constants
 
 (def form-data

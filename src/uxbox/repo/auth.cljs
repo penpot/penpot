@@ -37,3 +37,10 @@
                 :method :post
                 :body data}]
     (send! params)))
+
+(defmethod request :auth/recovery-request
+  [_ data]
+  (let [params {:url (str url "/auth/recovery")
+                :method :post
+                :body data}]
+    (send! params)))

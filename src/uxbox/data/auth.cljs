@@ -118,3 +118,27 @@
     (if errors
       (udf/assign-errors :register errors)
       (Register. data))))
+
+;; --- Recovery Request
+
+(defrecord RecoveryRequest [data]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (letfn [(on-error [{payload :payload}]
+              (println "on-error" payload)
+              (->> (:payload payload)
+                   (udf/assign-errors :recovery-request)
+                   (rx/of)))]
+      (rx/merge
+       (->> (rp/req :auth/recovery-request data)
+            (rx/map (constantly ::recovery-requested))
+            (rx/catch rp/client-error? on-error))
+       (->> stream
+            (rx/filter #(= % ::recovery-requested))
+            (rx/take 1)
+            (rx/do #(udm/info! (tr "auth.message.recovery-token-sent")))
+            (rx/map #(udf/clean :recovery-request)))))))
+
+(defn recovery-request
+  [data]
+  (RecoveryRequest. data))

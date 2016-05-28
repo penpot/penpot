@@ -44,6 +44,8 @@
    "ds.help.circle" "Circle (Ctrl + E)"
    "ds.help.line" "Line (Ctrl + L)"
 
+   "auth.message.recovery-token-sent" "Password recovery link sent to your inbox."
+
    "settings.profile" "PROFILE"
    "settings.password" "PASSWORD"
    "settings.notifications" "NOTIFICATIONS"
@@ -54,6 +56,7 @@
    "errors.api.form.old-password-not-match" "Incorrect old password"
    "errors.api.form.email-already-exists" "The email is already in use by other user."
    "errors.api.form.username-already-exists" "The username is already in use by other user."
+   "errors.api.form.user-not-exists" "Username or email does not matches any existing user."
    "errors.form.required" "This field is mandatory"
    "errors.form.string" "Should be string"
    "errors.form.number" "Invalid number"

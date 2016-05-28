@@ -31,7 +31,11 @@
 
 ;; --- Constants
 
-(def ^:const +unrestricted+ #{:auth/login :auth/register})
+(def ^:const +unrestricted+
+  #{:auth/login
+    :auth/register
+    :auth/recovery-request
+    :auth/recovery})
 (def ^:const restricted? (complement +unrestricted+))
 
 (def route-l
@@ -78,6 +82,8 @@
       (case location
         :auth/login (auth/login-page)
         :auth/register (auth/register-page)
+        :auth/recovery-request (auth/recovery-request-page)
+        ;; :auth/recovery (auth/recovery-page)
         :dashboard/projects (dashboard/projects-page)
         :dashboard/elements (dashboard/elements-page)
         :dashboard/icons (dashboard/icons-page)

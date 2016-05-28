@@ -61,7 +61,7 @@
 (def routes
   ["/" [["auth/login" :auth/login]
         ["auth/register" :auth/register]
-        ["auth/recover" :auth/recover-password]
+        ["auth/recovery-request" :auth/recovery-request]
 
         ["settings/" [["profile" :settings/profile]
                       ["password" :settings/password]
