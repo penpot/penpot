@@ -74,3 +74,9 @@
      [:g attrs
       (for [item (reverse (into [] xf items))]
         (rum/with-key item (str (:id item))))])))
+
+(def group-shape
+  (mx/component
+   {:render group-shape-render
+    :name "group-shape"
+    :mixins [mx/static]}))
