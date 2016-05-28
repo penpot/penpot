@@ -23,7 +23,7 @@
                  [funcool/lentes "1.0.1"]
                  [funcool/httpurr "0.6.0"]
                  [funcool/promesa "1.2.0"]
-                 [funcool/beicon "1.3.0"]
+                 [funcool/beicon "1.4.0"]
                  [funcool/cuerdas "0.7.2"]
                  [bidi "2.0.9"]]
   :plugins [[lein-ancient "0.6.10"]]
