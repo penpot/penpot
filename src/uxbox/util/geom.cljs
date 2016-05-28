@@ -181,29 +181,26 @@
 (defn- move-rect-vertex
   "A specialized function for vertex movement
   for rect-like shapes."
-  [shape vid {dx :x dy :y}]
-  (let [{:keys [x1 x2 y1 y2]} shape]
+  [shape vid {dx :x dy :y lock? :lock}]
+  (let [{:keys [x1 x2 y1 y2]} shape
+        dy (if lock? dx dy)]
     (case vid
-      1 (assoc shape
-               :x1 (min x2 (+ x1 dx))
-               :y1 (min y2 (+ y1 dy)))
-      2 (assoc shape
-               :x2 (max x1 (+ x2 dx))
-               :y1 (min y2 (+ y1 dy)))
-      3 (assoc shape
-               :x1 (min x2 (+ x1 dx))
-               :y2 (max y1 (+ y2 dy)))
-      4 (assoc shape
-               :x2 (max x1 (+ x2 dx))
-               :y2 (max y1 (+ y2 dy)))
-      5 (assoc shape
-               :y1 (min y2 (+ y1 dy)))
-      6 (assoc shape
-               :x2 (max x1 (+ x2 dx)))
-      7 (assoc shape
-               :y2 (max y1 (+ y2 dy)))
-      8 (assoc shape
-               :x1 (min x2 (+ x1 dx))))))
+      :top-left (assoc shape
+                       :x1 (min x2 (+ x1 dx))
+                       :y1 (min y2 (+ y1 dy)))
+      :top-right (assoc shape
+                        :x2 (max x1 (+ x2 dx))
+                        :y1 (min y2 (+ y1 dy)))
+      :bottom-left (assoc shape
+                          :x1 (min x2 (+ x1 dx))
+                          :y2 (max y1 (+ y2 dy)))
+      :bottom-right (assoc shape
+                           :x2 (max x1 (+ x2 dx))
+                           :y2 (max y1 (+ y2 dy)))
+      :top (assoc shape :y1 (min y2 (+ y1 dy)))
+      :right (assoc shape :x2 (max x1 (+ x2 dx)))
+      :bottom (assoc shape :y2 (max y1 (+ y2 dy)))
+      :left (assoc shape :x1 (min x2 (+ x1 dx))))))
 
 (defn- move-circle-vertex
   "A specialized function for vertex movement
@@ -211,22 +208,22 @@
   [shape vid {dx :x dy :y lock :lock}]
   (let [[dx dy] (if lock [dx dx] [dx dy])]
     (case vid
-      1 (assoc shape
-               :rx (max 0 (- (:rx shape) dx))
-               :ry (max 0 (- (:ry shape) dy)))
-      2 (assoc shape
-               :rx (max 0 (+ (:rx shape) dx))
-               :ry (max 0 (- (:ry shape) dy)))
-      3 (assoc shape
-               :rx (max 0 (- (:rx shape) dx))
-               :ry (max 0 (+ (:ry shape) dy)))
-      4 (assoc shape
-               :rx (max 0 (+ (:rx shape) dx))
-               :ry (max 0 (+ (:ry shape) dy)))
-      5 (assoc shape :ry (max 0 (- (:ry shape) dy)))
-      6 (assoc shape :rx (max 0 (+ (:rx shape) dx)))
-      7 (assoc shape :ry (max 0 (+ (:ry shape) dy)))
-      8 (assoc shape :rx (max 0 (+ (:rx shape) dx))))))
+      :top-left (assoc shape
+                       :rx (max 0 (- (:rx shape) dx))
+                       :ry (max 0 (- (:ry shape) dy)))
+      :top-right (assoc shape
+                        :rx (max 0 (+ (:rx shape) dx))
+                        :ry (max 0 (- (:ry shape) dy)))
+      :bottom-left (assoc shape
+                          :rx (max 0 (- (:rx shape) dx))
+                          :ry (max 0 (+ (:ry shape) dy)))
+      :bottom-right (assoc shape
+                           :rx (max 0 (+ (:rx shape) dx))
+                           :ry (max 0 (+ (:ry shape) dy)))
+      :top (assoc shape :ry (max 0 (- (:ry shape) dy)))
+      :right (assoc shape :rx (max 0 (+ (:rx shape) dx)))
+      :bottom (assoc shape :ry (max 0 (+ (:ry shape) dy)))
+      :left (assoc shape :rx (max 0 (+ (:rx shape) dx))))))
 
 ;; --- Resize (Absolute)
 

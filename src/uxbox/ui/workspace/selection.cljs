@@ -63,50 +63,50 @@
                      :style {:stroke "#333" :fill "transparent" :stroke-opacity "1"}}]
         [:circle.top
          (merge +circle-props+
-         {:on-mouse-up #(on-mouse-up 5 %)
-          :on-mouse-down #(on-mouse-down 5 %)
+         {:on-mouse-up #(on-mouse-up :top %)
+          :on-mouse-down #(on-mouse-down :top %)
           :cx (+ x (/ width 2))
           :cy (- y 2)})]
         [:circle.right
          (merge +circle-props+
-           {:on-mouse-up #(on-mouse-up 6 %)
-            :on-mouse-down #(on-mouse-down 6 %)
+           {:on-mouse-up #(on-mouse-up :right %)
+            :on-mouse-down #(on-mouse-down :right %)
             :cy (+ y (/ height 2))
             :cx (+ x width 1)})]
         [:circle.bottom
          (merge +circle-props+
-           {:on-mouse-up #(on-mouse-up 7 %)
-            :on-mouse-down #(on-mouse-down 7 %)
+           {:on-mouse-up #(on-mouse-up :bottom %)
+            :on-mouse-down #(on-mouse-down :bottom %)
             :cx (+ x (/ width 2))
             :cy (+ y height 2)})]
         [:circle.left
          (merge +circle-props+
-           {:on-mouse-up #(on-mouse-up 8 %)
-            :on-mouse-down #(on-mouse-down 8 %)
+           {:on-mouse-up #(on-mouse-up :left %)
+            :on-mouse-down #(on-mouse-down :left %)
             :cy (+ y (/ height 2))
             :cx (- x 3)})]
         [:circle.top-left
          (merge +circle-props+
-                {:on-mouse-up #(on-mouse-up 1 %)
-                 :on-mouse-down #(on-mouse-down 1 %)
+                {:on-mouse-up #(on-mouse-up :top-left %)
+                 :on-mouse-down #(on-mouse-down :top-left %)
                  :cx x
                  :cy y})]
         [:circle.top-right
          (merge +circle-props+
-                {:on-mouse-up #(on-mouse-up 2 %)
-                 :on-mouse-down #(on-mouse-down 2 %)
+                {:on-mouse-up #(on-mouse-up :top-right %)
+                 :on-mouse-down #(on-mouse-down :top-right %)
                  :cx (+ x width)
                  :cy y})]
         [:circle.bottom-left
          (merge +circle-props+
-                {:on-mouse-up #(on-mouse-up 3 %)
-                 :on-mouse-down #(on-mouse-down 3 %)
+                {:on-mouse-up #(on-mouse-up :bottom-left %)
+                 :on-mouse-down #(on-mouse-down :bottom-left %)
                  :cx x
                  :cy (+ y height)})]
         [:circle.bottom-right
          (merge +circle-props+
-                {:on-mouse-up #(on-mouse-up 4 %)
-                 :on-mouse-down #(on-mouse-down 4 %)
+                {:on-mouse-up #(on-mouse-up :bottom-right %)
+                 :on-mouse-down #(on-mouse-down :bottom-right %)
                  :cx (+ x width)
                  :cy (+ y height)})]]))))
 
