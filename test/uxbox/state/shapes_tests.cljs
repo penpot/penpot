@@ -374,7 +374,7 @@
 
 ;; group shapes inside a group
 
-(t/deftest group-shapes-3
+(t/deftest group-shapes-4
   (let [initial {:pages-by-id {1 {:id 1 :shapes [1 3]}}
                  :shapes-by-id {1 {:id 1 :page 1}
                                 2 {:id 2 :page 1 :group 3}
@@ -394,7 +394,7 @@
 
 ;; group shapes in multiple groups
 
-(t/deftest group-shapes-4
+(t/deftest group-shapes-5
   (let [initial {:pages-by-id {1 {:id 1 :shapes [3 4]}}
                  :shapes-by-id {1 {:id 1 :page 1 :group 4}
                                 2 {:id 2 :page 1 :group 3}
