@@ -188,7 +188,7 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [_]
-              (rs/swap #(stpr/purge-page % id)))]
+              #(stpr/purge-page % id))]
       (->> (rp/req :delete/page id)
            (rx/map on-success)
            (rx/tap callback)

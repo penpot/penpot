@@ -117,7 +117,7 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [_]
-              (rs/swap #(stpr/dissoc-project % id)))]
+              #(stpr/dissoc-project % id))]
       (->> (rp/req :delete/project id)
            (rx/map on-success)))))
 

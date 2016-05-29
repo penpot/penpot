@@ -67,26 +67,8 @@
   ([event & events]
    (run! emit! (cons event events))))
 
-(defrecord SwapState [f]
-  UpdateEvent
-  (-apply-update [_ state]
-    (f state)))
-
-(defn swap
-  "A helper for just apply some function to state
-  without a need to declare additional event."
-  [f]
-  (->SwapState f))
-
-(defn reset
-  "A event that resets the internal state with
-  the provided value."
-  [v]
-  (->SwapState (fn [_] v)))
-
-(enable-console-print!)
-
-(defonce ^:private error-handlers (atom {}))
+(defonce ^:private error-handlers
+  (atom {}))
 
 (defn add-error-watcher
   [key callable]
@@ -130,5 +112,5 @@
       (rx/subscribe $ (fn [[event model]] (-apply-effect event model))))
 
     ;; Initialize the stream machinary with initial state.
-    (emit! (swap #(merge % state)))
+    (emit! #(merge % state))
     state-s))
