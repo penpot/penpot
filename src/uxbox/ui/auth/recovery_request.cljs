@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.ui.auth.recovery
+(ns uxbox.ui.auth.recovery-request
   (:require [sablono.core :as html :refer-macros [html]]
             [lentes.core :as l]
             [cuerdas.core :as str]
@@ -23,26 +23,26 @@
             [uxbox.ui.mixins :as mx]
             [uxbox.util.dom :as dom]))
 
-;; --- Constants
+;; --- Recovery Request Constants
 
 (def form-data
-  (-> (l/in [:forms :recovery])
+  (-> (l/in [:forms :recovery-request])
       (l/focus-atom st/state)))
 
 (def form-errors
-  (-> (l/in [:errors :recovery])
+  (-> (l/in [:errors :recovery-request])
       (l/focus-atom st/state)))
 
 (def set-value!
-  (partial udf/assign-field-value :recovery))
+  (partial udf/assign-field-value :recovery-request))
 
 ;; --- Recovery Request Form
 
 (def schema
-  {:password [us/required us/string]})
+  {:username [us/required us/string]})
 
 (defn- form-render
-  [own token]
+  [own]
   (let [form (rum/react form-data)
         errors (rum/react form-errors)
         valid? (us/valid? form schema)]
@@ -51,18 +51,17 @@
                 (rs/emit! (set-value! field value))))
             (on-submit [event]
               (dom/prevent-default event)
-              (rs/emit! (uda/recovery (assoc form :token token))))]
+              (rs/emit! (uda/recovery-request form)))]
       (html
        [:form {:on-submit on-submit}
         [:div.login-content
-
          [:input.input-text
-          {:name "password"
-           :value (:password form "")
-           :on-change (partial on-change :password)
-           :placeholder "Password"
-           :type "password"}]
-         (forms/input-error errors :password)
+          {:name "username"
+           :value (:username form "")
+           :on-change (partial on-change :username)
+           :placeholder "username or email address"
+           :type "text"}]
+         (forms/input-error errors :username)
 
          [:input.btn-primary
           {:name "login"
@@ -81,24 +80,17 @@
 
 ;; --- Recovery Request Page
 
-(defn- recovery-page-will-mount
+(defn- recovery-request-page-render
   [own]
-  (let [[token] (:rum/props own)]
-    (rs/emit! (uda/validate-recovery-token token))
-    own))
-
-(defn- recovery-page-render
-  [own token]
   (html
    [:div.login
     [:div.login-body
      (uum/messages)
      [:a i/logo]
-     (form token)]]))
+     (form)]]))
 
-(def recovery-page
+(def recovery-request-page
   (mx/component
-   {:render recovery-page-render
-    :will-mount recovery-page-will-mount
-    :name "recovery-page"
+   {:render recovery-request-page-render
+    :name "recovery-request-page"
     :mixins [mx/static]}))

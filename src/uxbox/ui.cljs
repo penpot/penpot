@@ -83,7 +83,7 @@
         :auth/login (auth/login-page)
         :auth/register (auth/register-page)
         :auth/recovery-request (auth/recovery-request-page)
-        ;; :auth/recovery (auth/recovery-page)
+        :auth/recovery (auth/recovery-page (:token params))
         :dashboard/projects (dashboard/projects-page)
         :dashboard/elements (dashboard/elements-page)
         :dashboard/icons (dashboard/icons-page)

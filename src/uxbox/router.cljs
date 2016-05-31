@@ -39,7 +39,6 @@
 (defrecord Navigate [id params]
   rs/EffectEvent
   (-apply-effect [_ state]
-    ;; (println "navigate" id params)
     (let [loc (merge {:handler id}
                      (when params
                        {:route-params params}))]
@@ -61,7 +60,8 @@
 (def routes
   ["/" [["auth/login" :auth/login]
         ["auth/register" :auth/register]
-        ["auth/recovery-request" :auth/recovery-request]
+        ["auth/recovery/request" :auth/recovery-request]
+        [["auth/recovery/token/" :token] :auth/recovery]
 
         ["settings/" [["profile" :settings/profile]
                       ["password" :settings/password]

@@ -10,7 +10,7 @@
             [promesa.core :as p]
             [uxbox.repo :as rp]
             [uxbox.rstore :as rs]
-            [uxbox.router :as r]
+            [uxbox.router :as rt]
             [uxbox.state :as st]
             [uxbox.schema :as us]
             [uxbox.locales :refer (tr)]
@@ -30,7 +30,7 @@
   rs/WatchEvent
   (-apply-watch [this state s]
     (rx/of (udu/fetch-profile)
-           (r/navigate :dashboard/projects)))
+           (rt/navigate :dashboard/projects)))
 
   rs/EffectEvent
   (-apply-effect [this state]
@@ -76,7 +76,7 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (r/navigate :auth/login))))
+    (rx/of (rt/navigate :auth/login))))
 
 (defn logout
   []
@@ -142,3 +142,42 @@
 (defn recovery-request
   [data]
   (RecoveryRequest. data))
+
+;; --- Check Recovery Token
+
+(defrecord ValidateRecoveryToken [token]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (letfn [(on-error [{payload :payload}]
+              (rx/of
+               (rt/navigate :auth/login)
+               (udm/show-error (tr "errors.auth.invalid-recovery-token"))))]
+      (->> (rp/req :auth/validate-recovery-token token)
+           (rx/ignore)
+           (rx/catch rp/client-error? on-error)))))
+
+
+(defn validate-recovery-token
+  [data]
+  (ValidateRecoveryToken. data))
+
+;; --- Recovery (Password)
+
+(defrecord Recovery [token password]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (letfn [(on-error [{payload :payload}]
+              (udm/error (tr "errors.auth.invalid-recovery-token")))
+            (on-success [{payload :payload}]
+              (rx/of
+               (rt/navigate :auth/login)
+               (udm/show-info (tr "auth.message.password-recovered"))))]
+      (->> (rp/req :auth/recovery {:token token :password password})
+           (rx/mapcat on-success)
+           (rx/catch rp/client-error? on-error)))))
+
+
+(defn recovery
+  [{:keys [token password]}]
+  (Recovery. token password))
+

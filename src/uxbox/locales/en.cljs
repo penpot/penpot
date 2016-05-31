@@ -45,6 +45,7 @@
    "ds.help.line" "Line (Ctrl + L)"
 
    "auth.message.recovery-token-sent" "Password recovery link sent to your inbox."
+   "auth.message.password-recovered" "Password successfully recovered."
 
    "settings.profile" "PROFILE"
    "settings.password" "PASSWORD"
@@ -68,5 +69,6 @@
    "errors.form.password-not-match" "Password does not match"
    "errors.generic" "Something work has happened."
    "errors.auth.unauthorized" "Username or passwords seems to be wrong."
+   "errors.auth.invalid-recovery-token" "The recovery token is invalid."
    "errors.profile.update-password" "Error updating password, probably your old password is wrong."
    })

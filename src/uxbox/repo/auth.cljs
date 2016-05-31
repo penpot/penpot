@@ -44,3 +44,16 @@
                 :method :post
                 :body data}]
     (send! params)))
+
+(defmethod request :auth/validate-recovery-token
+  [_ token]
+  (let [params {:url (str url "/auth/recovery/" token)
+                :method :get}]
+    (send! params)))
+
+(defmethod request :auth/recovery
+  [_ data]
+  (let [params {:url (str url "/auth/recovery")
+                :method :put
+                :body data}]
+    (send! params)))
