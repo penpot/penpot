@@ -156,7 +156,6 @@
            (rx/ignore)
            (rx/catch rp/client-error? on-error)))))
 
-
 (defn validate-recovery-token
   [data]
   (ValidateRecoveryToken. data))
