@@ -15,7 +15,6 @@ goog.provide("kdtree.core");
 goog.provide("kdtree.core.KDTree");
 
 goog.require("kdtree.heap");
-goog.require("goog.array");
 goog.require("goog.asserts");
 
 goog.scope(function() {
@@ -23,7 +22,6 @@ goog.scope(function() {
 
   const assert = goog.asserts.assert;
   const assertNumber = goog.asserts.assertNumber;
-  const every = goog.array.every;
 
   class Node {
     constructor(obj, dimension, parent) {
@@ -252,7 +250,7 @@ goog.scope(function() {
             nearestSearch(otherChild);
           }
         }
-      }
+      };
 
       if(this.root) {
         nearestSearch(this.root);
@@ -265,24 +263,6 @@ goog.scope(function() {
       }
 
       return result;
-    }
-
-    balanceFactor() {
-      function height(node) {
-        if (node === null) {
-          return 0;
-        }
-        return Math.max(height(node.left), height(node.right)) + 1;
-      }
-
-      function count(node) {
-        if (node === null) {
-          return 0;
-        }
-        return count(node.left) + count(node.right) + 1;
-      }
-
-      return height(this.root) / (Math.log(count(this.root)) / Math.log(2));
     }
   }
 
