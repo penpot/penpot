@@ -1,5 +1,6 @@
 (ns bench.core
   (:require [kdtree.core :as k]
+            [intervaltree.core :as it]
             [cljs.pprint :refer (pprint)]
             [cljs.nodejs :as node]))
 
@@ -76,6 +77,25 @@
     (pprint (js->clj (.nearest tree #js [1742 1420] 6)))
     ))
 
+(defn test-interval
+  []
+  (let [tree (doto (it/create)
+               (.add #js [1 5])
+               (.add #js [5 7])
+               (.add #js [-4 -1])
+               (.add #js [-10 -3])
+               (.add #js [-20 -10])
+               (.add #js [20 30])
+               (.add #js [3 9])
+               (.add #js [100 200])
+               (.add #js [1000 2000])
+               (.add #js [6 9])
+               )]
+    (js/console.dir tree #js {"depth" nil})
+    (js/console.log "contains", 4, (.contains tree 4))
+    (js/console.log "contains", 0, (.contains tree 0))
+    ))
+
 (defn main
   [& [type]]
   (cond
@@ -87,6 +107,9 @@
 
     (= type "test")
     (test-accuracity)
+
+    (= type "interval")
+    (test-interval)
 
     :else
     (println "not implemented")))
