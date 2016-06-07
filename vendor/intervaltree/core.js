@@ -31,12 +31,12 @@ goog.scope(function() {
   }
 
   class Node {
-    constructor(interval, parent) {
+    constructor(interval) {
       this.interval = interval;
-      this.parent = parent || null
       this.left = null;
       this.right = null;
-      this.max = -Infinity;
+      this.maxEnd = interval.end;
+      this.height = 1;
     }
   }
 
@@ -48,14 +48,9 @@ goog.scope(function() {
     add(item) {
       // Coerce to interval
       const interval = makeInterval(item);
+      const node = new Node(interval);
 
-      // Set root if the current tree is empty
-      if (this.root === null) {
-        this.root = new Node(interval, null);
-      } else {
-        insertInterval(this.root, interval);
-      }
-
+      this.root = add(this.root, node);
       return this;
     }
 
@@ -66,7 +61,6 @@ goog.scope(function() {
     }
 
     search(item) {
-      assert(this.root !== null);
       const interval = makeInterval(item);
       return search(this.root, interval);
     }
@@ -74,36 +68,109 @@ goog.scope(function() {
 
   // --- Private Api (Implementation)
 
-  function insertInterval(root, interval) {
-    if (root.interval.start > interval.start) {
-      if (root.left !== null) {
-        insertInterval(root.left, interval);
-      } else {
-        root.left = new Node(interval, root);
-        recalculateMax(root.left);
-      }
-    } else {
-      if (root.right !== null) {
-        insertInterval(root.right, interval);
-      } else {
-        root.right = new Node(interval, root);
-        recalculateMax(root.right);
-      }
+  function add(root, node) {
+    if (root === null) {
+      return node;
     }
+
+    if (root.interval.start === node.interval.start &&
+        root.interval.end == node.interval.end) {
+      return root;
+    }
+
+    if (node.interval.start <= root.interval.start) {
+      root.left = add(root.left, node);
+    } else {
+      root.right = add(root.right, node);
+    }
+
+    root.maxEnd = calculateMaxEnd(root);
+    root.height = calculateHeight(root);
+
+    const balance = calculateBalance(root);
+    if (balance > 1) {
+      if (node.interval.start < root.left.interval.start) {
+        return rotateRight(root);
+      }
+      // else {
+      //   root.left = rotateLeft(root.left);
+      //   return rotateRight(root);
+      // }
+    } else if (balance < -1) {
+      if (node.interval.start > root.right.interval.start) {
+        return rotateLeft(root);
+      }
+      // else {
+      //   root.right = rotateRight(root.right);
+      //   return rotateLeft(current);
+      // }
+    }
+
+    return root;
   }
 
-  function recalculateMax(node) {
-    const interval = node.interval;
-    const parent = node.parent;
+  function calculateMaxEnd(node) {
+    const left = node.left ? node.left.maxEnd : 0;
+    const right = node.right ? node.right.maxEnd: 0;
+    return Math.max(node.interval.end, Math.max(left, right));
+  }
 
-    if (parent.max < interval.end) {
-      while (node) {
-        if (node.max < interval.end) {
-          node.max = interval.end;
-        }
-        node = node.parent;
-      }
+  function calculateHeight(node) {
+    const left = node.left ? node.left.height : 0;
+    const right = node.right ? node.right.height: 0;
+    return Math.max(left, right) + 1;
+  }
+
+  function calculateBalance(node) {
+    if (node === null) {
+      return 0;
     }
+
+    const left = node.left ? node.left.height: 0;
+    const right = node.right ? node.right.height: 0;
+    return left - right;
+  }
+
+  function rotateLeft(z) {
+    const y = z.right;
+    const x = y.right;
+
+    const t1 = z.left;
+    const t2 = y.left;
+
+    z.left = t1;
+    z.right = t2;
+
+    y.left = z;
+    y.right = x;
+
+    z.height = calculateHeight(z);
+    z.maxEnd = calculateMaxEnd(z);
+    y.height = calculateHeight(z);
+    y.maxEnd = calculateMaxEnd(z);
+
+    return y;
+  }
+
+  function rotateRight(z) {
+    const y = z.left;
+    const x = y.left;
+
+    const t3 = y.right;
+    const t4 = z.right;
+
+    z.left = t3;
+    z.right = t4;
+
+    y.left = x;
+    y.right = z;
+
+    z.height = calculateHeight(z);
+    z.maxEnd = calculateMaxEnd(z);
+    y.height = calculateHeight(z);
+    y.maxEnd = calculateMaxEnd(z);
+
+    return y;
   }
 
   function contains(root, point) {
@@ -113,11 +180,11 @@ goog.scope(function() {
     } else {
       let result = false;
 
-      if (root.left && root.left.max >= point) {
+      if (root.left && root.left.maxEnd >= point) {
         result = result || contains(root.left, point);
       }
 
-      if (root.right && root.right.max >= point) {
+      if (root.right && root.right.maxEnd >= point) {
         result = result || contains(root.right, point);
       }
 
@@ -139,11 +206,11 @@ goog.scope(function() {
     } else {
       let result = null;
 
-      if (root.left && root.left.max >= interval.start) {
+      if (root.left && root.left.maxEnd >= interval.start) {
         result = result || search(root.left, interval);
       }
 
-      if (root.right && root.right.max >= interval.start) {
+      if (root.right && root.right.maxEnd >= interval.start) {
         result = result || search(root.right, interval);
       }
 
@@ -172,7 +239,7 @@ goog.scope(function() {
         return new Interval(value[0], value[1], value[2]);
       }
     } else if (arguments.length === 1 && goog.isNumber(value)) {
-        return new Interval(value, value);
+      return new Interval(value, value);
     } else if (arguments.length >= 2 && goog.isNumber(value)) {
       if (goog.isNumber(arguments[1])) {
         return new Interval(value, arguments[1], arguments[2]);
@@ -206,73 +273,4 @@ goog.scope(function() {
   // Constructors
   module.interval = makeInterval;
   module.create = makeTree;
-
-  // function getRandom(min, max) {
-  //   var crypto = require("crypto");
-  //   var MAX_UINT32 = 0xFFFFFFFF;
-  //   var range = max - min;
-
-  //   if (!(range <= MAX_UINT32)) {
-  //     throw new Error(
-  //       "Range of " + range + " covering " + min + " to " + max + " is > " +
-  //         MAX_UINT32 + ".");
-  //   } else if (min === max) {
-  //     return min;
-  //   } else if (!(max > min)) {
-  //     throw new Error("max (" + max + ") must be >= min (" + min + ").");
-  //   }
-
-  //   // We need to cut off values greater than this to avoid bias in distribution
-  //   // over the range.
-  //   var maxUnbiased = MAX_UINT32 - ((MAX_UINT32 + 1) % (range + 1));
-
-  //   var rand;
-  //   do {
-  //     rand = crypto.randomBytes(4).readUInt32LE();
-  //     // rand = crypto.randomBytes(new Uint32Array(1))[0];
-  //   } while (rand > maxUnbiased);
-
-  //   var offset = rand % (range + 1);
-  //   return min + offset;
-  // }
-
-  // function* randomSeq(n) {
-  //   for(let i=0; i<n; i++) {
-  //     let value = getRandom(0, 1000);
-  //     yield [value, getRandom(value, value+10)]
-  //   }
-  // }
-
-  // function randomList(n) {
-  //   return Array.from(randomSeq(n));
-  // }
-
-  // module.randomList = randomList;
-  // module.benchmark = function() {
-  //   let util = require('util');
-
-  //   const intervals = randomList(100000);
-  //   console.time("init");
-  //   const tree = module.create(intervals);
-  //   console.timeEnd("init");
-
-  //   console.log(util.inspect(tree, {showHidden: false, depth: 5}));
-
-
-  //   console.time("search")
-
-  //   console.log("result:", tree.search(getRandom(0, 100000)));
-
-  //   console.timeEnd("search")
-  // };
-
-  // module.test = function() {
-  //   let util = require('util');
-
-  //   const tree = makeTree([[1,3], [-4,0], [7,8], [6, 100], [8,12]]);
-  //   console.log(util.inspect(tree, {showHidden: false, depth: null}));
-
-  //   console.log("result:", tree.search(8));
-  // };
-
 });
