@@ -323,4 +323,32 @@ goog.scope(function() {
   // Constructors
   module.interval = makeInterval;
   module.create = makeTree;
+
+
+  module.test = function() {
+    // const util = require('util');
+
+    console.time("init");
+    const tree = module.create([
+      [1,5], [-5, 10], [4, 9],
+      [10,14], [-10, 1], [9, 22],
+    ]);
+    console.timeEnd("init");
+
+    console.dir(tree, { depth: 5});
+
+    const n = 6;
+    console.time("search")
+    console.log("result to", n, "=>", tree.search(n));
+    console.timeEnd("search")
+
+    console.time("remove");
+    // tree.remove([4,9]);
+    tree.remove([9, 22]);
+    tree.remove([-10, 1]);
+
+    console.dir(tree, { depth: 5});
+    console.timeEnd("remove");
+  };
+
 });
