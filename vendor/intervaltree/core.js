@@ -54,6 +54,12 @@ goog.scope(function() {
       return this;
     }
 
+    remove(item) {
+      const interval = makeInterval(item)
+      this.root = remove(this.root, interval);
+      return this;
+    }
+
     contains(point) {
       assert(goog.isNumber(point));
       assert(this.root !== null);
@@ -107,6 +113,50 @@ goog.scope(function() {
     }
 
     return root;
+  }
+
+  function remove(root, interval) {
+    if (root === null) {
+      return root;
+    } else if (root.interval.start === interval.start &&
+               root.interval.end === interval.end) {
+      if (root.left === null) {
+        return root.right;
+      } else if (root.right === null) {
+        return root.left;
+      } else {
+        const result = removeLeftMost(root.right);
+        const newroot = result[0];
+        const newright = result[1];
+
+        newroot.left = root.left;
+        newroot.right = newright;
+        return newroot;
+      }
+    } else {
+      root.left = remove(root.left, interval);
+      root.right = remove(root.right, interval);
+
+      root.height = calculateHeight(root);
+      root.maxEnd = calculateMaxEnd(root);
+
+      return root;
+    }
+  }
+
+  function removeLeftMost(root) {
+    if (root === null) {
+      return [null, null];
+    } else if (root.left === null) {
+      return [root, root.right];
+    } else {
+      const result = removeLeftMost(root.left);
+      const newroot = result[0];
+      const newleft = result[1];
+      root.left = newleft;
+
+      return [newroot, root];
+    }
   }
 
   function calculateMaxEnd(node) {
