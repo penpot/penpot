@@ -24,7 +24,6 @@
      (vreset! state tree)
      (wrk/reply! sender nil))))
 
-
 (defmethod wrk/handler :grid/align
   [{:keys [sender point] :as message}]
   (let [point #js [(:x point) (:y point)]
