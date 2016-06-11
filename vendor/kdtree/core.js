@@ -176,9 +176,25 @@ goog.scope(function() {
     return tree;
   };
 
+  function initialize(tree, width, height, widthStep, heightStep) {
+    const totalSize = Math.floor((width/widthStep) * (height/heightStep));
+    const points = new Array(totalSize);
+    let pos = 0;
+
+    for (let i = 0; i <= width; i += widthStep){
+      for (let z = 0; z <= height; z += heightStep){
+        points[pos++] = [i, z];
+      }
+    }
+
+    tree.initialize(points);
+    return tree;
+  }
+
   // Types
   kdtree.core.KDTree = KDTree;
 
   // Factory functions
   kdtree.core.create = create;
+  kdtree.core.initialize = initialize;
 });
