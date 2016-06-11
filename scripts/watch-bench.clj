@@ -6,8 +6,8 @@
   :output-to "out/bench.js"
   :output-dir "out"
   :parallel-build false
-  :optimizations :simple
-  :static-fns true
+  :optimizations :none
+  :static-fns false
   :target :nodejs
   :language-in  :ecmascript6
   :language-out :ecmascript5
