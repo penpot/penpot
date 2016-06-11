@@ -1,0 +1,61 @@
+// UXBOX STYLES
+//#################################################
+//
+//#################################################
+
+@import 'dependencies/colors';
+@import 'dependencies/uxbox-light';
+/* @import 'dependencies/uxbox-dark'; */
+@import 'dependencies/helpers';
+@import 'dependencies/mixin';
+@import 'dependencies/fonts';
+@import 'dependencies/reset';
+@import 'dependencies/animations';
+@import 'dependencies/z-index';
+
+//#################################################
+// Layouts
+//#################################################
+
+@import 'base';
+@import 'layouts/main-layout';
+@import 'layouts/login';
+
+//#################################################
+// Commons
+//#################################################
+
+@import 'framework';
+
+//#################################################
+// Partials
+//#################################################
+
+@import 'partials/main-bar';
+@import 'partials/workspace-bar';
+@import 'partials/workspace-canvas';
+@import 'partials/tool-bar';
+@import 'partials/project-bar';
+@import 'partials/sidebar';
+@import 'partials/sidebar-tools';
+@import 'partials/sidebar-element-options';
+@import 'partials/sidebar-icons';
+@import 'partials/sidebar-layers';
+@import 'partials/sidebar-sitemap';
+@import 'partials/sidebar-document-history';
+@import 'partials/dashboard-bar';
+@import 'partials/dashboard-grid';
+@import 'partials/user-settings';
+@import 'partials/activity-bar';
+@import 'partials/library-bar';
+@import 'partials/lightbox';
+@import 'partials/color-palette';
+@import 'partials/colorpicker';
+@import 'partials/forms';
+@import 'partials/loader';
+
+//#################################################
+// Resources
+//#################################################
+
+@import 'collection/font-collection';

@@ -18,4 +18,5 @@ node_modules
 /resources/public/css
 /resources/public/js
 /resources/public/index.html
+/resources/public/preview/index.html
 /*-init.clj

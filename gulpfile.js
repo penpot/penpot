@@ -1,20 +1,24 @@
-var gulp = require("gulp");
-var runseq = require('run-sequence');
-var scss = require("gulp-sass");
-var plumber = require("gulp-plumber");
-var autoprefixer = require('gulp-autoprefixer');
-var watch = require("gulp-watch");
-var cssmin = require("gulp-cssmin");
-var rimraf = require("rimraf");
-var mustache = require("gulp-mustache");
-var rename = require("gulp-rename");
+const gulp = require("gulp");
+const runseq = require('run-sequence');
+const scss = require("gulp-sass");
+const plumber = require("gulp-plumber");
+const autoprefixer = require('gulp-autoprefixer');
+const watch = require("gulp-watch");
+const cssmin = require("gulp-cssmin");
+const rimraf = require("rimraf");
+const mustache = require("gulp-mustache");
+const rename = require("gulp-rename");
 
-var paths = {};
+const paths = {};
 paths.app = "./resources/";
 paths.output = "./resources/public/";
 paths.dist = "./dist/";
 paths.target = "./target/";
 paths.scss = paths.app + "styles/**/*.scss";
+
+/***********************************************
+ * Styles
+ ***********************************************/
 
 function makeAutoprefixer() {
   return autoprefixer('last 2 version',
@@ -24,59 +28,95 @@ function makeAutoprefixer() {
 }
 
 function scssPipeline(options) {
-  var input = options.input;
-  var output = options.output;
+  const input = options.input;
+  const output = options.output;
 
   return gulp.src(input)
-             .pipe(plumber())
-             .pipe(scss({style: "expanded"}))
-             .pipe(makeAutoprefixer())
-             .pipe(gulp.dest(output));
+    .pipe(plumber())
+    .pipe(scss({style: "expanded"}))
+    .pipe(makeAutoprefixer())
+    .pipe(gulp.dest(output));
 }
 
-gulp.task("scss:theme-light", function() {
+gulp.task("scss:main", function() {
   return scssPipeline({
     input: paths.app + "styles/main.scss",
     output: paths.output + "css/"
   });
 });
 
-// gulp.task("scss:theme-dark", function() {
-//   return scssPipeline({
-//     input: paths.app + "styles/main-theme-dark.scss",
-//     output: paths.output + "css/"
-//   });
-// });
-
-gulp.task("scss:all", [ // "scss:theme-dark",
-                       "scss:theme-light"]);
-
-gulp.task("dist:cssmin", function() {
-  return gulp.src(paths.output + "css/main.css")
-             .pipe(cssmin())
-             .pipe(gulp.dest(paths.output + "css/"));
+gulp.task("scss:preview", function() {
+  return scssPipeline({
+    input: paths.app + "styles/preview.scss",
+    output: paths.output + "css/"
+  });
 });
 
-gulp.task("template", function() {
-  var ts = Math.floor(new Date());
-  var tmpl = mustache({
+gulp.task("scss", ["scss:main", "scss:preview"]);
+
+/***********************************************
+ * Templates
+ ***********************************************/
+
+gulp.task("template:main", function() {
+  const ts = Math.floor(new Date());
+  const tmpl = mustache({
     jsfile: "/js/main.js?v=" + ts,
     cssfile: "/css/main.css?v=" + ts
   });
 
   return gulp.src(paths.app + "index.mustache")
-             .pipe(tmpl)
-             .pipe(rename("index.html"))
-             .pipe(gulp.dest(paths.output));
+    .pipe(tmpl)
+    .pipe(rename("index.html"))
+    .pipe(gulp.dest(paths.output));
 });
 
+gulp.task("template:preview", function() {
+  const ts = Math.floor(new Date());
+  const tmpl = mustache({
+    jsfile: "/js/preview.js?v=" + ts,
+    cssfile: "/css/preview.css?v=" + ts
+  });
+
+  return gulp.src(paths.app + "preview.mustache")
+    .pipe(tmpl)
+    .pipe(rename("index.html"))
+    .pipe(gulp.dest(paths.output + "preview/"));
+});
+
+gulp.task("template", ["template:preview",
+                       "template:main"]);
+
+/***********************************************
+ * Production Build
+ ***********************************************/
+
+gulp.task("dist:cssmin:main", function() {
+  return gulp.src(paths.output + "css/main.css")
+    .pipe(cssmin())
+    .pipe(gulp.dest(paths.output + "css/"));
+});
+
+gulp.task("dist:cssmin:preview", function() {
+  return gulp.src(paths.output + "css/preview.css")
+    .pipe(cssmin())
+    .pipe(gulp.dest(paths.output + "css/"));
+});
+
+gulp.task("dist:cssmin", ["dist:cssmin:main",
+                          "dist:cssmin:preview"]);
+
 gulp.task("dist:scss", function(next) {
-  runseq("scss:all", "dist:cssmin", next);
+  runseq("scss", "dist:cssmin", next);
 });
 
 gulp.task("dist:clean", function(next) {
   rimraf(paths.dist, next);
 });
+
+/***********************************************
+ * Helper Tasks
+ ***********************************************/
 
 gulp.task("clean", function(next) {
   rimraf(paths.output + "css/", function() {
@@ -88,15 +128,19 @@ gulp.task("clean", function(next) {
 
 gulp.task("dist:copy", function() {
   return gulp.src(paths.output + "/**/*.*")
-             .pipe(gulp.dest(paths.dist));
+    .pipe(gulp.dest(paths.dist));
 });
+
+/***********************************************
+ * Entry Points
+ ***********************************************/
 
 // Default
 gulp.task("dist", function(next) {
-  runseq("template", "dist:scss", "dist:clean", "dist:copy", next);
+  runseq(["template", "dist:scss"], "dist:clean", "dist:copy", next);
 });
 
 // Watch
-gulp.task("default", ["scss:all", "template"], function () {
-    gulp.watch(paths.scss, ["scss:all"]);
+gulp.task("default", ["scss", "template"], function () {
+  gulp.watch(paths.scss, ["scss"]);
 });
