@@ -14,8 +14,8 @@
 "use strict";
 
 goog.provide("kdtree.core");
-
 goog.require("kdtree.heap");
+goog.require("lru");
 goog.require("goog.asserts");
 
 goog.scope(function() {
@@ -145,6 +145,7 @@ goog.scope(function() {
   }
 
   // --- Public Api
+  const cache = new lru.create();
 
   function create(points) {
     const tree = new KDTree();
@@ -154,6 +155,20 @@ goog.scope(function() {
       return tree;
     }
   };
+
+  function generate(width, height, widthStep, heightStep) {
+    const key = `${width}.${height}.${widthStep}.${heightStep}`;
+
+    let tree = lru.get(cache, key);
+    if (tree instanceof KDTree) {
+      return tree;
+    } else {
+      tree = new KDTree();
+      setup(tree, width, height, widthStep, heightStep);
+      lru.set(cache, key, tree);
+      return tree;
+    }
+  }
 
   function initialize(tree, points) {
     assert(goog.isArray(points));
@@ -174,7 +189,8 @@ goog.scope(function() {
       }
     }
 
-    return initialize(tree, points);
+    initialize(tree, points);
+    return tree;
   }
 
   function isInitialized(tree) {
@@ -197,6 +213,7 @@ goog.scope(function() {
 
   // Factory functions
   kdtree.core.create = create;
+  kdtree.core.generate = generate;
   kdtree.core.initialize = initialize;
   kdtree.core.setup = setup;
   kdtree.core.isInitialized = isInitialized;
