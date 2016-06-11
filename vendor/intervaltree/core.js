@@ -4,17 +4,17 @@
  * @author Andrey Antukh <niwi@niwi.nz>, 2016
  * @license MIT License <https://opensource.org/licenses/MIT>
  */
+
 "use strict";
-
 goog.provide("intervaltree.core");
-goog.provide("intervaltree.core.IntervalTree");
-
 goog.require("goog.asserts");
 goog.require("goog.array");
 
 goog.scope(function() {
   const assert = goog.asserts.assert;
   const every = goog.array.every;
+
+  const ID_SYM = Symbol.for("intervaltree.core:id-sym");
 
   // --- Types Declaration
 
@@ -43,38 +43,20 @@ goog.scope(function() {
   class IntervalTree {
     constructor() {
       this.root = null;
-    }
-
-    add(item) {
-      // Coerce to interval
-      const interval = makeInterval(item);
-      const node = new Node(interval);
-
-      this.root = add(this.root, node);
-      return this;
-    }
-
-    remove(item) {
-      const interval = makeInterval(item)
-      this.root = remove(this.root, interval);
-      return this;
-    }
-
-    contains(point) {
-      assert(goog.isNumber(point));
-      assert(this.root !== null);
-      return contains(this.root, point);
-    }
-
-    search(item) {
-      const interval = makeInterval(item);
-      return search(this.root, interval);
+      this.byId = new Map();
     }
   }
 
   // --- Private Api (Implementation)
 
-  function add(root, node) {
+  const nextId = (function() {
+    let counter = 0;
+    return function() {
+      return counter++;
+    };
+  })();
+
+  function addNode(root, node) {
     if (root === null) {
       return node;
     }
@@ -85,9 +67,9 @@ goog.scope(function() {
     }
 
     if (node.interval.start <= root.interval.start) {
-      root.left = add(root.left, node);
+      root.left = addNode(root.left, node);
     } else {
-      root.right = add(root.right, node);
+      root.right = addNode(root.right, node);
     }
 
     root.maxEnd = calculateMaxEnd(root);
@@ -115,11 +97,16 @@ goog.scope(function() {
     return root;
   }
 
-  function remove(root, interval) {
+  function removeInterval(root, index, interval) {
     if (root === null) {
       return root;
     } else if (root.interval.start === interval.start &&
                root.interval.end === interval.end) {
+
+      // Remove interval from the index.
+      const intervalId = root.interval[ID_SYM];
+      index.delete(intervalId);
+
       if (root.left === null) {
         return root.right;
       } else if (root.right === null) {
@@ -134,8 +121,8 @@ goog.scope(function() {
         return newroot;
       }
     } else {
-      root.left = remove(root.left, interval);
-      root.right = remove(root.right, interval);
+      root.left = remove(root.left, index, interval);
+      root.right = remove(root.right, index, interval);
 
       root.height = calculateHeight(root);
       root.maxEnd = calculateMaxEnd(root);
@@ -223,7 +210,7 @@ goog.scope(function() {
     return y;
   }
 
-  function contains(root, point) {
+  function containsPoint(root, point) {
     if (root.interval.start <= point &&
         root.interval.end >= point) {
       return true;
@@ -231,11 +218,11 @@ goog.scope(function() {
       let result = false;
 
       if (root.left && root.left.maxEnd >= point) {
-        result = result || contains(root.left, point);
+        result = result || containsPoint(root.left, point);
       }
 
       if (root.right && root.right.maxEnd >= point) {
-        result = result || contains(root.right, point);
+        result = result || containsPoint(root.right, point);
       }
 
       return result;
@@ -249,8 +236,7 @@ goog.scope(function() {
             (b.start <= a.end && b.end >= a.end));
   }
 
-  function search(root, interval) {
-    console.log("1111");
+  function searchSingleInterval(root, interval) {
     if (isIntervalIntersect(root.interval, interval)) {
       return root.interval;
     } else {
@@ -268,9 +254,29 @@ goog.scope(function() {
     }
   }
 
-  // --- Public Api
+  function searchInterval(root, interval) {
+    const result = new Set();
 
-  function makeInterval(value) {
+    if (isIntervalIntersect(root.interval, interval)) {
+      result.add(root.interval);
+    }
+
+    if (root.left && root.left.maxEnd >= interval.start) {
+      for (let item of searchMany(root.left, interval)) {
+        result.add(item);
+      }
+    }
+
+    if (root.right && root.right.maxEnd >= interval.start) {
+      for (let item of searchMany(root.right, interval)) {
+        result.add(item);
+      }
+    }
+
+    return result;
+  }
+
+  function createInterval(value) {
     if (value instanceof Interval) {
       return value
     } else if (goog.isArray(value)) {
@@ -301,10 +307,12 @@ goog.scope(function() {
     }
   };
 
-  function makeTree(items) {
+  // --- Public Api
+
+  function create(items) {
     const tree = new IntervalTree();
 
-    if (goog.isArrayLike(items)) {
+    if (goog.isArray(items)) {
       for(let item of items) {
         tree.add(item);
       }
@@ -313,18 +321,77 @@ goog.scope(function() {
     return tree;
   }
 
-  const module = intervaltree.core;
+  function add(tree, id, item) {
+    assert(tree instanceof IntervalTree);
 
-  // Types
-  module.IntervalTree = IntervalTree;
-  module.Interval = Interval;
-  module.Node = Node;
+    if (id && !item) {
+      item = id;
+      id = nextId();
+    }
 
-  // Constructors
-  module.interval = makeInterval;
-  module.create = makeTree;
+    // Coerce to interval
+    const interval = createInterval(item);
+    const node = new Node(interval);
 
+    interval[ID_SYM] = id;
 
+    tree.byId.set(id, interval);
+    tree.root = addNode(tree.root, node);
+    return tree;
+  }
+
+  function clear(tree) {
+    assert(tree instanceof IntervalTree);
+    this.root = null;
+    this.byId.clear();
+  }
+
+  function remove(tree, item) {
+    assert(tree instanceof IntervalTree);
+
+    const interval = createInterval(item);
+    tree.root = removeInterval(tree.root, tree.byId, interval);
+    return tree;
+  }
+
+  function removeById(tree, id) {
+    assert(tree instanceof IntervalTree);
+
+    if (tree.byId.has(id)) {
+      const interval = this.byId.get(id);
+      remove(tree, interval);
+    }
+  }
+
+  function contains(tree, point) {
+    assert(tree instanceof IntervalTree);
+    assert(goog.isNumber(point));
+
+    return containsPoint(tree.root, point);
+  }
+
+  function search(tree, item) {
+    assert(tree instanceof IntervalTree);
+    const interval = createInterval(item);
+    return Array.from(searchInterval(tree.root, interval));
+  }
+
+  function searchSingle(tree, item) {
+    assert(tree instanceof IntervalTree);
+    const interval = createInterval(item);
+    return searchSingleInterval(tree.root, interval);
+  }
+
+  // Api
+  intervaltree.core.create = create;
+  intervaltree.core.add = add;
+  intervaltree.core.remove = remove;
+  intervaltree.core.removeById = removeById;
+  intervaltree.core.contains = contains;
+  intervaltree.core.search = search;
+  intervaltree.core.searchSingle = searchSingle;
+
+  // Test
   module.test = function() {
     // const util = require('util');
 
@@ -334,21 +401,22 @@ goog.scope(function() {
       [10,14], [-10, 1], [9, 22],
     ]);
     console.timeEnd("init");
-
     console.dir(tree, { depth: 5});
 
-    const n = 6;
-    console.time("search")
-    console.log("result to", n, "=>", tree.search(n));
-    console.timeEnd("search")
+    const n = 2;
+    console.time("search");
+    console.log("SEARCH***********************************");
+    console.log(`RESULT searchMany(${n}):`);
+    console.log(tree.searchMany(n));
+    console.timeEnd("search");
 
     console.time("remove");
-    // tree.remove([4,9]);
-    tree.remove([9, 22]);
+    // // tree.remove([4,9]);
+    // tree.remove([9, 22]);
     tree.remove([-10, 1]);
-
-    console.dir(tree, { depth: 5});
     console.timeEnd("remove");
+
+    // console.dir(tree, { depth: 5});
   };
 
 });
