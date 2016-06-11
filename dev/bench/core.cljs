@@ -81,33 +81,33 @@
 
 (defn test-interval
   []
-  (let [tree (doto (it/create)
-               (.add #js [1 5])
-               (.add #js [5 7])
-               (.add #js [-4 -1])
-               (.add #js [-10 -3])
-               (.add #js [-20 -10])
-               (.add #js [20 30])
-               (.add #js [3 9])
-               (.add #js [100 200])
-               (.add #js [1000 2000])
-               (.add #js [6 9])
-               )]
+  (let [tree (it/create)]
+    (it/add tree #js [1 5])
+    (it/add tree #js [5 7])
+    (it/add tree #js [-4 -1])
+    (it/add tree #js [-10 -3])
+    (it/add tree #js [-20 -10])
+    (it/add tree #js [20 30])
+    (it/add tree #js [3 9])
+    (it/add tree #js [100 200])
+    (it/add tree #js [1000 2000])
+    (it/add tree #js [6 9])
+
     (js/console.dir tree #js {"depth" nil})
-    (js/console.log "contains", 4, (.contains tree 4))
-    (js/console.log "contains", 0, (.contains tree 0))
+    (js/console.log "contains", 4, (it/contains tree 4))
+    (js/console.log "contains", 0, (it/contains tree 0))
     ))
 
 (defn main
   [& [type]]
   (cond
-    (= type "init")
+    (= type "kd-init")
     (bench-init)
 
-    (= type "knn")
+    (= type "kd-search")
     (bench-knn)
 
-    (= type "test")
+    (= type "kd-test")
     (test-accuracity)
 
     (= type "interval")
