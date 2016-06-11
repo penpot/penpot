@@ -14,7 +14,6 @@
 "use strict";
 
 goog.provide("kdtree.core");
-goog.provide("kdtree.core.KDTree");
 
 goog.require("kdtree.heap");
 goog.require("goog.asserts");
@@ -38,26 +37,6 @@ goog.scope(function() {
   class KDTree {
     constructor() {
       this.root = null;
-    }
-
-    initialize(points) {
-      assert(goog.isArray(points));
-      this.root = buildTree(null, points, 0);
-    }
-
-    isInitialized() {
-      return this.root !== null;
-    }
-
-    clear() {
-      this.root = null
-    }
-
-    nearest(point, maxNodes) {
-      assert(goog.isArray(point));
-      assert(maxNodes >= 1);
-      assert(this.isInitialized())
-      return searchNearest(this.root, point, maxNodes);
     }
   }
 
@@ -170,13 +149,21 @@ goog.scope(function() {
   function create(points) {
     const tree = new KDTree();
     if (goog.isArray(points)) {
-      tree.initialize(points);
+      return initialize(tree, points);
+    } else {
+      return tree;
     }
-
-    return tree;
   };
 
-  function initialize(tree, width, height, widthStep, heightStep) {
+  function initialize(tree, points) {
+    assert(goog.isArray(points));
+    assert(tree instanceof KDTree);
+
+    tree.root = buildTree(null, points, 0);
+    return tree;
+  }
+
+  function setup(tree, width, height, widthStep, heightStep) {
     const totalSize = Math.floor((width/widthStep) * (height/heightStep));
     const points = new Array(totalSize);
     let pos = 0;
@@ -187,14 +174,32 @@ goog.scope(function() {
       }
     }
 
-    tree.initialize(points);
+    return initialize(tree, points);
+  }
+
+  function isInitialized(tree) {
+    assert(tree instanceof KDTree);
+    return tree.root !== null;
+  }
+
+  function clear(tree) {
+    assert(tree instanceof KDTree);
+    tree.root = null;
     return tree;
   }
 
-  // Types
-  kdtree.core.KDTree = KDTree;
+  function nearest(tree, point, maxNodes) {
+    assert(goog.isArray(point));
+    assert(maxNodes >= 1);
+    assert(isInitialized(tree));
+    return searchNearest(tree.root, point, maxNodes);
+  }
 
   // Factory functions
   kdtree.core.create = create;
   kdtree.core.initialize = initialize;
+  kdtree.core.setup = setup;
+  kdtree.core.isInitialized = isInitialized;
+  kdtree.core.clear = clear;
+  kdtree.core.nearest = nearest;
 });
