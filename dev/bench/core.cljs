@@ -20,19 +20,17 @@
 
 (defn- bench-init-10000
   []
-  (js/console.time "init:10000")
-  (let [points (generate-points 1000 10)]
-    (println (count points))
-    (k/create2d points)
-    (js/console.timeEnd "init:10000")))
+  (println "1000x1000,10 -> 10000 points")
+  (let [tree (k/create)]
+    (time
+     (k/initialize tree 1000 1000 10 10))))
 
 (defn- bench-init-250000
   []
-  (js/console.time "init:250000")
-  (let [points (generate-points 5000 10)]
-    (println (count points))
-    (k/create2d points)
-    (js/console.timeEnd "init:250000")))
+  (println "5000x5000,10 -> 250000 points")
+  (let [tree (k/create)]
+    (time
+     (k/initialize tree 5000 5000 10 10))))
 
 (defn bench-init
   []
@@ -43,23 +41,26 @@
 
 (defn- bench-knn-160000
   []
-  (let [tree (k/create2d (generate-points 4000 10))]
-    (dotimes [i 100]
-      (js/console.time "knn:160000")
-      (let [pt #js [(rand-int 400)
-                    (rand-int 400)]]
-        (.nearest tree pt 2))
-      (js/console.timeEnd "knn:160000"))))
+  (let [tree (k/create)]
+    (k/initialize tree 4000 4000 10 10)
+    (println "KNN Search (160000 points) 1000 times")
+    (time
+     (dotimes [i 1000]
+       (let [pt #js [(rand-int 400)
+                     (rand-int 400)]]
+         (.nearest tree pt 2))))))
+
 
 (defn- bench-knn-360000
   []
-  (let [tree (k/create2d (generate-points 6000 10))]
-    (dotimes [i 100]
-      (js/console.time "knn:360000")
-      (let [pt #js [(rand-int 600)
-                    (rand-int 600)]]
-        (.nearest tree pt 2))
-      (js/console.timeEnd "knn:360000"))))
+  (let [tree (k/create)]
+    (k/initialize tree 6000 6000 10 10)
+    (println "KNN Search (360000 points) 1000 times")
+    (time
+     (dotimes [i 1000]
+       (let [pt #js [(rand-int 600)
+                     (rand-int 600)]]
+         (.nearest tree pt 2))))))
 
 (defn bench-knn
   []
@@ -70,7 +71,7 @@
 
 (defn test-accuracity
   []
-  (let [tree (k/create2d (generate-points 4000 20))]
+  (let [tree (k/create (generate-points 4000 20))]
     (print "[1742 1419]")
     (pprint (js->clj (.nearest tree #js [1742 1419] 6)))
     (print "[1742 1420]")
