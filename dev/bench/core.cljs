@@ -23,14 +23,14 @@
   (println "1000x1000,10 -> 10000 points")
   (let [tree (k/create)]
     (time
-     (k/initialize tree 1000 1000 10 10))))
+     (k/setup tree 1000 1000 10 10))))
 
 (defn- bench-init-250000
   []
   (println "5000x5000,10 -> 250000 points")
   (let [tree (k/create)]
     (time
-     (k/initialize tree 5000 5000 10 10))))
+     (k/setup tree 5000 5000 10 10))))
 
 (defn bench-init
   []
@@ -42,13 +42,13 @@
 (defn- bench-knn-160000
   []
   (let [tree (k/create)]
-    (k/initialize tree 4000 4000 10 10)
+    (k/setup tree 4000 4000 10 10)
     (println "KNN Search (160000 points) 1000 times")
     (time
      (dotimes [i 1000]
        (let [pt #js [(rand-int 400)
                      (rand-int 400)]]
-         (.nearest tree pt 2))))))
+         (k/nearest tree pt 2))))))
 
 
 (defn- bench-knn-360000
@@ -60,7 +60,7 @@
      (dotimes [i 1000]
        (let [pt #js [(rand-int 600)
                      (rand-int 600)]]
-         (.nearest tree pt 2))))))
+         (k/nearest tree pt 2))))))
 
 (defn bench-knn
   []
@@ -71,11 +71,12 @@
 
 (defn test-accuracity
   []
-  (let [tree (k/create (generate-points 4000 20))]
+  (let [tree (k/create)]
+    (k/setup tree 4000 4000 20 20)
     (print "[1742 1419]")
-    (pprint (js->clj (.nearest tree #js [1742 1419] 6)))
+    (pprint (js->clj (k/nearest tree #js [1742 1419] 6)))
     (print "[1742 1420]")
-    (pprint (js->clj (.nearest tree #js [1742 1420] 6)))
+    (pprint (js->clj (k/nearest tree #js [1742 1420] 6)))
     ))
 
 (defn test-interval
