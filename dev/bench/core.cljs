@@ -21,20 +21,23 @@
 (defn- bench-init-10000
   []
   (println "1000x1000,10 -> 10000 points")
-  (let [tree (k/create)]
-    (time
-     (k/setup tree 1000 1000 10 10))))
+  (time
+   (k/generate 1000 1000 10 10)))
 
 (defn- bench-init-250000
   []
-  (println "5000x5000,10 -> 250000 points")
-  (let [tree (k/create)]
-    (time
-     (k/setup tree 5000 5000 10 10))))
+  (time
+   (k/generate 5000 5000 10 10)))
 
 (defn bench-init
   []
   (bench-init-10000)
+  (bench-init-10000)
+  (bench-init-250000)
+  (bench-init-250000)
+  (bench-init-10000)
+  (bench-init-10000)
+  (bench-init-250000)
   (bench-init-250000))
 
 ;; --- Nearest Search Benchmark
