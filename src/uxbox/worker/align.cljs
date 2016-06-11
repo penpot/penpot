@@ -11,23 +11,19 @@
             [uxbox.worker.core :as wrk]
             [uxbox.util.geom.point :as gpt]))
 
-(defonce state (volatile! nil))
+(defonce tree (kd/create))
 
 (defmethod wrk/handler :grid/init
   [{:keys [sender width height x-axis y-axis] :as opts}]
   (time
-   (let [points (into-array
-                 (for [x (range 0 width (or x-axis 10))
-                       y (range 0 height (or y-axis 10))]
-                   #js [x y]))
-         tree (kd/create2d points)]
-     (vreset! state tree)
-     (wrk/reply! sender nil))))
+   (let [value (kd/generate width height (or x-axis 10) (or y-axis 10))]
+     (set! tree value)))
+  (wrk/reply! sender nil))
 
 (defmethod wrk/handler :grid/align
   [{:keys [sender point] :as message}]
   (let [point #js [(:x point) (:y point)]
-        results (js->clj (.nearest @state point 1))
+        results (js->clj (kd/nearest tree point 1))
         [[x y] d] (first results)
         result (gpt/point x y)]
     (wrk/reply! sender {:point (gpt/point x y)})))
