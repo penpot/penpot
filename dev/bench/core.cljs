@@ -6,16 +6,6 @@
 
 (enable-console-print!)
 
-;; --- Helpers
-
-(defn generate-points
-  ([n] (generate-points n 1))
-  ([n step]
-   (into-array
-    (for [x (range 0 n step)
-          y (range 0 n step)]
-      #js [x y]))))
-
 ;; --- Index Initialization Bechmark
 
 (defn- bench-init-10000
