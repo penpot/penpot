@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.worker.core
+(ns uxbox-worker.impl
   (:require [uxbox.util.transit :as t]))
 
 (enable-console-print!)

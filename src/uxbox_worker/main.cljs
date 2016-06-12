@@ -4,18 +4,18 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.worker
+(ns uxbox-worker.main
   (:require [beicon.core :as rx]
             [uxbox.util.transit :as t]
-            [uxbox.worker.core :as wrk]
-            [uxbox.worker.align]))
+            [uxbox-worker.impl :as impl]
+            [uxbox-worker.align]))
 
 (enable-console-print!)
 
 (defn- on-message
   [event]
   (let [message (t/decode (.-data event))]
-    (wrk/handler message)))
+    (impl/handler message)))
 
 (defonce _
   (.addEventListener js/self "message" on-message))

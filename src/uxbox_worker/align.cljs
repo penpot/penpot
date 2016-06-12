@@ -4,26 +4,26 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.worker.align
+(ns uxbox-worker.align
   "Workspace aligment indexes worker."
   (:require [beicon.core :as rx]
             [kdtree.core :as kd]
-            [uxbox.worker.core :as wrk]
+            [uxbox-worker.impl :as impl]
             [uxbox.util.geom.point :as gpt]))
 
 (defonce tree (kd/create))
 
-(defmethod wrk/handler :grid/init
+(defmethod impl/handler :grid/init
   [{:keys [sender width height x-axis y-axis] :as opts}]
   (time
    (let [value (kd/generate width height (or x-axis 10) (or y-axis 10))]
      (set! tree value)))
-  (wrk/reply! sender nil))
+  (impl/reply! sender nil))
 
-(defmethod wrk/handler :grid/align
+(defmethod impl/handler :grid/align
   [{:keys [sender point] :as message}]
   (let [point #js [(:x point) (:y point)]
         results (js->clj (kd/nearest tree point 1))
         [[x y] d] (first results)
         result (gpt/point x y)]
-    (wrk/reply! sender {:point (gpt/point x y)})))
+    (impl/reply! sender {:point (gpt/point x y)})))

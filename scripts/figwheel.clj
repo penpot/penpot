@@ -26,7 +26,6 @@
       :output-to "resources/public/js/main.js"
       :output-dir "resources/public/js"
       :verbose true}}
-
     #_{:id "preview"
      ;; :figwheel {:on-jsload "uxbox.ui/init"}
      :source-paths ["src" "vendor"]
