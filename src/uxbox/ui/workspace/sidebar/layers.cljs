@@ -6,7 +6,6 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.ui.workspace.sidebar.layers
-  (:require-macros [uxbox.util.syntax :refer (defer)])
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [lentes.core :as l]

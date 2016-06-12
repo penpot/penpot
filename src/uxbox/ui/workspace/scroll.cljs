@@ -6,7 +6,6 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.ui.workspace.scroll
-  (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.constants :as c]
