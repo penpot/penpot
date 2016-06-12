@@ -6,14 +6,12 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main
-  (:require-macros [uxbox.util.syntax :refer [define-once]])
   (:require [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.ui :as ui]))
 
-(enable-console-print!)
-
-(define-once :setup
+(defn ^:export main
+  []
   (st/init)
   (ui/init-routes)
   (ui/init))
