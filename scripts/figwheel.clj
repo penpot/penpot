@@ -13,7 +13,7 @@
      :compiler
      {:main 'uxbox.main
       :asset-path "js"
-      :parallel-build false
+      :parallel-build true
       :optimizations :none
       ;; :closure-defines {"uxbox.repo.core.url"
       ;;                   "https://test.uxbox.io/api"}
