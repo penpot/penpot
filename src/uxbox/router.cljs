@@ -10,6 +10,7 @@
             [bidi.bidi :as bidi]
             [goog.events :as events]
             [lentes.core :as l]
+            [beicon.core :as rx]
             [uxbox.rstore :as rs]))
 
 (enable-console-print!)

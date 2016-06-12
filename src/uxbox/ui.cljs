@@ -21,8 +21,9 @@
             [uxbox.data.users :as udu]
             [uxbox.data.auth :as dauth]
             [uxbox.data.messages :as dmsg]
+            [uxbox.ui.loader :refer (loader)]
+            [uxbox.ui.lightbox :refer (lightbox)]
             [uxbox.ui.icons :as i]
-            [uxbox.ui.lightbox :as lightbox]
             [uxbox.ui.auth :as auth]
             [uxbox.ui.dashboard :as dashboard]
             [uxbox.ui.settings :as settings]
@@ -37,11 +38,13 @@
     :auth/register
     :auth/recovery-request
     :auth/recovery})
-(def ^:const restricted? (complement +unrestricted+))
+
+(def ^:const restricted?
+  (complement +unrestricted+))
 
 (def route-l
-  (as-> (l/key :route) $
-    (l/focus-atom $ st/state)))
+  (-> (l/key :route)
+      (l/focus-atom st/state)))
 
 ;; --- Error Handling
 
@@ -112,20 +115,6 @@
     :mixins [rum/reactive]
     :name "app"}))
 
-;; --- Loader
-
-(defn loader-render
-  [own]
-  (when (rum/react st/loader)
-    (html
-     [:div.loader-content i/loader])))
-
-(def loader
-  (mx/component
-   {:render loader-render
-    :name "loader"
-    :mixins [rum/reactive mx/static]}))
-
 ;; --- Routes
 
 (def ^:private page-route
@@ -160,5 +149,5 @@
         lightbox-dom (gdom/getElement "lightbox")
         loader-dom (gdom/getElement "loader")]
     (rum/mount (app) app-dom)
-    (rum/mount (lightbox/lightbox) lightbox-dom)
+    (rum/mount (lightbox) lightbox-dom)
     (rum/mount (loader) loader-dom)))
