@@ -7,13 +7,14 @@
 
 (ns uxbox.ui
   (:require [sablono.core :as html :refer-macros [html]]
+            [bidi.bidi :as bidi]
             [promesa.core :as p]
             [beicon.core :as rx]
             [goog.dom :as gdom]
             [rum.core :as rum]
             [lentes.core :as l]
             [uxbox.state :as st]
-            [uxbox.router :as r]
+            [uxbox.router :as rt]
             [uxbox.rstore :as rs]
             [uxbox.locales :refer (tr)]
             [uxbox.data.projects :as dp]
@@ -78,7 +79,7 @@
         location (:id route)
         params (:params route)]
     (if (and (restricted? location) (not auth))
-      (do (p/schedule 0 #(r/go :auth/login)) nil)
+      (do (p/schedule 0 #(rt/go :auth/login)) nil)
       (case location
         :auth/login (auth/login-page)
         :auth/register (auth/register-page)
@@ -125,7 +126,33 @@
     :name "loader"
     :mixins [rum/reactive mx/static]}))
 
+;; --- Routes
+
+(def ^:private page-route
+  [[bidi/uuid :project-uuid] "/" [bidi/uuid :page-uuid]])
+
+(def routes
+  ["/" [["auth/login" :auth/login]
+        ["auth/register" :auth/register]
+        ["auth/recovery/request" :auth/recovery-request]
+        [["auth/recovery/token/" :token] :auth/recovery]
+
+        ["settings/" [["profile" :settings/profile]
+                      ["password" :settings/password]
+                      ["notifications" :settings/notifications]]]
+
+        ["dashboard/" [["projects" :dashboard/projects]
+                       ["elements" :dashboard/elements]
+                       ["icons" :dashboard/icons]
+                       ["images" :dashboard/images]
+                       ["colors" :dashboard/colors]]]
+        ["workspace/" [[page-route :workspace/page]]]]])
+
 ;; --- Main Entry Point
+
+(defn init-routes
+  []
+  (rt/init routes))
 
 (defn init
   []

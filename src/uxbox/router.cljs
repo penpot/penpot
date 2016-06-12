@@ -14,7 +14,8 @@
 
 (enable-console-print!)
 
-(defonce +router+ (volatile! nil))
+(defonce +router+ nil)
+(defonce +routes+ nil)
 
 ;; --- Update Location (Event)
 
@@ -42,7 +43,7 @@
     (let [loc (merge {:handler id}
                      (when params
                        {:route-params params}))]
-      (bidi.router/set-location! @+router+ loc))))
+      (bidi.router/set-location! +router+ loc))))
 
 (defn navigate
   ([id] (navigate id nil))
@@ -50,40 +51,15 @@
    {:pre [(keyword? id)]}
    (Navigate. id params)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Router declaration
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:private page-route
-  [[bidi/uuid :project-uuid] "/" [bidi/uuid :page-uuid]])
-
-(def routes
-  ["/" [["auth/login" :auth/login]
-        ["auth/register" :auth/register]
-        ["auth/recovery/request" :auth/recovery-request]
-        [["auth/recovery/token/" :token] :auth/recovery]
-
-        ["settings/" [["profile" :settings/profile]
-                      ["password" :settings/password]
-                      ["notifications" :settings/notifications]]]
-
-        ["dashboard/" [["projects" :dashboard/projects]
-                       ["elements" :dashboard/elements]
-                       ["icons" :dashboard/icons]
-                       ["images" :dashboard/images]
-                       ["colors" :dashboard/colors]]]
-        ["workspace/" [[page-route :workspace/page]]]]])
+;; --- Public Api
 
 (defn init
-  []
+  [routes]
   (let [opts {:on-navigate #(rs/emit! (update-location %))
               :default-location {:handler :auth/login}}
         router (bidi.router/start-router! routes opts)]
-    (vreset! +router+ router)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Public Api
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    (set! +routes+ routes)
+    (set! +router+ router)))
 
 (defn go
   "Redirect the user to other url."
@@ -94,6 +70,6 @@
   "Given a location handler and optional parameter map, return the URI
   for such handler and parameters."
   ([id]
-   (bidi/path-for routes id))
+   (bidi/path-for +routes+ id))
   ([id params]
-   (apply bidi/path-for routes id (into [] (mapcat (fn [[k v]] [k v])) params))))
+   (apply bidi/path-for +routes+ id (into [] (mapcat (fn [[k v]] [k v])) params))))

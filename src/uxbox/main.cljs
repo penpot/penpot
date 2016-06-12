@@ -5,11 +5,9 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.core
+(ns uxbox.main
   (:require-macros [uxbox.util.syntax :refer [define-once]])
-  (:require [beicon.core :as rx]
-            [uxbox.state :as st]
-            [uxbox.router :as rt]
+  (:require [uxbox.state :as st]
             [uxbox.rstore :as rs]
             [uxbox.ui :as ui]))
 
@@ -17,5 +15,5 @@
 
 (define-once :setup
   (st/init)
-  (rt/init)
+  (ui/init-routes)
   (ui/init))

@@ -5,7 +5,7 @@
 (let [start (System/nanoTime)]
   (b/build
    (b/inputs "src" "vendor")
-   {:main 'uxbox.core
+   {:main 'uxbox.main
     :parallel-build false
     :warnings {:ns-var-clash false}
     :output-to "resources/public/js/main.js"
