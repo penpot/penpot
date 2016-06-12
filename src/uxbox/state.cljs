@@ -15,14 +15,13 @@
 (enable-console-print!)
 
 (defonce state (atom {}))
+(defonce loader (atom false))
 
 (def auth-l
   (-> (l/key :auth)
       (l/focus-atom state)))
 
-(def loader (atom false))
-
-(defn- get-initial-state
+(defn initial-state
   []
   {:dashboard {:project-order :name
                :project-filter ""
@@ -40,19 +39,10 @@
    :projects-by-id {}
    :pages-by-id {}})
 
-(defn- on-error
-  [error]
-  ;; Disable loader in case of error.
-  (reset! loader false))
-
-(rs/add-error-watcher :test on-error)
-
-(defonce stream
-  (rs/init (get-initial-state)))
-
 (defn init
   "Initialize the state materialization."
-  []
-  (as-> stream $
-    (rx/dedupe $)
-    (rx/to-atom $ state)))
+  ([] (init initial-state))
+  ([& callbacks]
+   (-> (reduce #(merge %1 (%2)) nil callbacks)
+       (rs/init)
+       (rx/to-atom state))))

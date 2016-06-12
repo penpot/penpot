@@ -49,7 +49,7 @@
 (defrecord Login [username password]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (merge state (dissoc (st/get-initial-state) :route)))
+    (merge state (dissoc (st/initial-state) :route)))
 
   rs/WatchEvent
   (-apply-watch [this state s]
@@ -72,7 +72,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (swap! storage dissoc :uxbox/auth)
-    (merge state (dissoc (st/get-initial-state) :route)))
+    (merge state (dissoc (st/initial-state) :route)))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
