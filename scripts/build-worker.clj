@@ -12,6 +12,7 @@
     :parallel-build true
     :optimizations :simple
     :static-fns true
+    :pretty-print true
     :language-in  :ecmascript6
     :language-out :ecmascript5
     :verbose true})
