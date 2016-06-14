@@ -9,7 +9,7 @@
   },
   "scripts": {
     "watch": "gulp",
-    "dist": "gulp clean && ./scripts/dist && gulp dist",
+    "dist": "./scripts/dist",
     "clean": "gulp clean",
     "figwheel": "./scripts/build-worker && ./scripts/figwheel",
     "test-watch": "./scripts/watch",
@@ -20,6 +20,7 @@
     "gulp-autoprefixer": "3.1.0",
     "gulp-css-base64": "1.3.4",
     "gulp-cssmin": "0.1.7",
+    "gulp-if": "2.0.1",
     "gulp-mustache": "2.2.0",
     "gulp-plumber": "1.1.0",
     "gulp-rename": "1.2.2",

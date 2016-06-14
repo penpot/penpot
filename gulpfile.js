@@ -8,6 +8,7 @@ const cssmin = require("gulp-cssmin");
 const rimraf = require("rimraf");
 const mustache = require("gulp-mustache");
 const rename = require("gulp-rename");
+const gulpif = require("gulp-if");
 
 const paths = {};
 paths.app = "./resources/";
@@ -16,103 +17,6 @@ paths.dist = "./dist/";
 paths.target = "./target/";
 paths.scss = paths.app + "styles/**/*.scss";
 
-/***********************************************
- * Styles
- ***********************************************/
-
-function makeAutoprefixer() {
-  return autoprefixer('last 2 version',
-                      'safari 5',
-                      'ios 6',
-                      'android 4');
-}
-
-function scssPipeline(options) {
-  const input = options.input;
-  const output = options.output;
-
-  return gulp.src(input)
-    .pipe(plumber())
-    .pipe(scss({style: "expanded"}))
-    .pipe(makeAutoprefixer())
-    .pipe(gulp.dest(output));
-}
-
-gulp.task("scss:main", function() {
-  return scssPipeline({
-    input: paths.app + "styles/main.scss",
-    output: paths.output + "css/"
-  });
-});
-
-gulp.task("scss:preview", function() {
-  return scssPipeline({
-    input: paths.app + "styles/preview.scss",
-    output: paths.output + "css/"
-  });
-});
-
-gulp.task("scss", ["scss:main", "scss:preview"]);
-
-/***********************************************
- * Templates
- ***********************************************/
-
-gulp.task("template:main", function() {
-  const ts = Math.floor(new Date());
-  const tmpl = mustache({
-    jsfile: "/js/main.js?v=" + ts,
-    cssfile: "/css/main.css?v=" + ts
-  });
-
-  return gulp.src(paths.app + "index.mustache")
-    .pipe(tmpl)
-    .pipe(rename("index.html"))
-    .pipe(gulp.dest(paths.output));
-});
-
-gulp.task("template:preview", function() {
-  const ts = Math.floor(new Date());
-  const tmpl = mustache({
-    jsfile: "/js/preview.js?v=" + ts,
-    cssfile: "/css/preview.css?v=" + ts
-  });
-
-  return gulp.src(paths.app + "preview.mustache")
-    .pipe(tmpl)
-    .pipe(rename("index.html"))
-    .pipe(gulp.dest(paths.output + "preview/"));
-});
-
-gulp.task("template", ["template:preview",
-                       "template:main"]);
-
-/***********************************************
- * Production Build
- ***********************************************/
-
-gulp.task("dist:cssmin:main", function() {
-  return gulp.src(paths.output + "css/main.css")
-    .pipe(cssmin())
-    .pipe(gulp.dest(paths.output + "css/"));
-});
-
-gulp.task("dist:cssmin:preview", function() {
-  return gulp.src(paths.output + "css/preview.css")
-    .pipe(cssmin())
-    .pipe(gulp.dest(paths.output + "css/"));
-});
-
-gulp.task("dist:cssmin", ["dist:cssmin:main",
-                          "dist:cssmin:preview"]);
-
-gulp.task("dist:scss", function(next) {
-  runseq("scss", "dist:cssmin", next);
-});
-
-gulp.task("dist:clean", function(next) {
-  rimraf(paths.dist, next);
-});
 
 /***********************************************
  * Helper Tasks
@@ -126,21 +30,157 @@ gulp.task("clean", function(next) {
   });
 });
 
-gulp.task("dist:copy", function() {
-  return gulp.src(paths.output + "/**/*.*")
-    .pipe(gulp.dest(paths.dist));
-});
+function makeAutoprefixer() {
+  return autoprefixer('last 2 version',
+                      'safari 5',
+                      'ios 6',
+                      'android 4');
+}
+
+
+function isProduction() {
+  return (process.env.NODE_ENV === 'production');
+}
 
 /***********************************************
- * Entry Points
+ * Development
  ***********************************************/
 
-// Default
-gulp.task("dist", function(next) {
-  runseq(["template", "dist:scss"], "dist:clean", "dist:copy", next);
-});
+// Styles
 
-// Watch
+function scssPipeline(options) {
+  return function() {
+    const input = options.input;
+    const output = options.output;
+
+    return gulp.src(input)
+      .pipe(plumber())
+      .pipe(scss({style: "expanded"}))
+      .pipe(makeAutoprefixer())
+      .pipe(gulpif(isProduction, cssmin()))
+      .pipe(gulp.dest(output));
+  };
+}
+
+gulp.task("scss:main", scssPipeline({
+  input: paths.app + "styles/main.scss",
+  output: paths.output + "css/"
+}));
+
+gulp.task("scss:view", scssPipeline({
+  input: paths.app + "styles/view.scss",
+  output: paths.output + "css/"
+}));
+
+gulp.task("scss", ["scss:main", "scss:view"]);
+
+// Templates
+
+function templatePipeline(options) {
+  return function() {
+    const input = options.input;
+    const output = options.output;
+    const jspath = options.jspath;
+    const csspath = options.csspath;
+
+    const ts = Math.floor(new Date());
+
+    const tmpl = mustache({
+      jsfile: `${jspath}?v=${ts}`,
+      cssfile: `${csspath}?v=${ts}`
+    });
+
+    return gulp.src(input)
+      .pipe(tmpl)
+      .pipe(rename("index.html"))
+      .pipe(gulp.dest(output));
+  };
+}
+
+gulp.task("template:main", templatePipeline({
+  input: paths.app + "index.mustache",
+  output: paths.output,
+  jspath: "/js/main.js",
+  csspath: "/css/main.css"
+}));
+
+gulp.task("template:view", templatePipeline({
+  input: paths.app + "view.mustache",
+  output: paths.output + "view/",
+  jspath: "/view/js/main.js",
+  csspath: "/view/css/main.css"
+}));
+
+gulp.task("template", ["template:view",
+                       "template:main"]);
+
+// Entry Point
+
 gulp.task("default", ["scss", "template"], function () {
   gulp.watch(paths.scss, ["scss"]);
 });
+
+/***********************************************
+ * Production
+ ***********************************************/
+
+gulp.task("dist:clean", function(next) {
+  rimraf(paths.dist, next);
+});
+
+// Templates
+
+gulp.task("dist:template:main", templatePipeline({
+  input: paths.app + "index.mustache",
+  output: paths.dist,
+  jspath: "/js/main.js",
+  csspath: "/css/main.css"
+}));
+
+gulp.task("dist:template:view", templatePipeline({
+  input: paths.app + "view.mustache",
+  output: paths.dist + "view/",
+  jspath: "/view/js/main.js",
+  csspath: "/view/css/main.css"
+}));
+
+gulp.task("dist:template", ["dist:template:view",
+                            "dist:template:main"]);
+
+// Styles
+
+gulp.task("dist:scss:main", scssPipeline({
+  input: paths.app + "styles/main.scss",
+  output: paths.dist + "css/"
+}));
+
+gulp.task("dist:scss:view", scssPipeline({
+  input: paths.app + "styles/view.scss",
+  output: paths.dist + "view/css/"
+}));
+
+gulp.task("dist:scss", ["dist:scss:main",
+                        "dist:scss:view"]);
+
+// Copy
+
+gulp.task("dist:copy:fonts", function() {
+  return gulp.src(paths.output + "/fonts/**/*")
+    .pipe(gulp.dest(paths.dist + "fonts/"));
+});
+
+gulp.task("dist:copy:images", function() {
+  return gulp.src(paths.output + "/images/**/*")
+    .pipe(gulp.dest(paths.dist + "images/"));
+});
+
+
+gulp.task("dist:copy", ["dist:copy:fonts",
+                        "dist:copy:images"]);
+
+// Entry Point
+
+gulp.task("dist", function(next) {
+  runseq("dist:clean", ["dist:template", "dist:scss", "dist:copy"], next);
+});
+

@@ -2,7 +2,7 @@
 
 (b/watch
  (b/inputs "src" "vendor")
- {:main 'uxbox-worker.main
+ {:main 'uxbox.worker.main
   :output-to "resources/public/js/worker.js"
   :output-dir "resources/public/js/worker"
   :asset-path "js"

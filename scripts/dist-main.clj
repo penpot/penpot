@@ -6,17 +6,17 @@
   (b/build
    (b/inputs "src" "vendor")
    {:main 'uxbox.main
-    :parallel-build false
+    :parallel-build true
     :warnings {:ns-var-clash false}
-    :output-to "resources/public/js/main.js"
-    :output-dir "resources/public/js"
-    :closure-defines {"uxbox.repo.core.url"
+    :output-to "dist/js/main.js"
+    :output-dir "dist/js"
+    :closure-defines {"uxbox.common.constants.url"
                       "https://test.uxbox.io/api"}
     :optimizations :simple
     :externs ["externs/main.js"]
-    :source-map "resources/public/js/main.js.map"
+    :source-map "dist/js/main.js.map"
     :static-fns true
-    :pretty-print true
+    :pretty-print false
     :language-in  :ecmascript6
     :language-out :ecmascript5
     :verbose true})
