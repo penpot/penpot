@@ -5,15 +5,11 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main
-  (:require [uxbox.main.state :as st]
-            [uxbox.common.rstore :as rs]
-            [uxbox.main.locales :as lc]
-            [uxbox.main.ui :as ui]))
+(ns uxbox.main.locales
+  "Initialization namespace for i18n locale data."
+  (:require [uxbox.common.i18n :as i18n]
+            [uxbox.main.locales.en :as en]))
 
-(defn ^:export init
+(defn init
   []
-  (lc/init)
-  (st/init)
-  (ui/init-routes)
-  (ui/init))
+  (vswap! i18n/locales assoc :en en/locales))

@@ -1,0 +1,86 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+(ns uxbox.main.library.icons
+  (:require [uxbox.main.library.icons.material.actions :as md-actions]
+            [uxbox.main.library.icons.material.alerts :as md-alerts]
+            [uxbox.main.library.icons.material.av :as md-av]
+            [uxbox.main.library.icons.material.communication :as md-comm]
+            [uxbox.main.library.icons.material.content :as md-content]
+            [uxbox.main.library.icons.material.device :as md-device]
+            [uxbox.main.library.icons.material.editor :as md-editor]
+            [uxbox.main.library.icons.material.file :as md-file]
+            [uxbox.main.library.icons.material.hardware :as md-hardware]
+            [uxbox.main.library.icons.material.image :as md-image]
+            [uxbox.main.library.icons.material.maps :as md-maps]
+            [uxbox.main.library.icons.material.navigation :as md-nav]
+            [uxbox.main.library.icons.material.notification :as md-not]
+            [uxbox.main.library.icons.material.social :as md-social]
+            [uxbox.main.library.icons.material.toggle :as md-toggle]
+            ))
+
+(def +collections+
+  [{:name "Material design (actions)"
+    :builtin true
+    :id 1
+    :icons md-actions/+icons+}
+   {:name "Material design (alerts)"
+    :builtin true
+    :id 2
+    :icons md-alerts/+icons+}
+   {:name "Material design (Av)"
+    :builtin true
+    :id 3
+    :icons md-av/+icons+}
+   {:name "Material design (Communication)"
+    :builtin true
+    :id 4
+    :icons md-comm/+icons+}
+   {:name "Material design (Content)"
+    :builtin true
+    :id 5
+    :icons md-content/+icons+}
+   {:name "Material design (Device)"
+    :builtin true
+    :id 6
+    :icons md-device/+icons+}
+   {:name "Material design (Editor)"
+    :builtin true
+    :id 7
+    :icons md-editor/+icons+}
+   {:name "Material design (File)"
+    :builtin true
+    :id 8
+    :icons md-file/+icons+}
+   {:name "Material design (Hardware)"
+    :builtin true
+    :id 9
+    :icons md-hardware/+icons+}
+   {:name "Material design (Image)"
+    :builtin true
+    :id 10
+    :icons md-image/+icons+}
+   {:name "Material design (Maps)"
+    :builtin true
+    :id 11
+    :icons md-maps/+icons+}
+   {:name "Material design (Navigation)"
+    :builtin true
+    :id 12
+    :icons md-nav/+icons+}
+   {:name "Material design (Notifications)"
+    :builtin true
+    :id 13
+    :icons md-not/+icons+}
+   {:name "Material design (Social)"
+    :builtin true
+    :id 14
+    :icons md-social/+icons+}
+   {:name "Material design (Toggle)"
+    :builtin true
+    :id 15
+    :icons md-toggle/+icons+}])
