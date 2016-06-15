@@ -1,4 +1,4 @@
-(ns uxbox.main.ui.mixins
+(ns uxbox.common.ui.mixins
   (:refer-clojure :exclude [derive])
   (:require [rum.core :as rum]
             [lentes.core :as l]
