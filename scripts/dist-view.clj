@@ -5,16 +5,17 @@
 (let [start (System/nanoTime)]
   (b/build
    (b/inputs "src" "vendor")
-   {:main 'uxbox.main
+   {:main 'uxbox.view
     :parallel-build false
     :warnings {:ns-var-clash false}
-    :output-to "dist/js/main.js"
-    :source-map "dist/js/main.js.map"
-    :output-dir "dist/js/main"
+    :output-to "dist/view/js/view.js"
+    :source-map "dist/view/js/view.js.map"
+    :output-dir "dist/view/js/view/"
     :closure-defines {"uxbox.common.constants.url"
                       "https://test.uxbox.io/api"}
     :optimizations :simple
     :externs ["externs/main.js"]
+    :source-map "dist/view/js/view.js.map"
     :static-fns true
     :pretty-print false
     :language-in  :ecmascript6

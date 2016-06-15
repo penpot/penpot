@@ -7,9 +7,10 @@
    (b/inputs "src" "vendor")
    {:main 'uxbox.worker
     :output-to "resources/public/js/worker.js"
+    :source-map "resources/public/js/worker.js.map"
     :output-dir "resources/public/js/worker"
     :asset-path "js"
-    :parallel-build true
+    :parallel-build false
     :optimizations :simple
     :static-fns true
     :pretty-print true
