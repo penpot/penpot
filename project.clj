@@ -16,7 +16,6 @@
                  [figwheel-sidecar "0.5.3-2" :scope "test"]
                  [com.cognitect/transit-clj "0.8.285"]
 
-
                  ;; runtime
                  [com.cognitect/transit-cljs "0.8.237"]
                  [rum "0.9.0"]
@@ -26,8 +25,8 @@
                  [funcool/struct "0.1.0"]
                  [funcool/lentes "1.0.1"]
                  [funcool/httpurr "0.6.0"]
-                 [funcool/promesa "1.2.0"]
-                 [funcool/beicon "2.0.0"]
+                 [funcool/promesa "1.3.1"]
+                 [funcool/beicon "2.1.0"]
                  [funcool/cuerdas "0.7.2"]
                  [bidi "2.0.9"]]
   :plugins [[lein-ancient "0.6.10"]]
