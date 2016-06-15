@@ -10,7 +10,7 @@
             [uxbox.main.state :as st]
             [uxbox.common.rstore :as rs]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.shapes]))
 
 ;; --- Error Handling

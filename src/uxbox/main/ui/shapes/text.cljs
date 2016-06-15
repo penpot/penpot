@@ -13,7 +13,7 @@
             [uxbox.common.rstore :as rs]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as ui]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.common.geom :as geom]

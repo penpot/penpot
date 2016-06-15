@@ -17,7 +17,7 @@
             [uxbox.main.ui.navigation :as nav]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.users :as ui.u]
-            [uxbox.main.ui.mixins :as mx]))
+            [uxbox.common.ui.mixins :as mx]))
 
 (def ^:static header-l
   (as-> (l/in [:dashboard]) $

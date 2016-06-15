@@ -17,7 +17,7 @@
             [uxbox.main.ui.shapes.icon :as icon]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (read-string)]))
 

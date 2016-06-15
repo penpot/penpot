@@ -20,7 +20,7 @@
             [uxbox.main.data.messages :as udm]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.dom :as dom]))

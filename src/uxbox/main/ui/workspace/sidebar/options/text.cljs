@@ -18,7 +18,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.workspace.colorpicker :refer (colorpicker)]
             [uxbox.main.ui.workspace.recent-colors :refer (recent-colors)]
             [uxbox.main.ui.workspace.base :as wb]

@@ -18,7 +18,7 @@
             [uxbox.main.ui.core :as uuc]
             [uxbox.main.ui.shapes :as shapes]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.common.geom :as geom]
             [uxbox.common.geom.point :as gpt]
             [uxbox.util.dom :as dom]))

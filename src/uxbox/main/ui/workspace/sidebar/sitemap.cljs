@@ -23,7 +23,7 @@
             [uxbox.main.ui.dashboard.projects :refer (+layouts+)]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.lens :as ul]
             [uxbox.util.data :refer (read-string parse-int)]

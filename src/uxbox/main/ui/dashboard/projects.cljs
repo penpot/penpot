@@ -23,7 +23,7 @@
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.messages :as uum]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.util.datetime :as dt]))
 
 ;; --- Helpers & Constants

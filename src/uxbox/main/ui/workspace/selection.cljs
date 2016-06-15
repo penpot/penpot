@@ -11,7 +11,7 @@
             [rum.core :as rum]
             [lentes.core :as l]
             [uxbox.main.state :as st]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.core :as uuc]
             [uxbox.common.geom :as geom]
             [uxbox.util.dom :as dom]))

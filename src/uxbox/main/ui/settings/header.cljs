@@ -17,7 +17,7 @@
             [uxbox.main.ui.navigation :as nav]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.users :refer (user)]
-            [uxbox.main.ui.mixins :as mx]))
+            [uxbox.common.ui.mixins :as mx]))
 
 (def ^:private section-l
   (-> (l/in [:route :id])

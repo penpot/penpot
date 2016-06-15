@@ -15,7 +15,7 @@
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as uuc]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.workspace.base :as wb]))
 
 (defonce position (atom nil))

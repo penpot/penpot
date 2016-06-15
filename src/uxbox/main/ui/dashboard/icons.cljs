@@ -19,7 +19,7 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.shapes.icon :as icon]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.util.dom :as dom]))
 

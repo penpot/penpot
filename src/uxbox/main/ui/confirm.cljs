@@ -9,7 +9,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.lightbox :as lbx]))
 

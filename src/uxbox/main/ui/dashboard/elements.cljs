@@ -12,7 +12,7 @@
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.library-bar :as ui.library-bar]
             [uxbox.main.ui.dashboard.header :refer (header)]

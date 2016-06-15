@@ -20,7 +20,7 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.util.dom :as dom]))
 
 ;; --- Constants

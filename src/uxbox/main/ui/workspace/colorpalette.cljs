@@ -22,7 +22,7 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.dom :as dom]
-            [uxbox.main.ui.mixins :as mx]))
+            [uxbox.common.ui.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses

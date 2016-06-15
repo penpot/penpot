@@ -22,7 +22,7 @@
             [uxbox.main.ui.forms :as form]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.colorpicker :refer (colorpicker)]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.main.ui.keyboard :as k]
             [uxbox.util.dom :as dom]

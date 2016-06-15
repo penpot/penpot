@@ -13,7 +13,7 @@
             [uxbox.main.state :as ust]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as uuc]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.workspace.base :as uuwb]
             [uxbox.common.geom.point :as gpt]))
 

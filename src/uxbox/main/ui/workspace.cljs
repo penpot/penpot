@@ -17,7 +17,7 @@
             [uxbox.util.dom :as dom]
             [uxbox.common.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.confirm]
             [uxbox.main.ui.workspace.images]

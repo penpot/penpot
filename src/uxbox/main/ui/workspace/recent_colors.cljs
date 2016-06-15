@@ -14,7 +14,7 @@
             [uxbox.main.state :as st]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.workspace.base :as wb]))
 

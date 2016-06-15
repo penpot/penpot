@@ -22,7 +22,7 @@
             [uxbox.main.ui.core :as uuc]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.shapes :as uus]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.workspace.base :as uuwb]
             [uxbox.main.ui.workspace.drawarea :refer (draw-area)]
             [uxbox.main.ui.workspace.movement :as cmov]

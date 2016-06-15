@@ -28,7 +28,7 @@
             [uxbox.main.ui.dashboard :as dashboard]
             [uxbox.main.ui.settings :as settings]
             [uxbox.main.ui.workspace :refer (workspace)]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.shapes]))
 
 ;; --- Constants

@@ -20,7 +20,7 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.forms :as forms]
             [uxbox.main.ui.messages :as uum]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.settings.header :refer (header)]
             [uxbox.util.dom :as dom]))
 

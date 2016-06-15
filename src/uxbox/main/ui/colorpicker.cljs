@@ -10,7 +10,7 @@
             [lentes.core :as l]
             [goog.events :as events]
             [uxbox.common.schema :as sc]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.util.math :as mth]
             [uxbox.util.data :as data]
             [uxbox.util.dom :as dom]

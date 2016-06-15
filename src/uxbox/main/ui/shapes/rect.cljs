@@ -9,7 +9,7 @@
             [rum.core :as rum]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.main.ui.mixins :as mx]
+            [uxbox.common.ui.mixins :as mx]
             [uxbox.common.geom :as geom]
             [uxbox.util.dom :as dom]))
 
