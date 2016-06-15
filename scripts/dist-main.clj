@@ -13,7 +13,7 @@
     :output-dir "dist/js/main"
     :closure-defines {"uxbox.common.constants.url"
                       "https://test.uxbox.io/api"}
-    :optimizations :simple
+    :optimizations :advanced
     :externs ["externs/main.js"]
     :static-fns true
     :pretty-print false

@@ -11,7 +11,7 @@
     :output-dir "dist/js/worker"
     :asset-path "js"
     :parallel-build true
-    :optimizations :simple
+    :optimizations :advanced
     :static-fns true
     :pretty-print false
     :language-in  :ecmascript6
