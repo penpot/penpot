@@ -5,11 +5,14 @@
 (let [start (System/nanoTime)]
   (b/build
    (b/inputs "src" "vendor" "test")
-   {:main 'uxbox.test-runner
-    :output-to "out/tests.js"
-    :output-dir "out"
+   {:main 'uxbox.tests.main
     :parallel-build false
-    :optimizations :none
+    :warnings {:ns-var-clash false}
+    :output-to "out/tests.js"
+    :source-map "out/tests.js.map"
+    :output-dir "out/tests"
+    :optimizations :simple
+    :static-fns true
     :pretty-print true
     :target :nodejs
     :language-in  :ecmascript6

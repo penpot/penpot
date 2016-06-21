@@ -1,8 +1,8 @@
-(ns uxbox.state.shapes-tests
+(ns uxbox.tests.shapes-state
   (:require [cljs.test :as t :include-macros true]
             [cljs.pprint :refer (pprint)]
             [uuid.core :as uuid]
-            [uxbox.state.shapes :as ssh]))
+            [uxbox.main.state.shapes :as sh]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Duplicate (one shape)
@@ -26,7 +26,7 @@
                      (assoc-in [:shapes-by-id 2] {:id 2 :page 1}))]
 
     (with-redefs [uuid.core/random (constantly 2)]
-      (let [result (ssh/duplicate-shapes initial [1])]
+      (let [result (sh/duplicate-shapes initial [1])]
         ;; (pprint expected)
         ;; (pprint result)
         (t/is (= result expected))))))
@@ -45,7 +45,7 @@
                      (assoc-in [:shapes-by-id 4] {:id 4 :name "3" :page 1 :group 1})
                      (assoc-in [:shapes-by-id 5] {:id 5 :name "2" :page 1 :group 1}))]
     (with-redefs [uuid.core/random (constantly-inc 4)]
-      (let [result (ssh/duplicate-shapes initial [2 3])]
+      (let [result (sh/duplicate-shapes initial [2 3])]
         ;; (pprint expected)
         ;; (pprint result)
         (t/is (= result expected))))))
@@ -66,7 +66,7 @@
                      (assoc-in [:shapes-by-id 5] {:id 5 :name "4" :page 1})
                      (assoc-in [:shapes-by-id 6] {:id 6 :name "3" :page 1}))]
     (with-redefs [uuid.core/random (constantly-inc 5)]
-      (let [result (ssh/duplicate-shapes initial [3 4])]
+      (let [result (sh/duplicate-shapes initial [3 4])]
         ;; (pprint expected)
         ;; (pprint result)
         (t/is (= result expected))))))
@@ -87,7 +87,7 @@
                                                   :items [4]})
                      (assoc-in [:shapes-by-id 4] {:id 4 :page 1 :group 3}))]
     (with-redefs [uuid.core/random (constantly-inc 3)]
-      (let [result (ssh/duplicate-shapes initial [1])]
+      (let [result (sh/duplicate-shapes initial [1])]
         ;; (pprint expected)
         ;; (pprint result)
         (t/is (= result expected))))))
@@ -103,7 +103,7 @@
                                 2 {:id 2 :page 1}
                                 3 {:id 3 :page 1}}}
         expected (assoc-in initial [:pages-by-id 1 :shapes] [3 1 2])
-        result (ssh/drop-shape initial 3 1 :before)]
+        result (sh/drop-shape initial 3 1 :before)]
     ;; (pprint expected)
     ;; (pprint result)
     (t/is (= result expected))
@@ -116,7 +116,7 @@
                                 2 {:id 2 :page 1}
                                 3 {:id 3 :page 1}}}
         expected (assoc-in initial [:pages-by-id 1 :shapes] [1 3 2])
-        result (ssh/drop-shape initial 3 1 :after)]
+        result (sh/drop-shape initial 3 1 :after)]
     (t/is (= result expected))
     (t/is (vector? (get-in result [:pages-by-id 1 :shapes])))))
 
@@ -133,7 +133,7 @@
                      (assoc-in [:pages-by-id 1 :shapes] [1 4])
                      (assoc-in [:shapes-by-id 1 :items] [3 2])
                      (assoc-in [:shapes-by-id 3 :group] 1))
-        result (ssh/drop-shape initial 3 2 :before)]
+        result (sh/drop-shape initial 3 2 :before)]
     (t/is (= result expected))
     (t/is (vector? (get-in result [:pages-by-id 1 :shapes])))))
 
@@ -150,7 +150,7 @@
                      (assoc-in [:pages-by-id 1 :shapes] [1 4])
                      (assoc-in [:shapes-by-id 1 :items] [2 3])
                      (assoc-in [:shapes-by-id 3 :group] 1))
-        result (ssh/drop-shape initial 3 1 :inside)]
+        result (sh/drop-shape initial 3 1 :inside)]
     ;; (pprint expected)
     ;; (pprint result)
     (t/is (= result expected))
@@ -169,7 +169,7 @@
                      (assoc-in [:pages-by-id 1 :shapes] [1 4 3])
                      (assoc-in [:shapes-by-id 1 :items] [2])
                      (update-in [:shapes-by-id 3] dissoc :group))
-        result (ssh/drop-shape initial 3 4 :after)]
+        result (sh/drop-shape initial 3 4 :after)]
     (t/is (= result expected))
     (t/is (vector? (get-in result [:pages-by-id 1 :shapes])))))
 
@@ -188,7 +188,7 @@
                      (assoc-in [:pages-by-id 1 :shapes] [1])
                      (assoc-in [:shapes-by-id 1 :items] [3 2])
                      (assoc-in [:shapes-by-id 2 :group] 1))
-        result (ssh/drop-shape initial 2 3 :after)]
+        result (sh/drop-shape initial 2 3 :after)]
     ;; (pprint expected)
     ;; (pprint result)
     (t/is (= result expected))
@@ -210,7 +210,7 @@
                      (assoc-in [:pages-by-id 1 :shapes] [2 3])
                      (update-in [:shapes-by-id] dissoc 1)
                      (update-in [:shapes-by-id 2] dissoc :group))
-        result (ssh/drop-shape initial 2 1 :after)]
+        result (sh/drop-shape initial 2 1 :after)]
     ;; (pprint expected)
     ;; (pprint result)
     (t/is (= result expected))
@@ -234,7 +234,7 @@
                      (assoc-in [:pages-by-id 1 :shapes] [1 5])
                      (update-in [:shapes-by-id 2 :items] conj 6)
                      (update-in [:shapes-by-id 6] assoc :group 2))
-        result (ssh/drop-shape initial 6 4 :after)]
+        result (sh/drop-shape initial 6 4 :after)]
     ;; (pprint expected)
     ;; (pprint result)
     (t/is (= result expected))))
@@ -258,7 +258,7 @@
                      (assoc-in [:shapes-by-id 2 :items] [3 4 6])
                      (assoc-in [:shapes-by-id 1 :items] [2 5])
                      (update-in [:shapes-by-id 6] assoc :group 2))
-        result (ssh/drop-shape initial 6 4 :after)]
+        result (sh/drop-shape initial 6 4 :after)]
     ;; (pprint expected)
     ;; (pprint result)
     (t/is (= result expected))))
@@ -282,7 +282,7 @@
         expected (-> initial
                      (assoc-in [:pages-by-id 1 :shapes] [1 3])
                      (update-in [:shapes-by-id] dissoc 4))
-        result (ssh/dissoc-shape initial shape)]
+        result (sh/dissoc-shape initial shape)]
     ;; (pprint expected)
     ;; (pprint result)
     (t/is (= result expected))))
@@ -301,7 +301,7 @@
                      (assoc-in [:pages-by-id 1 :shapes] [3 4])
                      (update-in [:shapes-by-id] dissoc 2)
                      (update-in [:shapes-by-id] dissoc 1))
-        result (ssh/dissoc-shape initial shape)]
+        result (sh/dissoc-shape initial shape)]
     ;; (pprint expected)
     ;; (pprint result)
     (t/is (= result expected))))
@@ -326,7 +326,7 @@
                                                   :items [2] :id 4 :page 1}))]
     (with-redefs [uuid.core/random (constantly 4)
                   cljs.core/rand-int (constantly 10)]
-      (let [result (ssh/group-shapes initial [2] 1)]
+      (let [result (sh/group-shapes initial [2] 1)]
         (t/is (= result expected))))))
 
 
@@ -347,7 +347,7 @@
                                                   :items [2 3] :id 4 :page 1}))]
     (with-redefs [uuid.core/random (constantly 4)
                   cljs.core/rand-int (constantly 10)]
-      (let [result (ssh/group-shapes initial [2 3] 1)]
+      (let [result (sh/group-shapes initial [2 3] 1)]
         (t/is (= result expected))))))
 
 
@@ -368,7 +368,7 @@
                                                   :items [2 3] :id 4 :page 1}))]
     (with-redefs [uuid.core/random (constantly 4)
                   cljs.core/rand-int (constantly 10)]
-      (let [result (ssh/group-shapes initial [2 3] 1)]
+      (let [result (sh/group-shapes initial [2 3] 1)]
         (t/is (= result expected))))))
 
 
@@ -389,7 +389,7 @@
                                                   :items [2] :id 4 :page 1 :group 3}))]
     (with-redefs [uuid.core/random (constantly 4)
                   cljs.core/rand-int (constantly 10)]
-      (let [result (ssh/group-shapes initial [2] 1)]
+      (let [result (sh/group-shapes initial [2] 1)]
         (t/is (= result expected))))))
 
 ;; group shapes in multiple groups
@@ -412,7 +412,7 @@
                      (update-in [:shapes-by-id] dissoc 4))]
     (with-redefs [uuid.core/random (constantly 5)
                   cljs.core/rand-int (constantly 10)]
-      (let [result (ssh/group-shapes initial [1 2] 1)]
+      (let [result (sh/group-shapes initial [1 2] 1)]
         (t/is (= result expected))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -435,7 +435,7 @@
                      (update-in [:shapes-by-id 1] dissoc :group)
                      (update-in [:shapes-by-id 2] dissoc :group)
                      (update-in [:shapes-by-id] dissoc 3))]
-    (let [result (ssh/degroup-shapes initial [3] 1)]
+    (let [result (sh/degroup-shapes initial [3] 1)]
       (t/is (= result expected)))))
 
 
@@ -453,7 +453,7 @@
                      (update-in [:shapes-by-id] dissoc 2)
                      (assoc-in [:shapes-by-id 1 :items] [3])
                      (assoc-in [:shapes-by-id 3 :group] 1))]
-    (let [result (ssh/degroup-shapes initial [2] 1)]
+    (let [result (sh/degroup-shapes initial [2] 1)]
       (t/is (= result expected)))))
 
 ;; degroup multiple groups not nested
@@ -472,7 +472,7 @@
                      (update :shapes-by-id dissoc 2)
                      (update-in [:shapes-by-id 3] dissoc :group)
                      (update-in [:shapes-by-id 4] dissoc :group))]
-    (let [result (ssh/degroup-shapes initial [1 2] 1)]
+    (let [result (sh/degroup-shapes initial [1 2] 1)]
       (t/is (= result expected)))))
 
 ;; degroup multiple groups nested (child first)
@@ -489,7 +489,7 @@
                      (update :shapes-by-id dissoc 1)
                      (update :shapes-by-id dissoc 2)
                      (update-in [:shapes-by-id 3] dissoc :group))]
-    (let [result (ssh/degroup-shapes initial [2 1] 1)]
+    (let [result (sh/degroup-shapes initial [2 1] 1)]
       (t/is (= result expected)))))
 
 ;; degroup multiple groups nested (parent first)
@@ -506,5 +506,5 @@
                      (update :shapes-by-id dissoc 1)
                      (update :shapes-by-id dissoc 2)
                      (update-in [:shapes-by-id 3] dissoc :group))]
-    (let [result (ssh/degroup-shapes initial [1 2] 1)]
+    (let [result (sh/degroup-shapes initial [1 2] 1)]
       (t/is (= result expected)))))
