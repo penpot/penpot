@@ -7,7 +7,7 @@
 
 (ns uxbox.main.data.workspace
   (:require [beicon.core :as rx]
-            [uuid.core :as uuid]
+            [uxbox.util.uuid :as uuid]
             [uxbox.main.constants :as c]
             [uxbox.common.rstore :as rs]
             [uxbox.common.schema :as sc]

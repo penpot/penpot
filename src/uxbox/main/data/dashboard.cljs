@@ -7,7 +7,7 @@
 
 (ns uxbox.main.data.dashboard
   (:require [beicon.core :as rx]
-            [uuid.core :as uuid]
+            [uxbox.util.uuid :as uuid]
             [uxbox.common.rstore :as rs]
             [uxbox.common.router :as r]
             [uxbox.main.state :as st]

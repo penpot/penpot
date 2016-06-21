@@ -7,7 +7,7 @@
 
 (ns uxbox.main.data.shapes
   (:require [beicon.core :as rx]
-            [uuid.core :as uuid]
+            [uxbox.util.uuid :as uuid]
             [uxbox.main.constants :as c]
             [uxbox.common.rstore :as rs]
             [uxbox.common.router :as r]

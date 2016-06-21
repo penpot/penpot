@@ -8,7 +8,7 @@
 (ns uxbox.main.data.images
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
-            [uuid.core :as uuid]
+            [uxbox.util.uuid :as uuid]
             [uxbox.common.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.common.repo :as rp]))

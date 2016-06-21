@@ -8,35 +8,39 @@
 
 "use strict";
 
-goog.provide("uuid.rng");
+goog.provide("uxbox.util.uuid.rng");
 goog.require("cljs.core");
 
 goog.scope(function() {
   const global = goog.global;
+  const rng = uxbox.util.uuid.rng;
+
 
   // Check if nodejs rng is available (high quality);
   if (cljs.core._STAR_target_STAR_ === "nodejs") {
     const crypto = require("crypto");
 
-    uuid.rng.getBytes = function(n) {
+    rng.getBytes = function(n) {
       return crypto.randomBytes(n);
     };
   }
+
   // Check if whatwg rng is available (high quality);
   else if (global.crypto !== undefined &&
            global.crypto.getRandomValues !== undefined) {
-    uuid.rng.getBytes = function(n) {
+    rng.getBytes = function(n) {
       const buf = new Uint8Array(16);
       global.crypto.getRandomValues(buf);
       return buf;
     };
   }
+
   // Switch Back to the Math.random (low quality);
   else {
     console.warn("No high quality RNG available, switching back to Math.random.");
-    uuid.rng.getBytes = function(n) {
-      const buf = new Array(16);
-      for (let i = 0, r; i < 16; i++) {
+    rng.getBytes = function(n) {
+      const buf = new Array(n);
+      for (let i = 0, r; i < n; i++) {
         if ((i & 0x03) === 0) { r = Math.random() * 0x100000000; }
         buf[i] = r >>> ((i & 0x03) << 3) & 0xff;
       }

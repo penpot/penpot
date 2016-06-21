@@ -1,7 +1,7 @@
 (ns uxbox.tests.shapes-state
   (:require [cljs.test :as t :include-macros true]
             [cljs.pprint :refer (pprint)]
-            [uuid.core :as uuid]
+            [uxbox.util.uuid :as uuid]
             [uxbox.main.state.shapes :as sh]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -25,7 +25,7 @@
                      (assoc-in [:pages-by-id 1 :shapes] [2 1])
                      (assoc-in [:shapes-by-id 2] {:id 2 :page 1}))]
 
-    (with-redefs [uuid.core/random (constantly 2)]
+    (with-redefs [uxbox.util.uuid/random (constantly 2)]
       (let [result (sh/duplicate-shapes initial [1])]
         ;; (pprint expected)
         ;; (pprint result)
@@ -44,7 +44,7 @@
                      (assoc-in [:shapes-by-id 1 :items] [5 4 2 3])
                      (assoc-in [:shapes-by-id 4] {:id 4 :name "3" :page 1 :group 1})
                      (assoc-in [:shapes-by-id 5] {:id 5 :name "2" :page 1 :group 1}))]
-    (with-redefs [uuid.core/random (constantly-inc 4)]
+    (with-redefs [uxbox.util.uuid/random (constantly-inc 4)]
       (let [result (sh/duplicate-shapes initial [2 3])]
         ;; (pprint expected)
         ;; (pprint result)
@@ -65,7 +65,7 @@
                      (assoc-in [:pages-by-id 1 :shapes] [6 5 1 4])
                      (assoc-in [:shapes-by-id 5] {:id 5 :name "4" :page 1})
                      (assoc-in [:shapes-by-id 6] {:id 6 :name "3" :page 1}))]
-    (with-redefs [uuid.core/random (constantly-inc 5)]
+    (with-redefs [uxbox.util.uuid/random (constantly-inc 5)]
       (let [result (sh/duplicate-shapes initial [3 4])]
         ;; (pprint expected)
         ;; (pprint result)
@@ -86,7 +86,7 @@
                                                   :type :group
                                                   :items [4]})
                      (assoc-in [:shapes-by-id 4] {:id 4 :page 1 :group 3}))]
-    (with-redefs [uuid.core/random (constantly-inc 3)]
+    (with-redefs [uxbox.util.uuid/random (constantly-inc 3)]
       (let [result (sh/duplicate-shapes initial [1])]
         ;; (pprint expected)
         ;; (pprint result)
@@ -324,7 +324,7 @@
                      (assoc-in [:shapes-by-id 2 :group] 4)
                      (assoc-in [:shapes-by-id 4] {:type :group :name "Group 10"
                                                   :items [2] :id 4 :page 1}))]
-    (with-redefs [uuid.core/random (constantly 4)
+    (with-redefs [uxbox.util.uuid/random (constantly 4)
                   cljs.core/rand-int (constantly 10)]
       (let [result (sh/group-shapes initial [2] 1)]
         (t/is (= result expected))))))
@@ -345,7 +345,7 @@
                      (assoc-in [:shapes-by-id 3 :group] 4)
                      (assoc-in [:shapes-by-id 4] {:type :group :name "Group 10"
                                                   :items [2 3] :id 4 :page 1}))]
-    (with-redefs [uuid.core/random (constantly 4)
+    (with-redefs [uxbox.util.uuid/random (constantly 4)
                   cljs.core/rand-int (constantly 10)]
       (let [result (sh/group-shapes initial [2 3] 1)]
         (t/is (= result expected))))))
@@ -366,7 +366,7 @@
                      (assoc-in [:shapes-by-id 3 :group] 4)
                      (assoc-in [:shapes-by-id 4] {:type :group :name "Group 10"
                                                   :items [2 3] :id 4 :page 1}))]
-    (with-redefs [uuid.core/random (constantly 4)
+    (with-redefs [uxbox.util.uuid/random (constantly 4)
                   cljs.core/rand-int (constantly 10)]
       (let [result (sh/group-shapes initial [2 3] 1)]
         (t/is (= result expected))))))
@@ -387,7 +387,7 @@
                      (assoc-in [:shapes-by-id 3 :items] [4])
                      (assoc-in [:shapes-by-id 4] {:type :group :name "Group 10"
                                                   :items [2] :id 4 :page 1 :group 3}))]
-    (with-redefs [uuid.core/random (constantly 4)
+    (with-redefs [uxbox.util.uuid/random (constantly 4)
                   cljs.core/rand-int (constantly 10)]
       (let [result (sh/group-shapes initial [2] 1)]
         (t/is (= result expected))))))
@@ -410,7 +410,7 @@
                                                   :items [1 2] :id 5 :page 1})
                      (update-in [:shapes-by-id] dissoc 3)
                      (update-in [:shapes-by-id] dissoc 4))]
-    (with-redefs [uuid.core/random (constantly 5)
+    (with-redefs [uxbox.util.uuid/random (constantly 5)
                   cljs.core/rand-int (constantly 10)]
       (let [result (sh/group-shapes initial [1 2] 1)]
         (t/is (= result expected))))))

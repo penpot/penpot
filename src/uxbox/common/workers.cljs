@@ -7,7 +7,7 @@
 (ns uxbox.common.workers
   "A lightweight layer on top of webworkers api."
   (:require [beicon.core :as rx]
-            [uuid.core :as uuid]
+            [uxbox.util.uuid :as uuid]
             [uxbox.util.transit :as t]))
 
 ;; --- Implementation

@@ -1,6 +1,6 @@
 (ns uxbox.main.state.shapes
   "A collection of functions for manage shapes insinde the state."
-  (:require [uuid.core :as uuid]
+  (:require [uxbox.util.uuid :as uuid]
             [uxbox.util.data :refer (index-of)]
             [uxbox.common.geom :as geom]))
 

@@ -8,7 +8,7 @@
 (ns uxbox.main.data.colors
   (:require [clojure.set :as set]
             [beicon.core :as rx]
-            [uuid.core :as uuid]
+            [uxbox.util.uuid :as uuid]
             [uxbox.main.state :as st]
             [uxbox.common.rstore :as rs]
             [uxbox.main.state.colors :as stc]

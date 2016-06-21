@@ -7,11 +7,12 @@
 */
 "use strict";
 
-goog.provide("uuid.impl");
-goog.require("uuid.rng");
+goog.provide("uxbox.util.uuid.impl");
+goog.require("uxbox.util.uuid.rng");
 
 goog.scope(function() {
-  const rng = uuid.rng;
+  const impl = uxbox.util.uuid.impl;
+  const rng = uxbox.util.uuid.rng;
   const hexMap = [];
 
   for (let i = 0; i < 256; i++) {
@@ -38,7 +39,7 @@ goog.scope(function() {
              hexMap[buf[i++]]);
   }
 
-  uuid.impl.v4 = function() {
+  impl.v4 = function() {
     const buf = rng.getBytes(16);
     buf[6] = (buf[6] & 0x0f) | 0x40;
     buf[8] = (buf[8] & 0x3f) | 0x80;
