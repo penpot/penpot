@@ -8,19 +8,18 @@
 
 "use strict";
 
-goog.provide("uxbox.util.uuid.rng");
+goog.provide("uxbox.util.rng_impl");
 goog.require("cljs.core");
 
 goog.scope(function() {
+  const self = uxbox.util.rng_impl;
   const global = goog.global;
-  const rng = uxbox.util.uuid.rng;
-
 
   // Check if nodejs rng is available (high quality);
   if (cljs.core._STAR_target_STAR_ === "nodejs") {
     const crypto = require("crypto");
 
-    rng.getBytes = function(n) {
+    self.getBytes = function(n) {
       return crypto.randomBytes(n);
     };
   }
@@ -28,7 +27,7 @@ goog.scope(function() {
   // Check if whatwg rng is available (high quality);
   else if (global.crypto !== undefined &&
            global.crypto.getRandomValues !== undefined) {
-    rng.getBytes = function(n) {
+    self.getBytes = function(n) {
       const buf = new Uint8Array(16);
       global.crypto.getRandomValues(buf);
       return buf;
@@ -38,7 +37,7 @@ goog.scope(function() {
   // Switch Back to the Math.random (low quality);
   else {
     console.warn("No high quality RNG available, switching back to Math.random.");
-    rng.getBytes = function(n) {
+    self.getBytes = function(n) {
       const buf = new Array(n);
       for (let i = 0, r; i < n; i++) {
         if ((i & 0x03) === 0) { r = Math.random() * 0x100000000; }

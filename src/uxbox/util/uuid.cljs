@@ -13,7 +13,7 @@
 
   If no high qualiry RNG, switches to the default Math based
   RNG with proper waring in the console."
-  (:require [uxbox.util.uuid.impl :as impl]))
+  (:require [uxbox.util.uuid-impl :as impl]))
 
 (defn v4
   "Generate a v4 (random) UUID."
