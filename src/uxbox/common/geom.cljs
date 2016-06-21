@@ -154,10 +154,10 @@
 (defn- get-rect-vertext-point
   [{:keys [x1 y1 x2 y2]} id]
   (case id
-    1 (gpt/point x1 y1)
-    2 (gpt/point x2 y1)
-    3 (gpt/point x1 y2)
-    4 (gpt/point x2 y2)))
+    :top-left (gpt/point x1 y1)
+    :top-right (gpt/point x2 y1)
+    :bottom-left (gpt/point x1 y2)
+    :bottom-right (gpt/point x2 y2)))
 
 (defn- get-circle-vertext-point
   [{:keys [rx ry]} id]
