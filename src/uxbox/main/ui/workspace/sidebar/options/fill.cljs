@@ -53,10 +53,10 @@
        [:span "Color"]
        [:div.row-flex.color-data
         [:span.color-th
-         {:style {:background-color (:fill shape)}
+         {:style {:background-color (:fill shape "#000000")}
           :on-click show-color-picker}]
         [:div.color-info
-         [:span (:fill shape)]]]
+         [:span (:fill shape "#000000")]]]
 
        [:div.row-flex
         [:input.input-text
