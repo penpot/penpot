@@ -45,9 +45,10 @@
         on-mouse-down #(common/on-mouse-down % shape selected)
         on-mouse-up #(common/on-mouse-up % shape)]
     (html
-     [:g.shape {:class (when selected? "selected")
-                :on-mouse-down on-mouse-down
-                :on-mouse-up on-mouse-up}
+     [:g.shape.group-shape
+      {:class (when selected? "selected")
+       :on-mouse-down on-mouse-down
+       :on-mouse-up on-mouse-up}
       (group-shape shape render-component)])))
 
 (def group-component
@@ -68,12 +69,13 @@
         shapes-by-id (get @st/state :shapes-by-id)
         xf (comp
             (map #(get shapes-by-id %))
-            (remove :hidden)
-            (map factory))]
+            (remove :hidden))]
     (html
      [:g attrs
-      (for [item (reverse (into [] xf items))]
-        (rum/with-key item (str (:id item))))])))
+      (for [item (reverse (into [] xf items))
+            :let [key (str (:id item))]]
+        (-> (factory item)
+            (rum/with-key key)))])))
 
 (def group-shape
   (mx/component
