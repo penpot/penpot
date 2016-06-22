@@ -54,24 +54,24 @@
 
 (def ^:private dashboard-l
   (-> (l/key :dashboard)
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def ^:private collections-by-id-l
   (-> (l/key :images-by-id)
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def ^:private images-ordering-l
   (-> (l/in [:dashboard :images-order])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def ^:private images-filtering-l
   (-> (l/in [:dashboard :images-filter])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (defn- focus-collection
   [collid]
   (-> (l/key collid)
-      (l/focus-atom collections-by-id-l)))
+      (l/derive collections-by-id-l)))
 
 ;; --- Page Title
 

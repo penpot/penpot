@@ -28,18 +28,18 @@
 
 (def formdata
   (-> (l/in [:forms :profile/main])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def formerrors
   (-> (l/in [:errors :profile/main])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def assign-field-value
   (partial udf/assign-field-value :profile/main))
 
 (def ^:private profile-l
   (-> (l/key :profile)
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 ;; --- Profile Form
 

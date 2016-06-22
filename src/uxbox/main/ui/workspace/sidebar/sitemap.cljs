@@ -25,7 +25,6 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.util.lens :as ul]
             [uxbox.util.data :refer (read-string parse-int)]
             [uxbox.util.dom :as dom]))
 
@@ -35,8 +34,8 @@
   (letfn [(getter [state]
             (let [project (get-in state [:workspace :project])]
               (stpr/project-pages state project)))]
-    (as-> (ul/getter getter) $
-      (l/focus-atom $ st/state))))
+    (as-> (l/lens getter) $
+      (l/derive $ st/state))))
 
 ;; --- Component
 

@@ -14,7 +14,7 @@
 
 (def ^:const ^:private message-l
   (-> (l/key :message)
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 ;; --- Notification Component
 

@@ -16,7 +16,7 @@
 (defn- focus-shape
   [id]
   (-> (l/in [:shapes-by-id id])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (defn- shape-render
   [own id]

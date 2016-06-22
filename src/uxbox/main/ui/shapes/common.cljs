@@ -19,11 +19,11 @@
 
 (def ^:const selected-shapes-l
   (-> (l/in [:workspace :selected])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def ^:const drawing-state-l
   (-> (l/in [:workspace :drawing])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 ;; --- Events
 

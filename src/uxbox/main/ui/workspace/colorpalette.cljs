@@ -33,7 +33,7 @@
 (def ^:private collections-by-id-l
   (-> (comp (l/in [:colors-by-id])
             (ul/merge library/+color-collections-by-id+))
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component

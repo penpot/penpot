@@ -64,15 +64,15 @@
 
 (def projects-by-id-l
   (as-> (l/key :projects-by-id) $
-    (l/focus-atom $ s/state)))
+    (l/derive $ s/state)))
 
 (def project-ordering-l
   (as-> (l/in [:dashboard :project-order]) $
-    (l/focus-atom $ s/state)))
+    (l/derive $ s/state)))
 
 (def project-filtering-l
   (as-> (l/in [:dashboard :project-filter]) $
-    (l/focus-atom $ s/state)))
+    (l/derive $ s/state)))
 
 ;; --- Sort Widget
 

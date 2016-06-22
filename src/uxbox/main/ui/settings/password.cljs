@@ -28,11 +28,11 @@
 
 (def formdata
   (-> (l/in [:forms :profile/password])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def formerrors
   (-> (l/in [:errors :profile/password])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def assign-field-value
   (partial udf/assign-field-value :profile/password))

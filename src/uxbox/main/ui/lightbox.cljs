@@ -15,7 +15,7 @@
 
 (def ^:const ^:private lightbox-l
   (-> (l/key :lightbox)
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 ;; --- Lightbox (Component)
 

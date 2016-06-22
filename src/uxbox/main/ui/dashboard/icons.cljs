@@ -27,7 +27,7 @@
 
 (def dashboard-l
   (as-> (l/in [:dashboard]) $
-    (l/focus-atom $ st/state)))
+    (l/derive $ st/state)))
 
 ;; --- Page Title
 

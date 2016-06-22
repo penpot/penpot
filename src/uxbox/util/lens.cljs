@@ -6,12 +6,8 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.util.lens
-  (:refer-clojure :exclude [derive merge])
+  (:refer-clojure :exclude [merge])
   (:require [lentes.core :as l]))
-
-(defn getter
-  [f]
-  (l/lens f #(throw (ex-info "Not implemented" {}))))
 
 (defn merge
   [data]

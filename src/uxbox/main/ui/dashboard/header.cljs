@@ -21,7 +21,7 @@
 
 (def header-l
   (as-> (l/in [:dashboard]) $
-    (l/focus-atom $ s/state)))
+    (l/derive $ s/state)))
 
 (defn- header-link
   [section content]

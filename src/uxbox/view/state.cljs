@@ -18,7 +18,7 @@
 
 (def auth-l
   (-> (l/key :auth)
-      (l/focus-atom state)))
+      (l/derive state)))
 
 (defn initial-state
   []

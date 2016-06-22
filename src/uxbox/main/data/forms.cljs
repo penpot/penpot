@@ -80,11 +80,11 @@
 (defn focus-form-data
   [type]
   (-> (l/in [:forms type])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (defn focus-form-errors
   [type]
   (-> (l/in [:errors type])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 

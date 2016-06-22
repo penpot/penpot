@@ -33,17 +33,17 @@
 
 (def ^:private dashboard-l
   (-> (l/key :dashboard)
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def ^:private collections-by-id-l
   (-> (comp (l/key :colors-by-id)
             (ul/merge library/+color-collections-by-id+))
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (defn- focus-collection
   [collid]
   (-> (l/key collid)
-      (l/focus-atom collections-by-id-l)))
+      (l/derive collections-by-id-l)))
 
 ;; --- Page Title
 

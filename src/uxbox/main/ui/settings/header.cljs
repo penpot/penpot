@@ -21,7 +21,7 @@
 
 (def ^:private section-l
   (-> (l/in [:route :id])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (defn- header-link
   [section content]

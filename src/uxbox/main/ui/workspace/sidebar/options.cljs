@@ -106,8 +106,8 @@
             (let [selected (get-in state [:workspace :selected])]
               (when (= 1 (count selected))
                 (get-in state [:shapes-by-id (first selected)]))))]
-    (as-> (l/getter getter) $
-      (l/focus-atom $ st/state))))
+    (-> (l/lens getter)
+        (l/derive st/state))))
 
 (defn options-toolbox-render
   [own]

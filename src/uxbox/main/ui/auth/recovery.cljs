@@ -27,11 +27,11 @@
 
 (def form-data
   (-> (l/in [:forms :recovery])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def form-errors
   (-> (l/in [:errors :recovery])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def set-value!
   (partial udf/assign-field-value :recovery))

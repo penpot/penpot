@@ -14,7 +14,6 @@
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.common.geom.point :as gpt]
-            [uxbox.util.lens :as ul]
             [goog.events :as events])
   (:import goog.events.EventType))
 
@@ -22,49 +21,49 @@
 
 (def ^:const workspace-l
   (as-> (l/in [:workspace]) $
-    (l/focus-atom $ st/state)))
+    (l/derive $ st/state)))
 
 (def ^:const project-l
   (letfn [(getter [state]
             (let [project (get-in state [:workspace :project])]
               (get-in state [:projects-by-id project])))]
-    (as-> (l/getter getter) $
-      (l/focus-atom $ st/state))))
+    (as-> (l/lens getter) $
+      (l/derive $ st/state))))
 
 (def ^:const page-l
   (letfn [(getter [state]
             (let [page (get-in state [:workspace :page])]
               (get-in state [:pages-by-id page])))]
-    (as-> (ul/getter getter) $
-      (l/focus-atom $ st/state))))
+    (as-> (l/lens getter) $
+      (l/derive $ st/state))))
 
 (def ^:const selected-shapes-l
   (as-> (l/in [:selected]) $
-    (l/focus-atom $ workspace-l)))
+    (l/derive $ workspace-l)))
 
 (def ^:const toolboxes-l
   (as-> (l/in [:toolboxes]) $
-    (l/focus-atom $ workspace-l)))
+    (l/derive $ workspace-l)))
 
 (def ^:const flags-l
   (as-> (l/in [:flags]) $
-    (l/focus-atom $ workspace-l)))
+    (l/derive $ workspace-l)))
 
 (def ^:const shapes-by-id-l
   (as-> (l/key :shapes-by-id) $
-    (l/focus-atom $ st/state)))
+    (l/derive $ st/state)))
 
 (def ^:const zoom-l
   (-> (l/in [:workspace :zoom])
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 (def ^:const alignment-l
   (letfn [(getter [flags]
             (and (contains? flags :grid/indexed)
                  (contains? flags :grid/alignment)
                  (contains? flags :grid)))]
-    (-> (l/getter getter)
-        (l/focus-atom flags-l))))
+    (-> (l/lens getter)
+        (l/derive flags-l))))
 
 ;; --- Scroll Stream
 

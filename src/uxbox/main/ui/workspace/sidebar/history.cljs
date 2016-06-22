@@ -29,7 +29,7 @@
 
 (def ^:const history-l
   (as-> (l/in [:workspace :history]) $
-    (l/focus-atom $ st/state)))
+    (l/derive $ st/state)))
 
 ;; --- History Item (Component)
 

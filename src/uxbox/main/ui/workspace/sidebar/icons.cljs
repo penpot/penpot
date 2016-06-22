@@ -31,7 +31,7 @@
   rerender the whole toolbox on each workspace
   change."
   (as-> (l/in [:workspace :drawing]) $
-    (l/focus-atom $ st/state)))
+    (l/derive $ st/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Icons

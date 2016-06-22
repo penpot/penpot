@@ -23,7 +23,7 @@
 
 (def ^:const ^:private clipboard-l
   (-> (l/key :clipboard)
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 ;; --- Clipboard Dialog Component
 

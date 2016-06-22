@@ -32,7 +32,7 @@
 (defn- focus-page
   [pageid]
   (as-> (l/in [:pages-by-id pageid]) $
-    (l/focus-atom $ st/state)))
+    (l/derive $ st/state)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components

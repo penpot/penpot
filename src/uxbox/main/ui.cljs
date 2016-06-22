@@ -44,7 +44,7 @@
 
 (def route-l
   (-> (l/key :route)
-      (l/focus-atom st/state)))
+      (l/derive st/state)))
 
 ;; --- Error Handling
 

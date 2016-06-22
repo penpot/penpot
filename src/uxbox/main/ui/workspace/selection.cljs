@@ -32,8 +32,8 @@
   (letfn [(getter [state]
             (let [selected (get-in state [:workspace :selected])]
               (mapv #(get-in state [:shapes-by-id %]) selected)))]
-    (-> (l/getter getter)
-        (l/focus-atom  st/state))))
+    (-> (l/lens getter)
+        (l/derive  st/state))))
 
 ;; --- Selection Handlers (Component)
 

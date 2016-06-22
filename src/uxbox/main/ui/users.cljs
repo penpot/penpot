@@ -52,7 +52,7 @@
 
 (def profile-l
   (as-> (l/key :profile) $
-    (l/focus-atom $ s/state)))
+    (l/derive $ s/state)))
 
 (defn user-render
   [own]
