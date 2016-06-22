@@ -10,10 +10,11 @@
 
 "use strict";
 
-goog.provide("lru");
+goog.provide("uxbox.util.lru_impl");
 goog.require("goog.asserts");
 
 goog.scope(function() {
+  const self = uxbox.util.lru_impl;
   const assert = goog.asserts.assert;
 
   class Node {
@@ -118,8 +119,8 @@ goog.scope(function() {
     return new Cache(limit);
   }
 
-  lru.create = create;
-  lru.get = (c, key) => c.getItem(key);
-  lru.set = (c, key, val) => c.setItem(key, val);
-  lru.remove = (c, key) => c.removeItem(key);
+  self.create = create;
+  self.get = (c, key) => c.getItem(key);
+  self.set = (c, key, val) => c.setItem(key, val);
+  self.remove = (c, key) => c.removeItem(key);
 });

@@ -13,12 +13,16 @@
 
 "use strict";
 
-goog.provide("kdtree.core");
-goog.require("kdtree.heap");
-goog.require("lru");
+goog.provide("uxbox.util.kdtree_impl");
+goog.require("uxbox.util.heap_impl");
+goog.require("uxbox.util.lru_impl");
 goog.require("goog.asserts");
 
 goog.scope(function() {
+  const self = uxbox.util.kdtree_impl;
+
+  const heap = uxbox.util.heap_impl;
+  const lru = uxbox.util.lru_impl;
   const assert = goog.asserts.assert;
 
   // Hardcoded dimensions value;
@@ -76,7 +80,7 @@ goog.scope(function() {
   function searchNearest(root, point, maxNodes) {
     const search = (best, node) => {
       if (best === null) {
-        best = new kdtree.heap.MinHeap((x, y) => x[1] - y[1]);
+        best = new heap.MinHeap((x, y) => x[1] - y[1]);
       }
 
       let distance = precision(calculateDistance(point, node.obj));
@@ -147,38 +151,7 @@ goog.scope(function() {
   // --- Public Api
   const cache = new lru.create();
 
-  function create(points) {
-    const tree = new KDTree();
-    if (goog.isArray(points)) {
-      return initialize(tree, points);
-    } else {
-      return tree;
-    }
-  };
-
   function generate(width, height, widthStep, heightStep) {
-    const key = `${width}.${height}.${widthStep}.${heightStep}`;
-
-    let tree = lru.get(cache, key);
-    if (tree instanceof KDTree) {
-      return tree;
-    } else {
-      tree = new KDTree();
-      setup(tree, width, height, widthStep, heightStep);
-      lru.set(cache, key, tree);
-      return tree;
-    }
-  }
-
-  function initialize(tree, points) {
-    assert(goog.isArray(points));
-    assert(tree instanceof KDTree);
-
-    tree.root = buildTree(null, points, 0);
-    return tree;
-  }
-
-  function setup(tree, width, height, widthStep, heightStep) {
     const totalSize = Math.floor((width/widthStep) * (height/heightStep));
     const points = new Array(totalSize);
     let pos = 0;
@@ -189,7 +162,21 @@ goog.scope(function() {
       }
     }
 
-    initialize(tree, points);
+    return points;
+  }
+
+  function setup(tree, width, height, widthStep, heightStep) {
+    const key = `${width}.${height}.${widthStep}.${heightStep}`;
+    const root = lru.get(cache, key);
+
+    if (root instanceof Node) {
+      tree.root = root;
+    } else {
+      const points = generate(width, height, widthStep, heightStep);
+      tree.root = buildTree(null, points, 0);
+      lru.set(cache, key, tree.root);
+    }
+
     return tree;
   }
 
@@ -197,6 +184,23 @@ goog.scope(function() {
     assert(tree instanceof KDTree);
     return tree.root !== null;
   }
+
+  function initialize(tree, points) {
+    assert(goog.isArray(points));
+    assert(tree instanceof KDTree);
+
+    tree.root = buildTree(null, points, 0);
+    return tree;
+  }
+
+  function create(points) {
+    const tree = new KDTree();
+    if (goog.isArray(points)) {
+      return initialize(tree, points);
+    } else {
+      return tree;
+    }
+  };
 
   function clear(tree) {
     assert(tree instanceof KDTree);
@@ -212,11 +216,10 @@ goog.scope(function() {
   }
 
   // Factory functions
-  kdtree.core.create = create;
-  kdtree.core.generate = generate;
-  kdtree.core.initialize = initialize;
-  kdtree.core.setup = setup;
-  kdtree.core.isInitialized = isInitialized;
-  kdtree.core.clear = clear;
-  kdtree.core.nearest = nearest;
+  self.create = create;
+  self.initialize = initialize;
+  self.setup = setup;
+  self.isInitialized = isInitialized;
+  self.clear = clear;
+  self.nearest = nearest;
 });

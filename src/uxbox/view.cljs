@@ -6,6 +6,7 @@
 
 (ns uxbox.view
   (:require [uxbox.view.state :as st]
+            [uxbox.common.constants]
             #_[uxbox.view.locales :as lc]
             [uxbox.view.ui :as ui]))
 

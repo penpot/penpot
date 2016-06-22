@@ -8,13 +8,15 @@
  * @license MIT License <https://opensource.org/licenses/MIT>
  */
 
-goog.provide("kdtree.heap");
-goog.provide("kdtree.heap.MinHeap");
+"use strict";
+
+goog.provide("uxbox.util.heap_impl");
+goog.provide("uxbox.util.heap_impl.MinHeap");
 
 goog.scope(function() {
-  "use strict";
+  const self = uxbox.util.heap_impl;
 
-  const compare = (x,y) => x-y;
+  const compare = (x, y) => x - y;
 
   class MinHeap {
     constructor(cmp) {
@@ -108,5 +110,5 @@ goog.scope(function() {
     }
   }
 
-  kdtree.heap.MinHeap = MinHeap;
+  self.MinHeap = MinHeap;
 });
