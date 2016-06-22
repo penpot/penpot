@@ -16,7 +16,7 @@
       :parallel-build false
       :optimizations :none
       :closure-defines {"uxbox.common.constants.url"
-                        "http://localhost:6060/api"}
+                        "https://test.uxbox.io/api"}
       :warnings {:ns-var-clash false}
       :language-in  :ecmascript6
       :language-out :ecmascript5
@@ -33,7 +33,7 @@
       :parallel-build false
       :optimizations :none
       :closure-defines {"uxbox.common.constants.url"
-                        "http://localhost:6060/api"}
+                        "https://test.uxbox.io/api"}
       :warnings {:ns-var-clash false}
       :language-in  :ecmascript6
       :language-out :ecmascript5
