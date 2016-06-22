@@ -10,20 +10,19 @@
   :profiles {:dev {:source-paths ["dev"]}}
 
   :dependencies [[org.clojure/clojure "1.9.0-alpha4" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.36" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.89" :scope "provided"]
 
                  ;; Build
-                 [figwheel-sidecar "0.5.3-2" :scope "test"]
-                 [com.cognitect/transit-clj "0.8.285"]
+                 [figwheel-sidecar "0.5.4-3" :scope "test"]
 
                  ;; runtime
-                 [com.cognitect/transit-cljs "0.8.237"]
-                 [rum "0.9.0"]
+                 [com.cognitect/transit-cljs "0.8.239"]
+                 [rum "0.9.1"]
                  [cljsjs/react "15.1.0-0"]
                  [cljsjs/react-dom "15.1.0-0"]
                  [cljsjs/moment "2.10.6-4"]
                  [funcool/struct "0.1.0"]
-                 [funcool/lentes "1.0.1"]
+                 [funcool/lentes "1.1.0"]
                  [funcool/httpurr "0.6.0"]
                  [funcool/promesa "1.3.1"]
                  [funcool/beicon "2.1.0"]
