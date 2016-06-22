@@ -6,15 +6,18 @@
  */
 
 "use strict";
-goog.provide("intervaltree.core");
+
+goog.provide("uxbox.util.intervaltree_impl");
 goog.require("goog.asserts");
 goog.require("goog.array");
 
 goog.scope(function() {
+  const self = uxbox.util.intervaltree_impl;
+
   const assert = goog.asserts.assert;
   const every = goog.array.every;
 
-  const ID_SYM = Symbol.for("intervaltree.core:id-sym");
+  const ID_SYM = Symbol.for("uxbox.util.intervaltree:id-sym");
 
   // --- Types Declaration
 
@@ -383,20 +386,20 @@ goog.scope(function() {
   }
 
   // Api
-  intervaltree.core.create = create;
-  intervaltree.core.add = add;
-  intervaltree.core.remove = remove;
-  intervaltree.core.removeById = removeById;
-  intervaltree.core.contains = contains;
-  intervaltree.core.search = search;
-  intervaltree.core.searchSingle = searchSingle;
+  self.create = create;
+  self.add = add;
+  self.remove = remove;
+  self.removeById = removeById;
+  self.contains = contains;
+  self.search = search;
+  self.searchSingle = searchSingle;
 
   // Test
-  module.test = function() {
+  self.test = function() {
     // const util = require('util');
 
     console.time("init");
-    const tree = module.create([
+    const tree = self.create([
       [1,5], [-5, 10], [4, 9],
       [10,14], [-10, 1], [9, 22],
     ]);
