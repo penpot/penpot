@@ -50,7 +50,7 @@
 
 ;; --- User Widget
 
-(def ^:static profile-l
+(def profile-l
   (as-> (l/key :profile) $
     (l/focus-atom $ s/state)))
 

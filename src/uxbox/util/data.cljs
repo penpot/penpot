@@ -22,7 +22,7 @@
   (persistent!
    (reduce #(assoc! %1 (getter %2) %2) (transient {}) coll)))
 
-(def ^:static index-by-id #(index-by % :id))
+(def index-by-id #(index-by % :id))
 
 (defn remove-nil-vals
   "Given a map, return a map removing key-value

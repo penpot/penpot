@@ -7,7 +7,7 @@
 
 (ns uxbox.main.library.images)
 
-(def ^:static +collections+
+(def +collections+
   [{:name "Generic 1"
     :id 1
     :builtin true

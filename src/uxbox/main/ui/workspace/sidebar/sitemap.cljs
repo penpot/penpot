@@ -95,7 +95,7 @@
           (-> (page-item page (count pages) active?)
               (rum/with-key (:id page))))]]])))
 
-(def ^:static sitemap-toolbox
+(def sitemap-toolbox
   (mx/component
    {:render sitemap-toolbox-render
     :name "sitemap-toolbox"

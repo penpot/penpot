@@ -35,7 +35,7 @@
      [:input.btn-primary {:type "submit" :value "Update settings"}]
      ]]]))
 
-(def ^:static notifications-page
+(def notifications-page
   (mx/component
    {:render notifications-page-render
     :name "notifications-page"

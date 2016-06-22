@@ -217,7 +217,7 @@
 
 
 
-(def ^:static colorpicker
+(def colorpicker
   (mx/component
    {:render colorpicker-render
     :name "colorpicker"

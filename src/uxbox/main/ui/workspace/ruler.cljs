@@ -149,7 +149,7 @@
     (when (contains? flags :ruler)
       (overlay))))
 
-(def ^:static ruler
+(def ruler
   (mx/component
    {:render ruler-render
     :name "ruler"

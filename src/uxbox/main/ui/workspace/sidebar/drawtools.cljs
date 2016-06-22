@@ -25,7 +25,7 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private ^:static drawing-shape
+(def ^:private drawing-shape
   "A focused vision of the drawing property
   of the workspace status. This avoids
   rerender the whole toolbox on each workspace
@@ -110,7 +110,7 @@
            :on-click (partial select-for-draw (:shape props))}
           (:icon props)])]])))
 
-(def ^:static draw-toolbox
+(def draw-toolbox
   (mx/component
    {:render draw-tools-render
     :name "draw-tools"

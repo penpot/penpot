@@ -19,7 +19,7 @@
             [uxbox.main.ui.users :as ui.u]
             [uxbox.common.ui.mixins :as mx]))
 
-(def ^:static header-l
+(def header-l
   (as-> (l/in [:dashboard]) $
     (l/focus-atom $ s/state)))
 

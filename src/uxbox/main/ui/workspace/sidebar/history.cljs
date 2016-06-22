@@ -145,7 +145,7 @@
          (history-pinned-list history)
          (history-list page history))]])))
 
-(def ^:static history-toolbox
+(def history-toolbox
   (mx/component
    {:render history-toolbox-render
     :name "document-history-toolbox"

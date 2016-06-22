@@ -124,7 +124,7 @@
         (if shape
           (options shape))]]])))
 
-(def ^:static options-toolbox
+(def options-toolbox
   (mx/component
    {:render options-toolbox-render
     :name "options-toolbox"

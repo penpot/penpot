@@ -183,7 +183,7 @@
          [:div.element-icon (element-icon item)]
          [:span (:name item "Unnamed")]]]))))
 
-(def ^:static ^:private layer-element
+(def ^:private layer-element
   (mx/component
    {:render layer-element-render
     :name "layer-element"
@@ -275,7 +275,7 @@
                (-> (layer-element shape selected)
                    (rum/with-key key))))])]))))
 
-(def ^:static ^:private layer-group
+(def ^:private layer-group
   (mx/component
    {:render layer-group-render
     :name "layer-group"
@@ -315,7 +315,7 @@
         [:li.degroup-layer {:on-click degroup} i/ungroup]
         [:li.delete-layer {:on-click delete} i/trash]]]])))
 
-(def ^:static layers-toolbox
+(def layers-toolbox
   (mx/component
    {:render layers-render
     :name "layers"

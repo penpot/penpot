@@ -77,7 +77,7 @@
      ]
     ]))
 
-(def ^:static library-bar
+(def library-bar
   (mx/component
    {:render library-bar-render
     :name "library-bar"

@@ -25,7 +25,7 @@
 
 ;; --- Lenses
 
-(def ^:static dashboard-l
+(def dashboard-l
   (as-> (l/in [:dashboard]) $
     (l/focus-atom $ st/state)))
 

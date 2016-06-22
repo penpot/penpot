@@ -52,7 +52,7 @@
   [own icon]
   (icon/icon-svg icon))
 
-(def ^:static ^:private icon-wrapper
+(def ^:private icon-wrapper
   (mx/component
    {:render icon-wrapper-render
     :name "icon-wrapper"
@@ -89,7 +89,7 @@
                            :on-click #(on-select icon)}
           (icon-wrapper icon)])]])))
 
-(def ^:static icons-toolbox
+(def icons-toolbox
   (mx/component
    {:render icons-render
     :name "icons-toolbox"

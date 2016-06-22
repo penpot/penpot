@@ -201,8 +201,8 @@
         (update-in $ [:shapes-by-id sid] dissoc :group)
         (clear-empty-groups $ source)))))
 
-(def ^:static drop-after #(drop-aside %1 :after %2 %3))
-(def ^:static drop-before #(drop-aside %1 :before %2 %3))
+(def drop-after #(drop-aside %1 :after %2 %3))
+(def drop-before #(drop-aside %1 :before %2 %3))
 
 (defn drop-inside
   [state tid sid]
