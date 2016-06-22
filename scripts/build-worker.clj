@@ -4,17 +4,18 @@
 
 (let [start (System/nanoTime)]
   (b/build
-   (b/inputs "src" "vendor")
+   (b/inputs "src")
    {:main 'uxbox.worker
+    :parallel-build false
+    :warnings {:ns-var-clash false}
     :output-to "resources/public/js/worker.js"
     :source-map "resources/public/js/worker.js.map"
     :output-dir "resources/public/js/worker"
     :asset-path "js"
-    :parallel-build false
     :optimizations :simple
     :static-fns true
-    :pretty-print true
     :language-in  :ecmascript6
     :language-out :ecmascript5
+    :pretty-print true
     :verbose true})
   (println "... done. Elapsed" (/ (- (System/nanoTime) start) 1e9) "seconds"))

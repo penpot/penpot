@@ -4,7 +4,7 @@
 
 (let [start (System/nanoTime)]
   (b/build
-   (b/inputs "src" "vendor")
+   (b/inputs "src")
    {:main 'uxbox.worker
     :output-to "dist/js/worker.js"
     :source-map "dist/js/worker.js.map"

@@ -1,10 +1,10 @@
 (require '[cljs.build.api :as b])
 
 (b/watch
- (b/inputs "dev" "vendor")
+ (b/inputs "dev" "src")
  {:main 'bench.core
   :output-to "out/bench.js"
-  :output-dir "out"
+  :output-dir "out/bench"
   :parallel-build false
   :optimizations :none
   :static-fns false

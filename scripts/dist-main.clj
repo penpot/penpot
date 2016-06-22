@@ -4,7 +4,7 @@
 
 (let [start (System/nanoTime)]
   (b/build
-   (b/inputs "src" "vendor")
+   (b/inputs "src")
    {:main 'uxbox.main
     :parallel-build false
     :warnings {:ns-var-clash false}

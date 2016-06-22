@@ -1,6 +1,6 @@
 language: clojure
-lein: lein
 sudo: false
+lein: lein
 
 script:
   - ./scripts/build-tests
@@ -11,6 +11,9 @@ script:
 jdk:
   - oraclejdk8
 
-node_js:
-  - "5.10.1"
-
+notifications:
+  email:
+    recipients:
+      - niwi@niwi.nz
+    on_success: change
+    on_failure: change

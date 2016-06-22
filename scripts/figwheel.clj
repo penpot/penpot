@@ -10,13 +10,13 @@
    :all-builds
    [{:id "main"
      :figwheel {:on-jsload "uxbox.main.ui/init"}
-     :source-paths ["src" "vendor"]
+     :source-paths ["src"]
      :compiler
      {:main 'uxbox.main
       :parallel-build false
       :optimizations :none
       :closure-defines {"uxbox.common.constants.url"
-                        "https://test.uxbox.io/api"}
+                        "http://localhost:6060/api"}
       :warnings {:ns-var-clash false}
       :language-in  :ecmascript6
       :language-out :ecmascript5
@@ -27,13 +27,13 @@
 
     {:id "view"
      :figwheel {:on-jsload "uxbox.view.ui/init"}
-     :source-paths ["src" "vendor"]
+     :source-paths ["src"]
      :compiler
      {:main 'uxbox.view
       :parallel-build false
       :optimizations :none
       :closure-defines {"uxbox.common.constants.url"
-                        "https://test.uxbox.io/api"}
+                        "http://localhost:6060/api"}
       :warnings {:ns-var-clash false}
       :language-in  :ecmascript6
       :language-out :ecmascript5

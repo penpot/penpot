@@ -4,7 +4,7 @@
 
 (let [start (System/nanoTime)]
   (b/build
-   (b/inputs "src" "vendor")
+   (b/inputs "src")
    {:main 'uxbox.view
     :parallel-build false
     :warnings {:ns-var-clash false}
@@ -15,7 +15,6 @@
                       "https://test.uxbox.io/api"}
     :optimizations :simple
     :externs ["externs/main.js"]
-    :source-map "dist/view/js/view.js.map"
     :static-fns true
     :pretty-print false
     :language-in  :ecmascript6
