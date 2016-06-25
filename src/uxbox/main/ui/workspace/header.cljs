@@ -155,8 +155,8 @@
          i/alignment]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom
-         {:alt "Multi-canvas (Ctrl + M)"}
-         i/multicanvas]]
+         {:alt "View mode (Ctrl + P)"}
+         i/play]]
        (coordinates)]
       (ui.u/user)])))
 
