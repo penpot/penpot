@@ -28,8 +28,8 @@
 
 (defn- focus-shape
   [id]
-  (as-> (l/in [:shapes-by-id id]) $
-    (l/derive $ st/state)))
+  (-> (l/in [:shapes-by-id id])
+      (l/derive st/state)))
 
 (defn- colorpicker-render
   [own {:keys [x y shape attr] :as opts}]
