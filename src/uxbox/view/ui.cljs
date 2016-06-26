@@ -12,6 +12,7 @@
             [uxbox.common.i18n :refer (tr)]
             ;; [uxbox.view.ui.loader :refer (loader)]
             ;; [uxbox.view.ui.lightbox :refer (lightbox)]
+            [uxbox.main.ui.icons :as i]
             [uxbox.common.ui.mixins :as mx]))
 
 ;; --- Main App (Component)
@@ -20,7 +21,16 @@
   [own]
   (html
    [:section.view-content
-    [:div.view-nav "NAV"]
+    [:div.view-nav
+     [:ul.view-options-btn
+      [:li.tooltip.tooltip-right
+        {:alt "sitemap"} i/project-tree]
+      [:li.tooltip.tooltip-right
+        {:alt "view interactions"} i/action]
+      [:li.tooltip.tooltip-right
+        {:alt "share"} i/export]
+      [:li.tooltip.tooltip-right
+        {:alt "save SVG"} i/save]]]
     [:div.view-canvas "VIEW CONTENT"]
    ]
   ))

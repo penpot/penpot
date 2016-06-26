@@ -218,3 +218,55 @@
   }
 
 }
+
+.options-btn {
+  align-items: center;
+  border-right: 4px double $soft-ui-border;
+  display: flex;
+  margin: 0;
+
+  &:last-child {
+    border: none;
+  }
+
+  li {
+    align-items: center;
+    background-color: $secondary-ui-bg;
+    border: 1px solid transparent;
+    border-radius: $br-small;
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    height: 30px;
+    justify-content: center;
+    margin: 0 $small;
+    position: relative;
+    width: 30px;
+
+    a {
+      padding-top: 6px;
+    }
+
+    svg {
+      fill: $intense-ui-icons;
+      height: 18px;
+      width: 18px;
+    }
+
+    &:hover {
+      background-color: $color-white;
+      border-color: $soft-ui-border;
+    }
+
+    &.selected {
+      background-color: $main-ui-color;
+
+      svg {
+        fill: $color-white;
+      }
+
+    }
+
+  }
+
+}

@@ -23,12 +23,65 @@
   flex-shrink: 0;
   height: 55px;
   width: 100%;
+
   @include bp(tablet) {
     border-right: 1px solid $soft-ui-border;
     border-top: 0;
     height: 100%;
     width: 70px;
   }
+
+}
+
+.view-options-btn {
+  align-items: center;
+  display: flex;
+  margin: auto;
+
+  @include bp(tablet) {
+    flex-direction: column;
+  }
+
+  li {
+    align-items: center;
+    background-color: $secondary-ui-bg;
+    border: 1px solid transparent;
+    border-radius: $br-small;
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    height: 40px;
+    justify-content: center;
+    margin: $small;
+    position: relative;
+    width: 40px;
+
+    a {
+      padding-top: 6px;
+    }
+
+    svg {
+      fill: $intense-ui-icons;
+      height: 24px;
+      width: 24px;
+    }
+
+    &:hover {
+      background-color: $color-white;
+      border-color: $soft-ui-border;
+    }
+
+    &.selected {
+      background-color: $main-ui-color;
+
+      svg {
+        fill: $color-white;
+      }
+
+    }
+
+  }
+
 }
 
 .view-canvas {
