@@ -18,7 +18,12 @@
 
 (defn app-render
   [own]
-  (html [:p "hello world!!"]))
+  (html
+   [:section.view-content
+    [:div.view-nav "NAV"]
+    [:div.view-canvas "VIEW CONTENT"]
+   ]
+  ))
 
 (def app
   (mx/component

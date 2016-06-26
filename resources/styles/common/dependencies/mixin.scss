@@ -7,21 +7,21 @@
 
 /// This mixin allows you  to add styles to a specific Media query inside the style selector specifying which Breaking Point you want to choose.
 /// @group Mixins
-/// @parameter $point - This parameter decide which one of Breaking Point you want to use: "bp-papabear" (Desktop), "bp-mamabear" (Tablet) and "bp-babybear" (Mobile).
+/// @parameter $point - This parameter decide which one of Breaking Point you want to use: "bp-desktop" (Desktop), "bp-tablet" (Tablet) and "bp-mobile" (Mobile).
 @mixin bp($point) {
 
-  $bp-babybear: "(min-width: 720px)";
-  $bp-mamabear: "(min-width: 1020px)";
-  $bp-papabear: "(min-width: 1366px)";
+  $bp-mobile: "(min-width: 720px)";
+  $bp-tablet: "(min-width: 1020px)";
+  $bp-desktop: "(min-width: 1366px)";
 
-  @if $point == papa-bear {
-    @media #{$bp-papabear} { @content; }
+  @if $point == mobile {
+    @media #{$bp-desktop} { @content; }
   }
-  @else if $point == mama-bear {
-    @media #{$bp-mamabear} { @content; }
+  @else if $point == tablet {
+    @media #{$bp-tablet} { @content; }
   }
-  @else if $point == baby-bear {
-    @media #{$bp-babybear}  { @content; }
+  @else if $point == desktop {
+    @media #{$bp-mobile}  { @content; }
   }
 
 }
