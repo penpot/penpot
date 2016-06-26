@@ -14,7 +14,7 @@
             [uxbox.main.ui.lightbox :as lbx]))
 
 (defn- confirm-dialog-render
-  [own {:keys [on-accept on-cancel] :as ctx}]
+  [own {:keys [on-accept on-cancel hint] :as ctx}]
   (letfn [(accept [event]
             (dom/prevent-default event)
             (udl/close!)
@@ -27,7 +27,8 @@
     (html
      [:div.lightbox-body.confirm-dialog
       [:h3 "Are you sure?"]
-      [:span "You're going to delete __PAGENAME__"]
+      (if hint
+        [:span hint])
       [:div.row-flex
        [:input.btn-success.btn-small
         {:type "button"
