@@ -1,58 +1,58 @@
-// UXBOX STYLES
+// UXBOX MAIN STYLES
 //#################################################
 //
 //#################################################
 
-@import 'dependencies/colors';
-@import 'dependencies/uxbox-light';
-/* @import 'dependencies/uxbox-dark'; */
-@import 'dependencies/helpers';
-@import 'dependencies/mixin';
-@import 'dependencies/fonts';
-@import 'dependencies/reset';
-@import 'dependencies/animations';
-@import 'dependencies/z-index';
+@import 'common/dependencies/colors';
+@import 'common/dependencies/uxbox-light';
+/* @import 'common/dependencies/uxbox-dark'; */
+@import 'common/dependencies/helpers';
+@import 'common/dependencies/mixin';
+@import 'common/dependencies/fonts';
+@import 'common/dependencies/reset';
+@import 'common/dependencies/animations';
+@import 'common/dependencies/z-index';
 
 //#################################################
 // Layouts
 //#################################################
 
-@import 'base';
-@import 'layouts/main-layout';
-@import 'layouts/login';
+@import 'common/base';
+@import 'main/layouts/main-layout';
+@import 'main/layouts/login';
 
 //#################################################
 // Commons
 //#################################################
 
-@import 'framework';
+@import 'common/framework';
 
 //#################################################
 // Partials
 //#################################################
 
-@import 'partials/main-bar';
-@import 'partials/workspace-bar';
-@import 'partials/workspace-canvas';
-@import 'partials/tool-bar';
-@import 'partials/project-bar';
-@import 'partials/sidebar';
-@import 'partials/sidebar-tools';
-@import 'partials/sidebar-element-options';
-@import 'partials/sidebar-icons';
-@import 'partials/sidebar-layers';
-@import 'partials/sidebar-sitemap';
-@import 'partials/sidebar-document-history';
-@import 'partials/dashboard-bar';
-@import 'partials/dashboard-grid';
-@import 'partials/user-settings';
-@import 'partials/activity-bar';
-@import 'partials/library-bar';
-@import 'partials/lightbox';
-@import 'partials/color-palette';
-@import 'partials/colorpicker';
-@import 'partials/forms';
-@import 'partials/loader';
+@import 'main/partials/main-bar';
+@import 'main/partials/workspace-bar';
+@import 'main/partials/workspace-canvas';
+@import 'main/partials/tool-bar';
+@import 'main/partials/project-bar';
+@import 'main/partials/sidebar';
+@import 'main/partials/sidebar-tools';
+@import 'main/partials/sidebar-element-options';
+@import 'main/partials/sidebar-icons';
+@import 'main/partials/sidebar-layers';
+@import 'main/partials/sidebar-sitemap';
+@import 'main/partials/sidebar-document-history';
+@import 'main/partials/dashboard-bar';
+@import 'main/partials/dashboard-grid';
+@import 'main/partials/user-settings';
+@import 'main/partials/activity-bar';
+@import 'main/partials/library-bar';
+@import 'main/partials/lightbox';
+@import 'main/partials/color-palette';
+@import 'main/partials/colorpicker';
+@import 'main/partials/forms';
+@import 'main/partials/loader';
 
 //#################################################
 // Resources

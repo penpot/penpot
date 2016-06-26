@@ -1,58 +1,34 @@
-// UXBOX STYLES
+// UXBOX VIEW STYLES
 //#################################################
 //
 //#################################################
 
-@import 'dependencies/colors';
-@import 'dependencies/uxbox-light';
-/* @import 'dependencies/uxbox-dark'; */
-@import 'dependencies/helpers';
-@import 'dependencies/mixin';
-@import 'dependencies/fonts';
-@import 'dependencies/reset';
-@import 'dependencies/animations';
-@import 'dependencies/z-index';
+@import 'common/dependencies/colors';
+@import 'common/dependencies/uxbox-light';
+@import 'common/dependencies/helpers';
+@import 'common/dependencies/mixin';
+@import 'common/dependencies/fonts';
+@import 'common/dependencies/reset';
+@import 'common/dependencies/animations';
+@import 'common/dependencies/z-index';
 
 //#################################################
 // Layouts
 //#################################################
 
-@import 'base';
-@import 'layouts/main-layout';
-@import 'layouts/login';
+@import 'common/base';
+@import 'view/layouts/main-layout';
 
 //#################################################
 // Commons
 //#################################################
 
-@import 'framework';
+@import 'common/framework';
 
 //#################################################
 // Partials
 //#################################################
 
-@import 'partials/main-bar';
-@import 'partials/workspace-bar';
-@import 'partials/workspace-canvas';
-@import 'partials/tool-bar';
-@import 'partials/project-bar';
-@import 'partials/sidebar';
-@import 'partials/sidebar-tools';
-@import 'partials/sidebar-element-options';
-@import 'partials/sidebar-icons';
-@import 'partials/sidebar-layers';
-@import 'partials/sidebar-sitemap';
-@import 'partials/sidebar-document-history';
-@import 'partials/dashboard-bar';
-@import 'partials/dashboard-grid';
-@import 'partials/user-settings';
-@import 'partials/activity-bar';
-@import 'partials/library-bar';
-@import 'partials/lightbox';
-@import 'partials/color-palette';
-@import 'partials/colorpicker';
-@import 'partials/forms';
-@import 'partials/loader';
 
 //#################################################
 // Resources
