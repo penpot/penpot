@@ -358,6 +358,36 @@
   [selrect]
   (SelectShapes. selrect))
 
+;; --- Update Interaction
+
+(defrecord UpdateInteraction [shape interaction]
+  udp/IPageUpdate
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [id (or (:id interaction)
+                 (uuid/random))
+          data (assoc interaction :id id)]
+      (assoc-in state [:shapes-by-id shape :interactions id] data))))
+
+(defn update-interaction
+  [shape interaction]
+  (UpdateInteraction. shape interaction))
+
+
+;; --- Delete Interaction
+
+(defrecord DeleteInteracton [shape id]
+  udp/IPageUpdate
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:shapes-by-id shape :interactions] dissoc id)))
+
+(defn delete-interaction
+  [shape id]
+  {:pre [(uuid? id) (uuid? shape)]}
+  (DeleteInteracton. shape id))
+
+
 ;; --- Events (implicit) (for selected)
 
 (defn deselect-all

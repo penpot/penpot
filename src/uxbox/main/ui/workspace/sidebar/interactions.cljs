@@ -37,34 +37,48 @@
      (reset! form data)
      (on-change form attr event))))
 
-(def show-elements-input?
-  #{:show :hide :toggle :moveto :moveby
-    :opacity :size :color :rotate :scrolltoelement})
-
-(def show-animation-input?
-  #{:show :hide :toggle})
-
-(def show-only-easing-input?
-  (complement show-animation-input?))
-
 ;; --- Interactions List
 
+(defn- translate-trigger-name
+  [trigger]
+  (case trigger
+    :click "Click"
+    :doubleclick "Double Click"
+    :rightclick "Right Click"
+    :hover "Hover"
+    :mousein "Mouse In"
+    :mouseout "Mouse Out"
+    :swiperight "Swipe Right"
+    :swipeleft "Swipe Left"
+    :swipedown "Swipe Down"
+    :touchandhold "Touch and Hold"
+    :holdrelease "Hold release"
+    (pr-str trigger)))
+
+
 (defn- interactions-list-render
-  [own]
-  (html
-   [:ul.element-list
-    [:li
-     [:div.list-icon i/action]
-     [:span "Hover"]
-     [:div.list-actions
-      [:a {:href "#"} i/pencil]
-      [:a {:href "#"} i/trash]]]
-    [:li
-     [:div.list-icon i/action]
-     [:span "Mouse in"]
-     [:div.list-actions
-      [:a {:href "#"} i/pencil]
-      [:a {:href "#"} i/trash]]]]))
+  [own shape form-ref]
+  (letfn [(on-edit [item event]
+            (dom/prevent-default event)
+            (reset! form-ref item))
+          (delete [item]
+            (let [sid (:id shape)
+                  id (:id item)]
+              (rs/emit! (uds/delete-interaction sid id))))
+          (on-delete [item event]
+            (dom/prevent-default event)
+            (let [delete (partial delete item)]
+              (udl/open! :confirm {:on-accept delete})))]
+    (html
+     [:ul.element-list
+      (for [item (vals (:interactions shape))
+            :let [key (pr-str (:id item))]]
+        [:li {:key key}
+         [:div.list-icon i/action]
+         [:span (translate-trigger-name (:trigger item))]
+         [:div.list-actions
+          [:a {:on-click (partial on-edit item)} i/pencil]
+          [:a {:on-click (partial on-delete item)} i/trash]]])])))
 
 (def interactions-list
   (mx/component
@@ -90,15 +104,15 @@
       [:option {:value ":rightclick"} "Right-click"]
       [:option {:value ":hover"} "Hover"]
       [:option {:value ":mousein"} "Mouse in"]
-      [:option {:value ":mousein"} "Mouse out"]
-      [:option {:value ":mousein"} "Swipe right"]
-      [:option {:value ":mousein"} "Swipe left"]
-      [:option {:value ":mousein"} "Swipe dpwn"]
-      [:option {:value ":mousein"} "Touch and hold"]
-      [:option {:value ":mousein"} "Hold release"]
-      [:option {:value ":keypress"} "Key press"]
-      [:option {:value ":pageisloaded"} "Page is loaded"]
-      [:option {:value ":windowscroll"} "Window is scrolled to"]]]]))
+      [:option {:value ":mouseout"} "Mouse out"]
+      [:option {:value ":swiperight"} "Swipe right"]
+      [:option {:value ":swipeleft"} "Swipe left"]
+      [:option {:value ":swipedown"} "Swipe dpwn"]
+      [:option {:value ":touchandhold"} "Touch and hold"]
+      [:option {:value ":holdrelease"} "Hold release"]
+      #_[:option {:value ":keypress"} "Key press"]
+      #_[:option {:value ":pageisloaded"} "Page is loaded"]
+      #_[:option {:value ":windowscroll"} "Window is scrolled to"]]]]))
 
 (def trigger-input
   (mx/component
@@ -117,6 +131,7 @@
      [:input.input-text
       {:placeholder "http://"
        :on-change (partial on-change form-ref :url)
+       :value (:url @form-ref "")
        :type "url"}]]]))
 
 (def url-input
@@ -424,7 +439,6 @@
 
 (defn- action-input-render
   [own page form-ref]
-  (println "action-input" @form-ref)
   (when-not (:action @form-ref)
     (swap! form-ref assoc :action :show))
 
@@ -489,14 +503,24 @@
 
 (defn- interactions-form-render
   [own shape form-ref]
-  ;; (println "interactions-form" @form-ref)
-  (html
-   [:form
-    (trigger-input form-ref)
-    (action-input (:page shape) form-ref)
-    [:div.row-flex
-     [:input.btn-primary.btn-small.save-btn {:value "Save" :type "submit"}]
-     [:a.cancel-btn {:href "#"} "Cancel"]]]))
+  (letfn [(on-submit [event]
+            (dom/prevent-default event)
+            (let [shape-id (:id shape)
+                  data (deref form-ref)]
+              (rs/emit! (uds/update-interaction shape-id data))
+              (reset! form-ref nil)))
+          (on-cancel [event]
+            (dom/prevent-default event)
+            (reset! form-ref nil))]
+    (html
+     [:form {:on-submit on-submit}
+      (trigger-input form-ref)
+      (action-input (:page shape) form-ref)
+      [:div.row-flex
+       [:input.btn-primary.btn-small.save-btn
+        {:value "Save" :type "submit"}]
+       [:a.cancel-btn {:on-click on-cancel}
+        "Cancel"]]])))
 
 (def interactions-form
   (mx/component
@@ -508,18 +532,21 @@
 (defn- interactions-menu-render
   [own menu shape]
   (let [local (:rum/local own)
-        form (l/derive (l/key :form) local)
-        interactions (:interactions shape)]
+        form-ref (l/derive (l/key :form) local)
+        interactions (:interactions shape)
+        create-interaction #(reset! form-ref {})]
     (html
      [:div.element-set {:key (str (:id menu))}
       [:div.element-set-title (:name menu)]
       [:div.element-set-content
-       (if (and (not @form)
-                (not (empty? interactions)))
+       (if @form-ref
+         (interactions-form shape form-ref)
          [:div
-          (interactions-list interactions)
-          [:input.btn-primary.btn-small {:value "New interaction" :type "submit"}]]
-         (interactions-form shape form))]])))
+          (interactions-list shape form-ref)
+          [:input.btn-primary.btn-small
+           {:value "New interaction"
+            :on-click create-interaction
+            :type "button"}]])]])))
 
 (def interactions-menu
   (mx/component
