@@ -21,6 +21,24 @@
   [own]
   (html
    [:section.view-content
+
+    [:div.view-sitemap.hide
+     [:span.sitemap-title "_Sitename_"]
+     [:ul.sitemap-list
+      [:li
+       [:div.page-icon i/page]
+        [:span "page 001"]]
+      [:li
+       [:div.page-icon i/page]
+        [:span "page 002"]]
+      [:li
+       [:div.page-icon i/page]
+        [:span "page 003"]]
+      [:li
+       [:div.page-icon i/page]
+        [:span "page 004"]]]
+    ]
+
     [:div.view-nav
      [:ul.view-options-btn
       [:li.tooltip.tooltip-right
@@ -31,9 +49,8 @@
         {:alt "share"} i/export]
       [:li.tooltip.tooltip-right
         {:alt "save SVG"} i/save]]]
-    [:div.view-canvas "VIEW CONTENT"]
-   ]
-  ))
+
+    [:div.view-canvas "VIEW CONTENT"]]))
 
 (def app
   (mx/component
