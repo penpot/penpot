@@ -12,7 +12,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as ui]
             [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.common.geom :as geom]
+            [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]))
 
 ;; --- Lenses

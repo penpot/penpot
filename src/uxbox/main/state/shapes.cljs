@@ -2,7 +2,7 @@
   "A collection of functions for manage shapes insinde the state."
   (:require [uxbox.util.uuid :as uuid]
             [uxbox.util.data :refer (index-of)]
-            [uxbox.common.geom :as geom]))
+            [uxbox.main.geom :as geom]))
 
 ;; --- Shape Creation
 

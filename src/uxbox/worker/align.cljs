@@ -9,7 +9,7 @@
   (:require [beicon.core :as rx]
             [uxbox.util.kdtree :as kd]
             [uxbox.worker.impl :as impl]
-            [uxbox.common.geom.point :as gpt]))
+            [uxbox.main.geom.point :as gpt]))
 
 (defonce tree (kd/create))
 

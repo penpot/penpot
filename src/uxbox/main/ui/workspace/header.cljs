@@ -21,7 +21,7 @@
             [uxbox.main.ui.users :as ui.u]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.common.ui.mixins :as mx]
-            [uxbox.common.geom.point :as gpt]
+            [uxbox.main.geom.point :as gpt]
             [uxbox.util.math :as mth]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

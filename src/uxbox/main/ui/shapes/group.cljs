@@ -17,7 +17,7 @@
             [uxbox.main.ui.shapes.circle :as circle]
             [uxbox.main.ui.shapes.text :as text]
             [uxbox.main.ui.shapes.line :as line]
-            [uxbox.common.geom :as geom]))
+            [uxbox.main.geom :as geom]))
 
 ;; --- Helpers
 

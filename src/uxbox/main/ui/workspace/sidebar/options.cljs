@@ -29,7 +29,7 @@
             [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
             [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
             [uxbox.main.ui.workspace.sidebar.options.interactions :as options-interactions]
-            [uxbox.common.geom :as geom]
+            [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 

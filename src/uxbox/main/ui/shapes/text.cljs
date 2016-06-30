@@ -16,7 +16,7 @@
             [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.common.geom :as geom]
+            [uxbox.main.geom :as geom]
             [uxbox.util.color :as color]
             [uxbox.util.dom :as dom])
   (:import goog.events.EventType))

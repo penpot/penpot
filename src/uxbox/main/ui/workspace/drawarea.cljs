@@ -19,8 +19,8 @@
             [uxbox.main.ui.shapes :as shapes]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.common.ui.mixins :as mx]
-            [uxbox.common.geom :as geom]
-            [uxbox.common.geom.point :as gpt]
+            [uxbox.main.geom :as geom]
+            [uxbox.main.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 
 ;; --- State

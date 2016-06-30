@@ -9,7 +9,7 @@
   (:refer-clojure :exclude [keyword uuid vector boolean map set])
   (:require [struct.core :as st]
             [uxbox.common.i18n :refer (tr)]
-            [uxbox.common.geom :refer (shape?)]))
+            [uxbox.main.geom :refer (shape?)]))
 
 ;; (def datetime
 ;;   {:message "must be an instant"

@@ -16,7 +16,7 @@
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.common.geom.point :as gpt]
+            [uxbox.main.geom.point :as gpt]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int)]
             [uxbox.main.ui.core :as uuc]

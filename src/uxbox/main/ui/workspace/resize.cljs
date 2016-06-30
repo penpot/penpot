@@ -11,7 +11,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as uuc]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.common.geom.point :as gpt]))
+            [uxbox.main.geom.point :as gpt]))
 
 (declare initialize)
 

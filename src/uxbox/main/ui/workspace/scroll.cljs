@@ -15,7 +15,7 @@
             [uxbox.main.ui.core :as uuc]
             [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.workspace.base :as uuwb]
-            [uxbox.common.geom.point :as gpt]))
+            [uxbox.main.geom.point :as gpt]))
 
 (defn watch-scroll-interactions
   [own]

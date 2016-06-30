@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.common.geom
-  (:require [uxbox.common.geom.matrix :as gmt]
-            [uxbox.common.geom.point :as gpt]
+(ns uxbox.main.geom
+  (:require [uxbox.main.geom.matrix :as gmt]
+            [uxbox.main.geom.point :as gpt]
             [uxbox.util.math :as mth]
             [uxbox.main.state :as st]))
 

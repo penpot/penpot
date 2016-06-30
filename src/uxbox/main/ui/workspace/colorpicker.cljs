@@ -22,7 +22,7 @@
             [uxbox.main.ui.colorpicker :as cp]
             [uxbox.main.ui.workspace.recent-colors :refer (recent-colors)]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.common.geom :as geom]
+            [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 

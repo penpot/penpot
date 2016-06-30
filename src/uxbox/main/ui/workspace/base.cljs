@@ -13,7 +13,7 @@
             [uxbox.main.state.project :as stpr]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.common.geom.point :as gpt]
+            [uxbox.main.geom.point :as gpt]
             [goog.events :as events])
   (:import goog.events.EventType))
 

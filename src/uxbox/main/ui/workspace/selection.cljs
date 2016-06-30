@@ -13,7 +13,7 @@
             [uxbox.main.state :as st]
             [uxbox.common.ui.mixins :as mx]
             [uxbox.main.ui.core :as uuc]
-            [uxbox.common.geom :as geom]
+            [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]))
 
 ;; --- Constants
