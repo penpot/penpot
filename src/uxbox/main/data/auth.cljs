@@ -8,7 +8,7 @@
 (ns uxbox.main.data.auth
   (:require [beicon.core :as rx]
             [promesa.core :as p]
-            [uxbox.common.repo :as rp]
+            [uxbox.main.repo :as rp]
             [uxbox.common.rstore :as rs]
             [uxbox.common.router :as rt]
             [uxbox.main.state :as st]

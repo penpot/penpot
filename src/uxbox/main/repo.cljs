@@ -4,16 +4,16 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.common.repo
+(ns uxbox.main.repo
   "A main interface for access to remote resources."
   (:require [httpurr.status :as status]
-            [uxbox.common.repo.auth]
-            [uxbox.common.repo.users]
-            [uxbox.common.repo.projects]
-            [uxbox.common.repo.pages]
-            [uxbox.common.repo.images]
-            [uxbox.common.repo.colors]
-            [uxbox.common.repo.impl :as impl]))
+            [uxbox.main.repo.auth]
+            [uxbox.main.repo.users]
+            [uxbox.main.repo.projects]
+            [uxbox.main.repo.pages]
+            [uxbox.main.repo.images]
+            [uxbox.main.repo.colors]
+            [uxbox.main.repo.impl :as impl]))
 
 (defn req
   "Perform a side effectfull action accesing

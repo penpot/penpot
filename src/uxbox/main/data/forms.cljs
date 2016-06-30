@@ -8,7 +8,7 @@
   (:require [beicon.core :as rx]
             [promesa.core :as p]
             [lentes.core :as l]
-            [uxbox.common.repo :as rp]
+            [uxbox.main.repo :as rp]
             [uxbox.common.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.common.schema :as sc]

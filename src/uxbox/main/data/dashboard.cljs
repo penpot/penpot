@@ -12,7 +12,7 @@
             [uxbox.common.router :as r]
             [uxbox.main.state :as st]
             [uxbox.common.schema :as sc]
-            [uxbox.common.repo :as rp]
+            [uxbox.main.repo :as rp]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.colors :as dc]
             [uxbox.main.data.images :as di]

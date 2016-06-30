@@ -11,7 +11,7 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.common.rstore :as rs]
             [uxbox.main.state :as st]
-            [uxbox.common.repo :as rp]))
+            [uxbox.main.repo :as rp]))
 
 ;; --- Initialize
 

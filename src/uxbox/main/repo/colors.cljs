@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.common.repo.colors
+(ns uxbox.main.repo.colors
   "A main interface for access to remote resources."
   (:require [beicon.core :as rx]
             [uxbox.common.constants :refer (url)]
-            [uxbox.common.repo.impl :refer (request send!)]
+            [uxbox.main.repo.impl :refer (request send!)]
             [uxbox.util.transit :as t]))
 
 (defn- decode-color-collection

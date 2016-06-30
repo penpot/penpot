@@ -12,7 +12,7 @@
             [lentes.core :as l]
             [uxbox.common.rstore :as rs]
             [uxbox.common.router :as r]
-            [uxbox.common.repo :as rp]
+            [uxbox.main.repo :as rp]
             [uxbox.common.i18n :refer (tr)]
             [uxbox.common.schema :as sc]
             [uxbox.main.state :as st]

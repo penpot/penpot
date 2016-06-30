@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.common.repo.impl
+(ns uxbox.main.repo.impl
   (:require [clojure.walk :as walk]
             [promesa.core :as p :include-macros true]
             [beicon.core :as rx]

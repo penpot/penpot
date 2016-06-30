@@ -12,7 +12,7 @@
             [uxbox.main.state :as st]
             [uxbox.common.rstore :as rs]
             [uxbox.main.state.colors :as stc]
-            [uxbox.common.repo :as rp]))
+            [uxbox.main.repo :as rp]))
 
 ;; --- Initialize
 
