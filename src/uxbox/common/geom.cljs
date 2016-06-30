@@ -157,7 +157,13 @@
     :top-left (gpt/point x1 y1)
     :top-right (gpt/point x2 y1)
     :bottom-left (gpt/point x1 y2)
-    :bottom-right (gpt/point x2 y2)))
+    :bottom-right (gpt/point x2 y2)
+    :top (gpt/point (/ (+ x1 x2) 2) y1)
+    :right (gpt/point x2 (/ (+ y1 y2) 2))
+    :left (gpt/point x1 (/ (+ y1 y2) 2))
+    :bottom (gpt/point (/ (+ x1 x2) 2)
+                       (/ (+ y1 y2) 2))))
+
 
 (defn- get-circle-vertext-point
   [{:keys [rx ry]} id]
