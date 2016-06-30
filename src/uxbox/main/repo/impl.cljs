@@ -10,7 +10,7 @@
             [beicon.core :as rx]
             [httpurr.client.xhr :as http]
             [httpurr.status :as status]
-            [uxbox.util.constants :refer (url)]
+            [uxbox.config :refer (url)]
             [uxbox.util.storage :refer (storage)]
             [uxbox.util.transit :as t])
   (:import [goog.Uri QueryData]))
