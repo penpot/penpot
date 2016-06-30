@@ -7,7 +7,7 @@
 (ns uxbox.main.repo.projects
   "A main interface for access to remote resources."
   (:require [beicon.core :as rx]
-            [uxbox.common.constants :refer (url)]
+            [uxbox.util.constants :refer (url)]
             [uxbox.main.repo.impl :refer (request send!)]))
 
 (defmethod request :fetch/projects

@@ -9,7 +9,7 @@
             [rum.core :as rum]
             [lentes.core :as l]
             [uxbox.main.state :as st]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.ui.shapes.icon :as icon]

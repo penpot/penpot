@@ -1,7 +1,7 @@
 (ns uxbox.main.ui.forms
   (:require [sablono.core :refer-macros [html]]
-            [uxbox.common.i18n :refer (tr)]
-            [uxbox.common.schema :as sc]))
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.schema :as sc]))
 
 (defn input-error
   [errors field]

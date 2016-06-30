@@ -4,7 +4,7 @@
             [lentes.core :as l]
             [uxbox.main.state :as st]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.keyboard :as k]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (classnames)]

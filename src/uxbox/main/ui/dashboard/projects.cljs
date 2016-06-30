@@ -10,9 +10,9 @@
             [rum.core :as rum]
             [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.common.i18n :as t :refer (tr)]
-            [uxbox.common.router :as r]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.i18n :as t :refer (tr)]
+            [uxbox.util.router :as r]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as s]
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.projects :as dp]
@@ -23,7 +23,7 @@
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.messages :as uum]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.util.datetime :as dt]))
 
 ;; --- Helpers & Constants

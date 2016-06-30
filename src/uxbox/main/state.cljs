@@ -8,8 +8,8 @@
 (ns uxbox.main.state
   (:require [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.common.rstore :as rs]
-            [uxbox.common.i18n :refer (tr)]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.util.storage :refer (storage)]))
 
 (enable-console-print!)

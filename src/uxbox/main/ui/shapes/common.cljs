@@ -7,7 +7,7 @@
 (ns uxbox.main.ui.shapes.common
   (:require [sablono.core :refer-macros [html]]
             [lentes.core :as l]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as ui]

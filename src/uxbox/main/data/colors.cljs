@@ -10,7 +10,7 @@
             [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
             [uxbox.main.state :as st]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state.colors :as stc]
             [uxbox.main.repo :as rp]))
 

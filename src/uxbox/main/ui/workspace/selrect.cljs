@@ -11,11 +11,11 @@
             [rum.core :as rum]
             [beicon.core :as rx]
             [uxbox.main.constants :as c]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as uuc]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.workspace.base :as wb]))
 
 (defonce position (atom nil))

@@ -9,7 +9,7 @@
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]))
 

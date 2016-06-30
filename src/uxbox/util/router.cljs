@@ -5,13 +5,13 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.common.router
+(ns uxbox.util.router
   (:require [bidi.router]
             [bidi.bidi :as bidi]
             [goog.events :as events]
             [lentes.core :as l]
             [beicon.core :as rx]
-            [uxbox.common.rstore :as rs]))
+            [uxbox.util.rstore :as rs]))
 
 (enable-console-print!)
 

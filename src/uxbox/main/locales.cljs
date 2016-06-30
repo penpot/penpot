@@ -7,7 +7,7 @@
 
 (ns uxbox.main.locales
   "Initialization namespace for i18n locale data."
-  (:require [uxbox.common.i18n :as i18n]
+  (:require [uxbox.util.i18n :as i18n]
             [uxbox.main.locales.en :as en]))
 
 (defn init

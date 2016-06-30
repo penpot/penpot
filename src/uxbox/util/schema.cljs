@@ -5,10 +5,10 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.common.schema
+(ns uxbox.util.schema
   (:refer-clojure :exclude [keyword uuid vector boolean map set])
   (:require [struct.core :as st]
-            [uxbox.common.i18n :refer (tr)]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.main.geom :refer (shape?)]))
 
 ;; (def datetime

@@ -9,8 +9,8 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
-            [uxbox.common.router :as r]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.router :as r]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.lightbox :as udl]
@@ -20,7 +20,7 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.users :as ui.u]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.geom.point :as gpt]
             [uxbox.util.math :as mth]))
 

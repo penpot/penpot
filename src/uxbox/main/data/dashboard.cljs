@@ -8,10 +8,10 @@
 (ns uxbox.main.data.dashboard
   (:require [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
-            [uxbox.common.rstore :as rs]
-            [uxbox.common.router :as r]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.router :as r]
             [uxbox.main.state :as st]
-            [uxbox.common.schema :as sc]
+            [uxbox.util.schema :as sc]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.colors :as dc]

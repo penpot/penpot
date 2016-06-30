@@ -7,8 +7,8 @@
 (ns uxbox.main.data.core
   "Worker related api and initialization events."
   (:require [beicon.core :as rx]
-            [uxbox.common.rstore :as rs]
-            [uxbox.common.workers :as uw]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.workers :as uw]
             [uxbox.main.constants :as c]))
 
 ;; This excludes webworker instantiation on nodejs where

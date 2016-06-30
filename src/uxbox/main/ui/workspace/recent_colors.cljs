@@ -9,12 +9,12 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [lentes.core :as l]
-            [uxbox.common.i18n :refer (tr)]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.ui.icons :as i]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.workspace.base :as wb]))
 

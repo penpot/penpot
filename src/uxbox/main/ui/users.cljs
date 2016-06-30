@@ -9,14 +9,14 @@
             [cuerdas.core :as str]
             [lentes.core :as l]
             [rum.core :as rum]
-            [uxbox.common.router :as r]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.router :as r]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as s]
             [uxbox.main.data.auth :as da]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.common.ui.mixins :as mx]))
+            [uxbox.util.mixins :as mx]))
 
 ;; --- User Menu
 

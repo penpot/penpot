@@ -7,7 +7,7 @@
 (ns uxbox.main.ui.shapes.icon
   (:require [sablono.core :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.geom :as geom]))

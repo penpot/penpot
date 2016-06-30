@@ -1,4 +1,4 @@
-(ns uxbox.common.ui.mixins
+(ns uxbox.util.mixins
   (:refer-clojure :exclude [concat])
   (:require [sablono.core :refer-macros [html]]
             [rum.core :as rum]

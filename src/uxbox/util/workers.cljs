@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.common.workers
+(ns uxbox.util.workers
   "A lightweight layer on top of webworkers api."
   (:require [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]

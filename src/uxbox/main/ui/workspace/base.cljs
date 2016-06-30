@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace.base
   (:require [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.state.project :as stpr]
             [uxbox.main.data.workspace :as dw]

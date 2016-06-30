@@ -9,16 +9,16 @@
             [lentes.core :as l]
             [cuerdas.core :as str]
             [rum.core :as rum]
-            [uxbox.common.router :as rt]
+            [uxbox.util.router :as rt]
             [uxbox.main.state :as st]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.data.auth :as da]
             [uxbox.main.data.messages :as udm]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.common.ui.mixins :as mx]))
+            [uxbox.util.mixins :as mx]))
 
 (defn- login-submit
   [event local]

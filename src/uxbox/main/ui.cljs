@@ -14,9 +14,9 @@
             [rum.core :as rum]
             [lentes.core :as l]
             [uxbox.main.state :as st]
-            [uxbox.common.router :as rt]
-            [uxbox.common.rstore :as rs]
-            [uxbox.common.i18n :refer (tr)]
+            [uxbox.util.router :as rt]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.users :as udu]
             [uxbox.main.data.auth :as dauth]
@@ -28,7 +28,7 @@
             [uxbox.main.ui.dashboard :as dashboard]
             [uxbox.main.ui.settings :as settings]
             [uxbox.main.ui.workspace :refer (workspace)]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.shapes]))
 
 ;; --- Constants

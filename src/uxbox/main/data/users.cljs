@@ -8,10 +8,10 @@
   (:require [beicon.core :as rx]
             [promesa.core :as p]
             [uxbox.main.repo :as rp]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
-            [uxbox.common.schema :as sc]
-            [uxbox.common.i18n :refer (tr)]
+            [uxbox.util.schema :as sc]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.main.data.forms :as udf]
             [uxbox.main.data.messages :as udm]))
 

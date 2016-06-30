@@ -8,11 +8,11 @@
 (ns uxbox.main.ui.dashboard.elements
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.library-bar :as ui.library-bar]
             [uxbox.main.ui.dashboard.header :refer (header)]

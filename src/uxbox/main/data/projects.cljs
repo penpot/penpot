@@ -8,12 +8,12 @@
 (ns uxbox.main.data.projects
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
-            [uxbox.common.rstore :as rs]
-            [uxbox.common.router :as r]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.router :as r]
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]
-            [uxbox.common.i18n :refer (tr)]
-            [uxbox.common.schema :as sc]
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.schema :as sc]
             [uxbox.main.state.project :as stpr]
             [uxbox.main.data.pages :as udp]))
 

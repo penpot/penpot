@@ -8,7 +8,7 @@
   (:require [lentes.core :as l]
             [rum.core :as rum]
             [uxbox.main.state :as st]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.shapes.group :as group]))
 
 (def render-component group/render-component)

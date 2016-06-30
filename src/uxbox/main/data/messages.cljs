@@ -9,7 +9,7 @@
             [promesa.core :as p]
             [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.common.rstore :as rs]))
+            [uxbox.util.rstore :as rs]))
 
 ;; --- Constants
 

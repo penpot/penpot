@@ -10,8 +10,8 @@
             [rum.core :as rum]
             [lentes.core :as l]
             [goog.events :as events]
-            [uxbox.common.router :as r]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.router :as r]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.library :as library]
             [uxbox.util.data :refer (read-string classnames)]
@@ -20,7 +20,7 @@
             [uxbox.main.ui.shapes.icon :as icon]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom])
   (:import goog.events.EventType))

@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace.shortcuts
   (:require [goog.events :as events]
             [beicon.core :as rx]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]

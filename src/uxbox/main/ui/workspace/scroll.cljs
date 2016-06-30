@@ -9,11 +9,11 @@
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.main.constants :as c]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as ust]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as uuc]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.workspace.base :as uuwb]
             [uxbox.main.geom.point :as gpt]))
 

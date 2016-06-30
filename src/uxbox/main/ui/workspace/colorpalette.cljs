@@ -10,7 +10,7 @@
             [rum.core :as rum]
             [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.library :as library]
             [uxbox.main.data.workspace :as dw]
@@ -22,7 +22,7 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.dom :as dom]
-            [uxbox.common.ui.mixins :as mx]))
+            [uxbox.util.mixins :as mx]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lenses

@@ -10,7 +10,7 @@
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.main.constants :as c]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.ui.core :as uuc]
             [uxbox.main.ui.workspace.base :as wb]

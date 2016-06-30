@@ -14,7 +14,7 @@
             [uxbox.main.state :as s]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.common.ui.mixins :as mx]))
+            [uxbox.util.mixins :as mx]))
 
 ;; --- Constants & Helpers
 

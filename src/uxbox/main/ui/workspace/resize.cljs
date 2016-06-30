@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.workspace.resize
   (:require [beicon.core :as rx]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as uuc]
             [uxbox.main.ui.workspace.base :as wb]

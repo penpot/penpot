@@ -9,15 +9,15 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [lentes.core :as l]
-            [uxbox.common.i18n :refer (tr)]
-            [uxbox.common.router :as r]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.router :as r]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as s]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.users :as ui.u]
-            [uxbox.common.ui.mixins :as mx]))
+            [uxbox.util.mixins :as mx]))
 
 (def header-l
   (as-> (l/in [:dashboard]) $

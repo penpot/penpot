@@ -9,10 +9,10 @@
             [promesa.core :as p]
             [lentes.core :as l]
             [uxbox.main.repo :as rp]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
-            [uxbox.common.schema :as sc]
-            [uxbox.common.i18n :refer (tr)]))
+            [uxbox.util.schema :as sc]
+            [uxbox.util.i18n :refer (tr)]))
 
 ;; --- Assign Errors
 

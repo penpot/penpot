@@ -6,8 +6,8 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main
-  (:require [uxbox.main.state :as st]
-            [uxbox.common.rstore :as rs]
+  (:require [uxbox.util.rstore :as rs]
+            [uxbox.main.state :as st]
             [uxbox.main.locales :as lc]
             [uxbox.main.ui :as ui]))
 

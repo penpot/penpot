@@ -8,9 +8,9 @@
   (:require [sablono.core :refer-macros [html]]
             [rum.core :as rum]
             [uxbox.main.state :as st]
-            [uxbox.common.rstore :as rs]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.ui.icons :as i]
-            [uxbox.common.ui.mixins :as mx]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.shapes]))
 
 ;; --- Error Handling
