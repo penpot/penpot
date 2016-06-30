@@ -4,6 +4,5 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.common.constants)
-
+(ns uxbox.config)
 (goog-define url "http://127.0.0.1:6060/api")

@@ -16,7 +16,7 @@
      {:main 'uxbox.main
       :parallel-build false
       :optimizations :none
-      :closure-defines {"uxbox.common.constants.url"
+      :closure-defines {"uxbox.config.url"
                         "https://test.uxbox.io/api"}
       :warnings {:ns-var-clash false}
       :language-in  :ecmascript6
@@ -33,7 +33,7 @@
      {:main 'uxbox.view
       :parallel-build false
       :optimizations :none
-      :closure-defines {"uxbox.common.constants.url"
+      :closure-defines {"uxbox.config.url"
                         "https://test.uxbox.io/api"}
       :warnings {:ns-var-clash false}
       :language-in  :ecmascript6
