@@ -66,7 +66,7 @@
   (mx/component
    {:render text-component-render
     :name "text-componet"
-    :mixins [mx/static rum/reactive (mx/local)]}))
+    :mixins [mx/static mx/reactive (mx/local)]}))
 
 ;; --- Text Styles Helpers
 

@@ -60,5 +60,5 @@
   (mx/component
    {:render recent-colors-render
     :name "recent-colors"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 

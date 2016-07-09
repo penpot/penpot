@@ -34,5 +34,5 @@
   (mx/component
    {:render loader-render
     :name "loader"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 

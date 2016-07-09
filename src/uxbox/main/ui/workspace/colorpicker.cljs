@@ -61,7 +61,7 @@
   (mx/component
    {:render colorpicker-render
     :name "colorpicker"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 (defmethod lbx/render-lightbox :workspace/colorpicker
   [params]

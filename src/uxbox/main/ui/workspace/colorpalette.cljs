@@ -94,5 +94,5 @@
   (mx/component
    {:render colorpalette-render
     :name "colorpalette"
-    :mixins [mx/static rum/reactive
+    :mixins [mx/static mx/reactive
              (mx/local {})]}))

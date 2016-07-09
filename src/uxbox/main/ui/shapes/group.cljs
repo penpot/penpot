@@ -55,7 +55,7 @@
   (mx/component
    {:render group-component-render
     :name "group-component"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Group Shape
 

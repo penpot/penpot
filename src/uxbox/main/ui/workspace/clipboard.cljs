@@ -52,7 +52,7 @@
   (mx/component
    {:render clipboard-dialog-render
     :name "clipboard-dialog"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 (defmethod lbx/render-lightbox :clipboard
   [_]

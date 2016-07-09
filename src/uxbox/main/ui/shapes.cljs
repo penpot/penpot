@@ -28,4 +28,4 @@
   (mx/component
    {:render shape-render
     :name "shape"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))

@@ -130,7 +130,7 @@
   (mx/component
    {:render page-title-render
     :name "page-title"
-    :mixins [(mx/local) mx/static rum/reactive]}))
+    :mixins [(mx/local) mx/static mx/reactive]}))
 
 ;; --- Nav
 
@@ -174,7 +174,7 @@
   (mx/component
    {:render nav-render
     :name "nav"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 ;; --- Grid
 
@@ -258,7 +258,7 @@
   (mx/component
    {:render grid-render
     :name "grid"
-    :mixins [(rum/local {:selected #{}}) mx/static rum/reactive]}))
+    :mixins [(rum/local {:selected #{}}) mx/static mx/reactive]}))
 
 ;; --- Sort Widget
 
@@ -286,7 +286,7 @@
   (mx/component
    {:render sort-widget-render
     :name "sort-widget-render"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 ;; --- Filtering Widget
 
@@ -314,7 +314,7 @@
   (mx/component
    {:render search-widget-render
     :name "search-widget"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 ;; --- Menu
 
@@ -335,7 +335,7 @@
   (mx/component
    {:render menu-render
     :name "menu"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 
 ;; --- Images Page

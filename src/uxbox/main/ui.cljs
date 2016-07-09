@@ -112,7 +112,7 @@
   (mx/component
    {:render app-render
     :will-mount app-will-mount
-    :mixins [rum/reactive]
+    :mixins [mx/reactive]
     :name "app"}))
 
 ;; --- Routes

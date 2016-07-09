@@ -56,7 +56,7 @@
     :will-mount selrect-will-mount
     :will-unmount selrect-will-unmount
     :transfer-state selrect-transfer-state
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Implementation
 

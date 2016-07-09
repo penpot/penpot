@@ -133,4 +133,4 @@
   (mx/component
    {:render options-toolbox-render
     :name "options-toolbox"
-    :mixins [mx/static rum/reactive (mx/local)]}))
+    :mixins [mx/static mx/reactive (mx/local)]}))

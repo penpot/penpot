@@ -93,5 +93,5 @@
   (mx/component
    {:render icons-render
     :name "icons-toolbox"
-    :mixins [rum/reactive
+    :mixins [mx/reactive
              (mx/local {:collid 1 :builtin true})]}))

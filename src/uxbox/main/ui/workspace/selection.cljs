@@ -122,4 +122,4 @@
   (mx/component
    {:render selection-handlers-render
     :name "selection-handlers"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))

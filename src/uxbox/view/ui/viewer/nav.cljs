@@ -39,4 +39,4 @@
   (mx/component
    {:render nav-render
     :name "nav"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))

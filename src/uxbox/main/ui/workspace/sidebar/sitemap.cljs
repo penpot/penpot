@@ -69,7 +69,7 @@
   (mx/component
    {:render page-item-render
     :name "page-item"
-    :mixins [(mx/local) mx/static rum/reactive]}))
+    :mixins [(mx/local) mx/static mx/reactive]}))
 
 (defn sitemap-toolbox-render
   [own]
@@ -98,7 +98,7 @@
   (mx/component
    {:render sitemap-toolbox-render
     :name "sitemap-toolbox"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Lightbox
 

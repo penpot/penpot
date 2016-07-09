@@ -279,7 +279,7 @@
   (mx/component
    {:render layer-group-render
     :name "layer-group"
-    :mixins [mx/static rum/reactive (mx/local)]}))
+    :mixins [mx/static mx/reactive (mx/local)]}))
 
 (defn layers-render
   [own]
@@ -319,4 +319,4 @@
   (mx/component
    {:render layers-render
     :name "layers"
-    :mixins [rum/reactive]}))
+    :mixins [mx/reactive]}))

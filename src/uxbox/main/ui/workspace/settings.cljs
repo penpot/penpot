@@ -100,7 +100,7 @@
   (mx/component
    {:render settings-form-render
     :name "settings-form"
-    :mixins [(mx/local) rum/reactive mx/static]}))
+    :mixins [(mx/local) mx/reactive mx/static]}))
 
 (defn- settings-dialog-render
   [own]

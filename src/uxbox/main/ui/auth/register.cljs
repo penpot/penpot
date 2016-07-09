@@ -100,7 +100,7 @@
   (mx/component
    {:render register-form-render
     :name "register-form"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Register Page
 

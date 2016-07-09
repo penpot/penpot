@@ -51,7 +51,7 @@
   (mx/component
    {:render coordenates-render
     :name "coordenates"
-    :mixins [rum/reactive]}))
+    :mixins [mx/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Header
@@ -164,4 +164,4 @@
   (mx/component
    {:render header-render
     :name "workspace-header"
-    :mixins [rum/reactive]}))
+    :mixins [mx/reactive]}))

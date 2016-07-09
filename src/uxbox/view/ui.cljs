@@ -59,7 +59,7 @@
   (mx/component
    {:render app-render
     :name "app"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Routes
 

@@ -116,7 +116,7 @@
   (mx/component
    {:render profile-form-render
     :name "profile-form"
-    :mixins [(mx/local) rum/reactive mx/static]}))
+    :mixins [(mx/local) mx/reactive mx/static]}))
 
 ;; --- Profile Photo Form
 
@@ -144,7 +144,7 @@
   (mx/component
    {:render profile-photo-form-render
     :name  profile-photo-form
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Profile Page
 

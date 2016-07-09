@@ -43,3 +43,5 @@
 
 (def static rum/static)
 (def ref-node rum/ref-node)
+(def react rum/react)
+(def reactive rum/reactive)

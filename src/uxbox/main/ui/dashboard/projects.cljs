@@ -100,7 +100,7 @@
   (mx/component
    {:render sort-widget-render
     :name "sort-widget-render"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 ;; --- Filtering Widget
 
@@ -129,7 +129,7 @@
   (mx/component
    {:render search-widget-render
     :name "search-widget"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 ;; --- Sort & Search Menu
 
@@ -148,7 +148,7 @@
   (mx/component
    {:render menu-render
     :name "menu"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 ;; --- Grid Item
 
@@ -214,7 +214,7 @@
   (mx/component
    {:render grid-render
     :name "grid"
-    :mixins [rum/reactive]}))
+    :mixins [mx/reactive]}))
 
 ;; --- Page
 

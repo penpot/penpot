@@ -33,7 +33,7 @@
   (mx/component
    {:render line-component-render
     :name "line-component"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Line Shape
 

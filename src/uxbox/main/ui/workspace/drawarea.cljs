@@ -61,7 +61,7 @@
     :will-mount draw-area-will-mount
     :will-unmount draw-area-will-unmount
     :transfer-state draw-area-transfer-state
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Drawing Logic
 

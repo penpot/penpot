@@ -34,7 +34,7 @@
   (mx/component
    {:render rect-component-render
     :name "rect-component"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Rect Shape
 

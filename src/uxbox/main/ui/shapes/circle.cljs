@@ -34,7 +34,7 @@
   (mx/component
    {:render circle-component-render
     :name "circle-component"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Circle Shape
 

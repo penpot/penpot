@@ -33,7 +33,7 @@
   (mx/component
    {:render icon-component-render
     :name "icon-component"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Icon Shape
 

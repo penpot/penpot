@@ -88,4 +88,4 @@
   (mx/component
    {:render messages-render
     :name "messages"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))

@@ -114,4 +114,4 @@
   (mx/component
    {:render draw-tools-render
     :name "draw-tools"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))

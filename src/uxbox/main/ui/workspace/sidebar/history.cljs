@@ -149,7 +149,7 @@
   (mx/component
    {:render history-toolbox-render
     :name "document-history-toolbox"
-    :mixins [mx/static rum/reactive (mx/local)]}))
+    :mixins [mx/static mx/reactive (mx/local)]}))
 
 ;; --- History Dialog
 
@@ -172,5 +172,5 @@
   (mx/component
    {:render history-dialog-render
     :name "history-dialog"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 

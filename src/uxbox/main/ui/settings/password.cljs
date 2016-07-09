@@ -82,7 +82,7 @@
   (mx/component
    {:render password-form-render
     :name "password-form"
-    :mixins [mx/static (mx/local) rum/reactive]}))
+    :mixins [mx/static (mx/local) mx/reactive]}))
 
 ;; --- Password Page
 

@@ -43,7 +43,7 @@
   (mx/component
    {:render grid-render
     :name "grid"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Helpers
 

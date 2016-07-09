@@ -51,7 +51,7 @@
   (mx/component
    {:render page-title-render
     :name "page-title"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Nav
 
@@ -92,7 +92,7 @@
   (mx/component
    {:render nav-render
     :name "nav"
-    :mixins [rum/reactive]}))
+    :mixins [mx/reactive]}))
 
 ;; --- Grid
 
@@ -121,7 +121,7 @@
   (mx/component
    {:render grid-render
     :name "grid"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Icons Page
 

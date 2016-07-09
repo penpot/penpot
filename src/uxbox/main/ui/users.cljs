@@ -65,11 +65,11 @@
      [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)
                       :on-mouse-leave #(swap! local assoc :open false)}
       [:span (:fullname profile)]
-      [:img {:border "0" :src photo}]
+      [:img {:src photo}]
       (user-menu (:open @local))])))
 
 (def user
   (mx/component
    {:render user-render
     :name "user"
-    :mixins [rum/reactive (rum/local {:open false})]}))
+    :mixins [mx/reactive (rum/local {:open false})]}))

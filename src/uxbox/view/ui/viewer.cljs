@@ -48,7 +48,7 @@
   own)
 
 (mx/defc viewer-page
-  {:mixins [mx/static rum/reactive]
+  {:mixins [mx/static mx/reactive]
    :will-unmount viewer-page-will-unmount
    :will-mount viewer-page-will-mount}
   [own]

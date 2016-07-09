@@ -158,7 +158,7 @@
   (mx/component
    {:render horizontal-rule-render
     :name "horizontal-rule"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Vertical Rule (Component)
 
@@ -184,4 +184,4 @@
   (mx/component
    {:render vertical-rule-render
     :name "vertical-rule"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))

@@ -90,7 +90,7 @@
   (mx/component
    {:render page-title-render
     :name "page-title"
-    :mixins [(rum/local {}) mx/static rum/reactive]}))
+    :mixins [(rum/local {}) mx/static mx/reactive]}))
 
 ;; --- Nav
 
@@ -134,7 +134,7 @@
   (mx/component
    {:render nav-render
     :name "nav"
-    :mixins [rum/reactive]}))
+    :mixins [mx/reactive]}))
 
 ;; --- Grid
 
@@ -195,7 +195,7 @@
     :name "grid"
     :mixins [(rum/local {:selected #{}})
              mx/static
-             rum/reactive]}))
+             mx/reactive]}))
 
 ;; --- Menu
 
@@ -214,7 +214,7 @@
   (mx/component
    {:render menu-render
     :name "menu"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 
 ;; --- Colors Page
@@ -235,7 +235,7 @@
             (dc/initialize))
   own)
 
-(defn colors-page-transfer-state
+(defn colors-page-did-remount
   [old-state state]
   (rs/emit! (dd/initialize :dashboard/colors))
   state)
@@ -244,7 +244,7 @@
   (mx/component
    {:render colors-page-render
     :will-mount colors-page-will-mount
-    :transfer-state colors-page-transfer-state
+    :did-remount colors-page-did-remount
     :name "colors"
     :mixins [mx/static]}))
 

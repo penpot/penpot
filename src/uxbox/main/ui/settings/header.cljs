@@ -54,4 +54,4 @@
    {:render header-render
     :name "header"
     :mixins [rum/static
-             rum/reactive]}))
+             mx/reactive]}))

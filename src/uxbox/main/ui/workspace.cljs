@@ -152,6 +152,6 @@
     :did-mount workspace-did-mount
     :name "workspace"
     :mixins [mx/static
-             rum/reactive
+             mx/reactive
              shortcuts-mixin
              (mx/local)]}))

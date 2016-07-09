@@ -117,7 +117,7 @@
     :will-unmount overlay-will-unmount
     :transfer-state overlay-transfer-state
     :name "overlay"
-    :mixins [mx/static (mx/local) rum/reactive]}))
+    :mixins [mx/static (mx/local) mx/reactive]}))
 
 (defn- overlay-line-render
   [own center pt]
@@ -153,4 +153,4 @@
   (mx/component
    {:render ruler-render
     :name "ruler"
-    :mixins [mx/static rum/reactive (mx/local)]}))
+    :mixins [mx/static mx/reactive (mx/local)]}))

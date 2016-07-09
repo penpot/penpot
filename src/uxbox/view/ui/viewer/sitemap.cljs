@@ -57,6 +57,6 @@
   (mx/component
    {:render sitemap-render
     :name "sitemap"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 

@@ -76,7 +76,7 @@
   (mx/component
    {:render canvas-render
     :name "canvas"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Viewport Component
@@ -191,4 +191,4 @@
     :did-mount viewport-did-mount
     :will-unmount viewport-will-unmount
     :transfer-state viewport-transfer-state
-    :mixins [rum/reactive]}))
+    :mixins [mx/reactive]}))

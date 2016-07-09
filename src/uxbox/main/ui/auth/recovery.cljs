@@ -77,7 +77,7 @@
   (mx/component
    {:render form-render
     :name "form"
-    :mixins [mx/static rum/reactive]}))
+    :mixins [mx/static mx/reactive]}))
 
 ;; --- Recovery Request Page
 

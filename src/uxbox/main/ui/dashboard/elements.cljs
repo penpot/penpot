@@ -148,7 +148,7 @@
   (rs/emit! (dd/initialize :dashboard/elements))
   own)
 
-(defn elements-page-transfer-state
+(defn elements-page-did-remount
   [old-state state]
   (rs/emit! (dd/initialize :dashboard/elements))
   state)
@@ -157,7 +157,7 @@
   (mx/component
    {:render elements-page-render
     :will-mount elements-page-will-mount
-    :transfer-state elements-page-transfer-state
+    :did-remount elements-page-did-remount
     :name "elements-page"
     :mixins [mx/static]}))
 

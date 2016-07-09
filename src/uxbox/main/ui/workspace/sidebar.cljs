@@ -42,7 +42,7 @@
   (mx/component
    {:render left-sidebar-render
     :name "left-sidebar"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Right Sidebar
@@ -65,4 +65,4 @@
   (mx/component
    {:render right-sidebar-render
     :name "right-sidebar"
-    :mixins [rum/reactive mx/static]}))
+    :mixins [mx/reactive mx/static]}))
