@@ -14,7 +14,6 @@
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
-            [uxbox.main.state.project :as stpr]
             [uxbox.main.library :as library]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.pages :as udp]

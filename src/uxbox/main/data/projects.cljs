@@ -14,7 +14,6 @@
             [uxbox.main.repo :as rp]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.schema :as sc]
-            [uxbox.main.state.project :as stpr]
             [uxbox.main.data.pages :as udp]))
 
 ;; --- Initialize
@@ -46,10 +45,12 @@
 
 ;; --- Projects Fetched
 
+(declare assoc-project)
+
 (defrecord ProjectsFetched [projects]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (reduce stpr/assoc-project state projects)))
+    (reduce assoc-project state projects)))
 
 (defn projects-fetched
   [projects]
@@ -77,7 +78,7 @@
 (defrecord ProjectCreated [project]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (stpr/assoc-project state project)))
+    (assoc-project state project)))
 
 (defn project-created
   [data]
@@ -113,11 +114,13 @@
 
 ;; --- Delete Project (by id)
 
+(declare dissoc-project)
+
 (defrecord DeleteProject [id]
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [_]
-              #(stpr/dissoc-project % id))]
+              #(dissoc-project % id))]
       (->> (rp/req :delete/project id)
            (rx/map on-success)))))
 
@@ -163,24 +166,7 @@
   ([projectid] (GoTo. projectid))
   ([projectid pageid] (GoToPage. projectid pageid)))
 
-;; --- Helpers
-
-(defn sort-projects-by
-  [ordering projs]
-  (case ordering
-    :name (sort-by :name projs)
-    :created (reverse (sort-by :created-at projs))
-    projs))
-
-(defn contains-term?
-  [phrase term]
-  (str/contains? (str/lower phrase) (str/trim (str/lower term))))
-
-(defn filter-projects-by
-  [term projs]
-  (if (str/blank? term)
-    projs
-    (filter #(contains-term? (:name %) term) projs)))
+;; --- UI related events
 
 (defn set-project-ordering
   [order]
@@ -202,3 +188,36 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:dashboard :project-filter] ""))))
+
+;; --- Helpers
+
+(defn sort-projects-by
+  [ordering projs]
+  (case ordering
+    :name (sort-by :name projs)
+    :created (reverse (sort-by :created-at projs))
+    projs))
+
+(defn contains-term?
+  [phrase term]
+  (str/contains? (str/lower phrase) (str/trim (str/lower term))))
+
+(defn filter-projects-by
+  [term projs]
+  (if (str/blank? term)
+    projs
+    (filter #(contains-term? (:name %) term) projs)))
+
+(defn assoc-project
+  "A reduce function for assoc the project
+  to the state map."
+  [state proj]
+  (let [id (:id proj)]
+    (update-in state [:projects-by-id id] merge proj)))
+
+(defn dissoc-project
+  "A reduce function for dissoc the project
+  from the state map."
+  [state id]
+  (update-in state [:projects-by-id] dissoc id))
+

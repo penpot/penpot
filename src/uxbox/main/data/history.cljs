@@ -16,7 +16,6 @@
             [uxbox.util.schema :as sc]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.state :as st]
-            [uxbox.main.state.project :as stpr]
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys
                                      replace-by-id
@@ -135,7 +134,7 @@
                       :history true
                       :data (:data item))]
       (-> state
-          (stpr/unpack-page page)
+          (udp/unpack-page page)
           (assoc-in [:workspace :history :selected] version)))))
 
 (defn select-page-history
@@ -165,7 +164,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [packed (get-in state [:pagedata-by-id id])]
-      (-> (stpr/unpack-page state packed)
+      (-> (udp/unpack-page state packed)
           (assoc-in [:workspace :history :deselecting] true)
           (assoc-in [:workspace :history :selected] nil))))
 

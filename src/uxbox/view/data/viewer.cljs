@@ -10,7 +10,6 @@
             [uxbox.util.router :as rt]
             [uxbox.util.schema :as sc]
             [uxbox.util.data :refer (parse-int)]
-            [uxbox.main.state.project :as stpr]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.pages :as udpg]
             [uxbox.main.data.projects :as udpj]))
@@ -29,30 +28,31 @@
   [token]
   (Initialize. token))
 
-;; (defrecord Initialize [id token]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     (assoc state
-;;            :token token
-;;            :index id)))
-
-;; (defn initialize
-;;   "Initialize the viewer state."
-;;   [id token]
-;;   (let [id (parse-int id 0)]
-;;     (Initialize. id token)))
-
 ;; --- Data Loaded
+
+(defn- unpack-page
+  "Unpacks packed page object and assocs it to the
+  provided state."
+  [state page]
+  (let [data (:data page)
+        shapes (:shapes data)
+        shapes-by-id (:shapes-by-id data)
+        page (-> page
+                 (dissoc page :data)
+                 (assoc :shapes shapes))]
+    (-> state
+        (update :shapes-by-id merge shapes-by-id)
+        (update :pages conj page))))
 
 (defrecord DataLoaded [data]
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [project (dissoc data :pages)
-          pages (vec (:pages data))]
+          pages (sort-by :created-at (:pages data))]
       (as-> state $
         (assoc $ :project project)
-        (assoc $ :pages pages)
-        (reduce stpr/unpack-page $ pages)))))
+        (assoc $ :pages [])
+        (reduce unpack-page $ pages)))))
 
 (defn data-loaded
   [data]
@@ -97,7 +97,6 @@
   "Toggle the enabled flag of the specified tool."
   [key]
   {:pre [(keyword? key)]}
-  (println "toggle-flag" key)
   (ToggleFlag. key))
 
 

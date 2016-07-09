@@ -16,7 +16,6 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.schema :as sc]
             [uxbox.main.state :as st]
-            [uxbox.main.state.project :as stpr]
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys replace-by-id)]))
 
@@ -24,14 +23,69 @@
   "A marker protocol for mark events that alters the
   page and is subject to perform a backend synchronization.")
 
+;; --- Page Pack/Unpack
+
+(defn dissoc-page-shapes
+  [state id]
+  (let [shapes (get-in state [:shapes-by-id])]
+    (assoc state :shapes-by-id (reduce-kv (fn [acc k v]
+                                            (if (= (:page v) id)
+                                              (dissoc acc k)
+                                              acc))
+                                          shapes
+                                          shapes))))
+
+(defn pack-page
+  "Return a packed version of page object ready
+  for send to remore storage service."
+  [state id]
+  (let [page (get-in state [:pages-by-id id])
+        xf (filter #(= (:page (second %)) id))
+        shapes (into {} xf (:shapes-by-id state))]
+    (-> page
+        (assoc-in [:data :shapes] (into [] (:shapes page)))
+        (assoc-in [:data :shapes-by-id] shapes)
+        (update-in [:data] dissoc :items)
+        (dissoc :shapes))))
+
+(defn unpack-page
+  "Unpacks packed page object and assocs it to the
+  provided state."
+  [state page]
+  (let [data (:data page)
+        shapes (:shapes data)
+        shapes-by-id (:shapes-by-id data)
+        page (-> page
+                 (dissoc page :data)
+                 (assoc :shapes shapes))]
+    (-> state
+        (update :shapes-by-id merge shapes-by-id)
+        (update :pages-by-id assoc (:id page) page))))
+
+(defn purge-page
+  "Remove page and all related stuff from the state."
+  [state id]
+  (-> state
+      (update :pages-by-id dissoc id)
+      (update :pagedata-by-id dissoc id)
+      (dissoc-page-shapes id)))
+
+(defn assoc-page
+  [state {:keys [id] :as page}]
+  (assoc-in state [:pagedata-by-id id] page))
+
+(defn dissoc-page
+  [state id]
+  (update state :pagedata-by-id dissoc id))
+
 ;; --- Pages Fetched
 
 (defrecord PagesFetched [pages]
   rs/UpdateEvent
   (-apply-update [_ state]
     (as-> state $
-      (reduce stpr/unpack-page $ pages)
-      (reduce stpr/assoc-page $ pages))))
+      (reduce unpack-page $ pages)
+      (reduce assoc-page $ pages))))
 
 (defn pages-fetched?
   [v]
@@ -56,8 +110,8 @@
   (-apply-watch [this state s]
     (letfn [(on-created [{page :payload}]
               (rx/of
-               #(stpr/unpack-page % page)
-               #(stpr/assoc-page % page)))]
+               #(unpack-page % page)
+               #(assoc-page % page)))]
       (let [params (-> (into {} this)
                        (assoc :data {}))]
         (->> (rp/req :create/page params)
@@ -82,7 +136,7 @@
   (-apply-update [this state]
     (-> state
         (assoc-in [:pages-by-id (:id page) :version] (:version page))
-        (stpr/assoc-page page))))
+        (assoc-page page))))
 
 (defn- page-synced?
   [event]
@@ -93,7 +147,7 @@
 (defrecord SyncPage [id]
   rs/WatchEvent
   (-apply-watch [this state s]
-    (let [page (stpr/pack-page state id)]
+    (let [page (pack-page state id)]
       (->> (rp/req :update/page page)
            (rx/map (comp ->PageSynced :payload))))))
 
@@ -188,7 +242,7 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(on-success [_]
-              #(stpr/purge-page % id))]
+              #(purge-page % id))]
       (->> (rp/req :delete/page id)
            (rx/map on-success)
            (rx/tap callback)
