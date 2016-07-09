@@ -55,17 +55,20 @@
 ;; --- Public Api
 
 (defn init
-  [routes]
-  (let [opts {:on-navigate #(rs/emit! (update-location %))
-              :default-location {:handler :auth/login}}
-        router (bidi.router/start-router! routes opts)]
-    (set! +routes+ routes)
-    (set! +router+ router)))
+  ([routes]
+   (init routes nil))
+  ([routes {:keys [default] :or {default :auth/login}}]
+   (let [opts {:on-navigate #(rs/emit! (update-location %))
+               :default-location {:handler default}}
+         router (bidi.router/start-router! routes opts)]
+     (set! +routes+ routes)
+     (set! +router+ router))))
 
 (defn go
   "Redirect the user to other url."
   ([id] (go id nil))
-  ([id params] (rs/emit! (navigate id params))))
+  ([id params]
+   (rs/emit! (navigate id params))))
 
 (defn route-for
   "Given a location handler and optional parameter map, return the URI
