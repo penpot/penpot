@@ -38,3 +38,8 @@
   [& args]
   (let [[render doc mixins cname] (parse-defc args)]
     `(def ~cname ~doc (rum/build-defc ~render ~mixins ~(str cname)))))
+
+(defmacro defcs
+  [& args]
+  (let [[render doc mixins cname] (parse-defc args)]
+    `(def ~cname ~doc (rum/build-defcs ~render ~mixins ~(str cname)))))
