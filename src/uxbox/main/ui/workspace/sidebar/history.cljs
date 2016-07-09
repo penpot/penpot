@@ -27,7 +27,7 @@
 
 ;; --- Lenses
 
-(def ^:const history-l
+(def ^:const history-ref
   (as-> (l/in [:workspace :history]) $
     (l/derive $ st/state)))
 
@@ -119,8 +119,8 @@
 (defn history-toolbox-render
   [own]
   (let [local (:rum/local own)
-        page (mx/react wb/page-l)
-        history (mx/react history-l)
+        page (mx/react wb/page-ref)
+        history (mx/react history-ref)
         section (:section @local :main)
         close #(rs/emit! (dw/toggle-flag :document-history))
         main? (= section :main)
@@ -155,7 +155,7 @@
 
 (defn history-dialog-render
   [own page]
-  (let [history (mx/react history-l)
+  (let [history (mx/react history-ref)
         version (:selected history)
         on-accept #(rs/emit! (udh/apply-selected-history page))
         on-cancel #(rs/emit! (udh/deselect-page-history page))]

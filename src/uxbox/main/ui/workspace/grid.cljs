@@ -20,7 +20,7 @@
 
 (defn- grid-render
   [own]
-  (let [options (:options (mx/react wb/page-l))
+  (let [options (:options (mx/react wb/page-ref))
         color (:grid/color options "#cccccc")
         width c/viewport-width
         height c/viewport-height

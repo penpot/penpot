@@ -17,11 +17,11 @@
 
 ;; --- Lenses
 
-(def ^:const selected-shapes-l
+(def ^:const selected-shapes-ref
   (-> (l/in [:workspace :selected])
       (l/derive st/state)))
 
-(def ^:const drawing-state-l
+(def ^:const drawing-state-ref
   (-> (l/in [:workspace :drawing])
       (l/derive st/state)))
 
@@ -30,7 +30,7 @@
 (defn on-mouse-down
   [event {:keys [id group] :as shape} selected]
   (let [selected? (contains? selected id)
-        drawing? @drawing-state-l]
+        drawing? @drawing-state-ref]
     (when-not (:blocked shape)
       (cond
         (or drawing?

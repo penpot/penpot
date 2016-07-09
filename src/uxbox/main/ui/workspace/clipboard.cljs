@@ -21,7 +21,7 @@
 
 ;; --- Lenses
 
-(def ^:const ^:private clipboard-l
+(def ^:const ^:private clipboard-ref
   (-> (l/key :clipboard)
       (l/derive st/state)))
 
@@ -34,7 +34,7 @@
 
 (defn- clipboard-dialog-render
   [own]
-  (let [clipboard (mx/react clipboard-l)]
+  (let [clipboard (mx/react clipboard-ref)]
     (html
      [:div.lightbox-body.clipboard
       [:div.clipboard-list

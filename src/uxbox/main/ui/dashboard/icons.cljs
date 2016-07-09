@@ -25,7 +25,7 @@
 
 ;; --- Lenses
 
-(def dashboard-l
+(def dashboard-ref
   (as-> (l/in [:dashboard]) $
     (l/derive $ st/state)))
 
@@ -33,7 +33,7 @@
 
 (defn- page-title-render
   [own coll]
-  (let [dashboard (mx/react dashboard-l)
+  (let [dashboard (mx/react dashboard-ref)
         own? (:builtin coll false)]
     (html
      [:div.dashboard-title {}
@@ -57,7 +57,7 @@
 
 (defn nav-render
   [own]
-  (let [dashboard (mx/react dashboard-l)
+  (let [dashboard (mx/react dashboard-ref)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
@@ -98,7 +98,7 @@
 
 (defn grid-render
   [own]
-  (let [dashboard (mx/react dashboard-l)
+  (let [dashboard (mx/react dashboard-ref)
         coll-type (:collection-type dashboard)
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)

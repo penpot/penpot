@@ -18,18 +18,18 @@
 
 ;; --- Lenses
 
-(def workspace-l
+(def workspace-ref
   (-> (l/in [:workspace])
       (l/derive st/state)))
 
-(def project-l
+(def project-ref
   (letfn [(getter [state]
             (let [project (get-in state [:workspace :project])]
               (get-in state [:projects-by-id project])))]
     (-> (l/lens getter)
         (l/derive st/state))))
 
-(def page-l
+(def page-ref
   (letfn [(getter [state]
             (let [page (get-in state [:workspace :page])]
               ;; (println "page-l$getter" page)
@@ -38,33 +38,33 @@
     (-> (l/lens getter)
         (l/derive st/state))))
 
-(def ^:const selected-shapes-l
+(def ^:const selected-shapes-ref
   (as-> (l/in [:selected]) $
-    (l/derive $ workspace-l)))
+    (l/derive $ workspace-ref)))
 
-(def ^:const toolboxes-l
+(def ^:const toolboxes-ref
   (as-> (l/in [:toolboxes]) $
-    (l/derive $ workspace-l)))
+    (l/derive $ workspace-ref)))
 
-(def ^:const flags-l
+(def ^:const flags-ref
   (as-> (l/in [:flags]) $
-    (l/derive $ workspace-l)))
+    (l/derive $ workspace-ref)))
 
-(def ^:const shapes-by-id-l
+(def ^:const shapes-by-id-ref
   (as-> (l/key :shapes-by-id) $
     (l/derive $ st/state)))
 
-(def ^:const zoom-l
+(def ^:const zoom-ref
   (-> (l/in [:workspace :zoom])
       (l/derive st/state)))
 
-(def ^:const alignment-l
+(def ^:const alignment-ref
   (letfn [(getter [flags]
             (and (contains? flags :grid/indexed)
                  (contains? flags :grid/alignment)
                  (contains? flags :grid)))]
     (-> (l/lens getter)
-        (l/derive flags-l))))
+        (l/derive flags-ref))))
 
 ;; --- Scroll Stream
 
@@ -118,9 +118,9 @@
 (defonce mouse-delta-s
   (->> mouse-viewport-s
        (rx/sample 10)
-       (rx/map #(gpt/divide % @zoom-l))
+       (rx/map #(gpt/divide % @zoom-ref))
        (rx/mapcat (fn [point]
-                    (if @alignment-l
+                    (if @alignment-ref
                       (uds/align-point point)
                       (rx/of point))))
        (rx/buffer 2 1)

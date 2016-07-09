@@ -50,8 +50,8 @@
         dom (mx/ref-node own "workspace-canvas")]
 
     ;; Set initial scroll position
-    (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-l))
-    (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-l))
+    (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-ref))
+    (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-ref))
 
     (assoc own ::sub1 sub1 ::sub2 sub2)))
 
@@ -97,12 +97,12 @@
       (rs/emit! (dw/decrease-zoom)))
 
     (let [dom (mx/ref-node own "workspace-canvas")]
-      (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-l))
-      (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-l)))))
+      (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-ref))
+      (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-ref)))))
 
 (defn- workspace-render
   [own]
-  (let [{:keys [flags zoom page] :as workspace} (mx/react wb/workspace-l)
+  (let [{:keys [flags zoom page] :as workspace} (mx/react wb/workspace-ref)
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools

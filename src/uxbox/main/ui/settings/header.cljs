@@ -19,7 +19,7 @@
             [uxbox.main.ui.users :refer (user)]
             [uxbox.util.mixins :as mx]))
 
-(def ^:private section-l
+(def ^:private section-ref
   (-> (l/in [:route :id])
       (l/derive st/state)))
 
@@ -31,7 +31,7 @@
 
 (defn header-render
   [own]
-  (let [section (mx/react section-l)
+  (let [section (mx/react section-ref)
         profile? (= section :settings/profile)
         password? (= section :settings/password)
         notifications? (= section :settings/notifications)]

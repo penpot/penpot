@@ -36,7 +36,7 @@
          (filter #(= project (:project %)))
          (sort-by :created-at))))
 
-(def pages-l
+(def pages-ref
   (-> (l/lens resolve-page)
       (l/derive st/state)))
 
@@ -76,9 +76,9 @@
 
 (defn sitemap-toolbox-render
   [own]
-  (let [project (mx/react wb/project-l)
-        pages (mx/react pages-l)
-        current (mx/react wb/page-l)
+  (let [project (mx/react wb/project-ref)
+        pages (mx/react pages-ref)
+        current (mx/react wb/page-ref)
         create #(udl/open! :page-form {:page {:project (:id project)}})
         close #(rs/emit! (dw/toggle-flag :sitemap))]
     (html

@@ -27,7 +27,7 @@
 
 (defn left-sidebar-render
   [own]
-  (let [flags (mx/react wb/flags-l)]
+  (let [flags (mx/react wb/flags-ref)]
     (html
      [:aside#settings-bar.settings-bar.settings-bar-left
       [:div.settings-bar-inside
@@ -50,7 +50,7 @@
 
 (defn right-sidebar-render
   [own]
-  (let [flags (mx/react wb/flags-l)]
+  (let [flags (mx/react wb/flags-ref)]
     (html
      [:aside#settings-bar.settings-bar
       [:div.settings-bar-inside

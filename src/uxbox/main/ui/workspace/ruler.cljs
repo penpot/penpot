@@ -116,8 +116,8 @@
 (defn- overlay-line-render
   [own center pt]
   (let [distance (-> (gpt/distance
-                      (gpt/divide pt @wb/zoom-l)
-                      (gpt/divide center @wb/zoom-l))
+                      (gpt/divide pt @wb/zoom-ref)
+                      (gpt/divide center @wb/zoom-ref))
                      (mth/precision 4))
         angle (-> (gpt/angle pt center)
                   (mth/precision 4))
@@ -139,7 +139,7 @@
 
 (defn- ruler-render
   [own]
-  (let [flags (mx/react wb/flags-l)]
+  (let [flags (mx/react wb/flags-ref)]
     (when (contains? flags :ruler)
       (overlay))))
 

@@ -17,7 +17,7 @@
 (defonce state (atom {}))
 (defonce loader (atom false))
 
-(def auth-l
+(def auth-ref
   (-> (l/key :auth)
       (l/derive state)))
 

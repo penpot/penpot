@@ -41,7 +41,7 @@
 
 (defn- settings-form-render
   [own]
-  (let [page (mx/react wb/page-l)
+  (let [page (mx/react wb/page-ref)
         form (merge settings-form-defaults
                     (:options page)
                     (mx/react formdata))

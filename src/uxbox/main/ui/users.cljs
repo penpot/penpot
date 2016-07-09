@@ -50,13 +50,13 @@
 
 ;; --- User Widget
 
-(def profile-l
+(def profile-ref
   (as-> (l/key :profile) $
     (l/derive $ s/state)))
 
 (defn user-render
   [own]
-  (let [profile (mx/react profile-l)
+  (let [profile (mx/react profile-ref)
         local (:rum/local own)
         photo (if (str/empty? (:photo profile ""))
                 "/images/avatar.jpg"

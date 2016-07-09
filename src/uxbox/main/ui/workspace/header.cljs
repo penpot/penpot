@@ -30,7 +30,7 @@
 
 (defn- coordenates-render
   [own]
-  (let [zoom (mx/react wb/zoom-l)
+  (let [zoom (mx/react wb/zoom-ref)
         coords (some-> (mx/react wb/mouse-canvas-a)
                        (gpt/divide zoom)
                        (gpt/round 1))
@@ -70,8 +70,8 @@
 
 (defn header-render
   [own]
-  (let [page (mx/react wb/page-l)
-        flags (mx/react wb/flags-l)
+  (let [page (mx/react wb/page-ref)
+        flags (mx/react wb/flags-ref)
         toggle #(rs/emit! (dw/toggle-flag %))
         on-undo #(rs/emit! (udh/backwards-to-previous-version))
         on-redo #(rs/emit! (udh/forward-to-next-version))

@@ -106,7 +106,7 @@
     :name "options"
     :mixins [mx/static (mx/local)]}))
 
-(def ^:const selected-shape-l
+(def ^:const selected-shape-ref
   (letfn [(getter [state]
             (let [selected (get-in state [:workspace :selected])]
               (when (= 1 (count selected))
@@ -116,7 +116,7 @@
 
 (defn options-toolbox-render
   [own]
-  (let [shape (mx/react selected-shape-l)
+  (let [shape (mx/react selected-shape-ref)
         close #(rs/emit! (udw/toggle-flag :element-options))]
     (html
      [:div.elementa-options.tool-window

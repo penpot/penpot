@@ -19,7 +19,7 @@
             [uxbox.main.ui.users :as ui.u]
             [uxbox.util.mixins :as mx]))
 
-(def header-l
+(def header-ref
   (as-> (l/in [:dashboard]) $
     (l/derive $ s/state)))
 
@@ -31,7 +31,7 @@
 
 (defn header-render
   [own]
-  (let [local (mx/react header-l)
+  (let [local (mx/react header-ref)
         projects? (= (:section local) :dashboard/projects)
         elements? (= (:section local) :dashboard/elements)
         icons? (= (:section local) :dashboard/icons)

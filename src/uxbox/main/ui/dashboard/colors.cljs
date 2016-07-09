@@ -31,11 +31,11 @@
 
 ;; --- Lenses
 
-(def ^:private dashboard-l
+(def ^:private dashboard-ref
   (-> (l/key :dashboard)
       (l/derive st/state)))
 
-(def ^:private collections-by-id-l
+(def ^:private collections-by-id-ref
   (-> (comp (l/key :colors-by-id)
             (ul/merge library/+color-collections-by-id+))
       (l/derive st/state)))
@@ -43,14 +43,14 @@
 (defn- focus-collection
   [collid]
   (-> (l/key collid)
-      (l/derive collections-by-id-l)))
+      (l/derive collections-by-id-ref)))
 
 ;; --- Page Title
 
 (defn page-title-render
   [own coll]
   (let [local (:rum/local own)
-        dashboard (mx/react dashboard-l)
+        dashboard (mx/react dashboard-ref)
         own? (:builtin coll false)]
     (letfn [(on-title-save [e]
               (rs/emit! (dc/rename-collection (:id coll) (:coll-name @local)))
@@ -96,8 +96,8 @@
 
 (defn nav-render
   [own]
-  (let [dashboard (mx/react dashboard-l)
-        collections-by-id (mx/react collections-by-id-l)
+  (let [dashboard (mx/react dashboard-ref)
+        collections-by-id (mx/react collections-by-id-ref)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
@@ -141,7 +141,7 @@
 (defn grid-render
   [own]
   (let [local (:rum/local own)
-        dashboard (mx/react dashboard-l)
+        dashboard (mx/react dashboard-ref)
         coll-type (:collection-type dashboard)
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
@@ -201,7 +201,7 @@
 
 (defn menu-render
   []
-  (let [dashboard (mx/react dashboard-l)
+  (let [dashboard (mx/react dashboard-ref)
         coll-id (:collection-id dashboard)
         coll (mx/react (focus-collection coll-id))
         ccount (count (:data coll)) ]

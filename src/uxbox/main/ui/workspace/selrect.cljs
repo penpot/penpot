@@ -73,7 +73,7 @@
 (defn- translate-to-canvas
   "Translate the given rect to the canvas coordinates system."
   [rect]
-  (let [zoom @wb/zoom-l
+  (let [zoom @wb/zoom-ref
         startx (* c/canvas-start-x zoom)
         starty (* c/canvas-start-y zoom)]
     (assoc rect

@@ -38,7 +38,7 @@
         stream (->> wb/mouse-delta-s
                     (rx/take-until stoper)
                     (rx/with-latest-from vector wb/mouse-ctrl-s))]
-    (when @wb/alignment-l
+    (when @wb/alignment-ref
       (rs/emit! (uds/initial-vertext-align shape vid)))
     (rx/subscribe stream #(handle-resize shape vid %))))
 

@@ -13,7 +13,7 @@
 
 ;; --- Lentes
 
-(def ^:const ^:private lightbox-l
+(def ^:const ^:private lightbox-ref
   (-> (l/key :lightbox)
       (l/derive st/state)))
 
@@ -49,7 +49,7 @@
 
 (defn- lightbox-render
   [own]
-  (let [data (mx/react lightbox-l)
+  (let [data (mx/react lightbox-ref)
         classes (classnames
                  :hide (nil? data)
                  :transparent (:transparent? data))]

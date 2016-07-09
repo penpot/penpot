@@ -24,7 +24,7 @@
 
 (defn watch-move-actions
   []
-  (let [initialize #(run! watch-movement @wb/selected-shapes-l)
+  (let [initialize #(run! watch-movement @wb/selected-shapes-ref)
         stream (rx/filter #(= "ui.shape.move" (:type %)) uuc/actions-s)]
     (rx/subscribe stream initialize)))
 
@@ -38,6 +38,6 @@
                     (rx/take 1))
         stream (->> wb/mouse-delta-s
                     (rx/take-until stoper))]
-    (when @wb/alignment-l
+    (when @wb/alignment-ref
       (rs/emit! (uds/initial-align-shape shape)))
     (rx/subscribe stream #(rs/emit! (uds/move-shape shape %)))))

@@ -26,7 +26,7 @@
 (defn handle-mouse-down
   [event local {:keys [id group] :as shape} selected]
   (if (and (not (:blocked shape))
-           (or @common/drawing-state-l
+           (or @common/drawing-state-ref
                (:edition @local)
                (and group (:locked (geom/resolve-parent shape)))))
     nil
@@ -39,7 +39,7 @@
 
 (defn- text-component-render
   [own {:keys [id x1 y1 content group] :as shape}]
-  (let [selected (mx/react common/selected-shapes-l)
+  (let [selected (mx/react common/selected-shapes-ref)
         selected? (and (contains? selected id)
                        (= (count selected) 1))
         local (:rum/local own)]

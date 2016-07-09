@@ -12,7 +12,7 @@
 
 ;; --- Lenses
 
-(def ^:const ^:private message-l
+(def ^:const ^:private message-ref
   (-> (l/key :message)
       (l/derive st/state)))
 
@@ -77,7 +77,7 @@
 
 (defn messages-render
   [own]
-  (let [message (mx/react message-l)]
+  (let [message (mx/react message-ref)]
     (case (:type message)
       :error (notification-box message)
       :info (notification-box message)

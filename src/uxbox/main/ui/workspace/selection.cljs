@@ -28,7 +28,7 @@
 
 ;; --- Lenses
 
-(def ^:const selected-shapes-l
+(def ^:const selected-shapes-ref
   (letfn [(getter [state]
             (let [selected (get-in state [:workspace :selected])]
               (mapv #(get-in state [:shapes-by-id %]) selected)))]
@@ -112,7 +112,7 @@
 
 (defn selection-handlers-render
   [own]
-  (let [shapes (mx/react selected-shapes-l)
+  (let [shapes (mx/react selected-shapes-ref)
         shapes-num (count shapes)]
     (cond
       (> shapes-num 1) (multiple-selection-handlers-render shapes)

@@ -30,7 +30,7 @@
 
 ;; TODO: move this lense under library ns.
 
-(def ^:private collections-by-id-l
+(def ^:private collections-by-id-ref
   (-> (comp (l/in [:colors-by-id])
             (ul/merge library/+color-collections-by-id+))
       (l/derive st/state)))
@@ -55,8 +55,8 @@
 (defn- colorpalette-render
   [own]
   (let [local (:rum/local own)
-        flags (mx/react wb/flags-l)
-        collections-by-id (mx/react collections-by-id-l)
+        flags (mx/react wb/flags-ref)
+        collections-by-id (mx/react collections-by-id-ref)
         collections (sort-by :name (vals collections-by-id))
         collection (if-let [collid (:selected @local)]
                      (get collections-by-id collid)

@@ -17,7 +17,7 @@
             [uxbox.main.library :as library]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.workspace.sidebar.sitemap :refer (pages-l)]
+            [uxbox.main.ui.workspace.sidebar.sitemap :refer (pages-ref)]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.colorpicker :as cp]
@@ -177,7 +177,7 @@
 
 (defn- pages-input-render
   [own form-ref path]
-  (let [pages @pages-l]
+  (let [pages @pages-ref]
     (when (and (not (:page @form-ref))
                (pos? (count pages)))
       (swap! form-ref assoc :page (:id (first pages))))

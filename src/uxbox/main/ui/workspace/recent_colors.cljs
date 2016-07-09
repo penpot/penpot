@@ -40,7 +40,7 @@
 
 (defn- recent-colors-render
   [own {:keys [page id] :as shape} callback]
-  (let [shapes-by-id (mx/react wb/shapes-by-id-l)
+  (let [shapes-by-id (mx/react wb/shapes-by-id-ref)
         shapes (->> (vals shapes-by-id)
                     (filter #(= (:page %) page)))
         colors (calculate-colors shapes)]

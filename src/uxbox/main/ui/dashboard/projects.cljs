@@ -62,15 +62,15 @@
 
 ;; --- Lenses
 
-(def projects-by-id-l
+(def projects-by-id-ref
   (as-> (l/key :projects-by-id) $
     (l/derive $ s/state)))
 
-(def project-ordering-l
+(def project-ordering-ref
   (as-> (l/in [:dashboard :project-order]) $
     (l/derive $ s/state)))
 
-(def project-filtering-l
+(def project-filtering-ref
   (as-> (l/in [:dashboard :project-filter]) $
     (l/derive $ s/state)))
 
@@ -78,7 +78,7 @@
 
 (defn sort-widget-render
   []
-  (let [ordering (mx/react project-ordering-l)
+  (let [ordering (mx/react project-ordering-ref)
         on-change #(rs/emit! (dp/set-project-ordering
                               (keyword (.-value (.-target %)))))]
     (html
@@ -120,7 +120,7 @@
         :on-change on-term-change
         :auto-focus true
         :placeholder (tr "ds.project-search.placeholder")
-        :value (mx/react project-filtering-l)}]
+        :value (mx/react project-filtering-ref)}]
       [:div.clear-search
        {:on-click on-clear}
        i/close]])))
@@ -135,7 +135,7 @@
 
 (defn menu-render
   []
-  (let [projects (mx/react projects-by-id-l)
+  (let [projects (mx/react projects-by-id-ref)
         pcount (count projects)]
     (html
      [:section.dashboard-bar
@@ -190,9 +190,9 @@
 
 (defn grid-render
   [own]
-  (let [projects (mx/react projects-by-id-l)
-        ordering (mx/react project-ordering-l)
-        filtering (mx/react project-filtering-l)]
+  (let [projects (mx/react projects-by-id-ref)
+        ordering (mx/react project-ordering-ref)
+        filtering (mx/react project-filtering-ref)]
     (letfn [(on-click [e]
               (dom/prevent-default e)
               (udl/open! :new-project))]

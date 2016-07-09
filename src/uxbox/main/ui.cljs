@@ -42,7 +42,7 @@
 (def ^:const restricted?
   (complement +unrestricted+))
 
-(def route-l
+(def route-ref
   (-> (l/key :route)
       (l/derive st/state)))
 
@@ -77,8 +77,8 @@
 
 (defn app-render
   [own]
-  (let [route (mx/react route-l)
-        auth (mx/react st/auth-l)
+  (let [route (mx/react route-ref)
+        auth (mx/react st/auth-ref)
         location (:id route)
         params (:params route)]
     (if (and (restricted? location) (not auth))
@@ -104,7 +104,7 @@
 
 (defn app-will-mount
   [own]
-  (when @st/auth-l
+  (when @st/auth-ref
     (rs/emit! (udu/fetch-profile)))
   own)
 

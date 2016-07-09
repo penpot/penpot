@@ -37,7 +37,7 @@
 (def assign-field-value
   (partial udf/assign-field-value :profile/main))
 
-(def ^:private profile-l
+(def ^:private profile-ref
   (-> (l/key :profile)
       (l/derive st/state)))
 
@@ -45,7 +45,7 @@
 
 (defn profile-form-render
   [own]
-  (let [form (merge (mx/react profile-l)
+  (let [form (merge (mx/react profile-ref)
                     (mx/react formdata))
         errors (mx/react formerrors)
         valid? (sc/valid? form udu/update-profile-schema)
@@ -129,7 +129,7 @@
                            (first))]
               (rs/emit! (udu/update-photo file))
               (dom/clean-value! target)))]
-    (let [{:keys [photo]} (mx/react profile-l)
+    (let [{:keys [photo]} (mx/react profile-ref)
           photo (if (or (str/empty? photo) (nil? photo))
                   "images/avatar.jpg"
                   photo)]

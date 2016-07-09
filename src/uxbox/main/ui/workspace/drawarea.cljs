@@ -68,7 +68,7 @@
                     (rx/map :type)
                     (rx/dedupe)
                     (rx/filter #(= "ui.shape.draw" %))
-                    (rx/map #(:drawing @wb/workspace-l))
+                    (rx/map #(:drawing @wb/workspace-ref))
                     (rx/filter identity))]
     (rx/subscribe stream initialize)))
 
@@ -84,7 +84,7 @@
 (defn- initialize-icon-drawing
   "A drawing handler for icons."
   [shape]
-  (let [{:keys [x y]} (gpt/divide @wb/mouse-canvas-a @wb/zoom-l)
+  (let [{:keys [x y]} (gpt/divide @wb/mouse-canvas-a @wb/zoom-ref)
         props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
         shape (geom/setup shape props)]
     (rs/emit! (uds/add-shape shape)
@@ -103,7 +103,7 @@
   [shape]
   (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
                    (rx/mapcat (fn [point]
-                                (if @wb/alignment-l
+                                (if @wb/alignment-ref
                                   (uds/align-point point)
                                   (rx/of point))))
                    (rx/map #(gpt/subtract % canvas-coords)))
@@ -127,7 +127,7 @@
 
 (defn- on-draw
   [[pt ctrl?]]
-  (let [pt (gpt/divide pt @wb/zoom-l)]
+  (let [pt (gpt/divide pt @wb/zoom-ref)]
     (reset! drawing-position (assoc pt :lock ctrl?))))
 
 (defn- on-draw-complete

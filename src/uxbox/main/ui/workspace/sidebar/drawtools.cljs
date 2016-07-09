@@ -89,7 +89,7 @@
 
 (defn draw-tools-render
   [open-toolboxes]
-  (let [workspace (mx/react wb/workspace-l)
+  (let [workspace (mx/react wb/workspace-ref)
         drawing (mx/react drawing-shape)
         close #(rs/emit! (dw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)

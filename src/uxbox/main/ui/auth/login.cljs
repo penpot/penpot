@@ -76,7 +76,7 @@
 
 (defn- login-page-will-mount
   [own]
-  (when @st/auth-l
+  (when @st/auth-ref
     (rt/go :dashboard/projects))
   own)
 
