@@ -101,7 +101,7 @@
       (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-l)))))
 
 (defn- workspace-render
-  [own projectid]
+  [own]
   (let [{:keys [flags zoom page] :as workspace} (rum/react wb/workspace-l)
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
