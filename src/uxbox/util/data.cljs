@@ -94,7 +94,7 @@
 
 (defn parse-int
   ([v]
-   (js/parseInt v 10))
+   (parse-int v nil))
   ([v default]
    (let [v (js/parseInt v 10)]
      (if (or (not v) (nan? v))
@@ -103,7 +103,7 @@
 
 (defn parse-float
   ([v]
-   (js/parseFloat v))
+   (parse-float v nil))
   ([v default]
    (let [v (js/parseFloat v)]
      (if (or (not v) (nan? v))
