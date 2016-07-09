@@ -29,12 +29,16 @@
 
 ;; --- Lenses
 
+(defn- resolve-page
+  [state]
+  (let [project (get-in state [:workspace :project])]
+    (->> (vals (:pages-by-id state))
+         (filter #(= project (:project %)))
+         (sort-by :created-at))))
+
 (def pages-l
-  (letfn [(getter [state]
-            (let [project (get-in state [:workspace :project])]
-              (stpr/project-pages state project)))]
-    (-> (l/lens getter)
-        (l/derive st/state))))
+  (-> (l/lens resolve-page)
+      (l/derive st/state)))
 
 ;; --- Component
 
