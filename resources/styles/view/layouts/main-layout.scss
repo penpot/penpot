@@ -215,4 +215,8 @@
   background-color: $secondary-ui-bg;
   width: 100%;
   overflow: auto;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

@@ -10,13 +10,12 @@
             [lentes.core :as l]
             [rum.core :as rum]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer (parse-int)]
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.view.data.viewer :as dv]))
-
 
 ;; --- Refs
 
@@ -35,28 +34,21 @@
 
 ;; --- Component
 
-(defn- sitemap-render
-  [own]
+(mx/defc sitemap
+  {:mixins [mx/static mx/reactive]}
+  []
   (let [project-name (mx/react project-name-ref)
         pages (mx/react pages-ref)
         selected (mx/react selected-ref)
         on-click #(rs/emit! (dv/select-page %))]
-    (html
-     [:div.view-sitemap
-      [:span.sitemap-title project-name]
-      [:ul.sitemap-list
-       (for [[i page] (map-indexed vector pages)
-             :let [selected? (= i selected)]]
-         [:li {:class (when selected? "selected")
-               :on-click (partial on-click i)
-               :key (str i)}
-          [:div.page-icon i/page]
-          [:span (:name page)]])]])))
-
-(def sitemap
-  (mx/component
-   {:render sitemap-render
-    :name "sitemap"
-    :mixins [mx/static mx/reactive]}))
-
+    [:div.view-sitemap
+     [:span.sitemap-title project-name]
+     [:ul.sitemap-list
+      (for [[i page] (map-indexed vector pages)
+            :let [selected? (= i selected)]]
+        [:li {:class (when selected? "selected")
+              :on-click (partial on-click i)
+              :key (str i)}
+         [:div.page-icon i/page]
+         [:span (:name page)]])]]))
 
