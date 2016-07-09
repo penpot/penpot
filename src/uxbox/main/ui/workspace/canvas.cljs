@@ -22,7 +22,7 @@
             [uxbox.main.ui.core :as uuc]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.shapes :as uus]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.workspace.base :as uuwb]
             [uxbox.main.ui.workspace.drawarea :refer (draw-area)]
             [uxbox.main.ui.workspace.movement :as cmov]
@@ -33,25 +33,17 @@
             [uxbox.main.ui.workspace.grid :refer (grid)])
   (:import goog.events.EventType))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Background
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Background
 
-(defn background-render
+(mx/defc background
   []
-  (html
-   [:rect
-    {:x 0 :y 0 :width "100%" :height "100%" :fill "white"}]))
+  [:rect
+   {:x 0 :y 0
+    :width "100%"
+    :height "100%"
+    :fill "white"}])
 
-(def background
-  (mx/component
-   {:render background-render
-    :name "background"
-    :mixins [mx/static]}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Canvas
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Canvas
 
 (defn- canvas-render
   [own {:keys [width height id] :as page}]
@@ -78,9 +70,7 @@
     :name "canvas"
     :mixins [mx/static mx/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Viewport Component
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Viewport
 
 (defn viewport-render
   [own]
