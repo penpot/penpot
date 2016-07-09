@@ -77,8 +77,8 @@
 
 (defn app-render
   [own]
-  (let [route (rum/react route-l)
-        auth (rum/react st/auth-l)
+  (let [route (mx/react route-l)
+        auth (mx/react st/auth-l)
         location (:id route)
         params (:params route)]
     (if (and (restricted? location) (not auth))

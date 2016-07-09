@@ -40,8 +40,8 @@
 
 (defn- register-form-render
   [own]
-  (let [form (rum/react form-data)
-        errors (rum/react form-errors)
+  (let [form (mx/react form-data)
+        errors (mx/react form-errors)
         valid? (us/valid? form uda/register-schema)]
     (letfn [(on-change [field event]
               (let [value (dom/event->value event)]

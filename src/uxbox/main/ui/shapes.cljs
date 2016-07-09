@@ -20,7 +20,7 @@
 
 (defn- shape-render
   [own id]
-  (let [shape (rum/react (focus-shape id))]
+  (let [shape (mx/react (focus-shape id))]
     (when-not (:hidden shape)
       (render-component shape))))
 

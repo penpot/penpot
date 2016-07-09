@@ -52,7 +52,7 @@
    :will-unmount viewer-page-will-unmount
    :will-mount viewer-page-will-mount}
   [own]
-  (let [flags (rum/react flags-ref)
+  (let [flags (mx/react flags-ref)
         sitemap? (contains? flags :sitemap)]
     [:section.view-content
      (when sitemap?

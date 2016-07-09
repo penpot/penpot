@@ -45,9 +45,9 @@
 
 (defn profile-form-render
   [own]
-  (let [form (merge (rum/react profile-l)
-                    (rum/react formdata))
-        errors (rum/react formerrors)
+  (let [form (merge (mx/react profile-l)
+                    (mx/react formdata))
+        errors (mx/react formerrors)
         valid? (sc/valid? form udu/update-profile-schema)
         theme (get-in form [:metadata :theme] "light")]
 
@@ -129,7 +129,7 @@
                            (first))]
               (rs/emit! (udu/update-photo file))
               (dom/clean-value! target)))]
-    (let [{:keys [photo]} (rum/react profile-l)
+    (let [{:keys [photo]} (mx/react profile-l)
           photo (if (or (str/empty? photo) (nil? photo))
                   "images/avatar.jpg"
                   photo)]

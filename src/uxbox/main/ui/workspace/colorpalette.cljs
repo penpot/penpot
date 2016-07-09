@@ -55,8 +55,8 @@
 (defn- colorpalette-render
   [own]
   (let [local (:rum/local own)
-        flags (rum/react wb/flags-l)
-        collections-by-id (rum/react collections-by-id-l)
+        flags (mx/react wb/flags-l)
+        collections-by-id (mx/react collections-by-id-l)
         collections (sort-by :name (vals collections-by-id))
         collection (if-let [collid (:selected @local)]
                      (get collections-by-id collid)

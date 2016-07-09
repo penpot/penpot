@@ -203,7 +203,7 @@
         toggle-open (fn [event]
                       (dom/stop-propagation event)
                       (swap! local assoc :open (not open?)))
-        shapes-by-id (rum/react wb/shapes-by-id-l)
+        shapes-by-id (mx/react wb/shapes-by-id-l)
         classes (classnames
                  :selected selected?
                  :drag-top (= :top (:over @local))
@@ -283,10 +283,10 @@
 
 (defn layers-render
   [own]
-  (let [workspace (rum/react wb/workspace-l)
+  (let [workspace (mx/react wb/workspace-l)
         selected (:selected workspace)
-        shapes-by-id (rum/react wb/shapes-by-id-l)
-        page (rum/react (focus-page (:page workspace)))
+        shapes-by-id (mx/react wb/shapes-by-id-l)
+        page (mx/react (focus-page (:page workspace)))
         close #(rs/emit! (udw/toggle-flag :layers))
         duplicate #(rs/emit! (uds/duplicate-selected))
         group #(rs/emit! (uds/group-selected))

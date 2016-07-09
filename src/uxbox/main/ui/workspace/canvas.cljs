@@ -55,7 +55,7 @@
 
 (defn- canvas-render
   [own {:keys [width height id] :as page}]
-  (let [workspace (rum/react uuwb/workspace-l)
+  (let [workspace (mx/react uuwb/workspace-l)
         flags (:flags workspace)]
     (html
      [:svg.page-canvas {:x c/canvas-start-x
@@ -84,8 +84,8 @@
 
 (defn viewport-render
   [own]
-  (let [workspace (rum/react uuwb/workspace-l)
-        page (rum/react uuwb/page-l)
+  (let [workspace (mx/react uuwb/workspace-l)
+        page (mx/react uuwb/page-l)
         flags (:flags workspace)
         drawing? (:drawing workspace)
         zoom (or (:zoom workspace) 1)]

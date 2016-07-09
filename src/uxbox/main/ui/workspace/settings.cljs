@@ -41,11 +41,11 @@
 
 (defn- settings-form-render
   [own]
-  (let [page (rum/react wb/page-l)
+  (let [page (mx/react wb/page-l)
         form (merge settings-form-defaults
                     (:options page)
-                    (rum/react formdata))
-        errors (rum/react formerrors)]
+                    (mx/react formdata))
+        errors (mx/react formerrors)]
     (letfn [(on-field-change [field event]
               (let [value (dom/event->value event)
                     value (parse-int value "")]

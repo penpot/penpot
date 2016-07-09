@@ -78,7 +78,7 @@
 
 (defn sort-widget-render
   []
-  (let [ordering (rum/react project-ordering-l)
+  (let [ordering (mx/react project-ordering-l)
         on-change #(rs/emit! (dp/set-project-ordering
                               (keyword (.-value (.-target %)))))]
     (html
@@ -120,7 +120,7 @@
         :on-change on-term-change
         :auto-focus true
         :placeholder (tr "ds.project-search.placeholder")
-        :value (rum/react project-filtering-l)}]
+        :value (mx/react project-filtering-l)}]
       [:div.clear-search
        {:on-click on-clear}
        i/close]])))
@@ -135,7 +135,7 @@
 
 (defn menu-render
   []
-  (let [projects (rum/react projects-by-id-l)
+  (let [projects (mx/react projects-by-id-l)
         pcount (count projects)]
     (html
      [:section.dashboard-bar
@@ -190,9 +190,9 @@
 
 (defn grid-render
   [own]
-  (let [projects (rum/react projects-by-id-l)
-        ordering (rum/react project-ordering-l)
-        filtering (rum/react project-filtering-l)]
+  (let [projects (mx/react projects-by-id-l)
+        ordering (mx/react project-ordering-l)
+        filtering (mx/react project-filtering-l)]
     (letfn [(on-click [e]
               (dom/prevent-default e)
               (udl/open! :new-project))]

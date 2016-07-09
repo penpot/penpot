@@ -33,7 +33,7 @@
 
 (defn- colorpicker-render
   [own {:keys [x y shape attr] :as opts}]
-  (let [shape (rum/react (focus-shape shape))
+  (let [shape (mx/react (focus-shape shape))
         left (- x 260)
         top (- y 50)]
     (letfn [(change-color [color]

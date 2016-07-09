@@ -112,7 +112,7 @@
 
 (defn selection-handlers-render
   [own]
-  (let [shapes (rum/react selected-shapes-l)
+  (let [shapes (mx/react selected-shapes-l)
         shapes-num (count shapes)]
     (cond
       (> shapes-num 1) (multiple-selection-handlers-render shapes)

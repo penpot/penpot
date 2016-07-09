@@ -78,7 +78,7 @@
 (defn page-title-render
   [own coll]
   (let [local (:rum/local own)
-        dashboard (rum/react dashboard-l)
+        dashboard (mx/react dashboard-l)
         own? (:builtin coll false)]
     (letfn [(persist [event]
               (let [name (:coll-name @local)]
@@ -136,13 +136,13 @@
 
 (defn nav-render
   [own]
-  (let [dashboard (rum/react dashboard-l)
+  (let [dashboard (mx/react dashboard-l)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
         collections (if builtin?
                       (vals library/+image-collections-by-id+)
-                      (vals (rum/react collections-by-id-l)))
+                      (vals (mx/react collections-by-id-l)))
         show-builtin #(rs/emit! (di/set-collection-type :builtin))
         show-own #(rs/emit! (di/set-collection-type :own))
         new-coll #(rs/emit! (di/create-collection))
@@ -181,16 +181,16 @@
 (defn- grid-render
   [own]
   (let [local (:rum/local own)
-        dashboard (rum/react dashboard-l)
+        dashboard (mx/react dashboard-l)
         coll-type (:collection-type dashboard)
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
         builtin? (= coll-type :builtin)
         coll (if builtin?
                (get library/+image-collections-by-id+ coll-id)
-               (rum/react (focus-collection coll-id)))
-        images-filtering (rum/react images-filtering-l)
-        images-ordering (rum/react images-ordering-l)
+               (mx/react (focus-collection coll-id)))
+        images-filtering (mx/react images-filtering-l)
+        images-ordering (mx/react images-ordering-l)
         images (->> (:images coll)
                     (remove nil?)
                     (filter-images-by images-filtering)
@@ -264,7 +264,7 @@
 
 (defn- sort-widget-render
   []
-  (let [ordering (rum/react images-ordering-l)
+  (let [ordering (mx/react images-ordering-l)
         on-change #(rs/emit! (di/set-images-ordering
                               (keyword (.-value (.-target %)))))]
     (html
@@ -307,7 +307,7 @@
         :on-change on-term-change
         :auto-focus true
         :placeholder (tr "ds.project-search.placeholder")
-        :value (rum/react images-filtering-l)}]
+        :value (mx/react images-filtering-l)}]
       [:div.clear-search {:on-click on-clear} i/close]])))
 
 (def ^:private search-widget
@@ -320,9 +320,9 @@
 
 (defn- menu-render
   []
-  (let [dashboard (rum/react dashboard-l)
+  (let [dashboard (mx/react dashboard-l)
         coll-id (:collection-id dashboard)
-        coll (rum/react (focus-collection coll-id))
+        coll (mx/react (focus-collection coll-id))
         icount (count (:images coll)) ]
     (html
      [:section.dashboard-bar.library-gap

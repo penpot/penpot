@@ -145,7 +145,7 @@
 
 (defn- ruler-render
   [own]
-  (let [flags (rum/react wb/flags-l)]
+  (let [flags (mx/react wb/flags-l)]
     (when (contains? flags :ruler)
       (overlay))))
 

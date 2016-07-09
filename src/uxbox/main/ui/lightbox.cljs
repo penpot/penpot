@@ -53,7 +53,7 @@
 
 (defn- lightbox-render
   [own]
-  (let [data (rum/react lightbox-l)
+  (let [data (mx/react lightbox-l)
         classes (classnames
                  :hide (nil? data)
                  :transparent (:transparent? data))]

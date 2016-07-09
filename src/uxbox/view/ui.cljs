@@ -49,7 +49,7 @@
 
 (defn app-render
   [own]
-  (let [location (rum/react route-id-ref)]
+  (let [location (mx/react route-id-ref)]
     (case location
       :view/notfound (notfound-page)
       :view/viewer (viewer-page)

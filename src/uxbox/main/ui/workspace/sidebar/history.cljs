@@ -119,8 +119,8 @@
 (defn history-toolbox-render
   [own]
   (let [local (:rum/local own)
-        page (rum/react wb/page-l)
-        history (rum/react history-l)
+        page (mx/react wb/page-l)
+        history (mx/react history-l)
         section (:section @local :main)
         close #(rs/emit! (dw/toggle-flag :document-history))
         main? (= section :main)
@@ -155,7 +155,7 @@
 
 (defn history-dialog-render
   [own page]
-  (let [history (rum/react history-l)
+  (let [history (mx/react history-l)
         version (:selected history)
         on-accept #(rs/emit! (udh/apply-selected-history page))
         on-cancel #(rs/emit! (udh/deselect-page-history page))]

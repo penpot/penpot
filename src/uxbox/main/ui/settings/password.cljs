@@ -39,8 +39,8 @@
 
 (defn password-form-render
   [own]
-  (let [form (rum/react formdata)
-        errors (rum/react formerrors)
+  (let [form (mx/react formdata)
+        errors (mx/react formerrors)
         valid? (sc/valid? form udu/update-password-schema)]
     (letfn [(on-field-change [field event]
               (let [value (dom/event->value event)]

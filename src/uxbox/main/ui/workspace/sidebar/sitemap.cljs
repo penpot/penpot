@@ -73,9 +73,9 @@
 
 (defn sitemap-toolbox-render
   [own]
-  (let [project (rum/react wb/project-l)
-        pages (rum/react pages-l)
-        current (rum/react wb/page-l)
+  (let [project (mx/react wb/project-l)
+        pages (mx/react pages-l)
+        current (mx/react wb/page-l)
         create #(udl/open! :page-form {:page {:project (:id project)}})
         close #(rs/emit! (dw/toggle-flag :sitemap))]
     (html

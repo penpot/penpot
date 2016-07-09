@@ -77,7 +77,7 @@
 
 (defn messages-render
   [own]
-  (let [message (rum/react message-l)]
+  (let [message (mx/react message-l)]
     (case (:type message)
       :error (notification-box message)
       :info (notification-box message)

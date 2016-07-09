@@ -102,7 +102,7 @@
 
 (defn- workspace-render
   [own]
-  (let [{:keys [flags zoom page] :as workspace} (rum/react wb/workspace-l)
+  (let [{:keys [flags zoom page] :as workspace} (mx/react wb/workspace-l)
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools

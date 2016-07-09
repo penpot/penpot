@@ -37,9 +37,9 @@
 
 (defn- sitemap-render
   [own]
-  (let [project-name (rum/react project-name-ref)
-        pages (rum/react pages-ref)
-        selected (rum/react selected-ref)
+  (let [project-name (mx/react project-name-ref)
+        pages (mx/react pages-ref)
+        selected (mx/react selected-ref)
         on-click #(rs/emit! (dv/select-page %))]
     (html
      [:div.view-sitemap

@@ -89,8 +89,8 @@
 
 (defn draw-tools-render
   [open-toolboxes]
-  (let [workspace (rum/react wb/workspace-l)
-        drawing (rum/react drawing-shape)
+  (let [workspace (mx/react wb/workspace-l)
+        drawing (mx/react drawing-shape)
         close #(rs/emit! (dw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))]

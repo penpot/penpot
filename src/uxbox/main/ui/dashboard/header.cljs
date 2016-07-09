@@ -31,7 +31,7 @@
 
 (defn header-render
   [own]
-  (let [local (rum/react header-l)
+  (let [local (mx/react header-l)
         projects? (= (:section local) :dashboard/projects)
         elements? (= (:section local) :dashboard/elements)
         icons? (= (:section local) :dashboard/icons)

@@ -34,7 +34,7 @@
 
 (defn- clipboard-dialog-render
   [own]
-  (let [clipboard (rum/react clipboard-l)]
+  (let [clipboard (mx/react clipboard-l)]
     (html
      [:div.lightbox-body.clipboard
       [:div.clipboard-list

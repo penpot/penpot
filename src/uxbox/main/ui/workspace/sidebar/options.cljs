@@ -116,7 +116,7 @@
 
 (defn options-toolbox-render
   [own]
-  (let [shape (rum/react selected-shape-l)
+  (let [shape (mx/react selected-shape-l)
         close #(rs/emit! (udw/toggle-flag :element-options))]
     (html
      [:div.elementa-options.tool-window

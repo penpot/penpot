@@ -31,7 +31,7 @@
 
 (defn header-render
   [own]
-  (let [section (rum/react section-l)
+  (let [section (mx/react section-l)
         profile? (= section :settings/profile)
         password? (= section :settings/password)
         notifications? (= section :settings/notifications)]

@@ -61,7 +61,7 @@
 (defn icons-render
   [own]
   (let [local (:rum/local own)
-        drawing (rum/react drawing-shape)
+        drawing (mx/react drawing-shape)
         collid (:collid @local)
         icons (get-in library/+icon-collections-by-id+ [collid :icons])
         on-close #(rs/emit! (dw/toggle-flag :icons))

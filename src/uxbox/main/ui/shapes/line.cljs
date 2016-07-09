@@ -19,7 +19,7 @@
 (defn- line-component-render
   [own shape]
   (let [{:keys [id x y width height group]} shape
-        selected (rum/react common/selected-shapes-l)
+        selected (mx/react common/selected-shapes-l)
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)
         on-mouse-up #(common/on-mouse-up % shape)]

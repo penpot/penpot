@@ -144,7 +144,7 @@
 
 (defn horizontal-rule-render
   [own zoom]
-  (let [scroll (rum/react wb/scroll-a)
+  (let [scroll (mx/react wb/scroll-a)
         scroll-x (:x scroll)
         translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
     (html
@@ -164,7 +164,7 @@
 
 (defn vertical-rule-render
   [own zoom]
-  (let [scroll (rum/react wb/scroll-a)
+  (let [scroll (mx/react wb/scroll-a)
         scroll-y (:y scroll)
         translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
     (html

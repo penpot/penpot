@@ -34,8 +34,8 @@
 
 (defn- draw-area-render
   [own]
-  (let [shape (rum/react drawing-shape)
-        position (rum/react drawing-position)]
+  (let [shape (mx/react drawing-shape)
+        position (mx/react drawing-position)]
     (when (and shape position)
       (-> (assoc shape :drawing? true)
           (geom/resize position)

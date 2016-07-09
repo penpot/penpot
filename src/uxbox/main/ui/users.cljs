@@ -56,7 +56,7 @@
 
 (defn user-render
   [own]
-  (let [profile (rum/react profile-l)
+  (let [profile (mx/react profile-l)
         local (:rum/local own)
         photo (if (str/empty? (:photo profile ""))
                 "/images/avatar.jpg"

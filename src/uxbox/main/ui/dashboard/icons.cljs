@@ -33,7 +33,7 @@
 
 (defn- page-title-render
   [own coll]
-  (let [dashboard (rum/react dashboard-l)
+  (let [dashboard (mx/react dashboard-l)
         own? (:builtin coll false)]
     (html
      [:div.dashboard-title {}
@@ -57,7 +57,7 @@
 
 (defn nav-render
   [own]
-  (let [dashboard (rum/react dashboard-l)
+  (let [dashboard (mx/react dashboard-l)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
@@ -98,7 +98,7 @@
 
 (defn grid-render
   [own]
-  (let [dashboard (rum/react dashboard-l)
+  (let [dashboard (mx/react dashboard-l)
         coll-type (:collection-type dashboard)
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)

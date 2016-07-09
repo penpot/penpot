@@ -27,7 +27,7 @@
 
 (defn- selrect-render
   [own]
-  (when-let [data (rum/react position)]
+  (when-let [data (mx/react position)]
     (let [{:keys [x y width height]} (selrect->rect data)]
       (html
        [:rect.selection-rect

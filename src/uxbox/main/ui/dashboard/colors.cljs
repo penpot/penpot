@@ -50,7 +50,7 @@
 (defn page-title-render
   [own coll]
   (let [local (:rum/local own)
-        dashboard (rum/react dashboard-l)
+        dashboard (mx/react dashboard-l)
         own? (:builtin coll false)]
     (letfn [(on-title-save [e]
               (rs/emit! (dc/rename-collection (:id coll) (:coll-name @local)))
@@ -96,8 +96,8 @@
 
 (defn nav-render
   [own]
-  (let [dashboard (rum/react dashboard-l)
-        collections-by-id (rum/react collections-by-id-l)
+  (let [dashboard (mx/react dashboard-l)
+        collections-by-id (mx/react collections-by-id-l)
         collid (:collection-id dashboard)
         own? (= (:collection-type dashboard) :own)
         builtin? (= (:collection-type dashboard) :builtin)
@@ -141,11 +141,11 @@
 (defn grid-render
   [own]
   (let [local (:rum/local own)
-        dashboard (rum/react dashboard-l)
+        dashboard (mx/react dashboard-l)
         coll-type (:collection-type dashboard)
         coll-id (:collection-id dashboard)
         own? (= coll-type :own)
-        coll (rum/react (focus-collection coll-id))
+        coll (mx/react (focus-collection coll-id))
         toggle-color-check (fn [color]
                              (swap! local update :selected #(if (% color) (disj % color) (conj % color))))
         delete-selected #(rs/emit! (dc/remove-colors (:id coll) (:selected @local)))]
@@ -201,9 +201,9 @@
 
 (defn menu-render
   []
-  (let [dashboard (rum/react dashboard-l)
+  (let [dashboard (mx/react dashboard-l)
         coll-id (:collection-id dashboard)
-        coll (rum/react (focus-collection coll-id))
+        coll (mx/react (focus-collection coll-id))
         ccount (count (:data coll)) ]
     (html
      [:section.dashboard-bar.library-gap
