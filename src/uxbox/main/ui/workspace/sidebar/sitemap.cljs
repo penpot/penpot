@@ -65,7 +65,7 @@
        (if (> total 1)
          [:a {:on-click on-delete} i/trash])]])))
 
-(def ^:const page-item
+(def page-item
   (mx/component
    {:render page-item-render
     :name "page-item"

@@ -45,17 +45,12 @@
   (.close (::sub own))
   (dissoc own ::sub))
 
-(defn- selrect-transfer-state
-  [oldown own]
-  (assoc own ::sub (::sub oldown)))
-
 (def selrect
   (mx/component
    {:render selrect-render
     :name "selrect"
     :will-mount selrect-will-mount
     :will-unmount selrect-will-unmount
-    :transfer-state selrect-transfer-state
     :mixins [mx/static mx/reactive]}))
 
 ;; --- Implementation

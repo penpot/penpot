@@ -139,7 +139,7 @@
   (rs/emit! (dd/initialize :dashboard/icons))
   own)
 
-(defn icons-page-transfer-state
+(defn icons-page-did-remount
   [old-state state]
   (rs/emit! (dd/initialize :dashboard/icons))
   state)
@@ -148,7 +148,7 @@
   (mx/component
    {:render icons-page-render
     :will-mount icons-page-will-mount
-    :transfer-state icons-page-transfer-state
+    :did-remount icons-page-did-remount
     :name "icons-page"
     :mixins [mx/static]}))
 

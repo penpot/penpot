@@ -19,23 +19,25 @@
 
 ;; --- Lenses
 
-(def ^:const workspace-l
-  (as-> (l/in [:workspace]) $
-    (l/derive $ st/state)))
+(def workspace-l
+  (-> (l/in [:workspace])
+      (l/derive st/state)))
 
-(def ^:const project-l
+(def project-l
   (letfn [(getter [state]
             (let [project (get-in state [:workspace :project])]
               (get-in state [:projects-by-id project])))]
-    (as-> (l/lens getter) $
-      (l/derive $ st/state))))
+    (-> (l/lens getter)
+        (l/derive st/state))))
 
-(def ^:const page-l
+(def page-l
   (letfn [(getter [state]
             (let [page (get-in state [:workspace :page])]
+              ;; (println "page-l$getter" page)
+
               (get-in state [:pages-by-id page])))]
-    (as-> (l/lens getter) $
-      (l/derive $ st/state))))
+    (-> (l/lens getter)
+        (l/derive st/state))))
 
 (def ^:const selected-shapes-l
   (as-> (l/in [:selected]) $

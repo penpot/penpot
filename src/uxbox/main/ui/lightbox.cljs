@@ -47,10 +47,6 @@
   (events/unlistenByKey (::key own))
   (dissoc own ::key))
 
-(defn- lightbox-transfer-state
-  [old-own own]
-  (assoc own ::key (::key old-own)))
-
 (defn- lightbox-render
   [own]
   (let [data (mx/react lightbox-l)
@@ -68,7 +64,6 @@
   (mx/component
    {:name "lightbox"
     :render lightbox-render
-    :transfer-state lightbox-transfer-state
     :will-mount lightbox-will-mount
     :will-unmount lightbox-will-umount
     :mixins [mx/reactive mx/static]}))

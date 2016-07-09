@@ -234,7 +234,7 @@
             (dp/initialize))
   own)
 
-(defn projects-page-transfer-state
+(defn projects-page-did-remount
   [old-state state]
   (rs/emit! (dd/initialize :dashboard/projects))
   state)
@@ -243,7 +243,7 @@
   (mx/component
    {:render projects-page-render
     :will-mount projects-page-will-mount
-    :transfer-state projects-page-transfer-state
+    :did-remount projects-page-did-remount
     :name "projects-page"
     :mixins [rum/static]}))
 

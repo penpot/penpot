@@ -65,7 +65,7 @@
 
   (dissoc own ::sub1 ::sub2))
 
-(defn- workspace-transfer-state
+(defn- workspace-did-remount
   [old-state state]
   (let [[projectid pageid] (:rum/args state)
         [oldprojectid oldpageid] (:rum/args old-state)]
@@ -146,7 +146,7 @@
 (def workspace
   (mx/component
    {:render workspace-render
-    :transfer-state workspace-transfer-state
+    :did-remount workspace-did-remount
     :will-mount workspace-will-mount
     :will-unmount workspace-will-unmount
     :did-mount workspace-did-mount

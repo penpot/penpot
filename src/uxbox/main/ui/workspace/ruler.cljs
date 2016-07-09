@@ -87,11 +87,6 @@
     (subscription)
     (dissoc own ::sub)))
 
-(defn- overlay-transfer-state
-  [old-own own]
-  (let [sub (::sub old-own)]
-    (assoc own ::sub sub)))
-
 (declare overlay-line-render)
 
 (defn- overlay-render
@@ -115,7 +110,6 @@
    {:render #(overlay-render % (:rum/local %))
     :will-mount #(overlay-will-mount % (:rum/local %))
     :will-unmount overlay-will-unmount
-    :transfer-state overlay-transfer-state
     :name "overlay"
     :mixins [mx/static (mx/local) mx/reactive]}))
 

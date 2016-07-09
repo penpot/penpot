@@ -356,7 +356,7 @@
             (di/initialize))
   own)
 
-(defn- images-page-transfer-state
+(defn- images-page-did-remount
   [old-state state]
   (rs/emit! (dd/initialize :dashboard/images))
   state)
@@ -365,6 +365,6 @@
   (mx/component
    {:render images-page-render
     :will-mount images-page-will-mount
-    :transfer-state images-page-transfer-state
+    :did-remount images-page-did-remount
     :name "images-page"
     :mixins [mx/static]}))

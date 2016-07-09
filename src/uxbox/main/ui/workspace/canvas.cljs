@@ -168,13 +168,6 @@
              ::key2 key2
              ::key3 key3))))
 
-(defn- viewport-transfer-state
-  [old-own own]
-  (->> [::key1 ::key2 ::key3
-        ::sub1 ::sub2]
-       (select-keys old-own)
-       (merge own)))
-
 (defn- viewport-will-unmount
   [own]
   (events/unlistenByKey (::key1 own))
@@ -190,5 +183,4 @@
     :name "viewport"
     :did-mount viewport-did-mount
     :will-unmount viewport-will-unmount
-    :transfer-state viewport-transfer-state
     :mixins [mx/reactive]}))

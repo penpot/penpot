@@ -105,11 +105,6 @@
   (.close (::sub own))
   (dissoc own ::sub))
 
-(defn- transfer-state
-  [oldown own]
-  (assoc own ::sub (::sub oldown)))
-
 (def shortcuts-mixin
   {:will-mount will-mount
-   :will-unmount will-unmount
-   :transfer-state transfer-state})
+   :will-unmount will-unmount})
