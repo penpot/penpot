@@ -5,42 +5,21 @@
             [lentes.core :as l]
             [goog.dom.forms :as gforms]))
 
+(extend-type cljs.core.UUID
+  INamed
+  (-name [this] (str this))
+  (-namespace [_] ""))
+
 (defn component
-  [spec]
-  (let [name (or (:name spec)
-                 (str (gensym "rum-")))
-        mixins (or (:mixins spec)
-                   [])
-        spec (merge (dissoc spec :name :mixins)
-                    (when-let [rfn (:render spec)]
-                      {:render (fn [state]
-                                 [(apply rfn state (:rum/props state)) state])}))
-        cls (rum/build-class (conj mixins spec) name)
-        ctr (fn self
-              ([] (self {}))
-              ([& props]
-               (let [state {:rum/props props}]
-                 (rum/element cls state nil))))]
-    (with-meta ctr {:rum/class cls})))
-
-(defn ref-html
-  [own ref]
-  (let [component (-> own :rum/react-component)
-        node (aget (.-refs component) ref)]
-    (.-innerHTML node)))
-
-(defn ref-value
-  [own ref]
-  (let [component (-> own :rum/react-component)
-        ref-node (aget (.-refs component) ref)
-        dom-node  (.findDOMNode js/ReactDOM ref-node)]
-    (.-value dom-node)))
-
-(defn get-ref-dom
-  [own ref]
-  (let [component (-> own :rum/react-component)
-        ref-node (aget (.-refs component) ref)]
-    (.findDOMNode js/ReactDOM ref-node)))
+  [{:keys [render] :as spec}]
+  {:pre [(ifn? render)]}
+  (let [name (or (:name spec) (str (gensym "rum-")))
+        mixins (or (:mixins spec) [])
+        spec (dissoc spec :name :mixins :render)
+        render' (fn [state]
+                  [(apply render state (:rum/args state)) state])
+        mixins (conj mixins spec)]
+    (rum/build-ctor render' mixins name)))
 
 (defn concat
   [& elements]
