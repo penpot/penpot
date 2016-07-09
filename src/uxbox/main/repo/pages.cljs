@@ -11,13 +11,13 @@
             [uxbox.main.repo.impl :refer (request send!)]
             [uxbox.util.transit :as t]))
 
-(defn- decode-page
+(defn decode-page
   [{:keys [data options] :as page}]
   (merge page
          (when data {:data (t/decode data)})
          (when options {:options (t/decode options)})))
 
-(defn- decode-payload
+(defn decode-payload
   [{:keys [payload] :as rsp}]
   (if (sequential? payload)
     (assoc rsp :payload (mapv decode-page payload))

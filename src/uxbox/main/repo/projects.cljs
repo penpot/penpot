@@ -8,6 +8,7 @@
   "A main interface for access to remote resources."
   (:require [beicon.core :as rx]
             [uxbox.config :refer (url)]
+            [uxbox.main.repo.pages :as pages]
             [uxbox.main.repo.impl :refer (request send!)]))
 
 (defmethod request :fetch/projects
@@ -23,7 +24,11 @@
 (defmethod request :fetch/project-by-token
   [_ token]
   (let [url (str url "/projects-by-token/" token)]
-    (send! {:url url :method :get})))
+    (->> (send! {:url url :method :get})
+         (rx/map (fn [response]
+                   (update-in response [:payload :pages]
+                              (fn [pages]
+                                (mapv pages/decode-page pages))))))))
 
 (defmethod request :create/project
   [_ data]
