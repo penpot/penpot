@@ -9,7 +9,7 @@
             [rum.core :as rum]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]))
 
@@ -38,19 +38,12 @@
 
 ;; --- Rect Shape
 
-(defn- rect-shape-render
-  [own {:keys [id x1 y1 x2 y2] :as shape}]
+(mx/defc rect-shape
+  [{:keys [id x1 y1 x2 y2] :as shape}]
   (let [key (str id)
         rfm (geom/transformation-matrix shape)
         size (geom/size shape)
         props {:x x1 :y y1 :id key :key key :transform (str rfm)}
         attrs (-> (attrs/extract-style-attrs shape)
                   (merge props size))]
-    (html
-     [:rect attrs])))
-
-(def rect-shape
-  (mx/component
-   {:render rect-shape-render
-    :name "rect-shape"
-    :mixins [mx/static]}))
+    [:rect attrs]))
