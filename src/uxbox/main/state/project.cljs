@@ -56,7 +56,7 @@
                  (assoc :shapes shapes))]
     (-> state
         (update :shapes-by-id merge shapes-by-id)
-        (update-in [:pages-by-id] assoc (:id page) page))))
+        (update :pages-by-id assoc (:id page) page))))
 
 (defn purge-page
   "Remove page and all related stuff from the state."
