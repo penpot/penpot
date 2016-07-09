@@ -5,14 +5,21 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.view
-  (:require [uxbox.view.state :as st]
-            [uxbox.common.constants]
-            #_[uxbox.view.locales :as lc]
+  (:require [uxbox.config]
+            [uxbox.main.state :as st]
             [uxbox.view.ui :as ui]))
+
+(defn initial-state
+  []
+  {:route nil
+   :project nil
+   :pages nil
+   :page nil
+   :shapes-by-id {}
+   :pages-by-id {}})
 
 (defn ^:export init
   []
-  ;; (lc/init)
-  (st/init)
-  ;; (ui/init-routes)
+  (st/init initial-state)
+  (ui/init-routes)
   (ui/init))
