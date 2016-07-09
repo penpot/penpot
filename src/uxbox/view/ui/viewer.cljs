@@ -14,7 +14,7 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as rt]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.state :as st]
             [uxbox.view.data.viewer :as dv]
@@ -47,21 +47,15 @@
   (remove-watch token-ref ::wkey)
   own)
 
-(defn viewer-page-render
+(mx/defc viewer-page
+  {:mixins [mx/static rum/reactive]
+   :will-unmount viewer-page-will-unmount
+   :will-mount viewer-page-will-mount}
   [own]
   (let [flags (rum/react flags-ref)
         sitemap? (contains? flags :sitemap)]
-    (html
-     [:section.view-content
-      (when sitemap?
-        (sitemap))
-      (nav flags)
-      (canvas)])))
-
-(def viewer-page
-  (mx/component
-   {:render viewer-page-render
-    :will-mount viewer-page-will-mount
-    :will-unmount viewer-page-will-unmount
-    :name "viewer-page"
-    :mixins [mx/static rum/reactive]}))
+    [:section.view-content
+     (when sitemap?
+       (sitemap))
+     (nav flags)
+     (canvas)]))
