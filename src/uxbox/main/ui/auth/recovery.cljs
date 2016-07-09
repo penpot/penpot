@@ -83,7 +83,7 @@
 
 (defn- recovery-page-will-mount
   [own]
-  (let [[token] (:rum/props own)]
+  (let [[token] (:rum/args own)]
     (rs/emit! (uda/validate-recovery-token token))
     own))
 

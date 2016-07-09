@@ -202,7 +202,7 @@
               (when (kbd/shift? event)
                 (toggle-check image)))
             (forward-click [event]
-              (dom/click (mx/get-ref-dom own "file-input")))
+              (dom/click (mx/ref-node own "file-input")))
             (delete-selected []
               (->> (:selected @local)
                    (run! #(rs/emit! (di/delete-image coll-id %)))))

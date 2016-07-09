@@ -119,14 +119,14 @@
 (defn- viewport-did-mount
   [own]
   (letfn [(translate-point-to-viewport [pt]
-            (let [viewport (mx/get-ref-dom own "viewport")
+            (let [viewport (mx/ref-node own "viewport")
                   brect (.getBoundingClientRect viewport)
                   brect (gpt/point (parse-int (.-left brect))
                                    (parse-int (.-top brect)))]
               (gpt/subtract pt brect)))
 
           (translate-point-to-canvas [pt]
-            (let [viewport (mx/get-ref-dom own "viewport")]
+            (let [viewport (mx/ref-node own "viewport")]
               (when-let [canvas (dom/get-element-by-class "page-canvas" viewport)]
                 (let [brect (.getBoundingClientRect canvas)
                       bbox (.getBBox canvas)

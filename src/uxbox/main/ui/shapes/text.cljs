@@ -106,8 +106,8 @@
 
 (defn- text-shape-edit-did-mount
   [own]
-  (let [[shape] (:rum/props own)
-        dom (mx/get-ref-dom own "container")]
+  (let [[shape] (:rum/args own)
+        dom (mx/ref-node own "container")]
     (set! (.-textContent dom) (:content shape ""))
     (.focus dom)
     own))
@@ -125,7 +125,7 @@
               (on-done))
             (on-input [ev]
               (let [content (dom/event->inner-text ev)
-                    sid (:id (first (:rum/props own)))]
+                    sid (:id (first (:rum/args own)))]
                 (rs/emit! (uds/update-text sid {:content content}))))]
       (html
        [:g

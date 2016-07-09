@@ -25,7 +25,7 @@
 
 (defn- resolve-position
   [own pt]
-  (let [overlay (mx/get-ref-dom own "overlay")
+  (let [overlay (mx/ref-node own "overlay")
         brect (.getBoundingClientRect overlay)
         bpt (gpt/point (.-left brect) (.-top brect))]
     (gpt/subtract pt bpt)))

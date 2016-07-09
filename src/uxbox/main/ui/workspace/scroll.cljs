@@ -37,7 +37,7 @@
 
           (on-scroll [pt initial]
             (let [{:keys [x y]} (gpt/subtract pt initial)
-                  el (mx/get-ref-dom own "workspace-canvas")
+                  el (mx/ref-node own "workspace-canvas")
                   cx (.-scrollLeft el)
                   cy (.-scrollTop el)]
               (set! (.-scrollLeft el) (- cx x))

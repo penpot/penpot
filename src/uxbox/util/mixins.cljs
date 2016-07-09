@@ -28,29 +28,12 @@
      (rum/with-key element (str i)))))
 
 (defn local
-  "Adds an atom to component’s state that can be used as local state.
-   Atom is stored under key `:rum/local`.
-   Component will be automatically re-rendered if atom’s value changes"
   ([]
-   (local {} :rum/local))
+   (rum/local {} :rum/local))
   ([initial]
-   (local initial :rum/local))
+   (rum/local initial :rum/local))
   ([initial key]
-   {:transfer-state
-    (fn [old new]
-      (assoc new key (old key)))
-    :will-mount
-    (fn [state]
-      (let [local-state (atom initial)
-            component   (:rum/react-component state)]
-        (add-watch local-state key
-                   (fn [_ _ oldv newv]
-                     (when (not= oldv newv)
-                       (rum/request-render component))))
-        (assoc state key local-state)))
-    }))
+   (rum/local initial key)))
 
-(def static
-  {:should-update
-   (fn [old-state new-state]
-     (not= (:rum/props old-state) (:rum/props new-state)))})
+(def static rum/static)
+(def ref-node rum/ref-node)

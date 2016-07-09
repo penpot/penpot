@@ -30,7 +30,7 @@
 
 (defn- on-out-clicked
   [own event]
-  (let [parent (mx/get-ref-dom own "parent")
+  (let [parent (mx/ref-node own "parent")
         current (dom/get-target event)]
     (when (dom/equals? parent current)
       (udl/close!))))

@@ -37,17 +37,17 @@
 
 (defn- workspace-will-mount
   [own]
-  (let [[projectid pageid] (:rum/props own)]
+  (let [[projectid pageid] (:rum/args own)]
     (rs/emit! (dw/initialize projectid pageid)
               (udh/watch-page-changes))
     own))
 
 (defn- workspace-did-mount
   [own]
-  (let [[projectid pageid] (:rum/props own)
+  (let [[projectid pageid] (:rum/args own)
         sub1 (scroll/watch-scroll-interactions own)
         sub2 (udp/watch-page-changes pageid)
-        dom (mx/get-ref-dom own "workspace-canvas")]
+        dom (mx/ref-node own "workspace-canvas")]
 
     ;; Set initial scroll position
     (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-l))
@@ -67,8 +67,8 @@
 
 (defn- workspace-transfer-state
   [old-state state]
-  (let [[projectid pageid] (:rum/props state)
-        [oldprojectid oldpageid] (:rum/props old-state)]
+  (let [[projectid pageid] (:rum/args state)
+        [oldprojectid oldpageid] (:rum/args old-state)]
     (if (not= pageid oldpageid)
       (do
         (rs/emit! (dw/initialize projectid pageid))
@@ -96,7 +96,7 @@
       (rs/emit! (dw/increase-zoom))
       (rs/emit! (dw/decrease-zoom)))
 
-    (let [dom (mx/get-ref-dom own "workspace-canvas")]
+    (let [dom (mx/ref-node own "workspace-canvas")]
       (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-l))
       (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-l)))))
 
