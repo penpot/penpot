@@ -15,6 +15,16 @@
   (let [url (str url "/projects")]
     (send! {:url url :method :get})))
 
+(defmethod request :fetch/project
+  [_ id]
+  (let [url (str url "/projects/" id)]
+    (send! {:url url :method :get})))
+
+(defmethod request :fetch/project-by-token
+  [_ token]
+  (let [url (str url "/projects-by-token/" token)]
+    (send! {:url url :method :get})))
+
 (defmethod request :create/project
   [_ data]
   (let [params {:url (str url "/projects")
