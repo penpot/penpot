@@ -14,12 +14,7 @@
             [uxbox.main.state :as st]
             [uxbox.main.ui.shapes :as uus]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.shapes.rect :refer (rect-shape)]
-            [uxbox.main.ui.shapes.icon :refer (icon-shape)]
-            [uxbox.main.ui.shapes.text :refer (text-shape)]
-            [uxbox.main.ui.shapes.group :refer (group-shape)]
-            [uxbox.main.ui.shapes.line :refer (line-shape)]
-            [uxbox.main.ui.shapes.circle :refer (circle-shape)]))
+            [uxbox.view.ui.viewer.shapes :as shapes]))
 
 ;; --- Refs
 
@@ -57,22 +52,6 @@
      [:svg.page-layout {:width width :height height}
       (background)
       (for [id (reverse (:shapes page))]
-        (-> (shape id)
+        (-> (shapes/shape id)
             (rum/with-key (str id))))]]))
 
-;; --- Shapes
-
-(mx/defc shape-component
-  [{:keys [type] :as shape}]
-  (case type
-    :group (group-shape shape shape-component)
-    :text (text-shape shape)
-    :line (line-shape shape)
-    :icon (icon-shape shape)
-    :rect (rect-shape shape)
-    :circle (circle-shape shape)))
-
-(mx/defc shape
-  [sid]
-  (let [item (get-in @st/state [:shapes-by-id sid])]
-    (shape-component item)))
