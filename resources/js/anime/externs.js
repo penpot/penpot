@@ -1,0 +1,9 @@
+var anime = function() {};
+anime.version = function() {};
+anime.speed = function() {};
+anime.list = function() {};
+anime.remove = function() {};
+anime.easing = function() {};
+anime.getValue = function() {};
+anime.path = function() {};
+anime.random = function() {};
