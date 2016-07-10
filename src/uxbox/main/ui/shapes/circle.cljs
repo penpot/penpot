@@ -40,7 +40,7 @@
 
 (defn- circle-shape-render
   [own {:keys [id] :as shape}]
-  (let [key (str id)
+  (let [key (str "shape-" id)
         rfm (geom/transformation-matrix shape)
         props (select-keys shape [:cx :cy :rx :ry])
         attrs (-> (attrs/extract-style-attrs shape)

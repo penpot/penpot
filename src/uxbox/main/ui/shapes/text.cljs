@@ -148,7 +148,7 @@
 
 (defn- text-shape-render
   [own {:keys [id x1 y1 content] :as shape}]
-  (let [key (str id)
+  (let [key (str "shape-" id)
         rfm (geom/transformation-matrix shape)
         size (geom/size shape)
         props {:x x1 :y y1

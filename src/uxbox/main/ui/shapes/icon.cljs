@@ -39,7 +39,7 @@
 
 (defn- icon-shape-render
   [own {:keys [data id] :as shape} factory]
-  (let [key (str id)
+  (let [key (str "shape-" id)
         rfm (geom/transformation-matrix shape)
         attrs (merge {:id key :key key :transform (str rfm)}
                      (attrs/extract-style-attrs shape)

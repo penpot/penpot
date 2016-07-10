@@ -6,13 +6,9 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.view.ui.viewer.nav
-  (:require [sablono.core :refer-macros [html]]
-            [lentes.core :as l]
-            [rum.core :as rum]
-            [uxbox.util.mixins :as mx :include-macros true]
+  (:require [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.rstore :as rs]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.state :as st]
             [uxbox.view.data.viewer :as dv]))
 
 (mx/defc nav

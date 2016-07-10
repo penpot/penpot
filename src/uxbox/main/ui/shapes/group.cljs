@@ -61,7 +61,7 @@
 
 (defn- group-shape-render
   [own {:keys [items id dx dy rotation] :as shape} factory]
-  (let [key (str "group-" id)
+  (let [key (str "shape-" id)
         rfm (geom/transformation-matrix shape)
         attrs (merge {:id key :key key :transform (str rfm)}
                      (attrs/extract-style-attrs shape)

@@ -40,7 +40,7 @@
 
 (mx/defc rect-shape
   [{:keys [id x1 y1 x2 y2] :as shape}]
-  (let [key (str id)
+  (let [key (str "shape-" id)
         rfm (geom/transformation-matrix shape)
         size (geom/size shape)
         props {:x x1 :y y1 :id key :key key :transform (str rfm)}

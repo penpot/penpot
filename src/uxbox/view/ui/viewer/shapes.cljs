@@ -5,27 +5,23 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.view.ui.viewer.shapes
-  (:require [sablono.core :refer-macros [html]]
-            [lentes.core :as l]
-            [rum.core :as rum]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.data :refer (parse-int)]
+  (:require [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.state :as st]
-            [uxbox.main.ui.shapes :as uus]
-            [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.shapes.rect :refer (rect-shape)]
             [uxbox.main.ui.shapes.icon :refer (icon-shape)]
             [uxbox.main.ui.shapes.text :refer (text-shape)]
             [uxbox.main.ui.shapes.group :refer (group-shape)]
             [uxbox.main.ui.shapes.line :refer (line-shape)]
-            [uxbox.main.ui.shapes.circle :refer (circle-shape)]))
+            [uxbox.main.ui.shapes.circle :refer (circle-shape)]
+            [uxbox.view.ui.viewer.interactions :as itx :refer (build-attrs)]))
 
 ;; --- Interactions Wrapper
 
 (mx/defc interactions-wrapper
   [shape factory]
-  (let [interactions (:interactions shape)]
-    [:g (factory shape)]))
+  (let [interactions (vals (:interactions shape))
+        attrs (itx/build-attrs interactions)]
+    [:g attrs (factory shape)]))
 
 ;; --- Shapes
 

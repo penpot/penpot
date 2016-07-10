@@ -248,6 +248,34 @@
    {:render moveto-input-render
     :name "moveto-input"}))
 
+;; --- MoveBy Input
+
+(defn- moveby-input-render
+  [own form-ref]
+  (when-not (:moveby-x @form-ref)
+    (swap! form-ref assoc :moveby-x 0))
+  (when-not (:moveby-y @form-ref)
+    (swap! form-ref assoc :moveby-y 0))
+  (html
+   [:div
+    [:span "Move to position (px)"]
+    [:div.row-flex
+     [:input.input-text
+      {:placeholder "X"
+       :on-change (partial on-change form-ref :moveby-x)
+       :type "number"
+       :value (:moveby-x @form-ref)}]
+     [:input.input-text
+      {:placeholder "Y"
+       :on-change (partial on-change form-ref :moveby-y)
+       :type "number"
+       :value (:moveby-y @form-ref)}]]]))
+
+(def moveby-input
+  (mx/component
+   {:render moveby-input-render
+    :name "moveby-input"}))
+
 ;; --- Opacity Input
 
 (defn- opacity-input-render
@@ -459,7 +487,7 @@
         [:option {:value ":hide"} "Hide"]
         [:option {:value ":toggle"} "Toggle"]
         [:option {:value ":moveto"} "Move to"]
-        #_[:option {:value ":moveby"} "Move by"]
+        [:option {:value ":moveby"} "Move by"]
         [:option {:value ":opacity"} "Opacity"]
         [:option {:value ":size"} "Size"]
         [:option {:value ":color"} "Color"]
@@ -476,6 +504,7 @@
         :rotate (rotate-input form-ref)
         :size (resize-input form-ref)
         :moveto (moveto-input form-ref)
+        :moveby (moveby-input form-ref)
         :opacity (opacity-input form-ref)
         nil)
 

@@ -39,7 +39,7 @@
 
 (defn- line-shape-render
   [own {:keys [id x1 y1 x2 y2] :as shape}]
-  (let [key (str id)
+  (let [key (str "shape-" id)
         props (select-keys shape [:x1 :x2 :y2 :y1])
         attrs (-> (attrs/extract-style-attrs shape)
                   (merge {:id key :key key})
