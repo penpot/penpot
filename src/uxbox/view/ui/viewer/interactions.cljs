@@ -17,6 +17,10 @@
   (case trigger
     :click :on-click
     :hover :on-hover
+    :doubleclick :on-double-click
+    :rightclick :on-context-menu
+    :mousein :on-mouse-enter
+    :mouseout :on-mouse-leave
     (throw (ex-info "not supported at this moment" {:trigger trigger}))))
 
 (defn- translate-ease
