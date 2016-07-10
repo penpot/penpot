@@ -7,7 +7,7 @@
 
 (ns uxbox.main.library.fonts)
 
-(def ^:const +collections+
+(def +collections+
   [{:id "sourcesanspro"
     :name "Source Sans Pro"
     :styles [{:name "Extra-Light"

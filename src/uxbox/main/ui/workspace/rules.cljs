@@ -18,17 +18,17 @@
 
 ;; --- Constants & Helpers
 
-(def ^:const step-padding 20)
-(def ^:const step-size 10)
+(def step-padding 20)
+(def step-size 10)
 
 (defn big-ticks-mod [zoom] (/ 100 zoom))
 (defn mid-ticks-mod [zoom] (/ 50 zoom))
 
-(def ^:const +ticks+
+(def +ticks+
   (concat (range (- (/ c/viewport-width 1)) 0 step-size)
           (range 0 (/ c/viewport-width 1) step-size)))
 
-(def ^:const rule-padding 20)
+(def rule-padding 20)
 
 (defn- make-vertical-tick
   [zoom acc value]
@@ -115,7 +115,7 @@
       [:path {:d (str/join " " path) :stroke "#9da2a6"}]
       labels])))
 
-(def ^:const ^:private horizontal-rule-ticks
+(def ^:private horizontal-rule-ticks
   (mx/component
    {:render horizontal-rule-ticks-render
     :name "horizontal-rule-ticks"
@@ -134,7 +134,7 @@
       [:path {:d (str/join " " path) :stroke "#9da2a6"}]
       labels])))
 
-(def ^:const ^:private vertical-rule-ticks
+(def ^:private vertical-rule-ticks
   (mx/component
    {:render vertical-rule-ticks-render
     :name "vertical-rule-ticks"

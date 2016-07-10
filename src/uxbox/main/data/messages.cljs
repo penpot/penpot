@@ -13,7 +13,7 @@
 
 ;; --- Constants
 
-(def ^:const +animation-timeout+ 600)
+(def +animation-timeout+ 600)
 
 ;; --- Message Event
 

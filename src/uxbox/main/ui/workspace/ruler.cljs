@@ -17,7 +17,7 @@
             [uxbox.main.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 
-(def ^:private ^:const immanted-zones
+(def ^:private immanted-zones
   (let [transform #(vector (- % 7) (+ % 7) %)]
     (concat
      (mapv transform (range 0 181 15))
@@ -105,7 +105,7 @@
       (if (and p1 p2)
         (overlay-line-render own p1 p2))])))
 
-(def ^:const overlay
+(def overlay
   (mx/component
    {:render #(overlay-render % (:rum/local %))
     :will-mount #(overlay-will-mount % (:rum/local %))

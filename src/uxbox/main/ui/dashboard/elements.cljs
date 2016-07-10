@@ -29,7 +29,7 @@
      [:span i/pencil]
      [:span i/trash]]]))
 
-(def ^:const ^:private page-title
+(def ^:private page-title
   (mx/component
    {:render page-title-render
     :name "page-title"
@@ -124,7 +124,7 @@
         [:div.project-th-icon.edit i/pencil]
         [:div.project-th-icon.delete i/trash]]]]]))
 
-(def ^:const ^:private grid
+(def ^:private grid
   (mx/component
    {:render grid-render
     :name "grid"
@@ -180,7 +180,7 @@
                               (udl/close!))}
      i/close]]))
 
-(def ^:const ^:private new-element-lightbox
+(def ^:private new-element-lightbox
   (mx/component
    {:render new-element-lightbox-render
     :name "new-element-lightbox"}))

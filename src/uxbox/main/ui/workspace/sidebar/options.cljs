@@ -106,7 +106,7 @@
     :name "options"
     :mixins [mx/static (mx/local)]}))
 
-(def ^:const selected-shape-ref
+(def selected-shape-ref
   (letfn [(getter [state]
             (let [selected (get-in state [:workspace :selected])]
               (when (= 1 (count selected))

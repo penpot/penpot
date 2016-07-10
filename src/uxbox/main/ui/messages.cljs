@@ -12,7 +12,7 @@
 
 ;; --- Lenses
 
-(def ^:const ^:private message-ref
+(def ^:private message-ref
   (-> (l/key :message)
       (l/derive st/state)))
 
@@ -84,7 +84,7 @@
       :dialog (dialog-box message)
       nil)))
 
-(def ^:const messages
+(def messages
   (mx/component
    {:render messages-render
     :name "messages"

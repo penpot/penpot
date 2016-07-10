@@ -16,38 +16,38 @@
 ;; Colors
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:const +color-collections+
+(def +color-collections+
   colors/+collections+)
 
-(def ^:const +color-collections-by-id+
+(def +color-collections-by-id+
   (index-by-id colors/+collections+))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Icons
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:const +icon-collections+
+(def +icon-collections+
   icons/+collections+)
 
-(def ^:const +icon-collections-by-id+
+(def +icon-collections-by-id+
   (index-by-id icons/+collections+))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Images
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:const +image-collections+
+(def +image-collections+
   images/+collections+)
 
-(def ^:const +image-collections-by-id+
+(def +image-collections-by-id+
   (index-by-id images/+collections+))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fonts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:const +fonts+
+(def +fonts+
   fonts/+collections+)
 
-(def ^:const +fonts-by-id+
+(def +fonts-by-id+
   (index-by-id fonts/+collections+))

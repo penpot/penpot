@@ -23,7 +23,7 @@
 
 ;; --- Shortcuts
 
-(defonce ^:const +shortcuts+
+(defonce +shortcuts+
   {:shift+g #(rs/emit! (dw/toggle-flag :grid))
    :ctrl+g #(rs/emit! (uds/group-selected))
    :ctrl+shift+g #(rs/emit! (uds/degroup-selected))

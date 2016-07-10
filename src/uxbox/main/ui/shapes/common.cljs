@@ -17,11 +17,11 @@
 
 ;; --- Lenses
 
-(def ^:const selected-shapes-ref
+(def selected-shapes-ref
   (-> (l/in [:workspace :selected])
       (l/derive st/state)))
 
-(def ^:const drawing-state-ref
+(def drawing-state-ref
   (-> (l/in [:workspace :drawing])
       (l/derive st/state)))
 

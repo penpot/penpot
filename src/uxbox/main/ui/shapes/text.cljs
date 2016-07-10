@@ -70,8 +70,8 @@
 
 ;; --- Text Styles Helpers
 
-(def ^:const +style-attrs+ [:font-size])
-(def ^:const +select-rect-attrs+
+(def +style-attrs+ [:font-size])
+(def +select-rect-attrs+
   {:stroke-dasharray "5,5"
    :style {:stroke "#333" :fill "transparent"
            :stroke-opacity "0.4"}})

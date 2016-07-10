@@ -18,7 +18,7 @@
 
 ;; --- Constants
 
-(def ^:const +circle-props+
+(def +circle-props+
   {:r 6
    :style {:fillOpacity "1"
            :strokeWidth "1px"
@@ -28,7 +28,7 @@
 
 ;; --- Lenses
 
-(def ^:const selected-shapes-ref
+(def selected-shapes-ref
   (letfn [(getter [state]
             (let [selected (get-in state [:workspace :selected])]
               (mapv #(get-in state [:shapes-by-id %]) selected)))]

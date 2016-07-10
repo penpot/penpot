@@ -1,6 +1,6 @@
 (ns uxbox.main.state.clipboard)
 
-(defonce ^:private ^:const +max-items+ 5)
+(defonce ^:private +max-items+ 5)
 
 (defn conj-item
   [state item]

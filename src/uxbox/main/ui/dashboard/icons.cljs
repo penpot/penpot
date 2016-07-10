@@ -47,7 +47,7 @@
          [:span {:on-click (constantly nil)}
           i/trash]])])))
 
-(def ^:const ^:private page-title
+(def ^:private page-title
   (mx/component
    {:render page-title-render
     :name "page-title"
@@ -88,7 +88,7 @@
            [:span.element-subtitle
             (str (count (:icons props)) " elements")]])]]])))
 
-(def ^:const ^:private nav
+(def ^:private nav
   (mx/component
    {:render nav-render
     :name "nav"

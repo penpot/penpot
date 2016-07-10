@@ -67,7 +67,7 @@
     [:rect {:x 0 :y 0 :width "100%" :height "100%"
             :fill "url(#gradient-hsv)"}]]))
 
-(def ^:const default-dimensions
+(def default-dimensions
   {:pi-height 5
    :pi-width 5
    :si-height 10
@@ -75,7 +75,7 @@
    :p-width 200
    :s-height 200})
 
-(def ^:const small-dimensions
+(def small-dimensions
   {:pi-height 5
    :pi-width 5
    :si-height 10

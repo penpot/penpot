@@ -105,7 +105,7 @@
 
 ;; --- Lightbox
 
-(def ^:const +page-defaults+
+(def +page-defaults+
   {:width 1920
    :height 1080
    :layout :desktop})

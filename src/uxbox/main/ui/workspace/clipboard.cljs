@@ -21,7 +21,7 @@
 
 ;; --- Lenses
 
-(def ^:const ^:private clipboard-ref
+(def ^:private clipboard-ref
   (-> (l/key :clipboard)
       (l/derive st/state)))
 

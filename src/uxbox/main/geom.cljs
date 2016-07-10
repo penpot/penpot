@@ -12,7 +12,7 @@
 
 ;; --- Types
 
-(def ^:const +hierarchy+
+(def +hierarchy+
   (-> (make-hierarchy)
       (derive ::rect ::shape)
       (derive :icon ::rect)

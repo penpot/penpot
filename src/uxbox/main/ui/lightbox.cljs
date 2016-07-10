@@ -13,7 +13,7 @@
 
 ;; --- Lentes
 
-(def ^:const ^:private lightbox-ref
+(def ^:private lightbox-ref
   (-> (l/key :lightbox)
       (l/derive st/state)))
 

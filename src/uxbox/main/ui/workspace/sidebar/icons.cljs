@@ -25,7 +25,7 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private ^:const drawing-shape
+(def ^:private drawing-shape
   "A focused vision of the drawing property
   of the workspace status. This avoids
   rerender the whole toolbox on each workspace

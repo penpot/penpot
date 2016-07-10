@@ -37,27 +37,27 @@
 ;; Draw Tools
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:const +draw-tool-rect+
+(def +draw-tool-rect+
   {:type :rect
    :name "Rect"
    :stroke "#000000"})
 
-(def ^:const +draw-tool-circle+
+(def +draw-tool-circle+
   {:type :circle
    :name "Circle"})
 
-(def ^:const +draw-tool-line+
+(def +draw-tool-line+
   {:type :line
    :name "Line"
    :stroke-type :solid
    :stroke "#000000"})
 
-(def ^:const +draw-tool-text+
+(def +draw-tool-text+
   {:type :text
    :name "Text"
    :content "Hello world"})
 
-(def ^:const +draw-tools+
+(def +draw-tools+
   {:rect
    {:icon i/box
     :help (tr "ds.help.rect")

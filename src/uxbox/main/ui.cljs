@@ -33,13 +33,13 @@
 
 ;; --- Constants
 
-(def ^:const +unrestricted+
+(def +unrestricted+
   #{:auth/login
     :auth/register
     :auth/recovery-request
     :auth/recovery})
 
-(def ^:const restricted?
+(def restricted?
   (complement +unrestricted+))
 
 (def route-ref

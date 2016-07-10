@@ -38,27 +38,27 @@
     (-> (l/lens getter)
         (l/derive st/state))))
 
-(def ^:const selected-shapes-ref
+(def selected-shapes-ref
   (as-> (l/in [:selected]) $
     (l/derive $ workspace-ref)))
 
-(def ^:const toolboxes-ref
+(def toolboxes-ref
   (as-> (l/in [:toolboxes]) $
     (l/derive $ workspace-ref)))
 
-(def ^:const flags-ref
+(def flags-ref
   (as-> (l/in [:flags]) $
     (l/derive $ workspace-ref)))
 
-(def ^:const shapes-by-id-ref
+(def shapes-by-id-ref
   (as-> (l/key :shapes-by-id) $
     (l/derive $ st/state)))
 
-(def ^:const zoom-ref
+(def zoom-ref
   (-> (l/in [:workspace :zoom])
       (l/derive st/state)))
 
-(def ^:const alignment-ref
+(def alignment-ref
   (letfn [(getter [flags]
             (and (contains? flags :grid/indexed)
                  (contains? flags :grid/alignment)

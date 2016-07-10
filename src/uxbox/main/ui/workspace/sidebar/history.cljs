@@ -27,7 +27,7 @@
 
 ;; --- Lenses
 
-(def ^:const history-ref
+(def history-ref
   (as-> (l/in [:workspace :history]) $
     (l/derive $ st/state)))
 
