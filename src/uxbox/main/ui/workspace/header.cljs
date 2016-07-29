@@ -9,6 +9,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [beicon.core :as rx]
+            [uxbox.config :as cfg]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
             [uxbox.main.data.workspace :as dw]
@@ -68,16 +69,21 @@
         url (.createObjectURL (.-URL js/window) data)]
     (set! (.-href (.-currentTarget event)) url)))
 
+(defn on-view-clicked
+  [event project page]
+  (let [url (str cfg/viewurl "#/" (:share-token project))]
+    (js/open url "new tab" "")
+    #_(set! (.-href js/location) url)))
+
 (defn header-render
   [own]
-  (let [page (mx/react wb/page-ref)
+  (let [project (mx/react wb/project-ref)
+        page (mx/react wb/page-ref)
         flags (mx/react wb/flags-ref)
         toggle #(rs/emit! (dw/toggle-flag %))
         on-undo #(rs/emit! (udh/backwards-to-previous-version))
         on-redo #(rs/emit! (udh/forward-to-next-version))
-        on-image #(udl/open! :new-image)
-        ;; TODO: temporary
-        open-confirm-dialog #(udl/open! :confirm)]
+        on-image #(udl/open! :new-image)]
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon
@@ -155,7 +161,8 @@
          i/alignment]]
        [:ul.options-btn
         [:li.tooltip.tooltip-bottom
-         {:alt "View mode (Ctrl + P)"}
+         {:alt "View mode (Ctrl + P)"
+          :on-click #(on-view-clicked % project page)}
          i/play]]
        (coordinates)]
       (ui.u/user)])))
@@ -164,4 +171,4 @@
   (mx/component
    {:render header-render
     :name "workspace-header"
-    :mixins [mx/reactive]}))
+    :mixins [mx/static mx/reactive]}))
