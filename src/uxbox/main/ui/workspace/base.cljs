@@ -32,8 +32,6 @@
 (def page-ref
   (letfn [(getter [state]
             (let [page (get-in state [:workspace :page])]
-              ;; (println "page-l$getter" page)
-
               (get-in state [:pages-by-id page])))]
     (-> (l/lens getter)
         (l/derive st/state))))
