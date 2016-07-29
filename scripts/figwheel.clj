@@ -21,7 +21,7 @@
       :language-out :ecmascript5
       :output-to "resources/public/js/main.js"
       :output-dir "resources/public/js/main"
-      :asset-path "js/main"
+      :asset-path "/js/main"
       :verbose true}}
 
     {:id "view"
@@ -34,9 +34,9 @@
       :warnings {:ns-var-clash false}
       :language-in  :ecmascript6
       :language-out :ecmascript5
-      :output-to "resources/public/view/js/view.js"
-      :output-dir "resources/public/view/js/view"
-      :asset-path "js/view"
+      :output-to "resources/public/js/view.js"
+      :output-dir "resources/public/js/view"
+      :asset-path "/js/view"
       :verbose true}}
     ]})
 

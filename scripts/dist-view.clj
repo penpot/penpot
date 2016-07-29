@@ -8,9 +8,9 @@
    {:main 'uxbox.view
     :parallel-build false
     :warnings {:ns-var-clash false}
-    :output-to "dist/view/js/view.js"
-    :source-map "dist/view/js/view.js.map"
-    :output-dir "dist/view/js/view/"
+    :output-to "dist/js/view.js"
+    :source-map "dist/js/view.js.map"
+    :output-dir "dist/js/view/"
     :closure-defines {"uxbox.config.url" "https://test.uxbox.io/api"
                       "uxbox.config.viewurl" "https://test.uxbox.io/view/"}
     :optimizations :simple

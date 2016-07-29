@@ -69,7 +69,7 @@ gulp.task("scss:main", scssPipeline({
 
 gulp.task("scss:view", scssPipeline({
   input: paths.app + "styles/view.scss",
-  output: paths.output + "view/css/"
+  output: paths.output + "css/"
 }));
 
 gulp.task("scss", ["scss:main", "scss:view"]);
@@ -107,8 +107,8 @@ gulp.task("template:main", templatePipeline({
 gulp.task("template:view", templatePipeline({
   input: paths.app + "view.mustache",
   output: paths.output + "view/",
-  jspath: "/view/js/view.js",
-  csspath: "/view/css/view.css"
+  jspath: "/js/view.js",
+  csspath: "/css/view.css"
 }));
 
 gulp.task("template", ["template:view",
@@ -140,8 +140,8 @@ gulp.task("dist:template:main", templatePipeline({
 gulp.task("dist:template:view", templatePipeline({
   input: paths.app + "view.mustache",
   output: paths.dist + "view/",
-  jspath: "/view/js/main.js",
-  csspath: "/view/css/main.css"
+  jspath: "/js/view.js",
+  csspath: "/css/view.css"
 }));
 
 gulp.task("dist:template", ["dist:template:view",
