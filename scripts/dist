@@ -5,4 +5,5 @@ SCRIPTPATH=`dirname $SCRIPT`
 
 NODE_ENV=production gulp dist
 $SCRIPTPATH/dist-main
+$SCRIPTPATH/dist-view
 $SCRIPTPATH/dist-worker
