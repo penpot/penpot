@@ -156,7 +156,7 @@ gulp.task("dist:scss:main", scssPipeline({
 
 gulp.task("dist:scss:view", scssPipeline({
   input: paths.app + "styles/view.scss",
-  output: paths.dist + "view/css/"
+  output: paths.dist + "css/"
 }));
 
 gulp.task("dist:scss", ["dist:scss:main",
