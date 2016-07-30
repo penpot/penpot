@@ -38,8 +38,7 @@
 (defn- workspace-will-mount
   [own]
   (let [[projectid pageid] (:rum/args own)]
-    (rs/emit! (dw/initialize projectid pageid)
-              (udh/watch-page-changes))
+    (rs/emit! (dw/initialize projectid pageid))
     own))
 
 (defn- workspace-did-mount
@@ -47,23 +46,25 @@
   (let [[projectid pageid] (:rum/args own)
         sub1 (scroll/watch-scroll-interactions own)
         sub2 (udp/watch-page-changes pageid)
+        sub3 (udh/watch-page-changes)
         dom (mx/ref-node own "workspace-canvas")]
 
     ;; Set initial scroll position
     (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-ref))
     (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-ref))
 
-    (assoc own ::sub1 sub1 ::sub2 sub2)))
+    (assoc own
+           ::sub1 sub1
+           ::sub2 sub2
+           ::sub3 sub3)))
 
 (defn- workspace-will-unmount
   [own]
-  (rs/emit! (udh/clean-page-history))
-
   ;; Close subscriptions
   (.close (::sub1 own))
   (.close (::sub2 own))
-
-  (dissoc own ::sub1 ::sub2))
+  (.close (::sub3 own))
+  (dissoc own ::sub1 ::sub2 ::sub3))
 
 (defn- workspace-did-remount
   [old-state state]
