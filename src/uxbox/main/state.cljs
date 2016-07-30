@@ -30,6 +30,7 @@
    :route nil
    :auth (:uxbox/auth storage nil)
    :clipboard #queue []
+   :undo {}
    :profile nil
    :workspace nil
    :shapes-by-id {}

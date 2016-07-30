@@ -14,6 +14,7 @@
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.history :as udh]
+            [uxbox.main.data.undo :as udu]
             [uxbox.util.dom :as dom]
             [uxbox.main.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
@@ -47,6 +48,7 @@
         sub1 (scroll/watch-scroll-interactions own)
         sub2 (udp/watch-page-changes pageid)
         sub3 (udh/watch-page-changes)
+        sub4 (udu/watch-page-changes pageid)
         dom (mx/ref-node own "workspace-canvas")]
 
     ;; Set initial scroll position
@@ -56,7 +58,8 @@
     (assoc own
            ::sub1 sub1
            ::sub2 sub2
-           ::sub3 sub3)))
+           ::sub3 sub3
+           ::sub4 sub4)))
 
 (defn- workspace-will-unmount
   [own]
@@ -64,7 +67,8 @@
   (.close (::sub1 own))
   (.close (::sub2 own))
   (.close (::sub3 own))
-  (dissoc own ::sub1 ::sub2 ::sub3))
+  (.close (::sub4 own))
+  (dissoc own ::sub1 ::sub2 ::sub3 ::sub4))
 
 (defn- workspace-did-remount
   [old-state state]
