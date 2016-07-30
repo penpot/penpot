@@ -48,13 +48,12 @@
     :hover "Hover"
     :mousein "Mouse In"
     :mouseout "Mouse Out"
-    :swiperight "Swipe Right"
-    :swipeleft "Swipe Left"
-    :swipedown "Swipe Down"
-    :touchandhold "Touch and Hold"
-    :holdrelease "Hold release"
+    ;; :swiperight "Swipe Right"
+    ;; :swipeleft "Swipe Left"
+    ;; :swipedown "Swipe Down"
+    ;; :touchandhold "Touch and Hold"
+    ;; :holdrelease "Hold release"
     (pr-str trigger)))
-
 
 (defn- interactions-list-render
   [own shape form-ref]
@@ -105,11 +104,11 @@
       [:option {:value ":hover"} "Hover"]
       [:option {:value ":mousein"} "Mouse in"]
       [:option {:value ":mouseout"} "Mouse out"]
-      [:option {:value ":swiperight"} "Swipe right"]
-      [:option {:value ":swipeleft"} "Swipe left"]
-      [:option {:value ":swipedown"} "Swipe dpwn"]
-      [:option {:value ":touchandhold"} "Touch and hold"]
-      [:option {:value ":holdrelease"} "Hold release"]
+      #_[:option {:value ":swiperight"} "Swipe right"]
+      #_[:option {:value ":swipeleft"} "Swipe left"]
+      #_[:option {:value ":swipedown"} "Swipe dpwn"]
+      #_[:option {:value ":touchandhold"} "Touch and hold"]
+      #_[:option {:value ":holdrelease"} "Hold release"]
       #_[:option {:value ":keypress"} "Key press"]
       #_[:option {:value ":pageisloaded"} "Page is loaded"]
       #_[:option {:value ":windowscroll"} "Window is scrolled to"]]]]))
@@ -236,12 +235,12 @@
       {:placeholder "X"
        :on-change (partial on-change form-ref :moveto-x)
        :type "number"
-       :value (:moveto-x @form-ref)}]
+       :value (:moveto-x @form-ref "")}]
      [:input.input-text
       {:placeholder "Y"
        :on-change (partial on-change form-ref :moveto-y)
        :type "number"
-       :value (:moveto-y @form-ref)}]]]))
+       :value (:moveto-y @form-ref "")}]]]))
 
 (def moveto-input
   (mx/component
@@ -264,12 +263,12 @@
       {:placeholder "X"
        :on-change (partial on-change form-ref :moveby-x)
        :type "number"
-       :value (:moveby-x @form-ref)}]
+       :value (:moveby-x @form-ref "")}]
      [:input.input-text
       {:placeholder "Y"
        :on-change (partial on-change form-ref :moveby-y)
        :type "number"
-       :value (:moveby-y @form-ref)}]]]))
+       :value (:moveby-y @form-ref "")}]]]))
 
 (def moveby-input
   (mx/component
@@ -292,7 +291,7 @@
        :min "0"
        :max "100"
        :type "number"
-       :value (:opacity @form-ref)}]]]))
+       :value (:opacity @form-ref "")}]]]))
 
 (def opacity-input
   (mx/component
@@ -308,10 +307,10 @@
     [:span "Rotate (dg)"]
     [:div.row-flex
      [:input.input-text
-      {:placeholder "px"
-       :on-change (partial on-change form-ref :rotate)
+      {:placeholder "dg"
+       :on-change (partial on-change form-ref :rotation)
        :type "number"
-       :value ""}]]]))
+       :value (:rotation @form-ref "")}]]]))
 
 (def rotate-input
   (mx/component
@@ -330,12 +329,12 @@
       {:placeholder "Width"
        :on-change (partial on-change form-ref :resize-width)
        :type "number"
-       :value ""}]
+       :value (:resize-width @form-ref "")}]
      [:input.input-text
       {:placeholder "Height"
        :on-change (partial on-change form-ref :resize-height)
        :type "number"
-       :value ""}]]]))
+       :value (:resize-height @form-ref "")}]]]))
 
 (def resize-input
   (mx/component
@@ -416,7 +415,7 @@
 (defn- easing-input-render
   [own form-ref]
   (when-not (:easing @form-ref)
-    (swap! form-ref assoc :easing :none))
+    (swap! form-ref assoc :easing :linear))
   (html
    [:div
     [:span "Easing"]
@@ -425,7 +424,6 @@
       {:placeholder "Easing"
        :on-change (partial on-change form-ref :easing)
        :value (pr-str (:easing @form-ref))}
-      [:option {:value ":none"} "None"]
       [:option {:value ":linear"} "Linear"]
       [:option {:value ":easein"} "Ease in"]
       [:option {:value ":easeout"} "Ease out"]
@@ -486,12 +484,12 @@
         [:option {:value ":show"} "Show"]
         [:option {:value ":hide"} "Hide"]
         [:option {:value ":toggle"} "Toggle"]
-        [:option {:value ":moveto"} "Move to"]
+        ;; [:option {:value ":moveto"} "Move to"]
         [:option {:value ":moveby"} "Move by"]
         [:option {:value ":opacity"} "Opacity"]
         [:option {:value ":size"} "Size"]
         [:option {:value ":color"} "Color"]
-        [:option {:value ":rotate"} "Rotate"]
+        ;; [:option {:value ":rotate"} "Rotate"]
         [:option {:value ":gotopage"} "Go to page"]
         [:option {:value ":gotourl"} "Go to URL"]
         #_[:option {:value ":goback"} "Go back"]

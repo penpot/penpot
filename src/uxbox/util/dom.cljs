@@ -30,6 +30,10 @@
   ([classname node]
    (dom/getElementByClass classname node)))
 
+(defn get-element
+  [id]
+  (dom/getElement id))
+
 (defn stop-propagation
   [e]
   (when e

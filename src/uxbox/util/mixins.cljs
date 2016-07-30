@@ -45,3 +45,4 @@
 (def ref-node rum/ref-node)
 (def react rum/react)
 (def reactive rum/reactive)
+(def dom-node rum/dom-node)
