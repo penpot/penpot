@@ -21,6 +21,26 @@
                                      replace-by-id
                                      index-by)]))
 
+;; --- Watch Page Changes
+
+(declare fetch-page-history)
+(declare fetch-pinned-page-history)
+
+(defn watch-page-changes
+  "A function that starts watching for `IPageUpdate`
+  events emited to the global event stream and just
+  reacts on them emiting an other event that just
+  persists the state of the page in an undo stack."
+  []
+  (letfn [(on-value [id]
+            (rs/emit! (fetch-page-history id)
+                      (fetch-pinned-page-history id)))]
+    (as-> rs/stream $
+      (rx/filter udp/page-synced? $)
+      (rx/delay 500 $)
+      (rx/map (comp :id :page) $)
+      (rx/on-value $ on-value))))
+
 ;; --- Pinned Page History Fetched
 
 (declare update-history-index)
@@ -88,23 +108,6 @@
    (fetch-page-history id nil))
   ([id params]
    (map->FetchPageHistory (assoc params :id id))))
-
-;; --- Watch Page Changes
-
-(defn watch-page-changes
-  "A function that starts watching for `IPageUpdate`
-  events emited to the global event stream and just
-  reacts on them emiting an other event that just
-  persists the state of the page in an undo stack."
-  []
-  (letfn [(on-value [id]
-            (rs/emit! (fetch-page-history id)
-                      (fetch-pinned-page-history id)))]
-    (as-> rs/stream $
-      (rx/filter udp/page-synced? $)
-      (rx/delay 500 $)
-      (rx/map (comp :id :page) $)
-      (rx/on-value $ on-value))))
 
 ;; --- Select Page History
 
