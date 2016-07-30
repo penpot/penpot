@@ -14,6 +14,8 @@
             [uxbox.main.state :as st]
             [uxbox.view.data.viewer :as dv]
             [vendor.snapsvg])
+  ;; Documentation about available events:
+  ;; https://google.github.io/closure-library/api/goog.events.EventType.html
   (:import goog.events.EventType))
 
 (defn- translate-trigger
