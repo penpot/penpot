@@ -25,9 +25,7 @@
             [uxbox.main.geom.point :as gpt]
             [uxbox.util.math :as mth]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Coordinates Debug
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Coordinates Widget
 
 (defn- coordenates-render
   [own]
@@ -54,9 +52,7 @@
     :name "coordenates"
     :mixins [mx/reactive]}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Header
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Header Component
 
 (defn on-download-clicked
   [event page]
@@ -71,9 +67,10 @@
 
 (defn on-view-clicked
   [event project page]
-  (let [url (str cfg/viewurl "#/" (:share-token project))]
-    (js/open url "new tab" "")
-    #_(set! (.-href js/location) url)))
+  (let [token (:share-token project)
+        index (:index page)
+        url (str cfg/viewurl "#/" token "/" index)]
+    (js/open url "new tab" "")))
 
 (defn header-render
   [own]
