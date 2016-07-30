@@ -174,13 +174,19 @@
   (UpdatePage. id))
 
 (defn watch-page-changes
+  "A function that starts watching for `IPageUpdate`
+  events emited to the global event stream and just
+  reacts emiting an other event in order to perform
+  the page persistence.
+
+  The main behavior debounces the posible emmited
+  events with 1sec of delay allowing batch updates
+  on fastly performed events."
   [id]
-  (letfn [(on-value []
-            (rs/emit! (update-page id)))]
-    (as-> rs/stream $
-      (rx/filter #(satisfies? IPageUpdate %) $)
-      (rx/debounce 2000 $)
-      (rx/on-next $ on-value))))
+  (as-> rs/stream $
+    (rx/filter #(satisfies? IPageUpdate %) $)
+    (rx/debounce 1000 $)
+    (rx/on-next $ #(rs/emit! (update-page id)))))
 
 ;; --- Update Page Metadata
 
