@@ -188,7 +188,7 @@
                               :on-change (partial on-change form-ref :page)
                               :value (pr-str (:page @form-ref))}
         (for [page pages
-              :let [key (pr-str (:id page))]]
+              :let [key (:index page)]]
           [:option {:key key :value key} (:name page)])]]])))
 
 (def pages-input

@@ -8,7 +8,6 @@
 (ns uxbox.view.ui.viewer.sitemap
   (:require [sablono.core :refer-macros (html)]
             [lentes.core :as l]
-            [rum.core :as rum]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer (parse-int)]

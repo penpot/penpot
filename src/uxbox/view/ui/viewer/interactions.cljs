@@ -7,10 +7,12 @@
 (ns uxbox.view.ui.viewer.interactions
   (:require [promesa.core :as p]
             [uxbox.util.dom :as dom]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.geom :as geom]
             [uxbox.main.geom.matrix :as gmt]
             [uxbox.main.geom.point :as gpt]
             [uxbox.main.state :as st]
+            [uxbox.view.data.viewer :as dv]
             [vendor.snapsvg])
   (:import goog.events.EventType))
 
@@ -181,6 +183,10 @@
   [{:keys [url]}]
   (set! (.-href js/location) url))
 
+(defn- run-gotopage-interaction
+  [{:keys [page]}]
+  (rs/emit! (dv/select-page page)))
+
 (defn- run-color-interaction
   [{:keys [element fill-color stroke-color direction easing delay duration]}]
   (let [shape (get-in @st/state [:shapes-by-id element])
@@ -223,9 +229,10 @@
     :hide (run-hide-interaction itx)
     :size (run-size-interaction itx)
     :opacity (run-opacity-interaction itx)
-    :gotourl (run-gotourl-interaction itx)
     :color (run-color-interaction itx)
     :rotate (run-rotate-interaction itx)
+    :gotourl (run-gotourl-interaction itx)
+    :gotopage (run-gotopage-interaction itx)
     (throw (ex-info "undefined interaction" {:action action}))))
 
 ;; --- Main Api
