@@ -6,8 +6,10 @@
 
 (ns uxbox.view.ui.viewer.shapes
   (:require [goog.events :as events]
+            [lentes.core :as l]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.state :as st]
+            [uxbox.main.geom :as geom]
             [uxbox.main.ui.shapes.rect :refer (rect-shape)]
             [uxbox.main.ui.shapes.icon :refer (icon-shape)]
             [uxbox.main.ui.shapes.text :refer (text-shape)]
@@ -16,6 +18,10 @@
             [uxbox.main.ui.shapes.circle :refer (circle-shape)]
             [uxbox.view.ui.viewer.interactions :as itx])
   (:import goog.events.EventType))
+
+(def itx-flag-ref
+  (-> (comp (l/key :flags) (l/lens :interactions))
+      (l/derive st/state)))
 
 ;; --- Interactions Wrapper
 
@@ -38,9 +44,18 @@
 
 (mx/defc interactions-wrapper
   {:did-mount interactions-wrapper-did-mount
-   :will-unmount interactions-wrapper-will-unmount}
+   :will-unmount interactions-wrapper-will-unmount
+   :mixins [mx/reactive mx/static]}
   [shape factory]
-  [:g {:id (str "itx-" (:id shape))} (factory shape)])
+  (let [show-itx? (mx/react itx-flag-ref)
+        rect (geom/inner-rect shape)]
+    [:g {:id (str "itx-" (:id shape))}
+     (factory shape)
+     (when show-itx?
+       [:circle {:fill "red"
+                 :cx (:x rect)
+                 :cy (:y rect)
+                 :r 10}])]))
 
 ;; --- Shapes
 
