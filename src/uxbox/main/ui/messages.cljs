@@ -28,7 +28,7 @@
     (html
      [:div.message {:class classes}
       [:div.message-body
-       [:span.close {:on-clock close}
+       [:span.close {:on-click close}
         i/close]
        [:span (:content message)]]])))
 
