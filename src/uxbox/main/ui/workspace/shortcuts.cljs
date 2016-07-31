@@ -12,8 +12,9 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.workspace.sidebar.drawtools :as wsd]
-            [uxbox.main.data.history :as udh])
+            [uxbox.main.data.undo :as udu]
+            [uxbox.main.data.history :as udh]
+            [uxbox.main.ui.workspace.sidebar.drawtools :as wsd])
   (:import goog.events.EventType
            goog.events.KeyCodes
            goog.ui.KeyboardShortcutHandler
@@ -36,13 +37,13 @@
    :ctrl+d #(rs/emit! (uds/duplicate-selected))
    :ctrl+c #(rs/emit! (dw/copy-to-clipboard))
    :ctrl+v #(rs/emit! (dw/paste-from-clipboard))
-   :ctrl+z #(rs/emit! (udh/backwards-to-previous-version))
+   :ctrl+shift+v #(udl/open! :clipboard)
+   :ctrl+z #(rs/emit! (udu/undo))
+   :ctrl+shift+z #(rs/emit! (udu/redo))
    :ctrl+b #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-rect+))
    :ctrl+e #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-circle+))
    :ctrl+l #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-line+))
    :ctrl+t #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-text+))
-   :ctrl+shift+z #(rs/emit! (udh/forward-to-next-version))
-   :ctrl+shift+v #(udl/open! :clipboard)
    :esc #(rs/emit! (uds/deselect-all))
    :backspace #(rs/emit! (uds/delete-selected))
    :delete #(rs/emit! (uds/delete-selected))

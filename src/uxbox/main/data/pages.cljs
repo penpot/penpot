@@ -55,8 +55,7 @@
   (let [data (:data page)
         shapes (:shapes data)
         shapes-by-id (:shapes-by-id data)
-        page (-> page
-                 (dissoc page :data)
+        page (-> (dissoc page :data)
                  (assoc :shapes shapes))]
     (-> state
         (update :shapes-by-id merge shapes-by-id)

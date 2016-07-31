@@ -47,8 +47,8 @@
   (let [[projectid pageid] (:rum/args own)
         sub1 (scroll/watch-scroll-interactions own)
         sub2 (udp/watch-page-changes pageid)
-        sub3 (udh/watch-page-changes)
-        sub4 (udu/watch-page-changes pageid)
+        sub3 (udu/watch-page-changes pageid)
+        sub4 (udh/watch-page-changes)
         dom (mx/ref-node own "workspace-canvas")]
 
     ;; Set initial scroll position
@@ -78,12 +78,17 @@
       (do
         (rs/emit! (dw/initialize projectid pageid))
         (.close (::sub2 old-state))
+        (.close (::sub3 old-state))
         (assoc state
                ::sub1 (::sub1 old-state)
-               ::sub2 (udp/watch-page-changes pageid)))
+               ::sub2 (udp/watch-page-changes pageid)
+               ::sub3 (udu/watch-page-changes pageid)
+               ::sub4 (::sub4 old-state)))
       (assoc state
              ::sub1 (::sub1 old-state)
-             ::sub2 (::sub2 old-state)))))
+             ::sub2 (::sub2 old-state)
+             ::sub3 (::sub3 old-state)
+             ::sub4 (::sub4 old-state)))))
 
 (defn- on-scroll
   [event]
