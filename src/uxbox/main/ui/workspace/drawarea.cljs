@@ -7,18 +7,17 @@
 
 (ns uxbox.main.ui.workspace.drawarea
   (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
             [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.main.constants :as c]
             [uxbox.util.rstore :as rs]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.main.constants :as c]
             [uxbox.main.state :as st]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.core :as uuc]
             [uxbox.main.ui.shapes :as shapes]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.util.mixins :as mx]
             [uxbox.main.geom :as geom]
             [uxbox.main.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
@@ -32,15 +31,6 @@
 
 (declare watch-draw-actions)
 
-(defn- draw-area-render
-  [own]
-  (let [shape (mx/react drawing-shape)
-        position (mx/react drawing-position)]
-    (when (and shape position)
-      (-> (assoc shape :drawing? true)
-          (geom/resize position)
-          (shapes/render-component)))))
-
 (defn- draw-area-will-mount
   [own]
   (assoc own ::sub (watch-draw-actions)))
@@ -50,13 +40,17 @@
   (.close (::sub own))
   (dissoc own ::sub))
 
-(def draw-area
-  (mx/component
-   {:render draw-area-render
-    :name "draw-area"
-    :will-mount draw-area-will-mount
-    :will-unmount draw-area-will-unmount
-    :mixins [mx/static mx/reactive]}))
+(mx/defc draw-area
+  {:will-mount draw-area-will-mount
+   :will-unmount draw-area-will-unmount
+   :mixins [mx/static mx/reactive]}
+  [own]
+  (let [shape (mx/react drawing-shape)
+        position (mx/react drawing-position)]
+    (when (and shape position)
+      (-> (assoc shape :drawing? true)
+          (geom/resize position)
+          (shapes/render-component)))))
 
 ;; --- Drawing Logic
 
