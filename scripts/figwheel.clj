@@ -17,6 +17,7 @@
       :parallel-build false
       :optimizations :none
       :warnings {:ns-var-clash false}
+      :closure-defines {"uxbox.config.url" "https://test.uxbox.io/api"}
       :language-in  :ecmascript6
       :language-out :ecmascript5
       :output-to "resources/public/js/main.js"
@@ -32,6 +33,7 @@
       :parallel-build false
       :optimizations :none
       :warnings {:ns-var-clash false}
+      :closure-defines {"uxbox.config.url" "https://test.uxbox.io/api"}
       :language-in  :ecmascript6
       :language-out :ecmascript5
       :output-to "resources/public/js/view.js"
