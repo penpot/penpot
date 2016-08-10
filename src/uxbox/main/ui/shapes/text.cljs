@@ -5,20 +5,18 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.text
-  (:require [sablono.core :refer-macros [html]]
-            [cuerdas.core :as str]
-            [rum.core :as rum]
+  (:require [cuerdas.core :as str]
             [lentes.core :as l]
             [goog.events :as events]
             [uxbox.util.rstore :as rs]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.color :as color]
+            [uxbox.util.dom :as dom]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.core :as ui]
-            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.main.geom :as geom]
-            [uxbox.util.color :as color]
-            [uxbox.util.dom :as dom])
+            [uxbox.main.ui.workspace.rlocks :as rlocks]
+            [uxbox.main.geom :as geom])
   (:import goog.events.EventType))
 
 ;; --- Events
@@ -37,7 +35,8 @@
 (declare text-shape)
 (declare text-shape-edit)
 
-(defn- text-component-render
+(mx/defcs text-component
+  {:mixins [mx/static mx/reactive (mx/local)]}
   [own {:keys [id x1 y1 content group] :as shape}]
   (let [selected (mx/react common/selected-shapes-ref)
         selected? (and (contains? selected id)
@@ -45,28 +44,18 @@
         local (:rum/local own)]
     (letfn [(on-mouse-down [event]
               (handle-mouse-down event local shape selected))
-            (on-mouse-up [event]
-              (common/on-mouse-up event shape))
             (on-done [_]
               (swap! local assoc :edition false))
             (on-double-click [event]
               (swap! local assoc :edition true)
-              (ui/acquire-action! "ui.text.edit"))]
-      (html
-       [:g.shape {:class (when selected? "selected")
-                  :ref "main"
-                  :on-double-click on-double-click
-                  :on-mouse-down on-mouse-down
-                  :on-mouse-up on-mouse-up}
-        (if (:edition @local false)
-          (text-shape-edit shape on-done)
-          (text-shape shape))]))))
-
-(def text-component
-  (mx/component
-   {:render text-component-render
-    :name "text-componet"
-    :mixins [mx/static mx/reactive (mx/local)]}))
+              (rlocks/acquire! :ui/text-edit))]
+      [:g.shape {:class (when selected? "selected")
+                 :ref "main"
+                 :on-double-click on-double-click
+                 :on-mouse-down on-mouse-down}
+       (if (:edition @local false)
+         (text-shape-edit shape on-done)
+         (text-shape shape))])))
 
 ;; --- Text Styles Helpers
 
@@ -112,8 +101,10 @@
     (.focus dom)
     own))
 
-(defn- text-shape-edit-render
-  [own {:keys [id x1 y1 content] :as shape} on-done]
+(mx/defc text-shape-edit
+  {:did-mount text-shape-edit-did-mount
+   :mixins [mx/static]}
+  [{:keys [id x1 y1 content] :as shape} on-done]
   (let [size (geom/size shape)
         style (make-style shape)
         rfm (geom/transformation-matrix shape)
@@ -121,33 +112,25 @@
                :transform (str rfm)}
         props (merge props size)]
     (letfn [(on-blur [ev]
-              (ui/release-action! "ui.text.edit")
+              (rlocks/release! :ui/text-edit)
               (on-done))
             (on-input [ev]
-              (let [content (dom/event->inner-text ev)
-                    sid (:id (first (:rum/args own)))]
-                (rs/emit! (uds/update-text sid {:content content}))))]
-      (html
-       [:g
-        [:rect (merge props +select-rect-attrs+)]
-        [:foreignObject props
-         [:p {:ref "container"
-              :on-blur on-blur
-              :on-input on-input
-              :contentEditable true
-              :style style}]]]))))
-
-(def text-shape-edit
-  (mx/component
-   {:render text-shape-edit-render
-    :did-mount text-shape-edit-did-mount
-    :name "text-shape-edit"
-    :mixins [mx/static]}))
+              (let [content (dom/event->inner-text ev)]
+                (rs/emit! (uds/update-text id {:content content}))))]
+      [:g
+       [:rect (merge props +select-rect-attrs+)]
+       [:foreignObject props
+        [:p {:ref "container"
+             :on-blur on-blur
+             :on-input on-input
+             :contentEditable true
+             :style style}]]])))
 
 ;; --- Text Shape
 
-(defn- text-shape-render
-  [own {:keys [id x1 y1 content] :as shape}]
+(mx/defc text-shape
+  {:mixins [mx/static]}
+  [{:keys [id x1 y1 content] :as shape}]
   (let [key (str "shape-" id)
         rfm (geom/transformation-matrix shape)
         size (geom/size shape)
@@ -155,12 +138,5 @@
                :transform (str rfm)}
         attrs (merge props size)
         style (make-style shape)]
-    (html
-     [:foreignObject attrs
-      [:p {:style style} content]])))
-
-(def text-shape
-  (mx/component
-   {:render text-shape-render
-    :name "text-shape"
-    :mixins [mx/static]}))
+    [:foreignObject attrs
+     [:p {:style style} content]]))

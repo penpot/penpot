@@ -6,32 +6,30 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.scroll
+  "Workspace scroll events handling."
   (:require [beicon.core :as rx]
-            [lentes.core :as l]
-            [uxbox.main.constants :as c]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as ust]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.core :as uuc]
             [uxbox.util.mixins :as mx]
-            [uxbox.main.ui.workspace.base :as uuwb]
+            [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.main.ui.workspace.rlocks :as rlocks]
             [uxbox.main.geom.point :as gpt]))
 
 (defn watch-scroll-interactions
   [own]
-  (letfn [(handle-scroll-interaction []
-            (let [stoper (->> uuc/actions-s
-                              (rx/map :type)
-                              (rx/filter #(empty? %))
+  (letfn [(is-space-up? [{:keys [key type]}]
+            (and (= 32 key) (= :keyboard/up type)))
+
+          (on-start []
+            (let [stoper (->> wb/keyboard-events-s
+                              (rx/filter is-space-up?)
                               (rx/take 1))
                   local (:rum/local own)
-                  initial @uuwb/mouse-viewport-a]
+                  initial @wb/mouse-viewport-a
+                  stream (rx/take-until stoper wb/mouse-viewport-s)]
               (swap! local assoc :scrolling true)
-              (as-> uuwb/mouse-viewport-s $
-                (rx/take-until stoper $)
-                (rx/subscribe $ #(on-scroll % initial) nil on-scroll-end))))
+              (rx/subscribe stream #(on-scroll % initial) nil on-scroll-end)))
 
           (on-scroll-end []
+            (rlocks/release! :workspace/scroll)
             (let [local (:rum/local own)]
               (swap! local assoc :scrolling false)))
 
@@ -42,8 +40,7 @@
                   cy (.-scrollTop el)]
               (set! (.-scrollLeft el) (- cx x))
               (set! (.-scrollTop el) (- cy y))))]
-    (as-> uuc/actions-s $
-      (rx/map :type $)
-      (rx/dedupe $)
-      (rx/filter #(= "ui.workspace.scroll" %) $)
-      (rx/on-value $ handle-scroll-interaction))))
+
+    (let [stream (->> (rx/map first rlocks/stream)
+                      (rx/filter #(= % :workspace/scroll)))]
+      (rx/subscribe stream on-start))))

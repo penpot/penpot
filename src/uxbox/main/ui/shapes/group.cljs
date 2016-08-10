@@ -17,6 +17,7 @@
             [uxbox.main.ui.shapes.circle :as circle]
             [uxbox.main.ui.shapes.text :as text]
             [uxbox.main.ui.shapes.line :as line]
+            [uxbox.main.ui.shapes.path :as path]
             [uxbox.main.geom :as geom]))
 
 ;; --- Helpers
@@ -25,12 +26,14 @@
 
 (defn render-component
   [{:keys [type] :as shape}]
+  ;; (println "render-component" shape)
   (case type
     :group (group-component shape)
     :text (text/text-component shape)
     :line (line/line-component shape)
     :icon (icon/icon-component shape)
     :rect (rect/rect-component shape)
+    :path (path/path-component shape)
     :circle (circle/circle-component shape)))
 
 ;; --- Group Component
@@ -42,13 +45,11 @@
   (let [{:keys [id x y width height group]} shape
         selected (mx/react common/selected-shapes-ref)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)
-        on-mouse-up #(common/on-mouse-up % shape)]
+        on-mouse-down #(common/on-mouse-down % shape selected)]
     (html
      [:g.shape.group-shape
       {:class (when selected? "selected")
-       :on-mouse-down on-mouse-down
-       :on-mouse-up on-mouse-up}
+       :on-mouse-down on-mouse-down}
       (group-shape shape render-component)])))
 
 (def group-component

@@ -7,35 +7,30 @@
 
 (ns uxbox.main.ui.workspace.sidebar.drawtools
   (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
             [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
+            [uxbox.util.data :refer (read-string)]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.dom :as dom]
             [uxbox.main.state :as st]
             [uxbox.main.library :as library]
-            [uxbox.util.data :refer (read-string)]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.ui.icons :as i]
-            [uxbox.util.mixins :as mx]
-            [uxbox.util.dom :as dom]))
+            [uxbox.main.ui.icons :as i]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Refs
 
 (def ^:private drawing-shape
   "A focused vision of the drawing property
   of the workspace status. This avoids
   rerender the whole toolbox on each workspace
   change."
-  (as-> (l/in [:workspace :drawing]) $
-    (l/derive $ st/state)))
+  (-> (l/in [:workspace :drawing])
+      (l/derive st/state)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Draw Tools
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Constants
 
 (def +draw-tool-rect+
   {:type :rect
@@ -49,6 +44,12 @@
 (def +draw-tool-line+
   {:type :line
    :name "Line"
+   :stroke-type :solid
+   :stroke "#000000"})
+
+(def +draw-tool-path+
+  {:type :path
+   :name "Path"
    :stroke-type :solid
    :stroke "#000000"})
 
@@ -77,41 +78,38 @@
    {:icon i/text
     :help (tr "ds.help.text")
     :shape +draw-tool-text+
-    :priority 4}})
+    :priority 4}
+   :path
+   {:icon i/curve
+    :help (tr "ds.help.path")
+    :shape +draw-tool-path+
+    :priority 5}})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Draw Tool Box
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Draw Toolbox (Component)
 
 (defn- select-for-draw
   [shape]
   (rs/emit! (dw/select-for-drawing shape)))
 
-(defn draw-tools-render
-  [open-toolboxes]
+(mx/defc draw-toolbox
+  {:mixins [mx/static mx/reactive]}
+  [own]
   (let [workspace (mx/react wb/workspace-ref)
         drawing (mx/react drawing-shape)
         close #(rs/emit! (dw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))]
-    (html
-     [:div#form-tools.tool-window.drawing-tools
-      [:div.tool-window-bar
-       [:div.tool-window-icon i/window]
-       [:span (tr "ds.draw-tools")]
-       [:div.tool-window-close {:on-click close} i/close]]
-      [:div.tool-window-content
-       (for [[key props] tools
-             :let [selected? (= drawing (:shape props))]]
-         [:div.tool-btn.tooltip.tooltip-hover
-          {:alt (:help props)
-           :class (when selected? "selected")
-           :key (name key)
-           :on-click (partial select-for-draw (:shape props))}
-          (:icon props)])]])))
-
-(def draw-toolbox
-  (mx/component
-   {:render draw-tools-render
-    :name "draw-tools"
-    :mixins [mx/static mx/reactive]}))
+    [:div#form-tools.tool-window.drawing-tools
+     [:div.tool-window-bar
+      [:div.tool-window-icon i/window]
+      [:span (tr "ds.draw-tools")]
+      [:div.tool-window-close {:on-click close} i/close]]
+     [:div.tool-window-content
+      (for [[key props] tools
+            :let [selected? (= drawing (:shape props))]]
+        [:div.tool-btn.tooltip.tooltip-hover
+         {:alt (:help props)
+          :class (when selected? "selected")
+          :key (name key)
+          :on-click (partial select-for-draw (:shape props))}
+         (:icon props)])]]))

@@ -10,8 +10,8 @@
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.core :as ui]
             [uxbox.main.ui.keyboard :as kbd]
+            [uxbox.main.ui.workspace.rlocks :as rlocks]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]))
 
@@ -41,7 +41,7 @@
         (do
           (dom/stop-propagation event)
           (rs/emit! (uds/select-shape id))
-          (ui/acquire-action! "ui.shape.move"))
+          (rlocks/acquire! :shape/move))
 
         (and (not selected?) (not (empty? selected)))
         (do
@@ -51,21 +51,9 @@
             (do
               (rs/emit! (uds/deselect-all)
                         (uds/select-shape id))
-              (ui/acquire-action! "ui.shape.move"))))
+              (rlocks/acquire! :shape/move))))
 
         :else
         (do
           (dom/stop-propagation event)
-          (ui/acquire-action! "ui.shape.move"))))))
-
-(defn on-mouse-up
-  [event {:keys [id group] :as shape}]
-  (cond
-    (and group (:locked (geom/resolve-parent shape)))
-    nil
-
-    :else
-    (do
-      (dom/stop-propagation event)
-      (ui/release-action! "ui.shape"))))
-
+          (rlocks/acquire! :shape/move))))))

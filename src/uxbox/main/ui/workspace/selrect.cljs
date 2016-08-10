@@ -6,17 +6,15 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.selrect
-  "Components for indicate the user selection and selected shapes group."
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [beicon.core :as rx]
-            [uxbox.main.constants :as c]
+  "Mouse selection interaction and component."
+  (:require [beicon.core :as rx]
             [uxbox.util.rstore :as rs]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.main.constants :as c]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.core :as uuc]
-            [uxbox.util.mixins :as mx]
-            [uxbox.main.ui.workspace.base :as wb]))
+            [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.main.ui.workspace.rlocks :as rlocks]))
 
 (defonce position (atom nil))
 
@@ -25,35 +23,29 @@
 (declare selrect->rect)
 (declare watch-selrect-actions)
 
-(defn- selrect-render
-  [own]
-  (when-let [data (mx/react position)]
-    (let [{:keys [x y width height]} (selrect->rect data)]
-      (html
-       [:rect.selection-rect
-        {:x x
-         :y y
-         :width width
-         :height height}]))))
-
-(defn- selrect-will-mount
+(defn- will-mount
   [own]
   (assoc own ::sub (watch-selrect-actions)))
 
-(defn- selrect-will-unmount
+(defn- will-unmount
   [own]
   (.close (::sub own))
   (dissoc own ::sub))
 
-(def selrect
-  (mx/component
-   {:render selrect-render
-    :name "selrect"
-    :will-mount selrect-will-mount
-    :will-unmount selrect-will-unmount
-    :mixins [mx/static mx/reactive]}))
+(mx/defc selrect
+  {:will-mount will-mount
+   :will-unmount will-unmount
+   :mixins [mx/static mx/reactive]}
+  []
+  (when-let [data (mx/react position)]
+    (let [{:keys [x y width height]} (selrect->rect data)]
+      [:rect.selection-rect
+       {:x x
+        :y y
+        :width width
+        :height height}])))
 
-;; --- Implementation
+;; --- Interaction
 
 (defn- selrect->rect
   [data]
@@ -82,31 +74,37 @@
            :width (/ (:width rect) zoom)
            :height (/ (:height rect) zoom))))
 
+(declare on-start)
+
 (defn- watch-selrect-actions
   []
-  (letfn [(on-value [pos]
-            (swap! position assoc :current pos))
+  (let [stream (->> (rx/map first rlocks/stream)
+                    (rx/filter #(= % :ui/selrect)))]
+    (rx/subscribe stream on-start)))
 
-          (on-complete []
-            (rs/emit! (-> (selrect->rect @position)
-                          (translate-to-canvas)
-                          (uds/select-shapes)))
-            (reset! position nil))
+(defn- on-move
+  "Function executed on each mouse movement while selrect
+  interaction is active."
+  [pos]
+  (swap! position assoc :current pos))
 
-          (init []
-            (let [stoper (->> uuc/actions-s
-                              (rx/map :type)
-                              (rx/filter #(empty? %))
-                              (rx/take 1))
-                  pos @wb/mouse-viewport-a]
-              (reset! position {:start pos :current pos})
+(defn- on-complete
+  "Function executed when the selection rect
+  interaction is terminated."
+  []
+  (rs/emit! (-> (selrect->rect @position)
+                (translate-to-canvas)
+                (uds/select-shapes)))
+  (rlocks/release! :ui/selrect)
+  (reset! position nil))
 
-              (as-> wb/mouse-viewport-s $
-                (rx/take-until stoper $)
-                (rx/subscribe $ on-value nil on-complete))))]
-
-    (as-> uuc/actions-s $
-      (rx/map :type $)
-      (rx/dedupe $)
-      (rx/filter #(= "ui.selrect"  %) $)
-      (rx/on-value $ init))))
+(defn- on-start
+  "Function execution when selrect action is started."
+  []
+  (let [stoper (->> wb/mouse-events-s
+                    (rx/filter #(= % :mouse/up))
+                    (rx/take 1))
+        stream (rx/take-until stoper wb/mouse-viewport-s)
+        pos @wb/mouse-viewport-a]
+    (reset! position {:start pos :current pos})
+    (rx/subscribe stream on-move nil on-complete)))

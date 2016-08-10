@@ -77,11 +77,19 @@
 (defonce scroll-a
   (rx/to-atom scroll-s))
 
+
+;; --- Events
+
+(defonce mouse-events-b (rx/bus))
+(defonce mouse-events-s (rx/dedupe mouse-events-b))
+
+(defonce keyboard-events-b (rx/bus))
+(defonce keyboard-events-s (rx/dedupe keyboard-events-b))
+
 ;; --- Mouse Position Stream
 
 (defonce mouse-b (rx/bus))
-(defonce mouse-s
-  (rx/dedupe mouse-b))
+(defonce mouse-s (rx/dedupe mouse-b))
 
 (defonce mouse-canvas-s
   (->> mouse-s

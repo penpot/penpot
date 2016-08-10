@@ -17,16 +17,13 @@
 (declare icon-shape)
 
 (defn- icon-component-render
-  [own shape]
-  (let [{:keys [id x y width height group]} shape
-        selected (mx/react common/selected-shapes-ref)
+  [own {:keys [id] :as shape}]
+  (let [selected (mx/react common/selected-shapes-ref)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)
-        on-mouse-up #(common/on-mouse-up % shape)]
+        on-mouse-down #(common/on-mouse-down % shape selected)]
     (html
      [:g.shape {:class (when selected? "selected")
-                :on-mouse-down on-mouse-down
-                :on-mouse-up on-mouse-up}
+                :on-mouse-down on-mouse-down}
       (icon-shape shape identity)])))
 
 (def icon-component

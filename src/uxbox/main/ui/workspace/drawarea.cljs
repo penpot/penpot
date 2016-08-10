@@ -6,18 +6,16 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.drawarea
-  (:require [sablono.core :as html :refer-macros [html]]
-            [beicon.core :as rx]
-            [lentes.core :as l]
+  "Draw interaction and component."
+  (:require [beicon.core :as rx]
             [uxbox.util.rstore :as rs]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.constants :as c]
-            [uxbox.main.state :as st]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.core :as uuc]
             [uxbox.main.ui.shapes :as shapes]
             [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.main.ui.workspace.rlocks :as rlocks]
             [uxbox.main.geom :as geom]
             [uxbox.main.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
@@ -26,6 +24,10 @@
 
 (defonce drawing-shape (atom nil))
 (defonce drawing-position (atom nil))
+
+(def ^:private canvas-coords
+  (gpt/point c/canvas-start-x
+             c/canvas-start-y))
 
 ;; --- Draw Area (Component)
 
@@ -52,48 +54,41 @@
           (geom/resize position)
           (shapes/render-component)))))
 
-;; --- Drawing Logic
+;; --- Drawing Initialization
 
-(declare initialize)
+(declare on-init)
+(declare on-init-draw-icon)
+(declare on-init-draw-generic)
+(declare on-draw-start)
+(declare on-draw)
+(declare on-draw-complete)
 
 (defn- watch-draw-actions
   []
-  (let [stream (->> uuc/actions-s
-                    (rx/map :type)
-                    (rx/dedupe)
-                    (rx/filter #(= "ui.shape.draw" %))
-                    (rx/map #(:drawing @wb/workspace-ref))
-                    (rx/filter identity))]
-    (rx/subscribe stream initialize)))
+  (let [stream (->> (rx/map first rlocks/stream)
+                    (rx/filter #(= % :ui/draw)))]
+    (rx/subscribe stream on-init)))
 
-(declare initialize-icon-drawing)
-(declare initialize-shape-drawing)
+(defn- on-init
+  "Function execution when draw shape operation is requested.
+  This is a entry point for the draw interaction."
+  []
+  (when-let [shape (:drawing @wb/workspace-ref)]
+    (case (:type shape)
+      :icon (on-init-draw-icon shape)
+      (on-init-draw-generic shape))))
 
-(defn- initialize
-  [shape]
-  (if (= (:type shape) :icon)
-    (initialize-icon-drawing shape)
-    (initialize-shape-drawing shape)))
-
-(defn- initialize-icon-drawing
-  "A drawing handler for icons."
+(defn- on-init-draw-icon
   [shape]
   (let [{:keys [x y]} (gpt/divide @wb/mouse-canvas-a @wb/zoom-ref)
         props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
         shape (geom/setup shape props)]
     (rs/emit! (uds/add-shape shape)
               (udw/select-for-drawing nil)
-              (uds/select-first-shape))))
+              (uds/select-first-shape))
+    (rlocks/release! :ui/draw)))
 
-(def ^:private canvas-coords
-  (gpt/point c/canvas-start-x
-             c/canvas-start-y))
-
-(declare on-draw)
-(declare on-draw-complete)
-(declare on-first-draw)
-
-(defn- initialize-shape-drawing
+(defn- on-init-draw-generic
   [shape]
   (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
                    (rx/mapcat (fn [point]
@@ -101,20 +96,21 @@
                                   (uds/align-point point)
                                   (rx/of point))))
                    (rx/map #(gpt/subtract % canvas-coords)))
-        stoper (->> uuc/actions-s
-                    (rx/map :type)
-                    (rx/filter #(empty? %))
+
+        stoper (->> wb/mouse-events-s
+                    (rx/filter #(= % :mouse/up))
+                    (rx/pr-log "mouse-events-s")
                     (rx/take 1))
+
         firstpos (rx/take 1 mouse)
-        stream (->> mouse
-                    (rx/take-until stoper)
+        stream (->> (rx/take-until stoper mouse)
                     (rx/skip-while #(nil? @drawing-shape))
                     (rx/with-latest-from vector wb/mouse-ctrl-s))]
 
-    (rx/subscribe firstpos #(on-first-draw shape %))
+    (rx/subscribe firstpos #(on-draw-start shape %))
     (rx/subscribe stream on-draw nil on-draw-complete)))
 
-(defn- on-first-draw
+(defn- on-draw-start
   [shape {:keys [x y] :as pt}]
   (let [shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})]
     (reset! drawing-shape shape)))
@@ -133,4 +129,5 @@
               (udw/select-for-drawing nil)
               (uds/select-first-shape))
     (reset! drawing-position nil)
-    (reset! drawing-shape nil)))
+    (reset! drawing-shape nil)
+    (rlocks/release! :ui/draw)))
