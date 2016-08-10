@@ -19,7 +19,6 @@
             [uxbox.util.data :refer (parse-int)]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.shapes :as uus]
-            ;; [uxbox.main.ui.shapes.path :as spath]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.rlocks :as rlocks]
@@ -42,19 +41,6 @@
 
 ;; --- Canvas
 
-;; (def ^:private test-path-shape
-;;   {:type :path
-;;    :id #uuid "042951a0-804a-4cf1-b606-3e97157f55b5"
-;;    :stroke-type :solid
-;;    :stroke "#000000"
-;;    :stroke-width 2
-;;    :fill "transparent"
-;;    :close? true
-;;    :points [(gpt/point 100 100)
-;;             (gpt/point 300 100)
-;;             (gpt/point 200 300)
-;;             ]})
-
 (mx/defc canvas
   {:mixins [mx/reactive]}
   [{:keys [width height id] :as page}]
@@ -71,7 +57,6 @@
        (for [item (reverse (:shapes page))]
          (-> (uus/shape item)
              (mx/with-key (str item))))
-       ;; (spath/path-component test-path-shape)
        (selection-handlers)
        (draw-area)]]]))
 
@@ -150,17 +135,25 @@
         zoom (or (:zoom workspace) 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
-              (rx/push! wb/mouse-events-b :mouse/down)
+              (rx/push! wb/events-b [:mouse/down])
               (if (:drawing workspace)
                 (rlocks/acquire! :ui/draw)
                 (rlocks/acquire! :ui/selrect)))
             (on-mouse-up [event]
-              (rx/push! wb/mouse-events-b :mouse/up)
-              (dom/stop-propagation event))]
+              (dom/stop-propagation event)
+              (rx/push! wb/events-b [:mouse/up]))
+            (on-click [event]
+              (dom/stop-propagation event)
+              (rx/push! wb/events-b [:mouse/click]))
+            (on-double-click [event]
+              (dom/stop-propagation event)
+              (rx/push! wb/events-b [:mouse/double-click]))]
       [:svg.viewport {:width (* c/viewport-width zoom)
                       :height (* c/viewport-height zoom)
                       :ref "viewport"
                       :class (when drawing? "drawing")
+                      :on-click on-click
+                      :on-double-click on-double-click
                       :on-mouse-down on-mouse-down
                       :on-mouse-up on-mouse-up}
        [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}

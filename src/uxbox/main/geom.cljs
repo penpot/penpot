@@ -29,6 +29,7 @@
 ;; --- Relative Movement
 
 (declare move-rect)
+(declare move-path)
 (declare move-circle)
 (declare move-group)
 
@@ -41,6 +42,7 @@
     :rect (move-rect shape dpoint)
     :text (move-rect shape dpoint)
     :line (move-rect shape dpoint)
+    :path (move-path shape dpoint)
     :circle (move-circle shape dpoint)
     :group (move-group shape dpoint)))
 
@@ -69,6 +71,16 @@
   (assoc shape
          :dx (mth/round (+ (:dx shape 0) dx))
          :dy (mth/round (+ (:dy shape 0) dy))))
+
+(defn- move-path
+  "A specialized function for relative movement
+  for path shapes."
+  [shape {dx :x dy :y}]
+  (let [points (:points shape)
+        xf (comp
+            (map #(update % :x + dx))
+            (map #(update % :y + dy)))]
+    (assoc shape :points (into [] xf points))))
 
 ;; --- Absolute Movement
 
@@ -353,6 +365,7 @@
 
 (declare apply-rotation-transformation)
 (declare generic-inner-rect)
+(declare path-inner-rect)
 (declare circle-inner-rect)
 (declare group-inner-rect)
 
@@ -364,6 +377,7 @@
      :rect (generic-inner-rect state shape)
      :text (generic-inner-rect shape shape)
      :line (generic-inner-rect state shape)
+     :path (path-inner-rect state shape)
      :circle (circle-inner-rect state shape)
      :group (group-inner-rect state shape))))
 
@@ -372,6 +386,19 @@
   (-> (assoc shape :x x1 :y y1)
       (merge (size shape))
       (apply-rotation-transformation)))
+
+(defn- path-inner-rect
+  [state {:keys [points] :as shape}]
+  (let [minx (apply min (map :x points))
+        miny (apply min (map :y points))
+        maxx (apply max (map :x points))
+        maxy (apply max (map :y points))
+        props {:x minx
+               :y miny
+               :width (- maxx minx)
+               :height (- maxy miny)}]
+    (-> (merge shape props)
+        (apply-rotation-transformation))))
 
 (defn- circle-inner-rect
   [state {:keys [cx cy rx ry group] :as shape}]
@@ -402,6 +429,7 @@
 
 (declare generic-outer-rect)
 (declare circle-outer-rect)
+(declare path-outer-rect)
 (declare group-outer-rect)
 (declare apply-rotation-transformation)
 (declare apply-parent-deltas)
@@ -415,6 +443,7 @@
                  :text (generic-outer-rect state shape)
                  :icon (generic-outer-rect state shape)
                  :line (generic-outer-rect state shape)
+                 :path (path-outer-rect state shape)
                  :circle (circle-outer-rect state shape)
                  :group (group-outer-rect state shape))]
      (if (:group shape)
@@ -449,6 +478,22 @@
                :height (* ry 2)}]
     (-> (merge shape props)
         (apply-rotation-transformation))))
+
+(defn- path-outer-rect
+  [state {:keys [points group] :as shape}]
+  (let [group (get-in state [:shapes-by-id group])
+        minx (apply min (map :x points))
+        miny (apply min (map :y points))
+        maxx (apply max (map :x points))
+        maxy (apply max (map :y points))
+
+        props {:x (+ minx (:dx group 0))
+               :y (+ miny (:dy group 0))
+               :width (- maxx minx)
+               :height (- maxy miny)}]
+    (-> (merge shape props)
+        (apply-rotation-transformation))))
+
 
 (defn- group-outer-rect
   [state {:keys [id group rotation dx dy] :as shape}]

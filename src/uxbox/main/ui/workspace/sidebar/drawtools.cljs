@@ -51,7 +51,11 @@
   {:type :path
    :name "Path"
    :stroke-type :solid
-   :stroke "#000000"})
+   :stroke "#000000"
+   :stroke-width 2
+   :fill "transparent"
+   ;; :close? true
+   :points []})
 
 (def +draw-tool-text+
   {:type :text

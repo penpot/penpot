@@ -49,15 +49,19 @@
   [own]
   (let [shape (mx/react drawing-shape)
         position (mx/react drawing-position)]
-    (when (and shape position)
-      (-> (assoc shape :drawing? true)
-          (geom/resize position)
-          (shapes/render-component)))))
+    (when shape
+      (if position
+        (-> (assoc shape :drawing? true)
+            (geom/resize position)
+            (shapes/render-component))
+        (-> (assoc shape :drawing? true)
+            (shapes/render-component))))))
 
 ;; --- Drawing Initialization
 
 (declare on-init)
 (declare on-init-draw-icon)
+(declare on-init-draw-path)
 (declare on-init-draw-generic)
 (declare on-draw-start)
 (declare on-draw)
@@ -76,6 +80,7 @@
   (when-let [shape (:drawing @wb/workspace-ref)]
     (case (:type shape)
       :icon (on-init-draw-icon shape)
+      :path (on-init-draw-path shape)
       (on-init-draw-generic shape))))
 
 (defn- on-init-draw-icon
@@ -88,6 +93,65 @@
               (uds/select-first-shape))
     (rlocks/release! :ui/draw)))
 
+(defn- on-init-draw-path
+  [shape]
+  (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
+                   (rx/mapcat (fn [point]
+                                (if @wb/alignment-ref
+                                  (uds/align-point point)
+                                  (rx/of point))))
+                   (rx/map #(gpt/subtract % canvas-coords)))
+
+        stoper (->> wb/events-s
+                    (rx/map first)
+                    (rx/filter #(= % :mouse/double-click))
+                    (rx/take 1))
+        ;; stoper (rx/empty)
+        firstpos (rx/take 1 mouse)
+        stream (->> (rx/take-until stoper mouse)
+                    (rx/skip-while #(nil? @drawing-shape))
+                    (rx/with-latest-from vector wb/mouse-ctrl-s))
+        ptstream (->> wb/events-s
+                      (rx/map first)
+                      (rx/filter #(= % :mouse/click))
+                      (rx/with-latest-from vector mouse)
+                      (rx/map second))
+        counter (atom 0)]
+    (letfn [(append-point [{:keys [type] :as shape} point]
+              (let [point (gpt/point point)]
+                (update shape :points conj point)))
+
+            (update-point [{:keys [type] :as shape} point index]
+              (let [point (gpt/point point)
+                    points (:points shape)]
+                (if (= (count points) index)
+                  (append-point shape point)
+                  (assoc-in shape [:points index] point))))
+            (on-first-point [point]
+              (println "on-first-point" point)
+              (let [shape (append-point shape point)]
+                (swap! counter inc)
+                (reset! drawing-shape shape)))
+            (on-click [point]
+              (let [shape (append-point @drawing-shape point)]
+                (swap! counter inc)
+                (reset! drawing-shape shape)))
+            (on-draw [[point ctrl?]]
+              (let [shape (update-point @drawing-shape point @counter)]
+                (reset! drawing-shape shape)))
+            (on-end []
+              (let [shape @drawing-shape]
+                (rs/emit! (uds/add-shape shape)
+                          (udw/select-for-drawing nil)
+                          (uds/select-first-shape))
+                (reset! drawing-position nil)
+                (reset! drawing-shape nil)
+                (rlocks/release! :ui/draw)))]
+
+      (rx/subscribe firstpos on-first-point)
+      (rx/subscribe ptstream on-click)
+      (rx/subscribe stream on-draw nil on-end))))
+
 (defn- on-init-draw-generic
   [shape]
   (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
@@ -97,23 +161,25 @@
                                   (rx/of point))))
                    (rx/map #(gpt/subtract % canvas-coords)))
 
-        stoper (->> wb/mouse-events-s
+        stoper (->> wb/events-s
+                    (rx/map first)
                     (rx/filter #(= % :mouse/up))
-                    (rx/pr-log "mouse-events-s")
                     (rx/take 1))
-
         firstpos (rx/take 1 mouse)
         stream (->> (rx/take-until stoper mouse)
                     (rx/skip-while #(nil? @drawing-shape))
                     (rx/with-latest-from vector wb/mouse-ctrl-s))]
 
-    (rx/subscribe firstpos #(on-draw-start shape %))
+    (rx/subscribe firstpos (fn [{:keys [x y] :as pt}]
+                             (let [shape (geom/setup shape {:x1 x :y1 y
+                                                            :x2 x :y2 y})]
+                               (reset! drawing-shape shape))))
     (rx/subscribe stream on-draw nil on-draw-complete)))
 
-(defn- on-draw-start
-  [shape {:keys [x y] :as pt}]
-  (let [shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})]
-    (reset! drawing-shape shape)))
+;; (defn- on-draw-start
+;;   [shape {:keys [x y] :as pt}]
+;;   (let [shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})]
+;;     (reset! drawing-shape shape)))
 
 (defn- on-draw
   [[pt ctrl?]]
@@ -124,7 +190,7 @@
   []
   (let [shape @drawing-shape
         shpos @drawing-position
-                  shape (geom/resize shape shpos)]
+        shape (geom/resize shape shpos)]
     (rs/emit! (uds/add-shape shape)
               (udw/select-for-drawing nil)
               (uds/select-first-shape))
