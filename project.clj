@@ -18,9 +18,9 @@
                  ;; runtime
                  [com.cognitect/transit-cljs "0.8.239"]
                  [rum "0.10.5"]
-                 [cljsjs/react "15.2.1-1"]
-                 [cljsjs/react-dom "15.2.1-1"]
-                 [cljsjs/react-dom-server "15.2.1-1"]
+                 [cljsjs/react "15.3.0-0"]
+                 [cljsjs/react-dom "15.3.0-0"]
+                 [cljsjs/react-dom-server "15.3.0-0"]
                  [cljsjs/moment "2.10.6-4"]
                  [funcool/struct "1.0.0"]
                  [funcool/lentes "1.1.0"]
