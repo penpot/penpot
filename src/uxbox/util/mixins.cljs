@@ -46,3 +46,4 @@
 (def react rum/react)
 (def reactive rum/reactive)
 (def dom-node rum/dom-node)
+(def with-key rum/with-key)
