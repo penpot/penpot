@@ -19,7 +19,7 @@
             [uxbox.util.data :refer (parse-int)]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.shapes :as uus]
-            [uxbox.main.ui.shapes.path :as spath]
+            ;; [uxbox.main.ui.shapes.path :as spath]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.rlocks :as rlocks]
@@ -42,18 +42,18 @@
 
 ;; --- Canvas
 
-(def ^:private test-path-shape
-  {:type :path
-   :id #uuid "042951a0-804a-4cf1-b606-3e97157f55b5"
-   :stroke-type :solid
-   :stroke "#000000"
-   :stroke-width 2
-   :fill "transparent"
-   :close? true
-   :points [(gpt/point 100 100)
-            (gpt/point 300 100)
-            (gpt/point 200 300)
-            ]})
+;; (def ^:private test-path-shape
+;;   {:type :path
+;;    :id #uuid "042951a0-804a-4cf1-b606-3e97157f55b5"
+;;    :stroke-type :solid
+;;    :stroke "#000000"
+;;    :stroke-width 2
+;;    :fill "transparent"
+;;    :close? true
+;;    :points [(gpt/point 100 100)
+;;             (gpt/point 300 100)
+;;             (gpt/point 200 300)
+;;             ]})
 
 (mx/defc canvas
   {:mixins [mx/reactive]}
@@ -71,7 +71,7 @@
        (for [item (reverse (:shapes page))]
          (-> (uus/shape item)
              (mx/with-key (str item))))
-       (spath/path-component test-path-shape)
+       ;; (spath/path-component test-path-shape)
        (selection-handlers)
        (draw-area)]]]))
 
