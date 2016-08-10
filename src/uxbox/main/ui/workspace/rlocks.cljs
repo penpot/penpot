@@ -18,7 +18,6 @@
 (defn acquire!
   ([type]
    (when (= @lock ::none)
-     (println "acquire!" type)
      (reset! lock type)
      (rx/push! stream [type nil])))
   ([type payload]
@@ -29,7 +28,6 @@
 (defn release!
   [type]
   (when (= @lock type)
-    (println "release!" type)
     (reset! lock ::none)
     (rx/push! stream [::none nil])))
 
