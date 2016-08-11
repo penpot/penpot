@@ -35,7 +35,7 @@
   (-point [v]
     (Point. (first v) (second v))))
 
-(defn point?
+(defn ^boolean point?
   "Return true if `v` is Point instance."
   [v]
   (instance? Point v))

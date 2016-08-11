@@ -44,7 +44,7 @@
     (let [[a b c d tx ty] v]
       (Matrix. a b c d tx ty))))
 
-(defn matrix?
+(defn ^boolean matrix?
   "Return true if `v` is Matrix instance."
   [v]
   (instance? Matrix v))
