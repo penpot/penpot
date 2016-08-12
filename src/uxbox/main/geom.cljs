@@ -29,6 +29,7 @@
 ;; --- Relative Movement
 
 (declare move-rect)
+(declare move-path)
 (declare move-circle)
 (declare move-group)
 
@@ -41,6 +42,8 @@
     :rect (move-rect shape dpoint)
     :text (move-rect shape dpoint)
     :line (move-rect shape dpoint)
+    ;; :path (move-path shape dpoint)
+    :path (move-rect shape dpoint)
     :circle (move-circle shape dpoint)
     :group (move-group shape dpoint)))
 
@@ -69,6 +72,16 @@
   (assoc shape
          :dx (mth/round (+ (:dx shape 0) dx))
          :dy (mth/round (+ (:dy shape 0) dy))))
+
+(defn- move-path
+  "A specialized function for relative movement
+  for path shapes."
+  [shape {dx :x dy :y}]
+  (let [points (:points shape)
+        xf (comp
+            (map #(update % :x + dx))
+            (map #(update % :y + dy)))]
+    (assoc shape :points (into [] xf points))))
 
 ;; --- Absolute Movement
 
@@ -129,7 +142,8 @@
     :text (rect-size shape)
     :rect (rect-size shape)
     :icon (rect-size shape)
-    :line (rect-size shape)))
+    :line (rect-size shape)
+    :path (rect-size shape)))
 
 (defn- rect-size
   "A specialized function for calculate size
@@ -164,7 +178,6 @@
     :bottom (gpt/point (/ (+ x1 x2) 2)
                        (/ (+ y1 y2) 2))))
 
-
 (defn- get-circle-vertext-point
   [{:keys [rx ry]} id]
   (gpt/point rx ry))
@@ -182,6 +195,7 @@
     :rect (move-rect-vertex shape vid dpoint)
     :text (move-rect-vertex shape vid dpoint)
     :icon (move-rect-vertex shape vid dpoint)
+    :path (move-rect-vertex shape vid dpoint)
     :circle (move-circle-vertex shape vid dpoint)))
 
 (defn- move-rect-vertex
@@ -248,6 +262,7 @@
     :icon (resize-rect shape point)
     :text (resize-rect shape point)
     :line (resize-line shape point)
+    :path (resize-rect shape point)
     :circle (resize-circle shape point)))
 
 (defn- resize-rect
@@ -353,6 +368,7 @@
 
 (declare apply-rotation-transformation)
 (declare generic-inner-rect)
+(declare path-inner-rect)
 (declare circle-inner-rect)
 (declare group-inner-rect)
 
@@ -364,6 +380,7 @@
      :rect (generic-inner-rect state shape)
      :text (generic-inner-rect shape shape)
      :line (generic-inner-rect state shape)
+     :path (path-inner-rect state shape)
      :circle (circle-inner-rect state shape)
      :group (group-inner-rect state shape))))
 
@@ -372,6 +389,19 @@
   (-> (assoc shape :x x1 :y y1)
       (merge (size shape))
       (apply-rotation-transformation)))
+
+(defn- path-inner-rect
+  [state {:keys [points] :as shape}]
+  (let [minx (apply min (map :x points))
+        miny (apply min (map :y points))
+        maxx (apply max (map :x points))
+        maxy (apply max (map :y points))
+        props {:x minx
+               :y miny
+               :width (- maxx minx)
+               :height (- maxy miny)}]
+    (-> (merge shape props)
+        (apply-rotation-transformation))))
 
 (defn- circle-inner-rect
   [state {:keys [cx cy rx ry group] :as shape}]
@@ -402,6 +432,7 @@
 
 (declare generic-outer-rect)
 (declare circle-outer-rect)
+(declare path-outer-rect)
 (declare group-outer-rect)
 (declare apply-rotation-transformation)
 (declare apply-parent-deltas)
@@ -415,6 +446,8 @@
                  :text (generic-outer-rect state shape)
                  :icon (generic-outer-rect state shape)
                  :line (generic-outer-rect state shape)
+                 :path (generic-outer-rect state shape)
+                 ;; :path (path-outer-rect state shape)
                  :circle (circle-outer-rect state shape)
                  :group (group-outer-rect state shape))]
      (if (:group shape)
@@ -449,6 +482,22 @@
                :height (* ry 2)}]
     (-> (merge shape props)
         (apply-rotation-transformation))))
+
+(defn- path-outer-rect
+  [state {:keys [points group] :as shape}]
+  (let [group (get-in state [:shapes-by-id group])
+        minx (apply min (map :x points))
+        miny (apply min (map :y points))
+        maxx (apply max (map :x points))
+        maxy (apply max (map :y points))
+
+        props {:x (+ minx (:dx group 0))
+               :y (+ miny (:dy group 0))
+               :width (- maxx minx)
+               :height (- maxy miny)}]
+    (-> (merge shape props)
+        (apply-rotation-transformation))))
+
 
 (defn- group-outer-rect
   [state {:keys [id group rotation dx dy] :as shape}]
@@ -534,6 +583,7 @@
 (declare text-transformation-matrix)
 (declare circle-transformation-matrix)
 (declare icon-transformation-matrix)
+(declare path-transformation-matrix)
 (declare group-transformation-matrix)
 
 (defn transformation-matrix
@@ -545,6 +595,7 @@
      :text (text-transformation-matrix state shape)
      :circle (circle-transformation-matrix state shape)
      :icon (icon-transformation-matrix state shape)
+     :path (path-transformation-matrix state shape)
      :group (group-transformation-matrix state shape))))
 
 (defn- rect-transformation-matrix
@@ -568,6 +619,22 @@
         (gmt/translate (- center-x) (- center-y)))))
 
 (defn- icon-transformation-matrix
+  [state {:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
+  (let [{:keys [width height]} (size shape)
+        orig-width (nth view-box 2)
+        orig-height (nth view-box 3)
+        scale-x (/ width orig-width)
+        scale-y (/ height orig-height)
+        center-x (- width (/ width 2))
+        center-y (- height (/ height 2))]
+    (-> (gmt/matrix)
+        (gmt/translate x1 y1)
+        (gmt/translate center-x center-y)
+        (gmt/rotate rotation)
+        (gmt/translate (- center-x) (- center-y))
+        (gmt/scale scale-x scale-y))))
+
+(defn- path-transformation-matrix
   [state {:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
   (let [{:keys [width height]} (size shape)
         orig-width (nth view-box 2)

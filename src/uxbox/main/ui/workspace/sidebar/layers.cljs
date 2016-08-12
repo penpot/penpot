@@ -96,6 +96,7 @@
     :icon (icon/icon-svg item)
     :line i/line
     :circle i/circle
+    :path i/curve
     :rect i/box
     :text i/text
     :group i/folder))

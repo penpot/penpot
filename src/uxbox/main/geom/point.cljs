@@ -35,7 +35,7 @@
   (-point [v]
     (Point. (first v) (second v))))
 
-(defn point?
+(defn ^boolean point?
   "Return true if `v` is Point instance."
   [v]
   (instance? Point v))
@@ -158,3 +158,11 @@
   [{:keys [x y]} decimanls]
   (Point. (mth/precision x decimanls)
           (mth/precision y decimanls)))
+
+
+(defn transform
+  "Transform a point applying a matrix transfomation."
+  [{:keys [x y] :as p} {:keys [a b c d tx ty] :as m}]
+  (Point. (+ (* x a) (* y c) tx)
+          (+ (* x b) (* y d) ty)))
+

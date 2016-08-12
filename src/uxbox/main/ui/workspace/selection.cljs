@@ -60,7 +60,8 @@
 
 (defn- on-resize-start
   [[vid shape]]
-  (let [stoper (->> wb/mouse-events-s
+  (let [stoper (->> wb/events-s
+                    (rx/map first)
                     (rx/filter #(= % :mouse/up))
                     (rx/take 1))
         stream (->> wb/mouse-delta-s
@@ -81,7 +82,8 @@
 
 (defn- on-move-start
   [shape]
-  (let [stoper (->> wb/mouse-events-s
+  (let [stoper (->> wb/events-s
+                    (rx/map first)
                     (rx/filter #(= % :mouse/up))
                     (rx/take 1))
         stream (rx/take-until stoper wb/mouse-delta-s)

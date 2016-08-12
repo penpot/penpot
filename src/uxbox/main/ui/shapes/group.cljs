@@ -26,7 +26,7 @@
 
 (defn render-component
   [{:keys [type] :as shape}]
-  ;; (println "render-component" shape)
+  ;; (println "render-component" (pr-str shape))
   (case type
     :group (group-component shape)
     :text (text/text-component shape)

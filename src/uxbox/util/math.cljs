@@ -9,6 +9,14 @@
   "A collection of math utils."
   (:require [goog.math :as math]))
 
+(defn ^boolean nan?
+  [v]
+  (js/isNaN v))
+
+(defn ^boolean finite?
+  [v]
+  (js/isFinite v))
+
 (defn abs
   [^number v]
   (js/Math.abs v))

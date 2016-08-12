@@ -101,7 +101,8 @@
 (defn- on-start
   "Function execution when selrect action is started."
   []
-  (let [stoper (->> wb/mouse-events-s
+  (let [stoper (->> wb/events-s
+                    (rx/map first)
                     (rx/filter #(= % :mouse/up))
                     (rx/take 1))
         stream (rx/take-until stoper wb/mouse-viewport-s)

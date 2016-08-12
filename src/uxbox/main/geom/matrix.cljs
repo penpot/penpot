@@ -44,7 +44,7 @@
     (let [[a b c d tx ty] v]
       (Matrix. a b c d tx ty))))
 
-(defn matrix?
+(defn ^boolean matrix?
   "Return true if `v` is Matrix instance."
   [v]
   (instance? Matrix v))
@@ -123,3 +123,21 @@
       (+ ty1 (* tx2 c1) (* ty2 d1)))))
   ([m om & others]
    (reduce append (append m om) others)))
+
+(defn ^boolean invertible?
+  [{:keys [a b c d tx ty] :as m}]
+  (let [det (- (* a d) (* c b))]
+    (and (not (mth/nan? det))
+         (mth/finite? tx)
+         (mth/finite? ty))))
+
+(defn invert
+  [{:keys [a b c d tx ty] :as m}]
+  (when (invertible? m)
+    (let [det (- (* a d) (* c b))]
+      (Matrix. (/ d det)
+               (/ (- b) det)
+               (/ (- c) det)
+               (/ a det)
+               (/ (- (* c ty) (* d tx)) det)
+               (/ (- (* b tx) (* a ty)) det)))))
