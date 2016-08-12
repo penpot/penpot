@@ -18,6 +18,7 @@
             [uxbox.main.ui.workspace.rlocks :as rlocks]
             [uxbox.main.geom :as geom]
             [uxbox.util.geom.point :as gpt]
+            [uxbox.util.geom.path :as path]
             [uxbox.util.dom :as dom]))
 
 ;; --- State
@@ -62,6 +63,7 @@
 (declare on-init)
 (declare on-init-draw-icon)
 (declare on-init-draw-path)
+(declare on-init-draw-free-path)
 (declare on-init-draw-generic)
 
 (defn- watch-draw-actions
@@ -77,7 +79,9 @@
   (when-let [shape (:drawing @wb/workspace-ref)]
     (case (:type shape)
       :icon (on-init-draw-icon shape)
-      :path (on-init-draw-path shape)
+      :path (if (:free shape)
+              (on-init-draw-free-path shape)
+              (on-init-draw-path shape))
       (on-init-draw-generic shape))))
 
 (defn- on-init-draw-icon
@@ -168,6 +172,57 @@
 
       (rx/subscribe firstpos on-first-point)
       (rx/subscribe ptstream on-click)
+      (rx/subscribe stream on-draw nil on-end))))
+
+(defn- on-init-draw-free-path
+  [shape]
+  (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
+                   (rx/mapcat (fn [point]
+                                (if @wb/alignment-ref
+                                  (uds/align-point point)
+                                  (rx/of point))))
+                   (rx/map #(gpt/subtract % canvas-coords)))
+        stoper (->> wb/events-s
+                    (rx/map first)
+                    (rx/filter #(= % :mouse/up))
+                    (rx/take 1))
+        stream (rx/take-until stoper mouse)]
+    (letfn [(normalize-shape [{:keys [points] :as shape}]
+              (let [minx (apply min (map :x points))
+                    miny (apply min (map :y points))
+                    maxx (apply max (map :x points))
+                    maxy (apply max (map :y points))
+
+                    dx (- 0 minx)
+                    dy (- 0 miny)
+                    points (mapv #(gpt/add % [dx dy]) points)
+                    ;; points (path/simplify points)
+                    width (- maxx minx)
+                    height (- maxy miny)]
+
+                (assoc shape
+                       :x1 minx
+                       :y1 miny
+                       :x2 maxx
+                       :y2 maxy
+                       :view-box [0 0 width height]
+                       :points points)))
+
+            (on-draw [point]
+              (let [point (gpt/point point)
+                    shape (-> (or @drawing-shape shape)
+                              (update :points conj point))]
+                (reset! drawing-shape shape)))
+
+            (on-end []
+              (let [shape (normalize-shape @drawing-shape)]
+                (rs/emit! (uds/add-shape shape)
+                          (udw/select-for-drawing nil)
+                          (uds/select-first-shape))
+                (reset! drawing-shape nil)
+                (reset! drawing-position nil)
+                (rlocks/release! :ui/draw)))]
+
       (rx/subscribe stream on-draw nil on-end))))
 
 (defn- on-init-draw-generic
