@@ -16,7 +16,7 @@
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.undo :as udu]
             [uxbox.util.dom :as dom]
-            [uxbox.main.geom.point :as gpt]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
             [uxbox.util.mixins :as mx]
             [uxbox.main.ui.messages :as uum]

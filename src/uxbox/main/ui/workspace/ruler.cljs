@@ -14,7 +14,7 @@
             [uxbox.util.math :as mth]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.mixins :as mx]
-            [uxbox.main.geom.point :as gpt]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 
 (def ^:private immanted-zones

@@ -11,7 +11,7 @@
             [uxbox.main.constants :as c]
             [uxbox.util.rstore :as rs]
             [uxbox.util.schema :as sc]
-            [uxbox.main.geom.point :as gpt]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.workers :as uw]
             [uxbox.main.state :as st]
             [uxbox.main.state.shapes :as stsh]

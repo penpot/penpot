@@ -9,8 +9,8 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.rstore :as rs]
             [uxbox.main.geom :as geom]
-            [uxbox.main.geom.matrix :as gmt]
-            [uxbox.main.geom.point :as gpt]
+            [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.main.state :as st]
             [uxbox.view.data.viewer :as dv]
             [vendor.snapsvg])

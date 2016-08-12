@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.geom.point
+(ns uxbox.util.geom.point
   (:refer-clojure :exclude [divide])
   (:require [uxbox.util.math :as mth]))
 

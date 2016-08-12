@@ -9,7 +9,7 @@
   (:require [cognitect.transit :as t]
             [com.cognitect.transit :as tr]
             [uxbox.util.data :refer (parse-int)]
-            [uxbox.main.geom.point :as gpt]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.datetime :as dt]))
 
 ;; --- Transit Handlers

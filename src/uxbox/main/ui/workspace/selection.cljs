@@ -16,7 +16,7 @@
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.rlocks :as rlocks]
             [uxbox.main.geom :as geom]
-            [uxbox.main.geom.point :as gpt]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 
 ;; --- Refs & Constants

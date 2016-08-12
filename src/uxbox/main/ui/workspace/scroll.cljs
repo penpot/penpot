@@ -11,7 +11,7 @@
             [uxbox.util.mixins :as mx]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.rlocks :as rlocks]
-            [uxbox.main.geom.point :as gpt]))
+            [uxbox.util.geom.point :as gpt]))
 
 (defn watch-scroll-interactions
   [own]

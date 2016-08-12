@@ -5,10 +5,10 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.geom.matrix
+(ns uxbox.util.geom.matrix
   (:require [cuerdas.core :as str]
             [uxbox.util.math :as mth]
-            [uxbox.main.geom.point :as gpt]))
+            [uxbox.util.geom.point :as gpt]))
 
 (defrecord Matrix [a b c d tx ty])
 

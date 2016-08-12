@@ -22,7 +22,7 @@
             [uxbox.main.ui.users :as ui.u]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.mixins :as mx]
-            [uxbox.main.geom.point :as gpt]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.math :as mth]))
 
 ;; --- Coordinates Widget
