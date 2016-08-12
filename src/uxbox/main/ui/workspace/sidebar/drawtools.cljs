@@ -64,31 +64,30 @@
    :content "Hello world"})
 
 (def +draw-tools+
-  {:rect
-   {:icon i/box
+  [{:icon i/box
     :help (tr "ds.help.rect")
     :shape +draw-tool-rect+
     :priority 1}
-   :circle
    {:icon i/circle
     :help (tr "ds.help.circle")
     :shape +draw-tool-circle+
     :priority 2}
-   :line
    {:icon i/line
     :help (tr "ds.help.line")
     :shape +draw-tool-line+
     :priority 3}
-   :text
    {:icon i/text
     :help (tr "ds.help.text")
     :shape +draw-tool-text+
     :priority 4}
-   :path
    {:icon i/curve
     :help (tr "ds.help.path")
     :shape +draw-tool-path+
-    :priority 5}})
+    :priority 5}
+   {:icon i/pencil
+    :help (tr "ds.help.path")
+    :shape (assoc +draw-tool-path+ :free true)
+    :priority 6}])
 
 ;; --- Draw Toolbox (Component)
 
@@ -110,11 +109,11 @@
       [:span (tr "ds.draw-tools")]
       [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content
-      (for [[key props] tools
+      (for [[i props] (map-indexed vector tools)
             :let [selected? (= drawing (:shape props))]]
         [:div.tool-btn.tooltip.tooltip-hover
          {:alt (:help props)
           :class (when selected? "selected")
-          :key (name key)
+          :key (str i)
           :on-click (partial select-for-draw (:shape props))}
          (:icon props)])]]))
