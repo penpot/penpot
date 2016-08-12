@@ -63,9 +63,6 @@
 (declare on-init-draw-icon)
 (declare on-init-draw-path)
 (declare on-init-draw-generic)
-(declare on-draw-start)
-(declare on-draw)
-(declare on-draw-complete)
 
 (defn- watch-draw-actions
   []
@@ -162,7 +159,6 @@
 
             (on-end []
               (let [shape (normalize-shape @drawing-shape)]
-                (println "on-end" shape)
                 (rs/emit! (uds/add-shape shape)
                           (udw/select-for-drawing nil)
                           (uds/select-first-shape))
@@ -192,30 +188,22 @@
                     (rx/skip-while #(nil? @drawing-shape))
                     (rx/with-latest-from vector wb/mouse-ctrl-s))]
 
-    (rx/subscribe firstpos (fn [{:keys [x y] :as pt}]
-                             (let [shape (geom/setup shape {:x1 x :y1 y
-                                                            :x2 x :y2 y})]
-                               (reset! drawing-shape shape))))
-    (rx/subscribe stream on-draw nil on-draw-complete)))
+    (letfn [(on-start [{:keys [x y] :as pt}]
+              (let [shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})]
+                (reset! drawing-shape shape)))
 
-;; (defn- on-draw-start
-;;   [shape {:keys [x y] :as pt}]
-;;   (let [shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})]
-;;     (reset! drawing-shape shape)))
-
-(defn- on-draw
-  [[pt ctrl?]]
-  (let [pt (gpt/divide pt @wb/zoom-ref)]
-    (reset! drawing-position (assoc pt :lock ctrl?))))
-
-(defn- on-draw-complete
-  []
-  (let [shape @drawing-shape
-        shpos @drawing-position
-        shape (geom/resize shape shpos)]
-    (rs/emit! (uds/add-shape shape)
-              (udw/select-for-drawing nil)
-              (uds/select-first-shape))
-    (reset! drawing-position nil)
-    (reset! drawing-shape nil)
-    (rlocks/release! :ui/draw)))
+            (on-draw [[pt ctrl?]]
+              (let [pt (gpt/divide pt @wb/zoom-ref)]
+                (reset! drawing-position (assoc pt :lock ctrl?))))
+            (on-end []
+              (let [shape @drawing-shape
+                    shpos @drawing-position
+                    shape (geom/resize shape shpos)]
+                (rs/emit! (uds/add-shape shape)
+                          (udw/select-for-drawing nil)
+                          (uds/select-first-shape))
+                (reset! drawing-position nil)
+                (reset! drawing-shape nil)
+                (rlocks/release! :ui/draw)))]
+      (rx/subscribe firstpos on-start)
+      (rx/subscribe stream on-draw nil on-end))))
