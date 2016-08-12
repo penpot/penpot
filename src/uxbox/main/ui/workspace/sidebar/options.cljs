@@ -39,6 +39,7 @@
   {:icon [:menu/icon-measures :menu/fill :menu/stroke :menu/interactions]
    :rect [:menu/rect-measures :menu/fill :menu/stroke :menu/interactions]
    :line [:menu/line-measures :menu/stroke :menu/interactions]
+   :path [:menu/fill :menu/stroke :menu/interactions]
    :circle [:menu/circle-measures :menu/fill :menu/stroke :menu/interactions]
    :text [:menu/fill :menu/text :menu/interactions]
    :group []})

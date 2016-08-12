@@ -53,7 +53,8 @@
    :stroke-type :solid
    :stroke "#000000"
    :stroke-width 2
-   :fill "transparent"
+   :fill "#000000"
+   :fill-opacity 0
    ;; :close? true
    :points []})
 
