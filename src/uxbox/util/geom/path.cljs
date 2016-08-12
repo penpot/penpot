@@ -8,6 +8,8 @@
   (:require [uxbox.util.geom.path-impl-simplify :as impl-simplify]))
 
 (defn simplify
-  [points]
-  (let [points (into-array points)]
-    (into [] (impl-simplify/simplify points 10 true))))
+  ([points]
+   (simplify points 0.1))
+  ([points tolerance]
+   (let [points (into-array points)]
+     (into [] (impl-simplify/simplify points tolerance true)))))

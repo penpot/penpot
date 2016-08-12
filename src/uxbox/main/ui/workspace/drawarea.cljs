@@ -195,8 +195,10 @@
 
                     dx (- 0 minx)
                     dy (- 0 miny)
+                    ;; _ (println "Initial number of points:" (count points))
                     points (mapv #(gpt/add % [dx dy]) points)
-                    ;; points (path/simplify points)
+                    points (path/simplify points 0.1)
+                    ;; _ (println "Final number of points:" (count points))
                     width (- maxx minx)
                     height (- maxy miny)]
 
@@ -227,7 +229,7 @@
 
 (defn- on-init-draw-generic
   [shape]
-  (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
+  (let [mouse (->> wb/mouse-viewport-s
                    (rx/mapcat (fn [point]
                                 (if @wb/alignment-ref
                                   (uds/align-point point)
