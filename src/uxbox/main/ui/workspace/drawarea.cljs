@@ -101,17 +101,15 @@
                                   (uds/align-point point)
                                   (rx/of point))))
                    (rx/map #(gpt/subtract % canvas-coords)))
-
         stoper (->> wb/events-s
                     (rx/map first)
                     (rx/filter #(= % :mouse/double-click))
                     (rx/take 1))
-        ;; stoper (rx/empty)
         firstpos (rx/take 1 mouse)
         stream (->> (rx/take-until stoper mouse)
                     (rx/skip-while #(nil? @drawing-shape))
                     (rx/with-latest-from vector wb/mouse-ctrl-s))
-        ptstream (->> wb/events-s
+        ptstream (->> (rx/take-until stoper wb/events-s)
                       (rx/map first)
                       (rx/filter #(= % :mouse/click))
                       (rx/with-latest-from vector mouse)
@@ -127,25 +125,49 @@
                 (if (= (count points) index)
                   (append-point shape point)
                   (assoc-in shape [:points index] point))))
+
+            (normalize-shape [{:keys [points] :as shape}]
+              (let [minx (apply min (map :x points))
+                    miny (apply min (map :y points))
+                    maxx (apply max (map :x points))
+                    maxy (apply max (map :y points))
+
+                    dx (- 0 minx)
+                    dy (- 0 miny)
+                    points (mapv #(gpt/add % [dx dy]) points)
+                    width (- maxx minx)
+                    height (- maxy miny)]
+
+                (assoc shape
+                       :x1 minx
+                       :y1 miny
+                       :x2 maxx
+                       :y2 maxy
+                       :view-box [0 0 width height]
+                       :points points)))
+
             (on-first-point [point]
-              (println "on-first-point" point)
               (let [shape (append-point shape point)]
                 (swap! counter inc)
                 (reset! drawing-shape shape)))
+
             (on-click [point]
               (let [shape (append-point @drawing-shape point)]
                 (swap! counter inc)
                 (reset! drawing-shape shape)))
+
             (on-draw [[point ctrl?]]
               (let [shape (update-point @drawing-shape point @counter)]
                 (reset! drawing-shape shape)))
+
             (on-end []
-              (let [shape @drawing-shape]
+              (let [shape (normalize-shape @drawing-shape)]
+                (println "on-end" shape)
                 (rs/emit! (uds/add-shape shape)
                           (udw/select-for-drawing nil)
                           (uds/select-first-shape))
-                (reset! drawing-position nil)
                 (reset! drawing-shape nil)
+                (reset! drawing-position nil)
                 (rlocks/release! :ui/draw)))]
 
       (rx/subscribe firstpos on-first-point)

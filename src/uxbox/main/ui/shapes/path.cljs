@@ -19,11 +19,9 @@
   [{:keys [id] :as shape}]
   (let [selected (mx/react common/selected-shapes-ref)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)
-        ]
+        on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
-               :on-mouse-down on-mouse-down
-               }
+               :on-mouse-down on-mouse-down}
      (path-shape shape identity)]))
 
 ;; --- Path Shape
@@ -39,10 +37,11 @@
 
 (mx/defc path-shape
   {:mixins [mx/static]}
-  [{:keys [id] :as shape}]
+  [{:keys [id drawing?] :as shape}]
   (let [key (str "shape-" id)
-        props {:d (render-path shape)}
+        rfm (geom/transformation-matrix shape)
         attrs (-> (attrs/extract-style-attrs shape)
-                  (merge {:id key :key key})
-                  (merge props))]
+                  (merge {:id key :key key :d (render-path shape)})
+                  (merge (when-not drawing?
+                           {:transform (str rfm)})))]
     [:path attrs]))

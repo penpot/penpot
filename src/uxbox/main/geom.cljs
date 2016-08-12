@@ -42,7 +42,8 @@
     :rect (move-rect shape dpoint)
     :text (move-rect shape dpoint)
     :line (move-rect shape dpoint)
-    :path (move-path shape dpoint)
+    ;; :path (move-path shape dpoint)
+    :path (move-rect shape dpoint)
     :circle (move-circle shape dpoint)
     :group (move-group shape dpoint)))
 
@@ -141,7 +142,8 @@
     :text (rect-size shape)
     :rect (rect-size shape)
     :icon (rect-size shape)
-    :line (rect-size shape)))
+    :line (rect-size shape)
+    :path (rect-size shape)))
 
 (defn- rect-size
   "A specialized function for calculate size
@@ -176,7 +178,6 @@
     :bottom (gpt/point (/ (+ x1 x2) 2)
                        (/ (+ y1 y2) 2))))
 
-
 (defn- get-circle-vertext-point
   [{:keys [rx ry]} id]
   (gpt/point rx ry))
@@ -194,6 +195,7 @@
     :rect (move-rect-vertex shape vid dpoint)
     :text (move-rect-vertex shape vid dpoint)
     :icon (move-rect-vertex shape vid dpoint)
+    :path (move-rect-vertex shape vid dpoint)
     :circle (move-circle-vertex shape vid dpoint)))
 
 (defn- move-rect-vertex
@@ -260,6 +262,7 @@
     :icon (resize-rect shape point)
     :text (resize-rect shape point)
     :line (resize-line shape point)
+    :path (resize-rect shape point)
     :circle (resize-circle shape point)))
 
 (defn- resize-rect
@@ -443,7 +446,8 @@
                  :text (generic-outer-rect state shape)
                  :icon (generic-outer-rect state shape)
                  :line (generic-outer-rect state shape)
-                 :path (path-outer-rect state shape)
+                 :path (generic-outer-rect state shape)
+                 ;; :path (path-outer-rect state shape)
                  :circle (circle-outer-rect state shape)
                  :group (group-outer-rect state shape))]
      (if (:group shape)
@@ -579,6 +583,7 @@
 (declare text-transformation-matrix)
 (declare circle-transformation-matrix)
 (declare icon-transformation-matrix)
+(declare path-transformation-matrix)
 (declare group-transformation-matrix)
 
 (defn transformation-matrix
@@ -590,6 +595,7 @@
      :text (text-transformation-matrix state shape)
      :circle (circle-transformation-matrix state shape)
      :icon (icon-transformation-matrix state shape)
+     :path (path-transformation-matrix state shape)
      :group (group-transformation-matrix state shape))))
 
 (defn- rect-transformation-matrix
@@ -613,6 +619,22 @@
         (gmt/translate (- center-x) (- center-y)))))
 
 (defn- icon-transformation-matrix
+  [state {:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
+  (let [{:keys [width height]} (size shape)
+        orig-width (nth view-box 2)
+        orig-height (nth view-box 3)
+        scale-x (/ width orig-width)
+        scale-y (/ height orig-height)
+        center-x (- width (/ width 2))
+        center-y (- height (/ height 2))]
+    (-> (gmt/matrix)
+        (gmt/translate x1 y1)
+        (gmt/translate center-x center-y)
+        (gmt/rotate rotation)
+        (gmt/translate (- center-x) (- center-y))
+        (gmt/scale scale-x scale-y))))
+
+(defn- path-transformation-matrix
   [state {:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
   (let [{:keys [width height]} (size shape)
         orig-width (nth view-box 2)
