@@ -15,6 +15,7 @@
             [uxbox.main.ui.shapes.text :refer (text-shape)]
             [uxbox.main.ui.shapes.group :refer (group-shape)]
             [uxbox.main.ui.shapes.line :refer (line-shape)]
+            [uxbox.main.ui.shapes.path :refer (path-shape)]
             [uxbox.main.ui.shapes.circle :refer (circle-shape)]
             [uxbox.view.ui.viewer.interactions :as itx])
   (:import goog.events.EventType))
@@ -67,6 +68,7 @@
     :line (line-shape shape)
     :icon (icon-shape shape)
     :rect (rect-shape shape)
+    :path (path-shape shape)
     :circle (circle-shape shape)))
 
 (mx/defc shape
