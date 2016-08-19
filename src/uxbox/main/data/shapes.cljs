@@ -19,6 +19,7 @@
             [uxbox.main.state.shapes :as stsh]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.pages :as udp]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
 
 (defn add-shape
