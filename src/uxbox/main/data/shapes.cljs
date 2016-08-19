@@ -387,6 +387,18 @@
   {:pre [(uuid? id) (uuid? shape)]}
   (DeleteInteracton. shape id))
 
+;; --- Path Modifications
+
+(defrecord UpdatePath [id index delta]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:shapes-by-id id :points index] gpt/add delta)))
+
+(defn update-path
+  "Update a concrete point in the path shape."
+  [id index delta]
+  {:pre [(uuid? id) (number? index) (gpt/point? delta)]}
+  (UpdatePath. id index delta))
 
 ;; --- Events (implicit) (for selected)
 
