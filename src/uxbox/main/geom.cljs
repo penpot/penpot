@@ -446,8 +446,8 @@
                  :text (generic-outer-rect state shape)
                  :icon (generic-outer-rect state shape)
                  :line (generic-outer-rect state shape)
-                 :path (generic-outer-rect state shape)
-                 ;; :path (path-outer-rect state shape)
+                 ;; :path (generic-outer-rect state shape)
+                 :path (path-outer-rect state shape)
                  :circle (circle-outer-rect state shape)
                  :group (group-outer-rect state shape))]
      (if (:group shape)
