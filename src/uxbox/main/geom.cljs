@@ -42,8 +42,8 @@
     :rect (move-rect shape dpoint)
     :text (move-rect shape dpoint)
     :line (move-rect shape dpoint)
-    ;; :path (move-path shape dpoint)
-    :path (move-rect shape dpoint)
+    :path (move-path shape dpoint)
+    ;; :path (move-rect shape dpoint)
     :circle (move-circle shape dpoint)
     :group (move-group shape dpoint)))
 
