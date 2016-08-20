@@ -493,7 +493,6 @@
        (->> (get-in state [:workspace :selected])
             (map #(update-stroke-attrs % opts)))))))
 
-
 (defn move-selected-layer
   [loc]
   (reify
