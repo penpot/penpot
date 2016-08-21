@@ -143,6 +143,25 @@
 
         }
 
+        &.view-mode {
+          background-color: $intense-ui-icons;
+
+          svg {
+            fill: $secondary-ui-bg;
+          }
+
+          &:hover {
+            background-color: $color-white;
+            border-color: $soft-ui-border;
+
+            svg {
+              fill: $intense-ui-icons;
+            }
+            
+          }
+
+        }
+
       }
 
     }

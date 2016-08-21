@@ -157,7 +157,7 @@
          {:alt "Align (Ctrl + A)"}
          i/alignment]]
        [:ul.options-btn
-        [:li.tooltip.tooltip-bottom
+        [:li.tooltip.tooltip-bottom.view-mode
          {:alt "View mode (Ctrl + P)"
           :on-click #(on-view-clicked % project page)}
          i/play]]
