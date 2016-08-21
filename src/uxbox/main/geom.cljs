@@ -245,6 +245,16 @@
       :bottom (assoc shape :ry (max 0 (+ (:ry shape) dy)))
       :left (assoc shape :rx (max 0 (+ (:rx shape) dx))))))
 
+;; --- Paths
+
+(defn update-path-point
+  "Update a concrete point in the path.
+
+  The point should exists before, this function
+  does not adds it automatically."
+  [shape index point]
+  (assoc-in shape [:points index] point))
+
 ;; --- Resize (Absolute)
 
 (declare resize-rect)
