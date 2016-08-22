@@ -133,18 +133,18 @@
                     maxx (apply max (map :x points))
                     maxy (apply max (map :y points))
 
-                    dx (- 0 minx)
-                    dy (- 0 miny)
-                    points (mapv #(gpt/add % [dx dy]) points)
+                    ;; dx (- 0 minx)
+                    ;; dy (- 0 miny)
+                    ;; points (mapv #(gpt/add % [dx dy]) points)
                     width (- maxx minx)
                     height (- maxy miny)]
 
                 (assoc shape
-                       :x1 minx
-                       :y1 miny
-                       :x2 maxx
-                       :y2 maxy
-                       :view-box [0 0 width height]
+                       ;; :x1 minx
+                       ;; :y1 miny
+                       ;; :x2 maxx
+                       ;; :y2 maxy
+                       ;; :view-box [0 0 width height]
                        :points points)))
 
             (on-first-point [point]
@@ -193,10 +193,10 @@
                     maxx (apply max (map :x points))
                     maxy (apply max (map :y points))
 
-                    dx (- 0 minx)
-                    dy (- 0 miny)
+                    ;; dx (- 0 minx)
+                    ;; dy (- 0 miny)
                     ;; _ (println "Initial number of points:" (count points))
-                    points (mapv #(gpt/add % [dx dy]) points)
+                    ;; points (mapv #(gpt/add % [dx dy]) points)
                     points (path/simplify points 0.1)
                     ;; _ (println "Final number of points:" (count points))
                     width (- maxx minx)

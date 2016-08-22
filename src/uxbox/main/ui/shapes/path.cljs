@@ -43,5 +43,5 @@
         attrs (-> (attrs/extract-style-attrs shape)
                   (merge {:id key :key key :d (render-path shape)})
                   (merge (when-not drawing?
-                           {:transform (str rfm)})))]
+                           #_{:transform (str rfm)})))]
     [:path attrs]))
