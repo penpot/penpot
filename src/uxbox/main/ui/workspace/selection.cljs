@@ -40,58 +40,45 @@
 
 ;; --- Resize
 
-(declare on-resize-start)
+(defn- start-resize
+  [vid shape]
+  (letfn [(on-resize [[delta ctrl?]]
+            (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
+              (rs/emit! (uds/update-vertex-position shape params))))
+          (on-end []
+            (rlocks/release! :shape/resize))]
+    (let [stoper (->> wb/events-s
+                      (rx/map first)
+                      (rx/filter #(= % :mouse/up))
+                      (rx/take 1))
+          stream (->> wb/mouse-delta-s
+                      (rx/take-until stoper)
+                      (rx/with-latest-from vector wb/mouse-ctrl-s))]
+      (rlocks/acquire! :shape/resize)
+      (when @wb/alignment-ref
+        (rs/emit! (uds/initial-vertext-align shape vid)))
+      (rx/subscribe stream on-resize nil on-end))))
 
-(defn watch-resize-actions
-  []
-  (let [stream (->> rlocks/stream
-                    (rx/filter #(= (first %) :shape/resize))
-                    (rx/map second))]
-    (rx/subscribe stream on-resize-start)))
 
-(defn- on-resize
-  [shape vid [delta ctrl?]]
-  (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
-    (rs/emit! (uds/update-vertex-position shape params))))
+;; --- Path Edition
 
-(defn- on-resize-stop
-  []
-  (rlocks/release! :shape/resize))
+(defn start-path-edition
+  [shape-id index]
+  (letfn [(on-move [delta]
+            (println "on-move" delta)
+            (rs/emit! (uds/update-path shape-id index delta)))
+          (on-end []
+            (rlocks/release! :shape/resize))]
+    (let [stoper (->> wb/events-s
+                      (rx/map first)
+                      (rx/filter #(= % :mouse/up))
+                      (rx/take 1))
+          stream (rx/take-until stoper wb/mouse-delta-s)]
+      (rlocks/acquire! :shape/resize)
+      (when @wb/alignment-ref
+        (rs/emit! (uds/initial-vertext-align shape-id index)))
+      (rx/subscribe stream on-move nil on-end))))
 
-(defn- on-resize-start
-  [[vid shape]]
-  (let [stoper (->> wb/events-s
-                    (rx/map first)
-                    (rx/filter #(= % :mouse/up))
-                    (rx/take 1))
-        stream (->> wb/mouse-delta-s
-                    (rx/take-until stoper)
-                    (rx/with-latest-from vector wb/mouse-ctrl-s))]
-    (when @wb/alignment-ref
-      (rs/emit! (uds/initial-vertext-align shape vid)))
-    (rx/subscribe stream (partial on-resize shape vid) nil on-resize-stop)))
-
-;; --- Movement
-
-(declare on-move-start)
-
-(defn watch-move-actions
-  []
-  (-> (rx/filter #(= (first %) :shape/move) rlocks/stream)
-      (rx/subscribe #(run! on-move-start @wb/selected-shapes-ref))))
-
-(defn- on-move-start
-  [shape]
-  (let [stoper (->> wb/events-s
-                    (rx/map first)
-                    (rx/filter #(= % :mouse/up))
-                    (rx/take 1))
-        stream (rx/take-until stoper wb/mouse-delta-s)
-        on-move #(rs/emit! (uds/move-shape shape %))
-        on-stop #(rlocks/release! :shape/move)]
-    (when @wb/alignment-ref
-      (rs/emit! (uds/initial-align-shape shape)))
-    (rx/subscribe stream on-move nil on-stop)))
 
 ;; --- Selection Handlers (Component)
 
@@ -110,11 +97,16 @@
   [{:keys [id] :as shape}]
   (letfn [(on-mouse-down [vid event]
             (dom/stop-propagation event)
-            (rlocks/acquire! :shape/resize [vid id]))]
+            (start-resize vid id))]
     (let [{:keys [x y width height]} (geom/outer-rect shape)]
       [:g.controls
-       [:rect.main {:x x :y y :width width :height height :stroke-dasharray "5,5"
-                    :style {:stroke "#333" :fill "transparent" :stroke-opacity "1"}}]
+       [:rect.main {:x x :y y
+                    :width width
+                    :height height
+                    :stroke-dasharray "5,5"
+                    :style {:stroke "#333"
+                            :fill "transparent"
+                            :stroke-opacity "1"}}]
        [:circle.top
         (merge +circle-props+
                {:on-mouse-down #(on-mouse-down :top %)
@@ -156,25 +148,14 @@
                 :cx (+ x width)
                 :cy (+ y height)})]])))
 
-(defn- selection-handlers-will-mount
-  [own]
-  (assoc own
-         ::sub1 (watch-resize-actions)
-         ::sub2 (watch-move-actions)))
-
-(defn- selection-handlers-will-unmount
-  [own]
-  (.close (::sub1 own))
-  (.close (::sub2 own))
-  (dissoc own ::sub1 ::sub2))
-
 (mx/defc selection-handlers
-  {:mixins [mx/reactive mx/static]
-   :will-mount selection-handlers-will-mount
-   :will-unmount selection-handlers-will-unmount}
+  {:mixins [mx/reactive mx/static]}
   []
   (let [shapes (mx/react selected-shapes-ref)
-        shapes-num (count shapes)]
+        shapes-num (count shapes)
+        shape (first shapes)]
     (cond
-      (> shapes-num 1) (multiple-selection-handlers shapes)
+      (> shapes-num 1)
+      (multiple-selection-handlers shapes)
+
       (= shapes-num 1) (single-selection-handlers (first shapes)))))
