@@ -7,10 +7,12 @@
 (ns uxbox.main.ui.shapes.common
   (:require [sablono.core :refer-macros [html]]
             [lentes.core :as l]
+            [beicon.core :as rx]
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.keyboard :as kbd]
+            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.rlocks :as rlocks]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]))
@@ -24,6 +26,24 @@
 (def selected-ref
   (-> (l/in [:workspace :selected])
       (l/derive st/state)))
+
+;; --- Movement
+
+(defn start-move
+  []
+  (letfn [(on-start [shape]
+            (let [stoper (->> (rx/map first wb/events-s)
+                              (rx/filter #(= % :mouse/up))
+                              (rx/take 1))
+                  stream (rx/take-until stoper wb/mouse-delta-s)
+                  on-move #(rs/emit! (uds/move-shape shape %))
+                  on-stop #(rlocks/release! :shape/move)]
+              (when @wb/alignment-ref
+                (rs/emit! (uds/initial-align-shape shape)))
+              (rx/subscribe stream on-move nil on-stop)))]
+
+    (rlocks/acquire! :shape/move)
+    (run! on-start @selected-ref)))
 
 ;; --- Events
 
@@ -41,7 +61,7 @@
         (do
           (dom/stop-propagation event)
           (rs/emit! (uds/select-shape id))
-          (rlocks/acquire! :shape/move))
+          (start-move))
 
         (and (not selected?) (not (empty? selected)))
         (do
@@ -51,9 +71,9 @@
             (do
               (rs/emit! (uds/deselect-all)
                         (uds/select-shape id))
-              (rlocks/acquire! :shape/move))))
+              (start-move))))
 
         :else
         (do
           (dom/stop-propagation event)
-          (rlocks/acquire! :shape/move))))))
+          (start-move))))))
