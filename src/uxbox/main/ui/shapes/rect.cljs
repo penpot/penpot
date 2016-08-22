@@ -20,7 +20,7 @@
 (defn- rect-component-render
   [own shape]
   (let [{:keys [id x y width height group]} shape
-        selected (mx/react common/selected-shapes-ref)
+        selected (mx/react common/selected-ref)
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)]
     (html

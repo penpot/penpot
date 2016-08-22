@@ -18,7 +18,7 @@
 
 (defn- icon-component-render
   [own {:keys [id] :as shape}]
-  (let [selected (mx/react common/selected-shapes-ref)
+  (let [selected (mx/react common/selected-ref)
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)]
     (html

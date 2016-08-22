@@ -38,7 +38,7 @@
 (mx/defcs text-component
   {:mixins [mx/static mx/reactive (mx/local)]}
   [own {:keys [id x1 y1 content group] :as shape}]
-  (let [selected (mx/react common/selected-shapes-ref)
+  (let [selected (mx/react common/selected-ref)
         selected? (and (contains? selected id)
                        (= (count selected) 1))
         local (:rum/local own)]

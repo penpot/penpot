@@ -17,12 +17,12 @@
 
 ;; --- Lenses
 
-(def selected-shapes-ref
-  (-> (l/in [:workspace :selected])
-      (l/derive st/state)))
-
 (def drawing-state-ref
   (-> (l/in [:workspace :drawing])
+      (l/derive st/state)))
+
+(def selected-ref
+  (-> (l/in [:workspace :selected])
       (l/derive st/state)))
 
 ;; --- Events

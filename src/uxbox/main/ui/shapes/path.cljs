@@ -17,7 +17,7 @@
 (mx/defc path-component
   {:mixins [mx/static mx/reactive]}
   [{:keys [id] :as shape}]
-  (let [selected (mx/react common/selected-shapes-ref)
+  (let [selected (mx/react common/selected-ref)
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
