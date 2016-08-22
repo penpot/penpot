@@ -93,6 +93,23 @@
                   :style {:stroke "#333" :fill "transparent"
                           :stroke-opacity "1"}}]]))
 
+(mx/defc path-edition-selection-handlers
+  [{:keys [id points] :as shape}]
+  (letfn [(on-mouse-down [index event]
+            (dom/stop-propagation event)
+            (rlocks/acquire! :shape/resize)
+            (println "on-mouse-down" index)
+            (start-path-edition id index))
+
+            #_(rlocks/acquire! :shape/resize [vid id])]
+    (let [tmx (geom/transformation-matrix shape)
+          points (map #(gpt/transform % tmx) points)]
+      [:g.controls
+       (for [[index {:keys [x y]}] (map-indexed vector points)]
+         [:circle {:cx x :cy y :r 3
+                   :on-mouse-down (partial on-mouse-down index)
+                   :fill "red"}])])))
+
 (mx/defc single-selection-handlers
   [{:keys [id] :as shape}]
   (letfn [(on-mouse-down [vid event]
@@ -157,5 +174,9 @@
     (cond
       (> shapes-num 1)
       (multiple-selection-handlers shapes)
+
+      (and (= :path (:type shape))
+           (:edition? shape))
+      (path-edition-selection-handlers shape)
 
       (= shapes-num 1) (single-selection-handlers (first shapes)))))
