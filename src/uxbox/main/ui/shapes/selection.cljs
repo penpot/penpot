@@ -165,15 +165,11 @@
             (dom/stop-propagation event)
             (rlocks/acquire! :shape/resize)
             (start-path-edition id index))]
-    (let [
-          ;;tmx (geom/transformation-matrix shape)
-          ;;points (map #(gpt/transform % tmx) points)
-          ]
-      [:g.controls
-       (for [[index {:keys [x y]}] (map-indexed vector points)]
-         [:circle {:cx x :cy y :r 3
-                   :on-mouse-down (partial on-mouse-down index)
-                   :fill "red"}])])))
+    [:g.controls
+     (for [[index {:keys [x y]}] (map-indexed vector points)]
+       [:circle {:cx x :cy y :r 3
+                 :on-mouse-down (partial on-mouse-down index)
+                 :fill "red"}])]))
 
 (mx/defc selection-handlers
   {:mixins [mx/reactive mx/static]}
