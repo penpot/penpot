@@ -17,7 +17,12 @@
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]))
 
-;; --- Lenses
+;; --- Refs
+
+;; (defonce edition-ref (atom nil))
+(def edition-ref
+  (-> (l/in [:workspace :edition])
+      (l/derive st/state)))
 
 (def drawing-state-ref
   (-> (l/in [:workspace :drawing])

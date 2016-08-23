@@ -19,6 +19,8 @@
             [uxbox.main.state.shapes :as stsh]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.pages :as udp]
+            ;; FIXME: rlocks should be moved out of ui.workspace
+            [uxbox.main.ui.workspace.rlocks :as rlocks]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
 
@@ -401,17 +403,43 @@
   {:pre [(uuid? id) (number? index) (gpt/point? delta)]}
   (UpdatePath. id index delta))
 
+;; --- Start shape "edition mode"
+
+(defrecord StartEditionMode [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:workspace :edition] id))
+
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    (rlocks/acquire! :shape/edition)))
+
+(defn start-edition-mode
+  [id]
+  {:pre [(uuid? id)]}
+  (println "start-edition-mode" id)
+  (StartEditionMode. id))
+
 ;; --- Events (implicit) (for selected)
 
+(defrecord DeselectAll []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (-> state
+        (assoc-in [:workspace :selected] #{})
+        (assoc-in [:workspace :edition] nil)
+        (assoc-in [:workspace :drawing] nil)))
+
+  rs/EffectEvent
+  (-apply-effect [_ state]
+    (rlocks/release! :shape/edition)))
+
 (defn deselect-all
-  "Mark a shape selected for drawing in the canvas."
+  "Clear all possible state of drawing, edition
+  or any similar action taken by the user."
   []
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (-> state
-          (assoc-in [:workspace :selected] #{})
-          (assoc-in [:workspace :drawing] nil)))))
+  (println "deselect-all")
+  (DeselectAll.))
 
 (defn group-selected
   []

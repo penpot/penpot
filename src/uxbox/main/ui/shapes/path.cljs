@@ -6,8 +6,10 @@
 
 (ns uxbox.main.ui.shapes.path
   (:require [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.rstore :as rs]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
+            [uxbox.main.data.shapes :as uds]
             [uxbox.main.geom :as geom]))
 
 ;; --- Path Component
@@ -18,11 +20,16 @@
   {:mixins [mx/static mx/reactive]}
   [{:keys [id] :as shape}]
   (let [selected (mx/react common/selected-ref)
-        selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)]
-    [:g.shape {:class (when selected? "selected")
-               :on-mouse-down on-mouse-down}
-     (path-shape shape identity)]))
+        selected? (contains? selected id)]
+    (letfn [(on-mouse-down [event]
+              (common/on-mouse-down event shape selected))
+            (on-double-click [event]
+              (when selected?
+                (rs/emit! (uds/start-edition-mode id))))]
+      [:g.shape {:class (when selected? "selected")
+                 :on-double-click on-double-click
+                 :on-mouse-down on-mouse-down}
+       (path-shape shape identity)])))
 
 ;; --- Path Shape
 
