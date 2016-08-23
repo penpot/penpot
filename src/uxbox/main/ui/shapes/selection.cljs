@@ -145,7 +145,6 @@
 (defn start-path-edition
   [shape-id index]
   (letfn [(on-move [delta]
-            (println "on-move" delta)
             (rs/emit! (uds/update-path shape-id index delta)))
           (on-end []
             (rlocks/release! :shape/resize))]
@@ -156,7 +155,7 @@
           stream (rx/take-until stoper wb/mouse-delta-s)]
       (rlocks/acquire! :shape/resize)
       (when @wb/alignment-ref
-        (rs/emit! (uds/initial-vertext-align shape-id index)))
+        (rs/emit! (uds/initial-path-point-align shape-id index)))
       (rx/subscribe stream on-move nil on-end))))
 
 (mx/defc path-edition-selection-handlers

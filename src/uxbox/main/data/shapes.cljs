@@ -376,7 +376,6 @@
   [shape interaction]
   (UpdateInteraction. shape interaction))
 
-
 ;; --- Delete Interaction
 
 (defrecord DeleteInteracton [shape id]
@@ -402,6 +401,25 @@
   [id index delta]
   {:pre [(uuid? id) (number? index) (gpt/point? delta)]}
   (UpdatePath. id index delta))
+
+(defrecord InitialPathPointAlign [id index]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [shape (get-in state [:shapes-by-id id])
+          point (get-in shape [:points index])
+          point (gpt/add point canvas-coords)]
+      (->> (align-point point)
+           (rx/map #(gpt/subtract % point))
+           (rx/map #(update-path id index %))))))
+
+(defn initial-path-point-align
+  "Event responsible of align a specified point of the
+  shape by `index` with the grid."
+  [id index]
+  {:pre [(uuid? id)
+         (number? index)
+         (not (neg? index))]}
+  (InitialPathPointAlign. id index))
 
 ;; --- Start shape "edition mode"
 
