@@ -17,14 +17,14 @@
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int)]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.shapes :as uus]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.main.ui.shapes.selection :refer (selection-handlers)]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.rlocks :as rlocks]
             [uxbox.main.ui.workspace.drawarea :refer (draw-area)]
             [uxbox.main.ui.workspace.ruler :refer (ruler)]
-            [uxbox.main.ui.workspace.selection :refer (selection-handlers)]
             [uxbox.main.ui.workspace.selrect :refer (selrect)]
             [uxbox.main.ui.workspace.grid :refer (grid)])
   (:import goog.events.EventType))
