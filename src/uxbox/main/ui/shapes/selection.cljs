@@ -41,7 +41,7 @@
 
 (def edition-ref scommon/edition-ref)
 
-;; --- Resize
+;; --- Resize Implementation
 
 (defn- start-resize
   [vid shape]
