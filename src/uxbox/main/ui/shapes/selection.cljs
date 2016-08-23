@@ -187,9 +187,10 @@
 
       :else
       (cond
-        (and (= :path (:type shape))
-             (= @edition-ref (:id shape)))
-        (path-edition-selection-handlers shape)
+        (= :path (:type shape))
+        (if (= @edition-ref (:id shape))
+          (path-edition-selection-handlers shape)
+          (single-not-editable-selection-handlers shape))
 
         :else
         (single-selection-handlers (first shapes))))))
