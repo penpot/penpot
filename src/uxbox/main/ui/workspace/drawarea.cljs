@@ -176,17 +176,23 @@
                 (swap! counter inc)
                 (reset! drawing-shape shape)))
 
-            (on-draw [[point ctrl?]]
-              (if ctrl?
-                (let [center (get-in @drawing-shape [:points (dec @counter)])
-                      point (as-> point $
-                              (gpt/subtract $ center)
-                              (align-position (gpt/angle $) $)
-                              (gpt/add $ center))]
-                  (->> (update-point @drawing-shape point @counter)
-                       (reset! drawing-shape)))
+            (on-assisted-draw [point]
+              (let [center (get-in @drawing-shape [:points (dec @counter)])
+                    point (as-> point $
+                            (gpt/subtract $ center)
+                            (align-position (gpt/angle $) $)
+                            (gpt/add $ center))]
                 (->> (update-point @drawing-shape point @counter)
                      (reset! drawing-shape))))
+
+            (on-free-draw [point]
+              (->> (update-point @drawing-shape point @counter)
+                   (reset! drawing-shape)))
+
+            (on-draw [[point ctrl?]]
+              (if ctrl?
+                (on-assisted-draw point)
+                (on-free-draw point)))
 
             (on-end []
               (let [shape (normalize-shape @drawing-shape)]
