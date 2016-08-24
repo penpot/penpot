@@ -14,7 +14,6 @@
             [uxbox.main.ui.shapes.icon :refer (icon-shape)]
             [uxbox.main.ui.shapes.text :refer (text-shape)]
             [uxbox.main.ui.shapes.group :refer (group-shape)]
-            [uxbox.main.ui.shapes.line :refer (line-shape)]
             [uxbox.main.ui.shapes.path :refer (path-shape)]
             [uxbox.main.ui.shapes.circle :refer (circle-shape)]
             [uxbox.view.ui.viewer.interactions :as itx])
@@ -65,7 +64,6 @@
   (case type
     :group (group-shape shape #(interactions-wrapper % shape*))
     :text (text-shape shape)
-    :line (line-shape shape)
     :icon (icon-shape shape)
     :rect (rect-shape shape)
     :path (path-shape shape)

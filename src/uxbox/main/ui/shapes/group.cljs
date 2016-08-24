@@ -16,7 +16,6 @@
             [uxbox.main.ui.shapes.rect :as rect]
             [uxbox.main.ui.shapes.circle :as circle]
             [uxbox.main.ui.shapes.text :as text]
-            [uxbox.main.ui.shapes.line :as line]
             [uxbox.main.ui.shapes.path :as path]
             [uxbox.main.geom :as geom]))
 
@@ -30,7 +29,6 @@
   (case type
     :group (group-component shape)
     :text (text/text-component shape)
-    :line (line/line-component shape)
     :icon (icon/icon-component shape)
     :rect (rect/rect-component shape)
     :path (path/path-component shape)

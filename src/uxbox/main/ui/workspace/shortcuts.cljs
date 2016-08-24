@@ -42,7 +42,6 @@
    :ctrl+shift+z #(rs/emit! (udu/redo))
    :ctrl+b #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-rect+))
    :ctrl+e #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-circle+))
-   :ctrl+l #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-line+))
    :ctrl+t #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-text+))
    :esc #(rs/emit! (uds/deselect-all))
    :backspace #(rs/emit! (uds/delete-selected))

@@ -17,7 +17,6 @@
       (derive ::rect ::shape)
       (derive :icon ::rect)
       (derive :rect ::rect)
-      (derive :line ::shape)
       (derive :circle ::shape)
       (derive :text ::rect)
       (derive :group ::rect)))
@@ -41,7 +40,6 @@
     :icon (move-rect shape dpoint)
     :rect (move-rect shape dpoint)
     :text (move-rect shape dpoint)
-    :line (move-rect shape dpoint)
     :path (move-path shape dpoint)
     ;; :path (move-rect shape dpoint)
     :circle (move-circle shape dpoint)
@@ -95,7 +93,6 @@
   (case (:type shape)
     :icon (absolute-move-rect shape point)
     :rect (absolute-move-rect shape point)
-    :line (absolute-move-rect shape point)
     :circle (absolute-move-circle shape point)
     :group (absolute-move-group shape point)))
 
@@ -142,7 +139,6 @@
     :text (rect-size shape)
     :rect (rect-size shape)
     :icon (rect-size shape)
-    :line (rect-size shape)
     :path (rect-size shape)))
 
 (defn- rect-size
@@ -258,7 +254,6 @@
 ;; --- Resize (Absolute)
 
 (declare resize-rect)
-(declare resize-line)
 (declare resize-circle)
 (declare normalize-shape)
 (declare equalize-sides)
@@ -271,7 +266,6 @@
     :rect (resize-rect shape point)
     :icon (resize-rect shape point)
     :text (resize-rect shape point)
-    :line (resize-line shape point)
     :path (resize-rect shape point)
     :circle (resize-circle shape point)))
 
@@ -297,12 +291,6 @@
     (if lock
       (assoc shape :rx rx :ry rx)
       (assoc shape :rx rx :ry ry))))
-
-(defn- resize-line
-  "A specialized function for absolute resize
-  for line shapes."
-  [shape {:keys [x y] :as pos}]
-  (assoc shape :x2 x :y2 y))
 
 (defn- normalize-shape
   "Normalize shape coordinates."
@@ -346,7 +334,6 @@
   (case (:type shape)
     :rect (setup-rect shape props)
     :icon (setup-rect shape props)
-    :line (setup-rect shape props)
     :text (setup-rect shape props)
     :circle (setup-circle shape props)
     :group (setup-group shape props)))
@@ -389,7 +376,6 @@
      :icon (generic-inner-rect state shape)
      :rect (generic-inner-rect state shape)
      :text (generic-inner-rect shape shape)
-     :line (generic-inner-rect state shape)
      :path (path-inner-rect state shape)
      :circle (circle-inner-rect state shape)
      :group (group-inner-rect state shape))))
@@ -455,7 +441,6 @@
                  :rect (generic-outer-rect state shape)
                  :text (generic-outer-rect state shape)
                  :icon (generic-outer-rect state shape)
-                 :line (generic-outer-rect state shape)
                  ;; :path (generic-outer-rect state shape)
                  :path (path-outer-rect state shape)
                  :circle (circle-outer-rect state shape)

@@ -41,12 +41,6 @@
   {:type :circle
    :name "Circle"})
 
-(def +draw-tool-line+
-  {:type :line
-   :name "Line"
-   :stroke-type :solid
-   :stroke "#000000"})
-
 (def +draw-tool-path+
   {:type :path
    :name "Path"
@@ -72,10 +66,6 @@
     :help (tr "ds.help.circle")
     :shape +draw-tool-circle+
     :priority 2}
-   {:icon i/line
-    :help (tr "ds.help.line")
-    :shape +draw-tool-line+
-    :priority 3}
    {:icon i/text
     :help (tr "ds.help.text")
     :shape +draw-tool-text+
