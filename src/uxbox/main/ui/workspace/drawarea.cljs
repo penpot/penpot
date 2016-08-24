@@ -33,6 +33,13 @@
 ;; --- Draw Area (Component)
 
 (declare watch-draw-actions)
+(declare on-init-draw)
+
+(defn- watch-draw-actions
+  []
+  (let [stream (->> (rx/map first rlocks/stream)
+                    (rx/filter #(= % :ui/draw)))]
+    (rx/subscribe stream on-init-draw)))
 
 (defn- draw-area-will-mount
   [own]
@@ -60,19 +67,12 @@
 
 ;; --- Drawing Initialization
 
-(declare on-init)
 (declare on-init-draw-icon)
 (declare on-init-draw-path)
 (declare on-init-draw-free-path)
 (declare on-init-draw-generic)
 
-(defn- watch-draw-actions
-  []
-  (let [stream (->> (rx/map first rlocks/stream)
-                    (rx/filter #(= % :ui/draw)))]
-    (rx/subscribe stream on-init)))
-
-(defn- on-init
+(defn- on-init-draw
   "Function execution when draw shape operation is requested.
   This is a entry point for the draw interaction."
   []
@@ -84,6 +84,8 @@
               (on-init-draw-path shape))
       (on-init-draw-generic shape))))
 
+;; --- Icon Drawing
+
 (defn- on-init-draw-icon
   [shape]
   (let [{:keys [x y]} (gpt/divide @wb/mouse-canvas-a @wb/zoom-ref)
@@ -93,6 +95,23 @@
               (udw/select-for-drawing nil)
               (uds/select-first-shape))
     (rlocks/release! :ui/draw)))
+
+;; --- Path Drawing
+
+(def ^:private immanted-zones
+  (let [transform #(vector (- % 7) (+ % 7) %)]
+    (concat
+     (mapv transform (range 0 181 15))
+     (mapv (comp transform -) (range 0 181 15)))))
+
+(defn- align-position
+  [angle pos]
+  (reduce (fn [pos [a1 a2 v]]
+            (if (< a1 angle a2)
+              (reduced (gpt/update-angle pos v))
+              pos))
+          pos
+          immanted-zones))
 
 (defn- on-init-draw-path
   [shape]
@@ -158,8 +177,16 @@
                 (reset! drawing-shape shape)))
 
             (on-draw [[point ctrl?]]
-              (let [shape (update-point @drawing-shape point @counter)]
-                (reset! drawing-shape shape)))
+              (if ctrl?
+                (let [center (get-in @drawing-shape [:points (dec @counter)])
+                      point (as-> point $
+                              (gpt/subtract $ center)
+                              (align-position (gpt/angle $) $)
+                              (gpt/add $ center))]
+                  (->> (update-point @drawing-shape point @counter)
+                       (reset! drawing-shape)))
+                (->> (update-point @drawing-shape point @counter)
+                     (reset! drawing-shape))))
 
             (on-end []
               (let [shape (normalize-shape @drawing-shape)]
