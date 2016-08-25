@@ -99,6 +99,11 @@
       min-width: 120px;
     }
 
+    // Export dialog
+    &.export-dialog {
+      width: auto;
+    }
+
   }
 
 }
@@ -206,4 +211,58 @@
   .btn-delete {
     margin: 2rem 1rem 0 1rem;
   }
+}
+
+// Export dialog
+.content-col {
+  align-items: center;
+  border-right: 1px solid $soft-ui-border;
+  display: flex;
+  flex-direction: column;
+  flex: 300px;
+  height: 450px;
+  padding: 2rem;
+
+  &:first-child{
+    padding-left: 1rem;
+  }
+
+  &:last-child {
+    border: none;
+    padding-right: 1rem;
+  }
+
+  .icon {
+    align-items: center;
+    background-color: $soft-ui-icons;
+    border-radius: $br-medium;
+    display: flex;
+    flex-shrink: 0;
+    height: 120px;
+    justify-content: center;
+    width: 120px;
+
+    svg {
+      fill: $medium-ui-icons;
+      height: 50px;
+      width: 50px;
+    }
+
+  }
+
+  .title {
+    font-size: $fs20;
+    font-weight: 500;
+    margin: 1rem 0;
+  }
+
+  .info {
+    font-size: $fs16;
+    text-align: center;
+  }
+
+  .btn-primary {
+    margin-top: auto !important;
+  }
+
 }
