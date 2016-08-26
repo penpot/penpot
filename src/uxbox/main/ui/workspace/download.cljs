@@ -33,9 +33,9 @@
     [:h3 "Export options"]
     [:div.row-flex
      [:div.content-col
-      [:span.icon i/trash]
+      [:span.icon i/file-svg]
       [:span.title "Export page"]
-      [:p.info "Get a single page of your project in SVG."]
+      [:p.info "Download a single page of your project in SVG."]
       [:select.input-select
        [:option "Choose a page"]
        [:option "Page 001"]
@@ -43,14 +43,14 @@
        [:option "Page 003"]]
       [:a.btn-primary {:href "#"} "Export page"]]
      [:div.content-col
-      [:span.icon i/trash]
+      [:span.icon i/folder-zip]
       [:span.title "Export project"]
-      [:p.info "Get the whole project as a ZIP file."]
+      [:p.info "Download the whole project as a ZIP file."]
       [:a.btn-primary {:href "#"} "Expor project"]]
      [:div.content-col
-      [:span.icon i/trash]
+      [:span.icon i/file-html]
       [:span.title "Export as HTML"]
-      [:p.info "Get your project as HTML."]
+      [:p.info "Download your project as HTML files."]
       [:a.btn-primary {:href "#"} "Export HTML"]]]
     [:a.close {:href "#"
                :on-click #(do (dom/prevent-default %)
