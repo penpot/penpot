@@ -16,7 +16,10 @@
             [goog.events :as events])
   (:import goog.events.EventType))
 
-;; --- Lenses
+;; FIXME: split this namespace in two:
+;; uxbox.main.ui.streams and uxbox.main.ui.workspace.refs
+
+;; --- Refs
 
 (def workspace-ref
   (-> (l/in [:workspace])
@@ -80,18 +83,8 @@
 
 ;; --- Events
 
-;; TODO: this should replace mouse-events-s and keyboard-events-b
 (defonce events-b (rx/bus))
 (defonce events-s (rx/dedupe events-b))
-
-(defonce mouse-events-b (rx/bus))
-(defonce mouse-events-s (rx/dedupe mouse-events-b))
-
-;; (defonce kaka
-;;   (rx/subscribe mouse-events-s #(println "event:" %)))
-
-(defonce keyboard-events-b (rx/bus))
-(defonce keyboard-events-s (rx/dedupe keyboard-events-b))
 
 ;; --- Mouse Position Stream
 

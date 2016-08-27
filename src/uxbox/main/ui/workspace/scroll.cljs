@@ -15,11 +15,11 @@
 
 (defn watch-scroll-interactions
   [own]
-  (letfn [(is-space-up? [{:keys [key type]}]
+  (letfn [(is-space-up? [[type {:keys [key]}]]
             (and (= 32 key) (= :keyboard/up type)))
 
           (on-start []
-            (let [stoper (->> wb/keyboard-events-s
+            (let [stoper (->> wb/events-s
                               (rx/filter is-space-up?)
                               (rx/take 1))
                   local (:rum/local own)

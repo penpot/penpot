@@ -83,18 +83,18 @@
                       (gpt/subtract brect))))))
 
           (on-key-down [event]
-            (rx/push! wb/keyboard-events-b {:type :keyboard/down
-                                            :key (.-keyCode event)
-                                            :shift? (kbd/shift? event)
-                                            :ctrl? (kbd/ctrl? event)})
-            (when (kbd/space? event)
-              (rlocks/acquire! :workspace/scroll)))
+            (let [opts {:key (.-keyCode event)
+                        :shift? (kbd/shift? event)
+                        :ctrl? (kbd/ctrl? event)}]
+              (rx/push! wb/events-b [:keyboard/down opts])
+              (when (kbd/space? event)
+                (rlocks/acquire! :workspace/scroll))))
 
           (on-key-up [event]
-            (rx/push! wb/keyboard-events-b {:type :keyboard/up
-                                            :key (.-keyCode event)
-                                            :shift? (kbd/shift? event)
-                                            :ctrl? (kbd/ctrl? event)}))
+            (let [opts {:key (.-keyCode event)
+                        :shift? (kbd/shift? event)
+                        :ctrl? (kbd/ctrl? event)}]
+              (rx/push! wb/events-b [:keyboard/up opts])))
 
           (on-mousemove [event]
             (let [wpt (gpt/point (.-clientX event)
