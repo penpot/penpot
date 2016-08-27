@@ -80,7 +80,6 @@
 (defonce scroll-a
   (rx/to-atom scroll-s))
 
-
 ;; --- Events
 
 (defonce events-b (rx/bus))

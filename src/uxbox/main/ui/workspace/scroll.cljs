@@ -16,7 +16,7 @@
 (defn watch-scroll-interactions
   [own]
   (letfn [(is-space-up? [[type {:keys [key]}]]
-            (and (= 32 key) (= :keyboard/up type)))
+            (and (= 32 key) (= :key/up type)))
 
           (on-start []
             (let [stoper (->> wb/events-s

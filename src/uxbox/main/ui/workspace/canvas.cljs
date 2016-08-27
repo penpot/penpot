@@ -86,7 +86,7 @@
             (let [opts {:key (.-keyCode event)
                         :shift? (kbd/shift? event)
                         :ctrl? (kbd/ctrl? event)}]
-              (rx/push! wb/events-b [:keyboard/down opts])
+              (rx/push! wb/events-b [:key/down opts])
               (when (kbd/space? event)
                 (rlocks/acquire! :workspace/scroll))))
 
@@ -94,7 +94,7 @@
             (let [opts {:key (.-keyCode event)
                         :shift? (kbd/shift? event)
                         :ctrl? (kbd/ctrl? event)}]
-              (rx/push! wb/events-b [:keyboard/up opts])))
+              (rx/push! wb/events-b [:key/up opts])))
 
           (on-mousemove [event]
             (let [wpt (gpt/point (.-clientX event)
@@ -106,6 +106,9 @@
                          :window-coords wpt
                          :viewport-coords vppt
                          :canvas-coords cvpt}]
+              ;; FIXME: refactor streams in order to use the wb/events-b
+              ;;        for all keyboard and mouse events and then derive
+              ;;        all the other from it.
               (rx/push! wb/mouse-b event)))]
 
     (let [key1 (events/listen js/document EventType.MOUSEMOVE on-mousemove)
@@ -139,19 +142,32 @@
               (if (:drawing workspace)
                 (rlocks/acquire! :ui/draw)
                 (rlocks/acquire! :ui/selrect)))
+            (on-context-menu [event]
+              (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (let [opts {:shift? (kbd/shift? event)
+                          :ctrl? (kbd/ctrl? event)}]
+                (rx/push! wb/events-b [:mouse/right-click opts])))
             (on-mouse-up [event]
               (dom/stop-propagation event)
-              (rx/push! wb/events-b [:mouse/up]))
+              (let [opts {:shift? (kbd/shift? event)
+                          :ctrl? (kbd/ctrl? event)}]
+                (rx/push! wb/events-b [:mouse/up])))
             (on-click [event]
               (dom/stop-propagation event)
-              (rx/push! wb/events-b [:mouse/click]))
+              (let [opts {:shift? (kbd/shift? event)
+                          :ctrl? (kbd/ctrl? event)}]
+                (rx/push! wb/events-b [:mouse/click opts])))
             (on-double-click [event]
               (dom/stop-propagation event)
-              (rx/push! wb/events-b [:mouse/double-click]))]
+              (let [opts {:shift? (kbd/shift? event)
+                          :ctrl? (kbd/ctrl? event)}]
+                (rx/push! wb/events-b [:mouse/double-click opts])))]
       [:svg.viewport {:width (* c/viewport-width zoom)
                       :height (* c/viewport-height zoom)
                       :ref "viewport"
                       :class (when drawing? "drawing")
+                      :on-context-menu on-context-menu
                       :on-click on-click
                       :on-double-click on-double-click
                       :on-mouse-down on-mouse-down
