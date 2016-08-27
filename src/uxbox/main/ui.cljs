@@ -7,7 +7,6 @@
 
 (ns uxbox.main.ui
   (:require [sablono.core :as html :refer-macros [html]]
-            [bidi.bidi :as bidi]
             [promesa.core :as p]
             [beicon.core :as rx]
             [goog.dom :as gdom]
@@ -96,8 +95,8 @@
         :settings/profile (settings/profile-page)
         :settings/password (settings/password-page)
         :settings/notifications (settings/notifications-page)
-        :workspace/page (let [projectid (:project-uuid params)
-                              pageid (:page-uuid params)]
+        :workspace/page (let [projectid (uuid (:project params))
+                              pageid (uuid (:page params))]
                           (workspace projectid pageid))
         nil
         ))))
@@ -117,25 +116,18 @@
 
 ;; --- Routes
 
-(def ^:private page-route
-  [[bidi/uuid :project-uuid] "/" [bidi/uuid :page-uuid]])
-
 (def routes
-  ["/" [["auth/login" :auth/login]
-        ["auth/register" :auth/register]
-        ["auth/recovery/request" :auth/recovery-request]
-        [["auth/recovery/token/" :token] :auth/recovery]
-
-        ["settings/" [["profile" :settings/profile]
-                      ["password" :settings/password]
-                      ["notifications" :settings/notifications]]]
-
-        ["dashboard/" [["projects" :dashboard/projects]
-                       ["elements" :dashboard/elements]
-                       ["icons" :dashboard/icons]
-                       ["images" :dashboard/images]
-                       ["colors" :dashboard/colors]]]
-        ["workspace/" [[page-route :workspace/page]]]]])
+  [["/auth/login" :auth/login]
+   ["/auth/recovery/token/:token" :auth/recovery]
+   ["/settings/profile" :settings/profile]
+   ["/settings/password" :settings/password]
+   ["/settings/notifications" :settings/notifications]
+   ["/dashboard/projects" :dashboard/projects]
+   ["/dashboard/elements" :dashboard/elements]
+   ["/dashboard/icons" :dashboard/icons]
+   ["/dashboard/images" :dashboard/images]
+   ["/dashboard/colors" :dashboard/colors]
+   ["/workspace/:project/:page" :workspace/page]])
 
 ;; --- Main Entry Point
 

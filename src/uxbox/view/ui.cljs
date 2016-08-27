@@ -6,7 +6,6 @@
 
 (ns uxbox.view.ui
   (:require [sablono.core :refer-macros [html]]
-            [bidi.bidi :as bidi]
             [goog.dom :as gdom]
             [lentes.core :as l]
             [rum.core :as rum]
@@ -63,9 +62,10 @@
 
 ;; --- Routes
 
-(def routes ["/" [[[:token "/" :id] :view/viewer]
-                  [[:token] :view/viewer]
-                  ["not-found" :view/notfound]]])
+(def routes
+  [["/:token/:id" :view/viewer]
+   ["/:token" :view/viewer]
+   ["/not-found" :view/notfound]])
 
 ;; --- Main Entry Point
 

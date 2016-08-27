@@ -141,8 +141,8 @@
   (-apply-watch [_ state s]
     (letfn [(navigate [pages]
               (let [pageid (:id (first pages))
-                    params {:project-uuid projectid
-                            :page-uuid pageid}]
+                    params {:project (str projectid)
+                            :page (str pageid)}]
                 (r/navigate :workspace/page params)))]
       (rx/merge
        (rx/of #(assoc % :loader true)
@@ -156,8 +156,8 @@
 (defrecord GoToPage [projectid pageid]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [params {:project-uuid projectid
-                  :page-uuid pageid}]
+    (let [params {:project (str projectid)
+                  :page (str pageid)}]
       (rx/of (r/navigate :workspace/page params)))))
 
 (defn go-to

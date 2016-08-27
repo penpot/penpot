@@ -6,17 +6,13 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.util.router
-  (:require [bidi.router]
-            [bidi.bidi :as bidi]
-            [goog.events :as events]
-            [lentes.core :as l]
+  (:require [bide.core :as r]
             [beicon.core :as rx]
             [uxbox.util.rstore :as rs]))
 
 (enable-console-print!)
 
 (defonce +router+ nil)
-(defonce +routes+ nil)
 
 ;; --- Update Location (Event)
 
@@ -33,8 +29,8 @@
   (instance? UpdateLocation v))
 
 (defn update-location
-  [{:keys [handler route-params] :as params}]
-  (UpdateLocation. handler route-params))
+  [name params]
+  (UpdateLocation. name params))
 
 ;; --- Navigate (Event)
 
@@ -44,7 +40,7 @@
     (let [loc (merge {:handler id}
                      (when params
                        {:route-params params}))]
-      (bidi.router/set-location! +router+ loc))))
+      (r/navigate! +router+ id params))))
 
 (defn navigate
   ([id] (navigate id nil))
@@ -58,11 +54,12 @@
   ([routes]
    (init routes nil))
   ([routes {:keys [default] :or {default :auth/login}}]
-   (let [opts {:on-navigate #(rs/emit! (update-location %))
-               :default-location {:handler default}}
-         router (bidi.router/start-router! routes opts)]
-     (set! +routes+ routes)
-     (set! +router+ router))))
+   (let [opts {:on-navigate #(rs/emit! (update-location %1 %2))
+               :default default}
+         router (-> (r/router routes)
+                    (r/start! opts))]
+     (set! +router+ router)
+     router)))
 
 (defn go
   "Redirect the user to other url."
@@ -74,6 +71,10 @@
   "Given a location handler and optional parameter map, return the URI
   for such handler and parameters."
   ([id]
-   (bidi/path-for +routes+ id))
+   (if +router+
+     (r/resolve +router+ id)
+     ""))
   ([id params]
-   (apply bidi/path-for +routes+ id (into [] (mapcat (fn [[k v]] [k v])) params))))
+   (if +router+
+     (r/resolve +router+ id params)
+     "")))
