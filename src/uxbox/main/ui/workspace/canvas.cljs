@@ -22,7 +22,7 @@
             [uxbox.main.ui.shapes :as uus]
             [uxbox.main.ui.shapes.selection :refer (selection-handlers)]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.ui.workspace.rlocks :as rlocks]
+            [uxbox.util.rlocks :as rlocks]
             [uxbox.main.ui.workspace.drawarea :refer (draw-area)]
             [uxbox.main.ui.workspace.ruler :refer (ruler)]
             [uxbox.main.ui.workspace.selrect :refer (selrect)]

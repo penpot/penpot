@@ -10,7 +10,7 @@
   (:require [beicon.core :as rx]
             [uxbox.util.mixins :as mx]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.ui.workspace.rlocks :as rlocks]
+            [uxbox.util.rlocks :as rlocks]
             [uxbox.util.geom.point :as gpt]))
 
 (defn watch-scroll-interactions

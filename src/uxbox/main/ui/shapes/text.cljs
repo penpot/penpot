@@ -15,7 +15,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.main.ui.workspace.rlocks :as rlocks]
+            [uxbox.util.rlocks :as rlocks]
             [uxbox.main.geom :as geom])
   (:import goog.events.EventType))
 

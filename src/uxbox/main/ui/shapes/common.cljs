@@ -13,7 +13,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.ui.workspace.rlocks :as rlocks]
+            [uxbox.util.rlocks :as rlocks]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]))
 

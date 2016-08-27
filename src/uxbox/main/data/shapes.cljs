@@ -19,8 +19,7 @@
             [uxbox.main.state.shapes :as stsh]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.pages :as udp]
-            ;; FIXME: rlocks should be moved out of ui.workspace
-            [uxbox.main.ui.workspace.rlocks :as rlocks]
+            [uxbox.util.rlocks :as rlocks]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
 

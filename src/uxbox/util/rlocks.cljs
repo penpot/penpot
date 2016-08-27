@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.main.ui.workspace.rlocks
+(ns uxbox.util.rlocks
   "Reactive locks abstraction.
 
   Mainly used for lock the interface to do one concrete user action

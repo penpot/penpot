@@ -14,7 +14,7 @@
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.ui.workspace.rlocks :as rlocks]))
+            [uxbox.util.rlocks :as rlocks]))
 
 (defonce position (atom nil))
 
