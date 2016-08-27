@@ -50,20 +50,34 @@
   (.close (::sub own))
   (dissoc own ::sub))
 
+(declare generic-shape-draw-area)
+(declare path-shape-draw-area)
+
 (mx/defc draw-area
   {:will-mount draw-area-will-mount
    :will-unmount draw-area-will-unmount
    :mixins [mx/static mx/reactive]}
-  [own]
+  []
   (let [shape (mx/react drawing-shape)
         position (mx/react drawing-position)]
     (when shape
-      (if position
-        (-> (assoc shape :drawing? true)
-            (geom/resize position)
-            (shapes/render-component))
-        (-> (assoc shape :drawing? true)
-            (shapes/render-component))))))
+      (if (= (:type shape) :path)
+        (path-shape-draw-area shape)
+        (generic-shape-draw-area shape position)))))
+
+(mx/defc generic-shape-draw-area
+  [shape position]
+  (if position
+    (-> (assoc shape :drawing? true)
+        (geom/resize position)
+        (shapes/render-component))
+    (-> (assoc shape :drawing? true)
+        (shapes/render-component))))
+
+(mx/defc path-shape-draw-area
+  [shape]
+  (-> (assoc shape :drawing? true)
+      (shapes/render-component)))
 
 ;; --- Drawing Initialization
 
