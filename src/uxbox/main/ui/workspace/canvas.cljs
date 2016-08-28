@@ -139,16 +139,16 @@
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
 
-              (when (seq (:selected workspace))
-                (rs/emit! (uds/deselect-all)))
-
               (let [opts {:shift? (kbd/shift? event)
                           :ctrl? (kbd/ctrl? event)}]
                 (rx/push! wb/events-b [:mouse/down opts]))
 
               (if (:drawing workspace)
                 (rlocks/acquire! :ui/draw)
-                (rlocks/acquire! :ui/selrect)))
+                (do
+                  (when (seq (:selected workspace))
+                    (rlocks/release! :shape/edition))
+                  (rlocks/acquire! :ui/selrect))))
             (on-context-menu [event]
               (dom/prevent-default event)
               (dom/stop-propagation event)
