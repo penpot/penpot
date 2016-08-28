@@ -23,6 +23,7 @@
 
 ;; --- State
 
+(defonce drawing-stoper (rx/bus))
 (defonce drawing-shape (atom nil))
 (defonce drawing-position (atom nil))
 
@@ -75,9 +76,24 @@
         (shapes/render-component))))
 
 (mx/defc path-shape-draw-area
-  [shape]
-  (-> (assoc shape :drawing? true)
-      (shapes/render-component)))
+  [{:keys [points] :as shape}]
+  (letfn [(on-click [event]
+            (dom/stop-propagation event)
+            (swap! drawing-shape
+                   (fn [shape]
+                     (let [points (:points shape)
+                           points (vec (butlast points))]
+                       (assoc shape :points points :close? true))))
+            (rx/push! drawing-stoper true))]
+    (let [{:keys [x y]} (first points)]
+      [:g
+       (-> (assoc shape :drawing? true)
+           (shapes/render-component))
+       [:circle {:cx x
+                 :cy y
+                 :r 5
+                 :fill "red"
+                 :on-click on-click}]])))
 
 ;; --- Drawing Initialization
 
@@ -149,7 +165,10 @@
                      (rx/mapcat conditional-align-point)
                      (rx/map #(gpt/subtract % canvas-coords)))
 
-          stoper (rx/take 1 (rx/filter stoper-event? wb/events-s))
+          stoper (->> (rx/merge
+                       (rx/take 1 drawing-stoper)
+                       (rx/filter stoper-event? wb/events-s))
+                      (rx/take 1))
           firstpos (rx/take 1 mouse)
           stream (->> (rx/take-until stoper mouse)
                       (rx/skip-while #(nil? @drawing-shape))
@@ -163,32 +182,10 @@
                 (let [point (gpt/point point)]
                   (update shape :points conj point)))
 
-              (update-point [{:keys [type] :as shape} point index]
+              (update-point [{:keys [type points] :as shape} point index]
                 (let [point (gpt/point point)
                       points (:points shape)]
-                  (if (= (count points) index)
-                    (append-point shape point)
-                    (assoc-in shape [:points index] point))))
-
-              (normalize-shape [{:keys [points] :as shape}]
-                (let [minx (apply min (map :x points))
-                      miny (apply min (map :y points))
-                      maxx (apply max (map :x points))
-                      maxy (apply max (map :y points))
-
-                      ;; dx (- 0 minx)
-                      ;; dy (- 0 miny)
-                      ;; points (mapv #(gpt/add % [dx dy]) points)
-                      width (- maxx minx)
-                      height (- maxy miny)]
-
-                  (assoc shape
-                         ;; :x1 minx
-                         ;; :y1 miny
-                         ;; :x2 maxx
-                         ;; :y2 maxy
-                         ;; :view-box [0 0 width height]
-                         :points points)))
+                  (assoc-in shape [:points index] point)))
 
               (on-first-point [point]
                 (let [shape (append-point shape point)]
@@ -219,7 +216,7 @@
                   (on-free-draw point)))
 
               (on-end []
-                (let [shape (normalize-shape @drawing-shape)]
+                (let [shape @drawing-shape]
                   (rs/emit! (uds/add-shape shape)
                             (udw/select-for-drawing nil)
                             (uds/select-first-shape))
