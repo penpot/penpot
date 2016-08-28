@@ -3,6 +3,7 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+
 (ns uxbox.main.exports
   "The main logic for SVG export functionality."
   (:require [uxbox.main.state :as st]

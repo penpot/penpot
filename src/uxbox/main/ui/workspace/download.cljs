@@ -6,61 +6,93 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.download
-  (:require [sablono.core :as html :refer-macros [html]]
-            [lentes.core :as l]
-            [rum.core :as rum]
-            [uxbox.main.constants :as c]
+  (:require [lentes.core :as l]
             [uxbox.main.state :as st]
             [uxbox.util.rstore :as rs]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.main.data.forms :as udf]
-            [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
-            [uxbox.util.mixins :as mx]
-            [uxbox.main.ui.forms :as forms]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.colorpicker :as uucp]
-            [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.main.exports :as exports]
+            [uxbox.util.blob :as blob]
+            [uxbox.util.mixins :as mx]
             [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (parse-int)]))
+            [uxbox.util.data :refer (read-string)]))
 
+;; --- Refs
 
-(defn- download-dialog-render
+(defn- resolve-pages
+  [state]
+  (let [project (get-in state [:workspace :project])]
+    (->> (vals (:pages-by-id state))
+         (filter #(= project (:project %)))
+         (sort-by :created-at))))
+
+(def pages-ref
+  (-> (l/lens resolve-pages)
+      (l/derive st/state)))
+
+(def current-page-ref
+  (-> (l/in [:workspace :page])
+      (l/derive st/state)))
+
+;; --- Download Lightbox (Component)
+
+(defn- download-page-svg
+  [page]
+  (let [content (exports/render-page page)
+        blob (blob/create content "image/svg+xml")
+        uri  (blob/create-uri blob)
+        link (.createElement js/document "a")
+        event (js/MouseEvent. "click")]
+    (.setAttribute link "href" uri)
+    (.setAttribute link "download" "page.svg")
+
+    (.appendChild (.-body js/document) link)
+    (.dispatchEvent link event)
+    (blob/revoke-uri uri)
+    (.removeChild (.-body js/document) link)))
+
+(mx/defcs download-dialog
+  {:mixins [mx/static mx/reactive]}
   [own]
-  (html
-   [:div.lightbox-body.export-dialog
-    [:h3 "Export options"]
-    [:div.row-flex
-     [:div.content-col
-      [:span.icon i/file-svg]
-      [:span.title "Export page"]
-      [:p.info "Download a single page of your project in SVG."]
-      [:select.input-select
-       [:option "Choose a page"]
-       [:option "Page 001"]
-       [:option "Page 002"]
-       [:option "Page 003"]]
-      [:a.btn-primary {:href "#"} "Export page"]]
-     [:div.content-col
-      [:span.icon i/folder-zip]
-      [:span.title "Export project"]
-      [:p.info "Download the whole project as a ZIP file."]
-      [:a.btn-primary {:href "#"} "Expor project"]]
-     [:div.content-col
-      [:span.icon i/file-html]
-      [:span.title "Export as HTML"]
-      [:p.info "Download your project as HTML files."]
-      [:a.btn-primary {:href "#"} "Export HTML"]]]
-    [:a.close {:href "#"
-               :on-click #(do (dom/prevent-default %)
-                              (udl/close!))} i/close]]))
-
-(def download-dialog
-  (mx/component
-   {:render download-dialog-render
-    :name "download-dialog"
-    :mixins []}))
+  (letfn [(on-close [event]
+            (dom/prevent-default event)
+            (udl/close!))
+          (download-page [event]
+            (dom/prevent-default event)
+            (let [page (-> (mx/ref-node own "page")
+                           (dom/get-value)
+                           (read-string))]
+              (download-page-svg page)
+              (udl/close!)))
+          (download-zip [event]
+            (dom/prevent-default event))
+          (download-html [event]
+            (dom/prevent-default event))]
+    (let [pages (mx/react pages-ref)
+          current (mx/react current-page-ref)]
+      [:div.lightbox-body.export-dialog
+       [:h3 "Export options"]
+       [:div.row-flex
+        [:div.content-col
+         [:span.icon i/file-svg]
+         [:span.title "Export page"]
+         [:p.info "Download a single page of your project in SVG."]
+         [:select.input-select {:ref "page" :default-value (pr-str current)}
+          (for [{:keys [id name]} pages]
+            [:option {:value (pr-str id)} name])]
+         [:a.btn-primary {:href "#" :on-click download-page} "Export page"]]
+        [:div.content-col
+         [:span.icon i/folder-zip]
+         [:span.title "Export project"]
+         [:p.info "Download the whole project as a ZIP file."]
+         [:a.btn-primary {:href "#" :on-click download-zip} "Expor project"]]
+        [:div.content-col
+         [:span.icon i/file-html]
+         [:span.title "Export as HTML"]
+         [:p.info "Download your project as HTML files."]
+         [:a.btn-primary {:href "#" :on-click download-html} "Export HTML"]]]
+       [:a.close {:href "#" :on-click on-close} i/close]])))
 
 (defmethod lbx/render-lightbox :download
   [_]
