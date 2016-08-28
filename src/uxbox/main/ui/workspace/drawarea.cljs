@@ -242,28 +242,12 @@
                     (rx/filter #(= % :mouse/up))
                     (rx/take 1))
         stream (rx/take-until stoper mouse)]
-    (letfn [(normalize-shape [{:keys [points] :as shape}]
-              (let [minx (apply min (map :x points))
-                    miny (apply min (map :y points))
-                    maxx (apply max (map :x points))
-                    maxy (apply max (map :y points))
-
-                    ;; dx (- 0 minx)
-                    ;; dy (- 0 miny)
-                    ;; _ (println "Initial number of points:" (count points))
-                    ;; points (mapv #(gpt/add % [dx dy]) points)
-                    points (path/simplify points 0.1)
-                    ;; _ (println "Final number of points:" (count points))
-                    width (- maxx minx)
-                    height (- maxy miny)]
-
-                (assoc shape
-                       :x1 minx
-                       :y1 miny
-                       :x2 maxx
-                       :y2 maxy
-                       :view-box [0 0 width height]
-                       :points points)))
+    (letfn [(simplify-shape [{:keys [points] :as shape}]
+              (let [prevnum (count points)
+                    points (path/simplify points 0.2)]
+                (println "path simplification: previous=" prevnum
+                         " current=" (count points))
+                (assoc shape :points points)))
 
             (on-draw [point]
               (let [point (gpt/point point)
@@ -272,7 +256,7 @@
                 (reset! drawing-shape shape)))
 
             (on-end []
-              (let [shape (normalize-shape @drawing-shape)]
+              (let [shape (simplify-shape @drawing-shape)]
                 (rs/emit! (uds/add-shape shape)
                           (udw/select-for-drawing nil)
                           (uds/select-first-shape))
