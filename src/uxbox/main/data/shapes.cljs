@@ -454,7 +454,6 @@
   "Clear all possible state of drawing, edition
   or any similar action taken by the user."
   []
-  (println "deselect-all")
   (DeselectAll.))
 
 (defn group-selected
