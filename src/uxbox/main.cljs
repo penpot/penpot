@@ -7,6 +7,7 @@
 
 (ns uxbox.main
   (:require [uxbox.util.rstore :as rs]
+            [uxbox.main.exports]
             [uxbox.main.state :as st]
             [uxbox.main.locales :as lc]
             [uxbox.main.ui :as ui]))

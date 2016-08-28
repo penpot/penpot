@@ -7,6 +7,7 @@
 (ns uxbox.util.mixins
   (:refer-clojure :exclude [concat])
   (:require [sablono.core :refer-macros [html]]
+            [sablono.server :as server]
             [rum.core :as rum]
             [lentes.core :as l]
             [goog.dom.forms :as gforms]))
@@ -47,3 +48,5 @@
 (def reactive rum/reactive)
 (def dom-node rum/dom-node)
 (def with-key rum/with-key)
+(def render-html server/render)
+(def render-static-html server/render-static)
