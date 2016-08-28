@@ -92,11 +92,12 @@
   "Function executed when the selection rect
   interaction is terminated."
   []
-  (rs/emit! (-> (selrect->rect @position)
-                (translate-to-canvas)
-                (uds/select-shapes)))
-  (rlocks/release! :ui/selrect)
-  (reset! position nil))
+  (let [rect (-> (selrect->rect @position)
+                 (translate-to-canvas))]
+    (rs/emit! (uds/deselect-all)
+              (uds/select-shapes rect))
+    (rlocks/release! :ui/selrect)
+    (reset! position nil)))
 
 (defn- on-start
   "Function execution when selrect action is started."

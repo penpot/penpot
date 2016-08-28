@@ -434,7 +434,6 @@
 (defn start-edition-mode
   [id]
   {:pre [(uuid? id)]}
-  (println "start-edition-mode" id)
   (StartEditionMode. id))
 
 ;; --- Events (implicit) (for selected)
