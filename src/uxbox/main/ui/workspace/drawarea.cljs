@@ -79,12 +79,12 @@
   [{:keys [points] :as shape}]
   (letfn [(on-click [event]
             (dom/stop-propagation event)
-            (swap! drawing-shape
-                   (fn [shape]
-                     (let [points (:points shape)
-                           points (vec (butlast points))]
-                       (assoc shape :points points :close? true))))
-            (rx/push! drawing-stoper true))]
+            (swap! drawing-shape drop-last-point)
+            (rx/push! drawing-stoper true))
+          (drop-last-point [shape]
+            (let [points (:points shape)
+                  points (vec (butlast points))]
+              (assoc shape :points points :close? true)))]
     (let [{:keys [x y]} (first points)]
       [:g
        (-> (assoc shape :drawing? true)
