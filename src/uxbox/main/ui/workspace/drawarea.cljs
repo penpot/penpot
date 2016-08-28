@@ -89,11 +89,12 @@
       [:g
        (-> (assoc shape :drawing? true)
            (shapes/render-component))
-       [:circle {:cx x
-                 :cy y
-                 :r 5
-                 :fill "red"
-                 :on-click on-click}]])))
+       (when-not (:free shape)
+         [:circle {:cx x
+                   :cy y
+                   :r 5
+                   :fill "red"
+                   :on-click on-click}])])))
 
 ;; --- Drawing Initialization
 
