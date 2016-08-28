@@ -9,7 +9,7 @@
 
   :profiles {:dev {:source-paths ["dev"]}}
 
-  :dependencies [[org.clojure/clojure "1.9.0-alpha10" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha11" :scope "provided"]
                  [org.clojure/clojurescript "1.9.227" :scope "provided"]
 
                  ;; Build
