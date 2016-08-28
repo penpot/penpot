@@ -38,14 +38,18 @@
 ;; --- Download Lightbox (Component)
 
 (defn- download-page-svg
-  [page]
-  (let [content (exports/render-page page)
+  [id]
+  (let [page (get-in @st/state [:pages-by-id id])
+        page-name (:name page)
+        content (exports/render-page id)
         blob (blob/create content "image/svg+xml")
         uri  (blob/create-uri blob)
         link (.createElement js/document "a")
         event (js/MouseEvent. "click")]
+
+    ;; FIXME: use str/slug for proper file naming
     (.setAttribute link "href" uri)
-    (.setAttribute link "download" "page.svg")
+    (.setAttribute link "download" (str page-name ".svg"))
 
     (.appendChild (.-body js/document) link)
     (.dispatchEvent link event)
@@ -60,10 +64,10 @@
             (udl/close!))
           (download-page [event]
             (dom/prevent-default event)
-            (let [page (-> (mx/ref-node own "page")
-                           (dom/get-value)
-                           (read-string))]
-              (download-page-svg page)
+            (let [id (-> (mx/ref-node own "page")
+                         (dom/get-value)
+                         (read-string))]
+              (download-page-svg id)
               (udl/close!)))
           (download-zip [event]
             (dom/prevent-default event))
