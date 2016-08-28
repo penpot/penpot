@@ -29,7 +29,7 @@
 
 ;; --- Lenses
 
-(defn- resolve-page
+(defn- resolve-pages
   [state]
   (let [project (get-in state [:workspace :project])]
     (->> (vals (:pages-by-id state))
@@ -37,7 +37,7 @@
          (sort-by :created-at))))
 
 (def pages-ref
-  (-> (l/lens resolve-page)
+  (-> (l/lens resolve-pages)
       (l/derive st/state)))
 
 ;; --- Component
