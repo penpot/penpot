@@ -22,12 +22,12 @@
 ;; --- Events
 
 (defn handle-mouse-down
-  [event local {:keys [id group] :as shape} selected]
+  [event {:keys [id group] :as shape} selected]
   (if (and (not (:blocked shape))
            (or @common/drawing-state-ref
-               (:edition @local)
+               @common/edition-ref
                (and group (:locked (geom/resolve-parent shape)))))
-    nil
+    (dom/stop-propagation event)
     (common/on-mouse-down event shape selected)))
 
 ;; --- Text Component
@@ -36,25 +36,23 @@
 (declare text-shape-edit)
 
 (mx/defcs text-component
-  {:mixins [mx/static mx/reactive (mx/local)]}
+  {:mixins [mx/static mx/reactive]}
   [own {:keys [id x1 y1 content group] :as shape}]
   (let [selected (mx/react common/selected-ref)
+        edition? (= (mx/react common/edition-ref) id)
         selected? (and (contains? selected id)
-                       (= (count selected) 1))
-        local (:rum/local own)]
+                       (= (count selected) 1))]
     (letfn [(on-mouse-down [event]
-              (handle-mouse-down event local shape selected))
-            (on-done [_]
-              (swap! local assoc :edition false))
+              (handle-mouse-down event shape selected))
             (on-double-click [event]
-              (swap! local assoc :edition true)
-              (rlocks/acquire! :ui/text-edit))]
+              (dom/stop-propagation event)
+              (rs/emit! (uds/start-edition-mode id)))]
       [:g.shape {:class (when selected? "selected")
                  :ref "main"
                  :on-double-click on-double-click
                  :on-mouse-down on-mouse-down}
-       (if (:edition @local false)
-         (text-shape-edit shape on-done)
+       (if edition?
+         (text-shape-edit shape)
          (text-shape shape))])))
 
 ;; --- Text Styles Helpers
@@ -104,14 +102,13 @@
 (mx/defc text-shape-edit
   {:did-mount text-shape-edit-did-mount
    :mixins [mx/static]}
-  [{:keys [id x1 y1 content] :as shape} on-done]
+  [{:keys [id x1 y1 content] :as shape}]
   (let [size (geom/size shape)
         style (make-style shape)
         rfm (geom/transformation-matrix shape)
-        props {:x x1 :y y1
-               :transform (str rfm)}
+        props {:x x1 :y y1 :transform (str rfm)}
         props (merge props size)]
-    (letfn [(on-blur [ev]
+    (letfn [#_(on-blur [ev]
               (rlocks/release! :ui/text-edit)
               (on-done))
             (on-input [ev]
@@ -121,7 +118,7 @@
        [:rect (merge props +select-rect-attrs+)]
        [:foreignObject props
         [:p {:ref "container"
-             :on-blur on-blur
+             ;; :on-blur on-blur
              :on-input on-input
              :contentEditable true
              :style style}]]])))

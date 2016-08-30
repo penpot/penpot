@@ -191,5 +191,10 @@
           (path-edition-selection-handlers shape)
           (single-not-editable-selection-handlers shape))
 
+        (= :text (:type shape))
+        (if (= @edition-ref (:id shape))
+          (single-not-editable-selection-handlers shape)
+          (single-selection-handlers (first shapes)))
+
         :else
         (single-selection-handlers (first shapes))))))
