@@ -6,17 +6,22 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.download
-  (:require [lentes.core :as l]
-            [uxbox.main.state :as st]
-            [uxbox.util.rstore :as rs]
+  (:require [cuerdas.core :as str]
+            [promesa.core :as p]
             [uxbox.main.data.lightbox :as udl]
+            [uxbox.main.exports :as exports]
+            [uxbox.main.state :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.exports :as exports]
+            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.blob :as blob]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.data :refer (read-string)]
+            [uxbox.util.datetime :as dt]
             [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (read-string)]))
+            [uxbox.util.mixins :as mx]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.zip :as zip]
+            [lentes.core :as l]))
 
 ;; --- Refs
 
@@ -38,18 +43,45 @@
 ;; --- Download Lightbox (Component)
 
 (defn- download-page-svg
-  [id]
-  (let [page (get-in @st/state [:pages-by-id id])
-        page-name (:name page)
-        content (exports/render-page id)
+  [{:keys [name id] :as page}]
+  (let [content (exports/render-page id)
         blob (blob/create content "image/svg+xml")
         uri  (blob/create-uri blob)
         link (.createElement js/document "a")
-        event (js/MouseEvent. "click")]
+        event (js/MouseEvent. "click")
+        now (dt/now)]
 
-    ;; FIXME: use str/slug for proper file naming
     (.setAttribute link "href" uri)
-    (.setAttribute link "download" (str page-name ".svg"))
+    (.setAttribute link "download" (str (str/uslug name) "_"
+                                        (dt/format now :unix)
+                                        ".svg"))
+
+    (.appendChild (.-body js/document) link)
+    (.dispatchEvent link event)
+    (blob/revoke-uri uri)
+    (.removeChild (.-body js/document) link)))
+
+(defn- generate-files
+  [pages]
+  (reduce (fn [acc {:keys [id name]}]
+            (let [content (exports/render-page id)]
+              (conj acc [(str (str/uslug name) ".svg")
+                         (blob/create content "image/svg+xml")])))
+          []
+          pages))
+
+(defn- download-project-zip
+  [{:keys [name] :as project} pages]
+  (p/alet [files (generate-files pages)
+           blob (p/await (zip/build files))
+           uri  (blob/create-uri blob)
+           link (.createElement js/document "a")
+           event (js/MouseEvent. "click")
+           now (dt/now)]
+    (.setAttribute link "href" uri)
+    (.setAttribute link "download" (str (str/uslug name) "_"
+                                        (dt/format now :unix)
+                                        ".zip"))
 
     (.appendChild (.-body js/document) link)
     (.dispatchEvent link event)
@@ -59,22 +91,28 @@
 (mx/defcs download-dialog
   {:mixins [mx/static mx/reactive]}
   [own]
-  (letfn [(on-close [event]
-            (dom/prevent-default event)
-            (udl/close!))
-          (download-page [event]
-            (dom/prevent-default event)
-            (let [id (-> (mx/ref-node own "page")
-                         (dom/get-value)
-                         (read-string))]
-              (download-page-svg id)
-              (udl/close!)))
-          (download-zip [event]
-            (dom/prevent-default event))
-          (download-html [event]
-            (dom/prevent-default event))]
-    (let [pages (mx/react pages-ref)
-          current (mx/react current-page-ref)]
+  (let [project (mx/react wb/project-ref)
+        pages (mx/react pages-ref)
+        current (mx/react current-page-ref)]
+    (letfn [(on-close [event]
+              (dom/prevent-default event)
+              (udl/close!))
+            (download-page [event]
+              (dom/prevent-default event)
+              (let [id (-> (mx/ref-node own "page")
+                           (dom/get-value)
+                           (read-string))
+                    page (->> pages
+                              (filter #(= id (:id %)))
+                              (first))]
+                (download-page-svg page)
+                (udl/close!)))
+            (download-zip [event]
+              (dom/prevent-default event)
+              (download-project-zip project pages)
+              (udl/close!))
+            (download-html [event]
+              (dom/prevent-default event))]
       [:div.lightbox-body.export-dialog
        [:h3 "Export options"]
        [:div.row-flex
