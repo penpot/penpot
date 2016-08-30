@@ -27,7 +27,7 @@
                  [funcool/httpurr "0.6.2"]
                  [funcool/promesa "1.5.0"]
                  [funcool/beicon "2.3.0"]
-                 [funcool/cuerdas "0.8.0"]
+                 [funcool/cuerdas "1.0.1"]
                  [funcool/bide "1.0.4"]]
   :plugins [[lein-ancient "0.6.10"]]
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
