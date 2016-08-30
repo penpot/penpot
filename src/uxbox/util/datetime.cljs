@@ -72,7 +72,8 @@
   "
   ([v] (format v :iso))
   ([v fmt]
-   (let [vm (js/moment v)]
+   {:pre [(datetime? v)]}
+   (let [vm (js/moment (.-v v))]
      (case fmt
        :unix (.unix vm)
        :offset (.valueOf vm)
