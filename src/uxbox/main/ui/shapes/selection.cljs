@@ -196,5 +196,8 @@
           (single-not-editable-selection-handlers shape)
           (single-selection-handlers (first shapes)))
 
+        (= :group (:type shape))
+        (single-not-editable-selection-handlers shape)
+
         :else
         (single-selection-handlers (first shapes))))))
