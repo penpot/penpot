@@ -59,15 +59,17 @@
 
 ;; --- Shapes
 
+(declare shape)
+
 (mx/defc shape*
-  [{:keys [type] :as shape}]
+  [{:keys [type] :as item}]
   (case type
-    :group (group-shape shape #(interactions-wrapper % shape*))
-    :text (text-shape shape)
-    :icon (icon-shape shape)
-    :rect (rect-shape shape)
-    :path (path-shape shape)
-    :circle (circle-shape shape)))
+    :group (group-shape item shape)
+    :text (text-shape item)
+    :icon (icon-shape item)
+    :rect (rect-shape item)
+    :path (path-shape item)
+    :circle (circle-shape item)))
 
 (mx/defc shape
   [sid]
