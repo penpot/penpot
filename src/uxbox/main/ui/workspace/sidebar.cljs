@@ -6,9 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [uxbox.main.state :as st]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
@@ -21,48 +19,33 @@
             [uxbox.main.ui.workspace.sidebar.icons :refer (icons-toolbox)]
             [uxbox.main.ui.workspace.sidebar.drawtools :refer (draw-toolbox)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Left Sidebar
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Left Sidebar (Component)
 
-(defn left-sidebar-render
-  [own]
+(mx/defc left-sidebar
+  {:mixins [mx/reactive mx/static]}
+  []
   (let [flags (mx/react wb/flags-ref)]
-    (html
-     [:aside#settings-bar.settings-bar.settings-bar-left
-      [:div.settings-bar-inside
-       (when (contains? flags :sitemap)
-         (sitemap-toolbox))
-       (when (contains? flags :document-history)
-         (history-toolbox))
-       (when (contains? flags :layers)
-         (layers-toolbox))]])))
+    [:aside#settings-bar.settings-bar.settings-bar-left
+     [:div.settings-bar-inside
+      (when (contains? flags :sitemap)
+        (sitemap-toolbox))
+      (when (contains? flags :document-history)
+        (history-toolbox))
+      (when (contains? flags :layers)
+        (layers-toolbox))]]))
 
-(def left-sidebar
-  (mx/component
-   {:render left-sidebar-render
-    :name "left-sidebar"
-    :mixins [mx/reactive mx/static]}))
+;; --- Right Sidebar (Component)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Right Sidebar
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn right-sidebar-render
-  [own]
+(mx/defc right-sidebar
+  {:mixins [mx/reactive mx/static]}
+  []
   (let [flags (mx/react wb/flags-ref)]
-    (html
-     [:aside#settings-bar.settings-bar
-      [:div.settings-bar-inside
-       (when (contains? flags :drawtools)
-         (draw-toolbox))
-       (when (contains? flags :element-options)
-         (options-toolbox))
-       (when (contains? flags :icons)
-         (icons-toolbox))]])))
+    [:aside#settings-bar.settings-bar
+     [:div.settings-bar-inside
+      (when (contains? flags :drawtools)
+        (draw-toolbox))
+      (when (contains? flags :element-options)
+        (options-toolbox))
+      (when (contains? flags :icons)
+        (icons-toolbox))]]))
 
-(def right-sidebar
-  (mx/component
-   {:render right-sidebar-render
-    :name "right-sidebar"
-    :mixins [mx/reactive mx/static]}))
