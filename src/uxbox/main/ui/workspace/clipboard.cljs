@@ -6,9 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.clipboard
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.data.lightbox :as udl]
@@ -19,40 +17,28 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.datetime :as dt]))
 
-;; --- Lenses
-
 (def ^:private clipboard-ref
   (-> (l/key :clipboard)
       (l/derive st/state)))
 
-;; --- Clipboard Dialog Component
-
-(defn- on-paste
-  [item]
-  (rs/emit! (udw/paste-from-clipboard (:id item)))
-  (udl/close!))
-
-(defn- clipboard-dialog-render
-  [own]
-  (let [clipboard (mx/react clipboard-ref)]
-    (html
-     [:div.lightbox-body.clipboard
-      [:div.clipboard-list
-       (for [item clipboard]
-         [:div.clipboard-item
-          {:key (str (:id item))
-           :on-click (partial on-paste item)}
-          [:span.clipboard-icon i/box]
-          [:span (str "Copied (" (dt/timeago (:created-at item)) ")")]])]
-      [:a.close {:href "#"
-                 :on-click #(do (dom/prevent-default %)
-                                (udl/close!))} i/close]])))
-
-(def clipboard-dialog
-  (mx/component
-   {:render clipboard-dialog-render
-    :name "clipboard-dialog"
-    :mixins [mx/static mx/reactive]}))
+(mx/defc clipboard-dialog
+  {:mixins [mx/static mx/reactive]}
+  []
+  (letfn [(on-paste [item]
+            (rs/emit! (udw/paste-from-clipboard (:id item)))
+            (udl/close!))
+          (on-close [event]
+            (dom/prevent-default event)
+            (udl/close!))]
+    [:div.lightbox-body.clipboard
+     [:div.clipboard-list
+      (for [item (mx/react clipboard-ref)]
+        [:div.clipboard-item
+         {:key (str (:id item))
+          :on-click (partial on-paste item)}
+         [:span.clipboard-icon i/box]
+         [:span (str "Copied (" (dt/timeago (:created-at item)) ")")]])]
+     [:a.close {:href "#" :on-click on-close} i/close]]))
 
 (defmethod lbx/render-lightbox :clipboard
   [_]
