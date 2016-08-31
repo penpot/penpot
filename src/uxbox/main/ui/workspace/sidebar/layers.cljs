@@ -119,9 +119,13 @@
   [own shape]
   (let [local (:rum/local own)]
     (letfn [(on-blur [event]
-              (let [parent (.-parentNode (.-target event))]
-                (set! (.-draggable parent) true))
-              (swap! local assoc :edition false))
+              (let [target (dom/event->target event)
+                    parent (.-parentNode target)
+                    data {:id (:id shape)
+                          :name (dom/get-value target)}]
+                (set! (.-draggable parent) true)
+                (rs/emit! (uds/update-shape data))
+                (swap! local assoc :edition false)))
             (on-click [event]
               (dom/stop-propagation event)
               (dom/prevent-default event)
