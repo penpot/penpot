@@ -178,12 +178,24 @@
 
       }
 
-      span {
+      span.element-name {
+        min-width: 40px;
+        min-height: 16px;
+        display: block;
+
         color: $medium-ui-text;
         font-size: $fs13;
         overflow-x: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      input.element-name {
+        margin: 0px;
+        border: 1px solid #eee;
+        padding: 3px;
+        font-size: $fs13;
+        width: 120px;
       }
 
       &.selected {

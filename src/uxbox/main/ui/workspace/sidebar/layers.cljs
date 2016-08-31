@@ -6,9 +6,8 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.layers
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
+            [cuerdas.core :as str]
             [goog.events :as events]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
@@ -25,18 +24,12 @@
             [uxbox.util.dom :as dom])
   (:import goog.events.EventType))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Helpers
 
 (defn- focus-page
-  [pageid]
-  (as-> (l/in [:pages-by-id pageid]) $
-    (l/derive $ st/state)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Components
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  [id]
+  (-> (l/in [:pages-by-id id])
+      (l/derive st/state)))
 
 (defn- select-shape
   [selected item event]
@@ -117,7 +110,38 @@
         :bottom
         :top))))
 
-(defn- layer-element-render
+;; --- Shape Name (Component)
+
+(mx/defcs shape-name
+  "A generic component that displays the shape name
+  if it is available and allows inline edition of it."
+  {:mixins [mx/static (mx/local)]}
+  [own shape]
+  (let [local (:rum/local own)]
+    (letfn [(on-blur [event]
+              (let [parent (.-parentNode (.-target event))]
+                (set! (.-draggable parent) true))
+              (swap! local assoc :edition false))
+            (on-click [event]
+              (dom/stop-propagation event)
+              (dom/prevent-default event)
+              (let [parent (.-parentNode (.-target event))]
+                (set! (.-draggable parent) false))
+              (swap! local assoc :edition true))]
+      (if (:edition @local)
+        [:input.element-name
+         {:type "text"
+          :on-blur on-blur
+          :auto-focus true
+          :default-value (:name shape "")}]
+        [:span.element-name
+         {:on-click on-click}
+         (:name shape "")]))))
+
+;; --- Layer Simple (Component)
+
+(mx/defcs layer-simple
+  {:mixins [mx/static (mx/local)]}
   [own item selected]
   (let [selected? (contains? selected (:id item))
         select #(select-shape selected item %)
@@ -155,44 +179,38 @@
               (swap! local assoc :over true))
             (on-drag-leave [event]
               (swap! local assoc :over false))]
-      (html
-       [:li {:key (str (:id item))
-             :class (when selected? "selected")}
-        [:div.element-list-body
-         {:class classes
-          :style {:opacity (if (:dragging @local)
-                             "0.5"
-                             "1")}
-          :on-click select
-          :on-drag-start on-drag-start
-          :on-drag-enter on-drag-enter
-          :on-drag-leave on-drag-leave
-          :on-drag-over on-drag-over
-          :on-drag-end on-drag-end
-          :on-drop on-drop
-          :draggable true}
+      [:li {:key (str (:id item))
+            :class (when selected? "selected")}
+       [:div.element-list-body
+        {:class classes
+         :style {:opacity (if (:dragging @local)
+                            "0.5"
+                            "1")}
+         :on-click select
+         :on-drag-start on-drag-start
+         :on-drag-enter on-drag-enter
+         :on-drag-leave on-drag-leave
+         :on-drag-over on-drag-over
+         :on-drag-end on-drag-end
+         :on-drop on-drop
+         :draggable true}
 
-         [:div.element-actions
-          [:div.toggle-element
-           {:class (when-not (:hidden item) "selected")
-            :on-click toggle-visibility}
-           i/eye]
-          [:div.block-element
-           {:class (when (:blocked item) "selected")
-            :on-click toggle-blocking}
-           i/lock]]
-         [:div.element-icon (element-icon item)]
-         [:span (:name item "Unnamed")]]]))))
+        [:div.element-actions
+         [:div.toggle-element
+          {:class (when-not (:hidden item) "selected")
+           :on-click toggle-visibility}
+          i/eye]
+         [:div.block-element
+          {:class (when (:blocked item) "selected")
+           :on-click toggle-blocking}
+          i/lock]]
+        [:div.element-icon (element-icon item)]
+        (shape-name item)]])))
 
-(def ^:private layer-element
-  (mx/component
-   {:render layer-element-render
-    :name "layer-element"
-    :mixins [mx/static (mx/local)]}))
+;; --- Layer Group (Component)
 
-(declare layer-group)
-
-(defn- layer-group-render
+(mx/defcs layer-group
+  {:mixins [mx/static mx/reactive (mx/local)]}
   [own item selected]
   (let [local (:rum/local own)
         selected? (contains? selected (:id item))
@@ -235,55 +253,51 @@
               (swap! local assoc :over true))
             (on-drag-leave [event]
               (swap! local assoc :over false))]
-      (html
-       [:li.group {:class (when open? "open")}
-        [:div.element-list-body
-         {:class classes
-          :draggable true
-          :on-drag-start on-drag-start
-          :on-drag-enter on-drag-enter
-          :on-drag-leave on-drag-leave
-          :on-drag-over on-drag-over
-          :on-drag-end on-drag-end
-          :on-drop on-drop
-          :on-click select}
-         [:div.element-actions
-          [:div.toggle-element
-           {:class (when-not (:hidden item) "selected")
-            :on-click toggle-visibility}
-           i/eye]
-          [:div.block-element
-           {:class (when (:blocked item) "selected")
-            :on-click toggle-blocking}
-           i/lock]
-          [:div.chain-element
-           {:class (when (:locked item) "selected")
-            :on-click toggle-locking}
-           i/chain]]
-         [:div.element-icon i/folder]
-         [:span (:name item "Unnamed group")]
-         [:span.toggle-content
-          {:on-click toggle-open
-           :class (when open? "inverse")}
-          i/arrow-slide]]
-        (if open?
-          [:ul
-           (for [shape (map #(get shapes-by-id %) (:items item))
-                 :let [key (str (:id shape))]]
-             (if (= (:type shape) :group)
-               (-> (layer-group shape selected)
-                   (rum/with-key key))
-               (-> (layer-element shape selected)
-                   (rum/with-key key))))])]))))
+      [:li.group {:class (when open? "open")}
+       [:div.element-list-body
+        {:class classes
+         :draggable true
+         :on-drag-start on-drag-start
+         :on-drag-enter on-drag-enter
+         :on-drag-leave on-drag-leave
+         :on-drag-over on-drag-over
+         :on-drag-end on-drag-end
+         :on-drop on-drop
+         :on-click select}
+        [:div.element-actions
+         [:div.toggle-element
+          {:class (when-not (:hidden item) "selected")
+           :on-click toggle-visibility}
+          i/eye]
+         [:div.block-element
+          {:class (when (:blocked item) "selected")
+           :on-click toggle-blocking}
+          i/lock]
+         [:div.chain-element
+          {:class (when (:locked item) "selected")
+           :on-click toggle-locking}
+          i/chain]]
+        [:div.element-icon i/folder]
+        (shape-name item)
+        [:span.toggle-content
+         {:on-click toggle-open
+          :class (when open? "inverse")}
+         i/arrow-slide]]
+       (if open?
+         [:ul
+          (for [shape (map #(get shapes-by-id %) (:items item))
+                :let [key (str (:id shape))]]
+            (if (= (:type shape) :group)
+              (-> (layer-group shape selected)
+                  (mx/with-key key))
+              (-> (layer-simple shape selected)
+                  (mx/with-key key))))])])))
 
-(def ^:private layer-group
-  (mx/component
-   {:render layer-group-render
-    :name "layer-group"
-    :mixins [mx/static mx/reactive (mx/local)]}))
+;; --- Layers Toolbox (Component)
 
-(defn layers-render
-  [own]
+(mx/defc layers-toolbox
+  {:mixins [mx/reactive]}
+  []
   (let [workspace (mx/react wb/workspace-ref)
         selected (:selected workspace)
         shapes-by-id (mx/react wb/shapes-by-id-ref)
@@ -294,30 +308,23 @@
         degroup #(rs/emit! (uds/degroup-selected))
         delete #(rs/emit! (uds/delete-selected))
         dragel (volatile! nil)]
-    (html
-     [:div#layers.tool-window
-      [:div.tool-window-bar
-       [:div.tool-window-icon i/layers]
-       [:span "Layers"]
-       [:div.tool-window-close {:on-click close} i/close]]
-      [:div.tool-window-content
-       [:ul.element-list {}
-        (for [shape (map #(get shapes-by-id %) (:shapes page))
-              :let [key (str (:id shape))]]
-          (if (= (:type shape) :group)
-            (-> (layer-group shape selected)
-                (rum/with-key key))
-            (-> (layer-element shape selected)
-                (rum/with-key key))))]]
-      [:div.layers-tools
-       [:ul.layers-tools-content
-        [:li.clone-layer {:on-click duplicate} i/copy]
-        [:li.group-layer {:on-click group} i/folder]
-        [:li.degroup-layer {:on-click degroup} i/ungroup]
-        [:li.delete-layer {:on-click delete} i/trash]]]])))
-
-(def layers-toolbox
-  (mx/component
-   {:render layers-render
-    :name "layers"
-    :mixins [mx/reactive]}))
+    [:div#layers.tool-window
+     [:div.tool-window-bar
+      [:div.tool-window-icon i/layers]
+      [:span "Layers"]
+      [:div.tool-window-close {:on-click close} i/close]]
+     [:div.tool-window-content
+      [:ul.element-list {}
+       (for [shape (map #(get shapes-by-id %) (:shapes page))
+             :let [key (str (:id shape))]]
+         (if (= (:type shape) :group)
+           (-> (layer-group shape selected)
+               (mx/with-key key))
+           (-> (layer-simple shape selected)
+               (mx/with-key key))))]]
+     [:div.layers-tools
+      [:ul.layers-tools-content
+       [:li.clone-layer {:on-click duplicate} i/copy]
+       [:li.group-layer {:on-click group} i/folder]
+       [:li.degroup-layer {:on-click degroup} i/ungroup]
+       [:li.delete-layer {:on-click delete} i/trash]]]]))
