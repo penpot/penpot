@@ -44,7 +44,6 @@
    :ctrl+e #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-circle+))
    :ctrl+t #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-text+))
    :esc #(rs/emit! (uds/deselect-all))
-   :backspace #(rs/emit! (uds/delete-selected))
    :delete #(rs/emit! (uds/delete-selected))
    :ctrl+up #(rs/emit! (uds/move-selected-layer :up))
    :ctrl+down #(rs/emit! (uds/move-selected-layer :down))
