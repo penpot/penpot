@@ -10,7 +10,7 @@
 (def +collections+
   [{:name "Generic 1"
     :id 1
-    :builtin true
+    :type :builtin
     :data #{"#00f9ff"
             "#009fff"
             "#0078ff"
@@ -23,7 +23,7 @@
 
    {:name "Generic 2"
     :id 2
-    :builtin true
+    :type :builtin
     :data #{"#20f9ff"
             "#209fff"
             "#2078ff"
