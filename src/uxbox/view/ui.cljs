@@ -5,15 +5,12 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.view.ui
-  (:require [sablono.core :refer-macros [html]]
-            [goog.dom :as gdom]
-            [lentes.core :as l]
-            [rum.core :as rum]
+  (:require [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as rt]
             [uxbox.util.mixins :as mx]
-            [uxbox.util.data :refer (parse-int)]
+            [uxbox.util.dom :as dom]
             [uxbox.main.ui.loader :refer (loader)]
             [uxbox.main.ui.lightbox :refer (lightbox)]
             [uxbox.main.state :as st]
@@ -46,19 +43,14 @@
 
 ;; --- Main App (Component)
 
-(defn app-render
-  [own]
+(mx/defc app
+  {:mixins [mx/static mx/reactive]}
+  []
   (let [location (mx/react route-id-ref)]
     (case location
       :view/notfound (notfound-page)
       :view/viewer (viewer-page)
       nil)))
-
-(def app
-  (mx/component
-   {:render app-render
-    :name "app"
-    :mixins [mx/static mx/reactive]}))
 
 ;; --- Routes
 
@@ -75,9 +67,6 @@
 
 (defn init
   []
-  (let [app-dom (gdom/getElement "app")
-        lightbox-dom (gdom/getElement "lightbox")
-        loader-dom (gdom/getElement "loader")]
-    (rum/mount (app) app-dom)
-    (rum/mount (lightbox) lightbox-dom)
-    (rum/mount (loader) loader-dom)))
+  (mx/mount (app) (dom/get-element "app"))
+  (mx/mount (lightbox) (dom/get-element "lightbox"))
+  (mx/mount (loader) (dom/get-element "loader")))
