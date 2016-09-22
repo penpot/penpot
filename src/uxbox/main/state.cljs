@@ -33,12 +33,12 @@
    :undo {}
    :profile nil
    :workspace nil
-   :shapes-by-id {}
-   :elements-by-id {}
-   :colors-by-id {}
-   :icons-by-id {}
-   :projects-by-id {}
-   :pages-by-id {}})
+   :shapes-by-id nil
+   :elements-by-id nil
+   :colors-by-id nil
+   :icons-by-id nil
+   :projects-by-id nil
+   :pages-by-id nil})
 
 (defn init
   "Initialize the state materialization."
