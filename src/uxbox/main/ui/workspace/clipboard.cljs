@@ -7,13 +7,13 @@
 
 (ns uxbox.main.ui.workspace.clipboard
   (:require [lentes.core :as l]
-            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.ui.icons :as i]
-            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.lightbox :as lbx]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.mixins :as mx]
             [uxbox.util.dom :as dom]
             [uxbox.util.datetime :as dt]))
 
