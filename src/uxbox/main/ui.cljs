@@ -124,6 +124,13 @@
    ["/dashboard/colors" :dashboard/colors]
    ["/workspace/:project/:page" :workspace/page]])
 
+(extend-protocol bc/IPathRepr
+  nil
+  (-repr [it] "")
+
+  cljs.core.Keyword
+  (-repr [it] (name it)))
+
 ;; --- Main Entry Point
 
 (defn init-routes
