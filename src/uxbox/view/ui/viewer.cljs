@@ -6,15 +6,12 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.view.ui.viewer
-  (:require [sablono.core :refer-macros [html]]
-            [goog.dom :as gdom]
-            [lentes.core :as l]
-            [rum.core :as rum]
+  (:require [lentes.core :as l]
             [promesa.core :as p]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as rt]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.state :as st]
             [uxbox.view.data.viewer :as dv]
