@@ -19,6 +19,7 @@
             [uxbox.main.ui.shapes.icon :as icon]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
+            [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.mixins :as mx]
             [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom])
@@ -126,6 +127,10 @@
                 (set! (.-draggable parent) true)
                 (rs/emit! (uds/update-shape data))
                 (swap! local assoc :edition false)))
+            (on-key-down [event]
+              (js/console.log event)
+              (when (kbd/enter? event)
+                (on-blur event)))
             (on-click [event]
               (dom/stop-propagation event)
               (dom/prevent-default event)
@@ -136,6 +141,7 @@
         [:input.element-name
          {:type "text"
           :on-blur on-blur
+          :on-key-down on-key-down
           :auto-focus true
           :default-value (:name shape "")}]
         [:span.element-name
