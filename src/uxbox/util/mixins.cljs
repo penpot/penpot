@@ -42,6 +42,7 @@
   ([initial key]
    (rum/local initial key)))
 
+(def mount rum/mount)
 (def static rum/static)
 (def ref-node rum/ref-node)
 (def dom-node rum/dom-node)
