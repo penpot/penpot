@@ -9,11 +9,11 @@
 
   :profiles {:dev {:source-paths ["dev"]}}
 
-  :dependencies [[org.clojure/clojure "1.9.0-alpha11" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.227" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha12" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.229" :scope "provided"]
 
                  ;; Build
-                 [figwheel-sidecar "0.5.6" :scope "test"]
+                 [figwheel-sidecar "0.5.7" :scope "test"]
 
                  ;; runtime
                  [com.cognitect/transit-cljs "0.8.239"]
@@ -27,7 +27,7 @@
                  [funcool/httpurr "0.6.2"]
                  [funcool/promesa "1.5.0"]
                  [funcool/beicon "2.3.0"]
-                 [funcool/cuerdas "1.0.1"]
+                 [funcool/cuerdas "1.0.2"]
                  [funcool/bide "1.0.4"]]
   :plugins [[lein-ancient "0.6.10"]]
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
