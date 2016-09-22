@@ -6,16 +6,12 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui
-  (:require [sablono.core :as html :refer-macros [html]]
-            [promesa.core :as p]
+  (:require [promesa.core :as p]
             [beicon.core :as rx]
-            [goog.dom :as gdom]
-            [rum.core :as rum]
             [lentes.core :as l]
+            [cuerdas.core :as str]
+            [bide.core :as bc]
             [uxbox.main.state :as st]
-            [uxbox.util.router :as rt]
-            [uxbox.util.rstore :as rs]
-            [uxbox.util.i18n :refer (tr)]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.users :as udu]
             [uxbox.main.data.auth :as dauth]
@@ -27,6 +23,11 @@
             [uxbox.main.ui.dashboard :as dashboard]
             [uxbox.main.ui.settings :as settings]
             [uxbox.main.ui.workspace :refer (workspace)]
+            [uxbox.util.router :as rt]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.data :refer (parse-int uuid-str?)]
+            [uxbox.util.dom :as dom]
             [uxbox.util.mixins :as mx]
             [uxbox.main.ui.shapes]))
 
@@ -99,7 +100,13 @@
         :dashboard/elements (dashboard/elements-page)
         :dashboard/icons (dashboard/icons-page)
         :dashboard/images (dashboard/images-page)
-        :dashboard/colors (dashboard/colors-page)
+        :dashboard/colors (let [{:keys [id type]} params
+                                type (when (str/alpha? type) (keyword type))
+                                id (cond
+                                     (str/digits? id) (parse-int id)
+                                     (uuid-str? id) (uuid id)
+                                     :else nil)]
+                            (dashboard/colors-page type id))
         :settings/profile (settings/profile-page)
         :settings/password (settings/password-page)
         :settings/notifications (settings/notifications-page)
@@ -122,6 +129,8 @@
    ["/dashboard/icons" :dashboard/icons]
    ["/dashboard/images" :dashboard/images]
    ["/dashboard/colors" :dashboard/colors]
+   ["/dashboard/colors/:type/:id" :dashboard/colors]
+   ["/dashboard/colors/:type" :dashboard/colors]
    ["/workspace/:project/:page" :workspace/page]])
 
 (extend-protocol bc/IPathRepr

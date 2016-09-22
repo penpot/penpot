@@ -6,9 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.header
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
@@ -20,43 +18,37 @@
             [uxbox.util.mixins :as mx]))
 
 (def header-ref
-  (as-> (l/in [:dashboard]) $
-    (l/derive $ s/state)))
+  (-> (l/in [:dashboard])
+      (l/derive s/state)))
 
-(defn- header-link
+(mx/defc header-link
   [section content]
   (let [link (r/route-for section)]
-    (html
-     [:a {:href (str "/#" link)} content])))
+    [:a {:href (str "/#" link)} content]))
 
-(defn header-render
-  [own]
+(mx/defc header
+  {:mixins [mx/static mx/reactive]}
+  []
   (let [local (mx/react header-ref)
         projects? (= (:section local) :dashboard/projects)
         elements? (= (:section local) :dashboard/elements)
         icons? (= (:section local) :dashboard/icons)
         images? (= (:section local) :dashboard/images)
         colors? (= (:section local) :dashboard/colors)]
-    (html
-     [:header#main-bar.main-bar
-      [:div.main-logo
-       (header-link :dashboard/projects i/logo)]
-      [:ul.main-nav
-       [:li {:class (when projects? "current")}
-        (header-link :dashboard/projects (tr "ds.projects"))]
-       [:li {:class (when elements? "current")}
-        (header-link :dashboard/elements (tr "ds.elements"))]
-       [:li {:class (when icons? "current")}
-        (header-link :dashboard/icons (tr "ds.icons"))]
-       [:li {:class (when images? "current")}
-        (header-link :dashboard/images (tr "ds.images"))]
-       [:li {:class (when colors? "current")}
-        (header-link :dashboard/colors (tr "ds.colors"))]]
-      (ui.u/user)])))
+    [:header#main-bar.main-bar
+     [:div.main-logo
+      (header-link :dashboard/projects i/logo)]
+     [:ul.main-nav
+      [:li {:class (when projects? "current")}
+       (header-link :dashboard/projects (tr "ds.projects"))]
+      [:li {:class (when elements? "current")}
+       (header-link :dashboard/elements (tr "ds.elements"))]
+      [:li {:class (when icons? "current")}
+       (header-link :dashboard/icons (tr "ds.icons"))]
+      [:li {:class (when images? "current")}
+       (header-link :dashboard/images (tr "ds.images"))]
+      [:li {:class (when colors? "current")}
+       (header-link :dashboard/colors (tr "ds.colors"))]]
+     (ui.u/user)]))
 
-(def header
-  (mx/component
-   {:render header-render
-    :name "header"
-    :mixins [rum/static
-             mx/reactive]}))
+

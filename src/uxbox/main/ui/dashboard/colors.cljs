@@ -29,260 +29,269 @@
             [uxbox.util.lens :as ul]
             [uxbox.util.color :refer (hex->rgb)]))
 
-;; --- Lenses
+;; --- Refs
 
 (def ^:private dashboard-ref
   (-> (l/key :dashboard)
       (l/derive st/state)))
 
-(def ^:private collections-by-id-ref
+(def ^:private collections-map-ref
   (-> (comp (l/key :colors-by-id)
             (ul/merge library/+color-collections-by-id+))
       (l/derive st/state)))
 
+(def ^:private collections-ref
+  (-> (l/lens vals)
+      (l/derive collections-map-ref)))
+
 (defn- focus-collection
-  [collid]
-  (-> (l/key collid)
-      (l/derive collections-by-id-ref)))
+  [id]
+  (-> (l/key id)
+      (l/derive collections-map-ref)))
 
 ;; --- Page Title
 
-(defn page-title-render
-  [own coll]
+(mx/defcs page-title
+  {:mixins [(rum/local {}) mx/static mx/reactive]}
+  [own {:keys [id] :as coll}]
   (let [local (:rum/local own)
         dashboard (mx/react dashboard-ref)
-        own? (:builtin coll false)]
-    (letfn [(on-title-save [e]
-              (rs/emit! (dc/rename-collection (:id coll) (:coll-name @local)))
+        own? (= :builtin (:type coll))
+        edit? (:edit @local)]
+    (letfn [(save []
+              (let [dom (mx/ref-node own "input")
+                    name (.-innerText dom)]
+                (rs/emit! (dc/rename-collection id (str/trim name)))
+                (swap! local assoc :edit false)))
+            (cancel []
               (swap! local assoc :edit false))
-            (on-title-edited [e]
+            (edit []
+              (swap! local assoc :edit true))
+            (on-input-keydown [e]
               (cond
-                (k/esc? e) (swap! local assoc :edit false)
-                (k/enter? e) (on-title-save e)
-                :else (let [content (dom/event->inner-text e)]
-                        (swap! local assoc :coll-name content))))
-            (on-title-edit [e]
-              (swap! local assoc :edit true :coll-name (:name coll)))
-            (on-delete [e]
+                (k/esc? e) (cancel)
+                (k/enter? e)
+                (do
+                  (dom/prevent-default e)
+                  (dom/stop-propagation e)
+                  (save))))
+            (delete-collection []
               (rs/emit! (dc/delete-collection (:id coll))))]
-      (html
-       [:div.dashboard-title {}
-        [:h2 {}
-         (if (:edit @local)
-           [:div.dashboard-title-field
-            [:span.edit
-             {:content-editable ""
-              :on-key-up on-title-edited}
-             (:name coll)]
-            [:span.close
-             {:on-click #(swap! local assoc :edit false)}
-             i/close]]
-           [:span.dashboard-title-field
-            (:name coll)])]
-        (if (and (not own?) coll)
-          [:div.edition
-           (if (:edit @local)
-             [:span {:on-click on-title-save} i/save]
-             [:span {:on-click on-title-edit} i/pencil])
-           [:span {:on-click on-delete} i/trash]])]))))
-
-(def ^:private page-title
-  (mx/component
-   {:render page-title-render
-    :name "page-title"
-    :mixins [(rum/local {}) mx/static mx/reactive]}))
-
-;; --- Nav
-
-(defn nav-render
-  [own]
-  (let [dashboard (mx/react dashboard-ref)
-        collections-by-id (mx/react collections-by-id-ref)
-        collid (:collection-id dashboard)
-        own? (= (:collection-type dashboard) :own)
-        builtin? (= (:collection-type dashboard) :builtin)
-        collections (as-> (vals collections-by-id) $
-                      (if own?
-                        (filter (comp not :builtin) $)
-                        (filter :builtin $)))]
-    (html
-     [:div.library-bar
-      [:div.library-bar-inside
-       [:ul.library-tabs
-        [:li {:class-name (when builtin? "current")
-              :on-click #(rs/emit! (dd/set-collection-type :builtin))}
-         "STANDARD"]
-        [:li {:class-name (when own? "current")
-              :on-click #(rs/emit! (dd/set-collection-type :own))}
-         "YOUR LIBRARIES"]]
-       [:ul.library-elements
-        (if own?
-          [:li
-           [:a.btn-primary
-            {:on-click #(rs/emit! (dc/create-collection))}
-            "+ New library"]])
-        (for [props collections
-              :let [num (count (:data props))]]
-          [:li {:key (str (:id props))
-                :on-click #(rs/emit! (dd/set-collection (:id props)))
-                :class-name (when (= (:id props) collid) "current")}
-           [:span.element-title (:name props)]
-           [:span.element-subtitle
-            (tr "ds.num-elements" (t/c num))]])]]])))
-
-(def ^:private nav
-  (mx/component
-   {:render nav-render
-    :name "nav"
-    :mixins [mx/reactive]}))
+      [:div.dashboard-title
+       [:h2
+        (if edit?
+          [:div.dashboard-title-field
+           [:span.edit
+            {:content-editable true
+             :ref "input"
+             :on-key-down on-input-keydown}
+            (:name coll)]
+           [:span.close {:on-click cancel} i/close]]
+          [:span.dashboard-title-field
+           {:on-double-click edit}
+           (:name coll)])]
+       (if (and (not own?) coll)
+         [:div.edition
+          (if edit?
+            [:span {:on-click save} i/save]
+            [:span {:on-click edit} i/pencil])
+          [:span {:on-click delete-collection} i/trash]])])))
 
 ;; --- Grid
 
-(defn grid-render
-  [own]
-  (let [local (:rum/local own)
-        dashboard (mx/react dashboard-ref)
-        coll-type (:collection-type dashboard)
-        coll-id (:collection-id dashboard)
-        own? (= coll-type :own)
-        coll (mx/react (focus-collection coll-id))
-        toggle-color-check (fn [color]
-                             (swap! local update :selected #(if (% color) (disj % color) (conj % color))))
-        delete-selected #(rs/emit! (dc/remove-colors (:id coll) (:selected @local)))]
-    (when coll
-      (html
-       [:section.dashboard-grid.library
-        (page-title coll)
-        [:div.dashboard-grid-content
-          [:div.dashboard-grid-row
-           (if own?
-             [:div.grid-item.small-item.add-project
-              {:on-click #(udl/open! :color-form {:coll coll})}
-              [:span "+ New color"]])
-           (for [color (remove nil? (:data coll))
-                 :let [color-rgb (hex->rgb color)]]
-             [:div.grid-item.small-item.project-th
-              {:key color :on-click #(when (k/shift? %) (toggle-color-check color))}
-              [:span.color-swatch {:style {:background-color color}}]
-              [:div.input-checkbox.check-primary
-               [:input {:type "checkbox"
-                        :id color
-                        :on-click #(toggle-color-check color)
-                        :checked ((:selected @local) color)}]
-               [:label {:for color}]]
-              [:span.color-data color]
-              [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]])]]
+(mx/defc grid-item
+  [color selected?]
+  (let [color-rgb (hex->rgb color)]
+    (letfn [(toggle-selection [event]
+              (rs/emit! (dc/toggle-color-selection color)))
+            (toggle-selection-shifted [event]
+              (when (k/shift? event)
+                (toggle-selection event)))]
+      [:div.grid-item.small-item.project-th
+       {:on-click toggle-selection-shifted}
+       [:span.color-swatch {:style {:background-color color}}]
+       [:div.input-checkbox.check-primary
+        [:input {:type "checkbox"
+                 :id color
+                 :on-click toggle-selection
+                 :checked selected?}]
+        [:label {:for color}]]
+       [:span.color-data color]
+       [:span.color-data (apply str "RGB " (interpose ", " color-rgb))]])))
 
-        (when (not (empty? (:selected @local)))
-          ;; MULTISELECT OPTIONS BAR
-          [:div.multiselect-bar
-           (if own?
-             [:div.multiselect-nav
-              [:span.move-item.tooltip.tooltip-top
-               {:alt "Move to"}
-               i/organize]
-              [:span.delete.tooltip.tooltip-top
-               {:alt "Delete" :on-click delete-selected}
-               i/trash]]
-             [:div.multiselect-nav
-              [:span.move-item.tooltip.tooltip-top
-               {:alt "Copy to"}
-               i/organize]])])]))))
+(mx/defc grid-options
+  [coll]
+  (let [own? (= (:type coll) :own)]
+    (letfn [(on-delete [event]
+              (rs/emit! (dc/delete-selected-colors)))]
+      ;; MULTISELECT OPTIONS BAR
+      [:div.multiselect-bar
+       (if own?
+         [:div.multiselect-nav
+          #_[:span.move-item.tooltip.tooltip-top
+             {:alt "Move to"}
+             i/organize]
+          [:span.delete.tooltip.tooltip-top
+           {:alt "Delete"
+            :on-click on-delete}
+           i/trash]]
+         [:div.multiselect-nav
+          [:span.move-item.tooltip.tooltip-top
+           {:alt "Copy to"}
+           i/organize]])])))
 
-(def ^:private grid
-  (mx/component
-   {:render grid-render
-    :name "grid"
-    :mixins [(rum/local {:selected #{}})
-             mx/static
-             mx/reactive]}))
+(mx/defc grid
+  {:mixins [mx/static]}
+  [selected coll]
+  (let [own? (= (:type coll) :own)]
+    [:div.dashboard-grid-content
+     [:div.dashboard-grid-row
+      (when own?
+        [:div.grid-item.small-item.add-project
+         {:on-click #(udl/open! :color-form {:coll coll})}
+         [:span "+ New color"]])
+      (for [color (remove nil? (:data coll))
+            :let [selected? (contains? selected color)]]
+        (-> (grid-item color selected?)
+            (mx/with-key (str color))))]]))
 
-;; --- Menu
-
-(defn menu-render
+(mx/defc content
+  {:mixins [mx/static mx/reactive]}
   []
   (let [dashboard (mx/react dashboard-ref)
-        coll-id (:collection-id dashboard)
+        selected (:selected dashboard)
+        coll-type (:type dashboard)
+        coll-id (:id dashboard)
         coll (mx/react (focus-collection coll-id))
-        ccount (count (:data coll)) ]
-    (html
-     [:section.dashboard-bar.library-gap
-      [:div.dashboard-info
-       [:span.dashboard-colors (tr "ds.num-colors" (t/c ccount))]]])))
+        own? (= coll-type :own)]
+    (when coll
+      [:section.dashboard-grid.library
+       (page-title coll)
+       (grid selected coll)
+       (when (and (seq selected))
+         (grid-options coll))])))
 
-(def menu
-  (mx/component
-   {:render menu-render
-    :name "menu"
-    :mixins [mx/reactive mx/static]}))
+;; --- Nav
 
+(mx/defc nav-collection
+  {:mixins [mx/static]}
+  [collection selected?]
+  (letfn [(on-click [event]
+            (let [type (:type collection)
+                  id (:id collection)]
+              (rs/emit! (dc/select-collection type id))))]
+    (let [colors (count (:data collection))]
+      [:li {:on-click on-click
+            :class-name (when selected? "current")}
+       [:span.element-title (:name collection)]
+       [:span.element-subtitle
+        (tr "ds.num-elements" (t/c colors))]])))
+
+(mx/defc nav-collections
+  {:mixins [mx/static mx/reactive]}
+  [type selected]
+  (let [own? (= type :own)
+        builtin? (= type :builtin)
+        collections (cond->> (rum/react collections-ref)
+                      own? (filter #(= :own (:type %)))
+                      builtin? (filter #(= :builtin (:type %)))
+                      own? (sort-by :id))]
+    [:ul.library-elements
+     (when own?
+       [:li
+        [:a.btn-primary
+         {:on-click #(rs/emit! (dc/create-collection))}
+         "+ New library"]])
+     (for [coll collections
+           :let [selected? (= (:id coll) selected)
+                 key (str (:id coll))]]
+       (-> (nav-collection coll selected?)
+           (mx/with-key key)))]))
+
+(mx/defc nav
+  {:mixins [mx/static mx/reactive]}
+  []
+  (let [dashboard (mx/react dashboard-ref)
+        collections (rum/react collections-ref)
+        selected (:id dashboard)
+        type (:type dashboard)
+        own? (= type :own)
+        builtin? (= type :builtin)]
+    (letfn [(select-tab [type]
+              (let [xf (filter #(= type (:type %)))
+                    colls (sequence xf collections)]
+                (if-let [item (first colls)]
+                  (rs/emit! (dc/select-collection type (:id item)))
+                  (rs/emit! (dc/select-collection type)))))]
+      [:div.library-bar
+       [:div.library-bar-inside
+        [:ul.library-tabs
+         [:li {:class-name (when builtin? "current")
+               :on-click (partial select-tab :builtin)}
+          "STANDARD"]
+         [:li {:class-name (when own? "current")
+               :on-click (partial select-tab :own)}
+          "YOUR LIBRARIES"]]
+        (nav-collections type selected)]])))
 
 ;; --- Colors Page
 
-(defn colors-page-render
+(defn- colors-page-will-mount
   [own]
-  (html
-   [:main.dashboard-main
-    (header)
-    [:section.dashboard-content
-     (nav)
-     (menu)
-     (grid)]]))
+  (let [[type id] (:rum/args own)]
+    (rs/emit! (dc/initialize type id))
+    own))
 
-(defn colors-page-will-mount
-  [own]
-  (rs/emit! (dd/initialize :dashboard/colors)
-            (dc/initialize))
-  own)
+(defn- colors-page-did-remount
+  [old-own own]
+  (let [[old-type old-id] (:rum/args old-own)
+        [new-type new-id] (:rum/args own)]
+    (when (or (not= old-type new-type)
+              (not= old-id new-id))
+      (rs/emit! (dc/initialize new-type new-id)))
+    own))
 
-(defn colors-page-did-remount
-  [old-state state]
-  (rs/emit! (dd/initialize :dashboard/colors))
-  state)
+(mx/defc colors-page
+  {:will-mount colors-page-will-mount
+   :did-remount colors-page-did-remount
+   :mixins [mx/static]}
+  [type id]
+  [:main.dashboard-main
+   (header)
+   [:section.dashboard-content
+    (nav)
+    (content)]])
 
-(def colors-page
-  (mx/component
-   {:render colors-page-render
-    :will-mount colors-page-will-mount
-    :did-remount colors-page-did-remount
-    :name "colors"
-    :mixins [mx/static]}))
+;; --- Colors Lightbox (Component)
 
-;; --- Colors Create / Edit Lightbox
-
-(defn- color-lightbox-render
+(mx/defcs color-lightbox
+  {:mixins [(rum/local {}) mx/static]}
   [own {:keys [coll color]}]
-  (html
   (let [local (:rum/local own)]
-    (letfn [(submit [e]
-              (let [params {:id (:id coll) :from color :to (:hex @local)}]
+    (letfn [(on-submit [event]
+              (let [params {:id (:id coll)
+                            :from color
+                            :to (:hex @local)}]
                 (rs/emit! (dc/replace-color params))
                 (udl/close!)))
-            (on-change [e]
-              (let [value (str/trim (dom/event->value e))]
-                (swap! local assoc :hex value)))]
-      (html
-       [:div.lightbox-body
-        [:h3 "New color"]
-        [:form
-         [:div.row-flex.center
-          (colorpicker
-           :value (or (:hex @local) color "#00ccff")
-           :on-change #(swap! local assoc :hex %))]
+            (on-change [event]
+              (let [value (str/trim (dom/event->value event))]
+                (swap! local assoc :hex value)))
+            (on-close [event]
+              (udl/close!))]
+      [:div.lightbox-body
+       [:h3 "New color"]
+       [:form
+        [:div.row-flex.center
+         (colorpicker
+          :value (or (:hex @local) color "#00ccff")
+          :on-change #(swap! local assoc :hex %))]
 
-         [:input#project-btn.btn-primary
-          {:value "+ Add color"
-           :on-click submit
-           :type "button"}]]
-        [:a.close {:on-click #(udl/close!)}
-       i/close]])))))
-
-(def color-lightbox
-  (mx/component
-   {:render color-lightbox-render
-    :name "color-lightbox"
-    :mixins [(rum/local {})
-             mx/static]}))
+        [:input#project-btn.btn-primary
+         {:value "+ Add color"
+          :on-click on-submit
+          :type "button"}]]
+       [:a.close {:on-click on-close} i/close]])))
 
 (defmethod lbx/render-lightbox :color-form
   [params]

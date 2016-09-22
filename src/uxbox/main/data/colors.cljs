@@ -9,44 +9,82 @@
   (:require [clojure.set :as set]
             [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
-            [uxbox.main.state :as st]
             [uxbox.util.rstore :as rs]
-            [uxbox.main.state.colors :as stc]
+            [uxbox.util.router :as r]
+            [uxbox.util.color :as color]
+            [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]))
+
+
+;; --- Helpers
+
+(defn- assoc-collection
+  [state coll]
+  (let [id (:id coll)
+        coll (assoc coll :type :own)]
+    (assoc-in state [:colors-by-id id] coll)))
+
+(defn- dissoc-collection
+  "A reduce function for dissoc the color collection
+  to the state map."
+  [state id]
+  (update state :colors-by-id dissoc id))
 
 ;; --- Initialize
 
 (declare fetch-collections)
 (declare collections-fetched?)
 
-(defrecord Initialize []
+(defrecord Initialize [type id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [type (or type :builtin)
+          id (or id (if (= type :builtin) 1 nil))
+          data {:type type :id id :selected #{}
+                :section :dashboard/colors}]
+      (assoc state :dashboard data)))
+
   rs/EffectEvent
   (-apply-effect [_ state]
-    (when-not (seq (:colors-by-id state))
+    (when (nil? (:colors-by-id state))
       (reset! st/loader true)))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [colors (seq (:colors-by-id state))]
-      (if colors
-        (rx/empty)
-        (rx/merge
-         (rx/of (fetch-collections))
+    (if (nil? (:colors-by-id state))
+      (rx/merge
+       (rx/of (fetch-collections))
          (->> (rx/filter collections-fetched? s)
               (rx/take 1)
               (rx/do #(reset! st/loader false))
-              (rx/ignore)))))))
+              (rx/ignore)))
+      (rx/empty))))
 
 (defn initialize
-  []
-  (Initialize.))
+  [type id]
+  (Initialize. type id))
+
+;; --- Select a Collection
+
+(defrecord SelectCollection [type id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (rx/of (r/navigate :dashboard/colors
+                       {:type type :id id}))))
+
+(defn select-collection
+  ([type]
+   (select-collection type nil))
+  ([type id]
+   {:pre [(keyword? type)]}
+   (SelectCollection. type id)))
 
 ;; --- Collections Fetched
 
 (defrecord CollectionFetched [items]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (reduce stc/assoc-collection state items)))
+    (reduce assoc-collection state items)))
 
 (defn collections-fetched
   [items]
@@ -75,7 +113,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (-> state
-        (stc/assoc-collection item)
+        (assoc-collection item)
         (assoc-in [:dashboard :collection-id] (:id item))
         (assoc-in [:dashboard :collection-type] :own))))
 
@@ -103,12 +141,11 @@
 (defrecord CollectionUpdated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (stc/assoc-collection state item)))
+    (assoc-collection state item)))
 
 (defn collection-updated
   [item]
   (CollectionUpdated. item))
-
 
 ;; --- Update Collection
 
@@ -144,7 +181,7 @@
 (defrecord DeleteCollection [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (stc/dissoc-collection state id))
+    (dissoc-collection state id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -188,3 +225,42 @@
   "Remove color in a collection."
   [id colors]
   (RemoveColors. id colors))
+
+;; --- Select color
+
+(defrecord SelectColor [color]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:dashboard :selected] conj color)))
+
+(defrecord DeselectColor [color]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:dashboard :selected] disj color)))
+
+(defrecord ToggleColorSelection [color]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [selected (get-in state [:dashboard :selected])]
+      (rx/of
+       (if (selected color)
+         (DeselectColor. color)
+         (SelectColor. color))))))
+
+(defn toggle-color-selection
+  [color]
+  {:pre [(color/hex? color)]}
+  (ToggleColorSelection. color))
+
+;; --- Delete Selected Colors
+
+(defrecord DeleteSelectedColors []
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [{:keys [id selected]} (get state :dashboard)]
+      (rx/of (remove-colors id selected)
+             #(assoc-in % [:dashboard :selected] #{})))))
+
+(defn delete-selected-colors
+  []
+  (DeleteSelectedColors.))
