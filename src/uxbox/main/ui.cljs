@@ -74,8 +74,16 @@
 
 ;; --- Main App (Component)
 
-(defn app-render
+(defn app-will-mount
   [own]
+  (when @st/auth-ref
+    (rs/emit! (udu/fetch-profile)))
+  own)
+
+(mx/defc app
+  {:will-mount app-will-mount
+   :mixins [mx/reactive]}
+  []
   (let [route (mx/react route-ref)
         auth (mx/react st/auth-ref)
         location (:id route)
@@ -101,19 +109,6 @@
         nil
         ))))
 
-(defn app-will-mount
-  [own]
-  (when @st/auth-ref
-    (rs/emit! (udu/fetch-profile)))
-  own)
-
-(def app
-  (mx/component
-   {:render app-render
-    :will-mount app-will-mount
-    :mixins [mx/reactive]
-    :name "app"}))
-
 ;; --- Routes
 
 (def routes
@@ -137,9 +132,6 @@
 
 (defn init
   []
-  (let [app-dom (gdom/getElement "app")
-        lightbox-dom (gdom/getElement "lightbox")
-        loader-dom (gdom/getElement "loader")]
-    (rum/mount (app) app-dom)
-    (rum/mount (lightbox) lightbox-dom)
-    (rum/mount (loader) loader-dom)))
+  (mx/mount (app) (dom/get-element "app"))
+  (mx/mount (lightbox) (dom/get-element "lightbox"))
+  (mx/mount (loader) (dom/get-element "loader")))
