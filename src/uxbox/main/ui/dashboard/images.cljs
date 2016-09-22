@@ -42,7 +42,7 @@
 
 (defn- contains-term?
   [phrase term]
-  (str/contains? (str/lower phrase) (str/trim (str/lower term))))
+  (str/includes? (str/lower phrase) (str/trim (str/lower term))))
 
 (defn- filter-images-by
   [term projs]
