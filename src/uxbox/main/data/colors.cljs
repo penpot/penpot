@@ -55,9 +55,10 @@
        (rx/of (fetch-collections))
          (->> (rx/filter collections-fetched? s)
               (rx/take 1)
-              (rx/do #(reset! st/loader false))
+              ;; (rx/do #(reset! st/loader false))
               (rx/ignore)))
-      (rx/empty))))
+      (rx/empty)))
+  )
 
 (defn initialize
   [type id]
