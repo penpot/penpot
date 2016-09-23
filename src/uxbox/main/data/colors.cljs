@@ -15,7 +15,6 @@
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]))
 
-
 ;; --- Helpers
 
 (defn- assoc-collection
@@ -44,10 +43,10 @@
                 :section :dashboard/colors}]
       (assoc state :dashboard data)))
 
-  rs/EffectEvent
-  (-apply-effect [_ state]
-    (when (nil? (:colors-by-id state))
-      (reset! st/loader true)))
+  ;; rs/EffectEvent
+  ;; (-apply-effect [_ state]
+  ;;   (when (nil? (:colors-by-id state))
+  ;;     (reset! st/loader true)))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
