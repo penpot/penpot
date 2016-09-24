@@ -10,6 +10,7 @@
             [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.rstore :as rs]
+            [uxbox.util.router :as r]
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]))
 
@@ -18,23 +19,30 @@
 (declare fetch-collections)
 (declare collections-fetched?)
 
-(defrecord Initialize []
+(defrecord Initialize [type id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [type (or type :builtin)
+          id (or id (if (= type :builtin) 1 nil))
+          data {:type type :id id :selected #{}
+                :section :dashboard/images}]
+      (assoc state :dashboard data)))
+
   rs/EffectEvent
   (-apply-effect [_ state]
-    (when-not (seq (:images-by-id state))
+    (when (nil? (:images-by-id state))
       (reset! st/loader true)))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [images (seq (:images-by-id state))]
-      (if images
-        (rx/empty)
-        (rx/merge
-         (rx/of (fetch-collections))
+    (if (nil? (:images-by-id state))
+      (rx/merge
+       (rx/of (fetch-collections))
          (->> (rx/filter collections-fetched? s)
               (rx/take 1)
               (rx/do #(reset! st/loader false))
-              (rx/ignore)))))))
+              (rx/ignore)))
+      (rx/empty))))
 
 (defn initialize
   []
