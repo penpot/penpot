@@ -45,16 +45,33 @@
       (rx/empty))))
 
 (defn initialize
-  []
-  (Initialize.))
+  [type id]
+  (Initialize. type id))
+
+;; --- Select a Collection
+
+(defrecord SelectCollection [type id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (rx/of (r/navigate :dashboard/images
+                       {:type type :id id}))))
+
+(defn select-collection
+  ([type]
+   (select-collection type nil))
+  ([type id]
+   {:pre [(keyword? type)]}
+   (SelectCollection. type id)))
 
 ;; --- Color Collections Fetched
 
 (defrecord CollectionsFetched [items]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (reduce (fn [acc {:keys [id] :as item}]
-               (assoc-in acc [:images-by-id id] item))
+    (reduce (fn [state item]
+              (let [id (:id item)
+                    item (assoc item :type :own)]
+                (assoc-in state [:images-by-id id] item)))
             state
             items)))
 
@@ -80,10 +97,11 @@
 (defrecord CollectionCreated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (-> state
-        (assoc-in [:images-by-id (:id item)] item)
-        (assoc-in [:dashboard :collection-id] (:id item))
-        (assoc-in [:dashboard :collection-type] :own))))
+    (let [item (assoc item :type :own)]
+      (-> state
+          (assoc-in [:images-by-id (:id item)] item)
+          (assoc-in [:dashboard :collection-id] (:id item))
+          (assoc-in [:dashboard :collection-type] :own)))))
 
 (defn collection-created
   [item]
