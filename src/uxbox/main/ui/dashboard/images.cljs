@@ -293,7 +293,6 @@
                 (rs/emit! (di/update-opts :order value))))
             (on-clear [event]
               (rs/emit! (di/update-opts :filter "")))]
-      (println "menu:" ordering)
       [:section.dashboard-bar.library-gap
        [:div.dashboard-info
 
