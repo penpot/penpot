@@ -257,50 +257,6 @@
   [coll-id image]
   (DeleteImage. coll-id image))
 
-;; --- Set Collection
-
-(defrecord SetCollection [id builtin?]
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (assoc-in state [:dashboard :collection-id] id))
-
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (cond
-      builtin? (rx/empty)
-      (nil? id) (rx/empty)
-      :else (rx/of (fetch-images id)))))
-
-(defn set-collection
-  [id builtin?]
-  (SetCollection. id builtin?))
-
-;; --- Set Collection Type
-
-(defrecord SetCollectionType [type]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (if (= type :builtin)
-      (rx/of (set-collection 1 true))
-      (let [colls (sort-by :id (vals (:images-by-id state)))]
-        (rx/of (set-collection (:id (first colls)) false)))))
-
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (as-> state $
-      (assoc-in $ [:dashboard :collection-type] type))))
-
-(defn set-collection-type
-  [type]
-  {:pre [(contains? #{:builtin :own} type)]}
-  (SetCollectionType. type))
-
-
-;; -------------------------------------
-
-
-
-
 ;; --- Remove Image
 
 (defrecord RemoveImages [id images]
@@ -357,27 +313,15 @@
   []
   (DeleteSelected.))
 
-;; --- Helpers
+;; --- Update Opts (Filtering & Ordering)
 
-(defn set-images-ordering
-  [order]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:dashboard :images-order] order))))
+(defrecord UpdateOpts [order filter]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update state :dashboard merge
+            (when order {:order order})
+            (when filter {:filter filter}))))
 
-(defn set-images-filtering
-  [term]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:dashboard :images-filter] term))))
-
-(defn clear-images-filtering
-  []
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:dashboard :images-filter] ""))))
-
-
+(defn update-opts
+  [& {:keys [order filter] :as opts}]
+  (UpdateOpts. order filter))

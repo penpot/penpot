@@ -23,7 +23,7 @@
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.library-bar :as ui.library-bar]
             [uxbox.main.ui.dashboard.header :refer (header)]
-            [uxbox.util.data :as data]
+            [uxbox.util.data :as data :refer (read-string)]
             [uxbox.util.lens :as ul]
             [uxbox.util.dom :as dom]))
 
@@ -34,39 +34,28 @@
    :created "ds.project-ordering.by-creation-date"})
 
 (defn- sort-images-by
-  [ordering projs]
+  [ordering images]
   (case ordering
-    :name (sort-by :name projs)
-    :created (reverse (sort-by :created-at projs))
-    projs))
+    :name (sort-by :name images)
+    :created (reverse (sort-by :created-at images))
+    images))
 
 (defn- contains-term?
   [phrase term]
-  (str/includes? (str/lower phrase) (str/trim (str/lower term))))
+  (let [term (name term)]
+    (str/includes? (str/lower phrase) (str/trim (str/lower term)))))
 
 (defn- filter-images-by
-  [term projs]
+  [term images]
   (if (str/blank? term)
-    projs
-    (filter #(contains-term? (:name %) term) projs)))
+    images
+    (filter #(contains-term? (:name %) term) images)))
 
 ;; --- Refs
 
 (def ^:private dashboard-ref
   (-> (l/key :dashboard)
       (l/derive st/state)))
-
-;; (def ^:private collections-by-id-ref
-;;   (-> (l/key :images-by-id)
-;;       (l/derive st/state)))
-
-;; (def ^:private images-ordering-ref
-;;   (-> (l/in [:dashboard :images-order])
-;;       (l/derive st/state)))
-
-;; (def ^:private images-filtering-ref
-;;   (-> (l/in [:dashboard :images-filter])
-;;       (l/derive st/state)))
 
 (def ^:private collections-map-ref
   (-> (comp (l/key :images-by-id)
@@ -139,12 +128,12 @@
             (let [type (:type collection)
                   id (:id collection)]
               (rs/emit! (di/select-collection type id))))]
-    (let [colors (count (:data collection))]
+    (let [images (count (:images collection))]
       [:li {:on-click on-click
             :class-name (when selected? "current")}
        [:span.element-title (:name collection)]
        [:span.element-subtitle
-        (tr "ds.num-elements" (t/c colors))]])))
+        (tr "ds.num-elements" (t/c images))]])))
 
 (mx/defc nav-section
   {:mixins [mx/static mx/reactive]}
@@ -194,83 +183,6 @@
         (nav-section type selected)]])))
 
 ;; --- Grid
-
-;; (defn- grid-render
-;;   [own]
-;;   (let [local (:rum/local own)
-;;         dashboard (mx/react dashboard-ref)
-;;         coll-type (:collection-type dashboard)
-;;         coll-id (:collection-id dashboard)
-;;         own? (= coll-type :own)
-;;         builtin? (= coll-type :builtin)
-;;         coll (if builtin?
-;;                (get library/+image-collections-by-id+ coll-id)
-;;                (mx/react (focus-collection coll-id)))
-;;         images-filtering (mx/react images-filtering-ref)
-;;         images-ordering (mx/react images-ordering-ref)
-;;         images (->> (:images coll)
-;;                     (remove nil?)
-;;                     (filter-images-by images-filtering)
-;;                     (sort-images-by images-ordering))
-;;         show-menu? (not (empty? (:selected @local)))]
-;;     (letfn [(toggle-check [image]
-;;               (swap! local update :selected #(data/conj-or-disj % image)))
-;;             (toggle-check-card [image event]
-;;               (when (kbd/shift? event)
-;;                 (toggle-check image)))
-;;             (delete-selected []
-;;               (->> (:selected @local)
-;;                    (run! #(rs/emit! (di/delete-image coll-id %)))))
-;;       (when coll
-;;         (html
-;;          [:section.dashboard-grid.library
-;;           (page-title coll)
-;;           [:div.dashboard-grid-content
-;;            [:div.dashboard-grid-row
-;;             (if own?
-;;               [:div.grid-item.add-project {:on-click forward-click}
-;;                [:span "+ New image"]
-;;                [:input.upload-image-input
-;;                 {:style {:display "none"}
-;;                  :multiple true
-;;                  :ref "file-input"
-;;                  :value ""
-;;                  :type "file"
-;;                  :on-change on-file-selected}]])
-
-;;             (for [image images
-;;                   :let [selected? (contains? (:selected @local) image)]]
-;;               [:div.grid-item.images-th
-;;                {:key (:id image)
-;;                 :on-click (partial toggle-check-card image)}
-;;                [:div.grid-item-th
-;;                 {:style {:background-image (str "url('" (:thumbnail image) "')")}}
-;;                 [:div.input-checkbox.check-primary
-;;                  [:input {:type "checkbox"
-;;                           :id (:id image)
-;;                           :on-click (partial toggle-check image)
-;;                           :checked selected?}]
-;;                  [:label {:for (:id image)}]]]
-;;                [:span (:name image)]])]
-
-;;            (when show-menu?
-;;              ;; MULTISELECT OPTIONS BAR
-;;              [:div.multiselect-bar
-;;               [:div.multiselect-nav
-;;                [:span.move-item.tooltip.tooltip-top {:alt "Copy to"} i/organize]
-;;                (if own?
-;;                  [:span.copy.tooltip.tooltip-top {:alt "Duplicate"} i/copy])
-;;                (if own?
-;;                  [:span.delete.tooltip.tooltip-top
-;;                   {:alt "Delete"
-;;                    :on-click delete-selected}
-;;                   i/trash])]])]])))))
-
-;; (def ^:private grid
-;;   (mx/component
-;;    {:render grid-render
-;;     :name "grid"
-;;     :mixins [(rum/local {:selected #{}}) mx/static mx/reactive]}))
 
 (mx/defcs grid-form
   {:mixins [mx/static]}
@@ -332,9 +244,14 @@
 
 (mx/defc grid
   {:mixins [mx/static]}
-  [selected {:keys [id type images] :as coll}]
-  (let [own? (= type :own)]
-    (println (map :id images))
+  [state selected {:keys [id type images] :as coll}]
+  (let [own? (= type :own)
+        ordering (:order state)
+        filtering (:filter state)
+        images (->> images
+                    (remove nil?)
+                    (filter-images-by filtering)
+                    (sort-images-by ordering))]
     [:div.dashboard-grid-content
      [:div.dashboard-grid-row
       (when own?
@@ -346,110 +263,65 @@
             (mx/with-key (str id))))]]))
 
 (mx/defc content
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [dashboard (mx/react dashboard-ref)
-        selected (:selected dashboard)
-        coll-type (:type dashboard)
-        coll-id (:id dashboard)
-        coll (mx/react (focus-collection coll-id))
+  {:mixins [mx/static]}
+  [state coll]
+  (let [selected (:selected state)
+        coll-type (:type coll)
         own? (= coll-type :own)]
     (when coll
       [:section.dashboard-grid.library
        (page-title coll)
-       (grid selected coll)
+       (grid state selected coll)
        (when (and (seq selected))
          (grid-options coll))])))
 
-;; --- Sort Widget
+;; --- Menu
 
-;; (defn- sort-widget-render
-;;   []
-;;   (let [ordering (mx/react images-ordering-ref)
-;;         on-change #(rs/emit! (di/set-images-ordering
-;;                               (keyword (.-value (.-target %)))))]
-;;     (html
-;;      [:div
-;;       [:span (tr "ds.project-ordering")]
-;;       [:select.input-select
-;;        {:on-change on-change
-;;         :value (:name ordering "")}
-;;        (for [option (keys +ordering-options+)
-;;              :let [option-id (get +ordering-options+ option)
-;;                    option-value (:name option)
-;;                    option-text (tr option-id)]]
-;;          [:option
-;;           {:key option-id
-;;            :value option-value}
-;;           option-text])]])))
+(mx/defc menu
+  {:mixins [mx/static]}
+  [state coll]
+  (let [ordering (:order state :name)
+        filtering (:filter state "")
+        icount (count (:images coll))]
+    (letfn [(on-term-change [event]
+              (let [term (-> (dom/get-target event)
+                             (dom/get-value))]
+                (rs/emit! (di/update-opts :filter term))))
+            (on-ordering-change [event]
+              (let [value (dom/event->value event)
+                    value (read-string value)]
+                (rs/emit! (di/update-opts :order value))))
+            (on-clear [event]
+              (rs/emit! (di/update-opts :filter "")))]
+      (println "menu:" ordering)
+      [:section.dashboard-bar.library-gap
+       [:div.dashboard-info
 
-;; (def ^:private sort-widget
-;;   (mx/component
-;;    {:render sort-widget-render
-;;     :name "sort-widget-render"
-;;     :mixins [mx/reactive mx/static]}))
+        ;; Counter
+        [:span.dashboard-images (tr "ds.num-images" (t/c icount))]
 
-;; --- Filtering Widget
-
-;; (defn- search-widget-render
-;;   []
-;;   (letfn [(on-term-change [event]
-;;             (-> (dom/get-target event)
-;;                 (dom/get-value)
-;;                 (di/set-images-filtering)
-;;                 (rs/emit!)))
-;;           (on-clear [event]
-;;             (rs/emit! (di/clear-images-filtering)))]
-;;     (html
-;;      [:form.dashboard-search
-;;       [:input.input-text
-;;        {:key :images-search-box
-;;         :type "text"
-;;         :on-change on-term-change
-;;         :auto-focus true
-;;         :placeholder (tr "ds.project-search.placeholder")
-;;         :value (mx/react images-filtering-ref)}]
-;;       [:div.clear-search {:on-click on-clear} i/close]])))
-
-;; (def ^:private search-widget
-;;   (mx/component
-;;    {:render search-widget-render
-;;     :name "search-widget"
-;;     :mixins [mx/reactive mx/static]}))
-
-;; ;; --- Menu
-
-;; (defn- menu-render
-;;   []
-;;   (let [dashboard (mx/react dashboard-ref)
-;;         coll-id (:collection-id dashboard)
-;;         coll (mx/react (focus-collection coll-id))
-;;         icount (count (:images coll)) ]
-;;     (html
-;;      [:section.dashboard-bar.library-gap
-;;       [:div.dashboard-info
-;;        [:span.dashboard-images (tr "ds.num-images" (t/c icount))]
-;;        (sort-widget)
-;;        (search-widget)]])))
-
-;; (def ^:private menu
-;;   (mx/component
-;;    {:render menu-render
-;;     :name "menu"
-;;     :mixins [mx/reactive mx/static]}))
-
+        ;; Sorting
+        [:div
+         [:span (tr "ds.project-ordering")]
+         [:select.input-select
+          {:on-change on-ordering-change
+           :value (pr-str ordering)}
+          (for [[key value] (seq +ordering-options+)
+                :let [ovalue (pr-str key)
+                      olabel (tr value)]]
+            [:option {:key ovalue :value ovalue} olabel])]]
+        ;; Search
+        [:form.dashboard-search
+         [:input.input-text
+          {:key :images-search-box
+           :type "text"
+           :on-change on-term-change
+           :auto-focus true
+           :placeholder (tr "ds.project-search.placeholder")
+           :value (or filtering "")}]
+         [:div.clear-search {:on-click on-clear} i/close]]]])))
 
 ;; --- Images Page
-
-;; (defn- images-page-render
-;;   [own]
-;;   (html
-;;    [:main.dashboard-main
-;;     (header)
-;;     [:section.dashboard-content
-;;      (nav)
-;;      (menu)
-;;      (grid)]]))
 
 (defn- images-page-will-mount
   [own]
@@ -469,10 +341,14 @@
 (mx/defc images-page
   {:will-mount images-page-will-mount
    :did-remount images-page-did-remount
-   :mixins [mx/static]}
+   :mixins [mx/static mx/reactive]}
   [type id]
-  [:main.dashboard-main
-   (header)
-   [:section.dashboard-content
-    (nav)
-    (content)]])
+  (let [state (mx/react dashboard-ref)
+        coll-id (:id state)
+        coll (mx/react (focus-collection coll-id))]
+    [:main.dashboard-main
+     (header)
+     [:section.dashboard-content
+      (nav)
+      (menu state coll)
+      (content state coll)]]))
