@@ -99,7 +99,14 @@
         :dashboard/projects (dashboard/projects-page)
         :dashboard/elements (dashboard/elements-page)
         :dashboard/icons (dashboard/icons-page)
-        :dashboard/images (dashboard/images-page)
+        :dashboard/images (let [{:keys [id type]} params
+                                type (when (str/alpha? type) (keyword type))
+                                id (cond
+                                     (str/digits? id) (parse-int id)
+                                     (uuid-str? id) (uuid id)
+                                     :else nil)]
+                            (dashboard/images-page type id))
+
         :dashboard/colors (let [{:keys [id type]} params
                                 type (when (str/alpha? type) (keyword type))
                                 id (cond
@@ -127,10 +134,15 @@
    ["/dashboard/projects" :dashboard/projects]
    ["/dashboard/elements" :dashboard/elements]
    ["/dashboard/icons" :dashboard/icons]
+
    ["/dashboard/images" :dashboard/images]
+   ["/dashboard/images/:type/:id" :dashboard/images]
+   ["/dashboard/images/:type" :dashboard/images]
+
    ["/dashboard/colors" :dashboard/colors]
    ["/dashboard/colors/:type/:id" :dashboard/colors]
    ["/dashboard/colors/:type" :dashboard/colors]
+
    ["/workspace/:project/:page" :workspace/page]])
 
 (extend-protocol bc/IPathRepr
