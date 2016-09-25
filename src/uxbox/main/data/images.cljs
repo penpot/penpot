@@ -295,6 +295,68 @@
   {:pre [(contains? #{:builtin :own} type)]}
   (SetCollectionType. type))
 
+
+;; -------------------------------------
+
+
+
+
+;; --- Remove Image
+
+(defrecord RemoveImages [id images]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    #_(update-in state [:images-by-id id :data]
+               #(set/difference % images)))
+
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (rx/of (update-collection id))))
+
+(defn remove-images
+  "Remove image in a collection."
+  [id images]
+  (RemoveImages. id images))
+
+
+;; --- Select image
+
+(defrecord SelectImage [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:dashboard :selected] conj id)))
+
+(defrecord DeselectImage [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:dashboard :selected] disj id)))
+
+(defrecord ToggleImageSelection [id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [selected (get-in state [:dashboard :selected])]
+      (rx/of
+       (if (selected id)
+         (DeselectImage. id)
+         (SelectImage. id))))))
+
+(defn toggle-image-selection
+  [id]
+  (ToggleImageSelection. id))
+
+;; --- Delete Selected
+
+(defrecord DeleteSelected []
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [{:keys [id selected]} (get state :dashboard)]
+      (rx/of (remove-images id selected)
+             #(assoc-in % [:dashboard :selected] #{})))))
+
+(defn delete-selected
+  []
+  (DeleteSelected.))
+
 ;; --- Helpers
 
 (defn set-images-ordering
@@ -317,3 +379,5 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (assoc-in state [:dashboard :images-filter] ""))))
+
+
