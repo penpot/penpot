@@ -97,8 +97,11 @@
                   (dom/prevent-default e)
                   (dom/stop-propagation e)
                   (on-save e))))
+
+            (delete []
+              (rs/emit! (di/delete-collection (:id coll))))
             (on-delete []
-              (rs/emit! (di/delete-collection (:id coll))))]
+              (udl/open! :confirm {:on-accept delete}))]
       [:div.dashboard-title
        [:h2
         (if edit?
@@ -205,8 +208,10 @@
 (mx/defc grid-options
   [coll]
   (let [own? (= (:type coll) :own)]
-    (letfn [(on-delete [event]
-              (rs/emit! (di/delete-selected)))]
+    (letfn [(delete []
+              (rs/emit! (di/delete-selected)))
+            (on-delete [event]
+              (udl/open! :confirm {:on-accept delete}))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
        (if own?
