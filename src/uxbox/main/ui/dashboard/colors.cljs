@@ -6,28 +6,26 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.colors
-  (:require [sablono.core :refer-macros [html]]
-            [rum.core :as rum]
-            [cuerdas.core :as str]
+  (:require [cuerdas.core :as str]
             [lentes.core :as l]
-            [uxbox.util.i18n :as t :refer (tr)]
-            [uxbox.main.state :as st]
-            [uxbox.util.rstore :as rs]
-            [uxbox.util.schema :as sc]
-            [uxbox.main.library :as library]
-            [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.colors :as dc]
+            [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.forms :as form]
-            [uxbox.main.ui.lightbox :as lbx]
+            [uxbox.main.library :as library]
+            [uxbox.main.state :as st]
             [uxbox.main.ui.colorpicker :refer (colorpicker)]
-            [uxbox.util.mixins :as mx]
             [uxbox.main.ui.dashboard.header :refer (header)]
+            [uxbox.main.ui.forms :as form]
+            [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.keyboard :as k]
+            [uxbox.main.ui.lightbox :as lbx]
+            [uxbox.util.color :refer (hex->rgb)]
             [uxbox.util.dom :as dom]
+            [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.lens :as ul]
-            [uxbox.util.color :refer (hex->rgb)]))
+            [uxbox.util.mixins :as mx]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.schema :as sc]))
 
 ;; --- Refs
 
@@ -52,7 +50,7 @@
 ;; --- Page Title
 
 (mx/defcs page-title
-  {:mixins [(rum/local {}) mx/static mx/reactive]}
+  {:mixins [(mx/local {}) mx/static mx/reactive]}
   [own {:keys [id] :as coll}]
   (let [local (:rum/local own)
         dashboard (mx/react dashboard-ref)
@@ -192,7 +190,7 @@
   [type selected]
   (let [own? (= type :own)
         builtin? (= type :builtin)
-        collections (cond->> (rum/react collections-ref)
+        collections (cond->> (mx/react collections-ref)
                       own? (filter #(= :own (:type %)))
                       builtin? (filter #(= :builtin (:type %)))
                       own? (sort-by :id))]
@@ -212,7 +210,7 @@
   {:mixins [mx/static mx/reactive]}
   []
   (let [dashboard (mx/react dashboard-ref)
-        collections (rum/react collections-ref)
+        collections (mx/react collections-ref)
         selected (:id dashboard)
         type (:type dashboard)
         own? (= type :own)
@@ -265,7 +263,7 @@
 ;; --- Colors Lightbox (Component)
 
 (mx/defcs color-lightbox
-  {:mixins [(rum/local {}) mx/static]}
+  {:mixins [(mx/local {}) mx/static]}
   [own {:keys [coll color]}]
   (let [local (:rum/local own)]
     (letfn [(on-submit [event]
