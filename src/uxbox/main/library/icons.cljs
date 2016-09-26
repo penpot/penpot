@@ -25,62 +25,62 @@
 
 (def +collections+
   [{:name "Material design (actions)"
-    :builtin true
+    :type :builtin
     :id 1
     :icons md-actions/+icons+}
    {:name "Material design (alerts)"
-    :builtin true
+    :type :builtin
     :id 2
     :icons md-alerts/+icons+}
    {:name "Material design (Av)"
-    :builtin true
+    :type :builtin
     :id 3
     :icons md-av/+icons+}
    {:name "Material design (Communication)"
-    :builtin true
+    :type :builtin
     :id 4
     :icons md-comm/+icons+}
    {:name "Material design (Content)"
-    :builtin true
+    :type :builtin
     :id 5
     :icons md-content/+icons+}
    {:name "Material design (Device)"
-    :builtin true
+    :type :builtin
     :id 6
     :icons md-device/+icons+}
    {:name "Material design (Editor)"
-    :builtin true
+    :type :builtin
     :id 7
     :icons md-editor/+icons+}
    {:name "Material design (File)"
-    :builtin true
+    :type :builtin
     :id 8
     :icons md-file/+icons+}
    {:name "Material design (Hardware)"
-    :builtin true
+    :type :builtin
     :id 9
     :icons md-hardware/+icons+}
    {:name "Material design (Image)"
-    :builtin true
+    :type :builtin
     :id 10
     :icons md-image/+icons+}
    {:name "Material design (Maps)"
-    :builtin true
+    :type :builtin
     :id 11
     :icons md-maps/+icons+}
    {:name "Material design (Navigation)"
-    :builtin true
+    :type :builtin
     :id 12
     :icons md-nav/+icons+}
    {:name "Material design (Notifications)"
-    :builtin true
+    :type :builtin
     :id 13
     :icons md-not/+icons+}
    {:name "Material design (Social)"
-    :builtin true
+    :type :builtin
     :id 14
     :icons md-social/+icons+}
    {:name "Material design (Toggle)"
-    :builtin true
+    :type :builtin
     :id 15
     :icons md-toggle/+icons+}])
