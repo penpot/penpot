@@ -16,12 +16,31 @@
             [uxbox.util.schema :as sc]
             [uxbox.main.data.pages :as udp]))
 
+;; --- Helpers
+
+(defn assoc-project
+  "A reduce function for assoc the project
+  to the state map."
+  [state proj]
+  (let [id (:id proj)]
+    (update-in state [:projects-by-id id] merge proj)))
+
+(defn dissoc-project
+  "A reduce function for dissoc the project
+  from the state map."
+  [state id]
+  (update-in state [:projects-by-id] dissoc id))
+
 ;; --- Initialize
 
 (declare fetch-projects)
 (declare projects-fetched?)
 
 (defrecord Initialize []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:dashboard :section] :dashboard/projects))
+
   rs/EffectEvent
   (-apply-effect [_ state]
     (when-not (seq (:projects-by-id state))
@@ -44,8 +63,6 @@
   (Initialize.))
 
 ;; --- Projects Fetched
-
-(declare assoc-project)
 
 (defrecord ProjectsFetched [projects]
   rs/UpdateEvent
@@ -114,8 +131,6 @@
 
 ;; --- Delete Project (by id)
 
-(declare dissoc-project)
-
 (defrecord DeleteProject [id]
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -166,58 +181,15 @@
   ([projectid] (GoTo. projectid))
   ([projectid pageid] (GoToPage. projectid pageid)))
 
-;; --- UI related events
+;; --- Update Opts (Filtering & Ordering)
 
-(defn set-project-ordering
-  [order]
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:dashboard :project-order] order))))
+(defrecord UpdateOpts [order filter]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:dashboard :projects] merge
+               (when order {:order order})
+               (when filter {:filter filter}))))
 
-(defn set-project-filtering
-  [term]
-  (reify
-    rs/WatchEvent
-    (-apply-watch [_ state s]
-      (assoc-in state [:dashboard :project-filter] term))))
-
-(defn clear-project-filtering
-  []
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc-in state [:dashboard :project-filter] ""))))
-
-;; --- Helpers
-
-(defn sort-projects-by
-  [ordering projs]
-  (case ordering
-    :name (sort-by :name projs)
-    :created (reverse (sort-by :created-at projs))
-    projs))
-
-(defn contains-term?
-  [phrase term]
-  (str/contains? (str/lower phrase) (str/trim (str/lower term))))
-
-(defn filter-projects-by
-  [term projs]
-  (if (str/blank? term)
-    projs
-    (filter #(contains-term? (:name %) term) projs)))
-
-(defn assoc-project
-  "A reduce function for assoc the project
-  to the state map."
-  [state proj]
-  (let [id (:id proj)]
-    (update-in state [:projects-by-id id] merge proj)))
-
-(defn dissoc-project
-  "A reduce function for dissoc the project
-  from the state map."
-  [state id]
-  (update-in state [:projects-by-id] dissoc id))
-
+(defn update-opts
+  [& {:keys [order filter] :as opts}]
+  (UpdateOpts. order filter))
