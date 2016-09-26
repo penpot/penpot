@@ -13,11 +13,14 @@
                       "%s project"
                       "%s projects"]
    "ds.num-colors" ["No colors"
-                      "%s color"
-                      "%s colors"]
+                    "%s color"
+                    "%s colors"]
    "ds.num-images" ["No images"
-                      "%s image"
-                      "%s images"]
+                    "%s image"
+                    "%s images"]
+   "ds.num-icons" ["No icons"
+                   "%s icon"
+                   "%s icons"]
    "ds.project-ordering" "Sort by"
    "ds.project-ordering.by-name" "name"
    "ds.project-ordering.by-last-update" "last update"
