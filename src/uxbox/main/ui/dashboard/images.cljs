@@ -18,7 +18,7 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.images :as di]
             [uxbox.main.ui.icons :as i]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.library-bar :as ui.library-bar]
@@ -54,11 +54,11 @@
 ;; --- Refs
 
 (def ^:private dashboard-ref
-  (-> (l/key :dashboard)
+  (-> (l/in [:dashboard :images])
       (l/derive st/state)))
 
 (def ^:private collections-map-ref
-  (-> (comp (l/key :images-by-id)
+  (-> (comp (l/key :image-colls-by-id)
             (ul/merge library/+image-collections-by-id+))
       (l/derive st/state)))
 
