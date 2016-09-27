@@ -7,19 +7,19 @@
 
 (ns uxbox.main.ui.dashboard.header
   (:require [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as s]
+            [uxbox.main.state :as st]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.users :as ui.u]
-            [uxbox.util.mixins :as mx]))
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.router :as r]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.rstore :as rs]))
 
 (def header-ref
-  (-> (l/in [:dashboard])
-      (l/derive s/state)))
+  (-> (l/key :dashboard)
+      (l/derive st/state)))
 
 (mx/defc header-link
   [section content]
