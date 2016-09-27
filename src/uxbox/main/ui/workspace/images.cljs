@@ -17,7 +17,7 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.images :as di]
             [uxbox.main.ui.icons :as i]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as k]
             [uxbox.main.ui.library-bar :as ui.library-bar]

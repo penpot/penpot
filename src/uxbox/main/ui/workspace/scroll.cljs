@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace.scroll
   "Workspace scroll events handling."
   (:require [beicon.core :as rx]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.rlocks :as rlocks]
             [uxbox.util.geom.point :as gpt]))

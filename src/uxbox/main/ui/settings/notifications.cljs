@@ -12,7 +12,7 @@
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
             [uxbox.main.ui.icons :as i]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.settings.header :refer (header)]))
 

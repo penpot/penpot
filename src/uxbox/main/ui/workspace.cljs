@@ -18,7 +18,7 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (classnames)]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.confirm]
             [uxbox.main.ui.workspace.images]

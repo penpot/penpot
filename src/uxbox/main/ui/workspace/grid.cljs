@@ -10,7 +10,7 @@
             [rum.core :as rum]
             [cuerdas.core :as str]
             [uxbox.main.constants :as c]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.workspace.base :as wb]))
 
 ;; --- Grid (Component)

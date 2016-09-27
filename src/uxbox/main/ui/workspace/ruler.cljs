@@ -13,7 +13,7 @@
             [uxbox.util.rstore :as rs]
             [uxbox.util.math :as mth]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 

@@ -7,7 +7,7 @@
 
 (ns uxbox.view.ui.notfound
   (:require [sablono.core :refer-macros [html]]
-            [uxbox.util.mixins :as mx]))
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 (defn notfound-page-render
   [own]

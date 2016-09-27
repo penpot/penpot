@@ -11,7 +11,7 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as rt]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.state :as st]
             [uxbox.view.data.viewer :as dv]

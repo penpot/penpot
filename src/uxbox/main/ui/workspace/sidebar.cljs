@@ -10,7 +10,7 @@
             [uxbox.main.state :as st]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.sidebar.options :refer (options-toolbox)]
             [uxbox.main.ui.workspace.sidebar.layers :refer (layers-toolbox)]

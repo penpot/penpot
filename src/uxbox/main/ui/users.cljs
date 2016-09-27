@@ -16,7 +16,7 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.mixins :as mx]))
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- User Menu
 

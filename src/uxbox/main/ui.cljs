@@ -28,7 +28,7 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.data :refer (parse-int uuid-str?)]
             [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.shapes]))
 
 ;; --- Constants
@@ -98,7 +98,14 @@
         :auth/recovery (auth/recovery-page (:token params))
         :dashboard/projects (dashboard/projects-page)
         :dashboard/elements (dashboard/elements-page)
-        :dashboard/icons (dashboard/icons-page)
+        :dashboard/icons (let [{:keys [id type]} params
+                                type (when (str/alpha? type) (keyword type))
+                                id (cond
+                                     (str/digits? id) (parse-int id)
+                                     (uuid-str? id) (uuid id)
+                                     :else nil)]
+                            (dashboard/icons-page type id))
+
         :dashboard/images (let [{:keys [id type]} params
                                 type (when (str/alpha? type) (keyword type))
                                 id (cond
@@ -133,7 +140,11 @@
    ["/settings/notifications" :settings/notifications]
    ["/dashboard/projects" :dashboard/projects]
    ["/dashboard/elements" :dashboard/elements]
+
+
    ["/dashboard/icons" :dashboard/icons]
+   ["/dashboard/icons/:type/:id" :dashboard/icons]
+   ["/dashboard/icons/:type" :dashboard/icons]
 
    ["/dashboard/images" :dashboard/images]
    ["/dashboard/images/:type/:id" :dashboard/images]

@@ -13,7 +13,7 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.rstore :as rs]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.datetime :as dt]))
 

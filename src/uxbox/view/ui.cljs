@@ -9,7 +9,7 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as rt]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.loader :refer (loader)]
             [uxbox.main.ui.lightbox :refer (lightbox)]

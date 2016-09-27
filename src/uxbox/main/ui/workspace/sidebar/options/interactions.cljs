@@ -12,7 +12,7 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.state :as st]
             [uxbox.main.library :as library]
             [uxbox.main.data.shapes :as uds]

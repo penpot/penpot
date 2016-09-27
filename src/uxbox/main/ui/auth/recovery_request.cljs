@@ -20,7 +20,7 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]))
 
 ;; --- Recovery Request Constants

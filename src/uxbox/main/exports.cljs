@@ -13,7 +13,7 @@
             [uxbox.main.ui.shapes.group :refer (group-shape)]
             [uxbox.main.ui.shapes.path :refer (path-shape)]
             [uxbox.main.ui.shapes.circle :refer (circle-shape)]
-            [uxbox.util.mixins :as mx]))
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 (mx/defc background
   []

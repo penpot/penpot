@@ -18,7 +18,7 @@
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.datetime :as dt]
             [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.rstore :as rs]
             [uxbox.util.zip :as zip]
             [lentes.core :as l]))

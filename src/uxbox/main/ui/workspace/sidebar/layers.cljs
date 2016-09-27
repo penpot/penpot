@@ -20,7 +20,7 @@
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom])
   (:import goog.events.EventType))

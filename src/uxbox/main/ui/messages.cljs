@@ -6,7 +6,7 @@
             [uxbox.main.state :as st]
             [uxbox.main.data.messages :as udm]
             [uxbox.main.ui.icons :as i]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer (classnames)]
             [uxbox.util.dom :as dom]))
 

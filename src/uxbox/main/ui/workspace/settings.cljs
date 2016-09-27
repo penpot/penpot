@@ -17,7 +17,7 @@
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.forms :as forms]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.colorpicker :as uucp]
