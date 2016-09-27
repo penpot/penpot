@@ -75,10 +75,10 @@
          [:span "Color"]
          [:div.row-flex.color-data
           [:span.color-th
-           {:style {:background-color (:stroke shape)}
+           {:style {:background-color (:stroke shape "#000000")}
             :on-click show-color-picker}]
           [:div.color-info
-           [:span (:stroke shape)]]]
+           [:span (:stroke shape "#000000")]]]
 
          [:span "Opacity"]
          [:div.row-flex
