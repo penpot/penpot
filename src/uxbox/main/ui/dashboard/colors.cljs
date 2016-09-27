@@ -23,18 +23,18 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.lens :as ul]
-            [uxbox.util.mixins :as mx]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.rstore :as rs]
             [uxbox.util.schema :as sc]))
 
 ;; --- Refs
 
 (def ^:private dashboard-ref
-  (-> (l/key :dashboard)
+  (-> (l/in [:dashboard :colors])
       (l/derive st/state)))
 
 (def ^:private collections-map-ref
-  (-> (comp (l/key :colors-by-id)
+  (-> (comp (l/key :color-colls-by-id)
             (ul/merge library/+color-collections-by-id+))
       (l/derive st/state)))
 

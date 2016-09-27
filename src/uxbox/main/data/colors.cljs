@@ -21,13 +21,13 @@
   [state coll]
   (let [id (:id coll)
         coll (assoc coll :type :own)]
-    (assoc-in state [:colors-by-id id] coll)))
+    (assoc-in state [:color-colls-by-id id] coll)))
 
 (defn- dissoc-collection
   "A reduce function for dissoc the color collection
   to the state map."
   [state id]
-  (update state :colors-by-id dissoc id))
+  (update state :color-colls-by-id dissoc id))
 
 ;; --- Initialize
 
@@ -39,18 +39,19 @@
   (-apply-update [_ state]
     (let [type (or type :builtin)
           id (or id (if (= type :builtin) 1 nil))
-          data {:type type :id id :selected #{}
-                :section :dashboard/colors}]
-      (assoc state :dashboard data)))
+          data {:type type :id id :selected #{}}]
+      (-> state
+          (assoc-in [:dashboard :colors] data)
+          (assoc-in [:dashboard :section] :dashboard/colors))))
 
   ;; rs/EffectEvent
   ;; (-apply-effect [_ state]
-  ;;   (when (nil? (:colors-by-id state))
+  ;;   (when (nil? (:color-colls-by-id state))
   ;;     (reset! st/loader true)))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (if (nil? (:colors-by-id state))
+    (if (nil? (:color-colls-by-id state))
       (rx/merge
        (rx/of (fetch-collections))
          (->> (rx/filter collections-fetched? s)
@@ -114,8 +115,8 @@
   (-apply-update [_ state]
     (-> state
         (assoc-collection item)
-        (assoc-in [:dashboard :collection-id] (:id item))
-        (assoc-in [:dashboard :collection-type] :own))))
+        (assoc-in [:dashboard :colors :id] (:id item))
+        (assoc-in [:dashboard :colors :type] :own))))
 
 (defn collection-created
   [item]
@@ -152,7 +153,7 @@
 (defrecord UpdateCollection [id]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [item (get-in state [:colors-by-id id])]
+    (let [item (get-in state [:color-colls-by-id id])]
       (->> (rp/req :update/color-collection item)
            (rx/map :payload)
            (rx/map collection-updated)))))
@@ -166,7 +167,7 @@
 (defrecord RenameCollection [id name]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:colors-by-id id :name] name))
+    (assoc-in state [:color-colls-by-id id :name] name))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -198,7 +199,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [replacer #(-> (disj % from) (conj to))]
-      (update-in state [:colors-by-id id :data] (fnil replacer #{}))))
+      (update-in state [:color-colls-by-id id :data] (fnil replacer #{}))))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -214,7 +215,7 @@
 (defrecord RemoveColors [id colors]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:colors-by-id id :data]
+    (update-in state [:color-colls-by-id id :data]
                #(set/difference % colors)))
 
   rs/WatchEvent
@@ -231,17 +232,17 @@
 (defrecord SelectColor [color]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:dashboard :selected] conj color)))
+    (update-in state [:dashboard :colors :selected] conj color)))
 
 (defrecord DeselectColor [color]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:dashboard :selected] disj color)))
+    (update-in state [:dashboard :colors :selected] disj color)))
 
 (defrecord ToggleColorSelection [color]
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (let [selected (get-in state [:dashboard :selected])]
+    (let [selected (get-in state [:dashboard :colors :selected])]
       (rx/of
        (if (selected color)
          (DeselectColor. color)
@@ -257,9 +258,9 @@
 (defrecord DeleteSelectedColors []
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (let [{:keys [id selected]} (get state :dashboard)]
+    (let [{:keys [id selected]} (get-in state [:dashboard :colors])]
       (rx/of (remove-colors id selected)
-             #(assoc-in % [:dashboard :selected] #{})))))
+             #(assoc-in % [:dashboard :colors :selected] #{})))))
 
 (defn delete-selected-colors
   []
