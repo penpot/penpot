@@ -277,6 +277,52 @@
   (let [{:keys [width height]} (size shape)]
     (assoc shape :proportion (/ width height))))
 
+;; --- Resize (Dimentsions)
+
+(declare resize-dim-rect)
+(declare resize-dim-circle)
+
+(defn resize-dim
+  "Resize using calculated dimensions (eg, `width` and `height`)
+  instead of absolute positions."
+  [shape opts]
+  (case (:type shape)
+    :rect (resize-dim-rect shape opts)
+    :icon (resize-dim-rect shape opts)
+    :circle (resize-dim-circle shape opts)))
+
+(defn- resize-dim-rect
+  [{:keys [proportion proportion-lock x1 y1] :as shape}
+   {:keys [width height]}]
+  {:pre [(not (and width height))]}
+  (if-not proportion-lock
+    (if width
+      (assoc shape :x2 (+ x1 width))
+      (assoc shape :y2 (+ y1 height)))
+    (if width
+      (-> shape
+          (assoc :x2 (+ x1 width))
+          (assoc :y2 (+ y1 (/ width proportion))))
+      (-> shape
+          (assoc :y2 (+ y1 height))
+          (assoc :x2 (+ x1 (* height proportion)))))))
+
+(defn- resize-dim-circle
+  [{:keys [proportion proportion-lock] :as shape}
+   {:keys [rx ry]}]
+  {:pre [(not (and rx ry))]}
+  (if-not proportion-lock
+    (if rx
+      (assoc shape :rx rx)
+      (assoc shape :ry ry))
+    (if rx
+      (-> shape
+          (assoc :rx rx)
+          (assoc :ry (/ rx proportion)))
+      (-> shape
+          (assoc :ry ry)
+          (assoc :rx (* ry proportion))))))
+
 ;; --- Resize (Absolute)
 
 (declare resize-rect)
