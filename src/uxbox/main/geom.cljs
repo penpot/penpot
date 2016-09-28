@@ -130,23 +130,32 @@
 
 ;; --- Size
 
-(declare rect-size)
+(declare size-rect)
+(declare size-circle)
 
 (defn size
   "Calculate the size of the shape."
   [shape]
   (case (:type shape)
-    :text (rect-size shape)
-    :rect (rect-size shape)
-    :icon (rect-size shape)
-    :path (rect-size shape)))
+    :circle (size-circle shape)
+    :text (size-rect shape)
+    :rect (size-rect shape)
+    :icon (size-rect shape)
+    :path (size-rect shape)))
 
-(defn- rect-size
+(defn- size-rect
   "A specialized function for calculate size
   for rect-like shapes."
   [{:keys [x1 y1 x2 y2] :as shape}]
   {:width (- x2 x1)
    :height (- y2 y1)})
+
+(defn- size-circle
+  "A specialized function for calculate size
+  for circle shape."
+  [{:keys [rx ry]}]
+  {:width (* rx 2)
+   :height (* ry 2)})
 
 ;; --- Vertex Access
 
