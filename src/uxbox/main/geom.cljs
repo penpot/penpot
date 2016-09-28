@@ -251,6 +251,23 @@
   [shape index point]
   (assoc-in shape [:points index] point))
 
+;; --- Setup Proportions
+
+(declare setup-proportions-rect)
+
+(defn setup-proportions
+  [shape]
+  (case (:type shape)
+    :rect (setup-proportions-rect shape)
+    :icon (setup-proportions-rect shape)
+    :circle (setup-proportions-rect shape)
+    shape))
+
+(defn setup-proportions-rect
+  [shape]
+  (let [{:keys [width height]} (size shape)]
+    (assoc shape :proportion (/ width height))))
+
 ;; --- Resize (Absolute)
 
 (declare resize-rect)
