@@ -30,7 +30,8 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [page (get-in state [:workspace :page])]
+      (let [page (get-in state [:workspace :page])
+            shape (geom/setup-proportions shape)]
         (stsh/assoc-shape-to-page state shape page)))))
 
 (defn delete-shape
