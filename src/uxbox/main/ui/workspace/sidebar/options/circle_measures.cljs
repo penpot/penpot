@@ -24,14 +24,15 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
-(defn- circle-measures-menu-render
-  [own menu shape]
+(mx/defc circle-measures-menu
+  {:mixins [mx/static]}
+  [menu {:keys [id] :as shape}]
   (letfn [(on-size-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (uds/update-radius-attrs sid props))))
+              (rs/emit! (uds/update-size sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
