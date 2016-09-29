@@ -43,66 +43,64 @@
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (uds/update-position sid props))))]
-    (html
-     [:div.element-set {:key (str (:id menu))}
-      [:div.element-set-title (:name menu)]
-      [:div.element-set-content
-       ;; SLIDEBAR FOR ROTATION AND OPACITY
-       [:span "Size"]
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "Width"
-          :type "number"
-          :min "0"
-          :value (:rx shape)
-          :on-change (partial on-size-change :rx)}]
-        [:div.lock-size i/lock]
-        [:input.input-text
-         {:placeholder "Height"
-          :type "number"
-          :min "0"
-          :value (:ry shape)
-          :on-change (partial on-size-change :ry)}]]
+              (rs/emit! (uds/update-position sid props))))
+          (on-proportion-lock-change [event]
+            (if (:proportion-lock shape)
+              (rs/emit! (uds/unlock-proportions id))
+              (rs/emit! (uds/lock-proportions id))))]
+    [:div.element-set {:key (str (:id menu))}
+     [:div.element-set-title (:name menu)]
+     [:div.element-set-content
+      ;; SLIDEBAR FOR ROTATION AND OPACITY
+      [:span "Size"]
+      [:div.row-flex
+       [:input.input-text
+        {:placeholder "Width"
+         :type "number"
+         :min "0"
+         :value (:rx shape)
+         :on-change (partial on-size-change :rx)}]
+       [:div.lock-size
+        {:class (when (:proportion-lock shape) "selected")
+         :on-click on-proportion-lock-change}
+        i/lock]
+       [:input.input-text
+        {:placeholder "Height"
+         :type "number"
+         :min "0"
+         :value (:ry shape)
+         :on-change (partial on-size-change :ry)}]]
 
-       [:span "Position"]
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "cx"
-          :type "number"
-          :value (:cx shape "")
-          :on-change (partial on-pos-change :x)}]
-        [:input.input-text
-         {:placeholder "cy"
-          :type "number"
-          :value (:cy shape "")
-          :on-change (partial on-pos-change :y)}]]
+      [:span "Position"]
+      [:div.row-flex
+       [:input.input-text
+        {:placeholder "cx"
+         :type "number"
+         :value (:cx shape "")
+         :on-change (partial on-pos-change :x)}]
+       [:input.input-text
+        {:placeholder "cy"
+         :type "number"
+         :value (:cy shape "")
+         :on-change (partial on-pos-change :y)}]]
 
-       [:span "Rotation"]
-       [:div.row-flex
-        [:input.slidebar
-         {:type "range"
-          :min 0
-          :max 360
-          :value (:rotation shape 0)
-          :on-change on-rotation-change}]]
+      [:span "Rotation"]
+      [:div.row-flex
+       [:input.slidebar
+        {:type "range"
+         :min 0
+         :max 360
+         :value (:rotation shape 0)
+         :on-change on-rotation-change}]]
 
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder ""
-          :type "number"
-          :min 0
-          :max 360
-          :value (:rotation shape "0")
-          :on-change on-rotation-change
-          }]
-        [:input.input-text
-         {:style {:visibility "hidden"}}]
-        ]]]
-     )))
-
-(def circle-measures-menu
-  (mx/component
-   {:render circle-measures-menu-render
-    :name "circle-measures-menu"
-    :mixins [mx/static]}))
+      [:div.row-flex
+       [:input.input-text
+        {:placeholder ""
+         :type "number"
+         :min 0
+         :max 360
+         :value (:rotation shape "0")
+         :on-change on-rotation-change
+         }]
+       [:input.input-text
+        {:style {:visibility "hidden"}}]]]]))
