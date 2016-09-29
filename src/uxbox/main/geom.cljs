@@ -207,48 +207,64 @@
   "A specialized function for vertex movement
   for rect-like shapes."
   [shape vid {dx :x dy :y lock? :lock}]
-  (let [{:keys [x1 x2 y1 y2]} shape
-        dy (if lock? dx dy)]
-    (case vid
-      :top-left (assoc shape
-                       :x1 (min x2 (+ x1 dx))
-                       :y1 (min y2 (+ y1 dy)))
-      :top-right (assoc shape
-                        :x2 (max x1 (+ x2 dx))
-                        :y1 (min y2 (+ y1 dy)))
-      :bottom-left (assoc shape
-                          :x1 (min x2 (+ x1 dx))
-                          :y2 (max y1 (+ y2 dy)))
-      :bottom-right (assoc shape
-                           :x2 (max x1 (+ x2 dx))
-                           :y2 (max y1 (+ y2 dy)))
-      :top (assoc shape :y1 (min y2 (+ y1 dy)))
-      :right (assoc shape :x2 (max x1 (+ x2 dx)))
-      :bottom (assoc shape :y2 (max y1 (+ y2 dy)))
-      :left (assoc shape :x1 (min x2 (+ x1 dx))))))
+  (letfn [(handle-positioning [{:keys [x1 x2 y1 y2 proportion] :as shape}]
+            (case vid
+              :top-left (assoc shape
+                               :x1 (min x2 (+ x1 dx))
+                               :y1 (min y2 (+ y1 dy)))
+              :top-right (assoc shape
+                                :x2 (max x1 (+ x2 dx))
+                                :y1 (min y2 (+ y1 dy)))
+              :bottom-left (assoc shape
+                                  :x1 (min x2 (+ x1 dx))
+                                  :y2 (max y1 (+ y2 dy)))
+              :bottom-right (assoc shape
+                                   :x2 (max x1 (+ x2 dx))
+                                   :y2 (max y1 (+ y2 dy)))
+              :top (assoc shape :y1 (min y2 (+ y1 dy)))
+              :right (assoc shape :x2 (max x1 (+ x2 dx)))
+              :bottom (assoc shape :y2 (max y1 (+ y2 dy)))
+              :left (assoc shape :x1 (min x2 (+ x1 dx)))))
+
+          (handle-proportion [{:keys [y1 proportion proportion-lock] :as shape}]
+            (let [{:keys [width height]} (size shape)]
+              (if (or lock? proportion-lock)
+                (assoc shape :y2 (+ y1 (/ width proportion)))
+                shape)))]
+    (-> shape
+        (handle-positioning)
+        (handle-proportion))))
 
 (defn- move-circle-vertex
   "A specialized function for vertex movement
   for circle shapes."
-  [shape vid {dx :x dy :y lock :lock}]
-  (let [[dx dy] (if lock [dx dx] [dx dy])]
-    (case vid
-      :top-left (assoc shape
-                       :rx (max 0 (- (:rx shape) dx))
-                       :ry (max 0 (- (:ry shape) dy)))
-      :top-right (assoc shape
-                        :rx (max 0 (+ (:rx shape) dx))
-                        :ry (max 0 (- (:ry shape) dy)))
-      :bottom-left (assoc shape
-                          :rx (max 0 (- (:rx shape) dx))
-                          :ry (max 0 (+ (:ry shape) dy)))
-      :bottom-right (assoc shape
-                           :rx (max 0 (+ (:rx shape) dx))
-                           :ry (max 0 (+ (:ry shape) dy)))
-      :top (assoc shape :ry (max 0 (- (:ry shape) dy)))
-      :right (assoc shape :rx (max 0 (+ (:rx shape) dx)))
-      :bottom (assoc shape :ry (max 0 (+ (:ry shape) dy)))
-      :left (assoc shape :rx (max 0 (+ (:rx shape) dx))))))
+  [shape vid {dx :x dy :y lock? :lock}]
+  (letfn [(handle-positioning [shape]
+            (case vid
+              :top-left (assoc shape
+                               :rx (max 0 (- (:rx shape) dx))
+                               :ry (max 0 (- (:ry shape) dy)))
+              :top-right (assoc shape
+                                :rx (max 0 (+ (:rx shape) dx))
+                                :ry (max 0 (- (:ry shape) dy)))
+              :bottom-left (assoc shape
+                                  :rx (max 0 (- (:rx shape) dx))
+                                  :ry (max 0 (+ (:ry shape) dy)))
+              :bottom-right (assoc shape
+                                   :rx (max 0 (+ (:rx shape) dx))
+                                   :ry (max 0 (+ (:ry shape) dy)))
+              :top (assoc shape :ry (max 0 (- (:ry shape) dy)))
+              :right (assoc shape :rx (max 0 (+ (:rx shape) dx)))
+              :bottom (assoc shape :ry (max 0 (+ (:ry shape) dy)))
+              :left (assoc shape :rx (max 0 (+ (:rx shape) dx)))))
+          (handle-proportion [{:keys [rx proportion proportion-lock] :as shape}]
+            (let [{:keys [width height]} (size shape)]
+              (if (or lock? proportion-lock)
+                (assoc shape :ry (/ rx proportion))
+                shape)))]
+    (-> shape
+        (handle-positioning)
+        (handle-proportion))))
 
 ;; --- Paths
 
