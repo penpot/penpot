@@ -6,9 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.options.rect-measures
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
@@ -24,11 +22,11 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
-(defn rect-measures-menu-render
-  [own menu shape]
+(mx/defc rect-measures-menu
+  {:mixins [mx/static]}
+  [menu {:keys [id] :as shape}]
   (letfn [(on-size-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
+            (let [value (-> (dom/event->value event) (parse-int 0))
                   sid (:id shape)
                   props {attr value}]
               (rs/emit! (uds/update-size sid props))))
@@ -48,81 +46,83 @@
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (uds/update-radius-attrs sid props))))]
+              (rs/emit! (uds/update-radius-attrs sid props))))
+          (on-proportion-lock-change [event]
+            (if (:proportion-lock shape)
+              (rs/emit! (uds/unlock-proportions id))
+              (rs/emit! (uds/lock-proportions id))))]
     (let [size (geom/size shape)]
-      (html
-       [:div.element-set {:key (str (:id menu))}
-        [:div.element-set-title (:name menu)]
-        [:div.element-set-content
-         ;; SLIDEBAR FOR ROTATION AND OPACITY
-         [:span "Size"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "Width"
-            :type "number"
-            :min "0"
-            :value (:width size)
-            :on-change (partial on-size-change :width)}]
-          [:div.lock-size i/lock]
-          [:input.input-text
-           {:placeholder "Height"
-            :type "number"
-            :min "0"
-            :value (:height size)
-            :on-change (partial on-size-change :height)}]]
+      [:div.element-set {:key (str (:id menu))}
+       [:div.element-set-title (:name menu)]
+       [:div.element-set-content
+        ;; SLIDEBAR FOR ROTATION AND OPACITY
+        [:span "Size"]
+        [:div.row-flex
+         [:input.input-text
+          {:placeholder "Width"
+           :type "number"
+           :min "0"
+           :value (:width size)
+           :on-change (partial on-size-change :width)}]
+         [:div.lock-size
+          {:class (when (:proportion-lock shape) "selected")
+           :on-click on-proportion-lock-change}
+          i/lock]
+         [:input.input-text
+          {:placeholder "Height"
+           :type "number"
+           :min "0"
+           :value (:height size)
+           :on-change (partial on-size-change :height)}]]
 
-         [:span "Position"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "x"
-            :type "number"
-            :value (:x1 shape "")
-            :on-change (partial on-pos-change :x)}]
-          [:input.input-text
-           {:placeholder "y"
-            :type "number"
-            :value (:y1 shape "")
-            :on-change (partial on-pos-change :y)}]]
+        [:span "Position"]
+        [:div.row-flex
+         [:input.input-text
+          {:placeholder "x"
+           :type "number"
+           :value (:x1 shape "")
+           :on-change (partial on-pos-change :x)}]
+         [:input.input-text
+          {:placeholder "y"
+           :type "number"
+           :value (:y1 shape "")
+           :on-change (partial on-pos-change :y)}]]
 
-         [:span "Border radius"]
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder "rx"
-            :type "number"
-            :value (:rx shape "")
-            :on-change (partial on-border-change :rx)}]
-          [:div.lock-size i/lock]
-          [:input.input-text
-           {:placeholder "ry"
-            :type "number"
-            :value (:ry shape "")
-            :on-change (partial on-border-change :ry)}]]
+        [:span "Border radius"]
+        [:div.row-flex
+         [:input.input-text
+          {:placeholder "rx"
+           :type "number"
+           :value (:rx shape "")
+           :on-change (partial on-border-change :rx)}]
+         [:div.lock-size i/lock]
+         [:input.input-text
+          {:placeholder "ry"
+           :type "number"
+           :value (:ry shape "")
+           :on-change (partial on-border-change :ry)}]]
 
-         [:span "Rotation"]
-         [:div.row-flex
-          [:input.slidebar
-           {:type "range"
-            :min 0
-            :max 360
-            :value (:rotation shape 0)
-            :on-change on-rotation-change}]]
+        [:span "Rotation"]
+        [:div.row-flex
+         [:input.slidebar
+          {:type "range"
+           :min 0
+           :max 360
+           :value (:rotation shape 0)
+           :on-change on-rotation-change}]]
 
-         [:div.row-flex
-          [:input.input-text
-           {:placeholder ""
-            :type "number"
-            :min 0
-            :max 360
-            :value (:rotation shape "0")
-            :on-change on-rotation-change
-            }]
-          [:input.input-text
-           {:style {:visibility "hidden"}}]
-          ]]]))))
+        [:div.row-flex
+         [:input.input-text
+          {:placeholder ""
+           :type "number"
+           :min 0
+           :max 360
+           :value (:rotation shape "0")
+           :on-change on-rotation-change
+           }]
+         [:input.input-text
+          {:style {:visibility "hidden"}}]
+         ]]])))
 
-(def rect-measures-menu
-  (mx/component
-   {:render rect-measures-menu-render
-    :name "rect-measures"
-    :mixins [mx/static]}))
+
 
