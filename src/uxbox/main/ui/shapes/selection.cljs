@@ -44,11 +44,12 @@
 ;; --- Resize Implementation
 
 (defn- start-resize
-  [vid shape]
+  [vid sid]
   (letfn [(on-resize [[delta ctrl?]]
             (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
-              (rs/emit! (uds/update-vertex-position shape params))))
+              (rs/emit! (uds/update-vertex-position sid params))))
           (on-end []
+            (rs/emit! (uds/setup-proportions sid))
             (rlocks/release! :shape/resize))]
     (let [stoper (->> wb/events-s
                       (rx/map first)
@@ -59,7 +60,7 @@
                       (rx/with-latest-from vector wb/mouse-ctrl-s))]
       (rlocks/acquire! :shape/resize)
       (when @wb/alignment-ref
-        (rs/emit! (uds/initial-vertext-align shape vid)))
+        (rs/emit! (uds/initial-vertext-align sid vid)))
       (rx/subscribe stream on-resize nil on-end))))
 
 ;; --- Selection Handlers (Component)
