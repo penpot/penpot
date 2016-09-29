@@ -108,25 +108,14 @@
 
 (defn update-size
   "A helper event just for update the position
-  of the shape using the width and heigt attrs
-  instread final point of coordinates.
-
-  WARN: only works with shapes that works
-  with height and width such are ::rect"
-  [sid {:keys [width height] :as opts}]
+  of the shape using the width and height attrs
+  instread final point of coordinates."
+  [sid opts]
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (letfn [(resize [shape {:keys [width height] :as size}]
-                (let [x1 (:x1 shape)
-                      y1 (:y1 shape)]
-                  (assoc shape
-                         :x2 (+ x1 width)
-                         :y2 (+ y1 height))))]
-        (let [shape (get-in state [:shapes-by-id sid])
-              size (merge (geom/size shape) opts)]
-          (update-in state [:shapes-by-id sid] resize size))))))
+      (update-in state [:shapes-by-id sid] geom/resize-dim opts))))
 
 (defn update-vertex-position
   [id {:keys [vid delta]}]
