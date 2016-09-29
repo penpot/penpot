@@ -166,6 +166,47 @@
                  (when color {:fill color})
                  (when opacity {:fill-opacity opacity})))))
 
+(defn lock-proportions
+  "Mark proportions of the shape locked and save the current
+  proportion as additional precalculated property."
+  [sid]
+  {:pre [(uuid? sid)]}
+  (reify
+    udp/IPageUpdate
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [[width height] (-> (get-in state [:shapes-by-id sid])
+                               (geom/size)
+                               (keep [:width :height]))
+            proportion (/ width height)]
+        (update-in state [:shapes-by-id sid] assoc
+                   :proportion proportion
+                   :proportion-lock true)))))
+
+(defn unlock-proportions
+  [sid]
+  {:pre [(uuid? sid)]}
+  (reify
+    udp/IPageUpdate
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id sid] assoc
+                 :proportion-lock false))))
+
+(defn setup-proportions
+  [sid]
+  {:pre [(uuid? sid)]}
+  (reify
+    udp/IPageUpdate
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (let [[width height] (-> (get-in state [:shapes-by-id sid])
+                               (geom/size)
+                               (keep [:width :height]))
+            proportion (/ width height)]
+        (update-in state [:shapes-by-id sid] assoc
+                   :proportion proportion)))))
+
 (defn update-font-attrs
   [sid {:keys [family style weight size align
                letter-spacing line-height] :as opts}]
