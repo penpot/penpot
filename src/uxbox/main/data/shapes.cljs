@@ -111,6 +111,7 @@
   of the shape using the width and height attrs
   instread final point of coordinates."
   [sid opts]
+  {:pre [(uuid? sid)]}
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
