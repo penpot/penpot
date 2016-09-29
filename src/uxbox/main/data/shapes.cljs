@@ -146,7 +146,6 @@
       (update-in state [:shapes-by-id sid] geom/absolute-move opts))))
 
 (defn update-text
-  "Update the start position coordenate of the shape."
   [sid {:keys [content]}]
   {:pre [(string? content)]}
   (reify
