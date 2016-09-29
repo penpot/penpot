@@ -6,32 +6,31 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.options
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
-            [uxbox.main.library :as library]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.ui.icons :as i]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.ui.workspace.colorpicker :refer (colorpicker)]
-            [uxbox.main.ui.workspace.recent-colors :refer (recent-colors)]
-            [uxbox.main.ui.workspace.sidebar.options.icon-measures :as options-iconm]
-            [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
-            [uxbox.main.ui.workspace.sidebar.options.rect-measures :as options-rectm]
-            [uxbox.main.ui.workspace.sidebar.options.line-measures :as options-linem]
-            [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
-            [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
-            [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
-            [uxbox.main.ui.workspace.sidebar.options.interactions :as options-interactions]
-            [uxbox.main.geom :as geom]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (parse-int parse-float read-string)]))
+  (:require
+   [lentes.core :as l]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.router :as r]
+   [uxbox.util.rstore :as rs]
+   [uxbox.main.state :as st]
+   [uxbox.main.library :as library]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.shapes :as uds]
+   [uxbox.main.ui.workspace.base :as wb]
+   [uxbox.main.ui.icons :as i]
+   [uxbox.util.mixins :as mx :include-macros true]
+   [uxbox.main.ui.workspace.colorpicker :refer (colorpicker)]
+   [uxbox.main.ui.workspace.recent-colors :refer (recent-colors)]
+   [uxbox.main.ui.workspace.sidebar.options.icon-measures :as options-iconm]
+   [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
+   [uxbox.main.ui.workspace.sidebar.options.rect-measures :as options-rectm]
+   [uxbox.main.ui.workspace.sidebar.options.line-measures :as options-linem]
+   [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
+   [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
+   [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
+   [uxbox.main.ui.workspace.sidebar.options.interactions :as options-interactions]
+   [uxbox.main.geom :as geom]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
 ;; --- Constants
 
@@ -83,29 +82,23 @@
 
 ;; --- Options
 
-(defn- options-render
+(mx/defcs options
+  {:mixins [mx/static (mx/local)]}
   [own shape]
   (let [local (:rum/local own)
         menus (get +menus-map+ (:type shape))
         active-menu (:menu @local (first menus))]
-    (html
-     [:div
-      [:ul.element-icons
-       (for [menu-id (get +menus-map+ (:type shape))
-             :let [menu (get +menus-by-id+ menu-id)
-                   selected? (= active-menu menu-id)]]
-         [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
-                      :key (str "menu-" (:id menu))
-                      :class (when selected? "selected")}
-          (:icon menu)])]
-      (when-let [menu (get +menus-by-id+ active-menu)]
-        ((:comp menu) menu shape))])))
-
-(def ^:private options
-  (mx/component
-   {:render options-render
-    :name "options"
-    :mixins [mx/static (mx/local)]}))
+    [:div
+     [:ul.element-icons
+      (for [menu-id (get +menus-map+ (:type shape))
+            :let [menu (get +menus-by-id+ menu-id)
+                  selected? (= active-menu menu-id)]]
+        [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
+                     :key (str "menu-" (:id menu))
+                     :class (when selected? "selected")}
+         (:icon menu)])]
+     (when-let [menu (get +menus-by-id+ active-menu)]
+       ((:comp menu) menu shape))]))
 
 (def selected-shape-ref
   (letfn [(getter [state]
@@ -115,23 +108,18 @@
     (-> (l/lens getter)
         (l/derive st/state))))
 
-(defn options-toolbox-render
-  [own]
+(mx/defc options-toolbox
+  {:mixins [mx/static mx/reactive]}
+  []
   (let [shape (mx/react selected-shape-ref)
         close #(rs/emit! (udw/toggle-flag :element-options))]
-    (html
-     [:div.elementa-options.tool-window
-      [:div.tool-window-bar
-       [:div.tool-window-icon i/options]
-       [:span (tr "ds.element-options")]
-       [:div.tool-window-close {:on-click close} i/close]]
-      [:div.tool-window-content
-       [:div.element-options
-        (if shape
-          (options shape))]]])))
+    [:div.elementa-options.tool-window
+     [:div.tool-window-bar
+      [:div.tool-window-icon i/options]
+      [:span (tr "ds.element-options")]
+      [:div.tool-window-close {:on-click close} i/close]]
+     [:div.tool-window-content
+      [:div.element-options
+       (if shape
+         (options shape))]]]))
 
-(def options-toolbox
-  (mx/component
-   {:render options-toolbox-render
-    :name "options-toolbox"
-    :mixins [mx/static mx/reactive (mx/local)]}))
