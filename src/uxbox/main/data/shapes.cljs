@@ -237,17 +237,6 @@
                  (when color {:stroke color})
                  (when opacity {:stroke-opacity opacity})))))
 
-(defn update-radius-attrs
-  [sid {:keys [rx ry] :as opts}]
-  (reify
-    udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid]
-                 merge
-                 (when rx {:rx rx})
-                 (when ry {:ry ry})))))
-
 (defn hide-shape
   [sid]
   (reify
