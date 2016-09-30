@@ -1,6 +1,11 @@
 (require '[figwheel-sidecar.repl :as r]
          '[figwheel-sidecar.repl-api :as ra])
 
+(def options
+  {;; "uxbox.config.url" "http://127.0.0.1:6060/api"
+   "uxbox.config.url" "https://test.uxbox.io/api"
+   })
+
 (ra/start-figwheel!
   {:figwheel-options {:css-dirs ["resources/public/css"
                                  "resources/public/view/css"]
@@ -17,7 +22,7 @@
       :parallel-build false
       :optimizations :none
       :warnings {:ns-var-clash false}
-      :closure-defines {"uxbox.config.url" "https://test.uxbox.io/api"}
+      :closure-defines options
       :language-in  :ecmascript6
       :language-out :ecmascript5
       :output-to "resources/public/js/main.js"
@@ -33,7 +38,7 @@
       :parallel-build false
       :optimizations :none
       :warnings {:ns-var-clash false}
-      :closure-defines {"uxbox.config.url" "https://test.uxbox.io/api"}
+      :closure-defines options
       :language-in  :ecmascript6
       :language-out :ecmascript5
       :output-to "resources/public/js/view.js"
