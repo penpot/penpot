@@ -33,6 +33,7 @@
 
 (declare fetch-collections)
 (declare collections-fetched?)
+(declare conditional-fetch)
 
 (defrecord Initialize [type id]
   rs/UpdateEvent
@@ -51,19 +52,28 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
+    (rx/of (conditional-fetch))))
+
+(defn initialize
+  [type id]
+  (Initialize. type id))
+
+;; --- Conditional fetch of Color Collections
+
+(defrecord ConditionalFetch []
+  rs/WatchEvent
+  (-apply-watch [_ state s]
     (if (nil? (:color-colls-by-id state))
       (rx/merge
        (rx/of (fetch-collections))
          (->> (rx/filter collections-fetched? s)
               (rx/take 1)
-              ;; (rx/do #(reset! st/loader false))
               (rx/ignore)))
-      (rx/empty)))
-  )
+      (rx/empty))))
 
-(defn initialize
-  [type id]
-  (Initialize. type id))
+(defn conditional-fetch
+  []
+  (ConditionalFetch.))
 
 ;; --- Select a Collection
 

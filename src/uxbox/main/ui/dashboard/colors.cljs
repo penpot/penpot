@@ -29,16 +29,16 @@
 
 ;; --- Refs
 
-(def ^:private dashboard-ref
+(def dashboard-ref
   (-> (l/in [:dashboard :colors])
       (l/derive st/state)))
 
-(def ^:private collections-map-ref
+(def collections-map-ref
   (-> (comp (l/key :color-colls-by-id)
             (ul/merge library/+color-collections-by-id+))
       (l/derive st/state)))
 
-(def ^:private collections-ref
+(def collections-ref
   (-> (l/lens vals)
       (l/derive collections-map-ref)))
 

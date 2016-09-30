@@ -6,93 +6,84 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.colorpalette
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [beicon.core :as rx]
+  (:require [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
             [uxbox.main.library :as library]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.util.lens :as ul]
-            [uxbox.util.data :refer (read-string)]
-            [uxbox.util.color :refer (hex->rgb)]
+            [uxbox.main.data.colors :as dc]
+            [uxbox.main.ui.dashboard.colors :refer (collections-ref)]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.keyboard :as kbd]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.lens :as ul]
+            [uxbox.util.data :refer (read-string)]
+            [uxbox.util.color :refer (hex->rgb)]
             [uxbox.util.dom :as dom]
             [uxbox.util.mixins :as mx :include-macros true]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- get-selected-collection
+  [local collections]
+  (if-let [selected (:selected @local)]
+    (first (filter #(= selected (:id %)) collections))
+    (first collections)))
 
-;; TODO: move this lense under library ns.
+(mx/defc palette-items
+  {:mixins [mx/static]}
+  [colors]
+  (letfn [(select-color [event color]
+            (dom/prevent-default event)
+            (if (kbd/shift? event)
+              (rs/emit! (uds/update-selected-shapes-stroke {:color color}))
+              (rs/emit! (uds/update-selected-shapes-fill {:color color}))))]
+    [:div.color-palette-content
+     (for [hex-color colors
+           :let [rgb-vec (hex->rgb hex-color)
+                 rgb-color (apply str "" (interpose ", " rgb-vec))]]
+       [:div.color-cell {:key (str hex-color)
+                         :on-click #(select-color % hex-color)}
+        [:span.color {:style {:background hex-color}}]
+        [:span.color-text hex-color]
+        [:span.color-text rgb-color]])]))
 
-(def ^:private collections-by-id-ref
-  (-> (comp (l/in [:colors-by-id])
-            (ul/merge library/+color-collections-by-id+))
-      (l/derive st/state)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Component
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- select-collection
-  [local event]
-  (let [value (-> (dom/event->value event)
-                  (read-string))]
-    (swap! local assoc :selected value)))
-
-(defn- select-color
-  [color event]
-  (dom/prevent-default event)
-  (if (kbd/shift? event)
-    (rs/emit! (uds/update-selected-shapes-stroke {:color color}))
-    (rs/emit! (uds/update-selected-shapes-fill {:color color}))))
-
-(defn- colorpalette-render
+(mx/defcs palette
+  {:mixins [mx/static mx/reactive (mx/local)]}
   [own]
   (let [local (:rum/local own)
-        flags (mx/react wb/flags-ref)
-        collections-by-id (mx/react collections-by-id-ref)
-        collections (sort-by :name (vals collections-by-id))
-        collection (if-let [collid (:selected @local)]
-                     (get collections-by-id collid)
-                     (first collections))
-        select-collection #(select-collection local %)
-        close #(rs/emit! (dw/toggle-flag :colorpalette))]
+        collections (sort-by :name (mx/react collections-ref))
+        collection (get-selected-collection local collections)]
+    (letfn [(select-collection [event]
+              (let [value (read-string (dom/event->value event))]
+                (swap! local assoc :selected value)))
+            (close [event]
+              (rs/emit! (dw/toggle-flag :colorpalette)))]
+      [:div.color-palette
+       [:div.color-palette-actions
+        [:select.input-select {:on-change select-collection}
+         (for [collection collections]
+           [:option {:key (str (:id collection))
+                     :value (pr-str (:id collection))}
+            (:name collection)])]
+        #_[:div.color-palette-buttons
+           [:div.btn-palette.edit.current i/pencil]
+           [:div.btn-palette.create i/close]]]
+       [:span.left-arrow i/arrow-slide]
+       (palette-items (:data collection))
+       [:span.right-arrow i/arrow-slide]
+       [:span.close-palette {:on-click close}
+        i/close]])))
+
+(defn- colorpalette-will-mount
+  [own]
+  (rs/emit! (dc/conditional-fetch))
+  own)
+
+(mx/defc colorpalette
+  {:mixins [mx/static mx/reactive]
+   :will-mount colorpalette-will-mount}
+  []
+  (let [flags (mx/react wb/flags-ref)]
     (when (contains? flags :colorpalette)
-      (html
-       [:div.color-palette
-        [:div.color-palette-actions
-         [:select.input-select {:on-change select-collection}
-          (for [collection collections]
-            [:option {:key (str (:id collection))
-                      :value (pr-str (:id collection))}
-             (:name collection)])]
-         #_[:div.color-palette-buttons
-            [:div.btn-palette.edit.current i/pencil]
-            [:div.btn-palette.create i/close]]]
-        [:span.left-arrow i/arrow-slide]
-        [:div.color-palette-content
-         (for [hex-color (:data collection)
-               :let [rgb-vec (hex->rgb hex-color)
-                     rgb-color (apply str "" (interpose ", " rgb-vec))]]
-           [:div.color-cell {:key (str hex-color)
-                             :on-click #(select-color hex-color %)}
-            [:span.color {:style {:background hex-color}}]
-            [:span.color-text hex-color]
-            [:span.color-text rgb-color]])]
-
-        [:span.right-arrow i/arrow-slide]
-        [:span.close-palette {:on-click close}
-         i/close]]))))
-
-(def colorpalette
-  (mx/component
-   {:render colorpalette-render
-    :name "colorpalette"
-    :mixins [mx/static mx/reactive
-             (mx/local {})]}))
+      (palette))))
