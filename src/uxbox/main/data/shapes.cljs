@@ -23,6 +23,8 @@
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.data :refer (index-of)]))
 
+;; --- Shapes CRUD
+
 (defn add-shape
   "Create and add shape to the current selected page."
   [shape]
@@ -52,6 +54,8 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (update-in state [:shapes-by-id id] merge shape))))
+
+;; --- Shape Transformations
 
 (defn move-shape
   "Move shape using relative position (delta)."
@@ -166,6 +170,50 @@
                  (when color {:fill color})
                  (when opacity {:fill-opacity opacity})))))
 
+(defn update-font-attrs
+  [sid {:keys [family style weight size align
+               letter-spacing line-height] :as opts}]
+  (reify
+    udp/IPageUpdate
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id sid :font]
+                 merge
+                 (when line-height {:line-height line-height})
+                 (when letter-spacing {:letter-spacing letter-spacing})
+                 (when align {:align align})
+                 (when family {:family family})
+                 (when style {:style style})
+                 (when weight {:weight weight})
+                 (when size {:size size})))))
+
+(defn update-stroke-attrs
+  [sid {:keys [color opacity type width] :as opts}]
+  (reify
+    udp/IPageUpdate
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id sid]
+                 merge
+                 (when type {:stroke-type type})
+                 (when width {:stroke-width width})
+                 (when color {:stroke color})
+                 (when opacity {:stroke-opacity opacity})))))
+
+(defn update-radius-attrs
+  [sid {:keys [rx ry] :as opts}]
+  (reify
+    udp/IPageUpdate
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id sid]
+                 merge
+                 (when rx {:rx rx})
+                 (when ry {:ry ry})))))
+
+
+;; --- Shape Proportions
+
 (defn lock-proportions
   "Mark proportions of the shape locked and save the current
   proportion as additional precalculated property."
@@ -207,46 +255,27 @@
         (update-in state [:shapes-by-id sid] assoc
                    :proportion proportion)))))
 
-(defn update-font-attrs
-  [sid {:keys [family style weight size align
-               letter-spacing line-height] :as opts}]
-  (reify
-    udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid :font]
-                 merge
-                 (when line-height {:line-height line-height})
-                 (when letter-spacing {:letter-spacing letter-spacing})
-                 (when align {:align align})
-                 (when family {:family family})
-                 (when style {:style style})
-                 (when weight {:weight weight})
-                 (when size {:size size})))))
+;; --- Group Collapsing
 
-(defn update-stroke-attrs
-  [sid {:keys [color opacity type width] :as opts}]
+(defn collapse-shape
+  [id]
+  {:pre [(uuid? id)]}
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid]
-                 merge
-                 (when type {:stroke-type type})
-                 (when width {:stroke-width width})
-                 (when color {:stroke color})
-                 (when opacity {:stroke-opacity opacity})))))
+      (update-in state [:shapes-by-id id] assoc :collapsed true))))
 
-(defn update-radius-attrs
-  [sid {:keys [rx ry] :as opts}]
+(defn uncollapse-shape
+  [id]
+  {:pre [(uuid? id)]}
   (reify
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid]
-                 merge
-                 (when rx {:rx rx})
-                 (when ry {:ry ry})))))
+      (update-in state [:shapes-by-id id] assoc :collapsed false))))
+
+;; --- Shape Visibility
 
 (defn hide-shape
   [sid]
