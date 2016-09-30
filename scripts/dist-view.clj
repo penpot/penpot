@@ -16,6 +16,7 @@
     :optimizations :simple
     :externs ["externs/main.js"]
     :static-fns true
+    :elide-asserts true
     :pretty-print false
     :language-in  :ecmascript6
     :language-out :ecmascript5
