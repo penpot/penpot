@@ -75,15 +75,6 @@
       (rs/emit! (uds/unblock-shape id))
       (rs/emit! (uds/block-shape id)))))
 
-(defn- toggle-locking
-  [item event]
-  (dom/stop-propagation event)
-  (let [id (:id item)
-        locked? (:locked item)]
-    (if locked?
-      (rs/emit! (uds/unlock-shape id))
-      (rs/emit! (uds/lock-shape id)))))
-
 (defn- element-icon
   [item]
   (case (:type item)
@@ -221,24 +212,30 @@
 
 (mx/defcs layer-group
   {:mixins [mx/static mx/reactive (mx/local)]}
-  [own item selected]
+  [own {:keys [id] :as item} selected]
   (let [local (:rum/local own)
         selected? (contains? selected (:id item))
-        open? (:open @local true)
-        select #(select-shape selected item %)
-        toggle-visibility #(toggle-visibility selected item %)
-        toggle-blocking #(toggle-blocking item %)
-        toggle-locking #(toggle-locking item %)
-        toggle-open (fn [event]
-                      (dom/stop-propagation event)
-                      (swap! local assoc :open (not open?)))
-        shapes-by-id (mx/react wb/shapes-by-id-ref)
+        collapsed? (:collapsed item true)
+        shapes-map (mx/react wb/shapes-by-id-ref)
         classes (classnames
                  :selected selected?
                  :drag-top (= :top (:over @local))
                  :drag-bottom (= :bottom (:over @local))
-                 :drag-inside (= :middle (:over @local)))]
-    (letfn [(on-drag-start [event]
+                 :drag-inside (= :middle (:over @local)))
+        select #(select-shape selected item %)
+        toggle-visibility #(toggle-visibility selected item %)
+        toggle-blocking #(toggle-blocking item %)]
+    (letfn [(toggle-collapse [event]
+              (dom/stop-propagation event)
+              (if (:collapsed item)
+                (rs/emit! (uds/uncollapse-shape id))
+                (rs/emit! (uds/collapse-shape id))))
+            (toggle-locking [event]
+              (dom/stop-propagation event)
+              (if (:locked item)
+                (rs/emit! (uds/unlock-shape id))
+                (rs/emit! (uds/lock-shape id))))
+            (on-drag-start [event]
               (let [target (dom/event->target event)]
                 (dnd/set-allowed-effect! event "move")
                 (dnd/set-data! event (:id item))
@@ -247,12 +244,12 @@
               (swap! local assoc :dragging false :over nil))
             (on-drop [event]
               (dom/stop-propagation event)
-              (let [id (dnd/get-data event)
+              (let [coming-id (dnd/get-data event)
                     over (:over @local)]
                 (case (:over @local)
-                  :top (rs/emit! (uds/drop-shape id (:id item) :before))
-                  :bottom (rs/emit! (uds/drop-shape id (:id item) :after))
-                  :middle (rs/emit! (uds/drop-shape id (:id item) :inside)))
+                  :top (rs/emit! (uds/drop-shape coming-id id :before))
+                  :bottom (rs/emit! (uds/drop-shape coming-id id :after))
+                  :middle (rs/emit! (uds/drop-shape coming-id id :inside)))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
@@ -263,7 +260,7 @@
               (swap! local assoc :over true))
             (on-drag-leave [event]
               (swap! local assoc :over false))]
-      [:li.group {:class (when open? "open")}
+      [:li.group {:class (when-not collapsed? "open")}
        [:div.element-list-body
         {:class classes
          :draggable true
@@ -290,12 +287,12 @@
         [:div.element-icon i/folder]
         (shape-name item)
         [:span.toggle-content
-         {:on-click toggle-open
-          :class (when open? "inverse")}
+         {:on-click toggle-collapse
+          :class (when-not collapsed? "inverse")}
          i/arrow-slide]]
-       (if open?
+       (if-not collapsed?
          [:ul
-          (for [shape (map #(get shapes-by-id %) (:items item))
+          (for [shape (map #(get shapes-map %) (:items item))
                 :let [key (str (:id shape))]]
             (if (= (:type shape) :group)
               (-> (layer-group shape selected)
@@ -310,7 +307,7 @@
   []
   (let [workspace (mx/react wb/workspace-ref)
         selected (:selected workspace)
-        shapes-by-id (mx/react wb/shapes-by-id-ref)
+        shapes-map (mx/react wb/shapes-by-id-ref)
         page (mx/react (focus-page (:page workspace)))
         close #(rs/emit! (udw/toggle-flag :layers))
         duplicate #(rs/emit! (uds/duplicate-selected))
@@ -325,7 +322,7 @@
       [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content
       [:ul.element-list {}
-       (for [shape (map #(get shapes-by-id %) (:shapes page))
+       (for [shape (map #(get shapes-map %) (:shapes page))
              :let [key (str (:id shape))]]
          (if (= (:type shape) :group)
            (-> (layer-group shape selected)
