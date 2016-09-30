@@ -1,8 +1,8 @@
 (ns uxbox.tests.geom-types
   (:require [cljs.test :as t :include-macros true]
             [cljs.pprint :refer (pprint)]
-            [uxbox.common.geom.point :as gpt]
-            [uxbox.common.geom.matrix :as gmt]))
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.geom.matrix :as gmt]))
 
 (t/deftest point-constructors-test
   (let [p (gpt/point 1 2)]
