@@ -170,7 +170,8 @@
        [:circle {:cx x :cy y :r 6
                  :on-mouse-down (partial on-mouse-down index)
                  :fill "#31e6e0"
-                 :stroke "#28c4d4"}])]))
+                 :stroke "#28c4d4"
+                 :style {:cursor "pointer"}}])]))
 
 (mx/defc selection-handlers
   {:mixins [mx/reactive mx/static]}
