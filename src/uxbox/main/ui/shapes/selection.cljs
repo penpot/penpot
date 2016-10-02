@@ -167,9 +167,10 @@
             (start-path-edition id index))]
     [:g.controls
      (for [[index {:keys [x y]}] (map-indexed vector points)]
-       [:circle {:cx x :cy y :r 3
+       [:circle {:cx x :cy y :r 6
                  :on-mouse-down (partial on-mouse-down index)
-                 :fill "red"}])]))
+                 :fill "#31e6e0"
+                 :stroke "#28c4d4"}])]))
 
 (mx/defc selection-handlers
   {:mixins [mx/reactive mx/static]}

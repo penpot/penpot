@@ -94,9 +94,11 @@
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
-      height: 150px;
+      height: 200px;
       justify-content: center;
       margin: $medium $medium 0 $medium;
+      max-width: 300px;
+      min-width: 260px;
       padding: $medium;
       position: relative;
       text-align: center;
