@@ -16,6 +16,7 @@
 
 ;; --- Initialize
 
+(declare fetch-images)
 (declare fetch-collections)
 (declare collections-fetched?)
 
