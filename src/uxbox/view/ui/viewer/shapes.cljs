@@ -16,6 +16,7 @@
             [uxbox.main.ui.shapes.group :refer (group-shape)]
             [uxbox.main.ui.shapes.path :refer (path-shape)]
             [uxbox.main.ui.shapes.circle :refer (circle-shape)]
+            [uxbox.main.ui.icons :as i]
             [uxbox.view.ui.viewer.interactions :as itx])
   (:import goog.events.EventType))
 
@@ -52,10 +53,11 @@
     [:g {:id (str "itx-" (:id shape))}
      (factory shape)
      (when show-itx?
-       [:circle {:fill "red"
-                 :cx (:x rect)
-                 :cy (:y rect)
-                 :r 10}])]))
+      [:div.interaction-mark i/trash])]))
+      ;  [:circle {:fill "red"
+      ;            :cx (:x rect)
+      ;            :cy (:y rect)
+      ;            :r 10}])]))
 
 ;; --- Shapes
 
@@ -75,4 +77,3 @@
   [sid]
   (let [item (get-in @st/state [:shapes-by-id sid])]
     (interactions-wrapper item shape*)))
-

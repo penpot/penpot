@@ -220,3 +220,18 @@
   justify-content: center;
   align-items: center;
 }
+
+.interaction-mark {
+  align-items: center;
+  background-color: $color-primary;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  height: 20px;
+  width: 20px;
+  svg {
+    fill: $color-white;
+    height: 15px;
+    width: 15px;
+  }
+}
