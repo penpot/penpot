@@ -30,21 +30,12 @@
           (assoc-in [:dashboard :images] data)
           (assoc-in [:dashboard :section] :dashboard/images))))
 
-  ;; rs/EffectEvent
-  ;; (-apply-effect [_ state]
-  ;;   (when (nil? (:image-colls-by-id state))
-  ;;     (reset! st/loader true)))
-
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (if (nil? (:image-colls-by-id state))
-      (rx/merge
-       (rx/of (fetch-collections))
-         (->> (rx/filter collections-fetched? s)
-              (rx/take 1)
-              (rx/do #(reset! st/loader false))
-              (rx/ignore)))
-      (rx/empty))))
+    (rx/merge
+     (rx/of (fetch-collections))
+     (when (uuid? id)
+       (rx/of (fetch-images id))))))
 
 (defn initialize
   [type id]
