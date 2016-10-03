@@ -214,13 +214,16 @@
 (defrecord ImagesFetched [coll-id items]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:image-colls-by-id coll-id :images] (set items))))
+    (reduce (fn [state {:keys [id] :as image}]
+              (assoc-in state [:images-by-id id] image))
+            state
+            items)))
 
 (defn images-fetched
   [coll-id items]
   (ImagesFetched. coll-id items))
 
-;; --- Load Images
+;; --- Fetch Images
 
 (defrecord FetchImages [coll-id]
   rs/WatchEvent
