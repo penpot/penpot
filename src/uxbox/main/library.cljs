@@ -14,32 +14,29 @@
 
 ;; --- Colors
 
-(def +color-collections+
-  colors/+collections+)
-
+(def +color-collections+ colors/+collections+)
 (def +color-collections-by-id+
   (index-by-id colors/+collections+))
 
 ;; --- Icons
 
-(def +icon-collections+
-  icons/+collections+)
-
+(def +icon-collections+ icons/+collections+)
 (def +icon-collections-by-id+
   (index-by-id icons/+collections+))
 
 ;; --- Images
 
-(def +image-collections+
-  images/+collections+)
+(def +image-collections+ images/+collections+)
+(def +images+ images/+images+)
 
 (def +image-collections-by-id+
   (index-by-id images/+collections+))
 
+(def +images-by-id+
+  (index-by-id images/+images+))
+
 ;; --- Fonts
 
-(def +fonts+
-  fonts/+collections+)
-
+(def +fonts+ fonts/+collections+)
 (def +fonts-by-id+
   (index-by-id fonts/+collections+))
