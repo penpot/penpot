@@ -239,19 +239,21 @@
 
 ;; --- Delete Images
 
-(defrecord DeleteImage [coll-id image]
+(defrecord DeleteImage [coll-id image-id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:image-colls-by-id coll-id :images] disj image))
+    (update state [:images-by-id] dissoc image-id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (->> (rp/req :delete/image (:id image))
+    (->> (rp/req :delete/image image-id)
          (rx/ignore))))
 
 (defn delete-image
-  [coll-id image]
-  (DeleteImage. coll-id image))
+  [coll-id image-id]
+  {:pre [(uuid? coll-id)
+         (uuid? image-id)]}
+  (DeleteImage. coll-id image-id))
 
 ;; --- Remove Image
 
