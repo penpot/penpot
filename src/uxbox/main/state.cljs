@@ -8,6 +8,7 @@
 (ns uxbox.main.state
   (:require [beicon.core :as rx]
             [lentes.core :as l]
+            [uxbox.main.library :as library]
             [uxbox.util.rstore :as rs]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.storage :refer (storage)]))
@@ -33,6 +34,8 @@
    :undo {}
    :profile nil
    :workspace nil
+   :images-by-id library/+images-by-id+
+   :image-colls-by-id library/+image-collections-by-id+
    :shapes-by-id nil
    :elements-by-id nil
    :colors-by-id nil
