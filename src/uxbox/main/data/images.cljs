@@ -26,16 +26,16 @@
     (let [type (or type :builtin)
           id (or id (if (= type :builtin) 1 nil))
           data {:type type :id id :selected #{}}]
+      (println "initialize:" data)
       (-> state
           (assoc-in [:dashboard :images] data)
           (assoc-in [:dashboard :section] :dashboard/images))))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/merge
-     (rx/of (fetch-collections))
-     (when (uuid? id)
-       (rx/of (fetch-images id))))))
+    (rx/merge (rx/of (fetch-collections))
+              (when (uuid? id)
+                (rx/of (fetch-images id))))))
 
 (defn initialize
   [type id]
