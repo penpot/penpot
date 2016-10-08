@@ -57,19 +57,22 @@
   (-> (l/in [:dashboard :images])
       (l/derive st/state)))
 
-(def ^:private collections-map-ref
-  (-> (comp (l/key :image-colls-by-id)
-            (ul/merge library/+image-collections-by-id+))
+(def ^:private collections-ref
+  (-> (l/key :image-colls-by-id)
       (l/derive st/state)))
 
-(def ^:private collections-ref
-  (-> (l/lens vals)
-      (l/derive collections-map-ref)))
+(def ^:private images-ref
+  (-> (l/key :images-by-id)
+      (l/derive st/state)))
 
-(defn- focus-collection
-  [id]
-  (-> (l/key id)
-      (l/derive collections-map-ref)))
+;; (def ^:private collections-ref
+;;   (-> (l/lens vals)
+;;       (l/derive collections-map-ref)))
+
+;; (defn- focus-collection
+;;   [id]
+;;   (-> (l/key id)
+;;       (l/derive collections-map-ref)))
 
 ;; --- Page Title
 
@@ -131,7 +134,7 @@
             (let [type (:type collection)
                   id (:id collection)]
               (rs/emit! (di/select-collection type id))))]
-    (let [images (count (:images collection))]
+    (let [images (count (:images collection []))]
       [:li {:on-click on-click
             :class-name (when selected? "current")}
        [:span.element-title (:name collection)]
@@ -140,10 +143,10 @@
 
 (mx/defc nav-section
   {:mixins [mx/static mx/reactive]}
-  [type selected]
+  [type selected colls]
   (let [own? (= type :own)
         builtin? (= type :builtin)
-        collections (cond->> (mx/react collections-ref)
+        collections (cond->> (vals colls)
                       own? (filter #(= :own (:type %)))
                       builtin? (filter #(= :builtin (:type %)))
                       own? (sort-by :id))]
@@ -160,17 +163,16 @@
            (mx/with-key key)))]))
 
 (mx/defc nav
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [dashboard (mx/react dashboard-ref)
-        collections (mx/react collections-ref)
-        selected (:id dashboard)
-        type (:type dashboard)
-        own? (= type :own)
+  {:mixins [mx/static]}
+  [{:keys [type id] :as state} colls]
+  (let [own? (= type :own)
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
-              (let [xf (filter #(= type (:type %)))
-                    colls (sequence xf collections)]
+              (let [xf (comp
+                        (map second)
+                        (filter #(= type (:type %))))
+                    colls (into [] xf colls)
+                    colls (sort-by :id colls)]
                 (if-let [item (first colls)]
                   (rs/emit! (di/select-collection type (:id item)))
                   (rs/emit! (di/select-collection type)))))]
@@ -183,7 +185,7 @@
          [:li {:class-name (when own? "current")
                :on-click (partial select-tab :own)}
           "YOUR LIBRARIES"]]
-        (nav-section type selected)]])))
+        (nav-section type id colls)]])))
 
 ;; --- Grid
 
@@ -248,13 +250,14 @@
      [:span (:name image)]]))
 
 (mx/defc grid
-  {:mixins [mx/static]}
-  [state selected {:keys [id type images] :as coll}]
-  (let [own? (= type :own)
+  {:mixins [mx/static mx/reactive]}
+  [{:keys [id type  selected] :as state}]
+  (let [filtering (:filter state)
         ordering (:order state)
-        filtering (:filter state)
-        images (->> images
-                    (remove nil?)
+        own? (= type :own)
+        images (rum/react images-ref)
+        images (->> (vals images)
+                    (filter #(= id (:collection %)))
                     (filter-images-by filtering)
                     (sort-images-by ordering))]
     [:div.dashboard-grid-content
@@ -269,23 +272,22 @@
 
 (mx/defc content
   {:mixins [mx/static]}
-  [state coll]
-  (let [selected (:selected state)
-        coll-type (:type coll)
-        own? (= coll-type :own)]
+  [{:keys [type id selected] :as state} coll]
+  (let [own? (= type :own)]
     (when coll
       [:section.dashboard-grid.library
        (page-title coll)
-       (grid state selected coll)
-       (when (and (seq selected))
+       (grid state)
+       (when (seq selected)
          (grid-options coll))])))
 
 ;; --- Menu
 
 (mx/defc menu
-  {:mixins [mx/static]}
-  [state coll]
-  (let [ordering (:order state :name)
+  {:mixins [mx/static mx/reactive]}
+  [coll]
+  (let [state (mx/react dashboard-ref)
+        ordering (:order state :name)
         filtering (:filter state "")
         icount (count (:images coll))]
     (letfn [(on-term-change [event]
@@ -346,13 +348,13 @@
   {:will-mount images-page-will-mount
    :did-remount images-page-did-remount
    :mixins [mx/static mx/reactive]}
-  [type id]
+  [_ _]
   (let [state (mx/react dashboard-ref)
-        coll-id (:id state)
-        coll (mx/react (focus-collection coll-id))]
+        colls (mx/react collections-ref)
+        coll (get colls (:id state))]
     [:main.dashboard-main
      (header)
      [:section.dashboard-content
-      (nav)
-      (menu state coll)
+      (nav state colls)
+      (menu coll)
       (content state coll)]]))
