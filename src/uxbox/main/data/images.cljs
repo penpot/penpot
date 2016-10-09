@@ -180,8 +180,7 @@
 (defrecord ImageCreated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:image-colls-by-id (:collection item) :images]
-               #(conj % item))))
+    (update state :images-by-id assoc (:id item) item)))
 
 (defn image-created
   [item]
