@@ -20,7 +20,6 @@
 
 (defn- retrieve-image-size
   [data]
-  (println "data:" data)
   (rx/create
    (fn [sick]
      (let [img (js/Image.)]
