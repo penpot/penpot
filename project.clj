@@ -24,7 +24,6 @@
                  [cljsjs/moment "2.10.6-4"]
                  [funcool/struct "1.0.0"]
                  [funcool/lentes "1.2.0"]
-                 [funcool/httpurr "0.6.2"]
                  [funcool/promesa "1.5.0"]
                  [funcool/beicon "2.3.0"]
                  [funcool/cuerdas "1.0.2"]

@@ -8,9 +8,8 @@
   (:require [clojure.walk :as walk]
             [promesa.core :as p :include-macros true]
             [beicon.core :as rx]
-            [httpurr.client.xhr :as http]
-            [httpurr.status :as status]
             [uxbox.config :refer (url)]
+            [uxbox.util.http :as http]
             [uxbox.util.storage :refer (storage)]
             [uxbox.util.transit :as t])
   (:import [goog.Uri QueryData]))
@@ -23,7 +22,7 @@
 
 (defn- handle-http-status
   [{:keys [body status] :as response}]
-  (if (status/success? response)
+  (if (http/success? response)
     (rx/of {:status status :payload body})
     (rx/throw {:status status :payload body})))
 
@@ -41,8 +40,9 @@
     (.extend data (clj->js params))
     (.toString data)))
 
-(defn- send!
-  [{:keys [body headers auth method query url] :or {auth true} :as request}]
+(defn send!
+  [{:keys [body headers auth method query url response-type]
+    :or {auth true response-type :text}}]
   (let [headers (merge {}
                        (when (map? body) +headers+)
                        headers
@@ -51,9 +51,9 @@
                  :url url
                  :headers headers
                  :query-string (when query (encode-query query))
-                 :body (if (map? body) (t/encode body) body)}]
-    (->> (http/send! request)
-         (rx/from-promise)
+                 :body (if (map? body) (t/encode body) body)}
+        options {:response-type response-type}]
+    (->> (http/send! request options)
          (rx/map conditional-decode)
          (rx/mapcat handle-http-status))))
 
