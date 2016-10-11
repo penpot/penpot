@@ -90,6 +90,16 @@
   (and (string? v)
        (re-seq +uuid-re+ v)))
 
+;; --- Interop
+
+(defn jscoll->vec
+  "Convert array like js object into vector."
+  [v]
+  (-> (clj->js [])
+      (.-slice)
+      (.call v)
+      (js->clj)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numbers Parsing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

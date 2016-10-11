@@ -46,8 +46,9 @@
   {:mixins [mx/static mx/reactive]}
   []
   (let [page (rum/react page-ref)
-        width (:width page)
-        height (:height page)]
+        metadata (:metadata page)
+        width (:width metadata)
+        height (:height metadata)]
     [:div.view-canvas
      [:svg.page-layout {:width width :height height}
       (background)

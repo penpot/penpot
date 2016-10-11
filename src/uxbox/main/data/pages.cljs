@@ -104,23 +104,23 @@
 
 ;; --- Create Page
 
-(defrecord CreatePage [name width height project layout]
+(defrecord CreatePage [name project metadata]
   rs/WatchEvent
   (-apply-watch [this state s]
     (letfn [(on-created [{page :payload}]
               (rx/of
                #(unpack-page % page)
                #(assoc-page % page)))]
-      (let [params (-> (into {} this)
-                       (assoc :data {}))]
+      (let [params {:name name
+                    :project project
+                    :data {}
+                    :metadata metadata}]
         (->> (rp/req :create/page params)
              (rx/mapcat on-created))))))
 
 (def ^:private create-page-schema
   {:name [sc/required sc/string]
-   :layout [sc/required sc/string]
-   :width [sc/required sc/integer]
-   :height [sc/required sc/integer]
+   :metadata [sc/required]
    :project [sc/required sc/uuid]})
 
 (defn create-page
