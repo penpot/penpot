@@ -12,10 +12,10 @@
             [uxbox.util.transit :as t]))
 
 (defn decode-page
-  [{:keys [data options] :as page}]
+  [{:keys [data metadata] :as page}]
   (merge page
          (when data {:data (t/decode data)})
-         (when options {:options (t/decode options)})))
+         (when metadata {:metadata (t/decode metadata)})))
 
 (defn decode-payload
   [{:keys [payload] :as rsp}]
@@ -51,10 +51,10 @@
             :method :delete})))
 
 (defmethod request :create/page
-  [type {:keys [data options] :as body}]
+  [type {:keys [data metadata] :as body}]
   (let [body (assoc body
                     :data (t/encode data)
-                    :options (t/encode options))
+                    :metadata (t/encode metadata))
         params {:url (str url "/pages")
                 :method :post
                 :body body}]
@@ -62,10 +62,10 @@
          (rx/map decode-payload))))
 
 (defmethod request :update/page
-  [type {:keys [id data options] :as body}]
+  [type {:keys [id data metadata] :as body}]
   (let [body (assoc body
                     :data (t/encode data)
-                    :options (t/encode options))
+                    :metadata (t/encode metadata))
         params {:url (str url "/pages/" id)
                 :method :put
                 :body body}]
@@ -81,9 +81,9 @@
          (rx/map decode-payload))))
 
 (defmethod request :update/page-metadata
-  [type {:keys [id options] :as body}]
+  [type {:keys [id metadata] :as body}]
   (let [body (dissoc body :data)
-        body (assoc body :options (t/encode options))
+        body (assoc body :metadata (t/encode metadata))
         params {:url (str url "/pages/" id "/metadata")
                 :method :put
                 :body body}]

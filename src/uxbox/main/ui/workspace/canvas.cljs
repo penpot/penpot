@@ -43,16 +43,18 @@
 
 (mx/defc canvas
   {:mixins [mx/reactive]}
-  [{:keys [width height id] :as page}]
+  [{:keys [metadata id] :as page}]
   (let [workspace (mx/react wb/workspace-ref)
-        flags (:flags workspace)]
+        flags (:flags workspace)
+        width (:width metadata)
+        height (:height metadata)]
     [:svg.page-canvas {:x c/canvas-start-x
                        :y c/canvas-start-y
                        :ref (str "canvas" id)
                        :width width
                        :height height}
      (background)
-     [:svg.page-layout {}
+     [:svg.page-layout
       [:g.main {}
        (for [item (reverse (:shapes page))]
          (-> (uus/shape item)
