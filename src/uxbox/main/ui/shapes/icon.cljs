@@ -5,9 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.icon
-  (:require [sablono.core :refer-macros [html]]
-            [rum.core :as rum]
-            [uxbox.util.mixins :as mx :include-macros true]
+  (:require [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.geom :as geom]))
@@ -16,52 +14,34 @@
 
 (declare icon-shape)
 
-(defn- icon-component-render
-  [own {:keys [id] :as shape}]
+(mx/defc icon-component
+  {:mixins [mx/static mx/reactive]}
+  [{:keys [id] :as shape}]
   (let [selected (mx/react common/selected-ref)
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)]
-    (html
-     [:g.shape {:class (when selected? "selected")
-                :on-mouse-down on-mouse-down}
-      (icon-shape shape identity)])))
-
-(def icon-component
-  (mx/component
-   {:render icon-component-render
-    :name "icon-component"
-    :mixins [mx/static mx/reactive]}))
+    [:g.shape {:class (when selected? "selected")
+               :on-mouse-down on-mouse-down}
+     (icon-shape shape identity)]))
 
 ;; --- Icon Shape
 
-(defn- icon-shape-render
-  [own {:keys [data id] :as shape} factory]
+(mx/defc icon-shape
+  {:mixins [mx/static]}
+  [{:keys [data id] :as shape} factory]
   (let [key (str "shape-" id)
         rfm (geom/transformation-matrix shape)
         attrs (merge {:id key :key key :transform (str rfm)}
                      (attrs/extract-style-attrs shape)
                      (attrs/make-debug-attrs shape))]
-    (html
-     [:g attrs data])))
-
-(def icon-shape
-  (mx/component
-   {:render icon-shape-render
-    :name "icon-shape"
-    :mixins [mx/static]}))
+    [:g attrs data]))
 
 ;; --- Icon SVG
 
-(defn- icon-svg-render
-  [own {:keys [data id view-box] :as shape}]
+(mx/defc icon-svg
+  {:mixins [mx/static]}
+  [{:keys [data id view-box] :as shape}]
   (let [key (str "icon-svg-" id)
         view-box (apply str (interpose " " view-box))
         props {:view-box view-box :id key :key key}]
-    (html
-     [:svg props data])))
-
-(def icon-svg
-  (mx/component
-   {:render icon-svg-render
-    :name "icon-svg"
-    :mixins [mx/static]}))
+    [:svg props data]))
