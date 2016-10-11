@@ -149,7 +149,7 @@
         collections (cond->> (vals colls)
                       own? (filter #(= :own (:type %)))
                       builtin? (filter #(= :builtin (:type %)))
-                      own? (sort-by :id))]
+                      own? (sort-by :name))]
     [:ul.library-elements
      (when own?
        [:li
@@ -171,8 +171,8 @@
               (let [xf (comp
                         (map second)
                         (filter #(= type (:type %))))
-                    colls (into [] xf colls)
-                    colls (sort-by :id colls)]
+                    colls (->> (into [] xf colls)
+                               (sort-by :name))]
                 (if-let [item (first colls)]
                   (rs/emit! (di/select-collection type (:id item)))
                   (rs/emit! (di/select-collection type)))))]
