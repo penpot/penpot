@@ -141,6 +141,7 @@
     :text (size-rect shape)
     :rect (size-rect shape)
     :icon (size-rect shape)
+    :image (size-rect shape)
     :path (size-rect shape)))
 
 (defn- size-rect
@@ -678,6 +679,7 @@
      :text (text-transformation-matrix state shape)
      :circle (circle-transformation-matrix state shape)
      :icon (icon-transformation-matrix state shape)
+     :image (icon-transformation-matrix state shape)
      :path (path-transformation-matrix state shape)
      :group (group-transformation-matrix state shape))))
 
