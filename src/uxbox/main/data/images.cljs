@@ -191,12 +191,16 @@
 
 ;; --- Create Image
 
+(def allowed-file-types #{"image/jpeg" "image/png"})
+
 (defrecord CreateImages [coll-id files]
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(image-size [file]
               (->> (files/get-image-size file)
                    (rx/map (partial vector file))))
+            (allowed-file? [file]
+              (contains? allowed-file-types (.-type file)))
             (prepare [[file [width height]]]
               {:coll coll-id
                :id (uuid/random)
@@ -204,6 +208,7 @@
                :width width
                :height height})]
       (->> (rx/from-coll (jscoll->vec files))
+           (rx/filter allowed-file?)
            (rx/flat-map image-size)
            (rx/map prepare)
            (rx/flat-map #(rp/req :create/image %))
