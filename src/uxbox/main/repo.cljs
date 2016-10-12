@@ -6,7 +6,7 @@
 
 (ns uxbox.main.repo
   "A main interface for access to remote resources."
-  (:require [httpurr.status :as status]
+  (:require [uxbox.util.http :as http]
             [uxbox.main.repo.auth]
             [uxbox.main.repo.users]
             [uxbox.main.repo.projects]
@@ -23,5 +23,5 @@
   ([type data]
    (impl/request type data)))
 
-(def client-error? status/client-error?)
-(def server-error? status/server-error?)
+(def client-error? http/client-error?)
+(def server-error? http/server-error?)

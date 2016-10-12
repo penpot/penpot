@@ -93,6 +93,14 @@
   [{:keys [status]}]
   (<= 200 status 299))
 
+(defn server-error?
+  [{:keys [status]}]
+  (<= 500 status 599))
+
+(defn client-error?
+  [{:keys [status]}]
+  (<= 400 status 499))
+
 (defn send!
   ([request]
    (send! request nil))
