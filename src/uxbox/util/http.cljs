@@ -44,7 +44,6 @@
 
 (defn- translate-response-type
   [type]
-  (println "translate-response-type" type)
   (case type
     :text ResponseType.TEXT
     :blob ResponseType.BLOB
@@ -63,7 +62,6 @@
   [{:keys [method url query-string query-params headers body] :as request}
    {:keys [timeout credentials? response-type]
     :or {timeout 0 credentials? false response-type :text}}]
-  (println "fetch$1" url)
   (let [uri (create-url url query-string query-params)
         headers (if headers (clj->js headers) #js {})
         method (translate-method method)
