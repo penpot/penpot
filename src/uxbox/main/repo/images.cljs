@@ -45,8 +45,10 @@
     (send! params)))
 
 (defmethod request :create/image
-  [_ {:keys [coll id file width height] :as body}]
+  [_ {:keys [coll id file width height mimetype] :as body}]
   (let [body (doto (js/FormData.)
+               (.append "mimetype" mimetype)
+               ;; (.append "collection" (str coll))
                (.append "file" file)
                (.append "width" width)
                (.append "height" height)
