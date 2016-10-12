@@ -8,9 +8,12 @@
 (ns uxbox.main.data.images
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
+            [promesa.core :as p]
+            [uxbox.util.data :refer (jscoll->vec)]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
+            [uxbox.util.dom.files :as files]
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]))
 
@@ -191,15 +194,18 @@
 (defrecord CreateImages [coll-id files]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [files-to-array (fn [js-col]
-                           (-> (clj->js [])
-                               (.-slice)
-                               (.call js-col)
-                               (js->clj)))
-          images-data (map (fn [file] {:coll coll-id
-                                       :id (uuid/random)
-                                       :file file}) (files-to-array files))]
-      (->> (rx/from-coll images-data)
+    (letfn [(image-size [file]
+              (->> (files/get-image-size file)
+                   (rx/map (partial vector file))))
+            (prepare [[file [width height]]]
+              {:coll coll-id
+               :id (uuid/random)
+               :file file
+               :width width
+               :height height})]
+      (->> (rx/from-coll (jscoll->vec files))
+           (rx/flat-map image-size)
+           (rx/map prepare)
            (rx/flat-map #(rp/req :create/image %))
            (rx/map :payload)
            (rx/map image-created)))))
