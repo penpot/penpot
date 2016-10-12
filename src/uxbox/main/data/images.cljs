@@ -203,6 +203,7 @@
               (contains? allowed-file-types (.-type file)))
             (prepare [[file [width height]]]
               {:coll coll-id
+               :mimetype (.-type file)
                :id (uuid/random)
                :file file
                :width width
