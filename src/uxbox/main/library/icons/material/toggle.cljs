@@ -8,6 +8,7 @@
   [{:name "Check Box"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728414"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -17,6 +18,7 @@
    {:name "Check Box Outline Blank"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728414"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -26,6 +28,7 @@
    {:name "Radio Button Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728414"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -35,6 +38,7 @@
    {:name "Radio Button On"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728414"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -44,6 +48,7 @@
    {:name "Star"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728414"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -53,6 +58,7 @@
    {:name "Star Half"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728414"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -62,6 +68,7 @@
    {:name "Star Outline"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728414"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

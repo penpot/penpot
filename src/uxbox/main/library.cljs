@@ -21,8 +21,13 @@
 ;; --- Icons
 
 (def +icon-collections+ icons/+collections+)
+(def +icons+ icons/+icons+)
+
 (def +icon-collections-by-id+
   (index-by-id icons/+collections+))
+
+(def +icons-by-id+
+  (index-by-id icons/+icons+))
 
 ;; --- Images
 

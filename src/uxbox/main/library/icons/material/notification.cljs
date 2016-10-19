@@ -8,6 +8,7 @@
   [{:name "ADB"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -17,6 +18,7 @@
    {:name "Bluetooth Audio"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -26,6 +28,7 @@
    {:name "Disc Full"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -35,6 +38,7 @@
    {:name "DND Forwardslash"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -44,6 +48,7 @@
    {:name "Do Not Disturb"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -53,6 +58,7 @@
    {:name "Drive ETA"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -62,6 +68,7 @@
    {:name "Event Available"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -71,6 +78,7 @@
    {:name "Event Busy"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -80,6 +88,7 @@
    {:name "Event Note"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -89,6 +98,7 @@
    {:name "Folder Special"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -98,6 +108,7 @@
    {:name "MMS"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -107,6 +118,7 @@
    {:name "More"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -116,6 +128,7 @@
    {:name "Network Locked"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -125,6 +138,7 @@
    {:name "Network Blueooth Speaker"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -134,6 +148,7 @@
    {:name "Phone Forwarded"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -143,6 +158,7 @@
    {:name "Phone In Talk"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -152,6 +168,7 @@
    {:name "Phone Locked"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -161,6 +178,7 @@
    {:name "Phone Missed"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -170,6 +188,7 @@
    {:name "Phone Paused"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -179,6 +198,7 @@
    {:name "Play Download"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -188,6 +208,7 @@
    {:name "Play Install"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -197,6 +218,7 @@
    {:name "SD Card"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -206,6 +228,7 @@
    {:name "Sim Card Alert"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -215,6 +238,7 @@
    {:name "SMS"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -224,6 +248,7 @@
    {:name "SMS Failed"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -233,6 +258,7 @@
    {:name "Sync"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -242,6 +268,7 @@
    {:name "Sync Disabled"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -251,6 +278,7 @@
    {:name "Sync Problem"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -260,6 +288,7 @@
    {:name "System Update"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -269,6 +298,7 @@
    {:name "Tap And Play"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -278,6 +308,7 @@
    {:name "Time To Leave"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -287,6 +318,7 @@
    {:name "Vibration"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -296,6 +328,7 @@
    {:name "Voice Chat"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -305,6 +338,7 @@
    {:name "VPN Lock"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

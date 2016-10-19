@@ -98,13 +98,14 @@
         :auth/recovery (auth/recovery-page (:token params))
         :dashboard/projects (dashboard/projects-page)
         :dashboard/elements (dashboard/elements-page)
+
         :dashboard/icons (let [{:keys [id type]} params
                                 type (when (str/alpha? type) (keyword type))
                                 id (cond
                                      (str/digits? id) (parse-int id)
                                      (uuid-str? id) (uuid id)
                                      :else nil)]
-                            (dashboard/icons-page type id))
+                           (dashboard/icons-page type id))
 
         :dashboard/images (let [{:keys [id type]} params
                                 type (when (str/alpha? type) (keyword type))

@@ -8,6 +8,7 @@
   [{:name "Apps"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -17,6 +18,7 @@
    {:name "Arrow Back"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -26,6 +28,7 @@
    {:name "Arrow Drop Down"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil}
                   :d "M14 20l10 10 10-10z"}]}
@@ -33,6 +36,7 @@
    {:name "Arrow Drop Down Circle"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -42,6 +46,7 @@
    {:name "Arrow Drop Up"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil}
                   :d "M14 28l10-10 10 10z"}]}
@@ -49,6 +54,7 @@
    {:name "Arrow Forward"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -58,6 +64,7 @@
    {:name "Cancel"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -67,6 +74,7 @@
    {:name "Check"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -75,6 +83,7 @@
    {:name "Chevron Left"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -83,6 +92,7 @@
    {:name "Chevron Right"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -91,6 +101,7 @@
    {:name "Close"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -100,6 +111,7 @@
    {:name "Expand Less"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -108,6 +120,7 @@
    {:name "Expand More"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -116,6 +129,7 @@
    {:name "Fullscreen"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -125,6 +139,7 @@
    {:name "Fullscreen Exit"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -134,6 +149,7 @@
    {:name "Menu"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -142,6 +158,7 @@
    {:name "More Horiz"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -151,6 +168,7 @@
    {:name "More Vert"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -160,6 +178,7 @@
    {:name "Refresh"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -169,6 +188,7 @@
    {:name "Unfold Less"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -178,6 +198,7 @@
    {:name "Unfold More"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

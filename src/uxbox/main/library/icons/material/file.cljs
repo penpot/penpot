@@ -8,6 +8,7 @@
   [{:name "Attachment"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -16,6 +17,7 @@
    {:name "Cloud"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -24,6 +26,7 @@
    {:name "Cloud Circle"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -32,6 +35,7 @@
    {:name "Cloud Done"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -40,6 +44,7 @@
    {:name "Cloud Download"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -48,6 +53,7 @@
    {:name "Cloud Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -57,6 +63,7 @@
    {:name "Cloud Queue"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -66,6 +73,7 @@
    {:name "Cloud Upload"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -75,6 +83,7 @@
    {:name "File Download"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -83,6 +92,7 @@
    {:name "File Upload"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -91,6 +101,7 @@
    {:name "Folder"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -100,6 +111,7 @@
    {:name "Folder Open"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -109,6 +121,7 @@
    {:name "Folder Shared"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

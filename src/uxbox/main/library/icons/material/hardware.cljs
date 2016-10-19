@@ -8,6 +8,7 @@
   [{:name "Cast"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -17,6 +18,7 @@
    {:name "Cast Connected"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -26,6 +28,7 @@
    {:name "Computer"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -35,6 +38,7 @@
    {:name "Desktop Mac"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -44,6 +48,7 @@
    {:name "Desktop Windows"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -53,6 +58,7 @@
    {:name "Dock"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -62,6 +68,7 @@
    {:name "Gamepad"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -71,6 +78,7 @@
    {:name "Headset"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -80,6 +88,7 @@
    {:name "Headset Mic"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -89,6 +98,7 @@
    {:name "Keyboard"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -98,6 +108,7 @@
    {:name "Keyboard Alt"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -107,6 +118,7 @@
    {:name "Keyboard Arrow Down"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -115,6 +127,7 @@
    {:name "Keyboard Arrow Left"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -123,6 +136,7 @@
    {:name "Keyboard Arrow Right"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -131,6 +145,7 @@
    {:name "Keyboard Arrow Up"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -139,6 +154,7 @@
    {:name "Keyboard Capslock"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -148,6 +164,7 @@
    {:name "Keyboard Control"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -157,6 +174,7 @@
    {:name "Keyboard Hide"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -166,6 +184,7 @@
    {:name "Keyboard Return"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -175,6 +194,7 @@
    {:name "Keyboard Tab"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -184,6 +204,7 @@
    {:name "Keyboard Voice"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -193,6 +214,7 @@
    {:name "Laptop"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -202,6 +224,7 @@
    {:name "Laptop Chromebook"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -211,6 +234,7 @@
    {:name "Laptop Mac"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -220,6 +244,7 @@
    {:name "Laptop Windows"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -229,6 +254,7 @@
    {:name "Memory"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -238,6 +264,7 @@
    {:name "Mouse"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -247,6 +274,7 @@
    {:name "Phone android"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -256,6 +284,7 @@
    {:name "Phone iPhone"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -265,6 +294,7 @@
    {:name "Phonelink"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -274,6 +304,7 @@
    {:name "Phonelink Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -283,6 +314,7 @@
    {:name "Security"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -292,6 +324,7 @@
    {:name "Sim Card"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -301,6 +334,7 @@
    {:name "Smartphone"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -310,6 +344,7 @@
    {:name "Speaker"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -319,6 +354,7 @@
    {:name "Tablet"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -328,6 +364,7 @@
    {:name "Tablet Android"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -337,6 +374,7 @@
    {:name "Tablet Mac"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -346,6 +384,7 @@
    {:name "TV"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -355,6 +394,7 @@
    {:name "Clock"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

@@ -9,6 +9,7 @@
   [{:name "Access Alarm"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -18,6 +19,7 @@
    {:name "Access Alarms"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -27,6 +29,7 @@
    {:name "Access Times"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g {}
            [:path
@@ -44,6 +47,7 @@
    {:name "Add Alarm"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -53,6 +57,7 @@
    {:name "Airplanemode Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -62,6 +67,7 @@
    {:name "Airplanemode On"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -71,6 +77,7 @@
    {:name "Battery 20"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g [:path
                {:style {:stroke nil}
@@ -85,6 +92,7 @@
    {:name "Battery 30"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -100,6 +108,7 @@
    {:name "Battery 50"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -115,6 +124,7 @@
    {:name "Battery 60"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -130,6 +140,7 @@
    {:name "Battery 80"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -145,6 +156,7 @@
    {:name "Battery 90"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -160,6 +172,7 @@
    {:name "Battery Alert"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -169,6 +182,7 @@
    {:name "Battery Charging 20"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -184,6 +198,7 @@
    {:name "Battery Charging 30"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -199,6 +214,7 @@
    {:name "Battery Charging 50"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -214,6 +230,7 @@
    {:name "Battery Charging 60"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -229,6 +246,7 @@
    {:name "Battery Charging 80"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -244,6 +262,7 @@
    {:name "Battery Charging 90"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -259,6 +278,7 @@
    {:name "Battery Charging Full"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -268,6 +288,7 @@
    {:name "Battery Full"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -277,6 +298,7 @@
    {:name "Battery Std"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -286,6 +308,7 @@
    {:name "Battery Unknown"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -295,6 +318,7 @@
    {:name "Bluetooth"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -304,6 +328,7 @@
    {:name "Bluetooth Connected"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -313,6 +338,7 @@
    {:name "Bluetooth Disabled"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -322,6 +348,7 @@
    {:name "Bluetooth Searching"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -331,6 +358,7 @@
    {:name "Brightness Auto"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -340,6 +368,7 @@
    {:name "Brightness High"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -349,6 +378,7 @@
    {:name "Brightness Low"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -358,6 +388,7 @@
    {:name "Brightness Medium"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -367,6 +398,7 @@
    {:name "Data Usage"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -376,6 +408,7 @@
    {:name "Developer Mode"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -385,6 +418,7 @@
    {:name "Devices"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -394,6 +428,7 @@
    {:name "DVR"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -403,6 +438,7 @@
    {:name "GPS Fixed"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -412,6 +448,7 @@
    {:name "GPS Not Fixed"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -421,6 +458,7 @@
    {:name "GPS Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -430,6 +468,7 @@
    {:name "Location Disabled"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -439,6 +478,7 @@
    {:name "Location Searching"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -448,6 +488,7 @@
    {:name "Multitrack Audio"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -457,6 +498,7 @@
    {:name "Network Cell"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -468,6 +510,7 @@
    {:name "Network Wifi"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -483,6 +526,7 @@
    {:name "NFC"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -492,6 +536,7 @@
    {:name "Now Wallpaper"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -501,6 +546,7 @@
    {:name "Now Widgets"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -510,6 +556,7 @@
    {:name "Screen Lock Landscape"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -519,6 +566,7 @@
    {:name "Screen Lock Portrait"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -528,6 +576,7 @@
    {:name "Screen Lock Rotation"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -537,6 +586,7 @@
    {:name "Screen Rotation"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -546,6 +596,7 @@
    {:name "SD Storage"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -555,6 +606,7 @@
    {:name "System Settings Daydream"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -564,6 +616,7 @@
    {:name "Signal Cellular 0 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -573,6 +626,7 @@
    {:name "Signal Cellular 1 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -584,6 +638,7 @@
    {:name "Signal Cellular 2 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -595,6 +650,7 @@
    {:name "Signal Cellular 3 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -606,6 +662,7 @@
    {:name "Signal Cellular 4 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil}
                   :d "M4 44h40v-40z"}]}
@@ -613,6 +670,7 @@
    {:name "Signal Cellular Connected No Internet 0 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -625,6 +683,7 @@
    {:name "Signal Cellular Connected No Internet 1 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -638,6 +697,7 @@
    {:name "Signal Cellular Connected No Internet 2 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -651,6 +711,7 @@
    {:name "Signal Cellular Connected No Internet 3 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -664,6 +725,7 @@
    {:name "Signal Cellular No Sim"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -673,6 +735,7 @@
    {:name "Signal Cellular Null"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -681,6 +744,7 @@
    {:name "Signal Cellular Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -690,6 +754,7 @@
    {:name "Signal Wifi 0 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -700,6 +765,7 @@
    {:name "Signal Wifi 1 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -715,6 +781,7 @@
    {:name "Signal Wifi 2 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -730,6 +797,7 @@
    {:name "Signal Wifi 3 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -745,6 +813,7 @@
    {:name "Signal Wifi 4 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -754,6 +823,7 @@
    {:name "Signal Wifi Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -763,6 +833,7 @@
    {:name "Signal Wifi Statusbar 0 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -773,6 +844,7 @@
    {:name "Signal Wifi Statusbar 1 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -788,6 +860,7 @@
    {:name "Signal Wifi Statusbar 2 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -803,6 +876,7 @@
    {:name "Signal Wifi Statusbar 3 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -818,6 +892,7 @@
    {:name "Signal Wifi Statusbar 4 Bar"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -827,6 +902,7 @@
    {:name "Signal Wifi Statusbar Null"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -836,6 +912,7 @@
    {:name "Storage"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -845,6 +922,7 @@
    {:name "Usb"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -854,6 +932,7 @@
    {:name "Wifi Lock"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -863,6 +942,7 @@
    {:name "Wifi Tethering"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

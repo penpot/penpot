@@ -8,6 +8,7 @@
   [{:name "Album"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -17,6 +18,7 @@
    {:name "AV Timer"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -26,6 +28,7 @@
    {:name "Closed Caption"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -35,6 +38,7 @@
    {:name "Equalizer"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -43,6 +47,7 @@
    {:name "Explicit"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -52,6 +57,7 @@
    {:name "Fast Forward"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -60,6 +66,7 @@
    {:name "Fast Rewind"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -68,6 +75,7 @@
    {:name "Games"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -77,6 +85,7 @@
    {:name "Hearing"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -86,6 +95,7 @@
    {:name "High Quality"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -95,6 +105,7 @@
    {:name "Loop"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -104,6 +115,7 @@
    {:name "Mic"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -113,6 +125,7 @@
    {:name "Mic None"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -122,6 +135,7 @@
    {:name "Mic Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -131,6 +145,7 @@
    {:name "Movie"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -140,6 +155,7 @@
    {:name "My Library Add"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -149,6 +165,7 @@
    {:name "My Library Books"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -158,6 +175,7 @@
    {:name "My Library Music"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -167,6 +185,7 @@
    {:name "New Releases"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -176,6 +195,7 @@
    {:name "Not Interested"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -185,6 +205,7 @@
    {:name "Pause"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -193,6 +214,7 @@
    {:name "Pause Circle Fill"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -202,6 +224,7 @@
    {:name "Pause Circle Outline"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -211,12 +234,14 @@
    {:name "Play"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil} :d "M16 10v28l22-14z"}]}
 
    {:name "Play Circle Fill"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -226,6 +251,7 @@
    {:name "Play Circle Outline"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -235,6 +261,7 @@
    {:name "Play Shopping Bag"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -244,6 +271,7 @@
    {:name "Playlist Add"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -253,6 +281,7 @@
    {:name "Queue"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -262,6 +291,7 @@
    {:name "Queue Music"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -271,6 +301,7 @@
    {:name "Radio"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -280,6 +311,7 @@
    {:name "Recent Actors"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -289,6 +321,7 @@
    {:name "Repeat"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -298,6 +331,7 @@
    {:name "Repeat One"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -307,6 +341,7 @@
    {:name "Replay"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -316,6 +351,7 @@
    {:name "Shuffle"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -325,6 +361,7 @@
    {:name "Skip Next"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -333,6 +370,7 @@
    {:name "Skip Previous"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil} :d "M12 12h4v24h-4zm7 12l17 12V12z"}]}
@@ -340,6 +378,7 @@
    {:name "Snooze"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -349,12 +388,14 @@
    {:name "Stop"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil} :d "M12 12h24v24H12z"}]}
 
    {:name "Subtitles"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -364,6 +405,7 @@
    {:name "Surround Sound"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -373,6 +415,7 @@
    {:name "Video Collection"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -382,6 +425,7 @@
    {:name "Videocam"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -391,6 +435,7 @@
    {:name "Videocam Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -400,6 +445,7 @@
    {:name "Volume Down"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -409,12 +455,14 @@
    {:name "Volume Mute"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil} :d "M14 18v12h8l10 10V8L22 18h-8z"}]}
 
    {:name "Volume Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -424,6 +472,7 @@
    {:name "Volume Up"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -433,6 +482,7 @@
    {:name "Web"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -444,6 +494,7 @@
    {:name "Business"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -453,6 +504,7 @@
    {:name "Call"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -462,6 +514,7 @@
    {:name "Call End"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -471,6 +524,7 @@
    {:name "Call Made"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -480,6 +534,7 @@
    {:name "Call Merge"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -489,6 +544,7 @@
    {:name "Call Missed"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -498,6 +554,7 @@
    {:name "Call Received"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -507,6 +564,7 @@
    {:name "Call Split"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -516,6 +574,7 @@
    {:name "Chat"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -525,6 +584,7 @@
    {:name "Contacts"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -534,6 +594,7 @@
    {:name "Dialer Sip"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -543,6 +604,7 @@
    {:name "Dialpad"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -552,6 +614,7 @@
    {:name "Dnd On"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -561,6 +624,7 @@
    {:name "Email"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -570,6 +634,7 @@
    {:name "Forum"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -579,6 +644,7 @@
    {:name "Import Export"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -588,6 +654,7 @@
    {:name "Invert Colors Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -597,6 +664,7 @@
    {:name "Invert Colors On"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -606,6 +674,7 @@
    {:name "Live Help"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -615,6 +684,7 @@
    {:name "Location Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -624,6 +694,7 @@
    {:name "Location On"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -633,6 +704,7 @@
    {:name "Message"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -642,6 +714,7 @@
    {:name "Messenger"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -651,6 +724,7 @@
    {:name "No Sim"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -660,6 +734,7 @@
    {:name "Phone"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -669,6 +744,7 @@
    {:name "Portable Wifi off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -678,6 +754,7 @@
    {:name "Quick Contacts Dialer"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -687,6 +764,7 @@
    {:name "Ring Volume"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -696,6 +774,7 @@
    {:name "Stay Current Landscape"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -705,6 +784,7 @@
    {:name "Stay Current Portrait"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -714,6 +794,7 @@
    {:name "Stay Primary Landscape"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -723,6 +804,7 @@
    {:name "Stay Primary Portrait"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -732,6 +814,7 @@
    {:name "Swap Calls"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -741,6 +824,7 @@
    {:name "Textsms"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -750,6 +834,7 @@
    {:name "Voicemail"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -759,6 +844,7 @@
    {:name "VPN Key"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

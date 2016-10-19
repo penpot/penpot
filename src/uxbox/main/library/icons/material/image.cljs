@@ -8,6 +8,7 @@
   [{:name "Add To photos"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -17,6 +18,7 @@
    {:name "Adjust"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -26,6 +28,7 @@
    {:name "Assistant Photo"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -34,6 +37,7 @@
    {:name "Audiotrack"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -43,6 +47,7 @@
    {:name "Blur Circular"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -52,6 +57,7 @@
    {:name "Blur Linear"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -61,6 +67,7 @@
    {:name "Blur Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -70,6 +77,7 @@
    {:name "Blur On"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -79,6 +87,7 @@
    {:name "Brightness"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:circle {:style {:stroke nil}
                     :r "20"
@@ -88,6 +97,7 @@
    {:name "Brightness 2"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -97,6 +107,7 @@
    {:name "Brightness 3"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -106,6 +117,7 @@
    {:name "Brightness 4"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -115,6 +127,7 @@
    {:name "Brightness 5"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -124,6 +137,7 @@
    {:name "Brightness 6"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -133,6 +147,7 @@
    {:name "Brightness 7"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -142,6 +157,7 @@
    {:name "Brush"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -151,6 +167,7 @@
    {:name "Camera"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -160,6 +177,7 @@
    {:name "Camera Alt"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -169,6 +187,7 @@
    {:name "Camera Front"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -178,6 +197,7 @@
    {:name "Camera Rear"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -187,6 +207,7 @@
    {:name "Camera Roll"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -196,6 +217,7 @@
    {:name "Center Focus Strong"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -205,6 +227,7 @@
    {:name "Center Focus Weak"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -214,6 +237,7 @@
    {:name "Collections"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -223,6 +247,7 @@
    {:name "Color Lens"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -232,6 +257,7 @@
    {:name "Colorize"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -241,6 +267,7 @@
    {:name "Compare"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -250,6 +277,7 @@
    {:name "Control Point"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -259,6 +287,7 @@
    {:name "Control Point Duplicate"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -268,6 +297,7 @@
    {:name "Crop 16:9"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -277,6 +307,7 @@
    {:name "Crop"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -286,6 +317,7 @@
    {:name "Crop 3:2"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -295,6 +327,7 @@
    {:name "Crop 5:4"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -304,6 +337,7 @@
    {:name "Crop 7:5"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -313,6 +347,7 @@
    {:name "Crop Din"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -322,6 +357,7 @@
    {:name "Crop Free"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -331,6 +367,7 @@
    {:name "Crop Landscape"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -340,6 +377,7 @@
    {:name "Crop Original"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -349,6 +387,7 @@
    {:name "Crop Portrait"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -358,6 +397,7 @@
    {:name "Crop Square"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -367,6 +407,7 @@
    {:name "Dehaze"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -375,6 +416,7 @@
    {:name "Details"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -383,6 +425,7 @@
    {:name "Edit"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -392,6 +435,7 @@
    {:name "Exposure"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -401,6 +445,7 @@
    {:name "Exposure Minus 1"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -410,6 +455,7 @@
    {:name "Exposure Minus 2"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -419,6 +465,7 @@
    {:name "Exposure Plus 1"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -428,6 +475,7 @@
    {:name "Exposure Plus 2"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -437,6 +485,7 @@
    {:name "Exposure Zero"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -446,6 +495,7 @@
    {:name "Filter 1"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -455,6 +505,7 @@
    {:name "Filter 2"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -464,6 +515,7 @@
    {:name "Filter 3"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -473,6 +525,7 @@
    {:name "Filter 4"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -482,6 +535,7 @@
    {:name "Filter 5"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -491,6 +545,7 @@
    {:name "Filter 6"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -500,6 +555,7 @@
    {:name "Filter 7"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -509,6 +565,7 @@
    {:name "Filter 8"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -518,6 +575,7 @@
    {:name "Filter b and w"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -527,6 +585,7 @@
    {:name "Filter Center Focus"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -536,6 +595,7 @@
    {:name "Filter Drama"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -545,6 +605,7 @@
    {:name "Filter Frames"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -554,6 +615,7 @@
    {:name "Filter HDR"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -563,6 +625,7 @@
    {:name "Filter None"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -572,6 +635,7 @@
    {:name "Filter Tilt Shift"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -581,6 +645,7 @@
    {:name "Filter Vintage"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -590,6 +655,7 @@
    {:name "Flare"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -599,6 +665,7 @@
    {:name "Flash Auto"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -608,6 +675,7 @@
    {:name "Flash Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -617,6 +685,7 @@
    {:name "Flash On"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil}
                   :d "M14 4v22h6v18l14-24h-8l8-16z"}]}
@@ -624,6 +693,7 @@
    {:name "Flip"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -633,6 +703,7 @@
    {:name "Gradient"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -642,6 +713,7 @@
    {:name "Grain"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -651,6 +723,7 @@
    {:name "Grid Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -660,6 +733,7 @@
    {:name "Grid On"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -669,6 +743,7 @@
    {:name "HDR Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -678,6 +753,7 @@
    {:name "HDR On"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -687,6 +763,7 @@
    {:name "HDR Strong"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -696,6 +773,7 @@
    {:name "HDR Weak"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -705,6 +783,7 @@
    {:name "Healing"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -714,6 +793,7 @@
    {:name "Image"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -723,6 +803,7 @@
    {:name "Image Aspect Ratio"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -732,6 +813,7 @@
    {:name "Iso"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -741,6 +823,7 @@
    {:name "Landscape"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -750,6 +833,7 @@
    {:name "Leak Add"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -759,6 +843,7 @@
    {:name "Leak Remove"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -768,6 +853,7 @@
    {:name "Lens"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -777,6 +863,7 @@
    {:name "Looks 3"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -786,6 +873,7 @@
    {:name "Looks 4"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -795,6 +883,7 @@
    {:name "Looks 5"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -804,6 +893,7 @@
    {:name "Looks 6"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -813,6 +903,7 @@
    {:name "Looks"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -822,6 +913,7 @@
    {:name "Looks One"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -831,6 +923,7 @@
    {:name "Looks Two"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -840,6 +933,7 @@
    {:name "Loupe"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -849,6 +943,7 @@
    {:name "Movie Creation"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -858,6 +953,7 @@
    {:name "Nature"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -867,6 +963,7 @@
    {:name "Navigate Before"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -875,6 +972,7 @@
    {:name "Navigate Next"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -883,6 +981,7 @@
    {:name "Palette"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -892,6 +991,7 @@
    {:name "Panorama"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -901,6 +1001,7 @@
    {:name "Panorama Fisheye"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -910,6 +1011,7 @@
    {:name "Panorama Horizontal"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -919,6 +1021,7 @@
    {:name "Panorama Vertical"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -928,6 +1031,7 @@
    {:name "Panorama Wide Angle"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -937,6 +1041,7 @@
    {:name "Photo"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -946,6 +1051,7 @@
    {:name "Photo Album"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -955,6 +1061,7 @@
    {:name "Photo Camera"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:g
            [:circle {:r "6.4"
@@ -968,6 +1075,7 @@
    {:name "Photo Library"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -977,6 +1085,7 @@
    {:name "Portrait"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -986,6 +1095,7 @@
    {:name "Remove Red Eye"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -995,6 +1105,7 @@
    {:name "Rotate Left"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1004,6 +1115,7 @@
    {:name "Rotate Right"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1013,6 +1125,7 @@
    {:name "Slideshow"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1022,6 +1135,7 @@
    {:name "Straighten"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1031,6 +1145,7 @@
    {:name "Style"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1040,6 +1155,7 @@
    {:name "Switch Camera"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1049,6 +1165,7 @@
    {:name "Switch Video"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1058,6 +1175,7 @@
    {:name "Tag Faces"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1067,6 +1185,7 @@
    {:name "Texture"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1076,6 +1195,7 @@
    {:name "Timelapse"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1085,6 +1205,7 @@
    {:name "Timer 3"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1094,6 +1215,7 @@
    {:name "Timer"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1103,6 +1225,7 @@
    {:name "Timer Auto"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1112,6 +1235,7 @@
    {:name "Timer Off"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1121,6 +1245,7 @@
    {:name "Tonality"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1130,6 +1255,7 @@
    {:name "Transform"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1139,6 +1265,7 @@
    {:name "Tune"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1148,6 +1275,7 @@
    {:name "WB Auto"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1157,6 +1285,7 @@
    {:name "WB Cloudy"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1166,6 +1295,7 @@
    {:name "WB Incandescent"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1175,6 +1305,7 @@
    {:name "WB Irradescent"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1184,6 +1315,7 @@
    {:name "WB Sunny"
     :id (gensym "icon")
     :type :icon
+    :collection #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

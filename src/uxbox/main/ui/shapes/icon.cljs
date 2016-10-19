@@ -45,3 +45,12 @@
         view-box (apply str (interpose " " view-box))
         props {:view-box view-box :id key :key key}]
     [:svg props data]))
+
+(mx/defc icon-raw-svg
+  {:mixins [mx/static]}
+  [{:keys [content id metadata] :as shape}]
+  (let [view-box (apply str (interpose " " (:view-box metadata)))
+        id (str "icon-svg-" id)
+        props {:view-box view-box :id id
+               :dangerouslySetInnerHTML {:__html content}}]
+    [:svg props]))
