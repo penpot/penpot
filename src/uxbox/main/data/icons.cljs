@@ -25,7 +25,6 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [type (or type :own)
-          id (or id (if (= type :builtin) 1 nil))
           data {:type type :id id :selected #{}}]
       (-> state
           (assoc-in [:dashboard :icons] data)
