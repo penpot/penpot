@@ -147,10 +147,10 @@
   [type selected colls]
   (let [own? (= type :own)
         builtin? (= type :builtin)
-        collections (cond->> (vals colls)
-                      own? (filter #(= :own (:type %)))
-                      builtin? (filter #(= :builtin (:type %)))
-                      own? (sort-by :name))]
+        colls (cond->> (vals colls)
+                own? (filter #(= :own (:type %)))
+                builtin? (filter #(= :builtin (:type %))))
+        colls (sort-by :name colls)]
     [:ul.library-elements
      (when own?
        [:li
@@ -159,7 +159,7 @@
          "+ New collection"]])
      (when own?
        (nav-item nil (nil? selected)))
-     (for [coll collections
+     (for [coll colls
            :let [selected? (= (:id coll) selected)
                  key (str (:id coll))]]
        (-> (nav-item coll selected?)
@@ -171,13 +171,12 @@
   (let [own? (= type :own)
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
-              (let [xf (comp (map second)
-                             (filter #(= type (:type %))))
-                    colls (->> (into [] xf colls)
-                               (sort-by :name))]
-                (if-let [item (first colls)]
-                  (rs/emit! (di/select-collection type (:id item)))
-                  (rs/emit! (di/select-collection type)))))]
+              (if (= type :builtin)
+                (let [colls (->> (map second colls)
+                                 (filter #(= :builtin (:type %)))
+                                 (sort-by :name))]
+                  (rs/emit! (di/select-collection type (:id (first colls)))))
+                (rs/emit! (di/select-collection type))))]
       [:div.library-bar
        [:div.library-bar-inside
         [:ul.library-tabs
