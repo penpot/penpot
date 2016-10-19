@@ -15,6 +15,7 @@
             [uxbox.main.ui.shapes.circle :as circle]
             [uxbox.main.ui.shapes.text :as text]
             [uxbox.main.ui.shapes.path :as path]
+            [uxbox.main.ui.shapes.image :as image]
             [uxbox.main.geom :as geom]))
 
 ;; --- Helpers
@@ -34,6 +35,7 @@
     :icon (icon/icon-component shape)
     :rect (rect/rect-component shape)
     :path (path/path-component shape)
+    :image (image/image-component shape)
     :circle (circle/circle-component shape)))
 
 (mx/defc component-container

@@ -6,25 +6,19 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.images
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [cuerdas.core :as str]
+  (:require [cuerdas.core :as str]
             [lentes.core :as l]
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.main.state :as st]
             [uxbox.util.rstore :as rs]
-            [uxbox.main.library :as library]
-            [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.images :as di]
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.main.ui.library-bar :as ui.library-bar]
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.util.data :as data :refer (read-string)]
-            [uxbox.util.lens :as ul]
             [uxbox.util.dom :as dom]))
 
 ;; --- Helpers & Constants
@@ -64,15 +58,6 @@
 (def ^:private images-ref
   (-> (l/key :images-by-id)
       (l/derive st/state)))
-
-;; (def ^:private collections-ref
-;;   (-> (l/lens vals)
-;;       (l/derive collections-map-ref)))
-
-;; (defn- focus-collection
-;;   [id]
-;;   (-> (l/key id)
-;;       (l/derive collections-map-ref)))
 
 ;; --- Page Title
 
@@ -117,7 +102,7 @@
            [:span.close {:on-click on-cancel} i/close]]
           [:span.dashboard-title-field
            {:on-double-click on-edit}
-           (:name coll)])]
+           (:name coll "Storage")])]
        (if (and (not own?) coll)
          [:div.edition
           (if edit?
@@ -127,19 +112,26 @@
 
 ;; --- Nav
 
+(defn react-count-images
+  [id]
+  (->> (mx/react images-ref)
+       (vals)
+       (filter #(= id (:collection %)))
+       (count)))
+
 (mx/defc nav-item
-  {:mixins [mx/static]}
-  [collection selected?]
+  {:mixins [mx/static mx/reactive]}
+  [{:keys [id type name] :as coll} selected?]
   (letfn [(on-click [event]
-            (let [type (:type collection)
-                  id (:id collection)]
+            (let [type (or type :own)]
               (rs/emit! (di/select-collection type id))))]
-    (let [images (count (:images collection []))]
+    (let [num-images (react-count-images id)]
       [:li {:on-click on-click
             :class-name (when selected? "current")}
-       [:span.element-title (:name collection)]
+       [:span.element-title
+        (if coll name "Storage")]
        [:span.element-subtitle
-        (tr "ds.num-elements" (t/c images))]])))
+        (tr "ds.num-elements" (t/c num-images))]])))
 
 (mx/defc nav-section
   {:mixins [mx/static mx/reactive]}
@@ -156,6 +148,8 @@
         [:a.btn-primary
          {:on-click #(rs/emit! (di/create-collection))}
          "+ New library"]])
+     (when own?
+       (nav-item nil (nil? selected)))
      (for [coll collections
            :let [selected? (= (:id coll) selected)
                  key (str (:id coll))]]
@@ -179,12 +173,13 @@
       [:div.library-bar
        [:div.library-bar-inside
         [:ul.library-tabs
-         [:li {:class-name (when builtin? "current")
-               :on-click (partial select-tab :builtin)}
-          "STANDARD"]
          [:li {:class-name (when own? "current")
                :on-click (partial select-tab :own)}
-          "YOUR LIBRARIES"]]
+          "YOUR IMAGES"]
+         [:li {:class-name (when builtin? "current")
+               :on-click (partial select-tab :builtin)}
+          "IMAGES STORE"]]
+
         (nav-section type id colls)]])))
 
 ;; --- Grid
@@ -208,15 +203,15 @@
        :on-change on-file-selected}]]))
 
 (mx/defc grid-options
-  [coll]
-  (let [own? (= (:type coll) :own)]
+  [{:keys [type] :as coll}]
+  (let [editable? (or (= type :own) (nil? coll))]
     (letfn [(delete []
               (rs/emit! (di/delete-selected)))
             (on-delete [event]
               (udl/open! :confirm {:on-accept delete}))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
-       (if own?
+       (if editable?
          [:div.multiselect-nav
           #_[:span.move-item.tooltip.tooltip-top
              {:alt "Move to"}
@@ -251,19 +246,18 @@
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}
-  [{:keys [id type  selected] :as state}]
-  (let [filtering (:filter state)
+  [{:keys [id type selected] :as state}]
+  (let [editable? (or (= type :own) (nil? id))
+        filtering (:filter state)
         ordering (:order state)
-        own? (= type :own)
-        images (rum/react images-ref)
+        images (mx/react images-ref)
         images (->> (vals images)
                     (filter #(= id (:collection %)))
                     (filter-images-by filtering)
                     (sort-images-by ordering))]
     [:div.dashboard-grid-content
      [:div.dashboard-grid-row
-      (when own?
-        (grid-form id))
+      (when editable? (grid-form id))
       (for [image images
             :let [id (:id image)
                   selected? (contains? selected id)]]
@@ -273,13 +267,11 @@
 (mx/defc content
   {:mixins [mx/static]}
   [{:keys [type id selected] :as state} coll]
-  (let [own? (= type :own)]
-    (when coll
-      [:section.dashboard-grid.library
-       (page-title coll)
-       (grid state)
-       (when (seq selected)
-         (grid-options coll))])))
+  [:section.dashboard-grid.library
+   (page-title coll)
+   (grid state)
+   (when (seq selected)
+     (grid-options coll))])
 
 ;; --- Menu
 

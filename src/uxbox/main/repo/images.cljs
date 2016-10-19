@@ -40,20 +40,28 @@
 
 (defmethod request :fetch/images
   [_ {:keys [coll]}]
-  (let [params {:url (str url "/library/image-collections/" coll "/images")
+  (let [url (if coll
+              (str url "/library/image-collections/" coll "/images")
+              (str url "/library/image-collections/images"))
+        params {:url url :method :get}]
+    (send! params)))
+
+(defmethod request :fetch/image
+  [_ {:keys [id]}]
+  (let [params {:url (str url "/library/images/" id)
                 :method :get}]
     (send! params)))
 
 (defmethod request :create/image
-  [_ {:keys [coll id file width height mimetype] :as body}]
+  [_ {:keys [collection id file width height mimetype] :as body}]
   (let [body (doto (js/FormData.)
                (.append "mimetype" mimetype)
-               ;; (.append "collection" (str coll))
+               (.append "collection" (str collection))
                (.append "file" file)
                (.append "width" width)
                (.append "height" height)
                (.append "id" id))
-        params {:url (str url "/library/image-collections/" coll "/images")
+        params {:url (str url "/library/images/")
                 :method :post
                 :body body}]
     (send! params)))

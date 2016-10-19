@@ -2,8 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.images
   (:require [cuerdas.core :as str]
@@ -26,10 +25,8 @@
 (defrecord Initialize [type id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [type (or type :builtin)
-          id (or id (if (= type :builtin) 1 nil))
+    (let [type (or type :own)
           data {:type type :id id :selected #{}}]
-      (println "initialize:" data)
       (-> state
           (assoc-in [:dashboard :images] data)
           (assoc-in [:dashboard :section] :dashboard/images))))
@@ -159,8 +156,8 @@
     (rx/of (update-collection id))))
 
 (defn rename-collection
-  [item name]
-  (RenameCollection. item name))
+  [id name]
+  (RenameCollection. id name))
 
 ;; --- Delete Collection
 
@@ -193,7 +190,7 @@
 
 (def allowed-file-types #{"image/jpeg" "image/png"})
 
-(defrecord CreateImages [coll-id files]
+(defrecord CreateImages [id files]
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(image-size [file]
@@ -202,7 +199,7 @@
             (allowed-file? [file]
               (contains? allowed-file-types (.-type file)))
             (prepare [[file [width height]]]
-              {:coll coll-id
+              {:collection id
                :mimetype (.-type file)
                :id (uuid/random)
                :file file
@@ -217,12 +214,13 @@
            (rx/map image-created)))))
 
 (defn create-images
-  [coll-id files]
-  (CreateImages. coll-id files))
+  [id files]
+  {:pre [(or (uuid? id) (nil? id))]}
+  (CreateImages. id files))
 
 ;; --- Images Fetched
 
-(defrecord ImagesFetched [coll-id items]
+(defrecord ImagesFetched [items]
   rs/UpdateEvent
   (-apply-update [_ state]
     (reduce (fn [state {:keys [id] :as image}]
@@ -231,58 +229,77 @@
             items)))
 
 (defn images-fetched
-  [coll-id items]
-  (ImagesFetched. coll-id items))
+  [items]
+  (ImagesFetched. items))
 
 ;; --- Fetch Images
 
-(defrecord FetchImages [coll-id]
+(defrecord FetchImages [id]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [params {:coll coll-id}]
+    (let [params {:coll id}]
       (->> (rp/req :fetch/images params)
            (rx/map :payload)
-           (rx/map #(images-fetched coll-id %))))))
+           (rx/map images-fetched)))))
 
 (defn fetch-images
-  [coll-id]
-  (FetchImages. coll-id))
+  "Fetch a list of images of the selected collection"
+  [id]
+  {:pre [(or (uuid? id) (nil? id))]}
+  (FetchImages. id))
+
+;; --- Fetch Image
+
+(declare image-fetched)
+
+(defrecord FetchImage [id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [existing (get-in state [:images-by-id id])]
+      (if existing
+        (rx/empty)
+        (->> (rp/req :fetch/image {:id id})
+             (rx/map :payload)
+             (rx/map image-fetched))))))
+
+(defn fetch-image
+  "Conditionally fetch image by its id. If image
+  is already loaded, this event is noop."
+  [id]
+  {:pre [(uuid? id)]}
+  (FetchImage. id))
+
+;; --- Image Fetched
+
+(defrecord ImageFetched [image]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [id (:id image)]
+      (update state :images-by-id assoc id image))))
+
+(defn image-fetched
+  [image]
+  {:pre [(map? image)]}
+  (ImageFetched. image))
 
 ;; --- Delete Images
 
-(defrecord DeleteImage [coll-id image-id]
+(defrecord DeleteImage [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update state [:images-by-id] dissoc image-id))
+    (-> state
+        (update :images-by-id dissoc id)
+        (update-in [:dashboard :images :selected] disj id)))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (->> (rp/req :delete/image image-id)
+    (->> (rp/req :delete/image id)
          (rx/ignore))))
 
 (defn delete-image
-  [coll-id image-id]
-  {:pre [(uuid? coll-id)
-         (uuid? image-id)]}
-  (DeleteImage. coll-id image-id))
-
-;; --- Remove Image
-
-(defrecord RemoveImages [id images]
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    #_(update-in state [:image-colls-by-id id :data]
-               #(set/difference % images)))
-
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (rx/of (update-collection id))))
-
-(defn remove-images
-  "Remove image in a collection."
-  [id images]
-  (RemoveImages. id images))
-
+  [id]
+  {:pre [(uuid? id)]}
+  (DeleteImage. id))
 
 ;; --- Select image
 
@@ -314,9 +331,9 @@
 (defrecord DeleteSelected []
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (let [{:keys [id selected]} (get-in state [:dashboard :images])]
-      (rx/of (remove-images id selected)
-             #(assoc-in % [:dashboard :images :selected] #{})))))
+    (let [selected (get-in state [:dashboard :images :selected])]
+      (->> (rx/from-coll selected)
+           (rx/map delete-image)))))
 
 (defn delete-selected
   []
