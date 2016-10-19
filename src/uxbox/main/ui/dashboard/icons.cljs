@@ -6,9 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.icons
-  (:require [sablono.core :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.main.state :as st]
             [uxbox.main.library :as library]
@@ -58,19 +56,18 @@
   (-> (l/in [:dashboard :icons])
       (l/derive st/state)))
 
-(def ^:private collections-map-ref
-  (-> (comp (l/key :icon-colls-by-id)
-            (ul/merge library/+icon-collections-by-id+))
+(def ^:private collections-ref
+  (-> (l/key :icon-colls-by-id)
       (l/derive st/state)))
 
-(def ^:private collections-ref
-  (-> (l/lens vals)
-      (l/derive collections-map-ref)))
+(def ^:private icons-ref
+  (-> (l/key :icons-by-id)
+      (l/derive st/state)))
 
-(defn- focus-collection
-  [id]
-  (-> (l/key id)
-      (l/derive collections-map-ref)))
+;; (defn- focus-collection
+;;   [id]
+;;   (-> (l/key id)
+;;       (l/derive collections-map-ref)))
 
 ;; --- Page Title
 
@@ -84,7 +81,7 @@
     (letfn [(on-save [e]
               (let [dom (mx/ref-node own "input")
                     name (.-innerText dom)]
-                #_(rs/emit! (di/rename-collection id (str/trim name)))
+                (rs/emit! (di/rename-collection id (str/trim name)))
                 (swap! local assoc :edit false)))
             (on-cancel [e]
               (swap! local assoc :edit false))
@@ -98,9 +95,8 @@
                   (dom/prevent-default e)
                   (dom/stop-propagation e)
                   (on-save e))))
-
             (delete []
-              #_(rs/emit! (di/delete-collection (:id coll))))
+              (rs/emit! (di/delete-collection id)))
             (on-delete []
               (udl/open! :confirm {:on-accept delete}))]
       [:div.dashboard-title
@@ -115,7 +111,7 @@
            [:span.close {:on-click on-cancel} i/close]]
           [:span.dashboard-title-field
            {:on-double-click on-edit}
-           (:name coll)])]
+           (:name coll "Storage")])]
        (if (and (not own?) coll)
          [:div.edition
           (if edit?
@@ -125,35 +121,44 @@
 
 ;; --- Nav
 
+(defn react-count-icons
+  [id]
+  (->> (mx/react icons-ref)
+       (vals)
+       (filter #(= id (:collection %)))
+       (count)))
+
 (mx/defc nav-item
-  {:mixins [mx/static]}
-  [collection selected?]
+  {:mixins [mx/static mx/reactive]}
+  [{:keys [id type name] :as coll} selected?]
   (letfn [(on-click [event]
-            (let [type (:type collection)
-                  id (:id collection)]
+            (let [type (or type :own)]
               (rs/emit! (di/select-collection type id))))]
-    (let [icons (count (:icons collection))]
+    (let [num-icons (react-count-icons id)]
       [:li {:on-click on-click
             :class-name (when selected? "current")}
-       [:span.element-title (:name collection)]
+       [:span.element-title
+        (if coll name "Storage")]
        [:span.element-subtitle
-        (tr "ds.num-elements" (t/c icons))]])))
+        (tr "ds.num-elements" (t/c num-icons))]])))
 
 (mx/defc nav-section
   {:mixins [mx/static mx/reactive]}
-  [type selected]
+  [type selected colls]
   (let [own? (= type :own)
         builtin? (= type :builtin)
-        collections (cond->> (mx/react collections-ref)
+        collections (cond->> (vals colls)
                       own? (filter #(= :own (:type %)))
                       builtin? (filter #(= :builtin (:type %)))
-                      own? (sort-by :id))]
+                      own? (sort-by :name))]
     [:ul.library-elements
      (when own?
        [:li
         [:a.btn-primary
-         #_{:on-click #(rs/emit! (di/create-collection))}
-         "+ New library"]])
+         {:on-click #(rs/emit! (di/create-collection))}
+         "+ New collection"]])
+     (when own?
+       (nav-item nil (nil? selected)))
      (for [coll collections
            :let [selected? (= (:id coll) selected)
                  key (str (:id coll))]]
@@ -162,67 +167,60 @@
 
 (mx/defc nav
   {:mixins [mx/static]}
-  [state]
-  (let [selected (:id state)
-        type (:type state)
-        own? (= type :own)
+  [{:keys [type id] :as state} colls]
+  (let [own? (= type :own)
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
-              (let [xf (filter #(= type (:type %)))
-                    colls (sequence xf @collections-ref)]
+              (let [xf (comp (map second)
+                             (filter #(= type (:type %))))
+                    colls (->> (into [] xf colls)
+                               (sort-by :name))]
                 (if-let [item (first colls)]
                   (rs/emit! (di/select-collection type (:id item)))
                   (rs/emit! (di/select-collection type)))))]
       [:div.library-bar
        [:div.library-bar-inside
         [:ul.library-tabs
-         [:li {:class-name (when builtin? "current")
-               :on-click (partial select-tab :builtin)}
-          "STANDARD"]
          [:li {:class-name (when own? "current")
                :on-click (partial select-tab :own)}
-          "YOUR LIBRARIES"]]
-        (nav-section type selected)]])))
+          "YOUR ICONS"]
+         [:li {:class-name (when builtin? "current")
+               :on-click (partial select-tab :builtin)}
+          "ICONS STORE"]]
+
+        (nav-section type id colls)]])))
 
 ;; --- Grid
 
-;; (defn grid-render
-;;   [own]
-;;   (let [dashboard (mx/react dashboard-ref)
-;;         coll-type (:collection-type dashboard)
-;;         coll-id (:collection-id dashboard)
-;;         own? (= coll-type :own)
-;;         coll (get library/+icon-collections-by-id+ coll-id)]
-;;     (when coll
-;;       (html
-;;        [:section.dashboard-grid.library
-;;         (page-title coll)
-;;         [:div.dashboard-grid-content
-;;           [:div.dashboard-grid-row
-;;            (for [icon (:icons coll)]
-;;              [:div.grid-item.small-item.project-th {}
-;;               [:span.grid-item-icon (icon/icon-svg icon)]
-;;               [:h3 (:name icon)]
-;;               #_[:div.project-th-actions
-;;                [:div.project-th-icon.edit i/pencil]
-;;                [:div.project-th-icon.delete i/trash]]])]]]))))
-
-;; (def grid
-;;   (mx/component
-;;    {:render grid-render
-;;     :name "grid"
-;;     :mixins [mx/static mx/reactive]}))
+(mx/defcs grid-form
+  {:mixins [mx/static]}
+  [own coll-id]
+  (letfn [(forward-click [event]
+            (dom/click (mx/ref-node own "file-input")))
+          (on-file-selected [event]
+            (let [files (dom/get-event-files event)]
+              (rs/emit! (di/create-icons coll-id files))))]
+    [:div.grid-item.small-item.add-project {:on-click forward-click}
+     [:span "+ New icon"]
+     [:input.upload-image-input
+      {:style {:display "none"}
+       :multiple true
+       :ref "file-input"
+       :value ""
+       :type "file"
+       :on-change on-file-selected}]]))
 
 (mx/defc grid-options
-  [coll]
-  (let [own? (= (:type coll) :own)]
+  [{:keys [type] :as coll}]
+  (let [editable? (or (= type :own)
+                      (nil? coll))]
     (letfn [(delete []
-              #_(rs/emit! (di/delete-selected)))
+              (rs/emit! (di/delete-selected)))
             (on-delete [event]
               (udl/open! :confirm {:on-accept delete}))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
-       (if own?
+       (if editable?
          [:div.multiselect-nav
           #_[:span.move-item.tooltip.tooltip-top
              {:alt "Move to"}
@@ -245,26 +243,35 @@
               (toggle-selection event)))]
     [:div.grid-item.small-item.project-th
      {:on-click toggle-selection-shifted}
-     [:span.grid-item-image (icon/icon-svg icon)]
+     [:div.input-checkbox.check-primary
+      [:input {:type "checkbox"
+               :id (:id icon)
+               :on-click toggle-selection
+               :checked selected?}]
+      [:label {:for (:id icon)}]]
+     [:span.grid-item-image
+      (case (:type icon)
+        :icon (icon/icon-svg icon)
+        :icon-raw (icon/icon-raw-svg icon))]
      [:h3 (:name icon)]
      #_[:div.project-th-actions
         [:div.project-th-icon.edit i/pencil]
         [:div.project-th-icon.delete i/trash]]]))
 
 (mx/defc grid
-  {:mixins [mx/static]}
-  [state selected {:keys [id type icons] :as coll}]
-  (let [own? (= type :own)
+  {:mixins [mx/static mx/reactive]}
+  [{:keys [selected id type] :as state}]
+  (let [editable? (or (= type :own) (nil? id))
         ordering (:order state)
         filtering (:filter state)
-        icons (->> icons
-                    (remove nil?)
-                    (filter-icons-by filtering)
-                    (sort-icons-by ordering))]
+        icons (mx/react icons-ref)
+        icons (->> (vals icons)
+                   (filter #(= id (:collection %)))
+                   (filter-icons-by filtering)
+                   (sort-icons-by ordering))]
     [:div.dashboard-grid-content
      [:div.dashboard-grid-row
-      #_(when own?
-        (grid-form id))
+      (when editable? (grid-form id))
       (for [icon icons
             :let [id (:id icon)
                   selected? (contains? selected id)]]
@@ -273,25 +280,21 @@
 
 (mx/defc content
   {:mixins [mx/static]}
-  [state coll]
-  (let [selected (:selected state)
-        coll-type (:type coll)
-        own? (= coll-type :own)]
-    (when coll
-      [:section.dashboard-grid.library
-       (page-title coll)
-       (grid state selected coll)
-       (when (seq selected)
-         (grid-options coll))])))
+  [{:keys [selected] :as state} coll]
+  [:section.dashboard-grid.library
+   (page-title coll)
+   (grid state)
+   (when (seq selected)
+     (grid-options coll))])
 
 ;; --- Menu
 
 (mx/defc menu
-  {:mixins [mx/static]}
-  [state coll]
+  {:mixins [mx/static mx/reactive]}
+  [state {:keys [id] :as coll}]
   (let [ordering (:order state :name)
         filtering (:filter state "")
-        icount (count (:icons coll))]
+        num-icons (react-count-icons id)]
     (letfn [(on-term-change [event]
               (let [term (-> (dom/get-target event)
                              (dom/get-value))]
@@ -306,10 +309,10 @@
        [:div.dashboard-info
 
         ;; Counter
-        [:span.dashboard-icons (tr "ds.num-icons" (t/c icount))]
+        [:span.dashboard-icons (tr "ds.num-icons" (t/c num-icons))]
 
         ;; Sorting
-        [:div
+        [:divi
          [:span (tr "ds.project-ordering")]
          [:select.input-select
           {:on-change on-ordering-change
@@ -352,42 +355,42 @@
    :mixins [mx/static mx/reactive]}
   []
   (let [state (mx/react dashboard-ref)
-        coll-id (:id state)
-        coll (mx/react (focus-collection coll-id))]
+        colls (mx/react collections-ref)
+        coll (get colls (:id state))]
     [:main.dashboard-main
      (header)
      [:section.dashboard-content
-      (nav state)
-      (menu state coll)
+      (nav state colls)
+      (menu coll)
       (content state coll)]]))
 
 ;; --- New Icon Lightbox (TODO)
 
-(defn- new-icon-lightbox-render
-  [own]
-  (html
-   [:div.lightbox-body
-    [:h3 "New icon"]
-    [:div.row-flex
-     [:div.lightbox-big-btn
-      [:span.big-svg i/shapes]
-      [:span.text "Go to workspace"]
-      ]
-     [:div.lightbox-big-btn
-      [:span.big-svg.upload i/exit]
-      [:span.text "Upload file"]
-      ]
-     ]
-    [:a.close {:href "#"
-               :on-click #(do (dom/prevent-default %)
-                              (udl/close!))}
-     i/close]]))
+;; (defn- new-icon-lightbox-render
+;;   [own]
+;;   (html
+;;    [:div.lightbox-body
+;;     [:h3 "New icon"]
+;;     [:div.row-flex
+;;      [:div.lightbox-big-btn
+;;       [:span.big-svg i/shapes]
+;;       [:span.text "Go to workspace"]
+;;       ]
+;;      [:div.lightbox-big-btn
+;;       [:span.big-svg.upload i/exit]
+;;       [:span.text "Upload file"]
+;;       ]
+;;      ]
+;;     [:a.close {:href "#"
+;;                :on-click #(do (dom/prevent-default %)
+;;                               (udl/close!))}
+;;      i/close]]))
 
-(def new-icon-lightbox
-  (mx/component
-   {:render new-icon-lightbox-render
-    :name "new-icon-lightbox"}))
+;; (def new-icon-lightbox
+;;   (mx/component
+;;    {:render new-icon-lightbox-render
+;;     :name "new-icon-lightbox"}))
 
-(defmethod lbx/render-lightbox :new-icon
-  [_]
-  (new-icon-lightbox))
+;; (defmethod lbx/render-lightbox :new-icon
+;;   [_]
+;;   (new-icon-lightbox))

@@ -23,64 +23,66 @@
             [uxbox.main.library.icons.material.toggle :as md-toggle]
             ))
 
+(def +icons+
+  (vec (concat md-actions/+icons+
+               md-alerts/+icons+
+               md-av/+icons+
+               md-comm/+icons+
+               md-content/+icons+
+               md-device/+icons+
+               md-editor/+icons+
+               md-file/+icons+
+               md-hardware/+icons+
+               md-image/+icons+
+               md-maps/+icons+
+               md-nav/+icons+
+               md-not/+icons+
+               md-social/+icons+
+               md-toggle/+icons+)))
+
 (def +collections+
   [{:name "Material design (actions)"
     :type :builtin
-    :id 1
-    :icons md-actions/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728400"}
    {:name "Material design (alerts)"
     :type :builtin
-    :id 2
-    :icons md-alerts/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728401"}
    {:name "Material design (Av)"
     :type :builtin
-    :id 3
-    :icons md-av/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728402"}
    {:name "Material design (Communication)"
     :type :builtin
-    :id 4
-    :icons md-comm/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728403"}
    {:name "Material design (Content)"
     :type :builtin
-    :id 5
-    :icons md-content/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728404"}
    {:name "Material design (Device)"
     :type :builtin
-    :id 6
-    :icons md-device/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728405"}
    {:name "Material design (Editor)"
     :type :builtin
-    :id 7
-    :icons md-editor/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728406"}
    {:name "Material design (File)"
     :type :builtin
-    :id 8
-    :icons md-file/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728407"}
    {:name "Material design (Hardware)"
     :type :builtin
-    :id 9
-    :icons md-hardware/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728408"}
    {:name "Material design (Image)"
     :type :builtin
-    :id 10
-    :icons md-image/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728409"}
    {:name "Material design (Maps)"
     :type :builtin
-    :id 11
-    :icons md-maps/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728410"}
    {:name "Material design (Navigation)"
     :type :builtin
-    :id 12
-    :icons md-nav/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728411"}
    {:name "Material design (Notifications)"
     :type :builtin
-    :id 13
-    :icons md-not/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728412"}
    {:name "Material design (Social)"
     :type :builtin
-    :id 14
-    :icons md-social/+icons+}
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728413"}
    {:name "Material design (Toggle)"
     :type :builtin
-    :id 15
-    :icons md-toggle/+icons+}])
+    :id #uuid "3efa8416-d9d7-4d3d-b60d-a456b2728414"}])

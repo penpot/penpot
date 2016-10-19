@@ -2,48 +2,39 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.icons
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
+            [uxbox.util.data :refer (jscoll->vec)]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
+            [uxbox.util.dom.files :as files]
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]))
 
 ;; --- Initialize
 
+(declare fetch-icons)
 (declare fetch-collections)
 (declare collections-fetched?)
 
 (defrecord Initialize [type id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [type (or type :builtin)
+    (let [type (or type :own)
           id (or id (if (= type :builtin) 1 nil))
           data {:type type :id id :selected #{}}]
       (-> state
           (assoc-in [:dashboard :icons] data)
-          (assoc-in [:dashboard :section] :dashboard/icons)))))
+          (assoc-in [:dashboard :section] :dashboard/icons))))
 
-  ;; rs/EffectEvent
-  ;; (-apply-effect [_ state]
-  ;;   (when (nil? (:icon-colls-by-id state))
-  ;;     (reset! st/loader true)))
-
-  ;; rs/WatchEvent
-  ;; (-apply-watch [_ state s]
-  ;;   (if (nil? (:icon-colls-by-id state))
-  ;;     (rx/merge
-  ;;      (rx/of (fetch-collections))
-  ;;        (->> (rx/filter collections-fetched? s)
-  ;;             (rx/take 1)
-  ;;             (rx/do #(reset! st/loader false))
-  ;;             (rx/ignore)))
-  ;;     (rx/empty))))
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (rx/merge (rx/of (fetch-collections))
+              (rx/of (fetch-icons id)))))
 
 (defn initialize
   [type id]
@@ -64,234 +55,258 @@
    {:pre [(keyword? type)]}
    (SelectCollection. type id)))
 
-;; --- Color Collections Fetched
+;; --- Collections Fetched
 
-;; (defrecord CollectionsFetched [items]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     (reduce (fn [state item]
-;;               (let [id (:id item)
-;;                     item (assoc item :type :own)]
-;;                 (assoc-in state [:icon-colls-by-id id] item)))
-;;             state
-;;             items)))
+(defrecord CollectionsFetched [items]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (reduce (fn [state item]
+              (let [id (:id item)
+                    item (assoc item :type :own)]
+                (assoc-in state [:icon-colls-by-id id] item)))
+            state
+            items)))
 
-;; (defn collections-fetched
-;;   [items]
-;;   (CollectionsFetched. items))
+(defn collections-fetched
+  [items]
+  (CollectionsFetched. items))
 
-;; --- Fetch Color Collections
+;; --- Fetch Collections
 
-;; (defrecord FetchCollections []
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state s]
-;;     (->> (rp/req :fetch/icon-collections)
-;;          (rx/map :payload)
-;;          (rx/map collections-fetched))))
+(defrecord FetchCollections []
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (->> (rp/req :fetch/icon-collections)
+         (rx/map :payload)
+         (rx/map collections-fetched))))
 
-;; (defn fetch-collections
-;;   []
-;;   (FetchCollections.))
+(defn fetch-collections
+  []
+  (FetchCollections.))
 
 ;; --- Collection Created
 
-;; (defrecord CollectionCreated [item]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     (let [item (assoc item :type :own)]
-;;       (-> state
-;;           (assoc-in [:icon-colls-by-id (:id item)] item)
-;;           (assoc-in [:dashboard :collection-id] (:id item))
-;;           (assoc-in [:dashboard :collection-type] :own)))))
+(defrecord CollectionCreated [item]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [item (assoc item :type :own)]
+      (-> state
+          (assoc-in [:icon-colls-by-id (:id item)] item)
+          (assoc-in [:dashboard :collection-id] (:id item))
+          (assoc-in [:dashboard :collection-type] :own)))))
 
-;; (defn collection-created
-;;   [item]
-;;   (CollectionCreated. item))
+(defn collection-created
+  [item]
+  (CollectionCreated. item))
 
 ;; --- Create Collection
 
-;; (defrecord CreateCollection []
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state s]
-;;     (let [coll {:name "Unnamed collection"
-;;                 :id (uuid/random)}]
-;;       (->> (rp/req :create/icon-collection coll)
-;;            (rx/map :payload)
-;;            (rx/map collection-created)))))
+(defrecord CreateCollection []
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [coll {:name "Unnamed collection"
+                :id (uuid/random)}]
+      (->> (rp/req :create/icon-collection coll)
+           (rx/map :payload)
+           (rx/map collection-created)))))
 
-;; (defn create-collection
-;;   []
-;;   (CreateCollection.))
+(defn create-collection
+  []
+  (CreateCollection.))
 
-;; (defn collections-fetched?
-;;   [v]
-;;   (instance? CollectionsFetched v))
+(defn collections-fetched?
+  [v]
+  (instance? CollectionsFetched v))
 
 ;; --- Collection Updated
 
-;; (defrecord CollectionUpdated [item]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     (update-in state [:icon-colls-by-id (:id item)]  merge item)))
+(defrecord CollectionUpdated [item]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update-in state [:icon-colls-by-id (:id item)]  merge item)))
 
-;; (defn collection-updated
-;;   [item]
-;;   (CollectionUpdated. item))
+(defn collection-updated
+  [item]
+  (CollectionUpdated. item))
 
 ;; --- Update Collection
 
-;; (defrecord UpdateCollection [id]
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state s]
-;;     (let [item (get-in state [:icon-colls-by-id id])]
-;;       (->> (rp/req :update/icon-collection item)
-;;            (rx/map :payload)
-;;            (rx/map collection-updated)))))
+(defrecord UpdateCollection [id]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [item (get-in state [:icon-colls-by-id id])]
+      (->> (rp/req :update/icon-collection item)
+           (rx/map :payload)
+           (rx/map collection-updated)))))
 
-;; (defn update-collection
-;;   [id]
-;;   (UpdateCollection. id))
+(defn update-collection
+  [id]
+  (UpdateCollection. id))
 
 ;; --- Rename Collection
 
-;; (defrecord RenameCollection [id name]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     (assoc-in state [:icon-colls-by-id id :name] name))
+(defrecord RenameCollection [id name]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:icon-colls-by-id id :name] name))
 
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state s]
-;;     (rx/of (update-collection id))))
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (rx/of (update-collection id))))
 
-;; (defn rename-collection
-;;   [item name]
-;;   (RenameCollection. item name))
+(defn rename-collection
+  [id name]
+  (RenameCollection. id name))
 
 ;; --- Delete Collection
 
-;; (defrecord DeleteCollection [id]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     (update state :icon-colls-by-id dissoc id))
+(defrecord DeleteCollection [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (update state :icon-colls-by-id dissoc id))
 
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state s]
-;;     (->> (rp/req :delete/icon-collection id)
-;;          (rx/ignore))))
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (->> (rp/req :delete/icon-collection id)
+         (rx/ignore))))
 
-;; (defn delete-collection
-;;   [id]
-;;   (DeleteCollection. id))
+(defn delete-collection
+  [id]
+  (DeleteCollection. id))
 
 ;; --- Icon Created
 
-;; (defrecord IconCreated [item]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     (update-in state [:icon-colls-by-id (:collection item) :icons]
-;;                #(conj % item))))
+(defrecord IconCreated [item]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [{:keys [id] :as item} (assoc item :type :icon-raw)]
+      (update state :icons-by-id assoc id item))))
 
-;; (defn icon-created
-;;   [item]
-;;   (IconCreated. item))
+(defn icon-created
+  [item]
+  (IconCreated. item))
 
 ;; --- Create Icon
 
-;; (defrecord CreateIcons [coll-id files]
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state s]
-;;     (let [files-to-array (fn [js-col]
-;;                            (-> (clj->js [])
-;;                                (.-slice)
-;;                                (.call js-col)
-;;                                (js->clj)))
-;;           icons-data (map (fn [file] {:coll coll-id
-;;                                        :id (uuid/random)
-;;                                        :file file}) (files-to-array files))]
-;;       (->> (rx/from-coll icons-data)
-;;            (rx/flat-map #(rp/req :create/icon %))
-;;            (rx/map :payload)
-;;            (rx/map icon-created)))))
+(defn- parse-svg
+  [data]
+  {:pre [(string? data)]}
+  (let [valid-tags #{"defs" "path" "circle" "rect" "metadata" "g"}
+        div (js/document.createElement "div")
+        gc  (js/document.createElement "div")
+        g (js/document.createElementNS "http://www.w3.org/2000/svg" "g")]
+    (set! (.-innerHTML div) data)
+    (loop [child (.. div -firstChild -firstChild)]
+      (if child
+        (let [tagname (.-tagName child)]
+          (if  (contains? valid-tags tagname)
+            (.appendChild g child)
+            (.appendChild gc child))
+          (recur (.. div -firstChild -firstChild)))
+        (let [svg (.-firstChild div)
+              width (.. svg -width -baseVal -value)
+              header (.. svg -height -baseVal -value)
+              view-box [(.. svg -viewBox -baseVal -x)
+                        (.. svg -viewBox -baseVal -y)
+                        (.. svg -viewBox -baseVal -width)
+                        (.. svg -viewBox -baseVal -height)]
+              props {:width width
+                     :mimetype "image/svg+xml"
+                     :height header
+                     :view-box view-box}]
+          [(.-outerHTML g) props])))))
 
-;; (defn create-icons
-;;   [coll-id files]
-;;   (CreateIcons. coll-id files))
+(defrecord CreateIcons [id files]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (letfn [(parse [file]
+              (->> (files/read-as-text file)
+                   (rx/map parse-svg)))
+            (allowed? [file]
+              (= (.-type file) "image/svg+xml"))
+            (prepare [[content metadata]]
+              {:collection id
+               :content content
+               :name (str "Icon " (gensym "i"))
+               :metadata metadata})]
+      (->> (rx/from-coll (jscoll->vec files))
+           (rx/filter allowed?)
+           (rx/flat-map parse)
+           (rx/map prepare)
+           (rx/flat-map #(rp/req :create/icon %))
+           (rx/map :payload)
+           (rx/map icon-created)))))
+
+(defn create-icons
+  [id files]
+  {:pre [(or (uuid? id) (nil? id))]}
+  (CreateIcons. id files))
 
 ;; --- Icons Fetched
 
-;; (defrecord IconsFetched [coll-id items]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     (assoc-in state [:icon-colls-by-id coll-id :icons] (set items))))
+(defrecord IconsFetched [items]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (reduce (fn [state {:keys [id] :as icon}]
+              (let [icon (assoc icon :type :icon-raw)]
+                (assoc-in state [:icons-by-id id] icon)))
+            state
+            items)))
 
-;; (defn icons-fetched
-;;   [coll-id items]
-;;   (IconsFetched. coll-id items))
+(defn icons-fetched
+  [items]
+  (IconsFetched. items))
 
 ;; --- Load Icons
 
-;; (defrecord FetchIcons [coll-id]
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state s]
-;;     (let [params {:coll coll-id}]
-;;       (->> (rp/req :fetch/icons params)
-;;            (rx/map :payload)
-;;            (rx/map #(icons-fetched coll-id %))))))
+(defrecord FetchIcons [id]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (let [params {:coll id}]
+      (->> (rp/req :fetch/icons params)
+           (rx/map :payload)
+           (rx/map icons-fetched)))))
 
-;; (defn fetch-icons
-;;   [coll-id]
-;;   (FetchIcons. coll-id))
+(defn fetch-icons
+  [id]
+  {:pre [(or (uuid? id) (nil? id))]}
+  (FetchIcons. id))
 
 ;; --- Delete Icons
 
-;; (defrecord DeleteIcon [coll-id icon]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     (update-in state [:icon-colls-by-id coll-id :icons] disj icon))
+(defrecord DeleteIcon [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (-> state
+        (update :icons-by-id dissoc id)
+        (update-in [:dashboard :icons :selected] disj id)))
 
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state s]
-;;     (->> (rp/req :delete/icon (:id icon))
-;;          (rx/ignore))))
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (->> (rp/req :delete/icon id)
+         (rx/ignore))))
 
-;; (defn delete-icon
-;;   [coll-id icon]
-;;   (DeleteIcon. coll-id icon))
-
-;; --- Remove Icon
-
-;; (defrecord RemoveIcons [id icons]
-;;   rs/UpdateEvent
-;;   (-apply-update [_ state]
-;;     #_(update-in state [:icon-colls-by-id id :data]
-;;                #(set/difference % icons)))
-
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state s]
-;;     (rx/of (update-collection id))))
-
-;; (defn remove-icons
-;;   "Remove icon in a collection."
-;;   [id icons]
-;;   (RemoveIcons. id icons))
-
+(defn delete-icon
+  [id]
+  {:pre [(uuid? id)]}
+  (DeleteIcon. id))
 
 ;; --- Select icon
 
 (defrecord SelectIcon [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:dashboard :selected] conj id)))
+    (update-in state [:dashboard :icons :selected] conj id)))
 
 (defrecord DeselectIcon [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:dashboard :selected] disj id)))
+    (update-in state [:dashboard :icons :selected] disj id)))
 
 (defrecord ToggleIconSelection [id]
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (let [selected (get-in state [:dashboard :selected])]
+    (let [selected (get-in state [:dashboard :icons :selected])]
       (rx/of
        (if (selected id)
          (DeselectIcon. id)
@@ -303,16 +318,16 @@
 
 ;; --- Delete Selected
 
-;; (defrecord DeleteSelected []
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state stream]
-;;     (let [{:keys [id selected]} (get state :dashboard)]
-;;       (rx/of (remove-icons id selected)
-;;              #(assoc-in % [:dashboard :selected] #{})))))
+(defrecord DeleteSelected []
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [selected (get-in state [:dashboard :icons :selected])]
+      (->> (rx/from-coll selected)
+           (rx/map delete-icon)))))
 
-;; (defn delete-selected
-;;   []
-;;   (DeleteSelected.))
+(defn delete-selected
+  []
+  (DeleteSelected.))
 
 ;; --- Update Opts (Filtering & Ordering)
 

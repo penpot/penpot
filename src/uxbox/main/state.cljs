@@ -34,12 +34,13 @@
    :undo {}
    :profile nil
    :workspace nil
-   :images-by-id library/+images-by-id+
    :image-colls-by-id library/+image-collections-by-id+
+   :images-by-id library/+images-by-id+
+   :icon-colls-by-id library/+icon-collections-by-id+
+   :icons-by-id library/+icons-by-id+
    :shapes-by-id nil
    :elements-by-id nil
    :colors-by-id nil
-   :icons-by-id nil
    :projects-by-id nil
    :pages-by-id nil})
 
