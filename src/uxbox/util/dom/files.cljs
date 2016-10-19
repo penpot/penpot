@@ -9,7 +9,16 @@
   (:require [beicon.core :as rx]
             [cuerdas.core :as str]))
 
-(defn- read-as-dataurl
+(defn read-as-text
+  [file]
+  (rx/create
+   (fn [sink]
+     (let [fr (js/FileReader.)]
+       (aset fr "onload" #(sink (rx/end (.-result fr))))
+       (.readAsText fr file)
+       (constantly nil)))))
+
+(defn read-as-dataurl
   [file]
   (rx/create
    (fn [sick]
