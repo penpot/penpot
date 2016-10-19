@@ -88,11 +88,12 @@
 (defrecord CollectionCreated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [item (assoc item :type :own)]
-      (-> state
-          (assoc-in [:icon-colls-by-id (:id item)] item)
-          (assoc-in [:dashboard :collection-id] (:id item))
-          (assoc-in [:dashboard :collection-type] :own)))))
+    (let [{:keys [id] :as item} (assoc item :type :own)]
+      (update state :image-colls-by-id assoc id item)))
+
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (rx/of (select-collection :own (:id item)))))
 
 (defn collection-created
   [item]
@@ -166,8 +167,9 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (->> (rp/req :delete/icon-collection id)
-         (rx/ignore))))
+    (let [type (get-in state [:dashboard :images :type])]
+      (->> (rp/req :delete/icon-collection id)
+           (rx/map #(select-collection type))))))
 
 (defn delete-collection
   [id]
