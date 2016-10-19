@@ -5,9 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.rect
-  (:require [sablono.core :refer-macros [html]]
-            [rum.core :as rum]
-            [uxbox.main.ui.shapes.common :as common]
+  (:require [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.geom :as geom]
@@ -17,26 +15,21 @@
 
 (declare rect-shape)
 
-(defn- rect-component-render
-  [own shape]
+(mx/defc rect-component
+  {:mixins [mx/reactive mx/static]}
+  [shape]
   (let [{:keys [id x y width height group]} shape
         selected (mx/react common/selected-ref)
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)]
-    (html
-     [:g.shape {:class (when selected? "selected")
-                :on-mouse-down on-mouse-down}
-      (rect-shape shape identity)])))
-
-(def rect-component
-  (mx/component
-   {:render rect-component-render
-    :name "rect-component"
-    :mixins [mx/static mx/reactive]}))
+    [:g.shape {:class (when selected? "selected")
+               :on-mouse-down on-mouse-down}
+     (rect-shape shape identity)]))
 
 ;; --- Rect Shape
 
 (mx/defc rect-shape
+  {:mixins [mx/static]}
   [{:keys [id x1 y1] :as shape}]
   (let [key (str "shape-" id)
         rfm (geom/transformation-matrix shape)
