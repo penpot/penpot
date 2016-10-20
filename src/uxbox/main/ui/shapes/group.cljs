@@ -33,6 +33,7 @@
     :group (group-component shape)
     :text (text/text-component shape)
     :icon (icon/icon-component shape)
+    :icon-raw (icon/icon-raw-component shape)
     :rect (rect/rect-component shape)
     :path (path/path-component shape)
     :image (image/image-component shape)
