@@ -324,8 +324,16 @@
   .multiselect-nav {
     align-items: center;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    margin-left: 10%;
     width: 110px;
+
+    span {
+      margin-right: 1.5rem;
+      &:last-child {
+        margin-right: 0;
+      }
+    }
 
     svg {
       cursor: pointer;
