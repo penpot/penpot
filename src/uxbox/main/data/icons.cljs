@@ -192,20 +192,22 @@
 (defn- parse-svg
   [data]
   {:pre [(string? data)]}
-  (let [valid-tags #{"defs" "path" "circle" "rect" "metadata" "g"}
+  (let [valid-tags #{"defs" "path" "circle" "rect" "metadata" "g"
+                     "radialGradient" "stop"}
         div (js/document.createElement "div")
+        div2 (js/document.createElement "div")
         gc  (js/document.createElement "div")
-        g (js/document.createElementNS "http://www.w3.org/2000/svg" "g")]
-    (set! (.-innerHTML div) data)
-    (loop [child (.. div -firstChild -firstChild)]
+        g (js/document.createElementNS "http://www.w3.org/2000/svg" "g")
+        _ (set! (.-innerHTML div) data)
+        svg (.querySelector div "svg")]
+    (loop [child (.-firstChild svg)]
       (if child
         (let [tagname (.-tagName child)]
           (if  (contains? valid-tags tagname)
             (.appendChild g child)
             (.appendChild gc child))
-          (recur (.. div -firstChild -firstChild)))
-        (let [svg (.-firstChild div)
-              width (.. svg -width -baseVal -value)
+          (recur (.-firstChild svg)))
+        (let [width (.. svg -width -baseVal -value)
               header (.. svg -height -baseVal -value)
               view-box [(.. svg -viewBox -baseVal -x)
                         (.. svg -viewBox -baseVal -y)
