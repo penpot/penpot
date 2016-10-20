@@ -362,3 +362,32 @@
   }
 
 }
+
+.move-item {
+  position: relative;
+
+  .move-list {
+    background-color: $color-white;
+    border-radius: $br-small;
+    bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    left: -30px;
+    max-height: 260px;
+    overflow-y: scroll;
+    padding: $medium;
+    position: absolute;
+    width: 260px;
+
+    li {
+      padding-bottom: $medium;
+
+      &.title {
+        color: $color-gray-darker;
+      }
+
+    }
+
+  }
+
+}

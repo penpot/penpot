@@ -126,7 +126,7 @@
       [:div.multiselect-bar
        (if own?
          [:div.multiselect-nav
-          #_[:span.move-item.tooltip.tooltip-top
+          [:span.move-item.tooltip.tooltip-top
              {:alt "Move to"}
              i/organize]
           [:span.delete.tooltip.tooltip-top
@@ -136,6 +136,22 @@
          [:div.multiselect-nav
           [:span.move-item.tooltip.tooltip-top
            {:alt "Copy to"}
+           [:ul.move-list
+            [:li.title "Copy to library"]
+            [:li
+             [:a {:href "#"} "Red palette"]]
+            [:li
+             [:a {:href "#"} "Protoype"]]
+            [:li
+             [:a {:href "#"} "Gray scale palette"]]
+            [:li
+             [:a {:href "#"} "Current project"]]
+            [:li
+             [:a {:href "#"} "Gray scale palette"]]
+            [:li
+             [:a {:href "#"} "Current project"]]
+            [:li
+             [:a {:href "#"} "Library 3"]]]
            i/organize]])])))
 
 (mx/defc grid
