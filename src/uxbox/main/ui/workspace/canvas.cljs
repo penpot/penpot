@@ -140,11 +140,9 @@
         zoom (or (:zoom workspace) 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
-
               (let [opts {:shift? (kbd/shift? event)
                           :ctrl? (kbd/ctrl? event)}]
                 (rx/push! wb/events-b [:mouse/down opts]))
-
               (if (:drawing workspace)
                 (rlocks/acquire! :ui/draw)
                 (do
