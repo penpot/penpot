@@ -130,11 +130,11 @@
 
 (mx/defc nav-item
   {:mixins [mx/static mx/reactive]}
-  [{:keys [id type name] :as coll} selected?]
+  [{:keys [id type name num-icons] :as coll} selected?]
   (letfn [(on-click [event]
             (let [type (or type :own)]
               (rs/emit! (di/select-collection type id))))]
-    (let [num-icons (react-count-icons id)]
+    (let [num-icons (or num-icons (react-count-icons id))]
       [:li {:on-click on-click
             :class-name (when selected? "current")}
        [:span.element-title
@@ -290,10 +290,10 @@
 
 (mx/defc menu
   {:mixins [mx/static mx/reactive]}
-  [state {:keys [id] :as coll}]
+  [state {:keys [id num-icons] :as coll}]
   (let [ordering (:order state :name)
         filtering (:filter state "")
-        num-icons (react-count-icons id)]
+        num-icons (or num-icons (react-count-icons id))]
     (letfn [(on-term-change [event]
               (let [term (-> (dom/get-target event)
                              (dom/get-value))]
