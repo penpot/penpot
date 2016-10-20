@@ -167,7 +167,7 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [type (get-in state [:dashboard :images :type])]
+    (let [type (get-in state [:dashboard :icons :type])]
       (->> (rp/req :delete/icon-collection id)
            (rx/map #(select-collection type))))))
 
