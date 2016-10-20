@@ -79,6 +79,7 @@
   [item]
   (case (:type item)
     :icon (icon/icon-svg item)
+    :icon-raw (icon/icon-raw-svg item)
     :line i/line
     :circle i/circle
     :path i/curve
