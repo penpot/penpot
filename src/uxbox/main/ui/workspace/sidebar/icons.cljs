@@ -6,36 +6,31 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.icons
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
-            [uxbox.main.library :as library]
             [uxbox.main.data.workspace :as dw]
+            [uxbox.main.data.icons :as udi]
             [uxbox.main.ui.shapes.icon :as icon]
             [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.main.ui.dashboard.icons :as icons]
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (read-string)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Lenses
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Refs
 
 (def ^:private drawing-shape
   "A focused vision of the drawing property
   of the workspace status. This avoids
   rerender the whole toolbox on each workspace
   change."
-  (as-> (l/in [:workspace :drawing]) $
-    (l/derive $ st/state)))
+  (-> (l/in [:workspace :drawing])
+      (l/derive st/state)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Icons
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Icons (Component)
 
 (defn- select-icon
   [icon]
@@ -48,50 +43,71 @@
     (swap! local assoc :collid value)
     (rs/emit! (dw/select-for-drawing nil))))
 
-(defn- icon-wrapper-render
-  [own icon]
-  (icon/icon-svg icon))
+(mx/defc icon-wrapper
+  {:mixins [mx/static]}
+  [icon]
+  (case (:type icon)
+    :icon (icon/icon-svg icon)
+    :icon-raw (icon/icon-raw-svg icon)))
 
-(def ^:private icon-wrapper
-  (mx/component
-   {:render icon-wrapper-render
-    :name "icon-wrapper"
-    :mixins [mx/static]}))
+(defn- icons-toolbox-will-mount
+  [own]
+  (let [local (:rum/local own)]
+    (rs/emit! (udi/fetch-collections))
+    (add-watch local ::key (fn [_ _ _ {:keys [id]}]
+                             (rs/emit! (udi/fetch-icons id))))
+    own))
 
-(defn icons-render
+(defn- icons-toolbox-will-unmount
+  [own]
+  (let [local (:rum/local own)]
+    (remove-watch local ::key)
+    own))
+
+(mx/defcs icons-toolbox
+  {:mixins [(mx/local) mx/reactive]
+   :will-mount icons-toolbox-will-mount
+   :will-unmount icons-toolbox-will-unmount}
   [own]
   (let [local (:rum/local own)
         drawing (mx/react drawing-shape)
-        collid (:collid @local)
-        icons (get-in library/+icon-collections-by-id+ [collid :icons])
-        on-close #(rs/emit! (dw/toggle-flag :icons))
-        on-select #(select-icon %)
-        on-change #(change-icon-coll local %)]
-    (html
-     [:div#form-figures.tool-window
-      [:div.tool-window-bar
-       [:div.tool-window-icon i/icon-set]
-       [:span "Icons"]
-       [:div.tool-window-close {:on-click on-close} i/close]]
-      [:div.tool-window-content
-       [:div.figures-catalog
-        ;; extract component: set selector
-        [:select.input-select.small {:on-change on-change
-                                     :value collid}
-         (for [icon-coll library/+icon-collections+]
-           [:option {:key (str "icon-coll" (:id icon-coll))
-                     :value (pr-str (:id icon-coll))}
-            (:name icon-coll)])]]
-       (for [icon icons
-             :let [selected? (= drawing icon)]]
-         [:div.figure-btn {:key (str (:id icon))
-                           :class (when selected? "selected")
-                           :on-click #(on-select icon)}
-          (icon-wrapper icon)])]])))
 
-(def icons-toolbox
-  (mx/component
-   {:render icons-render
-    :name "icons-toolbox"
-    :mixins [mx/reactive
-             (mx/local {:collid 1 :builtin true})]}))
+        colls-map (mx/react icons/collections-ref)
+        colls (->> (vals colls-map)
+                   (sort-by :name))
+        coll (get colls-map (:id @local))
+
+        icons (mx/react icons/icons-ref)
+        icons (->> (vals icons)
+                   (filter #(= (:id coll) (:collection %))))]
+
+    (letfn [(on-close [event]
+              (rs/emit! (dw/toggle-flag :icons)))
+            (on-select [icon event]
+              (rs/emit! (dw/select-for-drawing icon)))
+            (on-change [event]
+              (let [value (-> (dom/event->value event)
+                              (read-string))]
+                (swap! local assoc :id value)
+                (rs/emit! (dw/select-for-drawing nil))))]
+      [:div#form-figures.tool-window
+       [:div.tool-window-bar
+        [:div.tool-window-icon i/icon-set]
+        [:span "Icons"]
+        [:div.tool-window-close {:on-click on-close} i/close]]
+       [:div.tool-window-content
+        [:div.figures-catalog
+         ;; extract component: set selector
+         [:select.input-select.small {:on-change on-change
+                                      :value (pr-str (:id coll))}
+          [:option {:value (pr-str nil)} "Storage"]
+          (for [coll colls]
+            [:option {:key (str "icon-coll" (:id coll))
+                      :value (pr-str (:id coll))}
+             (:name coll)])]]
+        (for [icon icons
+              :let [selected? (= drawing icon)]]
+          [:div.figure-btn {:key (str (:id icon))
+                            :class (when selected? "selected")
+                            :on-click (partial on-select icon)}
+           (icon-wrapper icon)])]])))
