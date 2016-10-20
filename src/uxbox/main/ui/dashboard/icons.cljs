@@ -360,7 +360,7 @@
      (header)
      [:section.dashboard-content
       (nav state colls)
-      (menu coll)
+      (menu state coll)
       (content state coll)]]))
 
 ;; --- New Icon Lightbox (TODO)
