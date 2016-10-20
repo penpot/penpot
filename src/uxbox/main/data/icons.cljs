@@ -104,8 +104,8 @@
 (defrecord CreateCollection []
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [coll {:name "Unnamed collection"
-                :id (uuid/random)}]
+    (let [name (str "Unnamed Collection (" (gensym "c") ")")
+          coll {:name name}]
       (->> (rp/req :create/icon-collection coll)
            (rx/map :payload)
            (rx/map collection-created)))))
