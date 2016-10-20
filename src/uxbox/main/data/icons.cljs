@@ -89,7 +89,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [{:keys [id] :as item} (assoc item :type :own)]
-      (update state :image-colls-by-id assoc id item)))
+      (update state :icon-colls-by-id assoc id item)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
