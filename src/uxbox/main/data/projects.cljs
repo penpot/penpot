@@ -41,22 +41,9 @@
   (-apply-update [_ state]
     (assoc-in state [:dashboard :section] :dashboard/projects))
 
-  rs/EffectEvent
-  (-apply-effect [_ state]
-    (when-not (seq (:projects-by-id state))
-      (reset! st/loader true)))
-
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [projects (seq (:projects-by-id state))]
-      (if projects
-        (rx/empty)
-        (rx/merge
-         (rx/of (fetch-projects))
-         (->> (rx/filter projects-fetched? s)
-              (rx/take 1)
-              (rx/do #(reset! st/loader false))
-              (rx/ignore)))))))
+    (rx/of (fetch-projects))))
 
 (defn initialize
   []
