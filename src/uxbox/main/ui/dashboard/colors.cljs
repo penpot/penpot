@@ -34,8 +34,7 @@
       (l/derive st/state)))
 
 (def collections-map-ref
-  (-> (comp (l/key :color-colls-by-id)
-            (ul/merge library/+color-collections-by-id+))
+  (-> (l/key :color-colls-by-id)
       (l/derive st/state)))
 
 (def collections-ref
