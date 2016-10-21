@@ -209,14 +209,38 @@
        :type "file"
        :on-change on-file-selected}]]))
 
-(mx/defc grid-options
-  [{:keys [type] :as coll}]
+(mx/defc grid-options-copy
+  {:mixins [mx/reactive mx/static]}
+  [colls]
+  (let [colls (mx/react collections-ref)
+        colls (->> (vals colls)
+                   (filter #(= :own (:type %)))
+                   (sort-by :name colls))
+        on-select (fn [event id]
+                    (dom/prevent-default event)
+                    (rs/emit! (di/copy-selected id)))]
+    [:ul.move-list
+     [:li.title "Copy to library"]
+     [:li [:a {:href "#" :on-click (partial on-select nil)} "Storage"]]
+     (for [coll colls
+           :let [id (:id coll)
+                 name (:name coll)]]
+       [:li {:key (str id)}
+        [:a {:on-click #(on-select % id)} name]])]))
+
+(mx/defcs grid-options
+  {:mixins [(mx/local) mx/static]}
+  [own {:keys [type] :as coll}]
   (let [editable? (or (= type :own)
-                      (nil? coll))]
+                      (nil? coll))
+        local (:rum/local own)]
     (letfn [(delete []
               (rs/emit! (di/delete-selected)))
             (on-delete [event]
-              (udl/open! :confirm {:on-accept delete}))]
+              (udl/open! :confirm {:on-accept delete}))
+            (on-toggle [event]
+              (swap! local update :show-copy-tooltip not)
+              (println "on-toggle"))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
        (if editable?
@@ -230,7 +254,9 @@
            i/trash]]
          [:div.multiselect-nav
           [:span.move-item.tooltip.tooltip-top
-           {:alt "Copy to"}
+           {:on-click on-toggle}
+           (when (:show-copy-tooltip @local)
+             (grid-options-copy))
            i/organize]])])))
 
 (mx/defc grid-item
