@@ -319,6 +319,25 @@
   [id]
   (ToggleIconSelection. id))
 
+;; --- Copy Icon
+
+(defrecord CopySelected [id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [selected (get-in state [:dashboard :icons :selected])
+          selected (map #(get-in state [:icons-by-id %]) selected)]
+      (->> (rx/from-coll selected)
+           (rx/map #(dissoc % :id))
+           (rx/map #(assoc % :collection id))
+           (rx/flat-map #(rp/req :create/icon %))
+           (rx/map :payload)
+           (rx/map icon-created)))))
+
+(defn copy-selected
+  [id]
+  {:pre [(or (uuid? id) (nil? id))]}
+  (CopySelected. id))
+
 ;; --- Delete Selected
 
 (defrecord DeleteSelected []
