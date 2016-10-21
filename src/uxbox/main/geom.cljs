@@ -168,6 +168,7 @@
   [shape id]
   (case (:type shape)
     :icon (get-rect-vertext-point shape id)
+    :icon-raw (get-rect-vertext-point shape id)
     :rect (get-rect-vertext-point shape id)
     :circle (get-circle-vertext-point shape id)
     :text (get-rect-vertext-point shape id)))
