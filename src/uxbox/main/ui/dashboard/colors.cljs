@@ -239,12 +239,12 @@
       [:div.library-bar
        [:div.library-bar-inside
         [:ul.library-tabs
-         [:li {:class-name (when builtin? "current")
-               :on-click (partial select-tab :builtin)}
-          "STANDARD"]
          [:li {:class-name (when own? "current")
                :on-click (partial select-tab :own)}
-          "YOUR LIBRARIES"]]
+          "YOUR COLORS"]
+         [:li {:class-name (when builtin? "current")
+               :on-click (partial select-tab :builtin)}
+          "COLORS STORE"]]
         (nav-collections type selected)]])))
 
 ;; --- Colors Page
