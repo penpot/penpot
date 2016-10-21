@@ -41,7 +41,7 @@
      [:ul.main-nav
       [:li {:class (when projects? "current")}
        (header-link :dashboard/projects (tr "ds.projects"))]
-      [:li {:class (when elements? "current")}
+      #_[:li {:class (when elements? "current")}
        (header-link :dashboard/elements (tr "ds.elements"))]
       [:li {:class (when icons? "current")}
        (header-link :dashboard/icons (tr "ds.icons"))]
