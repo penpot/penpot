@@ -38,17 +38,11 @@
 (defrecord Initialize [type id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [type (or type :builtin)
-          id (or id (if (= type :builtin) 1 nil))
+    (let [type (or type :own)
           data {:type type :id id :selected #{}}]
       (-> state
           (assoc-in [:dashboard :colors] data)
           (assoc-in [:dashboard :section] :dashboard/colors))))
-
-  ;; rs/EffectEvent
-  ;; (-apply-effect [_ state]
-  ;;   (when (nil? (:color-colls-by-id state))
-  ;;     (reset! st/loader true)))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
