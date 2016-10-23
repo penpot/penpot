@@ -34,8 +34,7 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (rx/merge (rx/of (fetch-collections))
-              (when (uuid? id)
-                (rx/of (fetch-images id))))))
+              (rx/of (fetch-images id)))))
 
 (defn initialize
   [type id]
