@@ -245,6 +245,33 @@
   {:pre [(or (uuid? id) (nil? id))]}
   (CreateIcons. id files))
 
+;; --- Icon Updated
+
+(defrecord IconUpdated [id data]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:icons-by-id id] data)))
+
+(defn icon-updated
+  [{:keys [id] :as data}]
+  {:pre [(map? data)]}
+  (IconUpdated. id data))
+
+;; --- Update Icon
+
+(defrecord UpdateIcon [id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [icon (get-in state [:icons-by-id id])]
+      (->> (rp/req :update/icon icon)
+           (rx/map :payload)
+           (rx/map icon-updated)))))
+
+(defn update-icon
+  [id]
+  {:pre [(uuid? id)]}
+  (UpdateIcon. id))
+
 ;; --- Icons Fetched
 
 (defrecord IconsFetched [items]
@@ -315,11 +342,16 @@
          (DeselectIcon. id)
          (SelectIcon. id))))))
 
+(defn deselect-icon
+  [id]
+  {:pre [(uuid? id)]}
+  (DeselectIcon. id))
+
 (defn toggle-icon-selection
   [id]
   (ToggleIconSelection. id))
 
-;; --- Copy Icon
+;; --- Copy Selected Icon
 
 (defrecord CopySelected [id]
   rs/WatchEvent
@@ -337,6 +369,31 @@
   [id]
   {:pre [(or (uuid? id) (nil? id))]}
   (CopySelected. id))
+
+;; --- Move Selected Icon
+
+(defrecord MoveSelected [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [selected (get-in state [:dashboard :icons :selected])]
+      (reduce (fn [state icon]
+                (assoc-in state [:icons-by-id icon :collection] id))
+              state
+              selected)))
+
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [selected (get-in state [:dashboard :icons :selected])]
+      (rx/merge
+       (->> (rx/from-coll selected)
+            (rx/map update-icon))
+       (->> (rx/from-coll selected)
+            (rx/map deselect-icon))))))
+
+(defn move-selected
+  [id]
+  {:pre [(or (uuid? id) (nil? id))]}
+  (MoveSelected. id))
 
 ;; --- Delete Selected
 
