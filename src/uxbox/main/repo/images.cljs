@@ -70,3 +70,10 @@
   [_ id]
   (let [url (str url "/library/images/" id)]
     (send! {:url url :method :delete})))
+
+(defmethod request :update/image
+  [_ {:keys [id collection] :as body}]
+  (let [params {:url (str url "/library/images/" id)
+                :method :put
+                :body body}]
+    (send! params)))

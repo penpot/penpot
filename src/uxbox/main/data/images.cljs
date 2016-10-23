@@ -219,6 +219,33 @@
   {:pre [(or (uuid? id) (nil? id))]}
   (CreateImages. id files))
 
+;; --- Image Updated
+
+(defrecord ImageUpdated [id data]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:images-by-id id] data)))
+
+(defn image-updated
+  [{:keys [id] :as data}]
+  {:pre [(map? data)]}
+  (ImageUpdated. id data))
+
+;; --- Update Image
+
+(defrecord UpdateImage [id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [image (get-in state [:images-by-id id])]
+      (->> (rp/req :update/image image)
+           (rx/map :payload)
+           (rx/map image-updated)))))
+
+(defn update-image
+  [id]
+  {:pre [(uuid? id)]}
+  (UpdateImage. id))
+
 ;; --- Images Fetched
 
 (defrecord ImagesFetched [items]
@@ -323,9 +350,58 @@
          (DeselectImage. id)
          (SelectImage. id))))))
 
+(defn deselect-image
+  [id]
+  {:pre [(uuid? id)]}
+  (DeselectImage. id))
+
 (defn toggle-image-selection
   [id]
   (ToggleImageSelection. id))
+
+;; --- Copy Selected Image
+
+(defrecord CopySelected [id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [selected (get-in state [:dashboard :images :selected])
+          selected (map #(get-in state [:images-by-id %]) selected)]
+      (->> (rx/from-coll selected)
+           (rx/map #(dissoc % :id))
+           (rx/map #(assoc % :collection id))
+           (rx/flat-map #(rp/req :create/image %))
+           (rx/map :payload)
+           (rx/map image-created)))))
+
+(defn copy-selected
+  [id]
+  {:pre [(or (uuid? id) (nil? id))]}
+  (CopySelected. id))
+
+;; --- Move Selected Image
+
+(defrecord MoveSelected [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [selected (get-in state [:dashboard :images :selected])]
+      (reduce (fn [state image]
+                (assoc-in state [:images-by-id image :collection] id))
+              state
+              selected)))
+
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [selected (get-in state [:dashboard :images :selected])]
+      (rx/merge
+       (->> (rx/from-coll selected)
+            (rx/map update-image))
+       (->> (rx/from-coll selected)
+            (rx/map deselect-image))))))
+
+(defn move-selected
+  [id]
+  {:pre [(or (uuid? id) (nil? id))]}
+  (MoveSelected. id))
 
 ;; --- Delete Selected
 
