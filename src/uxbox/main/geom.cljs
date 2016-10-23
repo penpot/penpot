@@ -38,7 +38,6 @@
   [shape dpoint]
   (case (:type shape)
     :icon (move-rect shape dpoint)
-    :icon-raw (move-rect shape dpoint)
     :rect (move-rect shape dpoint)
     :text (move-rect shape dpoint)
     :path (move-path shape dpoint)
@@ -141,7 +140,6 @@
     :text (size-rect shape)
     :rect (size-rect shape)
     :icon (size-rect shape)
-    :icon-raw (size-rect shape)
     :image (size-rect shape)
     :path (size-rect shape)))
 
@@ -168,7 +166,6 @@
   [shape id]
   (case (:type shape)
     :icon (get-rect-vertext-point shape id)
-    :icon-raw (get-rect-vertext-point shape id)
     :rect (get-rect-vertext-point shape id)
     :circle (get-circle-vertext-point shape id)
     :text (get-rect-vertext-point shape id)))
@@ -203,7 +200,6 @@
     :rect (move-rect-vertex shape vid dpoint)
     :text (move-rect-vertex shape vid dpoint)
     :icon (move-rect-vertex shape vid dpoint)
-    :icon-raw (move-rect-vertex shape vid dpoint)
     :path (move-rect-vertex shape vid dpoint)
     :circle (move-circle-vertex shape vid dpoint)))
 
@@ -291,7 +287,6 @@
   (case (:type shape)
     :rect (setup-proportions-rect shape)
     :icon (setup-proportions-rect shape)
-    :icon-raw (setup-proportions-rect shape)
     :circle (setup-proportions-rect shape)
     shape))
 
@@ -360,7 +355,6 @@
   (case (:type shape)
     :rect (resize-rect shape point)
     :icon (resize-rect shape point)
-    :icon-raw (resize-rect shape point)
     :text (resize-rect shape point)
     :path (resize-rect shape point)
     :circle (resize-circle shape point)))
@@ -430,7 +424,6 @@
   (case (:type shape)
     :rect (setup-rect shape props)
     :icon (setup-rect shape props)
-    :icon-raw (setup-rect shape props)
     :text (setup-rect shape props)
     :circle (setup-circle shape props)
     :group (setup-group shape props)))
@@ -538,7 +531,6 @@
                  :rect (generic-outer-rect state shape)
                  :text (generic-outer-rect state shape)
                  :icon (generic-outer-rect state shape)
-                 :icon-raw (generic-outer-rect state shape)
                  ;; :path (generic-outer-rect state shape)
                  :path (path-outer-rect state shape)
                  :circle (circle-outer-rect state shape)
@@ -688,7 +680,6 @@
      :text (text-transformation-matrix state shape)
      :circle (circle-transformation-matrix state shape)
      :icon (icon-transformation-matrix state shape)
-     :icon-raw (icon-transformation-matrix state shape)
      :image (icon-transformation-matrix state shape)
      :path (path-transformation-matrix state shape)
      :group (group-transformation-matrix state shape))))

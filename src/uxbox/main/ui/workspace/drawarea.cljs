@@ -110,7 +110,6 @@
   (when-let [shape (:drawing @wb/workspace-ref)]
     (case (:type shape)
       :icon (on-init-draw-icon shape)
-      :icon-raw (on-init-draw-icon shape)
       :path (if (:free shape)
               (on-init-draw-free-path shape)
               (on-init-draw-path shape))

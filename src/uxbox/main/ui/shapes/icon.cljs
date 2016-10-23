@@ -13,7 +13,6 @@
 ;; --- Icon Component
 
 (declare icon-shape)
-(declare icon-raw-shape)
 
 (mx/defc icon-component
   {:mixins [mx/static mx/reactive]}
@@ -25,29 +24,9 @@
                :on-mouse-down on-mouse-down}
      (icon-shape shape identity)]))
 
-(mx/defc icon-raw-component
-  {:mixins [mx/static mx/reactive]}
-  [{:keys [id] :as shape}]
-  (let [selected (mx/react common/selected-ref)
-        selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)]
-    [:g.shape {:class (when selected? "selected")
-               :on-mouse-down on-mouse-down}
-     (icon-raw-shape shape identity)]))
-
 ;; --- Icon Shape
 
 (mx/defc icon-shape
-  {:mixins [mx/static]}
-  [{:keys [data id] :as shape} factory]
-  (let [key (str "shape-icon-" id)
-        rfm (geom/transformation-matrix shape)
-        attrs (merge {:id key :key key :transform (str rfm)}
-                     (attrs/extract-style-attrs shape)
-                     (attrs/make-debug-attrs shape))]
-    [:g attrs data]))
-
-(mx/defc icon-raw-shape
   {:mixins [mx/static]}
   [{:keys [x1 y1 content id metadata] :as shape} factory]
   (let [key (str "shape-icon-raw-" id)
@@ -66,14 +45,6 @@
 ;; --- Icon SVG
 
 (mx/defc icon-svg
-  {:mixins [mx/static]}
-  [{:keys [data id view-box] :as shape}]
-  (let [key (str "icon-svg-" id)
-        view-box (apply str (interpose " " view-box))
-        props {:view-box view-box :id key :key key}]
-    [:svg props data]))
-
-(mx/defc icon-raw-svg
   {:mixins [mx/static]}
   [{:keys [content id metadata] :as shape}]
   (let [view-box (apply str (interpose " " (:view-box metadata)))
