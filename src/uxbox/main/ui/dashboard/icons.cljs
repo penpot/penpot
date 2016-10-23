@@ -275,9 +275,7 @@
                :checked selected?}]
       [:label {:for (:id icon)}]]
      [:span.grid-item-image
-      (case (:type icon)
-        :icon (icon/icon-svg icon)
-        :icon-raw (icon/icon-raw-svg icon))]
+      (icon/icon-svg icon)]
      [:h3 (:name icon)]
      #_[:div.project-th-actions
         [:div.project-th-icon.edit i/pencil]

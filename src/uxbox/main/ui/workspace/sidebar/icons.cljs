@@ -46,9 +46,7 @@
 (mx/defc icon-wrapper
   {:mixins [mx/static]}
   [icon]
-  (case (:type icon)
-    :icon (icon/icon-svg icon)
-    :icon-raw (icon/icon-raw-svg icon)))
+  (icon/icon-svg icon))
 
 (defn- icons-toolbox-will-mount
   [own]

@@ -180,7 +180,7 @@
 (defrecord IconCreated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [{:keys [id] :as item} (assoc item :type :icon-raw)]
+    (let [{:keys [id] :as item} (assoc item :type :icon)]
       (update state :icons-by-id assoc id item))))
 
 (defn icon-created
@@ -251,7 +251,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (reduce (fn [state {:keys [id] :as icon}]
-              (let [icon (assoc icon :type :icon-raw)]
+              (let [icon (assoc icon :type :icon)]
                 (assoc-in state [:icons-by-id id] icon)))
             state
             items)))
