@@ -63,3 +63,11 @@
   [_ id]
   (let [url (str url "/library/icons/" id)]
     (send! {:url url :method :delete})))
+
+(defmethod request :update/icon
+  [_ {:keys [id collection] :as body}]
+  (let [params {:url (str url "/library/icons/" id)
+                :method :put
+                :body body}]
+    (send! params)))
+
