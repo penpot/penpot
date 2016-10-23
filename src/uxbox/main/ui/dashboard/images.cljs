@@ -202,27 +202,80 @@
        :type "file"
        :on-change on-file-selected}]]))
 
-(mx/defc grid-options
-  [{:keys [type] :as coll}]
-  (let [editable? (or (= type :own) (nil? coll))]
+(mx/defc grid-options-copy
+  {:mixins [mx/reactive mx/static]}
+  [current-coll]
+  {:pre [(uuid? current-coll)]}
+  (let [colls (mx/react collections-ref)
+        colls (->> (vals colls)
+                   (filter #(= :own (:type %)))
+                   (remove #(= current-coll (:id %)))
+                   (sort-by :name colls))
+        on-select (fn [event id]
+                    (dom/prevent-default event)
+                    (rs/emit! (di/copy-selected id)))]
+    [:ul.move-list
+     [:li.title "Copy to library"]
+     [:li [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
+     (for [coll colls
+           :let [id (:id coll)
+                 name (:name coll)]]
+       [:li {:key (str id)}
+        [:a {:on-click #(on-select % id)} name]])]))
+
+(mx/defc grid-options-move
+  {:mixins [mx/reactive mx/static]}
+  [current-coll]
+  {:pre [(uuid? current-coll)]}
+  (let [colls (mx/react collections-ref)
+        colls (->> (vals colls)
+                   (filter #(= :own (:type %)))
+                   (remove #(= current-coll (:id %)))
+                   (sort-by :name colls))
+        on-select (fn [event id]
+                    (println "on-select" event id)
+                    (dom/prevent-default event)
+                    (rs/emit! (di/move-selected id)))]
+    [:ul.move-list
+     [:li.title "Move to library"]
+     [:li [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
+     (for [coll colls
+           :let [id (:id coll)
+                 name (:name coll)]]
+       [:li {:key (str id)}
+        [:a {:on-click #(on-select % id)} name]])]))
+
+(mx/defcs grid-options
+  {:mixins [(mx/local) mx/static]}
+  [own {:keys [type id] :as coll}]
+  (let [editable? (or (= type :own) (nil? coll))
+        local (:rum/local own)]
     (letfn [(delete []
               (rs/emit! (di/delete-selected)))
             (on-delete [event]
-              (udl/open! :confirm {:on-accept delete}))]
+              (udl/open! :confirm {:on-accept delete}))
+            (on-toggle-copy [event]
+              (swap! local update :show-copy-tooltip not))
+            (on-toggle-move [event]
+              (swap! local update :show-move-tooltip not))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
        (if editable?
          [:div.multiselect-nav
-          #_[:span.move-item.tooltip.tooltip-top
-             {:alt "Move to"}
-             i/organize]
+          [:span.move-item.tooltip.tooltip-top
+           {:on-click on-toggle-move}
+           (when (:show-move-tooltip @local)
+             (grid-options-move id))
+           i/organize]
           [:span.delete.tooltip.tooltip-top
            {:alt "Delete"
             :on-click on-delete}
            i/trash]]
          [:div.multiselect-nav
           [:span.move-item.tooltip.tooltip-top
-           {:alt "Copy to"}
+           {:on-click on-toggle-copy}
+           (when (:show-copy-tooltip @local)
+             (grid-options-copy id))
            i/organize]])])))
 
 (mx/defc grid-item
