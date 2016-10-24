@@ -66,4 +66,4 @@
     :render lightbox-render
     :will-mount lightbox-will-mount
     :will-unmount lightbox-will-umount
-    :mixins [mx/reactive mx/static]}))
+    :mixins [mx/reactive]}))
