@@ -59,6 +59,10 @@
   (-> (l/key :images-by-id)
       (l/derive st/state)))
 
+(def ^:private uploading?-ref
+  (-> (l/key :uploading)
+      (l/derive dashboard-ref)))
+
 ;; --- Page Title
 
 (mx/defcs page-title
@@ -185,22 +189,25 @@
 ;; --- Grid
 
 (mx/defcs grid-form
-  {:mixins [mx/static]}
+  {:mixins [mx/static mx/reactive]}
   [own coll-id]
   (letfn [(forward-click [event]
             (dom/click (mx/ref-node own "file-input")))
           (on-file-selected [event]
             (let [files (dom/get-event-files event)]
               (rs/emit! (di/create-images coll-id files))))]
-    [:div.grid-item.add-project {:on-click forward-click}
-     [:span "+ New image"]
-     [:input.upload-image-input
-      {:style {:display "none"}
-       :multiple true
-       :ref "file-input"
-       :value ""
-       :type "file"
-       :on-change on-file-selected}]]))
+    (let [uploading? (mx/react uploading?-ref)]
+      [:div.grid-item.add-project {:on-click forward-click}
+       (if uploading?
+         [:div i/loader-pencil]
+         [:span "+ New image"])
+       [:input.upload-image-input
+        {:style {:display "none"}
+         :multiple true
+         :ref "file-input"
+         :value ""
+         :type "file"
+         :on-change on-file-selected}]])))
 
 (mx/defc grid-options-copy
   {:mixins [mx/reactive mx/static]}
