@@ -191,7 +191,11 @@
 
 (def allowed-file-types #{"image/jpeg" "image/png"})
 
-(defrecord CreateImages [id files]
+(defrecord CreateImages [id files on-uploaded]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:dashboard :images :uploading] true))
+
   rs/WatchEvent
   (-apply-watch [_ state s]
     (letfn [(image-size [file]
@@ -199,6 +203,8 @@
                    (rx/map (partial vector file))))
             (allowed-file? [file]
               (contains? allowed-file-types (.-type file)))
+            (finalize-upload []
+              (assoc-in state [:dashboard :images :uploading] false))
             (prepare [[file [width height]]]
               {:collection id
                :mimetype (.-type file)
@@ -208,16 +214,23 @@
                :height height})]
       (->> (rx/from-coll (jscoll->vec files))
            (rx/filter allowed-file?)
-           (rx/flat-map image-size)
+           (rx/mapcat image-size)
            (rx/map prepare)
-           (rx/flat-map #(rp/req :create/image %))
+           (rx/mapcat #(rp/req :create/image %))
            (rx/map :payload)
+           (rx/reduce conj [])
+           (rx/do #(rs/emit! finalize-upload))
+           (rx/do on-uploaded)
+           (rx/mapcat identity)
            (rx/map image-created)))))
 
 (defn create-images
-  [id files]
-  {:pre [(or (uuid? id) (nil? id))]}
-  (CreateImages. id files))
+  ([id files]
+   {:pre [(or (uuid? id) (nil? id))]}
+   (CreateImages. id files (constantly nil)))
+  ([id files on-uploaded]
+   {:pre [(or (uuid? id) (nil? id)) (fn? on-uploaded)]}
+   (CreateImages. id files on-uploaded)))
 
 ;; --- Image Updated
 
