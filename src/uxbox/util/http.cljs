@@ -74,10 +74,11 @@
        (letfn [(on-complete [event]
                  (if (or (= (.getLastErrorCode xhr) ErrorCode.HTTP_ERROR)
                          (.isSuccess xhr))
-                   (sink {:status (.getStatus xhr)
-                          :body (.getResponse xhr)
-                          :headers (normalize-headers
-                                    (.getResponseHeaders xhr))})
+                   (sink (rx/end
+                          {:status (.getStatus xhr)
+                           :body (.getResponse xhr)
+                           :headers (normalize-headers
+                                     (.getResponseHeaders xhr))}))
                    (sink (let [type (-> (.getLastErrorCode xhr)
                                         (translate-error-code))
                                message (.getLastError xhr)]
