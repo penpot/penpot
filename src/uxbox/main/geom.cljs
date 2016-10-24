@@ -38,6 +38,7 @@
   [shape dpoint]
   (case (:type shape)
     :icon (move-rect shape dpoint)
+    :image (move-rect shape dpoint)
     :rect (move-rect shape dpoint)
     :text (move-rect shape dpoint)
     :path (move-path shape dpoint)
@@ -166,6 +167,7 @@
   [shape id]
   (case (:type shape)
     :icon (get-rect-vertext-point shape id)
+    :image (get-rect-vertext-point shape id)
     :rect (get-rect-vertext-point shape id)
     :circle (get-circle-vertext-point shape id)
     :text (get-rect-vertext-point shape id)))
@@ -200,6 +202,7 @@
     :rect (move-rect-vertex shape vid dpoint)
     :text (move-rect-vertex shape vid dpoint)
     :icon (move-rect-vertex shape vid dpoint)
+    :image (move-rect-vertex shape vid dpoint)
     :path (move-rect-vertex shape vid dpoint)
     :circle (move-circle-vertex shape vid dpoint)))
 
@@ -279,6 +282,7 @@
 ;; --- Setup Proportions
 
 (declare setup-proportions-rect)
+(declare setup-proportions-image)
 
 ;; FIXME: improve proportions setup for icons.
 
@@ -288,7 +292,14 @@
     :rect (setup-proportions-rect shape)
     :icon (setup-proportions-rect shape)
     :circle (setup-proportions-rect shape)
+    :image (setup-proportions-image shape)
     shape))
+
+(defn setup-proportions-image
+  [{:keys [metadata] :as shape}]
+  (println "setup-proportions-image" shape)
+  (let [{:keys [width height]} metadata]
+    (assoc shape :proportion (/ width height))))
 
 (defn setup-proportions-rect
   [shape]
@@ -355,6 +366,7 @@
   (case (:type shape)
     :rect (resize-rect shape point)
     :icon (resize-rect shape point)
+    :image (resize-rect shape point)
     :text (resize-rect shape point)
     :path (resize-rect shape point)
     :circle (resize-circle shape point)))
@@ -414,6 +426,7 @@
 ;; --- Setup (Initialize)
 
 (declare setup-rect)
+(declare setup-image)
 (declare setup-circle)
 (declare setup-group)
 
@@ -424,6 +437,7 @@
   (case (:type shape)
     :rect (setup-rect shape props)
     :icon (setup-rect shape props)
+    :image (setup-image shape props)
     :text (setup-rect shape props)
     :circle (setup-circle shape props)
     :group (setup-group shape props)))
@@ -450,6 +464,17 @@
          :cy y1
          :rx (mth/abs (- x2 x1))
          :ry (mth/abs (- y2 y1))))
+
+(defn- setup-image
+  [{:keys [view-box] :as shape} {:keys [x1 y1 x2 y2] :as props}]
+  (let [[_ _ width height] view-box]
+    (assoc shape
+           :x1 x1
+           :y1 y1
+           :x2 x2
+           :y2 y2
+           :proportion (/ width height)
+           :proportion-lock true)))
 
 ;; --- Inner Rect
 
@@ -531,6 +556,7 @@
                  :rect (generic-outer-rect state shape)
                  :text (generic-outer-rect state shape)
                  :icon (generic-outer-rect state shape)
+                 :image (generic-outer-rect state shape)
                  ;; :path (generic-outer-rect state shape)
                  :path (path-outer-rect state shape)
                  :circle (circle-outer-rect state shape)
