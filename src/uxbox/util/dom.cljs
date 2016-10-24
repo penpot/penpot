@@ -82,3 +82,33 @@
   "Extract the files from event instance."
   [event]
   (get-files (get-target event)))
+
+(defn create-element
+  ([tag]
+   (.createElement js/document tag))
+  ([ns tag]
+   (.createElementNS js/document ns tag)))
+
+(defn set-html!
+  [el html]
+  (set! (.-innerHTML el) html))
+
+(defn append-child!
+  [el child]
+  (.appendChild el child))
+
+(defn get-first-child
+  [el]
+  (.-firstChild el))
+
+(defn get-tag-name
+  [el]
+  (.-tagName el))
+
+(defn get-outer-html
+  [el]
+  (.-outerHTML el))
+
+(defn query
+  [el query]
+  (.querySelector el query))
