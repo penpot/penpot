@@ -13,7 +13,6 @@
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
-            [uxbox.main.library :as library]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.workspace.base :as wb]
@@ -24,7 +23,13 @@
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (parse-int parse-float read-string)]))
+            [uxbox.util.data :refer (parse-int
+                                     parse-float
+                                     read-string
+                                     index-by-id)]))
+
+(declare +fonts+)
+(declare +fonts-by-id+)
 
 (defn- text-menu-render
   [own menu {:keys [font] :as shape}]
@@ -70,7 +75,7 @@
                 letter-spacing 1
                 line-height 1.4
                 size 16}} font
-          styles (:styles (first (filter #(= (:id %) family) library/+fonts+)))]
+          styles (:styles (first (filter #(= (:id %) family) +fonts+)))]
       (html
        [:div.element-set {:key (str (:id menu))}
         [:div.element-set-title (:name menu)]
@@ -80,7 +85,7 @@
          [:div.row-flex
           [:select.input-select {:value (pr-str family)
                                  :on-change on-font-family-change}
-           (for [font library/+fonts+]
+           (for [font +fonts+]
              [:option {:value (pr-str (:id font))
                        :key (:id font)} (:name font)])]]
 
@@ -140,3 +145,200 @@
    {:render text-menu-render
     :name "text-menu"
     :mixins [mx/static]}))
+
+
+(def +fonts+
+  [{:id "sourcesanspro"
+    :name "Source Sans Pro"
+    :styles [{:name "Extra-Light"
+              :weight "100"
+              :style "normal"}
+             {:name "Extra-Light Italic"
+              :weight "100"
+              :style "italic"}
+             {:name "Light"
+              :weight "200"
+              :style "normal"}
+             {:name "Light Italic"
+              :weight "200"
+              :style "italic"}
+             {:name "Regular"
+              :weight "normal"
+              :style "normal"}
+             {:name "Italic"
+              :weight "normal"
+              :style "italic"}
+             {:name "Semi-Bold"
+              :weight "500"
+              :style "normal"}
+             {:name "Semi-Bold Italic"
+              :weight "500"
+              :style "italic"}
+             {:name "Bold"
+              :weight "bold"
+              :style "normal"}
+             {:name "Bold Italic"
+              :weight "bold"
+              :style "italic"}
+             {:name "Black"
+              :weight "900"
+              :style "normal"}
+             {:name "Black Italic"
+              :weight "900"
+              :style "italic"}]}
+   {:id "opensans"
+    :name "Open Sans"
+    :styles [{:name "Extra-Light"
+              :weight "100"
+              :style "normal"}
+             {:name "Extra-Light Italic"
+              :weight "100"
+              :style "italic"}
+             {:name "Light"
+              :weight "200"
+              :style "normal"}
+             {:name "Light Italic"
+              :weight "200"
+              :style "italic"}
+             {:name "Regular"
+              :weight "normal"
+              :style "normal"}
+             {:name "Italic"
+              :weight "normal"
+              :style "italic"}
+             {:name "Semi-Bold"
+              :weight "500"
+              :style "normal"}
+             {:name "Semi-Bold Italic"
+              :weight "500"
+              :style "italic"}
+             {:name "Bold"
+              :weight "bold"
+              :style "normal"}
+             {:name "Bold Italic"
+              :weight "bold"
+              :style "italic"}
+             {:name "Black"
+              :weight "900"
+              :style "normal"}
+             {:name "Black Italic"
+              :weight "900"
+              :style "italic"}]}
+   {:id "bebas"
+    :name "Bebas"
+    :styles [{:name "Normal"
+              :weight "normal"
+              :style "normal"}]}
+   {:id "gooddog"
+    :name "Good Dog"
+    :styles [{:name "Normal"
+              :weight "normal"
+              :style "normal"}]}
+   {:id "caviardreams"
+    :name "Caviar Dreams"
+    :styles [{:name "Normal"
+              :weight "normal"
+              :style "normal"}
+             {:name "Normal Italic"
+              :weight "normal"
+              :style "italic"}
+             {:name "Bold"
+              :weight "bold"
+              :style "normal"}
+             {:name "Bold Italic"
+              :weight "bold"
+              :style "italic"}]}
+   {:id "ptsans"
+    :name "PT Sans"
+    :styles [{:name "Normal"
+              :weight "normal"
+              :style "normal"}
+             {:name "Normal Italic"
+              :weight "normal"
+              :style "italic"}
+             {:name "Bold"
+              :weight "bold"
+              :style "normal"}
+             {:name "Bold Italic"
+              :weight "bold"
+              :style "italic"}]}
+   {:id "roboto"
+    :name "Roboto"
+    :styles [{:name "Extra-Light"
+              :weight "100"
+              :style "normal"}
+             {:name "Extra-Light Italic"
+              :weight "100"
+              :style "italic"}
+             {:name "Light"
+              :weight "200"
+              :style "normal"}
+             {:name "Light Italic"
+              :weight "200"
+              :style "italic"}
+             {:name "Regular"
+              :weight "normal"
+              :style "normal"}
+             {:name "Italic"
+              :weight "normal"
+              :style "italic"}
+             {:name "Semi-Bold"
+              :weight "500"
+              :style "normal"}
+             {:name "Semi-Bold Italic"
+              :weight "500"
+              :style "italic"}
+             {:name "Bold"
+              :weight "bold"
+              :style "normal"}
+             {:name "Bold Italic"
+              :weight "bold"
+              :style "italic"}
+             {:name "Black"
+              :weight "900"
+              :style "normal"}
+             {:name "Black Italic"
+              :weight "900"
+              :style "italic"}]}
+   {:id "robotocondensed"
+    :name "Roboto Condensed"
+    :styles [{:name "Extra-Light"
+              :weight "100"
+              :style "normal"}
+             {:name "Extra-Light Italic"
+              :weight "100"
+              :style "italic"}
+             {:name "Light"
+              :weight "200"
+              :style "normal"}
+             {:name "Light Italic"
+              :weight "200"
+              :style "italic"}
+             {:name "Regular"
+              :weight "normal"
+              :style "normal"}
+             {:name "Italic"
+              :weight "normal"
+              :style "italic"}
+             {:name "Semi-Bold"
+              :weight "500"
+              :style "normal"}
+             {:name "Semi-Bold Italic"
+              :weight "500"
+              :style "italic"}
+             {:name "Bold"
+              :weight "bold"
+              :style "normal"}
+             {:name "Bold Italic"
+              :weight "bold"
+              :style "italic"}
+             {:name "Black"
+              :weight "900"
+              :style "normal"}
+             {:name "Black Italic"
+              :weight "900"
+              :style "italic"}]}
+   ])
+
+(def +fonts-by-id+
+  (index-by-id +fonts+))

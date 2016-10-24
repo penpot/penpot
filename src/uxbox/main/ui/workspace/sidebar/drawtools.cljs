@@ -15,7 +15,6 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.main.state :as st]
-            [uxbox.main.library :as library]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]))

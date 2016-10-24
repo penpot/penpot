@@ -14,7 +14,6 @@
             [uxbox.util.rstore :as rs]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.state :as st]
-            [uxbox.main.library :as library]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.workspace.sidebar.sitemap :refer (pages-ref)]

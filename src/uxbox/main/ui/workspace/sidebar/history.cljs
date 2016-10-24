@@ -13,7 +13,6 @@
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
-            [uxbox.main.library :as library]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.history :as udh]

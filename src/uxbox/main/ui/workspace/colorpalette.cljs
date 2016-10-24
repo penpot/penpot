@@ -9,7 +9,6 @@
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.main.state :as st]
-            [uxbox.main.library :as library]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.colors :as dc]

@@ -9,7 +9,6 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.main.state :as st]
-            [uxbox.main.library :as library]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.icons :as di]
             [uxbox.main.ui.icons :as i]

@@ -12,7 +12,6 @@
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]
-            [uxbox.main.library :as library]
             [uxbox.util.data :refer (read-string classnames)]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]

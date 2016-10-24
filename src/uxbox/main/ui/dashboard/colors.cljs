@@ -11,7 +11,6 @@
             [uxbox.main.data.colors :as dc]
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.library :as library]
             [uxbox.main.state :as st]
             [uxbox.main.ui.colorpicker :refer (colorpicker)]
             [uxbox.main.ui.dashboard.header :refer (header)]
