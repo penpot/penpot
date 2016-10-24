@@ -20,6 +20,13 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]))
 
+
+;; --- Refs
+
+(def ^:private dashboard-ref
+  (-> (l/in [:dashboard :images])
+      (l/derive st/state)))
+
 (def ^:private collections-ref
   (-> (l/key :image-colls-by-id)
       (l/derive st/state)))
@@ -28,8 +35,14 @@
   (-> (l/key :images-by-id)
       (l/derive st/state)))
 
+(def ^:private uploading?-ref
+  (-> (l/key :uploading)
+      (l/derive dashboard-ref)))
+
+;; --- Components
+
 (mx/defcs import-image-lightbox
-  {:mixins [mx/static]}
+  {:mixins [mx/static mx/reactive]}
   [own]
   (letfn [(on-upload-click [event]
             (let [input (mx/ref-node own "input")]
@@ -52,23 +65,26 @@
           (on-close [event]
             (dom/prevent-default event)
             (udl/close!))]
-    [:div.lightbox-body
-     [:h3 "New image"]
-     [:div.row-flex
-      [:div.lightbox-big-btn
-       {:on-click on-select-from-library}
-       [:span.big-svg i/image]
-       [:span.text "Select from library"]]
-      [:div.lightbox-big-btn
-       {:on-click on-upload-click}
-       [:span.big-svg.upload i/exit]
-       [:span.text "Upload file"]
-       [:input.upload-image-input
-        {:style {:display "none"}
-         :type "file"
-         :ref "input"
-         :on-change on-files-selected}]]]
-     [:a.close {:href "#" :on-click on-close} i/close]]))
+    (let [uploading? (mx/react uploading?-ref)]
+      [:div.lightbox-body
+       [:h3 "New image"]
+       [:div.row-flex
+        [:div.lightbox-big-btn
+         {:on-click on-select-from-library}
+         [:span.big-svg i/image]
+         [:span.text "Select from library"]]
+        [:div.lightbox-big-btn
+         {:on-click on-upload-click}
+         (if uploading?
+           [:span.big-svg.upload i/loader-pencil]
+           [:span.big-svg.upload i/exit])
+         [:span.text "Upload file"]
+         [:input.upload-image-input
+          {:style {:display "none"}
+           :type "file"
+           :ref "input"
+           :on-change on-files-selected}]]]
+       [:a.close {:on-click on-close} i/close]])))
 
 (mx/defc image-item
   {:mixins [mx/static]}
