@@ -110,6 +110,7 @@
   (when-let [shape (:drawing @wb/workspace-ref)]
     (case (:type shape)
       :icon (on-init-draw-icon shape)
+      :image (on-init-draw-icon shape)
       :path (if (:free shape)
               (on-init-draw-free-path shape)
               (on-init-draw-path shape))
@@ -118,9 +119,14 @@
 ;; --- Icon Drawing
 
 (defn- on-init-draw-icon
-  [shape]
+  [{:keys [metadata] :as shape}]
   (let [{:keys [x y]} (gpt/divide @wb/mouse-canvas-a @wb/zoom-ref)
-        props {:x1 x :y1 y :x2 (+ x 100) :y2 (+ y 100)}
+        {:keys [width height]} metadata
+        proportion (/ width height)
+        props {:x1 x
+               :y1 y
+               :x2 (+ x 200)
+               :y2 (+ y (/ 200 proportion))}
         shape (geom/setup shape props)]
     (rs/emit! (uds/add-shape shape)
               (udw/select-for-drawing nil)
