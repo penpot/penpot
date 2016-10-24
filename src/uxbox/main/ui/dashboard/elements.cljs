@@ -165,149 +165,42 @@
 
 (defn- new-element-lightbox-render
   [own]
-  (html
-  ;;------Element lightbox
+  #_(html
+   ;;------Element lightbox
 
    ;;[:div.lightbox-body
-    ;;[:h3 "New element"]
-    ;;[:div.row-flex
-     ;;[:div.lightbox-big-btn
-      ;;[:span.big-svg i/shapes]
-      ;;[:span.text "Go to workspace"]]
-     ;;[:div.lightbox-big-btn
-      ;;[:span.big-svg.upload i/exit]
-      ;;[:span.text "Upload file"]]]
-    ;;[:a.close {:href "#"
-               ;;:on-click #(do (dom/prevent-default %)
-                              ;;(udl/close!))}
-     ;;i/close]]
+   ;;[:h3 "New element"]
+   ;;[:div.row-flex
+   ;;[:div.lightbox-big-btn
+   ;;[:span.big-svg i/shapes]
+   ;;[:span.text "Go to workspace"]]
+   ;;[:div.lightbox-big-btn
+   ;;[:span.big-svg.upload i/exit]
+   ;;[:span.text "Upload file"]]]
+   ;;[:a.close {:href "#"
+   ;;:on-click #(do (dom/prevent-default %)
+   ;;(udl/close!))}
+   ;;i/close]]
 
-  ;;------Upload image lightbox
+   ;;------Upload image lightbox
 
    ;;[:div.lightbox-body
-    ;;[:h3 "Import image"]
-    ;;[:div.row-flex
-     ;;[:div.lightbox-big-btn
-      ;;[:span.big-svg i/image]
-      ;;[:span.text "Select from library"]]
-     ;;[:div.lightbox-big-btn
-      ;;[:span.big-svg.upload i/exit]
-      ;;[:span.text "Upload file"]]]
-    ;;[:a.close {:href "#"
-               ;;:on-click #(do (dom/prevent-default %)
-                              ;;(udl/close!))}
-     ;;i/close]]
+   ;;[:h3 "Import image"]
+   ;;[:div.row-flex
+   ;;[:div.lightbox-big-btn
+   ;;[:span.big-svg i/image]
+   ;;[:span.text "Select from library"]]
+   ;;[:div.lightbox-big-btn
+   ;;[:span.big-svg.upload i/exit]
+   ;;[:span.text "Upload file"]]]
+   ;;[:a.close {:href "#"
+   ;;:on-click #(do (dom/prevent-default %)
+   ;;(udl/close!))}
+   ;;i/close]]
 
-  ;;------Upload image library lightbox
+   ;;------Upload image library lightbox
 
-   [:div.lightbox-body.big-lightbox
-    [:h3 "Import image from library"]
-    [:div.import-img-library
-     [:div.library-actions
-      [:ul.toggle-library
-       [:li.standard.current "STANDARD"]
-       [:li.your-images "YOUR IMAGES"]]
-      [:select.input-select
-       [:option "Library 1"]
-       [:option "Library 2"]
-       [:option "Library 3"]
-       [:option "Library 4"]
-       [:option "Library 5"]
-       [:option "Library 6"]]]
-
-     [:div.library-content
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-       [:div.library-item
-        [:div.library-item-th
-         {:style
-           {:background-image "url('https://images.unsplash.com/photo-1441986380878-c4248f5b8b5b?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&w=1080&fit=max&s=486f09671860a11e70bdd0a45e7c5014')"}}]
-        [:span "image_name.jpg"]]
-
-     ]]
-    [:a.close {:href "#"
-               :on-click #(do (dom/prevent-default %)
-                              (udl/close!))}
-     i/close]]
-
-     ))
+   ))
 
 (def ^:private new-element-lightbox
   (mx/component
