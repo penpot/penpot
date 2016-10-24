@@ -13,7 +13,10 @@
             [uxbox.main.ui.shapes.group :refer (group-shape)]
             [uxbox.main.ui.shapes.path :refer (path-shape)]
             [uxbox.main.ui.shapes.circle :refer (circle-shape)]
+            [uxbox.main.ui.shapes.image :refer (image-shape)]
             [uxbox.util.mixins :as mx :include-macros true]))
+
+(def ^:dynamic *state* st/state)
 
 (mx/defc background
   []
@@ -34,17 +37,21 @@
     :icon (icon-shape s)
     :rect (rect-shape s)
     :path (path-shape s)
-    :circle (circle-shape s)))
+    :circle (circle-shape s)
+    :image (let [image-id (:image s)
+                 image (get-in @*state* [:images-by-id image-id])]
+             (image-shape (assoc s :image image)))))
 
 (mx/defc shape
   [sid]
-  (shape* (get-in @st/state [:shapes-by-id sid])))
+  (shape* (get-in @*state* [:shapes-by-id sid])))
 
 (mx/defc page-svg
   [{:keys [width height] :as page}]
   [:svg {:width width
          :height height
          :version "1.1"
+         :xmlnsXlink "http://www.w3.org/1999/xlink"
          :xmlns "http://www.w3.org/2000/svg"}
    (background)
    (for [item (reverse (:shapes page))]
