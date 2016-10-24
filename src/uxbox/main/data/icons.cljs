@@ -11,6 +11,7 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
+            [uxbox.util.dom :as dom]
             [uxbox.util.dom.files :as files]
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]))
@@ -194,19 +195,18 @@
   {:pre [(string? data)]}
   (let [valid-tags #{"defs" "path" "circle" "rect" "metadata" "g"
                      "radialGradient" "stop"}
-        div (js/document.createElement "div")
-        div2 (js/document.createElement "div")
-        gc  (js/document.createElement "div")
-        g (js/document.createElementNS "http://www.w3.org/2000/svg" "g")
-        _ (set! (.-innerHTML div) data)
-        svg (.querySelector div "svg")]
-    (loop [child (.-firstChild svg)]
+        div (dom/create-element "div")
+        gc (dom/create-element "div")
+        g (dom/create-element "http://www.w3.org/2000/svg" "g")
+        _ (dom/set-html! div data)
+        svg (dom/query div "svg")]
+    (loop [child (dom/get-first-child svg)]
       (if child
-        (let [tagname (.-tagName child)]
+        (let [tagname (dom/get-tag-name child)]
           (if  (contains? valid-tags tagname)
-            (.appendChild g child)
-            (.appendChild gc child))
-          (recur (.-firstChild svg)))
+            (dom/append-child! g child)
+            (dom/append-child! gc child))
+          (recur (dom/get-first-child svg)))
         (let [width (.. svg -width -baseVal -value)
               header (.. svg -height -baseVal -value)
               view-box [(.. svg -viewBox -baseVal -x)
@@ -217,7 +217,7 @@
                      :mimetype "image/svg+xml"
                      :height header
                      :view-box view-box}]
-          [(.-outerHTML g) props])))))
+          [(dom/get-outer-html g) props])))))
 
 (defrecord CreateIcons [id files]
   rs/WatchEvent
