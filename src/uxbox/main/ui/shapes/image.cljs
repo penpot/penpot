@@ -29,16 +29,17 @@
 
 (defn- will-mount
   [own]
-  (let [{:keys [image-id]} (first (:rum/args own))]
-    (rs/emit! (udi/fetch-image image-id))
+  (let [{:keys [image]} (first (:rum/args own))]
+    (println (:rum/args own))
+    (rs/emit! (udi/fetch-image image))
     own))
 
 (mx/defcs image-component
   {:mixins [mx/static mx/reactive]
    :will-mount will-mount}
-  [own {:keys [id image-id] :as shape}]
+  [own {:keys [id image] :as shape}]
   (let [selected (mx/react common/selected-ref)
-        image (mx/react (image-ref image-id))
+        image (mx/react (image-ref image))
         selected? (contains? selected id)
         local (:rum/local own)
         on-mouse-down #(common/on-mouse-down % shape selected)]
@@ -61,13 +62,3 @@
         attrs (-> (attrs/extract-style-attrs shape)
                   (merge props size))]
     [:image attrs]))
-
-;; --- Image SVG
-
-(mx/defc image-svg
-  {:mixins [mx/static]}
-  [{:keys [data id view-box] :as shape}]
-  (let [key (str "image-svg-" id)
-        view-box (apply str (interpose " " view-box))
-        props {:view-box view-box :id key :key key}]
-    [:svg props data]))
