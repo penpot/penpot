@@ -143,3 +143,9 @@
                             acc))
                         []
                         (partition 2 params))))
+
+
+;; (defmacro mirror-map [& fields]
+;;   (let [keys# (map #(keyword (name %)) fields)
+;;         vals# fields]
+;;     (apply hash-map (interleave keys# vals#))))
