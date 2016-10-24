@@ -49,7 +49,6 @@
             (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
               (rs/emit! (uds/update-vertex-position sid params))))
           (on-end []
-            (rs/emit! (uds/setup-proportions sid))
             (rlocks/release! :shape/resize))]
     (let [stoper (->> wb/events-s
                       (rx/map first)

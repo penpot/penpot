@@ -284,27 +284,28 @@
 (declare setup-proportions-rect)
 (declare setup-proportions-image)
 
-;; FIXME: improve proportions setup for icons.
-
 (defn setup-proportions
   [shape]
   (case (:type shape)
     :rect (setup-proportions-rect shape)
-    :icon (setup-proportions-rect shape)
     :circle (setup-proportions-rect shape)
+    :icon (setup-proportions-image shape)
     :image (setup-proportions-image shape)
-    shape))
+    :text shape))
 
 (defn setup-proportions-image
   [{:keys [metadata] :as shape}]
-  (println "setup-proportions-image" shape)
   (let [{:keys [width height]} metadata]
-    (assoc shape :proportion (/ width height))))
+    (assoc shape
+           :proportion (/ width height)
+           :proportion-lock true)))
 
 (defn setup-proportions-rect
   [shape]
   (let [{:keys [width height]} (size shape)]
-    (assoc shape :proportion (/ width height))))
+    (assoc shape
+           :proportion (/ width height)
+           :proportion-lock true)))
 
 ;; --- Resize (Dimentsions)
 

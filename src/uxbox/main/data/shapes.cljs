@@ -241,20 +241,6 @@
       (update-in state [:shapes-by-id sid] assoc
                  :proportion-lock false))))
 
-(defn setup-proportions
-  [sid]
-  {:pre [(uuid? sid)]}
-  (reify
-    udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (let [[width height] (-> (get-in state [:shapes-by-id sid])
-                               (geom/size)
-                               (keep [:width :height]))
-            proportion (/ width height)]
-        (update-in state [:shapes-by-id sid] assoc
-                   :proportion proportion)))))
-
 ;; --- Group Collapsing
 
 (defn collapse-shape
