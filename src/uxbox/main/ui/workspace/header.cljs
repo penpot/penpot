@@ -54,17 +54,6 @@
 
 ;; --- Header Component
 
-(defn on-download-clicked
-  [event page]
-  (udl/open! :download)
-  #_(let [content (.-innerHTML (.getElementById js/document "page-layout"))
-        width (:width page)
-        height (:height page)
-        html (str "<svg width='" width  "' height='" height  "'>" content "</svg>")
-        data (js/Blob. #js [html] #js {:type "application/octet-stream"})
-        url (.createObjectURL (.-URL js/window) data)]
-    (set! (.-href (.-currentTarget event)) url)))
-
 (defn on-view-clicked
   [event project page]
   (let [token (:share-token project)
@@ -80,7 +69,8 @@
         toggle #(rs/emit! (dw/toggle-flag %))
         on-undo #(rs/emit! (udh/backwards-to-previous-version))
         on-redo #(rs/emit! (udh/forward-to-next-version))
-        on-image #(udl/open! :new-image)]
+        on-image #(udl/open! :import-image)
+        on-download #(udl/open! :download)]
     (html
      [:header#workspace-bar.workspace-bar
       [:div.main-icon
@@ -133,10 +123,9 @@
          :on-click on-redo}
          i/redo]]
        [:ul.options-btn
-        ;; TODO: refactor
         [:li.tooltip.tooltip-bottom
          {:alt "Export (Ctrl + E)"
-          :on-click on-download-clicked}
+          :on-click on-download}
          i/export]
         [:li.tooltip.tooltip-bottom
          {:alt "Image (Ctrl + I)"
