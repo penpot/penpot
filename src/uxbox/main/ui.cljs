@@ -97,8 +97,7 @@
         :auth/recovery-request (auth/recovery-request-page)
         :auth/recovery (auth/recovery-page (:token params))
         :dashboard/projects (dashboard/projects-page)
-        :dashboard/elements (dashboard/elements-page)
-
+        ;; :dashboard/elements (dashboard/elements-page)
         :dashboard/icons (let [{:keys [id type]} params
                                 type (when (str/alpha? type) (keyword type))
                                 id (cond
