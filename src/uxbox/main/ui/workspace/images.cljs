@@ -34,9 +34,15 @@
   (letfn [(on-upload-click [event]
             (let [input (mx/ref-node own "input")]
               (dom/click input)))
-          (on-uploaded [images]
-            (println "on-uploaded" images)
-            (udl/close!))
+          (on-uploaded [[image]]
+            (let [{:keys [id name width height]} image
+                  shape {:type :image
+                         :name name
+                         :metadata {:width width
+                                    :height height}
+                         :image id}]
+              (rs/emit! (udw/select-for-drawing shape))
+              (udl/close!)))
           (on-files-selected [event]
             (let [files (dom/get-event-files event)]
               (rs/emit! (udi/create-images nil files on-uploaded))))
