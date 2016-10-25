@@ -77,6 +77,7 @@
   [shape point]
   (case (:type shape)
     :icon (absolute-move-rect shape point)
+    :image (absolute-move-rect shape point)
     :rect (absolute-move-rect shape point)
     :circle (absolute-move-circle shape point)
     :group (absolute-move-group shape point)))
@@ -276,7 +277,8 @@
     :circle (setup-proportions-rect shape)
     :icon (setup-proportions-image shape)
     :image (setup-proportions-image shape)
-    :text shape))
+    :text shape
+    :path (setup-proportions-rect shape)))
 
 (defn setup-proportions-image
   [{:keys [metadata] :as shape}]
@@ -304,6 +306,7 @@
   (case (:type shape)
     :rect (resize-dim-rect shape opts)
     :icon (resize-dim-rect shape opts)
+    :image (resize-dim-rect shape opts)
     :circle (resize-dim-circle shape opts)))
 
 (defn- resize-dim-rect
@@ -465,29 +468,27 @@
 ;; --- Inner Rect
 
 (declare apply-rotation-transformation)
-(declare generic-inner-rect)
-(declare path-inner-rect)
-(declare circle-inner-rect)
-(declare group-inner-rect)
+(declare inner-rect-circle)
+(declare inner-rect-group)
+(declare inner-rect-path)
+(declare inner-rect-generic)
 
 (defn inner-rect
   ([shape] (inner-rect @st/state shape))
   ([state shape]
    (case (:type shape)
-     :icon (generic-inner-rect state shape)
-     :rect (generic-inner-rect state shape)
-     :text (generic-inner-rect shape shape)
-     :path (path-inner-rect state shape)
-     :circle (circle-inner-rect state shape)
-     :group (group-inner-rect state shape))))
+     :circle (inner-rect-circle state shape)
+     :group (inner-rect-group state shape)
+     :path (inner-rect-path state shape)
+     (inner-rect-generic state shape))))
 
-(defn- generic-inner-rect
+(defn- inner-rect-generic
   [state {:keys [x1 y1] :as shape}]
   (-> (assoc shape :x x1 :y y1)
       (merge (size shape))
       (apply-rotation-transformation)))
 
-(defn- path-inner-rect
+(defn- inner-rect-path
   [state {:keys [points] :as shape}]
   (let [minx (apply min (map :x points))
         miny (apply min (map :y points))
@@ -500,7 +501,7 @@
     (-> (merge shape props)
         (apply-rotation-transformation))))
 
-(defn- circle-inner-rect
+(defn- inner-rect-circle
   [state {:keys [cx cy rx ry group] :as shape}]
   (let [props {:x (- cx rx)
                :y (- cy ry)
@@ -509,7 +510,7 @@
     (-> (merge shape props)
         (apply-rotation-transformation))))
 
-(defn- group-inner-rect
+(defn- inner-rect-group
   [state {:keys [id group rotation dx dy] :as shape}]
   (let [shapes (->> (:items shape)
                     (map #(get-in state [:shapes-by-id %]))
@@ -527,10 +528,10 @@
 
 ;; --- Outer Rect
 
-(declare generic-outer-rect)
-(declare circle-outer-rect)
-(declare path-outer-rect)
-(declare group-outer-rect)
+(declare outer-rect-generic)
+(declare outer-rect-circle)
+(declare outer-rect-path)
+(declare outer-rect-group)
 (declare apply-rotation-transformation)
 (declare apply-parent-deltas)
 
@@ -539,14 +540,10 @@
    (outer-rect @st/state shape))
   ([state shape]
    (let [shape (case (:type shape)
-                 :rect (generic-outer-rect state shape)
-                 :text (generic-outer-rect state shape)
-                 :icon (generic-outer-rect state shape)
-                 :image (generic-outer-rect state shape)
-                 ;; :path (generic-outer-rect state shape)
-                 :path (path-outer-rect state shape)
-                 :circle (circle-outer-rect state shape)
-                 :group (group-outer-rect state shape))]
+                 :path (outer-rect-path state shape)
+                 :circle (outer-rect-circle state shape)
+                 :group (outer-rect-group state shape)
+                 (outer-rect-generic state shape))]
      (if (:group shape)
        (let [group (get-in state [:shapes-by-id (:group shape)])]
          (apply-parent-deltas state shape (:group group)))
@@ -560,7 +557,7 @@
       (apply-parent-deltas state (merge shape props) (:group group)))
     shape))
 
-(defn- generic-outer-rect
+(defn- outer-rect-generic
   [state {:keys [x1 y1 x2 y2 group] :as shape}]
   (let [group (get-in state [:shapes-by-id group])
         props {:x (+ x1 (:dx group 0))
@@ -570,7 +567,7 @@
     (-> (merge shape props)
         (apply-rotation-transformation))))
 
-(defn- circle-outer-rect
+(defn- outer-rect-circle
   [state {:keys [cx cy rx ry group] :as shape}]
   (let [group (get-in state [:shapes-by-id group])
         props {:x (+ (- cx rx) (:dx group 0))
@@ -580,7 +577,7 @@
     (-> (merge shape props)
         (apply-rotation-transformation))))
 
-(defn- path-outer-rect
+(defn- outer-rect-path
   [state {:keys [points group] :as shape}]
   (let [group (get-in state [:shapes-by-id group])
         minx (apply min (map :x points))
@@ -596,7 +593,7 @@
         (apply-rotation-transformation))))
 
 
-(defn- group-outer-rect
+(defn- outer-rect-group
   [state {:keys [id group rotation dx dy] :as shape}]
   (let [shapes (->> (:items shape)
                     (map #(get-in state [:shapes-by-id %]))
@@ -676,27 +673,27 @@
 
 ;; --- Transformation Matrix
 
-(declare rect-transformation-matrix)
-(declare text-transformation-matrix)
-(declare circle-transformation-matrix)
-(declare icon-transformation-matrix)
-(declare path-transformation-matrix)
-(declare group-transformation-matrix)
+(declare transformation-matrix-rect)
+(declare transformation-matrix-text)
+(declare transformation-matrix-circle)
+(declare transformation-matrix-icon)
+(declare transformation-matrix-path)
+(declare transformation-matrix-group)
 
 (defn transformation-matrix
   ([shape]
    (transformation-matrix @st/state shape))
   ([state shape]
    (case (:type shape)
-     :rect (rect-transformation-matrix state shape)
-     :text (text-transformation-matrix state shape)
-     :circle (circle-transformation-matrix state shape)
-     :icon (icon-transformation-matrix state shape)
-     :image (icon-transformation-matrix state shape)
-     :path (path-transformation-matrix state shape)
-     :group (group-transformation-matrix state shape))))
+     :rect (transformation-matrix-rect state shape)
+     :text (transformation-matrix-text state shape)
+     :circle (transformation-matrix-circle state shape)
+     :icon (transformation-matrix-icon state shape)
+     :image (transformation-matrix-icon state shape)
+     :path (transformation-matrix-path state shape)
+     :group (transformation-matrix-group state shape))))
 
-(defn- rect-transformation-matrix
+(defn- transformation-matrix-rect
   [state {:keys [x1 y1 rotation] :or {rotation 0} :as shape}]
   (let [{:keys [width height]} (size shape)
         center-x (+ x1 (/ width 2))
@@ -706,7 +703,7 @@
         (gmt/rotate rotation)
         (gmt/translate (- center-x) (- center-y)))))
 
-(defn- text-transformation-matrix
+(defn- transformation-matrix-text
   [state {:keys [x1 y1 rotation] :or {rotation 0} :as shape}]
   (let [{:keys [width height]} (size shape)
         center-x (+ x1 (/ width 2))
@@ -716,7 +713,7 @@
         (gmt/rotate rotation)
         (gmt/translate (- center-x) (- center-y)))))
 
-(defn- icon-transformation-matrix
+(defn- transformation-matrix-icon
   [state {:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
   (let [{:keys [width height]} (size shape)
         orig-width (nth view-box 2)
@@ -732,7 +729,7 @@
         (gmt/translate (- center-x) (- center-y))
         (gmt/scale scale-x scale-y))))
 
-(defn- path-transformation-matrix
+(defn- transformation-matrix-path
   [state {:keys [x1 y1 rotation view-box] :or {rotation 0} :as shape}]
   (let [{:keys [width height]} (size shape)
         orig-width (nth view-box 2)
@@ -748,14 +745,14 @@
         (gmt/translate (- center-x) (- center-y))
         (gmt/scale scale-x scale-y))))
 
-(defn- circle-transformation-matrix
+(defn- transformation-matrix-circle
   [state {:keys [cx cy rx ry rotation] :or {rotation 0} :as shape}]
   (-> (gmt/matrix)
       (gmt/translate cx cy)
       (gmt/rotate rotation)
       (gmt/translate (- cx) (- cy))))
 
-(defn- group-transformation-matrix
+(defn- transformation-matrix-group
   [state {:keys [dx dy rotation items] :or {rotation 0} :as shape}]
   (let [shapes-by-id (get state :shapes-by-id)
         shapes (map #(get shapes-by-id %) items)
