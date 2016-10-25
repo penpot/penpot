@@ -206,6 +206,7 @@
          :multiple true
          :ref "file-input"
          :value ""
+         :accept "image/jpeg,image/png"
          :type "file"
          :on-change on-file-selected}]])))
 

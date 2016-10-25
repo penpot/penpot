@@ -205,6 +205,7 @@
        :multiple true
        :ref "file-input"
        :value ""
+       :accept "image/svg+xml"
        :type "file"
        :on-change on-file-selected}]]))
 

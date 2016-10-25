@@ -81,6 +81,7 @@
          [:span.text "Upload file"]
          [:input.upload-image-input
           {:style {:display "none"}
+           :accept "image/jpeg,image/png"
            :type "file"
            :ref "input"
            :on-change on-files-selected}]]]
