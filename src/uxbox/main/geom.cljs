@@ -10,21 +10,6 @@
             [uxbox.util.math :as mth]
             [uxbox.main.state :as st]))
 
-;; --- Types
-
-(def +hierarchy+
-  (-> (make-hierarchy)
-      (derive ::rect ::shape)
-      (derive :icon ::rect)
-      (derive :rect ::rect)
-      (derive :circle ::shape)
-      (derive :text ::rect)
-      (derive :group ::rect)))
-
-(defn shape?
-  [type]
-  (isa? +hierarchy+ type ::shape))
-
 ;; --- Relative Movement
 
 (declare move-rect)
