@@ -8,8 +8,7 @@
 (ns uxbox.util.schema
   (:refer-clojure :exclude [keyword uuid vector boolean map set])
   (:require [struct.core :as st]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.main.geom :refer (shape?)]))
+            [uxbox.util.i18n :refer (tr)]))
 
 ;; (def datetime
 ;;   {:message "must be an instant"
@@ -64,11 +63,6 @@
   {:message "errors.form.color"
    :optional true
    :validate #(not (nil? (re-find #"^#[0-9A-Fa-f]{6}$" %)))})
-
-(def shape-type
-  {:message "should be shape"
-   :optional true
-   :validate #(shape? %)})
 
 (defn validate
   ([data schema]
