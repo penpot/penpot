@@ -155,14 +155,17 @@
 (mx/defc grid
   {:mixins [mx/static]}
   [selected coll]
-  (let [own? (= (:type coll) :own)]
+  (let [own? (= (:type coll) :own)
+        colors (->> (:data coll)
+                    (remove nil?)
+                    (sort-by identity))]
     [:div.dashboard-grid-content
      [:div.dashboard-grid-row
       (when own?
         [:div.grid-item.small-item.add-project
          {:on-click #(udl/open! :color-form {:coll coll})}
          [:span "+ New color"]])
-      (for [color (remove nil? (:data coll))
+      (for [color colors
             :let [selected? (contains? selected color)]]
         (-> (grid-item color selected?)
             (mx/with-key (str color))))]]))
@@ -185,53 +188,53 @@
 
 ;; --- Nav
 
-(mx/defc nav-collection
+(mx/defc nav-item
   {:mixins [mx/static]}
-  [collection selected?]
+  [coll selected?]
   (letfn [(on-click [event]
-            (let [type (:type collection)
-                  id (:id collection)]
+            (let [type (:type coll)
+                  id (:id coll)]
               (rs/emit! (dc/select-collection type id))))]
-    (let [colors (count (:data collection))]
+    (let [colors (count (:data coll))]
       [:li {:on-click on-click
             :class-name (when selected? "current")}
-       [:span.element-title (:name collection)]
+       [:span.element-title (:name coll)]
        [:span.element-subtitle
         (tr "ds.num-elements" (t/c colors))]])))
 
-(mx/defc nav-collections
+(mx/defc nav-section
   {:mixins [mx/static mx/reactive]}
   [type selected]
   (let [own? (= type :own)
         builtin? (= type :builtin)
-        collections (cond->> (mx/react collections-ref)
-                      own? (filter #(= :own (:type %)))
-                      builtin? (filter #(= :builtin (:type %)))
-                      own? (sort-by :id))]
+        colls (cond->> (mx/react collections-ref)
+                own? (filter #(= :own (:type %)))
+                builtin? (filter #(= :builtin (:type %)))
+                own? (sort-by :id))]
     [:ul.library-elements
      (when own?
        [:li
         [:a.btn-primary
          {:on-click #(rs/emit! (dc/create-collection))}
          "+ New library"]])
-     (for [coll collections
+     (for [coll colls
            :let [selected? (= (:id coll) selected)
                  key (str (:id coll))]]
-       (-> (nav-collection coll selected?)
+       (-> (nav-item coll selected?)
            (mx/with-key key)))]))
 
 (mx/defc nav
   {:mixins [mx/static mx/reactive]}
   []
   (let [dashboard (mx/react dashboard-ref)
-        collections (mx/react collections-ref)
+        colls (mx/react collections-ref)
         selected (:id dashboard)
         type (:type dashboard)
         own? (= type :own)
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
               (let [xf (filter #(= type (:type %)))
-                    colls (sequence xf collections)]
+                    colls (sequence xf colls)]
                 (if-let [item (first colls)]
                   (rs/emit! (dc/select-collection type (:id item)))
                   (rs/emit! (dc/select-collection type)))))]
@@ -244,7 +247,7 @@
          [:li {:class-name (when builtin? "current")
                :on-click (partial select-tab :builtin)}
           "COLORS STORE"]]
-        (nav-collections type selected)]])))
+        (nav-section type selected)]])))
 
 ;; --- Colors Page
 
