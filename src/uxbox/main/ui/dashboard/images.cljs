@@ -328,7 +328,7 @@
 
 (mx/defc content
   {:mixins [mx/static]}
-  [{:keys [type id selected] :as state} coll]
+  [{:keys [selected] :as state} coll]
   [:section.dashboard-grid.library
    (page-title coll)
    (grid state)
