@@ -109,6 +109,10 @@
   [el]
   (.-outerHTML el))
 
+(defn get-inner-text
+  [el]
+  (.-innerText el))
+
 (defn query
   [el query]
   (.querySelector el query))
