@@ -138,7 +138,7 @@
         (tr "ds.num-elements" (t/c num-images))]])))
 
 (mx/defc nav-section
-  {:mixins [mx/static mx/reactive]}
+  {:mixins [mx/static]}
   [type selected colls]
   (let [own? (= type :own)
         builtin? (= type :builtin)
@@ -166,14 +166,15 @@
   (let [own? (= type :own)
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
-              (let [xf (comp
-                        (map second)
-                        (filter #(= type (:type %))))
-                    colls (->> (into [] xf colls)
-                               (sort-by :name))]
-                (if-let [item (first colls)]
-                  (rs/emit! (di/select-collection type (:id item)))
-                  (rs/emit! (di/select-collection type)))))]
+              (if own?
+                (rs/emit! (di/select-collection type))
+                (let [coll (->> (map second colls)
+                                 (filter #(= type (:type %)))
+                                 (sort-by :name)
+                                 (first))]
+                  (if coll
+                    (rs/emit! (di/select-collection type (:id coll)))
+                    (rs/emit! (di/select-collection type))))))]
       [:div.library-bar
        [:div.library-bar-inside
         [:ul.library-tabs
