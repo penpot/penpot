@@ -304,7 +304,9 @@
                 :on-click toggle-selection
                 :checked selected?}]
        [:label {:for (:id image)}]]]
-     [:span (:name image)]]))
+     [:div.item-info
+      [:h3 (:name image)]
+      [:span.date "Uploaded at 12/11/2016"]]]))
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}

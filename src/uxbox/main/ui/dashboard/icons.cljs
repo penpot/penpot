@@ -304,7 +304,9 @@
       [:label {:for (:id icon)}]]
      [:span.grid-item-image
       (icon/icon-svg icon)]
-     [:h3 (:name icon)]
+     [:div.item-info
+      [:h3 (:name icon)]
+      [:span.date "Uploaded at 21/09/2016"]]
      #_[:div.project-th-actions
         [:div.project-th-icon.edit i/pencil]
         [:div.project-th-icon.delete i/trash]]]))

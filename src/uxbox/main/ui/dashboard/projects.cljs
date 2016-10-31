@@ -153,9 +153,10 @@
             (dom/stop-propagation event)
             (udl/open! :confirm {:on-accept delete}))]
     [:div.grid-item.project-th {:on-click on-navigate}
-     [:h3 (:name project)]
-     [:span.project-th-update
-      (str "Updated " (dt/timeago (:modified-at project)))]
+     [:div.item-info
+      [:h3 (:name project)]
+      [:span.date
+      (str "Updated " (dt/timeago (:modified-at project)))]]
      [:div.project-th-actions
       [:div.project-th-icon.pages
        i/page
@@ -163,7 +164,7 @@
       #_[:div.project-th-icon.comments
          i/chat
         [:span "0"]]
-      #_[:div.project-th-icon.edit
+      [:div.project-th-icon.edit
          i/pencil]
       [:div.project-th-icon.delete
        {:on-click on-delete}
