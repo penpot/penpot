@@ -153,6 +153,8 @@
             (dom/stop-propagation event)
             (udl/open! :confirm {:on-accept delete}))]
     [:div.grid-item.project-th {:on-click on-navigate}
+     [:div.grid-item-th
+      {:style {:background-image "url('/images/project-placeholder.svg')"}}]
      [:div.item-info
       [:h3 (:name project)]
       [:span.date

@@ -95,11 +95,9 @@
       flex-direction: column;
       flex-shrink: 0;
       height: 200px;
-      justify-content: center;
       margin: $medium $medium 0 $medium;
       max-width: 300px;
       min-width: 260px;
-      padding: $medium;
       position: relative;
       text-align: center;
       width: 18%;
@@ -107,6 +105,8 @@
       &.small-item {
         max-width: 12%;
         min-width: 190px;
+        padding: $medium;
+        justify-content: center;
       }
 
       .item-info {
@@ -253,22 +253,9 @@
       &.images-th {
         background-color: $color-white;
         border-bottom: 2px solid lighten($color-gray-light, 12%);
-        justify-content: flex-start;
-        padding: 0;
 
         &:hover {
           border-color: $main-ui-color;
-        }
-
-        .grid-item-th {
-          background-position: center;
-          background-size: cover;
-          border-top-left-radius: $br-medium;
-          border-top-right-radius: $br-medium;
-          height: 70%;
-          position: relative;
-          width: 100%;
-
         }
 
       }
@@ -319,6 +306,16 @@
     padding: $medium $medium $medium 250px;
   }
 
+}
+
+.grid-item-th {
+  background-position: center;
+  background-size: cover;
+  border-top-left-radius: $br-medium;
+  border-top-right-radius: $br-medium;
+  height: 70%;
+  position: relative;
+  width: 100%;
 }
 
 // MULTISELECT OPTIONS BAR
