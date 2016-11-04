@@ -312,6 +312,56 @@ ul.slider-dots {
 }
 
 // Input elements
+.input-element {
+  display: flex;
+  position: relative;
+  width: 100%;
+
+  &::after {
+    color: $soft-ui-text;
+    font-size: $fs12;
+    height: 20px;
+    position: absolute;
+    right: 3px;
+    top: 26%;
+    width: 20px;
+  }
+
+  // Input amounts
+
+  &.pixels {
+
+    &::after {
+      content: "px";
+    }
+
+  }
+
+  &.percentail {
+
+    &::after {
+      content: "%";
+    }
+
+  }
+
+  &.miliseconds {
+
+    &::after {
+      content: "ms";
+    }
+
+  }
+
+  &.degrees {
+
+    &::after {
+      content: "dg";
+    }
+
+  }
+
+}
 
 input,
 select {
@@ -355,6 +405,7 @@ input[type="checkbox"]:focus {
   box-shadow: none;
   outline: none;
   padding: $small $big $small $small;
+  position: relative;
 
   @include placeholder {
     transition: all .3s ease;
@@ -401,6 +452,7 @@ input[type="checkbox"]:focus {
   }
 
 }
+
 
 // Input radio
 

@@ -57,13 +57,6 @@
         [:div.color-info
          [:span (:fill shape "#000000")]]]
 
-       [:div.row-flex
-        [:input.input-text
-         {:placeholder "#"
-          :type "text"
-          :value (:fill shape "")
-          :on-change on-color-change}]]
-
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]
        [:div.row-flex

@@ -63,22 +63,24 @@
        [:form {:on-submit on-submit}
         [:span.lightbox-label "Grid size"]
         [:div.project-size
-         [:input#grid-x.input-text
-          {:placeholder "X px"
-           :type "number"
-           :class (forms/error-class errors :grid/x-axis)
-           :value (:grid/x-axis form "")
-           :on-change (partial on-field-change :grid/x-axis)
-           :min 1
-           :max 100}]
-         [:input#grid-y.input-text
-          {:placeholder "Y px"
-           :type "number"
-           :class (forms/error-class errors :grid/y-axis)
-           :value (:grid/y-axis form "")
-           :on-change (partial on-field-change :grid/y-axis)
-           :min 1
-           :max 100}]]
+         [:div.input-element.pixels
+          [:input#grid-x.input-text
+           {:placeholder "X"
+            :type "number"
+            :class (forms/error-class errors :grid/x-axis)
+            :value (:grid/x-axis form "")
+            :on-change (partial on-field-change :grid/x-axis)
+            :min 1
+            :max 100}]]
+         [:div.input-element.pixels
+          [:input#grid-y.input-text
+           {:placeholder "Y"
+            :type "number"
+            :class (forms/error-class errors :grid/y-axis)
+            :value (:grid/y-axis form "")
+            :on-change (partial on-field-change :grid/y-axis)
+            :min 1
+            :max 100}]]]
         [:span.lightbox-label "Grid color"]
         (uucp/colorpicker
          :value (:grid/color form)
