@@ -32,42 +32,27 @@
 ;; --- Initialize
 
 (declare fetch-collections)
+(declare persist-collections)
 (declare collections-fetched?)
-(declare conditional-fetch)
 
 (defrecord Initialize [type id]
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [type (or type :own)
-          data {:type type :id id :selected #{}}]
+          data {:type type
+                :id id
+                :selected #{}}]
       (-> state
           (assoc-in [:dashboard :colors] data)
           (assoc-in [:dashboard :section] :dashboard/colors))))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (conditional-fetch))))
+    (rx/of (fetch-collections))))
 
 (defn initialize
   [type id]
   (Initialize. type id))
-
-;; --- Conditional fetch of Color Collections
-
-(defrecord ConditionalFetch []
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (if (nil? (:color-colls-by-id state))
-      (rx/merge
-       (rx/of (fetch-collections))
-         (->> (rx/filter collections-fetched? s)
-              (rx/take 1)
-              (rx/ignore)))
-      (rx/empty))))
-
-(defn conditional-fetch
-  []
-  (ConditionalFetch.))
 
 ;; --- Select a Collection
 
@@ -86,85 +71,81 @@
 
 ;; --- Collections Fetched
 
-(defrecord CollectionFetched [items]
+(defrecord CollectionsFetched [data]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (reduce assoc-collection state items)))
+    (let [value (:value data)]
+      (-> state
+          (assoc-in [:kvstore :color-collections] data)
+          (update :color-colls-by-id merge value)))))
 
 (defn collections-fetched
-  [items]
-  (CollectionFetched. items))
+  [data]
+  {:pre [(map? data)]}
+  (CollectionsFetched. data))
 
 (defn collections-fetched?
   [v]
-  (instance? CollectionFetched v))
+  (instance? CollectionsFetched v))
 
 ;; --- Fetch Collections
 
 (defrecord FetchCollections []
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (->> (rp/req :fetch/color-collections)
+    (->> (rp/req :fetch/kvstore "color-collections")
          (rx/map :payload)
+         (rx/map (fn [payload]
+                   (if (nil? payload)
+                     {:key "color-collections"
+                      :value nil}
+                     payload)))
          (rx/map collections-fetched))))
 
 (defn fetch-collections
   []
   (FetchCollections.))
 
-;; --- Collection Created
-
-(defrecord CollectionCreated [item]
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (-> state
-        (assoc-collection item)
-        (assoc-in [:dashboard :colors :id] (:id item))
-        (assoc-in [:dashboard :colors :type] :own))))
-
-(defn collection-created
-  [item]
-  (CollectionCreated. item))
-
 ;; --- Create Collection
 
 (defrecord CreateCollection []
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [id (uuid/random)
+          item {:name "Unnamed collection"
+                :type :own
+                :id id}]
+      (-> state
+          (assoc-in [:color-colls-by-id id] item)
+          (assoc-in [:dashboard :colors :id] id)
+          (assoc-in [:dashboard :colors :type] :own))))
+
   rs/WatchEvent
-  (-apply-watch [_ state s]
-    (let [coll {:name "Unnamed collection"
-                :id (uuid/random)}]
-      (->> (rp/req :create/color-collection coll)
-           (rx/map :payload)
-           (rx/map collection-created)))))
+  (-apply-watch [_ state stream]
+    (rx/of (persist-collections))))
 
 (defn create-collection
   []
   (CreateCollection.))
 
-;; --- Collection Updated
+;; --- Persist Collections
 
-(defrecord CollectionUpdated [item]
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (assoc-collection state item)))
-
-(defn collection-updated
-  [item]
-  (CollectionUpdated. item))
-
-;; --- Update Collection
-
-(defrecord UpdateCollection [id]
+(defrecord PersistCollections []
   rs/WatchEvent
-  (-apply-watch [_ state s]
-    (let [item (get-in state [:color-colls-by-id id])]
-      (->> (rp/req :update/color-collection item)
-           (rx/map :payload)
-           (rx/map collection-updated)))))
+  (-apply-watch [_ state stream]
+    (let [builtin? #(= :builtin (:type %))
+          xf (remove (comp builtin? second))
 
-(defn update-collection
-  [id]
-  (UpdateCollection. id))
+          colls (get state :color-colls-by-id)
+          data (-> (get-in state [:kvstore :color-collections])
+                   (assoc :value (into {} xf colls)))]
+      (->> (rp/req :update/kvstore data)
+           (rx/map :payload)
+           (rx/map collections-fetched)))))
+
+(defn persist-collections
+  []
+  (PersistCollections.))
 
 ;; --- Rename Collection
 
@@ -175,7 +156,7 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (update-collection id))))
+    (rx/of (persist-collections))))
 
 (defn rename-collection
   [item name]
@@ -186,12 +167,11 @@
 (defrecord DeleteCollection [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (dissoc-collection state id))
+    (update state :color-colls-by-id dissoc id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (->> (rp/req :delete/color-collection id)
-         (rx/ignore))))
+    (rx/of (persist-collections))))
 
 (defn delete-collection
   [id]
@@ -207,11 +187,12 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (update-collection id))))
+    (rx/of (persist-collections))))
 
 (defn replace-color
   "Add or replace color in a collection."
   [{:keys [id from to] :as params}]
+  (println "replace-color" params)
   (ReplaceColor. id from to))
 
 ;; --- Remove Color
@@ -224,7 +205,7 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (update-collection id))))
+    (rx/of (persist-collections))))
 
 (defn remove-colors
   "Remove color in a collection."
@@ -256,6 +237,43 @@
   [color]
   {:pre [(color/hex? color)]}
   (ToggleColorSelection. color))
+
+;; --- Copy Selected Icon
+
+(defrecord CopySelected [id]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [selected (get-in state [:dashboard :colors :selected])]
+      (update-in state [:color-colls-by-id id :data] set/union selected)))
+
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (rx/of (persist-collections))))
+
+(defn copy-selected
+  [id]
+  {:pre [(or (uuid? id) (nil? id))]}
+  (CopySelected. id))
+
+;; --- Move Selected Icon
+
+(defrecord MoveSelected [from to]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (let [selected (get-in state [:dashboard :colors :selected])]
+      (-> state
+          (update-in [:color-colls-by-id from :data] set/difference selected)
+          (update-in [:color-colls-by-id to :data] set/union selected))))
+
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (rx/of (persist-collections))))
+
+(defn move-selected
+  [from to]
+  {:pre [(or (uuid? from) (nil? from))
+         (or (uuid? to) (nil? to))]}
+  (MoveSelected. from to))
 
 ;; --- Delete Selected Colors
 

@@ -13,7 +13,7 @@
             [uxbox.main.repo.pages]
             [uxbox.main.repo.images]
             [uxbox.main.repo.icons]
-            [uxbox.main.repo.colors]
+            [uxbox.main.repo.kvstore]
             [uxbox.main.repo.impl :as impl]))
 
 (defn req

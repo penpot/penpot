@@ -76,7 +76,7 @@
 
 (defn- colorpalette-will-mount
   [own]
-  (rs/emit! (dc/conditional-fetch))
+  (rs/emit! (dc/fetch-collections))
   own)
 
 (mx/defc colorpalette
