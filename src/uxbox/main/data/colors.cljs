@@ -15,20 +15,6 @@
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]))
 
-;; --- Helpers
-
-(defn- assoc-collection
-  [state coll]
-  (let [id (:id coll)
-        coll (assoc coll :type :own)]
-    (assoc-in state [:color-colls-by-id id] coll)))
-
-(defn- dissoc-collection
-  "A reduce function for dissoc the color collection
-  to the state map."
-  [state id]
-  (update state :color-colls-by-id dissoc id))
-
 ;; --- Initialize
 
 (declare fetch-collections)
