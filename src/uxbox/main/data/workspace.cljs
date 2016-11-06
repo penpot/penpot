@@ -3,7 +3,6 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.data.workspace
   (:require [beicon.core :as rx]
@@ -14,11 +13,11 @@
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.workers :as uw]
             [uxbox.main.state :as st]
-            [uxbox.main.state.shapes :as stsh]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.shapes :as uds]
+            [uxbox.main.data.shapes-impl :as shimpl]
             [uxbox.main.data.forms :as udf]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.history :as udh]
@@ -158,7 +157,7 @@
                      (->> (:clipboard state)
                           (filter #(= id (:id %)))
                           (first)))]
-      (stsh/duplicate-shapes state (:items selected) page))))
+      (shimpl/duplicate-shapes state (:items selected) page))))
 
 (defn paste-from-clipboard
   "Copy selected shapes to clipboard."

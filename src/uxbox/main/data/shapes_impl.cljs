@@ -1,5 +1,10 @@
-(ns uxbox.main.state.shapes
-  "A collection of functions for manage shapes insinde the state."
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+
+(ns uxbox.main.data.shapes-impl
   (:require [uxbox.util.uuid :as uuid]
             [uxbox.util.data :refer (index-of)]
             [uxbox.main.geom :as geom]))
@@ -372,3 +377,4 @@
       (as-> state $
         (empty-groups $ page groups-ids)
         (update $ :workspace assoc :selected (set groups-items))))))
+

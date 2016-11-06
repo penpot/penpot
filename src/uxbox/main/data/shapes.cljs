@@ -8,20 +8,18 @@
 (ns uxbox.main.data.shapes
   (:require [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
-            [uxbox.main.constants :as c]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
             [uxbox.util.schema :as sc]
-            [uxbox.main.geom :as geom]
-            [uxbox.util.geom.point :as gpt]
             [uxbox.util.workers :as uw]
+            [uxbox.main.constants :as c]
+            [uxbox.main.geom :as geom]
             [uxbox.main.state :as st]
-            [uxbox.main.state.shapes :as stsh]
             [uxbox.main.data.core :refer (worker)]
+            [uxbox.main.data.shapes-impl :as impl]
             [uxbox.main.data.pages :as udp]
             [uxbox.util.rlocks :as rlocks]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.data :refer (index-of)]))
+            [uxbox.util.geom.point :as gpt]))
 
 ;; --- Shapes CRUD
 
@@ -34,7 +32,7 @@
     (-apply-update [_ state]
       (let [page (get-in state [:workspace :page])
             shape (geom/setup-proportions shape)]
-        (stsh/assoc-shape-to-page state shape page)))))
+        (impl/assoc-shape-to-page state shape page)))))
 
 (defn delete-shape
   "Remove the shape using its id."
@@ -44,7 +42,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [shape (get-in state [:shapes-by-id id])]
-        (stsh/dissoc-shape state shape)))))
+        (impl/dissoc-shape state shape)))))
 
 (defn update-shape
   "Just updates in place the shape."
@@ -369,7 +367,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (stsh/drop-shape state sid tid loc))))
+      (impl/drop-shape state sid tid loc))))
 
 (defn select-first-shape
   "Mark a shape selected for drawing in the canvas."
@@ -399,7 +397,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [page (get-in state [:workspace :page])
-          shapes (stsh/match-by-selrect state page selrect)]
+          shapes (impl/match-by-selrect state page selrect)]
       (assoc-in state [:workspace :selected] shapes))))
 
 (defn select-shapes
@@ -511,7 +509,7 @@
     (-apply-update [_ state]
       (let [pid (get-in state [:workspace :page])
             selected (get-in state [:workspace :selected])]
-        (stsh/group-shapes state selected pid)))))
+        (impl/group-shapes state selected pid)))))
 
 (defn degroup-selected
   []
@@ -521,7 +519,7 @@
     (-apply-update [_ state]
       (let [pid (get-in state [:workspace :page])
             selected (get-in state [:workspace :selected])]
-        (stsh/degroup-shapes state selected pid)))))
+        (impl/degroup-shapes state selected pid)))))
 
 ;; TODO: maybe split in two separate events
 (defn duplicate-selected
@@ -531,7 +529,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [selected (get-in state [:workspace :selected])]
-        (stsh/duplicate-shapes state selected)))))
+        (impl/duplicate-shapes state selected)))))
 
 (defn delete-selected
   "Deselect all and remove all selected shapes."
@@ -590,7 +588,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [selected (get-in state [:workspace :selected])]
-        (stsh/move-layer state selected loc)))))
+        (impl/move-layer state selected loc)))))
 
 ;; --- Point Alignment (with Grid)
 
