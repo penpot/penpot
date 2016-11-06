@@ -43,7 +43,8 @@
   [own {:keys [id] :as coll}]
   (let [local (:rum/local own)
         dashboard (mx/react dashboard-ref)
-        own? (= :builtin (:type coll))
+        own? (= :own (:type coll))
+        editable? (or own? (nil? id))
         edit? (:edit @local)]
     (letfn [(save []
               (let [dom (mx/ref-node own "input")
@@ -74,10 +75,13 @@
              :on-key-down on-input-keydown}
             (:name coll)]
            [:span.close {:on-click cancel} i/close]]
-          [:span.dashboard-title-field
-           {:on-double-click edit}
-           (:name coll "Storage")])]
-       (if (and (not own?) coll)
+          (if own?
+            [:span.dashboard-title-field
+             {:on-double-click edit}
+             (:name coll)]
+            [:span.dashboard-title-field
+             (:name coll "Storage")]))]
+       (if (and own? coll)
          [:div.edition
           (if edit?
             [:span {:on-click save} i/save]
@@ -92,7 +96,7 @@
   (letfn [(on-click [event]
             (let [type (or type :own)]
               (rs/emit! (dc/select-collection type id))))]
-    (let [colors (count (:data coll))]
+    (let [colors (count (:colors coll))]
       [:li {:on-click on-click
             :class-name (when selected? "current")}
        [:span.element-title
@@ -101,7 +105,7 @@
         (tr "ds.num-elements" (t/c colors))]])))
 
 (def ^:private storage-num-colors-ref
-  (-> (comp (l/in [:color-colls-by-id nil :data])
+  (-> (comp (l/in [:color-colls-by-id nil :colors])
             (l/lens count))
       (l/derive st/state)))
 
@@ -123,7 +127,8 @@
         colls (cond->> (vals colls)
                 own? (filter #(= :own (:type %)))
                 builtin? (filter #(= :builtin (:type %)))
-                own? (sort-by :id))]
+                own? (sort-by :created-at)
+                builtin? (sort-by :created-at))]
     [:ul.library-elements
      (when own?
        [:li
@@ -144,11 +149,11 @@
   (let [own? (= type :own)
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
-              (if own?
+              (if (= type :own)
                 (rs/emit! (dc/select-collection type))
                 (let [coll (->> (map second colls)
                                  (filter #(= type (:type %)))
-                                 (sort-by :name)
+                                 (sort-by :created-at)
                                  (first))]
                   (if coll
                     (rs/emit! (dc/select-collection type (:id coll)))
@@ -278,9 +283,9 @@
 
 (mx/defc grid
   {:mixins [mx/static]}
-  [{:keys [id type data] :as coll} selected]
+  [{:keys [id type colors] :as coll} selected]
   (let [editable? (or (= :own type) (nil? id))
-        colors (->> (remove nil? data)
+        colors (->> (remove nil? colors)
                     (sort-by identity))]
     [:div.dashboard-grid-content
      [:div.dashboard-grid-row

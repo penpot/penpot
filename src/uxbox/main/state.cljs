@@ -3,11 +3,11 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.state
   (:require [beicon.core :as rx]
             [lentes.core :as l]
+            [uxbox.main.state.colors :as colors]
             [uxbox.util.rstore :as rs]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.storage :refer (storage)]))
@@ -38,8 +38,7 @@
    :icon-colls-by-id nil
    :icons-by-id nil
    :shapes-by-id nil
-   :elements-by-id nil
-   :colors-by-id nil
+   :color-colls-by-id colors/collections
    :projects-by-id nil
    :pages-by-id nil})
 

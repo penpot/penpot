@@ -8,6 +8,7 @@
 (ns uxbox.main.data.colors
   (:require [clojure.set :as set]
             [beicon.core :as rx]
+            [uxbox.util.datetime :as dt]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
@@ -60,10 +61,9 @@
 (defrecord CollectionsFetched [data]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [value (:value data)]
-      (-> state
-          (assoc-in [:kvstore :color-collections] data)
-          (update :color-colls-by-id merge value)))))
+    (-> state
+        (assoc-in [:kvstore :color-collections] data)
+        (update :color-colls-by-id merge (:value data)))))
 
 (defn collections-fetched
   [data]
@@ -94,25 +94,25 @@
 
 ;; --- Create Collection
 
-(defrecord CreateCollection []
+(defrecord CreateCollection [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [id (uuid/random)
-          item {:name "Unnamed collection"
+    (let [item {:name "Unnamed collection"
+                :id id
+                :created-at (dt/now)
                 :type :own
-                :id id}]
-      (-> state
-          (assoc-in [:color-colls-by-id id] item)
-          (assoc-in [:dashboard :colors :id] id)
-          (assoc-in [:dashboard :colors :type] :own))))
+                :colors #{}}]
+      (assoc-in state [:color-colls-by-id id] item)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (rx/of (persist-collections))))
+    (rx/of (persist-collections)
+           (select-collection :own id))))
 
 (defn create-collection
   []
-  (CreateCollection.))
+  (let [id (uuid/random)]
+    (CreateCollection. id)))
 
 ;; --- Persist Collections
 
@@ -120,12 +120,12 @@
   rs/WatchEvent
   (-apply-watch [_ state stream]
     (let [builtin? #(= :builtin (:type %))
-          xf (remove (comp builtin? second))
-
-          colls (get state :color-colls-by-id)
-          data (-> (get-in state [:kvstore :color-collections])
-                   (assoc :value (into {} xf colls)))]
-      (->> (rp/req :update/kvstore data)
+          xform (remove (comp builtin? second))
+          value (->> (get state :color-colls-by-id)
+                     (into {} xform))
+          store (get-in state [:kvstore :color-collections])
+          store (assoc store :value value)]
+      (->> (rp/req :update/kvstore store)
            (rx/map :payload)
            (rx/map collections-fetched)))))
 
@@ -157,7 +157,9 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (persist-collections))))
+    (let [type (get-in state [:dashboard :colors :type])]
+      (rx/of (persist-collections)
+             (select-collection type)))))
 
 (defn delete-collection
   [id]
@@ -169,7 +171,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [replacer #(-> (disj % from) (conj to))]
-      (update-in state [:color-colls-by-id id :data] (fnil replacer #{}))))
+      (update-in state [:color-colls-by-id id :colors] (fnil replacer #{}))))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -178,7 +180,6 @@
 (defn replace-color
   "Add or replace color in a collection."
   [{:keys [id from to] :as params}]
-  (println "replace-color" params)
   (ReplaceColor. id from to))
 
 ;; --- Remove Color
@@ -186,7 +187,7 @@
 (defrecord RemoveColors [id colors]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:color-colls-by-id id :data]
+    (update-in state [:color-colls-by-id id :colors]
                #(set/difference % colors)))
 
   rs/WatchEvent
@@ -230,7 +231,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [selected (get-in state [:dashboard :colors :selected])]
-      (update-in state [:color-colls-by-id id :data] set/union selected)))
+      (update-in state [:color-colls-by-id id :colors] set/union selected)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
@@ -248,8 +249,8 @@
   (-apply-update [_ state]
     (let [selected (get-in state [:dashboard :colors :selected])]
       (-> state
-          (update-in [:color-colls-by-id from :data] set/difference selected)
-          (update-in [:color-colls-by-id to :data] set/union selected))))
+          (update-in [:color-colls-by-id from :colors] set/difference selected)
+          (update-in [:color-colls-by-id to :colors] set/union selected))))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
