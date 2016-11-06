@@ -3,7 +3,6 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.data.colors
   (:require [clojure.set :as set]
@@ -61,9 +60,10 @@
 (defrecord CollectionsFetched [data]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (-> state
-        (assoc-in [:kvstore :color-collections] data)
-        (update :color-colls-by-id merge (:value data)))))
+    (let [{:keys [version value]} data]
+      (-> state
+          (update :color-collections merge value)
+          (assoc ::version version)))))
 
 (defn collections-fetched
   [data]
@@ -81,11 +81,6 @@
   (-apply-watch [_ state s]
     (->> (rp/req :fetch/kvstore "color-collections")
          (rx/map :payload)
-         (rx/map (fn [payload]
-                   (if (nil? payload)
-                     {:key "color-collections"
-                      :value nil}
-                     payload)))
          (rx/map collections-fetched))))
 
 (defn fetch-collections
@@ -102,7 +97,7 @@
                 :created-at (dt/now)
                 :type :own
                 :colors #{}}]
-      (assoc-in state [:color-colls-by-id id] item)))
+      (assoc-in state [:color-collections id] item)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
@@ -121,10 +116,12 @@
   (-apply-watch [_ state stream]
     (let [builtin? #(= :builtin (:type %))
           xform (remove (comp builtin? second))
-          value (->> (get state :color-colls-by-id)
+          version (get state ::version)
+          value (->> (get state :color-collections)
                      (into {} xform))
-          store (get-in state [:kvstore :color-collections])
-          store (assoc store :value value)]
+          store {:key "color-collections"
+                 :version version
+                 :value value}]
       (->> (rp/req :update/kvstore store)
            (rx/map :payload)
            (rx/map collections-fetched)))))
@@ -138,7 +135,7 @@
 (defrecord RenameCollection [id name]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:color-colls-by-id id :name] name))
+    (assoc-in state [:color-collections id :name] name))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -153,7 +150,7 @@
 (defrecord DeleteCollection [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update state :color-colls-by-id dissoc id))
+    (update state :color-collections dissoc id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -171,7 +168,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [replacer #(-> (disj % from) (conj to))]
-      (update-in state [:color-colls-by-id id :colors] (fnil replacer #{}))))
+      (update-in state [:color-collections id :colors] (fnil replacer #{}))))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -187,7 +184,7 @@
 (defrecord RemoveColors [id colors]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:color-colls-by-id id :colors]
+    (update-in state [:color-collections id :colors]
                #(set/difference % colors)))
 
   rs/WatchEvent
@@ -231,7 +228,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [selected (get-in state [:dashboard :colors :selected])]
-      (update-in state [:color-colls-by-id id :colors] set/union selected)))
+      (update-in state [:color-collections id :colors] set/union selected)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
@@ -249,8 +246,8 @@
   (-apply-update [_ state]
     (let [selected (get-in state [:dashboard :colors :selected])]
       (-> state
-          (update-in [:color-colls-by-id from :colors] set/difference selected)
-          (update-in [:color-colls-by-id to :colors] set/union selected))))
+          (update-in [:color-collections from :colors] set/difference selected)
+          (update-in [:color-collections to :colors] set/union selected))))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]

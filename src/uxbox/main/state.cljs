@@ -38,7 +38,7 @@
    :icon-colls-by-id nil
    :icons-by-id nil
    :shapes-by-id nil
-   :color-colls-by-id colors/collections
+   :color-collections colors/collections
    :projects-by-id nil
    :pages-by-id nil})
 

@@ -15,11 +15,14 @@
   [_ id]
   (let [url (str url "/kvstore/" id)
         params {:url url :method :get}]
-    (send! params)))
+    (->> (send! params)
+         (rx/map (fn [{:keys [payload] :as response}]
+                   (if (nil? payload)
+                     (assoc response :payload {:key id :value nil :version nil})
+                     response))))))
 
 (defmethod request :update/kvstore
   [_ data]
-  (println ":update/kvstore" data)
   (let [url (str url "/kvstore")
         params {:url url :method :put :body data}]
     (send! params)))

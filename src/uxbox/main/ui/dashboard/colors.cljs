@@ -33,7 +33,7 @@
       (l/derive st/state)))
 
 (def collections-ref
-  (-> (l/key :color-colls-by-id)
+  (-> (l/key :color-collections)
       (l/derive st/state)))
 
 ;; --- Page Title
@@ -105,7 +105,7 @@
         (tr "ds.num-elements" (t/c colors))]])))
 
 (def ^:private storage-num-colors-ref
-  (-> (comp (l/in [:color-colls-by-id nil :colors])
+  (-> (comp (l/in [:color-collections nil :colors])
             (l/lens count))
       (l/derive st/state)))
 
