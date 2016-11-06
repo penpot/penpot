@@ -56,7 +56,7 @@
       (l/derive st/state)))
 
 (def ^:private collections-ref
-  (-> (l/key :icon-collections)
+  (-> (l/key :icons-collections)
       (l/derive st/state)))
 
 (def ^:private icons-ref

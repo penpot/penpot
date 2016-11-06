@@ -63,7 +63,7 @@
     (reduce (fn [state item]
               (let [id (:id item)
                     item (assoc item :type :own)]
-                (assoc-in state [:image-collections id] item)))
+                (assoc-in state [:images-collections id] item)))
             state
             items)))
 
@@ -90,7 +90,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [{:keys [id] :as item} (assoc item :type :own)]
-      (update state :image-collections assoc id item)))
+      (update state :images-collections assoc id item)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
@@ -124,7 +124,7 @@
 (defrecord CollectionUpdated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:image-collections (:id item)]  merge item)))
+    (update-in state [:images-collections (:id item)]  merge item)))
 
 (defn collection-updated
   [item]
@@ -135,7 +135,7 @@
 (defrecord UpdateCollection [id]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [item (get-in state [:image-collections id])]
+    (let [item (get-in state [:images-collections id])]
       (->> (rp/req :update/image-collection item)
            (rx/map :payload)
            (rx/map collection-updated)))))
@@ -149,7 +149,7 @@
 (defrecord RenameCollection [id name]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:image-collections id :name] name))
+    (assoc-in state [:images-collections id :name] name))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -164,7 +164,7 @@
 (defrecord DeleteCollection [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update state :image-collections dissoc id))
+    (update state :images-collections dissoc id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]

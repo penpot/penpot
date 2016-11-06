@@ -62,7 +62,7 @@
   (-apply-update [_ state]
     (let [{:keys [version value]} data]
       (-> state
-          (update :color-collections merge value)
+          (update :colors-collections merge value)
           (assoc ::version version)))))
 
 (defn collections-fetched
@@ -97,7 +97,7 @@
                 :created-at (dt/now)
                 :type :own
                 :colors #{}}]
-      (assoc-in state [:color-collections id] item)))
+      (assoc-in state [:colors-collections id] item)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
@@ -117,7 +117,7 @@
     (let [builtin? #(= :builtin (:type %))
           xform (remove (comp builtin? second))
           version (get state ::version)
-          value (->> (get state :color-collections)
+          value (->> (get state :colors-collections)
                      (into {} xform))
           store {:key "color-collections"
                  :version version
@@ -135,7 +135,7 @@
 (defrecord RenameCollection [id name]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:color-collections id :name] name))
+    (assoc-in state [:colors-collections id :name] name))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -150,7 +150,7 @@
 (defrecord DeleteCollection [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update state :color-collections dissoc id))
+    (update state :colors-collections dissoc id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -168,7 +168,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [replacer #(-> (disj % from) (conj to))]
-      (update-in state [:color-collections id :colors] (fnil replacer #{}))))
+      (update-in state [:colors-collections id :colors] (fnil replacer #{}))))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -184,7 +184,7 @@
 (defrecord RemoveColors [id colors]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:color-collections id :colors]
+    (update-in state [:colors-collections id :colors]
                #(set/difference % colors)))
 
   rs/WatchEvent
@@ -228,7 +228,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [selected (get-in state [:dashboard :colors :selected])]
-      (update-in state [:color-collections id :colors] set/union selected)))
+      (update-in state [:colors-collections id :colors] set/union selected)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
@@ -246,8 +246,8 @@
   (-apply-update [_ state]
     (let [selected (get-in state [:dashboard :colors :selected])]
       (-> state
-          (update-in [:color-collections from :colors] set/difference selected)
-          (update-in [:color-collections to :colors] set/union selected))))
+          (update-in [:colors-collections from :colors] set/difference selected)
+          (update-in [:colors-collections to :colors] set/union selected))))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]

@@ -33,11 +33,11 @@
    :undo {}
    :profile nil
    :workspace nil
-   :image-collections nil
-   :color-collections colors/collections
-   :icon-collections nil
+   :images-collections nil
    :images nil
+   :icons-collections nil
    :icons nil
+   :colors-collections colors/collections
    :shapes nil
    :projects nil
    :pages nil})

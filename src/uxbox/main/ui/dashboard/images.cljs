@@ -52,7 +52,7 @@
       (l/derive st/state)))
 
 (def ^:private collections-ref
-  (-> (l/key :image-collections)
+  (-> (l/key :images-collections)
       (l/derive st/state)))
 
 (def ^:private images-ref
