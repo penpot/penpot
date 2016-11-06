@@ -41,7 +41,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id id])]
+      (let [shape (get-in state [:shapes id])]
         (impl/dissoc-shape state shape)))))
 
 (defn update-shape
@@ -51,7 +51,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id id] merge shape))))
+      (update-in state [:shapes id] merge shape))))
 
 ;; --- Shape Transformations
 
@@ -62,8 +62,8 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id sid])]
-        (update-in state [:shapes-by-id sid] geom/move delta)))))
+      (let [shape (get-in state [:shapes sid])]
+        (update-in state [:shapes sid] geom/move delta)))))
 
 (declare align-point)
 
@@ -76,7 +76,7 @@
   (reify
     rs/WatchEvent
     (-apply-watch [_ state s]
-      (let [shape (get-in state [:shapes-by-id id])
+      (let [shape (get-in state [:shapes id])
             shape (geom/outer-rect state shape)
             point (gpt/point (:x shape) (:y shape))
             point (gpt/add point canvas-coords)]
@@ -90,10 +90,10 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [shape (get-in state [:shapes-by-id sid])
+      (let [shape (get-in state [:shapes sid])
             props (select-keys opts [:x1 :y1 :x2 :y2])
             props' (select-keys shape [:x1 :y1 :x2 :y2])]
-        (update-in state [:shapes-by-id sid] geom/setup
+        (update-in state [:shapes sid] geom/setup
                    (merge props' props))))))
 
 (defn update-rotation
@@ -105,7 +105,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid]
+      (update-in state [:shapes sid]
                  geom/rotate rotation))))
 
 (defn update-size
@@ -118,7 +118,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid] geom/resize-dim opts))))
+      (update-in state [:shapes sid] geom/resize-dim opts))))
 
 (defn update-vertex-position
   [id {:keys [vid delta]}]
@@ -126,14 +126,14 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id id] geom/move-vertex vid delta))))
+      (update-in state [:shapes id] geom/move-vertex vid delta))))
 
 (defn initial-vertext-align
   [id vid]
   (reify
     rs/WatchEvent
     (-apply-watch [_ state s]
-      (let [shape (get-in state [:shapes-by-id id])
+      (let [shape (get-in state [:shapes id])
             point (geom/get-vertex-point shape vid)
             point (gpt/add point canvas-coords)]
         (->> (align-point point)
@@ -146,7 +146,7 @@
   (reify
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid] geom/absolute-move opts))))
+      (update-in state [:shapes sid] geom/absolute-move opts))))
 
 (defn update-text
   [sid {:keys [content]}]
@@ -155,7 +155,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:shapes-by-id sid :content] content))))
+      (assoc-in state [:shapes sid :content] content))))
 
 (defn update-fill-attrs
   [sid {:keys [color opacity] :as opts}]
@@ -163,7 +163,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid]
+      (update-in state [:shapes sid]
                  merge
                  (when color {:fill color})
                  (when opacity {:fill-opacity opacity})))))
@@ -175,7 +175,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid :font]
+      (update-in state [:shapes sid :font]
                  merge
                  (when line-height {:line-height line-height})
                  (when letter-spacing {:letter-spacing letter-spacing})
@@ -191,7 +191,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid]
+      (update-in state [:shapes sid]
                  merge
                  (when type {:stroke-type type})
                  (when width {:stroke-width width})
@@ -204,7 +204,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid]
+      (update-in state [:shapes sid]
                  merge
                  (when rx {:rx rx})
                  (when ry {:ry ry})))))
@@ -221,11 +221,11 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (let [[width height] (-> (get-in state [:shapes-by-id sid])
+      (let [[width height] (-> (get-in state [:shapes sid])
                                (geom/size)
                                (keep [:width :height]))
             proportion (/ width height)]
-        (update-in state [:shapes-by-id sid] assoc
+        (update-in state [:shapes sid] assoc
                    :proportion proportion
                    :proportion-lock true)))))
 
@@ -236,7 +236,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id sid] assoc
+      (update-in state [:shapes sid] assoc
                  :proportion-lock false))))
 
 ;; --- Group Collapsing
@@ -248,7 +248,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id id] assoc :collapsed true))))
+      (update-in state [:shapes id] assoc :collapsed true))))
 
 (defn uncollapse-shape
   [id]
@@ -257,7 +257,7 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (update-in state [:shapes-by-id id] assoc :collapsed false))))
+      (update-in state [:shapes id] assoc :collapsed false))))
 
 ;; --- Shape Visibility
 
@@ -267,11 +267,11 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:shapes-by-id sid :hidden] true))
+      (assoc-in state [:shapes sid :hidden] true))
 
     rs/WatchEvent
     (-apply-watch [_ state s]
-      (let [shape (get-in state [:shapes-by-id sid])]
+      (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
@@ -283,11 +283,11 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:shapes-by-id sid :hidden] false))
+      (assoc-in state [:shapes sid :hidden] false))
 
     rs/WatchEvent
     (-apply-watch [_ state s]
-      (let [shape (get-in state [:shapes-by-id sid])]
+      (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
@@ -299,11 +299,11 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:shapes-by-id sid :blocked] true))
+      (assoc-in state [:shapes sid :blocked] true))
 
     rs/WatchEvent
     (-apply-watch [_ state s]
-      (let [shape (get-in state [:shapes-by-id sid])]
+      (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
@@ -315,11 +315,11 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:shapes-by-id sid :blocked] false))
+      (assoc-in state [:shapes sid :blocked] false))
 
     rs/WatchEvent
     (-apply-watch [_ state s]
-      (let [shape (get-in state [:shapes-by-id sid])]
+      (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
@@ -331,11 +331,11 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:shapes-by-id sid :locked] true))
+      (assoc-in state [:shapes sid :locked] true))
 
     rs/WatchEvent
     (-apply-watch [_ state s]
-      (let [shape (get-in state [:shapes-by-id sid])]
+      (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
@@ -347,11 +347,11 @@
     udp/IPageUpdate
     rs/UpdateEvent
     (-apply-update [_ state]
-      (assoc-in state [:shapes-by-id sid :locked] false))
+      (assoc-in state [:shapes sid :locked] false))
 
     rs/WatchEvent
     (-apply-watch [_ state s]
-      (let [shape (get-in state [:shapes-by-id sid])]
+      (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
           (rx/from-coll
@@ -376,7 +376,7 @@
     rs/UpdateEvent
     (-apply-update [_ state]
       (let [page (get-in state [:workspace :page])
-            id (first (get-in state [:pages-by-id page :shapes]))]
+            id (first (get-in state [:pages page :shapes]))]
         (assoc-in state [:workspace :selected] #{id})))))
 
 (defn select-shape
@@ -414,7 +414,7 @@
     (let [id (or (:id interaction)
                  (uuid/random))
           data (assoc interaction :id id)]
-      (assoc-in state [:shapes-by-id shape :interactions id] data))))
+      (assoc-in state [:shapes shape :interactions id] data))))
 
 (defn update-interaction
   [shape interaction]
@@ -426,7 +426,7 @@
   udp/IPageUpdate
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:shapes-by-id shape :interactions] dissoc id)))
+    (update-in state [:shapes shape :interactions] dissoc id)))
 
 (defn delete-interaction
   [shape id]
@@ -438,7 +438,7 @@
 (defrecord UpdatePath [id index delta]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:shapes-by-id id :points index] gpt/add delta)))
+    (update-in state [:shapes id :points index] gpt/add delta)))
 
 (defn update-path
   "Update a concrete point in the path shape."
@@ -449,7 +449,7 @@
 (defrecord InitialPathPointAlign [id index]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [shape (get-in state [:shapes-by-id id])
+    (let [shape (get-in state [:shapes id])
           point (get-in shape [:points index])
           point (gpt/add point canvas-coords)]
       (->> (align-point point)

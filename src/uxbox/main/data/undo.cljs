@@ -62,7 +62,7 @@
   rs/WatchEvent
   (-apply-watch [_ state stream]
     (let [initialized? (get-in state [:undo id])
-          page-loaded? (get-in state [:pages-by-id id])]
+          page-loaded? (get-in state [:pages id])]
       (cond
         (and page-loaded? initialized?)
         (rx/empty)
@@ -93,7 +93,7 @@
       (if (>= selected (dec (count stack)))
         state
         (let [pointer (inc selected)
-              page (get-in state [:pages-by-id page-id])
+              page (get-in state [:pages page-id])
               data (nth stack pointer)
               packed (assoc page :data data)]
 
@@ -127,7 +127,7 @@
         state
         (let [pointer (dec selected)
               data (nth stack pointer)
-              page (get-in state [:pages-by-id page-id])
+              page (get-in state [:pages page-id])
               packed (assoc page :data data)]
 
           ;; (println "Redo: pointer=" pointer)

@@ -115,7 +115,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [item (get-in state [:workspace :history :by-version version])
-          page (get-in state [:pages-by-id (:page item)])
+          page (get-in state [:pages (:page item)])
           page (assoc page
                       :history true
                       :data (:data item))]
@@ -133,7 +133,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (-> state
-        (update-in [:pages-by-id id] dissoc :history)
+        (update-in [:pages id] dissoc :history)
         (assoc-in [:workspace :history :selected] nil)))
 
   rs/WatchEvent

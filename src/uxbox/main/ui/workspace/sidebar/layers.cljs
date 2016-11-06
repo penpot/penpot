@@ -28,7 +28,7 @@
 
 (defn- focus-page
   [id]
-  (-> (l/in [:pages-by-id id])
+  (-> (l/in [:pages id])
       (l/derive st/state)))
 
 (defn- select-shape

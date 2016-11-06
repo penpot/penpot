@@ -39,12 +39,12 @@
     :path (path-shape s)
     :circle (circle-shape s)
     :image (let [image-id (:image s)
-                 image (get-in @*state* [:images-by-id image-id])]
+                 image (get-in @*state* [:images image-id])]
              (image-shape (assoc s :image image)))))
 
 (mx/defc shape
   [sid]
-  (shape* (get-in @*state* [:shapes-by-id sid])))
+  (shape* (get-in @*state* [:shapes sid])))
 
 (mx/defc page-svg
   [{:keys [width height] :as page}]
@@ -60,5 +60,5 @@
 
 (defn render-page
   [id]
-  (let [page (get-in @st/state [:pages-by-id id])]
+  (let [page (get-in @st/state [:pages id])]
     (mx/render-static-html (page-svg page))))

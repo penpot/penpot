@@ -76,5 +76,5 @@
 
 (mx/defc shape
   [sid]
-  (let [item (get-in @st/state [:shapes-by-id sid])]
+  (let [item (get-in @st/state [:shapes sid])]
     (interactions-wrapper item shape*)))

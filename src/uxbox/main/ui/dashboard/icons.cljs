@@ -56,11 +56,11 @@
       (l/derive st/state)))
 
 (def ^:private collections-ref
-  (-> (l/key :icon-colls-by-id)
+  (-> (l/key :icon-collections)
       (l/derive st/state)))
 
 (def ^:private icons-ref
-  (-> (l/key :icons-by-id)
+  (-> (l/key :icons)
       (l/derive st/state)))
 
 ;; (defn- focus-collection

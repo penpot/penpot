@@ -63,7 +63,7 @@
     (reduce (fn [state item]
               (let [id (:id item)
                     item (assoc item :type :own)]
-                (assoc-in state [:image-colls-by-id id] item)))
+                (assoc-in state [:image-collections id] item)))
             state
             items)))
 
@@ -90,7 +90,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [{:keys [id] :as item} (assoc item :type :own)]
-      (update state :image-colls-by-id assoc id item)))
+      (update state :image-collections assoc id item)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
@@ -124,7 +124,7 @@
 (defrecord CollectionUpdated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:image-colls-by-id (:id item)]  merge item)))
+    (update-in state [:image-collections (:id item)]  merge item)))
 
 (defn collection-updated
   [item]
@@ -135,7 +135,7 @@
 (defrecord UpdateCollection [id]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [item (get-in state [:image-colls-by-id id])]
+    (let [item (get-in state [:image-collections id])]
       (->> (rp/req :update/image-collection item)
            (rx/map :payload)
            (rx/map collection-updated)))))
@@ -149,7 +149,7 @@
 (defrecord RenameCollection [id name]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:image-colls-by-id id :name] name))
+    (assoc-in state [:image-collections id :name] name))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -164,7 +164,7 @@
 (defrecord DeleteCollection [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update state :image-colls-by-id dissoc id))
+    (update state :image-collections dissoc id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -181,7 +181,7 @@
 (defrecord ImageCreated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update state :images-by-id assoc (:id item) item)))
+    (update state :images assoc (:id item) item)))
 
 (defn image-created
   [item]
@@ -237,7 +237,7 @@
 (defrecord ImageUpdated [id data]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:images-by-id id] data)))
+    (assoc-in state [:images id] data)))
 
 (defn image-updated
   [{:keys [id] :as data}]
@@ -249,7 +249,7 @@
 (defrecord UpdateImage [id]
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (let [image (get-in state [:images-by-id id])]
+    (let [image (get-in state [:images id])]
       (->> (rp/req :update/image image)
            (rx/map :payload)
            (rx/map image-updated)))))
@@ -265,7 +265,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (reduce (fn [state {:keys [id] :as image}]
-              (assoc-in state [:images-by-id id] image))
+              (assoc-in state [:images id] image))
             state
             items)))
 
@@ -296,7 +296,7 @@
 (defrecord FetchImage [id]
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (let [existing (get-in state [:images-by-id id])]
+    (let [existing (get-in state [:images id])]
       (if existing
         (rx/empty)
         (->> (rp/req :fetch/image {:id id})
@@ -316,7 +316,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [id (:id image)]
-      (update state :images-by-id assoc id image))))
+      (update state :images assoc id image))))
 
 (defn image-fetched
   [image]
@@ -329,7 +329,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (-> state
-        (update :images-by-id dissoc id)
+        (update :images dissoc id)
         (update-in [:dashboard :images :selected] disj id)))
 
   rs/WatchEvent
@@ -378,7 +378,7 @@
   rs/WatchEvent
   (-apply-watch [_ state stream]
     (let [selected (get-in state [:dashboard :images :selected])
-          selected (map #(get-in state [:images-by-id %]) selected)]
+          selected (map #(get-in state [:images %]) selected)]
       (->> (rx/from-coll selected)
            (rx/map #(dissoc % :id))
            (rx/map #(assoc % :collection id))
@@ -398,7 +398,7 @@
   (-apply-update [_ state]
     (let [selected (get-in state [:dashboard :images :selected])]
       (reduce (fn [state image]
-                (assoc-in state [:images-by-id image :collection] id))
+                (assoc-in state [:images image :collection] id))
               state
               selected)))
 

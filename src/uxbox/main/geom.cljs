@@ -513,7 +513,7 @@
 (defn- inner-rect-group
   [state {:keys [id group rotation dx dy] :as shape}]
   (let [shapes (->> (:items shape)
-                    (map #(get-in state [:shapes-by-id %]))
+                    (map #(get-in state [:shapes %]))
                     (map #(inner-rect state %)))
         x (apply min (map :x shapes))
         y (apply min (map :y shapes))
@@ -545,13 +545,13 @@
                  :group (outer-rect-group state shape)
                  (outer-rect-generic state shape))]
      (if (:group shape)
-       (let [group (get-in state [:shapes-by-id (:group shape)])]
+       (let [group (get-in state [:shapes (:group shape)])]
          (apply-parent-deltas state shape (:group group)))
        shape))))
 
 (defn- apply-parent-deltas
   [state {:keys [x y] :as shape} id]
-  (if-let [group (get-in state [:shapes-by-id id])]
+  (if-let [group (get-in state [:shapes id])]
     (let [props {:x (+ x (:dx group 0))
                  :y (+ y (:dy group 0))}]
       (apply-parent-deltas state (merge shape props) (:group group)))
@@ -559,7 +559,7 @@
 
 (defn- outer-rect-generic
   [state {:keys [x1 y1 x2 y2 group] :as shape}]
-  (let [group (get-in state [:shapes-by-id group])
+  (let [group (get-in state [:shapes group])
         props {:x (+ x1 (:dx group 0))
                :y (+ y1 (:dy group 0))
                :width (- x2 x1)
@@ -569,7 +569,7 @@
 
 (defn- outer-rect-circle
   [state {:keys [cx cy rx ry group] :as shape}]
-  (let [group (get-in state [:shapes-by-id group])
+  (let [group (get-in state [:shapes group])
         props {:x (+ (- cx rx) (:dx group 0))
                :y (+ (- cy ry) (:dy group 0))
                :width (* rx 2)
@@ -579,7 +579,7 @@
 
 (defn- outer-rect-path
   [state {:keys [points group] :as shape}]
-  (let [group (get-in state [:shapes-by-id group])
+  (let [group (get-in state [:shapes group])
         minx (apply min (map :x points))
         miny (apply min (map :y points))
         maxx (apply max (map :x points))
@@ -596,7 +596,7 @@
 (defn- outer-rect-group
   [state {:keys [id group rotation dx dy] :as shape}]
   (let [shapes (->> (:items shape)
-                    (map #(get-in state [:shapes-by-id %]))
+                    (map #(get-in state [:shapes %]))
                     (map #(outer-rect state %)))
         x (apply min (map :x shapes))
         y (apply min (map :y shapes))
@@ -754,7 +754,7 @@
 
 (defn- transformation-matrix-group
   [state {:keys [dx dy rotation items] :or {rotation 0} :as shape}]
-  (let [shapes-by-id (get state :shapes-by-id)
+  (let [shapes-by-id (get state :shapes)
         shapes (map #(get shapes-by-id %) items)
         {:keys [x y width height]} (outer-rect-coll shapes)
         center-x (+ x (/ width 2))
@@ -784,7 +784,7 @@
    (resolve-parent @st/state shape))
   ([state {:keys [group] :as shape}]
    (if group
-     (resolve-parent state (get-in state [:shapes-by-id group]))
+     (resolve-parent state (get-in state [:shapes group]))
      shape)))
 
 (defn contained-in?
@@ -827,7 +827,7 @@
 (defn parent-satisfies?
   "Resolve the first parent that satisfies a condition."
   [{:keys [group] :as shape} pred]
-  (let [shapes-by-id (:shapes-by-id @st/state)]
+  (let [shapes-by-id (:shapes @st/state)]
     (if group
       (loop [parent (get shapes-by-id group)]
         (cond

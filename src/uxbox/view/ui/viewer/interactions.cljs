@@ -98,7 +98,7 @@
 (defn- run-opacity-interaction
   [{:keys [element opacity easing delay
            duration animation direction]}]
-  (let [shape (get-in @st/state [:shapes-by-id element])
+  (let [shape (get-in @st/state [:shapes element])
         dom (dom/get-element (str "shape-" element))]
     (if (= direction :reverse)
       (animate* dom {:fillOpacity (:fill-opacity shape "1")
@@ -115,7 +115,7 @@
 ;; (defn- run-size-interaction
 ;;   [{:keys [element resize-width resize-height
 ;;            easing delay duration] :as opts}]
-;;   (let [shape (get-in @st/state [:shapes-by-id element])
+;;   (let [shape (get-in @st/state [:shapes element])
 ;;         tf (geom/transformation-matrix
 ;;             (geom/resize shape (gpt/point resize-width resize-height)))]
 ;;     (animate :targets [(str "#shape-" element)]
@@ -176,7 +176,7 @@
 
 (defn- run-size-interaction
   [{:keys [element] :as opts}]
-  (let [shape (get-in @st/state [:shapes-by-id element])]
+  (let [shape (get-in @st/state [:shapes element])]
     (case (:type shape)
       :icon (run-size-interaction-icon shape opts)
       :rect (run-size-interaction-rect shape opts))))
@@ -191,7 +191,7 @@
 
 (defn- run-color-interaction
   [{:keys [element fill-color stroke-color direction easing delay duration]}]
-  (let [shape (get-in @st/state [:shapes-by-id element])
+  (let [shape (get-in @st/state [:shapes element])
         dom (dom/get-element (str "shape-" element))]
     (if (= direction :reverse)
       (animate* dom {:easing (translate-ease easing)
@@ -207,7 +207,7 @@
 
 (defn- run-rotate-interaction
   [{:keys [element rotation direction easing delay duration] :as opts}]
-  (let [shape (get-in @st/state [:shapes-by-id element])
+  (let [shape (get-in @st/state [:shapes element])
         dom (dom/get-element (str "shape-" element))
         mtx1 (geom/transformation-matrix (update shape :rotation + rotation))
         mtx2 (geom/transformation-matrix shape)]

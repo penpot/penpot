@@ -23,13 +23,13 @@
   to the state map."
   [state proj]
   (let [id (:id proj)]
-    (update-in state [:projects-by-id id] merge proj)))
+    (update-in state [:projects id] merge proj)))
 
 (defn dissoc-project
   "A reduce function for dissoc the project
   from the state map."
   [state id]
-  (update-in state [:projects-by-id] dissoc id))
+  (update-in state [:projects] dissoc id))
 
 ;; --- Initialize
 

@@ -28,7 +28,7 @@
 
 (defn- focus-shape
   [id]
-  (-> (l/in [:shapes-by-id id])
+  (-> (l/in [:shapes id])
       (l/derive st/state)))
 
 (defn- colorpicker-render

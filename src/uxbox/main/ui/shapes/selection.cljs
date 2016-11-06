@@ -33,7 +33,7 @@
 (defn- focus-selected-shapes
   [state]
   (let [selected (get-in state [:workspace :selected])]
-    (mapv #(get-in state [:shapes-by-id %]) selected)))
+    (mapv #(get-in state [:shapes %]) selected)))
 
 (def ^:private selected-shapes-ref
   (-> (l/lens focus-selected-shapes)

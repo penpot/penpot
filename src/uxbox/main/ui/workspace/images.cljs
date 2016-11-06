@@ -28,11 +28,11 @@
       (l/derive st/state)))
 
 (def ^:private collections-ref
-  (-> (l/key :image-colls-by-id)
+  (-> (l/key :image-collections)
       (l/derive st/state)))
 
 (def ^:private images-ref
-  (-> (l/key :images-by-id)
+  (-> (l/key :images)
       (l/derive st/state)))
 
 (def ^:private uploading?-ref

@@ -27,8 +27,8 @@
 
 (defn dissoc-page-shapes
   [state id]
-  (let [shapes (get-in state [:shapes-by-id])]
-    (assoc state :shapes-by-id (reduce-kv (fn [acc k v]
+  (let [shapes (get-in state [:shapes])]
+    (assoc state :shapes (reduce-kv (fn [acc k v]
                                             (if (= (:page v) id)
                                               (dissoc acc k)
                                               acc))
@@ -39,12 +39,12 @@
   "Return a packed version of page object ready
   for send to remore storage service."
   [state id]
-  (let [page (get-in state [:pages-by-id id])
+  (let [page (get-in state [:pages id])
         xf (filter #(= (:page (second %)) id))
-        shapes (into {} xf (:shapes-by-id state))]
+        shapes (into {} xf (:shapes state))]
     (-> page
         (assoc-in [:data :shapes] (into [] (:shapes page)))
-        (assoc-in [:data :shapes-by-id] shapes)
+        (assoc-in [:data :shapes] shapes)
         (update-in [:data] dissoc :items)
         (dissoc :shapes))))
 
@@ -54,18 +54,18 @@
   [state page]
   (let [data (:data page)
         shapes (:shapes data)
-        shapes-by-id (:shapes-by-id data)
+        shapes-by-id (:shapes data)
         page (-> (dissoc page :data)
                  (assoc :shapes shapes))]
     (-> state
-        (update :shapes-by-id merge shapes-by-id)
-        (update :pages-by-id assoc (:id page) page))))
+        (update :shapes merge shapes-by-id)
+        (update :pages assoc (:id page) page))))
 
 (defn purge-page
   "Remove page and all related stuff from the state."
   [state id]
   (-> state
-      (update :pages-by-id dissoc id)
+      (update :pages dissoc id)
       (update :pagedata-by-id dissoc id)
       (dissoc-page-shapes id)))
 
@@ -134,7 +134,7 @@
   rs/UpdateEvent
   (-apply-update [this state]
     (-> state
-        (assoc-in [:pages-by-id (:id page) :version] (:version page))
+        (assoc-in [:pages (:id page) :version] (:version page))
         (assoc-page page))))
 
 (defn- page-synced?
@@ -159,7 +159,7 @@
 (defrecord UpdatePage [id]
   rs/WatchEvent
   (-apply-watch [this state s]
-    (let [page (get-in state [:pages-by-id id])]
+    (let [page (get-in state [:pages id])]
       (if (:history page)
         (rx/empty)
         (rx/of (sync-page id))))))
@@ -204,12 +204,12 @@
                      (when width {:width width})
                      (when height {:height height})
                      (when name {:name name})))]
-      (update-in state [:pages-by-id id] updater)))
+      (update-in state [:pages id] updater)))
 
   rs/WatchEvent
   (-apply-watch [this state s]
     (letfn [(on-success [{page :payload}]
-              #(assoc-in % [:pages-by-id id :version] (:version page)))]
+              #(assoc-in % [:pages id :version] (:version page)))]
       (->> (rp/req :update/page-metadata (into {} this))
            (rx/map on-success)))))
 
@@ -233,7 +233,7 @@
 (defrecord UpdatePageOptions [id options]
   rs/WatchEvent
   (-apply-watch [this state s]
-    (let [page (get-in state [:pages-by-id id])
+    (let [page (get-in state [:pages id])
           page (assoc page :options options)]
       (rx/of (map->UpdatePageMetadata page)))))
 

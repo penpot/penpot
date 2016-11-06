@@ -63,7 +63,7 @@
     (reduce (fn [state item]
               (let [id (:id item)
                     item (assoc item :type :own)]
-                (assoc-in state [:icon-colls-by-id id] item)))
+                (assoc-in state [:icon-collections id] item)))
             state
             items)))
 
@@ -90,7 +90,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [{:keys [id] :as item} (assoc item :type :own)]
-      (update state :icon-colls-by-id assoc id item)))
+      (update state :icon-collections assoc id item)))
 
   rs/WatchEvent
   (-apply-watch [_ state stream]
@@ -124,7 +124,7 @@
 (defrecord CollectionUpdated [item]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update-in state [:icon-colls-by-id (:id item)]  merge item)))
+    (update-in state [:icon-collections (:id item)]  merge item)))
 
 (defn collection-updated
   [item]
@@ -135,7 +135,7 @@
 (defrecord UpdateCollection [id]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [item (get-in state [:icon-colls-by-id id])]
+    (let [item (get-in state [:icon-collections id])]
       (->> (rp/req :update/icon-collection item)
            (rx/map :payload)
            (rx/map collection-updated)))))
@@ -149,7 +149,7 @@
 (defrecord RenameCollection [id name]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:icon-colls-by-id id :name] name))
+    (assoc-in state [:icon-collections id :name] name))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -164,7 +164,7 @@
 (defrecord DeleteCollection [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (update state :icon-colls-by-id dissoc id))
+    (update state :icon-collections dissoc id))
 
   rs/WatchEvent
   (-apply-watch [_ state s]
@@ -182,7 +182,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (let [{:keys [id] :as item} (assoc item :type :icon)]
-      (update state :icons-by-id assoc id item))))
+      (update state :icons assoc id item))))
 
 (defn icon-created
   [item]
@@ -250,7 +250,7 @@
 (defrecord IconUpdated [id data]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-in state [:icons-by-id id] data)))
+    (assoc-in state [:icons id] data)))
 
 (defn icon-updated
   [{:keys [id] :as data}]
@@ -262,7 +262,7 @@
 (defrecord UpdateIcon [id]
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (let [icon (get-in state [:icons-by-id id])]
+    (let [icon (get-in state [:icons id])]
       (->> (rp/req :update/icon icon)
            (rx/map :payload)
            (rx/map icon-updated)))))
@@ -279,7 +279,7 @@
   (-apply-update [_ state]
     (reduce (fn [state {:keys [id] :as icon}]
               (let [icon (assoc icon :type :icon)]
-                (assoc-in state [:icons-by-id id] icon)))
+                (assoc-in state [:icons id] icon)))
             state
             items)))
 
@@ -308,7 +308,7 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (-> state
-        (update :icons-by-id dissoc id)
+        (update :icons dissoc id)
         (update-in [:dashboard :icons :selected] disj id)))
 
   rs/WatchEvent
@@ -357,7 +357,7 @@
   rs/WatchEvent
   (-apply-watch [_ state stream]
     (let [selected (get-in state [:dashboard :icons :selected])
-          selected (map #(get-in state [:icons-by-id %]) selected)]
+          selected (map #(get-in state [:icons %]) selected)]
       (->> (rx/from-coll selected)
            (rx/map #(dissoc % :id))
            (rx/map #(assoc % :collection id))
@@ -377,7 +377,7 @@
   (-apply-update [_ state]
     (let [selected (get-in state [:dashboard :icons :selected])]
       (reduce (fn [state icon]
-                (assoc-in state [:icons-by-id icon :collection] id))
+                (assoc-in state [:icons icon :collection] id))
               state
               selected)))
 

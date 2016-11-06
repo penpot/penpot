@@ -103,7 +103,7 @@
   (letfn [(getter [state]
             (let [selected (get-in state [:workspace :selected])]
               (when (= 1 (count selected))
-                (get-in state [:shapes-by-id (first selected)]))))]
+                (get-in state [:shapes (first selected)]))))]
     (-> (l/lens getter)
         (l/derive st/state))))
 

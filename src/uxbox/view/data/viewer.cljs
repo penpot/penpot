@@ -36,12 +36,12 @@
   [state page]
   (let [data (:data page)
         shapes (:shapes data)
-        shapes-by-id (:shapes-by-id data)
+        shapes-by-id (:shapes data)
         page (-> page
                  (dissoc page :data)
                  (assoc :shapes shapes))]
     (-> state
-        (update :shapes-by-id merge shapes-by-id)
+        (update :shapes merge shapes-by-id)
         (update :pages conj page))))
 
 (defrecord DataLoaded [data]

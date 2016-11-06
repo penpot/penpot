@@ -28,7 +28,7 @@
 (defn- resolve-pages
   [state]
   (let [project (get-in state [:workspace :project])]
-    (->> (vals (:pages-by-id state))
+    (->> (vals (:pages state))
          (filter #(= project (:project %)))
          (sort-by :created-at))))
 

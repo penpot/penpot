@@ -28,14 +28,14 @@
 (def project-ref
   (letfn [(getter [state]
             (let [project (get-in state [:workspace :project])]
-              (get-in state [:projects-by-id project])))]
+              (get-in state [:projects project])))]
     (-> (l/lens getter)
         (l/derive st/state))))
 
 (def page-ref
   (letfn [(getter [state]
             (let [page (get-in state [:workspace :page])]
-              (get-in state [:pages-by-id page])))]
+              (get-in state [:pages page])))]
     (-> (l/lens getter)
         (l/derive st/state))))
 
@@ -52,7 +52,7 @@
     (l/derive $ workspace-ref)))
 
 (def shapes-by-id-ref
-  (as-> (l/key :shapes-by-id) $
+  (as-> (l/key :shapes) $
     (l/derive $ st/state)))
 
 (def zoom-ref

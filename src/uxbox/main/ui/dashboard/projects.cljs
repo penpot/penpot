@@ -60,7 +60,7 @@
 ;; --- Refs
 
 (def projects-map-ref
-  (-> (l/key :projects-by-id)
+  (-> (l/key :projects)
       (l/derive st/state)))
 
 (def dashboard-ref

@@ -141,8 +141,8 @@
 
 (defn- collect-shapes
   [state page]
-  (let [shapes-by-id (:shapes-by-id state)
-        shapes (get-in state [:pages-by-id page :shapes])]
+  (let [shapes-by-id (:shapes state)
+        shapes (get-in state [:pages page :shapes])]
     (letfn [(resolve-shape [acc id]
               (let [shape (get shapes-by-id id)]
                 (if (= (:type shape) :group)

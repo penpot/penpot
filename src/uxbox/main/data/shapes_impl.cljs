@@ -16,8 +16,8 @@
   (let [sid (uuid/random)
         shape (merge shape {:id sid :page page})]
     (as-> state $
-      (update-in $ [:pages-by-id page :shapes] #(into [] (cons sid %)))
-      (assoc-in $ [:shapes-by-id sid] shape))))
+      (update-in $ [:pages page :shapes] #(into [] (cons sid %)))
+      (assoc-in $ [:shapes sid] shape))))
 
 (defn duplicate-shapes'
   ([state shapes page]
@@ -30,12 +30,12 @@
                      shape (assoc shape :id id :page page :items [])
                      state (if (nil? group)
                              (as-> state $
-                               (update-in $ [:pages-by-id page :shapes] #(into [] (cons id %)))
-                               (assoc-in $ [:shapes-by-id id] shape))
+                               (update-in $ [:pages page :shapes] #(into [] (cons id %)))
+                               (assoc-in $ [:shapes id] shape))
                              (as-> state $
-                               (update-in $ [:shapes-by-id group :items] #(into [] (cons id %)))
-                               (assoc-in $ [:shapes-by-id id] shape)))]
-                 (->> (map #(get-in state [:shapes-by-id %]) items)
+                               (update-in $ [:shapes group :items] #(into [] (cons id %)))
+                               (assoc-in $ [:shapes id] shape)))]
+                 (->> (map #(get-in state [:shapes %]) items)
                       (reduce #(duplicate-shape %1 %2 page id) state)))
                (let [id (uuid/random)
                      shape (-> (dissoc shape :group)
@@ -43,11 +43,11 @@
                                (merge (when group {:group group})))]
                  (if (nil? group)
                    (as-> state $
-                     (update-in $ [:pages-by-id page :shapes] #(into [] (cons id %)))
-                     (assoc-in $ [:shapes-by-id id] shape))
+                     (update-in $ [:pages page :shapes] #(into [] (cons id %)))
+                     (assoc-in $ [:shapes id] shape))
                    (as-> state $
-                     (update-in $ [:shapes-by-id group :items] #(into [] (cons id %)))
-                     (assoc-in $ [:shapes-by-id id] shape))))))]
+                     (update-in $ [:shapes group :items] #(into [] (cons id %)))
+                     (assoc-in $ [:shapes id] shape))))))]
 
      (reduce #(duplicate-shape %1 %2 page group) state shapes))))
 
@@ -60,7 +60,7 @@
            (all-same-group? [coll]
              (let [group (:group (first coll))]
                (every? #(= group (:group %)) coll)))]
-     (let [shapes (reverse (mapv #(get-in state [:shapes-by-id %]) shapes))]
+     (let [shapes (reverse (mapv #(get-in state [:shapes %]) shapes))]
        (cond
          (all-toplevel? shapes)
          (let [page (or page (:page (first shapes)))]
@@ -82,28 +82,28 @@
   data structure of shapes from the state."
   [state {:keys [id type] :as shape}]
   (if (= :group type)
-    (let [items (map #(get-in state [:shapes-by-id %]) (:items shape))]
+    (let [items (map #(get-in state [:shapes %]) (:items shape))]
       (as-> state $
-        (update-in $ [:shapes-by-id] dissoc id)
+        (update-in $ [:shapes] dissoc id)
         (reduce dissoc-from-index $ items)))
-    (update-in state [:shapes-by-id] dissoc id)))
+    (update-in state [:shapes] dissoc id)))
 
 (defn dissoc-from-page
   "Given a shape, try to remove its reference from the
   corresponding page."
   [state {:keys [id page] :as shape}]
-  (as-> (get-in state [:pages-by-id page :shapes]) $
+  (as-> (get-in state [:pages page :shapes]) $
     (into [] (remove #(= % id) $))
-    (assoc-in state [:pages-by-id page :shapes] $)))
+    (assoc-in state [:pages page :shapes] $)))
 
 (defn dissoc-from-group
   "Given a shape, try to remove its reference from the
   corresponding group (only if it belongs to one group)."
   [state {:keys [id group] :as shape}]
-  (if-let [group' (get-in state [:shapes-by-id group])]
+  (if-let [group' (get-in state [:shapes group])]
     (as-> (:items group') $
       (into [] (remove #(= % id) $))
-      (assoc-in state [:shapes-by-id group :items] $))
+      (assoc-in state [:shapes group :items] $))
     state))
 
 (declare dissoc-shape)
@@ -116,7 +116,7 @@
   all empty parent groups of recently removed
   shape."
   [state {:keys [group] :as shape}]
-  (if-let [group' (get-in state [:shapes-by-id group])]
+  (if-let [group' (get-in state [:shapes group])]
     (if (empty? (:items group'))
       (dissoc-shape state group')
       state)
@@ -141,13 +141,13 @@
 (defn drop-relative
   [state loc sid]
   {:pre [(not (nil? sid))]}
-  (let [shape (get-in state [:shapes-by-id (first sid)])
+  (let [shape (get-in state [:shapes (first sid)])
         {:keys [page group]} shape
         sid (:id shape)
 
         shapes (if group
-                 (get-in state [:shapes-by-id group :items])
-                 (get-in state [:pages-by-id page :shapes]))
+                 (get-in state [:shapes group :items])
+                 (get-in state [:pages page :shapes]))
 
         index (case loc
                 :first 0
@@ -160,19 +160,19 @@
                   (dissoc-from-group shape))
 
         shapes (if group
-                 (get-in state [:shapes-by-id group :items])
-                 (get-in state [:pages-by-id page :shapes]))
+                 (get-in state [:shapes group :items])
+                 (get-in state [:pages page :shapes]))
 
         shapes (drop-at-index index shapes sid)]
 
     (if group
       (as-> state $
-        (assoc-in $ [:shapes-by-id group :items] shapes)
-        (update-in $ [:shapes-by-id sid] assoc :group group)
+        (assoc-in $ [:shapes group :items] shapes)
+        (update-in $ [:shapes sid] assoc :group group)
         (clear-empty-groups $ shape))
       (as-> state $
-        (assoc-in $ [:pages-by-id page :shapes] shapes)
-        (update-in $ [:shapes-by-id sid] dissoc :group)
+        (assoc-in $ [:pages page :shapes] shapes)
+        (update-in $ [:shapes sid] dissoc :group)
         (clear-empty-groups $ shape)))))
 
 (defn drop-aside
@@ -180,16 +180,16 @@
   {:pre [(not= tid sid)
          (not (nil? tid))
          (not (nil? sid))]}
-  (let [{:keys [page group]} (get-in state [:shapes-by-id tid])
-        source (get-in state [:shapes-by-id sid])
+  (let [{:keys [page group]} (get-in state [:shapes tid])
+        source (get-in state [:shapes sid])
 
         state (-> state
                   (dissoc-from-page source)
                   (dissoc-from-group source))
 
         shapes (if group
-                 (get-in state [:shapes-by-id group :items])
-                 (get-in state [:pages-by-id page :shapes]))
+                 (get-in state [:shapes group :items])
+                 (get-in state [:pages page :shapes]))
 
         index (case loc
                 :after (inc (index-of shapes tid))
@@ -198,12 +198,12 @@
         shapes (drop-at-index index shapes sid)]
     (if group
       (as-> state $
-        (assoc-in $ [:shapes-by-id group :items] shapes)
-        (update-in $ [:shapes-by-id sid] assoc :group group)
+        (assoc-in $ [:shapes group :items] shapes)
+        (update-in $ [:shapes sid] assoc :group group)
         (clear-empty-groups $ source))
       (as-> state $
-        (assoc-in $ [:pages-by-id page :shapes] shapes)
-        (update-in $ [:shapes-by-id sid] dissoc :group)
+        (assoc-in $ [:pages page :shapes] shapes)
+        (update-in $ [:shapes sid] dissoc :group)
         (clear-empty-groups $ source)))))
 
 (def drop-after #(drop-aside %1 :after %2 %3))
@@ -212,15 +212,15 @@
 (defn drop-inside
   [state tid sid]
   {:pre [(not= tid sid)]}
-  (let [source (get-in state [:shapes-by-id sid])
+  (let [source (get-in state [:shapes sid])
         state (-> state
                   (dissoc-from-page source)
                   (dissoc-from-group source))
-        shapes (get-in state [:shapes-by-id tid :items])]
+        shapes (get-in state [:shapes tid :items])]
     (if (seq shapes)
       (as-> state $
-        (assoc-in $ [:shapes-by-id tid :items] (conj shapes sid))
-        (update-in $ [:shapes-by-id sid] assoc :group tid))
+        (assoc-in $ [:shapes tid :items] (conj shapes sid))
+        (update-in $ [:shapes sid] assoc :group tid))
       state)))
 
 (defn drop-shape
@@ -262,12 +262,12 @@
 
 (defn match-by-selrect
   [state page selrect]
-  (let [xf (comp (map #(get-in state [:shapes-by-id %]))
+  (let [xf (comp (map #(get-in state [:shapes %]))
                  (remove :hidden)
                  (remove :blocked)
                  (map geom/outer-rect))
         match (partial try-match-shape xf selrect)
-        shapes (get-in state [:pages-by-id page :shapes])]
+        shapes (get-in state [:pages page :shapes])]
     (reduce match #{} (sequence xf shapes))))
 
 (defn group-shapes
@@ -282,37 +282,37 @@
           (move-shapes-to-new-group [state page shapes new-group]
             (reduce (fn [state {:keys [id group] :as shape}]
                       (-> state
-                        (update-in [:shapes-by-id group :items] #(remove (set [id]) %))
-                        (update-in [:pages-by-id page :shapes] #(remove (set [id]) %))
+                        (update-in [:shapes group :items] #(remove (set [id]) %))
+                        (update-in [:pages page :shapes] #(remove (set [id]) %))
                         (clear-empty-groups shape)
-                        (assoc-in [:shapes-by-id id :group] new-group)
+                        (assoc-in [:shapes id :group] new-group)
                         ))
                     state
                     shapes))
 
           (update-shapes-on-page [state page shapes group]
-            (as-> (get-in state [:pages-by-id page :shapes]) $
+            (as-> (get-in state [:pages page :shapes]) $
               (replace-first-item (set shapes) $ group)
               (remove (set shapes) $)
               (into [] $)
-              (assoc-in state [:pages-by-id page :shapes] $)))
+              (assoc-in state [:pages page :shapes] $)))
 
           (update-shapes-on-group [state parent-group shapes group]
-            (as-> (get-in state [:shapes-by-id parent-group :items]) $
+            (as-> (get-in state [:shapes parent-group :items]) $
               (replace-first-item (set shapes) $ group)
               (remove (set shapes) $)
               (into [] $)
-              (assoc-in state [:shapes-by-id parent-group :items] $)))
+              (assoc-in state [:shapes parent-group :items] $)))
 
           (update-shapes-on-index [state shapes group]
             (reduce (fn [state {:keys [id] :as shape}]
                       (as-> shape $
                         (assoc $ :group group)
-                        (assoc-in state [:shapes-by-id id] $)))
+                        (assoc-in state [:shapes id] $)))
                     state
                     shapes))]
     (let [sid (uuid/random)
-          shapes' (map #(get-in state [:shapes-by-id %]) shapes)
+          shapes' (map #(get-in state [:shapes %]) shapes)
           distinct-groups (distinct (map :group shapes'))
           parent-group (cond
                          (not= 1 (count distinct-groups)) :multi
@@ -329,48 +329,48 @@
           (= :multi parent-group)
             (-> $
               (move-shapes-to-new-group page shapes' sid)
-              (update-in [:pages-by-id page :shapes] #(into [] (cons sid %))))
+              (update-in [:pages page :shapes] #(into [] (cons sid %))))
           (= :page parent-group)
             (update-shapes-on-page $ page shapes sid)
           :else
             (update-shapes-on-group $ parent-group shapes sid))
-        (update $ :shapes-by-id assoc sid group)
+        (update $ :shapes assoc sid group)
         (cond
           (= :multi parent-group) $
           (= :page parent-group) $
-          :else (assoc-in $ [:shapes-by-id sid :group] parent-group))
+          :else (assoc-in $ [:shapes sid :group] parent-group))
         (update $ :workspace assoc :selected #{sid})))))
 
 (defn degroup-shapes
   [state shapes page]
   (letfn [(empty-group [state page-id group-id]
-            (let [group (get-in state [:shapes-by-id group-id])
+            (let [group (get-in state [:shapes group-id])
                   parent-id (:group group)
                   position (if (nil? parent-id)
-                             (index-of (get-in state [:pages-by-id page-id :shapes]) group-id)
-                             (index-of (get-in state [:shapes-by-id parent-id :items]) group-id))
+                             (index-of (get-in state [:pages page-id :shapes]) group-id)
+                             (index-of (get-in state [:shapes parent-id :items]) group-id))
                   reduce-func (fn [state item]
                                 (if (nil? parent-id)
                                   (-> state
-                                    (update-in [:pages-by-id page-id :shapes] #(drop-at-index position % item))
-                                    (update-in [:shapes-by-id item] dissoc :group))
+                                    (update-in [:pages page-id :shapes] #(drop-at-index position % item))
+                                    (update-in [:shapes item] dissoc :group))
                                   (-> state
-                                    (update-in [:shapes-by-id parent-id :items] #(drop-at-index position % item))
-                                    (assoc-in [:shapes-by-id item :group] parent-id))))]
+                                    (update-in [:shapes parent-id :items] #(drop-at-index position % item))
+                                    (assoc-in [:shapes item :group] parent-id))))]
 
               (as-> state $
                 (reduce reduce-func $ (reverse (:items group)))
                 (if (nil? parent-id)
-                  (update-in $ [:pages-by-id page-id :shapes] #(into [] (remove #{group-id} %)))
-                  (update-in $ [:shapes-by-id parent-id :items] #(into [] (remove #{group-id} %))))
-                (update-in $ [:shapes-by-id] dissoc group-id))))
+                  (update-in $ [:pages page-id :shapes] #(into [] (remove #{group-id} %)))
+                  (update-in $ [:shapes parent-id :items] #(into [] (remove #{group-id} %))))
+                (update-in $ [:shapes] dissoc group-id))))
 
           (empty-groups [state page-id groups-ids]
             (reduce (fn [state group-id]
                       (empty-group state page-id group-id))
                     state
                     groups-ids))]
-    (let [shapes' (map #(get-in state [:shapes-by-id %]) shapes)
+    (let [shapes' (map #(get-in state [:shapes %]) shapes)
           groups (filter #(= (:type %) :group) shapes')
           groups-ids (map :id groups)
           groups-items (remove (set groups-ids) (mapcat :items groups))]

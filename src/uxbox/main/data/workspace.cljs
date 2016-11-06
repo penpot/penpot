@@ -58,7 +58,7 @@
   rs/WatchEvent
   (-apply-watch [_ state s]
     (let [page-id page
-          page (get-in state [:pages-by-id page-id])]
+          page (get-in state [:pages page-id])]
 
       ;; Activate loaded if page is not fetched.
       (when-not page (reset! st/loader true))
@@ -81,7 +81,7 @@
   rs/EffectEvent
   (-apply-effect [_ state]
     ;; Optimistic prefetch of projects if them are not already fetched
-    (when-not (seq (:projects-by-id state))
+    (when-not (seq (:projects state))
       (rs/emit! (dp/fetch-projects)))))
 
 (defn initialize
@@ -208,7 +208,7 @@
 (defrecord InitializeAlignmentIndex [id]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (let [page (get-in state [:pages-by-id id])
+    (let [page (get-in state [:pages id])
           opts (:options page)
           message {:cmd :grid/init
                    :width c/viewport-width

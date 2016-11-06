@@ -20,7 +20,7 @@
 
 (defn image-ref
   [id]
-  (-> (l/in [:images-by-id id])
+  (-> (l/in [:images id])
       (l/derive st/state)))
 
 ;; --- Image Component
