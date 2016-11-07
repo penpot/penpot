@@ -16,8 +16,7 @@
    :pages nil
    :page nil
    :flags #{:sitemap}
-   :shapes {}
-   :pages {}})
+   :shapes {}})
 
 (defn ^:export init
   []
