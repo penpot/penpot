@@ -63,8 +63,10 @@
                   (dom/prevent-default e)
                   (dom/stop-propagation e)
                   (save))))
-            (delete-collection []
-              (rs/emit! (dc/delete-collection (:id coll))))]
+            (delete []
+              (rs/emit! (dc/delete-collection id)))
+            (on-delete []
+              (udl/open! :confirm {:on-accept delete}))]
       [:div.dashboard-title
        [:h2
         (if edit?
@@ -86,7 +88,7 @@
           (if edit?
             [:span {:on-click save} i/save]
             [:span {:on-click edit} i/pencil])
-          [:span {:on-click delete-collection} i/trash]])])))
+          [:span {:on-click on-delete} i/trash]])])))
 
 ;; --- Nav
 
