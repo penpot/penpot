@@ -18,6 +18,7 @@
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.dashboard.header :refer (header)]
+            [uxbox.util.datetime :as dt]
             [uxbox.util.data :as data :refer (read-string)]
             [uxbox.util.dom :as dom]))
 
@@ -294,7 +295,7 @@
            i/organize]])])))
 
 (mx/defc grid-item
-  [{:keys [id] :as image} selected?]
+  [{:keys [id created-at] :as image} selected?]
   (letfn [(toggle-selection [event]
             (rs/emit! (di/toggle-image-selection id)))
           (toggle-selection-shifted [event]
@@ -312,7 +313,8 @@
        [:label {:for (:id image)}]]]
      [:div.item-info
       [:h3 (:name image)]
-      [:span.date "Uploaded at 12/11/2016"]]]))
+      [:span.date
+       (str "Uploaded at " (dt/format created-at "L"))]]]))
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}

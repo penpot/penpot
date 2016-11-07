@@ -19,6 +19,7 @@
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.datetime :as dt]
             [uxbox.util.rstore :as rs]
             [uxbox.util.schema :as sc]
             [uxbox.util.lens :as ul]
@@ -290,7 +291,7 @@
            i/organize]])])))
 
 (mx/defc grid-item
-  [{:keys [id] :as icon} selected?]
+  [{:keys [id created-at] :as icon} selected?]
   (letfn [(toggle-selection [event]
             (rs/emit! (di/toggle-icon-selection id)))
           (toggle-selection-shifted [event]
@@ -309,7 +310,7 @@
       (icon/icon-svg icon)]
      [:div.item-info
       [:h3 (:name icon)]
-      [:span.date "Uploaded at 21/09/2016"]]
+      (str "Uploaded at " (dt/format created-at "L"))]
      #_[:div.project-th-actions
         [:div.project-th-icon.edit i/pencil]
         [:div.project-th-icon.delete i/trash]]]))
