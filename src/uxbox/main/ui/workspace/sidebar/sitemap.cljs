@@ -153,21 +153,23 @@
           :auto-focus true
           :on-change update-name}]
         [:div.project-size
-         [:input#project-witdh.input-text
-          {:placeholder "Width"
-           :type "number"
-           :min 0
-           :max 4000
-           :value (:width metadata)
-           :on-change #(update-size :width %)}]
+         [:div.input-element.pixels
+          [:input#project-witdh.input-text
+           {:placeholder "Width"
+            :type "number"
+            :min 0
+            :max 4000
+            :value (:width metadata)
+            :on-change #(update-size :width %)}]]
          [:a.toggle-layout {:on-click toggle-sizes} i/toggle]
-         [:input#project-height.input-text
-          {:placeholder "Height"
-           :type "number"
-           :min 0
-           :max 4000
-           :value (:height metadata)
-           :on-change #(update-size :height %)}]]
+         [:div.input-element.pixels
+          [:input#project-height.input-text
+           {:placeholder "Height"
+            :type "number"
+            :min 0
+            :max 4000
+            :value (:height metadata)
+            :on-change #(update-size :height %)}]]]
 
         [:div.input-radio.radio-primary
          (layout-input local page "mobile")

@@ -228,18 +228,20 @@
     (swap! form-ref assoc :moveto-y 0))
   (html
    [:div
-    [:span "Move to position (px)"]
+    [:span "Move to position"]
     [:div.row-flex
-     [:input.input-text
-      {:placeholder "X"
-       :on-change (partial on-change form-ref :moveto-x)
-       :type "number"
-       :value (:moveto-x @form-ref "")}]
-     [:input.input-text
-      {:placeholder "Y"
-       :on-change (partial on-change form-ref :moveto-y)
-       :type "number"
-       :value (:moveto-y @form-ref "")}]]]))
+     [:div.input-element.pixels
+      [:input.input-text
+       {:placeholder "X"
+        :on-change (partial on-change form-ref :moveto-x)
+        :type "number"
+        :value (:moveto-x @form-ref "")}]]
+     [:div.input-element.pixels
+      [:input.input-text
+       {:placeholder "Y"
+        :on-change (partial on-change form-ref :moveto-y)
+        :type "number"
+        :value (:moveto-y @form-ref "")}]]]]))
 
 (def moveto-input
   (mx/component
@@ -256,18 +258,20 @@
     (swap! form-ref assoc :moveby-y 0))
   (html
    [:div
-    [:span "Move to position (px)"]
+    [:span "Move to position"]
     [:div.row-flex
-     [:input.input-text
-      {:placeholder "X"
-       :on-change (partial on-change form-ref :moveby-x)
-       :type "number"
-       :value (:moveby-x @form-ref "")}]
-     [:input.input-text
-      {:placeholder "Y"
-       :on-change (partial on-change form-ref :moveby-y)
-       :type "number"
-       :value (:moveby-y @form-ref "")}]]]))
+     [:div.input-element.pixels
+      [:input.input-text
+       {:placeholder "X"
+        :on-change (partial on-change form-ref :moveby-x)
+        :type "number"
+        :value (:moveby-x @form-ref "")}]]
+     [:div.input-element.pixels
+      [:input.input-text
+       {:placeholder "Y"
+        :on-change (partial on-change form-ref :moveby-y)
+        :type "number"
+        :value (:moveby-y @form-ref "")}]]]]))
 
 (def moveby-input
   (mx/component
@@ -282,15 +286,16 @@
     (swap! form-ref assoc :opacity 100))
   (html
    [:div
-    [:span "Opacity (%)"]
+    [:span "Opacity"]
     [:div.row-flex
-     [:input.input-text
-      {:placeholder "%"
-       :on-change (partial on-change form-ref :opacity)
-       :min "0"
-       :max "100"
-       :type "number"
-       :value (:opacity @form-ref "")}]]]))
+     [:div.input-element.percentail
+      [:input.input-text
+       {:placeholder "%"
+        :on-change (partial on-change form-ref :opacity)
+        :min "0"
+        :max "100"
+        :type "number"
+        :value (:opacity @form-ref "")}]]]]))
 
 (def opacity-input
   (mx/component
@@ -305,11 +310,12 @@
    [:div
     [:span "Rotate (dg)"]
     [:div.row-flex
-     [:input.input-text
-      {:placeholder "dg"
-       :on-change (partial on-change form-ref :rotation)
-       :type "number"
-       :value (:rotation @form-ref "")}]]]))
+     [:div.input-element.degrees
+      [:input.input-text
+       {:placeholder "dg"
+        :on-change (partial on-change form-ref :rotation)
+        :type "number"
+        :value (:rotation @form-ref "")}]]]]))
 
 (def rotate-input
   (mx/component
@@ -322,18 +328,20 @@
   [own form-ref]
   (html
    [:div
-    [:span "Resize (px)"]
+    [:span "Resize"]
     [:div.row-flex
-     [:input.input-text
-      {:placeholder "Width"
-       :on-change (partial on-change form-ref :resize-width)
-       :type "number"
-       :value (:resize-width @form-ref "")}]
-     [:input.input-text
-      {:placeholder "Height"
-       :on-change (partial on-change form-ref :resize-height)
-       :type "number"
-       :value (:resize-height @form-ref "")}]]]))
+     [:div.input-element.pixels
+      [:input.input-text
+       {:placeholder "Width"
+        :on-change (partial on-change form-ref :resize-width)
+        :type "number"
+        :value (:resize-width @form-ref "")}]]
+     [:div.input-element.pixels
+      [:input.input-text
+       {:placeholder "Height"
+        :on-change (partial on-change form-ref :resize-height)
+        :type "number"
+        :value (:resize-height @form-ref "")}]]]]))
 
 (def resize-input
   (mx/component
@@ -443,17 +451,19 @@
     (swap! form-ref assoc :delay 0))
   (html
    [:div
-    [:span "Duration  |  Delay (ms)"]
+    [:span "Duration  |  Delay"]
     [:div.row-flex
-     [:input.input-text
-      {:placeholder "Duration"
-       :type "number"
-       :on-change (partial on-change form-ref :duration)
-       :value (pr-str (:duration @form-ref))}]
-     [:input.input-text {:placeholder "Delay"
+     [:div.input-element.miliseconds
+      [:input.input-text
+       {:placeholder "Duration"
+        :type "number"
+        :on-change (partial on-change form-ref :duration)
+        :value (pr-str (:duration @form-ref))}]]
+     [:div.input-element.miliseconds
+      [:input.input-text {:placeholder "Delay"
                          :type "number"
                          :on-change (partial on-change form-ref :delay)
-                         :value (pr-str (:delay @form-ref))}]]]))
+                         :value (pr-str (:delay @form-ref))}]]]]))
 
 (def duration-input
   (mx/component

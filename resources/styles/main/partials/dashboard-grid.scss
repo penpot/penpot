@@ -95,11 +95,9 @@
       flex-direction: column;
       flex-shrink: 0;
       height: 200px;
-      justify-content: center;
       margin: $medium $medium 0 $medium;
       max-width: 300px;
       min-width: 260px;
-      padding: $medium;
       position: relative;
       text-align: center;
       width: 18%;
@@ -107,6 +105,40 @@
       &.small-item {
         max-width: 12%;
         min-width: 190px;
+        padding: $medium;
+        justify-content: center;
+      }
+
+      .item-info {
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        left: 0;
+        padding: $small;
+        position: absolute;
+        text-align: left;
+        width: 100%;
+
+        h3 {
+          color: $intense-ui-text;
+          font-size: $fs16;
+          font-weight: 400;
+          overflow: hidden;
+          padding: 0;
+          padding-right: $small;
+          text-overflow: ellipsis;
+          width: 100%;
+          white-space: nowrap;
+        }
+
+        span.date {
+          color: $soft-ui-text;
+          font-size: $fs12;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          width: 100%;
+        }
+
       }
 
       &.add-project {
@@ -148,20 +180,12 @@
 
         }
 
-        h3 {
-          color: $color-gray-darker;
-          font-weight: 400;
-        }
-
-        .project-th-update {
-          color: $color-gray-light;
-        }
-
         .project-th-actions {
           align-items: center;
           bottom: 0;
           display: flex;
           left: 0;
+          justify-content: flex-end;
           padding: $small;
           position: absolute;
           width: 100%;
@@ -169,7 +193,7 @@
           svg {
             fill: $color-gray-light;
             height: 14px;
-            margin-right: 5px;
+            margin-right: $x-small;
             width: 14px;
           }
 
@@ -182,25 +206,39 @@
             display: flex;
             margin-right: $small;
 
-            &.delete,
-            &.edit {
-              margin-left: auto;
+            &.delete {
               margin-right: 0;
 
               svg {
-                fill: $color-danger;
+                fill: $medium-ui-icons;
+                margin-right: 0;
               }
 
               &:hover {
                 transform: scale(1.4);
+
+                svg {
+                  fill: $color-danger;
+                }
+
               }
 
             }
 
             &.edit {
+              margin-right: 0;
+
+              svg {
+                fill: $medium-ui-icons;
+              }
 
               &:hover {
                 transform: scale(1.4);
+
+                svg {
+                  fill: $color-primary;
+                }
+
               }
 
             }
@@ -215,34 +253,9 @@
       &.images-th {
         background-color: $color-white;
         border-bottom: 2px solid lighten($color-gray-light, 12%);
-        justify-content: flex-start;
-        padding: 0;
 
         &:hover {
           border-color: $main-ui-color;
-
-          span {
-            color: $main-ui-color;
-          }
-
-        }
-
-        span {
-          padding: $small;
-          text-align: left;
-          width: 100%;
-          @include text-ellipsis;
-        }
-
-        .grid-item-th {
-          background-position: center;
-          background-size: cover;
-          border-top-left-radius: $br-medium;
-          border-top-right-radius: $br-medium;
-          height: 70%;
-          position: relative;
-          width: 100%;
-
         }
 
       }
@@ -252,7 +265,7 @@
         svg {
           height: 20%;
           max-width: 120px;
-          width: 40%;
+          width: 3vw;
         }
 
       }
@@ -291,21 +304,18 @@
   // STYLES FOR LIBRARIES
   &.library {
     padding: $medium $medium $medium 250px;
-
-    .dashboard-grid-content {
-
-      .grid-item {
-
-        h3 {
-          font-size: $fs18;
-        }
-
-      }
-
-    }
-
   }
 
+}
+
+.grid-item-th {
+  background-position: center;
+  background-size: cover;
+  border-top-left-radius: $br-medium;
+  border-top-right-radius: $br-medium;
+  height: 70%;
+  position: relative;
+  width: 100%;
 }
 
 // MULTISELECT OPTIONS BAR

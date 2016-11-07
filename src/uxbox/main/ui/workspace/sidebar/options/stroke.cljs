@@ -64,12 +64,13 @@
            [:option {:value ":dotted"} "Dotted"]
            [:option {:value ":dashed"} "Dashed"]
            [:option {:value ":mixed"} "Mixed"]]
-          [:input.input-text
-           {:placeholder "Width"
-            :type "number"
-            :min "0"
-            :value (:stroke-width shape "1")
-            :on-change on-width-change}]]
+          [:div.input-element.pixels
+           [:input.input-text
+            {:placeholder "Width"
+             :type "number"
+             :min "0"
+             :value (:stroke-width shape "1")
+             :on-change on-width-change}]]]
 
          [:span "Color"]
          [:div.row-flex.color-data

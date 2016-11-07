@@ -57,35 +57,39 @@
         ;; SLIDEBAR FOR ROTATION AND OPACITY
         [:span "Size"]
         [:div.row-flex
-         [:input.input-text
-          {:placeholder "Width"
-           :type "number"
-           :min "0"
-           :value (:width size)
-           :on-change (partial on-size-change :width)}]
+         [:div.input-element.pixels
+          [:input.input-text
+           {:placeholder "Width"
+            :type "number"
+            :min "0"
+            :value (:width size)
+            :on-change (partial on-size-change :width)}]]
          [:div.lock-size
           {:class (when (:proportion-lock shape) "selected")
            :on-click on-proportion-lock-change}
           i/lock]
-         [:input.input-text
-          {:placeholder "Height"
-           :type "number"
-           :min "0"
-           :value (:height size)
-           :on-change (partial on-size-change :height)}]]
+         [:div.input-element.pixels
+          [:input.input-text
+           {:placeholder "Height"
+            :type "number"
+            :min "0"
+            :value (:height size)
+            :on-change (partial on-size-change :height)}]]]
 
         [:span "Position"]
         [:div.row-flex
-         [:input.input-text
-          {:placeholder "x"
-           :type "number"
-           :value (:x1 shape "")
-           :on-change (partial on-pos-change :x)}]
-         [:input.input-text
-          {:placeholder "y"
-           :type "number"
-           :value (:y1 shape "")
-           :on-change (partial on-pos-change :y)}]]
+         [:div.input-element.pixels
+          [:input.input-text
+           {:placeholder "x"
+            :type "number"
+            :value (:x1 shape "")
+            :on-change (partial on-pos-change :x)}]]
+         [:div.input-element.pixels
+          [:input.input-text
+           {:placeholder "y"
+            :type "number"
+            :value (:y1 shape "")
+            :on-change (partial on-pos-change :y)}]]]
 
         [:span "Border radius"]
         [:div.row-flex
@@ -111,17 +115,15 @@
            :on-change on-rotation-change}]]
 
         [:div.row-flex
-         [:input.input-text
-          {:placeholder ""
-           :type "number"
-           :min 0
-           :max 360
-           :value (:rotation shape "0")
-           :on-change on-rotation-change
-           }]
+         [:div.input-element.degrees
+          [:input.input-text
+           {:placeholder ""
+            :type "number"
+            :min 0
+            :max 360
+            :value (:rotation shape "0")
+            :on-change on-rotation-change
+            }]]
          [:input.input-text
           {:style {:visibility "hidden"}}]
          ]]])))
-
-
-

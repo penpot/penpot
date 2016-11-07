@@ -271,10 +271,13 @@
        (if editable?
          [:div.multiselect-nav
           [:span.move-item.tooltip.tooltip-top
-           {:on-click on-toggle-move}
+           {:alt "Move items" :on-click on-toggle-move}
            (when (:show-move-tooltip @local)
              (grid-options-move id))
            i/organize]
+          [:span.move-item.tooltip.tooltip-top
+           {:alt "Rename"}
+           i/pencil]
           [:span.delete.tooltip.tooltip-top
            {:alt "Delete"
             :on-click on-delete}
@@ -304,7 +307,9 @@
       [:label {:for (:id icon)}]]
      [:span.grid-item-image
       (icon/icon-svg icon)]
-     [:h3 (:name icon)]
+     [:div.item-info
+      [:h3 (:name icon)]
+      [:span.date "Uploaded at 21/09/2016"]]
      #_[:div.project-th-actions
         [:div.project-th-icon.edit i/pencil]
         [:div.project-th-icon.delete i/trash]]]))

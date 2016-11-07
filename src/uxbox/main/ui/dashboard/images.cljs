@@ -272,10 +272,13 @@
        (if editable?
          [:div.multiselect-nav
           [:span.move-item.tooltip.tooltip-top
-           {:on-click on-toggle-move}
+           {:alt "Move items":on-click on-toggle-move}
            (when (:show-move-tooltip @local)
              (grid-options-move id))
            i/organize]
+          [:span.move-item.tooltip.tooltip-top
+           {:alt "Rename"}
+           i/pencil]
           [:span.delete.tooltip.tooltip-top
            {:alt "Delete"
             :on-click on-delete}
@@ -304,7 +307,9 @@
                 :on-click toggle-selection
                 :checked selected?}]
        [:label {:for (:id image)}]]]
-     [:span (:name image)]]))
+     [:div.item-info
+      [:h3 (:name image)]
+      [:span.date "Uploaded at 12/11/2016"]]]))
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}

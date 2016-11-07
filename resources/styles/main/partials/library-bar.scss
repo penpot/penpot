@@ -34,7 +34,10 @@
         color: $color-gray;
         cursor: pointer;
         font-weight: bold;
+        font-size: $fs14;
         padding: .6rem;
+        text-align: center;
+        width: 118px;
 
         &:hover {
           color: $color-white;
