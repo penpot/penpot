@@ -179,41 +179,23 @@
    {:on-click #(udl/open! :color-form {:coll coll-id})}
    [:span "+ New color"]])
 
-(mx/defc grid-options-copy
+(mx/defc grid-options-tooltip
   {:mixins [mx/reactive mx/static]}
-  [current-coll]
-  {:pre [(uuid? current-coll)]}
+  [& {:keys [selected on-select title]}]
+  {:pre [(uuid? selected)
+         (fn? on-select)
+         (string? title)]}
   (let [colls (mx/react collections-ref)
         colls (->> (vals colls)
                    (filter #(= :own (:type %)))
-                   (remove #(= current-coll (:id %)))
+                   (remove #(= selected (:id %)))
                    (sort-by :name colls))
         on-select (fn [event id]
                     (dom/prevent-default event)
-                    (rs/emit! (dc/copy-selected id)))]
+                    (dom/stop-propagation event)
+                    (on-select id))]
     [:ul.move-list
-     [:li.title "Copy to library"]
-     [:li [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
-     (for [coll colls
-           :let [id (:id coll)
-                 name (:name coll)]]
-       [:li {:key (str id)}
-        [:a {:on-click #(on-select % id)} name]])]))
-
-(mx/defc grid-options-move
-  {:mixins [mx/reactive mx/static]}
-  [current-coll]
-  {:pre [(uuid? current-coll)]}
-  (let [colls (mx/react collections-ref)
-        colls (->> (vals colls)
-                   (filter #(= :own (:type %)))
-                   (remove #(= current-coll (:id %)))
-                   (sort-by :name colls))
-        on-select (fn [event id]
-                    (dom/prevent-default event)
-                    (rs/emit! (dc/move-selected current-coll id)))]
-    [:ul.move-list
-     [:li.title "Move to library"]
+     [:li.title title]
      [:li [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
      (for [coll colls
            :let [id (:id coll)
@@ -231,13 +213,22 @@
             (on-delete [event]
               (udl/open! :confirm {:on-accept delete}))
             (on-toggle-copy [event]
-              (swap! local assoc
-                     :show-copy-tooltip not
-                     :show-move-tooltip false))
+              (swap! local update :show-copy-tooltip not)
+              (swap! local assoc :show-move-tooltip false))
             (on-toggle-move [event]
+              (swap! local update :show-move-tooltip not)
+              (swap! local assoc :show-copy-tooltip false))
+            (on-copy [selected]
               (swap! local assoc
-                     :show-move-tooltip not
-                     :show-copy-tooltip false))]
+                     :show-move-tooltip false
+                     :show-copy-tooltip false)
+              (rs/emit! (dc/copy-selected selected)))
+            (on-move [selected]
+              (swap! local assoc
+                     :show-move-tooltip false
+                     :show-copy-tooltip false)
+              (rs/emit! (dc/move-selected id selected)))]
+
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
        (if editable?
@@ -245,12 +236,17 @@
           [:span.move-item.tooltip.tooltip-top
            {:on-click on-toggle-copy}
            (when (:show-copy-tooltip @local)
-             (grid-options-copy id))
+             (grid-options-tooltip :selected id
+                                   :title "Copy to library"
+                                   :on-select on-copy))
+
            i/organize]
           [:span.move-item.tooltip.tooltip-top
            {:on-click on-toggle-move}
            (when (:show-move-tooltip @local)
-             (grid-options-move id))
+             (grid-options-tooltip :selected id
+                                   :title "Move to library"
+                                   :on-select on-move))
            i/organize]
           [:span.delete.tooltip.tooltip-top
            {:alt "Delete"
@@ -260,7 +256,9 @@
           [:span.move-item.tooltip.tooltip-top
            {:on-click on-toggle-copy}
            (when (:show-copy-tooltip @local)
-             (grid-options-copy id))
+             (grid-options-tooltip :selected id
+                                   :title "Copy to library"
+                                   :on-select on-copy))
            i/organize]])])))
 
 (mx/defc grid-item

@@ -89,9 +89,8 @@
                   (dom/prevent-default e)
                   (dom/stop-propagation e)
                   (on-save e))))
-
             (delete []
-              (rs/emit! (di/delete-collection (:id coll))))
+              (rs/emit! (di/delete-collection id)))
             (on-delete []
               (udl/open! :confirm {:on-accept delete}))]
       [:div.dashboard-title
