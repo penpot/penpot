@@ -234,7 +234,7 @@
        (if editable?
          [:div.multiselect-nav
           [:span.move-item.tooltip.tooltip-top
-           {:on-click on-toggle-copy}
+           {:on-click on-toggle-copy :alt "Copy"}
            (when (:show-copy-tooltip @local)
              (grid-options-tooltip :selected id
                                    :title "Copy to library"
@@ -242,7 +242,7 @@
 
            i/organize]
           [:span.move-item.tooltip.tooltip-top
-           {:on-click on-toggle-move}
+           {:on-click on-toggle-move :alt "Move"}
            (when (:show-move-tooltip @local)
              (grid-options-tooltip :selected id
                                    :title "Move to library"

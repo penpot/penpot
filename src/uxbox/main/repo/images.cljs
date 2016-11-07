@@ -77,3 +77,10 @@
                 :method :put
                 :body body}]
     (send! params)))
+
+(defmethod request :copy/image
+  [_ {:keys [id collection] :as body}]
+  (let [params {:url (str url "/library/images/copy")
+                :method :put
+                :body body}]
+    (send! params)))

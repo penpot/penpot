@@ -210,42 +210,24 @@
          :type "file"
          :on-change on-file-selected}]])))
 
-(mx/defc grid-options-copy
-  {:mixins [mx/reactive mx/static]}
-  [current-coll]
-  {:pre [(uuid? current-coll)]}
-  (let [colls (mx/react collections-ref)
-        colls (->> (vals colls)
-                   (filter #(= :own (:type %)))
-                   (remove #(= current-coll (:id %)))
-                   (sort-by :name colls))
-        on-select (fn [event id]
-                    (dom/prevent-default event)
-                    (rs/emit! (di/copy-selected id)))]
-    [:ul.move-list
-     [:li.title "Copy to library"]
-     [:li [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
-     (for [coll colls
-           :let [id (:id coll)
-                 name (:name coll)]]
-       [:li {:key (str id)}
-        [:a {:on-click #(on-select % id)} name]])]))
 
-(mx/defc grid-options-move
+(mx/defc grid-options-tooltip
   {:mixins [mx/reactive mx/static]}
-  [current-coll]
-  {:pre [(uuid? current-coll)]}
+  [& {:keys [selected on-select title]}]
+  {:pre [(uuid? selected)
+         (fn? on-select)
+         (string? title)]}
   (let [colls (mx/react collections-ref)
         colls (->> (vals colls)
                    (filter #(= :own (:type %)))
-                   (remove #(= current-coll (:id %)))
+                   (remove #(= selected (:id %)))
                    (sort-by :name colls))
         on-select (fn [event id]
-                    (println "on-select" event id)
                     (dom/prevent-default event)
-                    (rs/emit! (di/move-selected id)))]
+                    (dom/stop-propagation event)
+                    (on-select id))]
     [:ul.move-list
-     [:li.title "Move to library"]
+     [:li.title title]
      [:li [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
      (for [coll colls
            :let [id (:id coll)
@@ -265,15 +247,35 @@
             (on-toggle-copy [event]
               (swap! local update :show-copy-tooltip not))
             (on-toggle-move [event]
-              (swap! local update :show-move-tooltip not))]
+              (swap! local update :show-move-tooltip not))
+            (on-copy [selected]
+              (println "copy from" id "to" selected)
+              (swap! local assoc
+                     :show-move-tooltip false
+                     :show-copy-tooltip false)
+              (rs/emit! (di/copy-selected selected)))
+            (on-move [selected]
+              (swap! local assoc
+                     :show-move-tooltip false
+                     :show-copy-tooltip false)
+              (rs/emit! (di/move-selected selected)))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
        (if editable?
          [:div.multiselect-nav
           [:span.move-item.tooltip.tooltip-top
-           {:alt "Move items":on-click on-toggle-move}
+           {:on-click on-toggle-copy :alt "Copy"}
+           (when (:show-copy-tooltip @local)
+             (grid-options-tooltip :selected id
+                                   :title "Copy to library"
+                                   :on-select on-copy))
+           i/organize]
+          [:span.move-item.tooltip.tooltip-top
+           {:on-click on-toggle-move :alt "Move"}
            (when (:show-move-tooltip @local)
-             (grid-options-move id))
+             (grid-options-tooltip :selected id
+                                   :title "Move to library"
+                                   :on-select on-move))
            i/organize]
           [:span.move-item.tooltip.tooltip-top
            {:alt "Rename"}
@@ -286,7 +288,9 @@
           [:span.move-item.tooltip.tooltip-top
            {:on-click on-toggle-copy}
            (when (:show-copy-tooltip @local)
-             (grid-options-copy id))
+             (grid-options-tooltip :selected id
+                                   :title "Copy to library"
+                                   :on-select on-copy))
            i/organize]])])))
 
 (mx/defc grid-item
