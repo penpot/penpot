@@ -50,7 +50,7 @@
 
 (defn- on-error
   "A default error handler."
-  [error]
+  [{:keys [status] :as error}]
   (cond
     ;; Unauthorized or Auth timeout
     (and (:status error)
@@ -58,6 +58,10 @@
          (or (= (:status error) 403)
              (= (:status error) 419)))
     (rs/emit! (dauth/logout))
+
+    ;; Conflict
+    (= status 412)
+    (dmsg/error! (tr "errors.conflict"))
 
     ;; Network error
     (= (:status error) 0)

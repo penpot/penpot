@@ -12,6 +12,7 @@
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.state :as st]
+            [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.colorpicker :refer (colorpicker)]
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.main.ui.forms :as form]
@@ -330,6 +331,7 @@
         colls (mx/react collections-ref)
         coll (get colls (:id state))]
     [:main.dashboard-main
+     (uum/messages)
      (header)
      [:section.dashboard-content
       (nav state colls)

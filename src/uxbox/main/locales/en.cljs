@@ -70,8 +70,11 @@
    "errors.form.max-len" "Should be less than %s"
    "errors.form.color" "Should be a valid color string"
    "errors.form.password-not-match" "Password does not match"
-   "errors.generic" "Something work has happened."
    "errors.auth.unauthorized" "Username or passwords seems to be wrong."
    "errors.auth.invalid-recovery-token" "The recovery token is invalid."
    "errors.profile.update-password" "Error updating password, probably your old password is wrong."
+
+   "errors.generic" "Something work has happened."
+   "errors.conflict" "Conflict on saving data, please refresh and try again."
+
    })
