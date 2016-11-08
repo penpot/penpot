@@ -116,7 +116,7 @@
   (-apply-watch [_ state stream]
     (let [builtin? #(= :builtin (:type %))
           xform (remove (comp builtin? second))
-          version (get state ::version)
+          version (or (get state ::version) -1)
           value (->> (get state :colors-collections)
                      (into {} xform))
           store {:key "color-collections"
