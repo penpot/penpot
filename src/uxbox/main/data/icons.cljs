@@ -356,14 +356,17 @@
 (defrecord CopySelected [id]
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (let [selected (get-in state [:dashboard :icons :selected])
-          selected (map #(get-in state [:icons %]) selected)]
-      (->> (rx/from-coll selected)
-           (rx/map #(dissoc % :id))
-           (rx/map #(assoc % :collection id))
-           (rx/flat-map #(rp/req :create/icon %))
-           (rx/map :payload)
-           (rx/map icon-created)))))
+    (let [selected (get-in state [:dashboard :icons :selected])]
+      (rx/merge
+       (->> (rx/from-coll selected)
+            (rx/map #(get-in state [:icons %]))
+            (rx/map #(dissoc % :id))
+            (rx/map #(assoc % :collection id))
+            (rx/flat-map #(rp/req :create/icon %))
+            (rx/map :payload)
+            (rx/map icon-created))
+       (->> (rx/from-coll selected)
+            (rx/map deselect-icon))))))
 
 (defn copy-selected
   [id]

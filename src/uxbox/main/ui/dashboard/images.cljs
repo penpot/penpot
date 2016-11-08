@@ -211,7 +211,6 @@
          :type "file"
          :on-change on-file-selected}]])))
 
-
 (mx/defc grid-options-tooltip
   {:mixins [mx/reactive mx/static]}
   [& {:keys [selected on-select title]}]
@@ -250,7 +249,6 @@
             (on-toggle-move [event]
               (swap! local update :show-move-tooltip not))
             (on-copy [selected]
-              (println "copy from" id "to" selected)
               (swap! local assoc
                      :show-move-tooltip false
                      :show-copy-tooltip false)
