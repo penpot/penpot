@@ -96,9 +96,9 @@
     (letfn [(on-success [{project :payload}]
               (rx/of
                (project-created project)
-               (udp/create-page {:width width
-                                 :height height
-                                 :layout layout
+               (udp/create-page {:metadata {:width width
+                                            :height height
+                                            :layout layout}
                                  :project (:id project)
                                  :name "Page 1"
                                  :data nil})))]
