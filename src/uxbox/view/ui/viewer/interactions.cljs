@@ -112,49 +112,6 @@
                      :delay delay
                      :duration duration}))))
 
-;; (defn- run-size-interaction
-;;   [{:keys [element resize-width resize-height
-;;            easing delay duration] :as opts}]
-;;   (let [shape (get-in @st/state [:shapes element])
-;;         tf (geom/transformation-matrix
-;;             (geom/resize shape (gpt/point resize-width resize-height)))]
-;;     (animate :targets [(str "#shape-" element)]
-;;              :transform (str tf)
-;;              :easing (translate-ease easing)
-;;              :delay delay
-;;              :duration duration
-;;              :loop false)))
-
-(defn- run-size-interaction-icon
-  [{:keys [x1 y1 view-box rotation] :as shape}
-   {:keys [resize-width resize-height easing
-           element delay duration direction] :as opts}]
-  (if (= direction :reverse)
-    (let [end (geom/transformation-matrix shape)]
-      (animate :targets [(str "#shape-" element)]
-               :transform (str end)
-               :easing (translate-ease easing)
-               :delay delay
-               :duration duration
-               :loop false))
-    (let [orig-width (nth view-box 2)
-          orig-height (nth view-box 3)
-          scale-x (/ resize-width orig-width)
-          scale-y (/ resize-height orig-height)
-          center-x (- resize-width (/ resize-width 2))
-          center-y (- resize-height (/ resize-height 2))
-          end (-> (gmt/matrix)
-                  (gmt/translate x1 y1)
-                  (gmt/translate center-x center-y)
-                  (gmt/rotate rotation)
-                  (gmt/translate (- center-x) (- center-y))
-                  (gmt/scale scale-x scale-y))
-          dom (dom/get-element (str "shape-" element))]
-      (animate* dom {:transform (str end)
-                     :easing (translate-ease easing)
-                     :delay delay
-                     :duration duration}))))
-
 (defn- run-size-interaction-rect
   [{:keys [x1 y1 rotation] :as shape}
    {:keys [resize-width resize-height easing
@@ -178,7 +135,8 @@
   [{:keys [element] :as opts}]
   (let [shape (get-in @st/state [:shapes element])]
     (case (:type shape)
-      :icon (run-size-interaction-icon shape opts)
+      :icon (run-size-interaction-rect shape opts)
+      :image (run-size-interaction-rect shape opts)
       :rect (run-size-interaction-rect shape opts))))
 
 (defn- run-gotourl-interaction

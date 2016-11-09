@@ -29,7 +29,7 @@
 (mx/defc icon-shape
   {:mixins [mx/static]}
   [{:keys [x1 y1 content id metadata] :as shape} factory]
-  (let [key (str "shape-icon-raw-" id)
+  (let [key (str "shape-" id)
         ;; rfm (geom/transformation-matrix shape)
         view-box (apply str (interpose " " (:view-box metadata)))
         size (geom/size shape)
