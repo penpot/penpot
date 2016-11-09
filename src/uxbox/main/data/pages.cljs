@@ -27,13 +27,13 @@
 
 (defn dissoc-page-shapes
   [state id]
-  (let [shapes (get-in state [:shapes])]
+  (let [shapes (get state :shapes)]
     (assoc state :shapes (reduce-kv (fn [acc k v]
-                                            (if (= (:page v) id)
-                                              (dissoc acc k)
-                                              acc))
-                                          shapes
-                                          shapes))))
+                                      (if (= (:page v) id)
+                                        (dissoc acc k)
+                                        acc))
+                                    shapes
+                                    shapes))))
 
 (defn pack-page
   "Return a packed version of page object ready
@@ -44,22 +44,21 @@
         shapes (into {} xf (:shapes state))]
     (-> page
         (assoc-in [:data :shapes] (into [] (:shapes page)))
-        (assoc-in [:data :shapes] shapes)
-        (update-in [:data] dissoc :items)
+        (assoc-in [:data :shapes-map] shapes)
         (dissoc :shapes))))
 
 (defn unpack-page
   "Unpacks packed page object and assocs it to the
   provided state."
-  [state page]
-  (let [data (:data page)
-        shapes (:shapes data)
-        shapes-by-id (:shapes data)
-        page (-> (dissoc page :data)
+  [state {:keys [id data] :as page}]
+  (let [shapes (:shapes data)
+        shapes-map (:shapes-map data)
+        page (-> page
+                 (dissoc :data)
                  (assoc :shapes shapes))]
     (-> state
-        (update :shapes merge shapes-by-id)
-        (update :pages assoc (:id page) page))))
+        (update :shapes merge shapes-map)
+        (update :pages assoc id page))))
 
 (defn purge-page
   "Remove page and all related stuff from the state."
