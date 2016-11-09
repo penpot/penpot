@@ -177,7 +177,6 @@
 (mx/defc grid
   {:mixins [mx/static]}
   [state projects]
-  {:pre [(map? projects)]}
   (let [ordering (:order state :name)
         filtering (:filter state "")
         projects (->> (vals projects)
