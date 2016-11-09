@@ -33,15 +33,14 @@
 (defn- unpack-page
   "Unpacks packed page object and assocs it to the
   provided state."
-  [state page]
-  (let [data (:data page)
-        shapes (:shapes data)
-        shapes-by-id (:shapes data)
+  [state {:keys [id data] :as page}]
+  (let [shapes (:shapes data)
+        shapes-map (:shapes-map data)
         page (-> page
-                 (dissoc page :data)
+                 (dissoc :data)
                  (assoc :shapes shapes))]
     (-> state
-        (update :shapes merge shapes-by-id)
+        (update :shapes merge shapes-map)
         (update :pages conj page))))
 
 (defrecord DataLoaded [data]

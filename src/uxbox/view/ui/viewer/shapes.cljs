@@ -16,6 +16,7 @@
             [uxbox.main.ui.shapes.group :refer (group-shape)]
             [uxbox.main.ui.shapes.path :refer (path-shape)]
             [uxbox.main.ui.shapes.circle :refer (circle-shape)]
+            [uxbox.main.ui.shapes.image :refer (image-shape)]
             [uxbox.main.ui.icons :as i]
             [uxbox.view.ui.viewer.interactions :as itx])
   (:import goog.events.EventType))
@@ -48,6 +49,7 @@
    :will-unmount interactions-wrapper-will-unmount
    :mixins [mx/reactive mx/static]}
   [shape factory]
+  {:pre [(map? shape)]}
   (let [show-itx? (mx/react itx-flag-ref)
         rect (geom/inner-rect shape)]
     [:g {:id (str "itx-" (:id shape))}
@@ -68,6 +70,7 @@
   [{:keys [type] :as item}]
   (case type
     :group (group-shape item shape)
+    :image (image-shape item)
     :text (text-shape item)
     :icon (icon-shape item)
     :rect (rect-shape item)
@@ -76,5 +79,6 @@
 
 (mx/defc shape
   [sid]
+  {:pre [(uuid? sid)]}
   (let [item (get-in @st/state [:shapes sid])]
     (interactions-wrapper item shape*)))
