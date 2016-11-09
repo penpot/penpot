@@ -51,7 +51,9 @@
   {:mixins [mx/static mx/reactive (mx/local)]}
   [own]
   (let [local (:rum/local own)
-        collections (sort-by :name (mx/react collections-ref))
+        collections (->> (mx/react collections-ref)
+                         (vals)
+                         (sort-by :name))
         collection (get-selected-collection local collections)]
     (letfn [(select-collection [event]
               (let [value (read-string (dom/event->value event))]
@@ -64,12 +66,12 @@
          (for [collection collections]
            [:option {:key (str (:id collection))
                      :value (pr-str (:id collection))}
-            (:name collection)])]
+            (:name collection "Storage")])]
         #_[:div.color-palette-buttons
            [:div.btn-palette.edit.current i/pencil]
            [:div.btn-palette.create i/close]]]
        [:span.left-arrow i/arrow-slide]
-       (palette-items (:data collection))
+       (palette-items (:colors collection))
        [:span.right-arrow i/arrow-slide]
        [:span.close-palette {:on-click close}
         i/close]])))
