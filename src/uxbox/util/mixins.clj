@@ -30,8 +30,14 @@
               (recur (assoc r :mixins mixins) (inc s) (first n) (rest n)))
             (recur (assoc r :mixins [v]) (inc s) (first n) (rest n)))
           (recur r (inc s) v n))
-      3 (let [sym (:name r)
-              func `(fn ~sym ~v ~(s/compile-html `(do ~@n)))]
+      3 (if (vector? v)
+          (recur (assoc r :args v) (inc s) (first n) (rest n))
+          (throw (ex-info "Invalid" {})))
+      4 (let [sym (:name r)
+              args (:args r)
+              func (if (map? v)
+                     `(fn ~sym ~args ~v ~(s/compile-html `(do ~@n)))
+                     `(fn ~sym ~args ~(s/compile-html `(do ~@(cons v n)))))]
           [func (:doc r) (:mixins r) sym]))))
 
 (defmacro defc
