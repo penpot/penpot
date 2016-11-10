@@ -19,21 +19,14 @@
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys replace-by-id)]))
 
+
+;; --- Protocols
+
 (defprotocol IPageUpdate
   "A marker protocol for mark events that alters the
   page and is subject to perform a backend synchronization.")
 
-;; --- Page Pack/Unpack
-
-(defn dissoc-page-shapes
-  [state id]
-  (let [shapes (get state :shapes)]
-    (assoc state :shapes (reduce-kv (fn [acc k v]
-                                      (if (= (:page v) id)
-                                        (dissoc acc k)
-                                        acc))
-                                    shapes
-                                    shapes))))
+;; --- Helpers
 
 (defn pack-page
   "Return a packed version of page object ready
@@ -47,7 +40,7 @@
         (assoc-in [:data :shapes-map] shapes)
         (dissoc :shapes))))
 
-(defn unpack-page
+(defn assoc-page
   "Unpacks packed page object and assocs it to the
   provided state."
   [state {:keys [id data] :as page}]
@@ -63,18 +56,24 @@
 (defn purge-page
   "Remove page and all related stuff from the state."
   [state id]
-  (-> state
-      (update :pages dissoc id)
-      (update :pagedata-by-id dissoc id)
-      (dissoc-page-shapes id)))
+  (let [shapes (get state :shapes)]
+    (-> state
+        (update :pages dissoc id)
+        (update :packed-pages dissoc id)
+        (assoc :shapes (reduce-kv (fn [acc k v]
+                                    (if (= (:page v) id)
+                                      (dissoc acc k)
+                                      acc))
+                                  shapes
+                                  shapes)))))
 
-(defn assoc-page
+(defn assoc-packed-page
   [state {:keys [id] :as page}]
-  (assoc-in state [:pagedata-by-id id] page))
+  (assoc-in state [:packed-pages id] page))
 
-(defn dissoc-page
+(defn dissoc-packed-page
   [state id]
-  (update state :pagedata-by-id dissoc id))
+  (update state :packed-pages dissoc id))
 
 ;; --- Pages Fetched
 
@@ -82,8 +81,8 @@
   rs/UpdateEvent
   (-apply-update [_ state]
     (as-> state $
-      (reduce unpack-page $ pages)
-      (reduce assoc-page $ pages))))
+      (reduce assoc-page $ pages)
+      (reduce assoc-packed-page $ pages))))
 
 (defn pages-fetched?
   [v]
@@ -108,8 +107,8 @@
   (-apply-watch [this state s]
     (letfn [(on-created [{page :payload}]
               (rx/of
-               #(unpack-page % page)
-               #(assoc-page % page)))]
+               #(assoc-page % page)
+               #(assoc-packed-page % page)))]
       (let [params {:name name
                     :project project
                     :data {}
@@ -217,9 +216,7 @@
    :project [sc/required]
    :version [sc/required]
    :name [sc/required sc/string]
-   :width [sc/required sc/integer]
-   :height [sc/required sc/integer]
-   :layout [sc/required sc/string]})
+   :metadata [sc/required]})
 
 (defn update-page-metadata
   [data]

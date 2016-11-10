@@ -120,7 +120,7 @@
                       :history true
                       :data (:data item))]
       (-> state
-          (udp/unpack-page page)
+          (udp/assoc-page page)
           (assoc-in [:workspace :history :selected] version)))))
 
 (defn select-page-history
@@ -149,8 +149,8 @@
 (defrecord DeselectPageHistory [id]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (let [packed (get-in state [:pagedata-by-id id])]
-      (-> (udp/unpack-page state packed)
+    (let [packed (get-in state [:packed-pages id])]
+      (-> (udp/assoc-page state packed)
           (assoc-in [:workspace :history :deselecting] true)
           (assoc-in [:workspace :history :selected] nil))))
 

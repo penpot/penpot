@@ -102,7 +102,7 @@
           ;; (pp/pprint packed)
 
           (-> state
-              (udp/unpack-page packed)
+              (udp/assoc-page packed)
               (assoc-in [:undo page-id :selected] pointer)))))))
 
 (defn undo
@@ -135,7 +135,7 @@
           ;; (pp/pprint packed)
 
           (-> state
-              (udp/unpack-page packed)
+              (udp/assoc-page packed)
               (assoc-in [:undo page-id :selected] pointer)))))))
 
 (defn redo
