@@ -95,16 +95,64 @@
   []
   (FetchProjects.))
 
-;; --- Project Created
+;; --- Project Persisted
 
-(defrecord ProjectCreated [project]
+(defrecord ProjectPersisted [data]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (assoc-project state project)))
+    (assoc-project state data)))
 
-(defn project-created
+(defn project-persisted
   [data]
-  (ProjectCreated. data))
+  {:pre [(map? data)]}
+  (ProjectPersisted. data))
+
+;; --- Persist Project
+
+(defrecord PersistProject [id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [project (get-in state [:projects id])]
+      (->> (rp/req :update/project project)
+           (rx/map :payload)
+           (rx/map project-persisted)))))
+
+(defn persist-project
+  [id]
+  {:pre [(uuid? id)]}
+  (PersistProject. id))
+
+;; --- Rename Project
+
+(defrecord RenameProject [id name]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:projects id :name] name))
+
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (rx/of (persist-project id))))
+
+(defn rename-project
+  [id name]
+  {:pre [(uuid? id) (string? name)]}
+  (RenameProject. id name))
+
+;; --- Delete Project (by id)
+
+(defrecord DeleteProject [id]
+  rs/WatchEvent
+  (-apply-watch [_ state s]
+    (letfn [(on-success [_]
+              #(dissoc-project % id))]
+      (->> (rp/req :delete/project id)
+           (rx/map on-success)))))
+
+(defn delete-project
+  [id]
+  (if (map? id)
+    (DeleteProject. (:id id))
+    (DeleteProject. id)))
 
 ;; --- Create Project
 
@@ -113,7 +161,7 @@
   (-apply-watch [this state s]
     (letfn [(on-success [{project :payload}]
               (rx/of
-               (project-created project)
+               (project-persisted project)
                (udp/create-page {:metadata {:width width
                                             :height height
                                             :layout layout}
@@ -133,22 +181,6 @@
   [params]
   (-> (sc/validate! params create-project-schema)
       (map->CreateProject)))
-
-;; --- Delete Project (by id)
-
-(defrecord DeleteProject [id]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (letfn [(on-success [_]
-              #(dissoc-project % id))]
-      (->> (rp/req :delete/project id)
-           (rx/map on-success)))))
-
-(defn delete-project
-  [id]
-  (if (map? id)
-    (DeleteProject. (:id id))
-    (DeleteProject. id)))
 
 ;; --- Go To & Go To Page
 

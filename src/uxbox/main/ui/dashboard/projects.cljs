@@ -9,17 +9,20 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.main.state :as st]
-            [uxbox.main.data.projects :as dp]
+            [uxbox.main.data.projects :as udp]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.messages :as uum]
+            [uxbox.main.ui.keyboard :as kbd]
+            [uxbox.main.exports :as exports]
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.rstore :as rs]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.dom :as dom]
+            [uxbox.util.blob :as blob]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.datetime :as dt]))
 
@@ -106,13 +109,13 @@
     (letfn [(on-term-change [event]
               (let [term (-> (dom/get-target event)
                              (dom/get-value))]
-                (rs/emit! (dp/update-opts :filter term))))
+                (rs/emit! (udp/update-opts :filter term))))
             (on-ordering-change [event]
               (let [value (dom/event->value event)
                     value (read-string value)]
-                (rs/emit! (dp/update-opts :order value))))
+                (rs/emit! (udp/update-opts :order value))))
             (on-clear [event]
-              (rs/emit! (dp/update-opts :filter "")))]
+              (rs/emit! (udp/update-opts :filter "")))]
       [:section.dashboard-bar
        [:div.dashboard-info
 
@@ -140,34 +143,82 @@
            :value (or filtering "")}]
          [:div.clear-search {:on-click on-clear} i/close]]]])))
 
+;; --- Grid Item Thumbnail
+
+(defn- grid-item-thumbnail-will-mount
+  [own]
+  (let [[project] (:rum/args own)
+        svg (exports/render-page* (:page-id project))
+        url (some-> svg
+                    (blob/create "image/svg+xml")
+                    (blob/create-uri))]
+    (assoc own ::url url)))
+
+(defn- grid-item-thumbnail-will-unmount
+  [own]
+  (let [url (::url own)]
+    (when url (blob/revoke-uri url))
+    own))
+
+(mx/defcs grid-item-thumbnail
+  {:mixins [mx/static]
+   :will-mount grid-item-thumbnail-will-mount
+   :will-unmount grid-item-thumbnail-will-unmount}
+  [own project]
+  (if-let [url (::url own)]
+    [:div.grid-item-th
+     {:style {:background-image (str "url('" url "')")}}]
+    [:div.grid-item-th
+     {:style {:background-image "url('/images/project-placeholder.svg')"}}]))
+
 ;; --- Grid Item
 
-(mx/defc  grid-item
-  {:mixins [mx/static]}
-  [project]
+(mx/defcs grid-item
+  {:mixins [mx/static (mx/local)]}
+  [{:keys [rum/local] :as own} project]
   (letfn [(on-navigate [event]
-            (rs/emit! (dp/go-to (:id project))))
+            (rs/emit! (udp/go-to (:id project))))
           (delete []
-            (rs/emit! (dp/delete-project project)))
+            (rs/emit! (udp/delete-project project)))
           (on-delete [event]
             (dom/stop-propagation event)
-            (udl/open! :confirm {:on-accept delete}))]
+            (udl/open! :confirm {:on-accept delete}))
+          (on-key-down [event]
+            (when (kbd/enter? event)
+              (on-blur event)))
+          (on-blur [event]
+            (let [target (dom/event->target event)
+                  name (dom/get-value target)
+                  id (:id project)]
+              (swap! local assoc :edition false)
+              (rs/emit! (udp/rename-project id name))))
+          (on-edit [event]
+            (dom/stop-propagation event)
+            (dom/prevent-default event)
+            (swap! local assoc :edition true))]
     [:div.grid-item.project-th {:on-click on-navigate}
-     [:div.grid-item-th
-      {:style {:background-image "url('/images/project-placeholder.svg')"}}]
+     (grid-item-thumbnail project)
      [:div.item-info
-      [:h3 (:name project)]
+      (if (:edition @local)
+        [:input {:type "text"
+                 :auto-focus true
+                 :on-key-down on-key-down
+                 :on-blur on-blur
+                 :on-click on-edit
+                 :default-value (:name project)}]
+        [:h3 (:name project)])
       [:span.date
-      (str "Updated " (dt/timeago (:modified-at project)))]]
+       (str "Updated " (dt/timeago (:modified-at project)))]]
      [:div.project-th-actions
       [:div.project-th-icon.pages
        i/page
        [:span (:total-pages project)]]
       #_[:div.project-th-icon.comments
          i/chat
-        [:span "0"]]
+         [:span "0"]]
       [:div.project-th-icon.edit
-         i/pencil]
+       {:on-click on-edit}
+       i/pencil]
       [:div.project-th-icon.delete
        {:on-click on-delete}
        i/trash]]]))
@@ -200,12 +251,12 @@
 
 (defn projects-page-will-mount
   [own]
-  (rs/emit! (dp/initialize))
+  (rs/emit! (udp/initialize))
   own)
 
 (defn projects-page-did-remount
   [old-own own]
-  (rs/emit! (dp/initialize))
+  (rs/emit! (udp/initialize))
   own)
 
 (mx/defc projects-page
@@ -299,7 +350,7 @@
          {:value "Go go go!"
           :on-click #(do
                        (dom/prevent-default %)
-                       (rs/emit! (dp/create-project @local))
+                       (rs/emit! (udp/create-project @local))
                        (udl/close!))
 
           :type "submit"}])]

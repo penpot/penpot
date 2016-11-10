@@ -38,12 +38,17 @@
 
 (defmethod request :create/project
   [_ data]
-  (let [params {:url (str url "/projects")
-                :method :post
-                :body data}]
-    (send! params)))
+  (send! {:url (str url "/projects")
+          :method :post
+          :body data}))
+
+(defmethod request :update/project
+  [_ {:keys [id] :as data}]
+  (send! {:url (str url "/projects/" id)
+          :method :put
+          :body data}))
 
 (defmethod request :delete/project
   [_ id]
-  (let [url (str url "/projects/" id)]
-    (send! {:url url :method :delete})))
+  (send! {:url (str url "/projects/" id)
+          :method :delete}))
