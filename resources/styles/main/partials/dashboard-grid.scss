@@ -310,7 +310,8 @@
 
 .grid-item-th {
   background-position: center;
-  background-size: cover;
+  background-size: auto 80%;
+  background-repeat: no-repeat;
   border-top-left-radius: $br-medium;
   border-top-right-radius: $br-medium;
   height: 70%;
