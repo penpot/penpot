@@ -45,7 +45,6 @@
   (let [local (:rum/local own)
         dashboard (mx/react dashboard-ref)
         own? (= :own (:type coll))
-        editable? (or own? (nil? id))
         edit? (:edit @local)]
     (letfn [(save []
               (let [dom (mx/ref-node own "input")
@@ -84,7 +83,7 @@
              (:name coll)]
             [:span.dashboard-title-field
              (:name coll "Storage")]))]
-       (if (and own? coll)
+       (when (and own? coll)
          [:div.edition
           (if edit?
             [:span {:on-click save} i/save]
