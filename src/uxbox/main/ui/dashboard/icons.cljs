@@ -71,7 +71,7 @@
   [own {:keys [id] :as coll}]
   (let [local (:rum/local own)
         dashboard (mx/react dashboard-ref)
-        own? (= :builtin (:type coll))
+        own? (= :own (:type coll))
         edit? (:edit @local)]
     (letfn [(on-save [e]
               (let [dom (mx/ref-node own "input")
@@ -104,10 +104,13 @@
              :on-key-down on-input-keydown}
             (:name coll)]
            [:span.close {:on-click on-cancel} i/close]]
-          [:span.dashboard-title-field
-           {:on-double-click on-edit}
-           (:name coll "Storage")])]
-       (if (and (not own?) coll)
+          (if own?
+            [:span.dashboard-title-field
+             {:on-double-click on-edit}
+             (:name coll)]
+            [:span.dashboard-title-field
+             (:name coll "Storage")]))]
+       (when (and own? coll)
          [:div.edition
           (if edit?
             [:span {:on-click on-save} i/save]
