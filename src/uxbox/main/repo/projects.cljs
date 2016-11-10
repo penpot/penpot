@@ -9,26 +9,32 @@
   (:require [beicon.core :as rx]
             [uxbox.config :refer (url)]
             [uxbox.main.repo.pages :as pages]
-            [uxbox.main.repo.impl :refer (request send!)]))
+            [uxbox.main.repo.impl :refer (request send!)]
+            [uxbox.util.transit :as t]))
 
 (defmethod request :fetch/projects
   [type data]
-  (let [url (str url "/projects")]
-    (send! {:url url :method :get})))
-
-(defmethod request :fetch/project
-  [_ id]
-  (let [url (str url "/projects/" id)]
-    (send! {:url url :method :get})))
+  (letfn [(decode-payload [{:keys [payload] :as response}]
+            (assoc response :payload (mapv decode-page payload)))
+          (decode-page [{:keys [page-metadata page-data] :as project}]
+            (assoc project
+                   :page-metadata (t/decode page-metadata)
+                   :page-data (t/decode page-data)))]
+    ;; Obtain the list of projects and decode the embedded
+    ;; page data in order to have it usable.
+    (->> (send! {:url (str url "/projects")
+                 :method :get})
+         (rx/map decode-payload))))
 
 (defmethod request :fetch/project-by-token
   [_ token]
-  (let [url (str url "/projects-by-token/" token)]
-    (->> (send! {:url url :method :get})
-         (rx/map (fn [response]
-                   (update-in response [:payload :pages]
-                              (fn [pages]
-                                (mapv pages/decode-page pages))))))))
+  (letfn [(decode-pages [response]
+            (let [pages (->> (get-in response [:payload :pages])
+                             (mapv pages/decode-page))]
+              (assoc-in response [:payload :pages] pages)))]
+    (->> (send! {:url (str url "/projects-by-token/" token)
+                 :method :get})
+         (rx/map decode-pages))))
 
 (defmethod request :create/project
   [_ data]

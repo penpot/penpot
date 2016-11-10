@@ -8,28 +8,44 @@
 (ns uxbox.main.data.projects
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]
-            [uxbox.util.router :as r]
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]
+            [uxbox.main.data.pages :as udp]
+            [uxbox.util.rstore :as rs]
+            [uxbox.util.router :as r]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.schema :as sc]
             [uxbox.main.data.pages :as udp]))
 
 ;; --- Helpers
 
+(defn assoc-project-page
+  "Assoc to the state the project's embedded page."
+  [state project]
+  (let [page {:id (:page-id project)
+              :name (:page-name project)
+              :version (:page-version project)
+              :data (:page-data project)
+              :created-at (:page-created-at project)
+              :modified-at (:page-modified-at project)
+              :metadata (:page-metadata project)}]
+    (-> state
+        (udp/assoc-page page)
+        (udp/assoc-packed-page page))))
+
 (defn assoc-project
-  "A reduce function for assoc the project
-  to the state map."
-  [state proj]
-  (let [id (:id proj)]
-    (update-in state [:projects id] merge proj)))
+  "A reduce function for assoc the project to the state map."
+  [state {:keys [id] :as project}]
+  (let [project (dissoc project
+                        :page-name :page-version
+                        :page-data :page-metadata
+                        :page-created-at :page-modified-at)]
+    (update-in state [:projects id] merge project)))
 
 (defn dissoc-project
-  "A reduce function for dissoc the project
-  from the state map."
+  "A reduce function for dissoc the project from the state map."
   [state id]
-  (update-in state [:projects] dissoc id))
+  (update state :projects dissoc id))
 
 ;; --- Initialize
 
@@ -54,7 +70,9 @@
 (defrecord ProjectsFetched [projects]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (reduce assoc-project state projects)))
+    (as-> state $
+      (reduce assoc-project-page $ projects)
+      (reduce assoc-project $ projects))))
 
 (defn projects-fetched
   [projects]
