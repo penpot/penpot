@@ -47,16 +47,18 @@
   (shape* (get-in @*state* [:shapes sid])))
 
 (mx/defc page-svg
-  [{:keys [width height] :as page}]
-  [:svg {:width width
-         :height height
-         :version "1.1"
-         :xmlnsXlink "http://www.w3.org/1999/xlink"
-         :xmlns "http://www.w3.org/2000/svg"}
-   (background)
-   (for [item (reverse (:shapes page))]
-     (-> (shape item)
-         (mx/with-key (str item))))])
+  [{:keys [metadata] :as page}]
+  (let [{:keys [width height]} metadata]
+    [:svg {:width width
+           :height height
+           :view-box (str "0 0 " width " " height)
+           :version "1.1"
+           :xmlnsXlink "http://www.w3.org/1999/xlink"
+           :xmlns "http://www.w3.org/2000/svg"}
+     #_(background)
+     (for [item (reverse (:shapes page))]
+       (-> (shape item)
+           (mx/with-key (str item))))]))
 
 (defn render-page
   [id]
