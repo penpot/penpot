@@ -234,30 +234,30 @@
 
 ;; --- Image Updated
 
-(defrecord ImageUpdated [id data]
+(defrecord ImagePersisted [id data]
   rs/UpdateEvent
   (-apply-update [_ state]
     (assoc-in state [:images id] data)))
 
-(defn image-updated
+(defn image-persisted
   [{:keys [id] :as data}]
-  {:pre [(map? data)]}
-  (ImageUpdated. id data))
+  {:pre [(map? data) (uuid? id)]}
+  (ImagePersisted. id data))
 
 ;; --- Update Image
 
-(defrecord UpdateImage [id]
+(defrecord PersistImage [id]
   rs/WatchEvent
   (-apply-watch [_ state stream]
     (let [image (get-in state [:images id])]
       (->> (rp/req :update/image image)
            (rx/map :payload)
-           (rx/map image-updated)))))
+           (rx/map image-persisted)))))
 
-(defn update-image
+(defn persist-image
   [id]
   {:pre [(uuid? id)]}
-  (UpdateImage. id))
+  (PersistImage. id))
 
 ;; --- Images Fetched
 
@@ -342,6 +342,22 @@
   {:pre [(uuid? id)]}
   (DeleteImage. id))
 
+;; --- Rename Image
+
+(defrecord RenameImage [id name]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:images id :name] name))
+
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (rx/of (persist-image id))))
+
+(defn rename-image
+  [id name]
+  {:pre [(uuid? id) (string? name)]}
+  (RenameImage. id name))
+
 ;; --- Select image
 
 (defrecord SelectImage [id]
@@ -407,7 +423,7 @@
     (let [selected (get-in state [:dashboard :images :selected])]
       (rx/merge
        (->> (rx/from-coll selected)
-            (rx/map update-image))
+            (rx/map persist-image))
        (->> (rx/from-coll selected)
             (rx/map deselect-image))))))
 

@@ -295,15 +295,32 @@
                                    :on-select on-copy))
            i/organize]])])))
 
-(mx/defc grid-item
-  [{:keys [id created-at] :as image} selected?]
+(mx/defcs grid-item
+  {:mixins [mx/static (mx/local)]}
+  [{:keys [rum/local] :as own}
+   {:keys [id created-at] :as image} selected?]
   (letfn [(toggle-selection [event]
             (rs/emit! (di/toggle-image-selection id)))
           (toggle-selection-shifted [event]
             (when (kbd/shift? event)
-              (toggle-selection event)))]
+              (toggle-selection event)))
+          (on-key-down [event]
+            (when (kbd/enter? event)
+              (on-blur event)))
+          (on-blur [event]
+            (let [target (dom/event->target event)
+                  name (dom/get-value target)
+                  id (:id image)]
+              (swap! local assoc :edition false)
+              (rs/emit! (di/rename-image id name))))
+          (on-edit [event]
+            (dom/stop-propagation event)
+            (dom/prevent-default event)
+            (swap! local assoc :edition true))]
+
     [:div.grid-item.images-th
-     {:on-click toggle-selection-shifted}
+     {:on-click toggle-selection-shifted
+      :on-double-click on-edit}
      [:div.grid-item-th
       {:style {:background-image (str "url('" (:thumbnail image) "')")}}
       [:div.input-checkbox.check-primary
@@ -313,7 +330,14 @@
                 :checked selected?}]
        [:label {:for (:id image)}]]]
      [:div.item-info
-      [:h3 (:name image)]
+      (if (:edition @local)
+        [:input {:type "text"
+                 :auto-focus true
+                 :on-key-down on-key-down
+                 :on-blur on-blur
+                 :on-click on-edit
+                 :default-value (:name image)}]
+        [:h3 (:name image)])
       [:span.date
        (str "Uploaded at " (dt/format created-at "L"))]]]))
 
