@@ -7,18 +7,13 @@
 (ns uxbox.util.zip
   "Helpers for make zip file (using jszip)."
   (:require [vendor.jszip]
-            [promesa.core :as p]))
-
-(defn build*
-  [files resolve reject]
-  (let [zipobj (js/JSZip.)]
-    (run! (fn [[name content]]
-            (.file zipobj name content))
-          files)
-    (-> (.generateAsync zipobj #js {:type "blob"})
-        (.then resolve reject))))
+            [beicon.core :as rx]))
 
 (defn build
   [files]
-  (p/promise (fn [resolve reject]
-               (build* files resolve reject))))
+  (letfn [(attach-file [zobj [name content]]
+            (.file zobj name content))]
+    (let [zobj (js/JSZip.)]
+      (run! (partial attach-file zobj) files)
+      (->> (.generateAsync zobj #js {:type "blob"})
+           (rx/from-promise)))))

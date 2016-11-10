@@ -6,8 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui
-  (:require [promesa.core :as p]
-            [beicon.core :as rx]
+  (:require [beicon.core :as rx]
             [lentes.core :as l]
             [cuerdas.core :as str]
             [bide.core :as bc]
@@ -23,6 +22,7 @@
             [uxbox.main.ui.dashboard :as dashboard]
             [uxbox.main.ui.settings :as settings]
             [uxbox.main.ui.workspace :refer (workspace)]
+            [uxbox.util.timers :as ts]
             [uxbox.util.router :as rt]
             [uxbox.util.rstore :as rs]
             [uxbox.util.i18n :refer (tr)]
@@ -94,7 +94,7 @@
         location (:id route)
         params (:params route)]
     (if (and (restricted? location) (not auth))
-      (do (p/schedule 0 #(rt/go :auth/login)) nil)
+      (do (ts/schedule 0 #(rt/go :auth/login)) nil)
       (case location
         :auth/login (auth/login-page)
         :auth/register (auth/register-page)

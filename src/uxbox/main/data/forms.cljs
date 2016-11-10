@@ -6,7 +6,6 @@
 
 (ns uxbox.main.data.forms
   (:require [beicon.core :as rx]
-            [promesa.core :as p]
             [lentes.core :as l]
             [uxbox.main.repo :as rp]
             [uxbox.util.rstore :as rs]

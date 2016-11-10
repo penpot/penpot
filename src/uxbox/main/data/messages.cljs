@@ -6,9 +6,9 @@
 
 (ns uxbox.main.data.messages
   (:require [cuerdas.core :as str]
-            [promesa.core :as p]
             [beicon.core :as rx]
             [lentes.core :as l]
+            [uxbox.util.timers :as ts]
             [uxbox.util.rstore :as rs]))
 
 ;; --- Constants
@@ -88,15 +88,15 @@
 
 (defn error!
   [& args]
-  (p/schedule 0 #(rs/emit! (apply show-error args))))
+  (ts/schedule 0 #(rs/emit! (apply show-error args))))
 
 (defn info!
   [& args]
-  (p/schedule 0 #(rs/emit! (apply show-info args))))
+  (ts/schedule 0 #(rs/emit! (apply show-info args))))
 
 (defn dialog!
   [& args]
-  (p/schedule 0 #(rs/emit! (apply show-dialog args))))
+  (ts/schedule 0 #(rs/emit! (apply show-dialog args))))
 
 (defn close!
   []

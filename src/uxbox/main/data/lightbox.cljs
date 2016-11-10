@@ -5,8 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.lightbox
-  (:require [promesa.core :as p]
-            [beicon.core :as rx]
+  (:require [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.util.rstore :as rs]))
 

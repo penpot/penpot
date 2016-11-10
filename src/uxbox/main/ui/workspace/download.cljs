@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.workspace.download
   (:require [cuerdas.core :as str]
-            [promesa.core :as p]
+            [beicon.core :as rx]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.exports :as exports]
             [uxbox.main.state :as st]
@@ -72,21 +72,22 @@
 
 (defn- download-project-zip
   [{:keys [name] :as project} pages]
-  (p/alet [files (generate-files pages)
-           blob (p/await (zip/build files))
-           uri  (blob/create-uri blob)
-           link (.createElement js/document "a")
-           event (js/MouseEvent. "click")
-           now (dt/now)]
-    (.setAttribute link "href" uri)
-    (.setAttribute link "download" (str (str/uslug name) "_"
-                                        (dt/format now :unix)
-                                        ".zip"))
-
-    (.appendChild (.-body js/document) link)
-    (.dispatchEvent link event)
-    (blob/revoke-uri uri)
-    (.removeChild (.-body js/document) link)))
+  (let [event (js/MouseEvent. "click")
+        link (.createElement js/document "a")
+        now (dt/now)
+        stream (->> (rx/from-coll (generate-files pages))
+                    (rx/reduce conj [])
+                    (rx/mapcat zip/build)
+                    (rx/map blob/create-uri)
+                    (rx/take 1))
+        download (str (str/uslug name) "_" (dt/format now :unix) ".zip")]
+    (rx/subscribe stream (fn [uri]
+                           (.setAttribute link "download" download)
+                           (.setAttribute link "href" uri)
+                           (.appendChild (.-body js/document) link)
+                           (.dispatchEvent link event)
+                           (blob/revoke-uri uri)
+                           (.removeChild (.-body js/document) link)))))
 
 (mx/defcs download-dialog
   {:mixins [mx/static mx/reactive]}

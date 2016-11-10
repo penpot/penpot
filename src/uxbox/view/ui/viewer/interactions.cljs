@@ -5,12 +5,12 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.view.ui.viewer.interactions
-  (:require [promesa.core :as p]
-            [uxbox.util.dom :as dom]
+  (:require [uxbox.util.dom :as dom]
             [uxbox.util.rstore :as rs]
-            [uxbox.main.geom :as geom]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
+            [uxbox.util.timers :as ts]
+            [uxbox.main.geom :as geom]
             [uxbox.main.state :as st]
             [uxbox.view.data.viewer :as dv]
             [vendor.snapsvg])
@@ -52,7 +52,7 @@
   [dom {:keys [delay duration easing] :as opts}]
   (let [props (dissoc opts :delay :duration :easing)
         snap (js/Snap. dom)]
-    (p/schedule delay #(.animate snap (clj->js props) duration easing))))
+    (ts/schedule delay #(.animate snap (clj->js props) duration easing))))
 
 ;; --- Interactions to Animation Compilation
 

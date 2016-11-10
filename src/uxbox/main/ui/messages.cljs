@@ -1,11 +1,11 @@
 (ns uxbox.main.ui.messages
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [promesa.core :as p]
             [lentes.core :as l]
             [uxbox.main.state :as st]
             [uxbox.main.data.messages :as udm]
             [uxbox.main.ui.icons :as i]
+            [uxbox.util.timers :as ts]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer (classnames)]
             [uxbox.util.dom :as dom]))
@@ -47,13 +47,13 @@
     (letfn [(accept [event]
               (dom/prevent-default event)
               (on-accept)
-              (p/schedule 0 udm/close!))
+              (ts/schedule 0 udm/close!))
 
             (cancel [event]
               (dom/prevent-default event)
               (when on-cancel
                 (on-cancel))
-              (p/schedule 0 udm/close!))]
+              (ts/schedule 0 udm/close!))]
       (html
        [:div.message {:class classes}
         [:div.message-body

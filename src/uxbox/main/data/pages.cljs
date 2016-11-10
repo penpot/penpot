@@ -7,7 +7,6 @@
 
 (ns uxbox.main.data.pages
   (:require [cuerdas.core :as str]
-            [promesa.core :as p]
             [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.util.rstore :as rs]

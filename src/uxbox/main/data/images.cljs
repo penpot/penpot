@@ -7,7 +7,6 @@
 (ns uxbox.main.data.images
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
-            [promesa.core :as p]
             [uxbox.util.data :refer (jscoll->vec)]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.rstore :as rs]

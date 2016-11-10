@@ -6,7 +6,6 @@
 
 (ns uxbox.main.repo.impl
   (:require [clojure.walk :as walk]
-            [promesa.core :as p :include-macros true]
             [beicon.core :as rx]
             [uxbox.config :refer (url)]
             [uxbox.util.http :as http]

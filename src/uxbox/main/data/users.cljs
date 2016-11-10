@@ -6,7 +6,6 @@
 
 (ns uxbox.main.data.users
   (:require [beicon.core :as rx]
-            [promesa.core :as p]
             [uxbox.main.repo :as rp]
             [uxbox.util.rstore :as rs]
             [uxbox.main.state :as st]

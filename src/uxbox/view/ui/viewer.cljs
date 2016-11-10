@@ -7,7 +7,6 @@
 
 (ns uxbox.view.ui.viewer
   (:require [lentes.core :as l]
-            [promesa.core :as p]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as rt]
