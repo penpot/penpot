@@ -64,3 +64,9 @@
   [id]
   (let [page (get-in @st/state [:pages id])]
     (mx/render-static-html (page-svg page))))
+
+(defn render-page*
+  [id]
+  (let [page (get-in @st/state [:pages id])]
+    (when (:shapes page)
+      (mx/render-static-html (page-svg page)))))
