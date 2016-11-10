@@ -285,14 +285,14 @@
   (let [{:keys [width height]} metadata]
     (assoc shape
            :proportion (/ width height)
-           :proportion-lock true)))
+           :proportion-lock false)))
 
 (defn setup-proportions-rect
   [shape]
   (let [{:keys [width height]} (size shape)]
     (assoc shape
            :proportion (/ width height)
-           :proportion-lock true)))
+           :proportion-lock false)))
 
 ;; --- Resize (Dimentsions)
 
