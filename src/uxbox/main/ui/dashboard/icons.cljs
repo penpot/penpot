@@ -41,6 +41,8 @@
 
 (defn- contains-term?
   [phrase term]
+  {:pre [(string? phrase)
+         (string? term)]}
   (let [term (name term)]
     (str/includes? (str/lower phrase) (str/trim (str/lower term)))))
 
@@ -320,8 +322,8 @@
   {:mixins [mx/static mx/reactive]}
   [{:keys [selected id type] :as state}]
   (let [editable? (or (= type :own) (nil? id))
-        ordering (:order state)
-        filtering (:filter state)
+        ordering (:order state :name)
+        filtering (:filter state "")
         icons (mx/react icons-ref)
         icons (->> (vals icons)
                    (filter #(= id (:collection %)))
