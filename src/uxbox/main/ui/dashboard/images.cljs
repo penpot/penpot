@@ -345,8 +345,8 @@
   {:mixins [mx/static mx/reactive]}
   [{:keys [id type selected] :as state}]
   (let [editable? (or (= type :own) (nil? id))
-        filtering (:filter state)
-        ordering (:order state)
+        ordering (:order state :name)
+        filtering (:filter state "")
         images (mx/react images-ref)
         images (->> (vals images)
                     (filter #(= id (:collection %)))
