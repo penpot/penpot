@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.util.dom.files
+(ns uxbox.util.files
   "A interop helpers for work with files."
   (:require [beicon.core :as rx]
             [cuerdas.core :as str]

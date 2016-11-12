@@ -11,7 +11,7 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
-            [uxbox.util.dom.files :as files]
+            [uxbox.util.files :as files]
             [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]))
 
