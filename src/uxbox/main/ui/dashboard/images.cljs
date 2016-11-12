@@ -240,7 +240,7 @@
 
 (mx/defcs grid-options
   {:mixins [(mx/local) mx/static]}
-  [own {:keys [type id] :as coll}]
+  [own {:keys [type id] :as coll} selected]
   (let [editable? (or (= type :own) (nil? coll))
         local (:rum/local own)]
     (letfn [(delete []
@@ -260,7 +260,10 @@
               (swap! local assoc
                      :show-move-tooltip false
                      :show-copy-tooltip false)
-              (rs/emit! (di/move-selected selected)))]
+              (rs/emit! (di/move-selected selected)))
+            (on-rename [event]
+              (let [selected (first selected)]
+                (rs/emit! (di/update-opts :edition selected))))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
        (if editable?
@@ -279,9 +282,11 @@
                                    :title "Move to library"
                                    :on-select on-move))
            i/organize]
-          [:span.move-item.tooltip.tooltip-top
-           {:alt "Rename"}
-           i/pencil]
+          (when (= 1 (count selected))
+            [:span.move-item.tooltip.tooltip-top
+             {:alt "Rename"
+              :on-click on-rename}
+             i/pencil])
           [:span.delete.tooltip.tooltip-top
            {:alt "Delete"
             :on-click on-delete}
@@ -295,10 +300,9 @@
                                    :on-select on-copy))
            i/organize]])])))
 
-(mx/defcs grid-item
-  {:mixins [mx/static (mx/local)]}
-  [{:keys [rum/local] :as own}
-   {:keys [id created-at] :as image} selected?]
+(mx/defc grid-item
+  {:mixins [mx/static]}
+  [{:keys [id created-at] :as image} selected? edition?]
   (letfn [(toggle-selection [event]
             (rs/emit! (di/toggle-image-selection id)))
           (toggle-selection-shifted [event]
@@ -309,18 +313,15 @@
               (on-blur event)))
           (on-blur [event]
             (let [target (dom/event->target event)
-                  name (dom/get-value target)
-                  id (:id image)]
-              (swap! local assoc :edition false)
-              (rs/emit! (di/rename-image id name))))
+                  name (dom/get-value target)]
+              (rs/emit! (di/update-opts :edition false)
+                        (di/rename-image id name))))
           (on-edit [event]
             (dom/stop-propagation event)
             (dom/prevent-default event)
-            (swap! local assoc :edition true))]
-
+            (rs/emit! (di/update-opts :edition id)))]
     [:div.grid-item.images-th
-     {:on-click toggle-selection-shifted
-      :on-double-click on-edit}
+     {:on-click toggle-selection-shifted}
      [:div.grid-item-th
       {:style {:background-image (str "url('" (:thumbnail image) "')")}}
       [:div.input-checkbox.check-primary
@@ -330,20 +331,21 @@
                 :checked selected?}]
        [:label {:for (:id image)}]]]
      [:div.item-info
-      (if (:edition @local)
+      (if edition?
         [:input {:type "text"
                  :auto-focus true
                  :on-key-down on-key-down
                  :on-blur on-blur
                  :on-click on-edit
                  :default-value (:name image)}]
-        [:h3 (:name image)])
+        [:h3 {:on-double-click on-edit}
+         (:name image)])
       [:span.date
        (str "Uploaded at " (dt/format created-at "L"))]]]))
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}
-  [{:keys [id type selected] :as state}]
+  [{:keys [id type selected edition] :as state}]
   (let [editable? (or (= type :own) (nil? id))
         ordering (:order state :name)
         filtering (:filter state "")
@@ -357,8 +359,9 @@
       (when editable? (grid-form id))
       (for [image images
             :let [id (:id image)
+                  edition? (= edition id)
                   selected? (contains? selected id)]]
-        (-> (grid-item image selected?)
+        (-> (grid-item image selected? edition?)
             (mx/with-key (str id))))]]))
 
 (mx/defc content
@@ -368,7 +371,7 @@
    (page-title coll)
    (grid state)
    (when (seq selected)
-     (grid-options coll))])
+     (grid-options coll selected))])
 
 ;; --- Menu
 

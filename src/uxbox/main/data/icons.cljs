@@ -245,32 +245,32 @@
   {:pre [(or (uuid? id) (nil? id))]}
   (CreateIcons. id files))
 
-;; --- Icon Updated
+;; --- Icon Persisted
 
-(defrecord IconUpdated [id data]
+(defrecord IconPersisted [id data]
   rs/UpdateEvent
   (-apply-update [_ state]
     (assoc-in state [:icons id] data)))
 
-(defn icon-updated
+(defn icon-persisted
   [{:keys [id] :as data}]
   {:pre [(map? data)]}
-  (IconUpdated. id data))
+  (IconPersisted. id data))
 
-;; --- Update Icon
+;; --- Persist Icon
 
-(defrecord UpdateIcon [id]
+(defrecord PersistIcon [id]
   rs/WatchEvent
   (-apply-watch [_ state stream]
     (let [icon (get-in state [:icons id])]
       (->> (rp/req :update/icon icon)
            (rx/map :payload)
-           (rx/map icon-updated)))))
+           (rx/map icon-persisted)))))
 
-(defn update-icon
+(defn persist-icon
   [id]
   {:pre [(uuid? id)]}
-  (UpdateIcon. id))
+  (PersistIcon. id))
 
 ;; --- Icons Fetched
 
@@ -320,6 +320,22 @@
   [id]
   {:pre [(uuid? id)]}
   (DeleteIcon. id))
+
+;; --- Rename Icon
+
+(defrecord RenameIcon [id name]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:icons id :name] name))
+
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (rx/of (persist-icon id))))
+
+(defn rename-icon
+  [id name]
+  {:pre [(uuid? id) (string? name)]}
+  (RenameIcon. id name))
 
 ;; --- Select icon
 
@@ -389,7 +405,7 @@
     (let [selected (get-in state [:dashboard :icons :selected])]
       (rx/merge
        (->> (rx/from-coll selected)
-            (rx/map update-icon))
+            (rx/map persist-icon))
        (->> (rx/from-coll selected)
             (rx/map deselect-icon))))))
 
@@ -413,13 +429,16 @@
 
 ;; --- Update Opts (Filtering & Ordering)
 
-(defrecord UpdateOpts [order filter]
+(defrecord UpdateOpts [order filter edition]
   rs/UpdateEvent
   (-apply-update [_ state]
     (update-in state [:dashboard :icons] merge
+               {:edition edition}
                (when order {:order order})
                (when filter {:filter filter}))))
 
 (defn update-opts
-  [& {:keys [order filter] :as opts}]
-  (UpdateOpts. order filter))
+  [& {:keys [order filter edition]
+      :or {edition false}
+      :as opts}]
+  (UpdateOpts. order filter edition))

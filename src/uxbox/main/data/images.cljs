@@ -446,13 +446,16 @@
 
 ;; --- Update Opts (Filtering & Ordering)
 
-(defrecord UpdateOpts [order filter]
+(defrecord UpdateOpts [order filter edition]
   rs/UpdateEvent
   (-apply-update [_ state]
     (update-in state [:dashboard :images] merge
+               {:edition edition}
                (when order {:order order})
                (when filter {:filter filter}))))
 
 (defn update-opts
-  [& {:keys [order filter] :as opts}]
-  (UpdateOpts. order filter))
+  [& {:keys [order filter edition]
+      :or {edition false}
+      :as opts}]
+  (UpdateOpts. order filter edition))

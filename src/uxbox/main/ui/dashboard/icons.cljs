@@ -236,9 +236,8 @@
 
 (mx/defcs grid-options
   {:mixins [(mx/local) mx/static]}
-  [own {:keys [type id] :as coll}]
-  (let [editable? (or (= type :own)
-                      (nil? coll))
+  [own {:keys [type id] :as coll} selected]
+  (let [editable? (or (= type :own) (nil? coll))
         local (:rum/local own)]
     (letfn [(delete []
               (rs/emit! (di/delete-selected)))
@@ -258,7 +257,10 @@
               (swap! local assoc
                      :show-move-tooltip false
                      :show-copy-tooltip false)
-              (rs/emit! (di/move-selected selected)))]
+              (rs/emit! (di/move-selected selected)))
+            (on-rename [event]
+              (let [selected (first selected)]
+                (rs/emit! (di/update-opts :edition selected))))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
        (if editable?
@@ -277,9 +279,11 @@
                                    :title "Move to library"
                                    :on-select on-move))
            i/organize]
-          [:span.move-item.tooltip.tooltip-top
-           {:alt "Rename"}
-           i/pencil]
+          (when (= 1 (count selected))
+            [:span.move-item.tooltip.tooltip-top
+             {:alt "Rename"
+              :on-click on-rename}
+             i/pencil])
           [:span.delete.tooltip.tooltip-top
            {:alt "Delete"
             :on-click on-delete}
@@ -294,12 +298,25 @@
            i/organize]])])))
 
 (mx/defc grid-item
-  [{:keys [id created-at] :as icon} selected?]
+  {:mixins [mx/static]}
+  [{:keys [id created-at] :as icon} selected? edition?]
   (letfn [(toggle-selection [event]
             (rs/emit! (di/toggle-icon-selection id)))
           (toggle-selection-shifted [event]
             (when (kbd/shift? event)
-              (toggle-selection event)))]
+              (toggle-selection event)))
+          (on-key-down [event]
+            (when (kbd/enter? event)
+              (on-blur event)))
+          (on-blur [event]
+            (let [target (dom/event->target event)
+                  name (dom/get-value target)]
+              (rs/emit! (di/update-opts :edition false)
+                        (di/rename-icon id name))))
+          (on-edit [event]
+            (dom/stop-propagation event)
+            (dom/prevent-default event)
+            (rs/emit! (di/update-opts :edition id)))]
     [:div.grid-item.small-item.project-th
      {:on-click toggle-selection-shifted
       :id (str "grid-item-" id)}
@@ -312,15 +329,20 @@
      [:span.grid-item-image
       (icon/icon-svg icon)]
      [:div.item-info
-      [:h3 (:name icon)]
-      (str "Uploaded at " (dt/format created-at "L"))]
-     #_[:div.project-th-actions
-        [:div.project-th-icon.edit i/pencil]
-        [:div.project-th-icon.delete i/trash]]]))
+      (if edition?
+        [:input {:type "text"
+                 :auto-focus true
+                 :on-key-down on-key-down
+                 :on-blur on-blur
+                 :on-click on-edit
+                 :default-value (:name icon)}]
+        [:h3 {:on-double-click on-edit}
+         (:name icon)])
+      (str "Uploaded at " (dt/format created-at "L"))]]))
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}
-  [{:keys [selected id type] :as state}]
+  [{:keys [selected edition id type] :as state}]
   (let [editable? (or (= type :own) (nil? id))
         ordering (:order state :name)
         filtering (:filter state "")
@@ -334,8 +356,9 @@
       (when editable? (grid-form id))
       (for [icon icons
             :let [id (:id icon)
+                  edition? (= edition id)
                   selected? (contains? selected id)]]
-        (-> (grid-item icon selected?)
+        (-> (grid-item icon selected? edition?)
             (mx/with-key (str id))))]]))
 
 (mx/defc content
@@ -345,7 +368,7 @@
    (page-title coll)
    (grid state)
    (when (seq selected)
-     (grid-options coll))])
+     (grid-options coll selected))])
 
 ;; --- Menu
 
