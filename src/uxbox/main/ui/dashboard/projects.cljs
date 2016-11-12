@@ -103,7 +103,7 @@
 (mx/defc menu
   {:mixins [mx/static]}
   [state projects]
-  (let [ordering (:order state :name)
+  (let [ordering (:order state :created)
         filtering (:filter state "")
         count (count projects)]
     (letfn [(on-term-change [event]
@@ -228,7 +228,7 @@
 (mx/defc grid
   {:mixins [mx/static]}
   [state projects]
-  (let [ordering (:order state :name)
+  (let [ordering (:order state :created)
         filtering (:filter state "")
         projects (->> (vals projects)
                       (filter-projects-by filtering)
