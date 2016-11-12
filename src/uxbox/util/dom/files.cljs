@@ -7,7 +7,8 @@
 (ns uxbox.util.dom.files
   "A interop helpers for work with files."
   (:require [beicon.core :as rx]
-            [cuerdas.core :as str]))
+            [cuerdas.core :as str]
+            [uxbox.util.blob :as blob]))
 
 (defn read-as-text
   [file]
@@ -27,17 +28,15 @@
        (.readAsDataURL fr file))
      (constantly nil))))
 
-(defn- retrieve-image-size
-  [data]
-  (rx/create
-   (fn [sick]
-     (let [img (js/Image.)]
-       (aset img "onload" #(sick (rx/end [(.-width img) (.-height img)])))
-       (set! (.-src img) data))
-     (constantly nil))))
-
 (defn get-image-size
-  "Get the real image size."
   [file]
-  (->> (read-as-dataurl file)
-       (rx/flat-map retrieve-image-size)))
+  (letfn [(on-load [sink img]
+            (let [size [(.-width img) (.-height img)]]
+              (sink (rx/end size))))
+          (on-subscribe [sink]
+            (let [img (js/Image.)
+                  uri (blob/create-uri file)]
+              (set! (.-onload img) (partial on-load sink img))
+              (set! (.-src img) uri)
+              #(blob/revoke-uri uri)))]
+    (rx/create on-subscribe)))
