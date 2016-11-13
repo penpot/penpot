@@ -25,15 +25,12 @@
 (def point-write-handler
   (t/write-handler
    (constantly "point")
-   (fn [v]
-     (let [ret #js []]
-       (.push ret (:x v))
-       (.push ret (:y v))
-       ret))))
+   (fn [v] (into {} v))))
 
 (def point-read-handler
   (t/read-handler
-   #(gpt/point (js->clj %))))
+   (fn [value]
+     (gpt/map->Point value))))
 
 (def ^:privare +read-handlers+
   {"u" uuid
