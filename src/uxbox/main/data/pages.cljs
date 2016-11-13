@@ -172,7 +172,7 @@
   [event]
   (instance? PagePersisted event))
 
-;; TODO: add specs
+;; TODO: add page spec
 
 (defn page-persisted
   [data]
