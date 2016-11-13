@@ -36,8 +36,8 @@
                       (fetch-pinned-page-history id)))]
     (as-> rs/stream $
       (rx/filter udp/page-persisted? $)
-      (rx/delay 500 $)
-      (rx/map (comp :id :page) $)
+      (rx/debounce 500 $)
+      (rx/map (comp :id :data) $)
       (rx/on-value $ on-value))))
 
 ;; --- Pinned Page History Fetched
