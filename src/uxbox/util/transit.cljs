@@ -30,7 +30,9 @@
 (def point-read-handler
   (t/read-handler
    (fn [value]
-     (gpt/map->Point value))))
+     (if (array? value)
+       (gpt/point (vec value))
+       (gpt/map->Point value)))))
 
 (def ^:privare +read-handlers+
   {"u" uuid
