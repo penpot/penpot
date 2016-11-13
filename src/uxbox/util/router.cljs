@@ -37,7 +37,7 @@
 (defrecord Navigate [id params]
   rs/EffectEvent
   (-apply-effect [_ state]
-    (r/navigate! +router+ id {})))
+    (r/navigate! +router+ id params)))
 
 (defn navigate
   ([id] (navigate id nil))
