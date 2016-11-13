@@ -30,7 +30,7 @@
 
 (defn- auth-headers
   []
-  (when-let [auth (:uxbox/auth storage)]
+  (when-let [auth (:auth storage)]
     {"authorization" (str "Token " (:token auth "no-token"))}))
 
 (defn- encode-query

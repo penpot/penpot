@@ -28,7 +28,7 @@
 
   rs/WatchEvent
   (-apply-watch [this state s]
-    (swap! storage assoc :uxbox/auth data)
+    (swap! storage assoc :auth data)
     (rx/of (udu/fetch-profile)
            (rt/navigate :dashboard/projects))))
 
@@ -67,7 +67,7 @@
 (defrecord Logout []
   rs/UpdateEvent
   (-apply-update [_ state]
-    (swap! storage dissoc :uxbox/auth)
+    (swap! storage dissoc :auth)
     (merge state (dissoc (st/initial-state) :route)))
 
   rs/WatchEvent

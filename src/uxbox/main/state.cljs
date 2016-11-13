@@ -28,7 +28,7 @@
                :images-order :name
                :images-filter ""}
    :route nil
-   :auth (:uxbox/auth storage nil)
+   :auth (:auth storage nil)
    :clipboard #queue []
    :undo {}
    :profile nil
