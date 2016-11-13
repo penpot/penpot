@@ -12,7 +12,7 @@
             [uxbox.main.repo :as rp]
             [uxbox.main.data.pages :as udp]
             [uxbox.util.rstore :as rs]
-            [uxbox.util.router :as r]
+            [uxbox.util.router :as rt]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.forms :as sc]
             [uxbox.main.data.pages :as udp]))
@@ -184,39 +184,32 @@
 
 ;; --- Go To & Go To Page
 
-(defrecord GoTo [projectid]
-  rs/EffectEvent
-  (-apply-effect [_ state]
-    (reset! st/loader true))
+(defrecord GoTo [project-id]
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (let [page-id (get-in state [:projects project-id :page-id])
+          params {:project project-id
+                  :page page-id}]
+      (rx/of (udp/fetch-pages project-id)
+             (rt/navigate :workspace/page params)))))
 
+(defrecord GoToPage [project-id page-id]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (letfn [(navigate [pages]
-              (let [pageid (:id (first pages))
-                    params {:project (str projectid)
-                            :page (str pageid)}]
-                (r/navigate :workspace/page params)))]
-      (rx/merge
-       (rx/of #(assoc % :loader true)
-              (udp/fetch-pages projectid))
-       (->> (rx/filter udp/pages-fetched? s)
-            (rx/take 1)
-            (rx/map :pages)
-            (rx/do #(reset! st/loader false))
-            (rx/map navigate))))))
-
-(defrecord GoToPage [projectid pageid]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
-    (let [params {:project (str projectid)
-                  :page (str pageid)}]
-      (rx/of (r/navigate :workspace/page params)))))
+    (let [params {:project project-id
+                  :page page-id}]
+      (rx/of (rt/navigate :workspace/page params)))))
 
 (defn go-to
   "A shortcut event that redirects the user to the
   first page of the project."
-  ([projectid] (GoTo. projectid))
-  ([projectid pageid] (GoToPage. projectid pageid)))
+  ([project-id]
+   {:pre [(uuid? project-id)]}
+   (GoTo. project-id))
+  ([project-id page-id]
+   {:pre [(uuid? project-id)
+          (uuid? page-id)]}
+   (GoToPage. project-id page-id)))
 
 ;; --- Update Opts (Filtering & Ordering)
 
