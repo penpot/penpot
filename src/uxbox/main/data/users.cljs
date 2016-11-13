@@ -5,14 +5,19 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.users
-  (:require [beicon.core :as rx]
-            [uxbox.main.repo :as rp]
+  (:require [cljs.spec :as s]
+            [beicon.core :as rx]
             [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
-            [uxbox.util.schema :as sc]
+            [uxbox.util.spec :as us]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.main.data.forms :as udf]
+            [uxbox.main.state :as st]
+            [uxbox.main.repo :as rp]
             [uxbox.main.data.messages :as udm]))
+
+(s/def ::fullname string?)
+(s/def ::email us/email?)
+(s/def ::username string?)
+(s/def ::theme string?)
 
 ;; --- Profile Fetched
 
@@ -55,37 +60,31 @@
 
 ;; --- Update Profile
 
-(defrecord UpdateProfile [data]
+(defrecord UpdateProfile [data on-success on-error]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (letfn [(on-error [{payload :payload}]
-              (->> (:payload payload)
-                   (udf/assign-errors :profile/main)
-                   (rx/of)))]
+    (letfn [(handle-error [{payload :payload}]
+              (on-error payload)
+              (rx/empty))]
       (->> (rp/req :update/profile data)
            (rx/map :payload)
+           (rx/do on-success)
            (rx/map profile-updated)
-           (rx/catch rp/client-error? on-error)))))
+           (rx/catch rp/client-error? handle-error)))))
 
-(def update-profile-schema
-  {:fullname [sc/required sc/string]
-   :email [sc/required sc/email]
-   :username [sc/required sc/string]})
+(s/def ::update-profile-event
+  (s/keys :req-un [::fullname ::email ::username ::theme]))
 
 (defn update-profile
-  [data]
-  (let [[errors data] (sc/validate data update-profile-schema)]
-    (if errors
-      (udf/assign-errors :profile/main errors)
-      (UpdateProfile. data))))
+  [data on-success on-error]
+  {:pre [(us/valid? ::update-profile-event data)
+         (fn? on-error)
+         (fn? on-success)]}
+  (UpdateProfile. data on-success on-error))
 
 ;; --- Password Updated
 
 (defrecord PasswordUpdated []
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (assoc-in state [:forms :profile/password] {}))
-
   rs/EffectEvent
   (-apply-effect [_ state]
     (udm/info! (tr "settings.password-saved"))))
@@ -99,28 +98,22 @@
 (defrecord UpdatePassword [data]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (letfn [(on-error [{payload :payload}]
-              (->> (:payload payload)
-                   (udf/assign-errors :profile/password)
-                   (rx/of)))]
-      (let [params {:old-password (:old-password data)
-                    :password (:password-1 data)}]
+    (let [params {:old-password (:old-password data)
+                  :password (:password-1 data)}]
         (->> (rp/req :update/profile-password params)
-             (rx/map password-updated)
-             (rx/catch rp/client-error? on-error))))))
+             (rx/map password-updated)))))
 
-(def update-password-schema
-  [[:password-1 sc/required sc/string [sc/min-len 6]]
-   [:password-2 sc/required sc/string
-    [sc/identical-to :password-1 :message "errors.form.password-not-match"]]
-   [:old-password sc/required sc/string]])
+(s/def ::password-1 string?)
+(s/def ::password-2 string?)
+(s/def ::old-password string?)
+
+(s/def ::update-password-event
+  (s/keys :req-un [::password-1 ::password-2 ::old-password]))
 
 (defn update-password
   [data]
-  (let [[errors data] (sc/validate data update-password-schema)]
-    (if errors
-      (udf/assign-errors :profile/password errors)
-      (UpdatePassword. data))))
+  {:pre [(us/valid? ::update-password-event data)]}
+  (UpdatePassword. data))
 
 ;; --- Update Photo
 
@@ -132,7 +125,7 @@
          (rx/map fetch-profile))))
 
 (defn update-photo
-  ([file]
-   (UpdatePhoto. file (constantly nil)))
+  ([file] (update-photo file (constantly nil)))
   ([file done]
+   {:pre [(us/file? file) (fn? done)]}
    (UpdatePhoto. file done)))

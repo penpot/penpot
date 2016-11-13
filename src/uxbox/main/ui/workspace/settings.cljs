@@ -6,119 +6,114 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.settings
-  (:require [sablono.core :as html :refer-macros [html]]
-            [lentes.core :as l]
-            [rum.core :as rum]
+  (:require [lentes.core :as l]
             [uxbox.main.constants :as c]
             [uxbox.main.state :as st]
             [uxbox.util.rstore :as rs]
             [uxbox.main.data.pages :as udp]
-            [uxbox.main.data.forms :as udf]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
+            [uxbox.util.forms :as forms]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.ui.forms :as forms]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.colorpicker :as uucp]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int)]))
 
-;; --- Lentes
-
-(def formdata (udf/focus-form-data :workspace/settings))
-(def formerrors (udf/focus-form-errors :workspace/settings))
-(def assign-field-value (partial udf/assign-field-value :workspace/settings))
+(def form-data (forms/focus-data :workspace-settings st/state))
+(def form-errors (forms/focus-errors :workspace-settings st/state))
+(def set-value! (partial forms/set-value! :workspace-settings))
+(def set-errors! (partial forms/set-errors! :workspace-settings))
+(def page-ref wb/page-ref)
 
 ;; --- Form Component
 
-(def settings-form-defaults
-  {:grid/x-axis c/grid-x-axis
-   :grid/y-axis c/grid-y-axis
-   :grid/color "#b5bdb9"
-   :grid/alignment false})
+(def +settings-defaults+
+  {:grid-x-axis c/grid-x-axis
+   :grid-y-axis c/grid-y-axis
+   :grid-color "#b5bdb9"
+   :grid-alignment false})
 
-(defn- settings-form-render
-  [own]
-  (let [page (mx/react wb/page-ref)
-        form (merge settings-form-defaults
-                    (:options page)
-                    (mx/react formdata))
-        errors (mx/react formerrors)]
+(def +settings-form+
+  {:grid-y-axis [forms/required forms/integer [forms/in-range 2 100]]
+   :grid-x-axis [forms/required forms/integer [forms/in-range 2 100]]
+   :grid-alignment [forms/boolean]
+   :grid-color [forms/required forms/color]})
+
+(mx/defc settings-form
+  {:mixins [mx/reactive]}
+  []
+  (let [{:keys [id] :as page} (mx/react page-ref)
+        errors (mx/react form-errors)
+        data (merge +settings-defaults+
+                    (:metadata page)
+                    (mx/react form-data))]
     (letfn [(on-field-change [field event]
               (let [value (dom/event->value event)
                     value (parse-int value "")]
-                (rs/emit! (assign-field-value field value))))
+                (set-value! field value)))
             (on-color-change [color]
-              (rs/emit! (assign-field-value :grid/color color)))
+              (set-value! :grid-color color))
             (on-align-change [event]
               (let [checked? (-> (dom/get-target event)
                                  (dom/checked?))]
-                (rs/emit! (assign-field-value :grid/alignment checked?))))
+                (set-value! :grid-alignment checked?)))
             (on-submit [event]
               (dom/prevent-default event)
-              (rs/emit! (udw/submit-workspace-settings (:id page) form)))]
-      (html
-       [:form {:on-submit on-submit}
-        [:span.lightbox-label "Grid size"]
-        [:div.project-size
-         [:div.input-element.pixels
-          [:input#grid-x.input-text
-           {:placeholder "X"
-            :type "number"
-            :class (forms/error-class errors :grid/x-axis)
-            :value (:grid/x-axis form "")
-            :on-change (partial on-field-change :grid/x-axis)
-            :min 1
-            :max 100}]]
-         [:div.input-element.pixels
-          [:input#grid-y.input-text
-           {:placeholder "Y"
-            :type "number"
-            :class (forms/error-class errors :grid/y-axis)
-            :value (:grid/y-axis form "")
-            :on-change (partial on-field-change :grid/y-axis)
-            :min 1
-            :max 100}]]]
-        [:span.lightbox-label "Grid color"]
-        (uucp/colorpicker
-         :value (:grid/color form)
-         :on-change on-color-change)
-        [:span.lightbox-label "Grid magnet option"]
-        [:div.input-checkbox.check-primary
-         [:input
-          {:type "checkbox"
-           :on-change on-align-change
-           :checked (:grid/alignment form)
-           :id "magnet"
-           :value "Yes"}]
-         [:label {:for "magnet"} "Activate magnet"]]
-        [:input.btn-primary
-         {:type "submit"
-          :value "Save"}]]))))
+              (let [[errors data] (forms/validate data +settings-form+)]
+                (if errors
+                  (set-errors! errors)
+                  (rs/emit! (udw/update-metadata id data)
+                            (forms/clear :workspace-settings)
+                            (udl/hide-lightbox)))))]
+      [:form {:on-submit on-submit}
+       [:span.lightbox-label "Grid size"]
+       [:div.project-size
+        [:div.input-element.pixels
+         [:input#grid-x.input-text
+          {:placeholder "X"
+           :type "number"
+           :class (forms/error-class errors :grid-x-axis)
+           :value (:grid-x-axis data "")
+           :on-change (partial on-field-change :grid-x-axis)
+           :min 2
+           :max 100}]]
+        [:div.input-element.pixels
+         [:input#grid-y.input-text
+          {:placeholder "Y"
+           :type "number"
+           :class (forms/error-class errors :grid-y-axis)
+           :value (:grid-y-axis data "")
+           :on-change (partial on-field-change :grid-y-axis)
+           :min 2
+           :max 100}]]]
+       [:span.lightbox-label "Grid color"]
+       (uucp/colorpicker
+        :value (:grid-color data)
+        :on-change on-color-change)
+       [:span.lightbox-label "Grid magnet option"]
+       [:div.input-checkbox.check-primary
+        [:input
+         {:type "checkbox"
+          :on-change on-align-change
+          :checked (:grid-alignment data)
+          :id "magnet"
+          :value "Yes"}]
+        [:label {:for "magnet"} "Activate magnet"]]
+       [:input.btn-primary
+        {:type "submit"
+         :value "Save"}]])))
 
-(def settings-form
-  (mx/component
-   {:render settings-form-render
-    :name "settings-form"
-    :mixins [(mx/local) mx/reactive mx/static]}))
-
-(defn- settings-dialog-render
+(mx/defc settings-dialog
   [own]
-  (html
-   [:div.lightbox-body.settings
-    [:h3 "Grid settings"]
-    (settings-form)
-    [:a.close {:href "#"
-               :on-click #(do (dom/prevent-default %)
-                              (udl/close!))} i/close]]))
-
-(def settings-dialog
-  (mx/component
-   {:render settings-dialog-render
-    :name "settings-dialog"
-    :mixins []}))
+  [:div.lightbox-body.settings
+   [:h3 "Grid settings"]
+   (settings-form)
+   [:a.close {:href "#"
+              :on-click #(do (dom/prevent-default %)
+                             (udl/close!))} i/close]])
 
 (defmethod lbx/render-lightbox :settings
   [_]

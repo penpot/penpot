@@ -6,100 +6,102 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.settings.profile
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [cuerdas.core :as str]
+  (:require [cuerdas.core :as str]
             [lentes.core :as l]
-            [uxbox.util.schema :as sc]
+            [uxbox.util.forms :as forms]
             [uxbox.util.router :as r]
-            [uxbox.main.state :as st]
             [uxbox.util.rstore :as rs]
-            [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.ui.forms :as forms]
+            [uxbox.util.interop :refer (iterable->seq)]
+            [uxbox.util.dom :as dom]
+            [uxbox.main.state :as st]
+            [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.settings.header :refer (header)]
             [uxbox.main.ui.messages :as uum]
-            [uxbox.main.data.users :as udu]
-            [uxbox.main.data.forms :as udf]
-            [uxbox.util.interop :refer (iterable->seq)]
-            [uxbox.util.dom :as dom]))
+            [uxbox.main.data.users :as udu]))
 
-;; --- Constants
+(def form-data (forms/focus-data :profile st/state))
+(def form-errors (forms/focus-errors :profile st/state))
+(def set-value! (partial forms/set-value! :profile))
+(def set-error! (partial forms/set-error! :profile))
 
-(def formdata
-  (-> (l/in [:forms :profile/main])
-      (l/derive st/state)))
-
-(def formerrors
-  (-> (l/in [:errors :profile/main])
-      (l/derive st/state)))
-
-(def assign-field-value
-  (partial udf/assign-field-value :profile/main))
-
-(def ^:private profile-ref
+(def profile-ref
   (-> (l/key :profile)
       (l/derive st/state)))
 
+(def +profile-form+
+  {:fullname [forms/required forms/string]
+   :email [forms/required forms/email]
+   :username [forms/required forms/string]})
+
 ;; --- Profile Form
 
-(defn profile-form-render
-  [own]
-  (let [form (merge (mx/react profile-ref)
-                    (mx/react formdata))
-        errors (mx/react formerrors)
-        valid? (sc/valid? form udu/update-profile-schema)
-        theme (get-in form [:metadata :theme] "light")]
-
+(mx/defc profile-form
+  {:mixins [mx/static mx/reactive]
+   :will-unmount (forms/cleaner-fn :profile)}
+  []
+  ;; TODO: properly persist theme
+  (let [data (merge {:theme "light"}
+                    (mx/react profile-ref)
+                    (mx/react form-data))
+        errors (mx/react form-errors)
+        valid? (forms/valid? data +profile-form+)
+        theme (:theme data)]
     (letfn [(on-change [field event]
               (let [value (dom/event->value event)]
-                (rs/emit! (assign-field-value field value))))
+                (set-value! field value)))
+            (on-error [{:keys [code] :as payload}]
+              (case code
+                :uxbox.services.users/email-already-exists
+                (set-error! :email "Email already exists")
+                :uxbox.services.users/username-already-exists
+                (set-error! :username "Username already exists")))
+            (on-success []
+              (forms/clear! :profile))
             (on-submit [event]
-              (rs/emit! (udu/update-profile form)))]
-      (html
-       [:form.profile-form
-        [:span.user-settings-label "Name, username and email"]
-        [:input.input-text
-         {:type "text"
-          :on-change (partial on-change :fullname)
-          :value (:fullname form "")
-          :placeholder "Your name"}]
-        (forms/input-error errors :fullname)
-        [:input.input-text
-         {:type "text"
-          :on-change (partial on-change :username)
-          :value (:username form "")
-          :placeholder "Your username"}]
+              (rs/emit! (udu/update-profile data on-success on-error)))]
+      [:form.profile-form
+       [:span.user-settings-label "Name, username and email"]
+       [:input.input-text
+        {:type "text"
+         :on-change (partial on-change :fullname)
+         :value (:fullname data "")
+         :placeholder "Your name"}]
+       [:input.input-text
+        {:type "text"
+         :on-change (partial on-change :username)
+         :value (:username data "")
+         :placeholder "Your username"}]
         (forms/input-error errors :username)
 
         [:input.input-text
          {:type "email"
           :on-change (partial on-change :email)
-          :value (:email form "")
+          :value (:email data "")
           :placeholder "Your email"}]
         (forms/input-error errors :email)
 
         [:span.user-settings-label "Choose a color theme"]
         [:div.input-radio.radio-primary
          [:input {:type "radio"
-                  :checked (= theme "light")
-                  :on-change (partial on-change [:metadata :theme])
+                  :checked (when (= theme "light") "checked")
+                  :on-change (partial on-change :theme)
                   :id "light-theme"
                   :name "theme"
                   :value "light"}]
          [:label {:for "light-theme"} "Light theme"]
 
          [:input {:type "radio"
-                  :checked (= theme "dark")
-                  :on-change (partial on-change [:metadata :theme])
+                  :checked (when (= theme "dark") "checked")
+                  :on-change (partial on-change :theme)
                   :id "dark-theme"
                   :name "theme"
                   :value "dark"}]
          [:label {:for "dark-theme"} "Dark theme"]
 
          [:input {:type "radio"
-                  :checked (= theme "high-contrast")
-                  :on-change (partial on-change [:metadata :theme])
+                  :checked (when (= theme "high-contrast") "checked")
+                  :on-change (partial on-change :theme)
                   :id "high-contrast-theme"
                   :name "theme"
                   :value "high-contrast"}]
@@ -110,18 +112,13 @@
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
           :on-click on-submit
-          :value "Update settings"}]]))))
-
-(def profile-form
-  (mx/component
-   {:render profile-form-render
-    :name "profile-form"
-    :mixins [(mx/local) mx/reactive mx/static]}))
+          :value "Update settings"}]])))
 
 ;; --- Profile Photo Form
 
-(defn- profile-photo-form-render
-  [own]
+(mx/defc profile-photo-form
+  {:mixins [mx/static mx/reactive]}
+  []
   (letfn [(on-change [event]
             (let [target (dom/get-target event)
                   file (-> (dom/get-files target)
@@ -133,36 +130,22 @@
           photo (if (or (str/empty? photo) (nil? photo))
                   "images/avatar.jpg"
                   photo)]
-    (html
-     [:form.avatar-form
-      [:img {:src photo :border "0"}]
-      [:input {:type "file"
-               :value ""
-               :on-change on-change}]]))))
-
-(def profile-photo-form
-  (mx/component
-   {:render profile-photo-form-render
-    :name  profile-photo-form
-    :mixins [mx/static mx/reactive]}))
+      [:form.avatar-form
+       [:img {:src photo}]
+       [:input {:type "file"
+                :value ""
+                :on-change on-change}]])))
 
 ;; --- Profile Page
 
-(defn profile-page-render
-  [own]
-  (html
-   [:main.dashboard-main
-    (header)
-    (uum/messages)
-    [:section.dashboard-content.user-settings
-     [:section.user-settings-content
-      [:span.user-settings-label "Your avatar"]
-      (profile-photo-form)
-      (profile-form)
-      ]]]))
-
-(def profile-page
-  (mx/component
-   {:render profile-page-render
-    :name "profile-page"
-    :mixins [mx/static]}))
+(mx/defc profile-page
+  {:mixins [mx/static]}
+  []
+  [:main.dashboard-main
+   (header)
+   (uum/messages)
+   [:section.dashboard-content.user-settings
+    [:section.user-settings-content
+     [:span.user-settings-label "Your avatar"]
+     (profile-photo-form)
+     (profile-form)]]])

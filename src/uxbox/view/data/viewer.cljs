@@ -8,7 +8,7 @@
   (:require [beicon.core :as rx]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as rt]
-            [uxbox.util.schema :as sc]
+            [uxbox.util.forms :as sc]
             [uxbox.util.data :refer (parse-int)]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.pages :as udpg]

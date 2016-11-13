@@ -13,13 +13,13 @@
 
 (defonce tree (kd/create))
 
-(defmethod impl/handler :grid/init
+(defmethod impl/handler :grid-init
   [{:keys [sender width height x-axis y-axis] :as opts}]
   (time
    (kd/setup! tree width height (or x-axis 10) (or y-axis 10)))
   (impl/reply! sender nil))
 
-(defmethod impl/handler :grid/align
+(defmethod impl/handler :grid-align
   [{:keys [sender point] :as message}]
   (let [point [(:x point) (:y point)]
         results (kd/nearest tree point 1)

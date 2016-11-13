@@ -37,10 +37,7 @@
 (defrecord Navigate [id params]
   rs/EffectEvent
   (-apply-effect [_ state]
-    (let [loc (merge {:handler id}
-                     (when params
-                       {:route-params params}))]
-      (r/navigate! +router+ id params))))
+    (r/navigate! +router+ id {})))
 
 (defn navigate
   ([id] (navigate id nil))

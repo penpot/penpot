@@ -11,7 +11,7 @@
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
             [uxbox.main.state :as st]
-            [uxbox.util.schema :as sc]
+            [uxbox.util.forms :as sc]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.colors :as dc]

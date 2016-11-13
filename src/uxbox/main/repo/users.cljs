@@ -11,27 +11,18 @@
             [uxbox.main.repo.impl :refer (request send!)]
             [uxbox.util.transit :as t]))
 
-(defn- decode-payload
-  [{:keys [payload] :as rsp}]
-  (let [metadata (:metadata payload)]
-    (assoc rsp :payload
-           (assoc payload :metadata (t/decode metadata)))))
-
 (defmethod request :fetch/profile
   [type _]
   (let [url (str url "/profile/me")
         params {:method :get :url url}]
-    (->> (send! params)
-         (rx/map decode-payload))))
+    (send! params)))
 
 (defmethod request :update/profile
-  [type {:keys [metadata] :as body}]
-  (let [body (assoc body :metadata (t/encode metadata))
-        params {:url (str url "/profile/me")
+  [type body]
+  (let [params {:url (str url "/profile/me")
                 :method :put
                 :body body}]
-    (->> (send! params)
-         (rx/map decode-payload))))
+    (send! params)))
 
 (defmethod request :update/profile-password
   [type data]

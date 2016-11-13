@@ -6,18 +6,24 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.data.auth
-  (:require [beicon.core :as rx]
+  (:require [cljs.spec :as s]
+            [beicon.core :as rx]
             [uxbox.main.repo :as rp]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as rt]
-            [uxbox.main.state :as st]
-            [uxbox.util.schema :as us]
+            [uxbox.util.spec :as us]
             [uxbox.util.i18n :refer (tr)]
+            [uxbox.main.state :as st]
             [uxbox.main.data.projects :as udp]
             [uxbox.main.data.users :as udu]
             [uxbox.main.data.messages :as udm]
-            [uxbox.main.data.forms :as udf]
             [uxbox.util.storage :refer (storage)]))
+
+(s/def ::username string?)
+(s/def ::password string?)
+(s/def ::fullname string?)
+(s/def ::email us/email?)
+(s/def ::token string?)
 
 ;; --- Logged In
 
@@ -58,8 +64,12 @@
            (rx/map logged-in)
            (rx/catch rp/client-error? on-error)))))
 
+(s/def ::login-event
+  (s/keys :req-un [::username ::password]))
+
 (defn login
   [params]
+  {:pre [(us/valid? ::login-event params)]}
   (map->Login params))
 
 ;; --- Logout
@@ -80,40 +90,33 @@
 
 ;; --- Register
 
-(defrecord Register [data]
+;; TODO: clean form on success
+
+(defrecord Register [data on-error]
   rs/WatchEvent
   (-apply-watch [_ state stream]
-    (letfn [(on-error [{payload :payload}]
-              (->> (:payload payload)
-                   (udf/assign-errors :register)
-                   (rx/of)))]
+    (letfn [(handle-error [{payload :payload}]
+              (on-error payload)
+              (rx/empty))]
       (rx/merge
        (->> (rp/req :auth/register data)
             (rx/map :payload)
             (rx/map (constantly ::registered))
-            (rx/catch rp/client-error? on-error))
+            (rx/catch rp/client-error? handle-error))
        (->> stream
             (rx/filter #(= % ::registered))
             (rx/take 1)
-            (rx/map #(login data)))
-       (->> stream
-            (rx/filter logged-in?)
-            (rx/take 1)
-            (rx/map #(udf/clean :register)))))))
+            (rx/map #(login data)))))))
 
-(def register-schema
-  {:username [us/required us/string]
-   :fullname [us/required us/string]
-   :email [us/required us/email]
-   :password [us/required us/string]})
+(s/def ::register-event
+  (s/keys :req-un [::fullname ::username ::email ::password]))
 
 (defn register
   "Create a register event instance."
-  [data]
-  (let [[errors data] (us/validate data register-schema)]
-    (if errors
-      (udf/assign-errors :register errors)
-      (Register. data))))
+  [data on-error]
+  {:pre [(us/valid? ::register-event data)
+         (fn? on-error)]}
+  (Register. data on-error))
 
 ;; --- Recovery Request
 
@@ -122,9 +125,7 @@
   (-apply-watch [_ state stream]
     (letfn [(on-error [{payload :payload}]
               (println "on-error" payload)
-              (->> (:payload payload)
-                   (udf/assign-errors :recovery-request)
-                   (rx/of)))]
+              (rx/empty))]
       (rx/merge
        (->> (rp/req :auth/recovery-request data)
             (rx/map (constantly ::recovery-requested))
@@ -132,11 +133,14 @@
        (->> stream
             (rx/filter #(= % ::recovery-requested))
             (rx/take 1)
-            (rx/do #(udm/info! (tr "auth.message.recovery-token-sent")))
-            (rx/map #(udf/clean :recovery-request)))))))
+            (rx/do #(udm/info! (tr "auth.message.recovery-token-sent"))))))))
+
+(s/def ::recovery-request-event
+  (s/keys :req-un [::username]))
 
 (defn recovery-request
   [data]
+  {:pre [(us/valid? ::recovery-request-event data)]}
   (RecoveryRequest. data))
 
 ;; --- Check Recovery Token
@@ -153,8 +157,9 @@
            (rx/catch rp/client-error? on-error)))))
 
 (defn validate-recovery-token
-  [data]
-  (ValidateRecoveryToken. data))
+  [token]
+  {:pre [(string? token)]}
+  (ValidateRecoveryToken. token))
 
 ;; --- Recovery (Password)
 
@@ -171,8 +176,10 @@
            (rx/mapcat on-success)
            (rx/catch rp/client-error? on-error)))))
 
+(s/def ::recovery-event
+  (s/keys :req-un [::username ::token]))
 
 (defn recovery
-  [{:keys [token password]}]
+  [{:keys [token password] :as data}]
+  {:pre [(us/valid? ::recovery-event data)]}
   (Recovery. token password))
-

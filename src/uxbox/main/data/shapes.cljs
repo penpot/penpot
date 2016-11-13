@@ -10,7 +10,7 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
-            [uxbox.util.schema :as sc]
+            [uxbox.util.forms :as sc]
             [uxbox.util.workers :as uw]
             [uxbox.main.constants :as c]
             [uxbox.main.geom :as geom]
@@ -594,6 +594,6 @@
 
 (defn align-point
   [point]
-  (let [message {:cmd :grid/align :point point}]
+  (let [message {:cmd :grid-align :point point}]
     (->> (uw/ask! worker message)
          (rx/map :point))))

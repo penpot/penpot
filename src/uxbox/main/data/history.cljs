@@ -12,7 +12,7 @@
             [uxbox.util.router :as r]
             [uxbox.main.repo :as rp]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.schema :as sc]
+            [uxbox.util.forms :as sc]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.state :as st]
             [uxbox.util.datetime :as dt]
@@ -35,7 +35,7 @@
             (rs/emit! (fetch-page-history id)
                       (fetch-pinned-page-history id)))]
     (as-> rs/stream $
-      (rx/filter udp/page-synced? $)
+      (rx/filter udp/page-persisted? $)
       (rx/delay 500 $)
       (rx/map (comp :id :page) $)
       (rx/on-value $ on-value))))
@@ -137,7 +137,7 @@
 
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (udp/update-page id))))
+    (rx/of (udp/persist-page id))))
 
 (defn apply-selected-history
   [id]

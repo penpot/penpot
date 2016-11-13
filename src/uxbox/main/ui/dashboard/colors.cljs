@@ -15,7 +15,6 @@
             [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.colorpicker :refer (colorpicker)]
             [uxbox.main.ui.dashboard.header :refer (header)]
-            [uxbox.main.ui.forms :as form]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.keyboard :as k]
             [uxbox.main.ui.lightbox :as lbx]
@@ -24,8 +23,7 @@
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.lens :as ul]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rstore :as rs]
-            [uxbox.util.schema :as sc]))
+            [uxbox.util.rstore :as rs]))
 
 ;; --- Refs
 

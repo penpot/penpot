@@ -14,27 +14,15 @@
 
 (defmethod request :fetch/projects
   [type data]
-  (letfn [(decode-payload [{:keys [payload] :as response}]
-            (assoc response :payload (mapv decode-page payload)))
-          (decode-page [{:keys [page-metadata page-data] :as project}]
-            (assoc project
-                   :page-metadata (t/decode page-metadata)
-                   :page-data (t/decode page-data)))]
-    ;; Obtain the list of projects and decode the embedded
-    ;; page data in order to have it usable.
-    (->> (send! {:url (str url "/projects")
-                 :method :get})
-         (rx/map decode-payload))))
+  ;; Obtain the list of projects and decode the embedded
+  ;; page data in order to have it usable.
+  (send! {:url (str url "/projects")
+          :method :get}))
 
 (defmethod request :fetch/project-by-token
   [_ token]
-  (letfn [(decode-pages [response]
-            (let [pages (->> (get-in response [:payload :pages])
-                             (mapv pages/decode-page))]
-              (assoc-in response [:payload :pages] pages)))]
-    (->> (send! {:url (str url "/projects-by-token/" token)
-                 :method :get})
-         (rx/map decode-pages))))
+  (send! {:url (str url "/projects-by-token/" token)
+          :method :get}))
 
 (defmethod request :create/project
   [_ data]

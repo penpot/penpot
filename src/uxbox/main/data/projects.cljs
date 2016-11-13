@@ -14,7 +14,7 @@
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.schema :as sc]
+            [uxbox.util.forms :as sc]
             [uxbox.main.data.pages :as udp]))
 
 ;; --- Helpers
@@ -25,6 +25,7 @@
   (let [page {:id (:page-id project)
               :name (:page-name project)
               :version (:page-version project)
+              :project (:id project)
               :data (:page-data project)
               :created-at (:page-created-at project)
               :modified-at (:page-modified-at project)
@@ -176,7 +177,6 @@
    :width [sc/required sc/integer]
    :height [sc/required sc/integer]
    :layout [sc/required sc/string]})
-
 (defn create-project
   [params]
   (-> (sc/validate! params create-project-schema)

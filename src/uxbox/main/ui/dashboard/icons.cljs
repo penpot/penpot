@@ -21,7 +21,7 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.datetime :as dt]
             [uxbox.util.rstore :as rs]
-            [uxbox.util.schema :as sc]
+            [uxbox.util.forms :as sc]
             [uxbox.util.lens :as ul]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.dom :as dom]))

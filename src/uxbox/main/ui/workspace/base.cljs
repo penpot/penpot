@@ -61,8 +61,8 @@
 
 (def alignment-ref
   (letfn [(getter [flags]
-            (and (contains? flags :grid/indexed)
-                 (contains? flags :grid/alignment)
+            (and (contains? flags :grid-indexed)
+                 (contains? flags :grid-alignment)
                  (contains? flags :grid)))]
     (-> (l/lens getter)
         (l/derive flags-ref))))

@@ -21,16 +21,16 @@
 (defn- grid-render
   [own]
   (let [options (:options (mx/react wb/page-ref))
-        color (:grid/color options "#cccccc")
+        color (:grid-color options "#cccccc")
         width c/viewport-width
         height c/viewport-height
         x-ticks (range (- 0 c/canvas-start-x)
                        (- width c/canvas-start-x)
-                       (:grid/x-axis options 10))
+                       (:grid-x-axis options 10))
 
         y-ticks (range (- 0 c/canvas-start-x)
                        (- height c/canvas-start-x)
-                       (:grid/y-axis options 10))
+                       (:grid-y-axis options 10))
 
         path (as-> [] $
                (reduce (partial vertical-line height) $ x-ticks)

@@ -138,13 +138,14 @@
 
 (def routes
   [["/auth/login" :auth/login]
+   ["/auth/register" :auth/register]
+   ["/auth/recovery/request" :auth/recovery-request]
    ["/auth/recovery/token/:token" :auth/recovery]
    ["/settings/profile" :settings/profile]
    ["/settings/password" :settings/password]
    ["/settings/notifications" :settings/notifications]
    ["/dashboard/projects" :dashboard/projects]
    ["/dashboard/elements" :dashboard/elements]
-
 
    ["/dashboard/icons" :dashboard/icons]
    ["/dashboard/icons/:type/:id" :dashboard/icons]

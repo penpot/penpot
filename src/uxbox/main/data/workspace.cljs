@@ -5,11 +5,13 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.workspace
-  (:require [beicon.core :as rx]
+  (:require [cljs.spec :as s]
+            [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
             [uxbox.main.constants :as c]
             [uxbox.util.rstore :as rs]
-            [uxbox.util.schema :as sc]
+            [uxbox.util.spec :as us]
+            [uxbox.util.forms :as sc]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.workers :as uw]
             [uxbox.main.state :as st]
@@ -18,7 +20,6 @@
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.shapes-impl :as shimpl]
-            [uxbox.main.data.forms :as udf]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.history :as udh]
             [uxbox.util.datetime :as dt]
@@ -210,44 +211,32 @@
   (-apply-watch [_ state s]
     (let [page (get-in state [:pages id])
           opts (:options page)
-          message {:cmd :grid/init
+          message {:cmd :grid-init
                    :width c/viewport-width
                    :height c/viewport-height
-                   :x-axis (:grid/x-axis opts c/grid-x-axis)
-                   :y-axis (:grid/y-axis opts c/grid-y-axis)}]
+                   :x-axis (:grid-x-axis opts c/grid-x-axis)
+                   :y-axis (:grid-y-axis opts c/grid-y-axis)}]
       (rx/merge
        (->> (uw/send! worker message)
-            (rx/map #(activate-flag :grid/indexed)))
-       (when (:grid/alignment opts)
-         (rx/of (activate-flag :grid/alignment)))))))
+            (rx/map #(activate-flag :grid-indexed)))
+       (when (:grid-alignment opts)
+         (rx/of (activate-flag :grid-alignment)))))))
 
 (defn initialize-alignment-index
   [id]
   (InitializeAlignmentIndex. id))
 
-;; --- Update Workspace Settings (Form)
+;; --- Update Metadata
 
-(defrecord SubmitWorkspaceSettings [id options]
+;; Is a workspace aware wrapper over uxbox.data.pages/UpdateMetadata event.
+
+(defrecord UpdateMetadata [id metadata]
   rs/WatchEvent
   (-apply-watch [_ state s]
-    (rx/of (udp/update-page-options id options)
-           (initialize-alignment-index id)
-           (udf/clean :workspace/settings)))
+    (rx/of (udp/update-metadata id metadata)
+           (initialize-alignment-index id))))
 
-  rs/EffectEvent
-  (-apply-effect [_ state]
-    (udl/close!)))
-
-(def submit-workspace-settings-schema
-  {:grid/y-axis [sc/required sc/integer [sc/in-range 2 100]]
-   :grid/x-axis [sc/required sc/integer [sc/in-range 2 100]]
-   :grid/alignment [sc/boolean]
-   :grid/color [sc/required sc/color]})
-
-(defn submit-workspace-settings
-  [id data]
-  (let [schema submit-workspace-settings-schema
-        [errors data] (sc/validate data schema)]
-    (if errors
-      (udf/assign-errors :workspace/settings errors)
-      (SubmitWorkspaceSettings. id data))))
+(defn update-metadata
+  [id metadata]
+  {:pre [(uuid? id) (us/valid? ::udp/metadata metadata)]}
+  (UpdateMetadata. id metadata))

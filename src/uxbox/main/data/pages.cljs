@@ -3,20 +3,42 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.data.pages
-  (:require [cuerdas.core :as str]
+  (:require [cljs.spec :as s]
+            [cuerdas.core :as str]
             [beicon.core :as rx]
             [lentes.core :as l]
+            [uxbox.main.repo :as rp]
+            [uxbox.main.state :as st]
+            [uxbox.util.spec :as us]
             [uxbox.util.rstore :as rs]
             [uxbox.util.router :as r]
-            [uxbox.main.repo :as rp]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.schema :as sc]
-            [uxbox.main.state :as st]
+            [uxbox.util.forms :as sc]
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys replace-by-id)]))
+
+;; --- Specs
+
+(s/def ::id uuid?)
+(s/def ::name string?)
+(s/def ::project uuid?)
+(s/def ::grid-x-axis number?)
+(s/def ::grid-y-axis number?)
+(s/def ::grid-color us/color?)
+(s/def ::grid-alignment boolean?)
+(s/def ::width number?)
+(s/def ::height number?)
+(s/def ::layout string?)
+
+(s/def ::metadata
+  (s/keys :req-un [::width ::height]
+          :opt-un [::grid-y-axis
+                   ::grid-x-axis
+                   ::grid-color
+                   ::grid-alignment
+                   ::layout]))
 
 
 ;; --- Protocols
@@ -99,75 +121,84 @@
   [projectid]
   (FetchPages. projectid))
 
+;; --- Page Created
+
+(defrecord PageCreated [data]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (-> state
+        (assoc-page data)
+        (assoc-packed-page data))))
+
+(s/def ::page-created-event
+  (s/keys :req-un [::id ::name ::project ::metadata]))
+
+(defn page-created
+  [data]
+  {:pre [(us/valid? ::page-created-event data)]}
+  (PageCreated. data))
+
 ;; --- Create Page
 
-(defrecord CreatePage [name project metadata]
+(defrecord CreatePage [name project width height layout]
   rs/WatchEvent
   (-apply-watch [this state s]
-    (letfn [(on-created [{page :payload}]
-              (rx/of
-               #(assoc-page % page)
-               #(assoc-packed-page % page)))]
-      (let [params {:name name
-                    :project project
-                    :data {}
-                    :metadata metadata}]
-        (->> (rp/req :create/page params)
-             (rx/mapcat on-created))))))
+    (let [params {:name name
+                  :project project
+                  :data {}
+                  :metadata {:width width
+                             :height height
+                             :layout layout}}]
+      (->> (rp/req :create/page params)
+           (rx/map :payload)
+           (rx/map page-created)))))
 
-(def ^:private create-page-schema
-  {:name [sc/required sc/string]
-   :metadata [sc/required]
-   :project [sc/required sc/uuid]})
+(s/def ::create-page-event
+  (s/keys :req-un [::name ::project ::width ::height ::layout]))
 
 (defn create-page
   [data]
-  (-> (sc/validate! data create-page-schema)
-      (map->CreatePage)))
+  {:pre [(us/valid? ::create-page-event data)]}
+  (map->CreatePage data))
 
-;; --- Page Synced
+;; --- Page Persisted
 
-(defrecord PageSynced [page]
+(defrecord PagePersisted [data]
   rs/UpdateEvent
-  (-apply-update [this state]
-    (-> state
-        (assoc-in [:pages (:id page) :version] (:version page))
-        (assoc-page page))))
+  (-apply-update [_ state]
+    (assoc-page state data)))
 
-(defn- page-synced?
+(defn- page-persisted?
   [event]
-  (instance? PageSynced event))
+  (instance? PagePersisted event))
 
-;; --- Sync Page
+;; TODO: add specs
 
-(defrecord SyncPage [id]
-  rs/WatchEvent
-  (-apply-watch [this state s]
-    (let [page (pack-page state id)]
-      (->> (rp/req :update/page page)
-           (rx/map (comp ->PageSynced :payload))))))
+(defn page-persisted
+  [data]
+  {:pre [(map? data)]}
+  (PagePersisted. data))
 
-(defn sync-page
-  [id]
-  (SyncPage. id))
+;; --- Persist Page
 
-;; --- Update Page
-
-(defrecord UpdatePage [id]
+(defrecord PersistPage [id]
   rs/WatchEvent
   (-apply-watch [this state s]
     (let [page (get-in state [:pages id])]
       (if (:history page)
         (rx/empty)
-        (rx/of (sync-page id))))))
+        (let [page (pack-page state id)]
+          (->> (rp/req :update/page page)
+               (rx/map :payload)
+               (rx/map page-persisted)))))))
 
-(defn update-page?
+(defn persist-page?
   [v]
-  (instance? UpdatePage v))
+  (instance? PersistPage v))
 
-(defn update-page
+(defn persist-page
   [id]
-  (UpdatePage. id))
+  (PersistPage. id))
 
 (defn watch-page-changes
   "A function that starts watching for `IPageUpdate`
@@ -182,59 +213,82 @@
   (as-> rs/stream $
     (rx/filter #(satisfies? IPageUpdate %) $)
     (rx/debounce 1000 $)
-    (rx/on-next $ #(rs/emit! (update-page id)))))
+    (rx/on-next $ #(rs/emit! (persist-page id)))))
 
-;; --- Update Page Metadata
+;; --- Page Metadata Persisted
 
-;; This is a simplified version of `UpdatePage` event
+(defrecord MetadataPersisted [id data]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    ;; TODO: page-data update
+    (assoc-in state [:pages id :version] (:version data))))
+
+(s/def ::metadata-persisted-event
+  (s/keys :req-un [::id ::version]))
+
+(defn metadata-persisted
+  [{:keys [id] :as data}]
+  {:pre [(us/valid? ::metadata-persisted-event data)]}
+  (MetadataPersisted. id data))
+
+;; --- Persist Page Metadata
+
+;; This is a simplified version of `PersistPage` event
 ;; that does not sends the heavyweiht `:data` attribute
 ;; and only serves for update other page data.
 
-;; TODO: sync also with the pagedata-by-id index.
-
-(defrecord UpdatePageMetadata [id name width height layout options]
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (letfn [(updater [page]
-              (merge page
-                     (when options {:options options})
-                     (when width {:width width})
-                     (when height {:height height})
-                     (when name {:name name})))]
-      (update-in state [:pages id] updater)))
-
+(defrecord PersistMetadata [id]
   rs/WatchEvent
-  (-apply-watch [this state s]
-    (letfn [(on-success [{page :payload}]
-              #(assoc-in % [:pages id :version] (:version page)))]
-      (->> (rp/req :update/page-metadata (into {} this))
-           (rx/map on-success)))))
+  (-apply-watch [_ state stream]
+    (let [page (get-in state [:pages id])]
+      (->> (rp/req :update/page-metadata page)
+           (rx/map :payload)
+           (rx/map metadata-persisted)))))
 
-(def ^:private update-page-schema
-  {:id [sc/required]
-   :project [sc/required]
-   :version [sc/required]
-   :name [sc/required sc/string]
-   :metadata [sc/required]})
-
-(defn update-page-metadata
-  [data]
-  (-> (sc/validate! data update-page-schema {:strip false})
-      (dissoc data :data)
-      (map->UpdatePageMetadata)))
+(defn persist-metadata
+  [id]
+  {:pre [(uuid? id)]}
+  (PersistMetadata. id))
 
 ;; --- Update Page Options
 
-(defrecord UpdatePageOptions [id options]
+(defrecord UpdateMetadata [id metadata]
+  rs/UpdateEvent
+  (-apply-update [_ state]
+    (assoc-in state [:pages id :metadata] metadata))
+
   rs/WatchEvent
   (-apply-watch [this state s]
-    (let [page (get-in state [:pages id])
-          page (assoc page :options options)]
-      (rx/of (map->UpdatePageMetadata page)))))
+    (rx/of (persist-metadata id))))
 
-(defn update-page-options
-  [id options]
-  (UpdatePageOptions. id options))
+(defn update-metadata
+  [id metadata]
+  {:pre [(uuid? id) (us/valid? ::metadata metadata)]}
+  (UpdateMetadata. id metadata))
+
+;; --- Update Page
+
+(defrecord UpdatePage [id name width height layout]
+  rs/UpdateEvent
+  (-apply-update [this state]
+    (println "update-page" this)
+    (-> state
+        (assoc-in [:pages id :name] name)
+        (assoc-in [:pages id :metadata :width] width)
+        (assoc-in [:pages id :metadata :height] height)
+        (assoc-in [:pages id :metadata :layout] layout)))
+
+  rs/WatchEvent
+  (-apply-watch [_ state stream]
+    (rx/of (persist-metadata id))))
+
+(s/def ::update-page-event
+  (s/keys :req-un [::name ::width ::height ::layout]))
+
+(defn update-page
+  [id {:keys [name width height layout] :as data}]
+  {:pre [(uuid? id) (us/valid? ::update-page-event data)]}
+  (UpdatePage. id name width height layout))
 
 ;; --- Delete Page (by id)
 
