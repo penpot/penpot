@@ -33,9 +33,10 @@
     .input-select {
       background-color: transparent;
       border-color: $color-gray;
+      font-size: $fs14;
       margin-bottom: 0;
       margin-left: $medium;
-      padding: 3px 15px 3px 3px;
+      padding: 3px 25px 3px 3px;
     }
 
   }
@@ -77,7 +78,6 @@
     }
 
   }
-
 
   &.library-gap {
     padding: $small $medium $small 270px;
