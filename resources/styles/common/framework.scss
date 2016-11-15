@@ -437,6 +437,17 @@ input[type="checkbox"]:focus {
 
 }
 
+// Element-name
+
+input.element-name {
+  border: 1px solid $soft-ui-border;
+  border-radius: $br-small;
+  font-size: $fs13;
+  margin: 0px;
+  padding: 3px;
+  width: 100%;
+}
+
 // Input select
 
 .input-select {

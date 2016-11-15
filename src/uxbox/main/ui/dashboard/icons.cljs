@@ -330,7 +330,7 @@
       (icon/icon-svg icon)]
      [:div.item-info
       (if edition?
-        [:input {:type "text"
+        [:input.element-name {:type "text"
                  :auto-focus true
                  :on-key-down on-key-down
                  :on-blur on-blur
