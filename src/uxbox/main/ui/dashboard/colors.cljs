@@ -238,14 +238,14 @@
                                    :title "Copy to library"
                                    :on-select on-copy))
 
-           i/organize]
+           i/copy]
           [:span.move-item.tooltip.tooltip-top
            {:on-click on-toggle-move :alt "Move"}
            (when (:show-move-tooltip @local)
              (grid-options-tooltip :selected id
                                    :title "Move to library"
                                    :on-select on-move))
-           i/organize]
+           i/move]
           [:span.delete.tooltip.tooltip-top
            {:alt "Delete"
             :on-click on-delete}
