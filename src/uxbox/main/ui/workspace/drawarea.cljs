@@ -150,14 +150,23 @@
           pos
           immanted-zones))
 
+(defn- translate-to-canvas
+  [point]
+  (let [zoom @wb/zoom-ref
+        ccords (gpt/multiply canvas-coords zoom)]
+    (-> point
+        (gpt/subtract ccords)
+        (gpt/divide zoom))))
+
+(defn- conditional-align
+  [point]
+  (if @wb/alignment-ref
+    (uds/align-point point)
+    (rx/of point)))
+
 (defn- on-init-draw-path
   [shape]
-  (letfn [(conditional-align-point [point]
-            (if @wb/alignment-ref
-              (uds/align-point point)
-              (rx/of point)))
-
-          (stoper-event? [[type opts]]
+  (letfn [(stoper-event? [[type opts]]
             (or (and (= type :key/down)
                      (= (:key opts) 13))
                 (and (= type :mouse/double-click)
@@ -169,9 +178,8 @@
                  (false? (:shift? opts))))]
 
     (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
-                     (rx/mapcat conditional-align-point)
-                     (rx/map #(gpt/subtract % canvas-coords)))
-
+                     (rx/mapcat conditional-align)
+                     (rx/map translate-to-canvas))
           stoper (->> (rx/merge
                        (rx/take 1 drawing-stoper)
                        (rx/filter stoper-event? wb/events-s))
@@ -238,11 +246,8 @@
 (defn- on-init-draw-free-path
   [shape]
   (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
-                   (rx/mapcat (fn [point]
-                                (if @wb/alignment-ref
-                                  (uds/align-point point)
-                                  (rx/of point))))
-                   (rx/map #(gpt/subtract % canvas-coords)))
+                   (rx/mapcat conditional-align)
+                   (rx/map translate-to-canvas))
         stoper (->> wb/events-s
                     (rx/map first)
                     (rx/filter #(= % :mouse/up))
@@ -275,12 +280,8 @@
 (defn- on-init-draw-generic
   [shape]
   (let [mouse (->> wb/mouse-viewport-s
-                   (rx/mapcat (fn [point]
-                                (if @wb/alignment-ref
-                                  (uds/align-point point)
-                                  (rx/of point))))
-                   (rx/map #(gpt/subtract % canvas-coords)))
-
+                   (rx/mapcat conditional-align)
+                   (rx/map translate-to-canvas))
         stoper (->> wb/events-s
                     (rx/map first)
                     (rx/filter #(= % :mouse/up))
@@ -295,8 +296,7 @@
                 (reset! drawing-shape shape)))
 
             (on-draw [[pt ctrl?]]
-              (let [pt (gpt/divide pt @wb/zoom-ref)]
-                (reset! drawing-position (assoc pt :lock ctrl?))))
+              (reset! drawing-position (assoc pt :lock ctrl?)))
             (on-end []
               (let [shape @drawing-shape
                     shpos @drawing-position
