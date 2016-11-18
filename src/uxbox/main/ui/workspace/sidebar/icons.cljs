@@ -41,6 +41,7 @@
   [own]
   (let [local (:rum/local own)]
     (rs/emit! (udi/fetch-collections))
+    (rs/emit! (udi/fetch-icons nil))
     (add-watch local ::key (fn [_ _ _ {:keys [id]}]
                              (rs/emit! (udi/fetch-icons id))))
     own))
