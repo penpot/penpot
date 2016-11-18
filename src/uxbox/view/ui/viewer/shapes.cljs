@@ -53,7 +53,9 @@
   (let [show-itx? (and (mx/react itx-flag-ref)
                        (not (empty? (:interactions shape))))
         rect (geom/inner-rect shape)]
-    [:g {:id (str "itx-" (:id shape))}
+    [:g {:id (str "itx-" (:id shape))
+         :style (when show-itx?
+                  {:cursor "pointer"})}
      (factory shape)
      (when show-itx?
        [:circle {:fill "#78dbbe"
