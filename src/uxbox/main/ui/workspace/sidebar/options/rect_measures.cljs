@@ -51,7 +51,7 @@
               (rs/emit! (uds/unlock-proportions id))
               (rs/emit! (uds/lock-proportions id))))]
     (let [size (geom/size shape)]
-      [:div.element-set {:key (str (:id menu))}
+      [:div.element-set
        [:div.element-set-title (:name menu)]
        [:div.element-set-content
         ;; SLIDEBAR FOR ROTATION AND OPACITY

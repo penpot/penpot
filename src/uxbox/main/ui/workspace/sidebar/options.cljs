@@ -26,77 +26,98 @@
    [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
    [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
    [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
+   [uxbox.main.ui.workspace.sidebar.options.page :as options-page]
    [uxbox.main.ui.workspace.sidebar.options.interactions :as options-interactions]
    [uxbox.main.geom :as geom]
    [uxbox.util.dom :as dom]
-   [uxbox.util.data :refer (parse-int parse-float read-string)]))
+   [uxbox.util.data :as data]))
 
 ;; --- Constants
 
 (def ^:private +menus-map+
-  {:icon [:menu/icon-measures :menu/fill :menu/stroke :menu/interactions]
-   :rect [:menu/rect-measures :menu/fill :menu/stroke :menu/interactions]
-   :line [:menu/line-measures :menu/stroke :menu/interactions]
-   :path [:menu/fill :menu/stroke :menu/interactions]
-   :circle [:menu/circle-measures :menu/fill :menu/stroke :menu/interactions]
-   :text [:menu/fill :menu/text :menu/interactions]
-   :group []})
+  {:icon [::icon-measures ::fill ::stroke ::interactions]
+   :rect [::rect-measures ::fill ::stroke ::interactions]
+   :line [::line-measures ::stroke ::interactions]
+   :path [::fill ::stroke ::interactions]
+   :circle [::circle-measures ::fill ::stroke ::interactions]
+   :text [::fill ::text ::interactions]
+   :image [::interactions]
+   :group [::interactions]
+   ::page [::page-measures ::page-grid-options]})
 
 (def ^:private +menus+
   [{:name "Size, position & rotation"
-    :id :menu/icon-measures
+    :id ::icon-measures
     :icon i/infocard
     :comp options-iconm/icon-measures-menu}
    {:name "Size, position & rotation"
-    :id :menu/rect-measures
+    :id ::rect-measures
     :icon i/infocard
     :comp options-rectm/rect-measures-menu}
    {:name "Size, position & rotation"
-    :id :menu/line-measures
+    :id ::line-measures
     :icon i/infocard
     :comp options-linem/line-measures-menu}
    {:name "Size, position & rotation"
-    :id :menu/circle-measures
+    :id ::circle-measures
     :icon i/infocard
     :comp options-circlem/circle-measures-menu}
    {:name "Fill"
-    :id :menu/fill
+    :id ::fill
     :icon i/fill
     :comp options-fill/fill-menu}
    {:name "Stroke"
-    :id :menu/stroke
+    :id ::stroke
     :icon i/stroke
     :comp options-stroke/stroke-menu}
    {:name "Text"
-    :id :menu/text
+    :id ::text
     :icon i/text
     :comp options-text/text-menu}
    {:name "Interactions"
-    :id :menu/interactions
+    :id ::interactions
     :icon i/action
-    :comp options-interactions/interactions-menu}])
+    :comp options-interactions/interactions-menu}
+   {:name "Page Measures (TODO)"
+    :id ::page-measures
+    :icon i/action
+    :comp options-page/measures-menu}
+   {:name "Grid Options (TODO)"
+    :id ::page-grid-options
+    :icon i/action
+    :comp options-page/grid-options-menu}])
 
 (def ^:private +menus-by-id+
-  (into {} (map #(vector (:id %) %)) +menus+))
+  (data/index-by-id +menus+))
 
 ;; --- Options
 
+(defn- options-did-remount
+  [old-own own]
+  (let [[prev-shape] (:rum/args old-own)
+        [curr-shape] (:rum/args own)]
+    (when (not (identical? prev-shape curr-shape))
+      (reset! (:rum/local own) {}))
+    own))
+
 (mx/defcs options
-  {:mixins [mx/static (mx/local)]}
-  [own shape]
-  (let [local (:rum/local own)
-        menus (get +menus-map+ (:type shape))
-        active-menu (:menu @local (first menus))]
+  {:mixins [mx/static (mx/local)]
+   :did-remount options-did-remount}
+  [{:keys [rum/local] :as own} shape]
+  (let [menus (get +menus-map+ (:type shape ::page))
+        contained-in? (into #{} menus)
+        active (:menu @local (first menus))]
+    (println "options" active)
     [:div
      [:ul.element-icons
-      (for [menu-id (get +menus-map+ (:type shape))
+      (for [menu-id (get +menus-map+ (:type shape ::page))
             :let [menu (get +menus-by-id+ menu-id)
-                  selected? (= active-menu menu-id)]]
+                  selected? (= active menu-id)]]
         [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
                      :key (str "menu-" (:id menu))
                      :class (when selected? "selected")}
          (:icon menu)])]
-     (when-let [menu (get +menus-by-id+ active-menu)]
+     (when-let [menu (get +menus-by-id+ active)]
        ((:comp menu) menu shape))]))
 
 (def selected-shape-ref
@@ -119,6 +140,5 @@
       [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content
       [:div.element-options
-       (if shape
-         (options shape))]]]))
+       (options shape)]]]))
 
