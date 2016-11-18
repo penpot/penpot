@@ -71,7 +71,8 @@
                      (attrs/extract-style-attrs shape)
                      (attrs/make-debug-attrs shape))]
     [:g attrs
-     (for [item items :let [key (str item)]]
+     (for [item (reverse items)
+           :let [key (str item)]]
        (-> (factory item)
            (mx/with-key key)))]))
 
