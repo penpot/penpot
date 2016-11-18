@@ -56,9 +56,8 @@
   {:mixins [(mx/local) mx/reactive]
    :will-mount icons-toolbox-will-mount
    :will-unmount icons-toolbox-will-unmount}
-  [own]
-  (let [local (:rum/local own)
-        drawing (mx/react drawing-shape)
+  [{:keys [rum/local] :as own}]
+  (let [drawing (mx/react drawing-shape)
 
         colls-map (mx/react icons/collections-ref)
         colls (->> (vals colls-map)
