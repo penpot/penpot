@@ -32,17 +32,6 @@
 
 ;; --- Icons (Component)
 
-(defn- select-icon
-  [icon]
-  (rs/emit! (dw/select-for-drawing icon)))
-
-(defn- change-icon-coll
-  [local event]
-  (let [value (-> (dom/event->value event)
-                  (read-string))]
-    (swap! local assoc :collid value)
-    (rs/emit! (dw/select-for-drawing nil))))
-
 (mx/defc icon-wrapper
   {:mixins [mx/static]}
   [icon]
