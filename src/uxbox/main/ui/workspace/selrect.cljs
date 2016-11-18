@@ -69,8 +69,8 @@
         startx (* c/canvas-start-x zoom)
         starty (* c/canvas-start-y zoom)]
     (assoc rect
-           :x (- (:x rect) startx)
-           :y (- (:y rect) starty)
+           :x (/ (- (:x rect) startx) zoom)
+           :y (/ (- (:y rect) starty) zoom)
            :width (/ (:width rect) zoom)
            :height (/ (:height rect) zoom))))
 
