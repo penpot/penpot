@@ -1,0 +1,18 @@
+{:migrations
+ {:verbose false}
+
+ :media
+ {:basedir "/tmp/uxbox/media"
+  :baseuri "http://localhost:6060/media/"}
+
+ :static
+ {:basedir "/tmp/uxbox/static"
+  :baseuri "http://localhost:6060/static/"}
+
+ :database
+ {:adapter "postgresql"
+  :username nil
+  :password nil
+  :database-name "test"
+  :server-name "localhost"
+  :port-number 5432}}

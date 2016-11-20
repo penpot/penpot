@@ -1,0 +1,11 @@
+{:icons
+ [{:name "Material Design (Action)"
+   :path "./material/action/svg/production"
+   :regex #"^.*_48px\.svg$"}]
+
+ :images
+ [{:name "Generic Collection 1"
+   :path "./my-images/collection1/"
+   :regex #"^.*\.(png|jpg|webp)$"}]}
+
+

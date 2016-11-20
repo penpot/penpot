@@ -1,0 +1,37 @@
+{;; A secret key used for create tokens
+ ;; WARNING: this is a default secret key and
+ ;; it should be overwritten in production env.
+ :secret "5qjiAn-QUpawUNqGP10UZKklSqbLKcdGY3sJpq0UUACpVXGg2HOFJCBejDWVHskhRyp7iHb4rjOLXX2ZjF-5cw"
+ :smtp
+ {:host "localhost" ;; Hostname of the desired SMTP server.
+  :port 25          ;; Port of SMTP server.
+  :user nil         ;; Username to authenticate with (if authenticating).
+  :pass nil         ;; Password to authenticate with (if authenticating).
+  :ssl false        ;; Enables SSL encryption if value is truthy.
+  :tls false       ;; Enables TLS encryption if value is truthy.
+  :noop true}
+
+ :auth-options {:alg :a256kw :enc :a128cbc-hs256}
+
+ :email {:reply-to "no-reply@uxbox.io"
+         :from "no-reply@uxbox.io"}
+
+ :http {:port 6060
+        :max-body-size 52428800
+        :debug true}
+
+ :media
+ {:basedir "resources/public/media"
+  :baseuri "http://localhost:6060/media/"}
+
+ :static
+ {:basedir "resources/public/static"
+  :baseuri "http://localhost:6060/static/"}
+
+ :database
+ {:adapter "postgresql"
+  :username nil
+  :password nil
+  :database-name "uxbox"
+  :server-name "localhost"
+  :port-number 5432}}
