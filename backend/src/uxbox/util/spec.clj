@@ -31,6 +31,12 @@
                 :context (s/explain-data spec data))
       result)))
 
+(defn valid?
+  [spec data]
+  (if (s/valid? spec data)
+    true
+    (s/explain spec data)))
+
 ;; --- Predicates
 
 (defn email?
