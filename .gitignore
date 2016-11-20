@@ -10,6 +10,7 @@ pom.xml
 .nrepl-port
 node_modules
 /backend/target/
+/backend/resources/public/media
 /frontend/target/
 /frontend/dist/
 /frontend/out/
