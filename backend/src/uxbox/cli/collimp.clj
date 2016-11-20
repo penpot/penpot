@@ -52,11 +52,10 @@
 
 ;; --- Colors Collections Importer
 
-(def storage media/images-storage)
-
 (defn- create-image-collection
   "Create or replace image collection by its name."
   [conn {:keys [name] :as entry}]
+  (println "Creating image collection:" name)
   (let [id (uuid/namespaced +imates-uuid-ns+ name)
         sqlv (sql/create-image-collection {:id id :name name})]
     (sc/execute conn sqlv)
@@ -78,7 +77,8 @@
   [conn {:keys [id path] :as image}]
   {:pre [(uuid? id)
          (fs/path? path)]}
-  (let [sqlv (sql/delete-image {:id id})]
+  (let [sqlv (sql/delete-image {:id id})
+        storage media/images-storage]
     @(st/delete storage path)
     (sc/execute conn sqlv)))
 
@@ -88,7 +88,8 @@
          (uuid? collid)
          (uuid? imageid)]}
   (let [filename (fs/base-name localpath)
-        [width height] (retrieve-image-size localpath)
+        storage media/images-storage
+        [width height] (time (retrieve-image-size localpath))
         extension (second (fs/split-ext filename))
         path @(st/save storage filename localpath)
         params {:name filename
@@ -106,7 +107,9 @@
 (defn- import-image
   [conn id fpath]
   {:pre [(uuid? id) (fs/path? fpath)]}
-  #_(let [imageid (uuid/namespaced +imates-uuid-ns+ (str id fpath))]
+  (println "Importing image:" (str fpath))
+  (let [filename (fs/base-name fpath)
+        imageid (uuid/namespaced +imates-uuid-ns+ (str id filename))]
     (if-let [image (retrieve-image conn imageid)]
       (do
         (delete-image conn image)
@@ -114,9 +117,10 @@
       (create-image conn id imageid fpath))))
 
 (defn- process-images-entry
-  [conn {:keys [path regex] :as entry}]
-  {:pre [(s/valid? ::import-entry entry)]}
-  (let [id (uuid/random) #_(create-image-collection conn entry)]
+  [conn basedir {:keys [path regex] :as entry}]
+  {:pre [(us/valid? ::import-entry entry)]}
+  (let [id (create-image-collection conn entry)
+        path (fs/resolve basedir path)]
     (doseq [fpath (fs/list-files path)]
       (when (re-matches regex (str fpath))
         (import-image conn id fpath)))))
@@ -145,25 +149,24 @@
 
 (defn- start-system
   []
-  (-> (mount/only #{#'uxbox.config/config
-                    #'uxbox.db/datasource
-                    #'uxbox.migrations/migrations})
-      (mount/start)))
+  (mount/start))
 
 (defn- stop-system
   []
   (mount/stop))
 
 (defn- run-importer
-  [directory data]
-  (println "Running importer on:")
-  (pprint data))
+  [conn basedir data]
+  (let [images (:images data)
+        icons (:icons data)]
+    (run! #(process-images-entry conn basedir %) images)))
 
 (defn -main
   [& [path]]
-  (let [[directory data] (read-import-file path)]
+  (let [[basedir data] (read-import-file path)]
     (start-system)
     (try
-      (run-importer directory data)
+      (with-open [conn (db/connection)]
+        (sc/apply-atomic conn run-importer basedir data))
       (finally
         (stop-system)))))
