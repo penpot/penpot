@@ -108,6 +108,14 @@
   [path]
   (first (split-ext path)))
 
+(defn resolve
+  "Resolve path on top of an other path."
+  [base path]
+  (let [^Path base (pt/-path base)
+        ^Path path (pt/-path path)]
+    (-> (.resolve base path)
+        (.normalize))))
+
 (defn list-directory
   [path]
   (let [path (pt/-path path)]
