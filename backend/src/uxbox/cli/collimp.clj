@@ -24,7 +24,6 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.util.data :as data])
   (:import [java.io Reader PushbackReader]
-           [javax.imageio ImageIO]
            [org.im4java.core Info]))
 
 ;; --- Constants & Specs
