@@ -29,6 +29,7 @@
 ;; --- Constants & Helpers
 
 (def ^:const +imates-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6e")
+(def ^:const +icons-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6f")
 
 (s/def ::name string?)
 (s/def ::path string?)
@@ -41,14 +42,71 @@
   [reader]
   (PushbackReader. ^Reader reader))
 
-;; --- Colors Collections Importer
+;; --- Icons Collections Importer
 
-(defn- create-image-collection
+(defn- create-icons-collection
+  "Create or replace image collection by its name."
+  [conn {:keys [name] :as entry}]
+  (println "Creating icons collection:" name)
+  (let [id (uuid/namespaced +icons-uuid-ns+ name)
+        sqlv (sql/create-icons-collection {:id id :name name})]
+    (sc/execute conn sqlv)
+    id))
+
+(defn- retrieve-icon
+  [conn id]
+  {:pre [(uuid? id)]}
+  (let [sqlv (sql/get-icon {:id id})]
+    (some->> (sc/fetch-one conn sqlv)
+             (data/normalize-attrs))))
+
+;; (defn- create-icon
+;;   [conn collid iconid localpath]
+;;   {:pre [(fs/path? localpath)
+;;          (uuid? collid)
+;;          (uuid? imageid)]}
+;;   (let [filename (fs/base-name localpath)
+;;         storage media/images-storage
+;;         [width height] (time (retrieve-image-size localpath))
+;;         extension (second (fs/split-ext filename))
+;;         path @(st/save storage filename localpath)
+;;         params {:name filename
+;;                 :path (str path)
+;;                 :mimetype (case extension
+;;                             ".jpg" "image/jpeg"
+;;                             ".png" "image/png")
+;;                 :width width
+;;                 :height height
+;;                 :collection collid
+;;                 :id imageid}
+;;         sqlv (sql/create-image params)]
+;;     (sc/execute conn sqlv)))
+
+(defn- import-icon
+  [conn id fpath]
+  {:pre [(uuid? id) (fs/path? fpath)]}
+  (println "Importing icon:" (str fpath))
+  (let [filename (fs/base-name fpath)
+        iconid (uuid/namespaced +imates-uuid-ns+ (str id filename))]
+    #_(create-icon conn id iconid fpath)))
+
+(defn- process-icons-entry
+  [conn basedir {:keys [path regex] :as entry}]
+  {:pre [(us/valid? ::import-entry entry)]}
+  (let [id (create-icons-collection conn entry)
+        path (fs/resolve basedir path)]
+    (doseq [fpath (fs/list-files path)]
+      (when (re-matches regex (str fpath))
+        (import-icon conn id fpath)))))
+
+;; --- Images Collections Importer
+
+(defn- create-images-collection
   "Create or replace image collection by its name."
   [conn {:keys [name] :as entry}]
   (println "Creating image collection:" name)
   (let [id (uuid/namespaced +imates-uuid-ns+ name)
-        sqlv (sql/create-image-collection {:id id :name name})]
+        sqlv (sql/create-images-collection {:id id :name name})]
     (sc/execute conn sqlv)
     id))
 
@@ -110,7 +168,7 @@
 (defn- process-images-entry
   [conn basedir {:keys [path regex] :as entry}]
   {:pre [(us/valid? ::import-entry entry)]}
-  (let [id (create-image-collection conn entry)
+  (let [id (create-images-collection conn entry)
         path (fs/resolve basedir path)]
     (doseq [fpath (fs/list-files path)]
       (when (re-matches regex (str fpath))

@@ -15,8 +15,15 @@ delete from images
  where id = :id
    and "user" = '00000000-0000-0000-0000-000000000000'::uuid;
 
--- :name create-image-collection
+-- :name create-images-collection
 insert into images_collections (id, "user", name)
+values (:id, '00000000-0000-0000-0000-000000000000'::uuid, :name)
+    on conflict (id)
+    do update set name = :name
+returning *;
+
+-- :name create-icons-collection
+insert into icons_collections (id, "user", name)
 values (:id, '00000000-0000-0000-0000-000000000000'::uuid, :name)
     on conflict (id)
     do update set name = :name
@@ -26,3 +33,20 @@ returning *;
 select * from images as i
  where i.id = :id
    and i."user" = '00000000-0000-0000-0000-000000000000'::uuid;
+
+-- :name get-icon
+select * from icons as i
+ where i.id = :id
+   and i."user" = '00000000-0000-0000-0000-000000000000'::uuid;
+
+-- :name create-icon :<! :1
+insert into icons ("user", name, collection, metadata, content)
+values (:user, :name, :collection, :metadata, :content)
+    on conflict (id)
+    do update set name = :name,
+                  content = :content,
+                  metadata = :metadata,
+                  collection = :collection
+                  "user" = '00000000-0000-0000-0000-000000000000'::uuid
+returning *;
+
