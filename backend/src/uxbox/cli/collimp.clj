@@ -24,7 +24,8 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.util.data :as data])
   (:import [java.io Reader PushbackReader]
-           [javax.imageio ImageIO]))
+           [javax.imageio ImageIO]
+           [org.im4java.core Info]))
 
 ;; --- Constants & Specs
 
@@ -63,11 +64,8 @@
 
 (defn- retrieve-image-size
   [path]
-  (let [path (fs/path path)
-        file (.toFile path)
-        buff (ImageIO/read file)]
-    [(.getWidth buff)
-     (.getHeight buff)]))
+  (let [info (Info. (str path) true)]
+    [(.getImageWidth info) (.getImageHeight info)]))
 
 (defn- retrieve-image
   [conn id]
