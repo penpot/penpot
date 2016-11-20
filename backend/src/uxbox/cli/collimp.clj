@@ -26,7 +26,7 @@
   (:import [java.io Reader PushbackReader]
            [org.im4java.core Info]))
 
-;; --- Constants & Specs
+;; --- Constants & Helpers
 
 (def ^:const +imates-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6e")
 
@@ -37,15 +37,7 @@
 (s/def ::import-entry
   (s/keys :req-un [::name ::path ::regex]))
 
-;; --- CLI Helpers
-
-
-(defn printerr
-  [& args]
-  (binding [*out* *err*]
-    (apply println args)))
-
-(defn pushback-reader
+(defn- pushback-reader
   [reader]
   (PushbackReader. ^Reader reader))
 
