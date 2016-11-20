@@ -6,7 +6,7 @@
 
 (ns storages.util
   "FileSystem related utils."
-  (:refer-clojure :exclude [name])
+  (:refer-clojure :exclude [name resolve])
   (:require [storages.proto :as pt])
   (:import java.nio.file.Path
            java.nio.file.Files
