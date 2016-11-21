@@ -15,7 +15,8 @@ returning *;
 select *,
        (select count(*) from icons where collection = ic.id) as num_icons
   from icons_collections as ic
- where ic."user" = :user
+ where (ic."user" = :user or
+        ic."user" = '00000000-0000-0000-0000-000000000000'::uuid)
    and ic.deleted_at is null
  order by ic.created_at desc;
 
@@ -27,7 +28,8 @@ update icons_collections
 -- :name get-icons-by-collection :? :*
 select *
   from icons as i
- where i."user" = :user
+ where (i."user" = :user or
+        i."user" = '00000000-0000-0000-0000-000000000000'::uuid)
    and i.deleted_at is null
    and i."collection" = :collection
  order by i.created_at desc;
