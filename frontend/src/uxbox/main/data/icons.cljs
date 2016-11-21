@@ -60,9 +60,9 @@
 (defrecord CollectionsFetched [items]
   rs/UpdateEvent
   (-apply-update [_ state]
-    (reduce (fn [state item]
-              (let [id (:id item)
-                    item (assoc item :type :own)]
+    (reduce (fn [state {:keys [id user] :as item}]
+              (let [type (if (uuid/zero? (:user item)) :builtin :own)
+                    item (assoc item :type type)]
                 (assoc-in state [:icons-collections id] item)))
             state
             items)))

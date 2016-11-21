@@ -13,7 +13,14 @@
 
   If no high qualiry RNG, switches to the default Math based
   RNG with proper waring in the console."
+  (:refer-clojure :exclude [zero?])
   (:require [uxbox.util.uuid-impl :as impl]))
+
+(def zero #uuid "00000000-0000-0000-0000-000000000000")
+
+(defn zero?
+  [v]
+  (= zero v))
 
 (defn v4
   "Generate a v4 (random) UUID."
