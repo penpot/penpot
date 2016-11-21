@@ -5,9 +5,9 @@ select *
    and cc."user" = '00000000-0000-0000-0000-000000000000'::uuid;
 
 -- :name create-image :<! :1
-insert into images ("user", name, collection, path, width, height, mimetype)
-values ('00000000-0000-0000-0000-000000000000'::uuid, :name, :collection,
-        :path, :width, :height, :mimetype)
+insert into images ("user", id, name, collection, path, width, height, mimetype)
+values ('00000000-0000-0000-0000-000000000000'::uuid,
+        :id, :name, :collection, :path, :width, :height, :mimetype)
 returning *;
 
 -- :name delete-image :! :n
@@ -40,9 +40,9 @@ select * from icons as i
    and i."user" = '00000000-0000-0000-0000-000000000000'::uuid;
 
 -- :name create-icon :<! :1
-insert into icons ("user", name, collection, metadata, content)
+insert into icons ("user", id, name, collection, metadata, content)
 values ('00000000-0000-0000-0000-000000000000'::uuid,
-        :name, :collection, :metadata, :content)
+        :id, :name, :collection, :metadata, :content)
     on conflict (id)
     do update set name = :name,
                   content = :content,
