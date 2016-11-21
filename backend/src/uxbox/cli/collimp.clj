@@ -19,8 +19,11 @@
             [uxbox.migrations]
             [uxbox.media :as media]
             [uxbox.cli.sql :as sql]
+            [uxbox.services.svgparse :as svg]
+            [uxbox.util.transit :as t]
             [uxbox.util.spec :as us]
             [uxbox.util.cli :as cli]
+            [uxbox.util.blob :as blob]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.data :as data])
   (:import [java.io Reader PushbackReader]
@@ -60,27 +63,24 @@
     (some->> (sc/fetch-one conn sqlv)
              (data/normalize-attrs))))
 
-;; (defn- create-icon
-;;   [conn collid iconid localpath]
-;;   {:pre [(fs/path? localpath)
-;;          (uuid? collid)
-;;          (uuid? imageid)]}
-;;   (let [filename (fs/base-name localpath)
-;;         storage media/images-storage
-;;         [width height] (time (retrieve-image-size localpath))
-;;         extension (second (fs/split-ext filename))
-;;         path @(st/save storage filename localpath)
-;;         params {:name filename
-;;                 :path (str path)
-;;                 :mimetype (case extension
-;;                             ".jpg" "image/jpeg"
-;;                             ".png" "image/png")
-;;                 :width width
-;;                 :height height
-;;                 :collection collid
-;;                 :id imageid}
-;;         sqlv (sql/create-image params)]
-;;     (sc/execute conn sqlv)))
+(defn- create-icon
+  [conn collid iconid localpath]
+  {:pre [(fs/path? localpath)
+         (uuid? collid)
+         (uuid? iconid)]}
+  (let [filename (fs/base-name localpath)
+        extension (second (fs/split-ext filename))
+        data (svg/parse localpath)
+        params {:name (:name data filename)
+                :content (:content data)
+                :metadata (-> {:width (:width data)
+                               :height (:height data)
+                               :view-box (:view-box data)}
+                              t/encode blob/encode)
+                :collection collid
+                :id iconid}
+        sqlv (sql/create-icon params)]
+    (sc/execute conn sqlv)))
 
 (defn- import-icon
   [conn id fpath]
@@ -88,7 +88,7 @@
   (println "Importing icon:" (str fpath))
   (let [filename (fs/base-name fpath)
         iconid (uuid/namespaced +imates-uuid-ns+ (str id filename))]
-    #_(create-icon conn id iconid fpath)))
+    (create-icon conn id iconid fpath)))
 
 (defn- process-icons-entry
   [conn basedir {:keys [path regex] :as entry}]
@@ -208,7 +208,9 @@
   [conn basedir data]
   (let [images (:images data)
         icons (:icons data)]
-    (run! #(process-images-entry conn basedir %) images)))
+    (run! #(process-images-entry conn basedir %) images)
+    (run! #(process-icons-entry conn basedir %) icons)
+    #_(throw (ex-info "" {}))))
 
 (defn -main
   [& [path]]

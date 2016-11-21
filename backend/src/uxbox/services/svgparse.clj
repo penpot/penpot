@@ -86,7 +86,6 @@
 
 (defn parse
   [data]
-  {:pre [(instance? InputStream data)]}
   (parse-string (slurp data)))
 
 (defmethod core/query :parse-svg

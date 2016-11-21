@@ -22,17 +22,17 @@ values (:id, '00000000-0000-0000-0000-000000000000'::uuid, :name)
     do update set name = :name
 returning *;
 
+-- :name get-image
+select * from images as i
+ where i.id = :id
+   and i."user" = '00000000-0000-0000-0000-000000000000'::uuid;
+
 -- :name create-icons-collection
 insert into icons_collections (id, "user", name)
 values (:id, '00000000-0000-0000-0000-000000000000'::uuid, :name)
     on conflict (id)
     do update set name = :name
 returning *;
-
--- :name get-image
-select * from images as i
- where i.id = :id
-   and i."user" = '00000000-0000-0000-0000-000000000000'::uuid;
 
 -- :name get-icon
 select * from icons as i
@@ -41,12 +41,13 @@ select * from icons as i
 
 -- :name create-icon :<! :1
 insert into icons ("user", name, collection, metadata, content)
-values (:user, :name, :collection, :metadata, :content)
+values ('00000000-0000-0000-0000-000000000000'::uuid,
+        :name, :collection, :metadata, :content)
     on conflict (id)
     do update set name = :name,
                   content = :content,
                   metadata = :metadata,
-                  collection = :collection
+                  collection = :collection,
                   "user" = '00000000-0000-0000-0000-000000000000'::uuid
 returning *;
 
