@@ -67,3 +67,7 @@
   "A shortcut for create a response instance."
   [data]
   (Rsp. data))
+
+(defn rsp?
+  [v]
+  (instance? Rsp v))
