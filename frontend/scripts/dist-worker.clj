@@ -12,6 +12,7 @@
     :asset-path "js"
     :parallel-build true
     :optimizations :advanced
+    :cache-analysis false
     :static-fns true
     :pretty-print false
     :language-in  :ecmascript6

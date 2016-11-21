@@ -13,6 +13,7 @@
     :closure-defines {"uxbox.config.url" "https://test.uxbox.io/api"
                       "uxbox.config.viewurl" "https://test.uxbox.io/view/"}
     :optimizations :simple
+    :cache-analysis false
     :externs ["externs/main.js"]
     :static-fns true
     :elide-asserts true
