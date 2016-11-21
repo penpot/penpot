@@ -13,7 +13,7 @@
     :output-dir "dist/js/main"
     :closure-defines {"uxbox.config.url" "https://test.uxbox.io/api"
                       "uxbox.config.viewurl" "https://test.uxbox.io/view/"}
-    :optimizations :advanced
+    :optimizations :simple
     :externs ["externs/main.js"]
     :static-fns true
     :elide-asserts true

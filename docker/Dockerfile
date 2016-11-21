@@ -12,7 +12,7 @@ ENV LC_ALL en_US.UTF-8
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
-RUN apt-get update -yq && \
+RUN apt-get update -yq &&  \
     apt-get install -yq bash git tmux vim openjdk-8-jdk rlwrap build-essential \
                         postgresql-9.5 postgresql-contrib-9.5 imagemagick webp \
                         sudo
