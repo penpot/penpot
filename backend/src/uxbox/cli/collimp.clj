@@ -31,7 +31,7 @@
 
 ;; --- Constants & Helpers
 
-(def ^:const +imates-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6e")
+(def ^:const +images-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6e")
 (def ^:const +icons-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6f")
 
 (s/def ::name string?)
@@ -50,7 +50,7 @@
 (defn- create-icons-collection
   "Create or replace image collection by its name."
   [conn {:keys [name] :as entry}]
-  (println "Creating icons collection:" name)
+  (println "Creating or updating icons collection:" name)
   (let [id (uuid/namespaced +icons-uuid-ns+ name)
         sqlv (sql/create-icons-collection {:id id :name name})]
     (sc/execute conn sqlv)
@@ -85,10 +85,11 @@
 (defn- import-icon
   [conn id fpath]
   {:pre [(uuid? id) (fs/path? fpath)]}
-  (println "Importing icon:" (str fpath))
   (let [filename (fs/base-name fpath)
-        iconid (uuid/namespaced +imates-uuid-ns+ (str id filename))]
-    (create-icon conn id iconid fpath)))
+        iconid (uuid/namespaced +icons-uuid-ns+ (str id filename))]
+    (when-not (retrieve-icon conn iconid)
+      (println "Importing icon:" (str fpath))
+      (create-icon conn id iconid fpath))))
 
 (defn- process-icons-entry
   [conn basedir {:keys [path regex] :as entry}]
@@ -104,8 +105,8 @@
 (defn- create-images-collection
   "Create or replace image collection by its name."
   [conn {:keys [name] :as entry}]
-  (println "Creating image collection:" name)
-  (let [id (uuid/namespaced +imates-uuid-ns+ name)
+  (println "Creating or updating image collection:" name)
+  (let [id (uuid/namespaced +images-uuid-ns+ name)
         sqlv (sql/create-images-collection {:id id :name name})]
     (sc/execute conn sqlv)
     id))
@@ -138,7 +139,7 @@
          (uuid? imageid)]}
   (let [filename (fs/base-name localpath)
         storage media/images-storage
-        [width height] (time (retrieve-image-size localpath))
+        [width height] (retrieve-image-size localpath)
         extension (second (fs/split-ext filename))
         path @(st/save storage filename localpath)
         params {:name filename
@@ -156,14 +157,17 @@
 (defn- import-image
   [conn id fpath]
   {:pre [(uuid? id) (fs/path? fpath)]}
-  (println "Importing image:" (str fpath))
   (let [filename (fs/base-name fpath)
-        imageid (uuid/namespaced +imates-uuid-ns+ (str id filename))]
-    (if-let [image (retrieve-image conn imageid)]
+        imageid (uuid/namespaced +images-uuid-ns+ (str id filename))]
+    (when-not (retrieve-image conn imageid)
+      (println "Importing image:" (str fpath))
+      (create-image conn id imageid fpath))))
+
+    #_(if-let [image (retrieve-image conn imageid)]
       (do
         (delete-image conn image)
         (create-image conn id imageid fpath))
-      (create-image conn id imageid fpath))))
+      (create-image conn id imageid fpath))
 
 (defn- process-images-entry
   [conn basedir {:keys [path regex] :as entry}]
