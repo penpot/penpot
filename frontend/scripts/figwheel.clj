@@ -2,8 +2,8 @@
          '[figwheel-sidecar.repl-api :as ra])
 
 (def options
-  {;; "uxbox.config.url" "http://127.0.0.1:6060/api"
-   "uxbox.config.url" "https://test.uxbox.io/api"
+  {"uxbox.config.url" "http://127.0.0.1:6060/api"
+   ;; "uxbox.config.url" "https://test.uxbox.io/api"
    })
 
 (ra/start-figwheel!
@@ -21,7 +21,6 @@
      {:main 'uxbox.main
       :parallel-build false
       :optimizations :none
-      :warnings {:ns-var-clash false}
       :closure-defines options
       :language-in  :ecmascript6
       :language-out :ecmascript5
@@ -37,7 +36,6 @@
      {:main 'uxbox.view
       :parallel-build false
       :optimizations :none
-      :warnings {:ns-var-clash false}
       :closure-defines options
       :language-in  :ecmascript6
       :language-out :ecmascript5

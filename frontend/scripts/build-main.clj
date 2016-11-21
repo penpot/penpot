@@ -5,14 +5,14 @@
 (let [start (System/nanoTime)]
   (b/build
    (b/inputs "src")
-   {:main 'uxbox.view
+   {:main 'uxbox.main
     :parallel-build false
-    :output-to "dist/js/view.js"
-    :source-map "dist/js/view.js.map"
-    :output-dir "dist/js/view/"
+    :output-to "resources/public/js/main.js"
+    :source-map "resources/public/js/main.js.map"
+    :output-dir "resources/public/js/main"
     :closure-defines {"uxbox.config.url" "https://test.uxbox.io/api"
                       "uxbox.config.viewurl" "https://test.uxbox.io/view/"}
-    :optimizations :simple
+    :optimizations :advanced
     :externs ["externs/main.js"]
     :static-fns true
     :elide-asserts true

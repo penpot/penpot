@@ -7,7 +7,6 @@
    (b/inputs "src")
    {:main 'uxbox.main
     :parallel-build false
-    :warnings {:ns-var-clash false}
     :output-to "dist/js/main.js"
     :source-map "dist/js/main.js.map"
     :output-dir "dist/js/main"

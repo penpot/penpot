@@ -4,7 +4,6 @@
  (b/inputs "src")
  {:main 'uxbox.worker
   :parallel-build false
-  :warnings {:ns-var-clash false}
   :output-to "resources/public/js/worker.js"
   :source-map "resources/public/js/worker.js.map"
   :output-dir "resources/public/js/worker"
