@@ -38,6 +38,9 @@
       (= etag new-tag))))
 
 (deftype Rsp [data]
+  clojure.lang.IDeref
+  (deref [_] data)
+
   ch/ISend
   (-send [_ ctx]
     (let [^Response response (ctx/get-response* ctx)
