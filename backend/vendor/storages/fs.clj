@@ -4,15 +4,17 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns storages.util
-  "FileSystem related utils."
+(ns storages.fs
+  "File System helpers."
   (:refer-clojure :exclude [name resolve])
   (:require [storages.proto :as pt])
   (:import java.nio.file.Path
            java.nio.file.Files
            java.nio.file.LinkOption
            java.nio.file.OpenOption
+           java.nio.file.CopyOption
            java.nio.file.StandardOpenOption
+           java.nio.file.StandardCopyOption
            java.nio.file.SimpleFileVisitor
            java.nio.file.FileVisitResult
            java.nio.file.attribute.FileAttribute
@@ -22,7 +24,7 @@
 ;; --- Constants
 
 (def write-open-opts
-  (->> [#_StandardOpenOption/CREATE_NEW
+  (->> [StandardOpenOption/TRUNCATE_EXISTING
         StandardOpenOption/CREATE
         StandardOpenOption/WRITE]
        (into-array OpenOption)))
@@ -30,6 +32,11 @@
 (def read-open-opts
   (->> [StandardOpenOption/READ]
        (into-array OpenOption)))
+
+(def move-opts
+  (->> [StandardCopyOption/ATOMIC_MOVE
+        StandardCopyOption/REPLACE_EXISTING]
+       (into-array CopyOption)))
 
 (def follow-link-opts
   (into-array LinkOption [LinkOption/NOFOLLOW_LINKS]))
@@ -135,6 +142,13 @@
         attrs (make-file-attrs "rwxr-xr-x")]
     (Files/createDirectories path attrs)))
 
+(defn create-dir!
+  "Create a new directory."
+  [path]
+  (let [^Path path (pt/-path path)
+        attrs (make-file-attrs "rwxr-xr-x")]
+    (Files/createDirectories path attrs)))
+
 (defn delete-dir!
   [path]
   (let [path (pt/-path path)
@@ -146,3 +160,9 @@
                     (Files/delete dir)
                     FileVisitResult/CONTINUE))]
     (Files/walkFileTree path visitor)))
+
+(defn create-tempfile
+  "Create a temporal file."
+  [& {:keys [suffix prefix]}]
+  (->> (make-file-attrs "rwxr-xr-x")
+       (Files/createTempFile prefix suffix)))

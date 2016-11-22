@@ -7,7 +7,7 @@
 (ns storages.impl
   "Implementation details and helpers."
   (:require [storages.proto :as pt]
-            [storages.util :as util]
+            [storages.fs :as fs]
             [buddy.core.codecs :as codecs]
             [clojure.java.io :as io])
   (:import java.io.File
@@ -79,11 +79,11 @@
 
 (defn- path->input-stream
   [^Path path]
-  (Files/newInputStream path util/read-open-opts))
+  (Files/newInputStream path fs/read-open-opts))
 
 (defn- path->output-stream
   [^Path path]
-  (Files/newOutputStream path util/write-open-opts))
+  (Files/newOutputStream path fs/write-open-opts))
 
 (extend-type Path
   io/IOFactory

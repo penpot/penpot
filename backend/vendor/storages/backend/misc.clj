@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns storages.fs.misc
+(ns storages.backend.misc
   "A local filesystem storage implementation."
   (:require [promesa.core :as p]
             [cuerdas.core :as str]
@@ -14,7 +14,7 @@
             [buddy.core.hash :as hash]
             [storages.proto :as pt]
             [storages.impl :as impl]
-            [storages.fs.local :as localfs])
+            [storages.backend.local :as local])
   (:import java.io.InputStream
            java.io.OutputStream
            java.nio.file.Path
@@ -22,7 +22,7 @@
 
 ;; --- Scoped Storage
 
-(defrecord ScopedPathStorage [storage ^Path prefix]
+(defrecord ScopedBackend [storage ^Path prefix]
   pt/IPublicStorage
   (-public-uri [_ path]
     (let [^Path path (pt/-path [prefix path])]
@@ -49,7 +49,7 @@
          (p/map (fn [^Path base]
                   (let [base (pt/-path [base prefix])]
                     (->> (pt/-path path)
-                         (localfs/normalize-path base))))))))
+                         (local/normalize-path base))))))))
 
 (defn scoped
   "Create a composed storage instance that automatically prefixes
@@ -60,7 +60,7 @@
   uploads."
   [storage prefix]
   (let [prefix (pt/-path prefix)]
-    (->ScopedPathStorage storage prefix)))
+    (->ScopedBackend storage prefix)))
 
 ;; --- Hashed Storage
 
@@ -78,7 +78,7 @@
         frest (apply str rest-tokens)]
     (pt/-path (list path frest name))))
 
-(defrecord HashedStorage [storage]
+(defrecord HashedBackend [storage]
   pt/IPublicStorage
   (-public-uri [_ path]
     (pt/-public-uri storage path))
@@ -107,5 +107,5 @@
   This is usefull when you want to store files with
   not predictable uris."
   [storage]
-  (->HashedStorage storage))
+  (->HashedBackend storage))
 

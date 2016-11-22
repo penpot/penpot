@@ -42,13 +42,6 @@
   [storage]
   (pt/-clear storage))
 
-(defn path
-  "Create path from string or more than one string."
-  ([fst]
-   (pt/-path fst))
-  ([fst & more]
-   (pt/-path (cons fst more))))
-
 (defn public-url
   [storage path]
   (pt/-public-uri storage path))

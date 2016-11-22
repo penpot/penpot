@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns storages.fs.local
+(ns storages.backend.local
   "A local filesystem storage implementation."
   (:require [promesa.core :as p]
             [clojure.java.io :as io]
             [executors.core :as exec]
             [storages.proto :as pt]
             [storages.impl :as impl]
-            [storages.util :as util])
+            [storages.fs :as fs])
   (:import java.io.InputStream
            java.io.OutputStream
            java.net.URI
@@ -20,7 +20,7 @@
 
 (defn normalize-path
   [^Path base ^Path path]
-  (if (util/absolute? path)
+  (if (fs/absolute? path)
     (throw (ex-info "Suspicios operation: absolute path not allowed."
                     {:path (str path)}))
     (let [^Path fullpath (.resolve base path)
@@ -34,11 +34,11 @@
   [base path content]
   (let [^Path path (pt/-path path)
         ^Path fullpath (normalize-path base path)]
-    (when-not (util/exists? (.getParent fullpath))
-      (util/create-dir! (.getParent fullpath)))
+    (when-not (fs/exists? (.getParent fullpath))
+      (fs/create-dir! (.getParent fullpath)))
     (with-open [^InputStream source (pt/-input-stream content)
                 ^OutputStream dest (Files/newOutputStream
-                                    fullpath util/write-open-opts)]
+                                    fullpath fs/write-open-opts)]
       (io/copy source dest)
       path)))
 
@@ -48,7 +48,7 @@
                   (normalize-path base))]
     (Files/deleteIfExists ^Path path)))
 
-(defrecord FileSystemStorage [^Path base ^URI baseuri]
+(defrecord LocalFileSystemBackend [^Path base ^URI baseuri]
   pt/IPublicStorage
   (-public-uri [_ path]
     (.resolve baseuri (str path)))
@@ -65,14 +65,14 @@
       (p/resolved
        (let [path (->> (pt/-path path)
                        (normalize-path base))]
-         (util/exists? path)))
+         (fs/exists? path)))
       (catch Exception e
         (p/rejected e))))
 
   pt/IClearableStorage
   (-clear [_]
-    (util/delete-dir! base)
-    (util/create-dir! base))
+    (fs/delete-dir! base)
+    (fs/create-dir! base))
 
   pt/ILocalStorage
   (-lookup [_ path']
@@ -83,7 +83,7 @@
       (catch Exception e
         (p/rejected e)))))
 
-(defn filesystem
+(defn localfs
   "Create an instance of local FileSystem storage providing an
   absolute base path.
 
@@ -93,12 +93,12 @@
   [{:keys [basedir baseuri] :as keys}]
   (let [^Path basepath (pt/-path basedir)
         ^URI baseuri (pt/-uri baseuri)]
-    (when (and (util/exists? basepath)
-               (not (util/directory? basepath)))
+    (when (and (fs/exists? basepath)
+               (not (fs/directory? basepath)))
       (throw (ex-info "File already exists." {})))
 
-    (when-not (util/exists? basepath)
-      (util/create-dir! basepath))
+    (when-not (fs/exists? basepath)
+      (fs/create-dir! basepath))
 
-    (->FileSystemStorage basepath baseuri)))
+    (->LocalFileSystemBackend basepath baseuri)))
 
