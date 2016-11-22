@@ -163,12 +163,6 @@
       (println "Importing image:" (str fpath))
       (create-image conn id imageid fpath))))
 
-    #_(if-let [image (retrieve-image conn imageid)]
-      (do
-        (delete-image conn image)
-        (create-image conn id imageid fpath))
-      (create-image conn id imageid fpath))
-
 (defn- process-images-entry
   [conn basedir {:keys [path regex] :as entry}]
   {:pre [(us/valid? ::import-entry entry)]}
