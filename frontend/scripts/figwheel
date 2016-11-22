@@ -1,2 +1,7 @@
-#!/bin/bash
-rlwrap lein trampoline run -m clojure.main scripts/figwheel.clj
+#!/usr/bin/env bash
+RLWRAP=`which rlwrap`
+if [ $? != 0 ]; then
+    RLWRAP="";
+fi
+
+$RLWRAP lein trampoline run -m clojure.main scripts/figwheel.clj || exit 1

@@ -9,11 +9,11 @@
   },
   "scripts": {
     "watch": "gulp",
-    "dist": "./scripts/dist",
+    "dist": "PATH=./scripts:$PATH ./scripts/dist",
     "clean": "gulp clean",
-    "figwheel": "./scripts/build-worker && ./scripts/figwheel",
-    "test-watch": "./scripts/watch",
-    "test-build": "./scripts/build"
+    "figwheel": "PATH=./scripts:$PATH ./scripts/build-worker && PATH=./scripts:$PATH ./scripts/figwheel",
+    "test-watch": "PATH=./scripts:$PATH ./scripts/watch",
+    "test-build": "PATH=./scripts:$PATH ./scripts/build"
   },
   "devDependencies": {
     "gulp": "3.9.1",
