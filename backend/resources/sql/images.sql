@@ -15,7 +15,8 @@ returning *;
 select *,
        (select count(*) from images where collection = ic.id) as num_images
   from images_collections as ic
- where ic."user" = :user
+ where (ic."user" = :user or
+        uc."user" = '00000000-0000-0000-0000-000000000000'::uuid)
    and ic.deleted_at is null
  order by ic.created_at desc;
 
@@ -27,7 +28,8 @@ update images_collections
 
 -- :name get-images-by-collection :? :*
 select * from images
- where "user" = :user
+ where ("user" = :user or
+        "user" = '00000000-0000-0000-0000-000000000000'::uuid)
    and deleted_at is null
    and collection = :collection
 order by created_at desc;
