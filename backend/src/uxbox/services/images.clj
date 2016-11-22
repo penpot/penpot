@@ -9,9 +9,8 @@
   (:require [clojure.spec :as s]
             [promesa.core :as p]
             [suricatta.core :as sc]
-            [buddy.core.codecs :as codecs]
             [storages.core :as st]
-            [storages.util :as path]
+            [storages.fs :as fs]
             [uxbox.config :as ucfg]
             [uxbox.util.spec :as us]
             [uxbox.sql :as sql]
@@ -185,7 +184,7 @@
       (ex/raise :type :validation
                 :code ::image-does-not-exists))
     (let [path @(st/lookup storage (:path image))
-          filename (path/base-name path)
+          filename (fs/base-name path)
           path @(st/save storage filename path)
           image (assoc image
                        :path (str path)

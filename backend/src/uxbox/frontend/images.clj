@@ -9,7 +9,7 @@
             [promesa.core :as p]
             [catacumba.http :as http]
             [storages.core :as st]
-            [storages.util :as path]
+            [storages.fs :as fs]
             [uxbox.media :as media]
             [uxbox.images :as images]
             [uxbox.util.spec :as us]
@@ -116,7 +116,7 @@
   (let [{:keys [file id width height
                 mimetype collection]} (us/conform ::create-image data)
         id (or id (uuid/random))
-        filename (path/base-name file)
+        filename (fs/base-name file)
         storage media/images-storage]
     (letfn [(persist-image-entry [path]
               (sv/novelty {:id id

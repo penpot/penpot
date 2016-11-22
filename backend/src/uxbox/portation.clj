@@ -9,12 +9,11 @@
   (:refer-clojure :exclude [with-open])
   (:require [clojure.java.io :as io]
             [suricatta.core :as sc]
-            [storages.util :as path]
+            [storages.fs :as fs]
             [uxbox.db :as db]
             [uxbox.sql :as sql]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.closeable :refer (with-open)]
-            [uxbox.util.tempfile :as tmpfile]
             [uxbox.util.transit :as t]
             [uxbox.util.snappy :as snappy]))
 
@@ -55,7 +54,7 @@
   "Given an id, returns a path to a temporal file with the exported
   bundle of the specified project."
   [id]
-  (let [path (tmpfile/create)]
+  (let [path (fs/create-tempfile)]
     (write-data path id)
     path))
 
@@ -105,7 +104,7 @@
 (defn import!
   "Given a path to the previously exported bundle, try to import it."
   [path]
-  (with-open [istream (io/input-stream (path/path path))
+  (with-open [istream (io/input-stream (fs/path path))
               zstream (snappy/input-stream istream)
               conn (db/connection)]
     (let [reader (t/reader zstream {:type :msgpack})]

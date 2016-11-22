@@ -10,19 +10,19 @@
             [clojure.java.io :as io]
             [cuerdas.core :as str]
             [storages.core :as st]
-            [storages.fs.local :refer (filesystem)]
-            [storages.fs.misc :refer (hashed scoped)]
+            [storages.backend.local :refer (localfs)]
+            [storages.backend.misc :refer (hashed scoped)]
             [uxbox.config :refer (config)]))
 
 ;; --- State
 
 (defstate static-storage
   :start (let [{:keys [basedir baseuri]} (:static config)]
-           (filesystem {:basedir basedir :baseuri baseuri})))
+           (localfs {:basedir basedir :baseuri baseuri})))
 
 (defstate media-storage
   :start (let [{:keys [basedir baseuri]} (:media config)]
-           (filesystem {:basedir basedir :baseuri baseuri})))
+           (localfs {:basedir basedir :baseuri baseuri})))
 
 (defstate images-storage
   :start (-> media-storage

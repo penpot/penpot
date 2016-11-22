@@ -13,7 +13,7 @@
             [cuerdas.core :as str]
             [suricatta.core :as sc]
             [storages.core :as st]
-            [storages.util :as fs]
+            [storages.fs :as fs]
             [uxbox.config]
             [uxbox.db :as db]
             [uxbox.migrations]

@@ -6,9 +6,9 @@
 
 (ns uxbox.images
   "Image postprocessing."
-  (:require [storages.core :as st]
-            [storages.util :as path]
-            [clojure.spec :as s]
+  (:require [clojure.spec :as s]
+            [storages.core :as st]
+            [storages.fs :as fs]
             [uxbox.util.spec :as us]
             [uxbox.media :as media]
             [uxbox.util.images :as images]
@@ -18,12 +18,12 @@
 
 (defn make-thumbnail
   [path {:keys [size format quality] :as cfg}]
-  (let [parent (path/parent path)
-        [filename ext] (path/split-ext path)
+  (let [parent (fs/parent path)
+        [filename ext] (fs/split-ext path)
 
         suffix-parts [(nth size 0) (nth size 1) quality format]
         final-name (apply str filename "-" (interpose "." suffix-parts))
-        final-path (path/path parent final-name)
+        final-path (fs/path parent final-name)
 
         images-storage media/images-storage
         thumbs-storage media/thumbnails-storage]

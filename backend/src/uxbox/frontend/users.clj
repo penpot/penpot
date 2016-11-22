@@ -9,7 +9,7 @@
             [promesa.core :as p]
             [catacumba.http :as http]
             [storages.core :as st]
-            [storages.util :as path]
+            [storages.fs :as fs]
             [uxbox.media :as media]
             [uxbox.images :as images]
             [uxbox.util.spec :as us]
@@ -80,7 +80,7 @@
 (defn update-photo
   [{user :identity data :data}]
   (letfn [(store-photo [file]
-            (let [filename (path/base-name file)
+            (let [filename (fs/base-name file)
                   storage media/images-storage]
               (st/save storage filename file)))
           (assign-photo [path]
