@@ -34,7 +34,11 @@
       [:input.input-text {:type "number" :placeholder "x"}]]
      [:div.input-element.pixels
       [:input.input-text {:type "number" :placeholder "y"}]]]
-    [:span "Background color"]]])
+    [:span "Background color"]
+    [:div.row-flex.color-data
+     [:span.color-th {:style {:background-color "#d2d2d2"}}]
+     [:div.color-info
+      [:span "#D2D2D2"]]]]])
 
 (mx/defc grid-options-menu
   {:mixins [mx/static]}
@@ -42,4 +46,19 @@
   [:div.element-set
    [:div.element-set-title (:name menu)]
    [:div.element-set-content
-    [:strong "Content here"]]])
+    [:span "Size"]
+    [:div.row-flex
+     [:div.input-element.pixels
+      [:input.input-text {:type "number" :placeholder "x"}]]
+     [:div.input-element.pixels
+      [:input.input-text {:type "number" :placeholder "y"}]]]
+    [:span "Color"]
+    [:div.row-flex.color-data
+     [:span.color-th {:style {:background-color "#d2d2d2"}}]
+     [:div.color-info
+      [:span "#D2D2D2"]]]
+    [:span "Magnet option"]
+    [:div.row-flex
+     [:div.input-checkbox.check-primary
+      [:input {:type "checkbox" :id "magnet" :value "Yes"}]
+      [:label {:for "magnet"} "Activate magnet"]]]]])

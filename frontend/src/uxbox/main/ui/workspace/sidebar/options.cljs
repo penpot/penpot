@@ -82,7 +82,7 @@
     :id ::page-measures
     :icon i/page
     :comp options-page/measures-menu}
-   {:name "Grid Options (TODO)"
+   {:name "Grid settings"
     :id ::page-grid-options
     :icon i/grid
     :comp options-page/grid-options-menu}])
