@@ -13,7 +13,7 @@
             [uxbox.main.state :as st]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.users :as udu]
-            [uxbox.main.data.auth :as dauth]
+            [uxbox.main.data.auth :refer [logout]]
             [uxbox.main.data.messages :as dmsg]
             [uxbox.main.ui.loader :refer (loader)]
             [uxbox.main.ui.lightbox :refer (lightbox)]
@@ -51,13 +51,13 @@
 (defn- on-error
   "A default error handler."
   [{:keys [status] :as error}]
+  (js/console.log "on-error:" (pr-str error))
   (cond
     ;; Unauthorized or Auth timeout
     (and (:status error)
-         (:payload error)
          (or (= (:status error) 403)
              (= (:status error) 419)))
-    (rs/emit! (dauth/logout))
+    (rs/emit! (logout))
 
     ;; Conflict
     (= status 412)
