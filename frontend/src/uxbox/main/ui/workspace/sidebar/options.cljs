@@ -78,13 +78,13 @@
     :id ::interactions
     :icon i/action
     :comp options-interactions/interactions-menu}
-   {:name "Page Measures (TODO)"
+   {:name "Page settings"
     :id ::page-measures
-    :icon i/action
+    :icon i/page
     :comp options-page/measures-menu}
    {:name "Grid Options (TODO)"
     :id ::page-grid-options
-    :icon i/action
+    :icon i/grid
     :comp options-page/grid-options-menu}])
 
 (def ^:private +menus-by-id+
@@ -141,4 +141,3 @@
      [:div.tool-window-content
       [:div.element-options
        (options shape)]]]))
-

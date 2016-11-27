@@ -28,7 +28,13 @@
   [:div.element-set
    [:div.element-set-title (:name menu)]
    [:div.element-set-content
-    [:strong "Content here"]]])
+    [:span "Size"]
+    [:div.row-flex
+     [:div.input-element.pixels
+      [:input.input-text {:type "number" :placeholder "x"}]]
+     [:div.input-element.pixels
+      [:input.input-text {:type "number" :placeholder "y"}]]]
+    [:span "Background color"]]])
 
 (mx/defc grid-options-menu
   {:mixins [mx/static]}
@@ -37,5 +43,3 @@
    [:div.element-set-title (:name menu)]
    [:div.element-set-content
     [:strong "Content here"]]])
-
-
