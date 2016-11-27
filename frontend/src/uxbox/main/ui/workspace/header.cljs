@@ -11,7 +11,8 @@
             [beicon.core :as rx]
             [uxbox.config :as cfg]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.lightbox :as udl]
@@ -33,8 +34,8 @@
         coords (some-> (mx/react wb/mouse-canvas-a)
                        (gpt/divide zoom)
                        (gpt/round 1))
-        increase #(rs/emit! (dw/increase-zoom))
-        decrease #(rs/emit! (dw/decrease-zoom))]
+        increase #(st/emit! (dw/increase-zoom))
+        decrease #(st/emit! (dw/decrease-zoom))]
     (html
      [:ul.options-view
       [:li.coordinates {:alt "x"}
@@ -66,9 +67,9 @@
   (let [project (mx/react wb/project-ref)
         page (mx/react wb/page-ref)
         flags (mx/react wb/flags-ref)
-        toggle #(rs/emit! (dw/toggle-flag %))
-        on-undo #(rs/emit! (udh/backwards-to-previous-version))
-        on-redo #(rs/emit! (udh/forward-to-next-version))
+        toggle #(st/emit! (dw/toggle-flag %))
+        on-undo #(st/emit! (udh/backwards-to-previous-version))
+        on-redo #(st/emit! (udh/forward-to-next-version))
         on-image #(udl/open! :import-image)
         on-download #(udl/open! :download)]
     (html

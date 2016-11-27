@@ -8,10 +8,10 @@
 (ns uxbox.main.data.projects
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.pages :as udp]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.router :as rt]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.forms :as sc]
@@ -54,12 +54,12 @@
 (declare projects-fetched?)
 
 (defrecord Initialize []
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:dashboard :section] :dashboard/projects))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (fetch-projects))))
 
 (defn initialize
@@ -69,8 +69,8 @@
 ;; --- Projects Fetched
 
 (defrecord ProjectsFetched [projects]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (as-> state $
       (reduce assoc-project-page $ projects)
       (reduce assoc-project $ projects))))
@@ -86,8 +86,8 @@
 ;; --- Fetch Projects
 
 (defrecord FetchProjects []
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (->> (rp/req :fetch/projects)
          (rx/map :payload)
          (rx/map projects-fetched))))
@@ -99,8 +99,8 @@
 ;; --- Project Persisted
 
 (defrecord ProjectPersisted [data]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-project state data)))
 
 (defn project-persisted
@@ -111,8 +111,8 @@
 ;; --- Persist Project
 
 (defrecord PersistProject [id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [project (get-in state [:projects id])]
       (->> (rp/req :update/project project)
            (rx/map :payload)
@@ -126,12 +126,12 @@
 ;; --- Rename Project
 
 (defrecord RenameProject [id name]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:projects id :name] name))
 
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (rx/of (persist-project id))))
 
 (defn rename-project
@@ -142,8 +142,8 @@
 ;; --- Delete Project (by id)
 
 (defrecord DeleteProject [id]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (letfn [(on-success [_]
               #(dissoc-project % id))]
       (->> (rp/req :delete/project id)
@@ -158,8 +158,8 @@
 ;; --- Create Project
 
 (defrecord CreateProject [name width height layout]
-  rs/WatchEvent
-  (-apply-watch [this state s]
+  ptk/WatchEvent
+  (watch [this state s]
     (letfn [(on-success [{project :payload}]
               (rx/of
                (project-persisted project)
@@ -185,8 +185,8 @@
 ;; --- Go To & Go To Page
 
 (defrecord GoTo [project-id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [page-id (get-in state [:projects project-id :page-id])
           params {:project project-id
                   :page page-id}]
@@ -194,8 +194,8 @@
              (rt/navigate :workspace/page params)))))
 
 (defrecord GoToPage [project-id page-id]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [params {:project project-id
                   :page page-id}]
       (rx/of (rt/navigate :workspace/page params)))))
@@ -214,8 +214,8 @@
 ;; --- Update Opts (Filtering & Ordering)
 
 (defrecord UpdateOpts [order filter]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:dashboard :projects] merge
                (when order {:order order})
                (when filter {:filter filter}))))

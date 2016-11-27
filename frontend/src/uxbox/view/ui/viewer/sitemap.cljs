@@ -11,8 +11,8 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer (parse-int)]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.view.data.viewer :as dv]))
 
@@ -39,7 +39,7 @@
   (let [project-name (mx/react project-name-ref)
         pages (mx/react pages-ref)
         selected (mx/react selected-ref)
-        on-click #(rs/emit! (dv/select-page %))]
+        on-click #(st/emit! (dv/select-page %))]
     [:div.view-sitemap
      [:span.sitemap-title project-name]
      [:ul.sitemap-list

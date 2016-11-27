@@ -7,10 +7,9 @@
 (ns uxbox.main.data.users
   (:require [cljs.spec :as s]
             [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.spec :as us]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.main.state :as st]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.messages :as udm]))
 
@@ -22,8 +21,8 @@
 ;; --- Profile Fetched
 
 (defrecord ProfileFetched [data]
-  rs/UpdateEvent
-  (-apply-update [this state]
+  ptk/UpdateEvent
+  (update [this state]
     (assoc state :profile data)))
 
 (defn profile-fetched
@@ -33,8 +32,8 @@
 ;; --- Fetch Profile
 
 (defrecord FetchProfile []
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (->> (rp/req :fetch/profile)
          (rx/map :payload)
          (rx/map profile-fetched))))
@@ -46,12 +45,12 @@
 ;; --- Profile Updated
 
 (defrecord ProfileUpdated [data]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (profile-fetched data)))
 
-  rs/EffectEvent
-  (-apply-effect [_ state]
+  ptk/EffectEvent
+  (effect [_ state stream]
     (udm/info! (tr "settings.profile-saved"))))
 
 (defn profile-updated
@@ -61,8 +60,8 @@
 ;; --- Update Profile
 
 (defrecord UpdateProfile [data on-success on-error]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (letfn [(handle-error [{payload :payload}]
               (on-error payload)
               (rx/empty))]
@@ -85,8 +84,8 @@
 ;; --- Password Updated
 
 (defrecord PasswordUpdated []
-  rs/EffectEvent
-  (-apply-effect [_ state]
+  ptk/EffectEvent
+  (effect [_ state stream]
     (udm/info! (tr "settings.password-saved"))))
 
 (defn password-updated
@@ -96,8 +95,8 @@
 ;; --- Update Password (Form)
 
 (defrecord UpdatePassword [data]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [params {:old-password (:old-password data)
                   :password (:password-1 data)}]
         (->> (rp/req :update/profile-password params)
@@ -118,8 +117,8 @@
 ;; --- Update Photo
 
 (defrecord UpdatePhoto [file done]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (->> (rp/req :update/profile-photo {:file file})
          (rx/do done)
          (rx/map fetch-profile))))

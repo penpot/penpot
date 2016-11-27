@@ -8,7 +8,8 @@
 (ns uxbox.util.router
   (:require [bide.core :as r]
             [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]))
+            [potok.core :as ptk]
+            [uxbox.store :as st]))
 
 (enable-console-print!)
 
@@ -17,8 +18,8 @@
 ;; --- Update Location (Event)
 
 (defrecord UpdateLocation [id params]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [route (merge {:id id}
                        (when params
                          {:params params}))]
@@ -35,8 +36,8 @@
 ;; --- Navigate (Event)
 
 (defrecord Navigate [id params]
-  rs/EffectEvent
-  (-apply-effect [_ state]
+  ptk/EffectEvent
+  (effect [_ state stream]
     (r/navigate! +router+ id params)))
 
 (defn navigate
@@ -51,7 +52,7 @@
   ([routes]
    (init routes nil))
   ([routes {:keys [default] :or {default :auth/login}}]
-   (let [opts {:on-navigate #(rs/emit! (update-location %1 %2))
+   (let [opts {:on-navigate #(st/emit! (update-location %1 %2))
                :default default}
          router (-> (r/router routes)
                     (r/start! opts))]
@@ -62,7 +63,7 @@
   "Redirect the user to other url."
   ([id] (go id nil))
   ([id params]
-   (rs/emit! (navigate id params))))
+   (st/emit! (navigate id params))))
 
 (defn route-for
   "Given a location handler and optional parameter map, return the URI

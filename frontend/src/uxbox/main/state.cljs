@@ -5,21 +5,8 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.state
-  (:require [beicon.core :as rx]
-            [lentes.core :as l]
-            [uxbox.main.state.colors :as colors]
-            [uxbox.util.rstore :as rs]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.storage :refer (storage)]))
-
-(enable-console-print!)
-
-(defonce state (atom {}))
-(defonce loader (atom false))
-
-(def auth-ref
-  (-> (l/key :auth)
-      (l/derive state)))
+  (:require [uxbox.builtins.colors :as colors]
+            [uxbox.util.storage :refer [storage]]))
 
 (defn initial-state
   []
@@ -41,11 +28,3 @@
    :shapes nil
    :projects nil
    :pages nil})
-
-(defn init
-  "Initialize the state materialization."
-  ([] (init initial-state))
-  ([& callbacks]
-   (-> (reduce #(merge %1 (%2)) nil callbacks)
-       (rs/init)
-       (rx/to-atom state))))

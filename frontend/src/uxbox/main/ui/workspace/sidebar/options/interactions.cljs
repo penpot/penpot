@@ -11,9 +11,9 @@
             [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.workspace.sidebar.sitemap :refer (pages-ref)]
@@ -62,7 +62,7 @@
           (delete [item]
             (let [sid (:id shape)
                   id (:id item)]
-              (rs/emit! (uds/delete-interaction sid id))))
+              (st/emit! (uds/delete-interaction sid id))))
           (on-delete [item event]
             (dom/prevent-default event)
             (let [delete (partial delete item)]
@@ -543,7 +543,7 @@
             (dom/prevent-default event)
             (let [shape-id (:id shape)
                   data (deref form-ref)]
-              (rs/emit! (uds/update-interaction shape-id data))
+              (st/emit! (uds/update-interaction shape-id data))
               (reset! form-ref nil)))
           (on-cancel [event]
             (dom/prevent-default event)

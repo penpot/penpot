@@ -11,8 +11,8 @@
             [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
@@ -24,7 +24,7 @@
   [own menu shape]
   (letfn [(change-stroke [value]
             (let [sid (:id shape)]
-              (rs/emit! (uds/update-stroke-attrs sid value))))
+              (st/emit! (uds/update-stroke-attrs sid value))))
           (on-width-change [event]
             (let [value (dom/event->value event)
                   value (parse-float value 1)]

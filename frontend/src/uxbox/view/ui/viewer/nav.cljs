@@ -7,14 +7,15 @@
 
 (ns uxbox.view.ui.viewer.nav
   (:require [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.view.data.viewer :as dv]))
 
 (mx/defc nav
   [flags]
-  (let [toggle-sitemap #(rs/emit! (dv/toggle-flag :sitemap))
-        toggle-interactions #(rs/emit! (dv/toggle-flag :interactions))
+  (let [toggle-sitemap #(st/emit! (dv/toggle-flag :sitemap))
+        toggle-interactions #(st/emit! (dv/toggle-flag :interactions))
         sitemap? (contains? flags :sitemap)
         interactions? (contains? flags :interactions)]
     [:div.view-nav

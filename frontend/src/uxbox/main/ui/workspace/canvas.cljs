@@ -9,7 +9,7 @@
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [goog.events :as events]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int)]

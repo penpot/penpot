@@ -8,8 +8,8 @@
 (ns uxbox.main.ui.workspace.sidebar.icons
   (:require [lentes.core :as l]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.icons :as udi]
             [uxbox.main.ui.shapes.icon :as icon]
@@ -40,10 +40,10 @@
 (defn- icons-toolbox-will-mount
   [own]
   (let [local (:rum/local own)]
-    (rs/emit! (udi/fetch-collections))
-    (rs/emit! (udi/fetch-icons nil))
+    (st/emit! (udi/fetch-collections))
+    (st/emit! (udi/fetch-icons nil))
     (add-watch local ::key (fn [_ _ _ {:keys [id]}]
-                             (rs/emit! (udi/fetch-icons id))))
+                             (st/emit! (udi/fetch-icons id))))
     own))
 
 (defn- icons-toolbox-will-unmount
@@ -69,14 +69,14 @@
                    (filter #(= (:id coll) (:collection %))))]
 
     (letfn [(on-close [event]
-              (rs/emit! (dw/toggle-flag :icons)))
+              (st/emit! (dw/toggle-flag :icons)))
             (on-select [icon event]
-              (rs/emit! (dw/select-for-drawing icon)))
+              (st/emit! (dw/select-for-drawing icon)))
             (on-change [event]
               (let [value (-> (dom/event->value event)
                               (read-string))]
                 (swap! local assoc :id value)
-                (rs/emit! (dw/select-for-drawing nil))))]
+                (st/emit! (dw/select-for-drawing nil))))]
       [:div#form-figures.tool-window
        [:div.tool-window-bar
         [:div.tool-window-icon i/icon-set]

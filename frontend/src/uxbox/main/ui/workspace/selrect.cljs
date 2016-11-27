@@ -8,8 +8,9 @@
 (ns uxbox.main.ui.workspace.selrect
   "Mouse selection interaction and component."
   (:require [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
@@ -94,7 +95,7 @@
   []
   (let [rect (-> (selrect->rect @position)
                  (translate-to-canvas))]
-    (rs/emit! (uds/deselect-all)
+    (st/emit! (uds/deselect-all)
               (uds/select-shapes rect))
     (rlocks/release! :ui/selrect)
     (reset! position nil)))

@@ -10,7 +10,7 @@
             [rum.core :as rum]
             [beicon.core :as rx]
             [uxbox.main.constants :as c]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.math :as mth]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.mixins :as mx :include-macros true]

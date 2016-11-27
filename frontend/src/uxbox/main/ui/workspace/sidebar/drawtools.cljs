@@ -10,11 +10,11 @@
             [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]))
@@ -82,14 +82,14 @@
 
 (defn- select-for-draw
   [shape]
-  (rs/emit! (dw/select-for-drawing shape)))
+  (st/emit! (dw/select-for-drawing shape)))
 
 (mx/defc draw-toolbox
   {:mixins [mx/static mx/reactive]}
   [own]
   (let [workspace (mx/react wb/workspace-ref)
         drawing (mx/react drawing-shape)
-        close #(rs/emit! (dw/toggle-flag :drawtools))
+        close #(st/emit! (dw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))]
     [:div#form-tools.tool-window.drawing-tools

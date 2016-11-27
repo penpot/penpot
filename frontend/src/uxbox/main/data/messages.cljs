@@ -8,8 +8,9 @@
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.util.timers :as ts]
-            [uxbox.util.rstore :as rs]))
+            [potok.core :as ptk]
+            [uxbox.store :as st]
+            [uxbox.util.timers :as ts]))
 
 ;; --- Constants
 
@@ -21,13 +22,13 @@
 (declare show-message?)
 
 (defrecord ShowMessage [data]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [message (assoc data :state :visible)]
       (assoc state :message message)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [stoper (->> (rx/filter show-message? s)
                       (rx/take 1))]
       (->> (rx/of (hide-message))
@@ -65,16 +66,16 @@
 ;; --- Hide Message
 
 (defrecord HideMessage [^:mutable canceled?]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update state :message
             (fn [v]
               (if (nil? v)
                 (do (set! canceled? true) nil)
                 (assoc v :state :hide)))))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (if canceled?
       (rx/empty)
       (->> (rx/of #(dissoc state :message))
@@ -88,19 +89,19 @@
 
 (defn error!
   [& args]
-  (ts/schedule 0 #(rs/emit! (apply show-error args))))
+  (ts/schedule 0 #(st/emit! (apply show-error args))))
 
 (defn info!
   [& args]
-  (ts/schedule 0 #(rs/emit! (apply show-info args))))
+  (ts/schedule 0 #(st/emit! (apply show-info args))))
 
 (defn dialog!
   [& args]
-  (ts/schedule 0 #(rs/emit! (apply show-dialog args))))
+  (ts/schedule 0 #(st/emit! (apply show-dialog args))))
 
 (defn close!
   []
-  (rs/emit! (hide-message)))
+  (st/emit! (hide-message)))
 
 (defn error
   [& args]

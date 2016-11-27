@@ -11,8 +11,8 @@
             [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.history :as udh]
@@ -36,14 +36,14 @@
   [own item selected]
   (letfn [(on-select [event]
             (dom/prevent-default event)
-            (rs/emit! (udh/select-page-history (:version item))))
+            (st/emit! (udh/select-page-history (:version item))))
           (on-pinned [event]
             (dom/prevent-default event)
             (dom/stop-propagation event)
             (let [item (assoc item
                               :label "no label"
                               :pinned (not (:pinned item)))]
-              (rs/emit! (udh/update-history-item item))))]
+              (st/emit! (udh/update-history-item item))))]
     (let [selected? (= (:version item) selected)]
       (html
        [:li {:class (when selected? "current") :on-click on-select}
@@ -65,13 +65,13 @@
   [own page history]
   (letfn [(on-select [event]
             (dom/prevent-default event)
-            (rs/emit! (udh/deselect-page-history (:id page))))
+            (st/emit! (udh/deselect-page-history (:id page))))
 
           (on-load-more [event]
             (dom/prevent-default event)
             (let [since (:min-version history)
                   params {:since since}]
-              (rs/emit! (udh/fetch-page-history (:id page) params))))]
+              (st/emit! (udh/fetch-page-history (:id page) params))))]
 
     (let [selected (:selected history)
           show-more? (pos? (:min-version history))]
@@ -121,7 +121,7 @@
         page (mx/react wb/page-ref)
         history (mx/react history-ref)
         section (:section @local :main)
-        close #(rs/emit! (dw/toggle-flag :document-history))
+        close #(st/emit! (dw/toggle-flag :document-history))
         main? (= section :main)
         pinned? (= section :pinned)
         show-main #(swap! local assoc :section :main)
@@ -156,8 +156,8 @@
   [own page]
   (let [history (mx/react history-ref)
         version (:selected history)
-        on-accept #(rs/emit! (udh/apply-selected-history page))
-        on-cancel #(rs/emit! (udh/deselect-page-history page))]
+        on-accept #(st/emit! (udh/apply-selected-history page))
+        on-cancel #(st/emit! (udh/deselect-page-history page))]
     (when (or version (:deselecting history))
       (html
        [:div.message-version

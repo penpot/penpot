@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.dashboard.elements
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
@@ -144,12 +144,12 @@
 
 ;; (defn elements-page-will-mount
 ;;   [own]
-;;   (rs/emit! (dd/initialize :dashboard/elements))
+;;   (st/emit! (dd/initialize :dashboard/elements))
 ;;   own)
 
 ;; (defn elements-page-did-remount
 ;;   [old-state state]
-;;   (rs/emit! (dd/initialize :dashboard/elements))
+;;   (st/emit! (dd/initialize :dashboard/elements))
 ;;   state)
 
 ;; (def elements-page

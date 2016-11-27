@@ -10,7 +10,8 @@
             [rum.core :as rum]
             [beicon.core :as rx]
             [uxbox.main.constants :as c]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.history :as udh]
@@ -39,7 +40,7 @@
 (defn- workspace-will-mount
   [own]
   (let [[projectid pageid] (:rum/args own)]
-    (rs/emit! (dw/initialize projectid pageid))
+    (st/emit! (dw/initialize projectid pageid))
     own))
 
 (defn- workspace-did-mount
@@ -76,7 +77,7 @@
         [oldprojectid oldpageid] (:rum/args old-state)]
     (if (not= pageid oldpageid)
       (do
-        (rs/emit! (dw/initialize projectid pageid))
+        (st/emit! (dw/initialize projectid pageid))
         (.close (::sub2 old-state))
         (.close (::sub3 old-state))
         (assoc state
@@ -103,8 +104,8 @@
     (dom/prevent-default event)
     (dom/stop-propagation event)
     (if (pos? (.-deltaY event))
-      (rs/emit! (dw/increase-zoom))
-      (rs/emit! (dw/decrease-zoom)))
+      (st/emit! (dw/increase-zoom))
+      (st/emit! (dw/decrease-zoom)))
 
     (let [dom (mx/ref-node own "workspace-canvas")]
       (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-ref))

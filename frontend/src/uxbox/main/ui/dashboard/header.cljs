@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.dashboard.header
   (:require [lentes.core :as l]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.main.ui.icons :as i]
@@ -15,7 +15,7 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rstore :as rs]))
+            [potok.core :as ptk]))
 
 (def header-ref
   (-> (l/key :dashboard)

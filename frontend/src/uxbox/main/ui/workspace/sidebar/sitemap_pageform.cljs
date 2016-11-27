@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace.sidebar.sitemap-pageform
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.lightbox :as udl]
@@ -17,7 +17,7 @@
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.forms :as forms]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer (deep-merge parse-int)]
@@ -81,8 +81,8 @@
               (dom/prevent-default e)
               (udl/close!)
               (if (nil? id)
-                (rs/emit! (udp/create-page data))
-                (rs/emit! (udp/update-page id data))))]
+                (st/emit! (udp/create-page data))
+                (st/emit! (udp/update-page id data))))]
       [:form
        [:input#project-name.input-text
         {:placeholder "Page name"

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.main.state.colors
+(ns uxbox.builtins.colors
   (:require [uxbox.util.uuid :as uuid]
             [uxbox.util.data :refer (index-by)]))
 

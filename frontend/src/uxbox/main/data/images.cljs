@@ -9,10 +9,10 @@
             [beicon.core :as rx]
             [uxbox.util.data :refer (jscoll->vec)]
             [uxbox.util.uuid :as uuid]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.router :as r]
             [uxbox.util.files :as files]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.repo :as rp]))
 
 ;; --- Initialize
@@ -22,16 +22,16 @@
 (declare collections-fetched?)
 
 (defrecord Initialize [type id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [type (or type :own)
           data {:type type :id id :selected #{}}]
       (-> state
           (assoc-in [:dashboard :images] data)
           (assoc-in [:dashboard :section] :dashboard/images))))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/merge (rx/of (fetch-collections))
               (rx/of (fetch-images id)))))
 
@@ -42,8 +42,8 @@
 ;; --- Select a Collection
 
 (defrecord SelectCollection [type id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (rx/of (r/navigate :dashboard/images
                        {:type type :id id}))))
 
@@ -57,8 +57,8 @@
 ;; --- Color Collections Fetched
 
 (defrecord CollectionsFetched [items]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (reduce (fn [state {:keys [id user] :as item}]
               (let [type (if (uuid/zero? (:user item)) :builtin :own)
                     item (assoc item :type type)]
@@ -73,8 +73,8 @@
 ;; --- Fetch Color Collections
 
 (defrecord FetchCollections []
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (->> (rp/req :fetch/image-collections)
          (rx/map :payload)
          (rx/map collections-fetched))))
@@ -86,13 +86,13 @@
 ;; --- Collection Created
 
 (defrecord CollectionCreated [item]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [{:keys [id] :as item} (assoc item :type :own)]
       (update state :images-collections assoc id item)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (rx/of (select-collection :own (:id item)))))
 
 (defn collection-created
@@ -102,8 +102,8 @@
 ;; --- Create Collection
 
 (defrecord CreateCollection []
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [coll {:name "Unnamed collection"
                 :id (uuid/random)}]
       (->> (rp/req :create/image-collection coll)
@@ -121,8 +121,8 @@
 ;; --- Collection Updated
 
 (defrecord CollectionUpdated [item]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:images-collections (:id item)]  merge item)))
 
 (defn collection-updated
@@ -132,8 +132,8 @@
 ;; --- Update Collection
 
 (defrecord UpdateCollection [id]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [item (get-in state [:images-collections id])]
       (->> (rp/req :update/image-collection item)
            (rx/map :payload)
@@ -146,12 +146,12 @@
 ;; --- Rename Collection
 
 (defrecord RenameCollection [id name]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:images-collections id :name] name))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (update-collection id))))
 
 (defn rename-collection
@@ -161,12 +161,12 @@
 ;; --- Delete Collection
 
 (defrecord DeleteCollection [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update state :images-collections dissoc id))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [type (get-in state [:dashboard :images :type])]
       (->> (rp/req :delete/image-collection id)
            (rx/map #(select-collection type))))))
@@ -178,8 +178,8 @@
 ;; --- Image Created
 
 (defrecord ImageCreated [item]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update state :images assoc (:id item) item)))
 
 (defn image-created
@@ -191,12 +191,12 @@
 (def allowed-file-types #{"image/jpeg" "image/png"})
 
 (defrecord CreateImages [id files on-uploaded]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:dashboard :images :uploading] true))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (letfn [(image-size [file]
               (->> (files/get-image-size file)
                    (rx/map (partial vector file))))
@@ -218,7 +218,7 @@
            (rx/mapcat #(rp/req :create/image %))
            (rx/map :payload)
            (rx/reduce conj [])
-           (rx/do #(rs/emit! finalize-upload))
+           (rx/do #(st/emit! finalize-upload))
            (rx/do on-uploaded)
            (rx/mapcat identity)
            (rx/map image-created)))))
@@ -234,8 +234,8 @@
 ;; --- Image Updated
 
 (defrecord ImagePersisted [id data]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:images id] data)))
 
 (defn image-persisted
@@ -246,8 +246,8 @@
 ;; --- Update Image
 
 (defrecord PersistImage [id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [image (get-in state [:images id])]
       (->> (rp/req :update/image image)
            (rx/map :payload)
@@ -261,8 +261,8 @@
 ;; --- Images Fetched
 
 (defrecord ImagesFetched [items]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (reduce (fn [state {:keys [id] :as image}]
               (assoc-in state [:images id] image))
             state
@@ -275,8 +275,8 @@
 ;; --- Fetch Images
 
 (defrecord FetchImages [id]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [params {:coll id}]
       (->> (rp/req :fetch/images params)
            (rx/map :payload)
@@ -293,8 +293,8 @@
 (declare image-fetched)
 
 (defrecord FetchImage [id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [existing (get-in state [:images id])]
       (if existing
         (rx/empty)
@@ -312,8 +312,8 @@
 ;; --- Image Fetched
 
 (defrecord ImageFetched [image]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [id (:id image)]
       (update state :images assoc id image))))
 
@@ -325,14 +325,14 @@
 ;; --- Delete Images
 
 (defrecord DeleteImage [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (-> state
         (update :images dissoc id)
         (update-in [:dashboard :images :selected] disj id)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (->> (rp/req :delete/image id)
          (rx/ignore))))
 
@@ -344,12 +344,12 @@
 ;; --- Rename Image
 
 (defrecord RenameImage [id name]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:images id :name] name))
 
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (rx/of (persist-image id))))
 
 (defn rename-image
@@ -360,18 +360,18 @@
 ;; --- Select image
 
 (defrecord SelectImage [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:dashboard :images :selected] conj id)))
 
 (defrecord DeselectImage [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:dashboard :images :selected] disj id)))
 
 (defrecord ToggleImageSelection [id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [selected (get-in state [:dashboard :images :selected])]
       (rx/of
        (if (selected id)
@@ -390,8 +390,8 @@
 ;; --- Copy Selected Image
 
 (defrecord CopySelected [id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [selected (get-in state [:dashboard :images :selected])]
       (rx/merge
        (->> (rx/from-coll selected)
@@ -409,16 +409,16 @@
 ;; --- Move Selected Image
 
 (defrecord MoveSelected [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [selected (get-in state [:dashboard :images :selected])]
       (reduce (fn [state image]
                 (assoc-in state [:images image :collection] id))
               state
               selected)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [selected (get-in state [:dashboard :images :selected])]
       (rx/merge
        (->> (rx/from-coll selected)
@@ -434,8 +434,8 @@
 ;; --- Delete Selected
 
 (defrecord DeleteSelected []
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [selected (get-in state [:dashboard :images :selected])]
       (->> (rx/from-coll selected)
            (rx/map delete-image)))))
@@ -447,8 +447,8 @@
 ;; --- Update Opts (Filtering & Ordering)
 
 (defrecord UpdateOpts [order filter edition]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:dashboard :images] merge
                {:edition edition}
                (when order {:order order})

@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.dashboard.projects
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.projects :as udp]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
@@ -19,7 +19,7 @@
             [uxbox.main.exports :as exports]
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.dom :as dom]
             [uxbox.util.blob :as blob]
@@ -109,13 +109,13 @@
     (letfn [(on-term-change [event]
               (let [term (-> (dom/get-target event)
                              (dom/get-value))]
-                (rs/emit! (udp/update-opts :filter term))))
+                (st/emit! (udp/update-opts :filter term))))
             (on-ordering-change [event]
               (let [value (dom/event->value event)
                     value (read-string value)]
-                (rs/emit! (udp/update-opts :order value))))
+                (st/emit! (udp/update-opts :order value))))
             (on-clear [event]
-              (rs/emit! (udp/update-opts :filter "")))]
+              (st/emit! (udp/update-opts :filter "")))]
       [:section.dashboard-bar
        [:div.dashboard-info
 
@@ -177,9 +177,9 @@
   {:mixins [mx/static (mx/local)]}
   [{:keys [rum/local] :as own} project]
   (letfn [(on-navigate [event]
-            (rs/emit! (udp/go-to (:id project))))
+            (st/emit! (udp/go-to (:id project))))
           (delete []
-            (rs/emit! (udp/delete-project project)))
+            (st/emit! (udp/delete-project project)))
           (on-delete [event]
             (dom/stop-propagation event)
             (udl/open! :confirm {:on-accept delete}))
@@ -191,7 +191,7 @@
                   name (dom/get-value target)
                   id (:id project)]
               (swap! local assoc :edition false)
-              (rs/emit! (udp/rename-project id name))))
+              (st/emit! (udp/rename-project id name))))
           (on-edit [event]
             (dom/stop-propagation event)
             (dom/prevent-default event)
@@ -251,12 +251,12 @@
 
 (defn projects-page-will-mount
   [own]
-  (rs/emit! (udp/initialize))
+  (st/emit! (udp/initialize))
   own)
 
 (defn projects-page-did-remount
   [old-own own]
-  (rs/emit! (udp/initialize))
+  (st/emit! (udp/initialize))
   own)
 
 (mx/defc projects-page
@@ -350,7 +350,7 @@
          {:value "Go go go!"
           :on-click #(do
                        (dom/prevent-default %)
-                       (rs/emit! (udp/create-project @local))
+                       (st/emit! (udp/create-project @local))
                        (udl/close!))
 
           :type "submit"}])]

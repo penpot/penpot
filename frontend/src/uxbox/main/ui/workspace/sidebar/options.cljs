@@ -10,8 +10,8 @@
    [lentes.core :as l]
    [uxbox.util.i18n :refer (tr)]
    [uxbox.util.router :as r]
-   [uxbox.util.rstore :as rs]
-   [uxbox.main.state :as st]
+   [potok.core :as ptk]
+   [uxbox.store :as st]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.data.shapes :as uds]
    [uxbox.main.ui.workspace.base :as wb]
@@ -132,7 +132,7 @@
   {:mixins [mx/static mx/reactive]}
   []
   (let [shape (mx/react selected-shape-ref)
-        close #(rs/emit! (udw/toggle-flag :element-options))]
+        close #(st/emit! (udw/toggle-flag :element-options))]
     [:div.elementa-options.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/options]

@@ -11,8 +11,8 @@
             [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.workspace.base :as wb]
@@ -39,26 +39,26 @@
                   params {:family (read-string value)
                           :weight "normal"
                           :style "normal"}]
-              (rs/emit! (uds/update-font-attrs sid params))))
+              (st/emit! (uds/update-font-attrs sid params))))
           (on-font-size-change [event]
             (let [value (dom/event->value event)
                   params {:size (parse-int value)}
                   sid (:id shape)]
-              (rs/emit! (uds/update-font-attrs sid params))))
+              (st/emit! (uds/update-font-attrs sid params))))
           (on-font-letter-spacing-change [event]
             (let [value (dom/event->value event)
                   params {:letter-spacing (parse-float value)}
                   sid (:id shape)]
-              (rs/emit! (uds/update-font-attrs sid params))))
+              (st/emit! (uds/update-font-attrs sid params))))
           (on-font-line-height-change [event]
             (let [value (dom/event->value event)
                   params {:line-height (parse-float value)}
                   sid (:id shape)]
-              (rs/emit! (uds/update-font-attrs sid params))))
+              (st/emit! (uds/update-font-attrs sid params))))
           (on-font-align-change [event value]
             (let [params {:align value}
                   sid (:id shape)]
-              (rs/emit! (uds/update-font-attrs sid params))))
+              (st/emit! (uds/update-font-attrs sid params))))
 
           (on-font-style-change [event]
             (let [value (dom/event->value event)
@@ -66,7 +66,7 @@
                   sid (:id shape)
                   params {:style style
                           :weight weight}]
-              (rs/emit! (uds/update-font-attrs sid params))))]
+              (st/emit! (uds/update-font-attrs sid params))))]
     (let [{:keys [family style weight size align line-height letter-spacing]
            :or {family "sourcesanspro"
                 align "left"

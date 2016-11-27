@@ -10,9 +10,9 @@
             [beicon.core :as rx]
             [lentes.core :as l]
             [uxbox.main.repo :as rp]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.util.spec :as us]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.router :as r]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.forms :as sc]
@@ -99,8 +99,8 @@
 ;; --- Pages Fetched
 
 (defrecord PagesFetched [pages]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (as-> state $
       (reduce assoc-page $ pages)
       (reduce assoc-packed-page $ pages))))
@@ -112,8 +112,8 @@
 ;; --- Fetch Pages (by project id)
 
 (defrecord FetchPages [projectid]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (->> (rp/req :fetch/pages-by-project {:project projectid})
          (rx/map (comp ->PagesFetched :payload)))))
 
@@ -124,8 +124,8 @@
 ;; --- Page Created
 
 (defrecord PageCreated [data]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (-> state
         (assoc-page data)
         (assoc-packed-page data))))
@@ -141,8 +141,8 @@
 ;; --- Create Page
 
 (defrecord CreatePage [name project width height layout]
-  rs/WatchEvent
-  (-apply-watch [this state s]
+  ptk/WatchEvent
+  (watch [this state s]
     (let [params {:name name
                   :project project
                   :data {}
@@ -164,8 +164,8 @@
 ;; --- Page Persisted
 
 (defrecord PagePersisted [data]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-page state data)))
 
 (defn- page-persisted?
@@ -182,8 +182,8 @@
 ;; --- Persist Page
 
 (defrecord PersistPage [id]
-  rs/WatchEvent
-  (-apply-watch [this state s]
+  ptk/WatchEvent
+  (watch [this state s]
     (let [page (get-in state [:pages id])]
       (if (:history page)
         (rx/empty)
@@ -210,16 +210,16 @@
   events with 1sec of delay allowing batch updates
   on fastly performed events."
   [id]
-  (as-> rs/stream $
+  (as-> st/store $
     (rx/filter #(satisfies? IPageUpdate %) $)
     (rx/debounce 1000 $)
-    (rx/on-next $ #(rs/emit! (persist-page id)))))
+    (rx/on-next $ #(st/emit! (persist-page id)))))
 
 ;; --- Page Metadata Persisted
 
 (defrecord MetadataPersisted [id data]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     ;; TODO: page-data update
     (assoc-in state [:pages id :version] (:version data))))
 
@@ -238,8 +238,8 @@
 ;; and only serves for update other page data.
 
 (defrecord PersistMetadata [id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [page (get-in state [:pages id])]
       (->> (rp/req :update/page-metadata page)
            (rx/map :payload)
@@ -253,12 +253,12 @@
 ;; --- Update Page Options
 
 (defrecord UpdateMetadata [id metadata]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:pages id :metadata] metadata))
 
-  rs/WatchEvent
-  (-apply-watch [this state s]
+  ptk/WatchEvent
+  (watch [this state s]
     (rx/of (persist-metadata id))))
 
 (defn update-metadata
@@ -269,8 +269,8 @@
 ;; --- Update Page
 
 (defrecord UpdatePage [id name width height layout]
-  rs/UpdateEvent
-  (-apply-update [this state]
+  ptk/UpdateEvent
+  (update [this state]
     (println "update-page" this)
     (-> state
         (assoc-in [:pages id :name] name)
@@ -278,8 +278,8 @@
         (assoc-in [:pages id :metadata :height] height)
         (assoc-in [:pages id :metadata :layout] layout)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (rx/of (persist-metadata id))))
 
 (s/def ::update-page-event
@@ -293,8 +293,8 @@
 ;; --- Delete Page (by id)
 
 (defrecord DeletePage [id callback]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (letfn [(on-success [_]
               #(purge-page % id))]
       (->> (rp/req :delete/page id)

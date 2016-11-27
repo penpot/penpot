@@ -10,8 +10,8 @@
             [cuerdas.core :as str]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as dw]
@@ -45,11 +45,11 @@
             (udl/open! :page-form {:page page}))
 
           (on-navigate [event]
-            (rs/emit! (dp/go-to (:project page) (:id page))))
+            (st/emit! (dp/go-to (:project page) (:id page))))
 
           (delete []
-            (let [next #(rs/emit! (dp/go-to (:project page)))]
-              (rs/emit! (udp/delete-page (:id page) next))))
+            (let [next #(st/emit! (dp/go-to (:project page)))]
+              (st/emit! (udp/delete-page (:id page) next))))
 
           (on-delete [event]
             (dom/prevent-default event)
@@ -71,7 +71,7 @@
         pages (mx/react pages-ref)
         current (mx/react wb/page-ref)
         create #(udl/open! :page-form {:page {:project (:id project)}})
-        close #(rs/emit! (dw/toggle-flag :sitemap))]
+        close #(st/emit! (dw/toggle-flag :sitemap))]
     [:div.sitemap.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/project-tree]

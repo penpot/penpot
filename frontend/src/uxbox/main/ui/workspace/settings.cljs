@@ -8,8 +8,8 @@
 (ns uxbox.main.ui.workspace.settings
   (:require [lentes.core :as l]
             [uxbox.main.constants :as c]
-            [uxbox.main.state :as st]
-            [uxbox.util.rstore :as rs]
+            [uxbox.store :as st]
+            [potok.core :as ptk]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.lightbox :as udl]
@@ -65,7 +65,7 @@
               (let [[errors data] (forms/validate data +settings-form+)]
                 (if errors
                   (set-errors! errors)
-                  (rs/emit! (udw/update-metadata id data)
+                  (st/emit! (udw/update-metadata id data)
                             (forms/clear :workspace-settings)
                             (udl/hide-lightbox)))))]
       [:form {:on-submit on-submit}

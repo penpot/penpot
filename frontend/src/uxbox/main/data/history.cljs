@@ -8,13 +8,13 @@
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.router :as r]
             [uxbox.main.repo :as rp]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.forms :as sc]
             [uxbox.main.data.pages :as udp]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.util.datetime :as dt]
             [uxbox.util.data :refer (without-keys
                                      replace-by-id
@@ -32,9 +32,9 @@
   persists the state of the page in an undo stack."
   []
   (letfn [(on-value [id]
-            (rs/emit! (fetch-page-history id)
+            (st/emit! (fetch-page-history id)
                       (fetch-pinned-page-history id)))]
-    (as-> rs/stream $
+    (as-> st/store $
       (rx/filter udp/page-persisted? $)
       (rx/debounce 500 $)
       (rx/map (comp :id :data) $)
@@ -45,8 +45,8 @@
 (declare update-history-index)
 
 (defrecord PinnedPageHistoryFetched [history]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (-> state
         (assoc-in [:workspace :history :pinned-items] (mapv :version history))
         (update-history-index history true))))
@@ -54,8 +54,8 @@
 ;; --- Fetch Pinned Page History
 
 (defrecord FetchPinnedPageHistory [id]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (letfn [(on-success [{history :payload}]
               (->PinnedPageHistoryFetched (into [] history)))]
       (let [params {:page id :pinned true}]
@@ -69,8 +69,8 @@
 ;; --- Page History Fetched
 
 (defrecord PageHistoryFetched [history append?]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (letfn [(update-counters [state items]
               (-> (assoc state :min-version (apply min items))
                   (assoc :max-version (apply max items))))
@@ -91,8 +91,8 @@
 ;; --- Fetch Page History
 
 (defrecord FetchPageHistory [id since max]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (letfn [(on-success [{history :payload}]
               (let [history (into [] history)]
                 (->PageHistoryFetched history (not (nil? since)))))]
@@ -111,8 +111,8 @@
 ;; --- Select Page History
 
 (defrecord SelectPageHistory [version]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [item (get-in state [:workspace :history :by-version version])
           page (get-in state [:pages (:page item)])
           page (assoc page
@@ -129,14 +129,14 @@
 ;; --- Apply selected history
 
 (defrecord ApplySelectedHistory [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (-> state
         (update-in [:pages id] dissoc :history)
         (assoc-in [:workspace :history :selected] nil)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (udp/persist-page id))))
 
 (defn apply-selected-history
@@ -146,15 +146,15 @@
 ;; --- Deselect Page History
 
 (defrecord DeselectPageHistory [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [packed (get-in state [:packed-pages id])]
       (-> (udp/assoc-page state packed)
           (assoc-in [:workspace :history :deselecting] true)
           (assoc-in [:workspace :history :selected] nil))))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (->> (rx/of #(assoc-in % [:workspace :history :deselecting] false))
          (rx/delay 500))))
 
@@ -165,8 +165,8 @@
 ;; --- History Item Updated
 
 (defrecord HistoryItemUpdated [item]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (-> state
         (update-in [:workspace :history :items] replace-by-id item)
         (update-in [:workspace :history :pinned-items] replace-by-id item))))
@@ -182,8 +182,8 @@
 ;; --- Refresh Page History
 
 (defrecord RefreshPageHistory [id]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [history (get-in state [:workspace :history])
           maxitems (count (:items history))]
       (rx/of (fetch-page-history id {:max maxitems})
@@ -196,8 +196,8 @@
 ;; --- Update History Item
 
 (defrecord UpdateHistoryItem [item]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (letfn [(on-success [{item :payload}]
               (->HistoryItemUpdated item))]
       (rx/merge
@@ -214,8 +214,8 @@
 ;; --- Forward to Next Version
 
 (defrecord ForwardToNextVersion []
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [workspace (:workspace state)
           history (:history workspace)
           version (:selected history)]
@@ -239,8 +239,8 @@
 ;; --- Backwards to Previous Version
 
 (defrecord BackwardsToPreviousVersion []
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [workspace (:workspace state)
           history (:history workspace)
           version (:selected history)]

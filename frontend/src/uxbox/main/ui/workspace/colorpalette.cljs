@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace.colorpalette
   (:require [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.colors :as dc]
@@ -16,7 +16,7 @@
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.lens :as ul]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.color :refer (hex->rgb)]
@@ -35,8 +35,8 @@
   (letfn [(select-color [event color]
             (dom/prevent-default event)
             (if (kbd/shift? event)
-              (rs/emit! (uds/update-selected-shapes-stroke {:color color}))
-              (rs/emit! (uds/update-selected-shapes-fill {:color color}))))]
+              (st/emit! (uds/update-selected-shapes-stroke {:color color}))
+              (st/emit! (uds/update-selected-shapes-fill {:color color}))))]
     [:div.color-palette-content
      (for [hex-color colors
            :let [rgb-vec (hex->rgb hex-color)
@@ -59,7 +59,7 @@
               (let [value (read-string (dom/event->value event))]
                 (swap! local assoc :selected value)))
             (close [event]
-              (rs/emit! (dw/toggle-flag :colorpalette)))]
+              (st/emit! (dw/toggle-flag :colorpalette)))]
       [:div.color-palette
        [:div.color-palette-actions
         [:select.input-select {:on-change select-collection}
@@ -78,7 +78,7 @@
 
 (defn- colorpalette-will-mount
   [own]
-  (rs/emit! (dc/fetch-collections))
+  (st/emit! (dc/fetch-collections))
   own)
 
 (mx/defc colorpalette

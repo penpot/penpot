@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.dashboard.icons
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.icons :as di]
             [uxbox.main.ui.icons :as i]
@@ -20,7 +20,7 @@
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.datetime :as dt]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.forms :as sc]
             [uxbox.util.lens :as ul]
             [uxbox.util.i18n :refer (tr)]
@@ -78,7 +78,7 @@
     (letfn [(on-save [e]
               (let [dom (mx/ref-node own "input")
                     name (.-innerText dom)]
-                (rs/emit! (di/rename-collection id (str/trim name)))
+                (st/emit! (di/rename-collection id (str/trim name)))
                 (swap! local assoc :edit false)))
             (on-cancel [e]
               (swap! local assoc :edit false))
@@ -93,7 +93,7 @@
                   (dom/stop-propagation e)
                   (on-save e))))
             (delete []
-              (rs/emit! (di/delete-collection id)))
+              (st/emit! (di/delete-collection id)))
             (on-delete []
               (udl/open! :confirm {:on-accept delete}))]
       [:div.dashboard-title
@@ -133,7 +133,7 @@
   [{:keys [id type name num-icons] :as coll} selected?]
   (letfn [(on-click [event]
             (let [type (or type :own)]
-              (rs/emit! (di/select-collection type id))))]
+              (st/emit! (di/select-collection type id))))]
     (let [num-icons (or num-icons (react-count-icons id))]
       [:li {:on-click on-click
             :class-name (when selected? "current")}
@@ -155,7 +155,7 @@
      (when own?
        [:li
         [:a.btn-primary
-         {:on-click #(rs/emit! (di/create-collection))}
+         {:on-click #(st/emit! (di/create-collection))}
          "+ New collection"]])
      (when own?
        (nav-item nil (nil? selected)))
@@ -175,8 +175,8 @@
                 (let [colls (->> (map second colls)
                                  (filter #(= :builtin (:type %)))
                                  (sort-by :name))]
-                  (rs/emit! (di/select-collection type (:id (first colls)))))
-                (rs/emit! (di/select-collection type))))]
+                  (st/emit! (di/select-collection type (:id (first colls)))))
+                (st/emit! (di/select-collection type))))]
       [:div.library-bar
        [:div.library-bar-inside
         [:ul.library-tabs
@@ -198,7 +198,7 @@
             (dom/click (mx/ref-node own "file-input")))
           (on-file-selected [event]
             (let [files (dom/get-event-files event)]
-              (rs/emit! (di/create-icons coll-id files))))]
+              (st/emit! (di/create-icons coll-id files))))]
     [:div.grid-item.small-item.add-project {:on-click forward-click}
      [:span "+ New icon"]
      [:input.upload-image-input
@@ -240,7 +240,7 @@
   (let [editable? (or (= type :own) (nil? coll))
         local (:rum/local own)]
     (letfn [(delete []
-              (rs/emit! (di/delete-selected)))
+              (st/emit! (di/delete-selected)))
             (on-delete [event]
               (udl/open! :confirm {:on-accept delete}))
             (on-toggle-copy [event]
@@ -252,15 +252,15 @@
               (swap! local assoc
                      :show-move-tooltip false
                      :show-copy-tooltip false)
-              (rs/emit! (di/copy-selected selected)))
+              (st/emit! (di/copy-selected selected)))
             (on-move [selected]
               (swap! local assoc
                      :show-move-tooltip false
                      :show-copy-tooltip false)
-              (rs/emit! (di/move-selected selected)))
+              (st/emit! (di/move-selected selected)))
             (on-rename [event]
               (let [selected (first selected)]
-                (rs/emit! (di/update-opts :edition selected))))]
+                (st/emit! (di/update-opts :edition selected))))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
        (if editable?
@@ -301,7 +301,7 @@
   {:mixins [mx/static]}
   [{:keys [id created-at] :as icon} selected? edition?]
   (letfn [(toggle-selection [event]
-            (rs/emit! (di/toggle-icon-selection id)))
+            (st/emit! (di/toggle-icon-selection id)))
           (toggle-selection-shifted [event]
             (when (kbd/shift? event)
               (toggle-selection event)))
@@ -311,12 +311,12 @@
           (on-blur [event]
             (let [target (dom/event->target event)
                   name (dom/get-value target)]
-              (rs/emit! (di/update-opts :edition false)
+              (st/emit! (di/update-opts :edition false)
                         (di/rename-icon id name))))
           (on-edit [event]
             (dom/stop-propagation event)
             (dom/prevent-default event)
-            (rs/emit! (di/update-opts :edition id)))]
+            (st/emit! (di/update-opts :edition id)))]
     [:div.grid-item.small-item.project-th
      {:on-click toggle-selection-shifted
       :id (str "grid-item-" id)}
@@ -381,13 +381,13 @@
     (letfn [(on-term-change [event]
               (let [term (-> (dom/get-target event)
                              (dom/get-value))]
-                (rs/emit! (di/update-opts :filter term))))
+                (st/emit! (di/update-opts :filter term))))
             (on-ordering-change [event]
               (let [value (dom/event->value event)
                     value (read-string value)]
-                (rs/emit! (di/update-opts :order value))))
+                (st/emit! (di/update-opts :order value))))
             (on-clear [event]
-              (rs/emit! (di/update-opts :filter "")))]
+              (st/emit! (di/update-opts :filter "")))]
       [:section.dashboard-bar.library-gap
        [:div.dashboard-info
 
@@ -420,7 +420,7 @@
 (defn- icons-page-will-mount
   [own]
   (let [[type id] (:rum/args own)]
-    (rs/emit! (di/initialize type id))
+    (st/emit! (di/initialize type id))
     own))
 
 (defn- icons-page-did-remount
@@ -429,7 +429,7 @@
         [new-type new-id] (:rum/args own)]
     (when (or (not= old-type new-type)
               (not= old-id new-id))
-      (rs/emit! (di/initialize new-type new-id)))
+      (st/emit! (di/initialize new-type new-id)))
     own))
 
 (mx/defc icons-page

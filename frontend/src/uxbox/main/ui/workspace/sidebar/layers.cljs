@@ -10,8 +10,8 @@
             [cuerdas.core :as str]
             [goog.events :as events]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.util.data :refer (read-string classnames)]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
@@ -41,17 +41,17 @@
       nil
 
       (.-ctrlKey event)
-      (rs/emit! (uds/select-shape id))
+      (st/emit! (uds/select-shape id))
 
       (> (count selected) 1)
-      (rs/emit! (uds/deselect-all)
+      (st/emit! (uds/deselect-all)
                 (uds/select-shape id))
 
       (contains? selected id)
-      (rs/emit! (uds/select-shape id))
+      (st/emit! (uds/select-shape id))
 
       :else
-      (rs/emit! (uds/deselect-all)
+      (st/emit! (uds/deselect-all)
                 (uds/select-shape id)))))
 
 (defn- toggle-visibility
@@ -60,10 +60,10 @@
   (let [id (:id item)
         hidden? (:hidden item)]
     (if hidden?
-      (rs/emit! (uds/show-shape id))
-      (rs/emit! (uds/hide-shape id)))
+      (st/emit! (uds/show-shape id))
+      (st/emit! (uds/hide-shape id)))
     (when (contains? selected id)
-      (rs/emit! (uds/select-shape id)))))
+      (st/emit! (uds/select-shape id)))))
 
 (defn- toggle-blocking
   [item event]
@@ -71,8 +71,8 @@
   (let [id (:id item)
         blocked? (:blocked item)]
     (if blocked?
-      (rs/emit! (uds/unblock-shape id))
-      (rs/emit! (uds/block-shape id)))))
+      (st/emit! (uds/unblock-shape id))
+      (st/emit! (uds/block-shape id)))))
 
 (defn- element-icon
   [item]
@@ -116,7 +116,7 @@
                     data {:id (:id shape)
                           :name (dom/get-value target)}]
                 (set! (.-draggable parent) true)
-                (rs/emit! (uds/update-shape data))
+                (st/emit! (uds/update-shape data))
                 (swap! local assoc :edition false)))
             (on-key-down [event]
               (js/console.log event)
@@ -168,8 +168,8 @@
               (let [id (dnd/get-data event)
                     over (:over @local)]
                 (case (:over @local)
-                  :top (rs/emit! (uds/drop-shape id (:id item) :before))
-                  :bottom (rs/emit! (uds/drop-shape id (:id item) :after)))
+                  :top (st/emit! (uds/drop-shape id (:id item) :before))
+                  :bottom (st/emit! (uds/drop-shape id (:id item) :after)))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
@@ -228,13 +228,13 @@
     (letfn [(toggle-collapse [event]
               (dom/stop-propagation event)
               (if (:collapsed item)
-                (rs/emit! (uds/uncollapse-shape id))
-                (rs/emit! (uds/collapse-shape id))))
+                (st/emit! (uds/uncollapse-shape id))
+                (st/emit! (uds/collapse-shape id))))
             (toggle-locking [event]
               (dom/stop-propagation event)
               (if (:locked item)
-                (rs/emit! (uds/unlock-shape id))
-                (rs/emit! (uds/lock-shape id))))
+                (st/emit! (uds/unlock-shape id))
+                (st/emit! (uds/lock-shape id))))
             (on-drag-start [event]
               (let [target (dom/event->target event)]
                 (dnd/set-allowed-effect! event "move")
@@ -247,9 +247,9 @@
               (let [coming-id (dnd/get-data event)
                     over (:over @local)]
                 (case (:over @local)
-                  :top (rs/emit! (uds/drop-shape coming-id id :before))
-                  :bottom (rs/emit! (uds/drop-shape coming-id id :after))
-                  :middle (rs/emit! (uds/drop-shape coming-id id :inside)))
+                  :top (st/emit! (uds/drop-shape coming-id id :before))
+                  :bottom (st/emit! (uds/drop-shape coming-id id :after))
+                  :middle (st/emit! (uds/drop-shape coming-id id :inside)))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
@@ -309,11 +309,11 @@
         selected (:selected workspace)
         shapes-map (mx/react wb/shapes-by-id-ref)
         page (mx/react (focus-page (:page workspace)))
-        close #(rs/emit! (udw/toggle-flag :layers))
-        duplicate #(rs/emit! (uds/duplicate-selected))
-        group #(rs/emit! (uds/group-selected))
-        degroup #(rs/emit! (uds/degroup-selected))
-        delete #(rs/emit! (uds/delete-selected))
+        close #(st/emit! (udw/toggle-flag :layers))
+        duplicate #(st/emit! (uds/duplicate-selected))
+        group #(st/emit! (uds/group-selected))
+        degroup #(st/emit! (uds/degroup-selected))
+        delete #(st/emit! (uds/delete-selected))
         dragel (volatile! nil)]
     [:div#layers.tool-window
      [:div.tool-window-bar

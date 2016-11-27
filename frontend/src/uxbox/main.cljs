@@ -3,17 +3,17 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main
-  (:require [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+  (:require [uxbox.store :as st]
             [uxbox.main.locales :as lc]
-            [uxbox.main.ui :as ui]))
+            [uxbox.main.ui :as ui]
+            [uxbox.main.state :refer [initial-state]]
+            [uxbox.util.storage :refer [storage]]))
 
 (defn ^:export init
   []
   (lc/init)
-  (st/init)
+  (st/init initial-state)
   (ui/init-routes)
   (ui/init))

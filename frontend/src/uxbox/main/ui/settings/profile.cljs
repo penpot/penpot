@@ -10,11 +10,11 @@
             [lentes.core :as l]
             [uxbox.util.forms :as forms]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.interop :refer (iterable->seq)]
             [uxbox.util.dom :as dom]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.settings.header :refer (header)]
             [uxbox.main.ui.messages :as uum]
@@ -59,7 +59,7 @@
             (on-success []
               (forms/clear! :profile))
             (on-submit [event]
-              (rs/emit! (udu/update-profile data on-success on-error)))]
+              (st/emit! (udu/update-profile data on-success on-error)))]
       [:form.profile-form
        [:span.user-settings-label "Name, username and email"]
        [:input.input-text
@@ -124,7 +124,7 @@
                   file (-> (dom/get-files target)
                            (iterable->seq)
                            (first))]
-              (rs/emit! (udu/update-photo file))
+              (st/emit! (udu/update-photo file))
               (dom/clean-value! target)))]
     (let [{:keys [photo]} (mx/react profile-ref)
           photo (if (or (str/empty? photo) (nil? photo))

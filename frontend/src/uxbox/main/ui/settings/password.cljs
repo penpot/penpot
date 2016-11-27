@@ -9,11 +9,11 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.util.i18n :as t :refer (tr)]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.forms :as forms]
             [uxbox.util.dom :as dom]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.users :as udu]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.messages :as uum]
@@ -41,7 +41,7 @@
                 (set-value! field value)))
             (on-submit [event]
               (println "on-submit" data)
-              #_(rs/emit! (udu/update-password form)))]
+              #_(st/emit! (udu/update-password form)))]
       (println "password-form" data)
       [:form.password-form
        [:span.user-settings-label "Change password"]

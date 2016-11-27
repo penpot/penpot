@@ -8,11 +8,11 @@
 (ns uxbox.view.ui.viewer
   (:require [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.router :as rt]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.view.data.viewer :as dv]
             [uxbox.view.ui.viewer.nav :refer (nav)]
             [uxbox.view.ui.viewer.canvas :refer (canvas)]
@@ -33,7 +33,7 @@
 (defn- viewer-page-will-mount
   [own]
   (letfn [(on-change [token]
-            (rs/emit! (dv/initialize token)))]
+            (st/emit! (dv/initialize token)))]
     (add-watch token-ref ::wkey #(on-change %4))
     (on-change @token-ref)
     own))

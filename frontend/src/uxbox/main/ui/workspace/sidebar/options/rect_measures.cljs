@@ -9,8 +9,8 @@
   (:require [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.icons :as i]
@@ -28,28 +28,28 @@
             (let [value (-> (dom/event->value event) (parse-int 0))
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (uds/update-size sid props))))
+              (st/emit! (uds/update-size sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
                   sid (:id shape)]
-              (rs/emit! (uds/update-rotation sid value))))
+              (st/emit! (uds/update-rotation sid value))))
           (on-pos-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (uds/update-position sid props))))
+              (st/emit! (uds/update-position sid props))))
           (on-border-change [attr event]
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (rs/emit! (uds/update-radius-attrs sid props))))
+              (st/emit! (uds/update-radius-attrs sid props))))
           (on-proportion-lock-change [event]
             (if (:proportion-lock shape)
-              (rs/emit! (uds/unlock-proportions id))
-              (rs/emit! (uds/lock-proportions id))))]
+              (st/emit! (uds/unlock-proportions id))
+              (st/emit! (uds/lock-proportions id))))]
     (let [size (geom/size shape)]
       [:div.element-set
        [:div.element-set-title (:name menu)]

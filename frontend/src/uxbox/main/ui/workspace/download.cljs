@@ -10,7 +10,7 @@
             [beicon.core :as rx]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.exports :as exports]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.workspace.base :as wb]
@@ -19,7 +19,7 @@
             [uxbox.util.datetime :as dt]
             [uxbox.util.dom :as dom]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.zip :as zip]
             [lentes.core :as l]))
 

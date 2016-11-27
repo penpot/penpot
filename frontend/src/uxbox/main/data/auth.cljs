@@ -3,21 +3,21 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.data.auth
   (:require [cljs.spec :as s]
             [beicon.core :as rx]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.repo :as rp]
-            [uxbox.util.rstore :as rs]
-            [uxbox.util.router :as rt]
-            [uxbox.util.spec :as us]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.main.state :as st]
+            [uxbox.main.state :refer [initial-state]]
             [uxbox.main.data.projects :as udp]
             [uxbox.main.data.users :as udu]
             [uxbox.main.data.messages :as udm]
-            [uxbox.util.storage :refer (storage)]))
+            [uxbox.util.router :as rt]
+            [uxbox.util.spec :as us]
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.storage :refer [storage]]))
 
 (s/def ::username string?)
 (s/def ::password string?)
@@ -28,12 +28,12 @@
 ;; --- Logged In
 
 (defrecord LoggedIn [data]
-  rs/UpdateEvent
-  (-apply-update [this state]
+  ptk/UpdateEvent
+  (update [this state]
     (assoc state :auth data))
 
-  rs/WatchEvent
-  (-apply-watch [this state s]
+  ptk/WatchEvent
+  (watch [this state s]
     (swap! storage assoc :auth data)
     (rx/of (udu/fetch-profile)
            (rt/navigate :dashboard/projects))))
@@ -49,12 +49,12 @@
 ;; --- Login
 
 (defrecord Login [username password]
-  rs/UpdateEvent
-  (-apply-update [_ state]
-    (merge state (dissoc (st/initial-state) :route)))
+  ptk/UpdateEvent
+  (update [_ state]
+    (merge state (dissoc (initial-state) :route)))
 
-  rs/WatchEvent
-  (-apply-watch [this state s]
+  ptk/WatchEvent
+  (watch [this state s]
     (let [params {:username username
                   :password password
                   :scope "webapp"}
@@ -75,13 +75,13 @@
 ;; --- Logout
 
 (defrecord Logout []
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (swap! storage dissoc :auth)
-    (merge state (dissoc (st/initial-state) :route)))
+    (merge state (dissoc (initial-state) :route)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (rt/navigate :auth/login))))
 
 (defn logout
@@ -93,8 +93,8 @@
 ;; TODO: clean form on success
 
 (defrecord Register [data on-error]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (letfn [(handle-error [{payload :payload}]
               (on-error payload)
               (rx/empty))]
@@ -121,8 +121,8 @@
 ;; --- Recovery Request
 
 (defrecord RecoveryRequest [data]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (letfn [(on-error [{payload :payload}]
               (println "on-error" payload)
               (rx/empty))]
@@ -146,8 +146,8 @@
 ;; --- Check Recovery Token
 
 (defrecord ValidateRecoveryToken [token]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (letfn [(on-error [{payload :payload}]
               (rx/of
                (rt/navigate :auth/login)
@@ -164,8 +164,8 @@
 ;; --- Recovery (Password)
 
 (defrecord Recovery [token password]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (letfn [(on-error [{payload :payload}]
               (udm/error (tr "errors.auth.invalid-recovery-token")))
             (on-success [{payload :payload}]

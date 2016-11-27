@@ -7,17 +7,18 @@
 (ns uxbox.view.ui
   (:require [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.rstore :as rs]
-            [uxbox.util.router :as rt]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.dom :as dom]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
+            [uxbox.main.data.messages :as dmsg]
             [uxbox.main.ui.loader :refer (loader)]
             [uxbox.main.ui.lightbox :refer (lightbox)]
-            [uxbox.main.state :as st]
-            [uxbox.main.data.messages :as dmsg]
             [uxbox.main.ui.icons :as i]
             [uxbox.view.ui.notfound :refer (notfound-page)]
-            [uxbox.view.ui.viewer :refer (viewer-page)]))
+            [uxbox.view.ui.viewer :refer (viewer-page)]
+            [uxbox.util.router :as rt]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.dom :as dom]))
+
 
 (def route-id-ref
   (-> (l/in [:route :id])
@@ -39,7 +40,7 @@
       (dmsg/error! (tr "errors.generic"))
       (js/console.error "Stack:" (.-stack error)))))
 
-(rs/add-error-watcher :ui on-error)
+(set! st/*on-error* on-error)
 
 ;; --- Main App (Component)
 

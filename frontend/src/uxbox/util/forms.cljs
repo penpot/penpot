@@ -7,10 +7,11 @@
 
 (ns uxbox.util.forms
   (:refer-clojure :exclude [keyword uuid vector boolean map set])
-  (:require [struct.core :as st]
+  (:require [struct.core :as f]
             [lentes.core :as l]
             [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.i18n :refer (tr)]))
 
@@ -21,35 +22,35 @@
 ;; --- Form Validators
 
 (def required
-  (assoc st/required :message "errors.form.required"))
+  (assoc f/required :message "errors.form.required"))
 
 (def string
-  (assoc st/string :message "errors.form.string"))
+  (assoc f/string :message "errors.form.string"))
 
 (def number
-  (assoc st/number :message "errors.form.number"))
+  (assoc f/number :message "errors.form.number"))
 
 (def integer
-  (assoc st/integer :message "errors.form.integer"))
+  (assoc f/integer :message "errors.form.integer"))
 
 (def boolean
-  (assoc st/boolean :message "errors.form.bool"))
+  (assoc f/boolean :message "errors.form.bool"))
 
 (def identical-to
-  (assoc st/identical-to :message "errors.form.identical-to"))
+  (assoc f/identical-to :message "errors.form.identical-to"))
 
-(def in-range st/in-range)
-;; (def uuid-like st/uuid-like)
-(def uuid st/uuid)
-(def keyword st/keyword)
-(def integer-str st/integer-str)
-(def number-str st/number-str)
-;; (def boolean-like st/boolean-like)
-(def email st/email)
-;; (def function st/function)
-(def positive st/positive)
-;; (def validate st/validate)
-;; (def validate! st/validate!)
+(def in-range f/in-range)
+;; (def uuid-like f/uuid-like)
+(def uuid f/uuid)
+(def keyword f/keyword)
+(def integer-str f/integer-str)
+(def number-str f/number-str)
+;; (def boolean-like f/boolean-like)
+(def email f/email)
+;; (def function f/function)
+(def positive f/positive)
+;; (def validate f/validate)
+;; (def validate! f/validate!)
 
 (def max-len
   {:message "errors.form.max-len"
@@ -75,7 +76,7 @@
   ([data schema]
    (validate data schema nil))
   ([data schema opts]
-   (st/validate data schema opts)))
+   (f/validate data schema opts)))
 
 (defn validate!
   ([data schema]
@@ -98,8 +99,8 @@
 ;; --- Set Error
 
 (defrecord SetError [type field error]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:errors type field] error)))
 
 (defn set-error
@@ -113,13 +114,13 @@
 
 (defn set-error!
   [& args]
-  (rs/emit! (apply set-error args)))
+  (st/emit! (apply set-error args)))
 
 ;; --- Set Errors
 
 (defrecord SetErrors [type errors]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:errors type] errors)))
 
 (defn set-errors
@@ -133,13 +134,13 @@
 
 (defn set-errors!
   [& args]
-  (rs/emit! (apply set-errors args)))
+  (st/emit! (apply set-errors args)))
 
 ;; --- Set Value
 
 (defrecord SetValue [type field value]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [form-path (into [:forms type] (if (coll? field) field [field]))
           errors-path (into [:errors type] (if (coll? field) field [field]))]
       (-> state
@@ -155,13 +156,13 @@
 
 (defn set-value!
   [type field value]
-  (rs/emit! (set-value type field value)))
+  (st/emit! (set-value type field value)))
 
 ;; --- Validate Form
 
 ;; (defrecord ValidateForm [type form data on-success]
-;;   rs/WatchEvent
-;;   (-apply-watch [_ state stream]
+;;   ptk/WatchEvent
+;;   (watch [_ state stream]
 ;;     (let [[errors data] (validate data form)]
 ;;       (if errors
 ;;         (rx/of (set-errors type errors))
@@ -179,13 +180,13 @@
 
 ;; (defn validate-form!
 ;;   [& args]
-;;   (rs/emit! (apply validate-form args)))
+;;   (f/emit! (apply validate-form args)))
 
 ;; --- Clear Form
 
 (defrecord ClearForm [type]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:forms type] nil)))
 
 (defn clear-form
@@ -195,13 +196,13 @@
 
 (defn clear-form!
   [type]
-  (rs/emit! (clear-form type)))
+  (st/emit! (clear-form type)))
 
 ;; --- Clear Form
 
 (defrecord ClearErrors [type]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:errors type] nil)))
 
 (defn clear-errors
@@ -211,13 +212,13 @@
 
 (defn clear-errors!
   [type]
-  (rs/emit! (clear-errors type)))
+  (st/emit! (clear-errors type)))
 
 ;; --- Clear
 
 (defrecord Clear [type]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (clear-form type)
            (clear-errors type))))
 
@@ -227,7 +228,7 @@
 
 (defn clear!
   [type]
-  (rs/emit! (clear type)))
+  (st/emit! (clear type)))
 
 ;; --- Helpers
 

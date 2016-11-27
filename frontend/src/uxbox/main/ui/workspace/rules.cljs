@@ -11,7 +11,7 @@
             [cuerdas.core :as str]
             [beicon.core :as rx]
             [uxbox.main.constants :as c]
-            [uxbox.main.state :as s]
+            [uxbox.store :as s]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.mixins :as mx :include-macros true]))

@@ -2,7 +2,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [lentes.core :as l]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.messages :as udm]
             [uxbox.main.ui.icons :as i]
             [uxbox.util.timers :as ts]

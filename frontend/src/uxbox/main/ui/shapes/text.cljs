@@ -8,10 +8,11 @@
   (:require [cuerdas.core :as str]
             [lentes.core :as l]
             [goog.events :as events]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.color :as color]
             [uxbox.util.dom :as dom]
+            [uxbox.store :as st]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
@@ -46,7 +47,7 @@
               (handle-mouse-down event shape selected))
             (on-double-click [event]
               (dom/stop-propagation event)
-              (rs/emit! (uds/start-edition-mode id)))]
+              (st/emit! (uds/start-edition-mode id)))]
       [:g.shape {:class (when selected? "selected")
                  :ref "main"
                  :on-double-click on-double-click
@@ -113,7 +114,7 @@
               (on-done))
             (on-input [ev]
               (let [content (dom/event->inner-text ev)]
-                (rs/emit! (uds/update-text id {:content content}))))]
+                (st/emit! (uds/update-text id {:content content}))))]
       [:g
        [:rect (merge props +select-rect-attrs+)]
        [:foreignObject props

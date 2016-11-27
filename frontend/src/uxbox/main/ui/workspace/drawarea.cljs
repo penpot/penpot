@@ -8,14 +8,15 @@
 (ns uxbox.main.ui.workspace.drawarea
   "Draw interaction and component."
   (:require [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.rlocks :as rlocks]
+            [uxbox.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes :as shapes]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.util.rlocks :as rlocks]
             [uxbox.main.geom :as geom]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.geom.path :as path]
@@ -128,7 +129,7 @@
                :x2 (+ x 200)
                :y2 (+ y (/ 200 proportion))}
         shape (geom/setup shape props)]
-    (rs/emit! (uds/add-shape shape)
+    (st/emit! (uds/add-shape shape)
               (udw/select-for-drawing nil)
               (uds/select-first-shape))
     (rlocks/release! :ui/draw)))
@@ -232,7 +233,7 @@
 
               (on-end []
                 (let [shape @drawing-shape]
-                  (rs/emit! (uds/add-shape shape)
+                  (st/emit! (uds/add-shape shape)
                             (udw/select-for-drawing nil)
                             (uds/select-first-shape))
                   (reset! drawing-shape nil)
@@ -268,7 +269,7 @@
 
             (on-end []
               (let [shape (simplify-shape @drawing-shape)]
-                (rs/emit! (uds/add-shape shape)
+                (st/emit! (uds/add-shape shape)
                           (udw/select-for-drawing nil)
                           (uds/select-first-shape))
                 (reset! drawing-shape nil)
@@ -301,7 +302,7 @@
               (let [shape @drawing-shape
                     shpos @drawing-position
                     shape (geom/resize shape shpos)]
-                (rs/emit! (uds/add-shape shape)
+                (st/emit! (uds/add-shape shape)
                           (udw/select-for-drawing nil)
                           (uds/select-first-shape))
                 (reset! drawing-position nil)

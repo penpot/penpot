@@ -8,7 +8,7 @@
   (:require [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.math :as mth]
-            [uxbox.main.state :as st]))
+            [uxbox.store :as st]))
 
 ;; --- Relative Movement
 

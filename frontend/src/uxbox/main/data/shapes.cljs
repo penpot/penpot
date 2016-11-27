@@ -8,13 +8,13 @@
 (ns uxbox.main.data.shapes
   (:require [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.router :as r]
             [uxbox.util.forms :as sc]
             [uxbox.util.workers :as uw]
             [uxbox.main.constants :as c]
             [uxbox.main.geom :as geom]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.shapes-impl :as impl]
             [uxbox.main.data.pages :as udp]
@@ -28,8 +28,8 @@
   [shape]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [page (get-in state [:workspace :page])
             shape (geom/setup-proportions shape)]
         (impl/assoc-shape-to-page state shape page)))))
@@ -39,8 +39,8 @@
   [id]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [shape (get-in state [:shapes id])]
         (impl/dissoc-shape state shape)))))
 
@@ -49,8 +49,8 @@
   [{:keys [id] :as shape}]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes id] merge shape))))
 
 ;; --- Shape Transformations
@@ -60,8 +60,8 @@
   [sid delta]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [shape (get-in state [:shapes sid])]
         (update-in state [:shapes sid] geom/move delta)))))
 
@@ -74,8 +74,8 @@
 (defn initial-align-shape
   [id]
   (reify
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (let [shape (get-in state [:shapes id])
             shape (geom/outer-rect state shape)
             point (gpt/point (:x shape) (:y shape))
@@ -88,8 +88,8 @@
   [sid {:keys [x1 y1 x2 y2] :as opts}]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [shape (get-in state [:shapes sid])
             props (select-keys opts [:x1 :y1 :x2 :y2])
             props' (select-keys shape [:x1 :y1 :x2 :y2])]
@@ -103,8 +103,8 @@
          (>= 360 rotation)]}
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes sid]
                  geom/rotate rotation))))
 
@@ -116,23 +116,23 @@
   {:pre [(uuid? sid)]}
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes sid] geom/resize-dim opts))))
 
 (defn update-vertex-position
   [id {:keys [vid delta]}]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes id] geom/move-vertex vid delta))))
 
 (defn initial-vertext-align
   [id vid]
   (reify
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (let [shape (get-in state [:shapes id])
             point (geom/get-vertex-point shape vid)
             point (gpt/add point canvas-coords)]
@@ -144,8 +144,8 @@
   "Update the start position coordenate of the shape."
   [sid {:keys [x y] :as opts}]
   (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes sid] geom/absolute-move opts))))
 
 (defn update-text
@@ -153,16 +153,16 @@
   {:pre [(string? content)]}
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (assoc-in state [:shapes sid :content] content))))
 
 (defn update-fill-attrs
   [sid {:keys [color opacity] :as opts}]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes sid]
                  merge
                  (when color {:fill color})
@@ -173,8 +173,8 @@
                letter-spacing line-height] :as opts}]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes sid :font]
                  merge
                  (when line-height {:line-height line-height})
@@ -189,8 +189,8 @@
   [sid {:keys [color opacity type width] :as opts}]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes sid]
                  merge
                  (when type {:stroke-type type})
@@ -202,8 +202,8 @@
   [sid {:keys [rx ry] :as opts}]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes sid]
                  merge
                  (when rx {:rx rx})
@@ -219,8 +219,8 @@
   {:pre [(uuid? sid)]}
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [[width height] (-> (get-in state [:shapes sid])
                                (geom/size)
                                (keep [:width :height]))
@@ -234,8 +234,8 @@
   {:pre [(uuid? sid)]}
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes sid] assoc
                  :proportion-lock false))))
 
@@ -246,8 +246,8 @@
   {:pre [(uuid? id)]}
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes id] assoc :collapsed true))))
 
 (defn uncollapse-shape
@@ -255,8 +255,8 @@
   {:pre [(uuid? id)]}
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (update-in state [:shapes id] assoc :collapsed false))))
 
 ;; --- Shape Visibility
@@ -265,12 +265,12 @@
   [sid]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (assoc-in state [:shapes sid :hidden] true))
 
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
@@ -281,12 +281,12 @@
   [sid]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (assoc-in state [:shapes sid :hidden] false))
 
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
@@ -297,12 +297,12 @@
   [sid]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (assoc-in state [:shapes sid :blocked] true))
 
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
@@ -313,12 +313,12 @@
   [sid]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (assoc-in state [:shapes sid :blocked] false))
 
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
@@ -329,12 +329,12 @@
   [sid]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (assoc-in state [:shapes sid :locked] true))
 
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
@@ -345,12 +345,12 @@
   [sid]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (assoc-in state [:shapes sid :locked] false))
 
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (let [shape (get-in state [:shapes sid])]
         (if-not (= (:type shape) :group)
           (rx/empty)
@@ -365,16 +365,16 @@
          (not (nil? sid))]}
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (impl/drop-shape state sid tid loc))))
 
 (defn select-first-shape
   "Mark a shape selected for drawing in the canvas."
   []
   (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [page (get-in state [:workspace :page])
             id (first (get-in state [:pages page :shapes]))]
         (assoc-in state [:workspace :selected] #{id})))))
@@ -383,8 +383,8 @@
   "Mark a shape selected for drawing in the canvas."
   [id]
   (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [selected (get-in state [:workspace :selected])
             state (if (contains? selected id)
                     (update-in state [:workspace :selected] disj id)
@@ -394,8 +394,8 @@
 ;; --- Select Shapes
 
 (defrecord SelectShapes [selrect]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [page (get-in state [:workspace :page])
           shapes (impl/match-by-selrect state page selrect)]
       (assoc-in state [:workspace :selected] shapes))))
@@ -409,8 +409,8 @@
 
 (defrecord UpdateInteraction [shape interaction]
   udp/IPageUpdate
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [id (or (:id interaction)
                  (uuid/random))
           data (assoc interaction :id id)]
@@ -424,8 +424,8 @@
 
 (defrecord DeleteInteracton [shape id]
   udp/IPageUpdate
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:shapes shape :interactions] dissoc id)))
 
 (defn delete-interaction
@@ -436,8 +436,8 @@
 ;; --- Path Modifications
 
 (defrecord UpdatePath [id index delta]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:shapes id :points index] gpt/add delta)))
 
 (defn update-path
@@ -447,8 +447,8 @@
   (UpdatePath. id index delta))
 
 (defrecord InitialPathPointAlign [id index]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [shape (get-in state [:shapes id])
           point (get-in shape [:points index])
           point (gpt/add point canvas-coords)]
@@ -468,12 +468,12 @@
 ;; --- Start shape "edition mode"
 
 (defrecord StartEditionMode [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:workspace :edition] id))
 
-  rs/EffectEvent
-  (-apply-effect [_ state]
+  ptk/EffectEvent
+  (effect [_ state stream]
     (rlocks/acquire! :shape/edition)))
 
 (defn start-edition-mode
@@ -484,15 +484,15 @@
 ;; --- Events (implicit) (for selected)
 
 (defrecord DeselectAll []
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (-> state
         (assoc-in [:workspace :selected] #{})
         (assoc-in [:workspace :edition] nil)
         (assoc-in [:workspace :drawing] nil)))
 
-  rs/EffectEvent
-  (-apply-effect [_ state]
+  ptk/EffectEvent
+  (effect [_ state stream]
     (rlocks/release! :shape/edition)))
 
 (defn deselect-all
@@ -505,8 +505,8 @@
   []
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [pid (get-in state [:workspace :page])
             selected (get-in state [:workspace :selected])]
         (impl/group-shapes state selected pid)))))
@@ -515,8 +515,8 @@
   []
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [pid (get-in state [:workspace :page])
             selected (get-in state [:workspace :selected])]
         (impl/degroup-shapes state selected pid)))))
@@ -526,8 +526,8 @@
   []
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [selected (get-in state [:workspace :selected])]
         (impl/duplicate-shapes state selected)))))
 
@@ -535,8 +535,8 @@
   "Deselect all and remove all selected shapes."
   []
   (reify
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (let [selected (get-in state [:workspace :selected])]
         (rx/from-coll
          (into [(deselect-all)] (map #(delete-shape %) selected)))))))
@@ -547,8 +547,8 @@
   ([dir n]
    {:pre [(contains? #{:up :down :right :left} dir)]}
    (reify
-     rs/WatchEvent
-     (-apply-watch [_ state s]
+     ptk/WatchEvent
+     (watch [_ state s]
        (let [selected (get-in state [:workspace :selected])
              delta (case dir
                     :up (gpt/point 0 (- n))
@@ -563,8 +563,8 @@
   selected shapes."
   [opts]
   (reify
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (rx/from-coll
        (->> (get-in state [:workspace :selected])
             (map #(update-fill-attrs % opts)))))))
@@ -575,8 +575,8 @@
   selected shapes."
   [opts]
   (reify
-    rs/WatchEvent
-    (-apply-watch [_ state s]
+    ptk/WatchEvent
+    (watch [_ state s]
       (rx/from-coll
        (->> (get-in state [:workspace :selected])
             (map #(update-stroke-attrs % opts)))))))
@@ -585,8 +585,8 @@
   [loc]
   (reify
     udp/IPageUpdate
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [selected (get-in state [:workspace :selected])]
         (impl/move-layer state selected loc)))))
 

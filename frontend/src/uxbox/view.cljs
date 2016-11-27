@@ -6,10 +6,10 @@
 
 (ns uxbox.view
   (:require [uxbox.config]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.view.ui :as ui]))
 
-(defn initial-state
+(defn- initial-state
   []
   {:route nil
    :project nil

@@ -11,7 +11,7 @@
             [uxbox.main.data.colors :as dc]
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.colorpicker :refer (colorpicker)]
             [uxbox.main.ui.dashboard.header :refer (header)]
@@ -23,7 +23,7 @@
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.lens :as ul]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rstore :as rs]))
+            [potok.core :as ptk]))
 
 ;; --- Refs
 
@@ -47,7 +47,7 @@
     (letfn [(save []
               (let [dom (mx/ref-node own "input")
                     name (dom/get-inner-text dom)]
-                (rs/emit! (dc/rename-collection id (str/trim name)))
+                (st/emit! (dc/rename-collection id (str/trim name)))
                 (swap! local assoc :edit false)))
             (cancel []
               (swap! local assoc :edit false))
@@ -62,7 +62,7 @@
                   (dom/stop-propagation e)
                   (save))))
             (delete []
-              (rs/emit! (dc/delete-collection id)))
+              (st/emit! (dc/delete-collection id)))
             (on-delete []
               (udl/open! :confirm {:on-accept delete}))]
       [:div.dashboard-title
@@ -95,7 +95,7 @@
   [{:keys [id type name] :as coll} selected?]
   (letfn [(on-click [event]
             (let [type (or type :own)]
-              (rs/emit! (dc/select-collection type id))))]
+              (st/emit! (dc/select-collection type id))))]
     (let [colors (count (:colors coll))]
       [:li {:on-click on-click
             :class-name (when selected? "current")}
@@ -113,7 +113,7 @@
   {:mixins [mx/static mx/reactive]}
   [selected?]
   (let [num-colors (mx/react storage-num-colors-ref)
-        on-click #(rs/emit! (dc/select-collection :own nil))]
+        on-click #(st/emit! (dc/select-collection :own nil))]
     [:li {:on-click on-click :class (when selected? "current")}
      [:span.element-title "Storage"]
      [:span.element-subtitle
@@ -133,7 +133,7 @@
      (when own?
        [:li
         [:a.btn-primary
-         {:on-click #(rs/emit! (dc/create-collection))}
+         {:on-click #(st/emit! (dc/create-collection))}
          "+ New library"]])
      (when own?
        (nav-item-storage (nil? selected)))
@@ -150,14 +150,14 @@
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
               (if (= type :own)
-                (rs/emit! (dc/select-collection type))
+                (st/emit! (dc/select-collection type))
                 (let [coll (->> (map second colls)
                                  (filter #(= type (:type %)))
                                  (sort-by :created-at)
                                  (first))]
                   (if coll
-                    (rs/emit! (dc/select-collection type (:id coll)))
-                    (rs/emit! (dc/select-collection type))))))]
+                    (st/emit! (dc/select-collection type (:id coll)))
+                    (st/emit! (dc/select-collection type))))))]
       [:div.library-bar
        [:div.library-bar-inside
         [:ul.library-tabs
@@ -207,7 +207,7 @@
   (let [editable? (or (= type :own) (nil? id))
         local (:rum/local own)]
     (letfn [(delete [event]
-              (rs/emit! (dc/delete-selected-colors)))
+              (st/emit! (dc/delete-selected-colors)))
             (on-delete [event]
               (udl/open! :confirm {:on-accept delete}))
             (on-toggle-copy [event]
@@ -220,12 +220,12 @@
               (swap! local assoc
                      :show-move-tooltip false
                      :show-copy-tooltip false)
-              (rs/emit! (dc/copy-selected selected)))
+              (st/emit! (dc/copy-selected selected)))
             (on-move [selected]
               (swap! local assoc
                      :show-move-tooltip false
                      :show-copy-tooltip false)
-              (rs/emit! (dc/move-selected id selected)))]
+              (st/emit! (dc/move-selected id selected)))]
 
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar
@@ -263,7 +263,7 @@
   [color selected?]
   (let [color-rgb (hex->rgb color)]
     (letfn [(toggle-selection [event]
-              (rs/emit! (dc/toggle-color-selection color)))
+              (st/emit! (dc/toggle-color-selection color)))
             (toggle-selection-shifted [event]
               (when (k/shift? event)
                 (toggle-selection event)))]
@@ -307,7 +307,7 @@
 (defn- colors-page-will-mount
   [own]
   (let [[type id] (:rum/args own)]
-    (rs/emit! (dc/initialize type id))
+    (st/emit! (dc/initialize type id))
     own))
 
 (defn- colors-page-did-remount
@@ -316,7 +316,7 @@
         [new-type new-id] (:rum/args own)]
     (when (or (not= old-type new-type)
               (not= old-id new-id))
-      (rs/emit! (dc/initialize new-type new-id)))
+      (st/emit! (dc/initialize new-type new-id)))
     own))
 
 (mx/defc colors-page
@@ -344,7 +344,7 @@
               (let [params {:id coll
                             :from color
                             :to (:hex @local)}]
-                (rs/emit! (dc/replace-color params))
+                (st/emit! (dc/replace-color params))
                 (udl/close!)))
             (on-change [event]
               (let [value (str/trim (dom/event->value event))]

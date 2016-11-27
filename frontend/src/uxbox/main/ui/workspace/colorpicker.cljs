@@ -11,8 +11,8 @@
             [lentes.core :as l]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.workspace.base :as wb]
@@ -38,7 +38,7 @@
         top (- y 50)]
     (letfn [(change-color [color]
               (let [attrs {:color color}]
-                (rs/emit!
+                (st/emit!
                  (case attr
                    :stroke (uds/update-stroke-attrs (:id shape) attrs)
                    :fill (uds/update-fill-attrs (:id shape) attrs)))))

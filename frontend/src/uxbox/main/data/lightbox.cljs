@@ -7,13 +7,14 @@
 (ns uxbox.main.data.lightbox
   (:require [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.util.rstore :as rs]))
+            [potok.core :as ptk]
+            [uxbox.store :as st]))
 
 ;; --- Show Lightbox
 
 (defrecord ShowLightbox [name params]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [data (merge {:name name} params)]
       (assoc state :lightbox data))))
 
@@ -26,8 +27,8 @@
 ;; --- Hide Lightbox
 
 (defrecord HideLightbox []
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (dissoc state :lightbox)))
 
 (defn hide-lightbox
@@ -38,8 +39,8 @@
 
 (defn open!
   [& args]
-  (rs/emit! (apply show-lightbox args)))
+  (st/emit! (apply show-lightbox args)))
 
 (defn close!
   [& args]
-  (rs/emit! (apply hide-lightbox args)))
+  (st/emit! (apply hide-lightbox args)))

@@ -6,7 +6,7 @@
 
 (ns uxbox.view.data.viewer
   (:require [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.router :as rt]
             [uxbox.util.forms :as sc]
             [uxbox.util.data :refer (parse-int)]
@@ -19,8 +19,8 @@
 (declare load-data)
 
 (defrecord Initialize [token]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (load-data token))))
 
 (defn initialize
@@ -44,8 +44,8 @@
         (update :pages conj page))))
 
 (defrecord DataLoaded [data]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [project (dissoc data :pages)
           pages (sort-by :created-at (:pages data))]
       (as-> state $
@@ -60,8 +60,8 @@
 ;; --- Load Data
 
 (defrecord LoadData [token]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (->> (rp/req :fetch/project-by-token token)
          (rx/map :payload)
          (rx/map data-loaded))))
@@ -73,8 +73,8 @@
 ;; --- Select Page
 
 (defrecord SelectPage [index]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [token (get-in state [:route :params :token])]
       (rx/of (rt/navigate :view/viewer {:token token :id index})))))
 
@@ -85,8 +85,8 @@
 ;; --- Toggle Flag
 
 (defrecord ToggleFlag [key]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [flags (:flags state #{})]
       (if (contains? flags key)
         (assoc state :flags (disj flags key))

@@ -9,9 +9,9 @@
   "Multiple selection handlers component."
   (:require [lentes.core :as l]
             [beicon.core :as rx]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.rlocks :as rlocks]
@@ -47,7 +47,7 @@
   [vid sid]
   (letfn [(on-resize [[delta ctrl?]]
             (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
-              (rs/emit! (uds/update-vertex-position sid params))))
+              (st/emit! (uds/update-vertex-position sid params))))
           (on-end []
             (rlocks/release! :shape/resize))]
     (let [stoper (->> wb/events-s
@@ -59,7 +59,7 @@
                       (rx/with-latest-from vector wb/mouse-ctrl-s))]
       (rlocks/acquire! :shape/resize)
       (when @wb/alignment-ref
-        (rs/emit! (uds/initial-vertext-align sid vid)))
+        (st/emit! (uds/initial-vertext-align sid vid)))
       (rx/subscribe stream on-resize nil on-end))))
 
 ;; --- Selection Handlers (Component)
@@ -145,7 +145,7 @@
 (defn start-path-edition
   [shape-id index]
   (letfn [(on-move [delta]
-            (rs/emit! (uds/update-path shape-id index delta)))
+            (st/emit! (uds/update-path shape-id index delta)))
           (on-end []
             (rlocks/release! :shape/resize))]
     (let [stoper (->> wb/events-s
@@ -155,7 +155,7 @@
           stream (rx/take-until stoper wb/mouse-delta-s)]
       (rlocks/acquire! :shape/resize)
       (when @wb/alignment-ref
-        (rs/emit! (uds/initial-path-point-align shape-id index)))
+        (st/emit! (uds/initial-path-point-align shape-id index)))
       (rx/subscribe stream on-move nil on-end))))
 
 (mx/defc path-edition-selection-handlers

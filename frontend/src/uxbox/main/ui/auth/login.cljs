@@ -9,10 +9,10 @@
             [cuerdas.core :as str]
             [uxbox.util.router :as rt]
             [uxbox.util.dom :as dom]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.forms :as forms]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.auth :as da]
             [uxbox.main.data.messages :as udm]
             [uxbox.main.ui.icons :as i]
@@ -42,7 +42,7 @@
                 (set-value! field value)))
             (on-submit [event]
               (dom/prevent-default event)
-              (rs/emit! (da/login {:username (:email data)
+              (st/emit! (da/login {:username (:email data)
                                    :password (:password data)})))]
       [:form {:on-submit on-submit}
        [:div.login-content

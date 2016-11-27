@@ -7,12 +7,12 @@
 
 (ns uxbox.main.ui.workspace.clipboard
   (:require [lentes.core :as l]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.datetime :as dt]))
@@ -25,7 +25,7 @@
   {:mixins [mx/static mx/reactive]}
   []
   (letfn [(on-paste [item]
-            (rs/emit! (udw/paste-from-clipboard (:id item)))
+            (st/emit! (udw/paste-from-clipboard (:id item)))
             (udl/close!))
           (on-close [event]
             (dom/prevent-default event)

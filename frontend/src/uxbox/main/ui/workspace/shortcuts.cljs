@@ -8,7 +8,8 @@
 (ns uxbox.main.ui.workspace.shortcuts
   (:require [goog.events :as events]
             [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
@@ -25,30 +26,30 @@
 ;; --- Shortcuts
 
 (defonce +shortcuts+
-  {:shift+g #(rs/emit! (dw/toggle-flag :grid))
-   :ctrl+g #(rs/emit! (uds/group-selected))
-   :ctrl+shift+g #(rs/emit! (uds/degroup-selected))
-   :ctrl+shift+m #(rs/emit! (dw/toggle-flag :sitemap))
-   :ctrl+shift+f #(rs/emit! (dw/toggle-flag :drawtools))
-   :ctrl+shift+i #(rs/emit! (dw/toggle-flag :icons))
-   :ctrl+shift+l #(rs/emit! (dw/toggle-flag :layers))
-   :ctrl+0 #(rs/emit! (dw/reset-zoom))
-   :ctrl+r #(rs/emit! (dw/toggle-flag :ruler))
-   :ctrl+d #(rs/emit! (uds/duplicate-selected))
-   :ctrl+c #(rs/emit! (dw/copy-to-clipboard))
-   :ctrl+v #(rs/emit! (dw/paste-from-clipboard))
+  {:shift+g #(st/emit! (dw/toggle-flag :grid))
+   :ctrl+g #(st/emit! (uds/group-selected))
+   :ctrl+shift+g #(st/emit! (uds/degroup-selected))
+   :ctrl+shift+m #(st/emit! (dw/toggle-flag :sitemap))
+   :ctrl+shift+f #(st/emit! (dw/toggle-flag :drawtools))
+   :ctrl+shift+i #(st/emit! (dw/toggle-flag :icons))
+   :ctrl+shift+l #(st/emit! (dw/toggle-flag :layers))
+   :ctrl+0 #(st/emit! (dw/reset-zoom))
+   :ctrl+r #(st/emit! (dw/toggle-flag :ruler))
+   :ctrl+d #(st/emit! (uds/duplicate-selected))
+   :ctrl+c #(st/emit! (dw/copy-to-clipboard))
+   :ctrl+v #(st/emit! (dw/paste-from-clipboard))
    :ctrl+shift+v #(udl/open! :clipboard)
-   :ctrl+z #(rs/emit! (udu/undo))
-   :ctrl+shift+z #(rs/emit! (udu/redo))
-   :ctrl+b #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-rect+))
-   :ctrl+e #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-circle+))
-   :ctrl+t #(rs/emit! (dw/select-for-drawing wsd/+draw-tool-text+))
-   :esc #(rs/emit! (uds/deselect-all))
-   :delete #(rs/emit! (uds/delete-selected))
-   :ctrl+up #(rs/emit! (uds/move-selected-layer :up))
-   :ctrl+down #(rs/emit! (uds/move-selected-layer :down))
-   :ctrl+shift+up #(rs/emit! (uds/move-selected-layer :top))
-   :ctrl+shift+down #(rs/emit! (uds/move-selected-layer :bottom))
+   :ctrl+z #(st/emit! (udu/undo))
+   :ctrl+shift+z #(st/emit! (udu/redo))
+   :ctrl+b #(st/emit! (dw/select-for-drawing wsd/+draw-tool-rect+))
+   :ctrl+e #(st/emit! (dw/select-for-drawing wsd/+draw-tool-circle+))
+   :ctrl+t #(st/emit! (dw/select-for-drawing wsd/+draw-tool-text+))
+   :esc #(st/emit! (uds/deselect-all))
+   :delete #(st/emit! (uds/delete-selected))
+   :ctrl+up #(st/emit! (uds/move-selected-layer :up))
+   :ctrl+down #(st/emit! (uds/move-selected-layer :down))
+   :ctrl+shift+up #(st/emit! (uds/move-selected-layer :top))
+   :ctrl+shift+down #(st/emit! (uds/move-selected-layer :bottom))
    :shift+up #(move-selected :up :fast)
    :shift+down #(move-selected :down :fast)
    :shift+right #(move-selected :right :fast)
@@ -90,8 +91,8 @@
 (defn- move-selected
   [dir speed]
   (case speed
-    :std (rs/emit! (uds/move-selected dir 1))
-    :fast (rs/emit! (uds/move-selected dir 20))))
+    :std (st/emit! (uds/move-selected dir 1))
+    :fast (st/emit! (uds/move-selected dir 20))))
 
 ;; --- Mixin
 

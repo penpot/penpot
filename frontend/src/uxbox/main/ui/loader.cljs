@@ -7,20 +7,10 @@
 (ns uxbox.main.ui.loader
   (:require [sablono.core :refer-macros [html]]
             [rum.core :as rum]
-            [uxbox.main.state :as st]
-            [uxbox.util.rstore :as rs]
+            [uxbox.store :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.shapes]))
-
-;; --- Error Handling
-
-(defn- on-error
-  [error]
-  ;; Disable loader in case of error.
-  (reset! st/loader false))
-
-(rs/add-error-watcher :loader on-error)
 
 ;; --- Component
 

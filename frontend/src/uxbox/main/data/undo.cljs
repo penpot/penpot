@@ -7,9 +7,9 @@
 (ns uxbox.main.data.undo
   (:require #_[cljs.pprint :as pp]
             [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.main.data.pages :as udp]
-            [uxbox.main.state :as st]))
+            [uxbox.store :as st]))
 
 ;; --- Watch Page Changes
 
@@ -25,26 +25,26 @@
   reacts on them emiting an other event that just
   persists the state of the page in an undo stack."
   [id]
-  (rs/emit! (initialize-undo-for-page id))
-  (as-> rs/stream $
+  (st/emit! (initialize-undo-for-page id))
+  (as-> st/store $
     (rx/filter #(satisfies? udp/IPageUpdate %) $)
     (rx/filter #(not (undo? %)) $)
     (rx/filter #(not (redo? %)) $)
     (rx/debounce 500 $)
-    (rx/on-next $ #(rs/emit! (save-undo-entry id)))))
+    (rx/on-next $ #(st/emit! (save-undo-entry id)))))
 
 ;; -- Save Undo Entry
 
 (defrecord SaveUndoEntry [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [page (udp/pack-page state id)]
       (-> state
           (update-in [:undo id :stack] #(cons (:data page) %))
           (assoc-in [:undo id :selected] 0)))))
 
-  ;; rs/EffectEvent
-  ;; (-apply-effect [_ state]
+  ;; ptk/EffectEvent
+  ;; (effect [_ state]
   ;;   (let [undo (get-in state [:undo id])]
   ;;     (println (pr-str undo)))))
 
@@ -59,8 +59,8 @@
 ;; --- Initialize Undo (For page)
 
 (defrecord InitializeUndoForPage [id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [initialized? (get-in state [:undo id])
           page-loaded? (get-in state [:pages id])]
       (cond
@@ -84,8 +84,8 @@
 
 (defrecord Undo []
   udp/IPageUpdate
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [page-id (get-in state [:workspace :page])
           undo (get-in state [:undo page-id])
           stack (:stack undo)
@@ -117,8 +117,8 @@
 
 (defrecord Redo []
   udp/IPageUpdate
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [page-id (get-in state [:workspace :page])
           undo (get-in state [:undo page-id])
           stack (:stack undo)

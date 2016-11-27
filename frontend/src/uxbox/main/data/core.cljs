@@ -7,7 +7,7 @@
 (ns uxbox.main.data.core
   "Worker related api and initialization events."
   (:require [beicon.core :as rx]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.workers :as uw]
             [uxbox.main.constants :as c]))
 

@@ -9,10 +9,10 @@
             [beicon.core :as rx]
             [uxbox.util.datetime :as dt]
             [uxbox.util.uuid :as uuid]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.router :as r]
             [uxbox.util.color :as color]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.repo :as rp]))
 
 ;; --- Initialize
@@ -22,8 +22,8 @@
 (declare collections-fetched?)
 
 (defrecord Initialize [type id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [type (or type :own)
           data {:type type
                 :id id
@@ -32,8 +32,8 @@
           (assoc-in [:dashboard :colors] data)
           (assoc-in [:dashboard :section] :dashboard/colors))))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (fetch-collections))))
 
 (defn initialize
@@ -43,8 +43,8 @@
 ;; --- Select a Collection
 
 (defrecord SelectCollection [type id]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (rx/of (r/navigate :dashboard/colors
                        {:type type :id id}))))
 
@@ -58,8 +58,8 @@
 ;; --- Collections Fetched
 
 (defrecord CollectionsFetched [data]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [{:keys [version value]} data]
       (-> state
           (update :colors-collections merge value)
@@ -77,8 +77,8 @@
 ;; --- Fetch Collections
 
 (defrecord FetchCollections []
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (->> (rp/req :fetch/kvstore "color-collections")
          (rx/map :payload)
          (rx/map collections-fetched))))
@@ -90,8 +90,8 @@
 ;; --- Create Collection
 
 (defrecord CreateCollection [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [item {:name "Unnamed collection"
                 :id id
                 :created-at (dt/now)
@@ -99,8 +99,8 @@
                 :colors #{}}]
       (assoc-in state [:colors-collections id] item)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (rx/of (persist-collections)
            (select-collection :own id))))
 
@@ -112,8 +112,8 @@
 ;; --- Persist Collections
 
 (defrecord PersistCollections []
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [builtin? #(= :builtin (:type %))
           xform (remove (comp builtin? second))
           version (or (get state ::version) -1)
@@ -133,12 +133,12 @@
 ;; --- Rename Collection
 
 (defrecord RenameCollection [id name]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:colors-collections id :name] name))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (persist-collections))))
 
 (defn rename-collection
@@ -148,12 +148,12 @@
 ;; --- Delete Collection
 
 (defrecord DeleteCollection [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update state :colors-collections dissoc id))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [type (get-in state [:dashboard :colors :type])]
       (rx/of (persist-collections)
              (select-collection type)))))
@@ -165,13 +165,13 @@
 ;; --- Replace Color
 
 (defrecord ReplaceColor [id from to]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [replacer #(-> (disj % from) (conj to))]
       (update-in state [:colors-collections id :colors] (fnil replacer #{}))))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (persist-collections))))
 
 (defn replace-color
@@ -182,13 +182,13 @@
 ;; --- Remove Color
 
 (defrecord RemoveColors [id colors]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:colors-collections id :colors]
                #(set/difference % colors)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (persist-collections))))
 
 (defn remove-colors
@@ -199,18 +199,18 @@
 ;; --- Select color
 
 (defrecord SelectColor [color]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:dashboard :colors :selected] conj color)))
 
 (defrecord DeselectColor [color]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:dashboard :colors :selected] disj color)))
 
 (defrecord ToggleColorSelection [color]
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [selected (get-in state [:dashboard :colors :selected])]
       (rx/of
        (if (selected color)
@@ -225,13 +225,13 @@
 ;; --- Copy Selected Icon
 
 (defrecord CopySelected [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [selected (get-in state [:dashboard :colors :selected])]
       (update-in state [:colors-collections id :colors] set/union selected)))
 
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (rx/of (persist-collections))))
 
 (defn copy-selected
@@ -242,15 +242,15 @@
 ;; --- Move Selected Icon
 
 (defrecord MoveSelected [from to]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [selected (get-in state [:dashboard :colors :selected])]
       (-> state
           (update-in [:colors-collections from :colors] set/difference selected)
           (update-in [:colors-collections to :colors] set/union selected))))
 
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (rx/of (persist-collections))))
 
 (defn move-selected
@@ -262,8 +262,8 @@
 ;; --- Delete Selected Colors
 
 (defrecord DeleteSelectedColors []
-  rs/WatchEvent
-  (-apply-watch [_ state stream]
+  ptk/WatchEvent
+  (watch [_ state stream]
     (let [{:keys [id selected]} (get-in state [:dashboard :colors])]
       (rx/of (remove-colors id selected)
              #(assoc-in % [:dashboard :colors :selected] #{})))))

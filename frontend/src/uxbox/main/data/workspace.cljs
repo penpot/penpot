@@ -9,12 +9,12 @@
             [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
             [uxbox.main.constants :as c]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.spec :as us]
             [uxbox.util.forms :as sc]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.workers :as uw]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.pages :as udp]
@@ -40,8 +40,8 @@
 (declare initialize-alignment-index)
 
 (defrecord InitializeWorkspace [project page]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (if (:workspace state)
       (update state :workspace merge
               {:project project
@@ -56,8 +56,8 @@
               :selected #{}
               :drawing nil})))
 
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [page-id page
           page (get-in state [:pages page-id])]
 
@@ -79,11 +79,11 @@
         (udh/fetch-page-history page-id)
         (udh/fetch-pinned-page-history page-id)))))
 
-  rs/EffectEvent
-  (-apply-effect [_ state]
+  ptk/EffectEvent
+  (effect [_ state stream]
     ;; Optimistic prefetch of projects if them are not already fetched
     (when-not (seq (:projects state))
-      (rs/emit! (dp/fetch-projects)))))
+      (st/emit! (dp/fetch-projects)))))
 
 (defn initialize
   "Initialize the workspace state."
@@ -96,8 +96,8 @@
   "Toggle the enabled flag of the specified tool."
   [key]
   (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [flags (get-in state [:workspace :flags])]
         (if (contains? flags key)
           (assoc-in state [:workspace :flags] (disj flags key))
@@ -107,8 +107,8 @@
   "Mark a shape selected for drawing in the canvas."
   [shape]
   (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (let [current (get-in state [:workspace :drawing])]
         (if (or (nil? shape)
                 (= shape current))
@@ -118,8 +118,8 @@
 ;; --- Activate Workspace Flag
 
 (defrecord ActivateFlag [flag]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update-in state [:workspace :flags] conj flag)))
 
 (defn activate-flag
@@ -129,8 +129,8 @@
 ;; --- Copy to Clipboard
 
 (defrecord CopyToClipboard []
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [selected (get-in state [:workspace :selected])
           item {:id (uuid/random)
                 :created-at (dt/now)
@@ -150,8 +150,8 @@
 ;; --- Paste from Clipboard
 
 (defrecord PasteFromClipboard [id]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [page (get-in state [:workspace :page])
           selected (if (nil? id)
                      (first (:clipboard state))
@@ -168,8 +168,8 @@
 ;; --- Increase Zoom
 
 (defrecord IncreaseZoom []
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [increase #(nth zoom-levels
                          (+ (index-of zoom-levels %) 1)
                          (last zoom-levels))]
@@ -182,8 +182,8 @@
 ;; --- Decrease Zoom
 
 (defrecord DecreaseZoom []
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (let [decrease #(nth zoom-levels
                          (- (index-of zoom-levels %) 1)
                          (first zoom-levels))]
@@ -196,8 +196,8 @@
 ;; --- Reset Zoom
 
 (defrecord ResetZoom []
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (assoc-in state [:workspace :zoom] 1)))
 
 (defn reset-zoom
@@ -207,8 +207,8 @@
 ;; --- Initialize Alignment Index
 
 (defrecord InitializeAlignmentIndex [id]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (let [page (get-in state [:pages id])
           opts (:options page)
           message {:cmd :grid-init
@@ -231,8 +231,8 @@
 ;; Is a workspace aware wrapper over uxbox.data.pages/UpdateMetadata event.
 
 (defrecord UpdateMetadata [id metadata]
-  rs/WatchEvent
-  (-apply-watch [_ state s]
+  ptk/WatchEvent
+  (watch [_ state s]
     (rx/of (udp/update-metadata id metadata)
            (initialize-alignment-index id))))
 

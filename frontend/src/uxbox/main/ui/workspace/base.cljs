@@ -8,8 +8,8 @@
 (ns uxbox.main.ui.workspace.base
   (:require [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]

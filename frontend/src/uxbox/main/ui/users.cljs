@@ -10,8 +10,8 @@
             [lentes.core :as l]
             [rum.core :as rum]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as s]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.data.auth :as da]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
@@ -38,7 +38,7 @@
       [:li {:on-click #(r/go :settings/profile)}
        i/user
        [:span "Your account"]]
-      [:li {:on-click #(rs/emit! (da/logout))}
+      [:li {:on-click #(st/emit! (da/logout))}
        i/exit
        [:span "Exit"]]])))
 
@@ -52,7 +52,7 @@
 
 (def profile-ref
   (as-> (l/key :profile) $
-    (l/derive $ s/state)))
+    (l/derive $ st/state)))
 
 (defn user-render
   [own]

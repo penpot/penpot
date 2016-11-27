@@ -6,12 +6,12 @@
 
 (ns uxbox.view.ui.viewer.interactions
   (:require [uxbox.util.dom :as dom]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.timers :as ts]
             [uxbox.main.geom :as geom]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.view.data.viewer :as dv]
             [vendor.snapsvg])
   ;; Documentation about available events:
@@ -145,7 +145,7 @@
 
 (defn- run-gotopage-interaction
   [{:keys [page]}]
-  (rs/emit! (dv/select-page page)))
+  (st/emit! (dv/select-page page)))
 
 (defn- run-color-interaction
   [{:keys [element fill-color stroke-color direction easing delay duration]}]

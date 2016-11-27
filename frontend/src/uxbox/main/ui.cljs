@@ -10,7 +10,7 @@
             [lentes.core :as l]
             [cuerdas.core :as str]
             [bide.core :as bc]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.users :as udu]
             [uxbox.main.data.auth :refer [logout]]
@@ -24,7 +24,7 @@
             [uxbox.main.ui.workspace :refer (workspace)]
             [uxbox.util.timers :as ts]
             [uxbox.util.router :as rt]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.data :refer (parse-int uuid-str?)]
             [uxbox.util.dom :as dom]
@@ -52,12 +52,13 @@
   "A default error handler."
   [{:keys [status] :as error}]
   (js/console.log "on-error:" (pr-str error))
+  (reset! st/loader false)
   (cond
     ;; Unauthorized or Auth timeout
     (and (:status error)
          (or (= (:status error) 403)
              (= (:status error) 419)))
-    (rs/emit! (logout))
+    (st/emit! (logout))
 
     ;; Conflict
     (= status 412)
@@ -75,14 +76,14 @@
       (dmsg/error! (tr "errors.generic"))
       (js/console.error "Stack:" (.-stack error)))))
 
-(rs/add-error-watcher :ui on-error)
+(set! st/*on-error* on-error)
 
 ;; --- Main App (Component)
 
 (defn app-will-mount
   [own]
   (when @st/auth-ref
-    (rs/emit! (udu/fetch-profile)))
+    (st/emit! (udu/fetch-profile)))
   own)
 
 (mx/defc app

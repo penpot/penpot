@@ -6,7 +6,7 @@
 
 (ns uxbox.main.ui.shapes.group
   (:require [lentes.core :as l]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]

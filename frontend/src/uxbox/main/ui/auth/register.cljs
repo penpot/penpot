@@ -8,11 +8,11 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.util.router :as rt]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.forms :as forms]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.main.data.auth :as uda]
             [uxbox.main.data.messages :as udm]
             [uxbox.main.ui.icons :as i]
@@ -49,7 +49,7 @@
                 (set-error! :username "Username already exists")))
             (on-submit [event]
               (dom/prevent-default event)
-              (rs/emit! (uda/register data on-error)))]
+              (st/emit! (uda/register data on-error)))]
       [:form {:on-submit on-submit}
        [:div.login-content
         [:input.input-text

@@ -8,9 +8,9 @@
 (ns uxbox.main.data.dashboard
   (:require [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.util.router :as r]
-            [uxbox.main.state :as st]
+            [uxbox.store :as st]
             [uxbox.util.forms :as sc]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.projects :as dp]
@@ -21,8 +21,8 @@
 ;; --- Events
 
 (defrecord InitializeDashboard [section]
-  rs/UpdateEvent
-  (-apply-update [_ state]
+  ptk/UpdateEvent
+  (update [_ state]
     (update state :dashboard assoc
             :section section
             :collection-type :builtin
@@ -41,8 +41,8 @@
               (let [colls (sort-by :id (vals (:colors-by-id state)))]
                 (assoc-in state [:dashboard :collection-id] (:id (first colls))))))]
     (reify
-      rs/UpdateEvent
-      (-apply-update [_ state]
+      ptk/UpdateEvent
+      (update [_ state]
         (as-> state $
           (assoc-in $ [:dashboard :collection-type] type)
           (select-first $))))))
@@ -50,6 +50,6 @@
 (defn set-collection
   [id]
   (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
+    ptk/UpdateEvent
+    (update [_ state]
       (assoc-in state [:dashboard :collection-id] id))))

@@ -8,8 +8,8 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.util.router :as rt]
-            [uxbox.main.state :as st]
-            [uxbox.util.rstore :as rs]
+            [uxbox.store :as st]
+            [potok.core :as ptk]
             [uxbox.util.forms :as forms]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
@@ -38,7 +38,7 @@
                 (set-value! field value)))
             (on-submit [event]
               (dom/prevent-default event)
-              (rs/emit! (uda/recovery data)
+              (st/emit! (uda/recovery data)
                         (forms/clear :recovery)))]
       [:form {:on-submit on-submit}
        [:div.login-content
@@ -62,7 +62,7 @@
 (defn- recovery-page-will-mount
   [own]
   (let [[token] (:rum/args own)]
-    (rs/emit! (uda/validate-recovery-token token))
+    (st/emit! (uda/validate-recovery-token token))
     own))
 
 (mx/defc recovery-page

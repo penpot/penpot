@@ -10,7 +10,7 @@
             [rum.core :as rum]
             [cuerdas.core :as str]
             [uxbox.util.router :as r]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]

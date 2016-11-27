@@ -6,7 +6,8 @@
 
 (ns uxbox.main.ui.shapes.path
   (:require [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rstore :as rs]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.data.shapes :as uds]
@@ -25,7 +26,7 @@
               (common/on-mouse-down event shape selected))
             (on-double-click [event]
               (when selected?
-                (rs/emit! (uds/start-edition-mode id))))]
+                (st/emit! (uds/start-edition-mode id))))]
       [:g.shape {:class (when selected? "selected")
                  :on-double-click on-double-click
                  :on-mouse-down on-mouse-down}

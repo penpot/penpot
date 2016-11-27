@@ -9,8 +9,8 @@
             [lentes.core :as l]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.http :as http]
-            [uxbox.util.rstore :as rs]
-            [uxbox.main.state :as st]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.data.images :as udi]
@@ -31,7 +31,7 @@
   [own]
   (let [{:keys [image]} (first (:rum/args own))]
     (println (:rum/args own))
-    (rs/emit! (udi/fetch-image image))
+    (st/emit! (udi/fetch-image image))
     own))
 
 (mx/defcs image-component
