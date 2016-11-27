@@ -9,7 +9,7 @@
 
   :profiles {:dev {:source-paths ["dev"]}}
 
-  :dependencies [[org.clojure/clojure "1.9.0-alpha13" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha14" :scope "provided"]
                  [org.clojure/clojurescript "1.9.293" :scope "provided"]
 
                  ;; Build
@@ -22,6 +22,7 @@
                  [cljsjs/react-dom "15.4.0-0"]
                  [cljsjs/react-dom-server "15.4.0-0"]
                  [cljsjs/moment "2.15.2-3"]
+                 [funcool/potok "1.0.0"]
                  [funcool/struct "1.0.0"]
                  [funcool/lentes "1.2.0"]
                  [funcool/beicon "2.5.0"]
