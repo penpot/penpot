@@ -9,6 +9,29 @@ function kill_container {
     fi
 }
 
+function start_local {
+    tmux -2 new-session -d -s uxbox
+
+    tmux new-window -t uxbox:1 -n 'figwheel'
+    tmux select-window -t uxbox:1
+    tmux send-keys -t uxbox 'cd frontend' enter
+    tmux send-keys -t uxbox 'npm run figwheel' enter
+
+    tmux new-window -t uxbox:2 -n 'backend'
+    tmux select-window -t uxbox:2
+    tmux send-keys -t uxbox 'cd backend' enter
+    # tmux send-keys -t uxbox 'bash ./scripts/fixtures.sh' enter
+    # tmux send-keys -t uxbox 'bash ./scripts/run.sh' enter
+
+    tmux rename-window -t uxbox:0 'gulp'
+    tmux select-window -t uxbox:0
+    tmux send-keys -t uxbox 'cd frontend' enter
+    tmux send-keys -t uxbox 'if [ ! -e ./node_modules ]; then npm install; fi' enter
+    tmux send-keys -t uxbox 'npm run watch' enter
+
+    tmux -2 attach-session -t uxbox
+}
+
 function build_image {
     kill_container
     sudo docker build --rm=true -t $IMGNAME:$REV docker/
@@ -38,6 +61,10 @@ case $1 in
         ;;
     run)
         run_image
+        ;;
+
+    start)
+        start_local
         ;;
 
     init)
