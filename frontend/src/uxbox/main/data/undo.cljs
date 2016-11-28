@@ -19,19 +19,23 @@
 (declare redo?)
 (declare initialize-undo-for-page)
 
+(deftype WatchPageChanges [id]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [stopper (->> stream
+                       (rx/filter #(= % ::udp/stop-page-watcher))
+                       (rx/take 1))]
+      (->> stream
+           (rx/take-until stopper)
+           (rx/filter #(satisfies? udp/IPageUpdate %))
+           (rx/filter #(not (undo? %)))
+           (rx/filter #(not (redo? %)))
+           (rx/debounce 500)
+           (rx/map #(save-undo-entry id))))))
+
 (defn watch-page-changes
-  "A function that starts watching for `IPageUpdate`
-  events emited to the global event stream and just
-  reacts on them emiting an other event that just
-  persists the state of the page in an undo stack."
   [id]
-  (st/emit! (initialize-undo-for-page id))
-  (as-> st/store $
-    (rx/filter #(satisfies? udp/IPageUpdate %) $)
-    (rx/filter #(not (undo? %)) $)
-    (rx/filter #(not (redo? %)) $)
-    (rx/debounce 500 $)
-    (rx/on-next $ #(st/emit! (save-undo-entry id)))))
+  (WatchPageChanges. id))
 
 ;; -- Save Undo Entry
 

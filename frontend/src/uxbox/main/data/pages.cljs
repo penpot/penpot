@@ -47,6 +47,10 @@
   "A marker protocol for mark events that alters the
   page and is subject to perform a backend synchronization.")
 
+(defprotocol IMetadataUpdate
+  "A marker protocol for mark events that alters the
+  page and is subject to perform a backend synchronization.")
+
 ;; --- Helpers
 
 (defn pack-page
@@ -200,21 +204,6 @@
   [id]
   (PersistPage. id))
 
-(defn watch-page-changes
-  "A function that starts watching for `IPageUpdate`
-  events emited to the global event stream and just
-  reacts emiting an other event in order to perform
-  the page persistence.
-
-  The main behavior debounces the posible emmited
-  events with 1sec of delay allowing batch updates
-  on fastly performed events."
-  [id]
-  (as-> st/store $
-    (rx/filter #(satisfies? IPageUpdate %) $)
-    (rx/debounce 1000 $)
-    (rx/on-next $ #(st/emit! (persist-page id)))))
-
 ;; --- Page Metadata Persisted
 
 (defrecord MetadataPersisted [id data]
@@ -253,13 +242,10 @@
 ;; --- Update Page Options
 
 (defrecord UpdateMetadata [id metadata]
+  IMetadataUpdate
   ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:pages id :metadata] metadata))
-
-  ptk/WatchEvent
-  (watch [this state s]
-    (rx/of (persist-metadata id))))
+  (update [this state]
+    (assoc-in state [:pages id :metadata] metadata)))
 
 (defn update-metadata
   [id metadata]
@@ -271,7 +257,6 @@
 (defrecord UpdatePage [id name width height layout]
   ptk/UpdateEvent
   (update [this state]
-    (println "update-page" this)
     (-> state
         (assoc-in [:pages id :name] name)
         (assoc-in [:pages id :metadata :width] width)
@@ -305,3 +290,27 @@
 (defn delete-page
   ([id] (DeletePage. id (constantly nil)))
   ([id callback] (DeletePage. id callback)))
+
+;; --- Watch Page Changes
+
+(deftype WatchPageChanges [id]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [stopper (->> stream
+                       (rx/filter #(= % ::stop-page-watcher))
+                       (rx/take 1))]
+      (rx/merge
+       (->> stream
+            (rx/take-until stopper)
+            (rx/filter #(satisfies? IPageUpdate %))
+            (rx/debounce 1000)
+            (rx/map #(persist-page id)))
+       (->> stream
+            (rx/take-until stopper)
+            (rx/filter #(satisfies? IMetadataUpdate %))
+            (rx/debounce 1000)
+            (rx/map #(persist-metadata id)))))))
+
+(defn watch-page-changes
+  [id]
+  (WatchPageChanges. id))

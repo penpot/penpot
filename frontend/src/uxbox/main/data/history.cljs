@@ -25,20 +25,23 @@
 (declare fetch-page-history)
 (declare fetch-pinned-page-history)
 
+(deftype WatchPageChanges [id]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (println "history:watch-page-changes" id)
+    (let [stopper (->> stream
+                       (rx/filter #(= % ::udp/stop-page-watcher))
+                       (rx/take 1))]
+      (->> stream
+           (rx/take-until stopper)
+           (rx/filter udp/page-persisted?)
+           (rx/debounce 500)
+           (rx/flat-map #(rx/of (fetch-page-history id)
+                                (fetch-pinned-page-history id)))))))
+
 (defn watch-page-changes
-  "A function that starts watching for `IPageUpdate`
-  events emited to the global event stream and just
-  reacts on them emiting an other event that just
-  persists the state of the page in an undo stack."
-  []
-  (letfn [(on-value [id]
-            (st/emit! (fetch-page-history id)
-                      (fetch-pinned-page-history id)))]
-    (as-> st/store $
-      (rx/filter udp/page-persisted? $)
-      (rx/debounce 500 $)
-      (rx/map (comp :id :data) $)
-      (rx/on-value $ on-value))))
+  [id]
+  (WatchPageChanges. id))
 
 ;; --- Pinned Page History Fetched
 

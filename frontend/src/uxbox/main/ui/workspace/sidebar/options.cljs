@@ -107,7 +107,6 @@
   (let [menus (get +menus-map+ (:type shape ::page))
         contained-in? (into #{} menus)
         active (:menu @local (first menus))]
-    (println "options" active)
     [:div
      [:ul.element-icons
       (for [menu-id (get +menus-map+ (:type shape ::page))

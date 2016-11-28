@@ -47,49 +47,35 @@
   [own]
   (let [[projectid pageid] (:rum/args own)
         sub1 (scroll/watch-scroll-interactions own)
-        sub2 (udp/watch-page-changes pageid)
-        sub3 (udu/watch-page-changes pageid)
-        sub4 (udh/watch-page-changes)
         dom (mx/ref-node own "workspace-canvas")]
+
+    (st/emit! (udp/watch-page-changes pageid)
+              (udu/watch-page-changes pageid)
+              (udh/watch-page-changes pageid))
 
     ;; Set initial scroll position
     (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-ref))
     (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-ref))
 
-    (assoc own
-           ::sub1 sub1
-           ::sub2 sub2
-           ::sub3 sub3
-           ::sub4 sub4)))
+    (assoc own ::sub1 sub1)))
 
 (defn- workspace-will-unmount
   [own]
-  ;; Close subscriptions
+  (st/emit! ::udp/stop-page-watcher)
   (.close (::sub1 own))
-  (.close (::sub2 own))
-  (.close (::sub3 own))
-  (.close (::sub4 own))
-  (dissoc own ::sub1 ::sub2 ::sub3 ::sub4))
+  (dissoc own ::sub1))
 
 (defn- workspace-did-remount
   [old-state state]
   (let [[projectid pageid] (:rum/args state)
         [oldprojectid oldpageid] (:rum/args old-state)]
-    (if (not= pageid oldpageid)
-      (do
-        (st/emit! (dw/initialize projectid pageid))
-        (.close (::sub2 old-state))
-        (.close (::sub3 old-state))
-        (assoc state
-               ::sub1 (::sub1 old-state)
-               ::sub2 (udp/watch-page-changes pageid)
-               ::sub3 (udu/watch-page-changes pageid)
-               ::sub4 (::sub4 old-state)))
-      (assoc state
-             ::sub1 (::sub1 old-state)
-             ::sub2 (::sub2 old-state)
-             ::sub3 (::sub3 old-state)
-             ::sub4 (::sub4 old-state)))))
+    (when (not= pageid oldpageid)
+      (st/emit! (dw/initialize projectid pageid)
+                ::udp/stop-page-watcher
+                (udp/watch-page-changes pageid)
+                (udu/watch-page-changes pageid)
+                (udh/watch-page-changes pageid)))
+    state))
 
 (defn- on-scroll
   [event]
