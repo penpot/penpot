@@ -32,12 +32,13 @@
 ;; --- Background
 
 (mx/defc background
-  []
+  {:mixins [mx/static]}
+  [{:keys [background] :as metadata}]
   [:rect
    {:x 0 :y 0
     :width "100%"
     :height "100%"
-    :fill "white"}])
+    :fill (or background "#000000")}])
 
 ;; --- Canvas
 
@@ -53,7 +54,7 @@
                        :ref (str "canvas" id)
                        :width width
                        :height height}
-     (background)
+     (background metadata)
      [:svg.page-layout
       [:g.main {}
        (for [item (reverse (:shapes page))]

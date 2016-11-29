@@ -34,9 +34,6 @@
                   value (parse-float value 1)
                   value (/ value 10000)]
               (change-stroke {:opacity value})))
-          (on-color-change [event]
-            (let [value (dom/event->value event)]
-              (change-stroke {:color value})))
           (on-stroke-style-change [event]
             (let [value (dom/event->value event)
                   value (read-string value)]
@@ -48,7 +45,7 @@
                         :shape (:id shape)
                         :attr :stroke
                         :transparent? true}]
-              (udl/open! :workspace/colorpicker opts)))]
+              (udl/open! :workspace/shape-colorpicker opts)))]
     (let [local (:rum/local own)]
       (html
        [:div.element-set {:key (str (:id menu))}

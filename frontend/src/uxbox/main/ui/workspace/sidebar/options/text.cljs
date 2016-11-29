@@ -18,8 +18,6 @@
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.ui.workspace.colorpicker :refer (colorpicker)]
-            [uxbox.main.ui.workspace.recent-colors :refer (recent-colors)]
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]

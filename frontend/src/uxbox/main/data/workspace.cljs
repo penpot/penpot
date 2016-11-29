@@ -210,7 +210,7 @@
   ptk/WatchEvent
   (watch [_ state s]
     (let [page (get-in state [:pages id])
-          opts (:options page)
+          opts (:metadata page)
           message {:cmd :grid-init
                    :width c/viewport-width
                    :height c/viewport-height

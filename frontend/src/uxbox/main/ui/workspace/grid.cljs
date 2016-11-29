@@ -6,9 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.grid
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [cuerdas.core :as str]
+  (:require [cuerdas.core :as str]
             [uxbox.main.constants :as c]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.workspace.base :as wb]))
@@ -18,9 +16,10 @@
 (declare vertical-line)
 (declare horizontal-line)
 
-(defn- grid-render
+(mx/defcs grid
+  {:mixins [mx/static mx/reactive]}
   [own]
-  (let [options (:options (mx/react wb/page-ref))
+  (let [options (:metadata (mx/react wb/page-ref))
         color (:grid-color options "#cccccc")
         width c/viewport-width
         height c/viewport-height
@@ -35,15 +34,8 @@
         path (as-> [] $
                (reduce (partial vertical-line height) $ x-ticks)
                (reduce (partial horizontal-line width) $ y-ticks))]
-    (html
-     [:g.grid {:style {:pointer-events "none"}}
-      [:path {:d (str/join " " path) :stroke color :opacity "0.3"}]])))
-
-(def grid
-  (mx/component
-   {:render grid-render
-    :name "grid"
-    :mixins [mx/static mx/reactive]}))
+    [:g.grid {:style {:pointer-events "none"}}
+     [:path {:d (str/join " " path) :stroke color :opacity "0.3"}]]))
 
 ;; --- Helpers
 

@@ -27,6 +27,8 @@
 (s/def ::grid-x-axis number?)
 (s/def ::grid-y-axis number?)
 (s/def ::grid-color us/color?)
+(s/def ::background us/color?)
+(s/def ::background-opacity number?)
 (s/def ::grid-alignment boolean?)
 (s/def ::width number?)
 (s/def ::height number?)
@@ -38,8 +40,9 @@
                    ::grid-x-axis
                    ::grid-color
                    ::grid-alignment
+                   ::background
+                   ::background-opacity
                    ::layout]))
-
 
 ;; --- Protocols
 

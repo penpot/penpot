@@ -17,8 +17,6 @@
    [uxbox.main.ui.workspace.base :as wb]
    [uxbox.main.ui.icons :as i]
    [uxbox.util.mixins :as mx :include-macros true]
-   [uxbox.main.ui.workspace.colorpicker :refer (colorpicker)]
-   [uxbox.main.ui.workspace.recent-colors :refer (recent-colors)]
    [uxbox.main.ui.workspace.sidebar.options.icon-measures :as options-iconm]
    [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
    [uxbox.main.ui.workspace.sidebar.options.rect-measures :as options-rectm]

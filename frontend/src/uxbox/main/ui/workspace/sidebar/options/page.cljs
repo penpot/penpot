@@ -11,10 +11,10 @@
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.data.pages :as udp]
+            [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.workspace.base :refer [page-ref]]
-            [uxbox.main.ui.workspace.colorpicker :refer [colorpicker]]
-            [uxbox.main.ui.workspace.recent-colors :refer [recent-colors]]
+            [uxbox.main.ui.workspace.colorpicker]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer [parse-int]]
             [uxbox.util.dom :as dom]))
@@ -22,8 +22,8 @@
 (mx/defcs measures-menu
   {:mixins [mx/static mx/reactive]}
   [own menu]
-  (let [{:keys [id] :as page} (mx/react page-ref)
-        {:keys [width height] :as metadata} (:metadata page)]
+  (let [{:keys [id metadata] :as page} (mx/react page-ref)
+        {:keys [width height background] :as metadata} metadata]
     (letfn [(on-width-change []
               (when-let [value (-> (mx/ref-node own "width")
                                    (dom/get-value)
@@ -37,7 +37,16 @@
                                    (parse-int nil))]
                 (->> (assoc metadata :height value)
                      (udp/update-metadata id)
-                     (st/emit!))))]
+                     (st/emit!))))
+          (show-color-picker [event]
+            (println "show-color-picker")
+            (let [x (.-clientX event)
+                  y (.-clientY event)
+                  opts {:x x :y y
+                        :default "#ffffff"
+                        :transparent? true
+                        :attr :background}]
+              (udl/open! :workspace/page-colorpicker opts)))]
       [:div.element-set
        [:div.element-set-title (:name menu)]
        [:div.element-set-content
@@ -59,29 +68,77 @@
             :placeholder "height"}]]]
         [:span "Background color"]
         [:div.row-flex.color-data
-         [:span.color-th {:style {:background-color "#d2d2d2"}}]
+         [:span.color-th
+          {:style {:background-color (or background "#ffffff")}
+           :on-click show-color-picker}]
          [:div.color-info
-          [:span "#D2D2D2"]]]]])))
+          [:span (or background "#ffffff")]]]]])))
 
-(mx/defc grid-options-menu
-  {:mixins [mx/static]}
-  [menu]
-  [:div.element-set
-   [:div.element-set-title (:name menu)]
-   [:div.element-set-content
-    [:span "Size"]
-    [:div.row-flex
-     [:div.input-element.pixels
-      [:input.input-text {:type "number" :placeholder "x"}]]
-     [:div.input-element.pixels
-      [:input.input-text {:type "number" :placeholder "y"}]]]
-    [:span "Color"]
-    [:div.row-flex.color-data
-     [:span.color-th {:style {:background-color "#d2d2d2"}}]
-     [:div.color-info
-      [:span "#D2D2D2"]]]
-    [:span "Magnet option"]
-    [:div.row-flex
-     [:div.input-checkbox.check-primary
-      [:input {:type "checkbox" :id "magnet" :value "Yes"}]
-      [:label {:for "magnet"} "Activate magnet"]]]]])
+(mx/defcs grid-options-menu
+  {:mixins [mx/static mx/reactive]}
+  [own menu]
+  (let [{:keys [id metadata] :as page} (mx/react page-ref)]
+    (letfn [(on-x-change []
+              (when-let [value (-> (mx/ref-node own "x-axis")
+                                   (dom/get-value)
+                                   (parse-int nil))]
+                (->> (assoc metadata :grid-x-axis value)
+                     (udp/update-metadata id)
+                     (st/emit!))))
+            (on-y-change []
+              (when-let [value (-> (mx/ref-node own "y-axis")
+                                   (dom/get-value)
+                                   (parse-int nil))]
+                (->> (assoc metadata :grid-y-axis value)
+                     (udp/update-metadata id)
+                     (st/emit!))))
+            (on-magnet-change []
+              (let [checked? (dom/checked? (mx/ref-node own "magnet"))]
+                (->> (assoc metadata :grid-alignment checked?)
+                     (udp/update-metadata id)
+                     (st/emit!))))
+          (show-color-picker [event]
+            (let [x (.-clientX event)
+                  y (.-clientY event)
+                  opts {:x x :y y
+                        :transparent? true
+                        :default "#cccccc"
+                        :attr :grid-color}]
+              (udl/open! :workspace/page-colorpicker opts)))]
+    [:div.element-set
+     [:div.element-set-title (:name menu)]
+     [:div.element-set-content
+      [:span "Size"]
+      [:div.row-flex
+       [:div.input-element.pixels
+        [:input.input-text
+         {:type "number"
+          :ref "x-axis"
+          :value (:grid-x-axis metadata 10)
+          :on-change on-x-change
+          :placeholder "x"}]]
+       [:div.input-element.pixels
+        [:input.input-text
+         {:type "number"
+          :ref "y-axis"
+          :value (:grid-y-axis metadata 10)
+          :on-change on-y-change
+          :placeholder "y"}]]]
+      [:span "Color"]
+      [:div.row-flex.color-dat
+       [:span.color-th
+        {:style {:background-color (:grid-color metadata "#cccccc")}
+         :on-click show-color-picker}]
+       [:div.color-info
+        [:span (:grid-color metadata "#cccccc")]]]
+
+      [:span "Magnet option"]
+      [:div.row-flex
+       [:div.input-checkbox.check-primary
+        [:input
+         {:type "checkbox"
+          :ref "magnet"
+          :id "magnet"
+          :on-change on-magnet-change
+          :checked (when (:grid-alignment metadata) "checked")}]
+        [:label {:for "magnet"} "Activate magnet"]]]]])))

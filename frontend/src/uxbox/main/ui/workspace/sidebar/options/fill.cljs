@@ -42,7 +42,7 @@
                         :shape (:id shape)
                         :attr :fill
                         :transparent? true}]
-              (udl/open! :workspace/colorpicker opts)))]
+              (udl/open! :workspace/shape-colorpicker opts)))]
 
     (html
      [:div.element-set {:key (str (:id menu))}
