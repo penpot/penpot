@@ -27,7 +27,8 @@
                        (rx/take 1))]
       (->> stream
            (rx/take-until stopper)
-           (rx/filter #(satisfies? udp/IPageUpdate %))
+           (rx/filter #(or (satisfies? udp/IPageUpdate %)
+                           (satisfies? udp/IMetadataUpdate %)))
            (rx/filter #(not (undo? %)))
            (rx/filter #(not (redo? %)))
            (rx/debounce 500)
@@ -42,15 +43,13 @@
 (defrecord SaveUndoEntry [id]
   ptk/UpdateEvent
   (update [_ state]
-    (let [page (udp/pack-page state id)]
+    (let [page (udp/pack-page state id)
+          undo {:data (:data page)
+                :metadata (:metadata page)}]
       (-> state
-          (update-in [:undo id :stack] #(cons (:data page) %))
+          (update-in [:undo id :stack] #(cons undo %))
           (assoc-in [:undo id :selected] 0)))))
 
-  ;; ptk/EffectEvent
-  ;; (effect [_ state]
-  ;;   (let [undo (get-in state [:undo id])]
-  ;;     (println (pr-str undo)))))
 
 (defn save-undo-entry
   [id]
@@ -91,15 +90,17 @@
   ptk/UpdateEvent
   (update [_ state]
     (let [page-id (get-in state [:workspace :page])
-          undo (get-in state [:undo page-id])
-          stack (:stack undo)
-          selected (:selected undo 0)]
+          undo-state (get-in state [:undo page-id])
+          stack (:stack undo-state)
+          selected (:selected undo-state 0)]
       (if (>= selected (dec (count stack)))
         state
         (let [pointer (inc selected)
               page (get-in state [:pages page-id])
-              data (nth stack pointer)
-              packed (assoc page :data data)]
+              undo (nth stack pointer)
+              data (:data undo)
+              metadata (:metadata undo)
+              packed (assoc page :data data :metadata metadata)]
 
           ;; (println "Undo: pointer=" pointer)
           ;; (println "Undo: packed=")
@@ -124,15 +125,17 @@
   ptk/UpdateEvent
   (update [_ state]
     (let [page-id (get-in state [:workspace :page])
-          undo (get-in state [:undo page-id])
-          stack (:stack undo)
-          selected (:selected undo)]
+          undo-state (get-in state [:undo page-id])
+          stack (:stack undo-state)
+          selected (:selected undo-state)]
       (if (or (nil? selected) (zero? selected))
         state
         (let [pointer (dec selected)
-              data (nth stack pointer)
+              undo (nth stack pointer)
+              data (:data undo)
+              metadata (:metadata undo)
               page (get-in state [:pages page-id])
-              packed (assoc page :data data)]
+              packed (assoc page :data data :metadata metadata)]
 
           ;; (println "Redo: pointer=" pointer)
           ;; (println "Redo: packed=")
