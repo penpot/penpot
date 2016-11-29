@@ -5,10 +5,8 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.users
-  (:require [sablono.core :as html :refer-macros [html]]
-            [cuerdas.core :as str]
+  (:require [cuerdas.core :as str]
             [lentes.core :as l]
-            [rum.core :as rum]
             [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.store :as st]
@@ -20,33 +18,22 @@
 
 ;; --- User Menu
 
-(defn menu-render
-  [own open?]
-  (let [open-settings-dialog #(udl/open! :settings)]
-    (html
-     [:ul.dropdown {:class (when-not open?
-                             "hide")}
-      [:li
-       i/page
-       [:span "Page settings"]]
-      [:li {:on-click open-settings-dialog}
-       i/grid
-       [:span "Grid settings"]]
-      [:li
-       i/eye
-       [:span "Preview"]]
-      [:li {:on-click #(r/go :settings/profile)}
-       i/user
-       [:span "Your account"]]
-      [:li {:on-click #(st/emit! (da/logout))}
-       i/exit
-       [:span "Exit"]]])))
-
-(def user-menu
-  (mx/component
-   {:render menu-render
-    :name "user-menu"
-    :mixins []}))
+(mx/defc user-menu
+  {:mixins [mx/static]}
+  [open?]
+  [:ul.dropdown {:class (when-not open? "hide")}
+   [:li
+    i/page
+    [:span "Page settings"]]
+   [:li
+    i/eye
+    [:span "Preview"]]
+   [:li {:on-click #(r/go :settings/profile)}
+    i/user
+    [:span "Your account"]]
+   [:li {:on-click #(st/emit! (da/logout))}
+    i/exit
+    [:span "Exit"]]])
 
 ;; --- User Widget
 
@@ -54,22 +41,16 @@
   (as-> (l/key :profile) $
     (l/derive $ st/state)))
 
-(defn user-render
+(mx/defcs user
+  {:mixins [mx/static mx/reactive (mx/local {:open false})]}
   [own]
   (let [profile (mx/react profile-ref)
         local (:rum/local own)
         photo (if (str/empty? (:photo profile ""))
                 "/images/avatar.jpg"
                 (:photo profile))]
-    (html
-     [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)
-                      :on-mouse-leave #(swap! local assoc :open false)}
-      [:span (:fullname profile)]
-      [:img {:src photo}]
-      (user-menu (:open @local))])))
-
-(def user
-  (mx/component
-   {:render user-render
-    :name "user"
-    :mixins [mx/reactive (rum/local {:open false})]}))
+    [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)
+                     :on-mouse-leave #(swap! local assoc :open false)}
+     [:span (:fullname profile)]
+     [:img {:src photo}]
+     (user-menu (:open @local))]))
