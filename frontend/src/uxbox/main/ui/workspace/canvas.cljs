@@ -38,7 +38,7 @@
    {:x 0 :y 0
     :width "100%"
     :height "100%"
-    :fill (or background "#000000")}])
+    :fill (or background "#ffffff")}])
 
 ;; --- Canvas
 
