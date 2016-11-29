@@ -38,14 +38,15 @@
               (st/emit! (uds/update-selected-shapes-stroke {:color color}))
               (st/emit! (uds/update-selected-shapes-fill {:color color}))))]
     [:div.color-palette-content
-     (for [hex-color colors
-           :let [rgb-vec (hex->rgb hex-color)
-                 rgb-color (apply str "" (interpose ", " rgb-vec))]]
-       [:div.color-cell {:key (str hex-color)
-                         :on-click #(select-color % hex-color)}
-        [:span.color {:style {:background hex-color}}]
-        [:span.color-text hex-color]
-        [:span.color-text rgb-color]])]))
+     [:div.color-palette-inside
+      (for [hex-color colors
+            :let [rgb-vec (hex->rgb hex-color)
+                  rgb-color (apply str "" (interpose ", " rgb-vec))]]
+        [:div.color-cell {:key (str hex-color)
+                          :on-click #(select-color % hex-color)}
+         [:span.color {:style {:background hex-color}}]
+         [:span.color-text hex-color]
+         [:span.color-text rgb-color]])]]))
 
 (mx/defcs palette
   {:mixins [mx/static mx/reactive (mx/local)]}

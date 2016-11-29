@@ -85,6 +85,14 @@
 .color-palette-content {
   align-items: center;
   display: flex;
+  overflow: hidden;
+  width: 100%;
+}
+
+.color-palette-inside {
+  align-items: center;
+  display: flex;
+  transition: all .6s ease;
   width: 100%;
 }
 
