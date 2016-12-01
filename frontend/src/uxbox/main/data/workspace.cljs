@@ -37,7 +37,7 @@
 
 ;; --- Initialize Workspace
 
-(declare initialize-alignment-index)
+(declare initialize-alignment)
 
 (defrecord InitializeWorkspace [project page]
   ptk/UpdateEvent
@@ -64,15 +64,17 @@
       ;; Activate loaded if page is not fetched.
       (when-not page (reset! st/loader true))
 
+      (println "initialize")
+
       (rx/merge
        (if page
-         (rx/of (initialize-alignment-index page-id))
+         (rx/of (initialize-alignment page-id))
          (rx/merge
           (rx/of (udp/fetch-pages project))
           (->> (rx/filter udp/pages-fetched? s)
                (rx/take 1)
                (rx/do #(reset! st/loader false))
-               (rx/map #(initialize-alignment-index page-id)))))
+               (rx/map #(initialize-alignment page-id)))))
 
        ;; Initial history loading
        (rx/of
@@ -206,7 +208,7 @@
 
 ;; --- Initialize Alignment Index
 
-(defrecord InitializeAlignmentIndex [id]
+(defrecord InitializeAlignment [id]
   ptk/WatchEvent
   (watch [_ state s]
     (let [page (get-in state [:pages id])
@@ -222,9 +224,9 @@
        (when (:grid-alignment opts)
          (rx/of (activate-flag :grid-alignment)))))))
 
-(defn initialize-alignment-index
+(defn initialize-alignment
   [id]
-  (InitializeAlignmentIndex. id))
+  (InitializeAlignment. id))
 
 ;; --- Update Metadata
 
@@ -234,7 +236,7 @@
   ptk/WatchEvent
   (watch [_ state s]
     (rx/of (udp/update-metadata id metadata)
-           (initialize-alignment-index id))))
+           (initialize-alignment id))))
 
 (defn update-metadata
   [id metadata]

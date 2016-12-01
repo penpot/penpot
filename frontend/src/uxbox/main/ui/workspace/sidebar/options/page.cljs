@@ -11,6 +11,7 @@
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.data.pages :as udp]
+            [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.workspace.base :refer [page-ref]]
@@ -93,52 +94,51 @@
                      (udp/update-metadata id)
                      (st/emit!))))
             (on-magnet-change []
-              (let [checked? (dom/checked? (mx/ref-node own "magnet"))]
-                (->> (assoc metadata :grid-alignment checked?)
-                     (udp/update-metadata id)
-                     (st/emit!))))
-          (show-color-picker [event]
-            (let [x (.-clientX event)
-                  y (.-clientY event)
-                  opts {:x x :y y
-                        :transparent? true
-                        :default "#cccccc"
-                        :attr :grid-color}]
-              (udl/open! :workspace/page-colorpicker opts)))]
-    [:div.element-set
-     [:div.element-set-title (:name menu)]
-     [:div.element-set-content
-      [:span "Size"]
-      [:div.row-flex
-       [:div.input-element.pixels
-        [:input.input-text
-         {:type "number"
-          :ref "x-axis"
-          :value (:grid-x-axis metadata 10)
-          :on-change on-x-change
-          :placeholder "x"}]]
-       [:div.input-element.pixels
-        [:input.input-text
-         {:type "number"
-          :ref "y-axis"
-          :value (:grid-y-axis metadata 10)
-          :on-change on-y-change
-          :placeholder "y"}]]]
-      [:span "Color"]
-      [:div.row-flex.color-dat
-       [:span.color-th
-        {:style {:background-color (:grid-color metadata "#cccccc")}
-         :on-click show-color-picker}]
-       [:div.color-info
-        [:span (:grid-color metadata "#cccccc")]]]
+              (let [checked? (dom/checked? (mx/ref-node own "magnet"))
+                    metadata (assoc metadata :grid-alignment checked?)]
+                (st/emit! (udw/update-metadata id metadata))))
+            (show-color-picker [event]
+              (let [x (.-clientX event)
+                    y (.-clientY event)
+                    opts {:x x :y y
+                          :transparent? true
+                          :default "#cccccc"
+                          :attr :grid-color}]
+                (udl/open! :workspace/page-colorpicker opts)))]
+      [:div.element-set
+       [:div.element-set-title (:name menu)]
+       [:div.element-set-content
+        [:span "Size"]
+        [:div.row-flex
+         [:div.input-element.pixels
+          [:input.input-text
+           {:type "number"
+            :ref "x-axis"
+            :value (:grid-x-axis metadata 10)
+            :on-change on-x-change
+            :placeholder "x"}]]
+         [:div.input-element.pixels
+          [:input.input-text
+           {:type "number"
+            :ref "y-axis"
+            :value (:grid-y-axis metadata 10)
+            :on-change on-y-change
+            :placeholder "y"}]]]
+        [:span "Color"]
+        [:div.row-flex.color-dat
+         [:span.color-th
+          {:style {:background-color (:grid-color metadata "#cccccc")}
+           :on-click show-color-picker}]
+         [:div.color-info
+          [:span (:grid-color metadata "#cccccc")]]]
 
-      [:span "Magnet option"]
-      [:div.row-flex
-       [:div.input-checkbox.check-primary
-        [:input
-         {:type "checkbox"
-          :ref "magnet"
-          :id "magnet"
-          :on-change on-magnet-change
-          :checked (when (:grid-alignment metadata) "checked")}]
-        [:label {:for "magnet"} "Activate magnet"]]]]])))
+        [:span "Magnet option"]
+        [:div.row-flex
+         [:div.input-checkbox.check-primary
+          [:input
+           {:type "checkbox"
+            :ref "magnet"
+            :id "magnet"
+            :on-change on-magnet-change
+            :checked (when (:grid-alignment metadata) "checked")}]
+          [:label {:for "magnet"} "Activate magnet"]]]]])))
