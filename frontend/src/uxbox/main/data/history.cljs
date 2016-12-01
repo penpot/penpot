@@ -28,7 +28,6 @@
 (deftype WatchPageChanges [id]
   ptk/WatchEvent
   (watch [_ state stream]
-    (println "history:watch-page-changes" id)
     (let [stopper (->> stream
                        (rx/filter #(= % ::udp/stop-page-watcher))
                        (rx/take 1))]

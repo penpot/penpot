@@ -248,7 +248,6 @@
             (on-toggle-move [event]
               (swap! local update :show-move-tooltip not))
             (on-copy [selected]
-              (println "copy from" id "to" selected)
               (swap! local assoc
                      :show-move-tooltip false
                      :show-copy-tooltip false)

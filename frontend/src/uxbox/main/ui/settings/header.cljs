@@ -35,7 +35,6 @@
         profile? (= section :settings/profile)
         password? (= section :settings/password)
         notifications? (= section :settings/notifications)]
-    (println "header-render" section)
     (html
      [:header#main-bar.main-bar
       [:div.main-logo

@@ -64,8 +64,6 @@
       ;; Activate loaded if page is not fetched.
       (when-not page (reset! st/loader true))
 
-      (println "initialize")
-
       (rx/merge
        (if page
          (rx/of (initialize-alignment page-id))

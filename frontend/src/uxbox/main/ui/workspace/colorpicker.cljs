@@ -73,5 +73,4 @@
 
 (defmethod lbx/render-lightbox :workspace/page-colorpicker
   [params]
-  (println "kakakaka")
   (page-colorpicker params))

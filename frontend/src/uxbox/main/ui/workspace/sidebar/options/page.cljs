@@ -40,7 +40,6 @@
                      (udp/update-metadata id)
                      (st/emit!))))
           (show-color-picker [event]
-            (println "show-color-picker")
             (let [x (.-clientX event)
                   y (.-clientY event)
                   opts {:x x :y y

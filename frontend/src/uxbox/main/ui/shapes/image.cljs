@@ -30,7 +30,6 @@
 (defn- will-mount
   [own]
   (let [{:keys [image]} (first (:rum/args own))]
-    (println (:rum/args own))
     (st/emit! (udi/fetch-image image))
     own))
 
