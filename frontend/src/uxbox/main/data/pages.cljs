@@ -105,7 +105,7 @@
 
 ;; --- Pages Fetched
 
-(defrecord PagesFetched [pages]
+(deftype PagesFetched [pages]
   ptk/UpdateEvent
   (update [_ state]
     (as-> state $
@@ -118,7 +118,7 @@
 
 ;; --- Fetch Pages (by project id)
 
-(defrecord FetchPages [projectid]
+(deftype FetchPages [projectid]
   ptk/WatchEvent
   (watch [_ state s]
     (->> (rp/req :fetch/pages-by-project {:project projectid})
@@ -130,7 +130,7 @@
 
 ;; --- Page Created
 
-(defrecord PageCreated [data]
+(deftype PageCreated [data]
   ptk/UpdateEvent
   (update [_ state]
     (-> state
@@ -147,7 +147,7 @@
 
 ;; --- Create Page
 
-(defrecord CreatePage [name project width height layout]
+(deftype CreatePage [name project width height layout]
   ptk/WatchEvent
   (watch [this state s]
     (let [params {:name name
@@ -164,13 +164,13 @@
   (s/keys :req-un [::name ::project ::width ::height ::layout]))
 
 (defn create-page
-  [data]
+  [{:keys [name project width height layout] :as data}]
   {:pre [(us/valid? ::create-page-event data)]}
-  (map->CreatePage data))
+  (->CreatePage name project width height layout))
 
 ;; --- Page Persisted
 
-(defrecord PagePersisted [data]
+(deftype PagePersisted [data]
   ptk/UpdateEvent
   (update [_ state]
     ;; TODO: update only the version instead of complete unpacking
@@ -191,7 +191,7 @@
 
 ;; --- Persist Page
 
-(defrecord PersistPage [id]
+(deftype PersistPage [id]
   ptk/WatchEvent
   (watch [this state s]
     (let [page (get-in state [:pages id])]
@@ -212,7 +212,7 @@
 
 ;; --- Page Metadata Persisted
 
-(defrecord MetadataPersisted [id data]
+(deftype MetadataPersisted [id data]
   ptk/UpdateEvent
   (update [_ state]
     ;; TODO: page-data update
@@ -232,7 +232,7 @@
 ;; that does not sends the heavyweiht `:data` attribute
 ;; and only serves for update other page data.
 
-(defrecord PersistMetadata [id]
+(deftype PersistMetadata [id]
   ptk/WatchEvent
   (watch [_ state stream]
     (let [page (get-in state [:pages id])]
@@ -247,7 +247,7 @@
 
 ;; --- Update Page Options
 
-(defrecord UpdateMetadata [id metadata]
+(deftype UpdateMetadata [id metadata]
   IMetadataUpdate
   ptk/UpdateEvent
   (update [this state]
@@ -260,7 +260,7 @@
 
 ;; --- Update Page
 
-(defrecord UpdatePage [id name width height layout]
+(deftype UpdatePage [id name width height layout]
   ptk/UpdateEvent
   (update [this state]
     (-> state
@@ -283,7 +283,7 @@
 
 ;; --- Delete Page (by id)
 
-(defrecord DeletePage [id callback]
+(deftype DeletePage [id callback]
   ptk/WatchEvent
   (watch [_ state s]
     (letfn [(on-success [_]
