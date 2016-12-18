@@ -173,6 +173,9 @@
 (defrecord PagePersisted [data]
   ptk/UpdateEvent
   (update [_ state]
+    ;; TODO: update only the version instead of complete unpacking
+    ;; this will improve the application responsiveness when multiple
+    ;; updates are performed
     (assoc-page state data)))
 
 (defn- page-persisted?
