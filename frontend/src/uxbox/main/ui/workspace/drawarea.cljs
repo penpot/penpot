@@ -24,7 +24,7 @@
 
 ;; --- State
 
-(defonce drawing-stoper (rx/bus))
+(defonce drawing-stoper (rx/subject))
 (defonce drawing-shape (atom nil))
 (defonce drawing-position (atom nil))
 

@@ -69,7 +69,7 @@
 
 ;; --- Scroll Stream
 
-(defonce scroll-b (rx/bus))
+(defonce scroll-b (rx/subject))
 
 (defonce scroll-s
   (as-> scroll-b $
@@ -82,12 +82,12 @@
 
 ;; --- Events
 
-(defonce events-b (rx/bus))
+(defonce events-b (rx/subject))
 (defonce events-s (rx/dedupe events-b))
 
 ;; --- Mouse Position Stream
 
-(defonce mouse-b (rx/bus))
+(defonce mouse-b (rx/subject))
 (defonce mouse-s (rx/dedupe mouse-b))
 
 (defonce mouse-canvas-s
