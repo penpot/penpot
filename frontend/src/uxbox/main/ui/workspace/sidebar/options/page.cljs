@@ -82,16 +82,16 @@
               (when-let [value (-> (mx/ref-node own "x-axis")
                                    (dom/get-value)
                                    (parse-int nil))]
-                (->> (assoc metadata :grid-x-axis value)
-                     (udp/update-metadata id)
-                     (st/emit!))))
+                (st/emit!
+                 (->> (assoc metadata :grid-x-axis value)
+                      (udw/update-metadata id)))))
             (on-y-change []
               (when-let [value (-> (mx/ref-node own "y-axis")
                                    (dom/get-value)
                                    (parse-int nil))]
-                (->> (assoc metadata :grid-y-axis value)
-                     (udp/update-metadata id)
-                     (st/emit!))))
+                (st/emit!
+                 (->> (assoc metadata :grid-y-axis value)
+                      (udw/update-metadata id)))))
             (on-magnet-change []
               (let [checked? (dom/checked? (mx/ref-node own "magnet"))
                     metadata (assoc metadata :grid-alignment checked?)]

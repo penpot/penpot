@@ -206,21 +206,32 @@
 
 ;; --- Initialize Alignment Index
 
+(declare initialize-alignment?)
+
 (defrecord InitializeAlignment [id]
   ptk/WatchEvent
-  (watch [_ state s]
+  (watch [_ state stream]
     (let [page (get-in state [:pages id])
           opts (:metadata page)
           message {:cmd :grid-init
                    :width c/viewport-width
                    :height c/viewport-height
                    :x-axis (:grid-x-axis opts c/grid-x-axis)
-                   :y-axis (:grid-y-axis opts c/grid-y-axis)}]
-      (rx/merge
-       (->> (uw/send! worker message)
-            (rx/map #(activate-flag :grid-indexed)))
-       (when (:grid-alignment opts)
-         (rx/of (activate-flag :grid-alignment)))))))
+                   :y-axis (:grid-y-axis opts c/grid-y-axis)}
+          stoper (->> (rx/filter initialize-alignment? stream)
+                      (rx/take 1))]
+      (->> (rx/just nil)
+           (rx/delay 1000)
+           (rx/take-until stoper)
+           (rx/flat-map (fn [_]
+                          (rx/merge (->> (uw/send! worker message)
+                                         (rx/map #(activate-flag :grid-indexed)))
+                                    (when (:grid-alignment opts)
+                                      (rx/of (activate-flag :grid-alignment))))))))))
+
+(defn initialize-alignment?
+  [v]
+  (instance? InitializeAlignment v))
 
 (defn initialize-alignment
   [id]
