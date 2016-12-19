@@ -87,15 +87,24 @@
 (defn- on-wheel
   [own event]
   (when (kbd/ctrl? event)
-    (dom/prevent-default event)
-    (dom/stop-propagation event)
-    (if (pos? (.-deltaY event))
-      (st/emit! (dw/increase-zoom))
-      (st/emit! (dw/decrease-zoom)))
+    (let [prev-zoom @wb/zoom-ref]
+      (dom/prevent-default event)
+      (dom/stop-propagation event)
+      (if (pos? (.-deltaY event))
+        (st/emit! (dw/increase-zoom))
+        (st/emit! (dw/decrease-zoom)))
 
-    (let [dom (mx/ref-node own "workspace-canvas")]
-      (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-ref))
-      (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-ref)))))
+      (let [
+          dom (mx/ref-node own "workspace-canvas")
+          scroll-position (gpt/divide @wb/scroll-a prev-zoom)
+          mouse-position (gpt/divide @wb/mouse-viewport-a prev-zoom)
+          viewport-offset-x (* (- (:x mouse-position) (:x scroll-position)) prev-zoom)
+          viewport-offset-y (* (- (:y mouse-position) (:y scroll-position)) prev-zoom)
+          new-scroll-position-x (- (* (:x mouse-position) @wb/zoom-ref) viewport-offset-x)
+          new-scroll-position-y (- (* (:y mouse-position) @wb/zoom-ref) viewport-offset-y)
+        ]
+        (set! (.-scrollLeft dom) new-scroll-position-x )
+        (set! (.-scrollTop dom) new-scroll-position-y)))))
 
 (defn- workspace-render
   [own]

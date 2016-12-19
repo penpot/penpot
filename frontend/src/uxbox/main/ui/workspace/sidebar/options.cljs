@@ -94,7 +94,7 @@
   [old-own own]
   (let [[prev-shape] (:rum/args old-own)
         [curr-shape] (:rum/args own)]
-    (when (not (identical? prev-shape curr-shape))
+    (when-not (= (:id prev-shape) (:id curr-shape))
       (reset! (:rum/local own) {}))
     own))
 
