@@ -22,15 +22,15 @@
   {:mixins [mx/static]}
   [open?]
   [:ul.dropdown {:class (when-not open? "hide")}
-   [:li
-    i/page
-    [:span "Page settings"]]
-   [:li
-    i/eye
-    [:span "Preview"]]
    [:li {:on-click #(r/go :settings/profile)}
     i/user
-    [:span "Your account"]]
+    [:span "Profile"]]
+   [:li {:on-click #(r/go :settings/password)}
+    i/lock
+    [:span "Password"]]
+   [:li {:on-click #(r/go :settings/notifications)}
+    i/mail
+    [:span "Notifications"]]
    [:li {:on-click #(st/emit! (da/logout))}
     i/exit
     [:span "Exit"]]])
