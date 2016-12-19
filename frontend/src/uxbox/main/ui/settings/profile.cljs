@@ -81,8 +81,8 @@
           :placeholder "Your email"}]
         (forms/input-error errors :email)
 
-        [:span.user-settings-label "Choose a color theme"]
-        [:div.input-radio.radio-primary
+        #_[:span.user-settings-label "Choose a color theme"]
+        #_[:div.input-radio.radio-primary
          [:input {:type "radio"
                   :checked (when (= theme "light") "checked")
                   :on-change (partial on-change :theme)
