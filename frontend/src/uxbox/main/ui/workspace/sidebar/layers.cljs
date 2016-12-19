@@ -123,7 +123,6 @@
               (when (kbd/enter? event)
                 (on-blur event)))
             (on-click [event]
-              (dom/stop-propagation event)
               (dom/prevent-default event)
               (let [parent (.-parentNode (.-target event))]
                 (set! (.-draggable parent) false))
@@ -136,7 +135,7 @@
           :auto-focus true
           :default-value (:name shape "")}]
         [:span.element-name
-         {:on-click on-click}
+         {:on-double-click on-click}
          (:name shape "")]))))
 
 ;; --- Layer Simple (Component)
@@ -188,6 +187,7 @@
                             "0.5"
                             "1")}
          :on-click select
+         :on-double-click #(dom/stop-propagation %)
          :on-drag-start on-drag-start
          :on-drag-enter on-drag-enter
          :on-drag-leave on-drag-leave
