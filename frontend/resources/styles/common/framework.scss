@@ -1066,3 +1066,13 @@ input[type=range]:focus::-ms-fill-upper {
   }
 
 }
+
+.close-bezier {
+  fill: $color-danger;
+  stroke: $color-danger-dark;
+  stroke-width: 2px;
+  cursor: pointer;
+  &:hover {
+    fill: $color-white;
+  }
+}

@@ -91,10 +91,12 @@
        (-> (assoc shape :drawing? true)
            (shapes/render-component))
        (when-not (:free shape)
-         [:circle {:cx x
+         [:circle.close-bezier {:cx x
                    :cy y
                    :r 5
-                   :fill "red"
+                   :stroke "#d52747"
+                   :stroke-width "2px"
+                   :style {:cursor "pointer"}
                    :on-click on-click}])])))
 
 ;; --- Drawing Initialization
