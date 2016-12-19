@@ -200,7 +200,7 @@
      (grid-item-thumbnail project)
      [:div.item-info
       (if (:edition @local)
-        [:input {:type "text"
+        [:input.element-name {:type "text"
                  :auto-focus true
                  :on-key-down on-key-down
                  :on-blur on-blur
