@@ -41,7 +41,7 @@
   "Return a initialized webworker instance."
   [path]
   (let [wrk (js/Worker. path)
-        bus (rx/bus)]
+        bus (rx/subject)]
     (.addEventListener wrk "message"
                        (fn [event]
                          (let [data (.-data event)
