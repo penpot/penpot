@@ -76,19 +76,19 @@
                           :stroke-opacity "1"}}]]))
 
 (mx/defc single-not-editable-selection-handlers
-  [{:keys [id] :as shape}]
+  [{:keys [id] :as shape} zoom]
   (let [{:keys [width height x y]} (geom/outer-rect shape)]
     [:g.controls
      [:rect.main {:x x :y y
                   :width width
                   :height height
-                  :stroke-dasharray "5,5"
+                  :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5.0 zoom))
                   :style {:stroke "#333"
                           :fill "transparent"
                           :stroke-opacity "1"}}]]))
 
 (mx/defc single-selection-handlers
-  [{:keys [id] :as shape}]
+  [{:keys [id] :as shape} zoom]
   (letfn [(on-mouse-down [vid event]
             (dom/stop-propagation event)
             (start-resize vid id))]
@@ -97,48 +97,56 @@
        [:rect.main {:x x :y y
                     :width width
                     :height height
-                    :stroke-dasharray "5,5"
+                    :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5.0 zoom))
                     :style {:stroke "#333"
                             :fill "transparent"
                             :stroke-opacity "1"}}]
        [:circle.top
         (merge +circle-props+
                {:on-mouse-down #(on-mouse-down :top %)
+                :r (/ 6.0 zoom)
                 :cx (+ x (/ width 2))
                 :cy (- y 2)})]
        [:circle.right
         (merge +circle-props+
                {:on-mouse-down #(on-mouse-down :right %)
+                :r (/ 6.0 zoom)
                 :cy (+ y (/ height 2))
                 :cx (+ x width 1)})]
        [:circle.bottom
         (merge +circle-props+
                {:on-mouse-down #(on-mouse-down :bottom %)
+                :r (/ 6.0 zoom)
                 :cx (+ x (/ width 2))
                 :cy (+ y height 2)})]
        [:circle.left
         (merge +circle-props+
                {:on-mouse-down #(on-mouse-down :left %)
+                :r (/ 6.0 zoom)
                 :cy (+ y (/ height 2))
                 :cx (- x 3)})]
        [:circle.top-left
         (merge +circle-props+
                {:on-mouse-down #(on-mouse-down :top-left %)
+                :r (/ 6.0 zoom)
                 :cx x
                 :cy y})]
        [:circle.top-right
         (merge +circle-props+
                {:on-mouse-down #(on-mouse-down :top-right %)
+                :r (/ 6.0 zoom)
                 :cx (+ x width)
                 :cy y})]
        [:circle.bottom-left
         (merge +circle-props+
                {:on-mouse-down #(on-mouse-down :bottom-left %)
+                :r (/ 6.0 zoom)
                 :cx x
                 :cy (+ y height)})]
        [:circle.bottom-right
         (merge +circle-props+
                {:on-mouse-down #(on-mouse-down :bottom-right %)
+                :r (/ 6.0 zoom)
                 :cx (+ x width)
                 :cy (+ y height)})]])))
 
@@ -159,14 +167,15 @@
       (rx/subscribe stream on-move nil on-end))))
 
 (mx/defc path-edition-selection-handlers
-  [{:keys [id points] :as shape}]
+  [{:keys [id points] :as shape} zoom]
   (letfn [(on-mouse-down [index event]
             (dom/stop-propagation event)
             (rlocks/acquire! :shape/resize)
             (start-path-edition id index))]
     [:g.controls
      (for [[index {:keys [x y]}] (map-indexed vector points)]
-       [:circle {:cx x :cy y :r 6
+       [:circle {:cx x :cy y
+                 :r (/ 6.0 zoom)
                  :on-mouse-down (partial on-mouse-down index)
                  :fill "#31e6e0"
                  :stroke "#28c4d4"
@@ -177,6 +186,7 @@
   []
   (let [shapes (mx/react selected-shapes-ref)
         edition (mx/react scommon/edition-ref)
+        zoom (mx/react wb/zoom-ref)
         shapes-num (count shapes)
         shape (first shapes)]
     (cond
@@ -184,22 +194,22 @@
       nil
 
       (> shapes-num 1)
-      (multiple-selection-handlers shapes)
+      (multiple-selection-handlers shapes zoom)
 
       :else
       (cond
         (= :path (:type shape))
         (if (= @edition-ref (:id shape))
-          (path-edition-selection-handlers shape)
-          (single-not-editable-selection-handlers shape))
+          (path-edition-selection-handlers shape zoom)
+          (single-not-editable-selection-handlers shape zoom))
 
         (= :text (:type shape))
         (if (= @edition-ref (:id shape))
-          (single-not-editable-selection-handlers shape)
-          (single-selection-handlers (first shapes)))
+          (single-not-editable-selection-handlers shape zoom)
+          (single-selection-handlers (first shapes) zoom))
 
         (= :group (:type shape))
-        (single-not-editable-selection-handlers shape)
+        (single-not-editable-selection-handlers shape zoom)
 
         :else
-        (single-selection-handlers (first shapes))))))
+        (single-selection-handlers (first shapes) zoom)))))
