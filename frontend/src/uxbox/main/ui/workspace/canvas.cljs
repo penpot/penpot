@@ -40,6 +40,21 @@
     :height "100%"
     :fill (or background "#ffffff")}])
 
+;; --- Coordinates Widget
+
+(mx/defc coordinates
+  {:mixins [mx/reactive mx/static]}
+  []
+  (let [zoom (mx/react wb/zoom-ref)
+        coords (some-> (mx/react wb/mouse-canvas-a)
+                       (gpt/divide zoom)
+                       (gpt/round 0))]
+   [:ul.coordinates
+    [:span {:alt "x"}
+     (str "X: " (:x coords "-"))]
+    [:span {:alt "y"}
+     (str "Y: " (:y coords "-"))]]))
+
 ;; --- Canvas
 
 (mx/defc canvas
@@ -171,21 +186,23 @@
               (let [opts {:shift? (kbd/shift? event)
                           :ctrl? (kbd/ctrl? event)}]
                 (rx/push! wb/events-b [:mouse/double-click opts])))]
-      [:svg.viewport {:width (* c/viewport-width zoom)
-                      :height (* c/viewport-height zoom)
-                      :ref "viewport"
-                      :class (when drawing? "drawing")
-                      :on-context-menu on-context-menu
-                      :on-click on-click
-                      :on-double-click on-double-click
-                      :on-mouse-down on-mouse-down
-                      :on-mouse-up on-mouse-up}
-       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
-        (if page
-          (canvas page))
-        (if (contains? flags :grid)
-          (grid))]
-       (ruler)
-       (selrect)])))
+      [:div
+        (coordinates)
+        [:svg.viewport {:width (* c/viewport-width zoom)
+                        :height (* c/viewport-height zoom)
+                        :ref "viewport"
+                        :class (when drawing? "drawing")
+                        :on-context-menu on-context-menu
+                        :on-click on-click
+                        :on-double-click on-double-click
+                        :on-mouse-down on-mouse-down
+                        :on-mouse-up on-mouse-up}
+         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
+          (if page
+            (canvas page))
+          (if (contains? flags :grid)
+            (grid))]
+         (ruler)
+         (selrect)]])))
 
 

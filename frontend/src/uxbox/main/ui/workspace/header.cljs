@@ -23,22 +23,15 @@
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.math :as mth]))
 
-;; --- Coordinates Widget
+;; --- Zoom Widget
 
-(mx/defc coordinates
+(mx/defc zoom-widget
   {:mixins [mx/reactive mx/static]}
   []
   (let [zoom (mx/react wb/zoom-ref)
-        coords (some-> (mx/react wb/mouse-canvas-a)
-                       (gpt/divide zoom)
-                       (gpt/round 1))
         increase #(st/emit! (dw/increase-zoom))
         decrease #(st/emit! (dw/decrease-zoom))]
     [:ul.options-view
-     [:li.coordinates {:alt "x"}
-      (str "X: " (:x coords "-"))]
-     [:li.coordinates {:alt "y"}
-      (str "Y: " (:y coords "-"))]
      [:li.zoom-input
       [:span.add-zoom {:on-click increase} "+"]
       [:span (str (mth/round (* 100 zoom)) "%")]
@@ -142,5 +135,5 @@
         {:alt "View mode (Ctrl + P)"
          :on-click #(on-view-clicked % project page)}
         i/play]]
-      (coordinates)]
+      (zoom-widget)]
      (ui.u/user)]))

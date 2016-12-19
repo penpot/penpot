@@ -19,10 +19,31 @@
 
   &.no-tool-bar-right {
     padding-right: 0;
+
+    .coordinates {
+      right: 10px;
+    }
   }
 
   &.no-tool-bar-left {
     padding-left: 0;
+  }
+
+  .coordinates {
+    background-color: $color-dark-bg;
+    border-radius: $br-small;
+    bottom: 0px;
+    padding-left: 5px;
+    position: fixed;
+    right: 240px;
+    text-align: center;
+    width: 80px;
+
+    span {
+      color: $color-white;
+      font-size: $fs12;
+      padding-right: 5px;
+    }
   }
 
   .workspace-canvas {
