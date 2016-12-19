@@ -153,10 +153,14 @@
   position: relative;
 
   .color-info {
-    border: 1px solid $soft-ui-border;
-    border-radius: $br-small;
-    margin: 3px 0 0 $x-small;
-    padding: 0 $x-small;
+    input {
+      border: 1px solid $soft-ui-border;
+      border-radius: $br-small;
+      margin: 3px 0 0 $x-small;
+      padding: 0 $x-small;
+      width: 55px;
+      font-size: $fs13;
+    }
   }
 
   .type {

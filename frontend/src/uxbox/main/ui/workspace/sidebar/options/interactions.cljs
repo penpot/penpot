@@ -21,7 +21,8 @@
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.colorpicker :as cp]
             [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (parse-int parse-float read-string)]))
+            [uxbox.util.data :refer (parse-int parse-float read-string)]
+            [uxbox.util.spec :refer (color?)]))
 
 ;; --- Helpers
 
@@ -382,6 +383,14 @@
     (swap! form-ref assoc :stroke-color "#000000"))
   (letfn [(on-change [attr color]
             (swap! form-ref assoc attr color))
+          (on-change-fill-color [event]
+            (let [value (dom/event->value event)]
+              (when (color? value)
+                (on-change :fill-color value))))
+          (on-change-stroke-color [event]
+            (let [value (dom/event->value event)]
+              (when (color? value)
+                (on-change :stroke-color value))))
           (show-picker [attr event]
             (let [x (.-clientX event)
                   y (.-clientY event)
@@ -402,7 +411,9 @@
             {:style {:background-color fill-color}
              :on-click (partial show-picker :fill-color)}]
            [:div.color-info
-            [:span fill-color]]]]
+            [:input
+             {:on-change on-change-fill-color
+              :value fill-color}]]]]
          [:div.column-half
           [:span "Stroke"]
           [:div.color-data
@@ -410,7 +421,9 @@
             {:style {:background-color stroke-color}
              :on-click (partial show-picker :stroke-color)}]
            [:div.color-info
-            [:span stroke-color]]]]]]))))
+            [:input
+             {:on-change on-change-stroke-color
+              :value stroke-color}]]]]]]))))
 
 (def color-input
   (mx/component

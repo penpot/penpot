@@ -18,7 +18,8 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (parse-int parse-float read-string)]))
+            [uxbox.util.data :refer (parse-int parse-float read-string)]
+            [uxbox.util.spec :refer (color?)]))
 
 (defn fill-menu-render
   [own menu shape]
@@ -27,7 +28,8 @@
               (st/emit! (uds/update-fill-attrs sid value))))
           (on-color-change [event]
             (let [value (dom/event->value event)]
-              (change-fill {:color value})))
+              (when (color? value)
+                (change-fill {:color value}))))
           (on-opacity-change [event]
             (let [value (dom/event->value event)
                   value (parse-float value 1)
@@ -55,7 +57,9 @@
          {:style {:background-color (:fill shape "#000000")}
           :on-click show-color-picker}]
         [:div.color-info
-         [:span (:fill shape "#000000")]]]
+         [:input
+          {:on-change on-color-change
+           :value (:fill shape "#000000")}]]]
 
        ;; SLIDEBAR FOR ROTATION AND OPACITY
        [:span "Opacity"]

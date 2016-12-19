@@ -18,6 +18,7 @@
             [uxbox.main.ui.workspace.colorpicker]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer [parse-int]]
+            [uxbox.util.spec :refer [color?]]
             [uxbox.util.dom :as dom]))
 
 (mx/defcs measures-menu
@@ -37,6 +38,13 @@
                                    (dom/get-value)
                                    (parse-int nil))]
                 (->> (assoc metadata :height value)
+                     (udp/update-metadata id)
+                     (st/emit!))))
+            (on-color-change []
+              (when-let [value (-> (mx/ref-node own "color")
+                                   (dom/get-value)
+                                   (#(if (color? %) % nil)))]
+                (->> (assoc metadata :background value)
                      (udp/update-metadata id)
                      (st/emit!))))
           (show-color-picker [event]
@@ -72,7 +80,10 @@
           {:style {:background-color (or background "#ffffff")}
            :on-click show-color-picker}]
          [:div.color-info
-          [:span (or background "#ffffff")]]]]])))
+          [:input
+           {:on-change on-color-change
+            :ref "color"
+            :value (or background "#ffffff")}]]]]])))
 
 (mx/defcs grid-options-menu
   {:mixins [mx/static mx/reactive]}
@@ -92,6 +103,13 @@
                 (st/emit!
                  (->> (assoc metadata :grid-y-axis value)
                       (udw/update-metadata id)))))
+            (on-color-change []
+              (when-let [value (-> (mx/ref-node own "color")
+                                   (dom/get-value)
+                                   (#(if (color? %) % nil)))]
+                (->> (assoc metadata :grid-color value)
+                     (udp/update-metadata id)
+                     (st/emit!))))
             (on-magnet-change []
               (let [checked? (dom/checked? (mx/ref-node own "magnet"))
                     metadata (assoc metadata :grid-alignment checked?)]
@@ -124,12 +142,15 @@
             :on-change on-y-change
             :placeholder "y"}]]]
         [:span "Color"]
-        [:div.row-flex.color-dat
+        [:div.row-flex.color-data
          [:span.color-th
           {:style {:background-color (:grid-color metadata "#cccccc")}
            :on-click show-color-picker}]
          [:div.color-info
-          [:span (:grid-color metadata "#cccccc")]]]
+          [:input
+           {:on-change on-color-change
+            :ref "color"
+            :value (:grid-color metadata "#cccccc")}]]]
 
         [:span "Magnet option"]
         [:div.row-flex

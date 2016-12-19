@@ -18,7 +18,8 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (parse-int parse-float read-string)]))
+            [uxbox.util.data :refer (parse-int parse-float read-string)]
+            [uxbox.util.spec :refer (color?)]))
 
 (defn- stroke-menu-render
   [own menu shape]
@@ -38,6 +39,10 @@
             (let [value (dom/event->value event)
                   value (read-string value)]
               (change-stroke {:type value})))
+          (on-stroke-color-change [event]
+            (let [value (dom/event->value event)]
+              (when (color? value)
+                (change-stroke {:color value}))))
           (show-color-picker [event]
             (let [x (.-clientX event)
                   y (.-clientY event)
@@ -75,7 +80,9 @@
            {:style {:background-color (:stroke shape "#000000")}
             :on-click show-color-picker}]
           [:div.color-info
-           [:span (:stroke shape "#000000")]]]
+           [:input
+            {:on-change on-stroke-color-change
+             :value (:stroke shape "#000000")}]]]
 
          [:span "Opacity"]
          [:div.row-flex
