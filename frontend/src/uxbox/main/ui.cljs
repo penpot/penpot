@@ -164,9 +164,12 @@
 
 ;; --- Main Entry Point
 
+(defn init-routes
+  []
+  (rt/init routes))
+
 (defn init
   []
-  (rt/init routes)
   (mx/mount (app) (dom/get-element "app"))
   (mx/mount (lightbox) (dom/get-element "lightbox"))
   (mx/mount (loader) (dom/get-element "loader")))

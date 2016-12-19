@@ -14,4 +14,5 @@
   []
   (lc/init)
   (st/init initial-state)
+  (ui/init-routes)
   (ui/init))
