@@ -23,10 +23,14 @@
       left: 0;
       top: 0;
       pointer-events: none;
+      transition: none;
     }
     .picker,
     .slide {
       cursor: crosshair;
+      svg {
+        transition: none;
+      }
     }
   }
 

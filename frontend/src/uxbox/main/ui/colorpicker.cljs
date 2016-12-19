@@ -107,11 +107,14 @@
     (on-change hex)))
 
 (defn- on-slide-click
-  [local dimensions event]
+  [local dimensions on-change color event]
   (let [event (.-nativeEvent event)
         my (.-offsetY event)
-        h  (* (/ my (:s-height dimensions)) 360)]
-    (swap! local assoc :color [(+ h 15) 1 255])))
+        h  (* (/ my (:s-height dimensions)) 360)
+        hsv [(+ h 15) (second color) (nth color 2)]
+        hex (color/hsv->hex hsv)]
+    (swap! local assoc :color hsv)
+    (on-change hex)))
 
 (defn- colorpicker-render
   [own & {:keys [value on-change theme]
@@ -141,7 +144,7 @@
               (swap! local assoc :mousedown false))
             (on-mouse-move-slide [event]
               (when (:mousedown @local)
-                (on-slide-click local dimensions event)))
+                (on-slide-click local dimensions on-change color event)))
             (on-mouse-move-picker [event]
               (when (:mousedown @local)
                 (on-picker-click local dimensions on-change color event)))
@@ -174,18 +177,19 @@
             :on-mouse-move on-mouse-move-picker
             :style {:backgroundColor bg}}
            (picker-box)]
-          [:div.picker-indicator
-           {:ref "picker-indicator"
-            :style {:top (str pil "px")
-                    :left (str pit "px")
-                    :pointerEvents "none"}}]]
+          (when-not (:mousedown @local)
+           [:div.picker-indicator
+            {:ref "picker-indicator"
+             :style {:top (str pil "px")
+                     :left (str pit "px")
+                     :pointerEvents "none"}}])]
          [:div.slide-wrapper
           [:div.slide
            {:ref "slide"
             :on-mouse-down on-mouse-down
             :on-mouse-up on-mouse-up
             :on-mouse-move on-mouse-move-slide
-            :on-click (partial on-slide-click local dimensions)}
+            :on-click (partial on-slide-click local dimensions on-change color)}
            (slider-box)]
           [:div.slide-indicator
            {:ref "slide-indicator"
