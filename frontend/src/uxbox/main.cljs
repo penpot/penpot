@@ -8,12 +8,10 @@
   (:require [uxbox.store :as st]
             [uxbox.main.locales :as lc]
             [uxbox.main.ui :as ui]
-            [uxbox.main.state :refer [initial-state]]
-            [uxbox.util.storage :refer [storage]]))
+            [uxbox.main.state :refer [initial-state]]))
 
 (defn ^:export init
   []
   (lc/init)
   (st/init initial-state)
-  (ui/init-routes)
   (ui/init))
