@@ -94,9 +94,6 @@
          [:circle.close-bezier {:cx x
                    :cy y
                    :r 5
-                   :stroke "#d52747"
-                   :stroke-width "2px"
-                   :style {:cursor "pointer"}
                    :on-click on-click}])])))
 
 ;; --- Drawing Initialization
