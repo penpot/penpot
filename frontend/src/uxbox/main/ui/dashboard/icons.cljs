@@ -312,12 +312,15 @@
                   name (dom/get-value target)]
               (st/emit! (di/update-opts :edition false)
                         (di/rename-icon id name))))
+          (ignore-click [event]
+            (dom/stop-propagation event)
+            (dom/prevent-default event))
           (on-edit [event]
             (dom/stop-propagation event)
             (dom/prevent-default event)
             (st/emit! (di/update-opts :edition id)))]
     [:div.grid-item.small-item.project-th
-     {:on-click toggle-selection-shifted
+     {:on-click toggle-selection
       :id (str "grid-item-" id)}
      [:div.input-checkbox.check-primary
       [:input {:type "checkbox"
@@ -328,6 +331,7 @@
      [:span.grid-item-image
       (icon/icon-svg icon)]
      [:div.item-info
+      {:on-click ignore-click}
       (if edition?
         [:input.element-name {:type "text"
                  :auto-focus true

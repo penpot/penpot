@@ -305,9 +305,6 @@
   [{:keys [id created-at] :as image} selected? edition?]
   (letfn [(toggle-selection [event]
             (st/emit! (di/toggle-image-selection id)))
-          (toggle-selection-shifted [event]
-            (when (kbd/shift? event)
-              (toggle-selection event)))
           (on-key-down [event]
             (when (kbd/enter? event)
               (on-blur event)))
@@ -321,9 +318,9 @@
             (dom/prevent-default event)
             (st/emit! (di/update-opts :edition id)))]
     [:div.grid-item.images-th
-     {:on-click toggle-selection-shifted}
      [:div.grid-item-th
-      {:style {:background-image (str "url('" (:thumbnail image) "')")}}
+      {:on-click toggle-selection
+       :style {:background-image (str "url('" (:thumbnail image) "')")}}
       [:div.input-checkbox.check-primary
        [:input {:type "checkbox"
                 :id (:id image)

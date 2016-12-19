@@ -263,12 +263,9 @@
   [color selected?]
   (let [color-rgb (hex->rgb color)]
     (letfn [(toggle-selection [event]
-              (st/emit! (dc/toggle-color-selection color)))
-            (toggle-selection-shifted [event]
-              (when (k/shift? event)
-                (toggle-selection event)))]
+              (st/emit! (dc/toggle-color-selection color)))]
       [:div.grid-item.small-item.project-th
-       {:on-click toggle-selection-shifted}
+       {:on-click toggle-selection}
        [:span.color-swatch {:style {:background-color color}}]
        [:div.input-checkbox.check-primary
         [:input {:type "checkbox"
