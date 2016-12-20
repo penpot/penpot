@@ -213,7 +213,7 @@
   "A specialized function for vertex movement
   for rect-like shapes."
   [shape vid {dx :x dy :y lock? :lock}]
-  (letfn [(handle-positioning [{:keys [x1 x2 y1 y2 proportion] :as shape}]
+  (letfn [(handle-positioning [{:keys [x1 x2 y1 y2] :as shape}]
             (case vid
               :top-left (assoc shape
                                :x1 (min x2 (+ x1 dx))
@@ -482,66 +482,124 @@
            :proportion (/ width height)
            :proportion-lock true)))
 
-;; --- Inner Rect
+;; --- Coerce to Rect-like shape.
 
-(declare apply-rotation-transformation)
-(declare inner-rect-circle)
-(declare inner-rect-group)
-(declare inner-rect-path)
-(declare inner-rect-generic)
+(declare circle->rect-shape)
+(declare path->rect-shape)
+(declare group->rect-shape)
 
-(defn inner-rect
-  ([shape] (inner-rect @st/state shape))
-  ([state shape]
-   (case (:type shape)
-     :circle (inner-rect-circle state shape)
-     :group (inner-rect-group state shape)
-     :path (inner-rect-path state shape)
-     (inner-rect-generic state shape))))
+(defn shape->rect-shape
+  "Coerce shape to rect like shape."
+  ([shape] (shape->rect-shape @st/state shape))
+  ([state {:keys [type] :as shape}]
+   (case type
+     :circle (circle->rect-shape state shape)
+     :path (path->rect-shape state shape)
+     :group (group->rect-shape state shape)
+     shape)))
 
-(defn- inner-rect-generic
-  [state {:keys [x1 y1] :as shape}]
-  (-> (assoc shape :x x1 :y y1)
-      (merge (size shape))
-      (apply-rotation-transformation)))
+(defn shapes->rect-shape
+  ([shapes] (shapes->rect-shape @st/state shapes))
+  ([state shapes]
+   {:pre [(seq shapes)]}
+   (let [shapes (map shape->rect-shape shapes)
+         minx (apply min (map :x1 shapes))
+         miny (apply min (map :y1 shapes))
+         maxx (apply max (map :x2 shapes))
+         maxy (apply max (map :y2 shapes))]
+     {:x1 minx
+      :y1 miny
+      :x2 maxx
+      :y2 maxy
+      ::shapes shapes})))
 
-(defn- inner-rect-path
+(defn- group->rect-shape
+  [state {:keys [items] :as group}]
+  (let [shapes (map #(get-in state [:shapes %]) items)]
+    (shapes->rect-shape state shapes)))
+
+(defn- path->rect-shape
   [state {:keys [points] :as shape}]
   (let [minx (apply min (map :x points))
         miny (apply min (map :y points))
         maxx (apply max (map :x points))
-        maxy (apply max (map :y points))
-        props {:x minx
-               :y miny
-               :width (- maxx minx)
-               :height (- maxy miny)}]
-    (-> (merge shape props)
-        (apply-rotation-transformation))))
+        maxy (apply max (map :y points))]
+    (assoc shape
+           :x1 minx
+           :y1 miny
+           :x2 maxx
+           :y2 maxy)))
 
-(defn- inner-rect-circle
-  [state {:keys [cx cy rx ry group] :as shape}]
-  (let [props {:x (- cx rx)
-               :y (- cy ry)
-               :width (* rx 2)
-               :height (* ry 2)}]
-    (-> (merge shape props)
-        (apply-rotation-transformation))))
+(defn- circle->rect-shape
+  [state {:keys [cx cy rx ry] :as shape}]
+  (let [width (* rx 2)
+        height (* ry 2)
+        x1 (- cx rx)
+        y1 (- cy ry)]
+    (assoc shape
+           :x1 x1
+           :y1 y1
+           :x2 (+ x1 width)
+           :y2 (+ y1 height))))
 
-(defn- inner-rect-group
-  [state {:keys [id group rotation dx dy] :as shape}]
-  (let [shapes (->> (:items shape)
-                    (map #(get-in state [:shapes %]))
-                    (map #(inner-rect state %)))
-        x (apply min (map :x shapes))
-        y (apply min (map :y shapes))
-        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
-        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
-        width (- x' x)
-        height (- y' y)
-        x (+ x dx)
-        y (+ y dy)]
-    (-> (merge shape {:width width :height height :x x :y y})
-        (apply-rotation-transformation))))
+;; --- Transform Shape
+
+(declare transform-rect)
+(declare transform-circle)
+(declare transform-path)
+
+(defn transform
+  "Apply the matrix transformation to shape."
+  ([shape xfmt] (transform @st/state shape xfmt))
+  ([state {:keys [type] :as shape} xfmt]
+   (case type
+     :rect (transform-rect shape xfmt)
+     :icon (transform-rect shape xfmt)
+     :image (transform-rect shape xfmt)
+     :path (transform-path shape xfmt)
+     :circle (transform-circle shape xfmt))))
+
+(defn- transform-rect
+  [{:keys [x1 y1] :as shape} mx]
+  (let [{:keys [width height]} (size shape)
+        tl (gpt/transform [x1 y1] mx)
+        tr (gpt/transform [(+ x1 width) y1] mx)
+        bl (gpt/transform [x1 (+ y1 height)] mx)
+        br (gpt/transform [(+ x1 width) (+ y1 height)] mx)
+        minx (apply min (map :x [tl tr bl br]))
+        maxx (apply max (map :x [tl tr bl br]))
+        miny (apply min (map :y [tl tr bl br]))
+        maxy (apply max (map :y [tl tr bl br]))]
+    (assoc shape
+           :x1 minx
+           :y1 miny
+           :x2 (+ minx (- maxx minx))
+           :y2 (+ miny (- maxy miny)))))
+
+(defn- transform-circle
+  [{:keys [cx cy rx ry] :as shape} xfmt]
+  (let [{:keys [x1 y1 x2 y2]} (shape->rect-shape shape)
+        tl (gpt/transform [x1 y1] xfmt)
+        tr (gpt/transform [x2 y1] xfmt)
+        bl (gpt/transform [x1 y2] xfmt)
+        br (gpt/transform [x2 y2] xfmt)
+
+        x (apply min (map :x [tl tr bl br]))
+        y (apply min (map :y [tl tr bl br]))
+        maxx (apply max (map :x [tl tr bl br]))
+        maxy (apply max (map :y [tl tr bl br]))
+        width (- maxx x)
+        height (- maxy y)
+        cx (+ x (/ width 2))
+        cy (+ y (/ height 2))
+        rx (/ width 2)
+        ry (/ height 2)]
+    (assoc shape :cx cx :cy cy :rx rx :ry ry)))
+
+(defn- transform-path
+  [{:keys [points] :as shape} xfmt]
+  (let [points (map #(gpt/transform % xfmt) points)]
+    (assoc shape :points points)))
 
 ;; --- Outer Rect
 
