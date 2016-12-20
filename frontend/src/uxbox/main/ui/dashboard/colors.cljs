@@ -90,17 +90,43 @@
 
 ;; --- Nav
 
-(mx/defc nav-item
-  {:mixins [mx/static]}
-  [{:keys [id type name] :as coll} selected?]
-  (letfn [(on-click [event]
-            (let [type (or type :own)]
-              (st/emit! (dc/select-collection type id))))]
-    (let [colors (count (:colors coll))]
+(mx/defcs nav-item
+  {:mixins [(mx/local) mx/static]}
+  [own {:keys [id type name] :as coll} selected?]
+  (let [colors (count (:colors coll))
+        editable? (= type :own)
+        local (:rum/local own)]
+    (letfn [(on-click [event]
+              (let [type (or type :own)]
+                (st/emit! (dc/select-collection type id))))
+            (on-input-change [event]
+              (let [value (dom/get-target event)
+                    value (dom/get-value value)]
+                (swap! local assoc :name value)))
+            (on-cancel [event]
+                (swap! local dissoc :name)
+                (swap! local dissoc :edit))
+            (on-double-click [event]
+              (when editable?
+                (swap! local assoc :edit true)))
+            (on-input-keyup [event]
+              (when (k/enter? event)
+                (let [value (dom/get-target event)
+                      value (dom/get-value value)]
+                  (st/emit! (dc/rename-collection id (str/trim (:name @local))))
+                  (swap! local assoc :edit false))))]
       [:li {:on-click on-click
+            :on-double-click on-double-click
             :class-name (when selected? "current")}
-       [:span.element-title
-        (if coll name "Storage")]
+       (if (:edit @local)
+         [:div
+          [:input.element-title
+            {:value (if (:name @local) (:name @local) (if coll name "Storage"))
+             :on-change on-input-change
+             :on-key-down on-input-keyup}]
+          [:span.close {:on-click on-cancel} i/close]]
+         [:span.element-title
+          (if coll name "Storage")])
        [:span.element-subtitle
         (tr "ds.num-elements" (t/c colors))]])))
 

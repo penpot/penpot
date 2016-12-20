@@ -67,13 +67,32 @@
         flex-shrink: 0;
         padding: 10px;
 
-        .element-title {
+        span.element-title {
           color: $color-gray-dark;
           font-weight: bold;
           margin-bottom: 5px;
           overflow-x: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+
+        input.element-title {
+          border: 0;
+          height: 30px;
+          padding: 5px;
+        }
+
+        .close {
+            background: $color-white;
+            cursor: pointer;
+            padding: 5px 10px;
+
+            svg {
+              fill: $color-gray;
+              height: 20px;
+              transform: rotate(45deg) translateY(7px);
+              width: 20px;
+            }
         }
 
         .element-subtitle {
@@ -85,9 +104,12 @@
         &.current {
           background-color: $main-ui-color;
 
-          .element-title,
+          span.element-title,
           .element-subtitle {
             color: $color-white;
+          }
+          input.element-title {
+            color: $color-gray-dark;
           }
         }
 
