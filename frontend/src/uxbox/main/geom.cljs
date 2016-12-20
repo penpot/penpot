@@ -12,6 +12,7 @@
 
 ;; --- Relative Movement
 
+;; TODO: revisit, maybe dead code
 (declare move-rect)
 (declare move-path)
 (declare move-circle)
@@ -118,31 +119,47 @@
 
 (declare size-rect)
 (declare size-circle)
+(declare size-path)
 
 (defn size
   "Calculate the size of the shape."
   [shape]
   (case (:type shape)
+    :group (assoc shape :width 100 :height 100)
     :circle (size-circle shape)
     :text (size-rect shape)
     :rect (size-rect shape)
     :icon (size-rect shape)
     :image (size-rect shape)
-    :path (size-rect shape)))
+    :path (size-path shape)))
+
+(defn- size-path
+  [{:keys [points x1 y1 x2 y2] :as shape}]
+  (if (and x1 y1 x2 y2)
+    (assoc shape
+           :width (- x2 x1)
+           :height (- y2 y1))
+    (let [minx (apply min (map :x points))
+          miny (apply min (map :y points))
+          maxx (apply max (map :x points))
+          maxy (apply max (map :y points))]
+      (assoc shape
+             :width (- maxx minx)
+             :height (- maxy miny)))))
 
 (defn- size-rect
   "A specialized function for calculate size
   for rect-like shapes."
   [{:keys [x1 y1 x2 y2] :as shape}]
-  {:width (- x2 x1)
-   :height (- y2 y1)})
+  (merge shape {:width (- x2 x1)
+                :height (- y2 y1)}))
 
 (defn- size-circle
   "A specialized function for calculate size
   for circle shape."
-  [{:keys [rx ry]}]
-  {:width (* rx 2)
-   :height (* ry 2)})
+  [{:keys [rx ry] :as shape}]
+  (merge shape {:width (* rx 2)
+                :height (* ry 2)}))
 
 ;; --- Vertex Access
 
