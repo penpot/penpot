@@ -19,6 +19,7 @@
      :source-paths ["src"]
      :compiler
      {:main 'uxbox.main
+      :cache-analysis false
       :parallel-build false
       :optimizations :none
       :closure-defines options
@@ -35,6 +36,7 @@
      :compiler
      {:main 'uxbox.view
       :parallel-build false
+      :cache-analysis false
       :optimizations :none
       :closure-defines options
       :language-in  :ecmascript6
