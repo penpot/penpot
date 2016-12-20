@@ -9,10 +9,11 @@
             [cuerdas.core :as str]
             [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.main.repo :as rp]
-            [uxbox.store :as st]
-            [uxbox.util.spec :as us]
             [potok.core :as ptk]
+            [uxbox.store :as st]
+            [uxbox.main.repo :as rp]
+            [uxbox.util.rlocks :as rlocks]
+            [uxbox.util.spec :as us]
             [uxbox.util.router :as r]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.forms :as sc]
@@ -308,6 +309,7 @@
       (rx/merge
        (->> stream
             (rx/take-until stopper)
+            (rx/filter #(not= @rlocks/lock :shape/resize))
             (rx/filter #(satisfies? IPageUpdate %))
             (rx/debounce 1000)
             (rx/map #(persist-page id)))

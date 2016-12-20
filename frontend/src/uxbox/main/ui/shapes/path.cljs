@@ -5,13 +5,14 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.path
-  (:require [uxbox.util.mixins :as mx :include-macros true]
-            [potok.core :as ptk]
+  (:require [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.geom :as geom]))
+            [uxbox.main.geom :as geom]
+            [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Path Component
 
@@ -45,11 +46,11 @@
 
 (mx/defc path-shape
   {:mixins [mx/static]}
-  [{:keys [id drawing?] :as shape}]
-  (let [key (str "shape-" id)
-        rfm (geom/transformation-matrix shape)
-        attrs (-> (attrs/extract-style-attrs shape)
-                  (merge {:id key :key key :d (render-path shape)})
-                  (merge (when-not drawing?
-                           #_{:transform (str rfm)})))]
+  [{:keys [id tmp-resize-xform tmp-displacement] :as shape}]
+  (let [xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
+               tmp-displacement (gmt/translate tmp-displacement))
+        props {:transform (str xfmt)
+               :id (str id)
+               :d (render-path shape)}
+        attrs (merge props (attrs/extract-style-attrs shape))]
     [:path attrs]))

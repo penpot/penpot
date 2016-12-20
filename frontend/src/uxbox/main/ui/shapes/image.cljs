@@ -7,14 +7,14 @@
 (ns uxbox.main.ui.shapes.image
   (:require [beicon.core :as rx]
             [lentes.core :as l]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.http :as http]
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.data.images :as udi]
-            [uxbox.main.geom :as geom]))
+            [uxbox.main.geom :as geom]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.geom.matrix :as gmt]))
 
 ;; --- Refs
 
@@ -51,13 +51,22 @@
 
 (mx/defc image-shape
   {:mixins [mx/static]}
-  [{:keys [id x1 y1 image] :as shape}]
-  (let [key (str "shape-" id)
-        ;; rfm (geom/transformation-matrix shape)
-        size (geom/size shape)
-        props {:x x1 :y y1 :id key :key key
+  [shape]
+  (let [{:keys [id x1 y1 image
+                width height
+                tmp-resize-xform
+                tmp-displacement]} (geom/size shape)
+
+        xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
+               tmp-displacement (gmt/translate tmp-displacement))
+
+        props {:x x1 :y y1
+               :id (str id)
                :preserve-aspect-ratio "none"
-               :xlink-href (:url image)}
-        attrs (-> (attrs/extract-style-attrs shape)
-                  (merge props size))]
+               :xlink-href (:url image)
+               :transform (str xfmt)
+               :width width
+               :height height}
+
+        attrs (merge props (attrs/extract-style-attrs shape))]
     [:image attrs]))

@@ -9,15 +9,16 @@
             [lentes.core :as l]
             [goog.events :as events]
             [potok.core :as ptk]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.color :as color]
-            [uxbox.util.dom :as dom]
             [uxbox.store :as st]
+            [uxbox.main.geom :as geom]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
+            [uxbox.util.color :as color]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.rlocks :as rlocks]
-            [uxbox.main.geom :as geom])
+            [uxbox.util.mixins :as mx :include-macros true])
   (:import goog.events.EventType))
 
 ;; --- Events
@@ -106,8 +107,8 @@
   [{:keys [id x1 y1 content] :as shape}]
   (let [size (geom/size shape)
         style (make-style shape)
-        rfm (geom/transformation-matrix shape)
-        props {:x x1 :y y1 :transform (str rfm)}
+        ;; rfm (geom/transformation-matrix shape)
+        props {:x x1 :y y1} ;; :transform (str rfm)}
         props (merge props size)]
     (letfn [#_(on-blur [ev]
               (rlocks/release! :ui/text-edit)
@@ -126,15 +127,38 @@
 
 ;; --- Text Shape
 
+;; NOTE: this is a hack for the browser rendering.
+;;
+;; Without forcing rerender, when the shape is displaced
+;; and only x and y attrs are updated in dom, the whole content
+;; of the foreignObject becomes sometimes partially or
+;; completelly invisible. The complete dom rerender fixes that
+;; problem.
+
+(defn- text-shape-did-update
+  [own]
+  (let [pref (mx/ref-node own "fo")
+        html (.-innerHTML pref)]
+    (set! (.-innerHTML pref) html)
+    own))
+
 (mx/defc text-shape
-  {:mixins [mx/static]}
-  [{:keys [id x1 y1 content] :as shape}]
-  (let [key (str "shape-" id)
-        rfm (geom/transformation-matrix shape)
-        size (geom/size shape)
-        props {:x x1 :y y1
-               :transform (str rfm)}
-        attrs (merge props size)
-        style (make-style shape)]
-    [:foreignObject attrs
-     [:p {:style style} content]]))
+  {:mixins [mx/static]
+   :did-update text-shape-did-update}
+  [{:keys [tmp-resize-xform] :as shape}]
+  (let [shape (cond-> (geom/size shape)
+                tmp-resize-xform (geom/transform shape tmp-resize-xform))
+
+        {:keys [id x1 y1 content
+                width height
+                tmp-displacement]} (geom/size shape)
+
+        xfmt (cond-> (gmt/matrix)
+               tmp-displacement (gmt/translate tmp-displacement))
+
+        style (make-style shape)
+        props {:x x1 :y y1 :id (str id) :ref "fo"
+               :width width :height height
+               :transform (str xfmt)}]
+    [:foreignObject props
+     [:p {:ref "p" :style style} content]]))

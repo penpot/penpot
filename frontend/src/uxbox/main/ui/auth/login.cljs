@@ -2,22 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.auth.login
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.util.router :as rt]
-            [uxbox.util.dom :as dom]
             [potok.core :as ptk]
-            [uxbox.util.forms :as forms]
-            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.store :as st]
             [uxbox.main.data.auth :as da]
             [uxbox.main.data.messages :as udm]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.messages :as uum]
-            [uxbox.main.ui.navigation :as nav]))
+            [uxbox.main.ui.navigation :as nav]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.router :as rt]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.forms :as forms]))
 
 (def form-data (forms/focus-data :login st/state))
 (def set-value! (partial forms/set-value! :login))

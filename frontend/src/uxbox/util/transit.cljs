@@ -10,6 +10,7 @@
             [com.cognitect.transit :as tr]
             [uxbox.util.data :refer (parse-int)]
             [uxbox.util.geom.point :as gpt]
+            [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.datetime :as dt]))
 
 ;; --- Transit Handlers
@@ -34,13 +35,25 @@
        (gpt/point (vec value))
        (gpt/map->Point value)))))
 
+(def matrix-write-handler
+  (t/write-handler
+   (constantly "matrix")
+   (fn [v] (into {} v))))
+
+(def matrix-read-handler
+  (t/read-handler
+   (fn [value]
+     (gmt/map->Matrix value))))
+
 (def ^:privare +read-handlers+
   {"u" uuid
    "m" datetime-read-handler
+   "matrix" matrix-read-handler
    "point" point-read-handler})
 
 (def ^:privare +write-handlers+
   {dt/DateTime datetime-write-handler
+   gmt/Matrix matrix-write-handler
    gpt/Point point-write-handler})
 
 ;; --- Public Api
@@ -52,5 +65,10 @@
 
 (defn encode
   [data]
-  (let [w (t/writer :json {:handlers +write-handlers+})]
-    (t/write w data)))
+  (try
+    (let [w (t/writer :json {:handlers +write-handlers+})]
+      (t/write w data))
+    (catch :default e
+      (println "data:" data)
+      (throw e))))
+

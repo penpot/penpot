@@ -94,6 +94,12 @@
     (Point. (/ (:x p) (:x other))
             (/ (:y p) (:y other)))))
 
+(defn negate
+  [p]
+  {:pre [(point? p)]}
+  (let [{:keys [x y]} (-point p)]
+    (Point. (- x) (- y))))
+
 (defn distance
   "Calculate the distance between two points."
   [p other]
@@ -161,7 +167,7 @@
 
 (defn transform
   "Transform a point applying a matrix transfomation."
-  [{:keys [x y] :as p} {:keys [a b c d tx ty] :as m}]
-  (Point. (+ (* x a) (* y c) tx)
-          (+ (* x b) (* y d) ty)))
-
+  [pt {:keys [a b c d tx ty] :as m}]
+  (let [{:keys [x y]} (point pt)]
+    (Point. (+ (* x a) (* y c) tx)
+            (+ (* x b) (* y d) ty))))

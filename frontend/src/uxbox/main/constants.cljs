@@ -3,7 +3,6 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.constants)
 
@@ -18,5 +17,3 @@
 (def canvas-scroll-padding 50)
 (def canvas-start-scroll-x (- canvas-start-x canvas-scroll-padding))
 (def canvas-start-scroll-y (- canvas-start-y canvas-scroll-padding))
-
-

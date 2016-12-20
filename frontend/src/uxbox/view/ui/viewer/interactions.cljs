@@ -116,7 +116,7 @@
   [{:keys [x1 y1 rotation] :as shape}
    {:keys [resize-width resize-height easing
            element delay duration direction] :as opts}]
-  (if (= direction :reverse)
+  #_(if (= direction :reverse)
     (let [end (geom/transformation-matrix shape)]
       (animate :targets [(str "#shape-" element)]
                :transform (str end)
@@ -165,7 +165,7 @@
 
 (defn- run-rotate-interaction
   [{:keys [element rotation direction easing delay duration] :as opts}]
-  (let [shape (get-in @st/state [:shapes element])
+  #_(let [shape (get-in @st/state [:shapes element])
         dom (dom/get-element (str "shape-" element))
         mtx1 (geom/transformation-matrix (update shape :rotation + rotation))
         mtx2 (geom/transformation-matrix shape)]
