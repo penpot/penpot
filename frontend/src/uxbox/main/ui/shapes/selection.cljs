@@ -9,14 +9,16 @@
   "Multiple selection handlers component."
   (:require [lentes.core :as l]
             [beicon.core :as rx]
-            [uxbox.store :as st]
-            [uxbox.util.mixins :as mx :include-macros true]
             [potok.core :as ptk]
+            [uxbox.store :as st]
+            [uxbox.main.constants :as c]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.util.rlocks :as rlocks]
             [uxbox.main.ui.shapes.common :as scommon]
             [uxbox.main.geom :as geom]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.rlocks :as rlocks]
+            [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 
@@ -41,114 +43,256 @@
 
 (def edition-ref scommon/edition-ref)
 
+(defn transform-rect
+  [{:keys [x1 y1 x2 y2] :as shape} xfmt]
+  (if xfmt
+    (let [tl (gpt/transform [x1 y1] xfmt)
+          tr (gpt/transform [x2 y1] xfmt)
+          bl (gpt/transform [x1 y2] xfmt)
+          br (gpt/transform [x2 y2] xfmt)
+          minx (apply min (map :x [tl tr bl br]))
+          maxx (apply max (map :x [tl tr bl br]))
+          miny (apply min (map :y [tl tr bl br]))
+          maxy (apply max (map :y [tl tr bl br]))]
+      (assoc shape
+             :x1 minx
+             :y1 miny
+             :x2 maxx
+             :y2 maxy))
+    shape))
+
 ;; --- Resize Implementation
 
 (defn- start-resize
-  [vid sid]
-  (letfn [(on-resize [[delta ctrl?]]
-            (let [params {:vid vid :delta (assoc delta :lock ctrl?)}]
-              (st/emit! (uds/update-vertex-position sid params))))
+  [vid ids shape]
+  (letfn [(gen-matrix [shape {scalex :x scaley :y}]
+            (case vid
+              :top-left
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x2 shape))
+                                 (+ (:y2 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x2 shape))
+                                 (- (:y2 shape))))
+
+              :top-right
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y2 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y2 shape))))
+
+              :top
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y2 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y2 shape))))
+
+              :bottom-left
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x2 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x2 shape))
+                                 (- (:y1 shape))))
+
+              :bottom-right
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y1 shape))))
+
+              :bottom
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y1 shape))))
+
+              :right
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y1 shape))))
+
+              :left
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x2 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x2 shape))
+                                 (- (:y1 shape))))
+              ))
+
+          (on-resize [shape scale]
+            (let [mt (gen-matrix shape scale)
+                  xf (map #(uds/apply-temporal-resize-matrix % mt))]
+              (apply st/emit! (sequence xf ids))))
+
           (on-end []
-            (rlocks/release! :shape/resize))]
+            (apply st/emit! (map uds/apply-resize-matrix ids))
+            (rlocks/release! :shape/resize))
+          (calculate-ratio [orig-shape {:keys [width height] :as shape}]
+            {:x (/ width (:width orig-shape))
+             :y (/ height (:height orig-shape))})
+          (apply-delta [shape [{:keys [x y] :as point} ctrl?]]
+            (case vid
+              :top-left
+              (let [width (- (:x2 shape) x)
+                    height (- (:y2 shape) y)
+                    proportion (:proportion shape)]
+                (assoc shape
+                       :width width
+                       :height (if ctrl? (/ width proportion) height)))
+
+              :top-right
+              (let [width (- x (:x1 shape))
+                    height (- (:y2 shape) y)
+                    proportion (:proportion shape)]
+                (assoc shape
+                       :width width
+                       :height (if ctrl? (/ width proportion) height)))
+
+              :top
+              (let [width (- (:x2 shape) (:x1 shape))
+                    height (- (:y2 shape) y)
+                    proportion (:proportion shape)]
+                (assoc shape
+                       :width width
+                       :height (if ctrl? (/ width proportion) height)))
+
+              :bottom-left
+              (let [width (- (:x2 shape) x)
+                    height (- y (:y1 shape))
+                    proportion (:proportion shape)]
+                (assoc shape
+                       :width width
+                       :height (if ctrl? (/ width proportion) height)))
+
+              :bottom-right
+              (let [width (- x (:x1 shape))
+                    height (- y (:y1 shape))
+                    proportion (:proportion shape)]
+                (assoc shape
+                       :width width
+                       :height (if ctrl? (/ width proportion) height)))
+
+              :bottom
+              (let [width (- (:x2 shape) (:x1 shape))
+                    height (- y (:y1 shape))
+                    proportion (:proportion shape)]
+                (assoc shape
+                       :width width
+                       :height (if ctrl? (/ width proportion) height)))
+
+              :left
+              (let [width (- (:x2 shape) x)
+                    height (- (:y2 shape) (:y1 shape))
+                    proportion (:proportion shape)]
+                (assoc shape
+                       :width width
+                       :height (if ctrl? (/ width proportion) height)))
+
+              :right
+              (let [width (- x (:x1 shape))
+                    height (- (:y2 shape) (:y1 shape))
+                    proportion (:proportion shape)]
+                (assoc shape
+                       :width width
+                       :height (if ctrl? (/ width proportion) height)))
+
+              ))]
+
     (let [stoper (->> wb/events-s
                       (rx/map first)
                       (rx/filter #(= % :mouse/up))
                       (rx/take 1))
-          stream (->> wb/mouse-delta-s
+          stream (->> wb/mouse-canvas-s
+                      (rx/map #(gpt/divide % @wb/zoom-ref))
+                      (rx/mapcat (fn [point]
+                                   (if @wb/alignment-ref
+                                     (uds/align-point point)
+                                     (rx/of point))))
                       (rx/take-until stoper)
-                      (rx/with-latest-from vector wb/mouse-ctrl-s))]
+                      (rx/with-latest-from vector wb/mouse-ctrl-s)
+                      (rx/scan apply-delta shape)
+                      (rx/map (partial calculate-ratio shape)))]
       (rlocks/acquire! :shape/resize)
-      (when @wb/alignment-ref
-        (st/emit! (uds/initial-vertext-align sid vid)))
-      (rx/subscribe stream on-resize nil on-end))))
+      (rx/subscribe stream
+                    (partial on-resize shape)
+                    nil
+                    on-end))))
+
+;; --- Controls (Component)
+
+(mx/defc controls
+  {:mixins [mx/static]}
+  [{:keys [width height x1 y1]} zoom on-mouse-down]
+  [:g.controls
+   [:rect.main {:x x1 :y y1
+                :width width
+                :height height
+                :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
+                :style {:stroke "#333" :fill "transparent"
+                        :stroke-opacity "1"}}]
+   [:circle.top
+    (merge +circle-props+
+           {:on-mouse-down #(on-mouse-down :top %)
+            :r (/ 6.0 zoom)
+            :cx (+ x1 (/ width 2))
+            :cy (- y1 2)})]
+   [:circle.right
+    (merge +circle-props+
+           {:on-mouse-down #(on-mouse-down :right %)
+            :r (/ 6.0 zoom)
+            :cy (+ y1 (/ height 2))
+            :cx (+ x1 width 1)})]
+   [:circle.bottom
+    (merge +circle-props+
+           {:on-mouse-down #(on-mouse-down :bottom %)
+            :r (/ 6.0 zoom)
+            :cx (+ x1 (/ width 2))
+            :cy (+ y1 height 2)})]
+   [:circle.left
+    (merge +circle-props+
+           {:on-mouse-down #(on-mouse-down :left %)
+            :r (/ 6.0 zoom)
+            :cy (+ y1 (/ height 2))
+            :cx (- x1 3)})]
+   [:circle.top-left
+    (merge +circle-props+
+           {:on-mouse-down #(on-mouse-down :top-left %)
+            :r (/ 6.0 zoom)
+            :cx x1
+            :cy y1})]
+   [:circle.top-right
+    (merge +circle-props+
+           {:on-mouse-down #(on-mouse-down :top-right %)
+            :r (/ 6.0 zoom)
+            :cx (+ x1 width)
+            :cy y1})]
+   [:circle.bottom-left
+    (merge +circle-props+
+           {:on-mouse-down #(on-mouse-down :bottom-left %)
+            :r (/ 6.0 zoom)
+            :cx x1
+            :cy (+ y1 height)})]
+   [:circle.bottom-right
+    (merge +circle-props+
+           {:on-mouse-down #(on-mouse-down :bottom-right %)
+            :r (/ 6.0 zoom)
+            :cx (+ x1 width)
+            :cy (+ y1 height)})]])
 
 ;; --- Selection Handlers (Component)
-
-(mx/defc multiple-selection-handlers
-  [shapes]
-  (let [{:keys [width height x y]} (geom/outer-rect-coll shapes)]
-    [:g.controls
-     [:rect.main {:x x :y y
-                  :width width
-                  :height height
-                  :stroke-dasharray "5,5"
-                  :style {:stroke "#333" :fill "transparent"
-                          :stroke-opacity "1"}}]]))
-
-(mx/defc single-not-editable-selection-handlers
-  [{:keys [id] :as shape} zoom]
-  (let [{:keys [width height x y]} (geom/outer-rect shape)]
-    [:g.controls
-     [:rect.main {:x x :y y
-                  :width width
-                  :height height
-                  :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5.0 zoom))
-                  :style {:stroke "#333"
-                          :fill "transparent"
-                          :stroke-opacity "1"}}]]))
-
-(mx/defc single-selection-handlers
-  [{:keys [id] :as shape} zoom]
-  (letfn [(on-mouse-down [vid event]
-            (dom/stop-propagation event)
-            (start-resize vid id))]
-    (let [{:keys [x y width height]} (geom/outer-rect shape)]
-      [:g.controls
-       [:rect.main {:x x :y y
-                    :width width
-                    :height height
-                    :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5.0 zoom))
-                    :style {:stroke "#333"
-                            :fill "transparent"
-                            :stroke-opacity "1"}}]
-       [:circle.top
-        (merge +circle-props+
-               {:on-mouse-down #(on-mouse-down :top %)
-                :r (/ 6.0 zoom)
-                :cx (+ x (/ width 2))
-                :cy (- y 2)})]
-       [:circle.right
-        (merge +circle-props+
-               {:on-mouse-down #(on-mouse-down :right %)
-                :r (/ 6.0 zoom)
-                :cy (+ y (/ height 2))
-                :cx (+ x width 1)})]
-       [:circle.bottom
-        (merge +circle-props+
-               {:on-mouse-down #(on-mouse-down :bottom %)
-                :r (/ 6.0 zoom)
-                :cx (+ x (/ width 2))
-                :cy (+ y height 2)})]
-       [:circle.left
-        (merge +circle-props+
-               {:on-mouse-down #(on-mouse-down :left %)
-                :r (/ 6.0 zoom)
-                :cy (+ y (/ height 2))
-                :cx (- x 3)})]
-       [:circle.top-left
-        (merge +circle-props+
-               {:on-mouse-down #(on-mouse-down :top-left %)
-                :r (/ 6.0 zoom)
-                :cx x
-                :cy y})]
-       [:circle.top-right
-        (merge +circle-props+
-               {:on-mouse-down #(on-mouse-down :top-right %)
-                :r (/ 6.0 zoom)
-                :cx (+ x width)
-                :cy y})]
-       [:circle.bottom-left
-        (merge +circle-props+
-               {:on-mouse-down #(on-mouse-down :bottom-left %)
-                :r (/ 6.0 zoom)
-                :cx x
-                :cy (+ y height)})]
-       [:circle.bottom-right
-        (merge +circle-props+
-               {:on-mouse-down #(on-mouse-down :bottom-right %)
-                :r (/ 6.0 zoom)
-                :cx (+ x width)
-                :cy (+ y height)})]])))
 
 (defn start-path-edition
   [shape-id index]
@@ -181,6 +325,43 @@
                  :stroke "#28c4d4"
                  :style {:cursor "pointer"}}])]))
 
+(mx/defc multiple-selection-handlers
+  {:mixins [mx/static]}
+  [[shape & rest :as shapes] zoom]
+  (let [resize-xf (:tmp-resize-xform shape (gmt/matrix))
+        displc-xf (-> (:tmp-displacement shape (gpt/point 0 0))
+                      (gmt/translate-matrix))
+        selection (-> (geom/shapes->rect-shape shapes)
+                      (assoc :type :rect)
+                      (geom/transform resize-xf)
+                      (geom/transform displc-xf)
+                      (geom/size))
+        on-click #(do (dom/stop-propagation %2)
+                      (start-resize %1 (map :id shapes) selection))]
+    ;; (println "single-selection-handlers" displc-xf)
+    ;; (println "single-selection-handlers" (select-keys selection [:x1 :y1 :x2 :y2]))
+    ;; (println "single-selection-handlers" (select-keys selection [:x1 :y1 :width :height]))
+    (controls selection zoom on-click)))
+
+(mx/defc single-selection-handlers
+  {:mixins [mx/static]}
+  [{:keys [id] :as shape} zoom]
+  (let [resize-xf (:tmp-resize-xform shape (gmt/matrix))
+        displc-xf (-> (:tmp-displacement shape (gpt/point 0 0))
+                      (gmt/translate-matrix))
+        selection (-> (geom/shape->rect-shape shape)
+                      ;; (transform-rect resize-xf)
+                      (assoc :type :rect)
+                      (geom/transform resize-xf)
+                      (geom/transform displc-xf)
+                      (geom/size))
+        on-click #(do (dom/stop-propagation %2)
+                      (start-resize %1 #{id} selection))]
+    ;; (println "single-selection-handlers" displc-xf)
+    ;; (println "single-selection-handlers" (select-keys selection [:x1 :y1 :x2 :y2]))
+    ;; (println "single-selection-handlers" (select-keys selection [:x1 :y1 :width :height]))
+    (controls selection zoom on-click)))
+
 (mx/defc selection-handlers
   {:mixins [mx/reactive mx/static]}
   []
@@ -196,20 +377,10 @@
       (> shapes-num 1)
       (multiple-selection-handlers shapes zoom)
 
+      (= :path (:type shape))
+      (if (= @edition-ref (:id shape))
+        (path-edition-selection-handlers shape zoom)
+        (single-selection-handlers shape zoom))
+
       :else
-      (cond
-        (= :path (:type shape))
-        (if (= @edition-ref (:id shape))
-          (path-edition-selection-handlers shape zoom)
-          (single-not-editable-selection-handlers shape zoom))
-
-        (= :text (:type shape))
-        (if (= @edition-ref (:id shape))
-          (single-not-editable-selection-handlers shape zoom)
-          (single-selection-handlers (first shapes) zoom))
-
-        (= :group (:type shape))
-        (single-not-editable-selection-handlers shape zoom)
-
-        :else
-        (single-selection-handlers (first shapes) zoom)))))
+      (single-selection-handlers shape zoom))))

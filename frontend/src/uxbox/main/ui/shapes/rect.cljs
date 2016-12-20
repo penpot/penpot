@@ -7,8 +7,10 @@
 (ns uxbox.main.ui.shapes.rect
   (:require [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.geom :as geom]
+            [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]))
 
 ;; --- Rect Component
@@ -23,18 +25,26 @@
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
-               :on-mouse-down on-mouse-down}
+               :on-mouse-down on-mouse-down
+               }
      (rect-shape shape identity)]))
 
 ;; --- Rect Shape
 
 (mx/defc rect-shape
   {:mixins [mx/static]}
-  [{:keys [id x1 y1] :as shape}]
-  (let [key (str "shape-" id)
-        rfm (geom/transformation-matrix shape)
-        size (geom/size shape)
-        props {:x x1 :y y1 :id key :key key :transform (str rfm)}
-        attrs (-> (attrs/extract-style-attrs shape)
-                  (merge props size))]
+  [shape]
+  (let [{:keys [id x1 y1 width height
+                tmp-resize-xform
+                tmp-displacement]} (geom/size shape)
+
+        xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
+               tmp-displacement (gmt/translate tmp-displacement))
+
+        props {:x x1 :y y1  :id id
+               :width width
+               :height height
+               :transform (str xfmt)}
+
+        attrs (merge (attrs/extract-style-attrs shape) props)]
     [:rect attrs]))

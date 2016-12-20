@@ -7,7 +7,7 @@
 (ns uxbox.main.ui.shapes.group
   (:require [lentes.core :as l]
             [uxbox.store :as st]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.main.geom :as geom]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.ui.shapes.icon :as icon]
@@ -16,7 +16,9 @@
             [uxbox.main.ui.shapes.text :as text]
             [uxbox.main.ui.shapes.path :as path]
             [uxbox.main.ui.shapes.image :as image]
-            [uxbox.main.geom :as geom]))
+            [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.mixins :as mx :include-macros true]))
+
 
 ;; --- Helpers
 
@@ -64,12 +66,14 @@
 
 (mx/defc group-shape
   {:mixins [mx/static mx/reactive]}
-  [{:keys [items id dx dy rotation] :as shape} factory]
-  (let [key (str "shape-" id)
-        rfm (geom/transformation-matrix shape)
-        attrs (merge {:id key :key key :transform (str rfm)}
-                     (attrs/extract-style-attrs shape)
-                     (attrs/make-debug-attrs shape))]
+  [{:keys [id items tmp-resize-xform tmp-displacement] :as shape} factory]
+  (let [xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
+               tmp-displacement (gmt/translate tmp-displacement))
+
+        props {:id (str id)
+               :transform (str xfmt)}
+
+        attrs (merge props (attrs/extract-style-attrs shape))]
     [:g attrs
      (for [item (reverse items)
            :let [key (str item)]]

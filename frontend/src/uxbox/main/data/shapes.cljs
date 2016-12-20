@@ -8,17 +8,18 @@
   (:require [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
             [potok.core :as ptk]
-            [uxbox.util.router :as r]
+            [uxbox.store :as st]
             [uxbox.util.forms :as sc]
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.router :as r]
+            [uxbox.util.rlocks :as rlocks]
             [uxbox.util.workers :as uw]
             [uxbox.main.constants :as c]
             [uxbox.main.geom :as geom]
-            [uxbox.store :as st]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.shapes-impl :as impl]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.util.rlocks :as rlocks]
-            [uxbox.util.geom.point :as gpt]))
+            [uxbox.main.data.pages :as udp]))
 
 ;; --- Shapes CRUD
 
@@ -70,18 +71,21 @@
   (gpt/point c/canvas-start-x
              c/canvas-start-y))
 
+(declare apply-temporal-displacement)
+
 (defn initial-align-shape
   [id]
   (reify
     ptk/WatchEvent
     (watch [_ state s]
-      (let [shape (get-in state [:shapes id])
-            shape (geom/outer-rect state shape)
-            point (gpt/point (:x shape) (:y shape))
-            point (gpt/add point canvas-coords)]
-        (->> (align-point point)
-             (rx/map #(gpt/subtract % point))
-             (rx/map #(move-shape id %)))))))
+      (let [{:keys [x1 y1] :as shape} (->> (get-in state [:shapes id])
+                                           (geom/shape->rect-shape state))
+            point1 (gpt/point x1 y1)
+            point2 (gpt/add point1 canvas-coords)]
+        (->> (align-point point2)
+             (rx/map #(gpt/subtract % canvas-coords))
+             (rx/map (fn [{:keys [x y] :as pt}]
+                       (apply-temporal-displacement id (gpt/subtract pt point1)))))))))
 
 (defn update-line-attrs
   [sid {:keys [x1 y1 x2 y2] :as opts}]
@@ -118,6 +122,92 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:shapes sid] geom/resize-dim opts))))
+
+;; --- Apply Temporal Displacement
+
+(deftype ApplyTemporalDisplacement [id delta]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [current-delta (get-in state [:shapes id :tmp-displacement] (gpt/point 0 0))
+          delta (gpt/add current-delta delta)]
+      (assoc-in state [:shapes id :tmp-displacement] delta))))
+
+(defn apply-temporal-displacement
+  [id pt]
+  {:pre [(uuid? id) (gpt/point? pt)]}
+  (ApplyTemporalDisplacement. id pt))
+
+;; --- Apply Displacement
+
+(deftype ApplyDisplacement [id]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [{:keys [tmp-displacement type] :as shape} (get-in state [:shapes id])
+          xfmt  (gmt/translate-matrix tmp-displacement)]
+
+      (if (= type :group)
+        (letfn [(update-item [state id]
+                  (let [{:keys [type items] :as shape} (get-in state [:shapes id])]
+                    (if (= type :group)
+                      (reduce update-item state items)
+                      (update-in state [:shapes id]
+                                 (fn [shape]
+                                   (as-> (dissoc shape :tmp-displacement) $
+                                     (geom/transform state $ xfmt)))))))]
+          (-> (reduce update-item state (:items shape))
+              (update-in [:shapes id] dissoc :tmp-displacement)))
+
+        (update-in state [:shapes id] (fn [shape]
+                                        (as-> (dissoc shape :tmp-displacement) $
+                                          (geom/transform state $ xfmt))))))))
+
+(defn apply-displacement
+  [id]
+  {:pre [(uuid? id)]}
+  (ApplyDisplacement. id))
+
+;; --- Apply Temporal Resize Matrix
+
+(deftype ApplyTemporalResizeMatrix [id mx]
+  ptk/UpdateEvent
+  (update [_ state]
+    (assoc-in state [:shapes id :tmp-resize-xform] mx)))
+
+(defn apply-temporal-resize-matrix
+  "Attach temporal resize matrix transformation to the shape."
+  [id mx]
+  (ApplyTemporalResizeMatrix. id mx))
+
+;; --- Apply Resize Matrix
+
+(declare apply-resize-matrix)
+
+(deftype ApplyResizeMatrix [id]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [{:keys [type tmp-resize-xform]
+           :or {tmp-resize-xform (gmt/matrix)}
+           :as shape} (get-in state [:shapes id])]
+      (if (= type :group)
+        (letfn [(update-item [state id]
+                  (let [{:keys [type items] :as shape} (get-in state [:shapes id])]
+                    (if (= type :group)
+                      (reduce update-item state items)
+                      (update-in state [:shapes id]
+                                 (fn [shape]
+                                   (as-> (dissoc shape :tmp-resize-xform) $
+                                     (geom/transform state $ tmp-resize-xform)))))))]
+          (-> (reduce update-item state (:items shape))
+              (update-in [:shapes id] dissoc :tmp-resize-xform)))
+        (update-in state [:shapes id] (fn [shape]
+                                        (as-> (dissoc shape :tmp-resize-xform) $
+                                          (geom/transform state $ tmp-resize-xform))))))))
+
+(defn apply-resize-matrix
+  "Apply definitivelly the resize matrix transformation to the shape."
+  [id]
+  {:pre [(uuid? id)]}
+  (ApplyResizeMatrix. id))
 
 (defn update-vertex-position
   [id {:keys [vid delta]}]
@@ -207,7 +297,6 @@
                  merge
                  (when rx {:rx rx})
                  (when ry {:ry ry})))))
-
 
 ;; --- Shape Proportions
 
@@ -378,17 +467,20 @@
             id (first (get-in state [:pages page :shapes]))]
         (assoc-in state [:workspace :selected] #{id})))))
 
+
+(deftype SelectShape [id]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [selected (get-in state [:workspace :selected])
+          state (if (contains? selected id)
+                  (update-in state [:workspace :selected] disj id)
+                  (update-in state [:workspace :selected] conj id))]
+      (update-in state [:workspace :flags] conj :element-options))))
+
 (defn select-shape
   "Mark a shape selected for drawing in the canvas."
   [id]
-  (reify
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [selected (get-in state [:workspace :selected])
-            state (if (contains? selected id)
-                    (update-in state [:workspace :selected] disj id)
-                    (update-in state [:workspace :selected] conj id))]
-        (update-in state [:workspace :flags] conj :element-options)))))
+  (SelectShape. id))
 
 ;; --- Select Shapes
 

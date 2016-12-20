@@ -5,10 +5,11 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.icon
-  (:require [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.ui.shapes.common :as common]
+  (:require [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.main.geom :as geom]))
+            [uxbox.main.geom :as geom]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.geom.matrix :as gmt]))
 
 ;; --- Icon Component
 
@@ -28,19 +29,30 @@
 
 (mx/defc icon-shape
   {:mixins [mx/static]}
-  [{:keys [x1 y1 content id metadata] :as shape} factory]
-  (let [key (str "shape-" id)
-        ;; rfm (geom/transformation-matrix shape)
+  [shape]
+  (let [{:keys [x1 y1 content id metadata
+                width height
+                tmp-resize-xform
+                tmp-displacement]} (geom/size shape)
+
+        [_ _ orw orh] (:view-box metadata)
+        scalex (/ width orw)
+        scaley (/ height orh)
+
         view-box (apply str (interpose " " (:view-box metadata)))
-        size (geom/size shape)
-        attrs (merge {:id key :key key ;; :transform (str rfm)
-                      :x x1 :y y1 :view-box view-box
-                      :preserve-aspect-ratio "none"
-                      :dangerouslySetInnerHTML {:__html content}}
-                     size
-                     (attrs/extract-style-attrs shape)
-                     (attrs/make-debug-attrs shape))]
-    [:svg attrs]))
+
+        xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
+               tmp-displacement (gmt/translate tmp-displacement)
+               true (gmt/translate x1 y1)
+               true (gmt/scale scalex scaley))
+
+        props {:id (str id)
+               :preserve-aspect-ratio "none"
+               :dangerouslySetInnerHTML {:__html content}
+               :transform (str xfmt)}
+
+        attrs (merge props (attrs/extract-style-attrs shape))]
+    [:g attrs]))
 
 ;; --- Icon SVG
 
@@ -48,7 +60,7 @@
   {:mixins [mx/static]}
   [{:keys [content id metadata] :as shape}]
   (let [view-box (apply str (interpose " " (:view-box metadata)))
-        id (str "icon-svg-" id)
-        props {:view-box view-box :id id
+        props {:view-box view-box
+               :id (str id)
                :dangerouslySetInnerHTML {:__html content}}]
     [:svg props]))

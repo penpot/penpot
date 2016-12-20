@@ -52,15 +52,15 @@
   {:pre [(map? shape)]}
   (let [show-itx? (and (mx/react itx-flag-ref)
                        (not (empty? (:interactions shape))))
-        rect (geom/inner-rect shape)]
+        rect (geom/shape->rect-shape shape)]
     [:g {:id (str "itx-" (:id shape))
          :style (when show-itx?
                   {:cursor "pointer"})}
      (factory shape)
      (when show-itx?
        [:circle {:fill "#78dbbe"
-                 :cx (:x rect)
-                 :cy (:y rect)
+                 :cx (:x1 rect)
+                 :cy (:y1 rect)
                  :r 5}])]))
 
 ;; --- Shapes

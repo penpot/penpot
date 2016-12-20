@@ -555,6 +555,7 @@
    (case type
      :rect (transform-rect shape xfmt)
      :icon (transform-rect shape xfmt)
+     :text (transform-rect shape xfmt)
      :image (transform-rect shape xfmt)
      :path (transform-path shape xfmt)
      :circle (transform-circle shape xfmt))))

@@ -10,11 +10,12 @@
             [beicon.core :as rx]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.geom :as geom]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.rlocks :as rlocks]
-            [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]))
 
 ;; --- Refs
@@ -36,13 +37,19 @@
 
 (defn start-move
   []
-  (letfn [(on-start [shape]
+  (letfn [(on-move [shape delta]
+            (st/emit! (uds/apply-temporal-displacement shape delta)))
+          (on-stop [{:keys [id] :as shape}]
+            (rlocks/release! :shape/move)
+            (st/emit! (uds/apply-displacement shape)))
+          (on-start [shape]
             (let [stoper (->> (rx/map first wb/events-s)
                               (rx/filter #(= % :mouse/up))
                               (rx/take 1))
-                  stream (rx/take-until stoper wb/mouse-delta-s)
-                  on-move #(st/emit! (uds/move-shape shape %))
-                  on-stop #(rlocks/release! :shape/move)]
+                  stream (->> wb/mouse-delta-s
+                              (rx/take-until stoper))
+                  on-move (partial on-move shape)
+                  on-stop (partial on-stop shape)]
               (when @wb/alignment-ref
                 (st/emit! (uds/initial-align-shape shape)))
               (rx/subscribe stream on-move nil on-stop)))]
