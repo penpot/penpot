@@ -54,10 +54,8 @@
 
     li {
       align-items: center;
-      border-bottom: 1px solid $soft-ui-border;
       display: flex;
       flex-direction: row;
-      padding: $small;
       width: 100%;
 
       .page-icon {
@@ -147,6 +145,143 @@
 
     }
 
+    .element-list-body {
+      align-items: center;
+      border-bottom: 1px solid $soft-ui-border;
+      display: flex;
+      padding: $small;
+      transition: none;
+      width: 100%;
+
+      svg {
+        fill: $soft-ui-icons;
+        height: 13px;
+        margin-right: 8px;
+        width: 13px;
+      }
+
+      .element-actions {
+        align-items: center;
+        display: flex;
+        flex-shrink: 0;
+        width: 62px;
+      }
+
+      .element-icon {
+
+        svg {
+          fill: $medium-ui-icons;
+        }
+
+      }
+
+      .toggle-content {
+        margin-left: auto;
+        width: 12px;
+
+        svg {
+          fill: $intense-ui-icons;
+          transform: rotate(90deg);
+          width: 10px;
+        }
+
+        &.inverse {
+          svg { transform: rotate(270deg); }
+        }
+
+        &:hover {
+
+          svg {
+            fill: $medium-ui-icons;
+          }
+
+        }
+
+      }
+
+      &.group {
+
+        &.open {
+
+          .toggle-content {
+            flex-shrink: 0;
+
+            svg {
+              transform: rotate(270deg);
+            }
+
+          }
+
+        }
+
+      }
+
+      span.element-name {
+        min-width: 40px;
+        min-height: 16px;
+        display: block;
+
+        color: $medium-ui-text;
+        font-size: $fs13;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      &.selected {
+
+        .element-icon {
+
+          svg {
+            fill: $main-ui-color;
+          }
+
+        }
+
+        span {
+          color: $main-ui-color;
+        }
+
+      }
+
+      .selected {
+
+        svg {
+          fill: $intense-ui-icons;
+        }
+
+      }
+
+      &:hover {
+        border-color: $main-ui-color;
+
+        .element-icon {
+
+          svg {
+            fill: $intense-ui-icons;
+          }
+
+        }
+
+        span {
+          color: $intense-ui-text;
+        }
+
+      }
+
+      &.drag-top {
+        border-top: 40px solid $color-gray-lighter !important;
+      }
+
+      &.drag-bottom {
+        border-bottom: 40px solid $color-gray-lighter !important;
+      }
+
+      &.drag-inside {
+        border: 2px solid $main-ui-color !important;
+      }
+
+    }
   }
 
 }

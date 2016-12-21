@@ -59,7 +59,7 @@
   {:mixins [mx/static mx/reactive]}
   [{:keys [metadata id] :as page}]
   (let [data (merge +page-defaults+
-                    (select-keys page [:name :id])
+                    (select-keys page [:name :id :project])
                     (select-keys metadata [:width :height :layout])
                     (mx/react form-data))
         valid? (forms/valid? data +page-form+)]

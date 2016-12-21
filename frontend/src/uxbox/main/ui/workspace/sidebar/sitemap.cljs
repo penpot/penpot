@@ -10,6 +10,7 @@
             [cuerdas.core :as str]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
+            [uxbox.util.data :refer (classnames)]
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.data.projects :as dp]
@@ -21,6 +22,7 @@
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
+            [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom]))
 
 ;; --- Refs
@@ -30,7 +32,7 @@
   (let [project (get-in state [:workspace :project])]
     (->> (vals (:pages state))
          (filter #(= project (:project %)))
-         (sort-by :created-at))))
+         (sort-by #(get-in % [:metadata :order])))))
 
 (def pages-ref
   (-> (l/lens resolve-pages)
@@ -38,31 +40,84 @@
 
 ;; --- Component
 
-(mx/defc page-item
+(mx/defcs page-item
   {:mixins [(mx/local) mx/static mx/reactive]}
-  [page total active?]
-  (letfn [(on-edit [event]
-            (udl/open! :page-form {:page page}))
+  [own page total active?]
+  (let [local (:rum/local own)
+        classes (classnames
+                 :selected active?
+                 :drag-active (:dragging @local)
+                 :drag-top (= :top (:over @local))
+                 :drag-bottom (= :bottom (:over @local))
+                 :drag-inside (= :middle (:over @local)))]
+    (letfn [(on-edit [event]
+              (udl/open! :page-form {:page page}))
 
-          (on-navigate [event]
-            (st/emit! (dp/go-to (:project page) (:id page))))
+            (on-navigate [event]
+              (st/emit! (dp/go-to (:project page) (:id page))))
 
-          (delete []
-            (let [next #(st/emit! (dp/go-to (:project page)))]
-              (st/emit! (udp/delete-page (:id page) next))))
+            (delete []
+              (let [next #(st/emit! (dp/go-to (:project page)))]
+                (st/emit! (udp/delete-page (:id page) next))))
 
-          (on-delete [event]
-            (dom/prevent-default event)
-            (dom/stop-propagation event)
-            (udl/open! :confirm {:on-accept delete}))]
-    [:li {:class (when active? "selected")
-          :on-click on-navigate}
-     [:div.page-icon i/page]
-     [:span (:name page)]
-     [:div.page-actions
-      [:a {:on-click on-edit} i/pencil]
-      (if (> total 1)
-        [:a {:on-click on-delete} i/trash])]]))
+            (on-delete [event]
+              (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (udl/open! :confirm {:on-accept delete}))
+
+            (on-drag-start [event]
+              (let [target (dom/event->target event)]
+                (dnd/set-allowed-effect! event "move")
+                (dnd/set-data! event (:id page))
+                (dnd/set-image! event target 50 10)
+                (swap! local assoc :dragging true)))
+            (on-drag-end [event]
+              (swap! local assoc :dragging false :over nil))
+            (on-drop [event]
+              (dom/stop-propagation event)
+              (let [id (dnd/get-data event)
+                    over (:over @local)]
+                (case (:over @local)
+                  :top (let [new-order (dec (get-in page [:metadata :order]))]
+                         (st/emit! (udp/update-order id new-order))
+                         (st/emit! (udp/reorder-pages))
+                         (st/emit! (udp/persist-pages)))
+                  :bottom (let [new-order (inc (get-in page [:metadata :order]))]
+                            (st/emit! (udp/update-order id new-order))
+                            (st/emit! (udp/reorder-pages))
+                            (st/emit! (udp/persist-pages))))
+                (swap! local assoc :dragging false :over nil)))
+            (on-drag-over [event]
+              (dom/prevent-default event)
+              (dnd/set-drop-effect! event "move")
+              (let [over (dnd/get-hover-position event false)]
+                (swap! local assoc :over over)))
+            (on-drag-enter [event]
+              (swap! local assoc :over true))
+            (on-drag-leave [event]
+              (swap! local assoc :over false))]
+    [:li {:class (when active? "selected")}
+     [:div.element-list-body
+      {:class classes
+       :style {:opacity (if (:dragging @local)
+                          "0.5"
+                          "1")}
+       :on-click on-navigate
+       :on-double-click #(dom/stop-propagation %)
+       :on-drag-start on-drag-start
+       :on-drag-enter on-drag-enter
+       :on-drag-leave on-drag-leave
+       :on-drag-over on-drag-over
+       :on-drag-end on-drag-end
+       :on-drop on-drop
+       :draggable true}
+
+       [:div.page-icon i/page]
+       [:span (:name page)]
+       [:div.page-actions
+        [:a {:on-click on-edit} i/pencil]
+        (if (> total 1)
+          [:a {:on-click on-delete} i/trash])]]])))
 
 (mx/defc sitemap-toolbox
   {:mixins [mx/static mx/reactive]}

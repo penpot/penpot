@@ -41,6 +41,7 @@
                    ::grid-x-axis
                    ::grid-color
                    ::grid-alignment
+                   ::order
                    ::background
                    ::background-opacity
                    ::layout]))
@@ -156,7 +157,8 @@
                   :data {}
                   :metadata {:width width
                              :height height
-                             :layout layout}}]
+                             :layout layout
+                             :order 0}}]
       (->> (rp/req :create/page params)
            (rx/map :payload)
            (rx/map page-created)))))
@@ -246,6 +248,22 @@
   {:pre [(uuid? id)]}
   (PersistMetadata. id))
 
+(deftype PersistPages []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (letfn [(resolve-pages [state]
+              (let [project (get-in state [:workspace :project])]
+                (->> (vals (:pages state))
+                     (filter #(= project (:project %)))
+                     (sort-by #(get-in % [:metadata :order])))))]
+      (->> (rx/from-coll (resolve-pages state))
+           (rx/map :id)
+           (rx/map persist-metadata)))))
+
+(defn persist-pages
+  []
+  (PersistPages.))
+
 ;; --- Update Page Options
 
 (deftype UpdateMetadata [id metadata]
@@ -258,6 +276,34 @@
   [id metadata]
   {:pre [(uuid? id) (us/valid? ::metadata metadata)]}
   (UpdateMetadata. id metadata))
+
+(deftype UpdateOrder [id order]
+  IMetadataUpdate
+  ptk/UpdateEvent
+  (update [this state]
+    (assoc-in state [:pages id :metadata :order] order)))
+
+(defn update-order
+  [id order]
+  {:pre [(uuid? id)]}
+  (UpdateOrder. id order))
+
+(deftype ReorderPages []
+  IMetadataUpdate
+  ptk/UpdateEvent
+  (update [this state]
+    (letfn [(resolve-pages []
+              (let [project (get-in state [:workspace :project])]
+                (->> (vals (:pages state))
+                     (filter #(= project (:project %)))
+                     (sort-by #(get-in % [:metadata :order])))))
+            (ordered-pages [[state idx] page]
+              [(assoc-in state [:pages (:id page) :metadata :order] (* 10 idx)) (inc idx)])]
+      (first (reduce ordered-pages [state, 1] (resolve-pages))))))
+
+(defn reorder-pages
+  []
+  (ReorderPages.))
 
 ;; --- Update Page
 

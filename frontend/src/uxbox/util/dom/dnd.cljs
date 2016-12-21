@@ -46,3 +46,19 @@
   ([e key]
    (let [dt (.-dataTransfer e)]
      (read-string (.getData dt (str key))))))
+
+(defn get-hover-position
+  [event group?]
+  (let [target (.-currentTarget event)
+        brect (.getBoundingClientRect target)
+        width (.-offsetHeight target)
+        y (- (.-clientY event) (.-top brect))
+        part (/ (* 30 width) 100)]
+    (if group?
+      (cond
+        (> part y) :top
+        (< (- width part) y) :bottom
+        :else :middle)
+      (if (>= y (/ width 2))
+        :bottom
+        :top))))
