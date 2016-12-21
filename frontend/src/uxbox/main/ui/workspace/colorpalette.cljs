@@ -31,14 +31,14 @@
 
 (mx/defc palette-items
   {:mixins [mx/static]}
-  [colors]
+  [colors position]
   (letfn [(select-color [event color]
             (dom/prevent-default event)
             (if (kbd/shift? event)
               (st/emit! (uds/update-selected-shapes-stroke {:color color}))
               (st/emit! (uds/update-selected-shapes-fill {:color color}))))]
     [:div.color-palette-content
-     [:div.color-palette-inside
+     [:div.color-palette-inside {:style {:position "relative" :right (str (* position 52 10) "px")}}
       (for [hex-color colors
             :let [rgb-vec (hex->rgb hex-color)
                   rgb-color (apply str "" (interpose ", " rgb-vec))]]
@@ -58,7 +58,7 @@
         collection (get-selected-collection local collections)]
     (letfn [(select-collection [event]
               (let [value (read-string (dom/event->value event))]
-                (swap! local assoc :selected value)))
+                (swap! local assoc :selected value :position 0)))
             (close [event]
               (st/emit! (dw/toggle-flag :colorpalette)))]
       [:div.color-palette
@@ -71,9 +71,17 @@
         #_[:div.color-palette-buttons
            [:div.btn-palette.edit.current i/pencil]
            [:div.btn-palette.create i/close]]]
-       [:span.left-arrow i/arrow-slide]
-       (palette-items (:colors collection))
-       [:span.right-arrow i/arrow-slide]
+       [:span.left-arrow
+        (if (> (:position @local) 0)
+          {:on-click #(swap! local update :position dec)}
+          {:class :disabled})
+        i/arrow-slide]
+       (palette-items (:colors collection) (:position @local))
+       [:span.right-arrow
+        (if (< (* (+ 1 (:position @local)) 10) (count (:colors collection)))
+          {:on-click #(swap! local update :position inc)}
+          {:class :disabled})
+        i/arrow-slide]
        [:span.close-palette {:on-click close}
         i/close]])))
 
