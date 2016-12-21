@@ -44,3 +44,54 @@
     (let [stream (->> (rx/map first rlocks/stream)
                       (rx/filter #(= % :workspace/scroll)))]
       (rx/subscribe stream on-start))))
+
+(defn set-scroll-position
+  [dom position]
+  (set! (.-scrollLeft dom) (:x position))
+  (set! (.-scrollTop dom) (:y position)))
+
+(defn set-scroll-center
+  [dom center]
+  (let [viewport-width (.-offsetWidth dom)
+        viewport-height (.-offsetHeight dom)
+        position-x (- (* (:x center) @wb/zoom-ref) (/ viewport-width 2))
+        position-y (- (* (:y center) @wb/zoom-ref) (/ viewport-height 2))
+        position (gpt/point position-x position-y)]
+    (set-scroll-position dom position)))
+
+(defn scroll-to-page-center
+  [dom page]
+  (let [page-width (get-in page [:metadata :width])
+        page-height (get-in page [:metadata :height])
+        center (gpt/point (+ 1200 (/ page-width 2)) (+ 1200 (/ page-height 2)))]
+    (set-scroll-center dom center)))
+
+(defn get-current-center
+  [dom]
+  (let [viewport-width (.-offsetWidth dom)
+        viewport-height (.-offsetHeight dom)
+        scroll-left (.-scrollLeft dom)
+        scroll-top (.-scrollTop dom)]
+    (gpt/point
+     (+ (/ viewport-width 2) scroll-left)
+     (+ (/ viewport-height 2) scroll-top))))
+
+(defn get-current-center-absolute
+  [dom]
+  (gpt/divide (get-current-center dom) @wb/zoom-ref))
+
+(defn get-current-position
+  [dom]
+  (let [scroll-left (.-scrollLeft dom)
+        scroll-top (.-scrollTop dom)]
+    (gpt/point scroll-left scroll-top)))
+
+(defn get-current-position-absolute
+  [dom]
+    (gpt/divide (get-current-position dom) @wb/zoom-ref))
+
+(defn scroll-to-point
+  [dom point position]
+  (let [viewport-offset (gpt/subtract point position)
+        new-scroll-position (gpt/subtract (gpt/multiply point @wb/zoom-ref) (gpt/multiply viewport-offset @wb/zoom-ref))]
+    (set-scroll-position dom new-scroll-position)))

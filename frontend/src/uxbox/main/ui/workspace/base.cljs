@@ -65,6 +65,8 @@
   (-> (l/in [:workspace :zoom])
       (l/derive st/state)))
 
+(def zoom-ref-s (rx/from-atom zoom-ref))
+
 (def alignment-ref
   (letfn [(getter [flags]
             (and (contains? flags :grid-indexed)

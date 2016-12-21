@@ -47,18 +47,11 @@
   [own]
   (let [[projectid pageid] (:rum/args own)
         dom (mx/ref-node own "workspace-canvas")
-        scroll-to-center (fn []
-            ;; Set page scroll position
-            (let [viewport-width (.-offsetWidth dom)
-                  viewport-height (.-offsetHeight dom)
-                  page-width (get-in @wb/page-ref [:metadata :width])
-                  page-height (get-in @wb/page-ref [:metadata :height])]
-              (set! (.-scrollLeft dom) (- (* (+ 1200 (/ page-width 2)) @wb/zoom-ref) (/ viewport-width 2)))
-              (set! (.-scrollTop dom) (- (* (+ 1200 (/ page-height 2)) @wb/zoom-ref) (/ viewport-height 2)))))
+        scroll-to-page-center #(scroll/scroll-to-page-center dom @wb/page-ref)
         sub1 (scroll/watch-scroll-interactions own)
-        sub2 (rx/subscribe wb/page-id-ref-s scroll-to-center)]
+        sub2 (rx/subscribe wb/page-id-ref-s scroll-to-page-center)]
 
-    (scroll-to-center)
+    (scroll-to-page-center)
 
     (st/emit! (udp/watch-page-changes pageid)
               (udu/watch-page-changes pageid)
@@ -95,24 +88,16 @@
 (defn- on-wheel
   [own event]
   (when (kbd/ctrl? event)
-    (let [prev-zoom @wb/zoom-ref]
+    (let [prev-zoom @wb/zoom-ref
+          dom (mx/ref-node own "workspace-canvas")
+          scroll-position (scroll/get-current-position-absolute dom)
+          mouse-point @wb/mouse-viewport-a]
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
         (st/emit! (dw/increase-zoom))
         (st/emit! (dw/decrease-zoom)))
-
-      (let [
-          dom (mx/ref-node own "workspace-canvas")
-          scroll-position (gpt/divide @wb/scroll-a prev-zoom)
-          mouse-position (gpt/divide @wb/mouse-viewport-a prev-zoom)
-          viewport-offset-x (* (- (:x mouse-position) (:x scroll-position)) prev-zoom)
-          viewport-offset-y (* (- (:y mouse-position) (:y scroll-position)) prev-zoom)
-          new-scroll-position-x (- (* (:x mouse-position) @wb/zoom-ref) viewport-offset-x)
-          new-scroll-position-y (- (* (:y mouse-position) @wb/zoom-ref) viewport-offset-y)
-        ]
-        (set! (.-scrollLeft dom) new-scroll-position-x )
-        (set! (.-scrollTop dom) new-scroll-position-y)))))
+      (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (defn- workspace-render
   [own]
