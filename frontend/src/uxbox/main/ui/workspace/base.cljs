@@ -39,6 +39,12 @@
     (-> (l/lens getter)
         (l/derive st/state))))
 
+(def page-id-ref
+  (as-> (l/in [:id]) $
+    (l/derive $ page-ref)))
+
+(def page-id-ref-s (rx/from-atom page-id-ref))
+
 (def selected-shapes-ref
   (as-> (l/in [:selected]) $
     (l/derive $ workspace-ref)))

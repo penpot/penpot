@@ -46,24 +46,32 @@
 (defn- workspace-did-mount
   [own]
   (let [[projectid pageid] (:rum/args own)
+        dom (mx/ref-node own "workspace-canvas")
+        scroll-to-center (fn []
+            ;; Set page scroll position
+            (let [viewport-width (.-offsetWidth dom)
+                  viewport-height (.-offsetHeight dom)
+                  page-width (get-in @wb/page-ref [:metadata :width])
+                  page-height (get-in @wb/page-ref [:metadata :height])]
+              (set! (.-scrollLeft dom) (- (* (+ 1200 (/ page-width 2)) @wb/zoom-ref) (/ viewport-width 2)))
+              (set! (.-scrollTop dom) (- (* (+ 1200 (/ page-height 2)) @wb/zoom-ref) (/ viewport-height 2)))))
         sub1 (scroll/watch-scroll-interactions own)
-        dom (mx/ref-node own "workspace-canvas")]
+        sub2 (rx/subscribe wb/page-id-ref-s scroll-to-center)]
+
+    (scroll-to-center)
 
     (st/emit! (udp/watch-page-changes pageid)
               (udu/watch-page-changes pageid)
               (udh/watch-page-changes pageid))
 
-    ;; Set initial scroll position
-    (set! (.-scrollLeft dom) (* c/canvas-start-scroll-x @wb/zoom-ref))
-    (set! (.-scrollTop dom) (* c/canvas-start-scroll-y @wb/zoom-ref))
-
-    (assoc own ::sub1 sub1)))
+    (assoc own ::sub1 sub1 ::sub2 sub2)))
 
 (defn- workspace-will-unmount
   [own]
   (st/emit! ::udp/stop-page-watcher)
   (.close (::sub1 own))
-  (dissoc own ::sub1))
+  (.close (::sub2 own))
+  (dissoc own ::sub1 ::sub2))
 
 (defn- workspace-did-remount
   [old-state state]
