@@ -52,6 +52,16 @@
     (remove-watch local ::key)
     own))
 
+(defn- get-or-select-coll
+  [local colls-map]
+  (if (:id @local)
+   (get colls-map (:id @local))
+   (let [colls (->> (vals colls-map)
+                    (sort-by :name))
+         selected-coll (first (filter #(> (:num-icons %) 0) colls))]
+     (swap! local assoc :id (:id selected-coll)
+     selected-coll))))
+
 (mx/defcs icons-toolbox
   {:mixins [(mx/local) mx/reactive]
    :will-mount icons-toolbox-will-mount
@@ -62,11 +72,10 @@
         colls-map (mx/react icons/collections-ref)
         colls (->> (vals colls-map)
                    (sort-by :name))
-        coll (get colls-map (:id @local))
-
+        selected-coll (get-or-select-coll local colls-map)
         icons (mx/react icons/icons-ref)
         icons (->> (vals icons)
-                   (filter #(= (:id coll) (:collection %))))]
+                   (filter #(= (:id selected-coll) (:collection %))))]
 
     (letfn [(on-close [event]
               (st/emit! (dw/toggle-flag :icons)))
@@ -86,7 +95,7 @@
         [:div.figures-catalog
          ;; extract component: set selector
          [:select.input-select.small {:on-change on-change
-                                      :value (pr-str (:id coll))}
+                                      :value (pr-str (:id selected-coll))}
           [:option {:value (pr-str nil)} "Storage"]
           (for [coll colls]
             [:option {:key (str "icon-coll" (:id coll))
