@@ -55,6 +55,17 @@
     [:span {:alt "y"}
      (str "Y: " (:y coords "-"))]]))
 
+(mx/defc cursor-tooltip
+  {:mixins [mx/reactive mx/static]}
+  [tooltip]
+  (let [coords (mx/react wb/mouse-absolute-a)]
+   [:span.cursor-tooltip
+    {:style
+     {:position "fixed"
+      :left (str (+ (:x coords) 5) "px")
+      :top (str (- (:y coords) 25) "px")}}
+    tooltip]))
+
 ;; --- Canvas
 
 (mx/defc canvas
@@ -153,6 +164,7 @@
         page (mx/react wb/page-ref)
         flags (:flags workspace)
         drawing? (:drawing workspace)
+        tooltip (:tooltip workspace)
         zoom (or (:zoom workspace) 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
@@ -188,6 +200,8 @@
                 (rx/push! wb/events-b [:mouse/double-click opts])))]
       [:div
         (coordinates)
+        (when tooltip
+          (cursor-tooltip tooltip))
         [:svg.viewport {:width (* c/viewport-width zoom)
                         :height (* c/viewport-height zoom)
                         :ref "viewport"

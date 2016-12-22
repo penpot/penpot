@@ -119,6 +119,9 @@
        (rx/map :window-coords)
        (rx/share)))
 
+(defonce mouse-absolute-a
+  (rx/to-atom mouse-absolute-s))
+
 (defonce mouse-ctrl-s
   (->> mouse-s
        (rx/map :ctrl)

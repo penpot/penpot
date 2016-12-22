@@ -204,6 +204,17 @@
   []
   (ResetZoom.))
 
+;; --- Set tooltip
+
+(defrecord SetTooltip [text]
+  ptk/UpdateEvent
+  (update [_ state]
+    (assoc-in state [:workspace :tooltip] text)))
+
+(defn set-tooltip
+  [text]
+  (SetTooltip. text))
+
 ;; --- Initialize Alignment Index
 
 (declare initialize-alignment?)

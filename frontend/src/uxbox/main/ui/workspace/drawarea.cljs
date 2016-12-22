@@ -81,7 +81,12 @@
   (letfn [(on-click [event]
             (dom/stop-propagation event)
             (swap! drawing-shape drop-last-point)
+            (st/emit! (udw/set-tooltip nil))
             (rx/push! drawing-stoper true))
+          (on-mouse-enter [event]
+            (st/emit! (udw/set-tooltip "Click to close the path")))
+          (on-mouse-leave [event]
+            (st/emit! (udw/set-tooltip nil)))
           (drop-last-point [shape]
             (let [points (:points shape)
                   points (vec (butlast points))]
@@ -94,7 +99,9 @@
          [:circle.close-bezier {:cx x
                    :cy y
                    :r 5
-                   :on-click on-click}])])))
+                   :on-click on-click
+                   :on-mouse-enter on-mouse-enter
+                   :on-mouse-leave on-mouse-leave}])])))
 
 ;; --- Drawing Initialization
 
