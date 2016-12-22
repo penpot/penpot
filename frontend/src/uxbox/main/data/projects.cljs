@@ -162,12 +162,11 @@
     (letfn [(on-success [{project :payload}]
               (rx/of
                (project-persisted project)
-               (udp/create-page {:metadata {:width width
-                                            :height height
-                                            :layout layout}
+               (udp/create-page {:width width
+                                 :height height
+                                 :layout layout
                                  :project (:id project)
-                                 :name "Page 1"
-                                 :data nil})))]
+                                 :name "Page 1" })))]
       (->> (rp/req :create/project {:name name})
            (rx/mapcat on-success)))))
 
