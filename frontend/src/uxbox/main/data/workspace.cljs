@@ -155,6 +155,7 @@
   ptk/UpdateEvent
   (update [_ state]
     (let [page (get-in state [:workspace :page])
+          used-names (map #(get-in state [:shapes % :name]) (get-in state [:pages page :shapes]))
           selected (if (nil? id)
                      (first (:clipboard state))
                      (->> (:clipboard state)

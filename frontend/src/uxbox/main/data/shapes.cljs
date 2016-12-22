@@ -31,8 +31,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page (get-in state [:workspace :page])
+            used-names (map #(get-in state [:shapes % :name]) (get-in state [:pages page :shapes]))
             shape (geom/setup-proportions shape)]
-        (impl/assoc-shape-to-page state shape page)))))
+        (impl/assoc-shape-to-page state shape used-names page)))))
 
 (defn delete-shape
   "Remove the shape using its id."
@@ -599,8 +600,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :page])
+            used-names (map #(get-in state [:shapes % :name]) (get-in state [:pages pid :shapes]))
             selected (get-in state [:workspace :selected])]
-        (impl/group-shapes state selected pid)))))
+        (impl/group-shapes state selected used-names pid)))))
 
 (defn degroup-selected
   []
@@ -619,8 +621,10 @@
     udp/IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (get-in state [:workspace :selected])]
-        (impl/duplicate-shapes state selected)))))
+      (let [pid (get-in state [:workspace :page])
+            selected (get-in state [:workspace :selected])
+            used-names (map #(get-in state [:shapes % :name]) (get-in state [:pages pid :shapes]))]
+        (impl/duplicate-shapes state selected used-names)))))
 
 (defn delete-selected
   "Deselect all and remove all selected shapes."

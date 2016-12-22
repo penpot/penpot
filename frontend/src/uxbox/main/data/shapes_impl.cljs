@@ -11,23 +11,34 @@
 
 ;; --- Shape Creation
 
+(defn generate-uniq-name
+  [used-names new-name counter]
+  (if (nil? counter)
+    (if (some #(= % new-name) used-names)
+      (generate-uniq-name used-names new-name 1)
+      new-name)
+    (if (some #(= % (str new-name "-" counter)) used-names)
+      (generate-uniq-name used-names new-name (inc counter))
+      (str new-name "-" counter))))
+
 (defn assoc-shape-to-page
-  [state shape page]
+  [state shape used-names page]
   (let [sid (uuid/random)
-        shape (merge shape {:id sid :page page})]
+        shape (merge shape {:id sid :page page :name (generate-uniq-name used-names (:name shape) nil)})]
+    (println used-names)
     (as-> state $
       (update-in $ [:pages page :shapes] #(into [] (cons sid %)))
       (assoc-in $ [:shapes sid] shape))))
 
 (defn duplicate-shapes'
-  ([state shapes page]
-   (duplicate-shapes' state shapes page nil))
-  ([state shapes page group]
-   (letfn [(duplicate-shape [state shape page group]
+  ([state shapes used-names page]
+   (duplicate-shapes' state shapes used-names page nil))
+  ([state shapes used-names page group]
+   (letfn [(duplicate-shape [state shape used-names page group]
              (if (= (:type shape) :group)
                (let [id (uuid/random)
                      items (:items shape)
-                     shape (assoc shape :id id :page page :items [])
+                     shape (assoc shape :id id :page page :items [] :name (generate-uniq-name used-names (str (:name shape) " copy") nil))
                      state (if (nil? group)
                              (as-> state $
                                (update-in $ [:pages page :shapes] #(into [] (cons id %)))
@@ -36,10 +47,10 @@
                                (update-in $ [:shapes group :items] #(into [] (cons id %)))
                                (assoc-in $ [:shapes id] shape)))]
                  (->> (map #(get-in state [:shapes %]) items)
-                      (reduce #(duplicate-shape %1 %2 page id) state)))
+                      (reduce #(duplicate-shape %1 %2 used-names page id) state)))
                (let [id (uuid/random)
                      shape (-> (dissoc shape :group)
-                               (assoc :id id :page page)
+                               (assoc :id id :page page :name (generate-uniq-name used-names (str (:name shape) " copy") nil))
                                (merge (when group {:group group})))]
                  (if (nil? group)
                    (as-> state $
@@ -49,12 +60,12 @@
                      (update-in $ [:shapes group :items] #(into [] (cons id %)))
                      (assoc-in $ [:shapes id] shape))))))]
 
-     (reduce #(duplicate-shape %1 %2 page group) state shapes))))
+     (reduce #(duplicate-shape %1 %2 used-names page group) state shapes))))
 
 (defn duplicate-shapes
-  ([state shapes]
-   (duplicate-shapes state shapes nil))
-  ([state shapes page]
+  ([state shapes used-names]
+   (duplicate-shapes state shapes used-names nil))
+  ([state shapes used-names page]
    (letfn [(all-toplevel? [coll]
              (every? #(nil? (:group %)) coll))
            (all-same-group? [coll]
@@ -64,16 +75,16 @@
        (cond
          (all-toplevel? shapes)
          (let [page (or page (:page (first shapes)))]
-           (duplicate-shapes' state shapes page))
+           (duplicate-shapes' state shapes used-names page))
 
          (all-same-group? shapes)
          (let [page (or page (:page (first shapes)))
                group (:group (first shapes))]
-           (duplicate-shapes' state shapes page group))
+           (duplicate-shapes' state shapes used-names page group))
 
          :else
          (let [page (or page (:page (first shapes)))]
-           (duplicate-shapes' state shapes page)))))))
+           (duplicate-shapes' state shapes used-names page)))))))
 
 ;; --- Delete Shapes
 
@@ -271,7 +282,7 @@
     (reduce match #{} (sequence xf shapes))))
 
 (defn group-shapes
-  [state shapes page]
+  [state shapes used-names page]
   (letfn [(replace-first-item [pred coll replacement]
             (into []
               (concat
@@ -319,10 +330,10 @@
                          (nil? (first distinct-groups)) :page
                          :else (first distinct-groups))
           group {:type :group
-                :name (str "Group " (rand-int 1000))
-                :items (into [] shapes)
-                :id sid
-                :page page}]
+                 :name (generate-uniq-name used-names "Group" nil)
+                 :items (into [] shapes)
+                 :id sid
+                 :page page}]
       (as-> state $
         (update-shapes-on-index $ shapes' sid)
         (cond
@@ -377,4 +388,3 @@
       (as-> state $
         (empty-groups $ page groups-ids)
         (update $ :workspace assoc :selected (set groups-items))))))
-
