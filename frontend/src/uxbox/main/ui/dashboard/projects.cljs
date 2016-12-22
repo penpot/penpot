@@ -289,7 +289,7 @@
        :id id
        :name "project-layout"
        :value name
-       :checked (= layout-id (:layout @local))
+       :checked (when (= layout-id (:layout @local)) "checked")
        :on-change #(swap! local merge {:layout layout-id
                                        :width width
                                        :height height})}]
