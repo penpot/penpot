@@ -19,6 +19,7 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
+            [uxbox.util.math :refer (precision)]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
 (mx/defc circle-measures-menu
@@ -56,7 +57,7 @@
          {:placeholder "Width"
           :type "number"
           :min "0"
-          :value (:rx shape)
+          :value (precision (:rx shape 0) 2)
           :on-change (partial on-size-change :rx)}]]
        [:div.lock-size
         {:class (when (:proportion-lock shape) "selected")
@@ -67,7 +68,7 @@
          {:placeholder "Height"
           :type "number"
           :min "0"
-          :value (:ry shape)
+          :value (precision (:ry shape 0) 2)
           :on-change (partial on-size-change :ry)}]]]
 
       [:span "Position"]
@@ -76,13 +77,13 @@
         [:input.input-text
          {:placeholder "cx"
           :type "number"
-          :value (:cx shape "")
+          :value (precision (:cx shape 0) 2)
           :on-change (partial on-pos-change :x)}]]
        [:div.input-element.pixels
         [:input.input-text
          {:placeholder "cy"
           :type "number"
-          :value (:cy shape "")
+          :value (precision (:cy shape 0) 2)
           :on-change (partial on-pos-change :y)}]]]
 
       [:span "Rotation"]
@@ -101,7 +102,7 @@
           :type "number"
           :min 0
           :max 360
-          :value (:rotation shape "0")
+          :value (precision (:rotation shape "0") 2)
           :on-change on-rotation-change
           }]]
        [:input.input-text

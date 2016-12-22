@@ -21,6 +21,7 @@
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
+            [uxbox.util.math :refer (precision)]
             [uxbox.util.data :refer (parse-int
                                      parse-float
                                      read-string
@@ -94,7 +95,7 @@
             :type "number"
             :min "0"
             :max "200"
-            :value size
+            :value (precision size 2)
             :on-change on-font-size-change}]
           [:select.input-select {:value (pr-str [weight style])
                                  :on-change on-font-style-change}
@@ -111,7 +112,7 @@
             :step "0.1"
             :min "0"
             :max "200"
-            :value line-height
+            :value (precision line-height 2)
             :on-change on-font-line-height-change}]
           [:input.input-text
            {:placeholder "Letter spacing"
@@ -119,7 +120,7 @@
             :step "0.1"
             :min "0"
             :max "200"
-            :value letter-spacing
+            :value (precision letter-spacing 2)
             :on-change on-font-letter-spacing-change}]]
 
 

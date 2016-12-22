@@ -19,6 +19,7 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
+            [uxbox.util.math :refer (precision)]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
 (defn- line-measures-menu-render
@@ -43,24 +44,24 @@
         [:input.input-text
          {:placeholder "x1"
           :type "number"
-          :value (:x1 shape "")
+          :value (precision (:x1 shape 0) 2)
           :on-change (partial on-pos-change :x1)}]
         [:input.input-text
          {:placeholder "y1"
           :type "number"
-          :value (:y1 shape "")
+          :value (precision (:y1 shape 0) 2)
           :on-change (partial on-pos-change :y1)}]]
 
        [:div.row-flex
         [:input.input-text
          {:placeholder "x2"
           :type "number"
-          :value (:x2 shape "")
+          :value (precision (:x2 shape 0) 2)
           :on-change (partial on-pos-change :x2)}]
         [:input.input-text
          {:placeholder "y2"
           :type "number"
-          :value (:y2 shape "")
+          :value (precision (:y2 shape 0) 2)
           :on-change (partial on-pos-change :y2)}]]
 
        [:span "Rotation"]
@@ -78,7 +79,7 @@
           :type "number"
           :min 0
           :max 360
-          :value (:rotation shape "0")
+          :value (precision (:rotation shape 0) 2)
           :on-change on-rotation-change
           }]
         [:input.input-text
