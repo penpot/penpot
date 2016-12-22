@@ -47,14 +47,16 @@
               {:project project
                :page page
                :selected #{}
-               :drawing nil})
+               :drawing nil
+               :tooltip nil})
       (assoc state :workspace
              {:project project
               :zoom 1
               :page page
               :flags #{:sitemap :drawtools :layers :element-options}
               :selected #{}
-              :drawing nil})))
+              :drawing nil
+              :tooltip nil})))
 
   ptk/WatchEvent
   (watch [_ state s]

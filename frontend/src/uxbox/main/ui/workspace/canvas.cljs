@@ -55,6 +55,20 @@
     [:span {:alt "y"}
      (str "Y: " (:y coords "-"))]]))
 
+;; --- Cursor tooltip
+
+(defn- get-shape-tooltip
+  "Return the shape tooltip text"
+  [shape]
+  (case (:type shape)
+    :icon "Click to place the Icon"
+    :image "Click to place the Image"
+    :rect "Drag to draw a Box"
+    :text "Drag to draw a Text Box"
+    :path "Click to draw a Path"
+    :circle "Drag to draw a Circle"
+    nil))
+
 (mx/defc cursor-tooltip
   {:mixins [mx/reactive mx/static]}
   [tooltip]
@@ -164,7 +178,9 @@
         page (mx/react wb/page-ref)
         flags (:flags workspace)
         drawing? (:drawing workspace)
-        tooltip (:tooltip workspace)
+        tooltip (if (:tooltip workspace)
+                  (:tooltip workspace)
+                  (get-shape-tooltip drawing?))
         zoom (or (:zoom workspace) 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
