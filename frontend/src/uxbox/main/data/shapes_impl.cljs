@@ -47,6 +47,7 @@
                                (update-in $ [:shapes group :items] #(into [] (cons id %)))
                                (assoc-in $ [:shapes id] shape)))]
                  (->> (map #(get-in state [:shapes %]) items)
+                      (reverse)
                       (reduce #(duplicate-shape %1 %2 used-names page id) state)))
                (let [id (uuid/random)
                      shape (-> (dissoc shape :group)
