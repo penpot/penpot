@@ -316,7 +316,7 @@
                (mx/with-key key))))]]
      [:div.layers-tools
       [:ul.layers-tools-content
-       [:li.clone-layer {:on-click duplicate} i/copy]
-       [:li.group-layer {:on-click group} i/folder]
-       [:li.degroup-layer {:on-click degroup} i/ungroup]
-       [:li.delete-layer {:on-click delete} i/trash]]]]))
+       [:li.clone-layer.tooltip.tooltip-top {:alt "Duplicate" :on-click duplicate} i/copy]
+       [:li.group-layer.tooltip.tooltip-top {:alt "Group" :on-click group} i/folder]
+       [:li.degroup-layer.tooltip.tooltip-top {:alt "Ungroup" :on-click degroup} i/ungroup]
+       [:li.delete-layer.tooltip.tooltip-top {:alt "Delete" :on-click delete} i/trash]]]]))
