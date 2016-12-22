@@ -27,7 +27,7 @@
   [local collections]
   (if-let [selected (:selected @local)]
     (first (filter #(= selected (:id %)) collections))
-    (first collections)))
+    (first (filter #(and (:id %) (> (count (:colors %)) 0)) collections))))
 
 (mx/defc palette-items
   {:mixins [mx/static]}
@@ -54,8 +54,9 @@
   (let [local (:rum/local own)
         collections (->> (mx/react collections-ref)
                          (vals)
+                         (filter :id)
                          (sort-by :name))
-        collection (get-selected-collection local collections)]
+        selected-collection (get-selected-collection local collections)]
     (letfn [(select-collection [event]
               (let [value (read-string (dom/event->value event))]
                 (swap! local assoc :selected value :position 0)))
@@ -66,8 +67,9 @@
         [:select.input-select {:on-change select-collection}
          (for [collection collections]
            [:option {:key (str (:id collection))
-                     :value (pr-str (:id collection))}
-            (:name collection "Storage")])]
+                     :value (pr-str (:id collection))
+                     :selected (when (= collection selected-collection) "selected")}
+            (:name collection)])]
         #_[:div.color-palette-buttons
            [:div.btn-palette.edit.current i/pencil]
            [:div.btn-palette.create i/close]]]
@@ -76,9 +78,9 @@
           {:on-click #(swap! local update :position dec)}
           {:class :disabled})
         i/arrow-slide]
-       (palette-items (:colors collection) (:position @local))
+       (palette-items (:colors selected-collection) (:position @local))
        [:span.right-arrow
-        (if (< (* (+ 1 (:position @local)) 10) (count (:colors collection)))
+        (if (< (* (+ 1 (:position @local)) 10) (count (:colors selected-collection)))
           {:on-click #(swap! local update :position inc)}
           {:class :disabled})
         i/arrow-slide]
