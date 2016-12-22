@@ -317,31 +317,35 @@
     [:div.lightbox-body
      [:h3 "New project"]
      [:form {:on-submit (constantly nil)}
-      [:input#project-name.input-text
+       [:input#project-name.input-text
         {:placeholder "New project name"
          :type "text"
          :value name
          :auto-focus true
          :on-change #(swap! local assoc :name (.-value (.-target %)))}]
       [:div.project-size
-       [:input#project-witdh.input-text
-        {:placeholder "Width"
-         :type "number"
-         :min 0 ;;TODO check this value
-         :max 666666 ;;TODO check this value
-         :value width
-         :on-change #(swap! local assoc :width (.-value (.-target %)))}]
+       [:div.input-element.pixels
+        [:span "Width"]
+        [:input#project-witdh.input-text
+         {:placeholder "Width"
+          :type "number"
+          :min 0 ;;TODO check this value
+          :max 666666 ;;TODO check this value
+          :value width
+          :on-change #(swap! local assoc :width (.-value (.-target %)))}]]
        [:a.toggle-layout
         {:href "#"
          :on-click #(swap! local assoc :width width :height height)}
         i/toggle]
-       [:input#project-height.input-text
-        {:placeholder "Height"
-         :type "number"
-         :min 0 ;;TODO check this value
-         :max 666666 ;;TODO check this value
-         :value height
-         :on-change #(swap! local assoc :height (.-value (.-target %)))}]]
+       [:div.input-element.pixels
+       [:span "Height"]
+        [:input#project-height.input-text
+         {:placeholder "Height"
+          :type "number"
+          :min 0 ;;TODO check this value
+          :max 666666 ;;TODO check this value
+          :value height
+          :on-change #(swap! local assoc :height (.-value (.-target %)))}]]]
       ;; Layout selector
       (layout-selector local)
       ;; Submit

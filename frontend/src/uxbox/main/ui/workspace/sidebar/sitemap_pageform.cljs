@@ -92,7 +92,7 @@
          :on-change update-name}]
        [:div.project-size
         [:div.input-element.pixels
-         [:input#project-witdh.input-text
+         [:span "Width"]          [:input#project-witdh.input-text
           {:placeholder "Width"
            :type "number"
            :min 0
@@ -101,13 +101,14 @@
            :on-change #(update-size :width %)}]]
         [:a.toggle-layout {:on-click toggle-sizes} i/toggle]
         [:div.input-element.pixels
+         [:span "Height"]
          [:input#project-height.input-text
-          {:placeholder "Height"
-           :type "number"
-           :min 0
-           :max 4000
-           :value (:height data)
-           :on-change #(update-size :height %)}]]]
+           {:placeholder "Height"
+            :type "number"
+            :min 0
+            :max 4000
+            :value (:height data)
+            :on-change #(update-size :height %)}]]]
 
        [:div.input-radio.radio-primary
         (layout-input data "mobile")
@@ -141,5 +142,3 @@
 (defmethod lbx/render-lightbox :page-form
   [{:keys [page]}]
   (page-form-lightbox page))
-
-

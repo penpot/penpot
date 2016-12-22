@@ -56,7 +56,7 @@
 
       .input-text {
         margin-right: $small;
-      //   width: 35%;
+        margin-top: 0;
        }
 
       .toggle-layout {
@@ -107,6 +107,21 @@
 
     &.big-lightbox {
       width: 800px;
+    }
+
+    .input-element {
+      flex-direction: column;
+
+      &::after {
+        top: 50%;
+      }
+
+      span {
+        color: $intense-ui-text;
+        font-size: $fs12;
+        margin-left: $small;
+      }
+
     }
   }
 }
