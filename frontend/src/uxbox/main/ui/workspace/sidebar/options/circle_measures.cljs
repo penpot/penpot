@@ -102,7 +102,7 @@
           :type "number"
           :min 0
           :max 360
-          :value (precision (:rotation shape "0") 2)
+          :value (precision (:rotation shape 0) 2)
           :on-change on-rotation-change
           }]]
        [:input.input-text
