@@ -80,7 +80,7 @@
              {:on-double-click edit}
              (:name coll)]
             [:span.dashboard-title-field
-             (:name coll "Storage")]))]
+             (:name coll)]))]
        (when (and own? coll)
          [:div.edition
           (if edit?
@@ -121,29 +121,13 @@
        (if (:edit @local)
          [:div
           [:input.element-title
-            {:value (if (:name @local) (:name @local) (if coll name "Storage"))
+            {:value (if (:name @local) (:name @local) name)
              :on-change on-input-change
              :on-key-down on-input-keyup}]
           [:span.close {:on-click on-cancel} i/close]]
-         [:span.element-title
-          (if coll name "Storage")])
+         [:span.element-title name])
        [:span.element-subtitle
         (tr "ds.num-elements" (t/c colors))]])))
-
-(def ^:private storage-num-colors-ref
-  (-> (comp (l/in [:colors-collections nil :colors])
-            (l/lens count))
-      (l/derive st/state)))
-
-(mx/defc nav-item-storage
-  {:mixins [mx/static mx/reactive]}
-  [selected?]
-  (let [num-colors (mx/react storage-num-colors-ref)
-        on-click #(st/emit! (dc/select-collection :own nil))]
-    [:li {:on-click on-click :class (when selected? "current")}
-     [:span.element-title "Storage"]
-     [:span.element-subtitle
-      (tr "ds.num-elements" (t/c num-colors))]]))
 
 (mx/defc nav-section
   {:mixins [mx/static]}
@@ -161,8 +145,6 @@
         [:a.btn-primary
          {:on-click #(st/emit! (dc/create-collection))}
          "+ New library"]])
-     (when own?
-       (nav-item-storage (nil? selected)))
      (for [coll colls
            :let [selected? (= (:id coll) selected)
                  key (str (:id coll))]]
@@ -220,7 +202,6 @@
                     (on-select id))]
     [:ul.move-list
      [:li.title title]
-     [:li [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
      (for [coll colls
            :let [id (:id coll)
                  name (:name coll)]]
