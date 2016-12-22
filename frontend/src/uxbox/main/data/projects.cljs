@@ -159,14 +159,18 @@
 (defrecord CreateProject [name width height layout]
   ptk/WatchEvent
   (watch [this state s]
-    (letfn [(on-success [{project :payload}]
-              (rx/of
-               (project-persisted project)
-               (udp/create-page {:width width
-                                 :height height
-                                 :layout layout
-                                 :project (:id project)
-                                 :name "Page 1" })))]
+    (letfn [(on-finish [{project :payload}]
+              (rx/of (fetch-projects)))
+            (on-success [{project :payload}]
+              (->> (rp/req :create/page
+                    {:name name
+                     :project (:id project)
+                     :data {}
+                     :metadata {:width width
+                                :height height
+                                :layout layout
+                                :order 0}})
+                   (rx/mapcat on-finish)))]
       (->> (rp/req :create/project {:name name})
            (rx/mapcat on-success)))))
 
