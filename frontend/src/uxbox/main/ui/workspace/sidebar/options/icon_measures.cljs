@@ -40,7 +40,11 @@
                   value (parse-int value nil)
                   sid (:id shape)
                   props {attr value}]
-              (st/emit! (uds/update-position sid props))))]
+              (st/emit! (uds/update-position sid props))))
+          (on-proportion-lock-change [event]
+            (if (:proportion-lock shape)
+              (st/emit! (uds/unlock-proportions (:id shape)))
+              (st/emit! (uds/lock-proportions (:id shape)))))]
     (let [size (geom/size shape)]
       (html
        [:div.element-set {:key (str (:id menu))}
@@ -56,7 +60,10 @@
              :min "0"
              :value (precision (:width size) 2)
              :on-change (partial on-size-change :width)}]]
-          [:div.lock-size i/lock]
+          [:div.lock-size
+           {:class (when (:proportion-lock shape) "selected")
+            :on-click on-proportion-lock-change}
+           i/lock]
           [:div.input-element.pixels
            [:input.input-text
             {:placeholder "Height"
