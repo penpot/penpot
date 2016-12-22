@@ -30,7 +30,7 @@
     padding: $medium $x-big;
     position: relative;
     width: 500px;
-    @include animation(.1s,1s,fadeInDown);
+    @include animation(.1s,.5s,fadeInDown);
 
     .lightbox-label {
       display: flex;
