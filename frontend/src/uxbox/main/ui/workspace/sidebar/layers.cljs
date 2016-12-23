@@ -193,6 +193,14 @@
         [:div.element-icon (element-icon item)]
         (shape-name item)]])))
 
+
+;; TODO: Fix this temporary hack (Looks like a problem in defcs macro)
+(declare layer-group)
+(mx/defc defcs-macro-hack
+  {:mixins [mx/static mx/reactive (mx/local)]}
+  [shape selected]
+  (layer-group shape selected))
+
 ;; --- Layer Group (Component)
 
 (mx/defcs layer-group
@@ -202,14 +210,11 @@
         selected? (contains? selected (:id item))
         collapsed? (:collapsed item true)
         shapes-map (mx/react wb/shapes-by-id-ref)
-        ;; TODO: Fix this temporary hack (Looks like a problem in defcs macro)
-        classes (if (nil? own)
-                 (classnames :selected selected?)
-                 (classnames
-                   :selected selected?
-                   :drag-top (= :top (:over @local))
-                   :drag-bottom (= :bottom (:over @local))
-                   :drag-inside (= :middle (:over @local))))
+        classes (classnames
+                 :selected selected?
+                 :drag-top (= :top (:over @local))
+                 :drag-bottom (= :bottom (:over @local))
+                 :drag-inside (= :middle (:over @local)))
         select #(select-shape selected item %)
         toggle-visibility #(toggle-visibility selected item %)
         toggle-blocking #(toggle-blocking item %)]
@@ -284,7 +289,7 @@
                 :let [key (str (:id shape))]]
             (if (= (:type shape) :group)
               ;; TODO: Fix this temporary hack (Looks like a problem in defcs macro)
-              (-> (layer-group nil shape selected)
+              (-> (defcs-macro-hack shape selected)
                   (mx/with-key key))
               (-> (layer-simple shape selected)
                   (mx/with-key key))))])])))
