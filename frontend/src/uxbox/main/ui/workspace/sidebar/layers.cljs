@@ -202,11 +202,14 @@
         selected? (contains? selected (:id item))
         collapsed? (:collapsed item true)
         shapes-map (mx/react wb/shapes-by-id-ref)
-        classes (classnames
-                 :selected selected?
-                 :drag-top (= :top (:over @local))
-                 :drag-bottom (= :bottom (:over @local))
-                 :drag-inside (= :middle (:over @local)))
+        ;; TODO: Fix this temporary hack (Looks like a problem in defcs macro)
+        classes (if (nil? own)
+                 (classnames :selected selected?)
+                 (classnames
+                   :selected selected?
+                   :drag-top (= :top (:over @local))
+                   :drag-bottom (= :bottom (:over @local))
+                   :drag-inside (= :middle (:over @local))))
         select #(select-shape selected item %)
         toggle-visibility #(toggle-visibility selected item %)
         toggle-blocking #(toggle-blocking item %)]
@@ -280,7 +283,8 @@
           (for [shape (map #(get shapes-map %) (:items item))
                 :let [key (str (:id shape))]]
             (if (= (:type shape) :group)
-              (-> (layer-group shape selected)
+              ;; TODO: Fix this temporary hack (Looks like a problem in defcs macro)
+              (-> (layer-group nil shape selected)
                   (mx/with-key key))
               (-> (layer-simple shape selected)
                   (mx/with-key key))))])])))
