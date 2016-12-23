@@ -248,6 +248,32 @@
     width: 100%;
   }
 
+  .editable-select {
+    position: relative;
+    width: 100%;
+    height: 38px;
+
+    .input-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 80%;
+    }
+
+    .input-select {
+      position: absolute;
+      top: 0;
+      left: 0;
+      border: none;
+      color: $color-white;
+      width: 100%;
+
+      option {
+        color: $intense-ui-text;
+        font-size: $fs12;
+      }
+    }
+  }
 }
 
 .color-th {

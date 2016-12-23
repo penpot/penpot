@@ -91,35 +91,22 @@
          [:span "Size and Weight"]
          [:div.row-flex
           [:div.editable-select
-           {:style {:position "relative"
-                    :width "100%"
-                    :height "38px"}}
            [:select.input-select
             {:id "common-font-sizes"
-             :style {:position "absolute"
-                     :top 0
-                     :left 0
-                     :border "none"
-                     :color "white"
-                     :width "100%"}
              :on-change on-font-size-change}
-            [:option {:style {:color "black"} :value "8"} "8"]
-            [:option {:style {:color "black"} :value "9"} "9"]
-            [:option {:style {:color "black"} :value "10"} "10"]
-            [:option {:style {:color "black"} :value "11"} "11"]
-            [:option {:style {:color "black"} :value "12"} "12"]
-            [:option {:style {:color "black"} :value "14"} "14"]
-            [:option {:style {:color "black"} :value "18"} "18"]
-            [:option {:style {:color "black"} :value "24"} "24"]
-            [:option {:style {:color "black"} :value "36"} "36"]
-            [:option {:style {:color "black"} :value "48"} "48"]
-            [:option {:style {:color "black"} :value "72"} "72"]]
+            [:option {:value "8"} "8"]
+            [:option {:value "9"} "9"]
+            [:option {:value "10"} "10"]
+            [:option {:value "11"} "11"]
+            [:option {:value "12"} "12"]
+            [:option {:value "14"} "14"]
+            [:option {:value "18"} "18"]
+            [:option {:value "24"} "24"]
+            [:option {:value "36"} "36"]
+            [:option {:value "48"} "48"]
+            [:option {:value "72"} "72"]]
            [:input.input-text
             {:placeholder "Font Size"
-             :style {:position "absolute"
-                     :top 0
-                     :left 0
-                     :width "80%"}
              :type "number"
              :min "0"
              :max "200"
