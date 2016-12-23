@@ -17,7 +17,7 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
-            [uxbox.util.math :refer (precision)]
+            [uxbox.util.math :refer (precision-or-0)]
             [uxbox.util.data :refer (parse-int parse-float read-string)]))
 
 (mx/defc rect-measures-menu
@@ -61,7 +61,7 @@
            {:placeholder "Width"
             :type "number"
             :min "0"
-            :value (precision (:width size) 2)
+            :value (precision-or-0 (:width size) 2)
             :on-change (partial on-size-change :width)}]]
          [:div.lock-size
           {:class (when (:proportion-lock shape) "selected")
@@ -72,7 +72,7 @@
            {:placeholder "Height"
             :type "number"
             :min "0"
-            :value (precision (:height size) 2)
+            :value (precision-or-0 (:height size) 2)
             :on-change (partial on-size-change :height)}]]]
 
         [:span "Position"]
@@ -81,13 +81,13 @@
           [:input.input-text
            {:placeholder "x"
             :type "number"
-            :value (precision (:x1 shape 0) 2)
+            :value (precision-or-0 (:x1 shape 0) 2)
             :on-change (partial on-pos-change :x)}]]
          [:div.input-element.pixels
           [:input.input-text
            {:placeholder "y"
             :type "number"
-            :value (precision (:y1 shape 0) 2)
+            :value (precision-or-0 (:y1 shape 0) 2)
             :on-change (partial on-pos-change :y)}]]]
 
         [:span "Border radius"]
@@ -95,13 +95,13 @@
          [:input.input-text
           {:placeholder "rx"
            :type "number"
-           :value (precision (:rx shape 0) 2)
+           :value (precision-or-0 (:rx shape 0) 2)
            :on-change (partial on-border-change :rx)}]
          [:div.lock-size i/lock]
          [:input.input-text
           {:placeholder "ry"
            :type "number"
-           :value (precision (:ry shape 0) 2)
+           :value (precision-or-0 (:ry shape 0) 2)
            :on-change (partial on-border-change :ry)}]]
 
         [:span "Rotation"]
@@ -120,7 +120,7 @@
             :type "number"
             :min 0
             :max 360
-            :value (precision (:rotation shape "0") 2)
+            :value (precision-or-0 (:rotation shape "0") 2)
             :on-change on-rotation-change
             }]]
          [:input.input-text

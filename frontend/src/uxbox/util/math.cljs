@@ -83,6 +83,12 @@
   [^number v ^number n]
   (js/parseFloat (.toFixed v n)))
 
+(defn precision-or-0
+  [^number v ^number n]
+  (if (.-toFixed v)
+    (js/parseFloat (.toFixed v n))
+    0))
+
 (defn radians
   "Converts degrees to radians."
   [^number degrees]

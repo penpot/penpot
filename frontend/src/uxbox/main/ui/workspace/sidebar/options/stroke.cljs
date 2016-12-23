@@ -19,7 +19,7 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]
-            [uxbox.util.math :refer (precision)]
+            [uxbox.util.math :refer (precision-or-0)]
             [uxbox.util.spec :refer (color?)]))
 
 (defn- stroke-menu-render
@@ -72,7 +72,7 @@
             {:placeholder "Width"
              :type "number"
              :min "0"
-             :value (precision (:stroke-width shape 1) 2)
+             :value (precision-or-0 (:stroke-width shape 1) 2)
              :on-change on-width-change}]]]
 
          [:span "Color"]
