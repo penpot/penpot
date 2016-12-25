@@ -5,14 +5,14 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.geom
-  (:require [uxbox.util.geom.matrix :as gmt]
+  (:require [cljs.pprint :refer [pprint]]
+            [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.math :as mth]
             [uxbox.store :as st]))
 
 ;; --- Relative Movement
 
-;; TODO: revisit, maybe dead code
 (declare move-rect)
 (declare move-path)
 (declare move-circle)
@@ -87,16 +87,16 @@
   "A specialized function for absolute moviment
   for rect-like shapes."
   [shape {:keys [x y] :as pos}]
-  (let [dx (if x (- (:x1 shape) x) 0)
-        dy (if y (- (:y1 shape) y) 0)]
+  (let [dx (if x (- x (:x1 shape)) 0)
+        dy (if y (- y (:y1 shape)) 0)]
     (move shape (gpt/point dx dy))))
 
 (defn- absolute-move-circle
   "A specialized function for absolute moviment
   for rect-like shapes."
   [shape {:keys [x y] :as pos}]
-  (let [dx (if x (- (:cx shape) x) 0)
-        dy (if y (- (:cy shape) y) 0)]
+  (let [dx (if x (- x(:cx shape)) 0)
+        dy (if y (- y (:cy shape)) 0)]
     (move shape (gpt/point dx dy))))
 
 (defn- absolute-move-group
@@ -160,117 +160,6 @@
   [{:keys [rx ry] :as shape}]
   (merge shape {:width (* rx 2)
                 :height (* ry 2)}))
-
-;; --- Vertex Access
-
-(declare get-rect-vertext-point)
-(declare get-circle-vertext-point)
-
-(defn get-vertex-point
-  [shape id]
-  (case (:type shape)
-    :icon (get-rect-vertext-point shape id)
-    :image (get-rect-vertext-point shape id)
-    :rect (get-rect-vertext-point shape id)
-    :circle (get-circle-vertext-point shape id)
-    :text (get-rect-vertext-point shape id)))
-
-(defn- get-rect-vertext-point
-  [{:keys [x1 y1 x2 y2]} id]
-  (case id
-    :top-left (gpt/point x1 y1)
-    :top-right (gpt/point x2 y1)
-    :bottom-left (gpt/point x1 y2)
-    :bottom-right (gpt/point x2 y2)
-    :top (gpt/point (/ (+ x1 x2) 2) y1)
-    :right (gpt/point x2 (/ (+ y1 y2) 2))
-    :left (gpt/point x1 (/ (+ y1 y2) 2))
-    :bottom (gpt/point (/ (+ x1 x2) 2)
-                       (/ (+ y1 y2) 2))))
-
-(defn- get-circle-vertext-point
-  [{:keys [rx ry]} id]
-  (gpt/point rx ry))
-
-;; --- Vertex Movement (Relative)
-
-(declare move-rect-vertex)
-(declare move-circle-vertex)
-
-(defn move-vertex
-  "Resize the shape moving one of its vertex using
-  relative delta."
-  [shape vid dpoint]
-  (case (:type shape)
-    :rect (move-rect-vertex shape vid dpoint)
-    :text (move-rect-vertex shape vid dpoint)
-    :icon (move-rect-vertex shape vid dpoint)
-    :image (move-rect-vertex shape vid dpoint)
-    :path (move-rect-vertex shape vid dpoint)
-    :circle (move-circle-vertex shape vid dpoint)))
-
-(defn- move-rect-vertex
-  "A specialized function for vertex movement
-  for rect-like shapes."
-  [shape vid {dx :x dy :y lock? :lock}]
-  (letfn [(handle-positioning [{:keys [x1 x2 y1 y2] :as shape}]
-            (case vid
-              :top-left (assoc shape
-                               :x1 (min x2 (+ x1 dx))
-                               :y1 (min y2 (+ y1 dy)))
-              :top-right (assoc shape
-                                :x2 (max x1 (+ x2 dx))
-                                :y1 (min y2 (+ y1 dy)))
-              :bottom-left (assoc shape
-                                  :x1 (min x2 (+ x1 dx))
-                                  :y2 (max y1 (+ y2 dy)))
-              :bottom-right (assoc shape
-                                   :x2 (max x1 (+ x2 dx))
-                                   :y2 (max y1 (+ y2 dy)))
-              :top (assoc shape :y1 (min y2 (+ y1 dy)))
-              :right (assoc shape :x2 (max x1 (+ x2 dx)))
-              :bottom (assoc shape :y2 (max y1 (+ y2 dy)))
-              :left (assoc shape :x1 (min x2 (+ x1 dx)))))
-
-          (handle-proportion [{:keys [y1 proportion proportion-lock] :as shape}]
-            (let [{:keys [width height]} (size shape)]
-              (if (or lock? proportion-lock)
-                (assoc shape :y2 (+ y1 (/ width proportion)))
-                shape)))]
-    (-> shape
-        (handle-positioning)
-        (handle-proportion))))
-
-(defn- move-circle-vertex
-  "A specialized function for vertex movement
-  for circle shapes."
-  [shape vid {dx :x dy :y lock? :lock}]
-  (letfn [(handle-positioning [shape]
-            (case vid
-              :top-left (assoc shape
-                               :rx (max 0 (- (:rx shape) dx))
-                               :ry (max 0 (- (:ry shape) dy)))
-              :top-right (assoc shape
-                                :rx (max 0 (+ (:rx shape) dx))
-                                :ry (max 0 (- (:ry shape) dy)))
-              :bottom-left (assoc shape
-                                  :rx (max 0 (- (:rx shape) dx))
-                                  :ry (max 0 (+ (:ry shape) dy)))
-              :bottom-right (assoc shape
-                                   :rx (max 0 (+ (:rx shape) dx))
-                                   :ry (max 0 (+ (:ry shape) dy)))
-              :top (assoc shape :ry (max 0 (- (:ry shape) dy)))
-              :right (assoc shape :rx (max 0 (+ (:rx shape) dx)))
-              :bottom (assoc shape :ry (max 0 (+ (:ry shape) dy)))
-              :left (assoc shape :rx (max 0 (+ (:rx shape) dx)))))
-          (handle-proportion [{:keys [rx proportion proportion-lock] :as shape}]
-            (let [{:keys [width height]} (size shape)]
-              (if (or lock? proportion-lock)
-                (assoc shape :ry (/ rx proportion))
-                shape)))]
-    (-> shape
-        (handle-positioning)
-        (handle-proportion))))
 
 ;; --- Paths
 
@@ -500,7 +389,7 @@
 
 (defn shapes->rect-shape
   ([shapes] (shapes->rect-shape @st/state shapes))
-  ([state shapes]
+  ([state [shape :as shapes]]
    {:pre [(seq shapes)]}
    (let [shapes (map shape->rect-shape shapes)
          minx (apply min (map :x1 shapes))
@@ -511,12 +400,14 @@
       :y1 miny
       :x2 maxx
       :y2 maxy
-      ::shapes shapes})))
+      :type :rect})))
 
 (defn- group->rect-shape
-  [state {:keys [items] :as group}]
+  [state {:keys [id items rotation] :as group}]
   (let [shapes (map #(get-in state [:shapes %]) items)]
-    (shapes->rect-shape state shapes)))
+    (-> (shapes->rect-shape state shapes)
+        (assoc :rotation rotation)
+        (assoc :id id))))
 
 (defn- path->rect-shape
   [state {:keys [points] :as shape}]
@@ -604,161 +495,65 @@
 
 ;; --- Outer Rect
 
-(declare outer-rect-generic)
-(declare outer-rect-circle)
-(declare outer-rect-path)
-(declare outer-rect-group)
-(declare apply-rotation-transformation)
-(declare apply-parent-deltas)
+(declare selection-rect-generic)
+(declare selection-rect-group)
 
-(defn outer-rect
+(defn rotation-matrix
+  "Generate a rotation matrix from shape."
+  [{:keys [x1 y1 rotation] :as shape}]
+  (let [{:keys [width height]} (size shape)
+        x-center (+ x1 (/ width 2))
+        y-center (+ y1 (/ height 2))]
+    (-> (gmt/matrix)
+        ;; (gmt/rotate* rotation (gpt/point x-center y-center)))))
+        (gmt/translate  x-center y-center)
+        (gmt/rotate rotation)
+        (gmt/translate (- x-center) (- y-center)))))
+
+(defn rotate-shape
+  "Apply the transformation matrix to the shape."
+  [shape]
+  (let [mtx (rotation-matrix (size shape))]
+    (transform shape mtx)))
+
+(defn selection-rect
+  "Return the selection rect for the shape."
   ([shape]
-   (outer-rect @st/state shape))
+   (selection-rect @st/state shape))
   ([state shape]
-   (let [shape (case (:type shape)
-                 :path (outer-rect-path state shape)
-                 :circle (outer-rect-circle state shape)
-                 :group (outer-rect-group state shape)
-                 (outer-rect-generic state shape))]
-     (if (:group shape)
-       (let [group (get-in state [:shapes (:group shape)])]
-         (apply-parent-deltas state shape (:group group)))
-       shape))))
+   (case (:type shape)
+     :group (selection-rect-group state shape)
+     (selection-rect-generic state shape))))
 
-(defn- apply-parent-deltas
-  [state {:keys [x y] :as shape} id]
-  (if-let [group (get-in state [:shapes id])]
-    (let [props {:x (+ x (:dx group 0))
-                 :y (+ y (:dy group 0))}]
-      (apply-parent-deltas state (merge shape props) (:group group)))
-    shape))
+(defn- selection-rect-generic
+  [state {:keys [id x1 y1 x2 y2] :as shape}]
+  (let [resize-xf (:tmp-resize-xform shape (gmt/matrix))
+        displc-xf (-> (:tmp-displacement shape (gpt/point 0 0))
+                      (gmt/translate-matrix))]
+    (-> (shape->rect-shape shape)
+        (assoc :type :rect :id id)
+        (transform resize-xf)
+        (transform displc-xf)
+        (rotate-shape)
+        (size))))
 
-(defn- outer-rect-generic
-  [state {:keys [x1 y1 x2 y2 group] :as shape}]
-  (let [group (get-in state [:shapes group])
-        props {:x (+ x1 (:dx group 0))
-               :y (+ y1 (:dy group 0))
-               :width (- x2 x1)
-               :height (- y2 y1)}]
-    (-> (merge shape props)
-        (apply-rotation-transformation))))
-
-(defn- outer-rect-circle
-  [state {:keys [cx cy rx ry group] :as shape}]
-  (let [group (get-in state [:shapes group])
-        props {:x (+ (- cx rx) (:dx group 0))
-               :y (+ (- cy ry) (:dy group 0))
-               :width (* rx 2)
-               :height (* ry 2)}]
-    (-> (merge shape props)
-        (apply-rotation-transformation))))
-
-(defn- outer-rect-path
-  [state {:keys [points group] :as shape}]
-  (let [group (get-in state [:shapes group])
-        minx (apply min (map :x points))
-        miny (apply min (map :y points))
-        maxx (apply max (map :x points))
-        maxy (apply max (map :y points))
-
-        props {:x (+ minx (:dx group 0))
-               :y (+ miny (:dy group 0))
-               :width (- maxx minx)
-               :height (- maxy miny)}]
-    (-> (merge shape props)
-        (apply-rotation-transformation))))
-
-
-(defn- outer-rect-group
-  [state {:keys [id group rotation dx dy] :as shape}]
-  (let [shapes (->> (:items shape)
+(defn- selection-rect-group
+  [state {:keys [id group items] :as shape}]
+  (let [resize-xf (:tmp-resize-xform shape (gmt/matrix))
+        displc-xf (-> (:tmp-displacement shape (gpt/point 0 0))
+                      (gmt/translate-matrix))
+        shapes (->> items
                     (map #(get-in state [:shapes %]))
-                    (map #(outer-rect state %)))
-        x (apply min (map :x shapes))
-        y (apply min (map :y shapes))
-        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
-        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
-        width (- x' x)
-        height (- y' y)]
-    (-> (merge shape {:width width :height height :x x :y y})
-        (apply-rotation-transformation))))
+                    (map #(selection-rect state %)))]
 
-(declare apply-rotation)
-
-(defn- apply-rotation-transformation
-  [{:keys [x y width height rotation] :as shape}]
-  (let [center-x (+ x (/ width 2))
-        center-y (+ y (/ height 2))
-
-        angle (mth/radians (or rotation 0))
-        x1 (- x center-x)
-        y1 (- y center-y)
-
-        x2 (- (+ x width) center-x)
-        y2 (- y center-y)
-
-        [rx1 ry1] (apply-rotation [x1 y1] rotation)
-        [rx2 ry2] (apply-rotation [x2 y2] rotation)
-
-        [d1 d2] (cond
-                  (and (>= rotation 0)
-                       (< rotation 90))
-                  [(mth/abs ry1)
-                   (mth/abs rx2)]
-
-                  (and (>= rotation 90)
-                       (< rotation 180))
-                  [(mth/abs ry2)
-                   (mth/abs rx1)]
-
-                  (and (>= rotation 180)
-                       (< rotation 270))
-                  [(mth/abs ry1)
-                   (mth/abs rx2)]
-
-                  (and (>= rotation 270)
-                       (<= rotation 360))
-                  [(mth/abs ry2)
-                   (mth/abs rx1)])
-        final-x (- center-x d2)
-        final-y (- center-y d1)
-        final-width (* d2 2)
-        final-height (* d1 2)]
-    (merge shape
-           {:x final-x
-            :y final-y
-            :width final-width
-            :height final-height})))
-
-;; --- Outer Rect Coll
-
-(defn outer-rect-coll
-  [shapes]
-  {:pre [(seq shapes)]}
-  (let [shapes (map outer-rect shapes)
-        x (apply min (map :x shapes))
-        y (apply min (map :y shapes))
-        x' (apply max (map (fn [{:keys [x width]}] (+ x width)) shapes))
-        y' (apply max (map (fn [{:keys [y height]}] (+ y height)) shapes))
-        width (- x' x)
-        height (- y' y)]
-    {:width width
-     :height height
-     :x x
-     :y y}))
+    (-> (shapes->rect-shape shapes)
+        (assoc :id id)
+        (transform resize-xf)
+        (transform displc-xf)
+        (rotate-shape)
+        (size))))
 
 ;; --- Helpers
-
-(defn apply-rotation
-  [[x y :as v] rotation]
-  (let [angle (mth/radians rotation)
-        rx (- (* x (mth/cos angle))
-              (* y (mth/sin angle)))
-        ry (+ (* x (mth/sin angle))
-              (* y (mth/cos angle)))]
-    (let [r [(mth/precision rx 6)
-             (mth/precision ry 6)]]
-      r)))
 
 (defn resolve-parent
   "Recursively resolve the real shape parent."
@@ -773,47 +568,9 @@
   "Check if a shape is contained in the
   provided selection rect."
   [shape selrect]
-  (let [sx1 (:x selrect)
-        sx2 (+ sx1 (:width selrect))
-        sy1 (:y selrect)
-        sy2 (+ sy1 (:height selrect))
-        rx1 (:x shape)
-        rx2 (+ rx1 (:width shape))
-        ry1 (:y shape)
-        ry2 (+ ry1 (:height shape))]
-    (and (neg? (- (:y selrect) (:y shape)))
-         (neg? (- (:x selrect) (:x shape)))
-         (pos? (- (+ (:y selrect)
-                     (:height selrect))
-                  (+ (:y shape)
-                     (:height shape))))
-         (pos? (- (+ (:x selrect)
-                     (:width selrect))
-                  (+ (:x shape)
-                     (:width shape)))))))
-
-;; TODO: maybe remove, seems it not used anymore.
-
-(defn translate-coords
-  "Given a shape and initial coords, transform
-  it mapping its coords to new provided initial coords."
-  ([shape x y]
-   (translate-coords shape x y -))
-  ([shape x y op]
-   (let [x' (:x shape)
-         y' (:y shape)]
-     (assoc shape :x (op x' x) :y (op y' y)))))
-
-;; This function will be deleted when selrect is implemented properly
-
-(defn parent-satisfies?
-  "Resolve the first parent that satisfies a condition."
-  [{:keys [group] :as shape} pred]
-  (let [shapes-by-id (:shapes @st/state)]
-    (if group
-      (loop [parent (get shapes-by-id group)]
-        (cond
-          (pred parent) true
-          (:group parent) (recur (get shapes-by-id (:group parent)))
-          :else false))
-      false)))
+  (let [{sx1 :x1 sx2 :x2 sy1 :y1 sy2 :y2} selrect
+        {rx1 :x1 rx2 :x2 ry1 :y1 ry2 :y2} shape]
+    (and (neg? (- sy1 ry1))
+         (neg? (- sx1 rx1))
+         (pos? (- sy2 ry2))
+         (pos? (- sx2 rx2)))))
