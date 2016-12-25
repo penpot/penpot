@@ -126,22 +126,12 @@
 
 ;; --- Apply Temporal Displacement
 
-(defn rotate
-  [{:keys [x1 y1 x2 y2 rotation] :as shape}]
-  (let [x-center (+ x1 (/ (- x2 x1) 2))
-        y-center (+ y1 (/ (- y2 y1) 2))]
-    (-> (gmt/matrix)
-        #_(gmt/translate  x-center y-center)
-        (gmt/rotate 15)
-        #_(gmt/translate (- x-center) (- y-center)))))
-
 (deftype ApplyTemporalDisplacement [id delta]
   udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (let [shape (get-in state [:shapes id])
           displ (:tmp-displacement shape (gpt/point 0 0))
-          ;; delta (gpt/transform delta (rotate shape))
           delta (gpt/add displ delta)]
       (assoc-in state [:shapes id :tmp-displacement] delta))))
 
