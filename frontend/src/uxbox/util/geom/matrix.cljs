@@ -59,12 +59,12 @@
          tx2 (:tx om)
          ty2 (:ty om)]
      (Matrix.
-      (+ (* a2 a1) (* c2 b1))
-      (+ (* b2 a1) (* d2 b1))
-      (+ (* a2 c1) (* c2 d1))
-      (+ (* b2 c1) (* d2 d1))
-      (+ tx1 (* tx2 a1) (* ty2 b1))
-      (+ ty1 (* tx2 c1) (* ty2 d1)))))
+      (+ (* a2 a1) (* c2 c1))
+      (+ (* a2 b1) (* c2 d1))
+      (+ (* b2 a1) (* d2 c1))
+      (+ (* b2 b1) (* d2 d1))
+      (+ tx1 (* tx2 a1) (* ty2 c1))
+      (+ ty1 (* tx2 b1) (* ty2 d1)))))
   ([m om & others]
    (reduce multiply (multiply m om) others)))
 
@@ -114,25 +114,26 @@
            (rotate-matrix angle)
            (translate-matrix (gpt/negate center)))))
 
-  ;; ([m angle]
-  ;;  (let [center (gpt/point 0 0)]
-  ;;    (rotate m angle center)))
-  ;; ([m angle center]
-  ;;  (let [angle (mth/radians angle)
-  ;;        x (:x center)
-  ;;        y (:y center)
-  ;;        cos (mth/cos angle)
-  ;;        sin (mth/sin angle)
-  ;;        nsin (- sin)
-  ;;        tx (- x (+ (* x cos)) (* y sin))
-  ;;        ty (- y (- (* x sin)) (* y cos))
-  ;;        a (+ (* cos (:a m)) (* sin (:b m)))
-  ;;        b (+ (* nsin (:a m)) (* cos (:b m)))
-  ;;        c (+ (* cos (:c m)) (* sin (:d m)))
-  ;;        d (+ (* nsin (:c m)) (* cos (:d m)))
-  ;;        tx' (+ (:tx m) (* tx (:a m)) (* ty (:b m)))
-  ;;        ty' (+ (:ty m) (* tx (:c m)) (* ty (:d m)))]
-  ;;    (Matrix. a b c d tx' ty'))))
+(defn rotate*
+  ([m angle]
+   (let [center (gpt/point 0 0)]
+     (rotate m angle center)))
+  ([m angle center]
+   (let [angle (mth/radians angle)
+         x (:x center)
+         y (:y center)
+         cos (mth/cos angle)
+         sin (mth/sin angle)
+         nsin (- sin)
+         tx (- x (+ (* x cos)) (* y sin))
+         ty (- y (- (* x sin)) (* y cos))
+         a (+ (* cos (:a m)) (* sin (:c m)))
+         b (+ (* cos (:b m)) (* sin (:d m)))
+         c (+ (* nsin (:a m)) (* cos (:c m)))
+         d (+ (* nsin (:b m)) (* cos (:d m)))
+         tx' (+ (:tx m) (* tx (:a m)) (* ty (:c m)))
+         ty' (+ (:ty m) (* tx (:b m)) (* ty (:d m)))]
+     (Matrix. a b c d tx' ty'))))
 
 (defn scale
   "Apply scale transformation to the matrix."
