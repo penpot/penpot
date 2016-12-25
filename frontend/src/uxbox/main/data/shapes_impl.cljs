@@ -25,7 +25,6 @@
   [state shape used-names page]
   (let [sid (uuid/random)
         shape (merge shape {:id sid :page page :name (generate-uniq-name used-names (:name shape) nil)})]
-    (println used-names)
     (as-> state $
       (update-in $ [:pages page :shapes] #(into [] (cons sid %)))
       (assoc-in $ [:shapes sid] shape))))
