@@ -597,7 +597,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :page])
-            used-names (map #(get-in state [:shapes % :name]) (get-in state [:pages pid :shapes]))
+            used-names (map #(get-in state [:shapes % :name])
+                            (get-in state [:pages pid :shapes]))
             selected (get-in state [:workspace :selected])]
         (impl/group-shapes state selected used-names pid)))))
 
@@ -620,7 +621,8 @@
     (update [_ state]
       (let [pid (get-in state [:workspace :page])
             selected (get-in state [:workspace :selected])
-            used-names (map #(get-in state [:shapes % :name]) (get-in state [:pages pid :shapes]))]
+            used-names (map #(get-in state [:shapes % :name])
+                            (get-in state [:pages pid :shapes]))]
         (impl/duplicate-shapes state selected used-names)))))
 
 (defn delete-selected
@@ -643,7 +645,6 @@
       (rx/from-coll
        (->> (get-in state [:workspace :selected])
             (map #(update-fill-attrs % opts)))))))
-
 
 (defn update-selected-shapes-stroke
   "Update the fill related attributed on

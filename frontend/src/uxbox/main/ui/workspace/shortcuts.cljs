@@ -89,11 +89,11 @@
 
 ;; --- Helpers
 
-(defn- move-selected
-  [dir speed]
-  (case speed
-    :std (st/emit! (uds/move-selected dir 1))
-    :fast (st/emit! (uds/move-selected dir 20))))
+;; (defn- move-selected
+;;   [dir speed]
+;;   (case speed
+;;     :std (st/emit! (uds/move-selected dir 1))
+;;     :fast (st/emit! (uds/move-selected dir 20))))
 
 ;; --- Mixin
 
