@@ -26,8 +26,8 @@
                  [funcool/struct "1.0.0"]
                  [funcool/lentes "1.2.0"]
                  [funcool/beicon "2.8.0"]
-                 [funcool/cuerdas "2.0.1"]
-                 [funcool/bide "1.2.1"]]
+                 [funcool/cuerdas "2.0.2"]
+                 [funcool/bide "1.2.2"]]
   :plugins [[lein-ancient "0.6.10"]]
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
   )
