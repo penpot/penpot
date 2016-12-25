@@ -176,10 +176,10 @@
 (deftype PagePersisted [data]
   ptk/UpdateEvent
   (update [_ state]
-    ;; TODO: update only the version instead of complete unpacking
-    ;; this will improve the application responsiveness when multiple
-    ;; updates are performed
-    (assoc-page state data)))
+    (let [{:keys [id version]} data]
+      (-> state
+          (assoc-in [:pages id :version] version)
+          (assoc-packed-page data)))))
 
 (defn- page-persisted?
   [event]
