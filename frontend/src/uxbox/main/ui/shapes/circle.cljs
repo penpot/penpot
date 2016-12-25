@@ -32,11 +32,18 @@
 
 (mx/defc circle-shape
   {:mixins [mx/static]}
-  [{:keys [id tmp-resize-xform tmp-displacement] :as shape}]
-  (let [xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
-               tmp-displacement (gmt/translate tmp-displacement))
+  [{:keys [id tmp-resize-xform tmp-displacement rotation cx cy] :as shape}]
+  (let [shape (cond-> shape
+                tmp-displacement (geom/transform (gmt/translate-matrix tmp-displacement))
+                tmp-resize-xform (geom/transform tmp-resize-xform))
+        center (gpt/point (:cx shape)
+                          (:cy shape))
+        rotation (or rotation 0)
 
-        props {:transform (str xfmt) :id (str id)}
+        xfmt (-> (gmt/matrix)
+                 (gmt/rotate* rotation center))
+
+        props {:id (str id) :transform (str xfmt)}
         attrs (merge props
                      (attrs/extract-style-attrs shape)
                      (select-keys shape [:cx :cy :rx :ry]))]

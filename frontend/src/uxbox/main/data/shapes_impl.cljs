@@ -276,7 +276,7 @@
   (let [xf (comp (map #(get-in state [:shapes %]))
                  (remove :hidden)
                  (remove :blocked)
-                 (map geom/outer-rect))
+                 (map geom/selection-rect))
         match (partial try-match-shape xf selrect)
         shapes (get-in state [:pages page :shapes])]
     (reduce match #{} (sequence xf shapes))))

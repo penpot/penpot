@@ -12,6 +12,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.geom :as geom]
             [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.geom.point :as gpt]
             [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Path Component
@@ -46,11 +47,13 @@
 
 (mx/defc path-shape
   {:mixins [mx/static]}
-  [{:keys [id tmp-resize-xform tmp-displacement] :as shape}]
-  (let [xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
-               tmp-displacement (gmt/translate tmp-displacement))
-        props {:transform (str xfmt)
-               :id (str id)
+  [{:keys [id tmp-resize-xform tmp-displacement rotation] :as shape}]
+  (let [shape (cond-> shape
+                tmp-displacement (geom/transform (gmt/translate-matrix tmp-displacement))
+                tmp-resize-xform (geom/transform tmp-resize-xform)
+                (pos? rotation) (geom/rotate-shape))
+
+        props {:id (str id)
                :d (render-path shape)}
         attrs (merge props (attrs/extract-style-attrs shape))]
     [:path attrs]))

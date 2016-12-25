@@ -25,21 +25,30 @@
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
-               :on-mouse-down on-mouse-down
-               }
+               :on-mouse-down on-mouse-down}
      (rect-shape shape identity)]))
 
 ;; --- Rect Shape
 
+(defn- rotate
+  [mt {:keys [x1 y1 x2 y2 width height rotation] :as shape}]
+  (let [x-center (+ x1 (/ width 2))
+        y-center (+ y1 (/ height 2))
+        center (gpt/point x-center y-center)]
+    (gmt/rotate* mt rotation center)))
+
 (mx/defc rect-shape
   {:mixins [mx/static]}
-  [shape]
-  (let [{:keys [id x1 y1 width height
-                tmp-resize-xform
-                tmp-displacement]} (geom/size shape)
+  [{:keys [id tmp-displacement tmp-resize-xform rotation] :as shape}]
+  (let [xfmt (cond-> (gmt/matrix)
+                tmp-displacement (gmt/translate tmp-displacement)
+                tmp-resize-xform (gmt/multiply tmp-resize-xform))
 
-        xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
-               tmp-displacement (gmt/translate tmp-displacement))
+        {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
+                                                   (geom/size))
+
+        xfmt (cond-> (gmt/matrix)
+               (pos? rotation) (rotate shape))
 
         props {:x x1 :y y1  :id id
                :width width

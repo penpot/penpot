@@ -5,21 +5,31 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.shapes
-  (:require [beicon.core :as rx]
+  (:require [cljs.spec :as s :include-macros true]
+            [beicon.core :as rx]
             [uxbox.util.uuid :as uuid]
             [potok.core :as ptk]
             [uxbox.store :as st]
-            [uxbox.util.forms :as sc]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.router :as r]
-            [uxbox.util.rlocks :as rlocks]
-            [uxbox.util.workers :as uw]
             [uxbox.main.constants :as c]
             [uxbox.main.geom :as geom]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.shapes-impl :as impl]
-            [uxbox.main.data.pages :as udp]))
+            [uxbox.main.data.pages :as udp]
+            [uxbox.util.forms :as sc]
+            [uxbox.util.spec :as us]
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.router :as r]
+            [uxbox.util.rlocks :as rlocks]
+            [uxbox.util.workers :as uw]))
+
+(s/def ::x1 number?)
+(s/def ::y1 number?)
+(s/def ::x2 number?)
+(s/def ::y2 number?)
+(s/def ::type keyword?)
+
+(s/def ::rect-shape (s/keys :req-un [::x1 ::y1 ::x2 ::y2 ::type]))
 
 ;; --- Shapes CRUD
 
@@ -55,16 +65,6 @@
       (update-in state [:shapes id] merge shape))))
 
 ;; --- Shape Transformations
-
-(defn move-shape
-  "Move shape using relative position (delta)."
-  [sid delta]
-  (reify
-    udp/IPageUpdate
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [shape (get-in state [:shapes sid])]
-        (update-in state [:shapes sid] geom/move delta)))))
 
 (declare align-point)
 
@@ -126,11 +126,23 @@
 
 ;; --- Apply Temporal Displacement
 
+(defn rotate
+  [{:keys [x1 y1 x2 y2 rotation] :as shape}]
+  (let [x-center (+ x1 (/ (- x2 x1) 2))
+        y-center (+ y1 (/ (- y2 y1) 2))]
+    (-> (gmt/matrix)
+        #_(gmt/translate  x-center y-center)
+        (gmt/rotate 15)
+        #_(gmt/translate (- x-center) (- y-center)))))
+
 (deftype ApplyTemporalDisplacement [id delta]
+  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
-    (let [current-delta (get-in state [:shapes id :tmp-displacement] (gpt/point 0 0))
-          delta (gpt/add current-delta delta)]
+    (let [shape (get-in state [:shapes id])
+          displ (:tmp-displacement shape (gpt/point 0 0))
+          ;; delta (gpt/transform delta (rotate shape))
+          delta (gpt/add displ delta)]
       (assoc-in state [:shapes id :tmp-displacement] delta))))
 
 (defn apply-temporal-displacement
@@ -141,6 +153,7 @@
 ;; --- Apply Displacement
 
 (deftype ApplyDisplacement [id]
+  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (let [{:keys [tmp-displacement type] :as shape} (get-in state [:shapes id])
@@ -170,6 +183,7 @@
 ;; --- Apply Temporal Resize Matrix
 
 (deftype ApplyTemporalResizeMatrix [id mx]
+  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (assoc-in state [:shapes id :tmp-resize-xform] mx)))
@@ -184,6 +198,7 @@
 (declare apply-resize-matrix)
 
 (deftype ApplyResizeMatrix [id]
+  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (let [{:keys [type tmp-resize-xform]
@@ -209,26 +224,6 @@
   [id]
   {:pre [(uuid? id)]}
   (ApplyResizeMatrix. id))
-
-(defn update-vertex-position
-  [id {:keys [vid delta]}]
-  (reify
-    udp/IPageUpdate
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:shapes id] geom/move-vertex vid delta))))
-
-(defn initial-vertext-align
-  [id vid]
-  (reify
-    ptk/WatchEvent
-    (watch [_ state s]
-      (let [shape (get-in state [:shapes id])
-            point (geom/get-vertex-point shape vid)
-            point (gpt/add point canvas-coords)]
-        (->> (align-point point)
-             (rx/map #(gpt/subtract % point))
-             (rx/map #(update-vertex-position id {:vid vid :delta %})))))))
 
 (defn update-position
   "Update the start position coordenate of the shape."
@@ -481,21 +476,23 @@
 (defn select-shape
   "Mark a shape selected for drawing in the canvas."
   [id]
+  {:pre [(uuid? id)]}
   (SelectShape. id))
 
 ;; --- Select Shapes
 
-(defrecord SelectShapes [selrect]
+(deftype SelectShapesBySelrect [selrect]
   ptk/UpdateEvent
   (update [_ state]
     (let [page (get-in state [:workspace :page])
           shapes (impl/match-by-selrect state page selrect)]
       (assoc-in state [:workspace :selected] shapes))))
 
-(defn select-shapes
+(defn select-shapes-by-selrect
   "Select shapes that matches the select rect."
   [selrect]
-  (SelectShapes. selrect))
+  {:pre [(us/valid? ::rect-shape selrect)]}
+  (SelectShapesBySelrect. selrect))
 
 ;; --- Update Interaction
 
@@ -635,23 +632,6 @@
       (let [selected (get-in state [:workspace :selected])]
         (rx/from-coll
          (into [(deselect-all)] (map #(delete-shape %) selected)))))))
-
-(defn move-selected
-  "Move a minimal position unit the selected shapes."
-  ([dir] (move-selected dir 1))
-  ([dir n]
-   {:pre [(contains? #{:up :down :right :left} dir)]}
-   (reify
-     ptk/WatchEvent
-     (watch [_ state s]
-       (let [selected (get-in state [:workspace :selected])
-             delta (case dir
-                    :up (gpt/point 0 (- n))
-                    :down (gpt/point 0 n)
-                    :right (gpt/point n 0)
-                    :left (gpt/point (- n) 0))]
-         (rx/from-coll
-          (map #(move-shape % delta) selected)))))))
 
 (defn update-selected-shapes-fill
   "Update the fill related attributed on

@@ -15,6 +15,7 @@
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.main.geom :as geom]
             [uxbox.util.rlocks :as rlocks]))
 
 (defonce position (atom nil))
@@ -39,29 +40,26 @@
    :mixins [mx/static mx/reactive]}
   []
   (when-let [data (mx/react position)]
-    (let [{:keys [x y width height]} (selrect->rect data)]
+    (let [{:keys [x1 y1 width height]} (geom/size (selrect->rect data))]
       [:rect.selection-rect
-       {:x x
-        :y y
+       {:x x1
+        :y y1
         :width width
         :height height}])))
 
 ;; --- Interaction
 
 (defn- selrect->rect
-  [data]
-  (let [start (:start data)
-        current (:current data)
-        start-x (min (:x start) (:x current))
+  [{:keys [start current] :as data}]
+  (let [start-x (min (:x start) (:x current))
         start-y (min (:y start) (:y current))
-        current-x (max (:x start) (:x current))
-        current-y (max (:y start) (:y current))
-        width (- current-x start-x)
-        height (- current-y start-y)]
-    {:x start-x
-     :y start-y
-     :width (- current-x start-x)
-     :height (- current-y start-y)}))
+        end-x (max (:x start) (:x current))
+        end-y (max (:y start) (:y current))]
+    {:x1 start-x
+     :y1 start-y
+     :x2 end-x
+     :y2 end-y
+     :type :rect}))
 
 (defn- translate-to-canvas
   "Translate the given rect to the canvas coordinates system."
@@ -70,10 +68,10 @@
         startx (* c/canvas-start-x zoom)
         starty (* c/canvas-start-y zoom)]
     (assoc rect
-           :x (/ (- (:x rect) startx) zoom)
-           :y (/ (- (:y rect) starty) zoom)
-           :width (/ (:width rect) zoom)
-           :height (/ (:height rect) zoom))))
+           :x1 (/ (- (:x1 rect) startx) zoom)
+           :y1 (/ (- (:y1 rect) starty) zoom)
+           :x2 (/ (- (:x2 rect) startx) zoom)
+           :y2 (/ (- (:y2 rect) starty) zoom))))
 
 (declare on-start)
 
@@ -96,7 +94,7 @@
   (let [rect (-> (selrect->rect @position)
                  (translate-to-canvas))]
     (st/emit! (uds/deselect-all)
-              (uds/select-shapes rect))
+              (uds/select-shapes-by-selrect rect))
     (rlocks/release! :ui/selrect)
     (reset! position nil)))
 

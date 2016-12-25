@@ -9,7 +9,8 @@
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.geom :as geom]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.geom.matrix :as gmt]))
+            [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.geom.point :as gpt]))
 
 ;; --- Icon Component
 
@@ -31,28 +32,27 @@
   {:mixins [mx/static]}
   [shape]
   (let [{:keys [x1 y1 content id metadata
-                width height
+                width height rotation
                 tmp-resize-xform
                 tmp-displacement]} (geom/size shape)
 
-        [_ _ orw orh] (:view-box metadata)
-        scalex (/ width orw)
-        scaley (/ height orh)
-
         view-box (apply str (interpose " " (:view-box metadata)))
 
-        xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
+        xfmt (cond-> (gmt/matrix)
+               tmp-resize-xform (gmt/multiply tmp-resize-xform)
                tmp-displacement (gmt/translate tmp-displacement)
-               true (gmt/translate x1 y1)
-               true (gmt/scale scalex scaley))
+               rotation (gmt/rotate* rotation (gpt/point (+ x1 (/ width 2))
+                                                         (+ y1 (/ height 2)))))
 
         props {:id (str id)
+               :x x1 :y y1 :view-box view-box
+               :width width :height height
                :preserve-aspect-ratio "none"
-               :dangerouslySetInnerHTML {:__html content}
-               :transform (str xfmt)}
+               :dangerouslySetInnerHTML {:__html content}}
 
         attrs (merge props (attrs/extract-style-attrs shape))]
-    [:g attrs]))
+    [:g {:transform (str xfmt)}
+     [:svg attrs]]))
 
 ;; --- Icon SVG
 

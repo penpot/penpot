@@ -19,7 +19,6 @@
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.mixins :as mx :include-macros true]))
 
-
 ;; --- Helpers
 
 (declare group-component)
@@ -70,8 +69,7 @@
   (let [xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
                tmp-displacement (gmt/translate tmp-displacement))
 
-        props {:id (str id)
-               :transform (str xfmt)}
+        props {:id (str id) :transform (str xfmt)}
 
         attrs (merge props (attrs/extract-style-attrs shape))]
     [:g attrs
