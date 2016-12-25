@@ -656,14 +656,22 @@
        (->> (get-in state [:workspace :selected])
             (map #(update-stroke-attrs % opts)))))))
 
+
+;; --- Move Selected Layer
+
+(s/def ::direction #{:up :down})
+
+(deftype MoveSelectedLayer [loc]
+  udp/IPageUpdate
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [selected (get-in state [:workspace :selected])]
+      (impl/move-layer state selected loc))))
+
 (defn move-selected-layer
   [loc]
-  (reify
-    udp/IPageUpdate
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [selected (get-in state [:workspace :selected])]
-        (impl/move-layer state selected loc)))))
+  {:pre [(us/valid? ::direction loc)]}
+  (MoveSelectedLayer. loc))
 
 ;; --- Point Alignment (with Grid)
 

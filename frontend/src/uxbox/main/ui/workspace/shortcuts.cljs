@@ -50,14 +50,15 @@
    :ctrl+down #(st/emit! (uds/move-selected-layer :down))
    :ctrl+shift+up #(st/emit! (uds/move-selected-layer :top))
    :ctrl+shift+down #(st/emit! (uds/move-selected-layer :bottom))
-   :shift+up #(move-selected :up :fast)
-   :shift+down #(move-selected :down :fast)
-   :shift+right #(move-selected :right :fast)
-   :shift+left #(move-selected :left :fast)
-   :up #(move-selected :up :std)
-   :down #(move-selected :down :std)
-   :right #(move-selected :right :std)
-   :left #(move-selected :left :std)})
+   ;; :shift+up #(move-selected :up :fast)
+   ;; :shift+down #(move-selected :down :fast)
+   ;; :shift+right #(move-selected :right :fast)
+   ;; :shift+left #(move-selected :left :fast)
+   ;; :up #(move-selected :up :std)
+   ;; :down #(move-selected :down :std)
+   ;; :right #(move-selected :right :std)
+   ;; :left #(move-selected :left :std)
+   })
 
 ;; --- Shortcuts Setup Functions
 
