@@ -10,6 +10,7 @@
   (:require [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.constants :as c]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.lightbox :as udl]
@@ -25,7 +26,7 @@
   {:mixins [mx/static mx/reactive]}
   [own menu]
   (let [{:keys [id metadata] :as page} (mx/react page-ref)
-        {:keys [width height background] :as metadata} metadata]
+        metadata (merge c/page-metadata metadata)]
     (letfn [(on-width-change []
               (when-let [value (-> (mx/ref-node own "width")
                                    (dom/get-value)
@@ -77,18 +78,19 @@
         [:span "Background color"]
         [:div.row-flex.color-data
          [:span.color-th
-          {:style {:background-color (or background "#ffffff")}
+          {:style {:background-color (:background metadata)}
            :on-click show-color-picker}]
          [:div.color-info
           [:input
            {:on-change on-color-change
             :ref "color"
-            :value (or background "#ffffff")}]]]]])))
+            :value (:background metadata)}]]]]])))
 
 (mx/defcs grid-options-menu
   {:mixins [mx/static mx/reactive]}
   [own menu]
-  (let [{:keys [id metadata] :as page} (mx/react page-ref)]
+  (let [{:keys [id metadata] :as page} (mx/react page-ref)
+        metadata (merge c/page-metadata metadata)]
     (letfn [(on-x-change []
               (when-let [value (-> (mx/ref-node own "x-axis")
                                    (dom/get-value)
@@ -131,20 +133,20 @@
           [:input.input-text
            {:type "number"
             :ref "x-axis"
-            :value (:grid-x-axis metadata 10)
+            :value (:grid-x-axis metadata)
             :on-change on-x-change
             :placeholder "x"}]]
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
             :ref "y-axis"
-            :value (:grid-y-axis metadata 10)
+            :value (:grid-y-axis metadata)
             :on-change on-y-change
             :placeholder "y"}]]]
         [:span "Color"]
         [:div.row-flex.color-data
          [:span.color-th
-          {:style {:background-color (:grid-color metadata "#cccccc")}
+          {:style {:background-color (:grid-color metadata)}
            :on-click show-color-picker}]
          [:div.color-info
           [:input
