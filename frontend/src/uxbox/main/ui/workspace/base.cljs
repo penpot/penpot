@@ -22,7 +22,7 @@
 ;; --- Refs
 
 (def workspace-ref
-  (-> (l/in [:workspace])
+  (-> (l/key :workspace)
       (l/derive st/state)))
 
 (def project-ref
@@ -40,26 +40,26 @@
         (l/derive st/state))))
 
 (def page-id-ref
-  (as-> (l/in [:id]) $
-    (l/derive $ page-ref)))
+  (-> (l/key :id)
+      (l/derive page-ref)))
 
 (def page-id-ref-s (rx/from-atom page-id-ref))
 
 (def selected-shapes-ref
-  (as-> (l/in [:selected]) $
-    (l/derive $ workspace-ref)))
+  (-> (l/key :selected)
+      (l/derive workspace-ref)))
 
 (def toolboxes-ref
-  (as-> (l/in [:toolboxes]) $
-    (l/derive $ workspace-ref)))
+  (-> (l/key :toolboxes)
+      (l/derive workspace-ref)))
 
 (def flags-ref
-  (as-> (l/in [:flags]) $
-    (l/derive $ workspace-ref)))
+  (-> (l/key :flags)
+      (l/derive workspace-ref)))
 
 (def shapes-by-id-ref
-  (as-> (l/key :shapes) $
-    (l/derive $ st/state)))
+  (-> (l/key :shapes)
+      (l/derive st/state)))
 
 (def zoom-ref
   (-> (l/in [:workspace :zoom])
