@@ -6,9 +6,6 @@
 
 (ns uxbox.main.constants)
 
-(def grid-x-axis 10)
-(def grid-y-axis 10)
-
 (def viewport-width 4000)
 (def viewport-height 4000)
 
@@ -17,3 +14,14 @@
 (def canvas-scroll-padding 50)
 (def canvas-start-scroll-x (- canvas-start-x canvas-scroll-padding))
 (def canvas-start-scroll-y (- canvas-start-y canvas-scroll-padding))
+
+(def grid-x-axis 10)
+(def grid-y-axis 10)
+
+(def page-metadata
+  "Default data for page metadata."
+  {:grid-x-axis grid-x-axis
+   :grid-y-axis grid-y-axis
+   :grid-color "#cccccc"
+   :grid-alignment true
+   :background "#ffffff"})
