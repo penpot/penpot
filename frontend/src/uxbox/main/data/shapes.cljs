@@ -6,8 +6,8 @@
 
 (ns uxbox.main.data.shapes
   (:require [cljs.spec :as s :include-macros true]
+            [lentes.core :as l]
             [beicon.core :as rx]
-            [uxbox.util.uuid :as uuid]
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.constants :as c]
@@ -21,6 +21,7 @@
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.router :as r]
             [uxbox.util.rlocks :as rlocks]
+            [uxbox.util.uuid :as uuid]
             [uxbox.util.workers :as uw]))
 
 (s/def ::x1 number?)
@@ -141,6 +142,8 @@
   (ApplyTemporalDisplacement. id pt))
 
 ;; --- Apply Displacement
+
+;; TODO: move to shapes-impl ns.
 
 (deftype ApplyDisplacement [id]
   udp/IPageUpdate
@@ -663,6 +666,61 @@
   [loc]
   {:pre [(us/valid? ::direction loc)]}
   (MoveSelectedLayer. loc))
+
+;; --- Move Selected
+
+(defn alignment-activated?
+  [state]
+  (let [flags (get-in state [:workspace :flags])]
+    (and (contains? flags :grid-indexed)
+         (contains? flags :grid-alignment)
+         (contains? flags :grid))))
+
+(def selected-shapes-lens (l/in [:workspace :selected]))
+(def selected-page-lens (l/in [:workspace :page]))
+
+(defn- calculate-displacement
+  [direction speed distance]
+  (case direction
+    :up (gpt/point 0 (- (get-in distance [speed :y])))
+    :down (gpt/point 0 (get-in distance [speed :y]))
+    :left (gpt/point (- (get-in distance [speed :x])) 0)
+    :right (gpt/point (get-in distance [speed :x]) 0)))
+
+(defn- calculate-displacement-distance
+  [metadata align?]
+  (let [gx (:grid-x-axis metadata)
+        gy (:grid-y-axis metadata)]
+    {:std (gpt/point (if align? gx 1)
+                     (if align? gy 1))
+     :fast (gpt/point (if align? (* 3 gx) 10)
+                      (if align? (* 3 gy) 10))}))
+
+(deftype MoveSelected [direction speed]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [align? (alignment-activated? state)
+          selected (l/focus selected-shapes-lens state)
+          page (l/focus selected-page-lens state)
+          metadata (merge c/page-metadata (get-in state [:pages page :metadata]))
+          distance (calculate-displacement-distance metadata align?)
+          displacement (calculate-displacement direction speed distance)]
+      (rx/concat
+       (when align?
+         (rx/concat
+          (rx/from-coll (map initial-align-shape selected))
+          (rx/from-coll (map apply-displacement selected))))
+       (rx/from-coll (map #(apply-temporal-displacement % displacement) selected))
+       (rx/from-coll (map apply-displacement selected))))))
+
+(s/def ::direction #{:up :down :right :left})
+(s/def ::speed #{:std :fast})
+
+(defn move-selected
+  [direction speed]
+  {:pre [(us/valid? ::direction direction)
+         (us/valid? ::speed speed)]}
+  (MoveSelected. direction speed))
 
 ;; --- Point Alignment (with Grid)
 
