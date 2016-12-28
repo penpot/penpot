@@ -193,14 +193,6 @@
         [:div.element-icon (element-icon item)]
         (shape-name item)]])))
 
-
-;; TODO: Fix this temporary hack (Looks like a problem in defcs macro)
-(declare layer-group)
-(mx/defc defcs-macro-hack
-  {:mixins [mx/static mx/reactive (mx/local)]}
-  [shape selected]
-  (layer-group shape selected))
-
 ;; --- Layer Group (Component)
 
 (mx/defcs layer-group
@@ -288,8 +280,7 @@
           (for [shape (map #(get shapes-map %) (:items item))
                 :let [key (str (:id shape))]]
             (if (= (:type shape) :group)
-              ;; TODO: Fix this temporary hack (Looks like a problem in defcs macro)
-              (-> (defcs-macro-hack shape selected)
+              (-> (layer-group shape selected)
                   (mx/with-key key))
               (-> (layer-simple shape selected)
                   (mx/with-key key))))])])))
