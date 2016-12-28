@@ -36,8 +36,8 @@
       4 (let [sym (:name r)
               args (:args r)
               func (if (map? v)
-                     `(fn ~sym ~args ~v ~(s/compile-html `(do ~@n)))
-                     `(fn ~sym ~args ~(s/compile-html `(do ~@(cons v n)))))]
+                     `(fn ~args ~v ~(s/compile-html `(do ~@n)))
+                     `(fn ~args ~(s/compile-html `(do ~@(cons v n)))))]
           [func (:doc r) (:mixins r) sym]))))
 
 (defmacro defc
