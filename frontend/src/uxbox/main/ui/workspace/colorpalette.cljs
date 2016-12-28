@@ -29,34 +29,47 @@
     (first (filter #(= selected (:id %)) collections))
     (first (filter #(and (:id %) (> (count (:colors %)) 0)) collections))))
 
-(mx/defc palette-items
+(mx/defc palette-item
   {:mixins [mx/static]}
-  [colors position]
-  (letfn [(select-color [event color]
+  [color]
+  (letfn [(select-color [event]
             (dom/prevent-default event)
             (if (kbd/shift? event)
               (st/emit! (uds/update-selected-shapes-stroke {:color color}))
               (st/emit! (uds/update-selected-shapes-fill {:color color}))))]
-    [:div.color-palette-content
-     [:div.color-palette-inside {:style {:position "relative" :right (str (* position 52 10) "px")}}
-      (for [hex-color colors
-            :let [rgb-vec (hex->rgb hex-color)
-                  rgb-color (apply str "" (interpose ", " rgb-vec))]]
-        [:div.color-cell {:key (str hex-color)
-                          :on-click #(select-color % hex-color)}
-         [:span.color {:style {:background hex-color}}]
-         [:span.color-text hex-color]
-         [:span.color-text rgb-color]])]]))
+    (let [rgb-vec (hex->rgb color)
+          rgb-color (apply str "" (interpose ", " rgb-vec))]
+      [:div.color-cell {:key (str color)
+                        :on-click select-color}
+       [:span.color {:style {:background color}}]
+       [:span.color-text color]
+       [:span.color-text rgb-color]])))
+
+(defn- palette-after-render
+  [{:keys [rum/local] :as own}]
+  (let [dom (mx/ref-node own "container")
+        width (.-clientWidth dom)]
+    (when (not= (:width @local) width)
+      (swap! local assoc :width width))
+    own))
+
+(defn- document-width
+  []
+  (.. js/document -documentElement -clientWidth))
 
 (mx/defcs palette
-  {:mixins [mx/static mx/reactive (mx/local)]}
-  [own]
-  (let [local (:rum/local own)
-        collections (->> (mx/react collections-ref)
+  {:mixins [mx/static mx/reactive (mx/local)]
+   :after-render palette-after-render}
+  [{:keys [rum/local] :as own}]
+  (let [collections (->> (mx/react collections-ref)
                          (vals)
                          (filter :id)
                          (sort-by :name))
-        selected-collection (get-selected-collection local collections)]
+        {:keys [colors] :as selected-coll} (get-selected-collection local collections)
+        width (:width @local (* (document-width) 0.84))
+        offset (:offset @local 0)
+        visible (/ width 86)
+        invisible (- (count colors) visible)]
     (letfn [(select-collection [event]
               (let [value (read-string (dom/event->value event))]
                 (swap! local assoc :selected value :position 0)))
@@ -68,21 +81,27 @@
          (for [collection collections]
            [:option {:key (str (:id collection))
                      :value (pr-str (:id collection))
-                     :selected (when (= collection selected-collection) "selected")}
+                     :selected (when (= collection selected-coll) "selected")}
             (:name collection)])]
         #_[:div.color-palette-buttons
            [:div.btn-palette.edit.current i/pencil]
            [:div.btn-palette.create i/close]]]
+
        [:span.left-arrow
-        (if (> (:position @local) 0)
-          {:on-click #(swap! local update :position dec)}
-          {:class :disabled})
+        (when (> offset 0)
+          {:on-click #(swap! local update :offset (fnil dec 1))})
         i/arrow-slide]
-       (palette-items (:colors selected-collection) (:position @local))
+
+       [:div.color-palette-content {:ref "container"}
+        [:div.color-palette-inside {:style {:position "relative"
+                                            :right (str (* 86 offset) "px")}}
+         (for [color colors]
+           (-> (palette-item color)
+               (mx/with-key color)))]]
+
        [:span.right-arrow
-        (if (< (* (+ 1 (:position @local)) 10) (count (:colors selected-collection)))
-          {:on-click #(swap! local update :position inc)}
-          {:class :disabled})
+        (when (< offset invisible)
+          {:on-click #(swap! local update :offset (fnil inc 0))})
         i/arrow-slide]
        [:span.close-palette {:on-click close}
         i/close]])))

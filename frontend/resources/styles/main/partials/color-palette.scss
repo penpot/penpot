@@ -105,8 +105,9 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  margin: 0 .6rem;
+  margin: 0 10px;
   position: relative;
+  flex-basis: 66px;
   .color {
     background-color: $color-gray-lighter;
     border: 2px solid $soft-ui-border;
