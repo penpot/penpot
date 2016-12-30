@@ -490,7 +490,7 @@
 
 ;; --- Update Interaction
 
-(defrecord UpdateInteraction [shape interaction]
+(deftype UpdateInteraction [shape interaction]
   udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
@@ -505,7 +505,7 @@
 
 ;; --- Delete Interaction
 
-(defrecord DeleteInteracton [shape id]
+(deftype DeleteInteracton [shape id]
   udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
@@ -518,7 +518,7 @@
 
 ;; --- Path Modifications
 
-(defrecord UpdatePath [id index delta]
+(deftype UpdatePath [id index delta]
   ptk/UpdateEvent
   (update [_ state]
     (update-in state [:shapes id :points index] gpt/add delta)))
@@ -529,7 +529,7 @@
   {:pre [(uuid? id) (number? index) (gpt/point? delta)]}
   (UpdatePath. id index delta))
 
-(defrecord InitialPathPointAlign [id index]
+(deftype InitialPathPointAlign [id index]
   ptk/WatchEvent
   (watch [_ state s]
     (let [shape (get-in state [:shapes id])
@@ -550,7 +550,7 @@
 
 ;; --- Start shape "edition mode"
 
-(defrecord StartEditionMode [id]
+(deftype StartEditionMode [id]
   ptk/UpdateEvent
   (update [_ state]
     (assoc-in state [:workspace :edition] id))
@@ -566,7 +566,7 @@
 
 ;; --- Events (implicit) (for selected)
 
-(defrecord DeselectAll []
+(deftype DeselectAll []
   ptk/UpdateEvent
   (update [_ state]
     (-> state
@@ -635,10 +635,10 @@
   [opts]
   (reify
     ptk/WatchEvent
-    (watch [_ state s]
-      (rx/from-coll
-       (->> (get-in state [:workspace :selected])
-            (map #(update-fill-attrs % opts)))))))
+    (watch [_ state stream]
+      (->> (get-in state [:workspace :selected])
+           (map #(update-fill-attrs % opts))
+           (rx/from-coll)))))
 
 (defn update-selected-shapes-stroke
   "Update the fill related attributed on
@@ -650,7 +650,6 @@
       (rx/from-coll
        (->> (get-in state [:workspace :selected])
             (map #(update-stroke-attrs % opts)))))))
-
 
 ;; --- Move Selected Layer
 
