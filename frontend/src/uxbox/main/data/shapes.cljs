@@ -11,6 +11,7 @@
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.constants :as c]
+            [uxbox.main.lenses :as ul]
             [uxbox.main.geom :as geom]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.shapes-impl :as impl]
@@ -671,15 +672,14 @@
 
 (defn alignment-activated?
   [state]
-  (let [flags (get-in state [:workspace :flags])]
+  (let [flags (l/focus ul/workspace-flags state)]
     (and (contains? flags :grid-indexed)
          (contains? flags :grid-alignment)
          (contains? flags :grid))))
 
-(def selected-shapes-lens (l/in [:workspace :selected]))
-(def selected-page-lens (l/in [:workspace :page]))
-
-(defn- calculate-displacement
+(defn- get-displacement
+  "Retrieve the correct displacement delta point for the
+  provided direction speed and distances thresholds."
   [direction speed distance]
   (case direction
     :up (gpt/point 0 (- (get-in distance [speed :y])))
@@ -687,7 +687,9 @@
     :left (gpt/point (- (get-in distance [speed :x])) 0)
     :right (gpt/point (get-in distance [speed :x]) 0)))
 
-(defn- calculate-displacement-distance
+(defn- get-displacement-distance
+  "Retrieve displacement distances thresholds for
+  defined displacement speeds."
   [metadata align?]
   (let [gx (:grid-x-axis metadata)
         gy (:grid-y-axis metadata)]
@@ -700,11 +702,11 @@
   ptk/WatchEvent
   (watch [_ state stream]
     (let [align? (alignment-activated? state)
-          selected (l/focus selected-shapes-lens state)
-          page (l/focus selected-page-lens state)
+          selected (l/focus ul/selected-shapes state)
+          page (l/focus ul/selected-page state)
           metadata (merge c/page-metadata (get-in state [:pages page :metadata]))
-          distance (calculate-displacement-distance metadata align?)
-          displacement (calculate-displacement direction speed distance)]
+          distance (get-displacement-distance metadata align?)
+          displacement (get-displacement direction speed distance)]
       (rx/concat
        (when align?
          (rx/concat

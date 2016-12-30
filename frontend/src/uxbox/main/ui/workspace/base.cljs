@@ -10,6 +10,7 @@
             [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.lenses :as ul]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]
@@ -19,27 +20,35 @@
 ;; FIXME: split this namespace in two:
 ;; uxbox.main.ui.streams and uxbox.main.ui.workspace.refs
 
+;; --- Helpers
+
+(defn resolve-project
+  "Retrieve the current project."
+  [state]
+  (let [id (l/focus ul/selected-project state)]
+    (get-in state [:projects id])))
+
+(defn resolve-page
+  [state]
+  (let [id (l/focus ul/selected-page state)]
+    (get-in state [:pages id])))
+
 ;; --- Refs
 
-(def workspace-ref
-  (-> (l/key :workspace)
-      (l/derive st/state)))
+(def workspace-ref (l/derive ul/workspace st/state))
 
 (def project-ref
-  (letfn [(getter [state]
-            (let [project (get-in state [:workspace :project])]
-              (get-in state [:projects project])))]
-    (-> (l/lens getter)
-        (l/derive st/state))))
+  "Ref to the current selected project."
+  (-> (l/lens resolve-project)
+      (l/derive st/state)))
 
 (def page-ref
-  (letfn [(getter [state]
-            (let [page (get-in state [:workspace :page])]
-              (get-in state [:pages page])))]
-    (-> (l/lens getter)
-        (l/derive st/state))))
+  "Ref to the current selected page."
+  (-> (l/lens resolve-page)
+      (l/derive st/state)))
 
 (def page-id-ref
+  "Ref to the current selected page id."
   (-> (l/key :id)
       (l/derive page-ref)))
 
@@ -62,18 +71,14 @@
       (l/derive st/state)))
 
 (def zoom-ref
-  (-> (l/in [:workspace :zoom])
-      (l/derive st/state)))
+  (-> (l/key :zoom)
+      (l/derive workspace-ref)))
 
 (def zoom-ref-s (rx/from-atom zoom-ref))
 
 (def alignment-ref
-  (letfn [(getter [flags]
-            (and (contains? flags :grid-indexed)
-                 (contains? flags :grid-alignment)
-                 (contains? flags :grid)))]
-    (-> (l/lens getter)
-        (l/derive flags-ref))))
+  (-> (l/lens uds/alignment-activated?)
+      (l/derive flags-ref)))
 
 ;; --- Scroll Stream
 
