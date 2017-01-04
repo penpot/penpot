@@ -5,8 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.common
-  (:require [sablono.core :refer-macros [html]]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [beicon.core :as rx]
             [potok.core :as ptk]
             [uxbox.store :as st]
@@ -20,7 +19,6 @@
 
 ;; --- Refs
 
-;; (defonce edition-ref (atom nil))
 (def edition-ref
   (-> (l/in [:workspace :edition])
       (l/derive st/state)))

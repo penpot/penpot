@@ -41,7 +41,7 @@
   (-> (l/lens focus-selected-shapes)
       (l/derive st/state)))
 
-(def edition-ref scommon/edition-ref)
+(def ^:private edition-ref scommon/edition-ref)
 
 ;; --- Resize Implementation
 
@@ -362,22 +362,39 @@
         shape (geom/selection-rect shape)]
     (controls shape zoom on-click)))
 
+(mx/defc text-edition-selection-handlers
+  {:mixins [mx/static]}
+  [{:keys [id] :as shape} zoom]
+  (let [{:keys [x1 y1 width height] :as shape} (geom/selection-rect shape)]
+    [:g.controls
+     [:rect.main {:x x1 :y y1
+                  :width width
+                  :height height
+                  ;; :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
+                  :style {:stroke "#333"
+                          :stroke-width "0.5"
+                          :stroke-opacity "0.5"
+                          :fill "transparent"}}]]))
+
 (mx/defc selection-handlers
   {:mixins [mx/reactive mx/static]}
   []
   (let [shapes (mx/react selected-shapes-ref)
-        edition (mx/react scommon/edition-ref)
+        edition? (mx/react edition-ref)
         zoom (mx/react wb/zoom-ref)
-        shapes-num (count shapes)
-        shape (first shapes)]
+        num (count shapes)
+        {:keys [type] :as shape} (first shapes)]
     (cond
-      (zero? shapes-num)
+      (zero? num)
       nil
 
-      (> shapes-num 1)
+      (> num 1)
       (multiple-selection-handlers shapes zoom)
 
-      (= :path (:type shape))
+      (and (= type :text) edition?)
+      (text-edition-selection-handlers shape zoom)
+
+      (= type :path)
       (if (= @edition-ref (:id shape))
         (path-edition-selection-handlers shape zoom)
         (single-selection-handlers shape zoom))
