@@ -35,17 +35,17 @@
 
 ;; --- Shapes CRUD
 
+(deftype AddShape [data]
+  udp/IPageUpdate
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [shape (geom/setup-proportions data)
+          page (l/focus ul/selected-page state)]
+      (impl/assoc-shape-to-page state shape page))))
+
 (defn add-shape
-  "Create and add shape to the current selected page."
-  [shape]
-  (reify
-    udp/IPageUpdate
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page (get-in state [:workspace :page])
-            used-names (map #(get-in state [:shapes % :name]) (get-in state [:pages page :shapes]))
-            shape (geom/setup-proportions shape)]
-        (impl/assoc-shape-to-page state shape used-names page)))))
+  [data]
+  (AddShape. data))
 
 (defn delete-shape
   "Remove the shape using its id."
@@ -605,18 +605,18 @@
             selected (get-in state [:workspace :selected])]
         (impl/degroup-shapes state selected pid)))))
 
-;; TODO: maybe split in two separate events
+;; --- Duplicate Selected
+
+(deftype DuplicateSelected []
+  udp/IPageUpdate
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [selected (get-in state [:workspace :selected])]
+      (impl/duplicate-shapes state selected))))
+
 (defn duplicate-selected
   []
-  (reify
-    udp/IPageUpdate
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (get-in state [:workspace :page])
-            selected (get-in state [:workspace :selected])
-            used-names (map #(get-in state [:shapes % :name])
-                            (get-in state [:pages pid :shapes]))]
-        (impl/duplicate-shapes state selected used-names)))))
+  (DuplicateSelected.))
 
 (defn delete-selected
   "Deselect all and remove all selected shapes."
