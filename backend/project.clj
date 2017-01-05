@@ -4,30 +4,25 @@
   :license {:name "MPL 2.0" :url "https://www.mozilla.org/en-US/MPL/2.0/"}
   :source-paths ["src" "vendor"]
   :javac-options ["-target" "1.8" "-source" "1.8" "-Xlint:-options"]
-  :jvm-opts ["-Dclojure.compiler.direct-linking=true"
-             ;; "-Dcom.sun.management.jmxremote.port=9090"
-             ;; "-Dcom.sun.management.jmxremote.authenticate=false"
-             ;; "-Dcom.sun.management.jmxremote.ssl=false"
-             ;; "-Dcom.sun.management.jmxremote.rmi.port=9090"
-             ;; "-Djava.rmi.server.hostname=0.0.0.0"
-             "-Dclojure.spec.check-asserts=true"
-             "-Dclojure.spec.compile-asserts=true"
-             "-XX:+UseG1GC" "-Xms1g" "-Xmx1g"]
-  :global-vars {*assert* true}
+  ;; :jvm-opts ["-Dcom.sun.management.jmxremote.port=9090"
+  ;;            "-Dcom.sun.management.jmxremote.authenticate=false"
+  ;;            "-Dcom.sun.management.jmxremote.ssl=false"
+  ;;            "-Dcom.sun.management.jmxremote.rmi.port=9090"
+  ;;            "-Djava.rmi.server.hostname=0.0.0.0"]
   :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
                  [org.clojure/tools.logging "0.3.1"]
                  [funcool/struct "1.0.0"]
-                 [funcool/suricatta "1.2.0"]
-                 [funcool/promesa "1.6.0"]
+                 [funcool/suricatta "1.3.1"]
+                 [funcool/promesa "1.7.0"]
                  [funcool/catacumba "2.0.0-SNAPSHOT"]
 
                  [org.clojure/data.xml "0.1.0-beta2"]
-                 [org.jsoup/jsoup "1.10.1"]
+                 [org.jsoup/jsoup "1.10.2"]
 
                  [hiccup "1.0.5"]
                  [org.im4java/im4java "1.4.0"]
 
-                 [org.slf4j/slf4j-simple "1.7.21"]
+                 [org.slf4j/slf4j-simple "1.7.22"]
                  [com.layerware/hugsql-core "0.4.7"
                   :exclusions [org.clojure/tools.reader]]
                  [niwinz/migrante "0.1.0"]
@@ -44,5 +39,5 @@
                  [com.draines/postal "2.0.2"]
 
                  [hikari-cp "1.7.5"]
-                 [mount "0.1.10"]
+                 [mount "0.1.11"]
                  [environ "1.1.0"]])

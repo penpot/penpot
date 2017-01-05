@@ -1,2 +1,7 @@
 #!/usr/bin/env bash
-lein run -m uxbox.cli.collimp/-main -- $@
+
+DIR=`dirname $0`
+LEIN="$DIR/lein"
+
+$LEIN trampoline run -m uxbox.cli.collimp/-main -- $@
+
