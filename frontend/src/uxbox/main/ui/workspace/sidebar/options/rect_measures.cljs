@@ -2,8 +2,8 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.options.rect-measures
   (:require [lentes.core :as l]
@@ -23,28 +23,22 @@
 (mx/defc rect-measures-menu
   {:mixins [mx/static]}
   [menu {:keys [id] :as shape}]
-  (letfn [(on-size-change [attr event]
-            (let [value (-> (dom/event->value event) (parse-int 0))
-                  sid (:id shape)
-                  props {attr value}]
-              (st/emit! (uds/update-size sid props))))
+  (letfn [(on-size-change [event attr]
+            (let [value (-> (dom/event->value event)
+                            (parse-int 0))]
+              (st/emit! (uds/update-size id {attr value}))))
           (on-rotation-change [event]
-            (let [value (dom/event->value event)
-                  value (parse-int value 0)
-                  sid (:id shape)]
-              (st/emit! (uds/update-rotation sid value))))
-          (on-pos-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value nil)
-                  sid (:id shape)
-                  props {attr value}]
-              (st/emit! (uds/update-position sid props))))
-          (on-border-change [attr event]
-            (let [value (dom/event->value event)
-                  value (parse-int value nil)
-                  sid (:id shape)
-                  props {attr value}]
-              (st/emit! (uds/update-radius-attrs sid props))))
+            (let [value (-> (dom/event->value event)
+                            (parse-int 0))]
+              (st/emit! (uds/update-rotation id value))))
+          (on-pos-change [event attr]
+            (let [value (-> (dom/event->value event)
+                            (parse-int nil))]
+              (st/emit! (uds/update-position id {attr value}))))
+          (on-border-change [event attr]
+            (let [value (-> (dom/event->value event)
+                            (parse-int nil))]
+              (st/emit! (uds/update-attrs id {attr value}))))
           (on-proportion-lock-change [event]
             (if (:proportion-lock shape)
               (st/emit! (uds/unlock-proportions id))
@@ -62,7 +56,7 @@
             :type "number"
             :min "0"
             :value (precision-or-0 (:width size) 2)
-            :on-change (partial on-size-change :width)}]]
+            :on-change #(on-size-change % :width)}]]
          [:div.lock-size
           {:class (when (:proportion-lock shape) "selected")
            :on-click on-proportion-lock-change}
@@ -73,7 +67,7 @@
             :type "number"
             :min "0"
             :value (precision-or-0 (:height size) 2)
-            :on-change (partial on-size-change :height)}]]]
+            :on-change #(on-size-change % :height)}]]]
 
         [:span "Position"]
         [:div.row-flex
@@ -82,13 +76,13 @@
            {:placeholder "x"
             :type "number"
             :value (precision-or-0 (:x1 shape 0) 2)
-            :on-change (partial on-pos-change :x)}]]
+            :on-change #(on-pos-change % :x)}]]
          [:div.input-element.pixels
           [:input.input-text
            {:placeholder "y"
             :type "number"
             :value (precision-or-0 (:y1 shape 0) 2)
-            :on-change (partial on-pos-change :y)}]]]
+            :on-change #(on-pos-change % :y)}]]]
 
         [:span "Border radius"]
         [:div.row-flex
@@ -96,13 +90,13 @@
           {:placeholder "rx"
            :type "number"
            :value (precision-or-0 (:rx shape 0) 2)
-           :on-change (partial on-border-change :rx)}]
+           :on-change #(on-border-change % :rx)}]
          [:div.lock-size i/lock]
          [:input.input-text
           {:placeholder "ry"
            :type "number"
            :value (precision-or-0 (:ry shape 0) 2)
-           :on-change (partial on-border-change :ry)}]]
+           :on-change #(on-border-change % :ry)}]]
 
         [:span "Rotation"]
         [:div.row-flex

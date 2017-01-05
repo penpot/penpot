@@ -31,6 +31,7 @@
 ;; --- Rect Shape
 
 (defn- rotate
+  ;; TODO: revisit, i'm not sure if this function is duplicated.
   [mt {:keys [x1 y1 x2 y2 width height rotation] :as shape}]
   (let [x-center (+ x1 (/ width 2))
         y-center (+ y1 (/ height 2))

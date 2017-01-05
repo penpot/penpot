@@ -16,11 +16,10 @@
    [uxbox.main.data.shapes :as uds]
    [uxbox.main.ui.workspace.base :as wb]
    [uxbox.main.ui.icons :as i]
-   [uxbox.util.mixins :as mx :include-macros true]
+   [uxbox.main.ui.shapes.attrs :refer [shape-default-attrs]]
    [uxbox.main.ui.workspace.sidebar.options.icon-measures :as options-iconm]
    [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
    [uxbox.main.ui.workspace.sidebar.options.rect-measures :as options-rectm]
-   [uxbox.main.ui.workspace.sidebar.options.line-measures :as options-linem]
    [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
    [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
    [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
@@ -28,19 +27,19 @@
    [uxbox.main.ui.workspace.sidebar.options.interactions :as options-interactions]
    [uxbox.main.geom :as geom]
    [uxbox.util.dom :as dom]
-   [uxbox.util.data :as data]))
+   [uxbox.util.data :as data]
+   [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Constants
 
 (def ^:private +menus-map+
   {:icon [::icon-measures ::fill ::stroke ::interactions]
    :rect [::rect-measures ::fill ::stroke ::interactions]
-   :line [::line-measures ::stroke ::interactions]
    :path [::fill ::stroke ::interactions]
    :circle [::circle-measures ::fill ::stroke ::interactions]
    :text [::fill ::text ::interactions]
    :image [::interactions]
-   :group [::interactions]
+   :group [::fill ::stroke ::interactions]
    ::page [::page-measures ::page-grid-options]})
 
 (def ^:private +menus+
@@ -52,10 +51,6 @@
     :id ::rect-measures
     :icon i/infocard
     :comp options-rectm/rect-measures-menu}
-   {:name "Size, position & rotation"
-    :id ::line-measures
-    :icon i/infocard
-    :comp options-linem/line-measures-menu}
    {:name "Size, position & rotation"
     :id ::circle-measures
     :icon i/infocard
@@ -128,7 +123,8 @@
 (mx/defc options-toolbox
   {:mixins [mx/static mx/reactive]}
   []
-  (let [shape (mx/react selected-shape-ref)
+  (let [shape (->> (mx/react selected-shape-ref)
+                   (merge shape-default-attrs))
         close #(st/emit! (udw/toggle-flag :element-options))]
     [:div.elementa-options.tool-window
      [:div.tool-window-bar

@@ -35,6 +35,7 @@
 ;; --- Text Component
 
 (declare text-shape)
+(declare text-shape-wrapper)
 (declare text-shape-edit)
 
 (mx/defcs text-component
@@ -55,7 +56,7 @@
                  :on-mouse-down on-mouse-down}
        (if edition?
          (text-shape-edit shape)
-         (text-shape shape))])))
+         (text-shape-wrapper shape))])))
 
 ;; --- Text Styles Helpers
 
@@ -66,28 +67,36 @@
            :stroke-opacity "0.4"}})
 
 (defn- make-style
-  [{:keys [font fill opacity]
-    :or {fill "#000000" opacity 1}}]
-  (let [{:keys [family weight style size align
-                line-height letter-spacing]
-         :or {family "sourcesanspro"
-              weight "normal"
-              style "normal"
-              line-height 1.4
-              letter-spacing 1
-              align "left"
-              size 16}} font
-        color (-> fill
-                  (color/hex->rgba opacity)
+  [{:keys [fill-color
+           fill-opacity
+           font-family
+           font-weight
+           font-style
+           font-size
+           text-align
+           line-height
+           letter-spacing]
+    :or {fill-color "#000000"
+         fill-opacity 1
+         font-family "sourcesanspro"
+         font-weight "normal"
+         font-style "normal"
+         fobt-size 16
+         line-height 1.4
+         letter-spacing 1
+         text-align "left"}
+    :as shape}]
+  (let [color (-> fill-color
+                  (color/hex->rgba fill-opacity)
                   (color/rgb->str))]
     (merge
-     {:fontSize (str size "px")
-      :color color
-      :whiteSpace "pre"
-      :textAlign align
-      :fontFamily family
-      :fontWeight weight
-      :fontStyle style}
+     {:fontSize (str font-size "px")
+      :color fill-color
+      :whiteSpace "pre-wrap"
+      :textAlign text-align
+      :fontFamily font-family
+      :fontWeight font-weight
+      :fontStyle font-style}
      (when line-height {:lineHeight line-height})
      (when letter-spacing {:letterSpacing letter-spacing}))))
 
@@ -105,11 +114,9 @@
   {:did-mount text-shape-edit-did-mount
    :mixins [mx/static]}
   [{:keys [id x1 y1 content] :as shape}]
-  (let [size (geom/size shape)
+  (let [{:keys [width height]} (geom/size shape)
         style (make-style shape)
-        ;; rfm (geom/transformation-matrix shape)
-        props {:x x1 :y y1} ;; :transform (str rfm)}
-        props (merge props size)]
+        props {:x x1 :y y1 :width width :height height}]
     (letfn [#_(on-blur [ev]
               (rlocks/release! :ui/text-edit)
               (on-done))
@@ -117,15 +124,15 @@
               (let [content (dom/event->inner-text ev)]
                 (st/emit! (uds/update-text id {:content content}))))]
       [:g
-       [:rect (merge props +select-rect-attrs+)]
+       #_[:rect (merge props +select-rect-attrs+)]
        [:foreignObject props
-        [:p {:ref "container"
-             ;; :on-blur on-blur
-             :on-input on-input
-             :contentEditable true
-             :style style}]]])))
+        [:div {:style style}
+         [:p {:ref "container"
+              ;; :on-blur on-blur
+              :on-input on-input
+              :contentEditable true}]]]])))
 
-;; --- Text Shape
+;; --- Text Shape Wrapper
 
 ;; NOTE: this is a hack for the browser rendering.
 ;;
@@ -135,30 +142,46 @@
 ;; completelly invisible. The complete dom rerender fixes that
 ;; problem.
 
-(defn- text-shape-did-update
+(defn text-shape-wrapper-did-mount
   [own]
-  (let [pref (mx/ref-node own "fo")
-        html (.-innerHTML pref)]
-    (set! (.-innerHTML pref) html)
+  (let [[shape] (:rum/args own)
+        dom (mx/ref-node own "fobject")
+        html (mx/render-static-html (text-shape shape))]
+    (set! (.-innerHTML dom) html))
+    own)
+
+(defn text-shape-wrapper-did-remount
+  [old own]
+  (let [[old-shape] (:rum/args old)
+        [shape] (:rum/args own)]
+    (when (not= shape old-shape)
+      (let [dom (mx/ref-node own "fobject")
+            html (mx/render-static-html (text-shape shape))]
+        (set! (.-innerHTML dom) html)))
     own))
 
-(mx/defc text-shape
+(mx/defc text-shape-wrapper
   {:mixins [mx/static]
-   :did-update text-shape-did-update}
-  [{:keys [tmp-resize-xform] :as shape}]
-  (let [shape (cond-> (geom/size shape)
-                tmp-resize-xform (geom/transform shape tmp-resize-xform))
+   :did-mount text-shape-wrapper-did-mount
+   :did-remount text-shape-wrapper-did-remount}
+  [{:keys [id tmp-resize-xform tmp-displacement] :as shape}]
+  (let [xfmt (cond-> (gmt/matrix)
+                tmp-displacement (gmt/translate tmp-displacement)
+                tmp-resize-xform (gmt/multiply tmp-resize-xform))
 
-        {:keys [id x1 y1 content
-                width height
-                tmp-displacement]} (geom/size shape)
+        {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
+                                                   (geom/size))]
+    [:foreignObject {:x x1
+                     :y y1
+                     :id (str id)
+                     :ref "fobject"
+                     :width width
+                     :height height}]))
 
-        xfmt (cond-> (gmt/matrix)
-               tmp-displacement (gmt/translate tmp-displacement))
+;; --- Text Shape
 
-        style (make-style shape)
-        props {:x x1 :y y1 :id (str id) :ref "fo"
-               :width width :height height
-               :transform (str xfmt)}]
-    [:foreignObject props
-     [:p {:ref "p" :style style} content]]))
+(mx/defc text-shape
+  [{:keys [content] :as shape}]
+  (let [style (make-style shape)]
+    [:div {:style style}
+     [:p content]]))

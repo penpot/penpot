@@ -69,9 +69,7 @@
   (let [xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
                tmp-displacement (gmt/translate tmp-displacement))
 
-        props {:id (str id) :transform (str xfmt)}
-
-        attrs (merge props (attrs/extract-style-attrs shape))]
+        attrs {:id (str id) :transform (str xfmt)}]
     [:g attrs
      (for [item (reverse items)
            :let [key (str item)]]

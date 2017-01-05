@@ -45,3 +45,20 @@
     (when-not valid
       (js/console.error (str "Spec validation error:\n" (s/explain-str spec data))))
     valid))
+
+(defn extract
+  "Given a map spec, performs a `select-keys`
+  like exctraction from the object.
+
+  NOTE: this function does not executes
+  the conform or validation of the data,
+  is responsability of the user to do it."
+  [data spec]
+  (let [desc (s/describe spec)
+        {:keys [req-un opt-un]} (apply hash-map (rest desc))
+        keys (concat
+              (map (comp keyword name) req-un)
+              (map (comp keyword name) opt-un))]
+    (select-keys data keys)))
+
+

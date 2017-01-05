@@ -33,10 +33,10 @@
   {:mixins [mx/static]}
   [color]
   (letfn [(select-color [event]
-            (dom/prevent-default event)
-            (if (kbd/shift? event)
-              (st/emit! (uds/update-selected-shapes-stroke {:color color}))
-              (st/emit! (uds/update-selected-shapes-fill {:color color}))))]
+            (let [attrs (if (kbd/shift? event)
+                          {:stroke-color color}
+                          {:fill-color color})]
+              (st/emit! (uds/update-selected-shapes-attrs attrs))))]
     (let [rgb-vec (hex->rgb color)
           rgb-color (apply str "" (interpose ", " rgb-vec))]
       [:div.color-cell {:key (str color)

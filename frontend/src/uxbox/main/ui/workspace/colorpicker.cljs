@@ -32,15 +32,11 @@
 (mx/defcs shape-colorpicker
   {:mixins [mx/reactive mx/static]}
   [own {:keys [x y shape attr] :as opts}]
-  (let [shape (mx/react (focus-shape shape))
+  (let [{:keys [id] :as shape} (mx/react (focus-shape shape))
         left (- x 260)
         top (- y 50)]
     (letfn [(change-color [color]
-              (let [attrs {:color color}]
-                (st/emit!
-                 (case attr
-                   :stroke (uds/update-stroke-attrs (:id shape) attrs)
-                   :fill (uds/update-fill-attrs (:id shape) attrs)))))]
+              (st/emit! (uds/update-attrs id {attr color})))]
       [:div.colorpicker-tooltip
        {:style {:left (str left "px")
                 :top (str top "px")}}
