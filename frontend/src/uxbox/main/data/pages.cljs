@@ -242,6 +242,10 @@
 (s/def ::metadata-persisted-event
   (s/keys :req-un [::id ::version]))
 
+(defn metadata-persisted?
+  [v]
+  (instance? MetadataPersisted. v))
+
 (defn metadata-persisted
   [{:keys [id] :as data}]
   {:pre [(us/valid? ::metadata-persisted-event data)]}
@@ -399,16 +403,21 @@
                        (rx/take 1))]
       (rx/merge
        (->> stream
-            (rx/take-until stopper)
-            (rx/filter #(not= @rlocks/lock :shape/resize))
             (rx/filter #(satisfies? IPageUpdate %))
-            (rx/debounce 1000)
-            (rx/map #(persist-page id)))
-       (->> stream
             (rx/take-until stopper)
-            (rx/filter #(satisfies? IMetadataUpdate %))
             (rx/debounce 1000)
-            (rx/map #(persist-metadata id)))))))
+            (rx/mapcat #(rx/merge (rx/of (persist-page id))
+                                  (->> (rx/filter page-persisted? stream)
+                                       (rx/take 1)
+                                       (rx/ignore)))))
+       (->> stream
+            (rx/filter #(satisfies? IMetadataUpdate %))
+            (rx/take-until stopper)
+            (rx/debounce 1000)
+            (rx/mapcat #(rx/merge (rx/of (persist-metadata id))
+                                  (->> (rx/filter metadata-persisted? stream)
+                                       (rx/take 1)
+                                       (rx/ignore)))))))))
 
 (defn watch-page-changes
   [id]
