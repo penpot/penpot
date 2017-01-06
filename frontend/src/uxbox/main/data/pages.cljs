@@ -12,6 +12,7 @@
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.repo :as rp]
+            [uxbox.main.lenses :as ul]
             [uxbox.util.rlocks :as rlocks]
             [uxbox.util.spec :as us]
             [uxbox.util.router :as r]
@@ -22,9 +23,6 @@
 
 ;; --- Specs
 
-(s/def ::id uuid?)
-(s/def ::name string?)
-(s/def ::project uuid?)
 (s/def ::grid-x-axis number?)
 (s/def ::grid-y-axis number?)
 (s/def ::grid-color us/color?)
@@ -45,6 +43,26 @@
                    ::background
                    ::background-opacity
                    ::layout]))
+
+(s/def ::id uuid?)
+(s/def ::name string?)
+(s/def ::version integer?)
+(s/def ::project uuid?)
+(s/def ::user uuid?)
+(s/def ::created-at dt/instant?)
+(s/def ::modified-at dt/instant?)
+(s/def ::shapes (s/coll-of uuid? :kind vector?))
+
+(s/def ::page
+  (s/keys :req-un [::id
+                   ::name
+                   ::project
+                   ::version
+                   ::created-at
+                   ::modified-at
+                   ::user
+                   ::metadata
+                   ::shapes]))
 
 ;; --- Protocols
 
@@ -264,7 +282,21 @@
   []
   (PersistPages.))
 
-;; --- Update Page Options
+;; --- Update Page
+
+(deftype UpdatePage [id data]
+  IPageUpdate
+  ptk/UpdateEvent
+  (update [_ state]
+    (update-in state [:pages id] merge (dissoc data :id :version))))
+
+(defn update-page
+  [id data]
+  {:pre [(uuid? id)
+         (us/valid? ::page data)]}
+  (UpdatePage. id data))
+
+;; --- Update Page Metadata
 
 (deftype UpdateMetadata [id metadata]
   IMetadataUpdate
@@ -277,6 +309,11 @@
   {:pre [(uuid? id) (us/valid? ::metadata metadata)]}
   (UpdateMetadata. id metadata))
 
+;; --- Update Order
+;;
+;; A specialized event for update order
+;; attribute on the page metadata
+
 (deftype UpdateOrder [id order]
   IMetadataUpdate
   ptk/UpdateEvent
@@ -285,48 +322,56 @@
 
 (defn update-order
   [id order]
-  {:pre [(uuid? id)]}
+  {:pre [(uuid? id) (number? order)]}
   (UpdateOrder. id order))
+
+;; --- Reorder Pages
+;;
+;; A post processing event that normalizes the
+;; page order numbers after a user sorting
+;; operation.
 
 (deftype ReorderPages []
   IMetadataUpdate
   ptk/UpdateEvent
   (update [this state]
-    (letfn [(resolve-pages []
-              (let [project (get-in state [:workspace :project])]
-                (->> (vals (:pages state))
+    (let [project (l/focus ul/selected-project state)
+          pages (->> (vals (:pages state))
                      (filter #(= project (:project %)))
-                     (sort-by #(get-in % [:metadata :order])))))
-            (ordered-pages [[state idx] page]
-              [(assoc-in state [:pages (:id page) :metadata :order] (* 10 idx)) (inc idx)])]
-      (first (reduce ordered-pages [state, 1] (resolve-pages))))))
+                     (sort-by #(get-in % [:metadata :order]))
+                     (map :id)
+                     (map-indexed vector))]
+      (reduce (fn [state [i page]]
+                (assoc-in state [:pages page :metadata :order] (* 10 i)))
+              state
+              pages))))
 
 (defn reorder-pages
   []
   (ReorderPages.))
 
-;; --- Update Page
+;; --- Persist Page Form
+;;
+;; A specialized event for persist data
+;; from the update page form.
 
-(deftype UpdatePage [id name width height layout]
-  ptk/UpdateEvent
-  (update [this state]
-    (-> state
-        (assoc-in [:pages id :name] name)
-        (assoc-in [:pages id :metadata :width] width)
-        (assoc-in [:pages id :metadata :height] height)
-        (assoc-in [:pages id :metadata :layout] layout)))
-
+(deftype PersistPageUpdateForm [id name width height layout]
   ptk/WatchEvent
   (watch [_ state stream]
-    (rx/of (persist-metadata id))))
+    (let [page (-> (get-in state [:pages id])
+                   (assoc-in [:name] name)
+                   (assoc-in [:metadata :width] width)
+                   (assoc-in [:metadata :height] height)
+                   (assoc-in [:metadata :layout] layout))]
+      (rx/of (update-page id page)))))
 
-(s/def ::update-page-event
+(s/def ::persist-page-update-form
   (s/keys :req-un [::name ::width ::height ::layout]))
 
-(defn update-page
+(defn persist-page-update-form
   [id {:keys [name width height layout] :as data}]
-  {:pre [(uuid? id) (us/valid? ::update-page-event data)]}
-  (UpdatePage. id name width height layout))
+  {:pre [(uuid? id) (us/valid? ::persist-page-update-form data)]}
+  (PersistPageUpdateForm. id name width height layout))
 
 ;; --- Delete Page (by id)
 

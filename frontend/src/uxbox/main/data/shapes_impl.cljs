@@ -62,10 +62,12 @@
                                   :name name)
                      state (if (nil? group)
                              (-> state
-                                 (update-in [:pages page :shapes] #(into [] (cons id %)))
+                                 (update-in [:pages page :shapes]
+                                            #(into [] (cons id %)))
                                  (assoc-in [:shapes id] shape))
                              (-> state
-                                 (update-in [:shapes group :items] #(into [] (cons id %)))
+                                 (update-in [:shapes group :items]
+                                            #(into [] (cons id %)))
                                  (assoc-in [:shapes id] shape)))]
                  (->> (map #(get-in state [:shapes %]) items)
                       (reverse)

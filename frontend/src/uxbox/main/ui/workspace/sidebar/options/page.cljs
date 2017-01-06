@@ -9,6 +9,7 @@
   "Page options menu entries."
   (:require [lentes.core :as l]
             [potok.core :as ptk]
+            [cuerdas.core :as str]
             [uxbox.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.data.pages :as udp]
@@ -27,20 +28,13 @@
   [own menu]
   (let [{:keys [id metadata] :as page} (mx/react page-ref)
         metadata (merge c/page-metadata metadata)]
-    (letfn [(on-width-change []
-              (when-let [value (-> (mx/ref-node own "width")
+    (letfn [(on-size-change [attr]
+              (when-let [value (-> (mx/ref-node own (name attr))
                                    (dom/get-value)
                                    (parse-int nil))]
-                (->> (assoc metadata :width value)
-                     (udp/update-metadata id)
-                     (st/emit!))))
-            (on-height-change []
-              (when-let [value (-> (mx/ref-node own "height")
-                                   (dom/get-value)
-                                   (parse-int nil))]
-                (->> (assoc metadata :height value)
-                     (udp/update-metadata id)
-                     (st/emit!))))
+                (st/emit! (->> (assoc metadata attr value)
+                               (udp/update-metadata id)))))
+
             (on-color-change []
               (when-let [value (-> (mx/ref-node own "color")
                                    (dom/get-value)
@@ -48,31 +42,49 @@
                 (->> (assoc metadata :background value)
                      (udp/update-metadata id)
                      (st/emit!))))
-          (show-color-picker [event]
-            (let [x (.-clientX event)
-                  y (.-clientY event)
-                  opts {:x x :y y
-                        :default "#ffffff"
-                        :transparent? true
-                        :attr :background}]
-              (udl/open! :workspace/page-colorpicker opts)))]
+
+            (on-name-change []
+              (when-let [value (-> (mx/ref-node own "name")
+                                   (dom/get-value)
+                                   (str/trim))]
+                (st/emit! (->> (assoc page :name value)
+                               (udp/update-page id)))))
+
+            (show-color-picker [event]
+              (let [x (.-clientX event)
+                    y (.-clientY event)
+                    opts {:x x :y y
+                          :default "#ffffff"
+                          :transparent? true
+                          :attr :background}]
+                (udl/open! :workspace/page-colorpicker opts)))]
       [:div.element-set
        [:div.element-set-title (:name menu)]
        [:div.element-set-content
+        [:span "Name"]
+        [:div.row-flex
+         [:div.input-element
+          [:input.input-text
+           {:type "text"
+            :ref "name"
+            :on-change on-name-change
+            :value (:name page)
+            :placeholder "page name"}]]]
+
         [:span "Size"]
         [:div.row-flex
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
             :ref "width"
-            :on-change on-width-change
+            :on-change #(on-size-change :width)
             :value (:width metadata)
             :placeholder "width"}]]
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
             :ref "height"
-            :on-change on-height-change
+            :on-change #(on-size-change :height)
             :value (:height metadata)
             :placeholder "height"}]]]
         [:span "Background color"]

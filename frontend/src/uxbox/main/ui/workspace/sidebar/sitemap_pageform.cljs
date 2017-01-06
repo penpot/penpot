@@ -82,7 +82,7 @@
               (udl/close!)
               (if (nil? id)
                 (st/emit! (udp/create-page data))
-                (st/emit! (udp/update-page id data))))]
+                (st/emit! (udp/persist-page-update-form id data))))]
       [:form
        [:input#project-name.input-text
         {:placeholder "Page name"

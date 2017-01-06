@@ -47,6 +47,10 @@
   [v]
   (instance? DateTime v))
 
+(defn instant?
+  [v]
+  (instance? DateTime v))
+
 (defn parse
   "Parse a string representation of datetime
   with an optional `format` parameter."
