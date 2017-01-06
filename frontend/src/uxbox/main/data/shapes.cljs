@@ -25,13 +25,70 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.util.workers :as uw]))
 
+(s/def ::fill-color us/color?)
+(s/def ::fill-opacity number?)
+(s/def ::line-height number?)
+(s/def ::letter-spacing number?)
+(s/def ::text-align #{"left" "right" "center" "justify"})
+(s/def ::font-family string?)
+(s/def ::font-style string?)
+(s/def ::font-weight string?)
+(s/def ::font-size number?)
+(s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
+(s/def ::stroke-width number?)
+(s/def ::stroke-color us/color?)
+(s/def ::stroke-opacity number?)
+(s/def ::rx number?)
+(s/def ::ry number?)
+(s/def ::proportion number?)
+(s/def ::proportion-lock boolean?)
+(s/def ::collapsed boolean?)
+(s/def ::hidden boolean?)
+(s/def ::blocked boolean?)
+(s/def ::locked boolean?)
 (s/def ::x1 number?)
 (s/def ::y1 number?)
 (s/def ::x2 number?)
 (s/def ::y2 number?)
-(s/def ::type keyword?)
 
-(s/def ::rect-shape (s/keys :req-un [::x1 ::y1 ::x2 ::y2 ::type]))
+(s/def ::attributes
+  (s/keys :opt-un [::fill-color
+                   ::fill-opacity
+                   ::line-height
+                   ::letter-spacing
+                   ::text-align
+                   ::font-family
+                   ::font-style
+                   ::font-weight
+                   ::font-size
+                   ::stroke-style
+                   ::stroke-width
+                   ::stroke-color
+                   ::stroke-opacity
+                   ::rx ::ry
+                   ::x1 ::x2
+                   ::y1 ::y2
+                   ::proportion-lock
+                   ::proportion
+                   ::collapsed
+                   ::hidden
+                   ::blocked
+                   ::locked]))
+
+(s/def ::id uuid?)
+(s/def ::page uuid?)
+(s/def ::type #{:rect
+                :group
+                :path
+                :circle
+                :image
+                :text})
+
+(s/def ::shape
+  (s/merge (s/keys ::req-un [::id ::page ::type]) ::attributes))
+
+(s/def ::rect-like-shape
+  (s/keys :req-un [::x1 ::y1 ::x2 ::y2 ::type]))
 
 ;; --- Shapes CRUD
 
@@ -237,54 +294,10 @@
         (rx/from-coll (map #(UpdateAttrs. % attrs) (:items shape)))
         (rx/of #(update-in % [:shapes id] merge attrs))))))
 
-(s/def ::fill-color us/color?)
-(s/def ::fill-opacity number?)
-(s/def ::line-height number?)
-(s/def ::letter-spacing number?)
-(s/def ::text-align #{"left" "right" "center" "justify"})
-(s/def ::font-family string?)
-(s/def ::font-style string?)
-(s/def ::font-weight string?)
-(s/def ::font-size number?)
-(s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
-(s/def ::stroke-width number?)
-(s/def ::stroke-color us/color?)
-(s/def ::stroke-opacity number?)
-(s/def ::rx number?)
-(s/def ::ry number?)
-(s/def ::proportion number?)
-(s/def ::proportion-lock boolean?)
-(s/def ::collapsed boolean?)
-(s/def ::hidden boolean?)
-(s/def ::blocked boolean?)
-(s/def ::locked boolean?)
-
-(s/def ::shape-attrs
-  (s/keys :opt-un [::fill-color
-                   ::fill-opacity
-                   ::line-height
-                   ::letter-spacing
-                   ::text-align
-                   ::font-family
-                   ::font-style
-                   ::font-weight
-                   ::font-size
-                   ::stroke-style
-                   ::stroke-width
-                   ::stroke-color
-                   ::stroke-opacity
-                   ::rx ::ry
-                   ::proportion-lock
-                   ::proportion
-                   ::collapsed
-                   ::hidden
-                   ::blocked
-                   ::locked]))
-
 (defn update-attrs
   [id attrs]
-  {:pre [(uuid? id) (us/valid? ::shape-attrs attrs)]}
-  (let [atts (us/extract attrs ::shape-attrs)]
+  {:pre [(uuid? id) (us/valid? ::attributes attrs)]}
+  (let [atts (us/extract attrs ::attributes)]
     (UpdateAttrs. id attrs)))
 
 ;; --- Shape Proportions
@@ -484,7 +497,7 @@
 (defn select-shapes-by-selrect
   "Select shapes that matches the select rect."
   [selrect]
-  {:pre [(us/valid? ::rect-shape selrect)]}
+  {:pre [(us/valid? ::rect-like-shape selrect)]}
   (SelectShapesBySelrect. selrect))
 
 ;; --- Update Interaction
