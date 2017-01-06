@@ -11,17 +11,17 @@
             [uxbox.util.data :refer (parse-int)]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.datetime :as dt]))
+            [uxbox.util.time :as dt]))
 
 ;; --- Transit Handlers
 
-(def datetime-write-handler
+(def instant-write-handler
   (t/write-handler (constantly "m")
                    #(str (dt/format % :offset))))
 
-(def datetime-read-handler
+(def instant-read-handler
   (t/read-handler
-   #(dt/datetime (parse-int %))))
+   #(dt/instant (parse-int %))))
 
 (def point-write-handler
   (t/write-handler
@@ -47,12 +47,12 @@
 
 (def ^:privare +read-handlers+
   {"u" uuid
-   "m" datetime-read-handler
+   "m" instant-read-handler
    "matrix" matrix-read-handler
    "point" point-read-handler})
 
 (def ^:privare +write-handlers+
-  {dt/DateTime datetime-write-handler
+  {dt/Instant instant-write-handler
    gmt/Matrix matrix-write-handler
    gpt/Point point-write-handler})
 

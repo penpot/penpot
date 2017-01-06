@@ -19,7 +19,7 @@
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.datetime :as dt]
+            [uxbox.util.time :as dt]
             [potok.core :as ptk]
             [uxbox.util.forms :as sc]
             [uxbox.util.lens :as ul]

@@ -16,7 +16,7 @@
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.blob :as blob]
             [uxbox.util.data :refer (read-string)]
-            [uxbox.util.datetime :as dt]
+            [uxbox.util.time :as dt]
             [uxbox.util.dom :as dom]
             [uxbox.util.mixins :as mx :include-macros true]
             [potok.core :as ptk]

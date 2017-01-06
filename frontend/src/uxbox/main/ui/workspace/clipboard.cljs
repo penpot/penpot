@@ -15,7 +15,7 @@
             [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
-            [uxbox.util.datetime :as dt]))
+            [uxbox.util.time :as dt]))
 
 (def ^:private clipboard-ref
   (-> (l/key :clipboard)

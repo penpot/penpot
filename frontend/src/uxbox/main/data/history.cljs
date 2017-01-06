@@ -15,7 +15,7 @@
             [uxbox.util.forms :as sc]
             [uxbox.main.data.pages :as udp]
             [uxbox.store :as st]
-            [uxbox.util.datetime :as dt]
+            [uxbox.util.time :as dt]
             [uxbox.util.data :refer (without-keys
                                      replace-by-id
                                      index-by)]))

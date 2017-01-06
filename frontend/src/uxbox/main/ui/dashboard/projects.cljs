@@ -24,7 +24,7 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.blob :as blob]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.datetime :as dt]))
+            [uxbox.util.time :as dt]))
 
 ;; --- Helpers & Constants
 

@@ -20,7 +20,7 @@
             [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.datetime :as dt]
+            [uxbox.util.time :as dt]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.dom :as dom]))
 

@@ -18,7 +18,7 @@
             [uxbox.util.router :as r]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.forms :as sc]
-            [uxbox.util.datetime :as dt]
+            [uxbox.util.time :as dt]
             [uxbox.util.data :refer (without-keys replace-by-id)]))
 
 ;; --- Specs

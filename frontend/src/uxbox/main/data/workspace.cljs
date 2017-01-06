@@ -22,7 +22,7 @@
             [uxbox.main.data.shapes-impl :as shimpl]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.history :as udh]
-            [uxbox.util.datetime :as dt]
+            [uxbox.util.time :as dt]
             [uxbox.util.math :as mth]
             [uxbox.util.data :refer (index-of)]))
 

@@ -18,7 +18,7 @@
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.dashboard.header :refer (header)]
-            [uxbox.util.datetime :as dt]
+            [uxbox.util.time :as dt]
             [uxbox.util.data :as data :refer (read-string)]
             [uxbox.util.dom :as dom]))
 
