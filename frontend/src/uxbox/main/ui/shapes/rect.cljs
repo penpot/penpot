@@ -51,7 +51,8 @@
         xfmt (cond-> (gmt/matrix)
                (pos? rotation) (rotate shape))
 
-        props {:x x1 :y y1  :id id
+        props {:x x1 :y y1
+               :id (str "shape-" id)
                :width width
                :height height
                :transform (str xfmt)}

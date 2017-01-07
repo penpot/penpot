@@ -61,6 +61,6 @@
   [{:keys [content id metadata] :as shape}]
   (let [view-box (apply str (interpose " " (:view-box metadata)))
         props {:view-box view-box
-               :id (str id)
+               :id (str "shape-" id)
                :dangerouslySetInnerHTML {:__html content}}]
     [:svg props]))

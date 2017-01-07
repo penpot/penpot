@@ -43,7 +43,9 @@
         xfmt (-> (gmt/matrix)
                  (gmt/rotate* rotation center))
 
-        props {:id (str id) :transform (str xfmt)}
+        props {:id (str "shape-" id)
+               :transform (str xfmt)}
+
         attrs (merge props
                      (attrs/extract-style-attrs shape)
                      (select-keys shape [:cx :cy :rx :ry]))]

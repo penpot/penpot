@@ -61,7 +61,7 @@
                tmp-displacement (gmt/translate tmp-displacement))
 
         props {:x x1 :y y1
-               :id (str id)
+               :id (str "shape-" id)
                :preserve-aspect-ratio "none"
                :xlink-href (:url image)
                :transform (str xfmt)

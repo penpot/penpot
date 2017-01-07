@@ -521,7 +521,7 @@
         :gotourl (url-input form-ref)
         :gotopage (pages-input form-ref)
         :color (color-input form-ref)
-        :rotate (rotate-input form-ref)
+        ;; :rotate (rotate-input form-ref)
         :size (resize-input form-ref)
         :moveto (moveto-input form-ref)
         :moveby (moveby-input form-ref)

@@ -69,7 +69,8 @@
   (let [xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
                tmp-displacement (gmt/translate tmp-displacement))
 
-        attrs {:id (str id) :transform (str xfmt)}]
+        attrs {:id (str "shape-" id)
+               :transform (str xfmt)}]
     [:g attrs
      (for [item (reverse items)
            :let [key (str item)]]

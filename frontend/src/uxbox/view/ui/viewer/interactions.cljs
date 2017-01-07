@@ -116,15 +116,14 @@
   [{:keys [x1 y1 rotation] :as shape}
    {:keys [resize-width resize-height easing
            element delay duration direction] :as opts}]
-  #_(if (= direction :reverse)
-    (let [end (geom/transformation-matrix shape)]
-      (animate :targets [(str "#shape-" element)]
-               :transform (str end)
-               :easing (translate-ease easing)
-               :delay delay
-               :duration duration
-               :loop false))
-    (let [dom (dom/get-element (str "shape-" element))]
+  (let [{:keys [width height]} (geom/size shape)
+        dom (dom/get-element (str "shape-" element))]
+    (if (= direction :reverse)
+      (animate* dom {:easing (translate-ease easing)
+                     :delay delay
+                     :duration duration
+                     :width width
+                     :height height})
       (animate* dom {:easing (translate-ease easing)
                      :delay delay
                      :duration duration
@@ -163,21 +162,23 @@
                      :fill fill-color
                      :stroke stroke-color}))))
 
-(defn- run-rotate-interaction
-  [{:keys [element rotation direction easing delay duration] :as opts}]
-  #_(let [shape (get-in @st/state [:shapes element])
-        dom (dom/get-element (str "shape-" element))
-        mtx1 (geom/transformation-matrix (update shape :rotation + rotation))
-        mtx2 (geom/transformation-matrix shape)]
-    (if (= direction :reverse)
-      (animate* dom {:easing (translate-ease easing)
-                     :delay delay
-                     :duration duration
-                     :transform (str mtx2)})
-      (animate* dom {:easing (translate-ease easing)
-                     :delay delay
-                     :duration duration
-                     :transform (str mtx1)}))))
+;; (defn- run-rotate-interaction
+;;   [{:keys [element rotation direction easing delay duration] :as opts}]
+;;   (let [shape (get-in @st/state [:shapes element])
+;;         {:keys [x1 y1 width height]} (geom/size shape)
+;;
+;;         dom (dom/get-element (str "shape-" element))
+;;         mtx1 (geom/transformation-matrix (update shape :rotation + rotation))
+;;         mtx2 (geom/transformation-matrix shape)]
+;;     (if (= direction :reverse)
+;;       (animate* dom {:easing (translate-ease easing)
+;;                      :delay delay
+;;                      :duration duration
+;;                      :transform (str mtx2)})
+;;       (animate* dom {:easing (translate-ease easing)
+;;                      :delay delay
+;;                      :duration duration
+;;                      :transform (str mtx1)}))))
 
 (defn- run-interaction
   "Given an interaction data structure return
@@ -190,7 +191,7 @@
     :size (run-size-interaction itx)
     :opacity (run-opacity-interaction itx)
     :color (run-color-interaction itx)
-    :rotate (run-rotate-interaction itx)
+    ;; :rotate (run-rotate-interaction itx)
     :gotourl (run-gotourl-interaction itx)
     :gotopage (run-gotopage-interaction itx)
     (throw (ex-info "undefined interaction" {:action action}))))
