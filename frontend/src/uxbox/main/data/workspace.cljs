@@ -7,14 +7,11 @@
 (ns uxbox.main.data.workspace
   (:require [cljs.spec :as s]
             [beicon.core :as rx]
-            [uxbox.util.uuid :as uuid]
-            [uxbox.main.constants :as c]
             [potok.core :as ptk]
-            [uxbox.util.spec :as us]
-            [uxbox.util.forms :as sc]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.workers :as uw]
+            [lentes.core :as l]
             [uxbox.store :as st]
+            [uxbox.main.constants :as c]
+            [uxbox.main.lenses :as ul]
             [uxbox.main.data.core :refer (worker)]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.pages :as udp]
@@ -22,6 +19,11 @@
             [uxbox.main.data.shapes-impl :as shimpl]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.history :as udh]
+            [uxbox.util.uuid :as uuid]
+            [uxbox.util.spec :as us]
+            [uxbox.util.forms :as sc]
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.workers :as uw]
             [uxbox.util.time :as dt]
             [uxbox.util.math :as mth]
             [uxbox.util.data :refer (index-of)]))
@@ -92,41 +94,54 @@
   [project page]
   (InitializeWorkspace. project page))
 
-;; --- Toggle Flag
+;; --- Select for Drawing
 
-(defn toggle-flag
-  "Toggle the enabled flag of the specified tool."
-  [key]
-  (reify
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [flags (get-in state [:workspace :flags])]
-        (if (contains? flags key)
-          (assoc-in state [:workspace :flags] (disj flags key))
-          (assoc-in state [:workspace :flags] (conj flags key)))))))
+(deftype SelectForDrawing [shape]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [current (l/focus ul/selected-drawing state)]
+      (if (or (nil? shape)
+              (= shape current))
+        (update state :workspace dissoc :drawing)
+        (assoc-in state [:workspace :drawing] shape)))))
 
 (defn select-for-drawing
-  "Mark a shape selected for drawing in the canvas."
   [shape]
-  (reify
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [current (get-in state [:workspace :drawing])]
-        (if (or (nil? shape)
-                (= shape current))
-          (update state :workspace dissoc :drawing)
-          (assoc-in state [:workspace :drawing] shape))))))
+  (SelectForDrawing. shape))
 
-;; --- Activate Workspace Flag
+;; --- Workspace Flags
 
-(defrecord ActivateFlag [flag]
+(deftype ActivateFlag [flag]
   ptk/UpdateEvent
   (update [_ state]
     (update-in state [:workspace :flags] conj flag)))
 
 (defn activate-flag
   [flag]
+  {:pre [(keyword? flag)]}
   (ActivateFlag. flag))
+
+(deftype DeactivateFlag [flag]
+  ptk/UpdateEvent
+  (update [_ state]
+    (update-in state [:workspace :flags] disj flag)))
+
+(defn deactivate-flag
+  [flag]
+  {:pre [(keyword? flag)]}
+  (DeactivateFlag. flag))
+
+(deftype ToggleFlag [flag]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [flags (get-in state [:workspace :flags])]
+      (if (contains? flags flag)
+        (rx/of (deactivate-flag flag))
+        (rx/of (activate-flag flag))))))
+
+(defn toggle-flag
+  [flag]
+  (ToggleFlag. flag))
 
 ;; --- Copy to Clipboard
 

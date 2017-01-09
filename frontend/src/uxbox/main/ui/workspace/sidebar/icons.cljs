@@ -10,6 +10,7 @@
             [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.lenses :as ul]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.icons :as udi]
             [uxbox.main.ui.shapes.icon :as icon]
@@ -22,13 +23,12 @@
 
 ;; --- Refs
 
-(def ^:private drawing-shape
+(def ^:private drawing-shape-ref
   "A focused vision of the drawing property
   of the workspace status. This avoids
   rerender the whole toolbox on each workspace
   change."
-  (-> (l/in [:workspace :drawing])
-      (l/derive st/state)))
+  (l/derive ul/selected-drawing st/state))
 
 ;; --- Icons (Component)
 
@@ -52,31 +52,36 @@
     (remove-watch local ::key)
     own))
 
+(defn- get-first-with-icons
+  "Get a first collection with icons."
+  [colls-map]
+  (->> (vals colls-map)
+       (sort-by :name)
+       (filter #(> (:num-icons %) 0))
+       (first)))
+
 (defn- get-or-select-coll
-  [local colls-map]
-  (if (:id @local)
-   (get colls-map (:id @local))
-   (let [colls (->> (vals colls-map)
-                    (sort-by :name))
-         selected-coll (first (filter #(> (:num-icons %) 0) colls))]
-     (swap! local assoc :id (:id selected-coll)
-     selected-coll))))
+  [local colls]
+  {:pre [(map? colls)]}
+  (let [selected (:id @local)]
+    (if selected
+      (get colls selected)
+      (let [coll (get-first-with-icons colls)]
+        (swap! local assoc :id (:d coll))
+        coll))))
 
 (mx/defcs icons-toolbox
   {:mixins [(mx/local) mx/reactive]
    :will-mount icons-toolbox-will-mount
    :will-unmount icons-toolbox-will-unmount}
   [{:keys [rum/local] :as own}]
-  (let [drawing (mx/react drawing-shape)
-
+  (let [drawing (mx/react drawing-shape-ref)
         colls-map (mx/react icons/collections-ref)
+        selected-coll (get-or-select-coll local colls-map)
         colls (->> (vals colls-map)
                    (sort-by :name))
-        selected-coll (get-or-select-coll local colls-map)
-        icons (mx/react icons/icons-ref)
-        icons (->> (vals icons)
+        icons (->> (vals (mx/react icons/icons-ref))
                    (filter #(= (:id selected-coll) (:collection %))))]
-
     (letfn [(on-close [event]
               (st/emit! (dw/toggle-flag :icons)))
             (on-select [icon event]
