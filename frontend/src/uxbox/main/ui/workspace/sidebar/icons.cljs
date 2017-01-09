@@ -11,7 +11,7 @@
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.lenses :as ul]
-            [uxbox.main.data.workspace :as dw]
+            [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.icons :as udi]
             [uxbox.main.ui.shapes.icon :as icon]
             [uxbox.main.ui.workspace.base :as wb]
@@ -30,6 +30,10 @@
   change."
   (l/derive ul/selected-drawing st/state))
 
+(def ^:private icons-toolbox-ref
+  (-> (l/in [:workspace :icons-toolbox])
+      (l/derive st/state)))
+
 ;; --- Icons (Component)
 
 (mx/defc icon-wrapper
@@ -39,58 +43,30 @@
 
 (defn- icons-toolbox-will-mount
   [own]
-  (let [local (:rum/local own)]
-    (st/emit! (udi/fetch-collections))
-    (st/emit! (udi/fetch-icons nil))
-    (add-watch local ::key (fn [_ _ _ {:keys [id]}]
-                             (st/emit! (udi/fetch-icons id))))
-    own))
+  (st/emit! (udw/initialize-icons-toolbox))
+  own)
 
-(defn- icons-toolbox-will-unmount
-  [own]
-  (let [local (:rum/local own)]
-    (remove-watch local ::key)
-    own))
-
-(defn- get-first-with-icons
-  "Get a first collection with icons."
-  [colls-map]
-  (->> (vals colls-map)
-       (sort-by :name)
-       (filter #(> (:num-icons %) 0))
-       (first)))
-
-(defn- get-or-select-coll
-  [local colls]
-  {:pre [(map? colls)]}
-  (let [selected (:id @local)]
-    (if selected
-      (get colls selected)
-      (let [coll (get-first-with-icons colls)]
-        (swap! local assoc :id (:d coll))
-        coll))))
-
-(mx/defcs icons-toolbox
-  {:mixins [(mx/local) mx/reactive]
-   :will-mount icons-toolbox-will-mount
-   :will-unmount icons-toolbox-will-unmount}
-  [{:keys [rum/local] :as own}]
+(mx/defc icons-toolbox
+  {:mixins [mx/static mx/reactive]
+   :will-mount icons-toolbox-will-mount}
+  []
   (let [drawing (mx/react drawing-shape-ref)
-        colls-map (mx/react icons/collections-ref)
-        selected-coll (get-or-select-coll local colls-map)
-        colls (->> (vals colls-map)
+        selected (mx/react icons-toolbox-ref)
+        colls (mx/react icons/collections-ref)
+        selected-coll (get colls selected)
+
+        colls (->> (vals (mx/react icons/collections-ref))
                    (sort-by :name))
         icons (->> (vals (mx/react icons/icons-ref))
                    (filter #(= (:id selected-coll) (:collection %))))]
     (letfn [(on-close [event]
-              (st/emit! (dw/toggle-flag :icons)))
+              (st/emit! (udw/toggle-flag :icons)))
             (on-select [icon event]
-              (st/emit! (dw/select-for-drawing icon)))
+              (st/emit! (udw/select-for-drawing icon)))
             (on-change [event]
-              (let [value (-> (dom/event->value event)
-                              (read-string))]
-                (swap! local assoc :id value)
-                (st/emit! (dw/select-for-drawing nil))))]
+              (let [value (read-string (dom/event->value event))]
+                (st/emit! (udw/select-for-drawing nil)
+                          (udw/select-icons-toolbox-collection value))))]
       [:div#form-figures.tool-window
        [:div.tool-window-bar
         [:div.tool-window-icon i/icon-set]

@@ -16,6 +16,7 @@
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.shapes :as uds]
+            [uxbox.main.data.icons :as udi]
             [uxbox.main.data.shapes-impl :as shimpl]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.history :as udh]
@@ -142,6 +143,54 @@
 (defn toggle-flag
   [flag]
   (ToggleFlag. flag))
+
+;; --- Icons Toolbox
+
+(deftype SelectIconsToolboxCollection [id]
+  ptk/UpdateEvent
+  (update [_ state]
+    (assoc-in state [:workspace :icons-toolbox] id))
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (udi/fetch-icons id))))
+
+(defn select-icons-toolbox-collection
+  [id]
+  {:pre [(or (nil? id) (uuid? id))]}
+  (SelectIconsToolboxCollection. id))
+
+(deftype InitializeIconsToolbox []
+  ptk/UpdateEvent
+  (update [_ state]
+    state)
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (letfn [(get-first-with-icons [colls]
+              (->> (sort-by :name colls)
+                   (filter #(> (:num-icons %) 0))
+                   (first)
+                   (:id)))
+            (on-fetched [event]
+              (let [coll (get-first-with-icons @event)]
+                (println "first" coll)
+                (select-icons-toolbox-collection coll)))]
+      (rx/merge
+       (rx/of (udi/fetch-collections)
+              (udi/fetch-icons nil))
+
+       ;; Only perform the autoselection if it is not
+       ;; previously already selected by the user.
+       (when-not (contains? (:workspace state) :icons-toolbox)
+         (->> stream
+              (rx/filter udi/collections-fetched?)
+              (rx/take 1)
+              (rx/map on-fetched)))))))
+
+(defn initialize-icons-toolbox
+  []
+  (InitializeIconsToolbox.))
 
 ;; --- Copy to Clipboard
 

@@ -57,7 +57,10 @@
 
 ;; --- Collections Fetched
 
-(defrecord CollectionsFetched [items]
+(deftype CollectionsFetched [items]
+  cljs.core/IDeref
+  (-deref [_] items)
+
   ptk/UpdateEvent
   (update [_ state]
     (reduce (fn [state {:keys [id user] :as item}]
