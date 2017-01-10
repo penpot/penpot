@@ -649,7 +649,7 @@
 
 (defn update-selected-shapes-attrs
   [attrs]
-  {:pre [(us/valid? ::shape-attrs attrs)]}
+  {:pre [(us/valid? ::attributes attrs)]}
   (UpdateSelectedShapesAttrs. attrs))
 
 ;; --- Move Selected Layer
