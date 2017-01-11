@@ -126,10 +126,10 @@
         {:alt "Grid (Ctrl + G)"
          :class (when (contains? flags :grid) "selected")
          :on-click (partial toggle :grid)}
-        i/grid]
-       [:li.tooltip.tooltip-bottom
-        {:alt "Align (Ctrl + A)"}
-        i/alignment]]
+        i/grid]]
+       ;; [:li.tooltip.tooltip-bottom
+        ;; {:alt "Align (Ctrl + A)"}
+        ;; i/alignment]]
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom.view-mode
         {:alt "View mode (Ctrl + P)"
