@@ -10,11 +10,7 @@
             [lentes.core :as l]
             [goog.events :as events]
             [potok.core :as ptk]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (parse-int)]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rlocks :as rlocks]
+            [uxbox.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.workspace :as dw]
@@ -23,10 +19,16 @@
             [uxbox.main.ui.shapes :as uus]
             [uxbox.main.ui.shapes.selection :refer (selection-handlers)]
             [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.main.ui.workspace.scroll :as scroll]
             [uxbox.main.ui.workspace.drawarea :refer (draw-area)]
             [uxbox.main.ui.workspace.ruler :refer (ruler)]
             [uxbox.main.ui.workspace.selrect :refer (selrect)]
-            [uxbox.main.ui.workspace.grid :refer (grid)])
+            [uxbox.main.ui.workspace.grid :refer (grid)]
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.data :refer (parse-int)]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.rlocks :as rlocks])
   (:import goog.events.EventType))
 
 ;; --- Background
