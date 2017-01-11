@@ -77,11 +77,11 @@
               (st/emit! (dw/toggle-flag :colorpalette)))]
       [:div.color-palette
        [:div.color-palette-actions
-        [:select.input-select {:on-change select-collection}
+        [:select.input-select {:on-change select-collection
+                               :value (pr-str selected-coll)}
          (for [collection collections]
            [:option {:key (str (:id collection))
-                     :value (pr-str (:id collection))
-                     :selected (when (= collection selected-coll) "selected")}
+                     :value (pr-str (:id collection))}
             (:name collection)])]
         #_[:div.color-palette-buttons
            [:div.btn-palette.edit.current i/pencil]
