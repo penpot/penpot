@@ -293,7 +293,6 @@
 (deftype UpdateAttrs [id attrs]
   ptk/WatchEvent
   (watch [_ state stream]
-    (println "update-attrs" id attrs)
     (let [{:keys [type] :as shape} (get-in state [:shapes id])]
       (if (= type :group)
         (rx/from-coll (map #(UpdateAttrs. % attrs) (:items shape)))
