@@ -11,7 +11,6 @@
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.lenses :as ul]
-            [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]
             [goog.events :as events])
