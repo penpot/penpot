@@ -78,7 +78,7 @@
       [:div.color-palette
        [:div.color-palette-actions
         [:select.input-select {:on-change select-collection
-                               :value (pr-str selected-coll)}
+                               :value (pr-str (:id selected-coll))}
          (for [collection collections]
            [:option {:key (str (:id collection))
                      :value (pr-str (:id collection))}
