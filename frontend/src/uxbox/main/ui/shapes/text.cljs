@@ -34,7 +34,7 @@
 
 ;; --- Text Component
 
-(declare text-shape)
+(declare text-shape-html)
 (declare text-shape-wrapper)
 (declare text-shape-edit)
 
@@ -117,20 +117,14 @@
   (let [{:keys [width height]} (geom/size shape)
         style (make-style shape)
         props {:x x1 :y y1 :width width :height height}]
-    (letfn [#_(on-blur [ev]
-              (rlocks/release! :ui/text-edit)
-              (on-done))
-            (on-input [ev]
+    (letfn [(on-input [ev]
               (let [content (dom/event->inner-text ev)]
                 (st/emit! (uds/update-text id {:content content}))))]
-      [:g
-       #_[:rect (merge props +select-rect-attrs+)]
-       [:foreignObject props
-        [:div {:style style}
-         [:p {:ref "container"
-              ;; :on-blur on-blur
+      [:foreignObject props
+       [:div {:style style
+              :ref "container"
               :on-input on-input
-              :contentEditable true}]]]])))
+              :contentEditable true}]])))
 
 ;; --- Text Shape Wrapper
 
@@ -146,7 +140,7 @@
   [own]
   (let [[shape] (:rum/args own)
         dom (mx/ref-node own "fobject")
-        html (mx/render-static-html (text-shape shape))]
+        html (mx/render-static-html (text-shape-html shape))]
     (set! (.-innerHTML dom) html))
     own)
 
@@ -156,7 +150,7 @@
         [shape] (:rum/args own)]
     (when (not= shape old-shape)
       (let [dom (mx/ref-node own "fobject")
-            html (mx/render-static-html (text-shape shape))]
+            html (mx/render-static-html (text-shape-html shape))]
         (set! (.-innerHTML dom) html)))
     own))
 
@@ -178,10 +172,33 @@
                      :width width
                      :height height}]))
 
-;; --- Text Shape
+;; --- Text Shape Html
 
-(mx/defc text-shape
+(mx/defc text-shape-html
   [{:keys [content] :as shape}]
   (let [style (make-style shape)]
-    [:div {:style style}
-     [:p content]]))
+    [:div {:style style} content]))
+
+
+;; --- Text Shape Html
+
+(mx/defc text-shape
+  {:mixins [mx/static]
+   :did-mount text-shape-wrapper-did-mount
+   :did-remount text-shape-wrapper-did-remount}
+  [{:keys [id content tmp-resize-xform tmp-displacement] :as shape}]
+  (let [xfmt (cond-> (gmt/matrix)
+                tmp-displacement (gmt/translate tmp-displacement)
+                tmp-resize-xform (gmt/multiply tmp-resize-xform))
+
+        {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
+                                                   (geom/size))
+        style (make-style shape)]
+    [:foreignObject {:x x1
+                     :y y1
+                     :id (str id)
+                     :ref "fobject"
+                     :width width
+                     :height height}
+     [:div {:style style}
+      [:p content]]]))
