@@ -34,7 +34,7 @@
 (def +draw-tool-rect+
   {:type :rect
    :name "Rect"
-   :stroke "#000000"})
+   :stroke-color "#000000"})
 
 (def +draw-tool-circle+
   {:type :circle
@@ -43,10 +43,10 @@
 (def +draw-tool-path+
   {:type :path
    :name "Path"
-   :stroke-type :solid
-   :stroke "#000000"
+   :stroke-style :solid
+   :stroke-color "#000000"
    :stroke-width 2
-   :fill "#000000"
+   :fill-color "#000000"
    :fill-opacity 0
    ;; :close? true
    :points []})

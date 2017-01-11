@@ -42,8 +42,10 @@
 
 (defn- transform-stroke-attrs
   [{:keys [stroke-style] :or {stroke-style :none} :as attrs}]
-  (if (= stroke-style :none)
-    (dissoc attrs :stroke-style :stroke-width :stroke-opacity :stroke-color)
+  (case stroke-style
+    :none (dissoc attrs :stroke-style :stroke-width :stroke-opacity :stroke-color)
+    :solid (-> (merge shape-default-attrs attrs)
+               (dissoc :stroke-style))
     (-> (merge shape-default-attrs attrs)
         (assoc :stroke-dasharray (stroke-type->dasharray stroke-style))
         (dissoc :stroke-style))))
