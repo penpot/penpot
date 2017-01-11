@@ -6,17 +6,15 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.recent-colors
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
+  (:require [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.data.workspace :as dw]
+            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
-            [uxbox.main.ui.workspace.base :as wb]))
+            [uxbox.util.i18n :refer (tr)]))
 
 ;; --- Helpers
 
@@ -30,35 +28,29 @@
 (defn- calculate-colors
   [shapes]
   (as-> {} $
-    (reduce #(count-color %1 %2 :fill) $ shapes)
-    (reduce #(count-color %1 %2 :stroke) $ shapes)
+    (reduce #(count-color %1 %2 :fill-color) $ shapes)
+    (reduce #(count-color %1 %2 :stroke-color) $ shapes)
     (remove nil? $)
     (sort-by second (into [] $))
     (take 5 (map first $))))
 
 ;; --- Component
 
-(defn- recent-colors-render
-  [own {:keys [page id] :as shape} callback]
+(mx/defc recent-colors
+  {:mixins [mx/static mx/reactive]}
+  [{:keys [page id] :as shape} callback]
   (let [shapes-by-id (mx/react wb/shapes-by-id-ref)
         shapes (->> (vals shapes-by-id)
                     (filter #(= (:page %) page)))
         colors (calculate-colors shapes)]
-    (html
-     [:div
-      [:span (tr "ds.recent-colors")]
-      [:div.row-flex
-       (for [color colors]
-         [:span.color-th {:style {:background-color color}
-                          :key color
-                          :on-click (partial callback color)}])
-       (for [i (range (- 5 (count colors)))]
-         [:span.color-th {:key (str "empty" i)}])
-       [:span.color-th.palette-th i/picker]]])))
-
-(def recent-colors
-  (mx/component
-   {:render recent-colors-render
-    :name "recent-colors"
-    :mixins [mx/static mx/reactive]}))
+    [:div
+     [:span (tr "ds.recent-colors")]
+     [:div.row-flex
+      (for [color colors]
+        [:span.color-th {:style {:background-color color}
+                         :key color
+                         :on-click (partial callback color)}])
+      (for [i (range (- 5 (count colors)))]
+        [:span.color-th {:key (str "empty" i)}])
+      [:span.color-th.palette-th i/picker]]]))
 
