@@ -60,12 +60,6 @@
 
 ;; --- Text Styles Helpers
 
-(def +style-attrs+ [:font-size])
-(def +select-rect-attrs+
-  {:stroke-dasharray "5,5"
-   :style {:stroke "#333" :fill "transparent"
-           :stroke-opacity "0.4"}})
-
 (defn- make-style
   [{:keys [fill-color
            fill-opacity
