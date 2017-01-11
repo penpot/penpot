@@ -212,7 +212,7 @@
         toggle-blocking #(toggle-blocking item %)]
     (letfn [(toggle-collapse [event]
               (dom/stop-propagation event)
-              (if (:collapsed item)
+              (if (:collapsed item true)
                 (st/emit! (uds/uncollapse-shape id))
                 (st/emit! (uds/collapse-shape id))))
             (toggle-locking [event]
