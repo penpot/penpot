@@ -269,12 +269,9 @@
 (defn- resize-rect
   "A specialized function for absolute resize
   for rect-like shapes."
-  [shape {:keys [x y lock] :as pos}]
-  (if lock
-    (-> (assoc shape :x2 x :y2 y)
-        (equalize-sides)
-        (normalize-shape))
-    (normalize-shape (assoc shape :x2 x :y2 y))))
+  [shape {:keys [x y] :as pos}]
+  (-> (assoc shape :x2 x :y2 y)
+      (normalize-shape)))
 
 (defn- resize-circle
   "A specialized function for absolute resize
