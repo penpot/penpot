@@ -149,22 +149,31 @@
     own))
 
 (mx/defc text-shape-wrapper
-  {:mixins [mx/static]
+  {
    :did-mount text-shape-wrapper-did-mount
    :did-remount text-shape-wrapper-did-remount}
-  [{:keys [id tmp-resize-xform tmp-displacement] :as shape}]
+  [{:keys [id tmp-resize-xform tmp-displacement drawing?] :as shape}]
+  (println "text-shape-wrapper" shape)
   (let [xfmt (cond-> (gmt/matrix)
                 tmp-displacement (gmt/translate tmp-displacement)
                 tmp-resize-xform (gmt/multiply tmp-resize-xform))
 
         {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
-                                                   (geom/size))]
-    [:foreignObject {:x x1
-                     :y y1
-                     :id (str id)
-                     :ref "fobject"
-                     :width width
-                     :height height}]))
+                                                   (geom/size))
+        attrs {:x x1
+               :y y1
+               :id (str id)
+               :ref "fobject"
+               :width width
+               :height height}
+        props (merge attrs
+                     (when drawing?
+                       {:style {:stroke "#333"
+                                :stroke-width "0.5"
+                                :stroke-opacity "0.5"
+                                :fill "transparent"}}))]
+
+    [:foreignObject props]))
 
 ;; --- Text Shape Html
 
