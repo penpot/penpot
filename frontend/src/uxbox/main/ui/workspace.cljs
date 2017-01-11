@@ -46,7 +46,7 @@
   (let [[projectid pageid] (:rum/args own)
         dom (mx/ref-node own "workspace-canvas")
         scroll-to-page-center #(scroll/scroll-to-page-center dom @wb/page-ref)
-        sub1 (scroll/watch-scroll-interactions own)
+        ;; sub1 (scroll/watch-scroll-interactions own)
         sub2 (rx/subscribe wb/page-id-ref-s scroll-to-page-center)]
 
     (scroll-to-page-center)
@@ -55,12 +55,14 @@
               (udu/watch-page-changes pageid)
               (udh/watch-page-changes pageid))
 
-    (assoc own ::sub1 sub1 ::sub2 sub2)))
+    (assoc own
+           ;; ::sub1 sub1
+           ::sub2 sub2)))
 
 (defn- workspace-will-unmount
   [own]
   (st/emit! ::udp/stop-page-watcher)
-  (.close (::sub1 own))
+  ;; (.close (::sub1 own))
   (.close (::sub2 own))
   (dissoc own ::sub1 ::sub2))
 

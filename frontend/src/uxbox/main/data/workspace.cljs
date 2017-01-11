@@ -20,6 +20,8 @@
             [uxbox.main.data.shapes-impl :as shimpl]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.history :as udh]
+
+            [uxbox.main.data.workspace.scroll :as wscroll]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.spec :as us]
             [uxbox.util.forms :as sc]
@@ -29,14 +31,10 @@
             [uxbox.util.math :as mth]
             [uxbox.util.data :refer (index-of)]))
 
-;; --- Constants
+;; --- Expose inner functions
 
-(def zoom-levels
-  [0.20 0.21 0.22 0.23 0.24 0.25 0.27 0.28 0.30 0.32 0.34
-   0.36 0.38 0.40 0.42 0.44 0.46 0.48 0.51 0.54 0.57 0.60
-   0.63 0.66 0.69 0.73 0.77 0.81 0.85 0.90 0.95 1.00 1.05
-   1.10 1.15 1.21 1.27 1.33 1.40 1.47 1.54 1.62 1.70 1.78
-   1.87 1.96 2.06 2.16 2.27 2.38 2.50 2.62 2.75 2.88 3.00])
+(def start-viewport-positioning wscroll/start-viewport-positioning)
+(def stop-viewport-positioning wscroll/stop-viewport-positioning)
 
 ;; --- Initialize Workspace
 
@@ -192,7 +190,7 @@
   []
   (InitializeIconsToolbox.))
 
-;; --- Copy to Clipboard
+;; --- Clipboard Management
 
 (defrecord CopyToClipboard []
   ptk/UpdateEvent
@@ -213,8 +211,6 @@
   []
   (CopyToClipboard.))
 
-;; --- Paste from Clipboard
-
 (defrecord PasteFromClipboard [id]
   ptk/UpdateEvent
   (update [_ state]
@@ -231,37 +227,33 @@
   ([] (PasteFromClipboard. nil))
   ([id] (PasteFromClipboard. id)))
 
-;; --- Increase Zoom
+;; --- Zoom Management
 
-(defrecord IncreaseZoom []
+(deftype IncreaseZoom []
   ptk/UpdateEvent
   (update [_ state]
-    (let [increase #(nth zoom-levels
-                         (+ (index-of zoom-levels %) 1)
-                         (last zoom-levels))]
+    (let [increase #(nth c/zoom-levels
+                         (+ (index-of c/zoom-levels %) 1)
+                         (last c/zoom-levels))]
       (update-in state [:workspace :zoom] (fnil increase 1)))))
 
 (defn increase-zoom
   []
   (IncreaseZoom.))
 
-;; --- Decrease Zoom
-
-(defrecord DecreaseZoom []
+(deftype DecreaseZoom []
   ptk/UpdateEvent
   (update [_ state]
-    (let [decrease #(nth zoom-levels
-                         (- (index-of zoom-levels %) 1)
-                         (first zoom-levels))]
+    (let [decrease #(nth c/zoom-levels
+                         (- (index-of c/zoom-levels %) 1)
+                         (first c/zoom-levels))]
       (update-in state [:workspace :zoom] (fnil decrease 1)))))
 
 (defn decrease-zoom
   []
   (DecreaseZoom.))
 
-;; --- Reset Zoom
-
-(defrecord ResetZoom []
+(deftype ResetZoom []
   ptk/UpdateEvent
   (update [_ state]
     (assoc-in state [:workspace :zoom] 1)))
@@ -270,7 +262,7 @@
   []
   (ResetZoom.))
 
-;; --- Set tooltip
+;; --- Tooltips
 
 (defrecord SetTooltip [text]
   ptk/UpdateEvent
@@ -281,7 +273,7 @@
   [text]
   (SetTooltip. text))
 
-;; --- Initialize Alignment Index
+;; --- Grid Alignment
 
 (declare initialize-alignment?)
 

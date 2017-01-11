@@ -133,12 +133,15 @@
                         :ctrl? (kbd/ctrl? event)}]
               (rx/push! wb/events-b [:key/down opts])
               (when (kbd/space? event)
-                (rlocks/acquire! :workspace/scroll))))
+                (st/emit! (dw/start-viewport-positioning)))))
+                #_(rlocks/acquire! :workspace/scroll)
 
           (on-key-up [event]
             (let [opts {:key (.-keyCode event)
                         :shift? (kbd/shift? event)
                         :ctrl? (kbd/ctrl? event)}]
+              (when (kbd/space? event)
+                (st/emit! (dw/stop-viewport-positioning)))
               (rx/push! wb/events-b [:key/up opts])))
 
           (on-mousemove [event]
