@@ -2,17 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.projects
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.store :as st]
+            [uxbox.main.constants :as c]
             [uxbox.main.data.projects :as udp]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.dashboard.header :refer (header)]
+            [uxbox.main.ui.dashboard.projects-createlightbox]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.keyboard :as kbd]
@@ -27,34 +29,6 @@
             [uxbox.util.time :as dt]))
 
 ;; --- Helpers & Constants
-
-(def ^:private +project-defaults+
-  {:name ""
-   :width 1920
-   :height 1080
-   :layout "desktop"})
-
-(def +layouts+
-  {"mobile"
-   {:name "Mobile"
-    :id "mobile"
-    :width 320
-    :height 480}
-   "tablet"
-   {:name "Tablet"
-    :id "tablet"
-    :width 1024
-    :height 768}
-   "notebook"
-   {:name "Notebook"
-    :id "notebook"
-    :width 1366
-    :height 768}
-   "desktop"
-   {:name "Desktop"
-    :id "desktop"
-    :width 1920
-    :height 1080}})
 
 (def +ordering-options+
   {:name "ds.project-ordering.by-name"
@@ -273,96 +247,3 @@
       (menu state projects-map)
       (grid state projects-map)]]))
 
-;; --- Lightbox: Layout input
-
-(mx/defc layout-input
-  [local layout-id]
-  (let [layout (get-in +layouts+ [layout-id])
-        id (:id layout)
-        name (:name layout)
-        width (:width layout)
-        height (:height layout)]
-    [:div
-     [:input
-      {:type "radio"
-       :key id
-       :id id
-       :name "project-layout"
-       :value name
-       :checked (when (= layout-id (:layout @local)) "checked")
-       :on-change #(swap! local merge {:layout layout-id
-                                       :width width
-                                       :height height})}]
-     [:label {:value (:name @local) :for id} name]]))
-
-;; --- Lightbox: Layout selector
-
-(mx/defc layout-selector
-  [local]
-  [:div.input-radio.radio-primary
-   (layout-input local "mobile")
-   (layout-input local "tablet")
-   (layout-input local "notebook")
-   (layout-input local "desktop")])
-
-;; -- New Project Lightbox
-
-(mx/defcs new-project-lightbox
-  {:mixins [(mx/local +project-defaults+)]}
-  [own]
-  (let [local (:rum/local own)
-        name (:name @local)
-        width (:width @local)
-        height (:height @local)]
-    [:div.lightbox-body
-     [:h3 "New project"]
-     [:form {:on-submit (constantly nil)}
-       [:input#project-name.input-text
-        {:placeholder "New project name"
-         :type "text"
-         :value name
-         :auto-focus true
-         :on-change #(swap! local assoc :name (.-value (.-target %)))}]
-      [:div.project-size
-       [:div.input-element.pixels
-        [:span "Width"]
-        [:input#project-witdh.input-text
-         {:placeholder "Width"
-          :type "number"
-          :min 0 ;;TODO check this value
-          :max 666666 ;;TODO check this value
-          :value width
-          :on-change #(swap! local assoc :width (.-value (.-target %)))}]]
-       [:a.toggle-layout
-        {:href "#"
-         :on-click #(swap! local assoc :width width :height height)}
-        i/toggle]
-       [:div.input-element.pixels
-       [:span "Height"]
-        [:input#project-height.input-text
-         {:placeholder "Height"
-          :type "number"
-          :min 0 ;;TODO check this value
-          :max 666666 ;;TODO check this value
-          :value height
-          :on-change #(swap! local assoc :height (.-value (.-target %)))}]]]
-      ;; Layout selector
-      (layout-selector local)
-      ;; Submit
-      (when-not (empty? (str/trim name))
-        [:input#project-btn.btn-primary
-         {:value "Go go go!"
-          :on-click #(do
-                       (dom/prevent-default %)
-                       (st/emit! (udp/create-project @local))
-                       (udl/close!))
-
-          :type "submit"}])]
-     [:a.close {:href "#"
-                :on-click #(do (dom/prevent-default %)
-                               (udl/close!))}
-      i/close]]))
-
-(defmethod lbx/render-lightbox :new-project
-  [_]
-  (new-project-lightbox))

@@ -263,3 +263,9 @@
   (fn [own]
     (clear! type)
     own))
+
+(defn clear-mixin
+  [type]
+  {:will-unmount (fn [own]
+                   (clear! type)
+                   own)})

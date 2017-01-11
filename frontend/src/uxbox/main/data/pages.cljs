@@ -51,9 +51,11 @@
 (s/def ::user uuid?)
 (s/def ::created-at dt/instant?)
 (s/def ::modified-at dt/instant?)
-(s/def ::shapes (s/coll-of uuid? :kind vector?))
+(s/def ::shapes
+  (-> (s/coll-of uuid? :kind vector?)
+      (s/nilable)))
 
-(s/def ::page
+(s/def ::page-entity
   (s/keys :req-un [::id
                    ::name
                    ::project
@@ -296,8 +298,8 @@
 
 (defn update-page
   [id data]
-  {:pre [(uuid? id)
-         (us/valid? ::page data)]}
+  (println "update-page" data)
+  {:pre [(uuid? id) (us/valid? ::page-entity data)]}
   (UpdatePage. id data))
 
 ;; --- Update Page Metadata

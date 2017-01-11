@@ -9,10 +9,10 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.store :as st]
+            [uxbox.main.constants :as c]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.dashboard.projects :refer (+layouts+)]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.i18n :refer (tr)]
@@ -28,11 +28,6 @@
 
 ;; --- Lightbox
 
-(def +page-defaults+
-  {:width 1920
-   :height 1080
-   :layout :desktop})
-
 (def +page-form+
   {:name [forms/required forms/string]
    :width [forms/required forms/number]
@@ -41,7 +36,7 @@
 
 (mx/defc layout-input
   [data id]
-  (let [{:keys [id name width height]} (get +layouts+ id)]
+  (let [{:keys [id name width height]} (get c/page-layouts id)]
     (letfn [(on-change [event]
               (set-value! :layout id)
               (set-value! :width width)
@@ -58,7 +53,7 @@
 (mx/defc page-form
   {:mixins [mx/static mx/reactive]}
   [{:keys [metadata id] :as page}]
-  (let [data (merge +page-defaults+
+  (let [data (merge c/page-defaults
                     (select-keys page [:name :id :project])
                     (select-keys metadata [:width :height :layout])
                     (mx/react form-data))

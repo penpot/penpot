@@ -25,6 +25,8 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.util.workers :as uw]))
 
+;; --- Specs
+
 (s/def ::fill-color us/color?)
 (s/def ::fill-opacity number?)
 (s/def ::line-height number?)
@@ -89,6 +91,9 @@
 
 (s/def ::rect-like-shape
   (s/keys :req-un [::x1 ::y1 ::x2 ::y2 ::type]))
+
+(s/def ::direction #{:up :down :right :left})
+(s/def ::speed #{:std :fast})
 
 ;; --- Shapes CRUD
 
@@ -654,8 +659,6 @@
 
 ;; --- Move Selected Layer
 
-(s/def ::direction #{:up :down})
-
 (deftype MoveSelectedLayer [loc]
   udp/IPageUpdate
   ptk/UpdateEvent
@@ -714,9 +717,6 @@
           (rx/from-coll (map apply-displacement selected))))
        (rx/from-coll (map #(apply-temporal-displacement % displacement) selected))
        (rx/from-coll (map apply-displacement selected))))))
-
-(s/def ::direction #{:up :down :right :left})
-(s/def ::speed #{:std :fast})
 
 (defn move-selected
   [direction speed]

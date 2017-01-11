@@ -2,25 +2,43 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.projects
-  (:require [cuerdas.core :as str]
+  (:require [cljs.spec :as s]
+            [cuerdas.core :as str]
             [beicon.core :as rx]
+            [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.pages :as udp]
-            [potok.core :as ptk]
-            [uxbox.util.router :as rt]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.forms :as sc]
-            [uxbox.main.data.pages :as udp]))
+            [uxbox.util.spec :as us]
+            [uxbox.util.time :as dt]
+            [uxbox.util.router :as rt]))
+
+;; --- Specs
+
+(s/def ::id uuid?)
+(s/def ::name string?)
+(s/def ::version integer?)
+(s/def ::user uuid?)
+(s/def ::created-at dt/instant?)
+(s/def ::modified-at dt/instant?)
+
+(s/def ::project-entity
+  (s/keys ::req-un [::id
+                    ::name
+                    ::version
+                    ::user
+                    ::created-at
+                    ::modified-at]))
 
 ;; --- Helpers
 
 (defn assoc-project-page
   "Assoc to the state the project's embedded page."
   [state project]
+  {:pre [(us/valid? ::project-entity project)]}
   (let [page {:id (:page-id project)
               :name (:page-name project)
               :version (:page-version project)
@@ -36,6 +54,7 @@
 (defn assoc-project
   "A reduce function for assoc the project to the state map."
   [state {:keys [id] :as project}]
+  {:pre [(us/valid? ::project-entity project)]}
   (let [project (dissoc project
                         :page-name :page-version
                         :page-data :page-metadata
@@ -76,6 +95,7 @@
 
 (defn projects-fetched
   [projects]
+  {:pre [(us/valid? (s/every ::project-entity) projects)]}
   (ProjectsFetched. projects))
 
 (defn projects-fetched?
@@ -159,30 +179,29 @@
 (defrecord CreateProject [name width height layout]
   ptk/WatchEvent
   (watch [this state s]
-    (letfn [(on-finish [{project :payload}]
-              (rx/of (fetch-projects)))
-            (on-success [{project :payload}]
-              (->> (rp/req :create/page
-                    {:name name
-                     :project (:id project)
+    (let [project-data {:name name}
+          page-data {:name "Page 0"
                      :data {}
                      :metadata {:width width
                                 :height height
                                 :layout layout
-                                :order 0}})
-                   (rx/mapcat on-finish)))]
+                                :order 0}}]
       (->> (rp/req :create/project {:name name})
-           (rx/mapcat on-success)))))
+           (rx/map :payload)
+           (rx/mapcat (fn [{:keys [id] :as project}]
+                        (rp/req :create/page (assoc page-data :project id))))
+           (rx/map #(fetch-projects))))))
 
-(def ^:private create-project-schema
-  {:name [sc/required sc/string]
-   :width [sc/required sc/integer]
-   :height [sc/required sc/integer]
-   :layout [sc/required sc/string]})
+(s/def ::create-project-event
+  (s/keys :req-un [::name
+                   ::udp/width
+                   ::udp/height
+                   ::udp/layout]))
+
 (defn create-project
-  [params]
-  (-> (sc/validate! params create-project-schema)
-      (map->CreateProject)))
+  [data]
+  {:pre [(us/valid? ::create-project-event data)]}
+  (map->CreateProject data))
 
 ;; --- Go To & Go To Page
 

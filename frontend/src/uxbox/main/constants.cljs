@@ -32,3 +32,33 @@
    0.63 0.66 0.69 0.73 0.77 0.81 0.85 0.90 0.95 1.00 1.05
    1.10 1.15 1.21 1.27 1.33 1.40 1.47 1.54 1.62 1.70 1.78
    1.87 1.96 2.06 2.16 2.27 2.38 2.50 2.62 2.75 2.88 3.00])
+
+(def page-defaults
+  {:width 1366
+   :height 768
+   :layout "notebook"})
+
+(def project-defaults
+  (merge {:name ""} page-defaults))
+
+(def page-layouts
+  {"mobile"
+   {:name "Mobile"
+    :id "mobile"
+    :width 320
+    :height 480}
+   "tablet"
+   {:name "Tablet"
+    :id "tablet"
+    :width 1024
+    :height 768}
+   "notebook"
+   {:name "Notebook"
+    :id "notebook"
+    :width 1366
+    :height 768}
+   "desktop"
+   {:name "Desktop"
+    :id "desktop"
+    :width 1920
+    :height 1080}})
