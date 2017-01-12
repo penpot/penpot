@@ -2,8 +2,8 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.header
   (:require [beicon.core :as rx]
@@ -11,11 +11,11 @@
             [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.workspace.clipboard]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.users :as ui.u]
             [uxbox.main.ui.navigation :as nav]
@@ -28,7 +28,7 @@
 (mx/defc zoom-widget
   {:mixins [mx/reactive mx/static]}
   []
-  (let [zoom (mx/react wb/zoom-ref)
+  (let [zoom (mx/react refs/selected-zoom)
         increase #(st/emit! (dw/increase-zoom))
         decrease #(st/emit! (dw/decrease-zoom))]
     [:ul.options-view
@@ -49,9 +49,9 @@
 (mx/defc header
   {:mixins [mx/static mx/reactive]}
   []
-  (let [project (mx/react wb/project-ref)
-        page (mx/react wb/page-ref)
-        flags (mx/react wb/flags-ref)
+  (let [project (mx/react refs/selected-project)
+        page (mx/react refs/selected-page)
+        flags (mx/react refs/flags)
         toggle #(st/emit! (dw/toggle-flag %))
         on-undo #(st/emit! (udh/backwards-to-previous-version))
         on-redo #(st/emit! (udh/forward-to-next-version))

@@ -12,7 +12,7 @@
             [uxbox.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.lenses :as ul]
-            [uxbox.main.data.core :refer (worker)]
+            [uxbox.main.workers :as uwrk]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.shapes :as uds]
@@ -20,13 +20,11 @@
             [uxbox.main.data.shapes-impl :as shimpl]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.history :as udh]
-
             [uxbox.main.data.workspace.scroll :as wscroll]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.spec :as us]
             [uxbox.util.forms :as sc]
             [uxbox.util.geom.point :as gpt]
-            [uxbox.util.workers :as uw]
             [uxbox.util.time :as dt]
             [uxbox.util.math :as mth]
             [uxbox.util.data :refer (index-of)]))
@@ -282,18 +280,17 @@
   (watch [_ state stream]
     (let [page (get-in state [:pages id])
           opts (:metadata page)
-          message {:cmd :grid-init
-                   :width c/viewport-width
-                   :height c/viewport-height
-                   :x-axis (:grid-x-axis opts c/grid-x-axis)
-                   :y-axis (:grid-y-axis opts c/grid-y-axis)}
+          params {:width c/viewport-width
+                  :height c/viewport-height
+                  :x-axis (:grid-x-axis opts c/grid-x-axis)
+                  :y-axis (:grid-y-axis opts c/grid-y-axis)}
           stoper (->> (rx/filter initialize-alignment? stream)
                       (rx/take 1))]
       (->> (rx/just nil)
            (rx/delay 1000)
            (rx/take-until stoper)
            (rx/flat-map (fn [_]
-                          (rx/merge (->> (uw/send! worker message)
+                          (rx/merge (->> (uwrk/initialize-alignment params)
                                          (rx/map #(activate-flag :grid-indexed)))
                                     (when (:grid-alignment opts)
                                       (rx/of (activate-flag :grid-alignment))))))))))

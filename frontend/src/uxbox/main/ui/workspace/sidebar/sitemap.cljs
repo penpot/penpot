@@ -8,20 +8,20 @@
 (ns uxbox.main.ui.workspace.sidebar.sitemap
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
-            [uxbox.util.data :refer (classnames)]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.refs :as refs]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.sidebar.sitemap-pageform]
+            [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.ui.lightbox :as lbx]
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.router :as r]
+            [uxbox.util.data :refer (classnames)]
             [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom]))
 
@@ -122,9 +122,9 @@
 (mx/defc sitemap-toolbox
   {:mixins [mx/static mx/reactive]}
   []
-  (let [project (mx/react wb/project-ref)
+  (let [project (mx/react refs/selected-project)
         pages (mx/react pages-ref)
-        current (mx/react wb/page-ref)
+        current (mx/react refs/selected-page)
         create #(udl/open! :page-form {:page {:project (:id project)}})
         close #(st/emit! (dw/toggle-flag :sitemap))]
     [:div.sitemap.tool-window

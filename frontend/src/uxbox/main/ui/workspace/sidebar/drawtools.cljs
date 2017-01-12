@@ -8,16 +8,16 @@
 (ns uxbox.main.ui.workspace.sidebar.drawtools
   (:require [sablono.core :as html :refer-macros [html]]
             [lentes.core :as l]
+            [potok.core :as ptk]
+            [uxbox.store :as st]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.data.workspace :as dw]
+            [uxbox.main.ui.icons :as i]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [potok.core :as ptk]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.dom :as dom]
-            [uxbox.store :as st]
-            [uxbox.main.data.workspace :as dw]
-            [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.ui.icons :as i]))
+            [uxbox.util.dom :as dom]))
 
 ;; --- Refs
 
@@ -87,7 +87,7 @@
 (mx/defc draw-toolbox
   {:mixins [mx/static mx/reactive]}
   [own]
-  (let [workspace (mx/react wb/workspace-ref)
+  (let [workspace (mx/react refs/workspace)
         drawing (mx/react drawing-shape)
         close #(st/emit! (dw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.shapes
   (:require [cljs.spec :as s :include-macros true]
@@ -13,7 +13,7 @@
             [uxbox.main.constants :as c]
             [uxbox.main.lenses :as ul]
             [uxbox.main.geom :as geom]
-            [uxbox.main.data.core :refer (worker)]
+            [uxbox.main.workers :as uwrk]
             [uxbox.main.data.shapes-impl :as impl]
             [uxbox.main.data.pages :as udp]
             [uxbox.util.forms :as sc]
@@ -22,8 +22,7 @@
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.router :as r]
             [uxbox.util.rlocks :as rlocks]
-            [uxbox.util.uuid :as uuid]
-            [uxbox.util.workers :as uw]))
+            [uxbox.util.uuid :as uuid]))
 
 ;; --- Specs
 
@@ -130,8 +129,6 @@
 
 ;; --- Shape Transformations
 
-(declare align-point)
-
 (def ^:private canvas-coords
   (gpt/point c/canvas-start-x
              c/canvas-start-y))
@@ -147,7 +144,7 @@
                                            (geom/shape->rect-shape state))
             point1 (gpt/point x1 y1)
             point2 (gpt/add point1 canvas-coords)]
-        (->> (align-point point2)
+        (->> (uwrk/align-point point2)
              (rx/map #(gpt/subtract % canvas-coords))
              (rx/map (fn [{:keys [x y] :as pt}]
                        (apply-temporal-displacement id (gpt/subtract pt point1)))))))))
@@ -551,7 +548,7 @@
     (let [shape (get-in state [:shapes id])
           point (get-in shape [:points index])
           point (gpt/add point canvas-coords)]
-      (->> (align-point point)
+      (->> (uwrk/align-point point)
            (rx/map #(gpt/subtract % point))
            (rx/map #(update-path id index %))))))
 
@@ -673,6 +670,7 @@
 ;; --- Move Selected
 
 (defn alignment-activated?
+  ;; TODO: use the function defined in uxbox.main.refs
   [state]
   (let [flags (l/focus ul/workspace-flags state)]
     (and (contains? flags :grid-indexed)
@@ -722,11 +720,3 @@
   {:pre [(us/valid? ::direction direction)
          (us/valid? ::speed speed)]}
   (MoveSelected. direction speed))
-
-;; --- Point Alignment (with Grid)
-
-(defn align-point
-  [point]
-  (let [message {:cmd :grid-align :point point}]
-    (->> (uw/ask! worker message)
-         (rx/map :point))))

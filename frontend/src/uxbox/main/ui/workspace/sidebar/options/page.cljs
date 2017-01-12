@@ -12,11 +12,11 @@
             [cuerdas.core :as str]
             [uxbox.store :as st]
             [uxbox.main.constants :as c]
+            [uxbox.main.refs :as refs]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.workspace.base :refer [page-ref]]
             [uxbox.main.ui.workspace.colorpicker]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer [parse-int]]
@@ -26,7 +26,7 @@
 (mx/defcs measures-menu
   {:mixins [mx/static mx/reactive]}
   [own menu]
-  (let [{:keys [id metadata] :as page} (mx/react page-ref)
+  (let [{:keys [id metadata] :as page} (mx/react refs/selected-page)
         metadata (merge c/page-metadata metadata)]
     (letfn [(on-size-change [attr]
               (when-let [value (-> (mx/ref-node own (name attr))
@@ -101,7 +101,7 @@
 (mx/defcs grid-options-menu
   {:mixins [mx/static mx/reactive]}
   [own menu]
-  (let [{:keys [id metadata] :as page} (mx/react page-ref)
+  (let [{:keys [id metadata] :as page} (mx/react refs/selected-page)
         metadata (merge c/page-metadata metadata)]
     (letfn [(on-x-change []
               (when-let [value (-> (mx/ref-node own "x-axis")

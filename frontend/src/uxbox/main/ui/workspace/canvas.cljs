@@ -12,13 +12,14 @@
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.constants :as c]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.streams :as streams]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.shapes :as uus]
             [uxbox.main.ui.shapes.selection :refer (selection-handlers)]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.scroll :as scroll]
             [uxbox.main.ui.workspace.drawarea :refer (draw-area)]
             [uxbox.main.ui.workspace.ruler :refer (ruler)]
@@ -47,8 +48,8 @@
 (mx/defc coordinates
   {:mixins [mx/reactive mx/static]}
   []
-  (let [zoom (mx/react wb/zoom-ref)
-        coords (some-> (mx/react wb/mouse-canvas-a)
+  (let [zoom (mx/react refs/selected-zoom)
+        coords (some-> (mx/react streams/mouse-canvas-a)
                        (gpt/divide zoom)
                        (gpt/round 0))]
    [:ul.coordinates
@@ -74,7 +75,7 @@
 (mx/defc cursor-tooltip
   {:mixins [mx/reactive mx/static]}
   [tooltip]
-  (let [coords (mx/react wb/mouse-absolute-a)]
+  (let [coords (mx/react streams/mouse-absolute-a)]
    [:span.cursor-tooltip
     {:style
      {:position "fixed"
@@ -87,7 +88,7 @@
 (mx/defc canvas
   {:mixins [mx/reactive]}
   [{:keys [metadata id] :as page}]
-  (let [workspace (mx/react wb/workspace-ref)
+  (let [workspace (mx/react refs/workspace)
         flags (:flags workspace)
         width (:width metadata)
         height (:height metadata)]
@@ -131,7 +132,7 @@
             (let [opts {:key (.-keyCode event)
                         :shift? (kbd/shift? event)
                         :ctrl? (kbd/ctrl? event)}]
-              (rx/push! wb/events-b [:key/down opts])
+              (rx/push! streams/events-b [:key/down opts])
               (when (kbd/space? event)
                 (st/emit! (dw/start-viewport-positioning)))))
                 #_(rlocks/acquire! :workspace/scroll)
@@ -142,7 +143,7 @@
                         :ctrl? (kbd/ctrl? event)}]
               (when (kbd/space? event)
                 (st/emit! (dw/stop-viewport-positioning)))
-              (rx/push! wb/events-b [:key/up opts])))
+              (rx/push! streams/events-b [:key/up opts])))
 
           (on-mousemove [event]
             (let [wpt (gpt/point (.-clientX event)
@@ -154,10 +155,10 @@
                          :window-coords wpt
                          :viewport-coords vppt
                          :canvas-coords cvpt}]
-              ;; FIXME: refactor streams in order to use the wb/events-b
+              ;; FIXME: refactor streams in order to use the streams/events-b
               ;;        for all keyboard and mouse events and then derive
               ;;        all the other from it.
-              (rx/push! wb/mouse-b event)))]
+              (rx/push! streams/mouse-b event)))]
 
     (let [key1 (events/listen js/document EventType.MOUSEMOVE on-mousemove)
           key2 (events/listen js/document EventType.KEYDOWN on-key-down)
@@ -179,8 +180,8 @@
    :will-unmount viewport-will-unmount
    :mixins [mx/reactive]}
   []
-  (let [workspace (mx/react wb/workspace-ref)
-        page (mx/react wb/page-ref)
+  (let [workspace (mx/react refs/workspace)
+        page (mx/react refs/selected-page)
         flags (:flags workspace)
         drawing? (:drawing workspace)
         tooltip (if (:tooltip workspace)
@@ -191,7 +192,7 @@
               (dom/stop-propagation event)
               (let [opts {:shift? (kbd/shift? event)
                           :ctrl? (kbd/ctrl? event)}]
-                (rx/push! wb/events-b [:mouse/down opts]))
+                (rx/push! streams/events-b [:mouse/down opts]))
               (if (:drawing workspace)
                 (rlocks/acquire! :ui/draw)
                 (do
@@ -203,22 +204,22 @@
               (dom/stop-propagation event)
               (let [opts {:shift? (kbd/shift? event)
                           :ctrl? (kbd/ctrl? event)}]
-                (rx/push! wb/events-b [:mouse/right-click opts])))
+                (rx/push! streams/events-b [:mouse/right-click opts])))
             (on-mouse-up [event]
               (dom/stop-propagation event)
               (let [opts {:shift? (kbd/shift? event)
                           :ctrl? (kbd/ctrl? event)}]
-                (rx/push! wb/events-b [:mouse/up])))
+                (rx/push! streams/events-b [:mouse/up])))
             (on-click [event]
               (dom/stop-propagation event)
               (let [opts {:shift? (kbd/shift? event)
                           :ctrl? (kbd/ctrl? event)}]
-                (rx/push! wb/events-b [:mouse/click opts])))
+                (rx/push! streams/events-b [:mouse/click opts])))
             (on-double-click [event]
               (dom/stop-propagation event)
               (let [opts {:shift? (kbd/shift? event)
                           :ctrl? (kbd/ctrl? event)}]
-                (rx/push! wb/events-b [:mouse/double-click opts])))]
+                (rx/push! streams/events-b [:mouse/double-click opts])))]
       [:div
         (coordinates)
         (when tooltip

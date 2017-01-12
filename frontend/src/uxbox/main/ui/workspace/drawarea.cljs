@@ -2,8 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.workspace.drawarea
   "Draw interaction and component."
@@ -13,10 +12,12 @@
             [uxbox.util.rlocks :as rlocks]
             [uxbox.store :as st]
             [uxbox.main.constants :as c]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.streams :as streams]
+            [uxbox.main.workers :as uwrk]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes :as shapes]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.geom :as geom]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.geom.path :as path]
@@ -114,7 +115,7 @@
   "Function execution when draw shape operation is requested.
   This is a entry point for the draw interaction."
   []
-  (when-let [shape (:drawing @wb/workspace-ref)]
+  (when-let [shape (:drawing @refs/workspace)]
     (case (:type shape)
       :icon (on-init-draw-icon shape)
       :image (on-init-draw-icon shape)
@@ -127,7 +128,7 @@
 
 (defn- on-init-draw-icon
   [{:keys [metadata] :as shape}]
-  (let [{:keys [x y]} (gpt/divide @wb/mouse-canvas-a @wb/zoom-ref)
+  (let [{:keys [x y]} (gpt/divide @streams/mouse-canvas-a @refs/selected-zoom)
         {:keys [width height]} metadata
         proportion (/ width height)
         props {:x1 x
@@ -159,7 +160,7 @@
 
 (defn- translate-to-canvas
   [point]
-  (let [zoom @wb/zoom-ref
+  (let [zoom @refs/selected-zoom
         ccords (gpt/multiply canvas-coords zoom)]
     (-> point
         (gpt/subtract ccords)
@@ -167,8 +168,8 @@
 
 (defn- conditional-align
   [point]
-  (if @wb/alignment-ref
-    (uds/align-point point)
+  (if @refs/selected-alignment
+    (uwrk/align-point point)
     (rx/of point)))
 
 (defn- on-init-draw-path
@@ -184,18 +185,18 @@
             (and (= type :mouse/click)
                  (false? (:shift? opts))))]
 
-    (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
+    (let [mouse (->> (rx/sample 10 streams/mouse-viewport-s)
                      (rx/mapcat conditional-align)
                      (rx/map translate-to-canvas))
           stoper (->> (rx/merge
                        (rx/take 1 drawing-stoper)
-                       (rx/filter stoper-event? wb/events-s))
+                       (rx/filter stoper-event? streams/events-s))
                       (rx/take 1))
           firstpos (rx/take 1 mouse)
           stream (->> (rx/take-until stoper mouse)
                       (rx/skip-while #(nil? @drawing-shape))
-                      (rx/with-latest-from vector wb/mouse-ctrl-s))
-          ptstream (->> (rx/take-until stoper wb/events-s)
+                      (rx/with-latest-from vector streams/mouse-ctrl-s))
+          ptstream (->> (rx/take-until stoper streams/events-s)
                         (rx/filter new-point-event?)
                         (rx/with-latest-from vector mouse)
                         (rx/map second))
@@ -252,10 +253,10 @@
 
 (defn- on-init-draw-free-path
   [shape]
-  (let [mouse (->> (rx/sample 10 wb/mouse-viewport-s)
+  (let [mouse (->> (rx/sample 10 streams/mouse-viewport-s)
                    (rx/mapcat conditional-align)
                    (rx/map translate-to-canvas))
-        stoper (->> wb/events-s
+        stoper (->> streams/events-s
                     (rx/map first)
                     (rx/filter #(= % :mouse/up))
                     (rx/take 1))
@@ -286,17 +287,17 @@
 
 (defn- on-init-draw-generic
   [shape]
-  (let [mouse (->> wb/mouse-viewport-s
+  (let [mouse (->> streams/mouse-viewport-s
                    (rx/mapcat conditional-align)
                    (rx/map translate-to-canvas))
-        stoper (->> wb/events-s
+        stoper (->> streams/events-s
                     (rx/map first)
                     (rx/filter #(= % :mouse/up))
                     (rx/take 1))
         firstpos (rx/take 1 mouse)
         stream (->> (rx/take-until stoper mouse)
                     (rx/skip-while #(nil? @drawing-shape))
-                    (rx/with-latest-from vector wb/mouse-ctrl-s))]
+                    (rx/with-latest-from vector streams/mouse-ctrl-s))]
 
     (letfn [(on-start [{:keys [x y] :as pt}]
               (let [shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})]

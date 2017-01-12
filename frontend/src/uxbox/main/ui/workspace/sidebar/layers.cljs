@@ -9,16 +9,16 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [goog.events :as events]
-            [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.store :as st]
-            [uxbox.util.data :refer (read-string classnames)]
+            [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.icon :as icon]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.keyboard :as kbd]
+            [uxbox.util.data :refer (read-string classnames)]
+            [uxbox.util.router :as r]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom])
@@ -201,7 +201,7 @@
   (let [local (:rum/local own)
         selected? (contains? selected (:id item))
         collapsed? (:collapsed item true)
-        shapes-map (mx/react wb/shapes-by-id-ref)
+        shapes-map (mx/react refs/shapes-by-id)
         classes (classnames
                  :selected selected?
                  :drag-top (= :top (:over @local))
@@ -290,9 +290,10 @@
 (mx/defc layers-toolbox
   {:mixins [mx/reactive]}
   []
-  (let [workspace (mx/react wb/workspace-ref)
+  (let [workspace (mx/react refs/workspace)
         selected (:selected workspace)
-        shapes-map (mx/react wb/shapes-by-id-ref)
+        ;; TODO: dont react to the while shapes-by-id
+        shapes-map (mx/react refs/shapes-by-id)
         page (mx/react (focus-page (:page workspace)))
         close #(st/emit! (udw/toggle-flag :layers))
         duplicate #(st/emit! (uds/duplicate-selected))

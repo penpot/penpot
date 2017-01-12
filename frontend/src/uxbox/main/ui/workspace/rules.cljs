@@ -2,18 +2,18 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.rules
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [cuerdas.core :as str]
             [beicon.core :as rx]
-            [uxbox.main.constants :as c]
             [uxbox.store :as s]
+            [uxbox.main.constants :as c]
+            [uxbox.main.streams :as streams]
             [uxbox.util.dom :as dom]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Constants & Helpers
@@ -144,7 +144,7 @@
 
 (defn horizontal-rule-render
   [own zoom]
-  (let [scroll (mx/react wb/scroll-a)
+  (let [scroll (mx/react streams/scroll-a)
         scroll-x (:x scroll)
         translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
     (html
@@ -164,7 +164,7 @@
 
 (defn vertical-rule-render
   [own zoom]
-  (let [scroll (mx/react wb/scroll-a)
+  (let [scroll (mx/react streams/scroll-a)
         scroll-y (:y scroll)
         translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
     (html

@@ -8,20 +8,20 @@
 (ns uxbox.main.ui.workspace.download
   (:require [cuerdas.core :as str]
             [beicon.core :as rx]
+            [potok.core :as ptk]
+            [lentes.core :as l]
+            [uxbox.store :as st]
+            [uxbox.main.refs :as refs]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.exports :as exports]
-            [uxbox.store :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.blob :as blob]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.time :as dt]
             [uxbox.util.dom :as dom]
             [uxbox.util.mixins :as mx :include-macros true]
-            [potok.core :as ptk]
-            [uxbox.util.zip :as zip]
-            [lentes.core :as l]))
+            [uxbox.util.zip :as zip]))
 
 ;; --- Refs
 
@@ -92,7 +92,7 @@
 (mx/defcs download-dialog
   {:mixins [mx/static mx/reactive]}
   [own]
-  (let [project (mx/react wb/project-ref)
+  (let [project (mx/react refs/selected-project)
         pages (mx/react pages-ref)
         current (mx/react current-page-ref)]
     (letfn [(on-close [event]

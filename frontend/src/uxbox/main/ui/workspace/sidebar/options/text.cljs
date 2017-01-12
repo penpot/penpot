@@ -7,17 +7,15 @@
 
 (ns uxbox.main.ui.workspace.sidebar.options.text
   (:require [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.geom :as geom]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.router :as r]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
             [uxbox.util.math :refer (precision-or-0)]
             [uxbox.util.data :refer (parse-int

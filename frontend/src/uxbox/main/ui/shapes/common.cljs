@@ -9,10 +9,11 @@
             [beicon.core :as rx]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.streams :as streams]
             [uxbox.main.geom :as geom]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.rlocks :as rlocks]
             [uxbox.util.dom :as dom]))
@@ -41,14 +42,14 @@
             (rlocks/release! :shape/move)
             (st/emit! (uds/apply-displacement shape)))
           (on-start [shape]
-            (let [stoper (->> (rx/map first wb/events-s)
+            (let [stoper (->> (rx/map first streams/events-s)
                               (rx/filter #(= % :mouse/up))
                               (rx/take 1))
-                  stream (->> wb/mouse-delta-s
+                  stream (->> streams/mouse-delta-s
                               (rx/take-until stoper))
                   on-move (partial on-move shape)
                   on-stop (partial on-stop shape)]
-              (when @wb/alignment-ref
+              (when @refs/selected-alignment
                 (st/emit! (uds/initial-align-shape shape)))
               (rx/subscribe stream on-move nil on-stop)))]
 

@@ -8,11 +8,12 @@
 (ns uxbox.main.ui.workspace.ruler
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
+            [potok.core :as ptk]
             [beicon.core :as rx]
             [uxbox.main.constants :as c]
-            [potok.core :as ptk]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.streams :as streams]
             [uxbox.util.math :as mth]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
@@ -74,10 +75,10 @@
               (on-value-aligned pos)
               (on-value-simple pos)))]
 
-    (let [stream (->> wb/mouse-absolute-s
+    (let [stream (->> streams/mouse-absolute-s
                       (rx/filter #(:active @local))
                       (rx/map #(resolve-position own %))
-                      (rx/with-latest-from vector wb/mouse-ctrl-s))
+                      (rx/with-latest-from vector streams/mouse-ctrl-s))
           sub (rx/on-value stream on-value)]
       (assoc own ::sub sub))))
 
@@ -116,8 +117,8 @@
 (defn- overlay-line-render
   [own center pt]
   (let [distance (-> (gpt/distance
-                      (gpt/divide pt @wb/zoom-ref)
-                      (gpt/divide center @wb/zoom-ref))
+                      (gpt/divide pt @refs/selected-zoom)
+                      (gpt/divide center @refs/selected-zoom))
                      (mth/precision 4))
         angle (-> (gpt/angle pt center)
                   (mth/precision 4))
@@ -139,7 +140,7 @@
 
 (defn- ruler-render
   [own]
-  (let [flags (mx/react wb/flags-ref)]
+  (let [flags (mx/react refs/flags)]
     (when (contains? flags :ruler)
       (overlay))))
 

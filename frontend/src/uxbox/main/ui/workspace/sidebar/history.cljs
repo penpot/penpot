@@ -9,16 +9,16 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.messages :as udm]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.router :as r]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.time :as dt]
             [uxbox.util.data :refer (read-string)]
@@ -118,7 +118,7 @@
 (defn history-toolbox-render
   [own]
   (let [local (:rum/local own)
-        page (mx/react wb/page-ref)
+        page (mx/react refs/selected-page)
         history (mx/react history-ref)
         section (:section @local :main)
         close #(st/emit! (dw/toggle-flag :document-history))

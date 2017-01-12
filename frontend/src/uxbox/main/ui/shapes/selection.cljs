@@ -2,8 +2,8 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.shapes.selection
   "Multiple selection handlers component."
@@ -12,8 +12,10 @@
             [potok.core :as ptk]
             [uxbox.store :as st]
             [uxbox.main.constants :as c]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.streams :as streams]
+            [uxbox.main.workers :as uwrk]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.shapes.common :as scommon]
             [uxbox.main.geom :as geom]
             [uxbox.util.mixins :as mx :include-macros true]
@@ -211,18 +213,18 @@
 
     (let [shape  (->> (geom/shape->rect-shape shape)
                       (geom/size))
-          stoper (->> wb/events-s
+          stoper (->> streams/events-s
                       (rx/map first)
                       (rx/filter #(= % :mouse/up))
                       (rx/take 1))
-          stream (->> wb/mouse-canvas-s
-                      (rx/map #(gpt/divide % @wb/zoom-ref))
+          stream (->> streams/mouse-canvas-s
+                      (rx/map #(gpt/divide % @refs/selected-zoom))
                       (rx/mapcat (fn [point]
-                                   (if @wb/alignment-ref
-                                     (uds/align-point point)
+                                   (if @refs/selected-alignment
+                                     (uwrk/align-point point)
                                      (rx/of point))))
                       (rx/take-until stoper)
-                      (rx/with-latest-from vector wb/mouse-ctrl-s)
+                      (rx/with-latest-from vector streams/mouse-ctrl-s)
                       (rx/scan accumulate-width shape)
                       (rx/map (partial calculate-ratio shape)))]
       (rlocks/acquire! :shape/resize)
@@ -318,13 +320,13 @@
             (st/emit! (uds/update-path shape-id index delta)))
           (on-end []
             (rlocks/release! :shape/resize))]
-    (let [stoper (->> wb/events-s
+    (let [stoper (->> streams/events-s
                       (rx/map first)
                       (rx/filter #(= % :mouse/up))
                       (rx/take 1))
-          stream (rx/take-until stoper wb/mouse-delta-s)]
+          stream (rx/take-until stoper streams/mouse-delta-s)]
       (rlocks/acquire! :shape/resize)
-      (when @wb/alignment-ref
+      (when @refs/selected-alignment
         (st/emit! (uds/initial-path-point-align shape-id index)))
       (rx/subscribe stream on-move nil on-end))))
 
@@ -381,7 +383,7 @@
   []
   (let [shapes (mx/react selected-shapes-ref)
         edition? (mx/react edition-ref)
-        zoom (mx/react wb/zoom-ref)
+        zoom (mx/react refs/selected-zoom)
         num (count shapes)
         {:keys [type] :as shape} (first shapes)]
     (cond

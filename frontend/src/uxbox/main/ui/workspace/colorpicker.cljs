@@ -2,24 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.colorpicker
   (:require [lentes.core :as l]
-            [uxbox.util.router :as rt]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.geom :as geom]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.colorpicker :as cp]
             [uxbox.main.ui.workspace.recent-colors :refer [recent-colors]]
-            [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.geom :as geom]
+            [uxbox.util.router :as rt]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer [parse-int parse-float read-string]]))
@@ -50,7 +49,7 @@
 (mx/defcs page-colorpicker
   {:mixins [mx/reactive mx/static]}
   [own {:keys [x y attr default] :as opts}]
-  (let [{:keys [id metadata] :as page} (mx/react wb/page-ref)]
+  (let [{:keys [id metadata] :as page} (mx/react refs/selected-page)]
     (letfn [(change-color [color]
               (let [metadata (assoc metadata attr color)]
                 (st/emit! (udp/update-metadata id metadata))))]

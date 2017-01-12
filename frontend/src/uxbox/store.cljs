@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.store
   (:require [beicon.core :as rx]
@@ -16,6 +16,7 @@
 (defonce state (atom {}))
 (defonce loader (atom false))
 (defonce store (ptk/store {:on-error #(*on-error* %)}))
+(defonce stream (ptk/input-stream store))
 
 (def auth-ref
   (-> (l/key :auth)

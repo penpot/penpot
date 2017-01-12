@@ -2,21 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.colorpalette
   (:require [beicon.core :as rx]
             [lentes.core :as l]
+            [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.colors :as dc]
             [uxbox.main.ui.dashboard.colors :refer (collections-ref)]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.keyboard :as kbd]
-            [potok.core :as ptk]
             [uxbox.util.lens :as ul]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.color :refer (hex->rgb)]
@@ -115,6 +115,6 @@
   {:mixins [mx/static mx/reactive]
    :will-mount colorpalette-will-mount}
   []
-  (let [flags (mx/react wb/flags-ref)]
+  (let [flags (mx/react refs/flags)]
     (when (contains? flags :colorpalette)
       (palette))))

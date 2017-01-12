@@ -9,7 +9,7 @@
   are related to UI logic."
   (:require [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.main.streams :as streams]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.rlocks :as rlocks]
             [uxbox.util.dom :as dom]
@@ -23,9 +23,9 @@
   [stream]
   (let [stoper (->> (rx/filter stop-viewport-positioning? stream)
                     (rx/take 1))
-        reference @wb/mouse-viewport-a
+        reference @streams/mouse-viewport-a
         dom (dom/get-element "workspace-canvas")]
-    (->> wb/mouse-viewport-s
+    (->> streams/mouse-viewport-s
          (rx/take-until stoper)
          (rx/map (fn [point]
                    (let [{:keys [x y]} (gpt/subtract point reference)

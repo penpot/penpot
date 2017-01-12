@@ -9,7 +9,7 @@
   "Workspace scroll events handling."
   (:require [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.main.ui.workspace.base :as wb]
+            [uxbox.main.refs :as refs]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.rlocks :as rlocks]
             [uxbox.util.dom :as dom]
@@ -24,8 +24,8 @@
   [dom center]
   (let [viewport-width (.-offsetWidth dom)
         viewport-height (.-offsetHeight dom)
-        position-x (- (* (:x center) @wb/zoom-ref) (/ viewport-width 2))
-        position-y (- (* (:y center) @wb/zoom-ref) (/ viewport-height 2))
+        position-x (- (* (:x center) @refs/selected-zoom) (/ viewport-width 2))
+        position-y (- (* (:y center) @refs/selected-zoom) (/ viewport-height 2))
         position (gpt/point position-x position-y)]
     (set-scroll-position dom position)))
 
@@ -48,7 +48,7 @@
 
 (defn get-current-center-absolute
   [dom]
-  (gpt/divide (get-current-center dom) @wb/zoom-ref))
+  (gpt/divide (get-current-center dom) @refs/selected-zoom))
 
 (defn get-current-position
   [dom]
@@ -58,10 +58,10 @@
 
 (defn get-current-position-absolute
   [dom]
-    (gpt/divide (get-current-position dom) @wb/zoom-ref))
+    (gpt/divide (get-current-position dom) @refs/selected-zoom))
 
 (defn scroll-to-point
   [dom point position]
   (let [viewport-offset (gpt/subtract point position)
-        new-scroll-position (gpt/subtract (gpt/multiply point @wb/zoom-ref) (gpt/multiply viewport-offset @wb/zoom-ref))]
+        new-scroll-position (gpt/subtract (gpt/multiply point @refs/selected-zoom) (gpt/multiply viewport-offset @refs/selected-zoom))]
     (set-scroll-position dom new-scroll-position)))

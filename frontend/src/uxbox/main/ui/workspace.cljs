@@ -7,9 +7,11 @@
 
 (ns uxbox.main.ui.workspace
   (:require [beicon.core :as rx]
-            [uxbox.main.constants :as c]
             [potok.core :as ptk]
             [uxbox.store :as st]
+            [uxbox.main.constants :as c]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.streams :as streams]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.history :as udh]
@@ -20,7 +22,6 @@
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.workspace.scroll :as scroll]
             [uxbox.main.ui.workspace.download]
-            [uxbox.main.ui.workspace.base :as wb]
             [uxbox.main.ui.workspace.shortcuts :refer (shortcuts-mixin)]
             [uxbox.main.ui.workspace.header :refer (header)]
             [uxbox.main.ui.workspace.rules :refer (horizontal-rule vertical-rule)]
@@ -45,9 +46,9 @@
   [own]
   (let [[projectid pageid] (:rum/args own)
         dom (mx/ref-node own "workspace-canvas")
-        scroll-to-page-center #(scroll/scroll-to-page-center dom @wb/page-ref)
+        scroll-to-page-center #(scroll/scroll-to-page-center dom @refs/selected-page)
         ;; sub1 (scroll/watch-scroll-interactions own)
-        sub2 (rx/subscribe wb/page-id-ref-s scroll-to-page-center)]
+        sub2 (rx/subscribe streams/page-id-ref-s scroll-to-page-center)]
 
     (scroll-to-page-center)
 
@@ -83,15 +84,15 @@
   (let [target (.-target event)
         top (.-scrollTop target)
         left (.-scrollLeft target)]
-    (rx/push! wb/scroll-b (gpt/point left top))))
+    (rx/push! streams/scroll-b (gpt/point left top))))
 
 (defn- on-wheel
   [own event]
   (when (kbd/ctrl? event)
-    (let [prev-zoom @wb/zoom-ref
+    (let [prev-zoom @refs/selected-zoom
           dom (mx/ref-node own "workspace-canvas")
           scroll-position (scroll/get-current-position-absolute dom)
-          mouse-point @wb/mouse-viewport-a]
+          mouse-point @streams/mouse-viewport-a]
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
@@ -109,7 +110,7 @@
             shortcuts-mixin
             (mx/local)]}
   [own]
-  (let [{:keys [flags zoom page] :as workspace} (mx/react wb/workspace-ref)
+  (let [{:keys [flags zoom page] :as workspace} (mx/react refs/workspace)
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools

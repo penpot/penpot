@@ -2,20 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.selrect
   "Mouse selection interaction and component."
   (:require [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.store :as st]
             [uxbox.main.constants :as c]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.streams :as streams]
+            [uxbox.main.geom :as geom]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.workspace.base :as wb]
-            [uxbox.main.geom :as geom]
+            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.rlocks :as rlocks]))
 
 (defonce position (atom nil))
@@ -64,7 +65,7 @@
 (defn- translate-to-canvas
   "Translate the given rect to the canvas coordinates system."
   [rect]
-  (let [zoom @wb/zoom-ref
+  (let [zoom @refs/selected-zoom
         startx (* c/canvas-start-x zoom)
         starty (* c/canvas-start-y zoom)]
     (assoc rect
@@ -101,11 +102,11 @@
 (defn- on-start
   "Function execution when selrect action is started."
   []
-  (let [stoper (->> wb/events-s
+  (let [stoper (->> streams/events-s
                     (rx/map first)
                     (rx/filter #(= % :mouse/up))
                     (rx/take 1))
-        stream (rx/take-until stoper wb/mouse-viewport-s)
-        pos @wb/mouse-viewport-a]
+        stream (rx/take-until stoper streams/mouse-viewport-s)
+        pos @streams/mouse-viewport-a]
     (reset! position {:start pos :current pos})
     (rx/subscribe stream on-move nil on-complete)))
