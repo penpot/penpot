@@ -12,7 +12,7 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :as data :refer (read-string)]
             [uxbox.util.dom :as dom]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.images :as udi]
             [uxbox.main.data.workspace :as udw]

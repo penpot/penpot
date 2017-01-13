@@ -10,7 +10,7 @@
   (:require [lentes.core :as l]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]

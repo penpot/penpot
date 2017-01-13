@@ -8,22 +8,22 @@
 (ns uxbox.main.ui.auth.recovery
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.util.router :as rt]
-            [uxbox.store :as st]
             [potok.core :as ptk]
+            [uxbox.main.store :as st]
+            [uxbox.main.data.auth :as uda]
+            [uxbox.main.ui.icons :as i]
+            [uxbox.main.ui.messages :refer [messages-widget]]
+            [uxbox.main.ui.navigation :as nav]
+            [uxbox.util.router :as rt]
             [uxbox.util.forms :as forms]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.dom :as dom]
-            [uxbox.main.data.auth :as uda]
-            [uxbox.main.data.messages :as udm]
-            [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.messages :as uum]
-            [uxbox.main.ui.navigation :as nav]))
+            [uxbox.util.dom :as dom]))
+
 
 ;; --- Recovery Form
 
 (def form-data (forms/focus-data :recovery st/state))
-(def set-value! (partial forms/set-value! :recovery))
+(def set-value! (partial forms/set-value! st/store :recovery))
 
 (def +recovery-form+
   {:password [forms/required forms/string]})
@@ -40,7 +40,8 @@
             (on-submit [event]
               (dom/prevent-default event)
               (st/emit! (uda/recovery data)
-                        (forms/clear :recovery)))]
+                        (forms/clear-form :recovery)
+                        (forms/clear-errors :recovery)))]
       [:form {:on-submit on-submit}
        [:div.login-content
         [:input.input-text
@@ -56,7 +57,7 @@
           :value "Recover password"
           :type "submit"}]
         [:div.login-links
-         [:a {:on-click #(rt/go :auth/login)} "Go back!"]]]])))
+         [:a {:on-click #(st/emit! (rt/navigate :auth/login))} "Go back!"]]]])))
 
 ;; --- Recovery Page
 
@@ -67,12 +68,11 @@
     own))
 
 (mx/defc recovery-page
-  {:mixins [mx/static]
-   :will-mount recovery-page-will-mount
-   :will-unmount (forms/cleaner-fn :recovery)}
+  {:mixins [mx/static (forms/clear-mixin st/store :recovery)]
+   :will-mount recovery-page-will-mount}
   [token]
   [:div.login
    [:div.login-body
-    (uum/messages)
+    (messages-widget)
     [:a i/logo]
     (recovery-form token)]])

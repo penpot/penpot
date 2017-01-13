@@ -2,19 +2,20 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [cuerdas.core :as str]
             [bide.core :as bc]
-            [uxbox.store :as st]
+            [potok.core :as ptk]
+            [uxbox.main.store :as st]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.users :as udu]
             [uxbox.main.data.auth :refer [logout]]
-            [uxbox.main.data.messages :as dmsg]
+            [uxbox.util.messages :as uum]
             [uxbox.main.ui.loader :refer (loader)]
             [uxbox.main.ui.lightbox :refer (lightbox)]
             [uxbox.main.ui.icons :as i]
@@ -22,14 +23,13 @@
             [uxbox.main.ui.dashboard :as dashboard]
             [uxbox.main.ui.settings :as settings]
             [uxbox.main.ui.workspace :refer (workspace)]
-            [uxbox.util.timers :as ts]
+            [uxbox.main.ui.shapes]
             [uxbox.util.router :as rt]
-            [potok.core :as ptk]
+            [uxbox.util.timers :as ts]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.data :refer (parse-int uuid-str?)]
             [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.ui.shapes]))
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Constants
 
@@ -62,18 +62,18 @@
 
     ;; Conflict
     (= status 412)
-    (dmsg/error! (tr "errors.conflict"))
+    (st/emit! (uum/error (tr "errors.conflict")))
 
     ;; Network error
     (= (:status error) 0)
     (do
-      (dmsg/error! (tr "errors.network"))
+      (st/emit! (uum/error (tr "errors.network")))
       (js/console.error "Stack:" (.-stack error)))
 
     ;; Something else
     :else
     (do
-      (dmsg/error! (tr "errors.generic"))
+      (st/emit! (uum/error (tr "errors.generic")))
       (js/console.error "Stack:" (.-stack error)))))
 
 (set! st/*on-error* on-error)
@@ -95,7 +95,7 @@
         location (:id route)
         params (:params route)]
     (if (and (restricted? location) (not auth))
-      (do (ts/schedule 0 #(rt/go :auth/login)) nil)
+      (do (ts/schedule 0 #(st/emit! (rt/navigate :auth/login))) nil)
       (case location
         :auth/login (auth/login-page)
         :auth/register (auth/register-page)
@@ -166,7 +166,7 @@
 
 (defn init-routes
   []
-  (rt/init routes))
+  (rt/init st/store routes {:default :auth/login}))
 
 (defn init
   []

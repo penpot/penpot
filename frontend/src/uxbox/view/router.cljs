@@ -10,6 +10,8 @@
             [potok.core :as ptk]
             [uxbox.main.store :as st]))
 
+(enable-console-print!)
+
 (defonce +router+ nil)
 
 ;; --- Update Location (Event)
@@ -46,15 +48,21 @@
 ;; --- Public Api
 
 (defn init
-  ([store routes]
-   (init store routes nil))
-  ([store routes {:keys [default] :or {default :auth/login}}]
-   (let [opts {:on-navigate #(ptk/emit! store (update-location %1 %2))
+  ([routes]
+   (init routes nil))
+  ([routes {:keys [default] :or {default :auth/login}}]
+   (let [opts {:on-navigate #(st/emit! (update-location %1 %2))
                :default default}
          router (-> (r/router routes)
                     (r/start! opts))]
      (set! +router+ router)
      router)))
+
+(defn go
+  "Redirect the user to other url."
+  ([id] (go id nil))
+  ([id params]
+   (st/emit! (navigate id params))))
 
 (defn route-for
   "Given a location handler and optional parameter map, return the URI

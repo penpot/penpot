@@ -12,7 +12,7 @@
             [potok.core :as ptk]
             [uxbox.util.router :as r]
             [uxbox.util.files :as files]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.repo :as rp]))
 
 ;; --- Initialize

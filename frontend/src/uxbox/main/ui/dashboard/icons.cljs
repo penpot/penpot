@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.dashboard.icons
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.icons :as di]
             [uxbox.main.ui.icons :as i]

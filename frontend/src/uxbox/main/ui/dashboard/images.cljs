@@ -9,7 +9,7 @@
   (:require [cuerdas.core :as str]
             [lentes.core :as l]
             [uxbox.util.i18n :as t :refer (tr)]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [potok.core :as ptk]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.images :as di]

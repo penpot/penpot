@@ -8,24 +8,23 @@
 (ns uxbox.main.ui.auth.register
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.util.router :as rt]
             [potok.core :as ptk]
+            [uxbox.main.store :as st]
+            [uxbox.main.data.auth :as uda]
+            [uxbox.main.ui.icons :as i]
+            [uxbox.main.ui.messages :refer [messages-widget]]
+            [uxbox.main.ui.navigation :as nav]
+            [uxbox.util.router :as rt]
             [uxbox.util.forms :as forms]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.dom :as dom]
-            [uxbox.store :as st]
-            [uxbox.main.data.auth :as uda]
-            [uxbox.main.data.messages :as udm]
-            [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.messages :as uum]
-            [uxbox.main.ui.navigation :as nav]))
+            [uxbox.util.dom :as dom]))
 
 ;; --- Register Form
 
 (def form-data (forms/focus-data :register st/state))
 (def form-errors (forms/focus-errors :register st/state))
-(def set-value! (partial forms/set-value! :register))
-(def set-error! (partial forms/set-error! :register))
+(def set-value! (partial forms/set-value! st/store :register))
+(def set-error! (partial forms/set-error! st/store :register))
 
 (def +register-form+
   {:username [forms/required forms/string]
@@ -94,8 +93,7 @@
           :value "Register"
           :type "submit"}]
         [:div.login-links
-         ;; [:a {:on-click #(rt/go :auth/recover-password)} "Forgot your password?"]
-         [:a {:on-click #(rt/go :auth/login)} "Already have an account?"]]]])))
+         [:a {:on-click #(st/emit! (rt/navigate :auth/login))} "Already have an account?"]]]])))
 
 ;; --- Register Page
 
@@ -104,6 +102,6 @@
   [own]
   [:div.login
    [:div.login-body
-    (uum/messages)
+    (messages-widget)
     [:a i/logo]
     (register-form)]])

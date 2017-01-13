@@ -9,7 +9,7 @@
             [cuerdas.core :as str]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.pages :as udp]
             [uxbox.util.spec :as us]

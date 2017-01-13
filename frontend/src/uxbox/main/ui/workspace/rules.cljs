@@ -10,7 +10,7 @@
             [rum.core :as rum]
             [cuerdas.core :as str]
             [beicon.core :as rx]
-            [uxbox.store :as s]
+            [uxbox.main.store :as s]
             [uxbox.main.constants :as c]
             [uxbox.main.streams :as streams]
             [uxbox.util.dom :as dom]

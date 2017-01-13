@@ -8,21 +8,21 @@
 (ns uxbox.main.ui.settings.password
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.util.i18n :as t :refer (tr)]
             [potok.core :as ptk]
-            [uxbox.util.forms :as forms]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.users :as udu]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.messages :as uum]
-            [uxbox.main.ui.settings.header :refer (header)]))
+            [uxbox.main.ui.messages :refer [messages-widget]]
+            [uxbox.main.ui.settings.header :refer [header]]
+            [uxbox.util.forms :as forms]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.mixins :as mx :include-macros true]))
+
 
 (def form-data (forms/focus-data :profile-password st/state))
 (def form-errors (forms/focus-errors :profile-password st/state))
-(def set-value! (partial forms/set-value! :profile-password))
-(def set-errors! (partial forms/set-errors! :profile-password))
+(def set-value! (partial forms/set-value! st/store :profile-password))
+(def set-errors! (partial forms/set-errors! st/store :profile-password))
 
 (def +password-form+
   [[:password-1 forms/required forms/string [forms/min-len 6]]
@@ -42,7 +42,6 @@
             (on-submit [event]
               (println "on-submit" data)
               #_(st/emit! (udu/update-password form)))]
-      (println "password-form" data)
       [:form.password-form
        [:span.user-settings-label "Change password"]
        [:input.input-text
@@ -79,8 +78,8 @@
   {:mixins [mx/static]}
   []
   [:main.dashboard-main
+   (messages-widget)
    (header)
-   (uum/messages)
    [:section.dashboard-content.user-settings
     [:section.user-settings-content
      (password-form)]]])

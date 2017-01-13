@@ -9,7 +9,7 @@
   (:require [goog.events :as events]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]

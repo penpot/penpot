@@ -8,7 +8,7 @@
   (:require [goog.events :as events]
             [lentes.core :as l]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.store :as st]
+            [uxbox.view.store :as st]
             [uxbox.main.geom :as geom]
             [uxbox.main.ui.shapes.rect :refer (rect-shape)]
             [uxbox.main.ui.shapes.icon :refer (icon-shape)]

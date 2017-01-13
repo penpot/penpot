@@ -8,12 +8,12 @@
   (:require [cljs.spec :as s]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.repo :as rp]
             [uxbox.main.state :refer [initial-state]]
             [uxbox.main.data.projects :as udp]
             [uxbox.main.data.users :as udu]
-            [uxbox.main.data.messages :as udm]
+            [uxbox.util.messages :as uum]
             [uxbox.util.router :as rt]
             [uxbox.util.spec :as us]
             [uxbox.util.i18n :refer (tr)]
@@ -58,7 +58,7 @@
     (let [params {:username username
                   :password password
                   :scope "webapp"}
-          on-error #(udm/error (tr "errors.auth.unauthorized"))]
+          on-error #(rx/of (uum/error (tr "errors.auth.unauthorized")))]
       (->> (rp/req :fetch/token params)
            (rx/map :payload)
            (rx/map logged-in)
@@ -133,7 +133,7 @@
        (->> stream
             (rx/filter #(= % ::recovery-requested))
             (rx/take 1)
-            (rx/do #(udm/info! (tr "auth.message.recovery-token-sent"))))))))
+            (rx/map #(uum/info (tr "auth.message.recovery-token-sent"))))))))
 
 (s/def ::recovery-request-event
   (s/keys :req-un [::username]))
@@ -151,7 +151,7 @@
     (letfn [(on-error [{payload :payload}]
               (rx/of
                (rt/navigate :auth/login)
-               (udm/show-error (tr "errors.auth.invalid-recovery-token"))))]
+               (uum/error (tr "errors.auth.invalid-recovery-token"))))]
       (->> (rp/req :auth/validate-recovery-token token)
            (rx/ignore)
            (rx/catch rp/client-error? on-error)))))
@@ -167,11 +167,11 @@
   ptk/WatchEvent
   (watch [_ state stream]
     (letfn [(on-error [{payload :payload}]
-              (udm/error (tr "errors.auth.invalid-recovery-token")))
+              (rx/of (uum/error (tr "errors.auth.invalid-recovery-token"))))
             (on-success [{payload :payload}]
               (rx/of
                (rt/navigate :auth/login)
-               (udm/show-info (tr "auth.message.password-recovered"))))]
+               (uum/info (tr "auth.message.password-recovered"))))]
       (->> (rp/req :auth/recovery {:token token :password password})
            (rx/mapcat on-success)
            (rx/catch rp/client-error? on-error)))))

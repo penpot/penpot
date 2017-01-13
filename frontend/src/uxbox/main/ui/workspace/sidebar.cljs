@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace.sidebar
   (:require [lentes.core :as l]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.ui.workspace.sidebar.options :refer (options-toolbox)]
             [uxbox.main.ui.workspace.sidebar.layers :refer (layers-toolbox)]

@@ -2,28 +2,30 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.settings.profile
   (:require [cuerdas.core :as str]
             [lentes.core :as l]
+            [potok.core :as ptk]
+            [uxbox.main.store :as st]
+            [uxbox.main.ui.icons :as i]
+            [uxbox.main.ui.settings.header :refer [header]]
+            [uxbox.main.ui.messages :refer [messages-widget]]
+            [uxbox.main.data.users :as udu]
             [uxbox.util.forms :as forms]
             [uxbox.util.router :as r]
-            [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.interop :refer (iterable->seq)]
-            [uxbox.util.dom :as dom]
-            [uxbox.store :as st]
-            [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.settings.header :refer (header)]
-            [uxbox.main.ui.messages :as uum]
-            [uxbox.main.data.users :as udu]))
+            [uxbox.util.interop :refer [iterable->seq]]
+            [uxbox.util.dom :as dom]))
+
 
 (def form-data (forms/focus-data :profile st/state))
 (def form-errors (forms/focus-errors :profile st/state))
-(def set-value! (partial forms/set-value! :profile))
-(def set-error! (partial forms/set-error! :profile))
+(def set-value! (partial forms/set-value! st/store :profile))
+(def set-error! (partial forms/set-error! st/store :profile))
+(def clear! (partial forms/clear! st/store :profile))
 
 (def profile-ref
   (-> (l/key :profile)
@@ -37,8 +39,8 @@
 ;; --- Profile Form
 
 (mx/defc profile-form
-  {:mixins [mx/static mx/reactive]
-   :will-unmount (forms/cleaner-fn :profile)}
+  {:mixins [mx/static mx/reactive
+            (forms/clear-mixin st/store :profile)]}
   []
   ;; TODO: properly persist theme
   (let [data (merge {:theme "light"}
@@ -56,10 +58,8 @@
                 (set-error! :email "Email already exists")
                 :uxbox.services.users/username-already-exists
                 (set-error! :username "Username already exists")))
-            (on-success []
-              (forms/clear! :profile))
             (on-submit [event]
-              (st/emit! (udu/update-profile data on-success on-error)))]
+              (st/emit! (udu/update-profile data clear! on-error)))]
       [:form.profile-form
        [:span.user-settings-label "Name, username and email"]
        [:input.input-text
@@ -142,8 +142,8 @@
   {:mixins [mx/static]}
   []
   [:main.dashboard-main
+   (messages-widget)
    (header)
-   (uum/messages)
    [:section.dashboard-content.user-settings
     [:section.user-settings-content
      [:span.user-settings-label "Your avatar"]

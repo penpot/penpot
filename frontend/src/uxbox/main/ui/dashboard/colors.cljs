@@ -8,11 +8,12 @@
 (ns uxbox.main.ui.dashboard.colors
   (:require [cuerdas.core :as str]
             [lentes.core :as l]
+            [potok.core :as ptk]
             [uxbox.main.data.colors :as dc]
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.store :as st]
-            [uxbox.main.ui.messages :as uum]
+            [uxbox.main.store :as st]
+            [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.colorpicker :refer (colorpicker)]
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.main.ui.icons :as i]
@@ -22,8 +23,7 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.lens :as ul]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [potok.core :as ptk]))
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Refs
 
@@ -332,7 +332,7 @@
         colls (mx/react collections-ref)
         coll (get colls (:id state))]
     [:main.dashboard-main
-     (uum/messages)
+     (messages-widget)
      (header)
      [:section.dashboard-content
       (nav state colls)

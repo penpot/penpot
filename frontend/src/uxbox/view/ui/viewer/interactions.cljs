@@ -11,7 +11,7 @@
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.timers :as ts]
             [uxbox.main.geom :as geom]
-            [uxbox.store :as st]
+            [uxbox.view.store :as st]
             [uxbox.view.data.viewer :as dv]
             [vendor.snapsvg])
   ;; Documentation about available events:

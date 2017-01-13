@@ -14,7 +14,7 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.forms :as sc]
             [uxbox.main.data.pages :as udp]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.util.time :as dt]
             [uxbox.util.data :refer (without-keys
                                      replace-by-id

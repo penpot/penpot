@@ -2,20 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.view.ui
   (:require [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
             [potok.core :as ptk]
-            [uxbox.store :as st]
-            [uxbox.main.data.messages :as dmsg]
-            [uxbox.main.ui.loader :refer (loader)]
-            [uxbox.main.ui.lightbox :refer (lightbox)]
             [uxbox.main.ui.icons :as i]
-            [uxbox.view.ui.notfound :refer (notfound-page)]
-            [uxbox.view.ui.viewer :refer (viewer-page)]
+            [uxbox.view.store :as st]
+            [uxbox.view.ui.loader :refer [loader]]
+            [uxbox.view.ui.notfound :refer [notfound-page]]
+            [uxbox.view.ui.viewer :refer [viewer-page]]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.router :as rt]
+            [uxbox.util.messages :as uum]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]))
 
@@ -31,13 +30,13 @@
     ;; Network error
     (= (:status error) 0)
     (do
-      (dmsg/error! (tr "errors.network"))
+      (st/emit! (uum/error (tr "errors.network")))
       (js/console.error "Stack:" (.-stack error)))
 
     ;; Something else
     :else
     (do
-      (dmsg/error! (tr "errors.generic"))
+      (st/emit! (uum/error (tr "errors.generic")))
       (js/console.error "Stack:" (.-stack error)))))
 
 (set! st/*on-error* on-error)
@@ -64,10 +63,9 @@
 
 (defn init-routes
   []
-  (rt/init routes {:default :view/notfound}))
+  (rt/init st/store routes {:default :view/notfound}))
 
 (defn init
   []
   (mx/mount (app) (dom/get-element "app"))
-  (mx/mount (lightbox) (dom/get-element "lightbox"))
   (mx/mount (loader) (dom/get-element "loader")))

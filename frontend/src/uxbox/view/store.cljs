@@ -4,12 +4,10 @@
 ;;
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.store
+(ns uxbox.view.store
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [potok.core :as ptk]))
-
-(enable-console-print!)
 
 (def ^:dynamic *on-error* identity)
 
@@ -28,9 +26,17 @@
   ([event & events]
    (apply ptk/emit! store (cons event events))))
 
+(defn- initial-state
+  []
+  {:route nil
+   :project nil
+   :pages nil
+   :page nil
+   :flags #{:sitemap}
+   :shapes {}})
+
 (defn init
   "Initialize the state materialization."
-  [initial-state]
-  (let [istate (if (fn? initial-state) (initial-state) initial-state)]
-    (emit! (constantly istate))
-    (rx/to-atom store state)))
+  []
+  (emit! initial-state)
+  (rx/to-atom store state))

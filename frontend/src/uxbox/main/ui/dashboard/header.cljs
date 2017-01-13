@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.dashboard.header
   (:require [lentes.core :as l]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.main.ui.icons :as i]

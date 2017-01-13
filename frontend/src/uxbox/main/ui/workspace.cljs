@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace
   (:require [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]
@@ -16,7 +16,7 @@
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.undo :as udu]
-            [uxbox.main.ui.messages :as uum]
+            [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.confirm]
             [uxbox.main.ui.workspace.images]
             [uxbox.main.ui.keyboard :as kbd]
@@ -121,9 +121,9 @@
                  :no-tool-bar-left (not left-sidebar?)
                  :scrolling (:viewport-positionig workspace))]
     [:div
+     (messages-widget)
      (header)
      (colorpalette)
-     (uum/messages)
 
      [:main.main-content
 

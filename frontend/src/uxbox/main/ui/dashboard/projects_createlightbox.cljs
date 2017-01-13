@@ -9,20 +9,19 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.exports :as exports]
             [uxbox.main.data.projects :as udp]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.dashboard.header :refer (header)]
+            [uxbox.main.ui.dashboard.header :refer [header]]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.messages :as uum]
             [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.util.i18n :as t :refer (tr)]
+            [uxbox.util.i18n :as t :refer [tr]]
             [uxbox.util.router :as r]
             [uxbox.util.forms :as forms]
-            [uxbox.util.data :refer (read-string)]
+            [uxbox.util.data :refer [read-string]]
             [uxbox.util.dom :as dom]
             [uxbox.util.blob :as blob]
             [uxbox.util.mixins :as mx :include-macros true]
@@ -30,9 +29,9 @@
 
 (def form-data (forms/focus-data :create-project st/state))
 (def form-errors (forms/focus-errors :create-project st/state))
-(def set-value! (partial forms/set-value! :create-project))
-(def set-error! (partial forms/set-error! :create-project))
-(def clear! (partial forms/clear! :create-project))
+(def set-value! (partial forms/set-value! st/store :create-project))
+(def set-error! (partial forms/set-error! st/store :create-project))
+(def clear! (partial forms/clear! st/store :create-project))
 
 (def ^:private create-project-form
   {:name [forms/required forms/string]
@@ -74,7 +73,7 @@
 
 (mx/defcs new-project-lightbox
   {:mixins [mx/static mx/reactive
-            (forms/clear-mixin :create-project)]}
+            (forms/clear-mixin st/store :create-project)]}
   [own]
   (let [data (merge c/project-defaults (mx/react form-data))
         errors (mx/react form-errors)

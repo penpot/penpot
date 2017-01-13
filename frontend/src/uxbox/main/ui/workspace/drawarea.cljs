@@ -10,7 +10,7 @@
             [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.rlocks :as rlocks]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]

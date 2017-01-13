@@ -10,7 +10,7 @@
             [cuerdas.core :as str]
             [goog.events :as events]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]

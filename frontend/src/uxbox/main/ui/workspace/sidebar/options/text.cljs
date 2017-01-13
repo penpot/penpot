@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace.sidebar.options.text
   (:require [lentes.core :as l]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.geom :as geom]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]

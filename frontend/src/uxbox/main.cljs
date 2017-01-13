@@ -5,14 +5,13 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main
-  (:require [uxbox.store :as st]
+  (:require [uxbox.main.store :as st]
             [uxbox.main.locales :as lc]
-            [uxbox.main.ui :as ui]
-            [uxbox.main.state :refer [initial-state]]))
+            [uxbox.main.ui :as ui]))
 
 (defn ^:export init
   []
   (lc/init)
-  (st/init initial-state)
+  (st/init)
   (ui/init-routes)
   (ui/init))

@@ -2,24 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.view
   (:require [uxbox.config]
-            [uxbox.store :as st]
+            [uxbox.view.store :as st]
             [uxbox.view.ui :as ui]))
-
-(defn- initial-state
-  []
-  {:route nil
-   :project nil
-   :pages nil
-   :page nil
-   :flags #{:sitemap}
-   :shapes {}})
 
 (defn ^:export init
   []
-  (st/init initial-state)
+  (st/init)
   (ui/init-routes)
   (ui/init))

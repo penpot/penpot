@@ -6,7 +6,7 @@
 
 (ns uxbox.main.exports
   "The main logic for SVG export functionality."
-  (:require [uxbox.store :as st]
+  (:require [uxbox.main.store :as st]
             [uxbox.main.ui.shapes.rect :refer (rect-shape)]
             [uxbox.main.ui.shapes.icon :refer (icon-shape)]
             [uxbox.main.ui.shapes.text :refer (text-shape)]

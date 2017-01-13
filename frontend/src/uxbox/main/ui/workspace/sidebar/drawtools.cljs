@@ -9,7 +9,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [lentes.core :as l]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.ui.icons :as i]

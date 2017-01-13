@@ -10,7 +10,7 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]

@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.workspace.clipboard
   (:require [lentes.core :as l]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.ui.icons :as i]

@@ -8,7 +8,8 @@
 (ns uxbox.main.ui.workspace.sidebar.sitemap-pageform
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.store :as st]
+            [potok.core :as ptk]
+            [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as dw]
@@ -17,14 +18,13 @@
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [potok.core :as ptk]
             [uxbox.util.forms :as forms]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer (deep-merge parse-int)]
             [uxbox.util.dom :as dom]))
 
 (def form-data (forms/focus-data :workspace-page-form st/state))
-(def set-value! (partial forms/set-value! :workspace-page-form))
+(def set-value! (partial forms/set-value! st/store :workspace-page-form))
 
 ;; --- Lightbox
 
@@ -118,10 +118,7 @@
            :type "button"}])])))
 
 (mx/defc page-form-lightbox
-  {:mixins [mx/static]
-   :will-unmount (fn [own]
-                   (forms/clear! :workspace-page-form)
-                   own)}
+  {:mixins [mx/static (forms/clear-mixin st/store :workspace-page-form)]}
   [{:keys [id] :as page}]
   (letfn [(on-cancel [event]
             (dom/prevent-default event)

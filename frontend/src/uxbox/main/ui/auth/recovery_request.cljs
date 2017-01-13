@@ -2,26 +2,26 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.auth.recovery-request
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.util.router :as rt]
             [potok.core :as ptk]
+            [uxbox.main.store :as st]
+            [uxbox.main.data.auth :as uda]
+            [uxbox.main.ui.icons :as i]
+            [uxbox.main.ui.messages :refer [messages-widget]]
+            [uxbox.main.ui.navigation :as nav]
+            [uxbox.util.router :as rt]
             [uxbox.util.forms :as forms]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.dom :as dom]
-            [uxbox.store :as st]
-            [uxbox.main.data.auth :as uda]
-            [uxbox.main.data.messages :as udm]
-            [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.messages :as uum]
-            [uxbox.main.ui.navigation :as nav]))
+            [uxbox.util.dom :as dom]))
+
 
 (def form-data (forms/focus-data :recovery-request st/state))
-(def set-value! (partial forms/set-value! :recovery-request))
+(def set-value! (partial forms/set-value! st/store :recovery-request))
 
 (def +recovery-request-form+
   {:username [forms/required forms/string]})
@@ -37,7 +37,8 @@
             (on-submit [event]
               (dom/prevent-default event)
               (st/emit! (uda/recovery-request data)
-                        (forms/clear :recovery-request)))]
+                        (forms/clear-form :recovery-request)
+                        (forms/clear-errors :recovery-request)))]
       [:form {:on-submit on-submit}
        [:div.login-content
         [:input.input-text
@@ -53,16 +54,15 @@
           :value "Recover password"
           :type "submit"}]
         [:div.login-links
-         [:a {:on-click #(rt/go :auth/login)} "Go back!"]]]])))
+         [:a {:on-click #(st/emit! (rt/navigate :auth/login))} "Go back!"]]]])))
 
 ;; --- Recovery Request Page
 
 (mx/defc recovery-request-page
-  {:mixins [mx/static]
-   :will-unmount (forms/cleaner-fn :recovery-request)}
+  {:mixins [mx/static (forms/clear-mixin st/store :recovery-request)]}
   []
   [:div.login
    [:div.login-body
-    (uum/messages)
+    (messages-widget)
     [:a i/logo]
     (recovery-request-form)]])

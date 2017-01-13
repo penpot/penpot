@@ -9,7 +9,7 @@
             [lentes.core :as l]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.lenses :as ul]
             [uxbox.main.geom :as geom]

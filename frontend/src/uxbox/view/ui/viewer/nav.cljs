@@ -8,7 +8,7 @@
 (ns uxbox.view.ui.viewer.nav
   (:require [uxbox.util.mixins :as mx :include-macros true]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.view.store :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.view.data.viewer :as dv]))
 

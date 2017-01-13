@@ -9,7 +9,7 @@
   (:require [lentes.core :as l]
             [uxbox.util.router :as r]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.lenses :as ul]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.icons :as udi]

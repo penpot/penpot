@@ -12,7 +12,7 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer (parse-int)]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.view.store :as st]
             [uxbox.main.ui.icons :as i]
             [uxbox.view.data.viewer :as dv]))
 

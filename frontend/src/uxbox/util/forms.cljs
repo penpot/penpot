@@ -11,7 +11,6 @@
             [lentes.core :as l]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.store :as st]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.i18n :refer (tr)]))
 
@@ -113,8 +112,8 @@
    (SetError. type field error)))
 
 (defn set-error!
-  [& args]
-  (st/emit! (apply set-error args)))
+  [store & args]
+  (ptk/emit! store (apply set-error args)))
 
 ;; --- Set Errors
 
@@ -133,8 +132,8 @@
    (SetErrors. type errors)))
 
 (defn set-errors!
-  [& args]
-  (st/emit! (apply set-errors args)))
+  [store & args]
+  (ptk/emit! store (apply set-errors args)))
 
 ;; --- Set Value
 
@@ -155,8 +154,8 @@
   (SetValue. type field value))
 
 (defn set-value!
-  [type field value]
-  (st/emit! (set-value type field value)))
+  [store type field value]
+  (ptk/emit! store (set-value type field value)))
 
 ;; --- Validate Form
 
@@ -195,8 +194,8 @@
   (ClearForm. type))
 
 (defn clear-form!
-  [type]
-  (st/emit! (clear-form type)))
+  [store type]
+  (ptk/emit! store (clear-form type)))
 
 ;; --- Clear Form
 
@@ -211,24 +210,16 @@
   (ClearErrors. type))
 
 (defn clear-errors!
-  [type]
-  (st/emit! (clear-errors type)))
+  [store type]
+  (ptk/emit! store (clear-errors type)))
 
 ;; --- Clear
 
-(defrecord Clear [type]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (rx/of (clear-form type)
-           (clear-errors type))))
-
-(defn clear
-  [type]
-  (Clear. type))
-
 (defn clear!
-  [type]
-  (st/emit! (clear type)))
+  [store type]
+  (ptk/emit! store
+             (clear-form type)
+             (clear-errors type)))
 
 ;; --- Helpers
 
@@ -257,15 +248,8 @@
   (when (get errors field)
     "invalid"))
 
-(defn cleaner-fn
-  [type]
-  {:pre [(keyword? type)]}
-  (fn [own]
-    (clear! type)
-    own))
-
 (defn clear-mixin
-  [type]
+  [store type]
   {:will-unmount (fn [own]
-                   (clear! type)
+                   (clear! store type)
                    own)})

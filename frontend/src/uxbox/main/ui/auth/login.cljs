@@ -9,11 +9,10 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.auth :as da]
-            [uxbox.main.data.messages :as udm]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.messages :as uum]
+            [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.router :as rt]
@@ -21,12 +20,12 @@
             [uxbox.util.forms :as forms]))
 
 (def form-data (forms/focus-data :login st/state))
-(def set-value! (partial forms/set-value! :login))
+(def set-value! (partial forms/set-value! st/store :login))
 
 (defn- login-page-will-mount
   [own]
   (when @st/auth-ref
-    (rt/go :dashboard/projects))
+    (st/emit! (rt/navigate :dashboard/projects)))
   own)
 
 (def +login-form+
@@ -68,8 +67,10 @@
           :value "Continue"
           :type "submit"}]
         [:div.login-links
-         [:a {:on-click #(rt/go :auth/recovery-request)} "Forgot your password?"]
-         [:a {:on-click #(rt/go :auth/register)} "Don't have an account?"]]]])))
+         [:a {:on-click #(st/emit! (rt/navigate :auth/recovery-request))}
+          "Forgot your password?"]
+         [:a {:on-click #(st/emit! (rt/navigate :auth/register))}
+          "Don't have an account?"]]]])))
 
 (mx/defc login-page
   {:mixins [mx/static]
@@ -77,6 +78,6 @@
   []
   [:div.login
    [:div.login-body
-    (uum/messages)
+    (messages-widget)
     [:a i/logo]
     (login-form)]])

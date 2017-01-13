@@ -13,7 +13,7 @@
   (:require [beicon.core :as rx]))
 
 (defonce lock (atom ::none))
-(defonce stream (rx/bus))
+(defonce stream (rx/subject))
 
 (defn acquire!
   ([type]

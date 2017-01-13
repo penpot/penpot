@@ -8,21 +8,21 @@
 (ns uxbox.main.ui.dashboard.projects
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.data.projects :as udp]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
-            [uxbox.main.ui.dashboard.header :refer (header)]
+            [uxbox.main.ui.dashboard.header :refer [header]]
             [uxbox.main.ui.dashboard.projects-createlightbox]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.messages :as uum]
+            [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.exports :as exports]
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.router :as r]
             [potok.core :as ptk]
-            [uxbox.util.data :refer (read-string)]
+            [uxbox.util.data :refer [read-string]]
             [uxbox.util.dom :as dom]
             [uxbox.util.blob :as blob]
             [uxbox.util.mixins :as mx :include-macros true]
@@ -241,7 +241,7 @@
   (let [state (mx/react dashboard-ref)
         projects-map (mx/react projects-map-ref)]
     [:main.dashboard-main
-     (uum/messages)
+     (messages-widget)
      (header)
      [:section.dashboard-content
       (menu state projects-map)

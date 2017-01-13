@@ -7,13 +7,13 @@
 (ns uxbox.main.ui.users
   (:require [cuerdas.core :as str]
             [lentes.core :as l]
-            [uxbox.util.router :as r]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.auth :as da]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.icons :as i]
             [uxbox.main.ui.navigation :as nav]
+            [uxbox.util.router :as rt]
             [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- User Menu
@@ -22,13 +22,13 @@
   {:mixins [mx/static]}
   [open?]
   [:ul.dropdown {:class (when-not open? "hide")}
-   [:li {:on-click #(r/go :settings/profile)}
+   [:li {:on-click #(st/emit! (rt/navigate :settings/profile))}
     i/user
     [:span "Profile"]]
-   [:li {:on-click #(r/go :settings/password)}
+   [:li {:on-click #(st/emit! (rt/navigate :settings/password))}
     i/lock
     [:span "Password"]]
-   [:li {:on-click #(r/go :settings/notifications)}
+   [:li {:on-click #(st/emit! (rt/navigate :settings/notifications))}
     i/mail
     [:span "Notifications"]]
    [:li {:on-click #(st/emit! (da/logout))}
@@ -38,8 +38,8 @@
 ;; --- User Widget
 
 (def profile-ref
-  (as-> (l/key :profile) $
-    (l/derive $ st/state)))
+  (-> (l/key :profile)
+      (l/derive st/state)))
 
 (mx/defcs user
   {:mixins [mx/static mx/reactive (mx/local {:open false})]}

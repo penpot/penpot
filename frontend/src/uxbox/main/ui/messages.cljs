@@ -1,91 +1,16 @@
 (ns uxbox.main.ui.messages
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
-            [uxbox.store :as st]
-            [uxbox.main.data.messages :as udm]
-            [uxbox.main.ui.icons :as i]
-            [uxbox.util.timers :as ts]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.data :refer (classnames)]
-            [uxbox.util.dom :as dom]))
-
-;; --- Lenses
+  (:require [lentes.core :as l]
+            [uxbox.main.store :as st]
+            [uxbox.util.messages :as uum]
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 (def ^:private message-ref
   (-> (l/key :message)
       (l/derive st/state)))
 
-;; --- Notification Component
-
-(defn notification-render
-  [own {:keys [type] :as message}]
-  (let [classes (classnames :error (= type :error)
-                            :info (= type :info)
-                            :hide-message (= (:state message) :hide)
-                            :quick true)
-        close #(udm/close!)]
-    (html
-     [:div.message {:class classes}
-      [:div.message-body
-       [:span.close {:on-click close}
-        i/close]
-       [:span (:content message)]]])))
-
-(def ^:private notification-box
-  (mx/component
-   {:render notification-render
-    :name "notification"
-    :mixins [mx/static]}))
-
-;; --- Dialog Component
-
-(defn dialog-render
-  [own {:keys [on-accept on-cancel] :as message}]
-  (let [classes (classnames :info true
-                            :hide-message (= (:state message) :hide))]
-    (letfn [(accept [event]
-              (dom/prevent-default event)
-              (on-accept)
-              (ts/schedule 0 udm/close!))
-
-            (cancel [event]
-              (dom/prevent-default event)
-              (when on-cancel
-                (on-cancel))
-              (ts/schedule 0 udm/close!))]
-      (html
-       [:div.message {:class classes}
-        [:div.message-body
-         [:span.close {:on-click cancel} i/close]
-         [:span (:content message)]
-         [:div.message-action
-          [:a.btn-transparent.btn-small
-           {:on-click accept}
-           "Accept"]
-          [:a.btn-transparent.btn-small
-           {:on-click cancel}
-           "Cancel"]]]]))))
-
-(def ^:private dialog-box
-  (mx/component
-   {:render dialog-render
-    :name "dialog"
-    :mixins [mx/static]}))
-
-;; --- Main Component (entry point)
-
-(defn messages-render
-  [own]
-  (let [message (mx/react message-ref)]
-    (case (:type message)
-      :error (notification-box message)
-      :info (notification-box message)
-      :dialog (dialog-box message)
-      nil)))
-
-(def messages
-  (mx/component
-   {:render messages-render
-    :name "messages"
-    :mixins [mx/static mx/reactive]}))
+(mx/defc messages-widget
+  {:mixins [mx/static mx/reactive]}
+  []
+  (let [message (mx/react message-ref)
+        on-close #(st/emit! (uum/hide))]
+    (uum/messages-widget (assoc message :on-close on-close))))

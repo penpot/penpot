@@ -13,7 +13,7 @@
             [uxbox.util.router :as r]
             [uxbox.util.dom :as dom]
             [uxbox.util.files :as files]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.repo :as rp]))
 
 ;; --- Initialize

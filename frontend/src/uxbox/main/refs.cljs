@@ -8,7 +8,7 @@
   "A collection of derived refs."
   (:require [lentes.core :as l]
             [beicon.core :as rx]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.lenses :as ul]))
 
 ;; --- Helpers

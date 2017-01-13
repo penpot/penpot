@@ -6,7 +6,7 @@
 
 (ns uxbox.main.ui.shapes.path
   (:require [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.data.shapes :as uds]

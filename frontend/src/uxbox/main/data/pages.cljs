@@ -10,7 +10,7 @@
             [beicon.core :as rx]
             [lentes.core :as l]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.repo :as rp]
             [uxbox.main.lenses :as ul]
             [uxbox.util.rlocks :as rlocks]

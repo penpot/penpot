@@ -9,7 +9,7 @@
             [lentes.core :as l]
             [goog.events :as events]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.geom :as geom]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.common :as common]

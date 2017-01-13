@@ -13,7 +13,7 @@
             [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.workspace.sidebar.sitemap :refer (pages-ref)]

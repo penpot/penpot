@@ -8,10 +8,10 @@
   (:require [cljs.spec :as s]
             [beicon.core :as rx]
             [potok.core :as ptk]
+            [uxbox.main.repo :as rp]
             [uxbox.util.spec :as us]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.main.repo :as rp]
-            [uxbox.main.data.messages :as udm]))
+            [uxbox.util.messages :as uum]))
 
 (s/def ::fullname string?)
 (s/def ::email us/email?)
@@ -47,11 +47,8 @@
 (defrecord ProfileUpdated [data]
   ptk/WatchEvent
   (watch [_ state s]
-    (rx/of (profile-fetched data)))
-
-  ptk/EffectEvent
-  (effect [_ state stream]
-    (udm/info! (tr "settings.profile-saved"))))
+    (rx/of (profile-fetched data)
+           (uum/info (tr "settings.profile-saved")))))
 
 (defn profile-updated
   [data]
@@ -84,9 +81,9 @@
 ;; --- Password Updated
 
 (defrecord PasswordUpdated []
-  ptk/EffectEvent
-  (effect [_ state stream]
-    (udm/info! (tr "settings.password-saved"))))
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (uum/info (tr "settings.password-saved")))))
 
 (defn password-updated
   []

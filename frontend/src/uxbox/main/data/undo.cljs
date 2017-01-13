@@ -9,7 +9,7 @@
             [beicon.core :as rx]
             [potok.core :as ptk]
             [uxbox.main.data.pages :as udp]
-            [uxbox.store :as st]))
+            [uxbox.main.store :as st]))
 
 ;; --- Watch Page Changes
 

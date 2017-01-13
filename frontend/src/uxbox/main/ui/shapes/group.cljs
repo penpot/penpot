@@ -6,7 +6,7 @@
 
 (ns uxbox.main.ui.shapes.group
   (:require [lentes.core :as l]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.geom :as geom]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]

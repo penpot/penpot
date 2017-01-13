@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.main.ui.loader
-  (:require [uxbox.main.store :as st]
-            [uxbox.main.ui.icons :as i]
+(ns uxbox.view.ui.loader
+  (:require [uxbox.main.ui.icons :as i]
+            [uxbox.view.store :as st]
             [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Component
@@ -16,3 +16,4 @@
   []
   (when (mx/react st/loader)
     [:div.loader-content i/loader]))
+

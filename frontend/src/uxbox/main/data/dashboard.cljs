@@ -9,7 +9,7 @@
             [uxbox.util.uuid :as uuid]
             [potok.core :as ptk]
             [uxbox.util.router :as r]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.util.forms :as sc]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.projects :as dp]

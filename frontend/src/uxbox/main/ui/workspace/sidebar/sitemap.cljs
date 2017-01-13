@@ -9,7 +9,7 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [potok.core :as ptk]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.data.pages :as udp]

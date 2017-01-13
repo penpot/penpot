@@ -2,7 +2,7 @@
   (:require [sablono.core :as html :refer-macros [html]]
             [rum.core :as rum]
             [lentes.core :as l]
-            [uxbox.store :as st]
+            [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.keyboard :as k]

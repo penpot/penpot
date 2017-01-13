@@ -11,7 +11,7 @@
             [rum.core :as rum]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer (parse-int)]
-            [uxbox.store :as st]
+            [uxbox.view.store :as st]
             [uxbox.main.ui.shapes :as uus]
             [uxbox.main.ui.icons :as i]
             [uxbox.view.ui.viewer.shapes :as shapes]))
