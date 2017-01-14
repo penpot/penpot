@@ -7,13 +7,13 @@
 (ns uxbox.view.ui
   (:require [lentes.core :as l]
             [potok.core :as ptk]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.view.store :as st]
             [uxbox.view.ui.loader :refer [loader]]
             [uxbox.view.ui.notfound :refer [notfound-page]]
             [uxbox.view.ui.viewer :refer [viewer-page]]
-            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.router :as rt]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.messages :as uum]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]))

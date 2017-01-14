@@ -14,7 +14,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.data.shapes :as uds]
-   [uxbox.main.ui.icons :as i]
+   [uxbox.builtins.icons :as i]
    [uxbox.main.ui.shapes.attrs :refer [shape-default-attrs]]
    [uxbox.main.ui.workspace.sidebar.options.icon-measures :as options-iconm]
    [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]

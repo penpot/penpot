@@ -5,7 +5,7 @@
 ;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.view.ui.loader
-  (:require [uxbox.main.ui.icons :as i]
+  (:require [uxbox.builtins.icons :as i]
             [uxbox.view.store :as st]
             [uxbox.util.mixins :as mx :include-macros true]))
 

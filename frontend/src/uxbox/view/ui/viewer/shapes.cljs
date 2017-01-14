@@ -17,7 +17,7 @@
             [uxbox.main.ui.shapes.path :refer (path-shape)]
             [uxbox.main.ui.shapes.circle :refer (circle-shape)]
             [uxbox.main.ui.shapes.image :refer (image-shape)]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.view.ui.viewer.interactions :as itx])
   (:import goog.events.EventType))
 

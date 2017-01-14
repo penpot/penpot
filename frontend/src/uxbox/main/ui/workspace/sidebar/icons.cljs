@@ -15,7 +15,7 @@
             [uxbox.main.data.icons :as udi]
             [uxbox.main.ui.shapes.icon :as icon]
             [uxbox.main.ui.dashboard.icons :as icons]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (read-string)]))

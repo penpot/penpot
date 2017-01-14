@@ -15,7 +15,7 @@
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.icon :as icon]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.data :refer (read-string classnames)]
             [uxbox.util.router :as r]

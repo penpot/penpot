@@ -11,7 +11,7 @@
             [cuerdas.core :as str]
             [uxbox.util.router :as r]
             [potok.core :as ptk]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.settings.profile :as profile]

@@ -10,7 +10,7 @@
             [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.main.store :as st]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.settings.header :refer [header]]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.data.users :as udu]

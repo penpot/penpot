@@ -11,7 +11,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as dw]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.i18n :refer (tr)]))

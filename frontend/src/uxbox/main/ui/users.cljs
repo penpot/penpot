@@ -11,7 +11,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.data.auth :as da]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.router :as rt]
             [uxbox.util.mixins :as mx :include-macros true]))

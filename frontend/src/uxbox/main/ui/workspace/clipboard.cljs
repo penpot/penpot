@@ -10,7 +10,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.workspace :as udw]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [potok.core :as ptk]
             [uxbox.util.mixins :as mx :include-macros true]

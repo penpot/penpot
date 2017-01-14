@@ -12,7 +12,7 @@
             [uxbox.main.geom :as geom]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.mixins :as mx :include-macros true]

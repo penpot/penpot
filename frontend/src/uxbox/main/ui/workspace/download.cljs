@@ -14,7 +14,7 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.exports :as exports]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.blob :as blob]
             [uxbox.util.data :refer (read-string)]

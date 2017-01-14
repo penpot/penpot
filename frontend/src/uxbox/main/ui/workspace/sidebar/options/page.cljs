@@ -16,7 +16,7 @@
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.workspace.colorpicker]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer [parse-int]]

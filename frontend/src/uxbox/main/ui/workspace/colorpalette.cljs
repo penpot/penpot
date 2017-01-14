@@ -15,7 +15,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.colors :as dc]
             [uxbox.main.ui.dashboard.colors :refer (collections-ref)]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.lens :as ul]
             [uxbox.util.data :refer (read-string)]

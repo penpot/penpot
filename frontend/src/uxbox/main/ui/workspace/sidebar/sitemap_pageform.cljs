@@ -14,7 +14,7 @@
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]

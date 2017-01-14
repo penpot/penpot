@@ -16,7 +16,7 @@
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.workspace.clipboard]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.users :as ui.u]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.mixins :as mx :include-macros true]

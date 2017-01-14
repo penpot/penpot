@@ -11,7 +11,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.icons :as di]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.shapes.icon :as icon]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.dashboard.header :refer (header)]

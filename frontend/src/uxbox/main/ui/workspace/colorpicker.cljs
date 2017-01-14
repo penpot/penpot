@@ -14,7 +14,7 @@
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.colorpicker :as cp]
             [uxbox.main.ui.workspace.recent-colors :refer [recent-colors]]

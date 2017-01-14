@@ -11,7 +11,7 @@
             [potok.core :as ptk]
             [uxbox.util.router :as rt]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.view.store :as st]
             [uxbox.view.data.viewer :as dv]
             [uxbox.view.ui.viewer.nav :refer (nav)]

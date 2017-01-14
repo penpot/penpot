@@ -1,5 +1,12 @@
-(ns uxbox.main.ui.icons
-  (:require [sablono.core :as html :refer-macros [html]]))
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+(ns uxbox.builtins.icons
+  (:require [sablono.core :refer-macros [html]]))
 
 (def logo
   (html

@@ -12,7 +12,7 @@
             [uxbox.main.constants :as c]
             [uxbox.main.data.projects :as udp]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.dashboard.header :refer [header]]
             [uxbox.main.ui.dashboard.projects-createlightbox]
             [uxbox.main.ui.lightbox :as lbx]

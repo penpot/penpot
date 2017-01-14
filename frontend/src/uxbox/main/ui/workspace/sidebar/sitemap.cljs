@@ -17,7 +17,7 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.workspace.sidebar.sitemap-pageform]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]

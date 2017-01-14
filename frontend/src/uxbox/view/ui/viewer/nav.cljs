@@ -9,7 +9,7 @@
   (:require [uxbox.util.mixins :as mx :include-macros true]
             [potok.core :as ptk]
             [uxbox.view.store :as st]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.view.data.viewer :as dv]))
 
 (mx/defc nav

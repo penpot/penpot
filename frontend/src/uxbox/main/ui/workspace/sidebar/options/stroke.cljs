@@ -13,7 +13,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (parse-int parse-float read-string)]

@@ -11,7 +11,7 @@
             [potok.core :as ptk]
             [uxbox.main.store :as st]
             [uxbox.main.data.auth :as uda]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.router :as rt]

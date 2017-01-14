@@ -13,7 +13,7 @@
             [uxbox.util.data :refer (parse-int)]
             [uxbox.view.store :as st]
             [uxbox.main.ui.shapes :as uus]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.view.ui.viewer.shapes :as shapes]))
 
 ;; --- Refs

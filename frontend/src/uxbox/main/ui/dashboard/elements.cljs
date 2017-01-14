@@ -11,7 +11,7 @@
             [potok.core :as ptk]
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.dashboard.header :refer (header)]

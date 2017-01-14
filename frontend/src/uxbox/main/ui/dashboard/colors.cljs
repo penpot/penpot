@@ -16,7 +16,7 @@
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.colorpicker :refer (colorpicker)]
             [uxbox.main.ui.dashboard.header :refer (header)]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.keyboard :as k]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.color :refer (hex->rgb)]

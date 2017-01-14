@@ -17,7 +17,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.workspace.sidebar.sitemap :refer (pages-ref)]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.colorpicker :as cp]
             [uxbox.util.dom :as dom]

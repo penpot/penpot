@@ -15,7 +15,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.users :refer (user)]
             [uxbox.util.mixins :as mx :include-macros true]))
 

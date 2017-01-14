@@ -10,7 +10,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.data.projects :as dp]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.users :as ui.u]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]

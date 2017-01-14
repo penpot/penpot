@@ -7,8 +7,7 @@
 (ns uxbox.util.router
   (:require [bide.core :as r]
             [beicon.core :as rx]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]))
+            [potok.core :as ptk]))
 
 (defonce +router+ nil)
 
@@ -46,15 +45,13 @@
 ;; --- Public Api
 
 (defn init
-  ([store routes]
-   (init store routes nil))
-  ([store routes {:keys [default] :or {default :auth/login}}]
-   (let [opts {:on-navigate #(ptk/emit! store (update-location %1 %2))
-               :default default}
-         router (-> (r/router routes)
-                    (r/start! opts))]
+  [store routes {:keys [default] :or {default :auth/login}}]
+  (let [opts {:on-navigate #(ptk/emit! store (update-location %1 %2))
+              :default default}
+        router (-> (r/router routes)
+                   (r/start! opts))]
      (set! +router+ router)
-     router)))
+     router))
 
 (defn route-for
   "Given a location handler and optional parameter map, return the URI

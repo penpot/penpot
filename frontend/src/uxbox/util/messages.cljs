@@ -10,7 +10,7 @@
             [cuerdas.core :as str]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.timers :as ts]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.data :refer [classnames]]

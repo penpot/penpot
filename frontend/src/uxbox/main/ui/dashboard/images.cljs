@@ -13,7 +13,7 @@
             [potok.core :as ptk]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.images :as di]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as kbd]

@@ -12,7 +12,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as dw]
-            [uxbox.main.ui.icons :as i]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.data :refer (read-string)]
