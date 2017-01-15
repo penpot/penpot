@@ -13,6 +13,7 @@
             [uxbox.main.constants :as c]
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]
+            [uxbox.main.user-events :as uev]
             [uxbox.main.geom :as geom]
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
@@ -102,11 +103,10 @@
 (defn- on-start
   "Function execution when selrect action is started."
   []
-  (let [stoper (->> streams/events-s
-                    (rx/map first)
-                    (rx/filter #(= % :mouse/up))
+  (let [stoper (->> streams/events
+                    (rx/filter uev/mouse-up?)
                     (rx/take 1))
-        stream (rx/take-until stoper streams/mouse-viewport-s)
-        pos @streams/mouse-viewport-a]
+        stream (rx/take-until stoper streams/viewport-mouse-position)
+        pos @refs/viewport-mouse-position]
     (reset! position {:start pos :current pos})
     (rx/subscribe stream on-move nil on-complete)))

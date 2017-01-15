@@ -73,6 +73,18 @@
   (-> (l/lens alignment-activated?)
       (l/derive flags)))
 
+(def canvas-mouse-position
+  (-> (l/in [:pointer :canvas])
+      (l/derive workspace)))
+
+(def viewport-mouse-position
+  (-> (l/in [:pointer :viewport])
+      (l/derive workspace)))
+
+(def window-mouse-position
+  (-> (l/in [:pointer :window])
+      (l/derive workspace)))
+
 
 
 

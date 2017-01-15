@@ -92,7 +92,7 @@
     (let [prev-zoom @refs/selected-zoom
           dom (mx/ref-node own "workspace-canvas")
           scroll-position (scroll/get-current-position-absolute dom)
-          mouse-point @streams/mouse-viewport-a]
+          mouse-point @refs/viewport-mouse-position]
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))

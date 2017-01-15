@@ -12,6 +12,7 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]
             [uxbox.main.geom :as geom]
+            [uxbox.main.user-events :as uev]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.geom.point :as gpt]
@@ -19,6 +20,8 @@
             [uxbox.util.dom :as dom]))
 
 ;; --- Refs
+
+;; FIXME: use the predefined lenses under uxbox.main.lenses
 
 (def edition-ref
   (-> (l/in [:workspace :edition])
@@ -42,17 +45,16 @@
             (rlocks/release! :shape/move)
             (st/emit! (uds/apply-displacement shape)))
           (on-start [shape]
-            (let [stoper (->> (rx/map first streams/events-s)
-                              (rx/filter #(= % :mouse/up))
+            (let [stoper (->> streams/events
+                              (rx/filter uev/mouse-up?)
                               (rx/take 1))
-                  stream (->> streams/mouse-delta-s
+                  stream (->> streams/mouse-position-deltas
                               (rx/take-until stoper))
                   on-move (partial on-move shape)
                   on-stop (partial on-stop shape)]
               (when @refs/selected-alignment
                 (st/emit! (uds/initial-align-shape shape)))
               (rx/subscribe stream on-move nil on-stop)))]
-
     (rlocks/acquire! :shape/move)
     (run! on-start @selected-ref)))
 

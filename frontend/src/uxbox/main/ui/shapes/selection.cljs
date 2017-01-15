@@ -15,6 +15,7 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]
             [uxbox.main.workers :as uwrk]
+            [uxbox.main.user-events :as uev]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.common :as scommon]
             [uxbox.main.geom :as geom]
@@ -213,18 +214,19 @@
 
     (let [shape  (->> (geom/shape->rect-shape shape)
                       (geom/size))
-          stoper (->> streams/events-s
-                      (rx/map first)
-                      (rx/filter #(= % :mouse/up))
+
+          stoper (->> streams/events
+                      (rx/filter uev/mouse-up?)
                       (rx/take 1))
-          stream (->> streams/mouse-canvas-s
+
+          stream (->> streams/canvas-mouse-position
                       (rx/map #(gpt/divide % @refs/selected-zoom))
                       (rx/mapcat (fn [point]
                                    (if @refs/selected-alignment
                                      (uwrk/align-point point)
                                      (rx/of point))))
                       (rx/take-until stoper)
-                      (rx/with-latest-from vector streams/mouse-ctrl-s)
+                      (rx/with-latest-from vector streams/mouse-position-ctrl)
                       (rx/scan accumulate-width shape)
                       (rx/map (partial calculate-ratio shape)))]
       (rlocks/acquire! :shape/resize)
@@ -320,11 +322,11 @@
             (st/emit! (uds/update-path shape-id index delta)))
           (on-end []
             (rlocks/release! :shape/resize))]
-    (let [stoper (->> streams/events-s
+    (let [stoper (->> streams/events
                       (rx/map first)
                       (rx/filter #(= % :mouse/up))
                       (rx/take 1))
-          stream (rx/take-until stoper streams/mouse-delta-s)]
+          stream (rx/take-until stoper streams/mouse-position-deltas)]
       (rlocks/acquire! :shape/resize)
       (when @refs/selected-alignment
         (st/emit! (uds/initial-path-point-align shape-id index)))

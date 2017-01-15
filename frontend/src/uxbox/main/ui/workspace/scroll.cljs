@@ -15,6 +15,8 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.point :as gpt]))
 
+;; FIXME: revisit this ns in order to find a better location for its functions
+
 (defn set-scroll-position
   [dom position]
   (set! (.-scrollLeft dom) (:x position))

@@ -2,8 +2,8 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.ruler
   (:require [sablono.core :as html :refer-macros [html]]
@@ -75,10 +75,10 @@
               (on-value-aligned pos)
               (on-value-simple pos)))]
 
-    (let [stream (->> streams/mouse-absolute-s
+    (let [stream (->> streams/window-mouse-position
                       (rx/filter #(:active @local))
                       (rx/map #(resolve-position own %))
-                      (rx/with-latest-from vector streams/mouse-ctrl-s))
+                      (rx/with-latest-from vector streams/mouse-position-ctrl))
           sub (rx/on-value stream on-value)]
       (assoc own ::sub sub))))
 

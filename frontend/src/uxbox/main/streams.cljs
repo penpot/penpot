@@ -7,6 +7,8 @@
 (ns uxbox.main.streams
   "A collection of derived streams."
   (:require [beicon.core :as rx]
+            [uxbox.main.store :as st]
+            [uxbox.main.user-events :as uev]
             [uxbox.main.refs :as refs]
             [uxbox.main.workers :as uwrk]
             [uxbox.util.geom.point :as gpt]))
@@ -28,40 +30,36 @@
 
 ;; --- Events
 
-(defonce events-b (rx/subject))
-(defonce events-s (rx/dedupe events-b))
+(defn- user-interaction-event?
+  [event]
+  (or (uev/keyboard-event? event)
+      (uev/mouse-event? event)))
+
+(defonce events
+  (rx/filter user-interaction-event? st/stream))
 
 ;; --- Mouse Position Stream
 
-(defonce mouse-b (rx/subject))
-(defonce mouse-s (rx/dedupe mouse-b))
+(defonce mouse-position
+  (rx/filter uev/pointer-event? st/stream))
 
-(defonce mouse-canvas-s
-  (->> mouse-s
-       (rx/map :canvas-coords)
+(defonce canvas-mouse-position
+  (->> mouse-position
+       (rx/map :canvas)
        (rx/share)))
 
-(defonce mouse-canvas-a
-  (rx/to-atom mouse-canvas-s))
-
-(defonce mouse-viewport-s
-  (->> mouse-s
-       (rx/map :viewport-coords)
+(defonce viewport-mouse-position
+  (->> mouse-position
+       (rx/map :viewport)
        (rx/share)))
 
-(defonce mouse-viewport-a
-  (rx/to-atom mouse-viewport-s))
-
-(defonce mouse-absolute-s
-  (->> mouse-s
-       (rx/map :window-coords)
+(defonce window-mouse-position
+  (->> mouse-position
+       (rx/map :window)
        (rx/share)))
 
-(defonce mouse-absolute-a
-  (rx/to-atom mouse-absolute-s))
-
-(defonce mouse-ctrl-s
-  (->> mouse-s
+(defonce mouse-position-ctrl
+  (->> mouse-position
        (rx/map :ctrl)
        (rx/share)))
 
@@ -69,8 +67,8 @@
   [[old new]]
   (gpt/subtract new old))
 
-(defonce mouse-delta-s
-  (->> mouse-viewport-s
+(defonce mouse-position-deltas
+  (->> viewport-mouse-position
        (rx/sample 10)
        (rx/map #(gpt/divide % @refs/selected-zoom))
        (rx/mapcat (fn [point]

@@ -15,6 +15,7 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]
             [uxbox.main.workers :as uwrk]
+            [uxbox.main.user-events :as uev]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes :as shapes]
@@ -128,7 +129,7 @@
 
 (defn- on-init-draw-icon
   [{:keys [metadata] :as shape}]
-  (let [{:keys [x y]} (gpt/divide @streams/mouse-canvas-a @refs/selected-zoom)
+  (let [{:keys [x y]} (gpt/divide @refs/canvas-mouse-position @refs/selected-zoom)
         {:keys [width height]} metadata
         proportion (/ width height)
         props {:x1 x
@@ -174,29 +175,30 @@
 
 (defn- on-init-draw-path
   [shape]
-  (letfn [(stoper-event? [[type opts]]
-            (or (and (= type :key/down)
-                     (= (:key opts) 13))
-                (and (= type :mouse/double-click)
-                     (true? (:shift? opts)))
-                (= type :mouse/right-click)))
+  (letfn [(stoper-event? [{:keys [type shift] :as event}]
+            (or (and (uev/mouse-event? event)
+                     (or (and (= type :double-click) shift)
+                         (= type :context-menu)))
+                (and (uev/keyboard-event? event)
+                     (= type :down)
+                     (= 13 (:key event)))))
 
           (new-point-event? [[type opts]]
             (and (= type :mouse/click)
                  (false? (:shift? opts))))]
 
-    (let [mouse (->> (rx/sample 10 streams/mouse-viewport-s)
+    (let [mouse (->> (rx/sample 10 streams/viewport-mouse-position)
                      (rx/mapcat conditional-align)
                      (rx/map translate-to-canvas))
           stoper (->> (rx/merge
                        (rx/take 1 drawing-stoper)
-                       (rx/filter stoper-event? streams/events-s))
+                       (rx/filter stoper-event? streams/events))
                       (rx/take 1))
           firstpos (rx/take 1 mouse)
           stream (->> (rx/take-until stoper mouse)
                       (rx/skip-while #(nil? @drawing-shape))
-                      (rx/with-latest-from vector streams/mouse-ctrl-s))
-          ptstream (->> (rx/take-until stoper streams/events-s)
+                      (rx/with-latest-from vector streams/mouse-position-ctrl))
+          ptstream (->> (rx/take-until stoper streams/events)
                         (rx/filter new-point-event?)
                         (rx/with-latest-from vector mouse)
                         (rx/map second))
@@ -253,12 +255,11 @@
 
 (defn- on-init-draw-free-path
   [shape]
-  (let [mouse (->> (rx/sample 10 streams/mouse-viewport-s)
+  (let [mouse (->> (rx/sample 10 streams/viewport-mouse-position)
                    (rx/mapcat conditional-align)
                    (rx/map translate-to-canvas))
-        stoper (->> streams/events-s
-                    (rx/map first)
-                    (rx/filter #(= % :mouse/up))
+        stoper (->> streams/events
+                    (rx/filter uev/mouse-up?)
                     (rx/take 1))
         stream (rx/take-until stoper mouse)]
     (letfn [(simplify-shape [{:keys [points] :as shape}]
@@ -287,17 +288,16 @@
 
 (defn- on-init-draw-generic
   [shape]
-  (let [mouse (->> streams/mouse-viewport-s
+  (let [mouse (->> streams/viewport-mouse-position
                    (rx/mapcat conditional-align)
                    (rx/map translate-to-canvas))
-        stoper (->> streams/events-s
-                    (rx/map first)
-                    (rx/filter #(= % :mouse/up))
+        stoper (->> streams/events
+                    (rx/filter uev/mouse-up?)
                     (rx/take 1))
         firstpos (rx/take 1 mouse)
         stream (->> (rx/take-until stoper mouse)
                     (rx/skip-while #(nil? @drawing-shape))
-                    (rx/with-latest-from vector streams/mouse-ctrl-s))]
+                    (rx/with-latest-from vector streams/mouse-position-ctrl))]
 
     (letfn [(on-start [{:keys [x y] :as pt}]
               (let [shape (geom/setup shape {:x1 x :y1 y :x2 x :y2 y})]
