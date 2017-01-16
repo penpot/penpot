@@ -15,19 +15,6 @@
 
 (def page-id-ref-s (rx/from-atom refs/selected-page-id))
 
-;; --- Scroll Stream
-
-(defonce scroll-b (rx/subject))
-
-(defonce scroll-s
-  (as-> scroll-b $
-    (rx/sample 10 $)
-    (rx/merge $ (rx/of (gpt/point)))
-    (rx/dedupe $)))
-
-(defonce scroll-a
-  (rx/to-atom scroll-s))
-
 ;; --- Events
 
 (defn- user-interaction-event?

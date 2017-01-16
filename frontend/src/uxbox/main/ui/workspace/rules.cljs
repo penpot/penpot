@@ -12,7 +12,7 @@
             [beicon.core :as rx]
             [uxbox.main.store :as s]
             [uxbox.main.constants :as c]
-            [uxbox.main.streams :as streams]
+            [uxbox.main.refs :as refs]
             [uxbox.util.dom :as dom]
             [uxbox.util.mixins :as mx :include-macros true]))
 
@@ -144,7 +144,7 @@
 
 (defn horizontal-rule-render
   [own zoom]
-  (let [scroll (mx/react streams/scroll-a)
+  (let [scroll (mx/react refs/workspace-scroll)
         scroll-x (:x scroll)
         translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
     (html
@@ -164,7 +164,7 @@
 
 (defn vertical-rule-render
   [own zoom]
-  (let [scroll (mx/react streams/scroll-a)
+  (let [scroll (mx/react refs/workspace-scroll)
         scroll-y (:y scroll)
         translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
     (html

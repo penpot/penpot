@@ -85,6 +85,10 @@
   (-> (l/in [:pointer :window])
       (l/derive workspace)))
 
+(def workspace-scroll
+  (-> (l/key :scroll)
+      (l/derive workspace)))
+
 
 
 

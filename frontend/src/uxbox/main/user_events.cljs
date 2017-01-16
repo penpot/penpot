@@ -10,17 +10,9 @@
             [potok.core :as ptk]
             [uxbox.util.geom.point :as gpt]))
 
-(defrecord KeyboardEvent [type key shift ctrl])
-(defrecord MouseEvent [type ctrl shift])
+;; --- Keyboard Event
 
-(defrecord PointerEvent [window
-                         viewport
-                         canvas
-                         ctrl
-                         shift]
-  ptk/UpdateEvent
-  (update [it state]
-    (assoc-in state [:workspace :pointer] it)))
+(defrecord KeyboardEvent [type key shift ctrl])
 
 (defn keyboard-event
   [type key ctrl shift]
@@ -33,6 +25,10 @@
 (defn keyboard-event?
   [v]
   (instance? KeyboardEvent v))
+
+;; --- Mouse Event
+
+(defrecord MouseEvent [type ctrl shift])
 
 (defn mouse-event
   [type ctrl shift]
@@ -50,7 +46,16 @@
   (and (mouse-event? v)
        (= :up (:type v))))
 
-;; TODO: add spec
+;; --- Pointer Event
+
+(defrecord PointerEvent [window
+                         viewport
+                         canvas
+                         ctrl
+                         shift]
+  ptk/UpdateEvent
+  (update [it state]
+    (assoc-in state [:workspace :pointer] it)))
 
 (defn pointer-event
   [window viewport canvas ctrl shift]
@@ -69,3 +74,19 @@
 (defn pointer-event?
   [v]
   (instance? PointerEvent v))
+
+;; --- Scroll Event
+
+(defrecord ScrollEvent [point]
+  ptk/UpdateEvent
+  (update [_ state]
+    (assoc-in state [:workspace :scroll] point)))
+
+(defn scroll-event
+  [pt]
+  {:pre [(gpt/point? pt)]}
+  (ScrollEvent. pt))
+
+(defn scroll-event?
+  [v]
+  (instance? ScrollEvent v))

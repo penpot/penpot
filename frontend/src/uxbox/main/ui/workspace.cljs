@@ -16,6 +16,7 @@
             [uxbox.main.data.pages :as udp]
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.undo :as udu]
+            [uxbox.main.user-events :as uev]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.confirm]
             [uxbox.main.ui.workspace.images]
@@ -47,7 +48,6 @@
   (let [[projectid pageid] (:rum/args own)
         dom (mx/ref-node own "workspace-canvas")
         scroll-to-page-center #(scroll/scroll-to-page-center dom @refs/selected-page)
-        ;; sub1 (scroll/watch-scroll-interactions own)
         sub2 (rx/subscribe streams/page-id-ref-s scroll-to-page-center)]
 
     (scroll-to-page-center)
@@ -56,14 +56,11 @@
               (udu/watch-page-changes pageid)
               (udh/watch-page-changes pageid))
 
-    (assoc own
-           ;; ::sub1 sub1
-           ::sub2 sub2)))
+    (assoc own ::sub2 sub2)))
 
 (defn- workspace-will-unmount
   [own]
   (st/emit! ::udp/stop-page-watcher)
-  ;; (.close (::sub1 own))
   (.close (::sub2 own))
   (dissoc own ::sub1 ::sub2))
 
@@ -84,7 +81,7 @@
   (let [target (.-target event)
         top (.-scrollTop target)
         left (.-scrollLeft target)]
-    (rx/push! streams/scroll-b (gpt/point left top))))
+    (st/emit! (uev/scroll-event (gpt/point left top)))))
 
 (defn- on-wheel
   [own event]
