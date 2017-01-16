@@ -20,7 +20,7 @@
 
 ;; --- Profile Fetched
 
-(defrecord ProfileFetched [data]
+(deftype ProfileFetched [data]
   ptk/UpdateEvent
   (update [this state]
     (assoc state :profile data)))
@@ -31,7 +31,7 @@
 
 ;; --- Fetch Profile
 
-(defrecord FetchProfile []
+(deftype FetchProfile []
   ptk/WatchEvent
   (watch [_ state s]
     (->> (rp/req :fetch/profile)
@@ -44,7 +44,7 @@
 
 ;; --- Profile Updated
 
-(defrecord ProfileUpdated [data]
+(deftype ProfileUpdated [data]
   ptk/WatchEvent
   (watch [_ state s]
     (rx/of (profile-fetched data)
@@ -56,7 +56,7 @@
 
 ;; --- Update Profile
 
-(defrecord UpdateProfile [data on-success on-error]
+(deftype UpdateProfile [data on-success on-error]
   ptk/WatchEvent
   (watch [_ state s]
     (letfn [(handle-error [{payload :payload}]
@@ -80,7 +80,7 @@
 
 ;; --- Password Updated
 
-(defrecord PasswordUpdated []
+(deftype PasswordUpdated []
   ptk/WatchEvent
   (watch [_ state stream]
     (rx/of (uum/info (tr "settings.password-saved")))))
@@ -91,7 +91,7 @@
 
 ;; --- Update Password (Form)
 
-(defrecord UpdatePassword [data]
+(deftype UpdatePassword [data]
   ptk/WatchEvent
   (watch [_ state s]
     (let [params {:old-password (:old-password data)
@@ -113,7 +113,7 @@
 
 ;; --- Update Photo
 
-(defrecord UpdatePhoto [file done]
+(deftype UpdatePhoto [file done]
   ptk/WatchEvent
   (watch [_ state stream]
     (->> (rp/req :update/profile-photo {:file file})
