@@ -134,21 +134,28 @@
       (reduce assoc-page $ pages)
       (reduce assoc-packed-page $ pages))))
 
+(defn pages-fetched
+  [pages]
+  {:pre [(coll? pages)]}
+  (PagesFetched. pages))
+
 (defn pages-fetched?
   [v]
   (instance? PagesFetched v))
 
 ;; --- Fetch Pages (by project id)
 
-(deftype FetchPages [projectid]
+(deftype FetchPages [id]
   ptk/WatchEvent
   (watch [_ state s]
-    (->> (rp/req :fetch/pages-by-project {:project projectid})
-         (rx/map (comp ->PagesFetched :payload)))))
+    (->> (rp/req :fetch/pages-by-project {:project id})
+         (rx/map :payload)
+         (rx/map pages-fetched))))
 
 (defn fetch-pages
-  [projectid]
-  (FetchPages. projectid))
+  [id]
+  {:pre [(uuid? id)]}
+  (FetchPages. id))
 
 ;; --- Page Created
 
