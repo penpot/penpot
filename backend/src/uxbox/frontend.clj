@@ -81,6 +81,8 @@
         [:post "auth/recovery" #'users/request-recovery]
         [:put  "auth/recovery" #'users/recover-password]
 
+        [:get "library/images/:id" #'images/retrieve-image]
+
         [:get "projects-by-token/:token" #'projects/retrieve-project-by-share-token]
 
         ;; SVG Parse
@@ -111,7 +113,6 @@
         ;; Images
         [:put "library/images/copy" #'images/copy-image]
         [:delete "library/images/:id" #'images/delete-image]
-        [:get "library/images/:id" #'images/retrieve-image]
         [:put "library/images/:id" #'images/update-image]
         [:post "library/images" #'images/create-image]
 
