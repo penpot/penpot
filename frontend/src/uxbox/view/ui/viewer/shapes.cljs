@@ -7,18 +7,19 @@
 (ns uxbox.view.ui.viewer.shapes
   (:require [goog.events :as events]
             [lentes.core :as l]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.view.store :as st]
-            [uxbox.main.geom :as geom]
-            [uxbox.main.ui.shapes.rect :refer (rect-shape)]
-            [uxbox.main.ui.shapes.icon :refer (icon-shape)]
-            [uxbox.main.ui.shapes.text :refer (text-shape)]
-            [uxbox.main.ui.shapes.group :refer (group-shape)]
-            [uxbox.main.ui.shapes.path :refer (path-shape)]
-            [uxbox.main.ui.shapes.circle :refer (circle-shape)]
-            [uxbox.main.ui.shapes.image :refer (image-shape)]
             [uxbox.builtins.icons :as i]
-            [uxbox.view.ui.viewer.interactions :as itx])
+            [uxbox.view.store :as st]
+            [uxbox.view.data.viewer :as udv]
+            [uxbox.view.ui.viewer.interactions :as itx]
+            [uxbox.main.geom :as geom]
+            [uxbox.main.ui.shapes.rect :refer [rect-shape]]
+            [uxbox.main.ui.shapes.icon :refer [icon-shape]]
+            [uxbox.main.ui.shapes.text :refer [text-shape]]
+            [uxbox.main.ui.shapes.group :refer [group-shape]]
+            [uxbox.main.ui.shapes.path :refer [path-shape]]
+            [uxbox.main.ui.shapes.circle :refer [circle-shape]]
+            [uxbox.main.ui.shapes.image :refer [image-shape image-ref]]
+            [uxbox.util.mixins :as mx :include-macros true])
   (:import goog.events.EventType))
 
 (def itx-flag-ref
@@ -63,6 +64,21 @@
                  :cy (:y1 rect)
                  :r 5}])]))
 
+;; --- Image Shape Wrapper
+;;
+;; NOTE: This wrapper is needed for preload the referenced
+;; image object which is need for properly show the shape.
+
+(mx/defc image-shape-wrapper
+  {:mixins [mx/static mx/reactive]
+   :will-mount (fn [own]
+                 (when-let [image-id (-> own :rum/args first :image)]
+                   (st/emit! (udv/fetch-image image-id)))
+                 own)}
+  [{:keys [image] :as item}]
+  (when-let [image (mx/react (image-ref image))]
+    (image-shape (assoc item :image image))))
+
 ;; --- Shapes
 
 (declare shape)
@@ -71,7 +87,7 @@
   [{:keys [type] :as item}]
   (case type
     :group (group-shape item shape)
-    :image (image-shape item)
+    :image (image-shape-wrapper item)
     :text (text-shape item)
     :icon (icon-shape item)
     :rect (rect-shape item)

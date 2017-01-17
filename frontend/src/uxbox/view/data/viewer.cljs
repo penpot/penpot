@@ -98,4 +98,36 @@
   {:pre [(keyword? key)]}
   (ToggleFlag. key))
 
+;; --- Fetch Image
 
+(declare image-fetched)
+
+(defrecord FetchImage [id]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [existing (get-in state [:images id])]
+      (if existing
+        (rx/empty)
+        (->> (rp/req :fetch/image {:id id})
+             (rx/map :payload)
+             (rx/map image-fetched))))))
+
+(defn fetch-image
+  "Conditionally fetch image by its id. If image
+  is already loaded, this event is noop."
+  [id]
+  {:pre [(uuid? id)]}
+  (FetchImage. id))
+
+;; --- Image Fetched
+
+(defrecord ImageFetched [image]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [id (:id image)]
+      (update state :images assoc id image))))
+
+(defn image-fetched
+  [image]
+  {:pre [(map? image)]}
+  (ImageFetched. image))

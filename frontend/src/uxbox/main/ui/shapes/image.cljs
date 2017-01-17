@@ -27,20 +27,18 @@
 
 (declare image-shape)
 
-(defn- will-mount
-  [own]
-  (let [{:keys [image]} (first (:rum/args own))]
-    (st/emit! (udi/fetch-image image))
-    own))
-
 (mx/defcs image-component
   {:mixins [mx/static mx/reactive]
-   :will-mount will-mount}
+   :will-mount (fn [own]
+                 ;; TODO: maybe do it conditionally
+                 ;; (only fetch when it's not fetched)
+                 (when-let [id (-> own :rum/args first :image)]
+                   (st/emit! (udi/fetch-image id)))
+                 own)}
   [own {:keys [id image] :as shape}]
   (let [selected (mx/react common/selected-ref)
         image (mx/react (image-ref image))
         selected? (contains? selected id)
-        local (:rum/local own)
         on-mouse-down #(common/on-mouse-down % shape selected)]
     (when image
       [:g.shape {:class (when selected? "selected")
