@@ -10,8 +10,8 @@
     :output-to "dist/js/main.js"
     :source-map "dist/js/main.js.map"
     :output-dir "dist/js/main"
-    :closure-defines {"uxbox.config.url" "https://test.uxbox.io/api"
-                      "uxbox.config.viewurl" "https://test.uxbox.io/view/"}
+    :closure-defines {"uxbox.config.url" "/api"
+                      "uxbox.config.viewurl" "/view/"}
     :optimizations :advanced
     :cache-analysis false
     :externs ["externs/main.js"]
