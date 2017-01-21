@@ -67,8 +67,8 @@
 (def num-projects 5)
 (def num-pages 5)
 
-(defn init
-  []
+(defn -main
+  [& args]
   (mount/start)
   (with-open [conn (db/connection)]
     (sc/atomic conn

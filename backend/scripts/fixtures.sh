@@ -3,4 +3,4 @@
 DIR=`dirname $0`
 LEIN="$DIR/lein"
 
-$LEIN trampoline run -m uxbox.fixtures/init
+$LEIN trampoline run -m uxbox.fixtures
