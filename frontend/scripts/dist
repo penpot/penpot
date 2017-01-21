@@ -3,7 +3,7 @@
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname $SCRIPT`
 
-NODE_ENV=production gulp dist
+NODE_ENV=production npm run dist
 $SCRIPTPATH/dist-main
 $SCRIPTPATH/dist-view
 $SCRIPTPATH/dist-worker

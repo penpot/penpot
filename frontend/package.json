@@ -9,7 +9,7 @@
   },
   "scripts": {
     "watch": "gulp",
-    "dist": "PATH=./scripts:$PATH ./scripts/dist",
+    "dist": "gulp dist",
     "clean": "gulp clean",
     "figwheel": "PATH=./scripts:$PATH ./scripts/build-worker && PATH=./scripts:$PATH ./scripts/figwheel",
     "test-watch": "PATH=./scripts:$PATH ./scripts/watch",
