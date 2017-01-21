@@ -11,6 +11,7 @@ pom.xml
 node_modules
 /backend/target/
 /backend/resources/public/media
+/backend/dist/
 /frontend/target/
 /frontend/dist/
 /frontend/out/
@@ -20,3 +21,4 @@ node_modules
 /frontend/resources/public/view
 /frontend/resources/public/index.html
 /media
+/deploy

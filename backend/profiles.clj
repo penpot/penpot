@@ -4,6 +4,7 @@
   :jvm-opts ["-Xms50m" "-Xmx200m" "-XX:+UseG1GC"]
   :main ^:skip-aot uxbox.main}
 
- :prod
- {:jvm-opts ^:replace ["-Xms1g" "-Xmx1g" "-XX:+UseG1GC"
-                       "-XX:+AggressiveOpts" "-server"]}}
+ :uberjar
+ {:jar-name "uxbox.jar"
+  :uberjar-name "uxbox-backend.jar"
+  :target-path "dist/"}}
