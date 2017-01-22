@@ -5,8 +5,8 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.emails.core
-  (:require [hiccup.core :refer (html)]
-            [hiccup.page :refer (html4)]
+  (:require [hiccup.core :refer [html]]
+            [hiccup.page :refer [html4]]
             [suricatta.core :as sc]
             [uxbox.db :as db]
             [uxbox.config :as cfg]
@@ -49,11 +49,10 @@
 
 (defn render-email
   [email context]
-  (let [config (:email cfg/config)
-        from (or (:email/from context)
-                 (:from config))
+  (let [from (or (:email/from context)
+                 (:email-from cfg/config))
         reply-to (or (:email/reply-to context)
-                     (:reply-to config)
+                     (:email-reply-to cfg/config)
                      from)]
     {:subject (render-subject email context)
      :body (render-body-alternatives email context)

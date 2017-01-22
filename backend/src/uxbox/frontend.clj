@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.frontend
   (:require [mount.core :refer [defstate]]
@@ -23,6 +23,7 @@
             [uxbox.frontend.kvstore :as kvstore]
             [uxbox.frontend.svgparse :as svgparse]
             [uxbox.frontend.debug-emails :as dbgemails]
+            [uxbox.services.auth :refer [auth-opts]]
             [uxbox.util.response :refer [rsp]]
             [uxbox.util.uuid :as uuid]))
 
@@ -56,14 +57,16 @@
   ([] (routes cfg/config))
   ([config]
    (let [auth-opts {:secret cfg/secret
-                    :options (:auth-options cfg/config)}]
+                    :options auth-opts}]
      (ct/routes
       [[:any (cauth/auth (cauth/jwe-backend auth-opts))]
        [:any (cmisc/autoreloader)]
 
        [:get "api" #'welcome-api]
-       [:assets "media" {:dir "public/media"}]
-       [:assets "static" {:dir "public/static"}]
+
+       ;; Serve assets on development server
+       [:assets "media" {:dir "media"}]
+       [:assets "static" {:dir "static"}]
 
        [:prefix "debug"
         [:any debug-only]
@@ -148,7 +151,9 @@
 
 (defn- start-server
   [config]
-  (let [config (:http config)]
+  (let [config {:port (:http-server-port config)
+                :debug (:http-server-debug config)
+                :max-body-size 52428800}]
     (ct/run-server (routes config) config)))
 
 (defstate server

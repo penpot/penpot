@@ -2,37 +2,69 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.config
   "A configuration management."
-  (:require [mount.core :refer [defstate]]
-            [environ.core :refer (env)]
-            [buddy.core.hash :as hash]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
+            [clojure.tools.logging :as log]
             [clojure.edn :as edn]
+            [cuerdas.core :as str]
+            [buddy.core.hash :as hash]
+            [environ.core :refer [env]]
+            [mount.core :refer [defstate]]
             [uxbox.util.exceptions :as ex]
             [uxbox.util.data :refer [deep-merge]]))
 
-;; --- Configuration Loading & Parsing
+;; --- Configuration Reading & Loading
 
-(def ^:dynamic *default-config-path* "config/default.edn")
-(def ^:dynamic *local-config-path* "config/local.edn")
+(defn lookup-env
+  [env key default]
+  (let [value (get env key ::empty)]
+    (if (= value ::empty)
+      default
+      (try
+        (read-string value)
+        (catch Exception e
+          (log/warn (str/istr "can't parse `~{key}` env value"))
+          default)))))
+
+;; --- Configuration Loading & Parsing
 
 (defn read-config
   []
-  (let [builtin (io/resource *default-config-path*)
-        local (io/resource *local-config-path*)
-        external (io/file (:uxbox-config env))]
-    (deep-merge (edn/read-string (slurp builtin))
-                (when local (edn/read-string (slurp local)))
-                (when (and external (.exists external))
-                  (edn/read-string (slurp external))))))
+  {:http-server-port (lookup-env env :uxbox-http-server-port 6060)
+   :http-server-debug (lookup-env env :uxbox-http-server-debug true)
+   :database-username (lookup-env env :uxbox-database-username "")
+   :database-password (lookup-env env :uxbox-database-password "")
+   :database-name (lookup-env env :uxbox-database-name "uxbox")
+   :database-server (lookup-env env :uxbox-database-server "localhost")
+   :database-port (lookup-env env :uxbox-database-port 5432)
+   :media-directory (lookup-env env :uxbox-media-directory "media")
+   :media-uri (lookup-env env :uxbox-media-uri "http://localhost:6060/media/")
+   :assets-directory (lookup-env env :uxbox-assets-directory "static")
+   :assets-uri (lookup-env env :uxbox-assets-uri "http://localhost:6060/static/")
+
+   :email-reply-to (lookup-env env :uxbox-email-reply-to "no-reply@uxbox.io")
+   :email-from (lookup-env env :uxbox-email-from "no-reply@uxbox.io")
+
+   :smtp-host (lookup-env env :uxbox-smtp-host "localhost")
+   :smtp-port (lookup-env env :uxbox-smtp-port 25)
+   :smtp-user (lookup-env env :uxbox-smtp-user nil)
+   :smtp-password (lookup-env env :uxbox-smtp-password nil)
+   :smtp-tls (lookup-env env :uxbox-smtp-tls false)
+   :smtp-ssl (lookup-env env :uxbox-smtp-ssl false)
+   :smtp-enabled (lookup-env env :uxbox-smtp-enabled false)
+
+   :secret (lookup-env env :uxbox-secret "5qjiAndGY3")})
 
 (defn read-test-config
   []
-  (binding [*local-config-path* "config/test.edn"]
-    (read-config)))
+  (assoc (read-config)
+         :database-name "test"
+         :media-directory "/tmp/uxbox/media"
+         :assets-directory "/tmp/uxbox/static"
+         :migrations-verbose false))
 
 (defstate config
   :start (read-config))

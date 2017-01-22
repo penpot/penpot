@@ -17,6 +17,9 @@
             [uxbox.services.users :as users]
             [uxbox.util.exceptions :as ex]))
 
+(def auth-opts
+  {:alg :a256kw :enc :a128cbc-hs256})
+
 ;; --- Login
 
 (defn- check-user-password
@@ -25,9 +28,8 @@
 
 (defn generate-token
   [user]
-  (let [data {:id (:id user)}
-        opts (:auth-options cfg/config)]
-    (jwt/encrypt data cfg/secret opts)))
+  (let [data {:id (:id user) :scope :auth}]
+    (jwt/encrypt data cfg/secret auth-opts)))
 
 (s/def ::scope string?)
 (s/def ::login

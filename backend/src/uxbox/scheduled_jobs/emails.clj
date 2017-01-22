@@ -65,9 +65,19 @@
   (println "********** end email:" id "**********")
   {:error :SUCCESS})
 
+(defn- get-smtp-config
+  [config]
+  {:host (:smtp-host config)
+   :port (:smtp-port config)
+   :user (:smtp-user config)
+   :pass (:smtp-password config)
+   :ssl (:smtp-ssl config)
+   :tls (:smtp-tls config)
+   :noop (not (:smtp-enabled config))})
+
 (defn- send-email
   [{:keys [id data] :as entry}]
-  (let [config (:smtp cfg/config)
+  (let [config (get-smtp-config cfg/config)
         result (if (:noop config)
                  (send-email-to-console entry)
                  (postal/send-message config data))]

@@ -69,7 +69,7 @@
 
 (defn- migrate
   []
-  (let [options (:migrations cfg/config {})]
+  (let [options {:verbose (:migrations-verbose cfg/config true)}]
     (with-open [mctx (mg/context db/datasource options)]
       (mg/migrate mctx +migrations+)
       nil)))

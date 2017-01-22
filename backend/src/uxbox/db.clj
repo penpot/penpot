@@ -21,7 +21,7 @@
 
 ;; --- State
 
-(def ^:const +defaults+
+(def connection-defaults
   {:connection-timeout 30000
    :idle-timeout 600000
    :max-lifetime 1800000
@@ -34,9 +34,18 @@
    :server-name "localhost"
    :port-number 5432})
 
+(defn get-db-config
+  [config]
+  (assoc connection-defaults
+         :username (:database-username config)
+         :password (:database-password config)
+         :database-name (:database-name config)
+         :server-name (:database-server config)
+         :port-number (:database-port config)))
+
 (defn create-datasource
   [config]
-  (let [dbconf (merge +defaults+ config)]
+  (let [dbconf (get-db-config config)]
     (hikari/make-datasource dbconf)))
 
 (defstate datasource

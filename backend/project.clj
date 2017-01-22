@@ -15,6 +15,8 @@
                  [funcool/suricatta "1.3.1"]
                  [funcool/promesa "1.7.0"]
                  [funcool/catacumba "2.0.0-SNAPSHOT"]
+                 [funcool/cuerdas "2.0.2"]
+                 [funcool/datoteka "1.0.0-SNAPSHOT"]
 
                  [org.clojure/data.xml "0.1.0-beta2"]
                  [org.jsoup/jsoup "1.10.2"]
@@ -26,6 +28,7 @@
                  [com.layerware/hugsql-core "0.4.7"
                   :exclusions [org.clojure/tools.reader]]
                  [niwinz/migrante "0.1.0"]
+
 
                  [buddy/buddy-sign "1.3.0" :exclusions [org.clojure/tools.reader]]
                  [buddy/buddy-hashers "1.1.0"]

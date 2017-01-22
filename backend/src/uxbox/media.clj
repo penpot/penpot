@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.media
   "A media storage impl for uxbox."
@@ -14,15 +14,17 @@
             [storages.backend.misc :refer (hashed scoped)]
             [uxbox.config :refer (config)]))
 
+;; FIXME: migrate from storages to datoteka
+
 ;; --- State
 
-(defstate static-storage
-  :start (let [{:keys [basedir baseuri]} (:static config)]
-           (localfs {:basedir basedir :baseuri baseuri})))
+(defstate assets-storage
+  :start (localfs {:basedir (:assets-directory config)
+                   :baseuri (:assets-uri config)}))
 
 (defstate media-storage
-  :start (let [{:keys [basedir baseuri]} (:media config)]
-           (localfs {:basedir basedir :baseuri baseuri})))
+  :start (localfs {:basedir (:media-directory config)
+                   :baseuri (:media-uri config)}))
 
 (defstate images-storage
   :start (-> media-storage
@@ -36,4 +38,4 @@
 
 (defn resolve-asset
   [path]
-  (str (st/public-url static-storage path)))
+  (str (st/public-url assets-storage path)))

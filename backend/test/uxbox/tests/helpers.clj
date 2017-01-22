@@ -24,7 +24,7 @@
                       #'uxbox.config/secret
                       #'uxbox.db/datasource
                       #'uxbox.migrations/migrations
-                      #'uxbox.media/static-storage
+                      #'uxbox.media/assets-storage
                       #'uxbox.media/media-storage
                       #'uxbox.media/images-storage
                       #'uxbox.media/thumbnails-storage})
@@ -53,7 +53,7 @@
        (next)
        (finally
          (st/clear! uxbox.media/media-storage)
-         (st/clear! uxbox.media/static-storage))))))
+         (st/clear! uxbox.media/assets-storage))))))
 
 (defmacro await
   [expr]
