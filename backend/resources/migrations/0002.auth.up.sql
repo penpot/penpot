@@ -24,12 +24,12 @@ VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
         ''::bytea);
 
 CREATE UNIQUE INDEX users_username_idx
-  ON users WHERE deleted_at is null
-  USING btree (username) ;
+  ON users USING btree (username)
+  WHERE deleted_at is null;
 
 CREATE UNIQUE INDEX users_email_idx
-  ON users WHERE deleted_at is null
-  USING btree (email);
+  ON users USING btree (email)
+  WHERE deleted_at is null;
 
 CREATE TRIGGER users_modified_at_tgr BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
