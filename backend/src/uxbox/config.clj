@@ -35,8 +35,8 @@
   []
   {:http-server-port (lookup-env env :uxbox-http-server-port 6060)
    :http-server-debug (lookup-env env :uxbox-http-server-debug true)
-   :database-username (lookup-env env :uxbox-database-username "")
-   :database-password (lookup-env env :uxbox-database-password "")
+   :database-username (lookup-env env :uxbox-database-username nil)
+   :database-password (lookup-env env :uxbox-database-password nil)
    :database-name (lookup-env env :uxbox-database-name "uxbox")
    :database-server (lookup-env env :uxbox-database-server "localhost")
    :database-port (lookup-env env :uxbox-database-port 5432)
