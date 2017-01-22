@@ -49,7 +49,7 @@
     (hikari/make-datasource dbconf)))
 
 (defstate datasource
-  :start (create-datasource (:database cfg/config))
+  :start (create-datasource cfg/config)
   :stop (hikari/close-datasource datasource))
 
 ;; --- Suricatta Async Adapter
