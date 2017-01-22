@@ -153,6 +153,7 @@
   [config]
   (let [config {:port (:http-server-port config)
                 :debug (:http-server-debug config)
+                :marker-file "basedir"
                 :max-body-size 52428800}]
     (ct/run-server (routes config) config)))
 

@@ -5,7 +5,7 @@
   :main ^:skip-aot uxbox.main}
 
  :uberjar
- {:jar-exclusions [#"\.swp|\.swo|user\.clj" #"public/media"]
+ {:jar-exclusions [#"\.swp|\.swo|user\.clj" #"^media"]
   :jar-name "uxbox.jar"
   :uberjar-name "uxbox-backend.jar"
   :target-path "dist/"}}
