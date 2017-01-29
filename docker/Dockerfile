@@ -5,16 +5,16 @@ RUN apt-get update && \
     apt-get install -yq locales ca-certificates wget && \
     rm -rf /var/lib/apt/lists/*
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
-RUN locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LANGUAGE=en
+RUN locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=C.UTF-8
 ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
+ENV LC_ALL C.UTF-8
 
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
 RUN apt-get update -yq &&  \
     apt-get install -yq bash git tmux vim openjdk-8-jdk rlwrap build-essential \
-                        postgresql-9.5 postgresql-contrib-9.5 imagemagick webp \
+                        postgresql-9.6 postgresql-contrib-9.6 imagemagick webp \
                         sudo
 
 RUN mkdir -p /etc/resolvconf/resolv.conf.d
@@ -24,13 +24,13 @@ RUN useradd -m -g users -s /bin/bash uxbox
 RUN passwd uxbox -d
 RUN echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-COPY files/pg_hba.conf /etc/postgresql/9.5/main/pg_hba.conf
-COPY files/postgresql.conf /etc/postgresql/9.5/main/postgresql.conf
+COPY files/pg_hba.conf /etc/postgresql/9.6/main/pg_hba.conf
+# COPY files/postgresql.conf /etc/postgresql/9.5/main/postgresql.conf
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
 
 RUN /etc/init.d/postgresql start \
-    && psql -U postgres -c "create user \"uxbox\" LOGIN SUPERUSER" \
+    && createuser -U postgres -sl uxbox \
     && createdb -U uxbox uxbox \
     && createdb -U uxbox test \
     && /etc/init.d/postgresql stop
@@ -41,6 +41,15 @@ RUN apt-get update -yq && \
                         libexif-dev libjpeg-dev libpng-dev libtiff-dev \
                         libwmf-dev libpango1.0-dev librsvg2-bin librsvg2-dev \
                         libxml2-dev libwebp-dev webp
+
+RUN wget http://mirror.checkdomain.de/imagemagick/releases/ImageMagick-7.0.4-6.tar.xz && \
+    tar xvf ImageMagick-7.0.4-6.tar.xz && \
+    cd ./ImageMagick-7.0.4-6 && \
+    ./configure --prefix=/opt/img && \
+    make -j2 && \
+    make install && \
+    cd .. && \
+    rm -rf ./ImageMagick-7.0.4-6.tar.xz ./ImageMagick-7.0.4-6
 
 RUN wget http://www.imagemagick.org/download/ImageMagick.tar.gz
 RUN tar xvf ImageMagick.tar.gz
@@ -54,8 +63,8 @@ USER uxbox
 WORKDIR /home/uxbox
 
 RUN git clone https://github.com/creationix/nvm.git .nvm
-RUN bash -c "source .nvm/nvm.sh && nvm install v6.9.1"
-RUN bash -c "source .nvm/nvm.sh && nvm alias default v6.9.1"
+RUN bash -c "source .nvm/nvm.sh && nvm install v6.9.2"
+RUN bash -c "source .nvm/nvm.sh && nvm alias default v6.9.2"
 
 COPY files/lein /home/uxbox/.local/bin/lein
 RUN bash -c "/home/uxbox/.local/bin/lein version"
