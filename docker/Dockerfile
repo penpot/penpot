@@ -51,10 +51,6 @@ RUN wget http://mirror.checkdomain.de/imagemagick/releases/ImageMagick-7.0.4-6.t
     cd .. && \
     rm -rf ./ImageMagick-7.0.4-6.tar.xz ./ImageMagick-7.0.4-6
 
-RUN wget http://www.imagemagick.org/download/ImageMagick.tar.gz
-RUN tar xvf ImageMagick.tar.gz
-RUN cd ImageMagick-* && ./configure --prefix=/opt/img && make && make install && cd ..
-
 EXPOSE 3449
 EXPOSE 6060
 EXPOSE 9090
