@@ -25,7 +25,7 @@
                  [funcool/potok "1.2.0"]
                  [funcool/struct "1.0.0"]
                  [funcool/lentes "1.2.0"]
-                 [funcool/beicon "2.8.0"]
+                 [funcool/beicon "2.9.0"]
                  [funcool/cuerdas "2.0.2"]
                  [funcool/bide "1.4.0"]]
   :plugins [[lein-ancient "0.6.10"]]
