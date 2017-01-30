@@ -42,7 +42,7 @@
   []
   (letfn [(on-move [shape delta]
             (st/emit! (uds/apply-temporal-displacement shape delta)))
-          (on-stop [{:keys [id] :as shape}]
+          (on-stop [shape]
             (st/emit! (uds/apply-displacement shape)))
           (on-start [shape]
             (let [stoper (->> streams/events

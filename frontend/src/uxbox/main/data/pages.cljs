@@ -76,15 +76,36 @@
 
 ;; --- Helpers
 
+;; TODO: make sure remove all :tmp-* related attrs from shape
+
+(defn pack-page-shapes
+  "Create a hash-map of shapes indexed by their id that belongs
+  to the provided page."
+  [state page]
+  (let [lookup-shape-xf (map #(get-in state [:shapes %]))]
+    (reduce (fn reducer [acc {:keys [id type items] :as shape}]
+              (let [shape (assoc shape :page (:id page))]
+                (cond
+                  (= type :group)
+                  (reduce reducer
+                          (assoc acc id shape)
+                          (sequence lookup-shape-xf items))
+
+                  (uuid? id)
+                  (assoc acc id shape)
+
+                  :else acc)))
+            {}
+            (sequence lookup-shape-xf (:shapes page)))))
+
 (defn pack-page
   "Return a packed version of page object ready
   for send to remore storage service."
   [state id]
   (let [page (get-in state [:pages id])
-        xf (filter #(= (:page (second %)) id))
-        shapes (into {} xf (:shapes state))]
+        shapes (pack-page-shapes state page)]
     (-> page
-        (assoc-in [:data :shapes] (into [] (:shapes page)))
+        (assoc-in [:data :shapes] (vec (:shapes page)))
         (assoc-in [:data :shapes-map] shapes)
         (dissoc :shapes))))
 
@@ -303,7 +324,6 @@
 
 (defn update-page
   [id data]
-  (println "update-page" data)
   {:pre [(uuid? id) (us/valid? ::page-entity data)]}
   (UpdatePage. id data))
 

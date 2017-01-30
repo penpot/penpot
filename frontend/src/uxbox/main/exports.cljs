@@ -48,7 +48,7 @@
     (shape-wrapper shape)))
 
 (mx/defc page-svg
-  [{:keys [metadata] :as page}]
+  [{:keys [id metadata] :as page}]
   (let [{:keys [width height]} metadata]
     [:svg {:width width
            :height height
