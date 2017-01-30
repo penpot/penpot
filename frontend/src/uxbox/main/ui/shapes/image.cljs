@@ -65,6 +65,5 @@
                :transform (str xfmt)
                :width width
                :height height}
-
         attrs (merge props (attrs/extract-style-attrs shape))]
     [:image attrs]))

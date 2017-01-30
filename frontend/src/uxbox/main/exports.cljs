@@ -40,7 +40,6 @@
     :circle (circle-shape shape)
     :image (let [image-id (:image shape)
                  image (get-in @*state* [:images image-id])]
-             ;; (println "shape-wrapper" image)
              (image-shape (assoc shape :image image)))))
 
 (mx/defc shape-component
@@ -57,17 +56,13 @@
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
+     ;; TODO: properly handle background
      #_(background)
      (for [item (reverse (:shapes page))]
-       (-> (shape item)
+       (-> (shape-component item)
            (mx/with-key (str item))))]))
 
 (defn render-page
-  [id]
-  (let [page (get-in @st/state [:pages id])]
-    (mx/render-static-html (page-svg page))))
-
-(defn render-page*
   [id]
   (let [page (get-in @st/state [:pages id])]
     (when (:shapes page)

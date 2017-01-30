@@ -122,7 +122,7 @@
 (defn- grid-item-thumbnail-will-mount
   [own]
   (let [[project] (:rum/args own)
-        svg (exports/render-page* (:page-id project))
+        svg (exports/render-page (:page-id project))
         url (some-> svg
                     (blob/create "image/svg+xml")
                     (blob/create-uri))]
