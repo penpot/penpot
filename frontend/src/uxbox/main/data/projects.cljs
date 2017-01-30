@@ -205,14 +205,31 @@
 
 ;; --- Go To & Go To Page
 
+(deftype GoToFirstPage [pages]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [[page & rest] (sort-by #(get-in % [:metadata :order]) pages)
+          params {:project (:project page)
+                  :page (:id page)}]
+      (rx/of (rt/navigate :workspace/page params)))))
+
+(defn go-to-first-page
+  [pages]
+  (GoToFirstPage. pages))
+
 (defrecord GoTo [project-id]
   ptk/WatchEvent
   (watch [_ state stream]
     (let [page-id (get-in state [:projects project-id :page-id])
           params {:project project-id
                   :page page-id}]
-      (rx/of (udp/fetch-pages project-id)
-             (rt/navigate :workspace/page params)))))
+      (rx/merge
+       (rx/of (udp/fetch-pages project-id))
+       (->> stream
+            (rx/filter udp/pages-fetched?)
+            (rx/take 1)
+            (rx/map deref)
+            (rx/map go-to-first-page))))))
 
 (defrecord GoToPage [project-id page-id]
   ptk/WatchEvent

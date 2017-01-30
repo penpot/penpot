@@ -147,6 +147,9 @@
 ;; --- Pages Fetched
 
 (deftype PagesFetched [pages]
+  IDeref
+  (-deref [_] pages)
+
   ptk/UpdateEvent
   (update [_ state]
     (as-> state $
