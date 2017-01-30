@@ -44,7 +44,7 @@
 
 (mx/defc shape-component
   [sid]
-  (let [shape (get-in @*state* [:shapes sid])]
+  (when-let [shape (get-in @*state* [:shapes sid])]
     (shape-wrapper shape)))
 
 (mx/defc page-svg
