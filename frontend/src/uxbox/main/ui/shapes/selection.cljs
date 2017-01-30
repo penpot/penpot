@@ -224,7 +224,7 @@
                                      (uwrk/align-point point)
                                      (rx/of point))))
                       (rx/take-until stoper)
-                      (rx/with-latest-from vector streams/mouse-position-ctrl)
+                      (rx/with-latest vector streams/mouse-position-ctrl)
                       (rx/scan accumulate-width shape)
                       (rx/map (partial calculate-ratio shape)))]
       (rx/subscribe stream

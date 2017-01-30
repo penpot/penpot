@@ -233,7 +233,7 @@
                    (rx/mapcat conditional-align)
                    (rx/map translate-to-canvas)
                    (rx/take-until stoper)
-                   (rx/with-latest-from vector streams/mouse-position-ctrl))]
+                   (rx/with-latest vector streams/mouse-position-ctrl))]
 
     (letfn [(on-position [[point ctrl?]]
               (if @start?
@@ -322,13 +322,13 @@
                    (rx/mapcat conditional-align)
                    (rx/map translate-to-canvas))
         points (->> (get-path-point-stream)
-                    (rx/with-latest-from vector mouse)
+                    (rx/with-latest vector mouse)
                     (rx/map second)
                     (rx/take-until stoper))
         counter (rx/merge (rx/scan #(inc %) 1 points) (rx/of 1))
         stream (->> mouse
-                    (rx/with-latest-from vector streams/mouse-position-ctrl)
-                    (rx/with-latest-from vector counter)
+                    (rx/with-latest vector streams/mouse-position-ctrl)
+                    (rx/with-latest vector counter)
                     (rx/map flatten)
                     (rx/take-until stoper))]
 

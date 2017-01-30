@@ -78,7 +78,7 @@
     (let [stream (->> streams/window-mouse-position
                       (rx/filter #(:active @local))
                       (rx/map #(resolve-position own %))
-                      (rx/with-latest-from vector streams/mouse-position-ctrl))
+                      (rx/with-latest vector streams/mouse-position-ctrl))
           sub (rx/on-value stream on-value)]
       (assoc own ::sub sub))))
 

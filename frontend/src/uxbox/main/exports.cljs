@@ -26,25 +26,27 @@
     :height "100%"
     :fill "white"}])
 
-(declare shape)
-(declare shape*)
+(declare shape-component)
+(declare shape-wrapper)
 
-(mx/defc shape*
-  [{:keys [type] :as s}]
+(mx/defc shape-wrapper
+  [{:keys [type] :as shape}]
   (case type
-    :group (group-shape s shape)
-    :text (text-shape s)
-    :icon (icon-shape s)
-    :rect (rect-shape s)
-    :path (path-shape s)
-    :circle (circle-shape s)
-    :image (let [image-id (:image s)
+    :group (group-shape shape shape-component)
+    :text (text-shape shape)
+    :icon (icon-shape shape)
+    :rect (rect-shape shape)
+    :path (path-shape shape)
+    :circle (circle-shape shape)
+    :image (let [image-id (:image shape)
                  image (get-in @*state* [:images image-id])]
-             (image-shape (assoc s :image image)))))
+             ;; (println "shape-wrapper" image)
+             (image-shape (assoc shape :image image)))))
 
-(mx/defc shape
+(mx/defc shape-component
   [sid]
-  (shape* (get-in @*state* [:shapes sid])))
+  (let [shape (get-in @*state* [:shapes sid])]
+    (shape-wrapper shape)))
 
 (mx/defc page-svg
   [{:keys [metadata] :as page}]
