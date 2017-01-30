@@ -7,13 +7,13 @@
 (ns uxbox.main.exports
   "The main logic for SVG export functionality."
   (:require [uxbox.main.store :as st]
-            [uxbox.main.ui.shapes.rect :refer (rect-shape)]
-            [uxbox.main.ui.shapes.icon :refer (icon-shape)]
-            [uxbox.main.ui.shapes.text :refer (text-shape)]
-            [uxbox.main.ui.shapes.group :refer (group-shape)]
-            [uxbox.main.ui.shapes.path :refer (path-shape)]
-            [uxbox.main.ui.shapes.circle :refer (circle-shape)]
-            [uxbox.main.ui.shapes.image :refer (image-shape)]
+            [uxbox.main.ui.shapes.rect :refer [rect-shape]]
+            [uxbox.main.ui.shapes.icon :refer [icon-shape]]
+            [uxbox.main.ui.shapes.text :refer [text-shape]]
+            [uxbox.main.ui.shapes.group :refer [group-shape]]
+            [uxbox.main.ui.shapes.path :refer [path-shape]]
+            [uxbox.main.ui.shapes.circle :refer [circle-shape]]
+            [uxbox.main.ui.shapes.image :refer [image-shape]]
             [uxbox.util.mixins :as mx :include-macros true]))
 
 (def ^:dynamic *state* st/state)
@@ -43,8 +43,8 @@
              (image-shape (assoc shape :image image)))))
 
 (mx/defc shape-component
-  [sid]
-  (when-let [shape (get-in @*state* [:shapes sid])]
+  [id]
+  (when-let [shape (get-in @*state* [:shapes id])]
     (shape-wrapper shape)))
 
 (mx/defc page-svg
@@ -64,6 +64,6 @@
 
 (defn render-page
   [id]
-  (let [page (get-in @st/state [:pages id])]
+  (let [page (get-in @*state* [:pages id])]
     (when (:shapes page)
       (mx/render-static-html (page-svg page)))))

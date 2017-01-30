@@ -42,7 +42,7 @@
 (mx/defc component-container
   {:mixins [mx/reactive mx/static]}
   [id]
-  (let [shape (mx/react (focus-shape id))]
+  (when-let [shape (mx/react (focus-shape id))]
     (when-not (:hidden shape)
       (render-component shape))))
 
