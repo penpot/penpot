@@ -16,12 +16,13 @@
             [uxbox.main.workers :as uwrk]
             [uxbox.main.data.shapes-impl :as impl]
             [uxbox.main.data.pages :as udp]
+            [uxbox.main.user-events :as uev]
+            [uxbox.util.data :refer [dissoc-in]]
             [uxbox.util.forms :as sc]
             [uxbox.util.spec :as us]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.router :as r]
-            [uxbox.util.rlocks :as rlocks]
             [uxbox.util.uuid :as uuid]))
 
 ;; --- Specs
@@ -568,9 +569,13 @@
   (update [_ state]
     (assoc-in state [:workspace :edition] id))
 
-  ptk/EffectEvent
-  (effect [_ state stream]
-    (rlocks/acquire! :shape/edition)))
+  ptk/WatchEvent
+  (watch [_ state stream]
+    ;; Stop edition on interrupt event
+    (->> stream
+         (rx/filter #(= % ::uev/interrupt))
+         (rx/take 1)
+         (rx/map (fn [_] #(dissoc-in % [:workspace :edition]))))))
 
 (defn start-edition-mode
   [id]
@@ -582,14 +587,11 @@
 (deftype DeselectAll []
   ptk/UpdateEvent
   (update [_ state]
-    (-> state
-        (assoc-in [:workspace :selected] #{})
-        (assoc-in [:workspace :edition] nil)
-        (assoc-in [:workspace :drawing] nil)))
+    (assoc-in state [:workspace :selected] #{}))
 
-  ptk/EffectEvent
-  (effect [_ state stream]
-    (rlocks/release! :shape/edition)))
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/just ::uev/interrupt)))
 
 (defn deselect-all
   "Clear all possible state of drawing, edition

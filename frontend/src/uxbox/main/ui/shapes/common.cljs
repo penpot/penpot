@@ -16,7 +16,6 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.geom.point :as gpt]
-            [uxbox.util.rlocks :as rlocks]
             [uxbox.util.dom :as dom]))
 
 ;; --- Refs
@@ -37,12 +36,13 @@
 
 ;; --- Movement
 
+;; TODO: implement in the same way as drawing (move under uxbox.main.data.workspace.)
+
 (defn start-move
   []
   (letfn [(on-move [shape delta]
             (st/emit! (uds/apply-temporal-displacement shape delta)))
           (on-stop [{:keys [id] :as shape}]
-            (rlocks/release! :shape/move)
             (st/emit! (uds/apply-displacement shape)))
           (on-start [shape]
             (let [stoper (->> streams/events
@@ -55,7 +55,6 @@
               (when @refs/selected-alignment
                 (st/emit! (uds/initial-align-shape shape)))
               (rx/subscribe stream on-move nil on-stop)))]
-    (rlocks/acquire! :shape/move)
     (run! on-start @selected-ref)))
 
 ;; --- Events

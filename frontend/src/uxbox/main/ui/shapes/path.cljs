@@ -48,6 +48,7 @@
 (mx/defc path-shape
   {:mixins [mx/static]}
   [{:keys [id tmp-resize-xform tmp-displacement rotation] :as shape}]
+
   (let [shape (cond-> shape
                 tmp-displacement (geom/transform (gmt/translate-matrix tmp-displacement))
                 tmp-resize-xform (geom/transform tmp-resize-xform)

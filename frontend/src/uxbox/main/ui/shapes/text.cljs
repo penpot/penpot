@@ -17,7 +17,6 @@
             [uxbox.util.color :as color]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.rlocks :as rlocks]
             [uxbox.util.mixins :as mx :include-macros true])
   (:import goog.events.EventType))
 
@@ -48,6 +47,8 @@
     (letfn [(on-mouse-down [event]
               (handle-mouse-down event shape selected))
             (on-double-click [event]
+              ;; TODO: handle grouping event propagation
+              ;; TODO: handle actions locking properly
               (dom/stop-propagation event)
               (st/emit! (uds/start-edition-mode id)))]
       [:g.shape {:class (when selected? "selected")
@@ -149,11 +150,9 @@
     own))
 
 (mx/defc text-shape-wrapper
-  {
-   :did-mount text-shape-wrapper-did-mount
+  {:did-mount text-shape-wrapper-did-mount
    :did-remount text-shape-wrapper-did-remount}
   [{:keys [id tmp-resize-xform tmp-displacement drawing?] :as shape}]
-  (println "text-shape-wrapper" shape)
   (let [xfmt (cond-> (gmt/matrix)
                 tmp-displacement (gmt/translate tmp-displacement)
                 tmp-resize-xform (gmt/multiply tmp-resize-xform))
@@ -181,7 +180,6 @@
   [{:keys [content] :as shape}]
   (let [style (make-style shape)]
     [:div {:style style} content]))
-
 
 ;; --- Text Shape Html
 

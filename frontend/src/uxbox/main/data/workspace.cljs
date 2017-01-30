@@ -21,6 +21,8 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.workspace.scroll :as wscroll]
+            [uxbox.main.data.workspace.drawing :as wdrawing]
+            [uxbox.main.data.workspace.selrect :as wselrect]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.spec :as us]
             [uxbox.util.forms :as sc]
@@ -33,6 +35,10 @@
 
 (def start-viewport-positioning wscroll/start-viewport-positioning)
 (def stop-viewport-positioning wscroll/stop-viewport-positioning)
+(def start-drawing wdrawing/start-drawing)
+(def close-drawing-path wdrawing/close-drawing-path)
+(def select-for-drawing wdrawing/select-for-drawing)
+(def start-selrect wselrect/start-selrect)
 
 ;; --- Initialize Workspace
 
@@ -90,21 +96,6 @@
   "Initialize the workspace state."
   [project page]
   (InitializeWorkspace. project page))
-
-;; --- Select for Drawing
-
-(deftype SelectForDrawing [shape]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [current (l/focus ul/selected-drawing state)]
-      (if (or (nil? shape)
-              (= shape current))
-        (update state :workspace dissoc :drawing)
-        (assoc-in state [:workspace :drawing] shape)))))
-
-(defn select-for-drawing
-  [shape]
-  (SelectForDrawing. shape))
 
 ;; --- Workspace Flags
 

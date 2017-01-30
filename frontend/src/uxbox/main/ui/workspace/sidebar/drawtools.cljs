@@ -12,6 +12,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as dw]
+            [uxbox.main.user-events :as uev]
             [uxbox.builtins.icons :as i]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
@@ -82,7 +83,8 @@
 
 (defn- select-for-draw
   [shape]
-  (st/emit! (dw/select-for-drawing shape)))
+  (st/emit! ::uev/interrupt
+            (dw/select-for-drawing shape)))
 
 (mx/defc draw-toolbox
   {:mixins [mx/static mx/reactive]}

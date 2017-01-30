@@ -12,7 +12,6 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rlocks :as rlocks]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.point :as gpt]))
 

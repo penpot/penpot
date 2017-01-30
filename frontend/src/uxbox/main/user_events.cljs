@@ -46,6 +46,11 @@
   (and (mouse-event? v)
        (= :up (:type v))))
 
+(defn mouse-click?
+  [v]
+  (and (mouse-event? v)
+       (= :click (:type v))))
+
 ;; --- Pointer Event
 
 (defrecord PointerEvent [window

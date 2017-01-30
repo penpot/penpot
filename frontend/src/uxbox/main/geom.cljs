@@ -487,7 +487,7 @@
 
 (defn- transform-path
   [{:keys [points] :as shape} xfmt]
-  (let [points (map #(gpt/transform % xfmt) points)]
+  (let [points (mapv #(gpt/transform % xfmt) points)]
     (assoc shape :points points)))
 
 ;; --- Outer Rect

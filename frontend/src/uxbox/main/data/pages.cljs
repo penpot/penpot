@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.pages
   (:require [cljs.spec :as s]
@@ -13,13 +13,9 @@
             [uxbox.main.store :as st]
             [uxbox.main.repo :as rp]
             [uxbox.main.lenses :as ul]
-            [uxbox.util.rlocks :as rlocks]
             [uxbox.util.spec :as us]
             [uxbox.util.router :as r]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.forms :as sc]
-            [uxbox.util.time :as dt]
-            [uxbox.util.data :refer (without-keys replace-by-id)]))
+            [uxbox.util.time :as dt]))
 
 ;; --- Specs
 
@@ -65,6 +61,8 @@
                    ::user
                    ::metadata
                    ::shapes]))
+
+;; TODO: add interactions to spec
 
 ;; --- Protocols
 

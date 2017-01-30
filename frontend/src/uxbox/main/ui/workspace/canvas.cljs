@@ -15,22 +15,21 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]
             [uxbox.main.user-events :as uev]
+            [uxbox.main.geom :as geom]
             [uxbox.main.data.projects :as dp]
-            [uxbox.main.data.workspace :as dw]
+            [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.shapes :as uus]
-            [uxbox.main.ui.shapes.selection :refer (selection-handlers)]
+            [uxbox.main.ui.shapes.selection :refer [selection-handlers]]
             [uxbox.main.ui.workspace.scroll :as scroll]
-            [uxbox.main.ui.workspace.drawarea :refer (draw-area)]
-            [uxbox.main.ui.workspace.ruler :refer (ruler)]
-            [uxbox.main.ui.workspace.selrect :refer (selrect)]
-            [uxbox.main.ui.workspace.grid :refer (grid)]
+            [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
+            [uxbox.main.ui.workspace.ruler :refer [ruler]]
+            [uxbox.main.ui.workspace.grid :refer [grid]]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (parse-int)]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rlocks :as rlocks])
+            [uxbox.util.data :refer [parse-int]]
+            [uxbox.util.mixins :as mx :include-macros true])
   (:import goog.events.EventType))
 
 ;; --- Background
@@ -58,6 +57,23 @@
      (str "X: " (:x coords "-"))]
     [:span {:alt "y"}
      (str "Y: " (:y coords "-"))]]))
+
+;; --- Selection Rect
+
+(def selrect-ref
+  (-> (l/key :selrect)
+      (l/derive refs/workspace)))
+
+(mx/defc selrect
+  {:mixins [mx/static mx/reactive]}
+  []
+  (when-let [rect (mx/react selrect-ref)]
+    (let [{:keys [x1 y1 width height]} (geom/size rect)]
+      [:rect.selection-rect
+       {:x x1
+        :y y1
+        :width width
+        :height height}])))
 
 ;; --- Cursor tooltip
 
@@ -137,12 +153,8 @@
                         :shift? shift?
                         :ctrl? ctrl?}]
               (st/emit! (uev/keyboard-event :down key ctrl? shift?))
-
-              ;; TODO: remove (deprecated)
-              #_(rx/push! streams/events-b [:key/down opts])
               (when (kbd/space? event)
-                (st/emit! (dw/start-viewport-positioning)))))
-                #_(rlocks/acquire! :workspace/scroll)
+                (st/emit! (udw/start-viewport-positioning)))))
 
           (on-key-up [event]
             (let [key (.-keyCode event)
@@ -152,10 +164,8 @@
                         :shift? shift?
                         :ctrl? ctrl?}]
               (when (kbd/space? event)
-                (st/emit! (dw/stop-viewport-positioning)))
-              (st/emit! (uev/keyboard-event :up key ctrl? shift?))
-              ;; TODO: remove (deprecated)
-              #_(rx/push! streams/events-b [:key/up opts])))
+                (st/emit! (udw/stop-viewport-positioning)))
+              (st/emit! (uev/keyboard-event :up key ctrl? shift?))))
 
           (on-mousemove [event]
             (let [wpt (gpt/point (.-clientX event)
@@ -169,9 +179,7 @@
                          :window-coords wpt
                          :viewport-coords vpt
                          :canvas-coords cpt}]
-              (st/emit! (uev/pointer-event wpt vpt cpt ctrl? shift?))
-              ;; TODO: remove (deprecated)
-              #_(rx/push! streams/mouse-b event)))]
+              (st/emit! (uev/pointer-event wpt vpt cpt ctrl? shift?))))]
 
     (let [key1 (events/listen js/document EventType.MOUSEMOVE on-mousemove)
           key2 (events/listen js/document EventType.KEYDOWN on-key-down)
@@ -207,15 +215,10 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uev/mouse-event :down ctrl? shift?))
-                ;; TODO: remove (deprecated)
-                #_(rx/push! streams/events-b [:mouse/down opts]))
-              (if (:drawing workspace)
-                (rlocks/acquire! :ui/draw)
-                (do
-                  (when (seq (:selected workspace))
-                    (rlocks/release! :shape/edition))
-                  (rlocks/acquire! :ui/selrect))))
+                (st/emit! (uev/mouse-event :down ctrl? shift?)))
+              (if-let [object (:drawing workspace)]
+                (st/emit! (udw/start-drawing object))
+                (st/emit! (udw/start-selrect))))
             (on-context-menu [event]
               (dom/prevent-default event)
               (dom/stop-propagation event)
@@ -223,36 +226,28 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uev/mouse-event :context-menu ctrl? shift?))
-                ;; TODO: remove (deprecated)
-                #_(rx/push! streams/events-b [:mouse/right-click opts])))
+                (st/emit! (uev/mouse-event :context-menu ctrl? shift?))))
             (on-mouse-up [event]
               (dom/stop-propagation event)
               (let [ctrl? (kbd/ctrl? event)
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uev/mouse-event :up ctrl? shift?))
-                ;; TODO: remove (deprecated)
-                #_(rx/push! streams/events-b [:mouse/up])))
+                (st/emit! (uev/mouse-event :up ctrl? shift?))))
             (on-click [event]
               (dom/stop-propagation event)
               (let [ctrl? (kbd/ctrl? event)
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uev/mouse-event :click ctrl? shift?))
-                ;; TODO: remove (deprecated)
-                #_(rx/push! streams/events-b [:mouse/click opts])))
+                (st/emit! (uev/mouse-event :click ctrl? shift?))))
             (on-double-click [event]
               (dom/stop-propagation event)
               (let [ctrl? (kbd/ctrl? event)
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uev/mouse-event :double-click ctrl? shift?))
-                ;; TODO: remove (deprecated)
-                #_(rx/push! streams/events-b [:mouse/double-click opts])))]
+                (st/emit! (uev/mouse-event :double-click ctrl? shift?))))]
       [:div
         (coordinates)
         (when tooltip

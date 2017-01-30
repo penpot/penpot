@@ -20,7 +20,6 @@
             [uxbox.main.ui.shapes.common :as scommon]
             [uxbox.main.geom :as geom]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.rlocks :as rlocks]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
@@ -209,8 +208,7 @@
               (apply st/emit! (sequence xf ids))))
 
           (on-end []
-            (apply st/emit! (map uds/apply-resize-matrix ids))
-            (rlocks/release! :shape/resize))]
+            (apply st/emit! (map uds/apply-resize-matrix ids)))]
 
     (let [shape  (->> (geom/shape->rect-shape shape)
                       (geom/size))
@@ -229,7 +227,6 @@
                       (rx/with-latest-from vector streams/mouse-position-ctrl)
                       (rx/scan accumulate-width shape)
                       (rx/map (partial calculate-ratio shape)))]
-      (rlocks/acquire! :shape/resize)
       (rx/subscribe stream
                     (partial on-resize shape)
                     nil
@@ -316,27 +313,30 @@
 
 ;; --- Selection Handlers (Component)
 
+(defn get-path-edition-stoper
+  [stream]
+  (letfn [(stoper-event? [{:keys [type shift] :as event}]
+            (and (uev/mouse-event? event) (= type :up)))]
+    (rx/merge
+     (rx/filter stoper-event? stream)
+     (->> stream
+          (rx/filter #(= % ::uev/interrupt))
+          (rx/take 1)))))
+
 (defn start-path-edition
   [shape-id index]
   (letfn [(on-move [delta]
-            (st/emit! (uds/update-path shape-id index delta)))
-          (on-end []
-            (rlocks/release! :shape/resize))]
-    (let [stoper (->> streams/events
-                      (rx/map first)
-                      (rx/filter #(= % :mouse/up))
-                      (rx/take 1))
+            (st/emit! (uds/update-path shape-id index delta)))]
+    (let [stoper (get-path-edition-stoper streams/events)
           stream (rx/take-until stoper streams/mouse-position-deltas)]
-      (rlocks/acquire! :shape/resize)
       (when @refs/selected-alignment
         (st/emit! (uds/initial-path-point-align shape-id index)))
-      (rx/subscribe stream on-move nil on-end))))
+      (rx/subscribe stream on-move))))
 
 (mx/defc path-edition-selection-handlers
   [{:keys [id points] :as shape} zoom]
   (letfn [(on-mouse-down [index event]
             (dom/stop-propagation event)
-            (rlocks/acquire! :shape/resize)
             (start-path-edition id index))]
     [:g.controls
      (for [[index {:keys [x y]}] (map-indexed vector points)]
