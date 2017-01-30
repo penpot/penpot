@@ -41,7 +41,7 @@ select distinct
  inner join project_shares as ps
          on (ps.project = pr.id)
   left join pages as pg
-         on (pg.project = pr.id)
+         on (pg.project = pr.id and pg.deleted_at is null)
  where pr.deleted_at is null
    and pr."user" = :user
 window win as (partition by pr.id
