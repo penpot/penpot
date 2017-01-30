@@ -106,8 +106,8 @@
 ;; --- Retrieve Image
 
 (defn retrieve-image
-  [conn {:keys [user id]}]
-  (let [sqlv (sql/get-image {:user user :id id})]
+  [conn {:keys [id]}]
+  (let [sqlv (sql/get-image {:id id})]
     (some-> (sc/fetch-one conn sqlv)
             (data/normalize-attrs))))
 
