@@ -18,12 +18,17 @@
             [uxbox.main.ui.shapes.group :refer [group-shape]]
             [uxbox.main.ui.shapes.path :refer [path-shape]]
             [uxbox.main.ui.shapes.circle :refer [circle-shape]]
-            [uxbox.main.ui.shapes.image :refer [image-shape image-ref]]
+            [uxbox.main.ui.shapes.image :refer [image-shape]]
             [uxbox.util.mixins :as mx :include-macros true])
   (:import goog.events.EventType))
 
 (def itx-flag-ref
   (-> (comp (l/key :flags) (l/lens :interactions))
+      (l/derive st/state)))
+
+(defn image-ref
+  [id]
+  (-> (l/in [:images id])
       (l/derive st/state)))
 
 ;; --- Interactions Wrapper
