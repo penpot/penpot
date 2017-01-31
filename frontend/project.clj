@@ -17,10 +17,12 @@
 
                  ;; runtime
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [rum "0.10.8"]
+                 [rum "0.10.8" :exclusions [cljsjs/react cljsjs/react-dom]]
+                 ;; [cljsjs/react-with-addons "15.4.2-1"]
                  [cljsjs/react "15.4.2-1"]
                  [cljsjs/react-dom "15.4.2-1"]
                  [cljsjs/react-dom-server "15.4.2-1"]
+
                  [cljsjs/moment "2.17.1-0"]
                  [funcool/potok "1.2.0"]
                  [funcool/struct "1.0.0"]
