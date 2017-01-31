@@ -10,7 +10,8 @@
   :profiles {:dev {:source-paths ["dev"]}}
 
   :dependencies [[org.clojure/clojure "1.9.0-alpha14" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.456" :scope "provided"]
+                 ;; [org.clojure/clojurescript "1.9.456" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.293" :scope "provided"]
 
                  ;; Build
                  [figwheel-sidecar "0.5.8" :scope "test"]
