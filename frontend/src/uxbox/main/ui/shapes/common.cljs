@@ -20,8 +20,6 @@
 
 ;; --- Refs
 
-;; FIXME: use the predefined lenses under uxbox.main.lenses
-
 (def edition-ref
   (-> (l/in [:workspace :edition])
       (l/derive st/state)))
@@ -31,8 +29,13 @@
       (l/derive st/state)))
 
 (def selected-ref
-  (-> (l/in [:workspace :selected])
-      (l/derive st/state)))
+  (-> (l/in [:selected])
+      (l/derive refs/workspace)))
+
+(defn modifiers-ref
+  [id]
+  (-> (l/in [:modifiers id])
+      (l/derive refs/workspace)))
 
 ;; --- Movement
 

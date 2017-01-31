@@ -19,11 +19,12 @@
 
 (mx/defc rect-component
   {:mixins [mx/reactive mx/static]}
-  [shape]
-  (let [{:keys [id x y width height group]} shape
+  [{:keys [id] :as shape}]
+  (let [modifiers (mx/react (common/modifiers-ref id))
         selected (mx/react common/selected-ref)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)]
+        on-mouse-down #(common/on-mouse-down % shape selected)
+        shape (assoc shape :modifiers modifiers)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
      (rect-shape shape identity)]))
@@ -40,10 +41,11 @@
 
 (mx/defc rect-shape
   {:mixins [mx/static]}
-  [{:keys [id tmp-displacement tmp-resize-xform rotation] :as shape}]
-  (let [xfmt (cond-> (gmt/matrix)
-                tmp-displacement (gmt/translate tmp-displacement)
-                tmp-resize-xform (gmt/multiply tmp-resize-xform))
+  [{:keys [id rotation modifiers] :as shape}]
+  (let [{:keys [displacement resize]} modifiers
+        xfmt (cond-> (gmt/matrix)
+               displacement (gmt/multiply displacement)
+               resize (gmt/multiply resize))
 
         {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
                                                    (geom/size))

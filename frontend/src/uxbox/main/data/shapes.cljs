@@ -14,8 +14,8 @@
             [uxbox.main.lenses :as ul]
             [uxbox.main.geom :as geom]
             [uxbox.main.workers :as uwrk]
-            [uxbox.main.data.shapes-impl :as impl]
             [uxbox.main.data.pages :as udp]
+            [uxbox.main.data.shapes-impl :as impl]
             [uxbox.main.user-events :as uev]
             [uxbox.util.data :refer [dissoc-in]]
             [uxbox.util.forms :as sc]
@@ -177,13 +177,11 @@
 ;; --- Apply Temporal Displacement
 
 (deftype ApplyTemporalDisplacement [id delta]
-  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
-    (let [shape (get-in state [:shapes id])
-          displ (:tmp-displacement shape (gpt/point 0 0))
-          delta (gpt/add displ delta)]
-      (assoc-in state [:shapes id :tmp-displacement] delta))))
+    (let [prev (get-in state [:workspace :modifiers id :displacement] (gmt/matrix))
+          curr (gmt/translate prev delta)]
+      (assoc-in state [:workspace :modifiers id :displacement] curr))))
 
 (defn apply-temporal-displacement
   [id pt]
@@ -192,30 +190,15 @@
 
 ;; --- Apply Displacement
 
-;; TODO: move to shapes-impl ns.
-
 (deftype ApplyDisplacement [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [{:keys [tmp-displacement type] :as shape} (get-in state [:shapes id])
-          xfmt  (gmt/translate-matrix tmp-displacement)]
-
-      (if (= type :group)
-        (letfn [(update-item [state id]
-                  (let [{:keys [type items] :as shape} (get-in state [:shapes id])]
-                    (if (= type :group)
-                      (reduce update-item state items)
-                      (update-in state [:shapes id]
-                                 (fn [shape]
-                                   (as-> (dissoc shape :tmp-displacement) $
-                                     (geom/transform state $ xfmt)))))))]
-          (-> (reduce update-item state (:items shape))
-              (update-in [:shapes id] dissoc :tmp-displacement)))
-
-        (update-in state [:shapes id] (fn [shape]
-                                        (as-> (dissoc shape :tmp-displacement) $
-                                          (geom/transform state $ xfmt))))))))
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [displacement (get-in state [:workspace :modifiers id :displacement])]
+      (if (gmt/matrix? displacement)
+        (rx/of #(impl/materialize-xfmt % id displacement)
+               #(update-in % [:workspace :modifiers id] dissoc :displacement)
+               ::udp/page-update)
+        (rx/empty)))))
 
 (defn apply-displacement
   [id]
@@ -224,48 +207,34 @@
 
 ;; --- Apply Temporal Resize Matrix
 
-(deftype ApplyTemporalResizeMatrix [id mx]
-  udp/IPageUpdate
+(deftype ApplyTemporalResize [id xfmt]
   ptk/UpdateEvent
   (update [_ state]
-    (assoc-in state [:shapes id :tmp-resize-xform] mx)))
+    (assoc-in state [:workspace :modifiers id :resize] xfmt)))
 
-(defn apply-temporal-resize-matrix
-  "Attach temporal resize matrix transformation to the shape."
-  [id mx]
-  (ApplyTemporalResizeMatrix. id mx))
+(defn apply-temporal-resize
+  "Attach temporal resize transformation to the shape."
+  [id xfmt]
+  {:pre [(gmt/matrix? xfmt)]}
+  (ApplyTemporalResize. id xfmt))
 
 ;; --- Apply Resize Matrix
 
-(declare apply-resize-matrix)
+(deftype ApplyResize [id]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [resize (get-in state [:workspace :modifiers id :resize])]
+      (if (gmt/matrix? resize)
+        (rx/of #(impl/materialize-xfmt % id resize)
+               #(update-in % [:workspace :modifiers id] dissoc :resize)
+               ::udp/page-update)
+        (rx/empty)))))
 
-(deftype ApplyResizeMatrix [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [{:keys [type tmp-resize-xform]
-           :or {tmp-resize-xform (gmt/matrix)}
-           :as shape} (get-in state [:shapes id])]
-      (if (= type :group)
-        (letfn [(update-item [state id]
-                  (let [{:keys [type items] :as shape} (get-in state [:shapes id])]
-                    (if (= type :group)
-                      (reduce update-item state items)
-                      (update-in state [:shapes id]
-                                 (fn [shape]
-                                   (as-> (dissoc shape :tmp-resize-xform) $
-                                     (geom/transform state $ tmp-resize-xform)))))))]
-          (-> (reduce update-item state (:items shape))
-              (update-in [:shapes id] dissoc :tmp-resize-xform)))
-        (update-in state [:shapes id] (fn [shape]
-                                        (as-> (dissoc shape :tmp-resize-xform) $
-                                          (geom/transform state $ tmp-resize-xform))))))))
-
-(defn apply-resize-matrix
+(defn apply-resize
   "Apply definitivelly the resize matrix transformation to the shape."
   [id]
   {:pre [(uuid? id)]}
-  (ApplyResizeMatrix. id))
+  (ApplyResize. id))
 
 (defn update-position
   "Update the start position coordenate of the shape."

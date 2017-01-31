@@ -22,8 +22,10 @@
 (mx/defc path-component
   {:mixins [mx/static mx/reactive]}
   [{:keys [id] :as shape}]
-  (let [selected (mx/react common/selected-ref)
-        selected? (contains? selected id)]
+  (let [modifiers (mx/react (common/modifiers-ref id))
+        selected (mx/react common/selected-ref)
+        selected? (contains? selected id)
+        shape (assoc shape :modifiers modifiers)]
     (letfn [(on-mouse-down [event]
               (common/on-mouse-down event shape selected))
             (on-double-click [event]
@@ -32,13 +34,12 @@
       [:g.shape {:class (when selected? "selected")
                  :on-double-click on-double-click
                  :on-mouse-down on-mouse-down}
-       (path-shape shape identity)])))
+       (path-shape shape)])))
 
 ;; --- Path Shape
 
 (defn- render-path
   [{:keys [points close?] :as shape}]
-  {:pre [(pos? (count points))]}
   (let [start (first points)
         init  (str "M " (:x start) " " (:y start))
         path  (reduce #(str %1 " L" (:x %2) " " (:y %2)) init points)]
@@ -47,11 +48,11 @@
 
 (mx/defc path-shape
   {:mixins [mx/static]}
-  [{:keys [id tmp-resize-xform tmp-displacement rotation] :as shape}]
-
-  (let [shape (cond-> shape
-                tmp-displacement (geom/transform (gmt/translate-matrix tmp-displacement))
-                tmp-resize-xform (geom/transform tmp-resize-xform)
+  [{:keys [id modifiers rotation] :as shape}]
+  (let [{:keys [resize displacement]} modifiers
+        shape (cond-> shape
+                displacement (geom/transform displacement)
+                resize (geom/transform resize)
                 (pos? rotation) (geom/rotate-shape))
 
         props {:id (str id)

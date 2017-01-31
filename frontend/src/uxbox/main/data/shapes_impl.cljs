@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.shapes-impl
   (:require [lentes.core :as l]
             [uxbox.main.geom :as geom]
             [uxbox.main.lenses :as ul]
+            [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.data :refer (index-of)]))
 
@@ -413,3 +414,11 @@
       (as-> state $
         (empty-groups $ page groups-ids)
         (update $ :workspace assoc :selected (set groups-items))))))
+
+(defn materialize-xfmt
+  [state id xfmt]
+  (let [{:keys [type items] :as shape} (get-in state [:shapes id])]
+    (if (= type :group)
+      (-> (reduce #(materialize-xfmt %1 %2 xfmt) state items)
+          (update-in [:shapes id] geom/transform xfmt))
+      (update-in state [:shapes id] geom/transform xfmt))))

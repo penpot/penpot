@@ -19,23 +19,27 @@
 
 (mx/defc circle-component
   {:mixins [mx/reactive mx/static]}
-  [shape]
-  (let [{:keys [id x y width height group]} shape
+  [{:keys [id] :as shape}]
+  (let [modifiers (mx/react (common/modifiers-ref id))
         selected (mx/react common/selected-ref)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)]
+        on-mouse-down #(common/on-mouse-down % shape selected)
+        shape (assoc shape :modifiers modifiers)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     (circle-shape shape identity)]))
+     (circle-shape shape)]))
 
 ;; --- Circle Shape
 
 (mx/defc circle-shape
   {:mixins [mx/static]}
-  [{:keys [id tmp-resize-xform tmp-displacement rotation cx cy] :as shape}]
-  (let [shape (cond-> shape
-                tmp-displacement (geom/transform (gmt/translate-matrix tmp-displacement))
-                tmp-resize-xform (geom/transform tmp-resize-xform))
+  [{:keys [id modifiers rotation cx cy] :as shape}]
+  (let [{:keys [resize displacement]} modifiers
+
+        shape (cond-> shape
+                displacement (geom/transform displacement)
+                resize (geom/transform resize))
+
         center (gpt/point (:cx shape)
                           (:cy shape))
         rotation (or rotation 0)

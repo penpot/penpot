@@ -44,6 +44,9 @@
       (l/derive st/state)))
 
 (def ^:private edition-ref scommon/edition-ref)
+(def ^:private modifiers-ref
+  (-> (l/key :modifiers)
+      (l/derive refs/workspace)))
 
 ;; --- Resize Implementation
 
@@ -204,11 +207,11 @@
               ))
           (on-resize [shape scale]
             (let [mt (gen-matrix shape scale)
-                  xf (map #(uds/apply-temporal-resize-matrix % mt))]
+                  xf (map #(uds/apply-temporal-resize % mt))]
               (apply st/emit! (sequence xf ids))))
 
           (on-end []
-            (apply st/emit! (map uds/apply-resize-matrix ids)))]
+            (apply st/emit! (map uds/apply-resize ids)))]
 
     (let [shape  (->> (geom/shape->rect-shape shape)
                       (geom/size))
@@ -349,7 +352,7 @@
 
 (mx/defc multiple-selection-handlers
   {:mixins [mx/static]}
-  [[shape & rest :as shapes] zoom]
+  [[shape & rest :as shapes] modifiers zoom]
   (let [selection (-> (map #(geom/selection-rect %) shapes)
                       (geom/shapes->rect-shape)
                       (geom/selection-rect))
@@ -360,7 +363,7 @@
 
 (mx/defc single-selection-handlers
   {:mixins [mx/static]}
-  [{:keys [id] :as shape} zoom]
+  [{:keys [id] :as shape} modifiers zoom]
   (let [on-click #(do (dom/stop-propagation %2)
                       (start-resize %1 #{id} shape))
         shape (geom/selection-rect shape)]
@@ -384,6 +387,7 @@
   {:mixins [mx/reactive mx/static]}
   []
   (let [shapes (mx/react selected-shapes-ref)
+        modifiers (mx/react modifiers-ref)
         edition? (mx/react edition-ref)
         zoom (mx/react refs/selected-zoom)
         num (count shapes)
@@ -393,7 +397,7 @@
       nil
 
       (> num 1)
-      (multiple-selection-handlers shapes zoom)
+      (multiple-selection-handlers shapes modifiers zoom)
 
       (and (= type :text) edition?)
       (text-edition-selection-handlers shape zoom)
@@ -401,7 +405,7 @@
       (= type :path)
       (if (= @edition-ref (:id shape))
         (path-edition-selection-handlers shape zoom)
-        (single-selection-handlers shape zoom))
+        (single-selection-handlers shape modifiers zoom))
 
       :else
-      (single-selection-handlers shape zoom))))
+      (single-selection-handlers shape modifiers zoom))))

@@ -36,27 +36,30 @@
                    (st/emit! (udi/fetch-image id)))
                  own)}
   [own {:keys [id image] :as shape}]
-  (let [selected (mx/react common/selected-ref)
+  (let [modifiers (mx/react (common/modifiers-ref id))
+        selected (mx/react common/selected-ref)
         image (mx/react (image-ref image))
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)]
+        on-mouse-down #(common/on-mouse-down % shape selected)
+        shape (assoc shape
+                     :modifiers modifiers
+                     :image image)]
     (when image
       [:g.shape {:class (when selected? "selected")
                  :on-mouse-down on-mouse-down}
-       (image-shape (assoc shape :image image))])))
+       (image-shape shape)])))
 
 ;; --- Image Shape
 
 (mx/defc image-shape
   {:mixins [mx/static]}
-  [shape]
-  (let [{:keys [id x1 y1 image
-                width height
-                tmp-resize-xform
-                tmp-displacement]} (geom/size shape)
+  [{:keys [id x1 y1 image modifiers] :as shape}]
+  (let [{:keys [width height]} (geom/size shape)
+        {:keys [resize displacement]} modifiers
 
-        xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
-               tmp-displacement (gmt/translate tmp-displacement))
+        xfmt (cond-> (gmt/matrix)
+               resize (gmt/multiply resize)
+               displacement (gmt/multiply displacement))
 
         props {:x x1 :y y1
                :id (str "shape-" id)

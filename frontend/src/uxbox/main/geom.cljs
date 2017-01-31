@@ -438,15 +438,14 @@
 
 (defn transform
   "Apply the matrix transformation to shape."
-  ([shape xfmt] (transform @st/state shape xfmt))
-  ([state {:keys [type] :as shape} xfmt]
-   (case type
-     :rect (transform-rect shape xfmt)
-     :icon (transform-rect shape xfmt)
-     :text (transform-rect shape xfmt)
-     :image (transform-rect shape xfmt)
-     :path (transform-path shape xfmt)
-     :circle (transform-circle shape xfmt))))
+  [{:keys [type] :as shape} xfmt]
+  (case type
+    :rect (transform-rect shape xfmt)
+    :icon (transform-rect shape xfmt)
+    :text (transform-rect shape xfmt)
+    :image (transform-rect shape xfmt)
+    :path (transform-path shape xfmt)
+    :circle (transform-circle shape xfmt)))
 
 (defn- transform-rect
   [{:keys [x1 y1] :as shape} mx]
@@ -524,29 +523,24 @@
 
 (defn- selection-rect-generic
   [state {:keys [id x1 y1 x2 y2] :as shape}]
-  (let [resize-xf (:tmp-resize-xform shape (gmt/matrix))
-        displc-xf (-> (:tmp-displacement shape (gpt/point 0 0))
-                      (gmt/translate-matrix))]
+  (let [{:keys [displacement resize]} (get-in state [:workspace :modifiers id])]
     (-> (shape->rect-shape shape)
         (assoc :type :rect :id id)
-        (transform resize-xf)
-        (transform displc-xf)
+        (transform (or resize (gmt/matrix)))
+        (transform (or displacement (gmt/matrix)))
         (rotate-shape)
         (size))))
 
 (defn- selection-rect-group
   [state {:keys [id group items] :as shape}]
-  (let [resize-xf (:tmp-resize-xform shape (gmt/matrix))
-        displc-xf (-> (:tmp-displacement shape (gpt/point 0 0))
-                      (gmt/translate-matrix))
+  (let [{:keys [displacement resize]} (get-in state [:workspace :modifiers id])
         shapes (->> items
                     (map #(get-in state [:shapes %]))
                     (map #(selection-rect state %)))]
-
     (-> (shapes->rect-shape shapes)
         (assoc :id id)
-        (transform resize-xf)
-        (transform displc-xf)
+        (transform (or resize (gmt/matrix)))
+        (transform (or displacement (gmt/matrix)))
         (rotate-shape)
         (size))))
 

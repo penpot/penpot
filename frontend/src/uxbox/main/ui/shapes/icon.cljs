@@ -19,34 +19,36 @@
 (mx/defc icon-component
   {:mixins [mx/static mx/reactive]}
   [{:keys [id] :as shape}]
-  (let [selected (mx/react common/selected-ref)
+  (let [modifiers (mx/react (common/modifiers-ref id))
+        selected (mx/react common/selected-ref)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)]
+        on-mouse-down #(common/on-mouse-down % shape selected)
+        shape (assoc shape :modifiers modifiers)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     (icon-shape shape identity)]))
+     (icon-shape shape)]))
 
 ;; --- Icon Shape
 
 (mx/defc icon-shape
   {:mixins [mx/static]}
-  [shape]
-  (let [{:keys [x1 y1 content id metadata
-                width height rotation
-                tmp-resize-xform
-                tmp-displacement]} (geom/size shape)
+  [{:keys [id content metadata rotation x1 y1 modifiers] :as shape}]
+  (let [{:keys [width height]} (geom/size shape)
+        {:keys [resize displacement]} modifiers
 
         view-box (apply str (interpose " " (:view-box metadata)))
 
         xfmt (cond-> (gmt/matrix)
-               tmp-resize-xform (gmt/multiply tmp-resize-xform)
-               tmp-displacement (gmt/translate tmp-displacement)
+               resize (gmt/multiply resize)
+               displacement (gmt/multiply displacement)
                rotation (gmt/rotate* rotation (gpt/point (+ x1 (/ width 2))
                                                          (+ y1 (/ height 2)))))
-
         props {:id (str id)
-               :x x1 :y y1 :view-box view-box
-               :width width :height height
+               :x x1
+               :y y1
+               :view-box view-box
+               :width width
+               :height height
                :preserve-aspect-ratio "none"
                :dangerouslySetInnerHTML {:__html content}}
 

@@ -433,7 +433,8 @@
                        (rx/take 1))]
       (rx/merge
        (->> stream
-            (rx/filter #(satisfies? IPageUpdate %))
+            (rx/filter #(or (satisfies? IPageUpdate %)
+                            (= ::page-update %)))
             (rx/take-until stopper)
             (rx/debounce 1000)
             (rx/mapcat #(rx/merge (rx/of (persist-page id))
