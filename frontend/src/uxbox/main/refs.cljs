@@ -62,6 +62,14 @@
   (-> (l/key :zoom)
       (l/derive workspace)))
 
+(def selected-tooltip
+  (-> (l/key :tooltip)
+      (l/derive workspace)))
+
+(def selected-drawing-tool
+  (-> (l/key :drawing-tool)
+      (l/derive workspace)))
+
 (defn alignment-activated?
   [state]
   (let [flags (l/focus ul/workspace-flags state)]

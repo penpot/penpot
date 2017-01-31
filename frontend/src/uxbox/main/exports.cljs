@@ -64,6 +64,9 @@
 
 (defn render-page
   [id]
-  (let [page (get-in @*state* [:pages id])]
-    (when (:shapes page)
-      (mx/render-static-html (page-svg page)))))
+  (try
+    (let [page (get-in @*state* [:pages id])]
+      (when (:shapes page)
+        (mx/render-static-html (page-svg page))))
+    (catch :default e
+      nil)))

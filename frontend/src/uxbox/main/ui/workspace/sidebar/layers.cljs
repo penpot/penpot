@@ -288,13 +288,13 @@
 ;; --- Layers Toolbox (Component)
 
 (mx/defc layers-toolbox
-  {:mixins [mx/reactive]}
+  {:mixins [mx/static mx/reactive]}
   []
-  (let [workspace (mx/react refs/workspace)
-        selected (:selected workspace)
-        ;; TODO: dont react to the while shapes-by-id
+  (let [selected (mx/react refs/selected-shapes)
+        page (mx/react refs/selected-page)
+
+        ;; TODO: dont react to the whole shapes-by-id
         shapes-map (mx/react refs/shapes-by-id)
-        page (mx/react (focus-page (:page workspace)))
         close #(st/emit! (udw/toggle-flag :layers))
         duplicate #(st/emit! (uds/duplicate-selected))
         group #(st/emit! (uds/group-selected))

@@ -14,6 +14,7 @@
             [uxbox.main.data.workspace :as dw]
             [uxbox.main.user-events :as uev]
             [uxbox.builtins.icons :as i]
+            [uxbox.util.uuid :as uuid]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.data :refer (read-string)]
@@ -22,27 +23,30 @@
 
 ;; --- Refs
 
-(def ^:private drawing-shape
+(def ^:private drawing-shape-id-ref
   "A focused vision of the drawing property
   of the workspace status. This avoids
   rerender the whole toolbox on each workspace
   change."
-  (-> (l/in [:workspace :drawing])
-      (l/derive st/state)))
+  (-> (l/key :drawing-tool)
+      (l/derive refs/workspace)))
 
 ;; --- Constants
 
 (def +draw-tool-rect+
   {:type :rect
+   :id (uuid/random)
    :name "Rect"
    :stroke-color "#000000"})
 
 (def +draw-tool-circle+
   {:type :circle
+   :id (uuid/random)
    :name "Circle"})
 
 (def +draw-tool-path+
   {:type :path
+   :id (uuid/random)
    :name "Path"
    :stroke-style :solid
    :stroke-color "#000000"
@@ -52,8 +56,14 @@
    ;; :close? true
    :points []})
 
+(def +draw-tool-curve+
+  (assoc +draw-tool-path+
+         :id (uuid/random)
+         :free true))
+
 (def +draw-tool-text+
   {:type :text
+   :id (uuid/random)
    :name "Text"
    :content "Hello world"})
 
@@ -76,7 +86,7 @@
     :priority 5}
    {:icon i/pencil
     :help (tr "ds.help.path")
-    :shape (assoc +draw-tool-path+ :free true)
+    :shape +draw-tool-curve+
     :priority 6}])
 
 ;; --- Draw Toolbox (Component)
@@ -88,9 +98,8 @@
 
 (mx/defc draw-toolbox
   {:mixins [mx/static mx/reactive]}
-  [own]
-  (let [workspace (mx/react refs/workspace)
-        drawing (mx/react drawing-shape)
+  []
+  (let [drawing-tool (mx/react refs/selected-drawing-tool)
         close #(st/emit! (dw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))]
@@ -101,7 +110,7 @@
       [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content
       (for [[i props] (map-indexed vector tools)
-            :let [selected? (= drawing (:shape props))]]
+            :let [selected? (= drawing-tool (:shape props))]]
         [:div.tool-btn.tooltip.tooltip-hover
          {:alt (:help props)
           :class (when selected? "selected")

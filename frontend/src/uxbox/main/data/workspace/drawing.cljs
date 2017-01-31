@@ -33,8 +33,10 @@
     (let [current (l/focus ul/selected-drawing state)]
       (if (or (nil? shape)
               (= shape current))
-        (update state :workspace dissoc :drawing)
-        (assoc-in state [:workspace :drawing] shape)))))
+        (update state :workspace dissoc :drawing :drawing-tool)
+        (update state :workspace assoc
+                :drawing shape
+                :drawing-tool shape)))))
 
 (defn select-for-drawing
   [shape]
@@ -105,9 +107,8 @@
 (deftype FinishDrawing []
   ptk/WatchEvent
   (watch [_ state stream]
-    (println "finish-drawing" (get-in state [:workspace :drawing]))
     (if-let [shape (get-in state [:workspace :drawing])]
-      (rx/of #(update % :workspace dissoc :drawing)
+      (rx/of #(update % :workspace dissoc :drawing :drawing-tool)
              (uds/add-shape shape)
              (uds/select-first-shape)
              ::uev/interrupt)
@@ -197,11 +198,9 @@
 
 (defn- translate-to-canvas
   [point]
-  (let [zoom @refs/selected-zoom
-        ccords (gpt/multiply canvas-coords zoom)]
-    (-> point
-        (gpt/subtract ccords)
-        (gpt/divide zoom))))
+  (-> point
+      (gpt/subtract (gpt/multiply canvas-coords @refs/selected-zoom))
+      (gpt/divide @refs/selected-zoom)))
 
 (declare on-init-draw-icon)
 (declare on-init-draw-path)
@@ -302,7 +301,7 @@
 (defn- on-init-draw-free-path
   [shape stoper]
   (let [stoper (get-path-stoper-stream stoper true)
-        mouse (->> (rx/sample 10 streams/viewport-mouse-position)
+        mouse (->> streams/viewport-mouse-position
                    (rx/mapcat conditional-align)
                    (rx/map translate-to-canvas))
 

@@ -151,24 +151,17 @@
 
 ;; --- History Dialog
 
-(defn history-dialog-render
-  [own page]
+(mx/defc history-dialog
+  {:mixins [mx/static mx/reactive]}
+  [page]
   (let [history (mx/react history-ref)
         version (:selected history)
         on-accept #(st/emit! (udh/apply-selected-history page))
         on-cancel #(st/emit! (udh/deselect-page-history page))]
     (when (or version (:deselecting history))
-      (html
-       [:div.message-version
-        {:class (when (:deselecting history) "hide-message")}
-        [:span (tr "history.alert-message" (or version "00"))
-         [:div.message-action
-          [:a.btn-transparent {:on-click on-accept} "Accept"]
-          [:a.btn-transparent {:on-click on-cancel} "Cancel"]]]]))))
-
-(def history-dialog
-  (mx/component
-   {:render history-dialog-render
-    :name "history-dialog"
-    :mixins [mx/static mx/reactive]}))
-
+      [:div.message-version
+       {:class (when (:deselecting history) "hide-message")}
+       [:span (tr "history.alert-message" (or version "00"))
+        [:div.message-action
+         [:a.btn-transparent {:on-click on-accept} "Accept"]
+         [:a.btn-transparent {:on-click on-cancel} "Cancel"]]]])))

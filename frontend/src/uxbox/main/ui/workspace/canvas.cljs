@@ -103,11 +103,9 @@
 ;; --- Canvas
 
 (mx/defc canvas
-  {:mixins [mx/reactive]}
+  {:mixins [mx/static mx/reactive]}
   [{:keys [metadata id] :as page}]
-  (let [workspace (mx/react refs/workspace)
-        flags (:flags workspace)
-        width (:width metadata)
+  (let [width (:width metadata)
         height (:height metadata)]
     [:svg.page-canvas {:x c/canvas-start-x
                        :y c/canvas-start-y
@@ -201,14 +199,12 @@
    :will-unmount viewport-will-unmount
    :mixins [mx/reactive]}
   []
-  (let [workspace (mx/react refs/workspace)
-        page (mx/react refs/selected-page)
-        flags (:flags workspace)
-        drawing? (:drawing workspace)
-        tooltip (if (:tooltip workspace)
-                  (:tooltip workspace)
-                  (get-shape-tooltip drawing?))
-        zoom (or (:zoom workspace) 1)]
+  (let [page (mx/react refs/selected-page)
+        flags (mx/react refs/flags)
+        drawing (mx/react refs/selected-drawing-tool)
+        tooltip (or (mx/react refs/selected-tooltip)
+                    (get-shape-tooltip drawing))
+        zoom (or (mx/react refs/selected-zoom) 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
               (let [ctrl? (kbd/ctrl? event)
@@ -216,8 +212,8 @@
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
                 (st/emit! (uev/mouse-event :down ctrl? shift?)))
-              (if-let [object (:drawing workspace)]
-                (st/emit! (udw/start-drawing object))
+              (if drawing
+                (st/emit! (udw/start-drawing drawing))
                 (st/emit! (udw/start-selrect))))
             (on-context-menu [event]
               (dom/prevent-default event)
@@ -255,7 +251,7 @@
         [:svg.viewport {:width (* c/viewport-width zoom)
                         :height (* c/viewport-height zoom)
                         :ref "viewport"
-                        :class (when drawing? "drawing")
+                        :class (when drawing "drawing")
                         :on-context-menu on-context-menu
                         :on-click on-click
                         :on-double-click on-double-click

@@ -8,6 +8,7 @@
 (ns uxbox.main.ui.workspace
   (:require [beicon.core :as rx]
             [potok.core :as ptk]
+            [lentes.core :as l]
             [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.refs :as refs]
@@ -97,6 +98,10 @@
         (st/emit! (dw/decrease-zoom)))
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
+(def ^:private workspace-page-ref
+  (-> (l/key :page)
+      (l/derive refs/workspace)))
+
 (mx/defcs workspace
   {:did-remount workspace-did-remount
    :will-mount workspace-will-mount
@@ -104,15 +109,15 @@
    :did-mount workspace-did-mount
    :mixins [mx/static
             mx/reactive
-            shortcuts-mixin
-            (mx/local)]}
+            shortcuts-mixin]}
   [own]
-  (let [{:keys [flags zoom page] :as workspace} (mx/react refs/workspace)
+  (let [flags (mx/react refs/flags)
+        page  (mx/react workspace-page-ref)
+
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools
                                                  :element-options])))
-        local (:rum/local own)
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?)
@@ -123,7 +128,6 @@
      (colorpalette)
 
      [:main.main-content
-
       [:section.workspace-content
        {:class classes
         :on-scroll on-scroll
@@ -133,8 +137,8 @@
        (history-dialog page)
 
        ;; Rules
-       (horizontal-rule zoom)
-       (vertical-rule zoom)
+       (horizontal-rule)
+       (vertical-rule)
 
        ;; Canvas
        [:section.workspace-canvas

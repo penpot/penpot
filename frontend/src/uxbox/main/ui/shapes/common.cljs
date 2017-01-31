@@ -21,12 +21,13 @@
 ;; --- Refs
 
 (def edition-ref
-  (-> (l/in [:workspace :edition])
-      (l/derive st/state)))
+  (-> (l/in [:edition])
+      (l/derive refs/workspace)))
 
+;; TODO: replace with refs/selected-drawing-tool
 (def drawing-state-ref
-  (-> (l/in [:workspace :drawing])
-      (l/derive st/state)))
+  (-> (l/key :drawing-tool)
+      (l/derive refs/workspace)))
 
 (def selected-ref
   (-> (l/in [:selected])

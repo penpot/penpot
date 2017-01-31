@@ -6,8 +6,7 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.rules
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
+  (:require [sablono.core :refer-macros [html]]
             [cuerdas.core :as str]
             [beicon.core :as rx]
             [uxbox.main.store :as s]
@@ -104,84 +103,62 @@
 
 ;; --- Horizontal Rule Ticks (Component)
 
-(defn- horizontal-rule-ticks-render
-  [own zoom]
+(mx/defc horizontal-rule-ticks
+  {:mixins [mx/static]}
+  [zoom]
   (let [zoom (or zoom 1)
         path (reduce (partial make-vertical-tick zoom) [] +ticks+)
         labels (->> (map (partial horizontal-text-label zoom) +ticks+)
                     (filterv identity))]
-    (html
-     [:g
-      [:path {:d (str/join " " path) :stroke "#9da2a6"}]
-      labels])))
-
-(def ^:private horizontal-rule-ticks
-  (mx/component
-   {:render horizontal-rule-ticks-render
-    :name "horizontal-rule-ticks"
-    :mixins [mx/static]}))
+    [:g
+     [:path {:d (str/join " " path) :stroke "#9da2a6"}]
+     labels]))
 
 ;; --- Vertical Rule Ticks (Component)
 
-(defn- vertical-rule-ticks-render
-  [own zoom]
+(mx/defc vertical-rule-ticks
+  {:mixins [mx/static]}
+  [zoom]
   (let [zoom (or zoom 1)
         path (reduce (partial make-horizontal-tick zoom) [] +ticks+)
         labels (->> (map (partial vertical-text-label zoom) +ticks+)
                     (filterv identity))]
-    (html
-     [:g
-      [:path {:d (str/join " " path) :stroke "#9da2a6"}]
-      labels])))
-
-(def ^:private vertical-rule-ticks
-  (mx/component
-   {:render vertical-rule-ticks-render
-    :name "vertical-rule-ticks"
-    :mixins [mx/static]}))
+    [:g
+     [:path {:d (str/join " " path) :stroke "#9da2a6"}]
+     labels]))
 
 ;; --- Horizontal Rule (Component)
 
-(defn horizontal-rule-render
-  [own zoom]
+(mx/defc horizontal-rule
+  {:mixins [mx/static mx/reactive]}
+  []
   (let [scroll (mx/react refs/workspace-scroll)
+        zoom (mx/react refs/selected-zoom)
         scroll-x (:x scroll)
         translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
-    (html
-     [:svg.horizontal-rule
-      {:width c/viewport-width
-       :height 20}
-      [:g {:transform (str "translate(" translate-x ", 0)")}
-       (horizontal-rule-ticks zoom)]])))
-
-(def horizontal-rule
-  (mx/component
-   {:render horizontal-rule-render
-    :name "horizontal-rule"
-    :mixins [mx/static mx/reactive]}))
+    [:svg.horizontal-rule
+     {:width c/viewport-width
+      :height 20}
+     [:g {:transform (str "translate(" translate-x ", 0)")}
+      (horizontal-rule-ticks zoom)]]))
 
 ;; --- Vertical Rule (Component)
 
-(defn vertical-rule-render
-  [own zoom]
+(mx/defc vertical-rule
+  {:mixins [mx/static mx/reactive]}
+  []
   (let [scroll (mx/react refs/workspace-scroll)
+        zoom (mx/react refs/selected-zoom)
         scroll-y (:y scroll)
         translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
-    (html
-     [:svg.vertical-rule
-      {:width 20
-       :height c/viewport-height}
+    [:svg.vertical-rule
+     {:width 20
+      :height c/viewport-height}
 
-      [:g {:transform (str  "translate(0, " translate-y ")")}
-       (vertical-rule-ticks zoom)]
-      [:rect {:x 0
-              :y 0
-              :height 20
-              :width 20
-              :fill "rgb(233, 234, 235)"}]])))
-
-(def vertical-rule
-  (mx/component
-   {:render vertical-rule-render
-    :name "vertical-rule"
-    :mixins [mx/static mx/reactive]}))
+     [:g {:transform (str  "translate(0, " translate-y ")")}
+      (vertical-rule-ticks zoom)]
+     [:rect {:x 0
+             :y 0
+             :height 20
+             :width 20
+             :fill "rgb(233, 234, 235)"}]]))

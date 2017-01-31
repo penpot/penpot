@@ -53,6 +53,7 @@
                :page page
                :selected #{}
                :drawing nil
+               :drawing-tool nil
                :tooltip nil})
       (assoc state :workspace
              {:project project
@@ -61,6 +62,7 @@
               :flags #{:sitemap :drawtools :layers :element-options}
               :selected #{}
               :drawing nil
+              :drawing-tool nil
               :tooltip nil})))
 
   ptk/WatchEvent
