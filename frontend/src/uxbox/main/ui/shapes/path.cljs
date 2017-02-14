@@ -6,6 +6,7 @@
 
 (ns uxbox.main.ui.shapes.path
   (:require [potok.core :as ptk]
+            [cuerdas.core :as str :include-macros true]
             [uxbox.main.store :as st]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
@@ -14,7 +15,6 @@
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.mixins :as mx :include-macros true]))
-
 ;; --- Path Component
 
 (declare path-shape)
@@ -39,12 +39,25 @@
 ;; --- Path Shape
 
 (defn- render-path
-  [{:keys [points close?] :as shape}]
-  (let [start (first points)
-        init  (str "M " (:x start) " " (:y start))
-        path  (reduce #(str %1 " L" (:x %2) " " (:y %2)) init points)]
-    (cond-> path
-      close? (str " Z"))))
+  [{:keys [segments close?] :as shape}]
+  (let [numsegs (count segments)]
+    (loop [buffer []
+           index 0]
+      (cond
+        (>= index numsegs)
+        (if close?
+          (str/join " " (conj buffer "Z"))
+          (str/join " " buffer))
+
+        (zero? index)
+        (let [{:keys [x y] :as segment} (nth segments index)
+              buffer (conj buffer (str/istr "M~{x},~{y}"))]
+          (recur buffer (inc index)))
+
+        :else
+        (let [{:keys [x y] :as segment} (nth segments index)
+              buffer (conj buffer (str/istr "L~{x},~{y}"))]
+          (recur buffer (inc index)))))))
 
 (mx/defc path-shape
   {:mixins [mx/static]}

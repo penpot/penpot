@@ -327,12 +327,12 @@
       (rx/subscribe stream on-move))))
 
 (mx/defc path-edition-selection-handlers
-  [{:keys [id points] :as shape} zoom]
+  [{:keys [id segments] :as shape} zoom]
   (letfn [(on-mouse-down [index event]
             (dom/stop-propagation event)
             (start-path-edition id index))]
     [:g.controls
-     (for [[index {:keys [x y]}] (map-indexed vector points)]
+     (for [[index {:keys [x y]}] (map-indexed vector segments)]
        [:circle {:cx x :cy y
                  :r (/ 6.0 zoom)
                  :on-mouse-down (partial on-mouse-down index)

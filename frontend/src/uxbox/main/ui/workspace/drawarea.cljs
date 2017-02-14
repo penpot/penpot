@@ -48,7 +48,7 @@
       (shapes/render-component)))
 
 (mx/defc path-draw-area
-  [{:keys [points] :as shape}]
+  [{:keys [segments] :as shape}]
   (letfn [(on-click [event]
             (dom/stop-propagation event)
             (st/emit! (udw/set-tooltip nil)
@@ -56,12 +56,8 @@
           (on-mouse-enter [event]
             (st/emit! (udw/set-tooltip "Click to close the path")))
           (on-mouse-leave [event]
-            (st/emit! (udw/set-tooltip nil)))
-          (drop-last-point [shape]
-            (let [points (:points shape)
-                  points (vec (butlast points))]
-              (assoc shape :points points :close? true)))]
-    (when-let [{:keys [x y]} (first points)]
+            (st/emit! (udw/set-tooltip nil)))]
+    (when-let [{:keys [x y] :as segment} (first segments)]
       [:g
        (-> (assoc shape :drawing? true)
            (shapes/render-component))

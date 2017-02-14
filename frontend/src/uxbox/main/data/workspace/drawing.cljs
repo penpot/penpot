@@ -122,7 +122,7 @@
 (deftype FinishPathDrawing []
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :drawing :points] #(vec (butlast %)))))
+    (update-in state [:workspace :drawing :segments] #(vec (butlast %)))))
 
 (defn finish-path-drawing
   []
@@ -133,7 +133,7 @@
 (deftype InsertDrawingPathPoint [point]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :drawing :points] (fnil conj []) point)))
+    (update-in state [:workspace :drawing :segments] (fnil conj []) point)))
 
 (defn insert-drawing-path-point
   [point]
@@ -145,9 +145,10 @@
 (deftype UpdateDrawingPathPoint [index point]
   ptk/UpdateEvent
   (update [_ state]
-    (let [points (count (get-in state [:workspace :drawing :points]))]
+    (let [segments (count (get-in state [:workspace :drawing :segments]))
+          exists? (< -1 index segments)]
       (cond-> state
-        (< -1 index points) (assoc-in [:workspace :drawing :points index] point)))))
+        exists? (assoc-in [:workspace :drawing :segments index] point)))))
 
 (defn update-drawing-path-point
   [index point]
@@ -174,7 +175,7 @@
 (deftype SimplifyDrawingPath [tolerance]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :drawing :points] pth/simplify tolerance)))
+    (update-in state [:workspace :drawing :segments] pth/simplify tolerance)))
 
 (defn simplify-drawing-path
   [tolerance]

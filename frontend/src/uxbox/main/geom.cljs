@@ -5,8 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.geom
-  (:require [cljs.pprint :refer [pprint]]
-            [uxbox.util.geom.matrix :as gmt]
+  (:require [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.math :as mth]
             [uxbox.main.store :as st]))
@@ -61,11 +60,11 @@
   "A specialized function for relative movement
   for path shapes."
   [shape {dx :x dy :y}]
-  (let [points (:points shape)
+  (let [segments (:segments shape)
         xf (comp
             (map #(update % :x + dx))
             (map #(update % :y + dy)))]
-    (assoc shape :points (into [] xf points))))
+    (assoc shape :segments (into [] xf segments))))
 
 ;; --- Absolute Movement
 
@@ -134,15 +133,15 @@
     :path (size-path shape)))
 
 (defn- size-path
-  [{:keys [points x1 y1 x2 y2] :as shape}]
+  [{:keys [segments x1 y1 x2 y2] :as shape}]
   (if (and x1 y1 x2 y2)
     (assoc shape
            :width (- x2 x1)
            :height (- y2 y1))
-    (let [minx (apply min (map :x points))
-          miny (apply min (map :y points))
-          maxx (apply max (map :x points))
-          maxy (apply max (map :y points))]
+    (let [minx (apply min (map :x segments))
+          miny (apply min (map :y segments))
+          maxx (apply max (map :x segments))
+          maxy (apply max (map :y segments))]
       (assoc shape
              :width (- maxx minx)
              :height (- maxy miny)))))
@@ -169,7 +168,7 @@
   The point should exists before, this function
   does not adds it automatically."
   [shape index point]
-  (assoc-in shape [:points index] point))
+  (assoc-in shape [:segments index] point))
 
 ;; --- Setup Proportions
 
@@ -407,11 +406,11 @@
         (assoc :id id))))
 
 (defn- path->rect-shape
-  [state {:keys [points] :as shape}]
-  (let [minx (apply min (map :x points))
-        miny (apply min (map :y points))
-        maxx (apply max (map :x points))
-        maxy (apply max (map :y points))]
+  [state {:keys [segments] :as shape}]
+  (let [minx (apply min (map :x segments))
+        miny (apply min (map :y segments))
+        maxx (apply max (map :x segments))
+        maxy (apply max (map :y segments))]
     (assoc shape
            :x1 minx
            :y1 miny
@@ -485,9 +484,9 @@
     (assoc shape :cx cx :cy cy :rx rx :ry ry)))
 
 (defn- transform-path
-  [{:keys [points] :as shape} xfmt]
-  (let [points (mapv #(gpt/transform % xfmt) points)]
-    (assoc shape :points points)))
+  [{:keys [segments] :as shape} xfmt]
+  (let [segments (mapv #(gpt/transform % xfmt) segments)]
+    (assoc shape :segments segments)))
 
 ;; --- Outer Rect
 
