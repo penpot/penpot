@@ -245,16 +245,6 @@
    :width width
    :height height})
 
-(defn- render-path
-  [points]
-  {:pre [(pos? (count points))]}
-  (let [start (first points)
-        close? false
-        init  (str "M " (:x start) " " (:y start))
-        path  (reduce #(str %1 " L" (:x %2) " " (:y %2)) init points)]
-    (cond-> path
-      close? (str " Z"))))
-
 (mx/defc controls
   {:mixins [mx/static]}
   [{:keys [x1 y1 width height] :as shape} zoom on-mouse-down]
