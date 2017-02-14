@@ -2,38 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.util.geom.point
   (:refer-clojure :exclude [divide])
-  (:require [uxbox.util.math :as mth]))
+  (:require [uxbox.util.math :as mth]
+            [cognitect.transit :as t]))
+
+;; --- Point Impl
 
 (defrecord Point [x y])
-
-(defprotocol ICoerce
-  "Point coersion protocol."
-  (-point [v] "Return a pont instance."))
-
-(extend-protocol ICoerce
-  nil
-  (-point [_]
-    (Point. 0 0))
-
-  number
-  (-point [v]
-    (Point. v v))
-
-  Point
-  (-point [v] v)
-
-  cljs.core/PersistentVector
-  (-point [v]
-    (Point. (first v) (second v)))
-
-  cljs.core/IndexedSeq
-  (-point [v]
-    (Point. (first v) (second v))))
 
 (defn ^boolean point?
   "Return true if `v` is Point instance."
@@ -43,7 +22,20 @@
 (defn point
   "Create a Point instance."
   ([] (Point. 0 0))
-  ([v] (-point v))
+  ([v]
+   (cond
+     (point? v)
+     v
+
+     (or (vector? v)
+         (seq? v))
+     (Point. (first v) (second v))
+
+     (number? v)
+     (Point. v v)
+
+     :else
+     (throw (ex-info "Invalid arguments" {:v v}))))
   ([x y] (Point. x y)))
 
 (defn rotate
@@ -64,7 +56,7 @@
   coordinates of the point as a new point."
   [p other]
   {:pre [(point? p)]}
-  (let [other (-point other)]
+  (let [other (point other)]
     (Point. (+ (:x p) (:x other))
             (+ (:y p) (:y other)))))
 
@@ -73,7 +65,7 @@
   coordinates of the point as a new point."
   [p other]
   {:pre [(point? p)]}
-  (let [other (-point other)]
+  (let [other (point other)]
     (Point. (- (:x p) (:x other))
             (- (:y p) (:y other)))))
 
@@ -83,27 +75,27 @@
   coordinates of the point as a new point."
   [p other]
   {:pre [(point? p)]}
-  (let [other (-point other)]
+  (let [other (point other)]
     (Point. (* (:x p) (:x other))
             (* (:y p) (:y other)))))
 
 (defn divide
   [p other]
   {:pre [(point? p)]}
-  (let [other (-point other)]
+  (let [other (point other)]
     (Point. (/ (:x p) (:x other))
             (/ (:y p) (:y other)))))
 
 (defn negate
   [p]
   {:pre [(point? p)]}
-  (let [{:keys [x y]} (-point p)]
+  (let [{:keys [x y]} (point p)]
     (Point. (- x) (- y))))
 
 (defn distance
   "Calculate the distance between two points."
   [p other]
-  (let [other (-point other)
+  (let [other (point other)
         dx (- (:x p) (:x other))
         dy (- (:y p) (:y other))]
     (-> (mth/sqrt (+ (mth/pow dx 2)
@@ -125,7 +117,7 @@
    (-> (mth/atan2 (:y p) (:x p))
        (mth/degrees)))
   ([p center]
-   (let [center (-point center)]
+   (let [center (point center)]
      (angle (subtract p center)))))
 
 (defn angle-with-other
@@ -133,7 +125,7 @@
   the angle between two vectors."
   [p other]
   {:pre [(point? p)]}
-  (let [other (-point other)
+  (let [other (point other)
         a (/ (+ (* (:x p) (:x other))
                 (* (:y p) (:y other)))
              (* (length p) (length other)))
@@ -171,3 +163,16 @@
   (let [{:keys [x y]} (point pt)]
     (Point. (+ (* x a) (* y c) tx)
             (+ (* x b) (* y d) ty))))
+
+
+;; --- Transit Adapter
+
+(def point-write-handler
+  (t/write-handler
+   (constantly "point")
+   (fn [v] (into {} v))))
+
+(def point-read-handler
+  (t/read-handler
+   (fn [value]
+     (map->Point value))))

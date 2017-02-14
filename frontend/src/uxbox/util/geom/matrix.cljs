@@ -7,8 +7,11 @@
 
 (ns uxbox.util.geom.matrix
   (:require [cuerdas.core :as str]
+            [cognitect.transit :as t]
             [uxbox.util.math :as mth]
             [uxbox.util.geom.point :as gpt]))
+
+;; --- Matrix Impl
 
 (defrecord Matrix [a b c d tx ty])
 
@@ -84,7 +87,7 @@
 
 (defn translate-matrix
   ([pt]
-   (let [pt (gpt/-point pt)]
+   (let [pt (gpt/point pt)]
      (Matrix. 1 0 0 1 (:x pt) (:y pt))))
   ([x y]
    (translate-matrix (gpt/point x y))))
@@ -156,7 +159,7 @@
    (translate m (gpt/point x y))))
 
   ;; ([m pt]
-  ;;  (let [pt (gpt/-point pt)]
+  ;;  (let [pt (gpt/point pt)]
   ;;    (assoc m
   ;;           :tx (+ (:tx m) (* (:x pt) (:a m)) (* (:y pt) (:b m)))
   ;;           :ty (+ (:ty m) (* (:x pt) (:c m)) (* (:y pt) (:d m))))))
@@ -180,3 +183,16 @@
                (/ a det)
                (/ (- (* c ty) (* d tx)) det)
                (/ (- (* b tx) (* a ty)) det)))))
+
+;; --- Transit Adapter
+
+(def matrix-write-handler
+  (t/write-handler
+   (constantly "matrix")
+   (fn [v] (into {} v))))
+
+(def matrix-read-handler
+  (t/read-handler
+   (fn [value]
+     (map->Matrix value))))
+

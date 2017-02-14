@@ -5,9 +5,10 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.time
-  (:require [cljsjs.moment]))
+  (:require [cljsjs.moment]
+            [cognitect.transit :as t]))
 
-;; A simplified immutable date time representation type.
+;; --- Instant Impl
 
 (deftype Instant [^number v]
   IComparable
@@ -16,11 +17,20 @@
       (compare v (.-v other))
       (throw (js/Error. (str "Cannot compare " this " to " other)))))
 
+  IEquiv
+  (-equiv [this other]
+    (if (instance? Instant other)
+      (-equiv v (.-v other))
+      false))
+
   IPrintWithWriter
   (-pr-writer [_ writer _]
     (let [m (js/moment v)
           ms (.toISOString m)]
       (-write writer (str "#instant \"" ms "\""))))
+
+  IHash
+  (-hash [_] v)
 
   Object
   (toString [this]
@@ -28,12 +38,7 @@
       (.toISOString m)))
 
   (equiv [this other]
-    (-equiv this other))
-
-  IHash
-  (-hash [_] v))
-
-(alter-meta! #'->Instant assoc :private true)
+    (-equiv this other)))
 
 (defn instant
   "Create a new Instant instance from
@@ -92,12 +97,12 @@
         vm (js/moment (.-v dt))]
     (.fromNow vm)))
 
-;; (defn day
-;;   [v]
-;;   (let [dt (parse v)
-;;         vm (js/moment (.-v dt))
-;;         fmt #js {:sameDay "[Today]"
-;;                  :sameElse "[Today]"
-;;                  :lastDay "[Yesterday]"
-;;                  :lastWeek "[Last] dddd"}]
-;;     (.calendar vm nil fmt)))
+;; --- Transit Adapter
+
+(def instant-write-handler
+  (t/write-handler
+   (constantly "m")
+   #(str (format % :offset))))
+
+(def instant-read-handler
+  (t/read-handler #(instant (js/parseInt % 10))))
