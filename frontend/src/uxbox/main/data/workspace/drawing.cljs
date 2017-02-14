@@ -58,7 +58,6 @@
         (->> stream
              (rx/filter #(= % ::uev/interrupt))
              (rx/take 1)
-             (rx/pr-log (str "STOPED DRAWING " id))
              (rx/map (fn [_] #(update % :workspace dissoc :drawing-lock))))
         (rx/empty))))
 
