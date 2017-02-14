@@ -42,14 +42,14 @@ RUN apt-get update -yq && \
                         libwmf-dev libpango1.0-dev librsvg2-bin librsvg2-dev \
                         libxml2-dev libwebp-dev webp
 
-RUN wget http://mirror.checkdomain.de/imagemagick/releases/ImageMagick-7.0.4-6.tar.xz && \
-    tar xvf ImageMagick-7.0.4-6.tar.xz && \
-    cd ./ImageMagick-7.0.4-6 && \
+RUN wget http://mirror.checkdomain.de/imagemagick/releases/ImageMagick-7.0.4-7.tar.xz && \
+    tar xvf ImageMagick-7.0.4-7.tar.xz && \
+    cd ./ImageMagick-7.0.4-7 && \
     ./configure --prefix=/opt/img && \
     make -j2 && \
     make install && \
     cd .. && \
-    rm -rf ./ImageMagick-7.0.4-6.tar.xz ./ImageMagick-7.0.4-6
+    rm -rf ./ImageMagick-7.0.4-7.tar.xz ./ImageMagick-7.0.4-7
 
 EXPOSE 3449
 EXPOSE 6060
