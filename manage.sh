@@ -21,6 +21,8 @@ function run_image {
         build_image
     fi
 
+    mkdir -p $HOME/.m2
+
     sudo docker run -ti \
          -v `pwd`:/home/uxbox/uxbox  \
          -v $HOME/.m2:/home/uxbox/.m2 \
