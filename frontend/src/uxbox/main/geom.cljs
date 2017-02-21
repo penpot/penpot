@@ -521,7 +521,7 @@
      (selection-rect-generic state shape))))
 
 (defn- selection-rect-generic
-  [state {:keys [id x1 y1 x2 y2] :as shape}]
+  [state {:keys [id] :as shape}]
   (let [{:keys [displacement resize]} (get-in state [:workspace :modifiers id])]
     (-> (shape->rect-shape shape)
         (assoc :type :rect :id id)

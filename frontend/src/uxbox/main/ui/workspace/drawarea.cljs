@@ -44,7 +44,7 @@
 
 (mx/defc generic-draw-area
   [shape zoom]
-  (let [{:keys [x1 y1 width height]} (geom/size shape)]
+  (let [{:keys [x1 y1 width height]} (geom/selection-rect shape)]
     [:g
      (-> (assoc shape :drawing? true)
          (shapes/render-component))
