@@ -152,30 +152,6 @@
   [store type field value]
   (ptk/emit! store (set-value type field value)))
 
-;; --- Validate Form
-
-;; (defrecord ValidateForm [type form data on-success]
-;;   ptk/WatchEvent
-;;   (watch [_ state stream]
-;;     (let [[errors data] (validate data form)]
-;;       (if errors
-;;         (rx/of (set-errors type errors))
-;;         (do
-;;           (on-success data)
-;;           (rx/empty))))))
-
-;; (defn validate-form
-;;   [& {:keys [type form data on-success]}]
-;;   {:pre [(keyword? type)
-;;          (map? form)
-;;          (map? data)
-;;          (fn? on-success)]}
-;;   (ValidateForm. type form data on-success))
-
-;; (defn validate-form!
-;;   [& args]
-;;   (f/emit! (apply validate-form args)))
-
 ;; --- Clear Form
 
 (defrecord ClearForm [type]
@@ -192,7 +168,7 @@
   [store type]
   (ptk/emit! store (clear-form type)))
 
-;; --- Clear Form
+;; --- Clear Errors
 
 (defrecord ClearErrors [type]
   ptk/UpdateEvent
