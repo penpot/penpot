@@ -104,7 +104,7 @@
 
 (mx/defc canvas
   {:mixins [mx/static mx/reactive]}
-  [{:keys [metadata id] :as page}]
+  [{:keys [metadata id] :as page} zoom]
   (let [width (:width metadata)
         height (:height metadata)]
     [:svg.page-canvas {:x c/canvas-start-x
@@ -119,7 +119,7 @@
          (-> (uus/shape item)
              (mx/with-key (str item))))
        (selection-handlers)
-       (draw-area)]]]))
+       (draw-area zoom)]]]))
 
 ;; --- Viewport
 
@@ -259,7 +259,7 @@
                         :on-mouse-up on-mouse-up}
          [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
           (if page
-            (canvas page))
+            (canvas page zoom))
           (if (contains? flags :grid)
             (grid))]
          (ruler)

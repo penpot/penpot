@@ -36,16 +36,25 @@
 
 (mx/defc draw-area
   {:mixins [mx/static mx/reactive]}
-  []
+  [zoom]
   (when-let [shape (mx/react drawing-shape)]
     (if (= (:type shape) :path)
       (path-draw-area shape)
-      (generic-draw-area shape))))
+      (generic-draw-area shape zoom))))
 
 (mx/defc generic-draw-area
-  [shape]
-  (-> (assoc shape :drawing? true)
-      (shapes/render-component)))
+  [shape zoom]
+  (let [{:keys [x1 y1 width height]} (geom/size shape)]
+    [:g
+     (-> (assoc shape :drawing? true)
+         (shapes/render-component))
+     [:rect.main {:x x1 :y y1
+                  :width width
+                  :height height
+                  :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
+                  :style {:stroke "#333" :fill "transparent"
+                          :stroke-opacity "1"}}]]))
+
 
 (mx/defc path-draw-area
   [{:keys [segments] :as shape}]
