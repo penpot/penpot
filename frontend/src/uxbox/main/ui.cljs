@@ -51,31 +51,26 @@
 (defn- on-error
   "A default error handler."
   [{:keys [status] :as error}]
-  (js/console.log "on-error:" (pr-str error))
-  (js/console.log "stack:" (.-stack error))
+  (js/console.error "on-error:" (pr-str error))
   (reset! st/loader false)
   (cond
     ;; Unauthorized or Auth timeout
     (and (:status error)
          (or (= (:status error) 403)
              (= (:status error) 419)))
-    (st/emit! (logout))
+    (ts/schedule 100 #(st/emit! (logout)))
 
     ;; Conflict
     (= status 412)
-    (st/emit! (uum/error (tr "errors.conflict")))
+    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.conflict"))))
 
     ;; Network error
     (= (:status error) 0)
-    (do
-      (st/emit! (uum/error (tr "errors.network")))
-      (js/console.error "Stack:" (.-stack error)))
+    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.network"))))
 
     ;; Something else
     :else
-    (do
-      (st/emit! (uum/error (tr "errors.generic")))
-      (js/console.error "Stack:" (.-stack error)))))
+    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.generic"))))))
 
 (set! st/*on-error* on-error)
 
