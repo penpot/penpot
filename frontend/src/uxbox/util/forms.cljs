@@ -14,6 +14,8 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.i18n :refer (tr)]))
 
+;; TODO: rewrite form stuff using cljs.spec
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Form Validation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
