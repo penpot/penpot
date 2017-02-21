@@ -12,6 +12,7 @@ node_modules
 /backend/target/
 /backend/resources/media
 /backend/dist/
+/backend/-
 /frontend/target/
 /frontend/dist/
 /frontend/out/
