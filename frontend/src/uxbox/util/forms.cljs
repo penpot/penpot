@@ -39,17 +39,12 @@
   (assoc f/identical-to :message "errors.form.identical-to"))
 
 (def in-range f/in-range)
-;; (def uuid-like f/uuid-like)
 (def uuid f/uuid)
 (def keyword f/keyword)
 (def integer-str f/integer-str)
 (def number-str f/number-str)
-;; (def boolean-like f/boolean-like)
 (def email f/email)
-;; (def function f/function)
 (def positive f/positive)
-;; (def validate f/validate)
-;; (def validate! f/validate!)
 
 (def max-len
   {:message "errors.form.max-len"

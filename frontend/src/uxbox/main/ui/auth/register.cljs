@@ -33,7 +33,8 @@
    :password [forms/required forms/string]})
 
 (mx/defc register-form
-  {:mixins [mx/static mx/reactive]}
+  {:mixins [mx/static mx/reactive
+            (forms/clear-mixin st/store :register)]}
   []
   (let [data (mx/react form-data)
         errors (mx/react form-errors)

@@ -22,12 +22,6 @@
 (def form-data (forms/focus-data :login st/state))
 (def set-value! (partial forms/set-value! st/store :login))
 
-(defn- login-page-will-mount
-  [own]
-  (when @st/auth-ref
-    (st/emit! (rt/navigate :dashboard/projects)))
-  own)
-
 (def +login-form+
   {:email [forms/required forms/string]
    :password [forms/required forms/string]})
@@ -73,8 +67,11 @@
           "Don't have an account?"]]]])))
 
 (mx/defc login-page
-  {:mixins [mx/static]
-   :will-mount login-page-will-mount}
+  {:mixins [mx/static (forms/clear-mixin st/store :login)]
+   :will-mount (fn [own]
+                 (when @st/auth-ref
+                   (st/emit! (rt/navigate :dashboard/projects)))
+                 own)}
   []
   [:div.login
    [:div.login-body
