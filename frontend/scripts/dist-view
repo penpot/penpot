@@ -1,2 +1,3 @@
 #!/bin/sh
 lein trampoline run -m clojure.main scripts/dist-view.clj
+gzip -9c dist/js/view.js > dist/js/view.js.gz
