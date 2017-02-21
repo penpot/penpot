@@ -14,8 +14,9 @@
 
                  ;; Build
                  [figwheel-sidecar "0.5.8" :scope "test"]
+                 [environ "1.1.0"]
 
-                 ;; runtime
+                 ;; Runtime
                  [com.cognitect/transit-cljs "0.8.239"]
                  [rum "0.10.8" :exclusions [cljsjs/react cljsjs/react-dom]]
                  ;; [cljsjs/react-with-addons "15.4.2-1"]
