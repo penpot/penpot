@@ -31,7 +31,7 @@ function run_image {
 }
 
 function usage {
-    echo "USAGE: $0 [ build | run | start ]"
+    echo "USAGE: $0 [ build | run]"
 }
 
 case $1 in
@@ -40,10 +40,6 @@ case $1 in
         ;;
     run)
         run_image
-        ;;
-
-    start)
-        start_local
         ;;
     *)
         usage
