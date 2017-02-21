@@ -504,7 +504,7 @@
 (deftype UpdatePath [id index delta]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:shapes id :points index] gpt/add delta)))
+    (update-in state [:shapes id :segments index] gpt/add delta)))
 
 (defn update-path
   "Update a concrete point in the path shape."
@@ -516,7 +516,7 @@
   ptk/WatchEvent
   (watch [_ state s]
     (let [shape (get-in state [:shapes id])
-          point (get-in shape [:points index])
+          point (get-in shape [:segments index])
           point (gpt/add point canvas-coords)]
       (->> (uwrk/align-point point)
            (rx/map #(gpt/subtract % point))
