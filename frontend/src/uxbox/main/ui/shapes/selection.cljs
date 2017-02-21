@@ -50,88 +50,74 @@
 
 ;; --- Resize Implementation
 
-(defn- rotate
-  [shape]
-  (let [{:keys [x1 y1 width height rotation]} (-> (geom/shape->rect-shape shape)
-                                                  (assoc :type :rect)
-                                                  (geom/size))
-        x-center (+ x1 (/ width 2))
-        y-center (+ y1 (/ height 2))
-        mt (-> (gmt/matrix)
-               (gmt/translate  x-center y-center)
-               (gmt/rotate rotation)
-               (gmt/translate (- x-center) (- y-center)))]
-    (geom/transform shape mt)))
-
 (defn- start-resize
   [vid ids shape]
   (letfn [(gen-matrix [shape {scalex :x scaley :y}]
-            (let [shape shape #_(rotate shape)]
-              (case vid
-                :top-left
-                (-> (gmt/matrix)
-                    (gmt/translate (+ (:x2 shape))
-                                   (+ (:y2 shape)))
-                    (gmt/scale scalex scaley)
-                    (gmt/translate (- (:x2 shape))
-                                   (- (:y2 shape))))
+            (case vid
+              :top-left
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x2 shape))
+                                 (+ (:y2 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x2 shape))
+                                 (- (:y2 shape))))
 
-                :top-right
-                (-> (gmt/matrix)
-                    (gmt/translate (+ (:x1 shape))
-                                   (+ (:y2 shape)))
-                    (gmt/scale scalex scaley)
-                    (gmt/translate (- (:x1 shape))
-                                   (- (:y2 shape))))
+              :top-right
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y2 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y2 shape))))
 
-                :top
-                (-> (gmt/matrix)
-                    (gmt/translate (+ (:x1 shape))
-                                   (+ (:y2 shape)))
-                    (gmt/scale scalex scaley)
-                    (gmt/translate (- (:x1 shape))
-                                   (- (:y2 shape))))
+              :top
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y2 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y2 shape))))
 
-                :bottom-left
-                (-> (gmt/matrix)
-                    (gmt/translate (+ (:x2 shape))
-                                   (+ (:y1 shape)))
-                    (gmt/scale scalex scaley)
-                    (gmt/translate (- (:x2 shape))
-                                   (- (:y1 shape))))
+              :bottom-left
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x2 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x2 shape))
+                                 (- (:y1 shape))))
 
-                :bottom-right
-                (-> (gmt/matrix)
-                    (gmt/translate (+ (:x1 shape))
-                                   (+ (:y1 shape)))
-                    (gmt/scale scalex scaley)
-                    (gmt/translate (- (:x1 shape))
-                                   (- (:y1 shape))))
+              :bottom-right
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y1 shape))))
 
-                :bottom
-                (-> (gmt/matrix)
-                    (gmt/translate (+ (:x1 shape))
-                                   (+ (:y1 shape)))
-                    (gmt/scale scalex scaley)
-                    (gmt/translate (- (:x1 shape))
-                                   (- (:y1 shape))))
+              :bottom
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y1 shape))))
 
-                :right
-                (-> (gmt/matrix)
-                    (gmt/translate (+ (:x1 shape))
-                                   (+ (:y1 shape)))
-                    (gmt/scale scalex scaley)
-                    (gmt/translate (- (:x1 shape))
-                                   (- (:y1 shape))))
+              :right
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x1 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x1 shape))
+                                 (- (:y1 shape))))
 
-                :left
-                (-> (gmt/matrix)
-                    (gmt/translate (+ (:x2 shape))
-                                   (+ (:y1 shape)))
-                    (gmt/scale scalex scaley)
-                    (gmt/translate (- (:x2 shape))
-                                   (- (:y1 shape))))
-                )))
+              :left
+              (-> (gmt/matrix)
+                  (gmt/translate (+ (:x2 shape))
+                                 (+ (:y1 shape)))
+                  (gmt/scale scalex scaley)
+                  (gmt/translate (- (:x2 shape))
+                                 (- (:y1 shape))))
+              ))
 
           (calculate-ratio [orig-shape {:keys [width height] :as shape}]
             (let [result {:x (/ width (:width orig-shape))
@@ -236,14 +222,6 @@
                     on-end))))
 
 ;; --- Controls (Component)
-
-(defn selection-rect
-  [{:keys [x1 y1 x2 y2 width height rotation] :as shape}]
-  {:x x1
-   :y y1
-   :rotation rotation
-   :width width
-   :height height})
 
 (mx/defc controls
   {:mixins [mx/static]}
