@@ -214,7 +214,7 @@
                 (st/emit! (uev/mouse-event :down ctrl? shift?)))
               (if drawing
                 (st/emit! (udw/start-drawing drawing))
-                (st/emit! (udw/start-selrect))))
+                (st/emit! ::uev/interrupt (udw/start-selrect))))
             (on-context-menu [event]
               (dom/prevent-default event)
               (dom/stop-propagation event)
