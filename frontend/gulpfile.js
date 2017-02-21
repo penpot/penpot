@@ -9,6 +9,8 @@ const rimraf = require("rimraf");
 const mustache = require("gulp-mustache");
 const rename = require("gulp-rename");
 const gulpif = require("gulp-if");
+const gzip = require("gulp-gzip");
+const brotli = require("gulp-brotli");
 
 const paths = {};
 paths.app = "./resources/";
@@ -16,7 +18,6 @@ paths.output = "./resources/public/";
 paths.dist = "./dist/";
 paths.target = "./target/";
 paths.scss = paths.app + "styles/**/*.scss";
-
 
 /***********************************************
  * Helper Tasks
@@ -178,9 +179,25 @@ gulp.task("dist:copy:images", function() {
 gulp.task("dist:copy", ["dist:copy:fonts",
                         "dist:copy:images"]);
 
+// GZip
+
+gulp.task("dist:gzip", function() {
+  return gulp.src(`${paths.dist}**/!(*.gz|*.br|*.jpg|*.png)`)
+    .pipe(gzip({gzipOptions: {level: 9}}))
+    .pipe(gulp.dest(paths.dist));
+});
+
+gulp.task("dist:brotli", function() {
+  return gulp.src(`${paths.dist}**/!(*.gz|*.br|*.jpg|*.png)`)
+    .pipe(brotli.compress({quality: 10}))
+    .pipe(gulp.dest(paths.dist));
+});
+
 // Entry Point
 
 gulp.task("dist", function(next) {
-  runseq("dist:clean", ["dist:template", "dist:scss", "dist:copy"], next);
+  runseq(["dist:clean"],
+         ["dist:template", "dist:scss", "dist:copy"],
+         ["dist:gzip", "dist:brotli"], next);
 });
 
