@@ -1,3 +1,10 @@
 #!/bin/sh
 lein trampoline run -m clojure.main scripts/dist-main.clj
-gzip -9c dist/js/main.js > dist/js/main.js.gz
+
+if [ -x "$(command -v gzip)" ]; then
+    gzip -9c dist/js/main.js > dist/js/main.js.gz
+fi
+
+if [ -x "$(command -v bro)" ]; then
+    bro --verbose --input dist/js/main.js --output dist/js/main.js.br
+fi
