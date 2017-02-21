@@ -1,5 +1,5 @@
 :2015 {
   gzip
-  root .
+  root ./dist
   proxy /api https://app.uxbox.io
 }
