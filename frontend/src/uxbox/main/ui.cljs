@@ -52,6 +52,7 @@
   "A default error handler."
   [{:keys [status] :as error}]
   (js/console.error "on-error:" (pr-str error))
+  (js/console.error (.-stack error))
   (reset! st/loader false)
   (cond
     ;; Unauthorized or Auth timeout
