@@ -43,7 +43,8 @@
   [event project page]
   (let [token (:share-token project)
         index (:index page)
-        url (str cfg/viewurl "#/" token "/" index)]
+        rval (rand-int 1000000)
+        url (str cfg/viewurl "?v=" rval "#/" token "/" index)]
     (js/open url "new tab" "")))
 
 (mx/defc header
