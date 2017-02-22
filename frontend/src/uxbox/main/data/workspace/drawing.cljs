@@ -229,9 +229,9 @@
                                      (rx/take 1)))
         start? (volatile! true)
         mouse (->> streams/viewport-mouse-position
+                   (rx/take-until stoper)
                    (rx/mapcat conditional-align)
                    (rx/map translate-to-canvas)
-                   (rx/take-until stoper)
                    (rx/with-latest vector streams/mouse-position-ctrl))]
 
     (letfn [(on-position [[point ctrl?]]
@@ -242,7 +242,9 @@
                 (st/emit! (update-drawing (assoc point :lock ctrl?)))))
 
             (on-finish []
-              (st/emit! (finish-drawing)))]
+              (if @start?
+                (st/emit! ::uev/interrupt)
+                (st/emit! (finish-drawing))))]
       (rx/subscribe mouse on-position nil on-finish))))
 
 (defn- on-init-draw-icon
