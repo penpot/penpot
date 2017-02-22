@@ -100,14 +100,15 @@
         contained-in? (into #{} menus)
         active (:menu @local (first menus))]
     [:div
-     [:ul.element-icons
-      (for [menu-id (get +menus-map+ (:type shape ::page))
-            :let [menu (get +menus-by-id+ menu-id)
-                  selected? (= active menu-id)]]
-        [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
-                     :key (str "menu-" (:id menu))
-                     :class (when selected? "selected")}
-         (:icon menu)])]
+     (when (> (count menus) 1)
+       [:ul.element-icons
+        (for [menu-id (get +menus-map+ (:type shape ::page))
+              :let [menu (get +menus-by-id+ menu-id)
+                    selected? (= active menu-id)]]
+          [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
+                       :key (str "menu-" (:id menu))
+                       :class (when selected? "selected")}
+           (:icon menu)])])
      (when-let [menu (get +menus-by-id+ active)]
        ((:comp menu) menu shape))]))
 
