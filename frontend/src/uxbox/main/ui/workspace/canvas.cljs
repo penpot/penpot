@@ -262,7 +262,8 @@
             (canvas page zoom))
           (if (contains? flags :grid)
             (grid))]
-         (ruler)
+         (when (contains? flags :ruler)
+           (ruler zoom))
          (selrect)]])))
 
 

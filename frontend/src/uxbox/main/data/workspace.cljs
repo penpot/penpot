@@ -23,6 +23,7 @@
             [uxbox.main.data.workspace.scroll :as wscroll]
             [uxbox.main.data.workspace.drawing :as wdrawing]
             [uxbox.main.data.workspace.selrect :as wselrect]
+            [uxbox.main.data.workspace.ruler :as wruler]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.spec :as us]
             [uxbox.util.forms :as sc]
@@ -39,6 +40,8 @@
 (def close-drawing-path wdrawing/close-drawing-path)
 (def select-for-drawing wdrawing/select-for-drawing)
 (def start-selrect wselrect/start-selrect)
+(def start-ruler wruler/start-ruler)
+(def clear-ruler wruler/clear-ruler)
 
 ;; --- Initialize Workspace
 
