@@ -50,176 +50,191 @@
 
 ;; --- Resize Implementation
 
+(defn- calculate-scale-ratio
+  "Calculate the scale factor from one shape to an other."
+  [origin final]
+  [(/ (:width final) (:width origin))
+   (/ (:height final) (:height origin))])
+
+(defn generate-resize-matrix
+  "Generate the resize transformation matrix given
+  a corner-id, shape and the scale factor vector."
+  [vid shape [scalex scaley]]
+  (case vid
+    :top-left
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x2 shape))
+                       (+ (:y2 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x2 shape))
+                       (- (:y2 shape))))
+
+    :top-right
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y2 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y2 shape))))
+
+    :top
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y2 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y2 shape))))
+
+    :bottom-left
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x2 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x2 shape))
+                       (- (:y1 shape))))
+
+    :bottom-right
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y1 shape))))
+
+    :bottom
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y1 shape))))
+
+    :right
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y1 shape))))
+
+    :left
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x2 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x2 shape))
+                       (- (:y1 shape))))))
+
+
+(defn- resize-shape
+  [vid shape {:keys [x y] :as point} ctrl?]
+  (case vid
+    :top-left
+    (let [width (- (:x2 shape) x)
+          height (- (:y2 shape) y)
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if ctrl? (/ width proportion) height)))
+
+    :top-right
+    (let [width (- x (:x1 shape))
+          height (- (:y2 shape) y)
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if ctrl? (/ width proportion) height)))
+
+    :top
+    (let [width (- (:x2 shape) (:x1 shape))
+          height (- (:y2 shape) y)
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if ctrl? (/ width proportion) height)))
+
+    :bottom-left
+    (let [width (- (:x2 shape) x)
+          height (- y (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if ctrl? (/ width proportion) height)))
+
+    :bottom-right
+    (let [width (- x (:x1 shape))
+          height (- y (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if ctrl? (/ width proportion) height)))
+
+    :bottom
+    (let [width (- (:x2 shape) (:x1 shape))
+          height (- y (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if ctrl? (/ width proportion) height)))
+
+    :left
+    (let [width (- (:x2 shape) x)
+          height (- (:y2 shape) (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if ctrl? (/ width proportion) height)))
+
+    :right
+    (let [width (- x (:x1 shape))
+          height (- (:y2 shape) (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if ctrl? (/ width proportion) height)))))
+
 (defn- start-resize
   [vid ids shape]
-  (letfn [(gen-matrix [shape {scalex :x scaley :y}]
-            (case vid
-              :top-left
-              (-> (gmt/matrix)
-                  (gmt/translate (+ (:x2 shape))
-                                 (+ (:y2 shape)))
-                  (gmt/scale scalex scaley)
-                  (gmt/translate (- (:x2 shape))
-                                 (- (:y2 shape))))
-
-              :top-right
-              (-> (gmt/matrix)
-                  (gmt/translate (+ (:x1 shape))
-                                 (+ (:y2 shape)))
-                  (gmt/scale scalex scaley)
-                  (gmt/translate (- (:x1 shape))
-                                 (- (:y2 shape))))
-
-              :top
-              (-> (gmt/matrix)
-                  (gmt/translate (+ (:x1 shape))
-                                 (+ (:y2 shape)))
-                  (gmt/scale scalex scaley)
-                  (gmt/translate (- (:x1 shape))
-                                 (- (:y2 shape))))
-
-              :bottom-left
-              (-> (gmt/matrix)
-                  (gmt/translate (+ (:x2 shape))
-                                 (+ (:y1 shape)))
-                  (gmt/scale scalex scaley)
-                  (gmt/translate (- (:x2 shape))
-                                 (- (:y1 shape))))
-
-              :bottom-right
-              (-> (gmt/matrix)
-                  (gmt/translate (+ (:x1 shape))
-                                 (+ (:y1 shape)))
-                  (gmt/scale scalex scaley)
-                  (gmt/translate (- (:x1 shape))
-                                 (- (:y1 shape))))
-
-              :bottom
-              (-> (gmt/matrix)
-                  (gmt/translate (+ (:x1 shape))
-                                 (+ (:y1 shape)))
-                  (gmt/scale scalex scaley)
-                  (gmt/translate (- (:x1 shape))
-                                 (- (:y1 shape))))
-
-              :right
-              (-> (gmt/matrix)
-                  (gmt/translate (+ (:x1 shape))
-                                 (+ (:y1 shape)))
-                  (gmt/scale scalex scaley)
-                  (gmt/translate (- (:x1 shape))
-                                 (- (:y1 shape))))
-
-              :left
-              (-> (gmt/matrix)
-                  (gmt/translate (+ (:x2 shape))
-                                 (+ (:y1 shape)))
-                  (gmt/scale scalex scaley)
-                  (gmt/translate (- (:x2 shape))
-                                 (- (:y1 shape))))
-              ))
-
-          (calculate-ratio [orig-shape {:keys [width height] :as shape}]
-            (let [result {:x (/ width (:width orig-shape))
-                          :y (/ height (:height orig-shape))}]
-              result))
-
-          (accumulate-width [shape [{:keys [x y] :as point} ctrl?]]
-            (case vid
-              :top-left
-              (let [width (- (:x2 shape) x)
-                    height (- (:y2 shape) y)
-                    proportion (:proportion shape)]
-                (assoc shape
-                       :width width
-                       :height (if ctrl? (/ width proportion) height)))
-
-              :top-right
-              (let [width (- x (:x1 shape))
-                    height (- (:y2 shape) y)
-                    proportion (:proportion shape)]
-                (assoc shape
-                       :width width
-                       :height (if ctrl? (/ width proportion) height)))
-
-              :top
-              (let [width (- (:x2 shape) (:x1 shape))
-                    height (- (:y2 shape) y)
-                    proportion (:proportion shape)]
-                (assoc shape
-                       :width width
-                       :height (if ctrl? (/ width proportion) height)))
-
-              :bottom-left
-              (let [width (- (:x2 shape) x)
-                    height (- y (:y1 shape))
-                    proportion (:proportion shape)]
-                (assoc shape
-                       :width width
-                       :height (if ctrl? (/ width proportion) height)))
-
-              :bottom-right
-              (let [width (- x (:x1 shape))
-                    height (- y (:y1 shape))
-                    proportion (:proportion shape)]
-                (assoc shape
-                       :width width
-                       :height (if ctrl? (/ width proportion) height)))
-
-              :bottom
-              (let [width (- (:x2 shape) (:x1 shape))
-                    height (- y (:y1 shape))
-                    proportion (:proportion shape)]
-                (assoc shape
-                       :width width
-                       :height (if ctrl? (/ width proportion) height)))
-
-              :left
-              (let [width (- (:x2 shape) x)
-                    height (- (:y2 shape) (:y1 shape))
-                    proportion (:proportion shape)]
-                (assoc shape
-                       :width width
-                       :height (if ctrl? (/ width proportion) height)))
-
-              :right
-              (let [width (- x (:x1 shape))
-                    height (- (:y2 shape) (:y1 shape))
-                    proportion (:proportion shape)]
-                (assoc shape
-                       :width width
-                       :height (if ctrl? (/ width proportion) height)))
-
-              ))
-          (on-resize [shape scale]
-            (let [mt (gen-matrix shape scale)
-                  xf (map #(uds/apply-temporal-resize % mt))]
-              (apply st/emit! (sequence xf ids))))
+  (letfn [(on-resize [shape [point lock?]]
+            (let [result (resize-shape vid shape point lock?)
+                  scale (calculate-scale-ratio shape result)
+                  mtx (generate-resize-matrix vid shape scale)
+                  xfm (map #(uds/apply-temporal-resize % mtx))]
+              (apply st/emit! (sequence xfm ids))))
 
           (on-end []
-            (apply st/emit! (map uds/apply-resize ids)))]
+            (apply st/emit! (map uds/apply-resize ids)))
+
+          ;; Unifies the instantaneous proportion lock modifier
+          ;; activated by Ctrl key and the shapes own proportion
+          ;; lock flag that can be activated on element options.
+          (normalize-proportion-lock [[point ctrl?]]
+            (let [proportion-lock? (:proportion-lock shape)]
+              [point (or proportion-lock? ctrl?)]))
+
+          ;; Applies alginment to point if it is currently
+          ;; activated on the current workspace
+          (apply-grid-alignment [point]
+            (if @refs/selected-alignment
+              (uwrk/align-point point)
+              (rx/of point)))
+
+          ;; Apply the current zoom factor to the point.
+          (apply-zoom [point]
+            (gpt/divide point @refs/selected-zoom))]
 
     (let [shape  (->> (geom/shape->rect-shape shape)
                       (geom/size))
-
           stoper (->> streams/events
                       (rx/filter uev/mouse-up?)
                       (rx/take 1))
-
           stream (->> streams/canvas-mouse-position
-                      (rx/map #(gpt/divide % @refs/selected-zoom))
-                      (rx/mapcat (fn [point]
-                                   (if @refs/selected-alignment
-                                     (uwrk/align-point point)
-                                     (rx/of point))))
                       (rx/take-until stoper)
+                      (rx/map apply-zoom)
+                      (rx/mapcat apply-grid-alignment)
                       (rx/with-latest vector streams/mouse-position-ctrl)
-                      (rx/scan accumulate-width shape)
-                      (rx/map (partial calculate-ratio shape)))]
-      (rx/subscribe stream
-                    (partial on-resize shape)
-                    nil
-                    on-end))))
+                      (rx/map normalize-proportion-lock))]
+      (rx/subscribe stream (partial on-resize shape) nil on-end))))
 
 ;; --- Controls (Component)
 
