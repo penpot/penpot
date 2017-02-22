@@ -85,7 +85,7 @@
 (defn- overlay-will-unmount
   [own]
   (let [subscription (::sub own)]
-    (subscription)
+    (rx/cancel! subscription)
     (dissoc own ::sub)))
 
 (declare overlay-line-render)

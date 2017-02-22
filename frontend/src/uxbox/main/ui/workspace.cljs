@@ -24,16 +24,16 @@
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.workspace.scroll :as scroll]
             [uxbox.main.ui.workspace.download]
-            [uxbox.main.ui.workspace.shortcuts :refer (shortcuts-mixin)]
-            [uxbox.main.ui.workspace.header :refer (header)]
-            [uxbox.main.ui.workspace.rules :refer (horizontal-rule vertical-rule)]
-            [uxbox.main.ui.workspace.sidebar.history :refer (history-dialog)]
-            [uxbox.main.ui.workspace.sidebar :refer (left-sidebar right-sidebar)]
-            [uxbox.main.ui.workspace.colorpalette :refer (colorpalette)]
-            [uxbox.main.ui.workspace.canvas :refer (viewport)]
+            [uxbox.main.ui.workspace.shortcuts :refer [shortcuts-mixin]]
+            [uxbox.main.ui.workspace.header :refer [header]]
+            [uxbox.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
+            [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
+            [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
+            [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
+            [uxbox.main.ui.workspace.canvas :refer [viewport]]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.point :as gpt]
-            [uxbox.util.data :refer (classnames)]
+            [uxbox.util.data :refer [classnames]]
             [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Workspace
@@ -49,7 +49,7 @@
   (let [[projectid pageid] (:rum/args own)
         dom (mx/ref-node own "workspace-canvas")
         scroll-to-page-center #(scroll/scroll-to-page-center dom @refs/selected-page)
-        sub2 (rx/subscribe streams/page-id-ref-s scroll-to-page-center)]
+        sub (rx/subscribe streams/page-id-ref-s scroll-to-page-center)]
 
     (scroll-to-page-center)
 
@@ -57,13 +57,13 @@
               (udu/watch-page-changes pageid)
               (udh/watch-page-changes pageid))
 
-    (assoc own ::sub2 sub2)))
+    (assoc own ::sub sub)))
 
 (defn- workspace-will-unmount
   [own]
   (st/emit! ::udp/stop-page-watcher)
-  (.close (::sub2 own))
-  (dissoc own ::sub1 ::sub2))
+  (rx/cancel! (::sub own))
+  (dissoc own ::sub))
 
 (defn- workspace-did-remount
   [old-state state]

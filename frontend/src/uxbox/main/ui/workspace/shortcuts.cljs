@@ -103,7 +103,7 @@
 
 (defn- will-unmount
   [own]
-  (.close (::sub own))
+  (rx/cancel! (::sub own))
   (dissoc own ::sub))
 
 (def shortcuts-mixin
