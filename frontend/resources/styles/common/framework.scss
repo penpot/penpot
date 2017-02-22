@@ -131,6 +131,7 @@
   }
 }
 
+input[type=button][disabled],
 .btn-disabled {
   opacity: .5;
   pointer-events: none;

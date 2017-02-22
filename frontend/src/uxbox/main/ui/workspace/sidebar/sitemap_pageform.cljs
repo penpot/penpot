@@ -111,11 +111,11 @@
         (layout-input data "notebook")
         (layout-input data "desktop")]
 
-       (when valid?
-         [:input#project-btn.btn-primary
-          {:value "Go go go!"
-           :on-click on-save
-           :type "button"}])])))
+       [:input#project-btn.btn-primary
+        {:value "Go go go!"
+         :disabled (not valid?)
+         :on-click on-save
+         :type "button"}]])))
 
 (mx/defc page-form-lightbox
   {:mixins [mx/static (forms/clear-mixin st/store :workspace-page-form)]}
