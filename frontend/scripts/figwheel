@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
+
+DIR=`dirname $0`
+LEIN="$DIR/lein"
+
 RLWRAP=`which rlwrap`
 if [ $? != 0 ]; then
     RLWRAP="";
 fi
 
-$RLWRAP lein trampoline run -m clojure.main scripts/figwheel.clj || exit 1
+LEIN_FAST_TRAMPOLINE=y $RLWRAP $LEIN trampoline run -m clojure.main scripts/figwheel.clj || exit 1

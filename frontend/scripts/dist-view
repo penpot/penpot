@@ -1,5 +1,9 @@
 #!/bin/sh
-lein trampoline run -m clojure.main scripts/dist-view.clj
+
+DIR=`dirname $0`
+LEIN="$DIR/lein"
+
+LEIN_FAST_TRAMPOLINE=y $LEIN trampoline run -m clojure.main scripts/dist-view.clj
 
 if [ -x "$(command -v gzip)" ]; then
     gzip -9c dist/js/view.js > dist/js/view.js.gz
