@@ -20,28 +20,34 @@
             [uxbox.util.math :refer (precision-or-0)]
             [uxbox.util.spec :refer (color?)]))
 
-(mx/defc stroke-menu
-  {:mixed [mx/static]}
-  [menu {:keys [id] :as shape}]
-  (letfn [(update-attrs [attrs]
-            (st/emit! (uds/update-attrs id attrs)))
-          (on-width-change [event]
+(mx/defcs stroke-menu
+  {:mixins [mx/static (mx/local)]}
+  [{:keys [rum/local]} menu {:keys [id] :as shape}]
+  (letfn [(on-width-change [event]
             (let [value (-> (dom/event->value event)
                             (parse-float 1))]
-              (update-attrs {:stroke-width value})))
+              (st/emit! (uds/update-attrs id {:stroke-width value}))))
           (on-opacity-change [event]
             (let [value (-> (dom/event->value event)
                             (parse-float 1)
                             (/ 10000))]
-              (update-attrs {:stroke-opacity value})))
+              (st/emit! (uds/update-attrs id {:stroke-opacity value}))))
           (on-stroke-style-change [event]
             (let [value (-> (dom/event->value event)
                             (read-string))]
-              (update-attrs {:stroke-style value})))
+              (st/emit! (uds/update-attrs id {:stroke-style value}))))
           (on-stroke-color-change [event]
             (let [value (dom/event->value event)]
               (when (color? value)
-                (update-attrs {:stroke-color value}))))
+                (st/emit! (uds/update-attrs id {:stroke-color value})))))
+          (on-border-change [event attr]
+            (let [value (-> (dom/event->value event)
+                            (parse-int nil))]
+              (if (:border-lock @local)
+                (st/emit! (uds/update-attrs id {:rx value :ry value}))
+                (st/emit! (uds/update-attrs id {attr value})))))
+          (on-border-proportion-lock [event]
+            (swap! local update :border-lock not))
           (show-color-picker [event]
             (let [x (.-clientX event)
                   y (.-clientY event)
@@ -80,6 +86,23 @@
         [:input
          {:on-change on-stroke-color-change
           :value (:stroke-color shape)}]]]
+
+      [:span "Radius"]
+      [:div.row-flex
+       [:input.input-text
+        {:placeholder "rx"
+         :type "number"
+         :value (precision-or-0 (:rx shape 0) 2)
+         :on-change #(on-border-change % :rx)}]
+       [:div.lock-size
+        {:class (when (:border-lock @local) "selected")
+         :on-click on-border-proportion-lock}
+        i/lock]
+       [:input.input-text
+        {:placeholder "ry"
+         :type "number"
+         :value (precision-or-0 (:ry shape 0) 2)
+         :on-change #(on-border-change % :ry)}]]
 
       [:span "Opacity"]
       [:div.row-flex

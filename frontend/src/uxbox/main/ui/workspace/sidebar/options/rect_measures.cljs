@@ -35,10 +35,6 @@
             (let [value (-> (dom/event->value event)
                             (parse-int nil))]
               (st/emit! (uds/update-position id {attr value}))))
-          (on-border-change [event attr]
-            (let [value (-> (dom/event->value event)
-                            (parse-int nil))]
-              (st/emit! (uds/update-attrs id {attr value}))))
           (on-proportion-lock-change [event]
             (if (:proportion-lock shape)
               (st/emit! (uds/unlock-proportions id))
@@ -83,20 +79,6 @@
             :type "number"
             :value (precision-or-0 (:y1 shape 0) 2)
             :on-change #(on-pos-change % :y)}]]]
-
-        [:span "Border radius"]
-        [:div.row-flex
-         [:input.input-text
-          {:placeholder "rx"
-           :type "number"
-           :value (precision-or-0 (:rx shape 0) 2)
-           :on-change #(on-border-change % :rx)}]
-         [:div.lock-size i/lock]
-         [:input.input-text
-          {:placeholder "ry"
-           :type "number"
-           :value (precision-or-0 (:ry shape 0) 2)
-           :on-change #(on-border-change % :ry)}]]
 
         [:span "Rotation"]
         [:div.row-flex
