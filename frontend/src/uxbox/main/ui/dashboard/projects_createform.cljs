@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.ui.dashboard.projects-createlightbox
+(ns uxbox.main.ui.dashboard.projects-createform
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [potok.core :as ptk]
@@ -130,7 +130,7 @@
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
           :type "submit"}]]
-       [:a.close {:on-clic #(udl/close!)} i/close]])))
+       [:a.close {:on-click #(udl/close!)} i/close]])))
 
 (defmethod lbx/render-lightbox :new-project
   [_]

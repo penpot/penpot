@@ -87,7 +87,8 @@
          :on-change update-name}]
        [:div.project-size
         [:div.input-element.pixels
-         [:span "Width"]          [:input#project-witdh.input-text
+         [:span "Width"]
+         [:input#project-witdh.input-text
           {:placeholder "Width"
            :type "number"
            :min 0
