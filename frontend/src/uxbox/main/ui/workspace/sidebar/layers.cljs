@@ -86,53 +86,50 @@
     :text i/text
     :group i/folder))
 
-
 ;; --- Shape Name (Component)
 
 (mx/defcs shape-name
   "A generic component that displays the shape name
   if it is available and allows inline edition of it."
   {:mixins [mx/static (mx/local)]}
-  [own shape]
-  (let [local (:rum/local own)]
-    (letfn [(on-blur [event]
-              (let [target (dom/event->target event)
-                    parent (.-parentNode target)
-                    data {:id (:id shape)
-                          :name (dom/get-value target)}]
-                (set! (.-draggable parent) true)
-                (st/emit! (uds/update-shape data))
-                (swap! local assoc :edition false)))
-            (on-key-down [event]
-              (js/console.log event)
-              (when (kbd/enter? event)
-                (on-blur event)))
-            (on-click [event]
-              (dom/prevent-default event)
-              (let [parent (.-parentNode (.-target event))]
-                (set! (.-draggable parent) false))
-              (swap! local assoc :edition true))]
-      (if (:edition @local)
-        [:input.element-name
-         {:type "text"
-          :on-blur on-blur
-          :on-key-down on-key-down
-          :auto-focus true
-          :default-value (:name shape "")}]
-        [:span.element-name
-         {:on-double-click on-click}
-         (:name shape "")]))))
+  [{:keys [rum/local]} shape]
+  (letfn [(on-blur [event]
+            (let [target (dom/event->target event)
+                  parent (.-parentNode target)
+                  data {:id (:id shape)
+                        :name (dom/get-value target)}]
+              (set! (.-draggable parent) true)
+              (st/emit! (uds/update-shape data))
+              (swap! local assoc :edition false)))
+          (on-key-down [event]
+            (js/console.log event)
+            (when (kbd/enter? event)
+              (on-blur event)))
+          (on-click [event]
+            (dom/prevent-default event)
+            (let [parent (.-parentNode (.-target event))]
+              (set! (.-draggable parent) false))
+            (swap! local assoc :edition true))]
+    (if (:edition @local)
+      [:input.element-name
+       {:type "text"
+        :on-blur on-blur
+        :on-key-down on-key-down
+        :auto-focus true
+        :default-value (:name shape "")}]
+      [:span.element-name
+       {:on-double-click on-click}
+       (:name shape "")])))
 
 ;; --- Layer Simple (Component)
 
 (mx/defcs layer-simple
   {:mixins [mx/static (mx/local)]}
-  [own item selected]
+  [{:keys [rum/local]} item selected]
   (let [selected? (contains? selected (:id item))
         select #(select-shape selected item %)
         toggle-visibility #(toggle-visibility selected item %)
         toggle-blocking #(toggle-blocking item %)
-        local (:rum/local own)
         classes (classnames
                  :selected selected?
                  :drag-active (:dragging @local)
@@ -197,9 +194,8 @@
 
 (mx/defcs layer-group
   {:mixins [mx/static mx/reactive (mx/local)]}
-  [own {:keys [id] :as item} selected]
-  (let [local (:rum/local own)
-        selected? (contains? selected (:id item))
+  [{:keys [rum/local]} {:keys [id] :as item} selected]
+  (let [selected? (contains? selected (:id item))
         collapsed? (:collapsed item true)
         shapes-map (mx/react refs/shapes-by-id)
         classes (classnames
@@ -285,6 +281,63 @@
               (-> (layer-simple shape selected)
                   (mx/with-key key))))])])))
 
+;; --- Layers Tools (Buttons Component)
+
+(defn- allow-grouping?
+  "Check if the current situation allows grouping
+  of the currently selected shapes."
+  [selected shapes-map]
+  ;; TODO: transducers
+  (let [xform (comp (map shapes-map)
+                    (map :group))
+        groups (into #{} xform selected)]
+    (= 1 (count groups))))
+
+(defn- allow-degrouping?
+  "Check if the current situation allows degrouping
+  of the currently selected shapes."
+  [selected shapes-map]
+  (let [xform (comp (map shapes-map)
+                    (map :group))
+        groups (into #{} xform selected)]
+    (and (= 1 (count groups))
+         (not (nil? (first groups))))))
+
+(mx/defc layers-tools
+  "Layers widget options buttons."
+  [selected shapes-map]
+  (let [duplicate #(st/emit! (uds/duplicate-selected))
+        group #(st/emit! (uds/group-selected))
+        degroup #(st/emit! (uds/degroup-selected))
+        delete #(st/emit! (uds/delete-selected))
+
+        allow-grouping? (allow-grouping? selected shapes-map)
+        allow-degrouping? (allow-degrouping? selected shapes-map)
+        allow-duplicate? (= 1 (count selected))
+        allow-deletion? (pos? (count selected))]
+    [:div.layers-tools
+     [:ul.layers-tools-content
+      [:li.clone-layer.tooltip.tooltip-top
+       {:alt "Duplicate"
+        :class (when-not allow-duplicate? "disable")
+        :on-click duplicate}
+       i/copy]
+      [:li.group-layer.tooltip.tooltip-top
+       {:alt "Group"
+        :class (when-not allow-grouping? "disable")
+        :on-click group}
+       i/folder]
+      [:li.degroup-layer.tooltip.tooltip-top
+       {:alt "Ungroup"
+        :class (when-not allow-degrouping? "disable")
+        :on-click degroup}
+       i/ungroup]
+      [:li.delete-layer.tooltip.tooltip-top
+       {:alt "Delete"
+        :class (when-not allow-deletion? "disable")
+        :on-click delete}
+       i/trash]]]))
+
 ;; --- Layers Toolbox (Component)
 
 (mx/defc layers-toolbox
@@ -296,10 +349,6 @@
         ;; TODO: dont react to the whole shapes-by-id
         shapes-map (mx/react refs/shapes-by-id)
         close #(st/emit! (udw/toggle-flag :layers))
-        duplicate #(st/emit! (uds/duplicate-selected))
-        group #(st/emit! (uds/group-selected))
-        degroup #(st/emit! (uds/degroup-selected))
-        delete #(st/emit! (uds/delete-selected))
         dragel (volatile! nil)]
     [:div#layers.tool-window
      [:div.tool-window-bar
@@ -315,9 +364,4 @@
                (mx/with-key key))
            (-> (layer-simple shape selected)
                (mx/with-key key))))]]
-     [:div.layers-tools
-      [:ul.layers-tools-content
-       [:li.clone-layer.tooltip.tooltip-top {:alt "Duplicate" :on-click duplicate} i/copy]
-       [:li.group-layer.tooltip.tooltip-top {:alt "Group" :on-click group} i/folder]
-       [:li.degroup-layer.tooltip.tooltip-top {:alt "Ungroup" :on-click degroup} i/ungroup]
-       [:li.delete-layer.tooltip.tooltip-top {:alt "Delete" :on-click delete} i/trash]]]]))
+     (layers-tools selected shapes-map)]))

@@ -36,6 +36,7 @@
       }
 
       &.disable {
+        pointer-events: none;
 
         svg {
           cursor: auto;
