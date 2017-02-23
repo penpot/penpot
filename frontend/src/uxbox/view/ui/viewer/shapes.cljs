@@ -84,6 +84,13 @@
   (when-let [image (mx/react (image-ref image))]
     (image-shape (assoc item :image image))))
 
+;; --- Text Shape Wrapper
+
+(mx/defc text-shape-wrapper
+  {:mixins [mx/static]}
+  [item]
+  (text-shape (assoc item :user-select true)))
+
 ;; --- Shapes
 
 (declare shape)
@@ -93,7 +100,7 @@
   (case type
     :group (group-shape item shape)
     :image (image-shape-wrapper item)
-    :text (text-shape item)
+    :text (text-shape-wrapper item)
     :icon (icon-shape item)
     :rect (rect-shape item)
     :path (path-shape item)

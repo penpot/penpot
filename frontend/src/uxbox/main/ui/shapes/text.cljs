@@ -70,16 +70,18 @@
            font-size
            text-align
            line-height
-           letter-spacing]
+           letter-spacing
+           user-select]
     :or {fill-color "#000000"
          fill-opacity 1
          font-family "sourcesanspro"
          font-weight "normal"
          font-style "normal"
-         fobt-size 16
+         font-size 18
          line-height 1.4
          letter-spacing 1
-         text-align "left"}
+         text-align "left"
+         user-select false}
     :as shape}]
   (let [color (-> fill-color
                   (color/hex->rgba fill-opacity)
@@ -92,6 +94,7 @@
       :fontFamily font-family
       :fontWeight font-weight
       :fontStyle font-style}
+     (when user-select {:userSelect "auto"})
      (when line-height {:lineHeight line-height})
      (when letter-spacing {:letterSpacing letter-spacing}))))
 
