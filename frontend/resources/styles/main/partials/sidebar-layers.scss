@@ -35,6 +35,15 @@
 
       }
 
+      &.disable {
+
+        svg {
+          cursor: auto;
+          fill: $soft-ui-icons;
+        }
+
+      }
+
       &.delete-layer {
 
         svg {
