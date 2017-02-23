@@ -94,8 +94,8 @@
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
-        (st/emit! (dw/increase-zoom))
-        (st/emit! (dw/decrease-zoom)))
+        (st/emit! (dw/decrease-zoom))
+        (st/emit! (dw/increase-zoom)))
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (def ^:private workspace-page-ref
