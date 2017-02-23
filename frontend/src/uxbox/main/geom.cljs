@@ -564,3 +564,13 @@
          (neg? (- sx1 rx1))
          (pos? (- sy2 ry2))
          (pos? (- sx2 rx2)))))
+
+(defn overlaps?
+  "Check if a shape overlaps with provided selection rect."
+  [shape selrect]
+  (let [{sx1 :x1 sx2 :x2 sy1 :y1 sy2 :y2} selrect
+        {rx1 :x1 rx2 :x2 ry1 :y1 ry2 :y2} shape]
+    (and (< rx1 sx2)
+         (> rx2 sx1)
+         (< ry1 sy2)
+         (> ry2 sy1))))

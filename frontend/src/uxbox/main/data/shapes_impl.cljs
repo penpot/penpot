@@ -286,6 +286,9 @@
     (geom/contained-in? shape selrect)
     (conj acc id)
 
+    (geom/overlaps? shape selrect)
+    (conj acc id)
+
     (:locked shape)
     acc
 
