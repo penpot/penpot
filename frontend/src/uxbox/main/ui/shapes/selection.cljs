@@ -238,64 +238,71 @@
 
 ;; --- Controls (Component)
 
+(def ^:private handler-size-threshold
+  "The size in pixels that shape width or height
+  should reach in order to increase the handler
+  control pointer radius from 4 to 6."
+  60)
+
 (mx/defc controls
   {:mixins [mx/static]}
   [{:keys [x1 y1 width height] :as shape} zoom on-mouse-down]
-  [:g.controls
-   [:rect.main {:x x1 :y y1
-                :width width
-                :height height
-                :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-                :style {:stroke "#333" :fill "transparent"
-                        :stroke-opacity "1"}}]
-   [:circle.top
-    (merge +circle-props+
-           {:on-mouse-down #(on-mouse-down :top %)
-            :r (/ 6.0 zoom)
-            :cx (+ x1 (/ width 2))
-            :cy (- y1 2)})]
-   [:circle.right
-    (merge +circle-props+
-           {:on-mouse-down #(on-mouse-down :right %)
-            :r (/ 6.0 zoom)
-            :cy (+ y1 (/ height 2))
-            :cx (+ x1 width 1)})]
-   [:circle.bottom
-    (merge +circle-props+
-           {:on-mouse-down #(on-mouse-down :bottom %)
-            :r (/ 6.0 zoom)
-            :cx (+ x1 (/ width 2))
-            :cy (+ y1 height 2)})]
-   [:circle.left
-    (merge +circle-props+
-           {:on-mouse-down #(on-mouse-down :left %)
-            :r (/ 6.0 zoom)
-            :cy (+ y1 (/ height 2))
-            :cx (- x1 3)})]
-   [:circle.top-left
-    (merge +circle-props+
-           {:on-mouse-down #(on-mouse-down :top-left %)
-            :r (/ 6.0 zoom)
-            :cx x1
-            :cy y1})]
-   [:circle.top-right
-    (merge +circle-props+
-           {:on-mouse-down #(on-mouse-down :top-right %)
-            :r (/ 6.0 zoom)
-            :cx (+ x1 width)
-            :cy y1})]
-   [:circle.bottom-left
-    (merge +circle-props+
-           {:on-mouse-down #(on-mouse-down :bottom-left %)
-            :r (/ 6.0 zoom)
-            :cx x1
-            :cy (+ y1 height)})]
-   [:circle.bottom-right
-    (merge +circle-props+
-           {:on-mouse-down #(on-mouse-down :bottom-right %)
-            :r (/ 6.0 zoom)
-            :cx (+ x1 width)
-            :cy (+ y1 height)})]])
+  (let [radius (if (> (max width height) handler-size-threshold) 6.0 4.0)]
+    [:g.controls
+     [:rect.main {:x x1 :y y1
+                  :width width
+                  :height height
+                  :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
+                  :style {:stroke "#333" :fill "transparent"
+                          :stroke-opacity "1"}}]
+     [:circle.top
+      (merge +circle-props+
+             {:on-mouse-down #(on-mouse-down :top %)
+              :r (/ radius zoom)
+              :cx (+ x1 (/ width 2))
+              :cy (- y1 2)})]
+     [:circle.right
+      (merge +circle-props+
+             {:on-mouse-down #(on-mouse-down :right %)
+              :r (/ radius zoom)
+              :cy (+ y1 (/ height 2))
+              :cx (+ x1 width 1)})]
+     [:circle.bottom
+      (merge +circle-props+
+             {:on-mouse-down #(on-mouse-down :bottom %)
+              :r (/ radius zoom)
+              :cx (+ x1 (/ width 2))
+              :cy (+ y1 height 2)})]
+     [:circle.left
+      (merge +circle-props+
+             {:on-mouse-down #(on-mouse-down :left %)
+              :r (/ radius zoom)
+              :cy (+ y1 (/ height 2))
+              :cx (- x1 3)})]
+     [:circle.top-left
+      (merge +circle-props+
+             {:on-mouse-down #(on-mouse-down :top-left %)
+              :r (/ radius zoom)
+              :cx x1
+              :cy y1})]
+     [:circle.top-right
+      (merge +circle-props+
+             {:on-mouse-down #(on-mouse-down :top-right %)
+              :r (/ radius zoom)
+              :cx (+ x1 width)
+              :cy y1})]
+     [:circle.bottom-left
+      (merge +circle-props+
+             {:on-mouse-down #(on-mouse-down :bottom-left %)
+              :r (/ radius zoom)
+              :cx x1
+              :cy (+ y1 height)})]
+     [:circle.bottom-right
+      (merge +circle-props+
+             {:on-mouse-down #(on-mouse-down :bottom-right %)
+              :r (/ radius zoom)
+              :cx (+ x1 width)
+              :cy (+ y1 height)})]]))
 
 ;; --- Selection Handlers (Component)
 
