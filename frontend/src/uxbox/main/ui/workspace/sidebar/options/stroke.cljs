@@ -89,20 +89,22 @@
 
       [:span "Radius"]
       [:div.row-flex
-       [:input.input-text
-        {:placeholder "rx"
-         :type "number"
-         :value (precision-or-0 (:rx shape 0) 2)
-         :on-change #(on-border-change % :rx)}]
+       [:div.input-element.pixels
+        [:input.input-text
+         {:placeholder "rx"
+          :type "number"
+          :value (precision-or-0 (:rx shape 0) 2)
+          :on-change #(on-border-change % :rx)}]]
        [:div.lock-size
         {:class (when (:border-lock @local) "selected")
          :on-click on-border-proportion-lock}
         i/lock]
-       [:input.input-text
-        {:placeholder "ry"
-         :type "number"
-         :value (precision-or-0 (:ry shape 0) 2)
-         :on-change #(on-border-change % :ry)}]]
+       [:div.input-element.pixels
+        [:input.input-text
+         {:placeholder "ry"
+          :type "number"
+          :value (precision-or-0 (:ry shape 0) 2)
+          :on-change #(on-border-change % :ry)}]]]
 
       [:span "Opacity"]
       [:div.row-flex
