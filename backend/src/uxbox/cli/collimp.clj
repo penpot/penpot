@@ -12,8 +12,8 @@
             [mount.core :as mount]
             [cuerdas.core :as str]
             [suricatta.core :as sc]
-            [storages.core :as st]
-            [storages.fs :as fs]
+            [datoteka.storages :as st]
+            [datoteka.core :as fs]
             [uxbox.config]
             [uxbox.db :as db]
             [uxbox.migrations]
@@ -68,7 +68,7 @@
   {:pre [(fs/path? localpath)
          (uuid? collid)
          (uuid? iconid)]}
-  (let [filename (fs/base-name localpath)
+  (let [filename (fs/name localpath)
         extension (second (fs/split-ext filename))
         data (svg/parse localpath)
         params {:name (:name data filename)
@@ -85,7 +85,7 @@
 (defn- import-icon
   [conn id fpath]
   {:pre [(uuid? id) (fs/path? fpath)]}
-  (let [filename (fs/base-name fpath)
+  (let [filename (fs/name fpath)
         iconid (uuid/namespaced +icons-uuid-ns+ (str id filename))]
     (when-not (retrieve-icon conn iconid)
       (println "Importing icon:" (str fpath))
@@ -95,8 +95,9 @@
   [conn basedir {:keys [path regex] :as entry}]
   {:pre [(us/valid? ::import-entry entry)]}
   (let [id (create-icons-collection conn entry)
-        path (fs/resolve basedir path)]
-    (doseq [fpath (fs/list-files path)]
+        path (fs/join basedir path)]
+    (doseq [fpath (->> (fs/list-dir path)
+                       (filter fs/regular-file?))]
       (when (re-matches regex (str fpath))
         (import-icon conn id fpath)))))
 
@@ -137,7 +138,7 @@
   {:pre [(fs/path? localpath)
          (uuid? collid)
          (uuid? imageid)]}
-  (let [filename (fs/base-name localpath)
+  (let [filename (fs/name localpath)
         storage media/images-storage
         [width height] (retrieve-image-size localpath)
         extension (second (fs/split-ext filename))
@@ -157,7 +158,7 @@
 (defn- import-image
   [conn id fpath]
   {:pre [(uuid? id) (fs/path? fpath)]}
-  (let [filename (fs/base-name fpath)
+  (let [filename (fs/name fpath)
         imageid (uuid/namespaced +images-uuid-ns+ (str id filename))]
     (when-not (retrieve-image conn imageid)
       (println "Importing image:" (str fpath))
@@ -167,8 +168,9 @@
   [conn basedir {:keys [path regex] :as entry}]
   {:pre [(us/valid? ::import-entry entry)]}
   (let [id (create-images-collection conn entry)
-        path (fs/resolve basedir path)]
-    (doseq [fpath (fs/list-files path)]
+        path (fs/join basedir path)]
+    (doseq [fpath (->> (fs/list-dir path)
+                       (filter fs/regular-file?))]
       (when (re-matches regex (str fpath))
         (import-image conn id fpath)))))
 

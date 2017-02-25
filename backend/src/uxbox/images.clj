@@ -7,8 +7,10 @@
 (ns uxbox.images
   "Image postprocessing."
   (:require [clojure.spec :as s]
-            [storages.core :as st]
-            [storages.fs :as fs]
+            [clojure.java.io :as io]
+            [datoteka.storages :as st]
+            [datoteka.core :as fs]
+            [datoteka.proto :as pt]
             [uxbox.util.spec :as us]
             [uxbox.media :as media]
             [uxbox.util.images :as images]

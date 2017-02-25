@@ -4,7 +4,7 @@
             [suricatta.core :as sc]
             [clojure.java.io :as io]
             [catacumba.testing :refer (with-server)]
-            [storages.core :as st]
+            [datoteka.storages :as st]
             [uxbox.db :as db]
             [uxbox.sql :as sql]
             [uxbox.media :as media]

@@ -9,7 +9,7 @@
   (:refer-clojure :exclude [with-open])
   (:require [clojure.java.io :as io]
             [suricatta.core :as sc]
-            [storages.fs :as fs]
+            [datoteka.core :as fs]
             [uxbox.db :as db]
             [uxbox.sql :as sql]
             [uxbox.util.uuid :as uuid]

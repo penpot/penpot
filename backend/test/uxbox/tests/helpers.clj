@@ -5,7 +5,7 @@
             [buddy.core.codecs :as codecs]
             [catacumba.serializers :as sz]
             [mount.core :as mount]
-            [storages.core :as st]
+            [datoteka.storages :as st]
             [suricatta.core :as sc]
             [uxbox.services.auth :as usa]
             [uxbox.services.users :as usu]

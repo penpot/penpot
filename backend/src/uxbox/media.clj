@@ -6,15 +6,13 @@
 
 (ns uxbox.media
   "A media storage impl for uxbox."
-  (:require [mount.core :as mount :refer (defstate)]
+  (:require [mount.core :refer [defstate]]
             [clojure.java.io :as io]
             [cuerdas.core :as str]
-            [storages.core :as st]
-            [storages.backend.local :refer (localfs)]
-            [storages.backend.misc :refer (hashed scoped)]
-            [uxbox.config :refer (config)]))
-
-;; FIXME: migrate from storages to datoteka
+            [datoteka.storages :as st]
+            [datoteka.storages.local :refer [localfs]]
+            [datoteka.storages.misc :refer [hashed scoped]]
+            [uxbox.config :refer [config]]))
 
 ;; --- State
 

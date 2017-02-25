@@ -8,8 +8,8 @@
   (:require [clojure.spec :as s]
             [promesa.core :as p]
             [catacumba.http :as http]
-            [storages.core :as st]
-            [storages.fs :as fs]
+            [datoteka.storages :as st]
+            [datoteka.core :as fs]
             [uxbox.media :as media]
             [uxbox.images :as images]
             [uxbox.util.spec :as us]
@@ -116,7 +116,7 @@
   (let [{:keys [file id width height
                 mimetype collection]} (us/conform ::create-image data)
         id (or id (uuid/random))
-        filename (fs/base-name file)
+        filename (fs/name file)
         storage media/images-storage]
     (letfn [(persist-image-entry [path]
               (sv/novelty {:id id
