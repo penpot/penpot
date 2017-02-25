@@ -27,7 +27,8 @@
 
 (def +thumbnail-options+ {:src :path
                           :dst :thumbnail
-                          :size [300 110]
+                          :width 300
+                          :height 100
                           :quality 92
                           :format "webp"})
 
