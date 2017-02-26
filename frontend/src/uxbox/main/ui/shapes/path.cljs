@@ -25,7 +25,9 @@
   (let [modifiers (mx/react (common/modifiers-ref id))
         selected (mx/react common/selected-ref)
         selected? (contains? selected id)
-        shape (assoc shape :modifiers modifiers)]
+        shape (assoc shape
+                     :modifiers modifiers
+                     :background? true)]
     (letfn [(on-mouse-down [event]
               (common/on-mouse-down event shape selected))
             (on-double-click [event]
@@ -61,14 +63,19 @@
 
 (mx/defc path-shape
   {:mixins [mx/static]}
-  [{:keys [id modifiers rotation] :as shape}]
+  [{:keys [id modifiers background?] :as shape}]
   (let [{:keys [resize displacement]} modifiers
         shape (cond-> shape
                 displacement (geom/transform displacement)
-                resize (geom/transform resize)
-                (pos? rotation) (geom/rotate-shape))
-
-        props {:id (str id)
-               :d (render-path shape)}
-        attrs (merge props (attrs/extract-style-attrs shape))]
-    [:path attrs]))
+                resize (geom/transform resize))
+        pdata (render-path shape)
+        attrs (merge {:id (str id) :d pdata}
+                     (attrs/extract-style-attrs shape))]
+    (if background?
+      [:g {}
+       [:path {:stroke "transparent"
+               :fill "transparent"
+               :stroke-width "20px"
+               :d pdata}]
+       [:path attrs]]
+      [:path attrs])))
