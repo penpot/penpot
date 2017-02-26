@@ -115,7 +115,6 @@
   udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
-    (println "DeleteShape$update" id)
     (let [shape (get-in state [:shapes id])]
       (impl/dissoc-shape state shape))))
 
