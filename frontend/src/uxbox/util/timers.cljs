@@ -4,8 +4,19 @@
 ;;
 ;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.util.timers)
+(ns uxbox.util.timers
+  (:require [beicon.core :as rx]))
 
 (defn schedule
   [ms func]
-  (js/setTimeout func ms))
+  (let [sem (js/setTimeout #(func) ms)]
+    (reify rx/ICancellable
+      (-cancel [_]
+        (js/clearTimeout sem)))))
+
+(defn interval
+  [ms func]
+  (let [sem (js/setInterval #(func) ms)]
+    (reify rx/ICancellable
+      (-cancel [_]
+        (js/clearInterval sem)))))
