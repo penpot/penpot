@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.dashboard.images
   (:require [cuerdas.core :as str]
             [lentes.core :as l]
-            [uxbox.util.i18n :as t :refer (tr)]
+            [uxbox.util.i18n :as t :refer [tr]]
             [uxbox.main.store :as st]
             [potok.core :as ptk]
             [uxbox.main.data.lightbox :as udl]
@@ -17,9 +17,9 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.main.ui.dashboard.header :refer (header)]
+            [uxbox.main.ui.dashboard.header :refer [header]]
             [uxbox.util.time :as dt]
-            [uxbox.util.data :as data :refer (read-string)]
+            [uxbox.util.data :refer [read-string jscoll->vec]]
             [uxbox.util.dom :as dom]))
 
 ;; --- Helpers & Constants
@@ -223,7 +223,8 @@
   (letfn [(forward-click [event]
             (dom/click (mx/ref-node own "file-input")))
           (on-file-selected [event]
-            (let [files (dom/get-event-files event)]
+            (let [files (dom/get-event-files event)
+                  files (jscoll->vec files)]
               (st/emit! (di/create-images coll-id files))))]
     (let [uploading? (mx/react uploading?-ref)]
       [:div.grid-item.add-project {:on-click forward-click}
@@ -371,8 +372,8 @@
   (let [editable? (or (= type :own) (nil? id))
         ordering (:order state :name)
         filtering (:filter state "")
-        images (mx/react images-ref)
-        images (->> (vals images)
+        images-map (mx/react images-ref)
+        images (->> (vals images-map)
                     (filter #(= id (:collection %)))
                     (filter-images-by filtering)
                     (sort-images-by ordering))]

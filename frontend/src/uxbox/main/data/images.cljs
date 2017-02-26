@@ -5,15 +5,45 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.images
-  (:require [cuerdas.core :as str]
+  (:require [cljs.spec :as s]
+            [cuerdas.core :as str]
             [beicon.core :as rx]
+            [potok.core :as ptk]
+            [uxbox.main.store :as st]
+            [uxbox.main.repo :as rp]
             [uxbox.util.data :refer (jscoll->vec)]
             [uxbox.util.uuid :as uuid]
-            [potok.core :as ptk]
+            [uxbox.util.time :as ts]
+            [uxbox.util.spec :as us]
             [uxbox.util.router :as r]
-            [uxbox.util.files :as files]
-            [uxbox.main.store :as st]
-            [uxbox.main.repo :as rp]))
+            [uxbox.util.files :as files]))
+
+;; --- Specs
+
+(s/def ::name string?)
+(s/def ::width number?)
+(s/def ::height number?)
+(s/def ::modified-at ts/instant?)
+(s/def ::created-at ts/instant?)
+(s/def ::mimetype string?)
+(s/def ::thumbnail us/url-str?)
+(s/def ::id uuid?)
+(s/def ::url us/url-str?)
+(s/def ::collection (s/nilable uuid?))
+(s/def ::user uuid?)
+
+(s/def ::image-entity
+  (s/keys :req-un [::id
+                   ::name
+                   ::width
+                   ::height
+                   ::created-at
+                   ::modified-at
+                   ::mimetype
+                   ::thumbnail
+                   ::url
+                   ::collection
+                   ::user]))
 
 ;; --- Initialize
 
@@ -184,6 +214,7 @@
 
 (defn image-created
   [item]
+  {:pre [(us/valid? ::image-entity item)]}
   (ImageCreated. item))
 
 ;; --- Create Image
@@ -196,13 +227,13 @@
     (assoc-in state [:dashboard :images :uploading] true))
 
   ptk/WatchEvent
-  (watch [_ state s]
+  (watch [_ state stream]
     (letfn [(image-size [file]
               (->> (files/get-image-size file)
                    (rx/map (partial vector file))))
             (allowed-file? [file]
               (contains? allowed-file-types (.-type file)))
-            (finalize-upload []
+            (finalize-upload [state]
               (assoc-in state [:dashboard :images :uploading] false))
             (prepare [[file [width height]]]
               {:collection id
@@ -211,7 +242,7 @@
                :file file
                :width width
                :height height})]
-      (->> (rx/from-coll (jscoll->vec files))
+      (->> (rx/from-coll files)
            (rx/filter allowed-file?)
            (rx/mapcat image-size)
            (rx/map prepare)

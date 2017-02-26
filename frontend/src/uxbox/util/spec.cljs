@@ -31,6 +31,12 @@
   [v]
   (instance? js/File v))
 
+;; TODO: properly implement
+
+(defn url-str?
+  [v]
+  (string? v))
+
 ;; --- Default Specs
 
 (s/def ::uuid uuid?)
