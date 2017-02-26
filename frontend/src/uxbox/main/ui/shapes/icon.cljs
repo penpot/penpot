@@ -30,19 +30,31 @@
 
 ;; --- Icon Shape
 
+(defn- rotate
+  ;; TODO: revisit, i'm not sure if this function is duplicated.
+  [mt {:keys [x1 y1 x2 y2 width height rotation] :as shape}]
+  (let [x-center (+ x1 (/ width 2))
+        y-center (+ y1 (/ height 2))
+        center (gpt/point x-center y-center)]
+    (gmt/rotate* mt rotation center)))
+
+
 (mx/defc icon-shape
   {:mixins [mx/static]}
   [{:keys [id content metadata rotation x1 y1 modifiers] :as shape}]
-  (let [{:keys [width height]} (geom/size shape)
-        {:keys [resize displacement]} modifiers
-
-        view-box (apply str (interpose " " (:view-box metadata)))
+  (let [{:keys [resize displacement]} modifiers
 
         xfmt (cond-> (gmt/matrix)
-               resize (gmt/multiply resize)
                displacement (gmt/multiply displacement)
-               rotation (gmt/rotate* rotation (gpt/point (+ x1 (/ width 2))
-                                                         (+ y1 (/ height 2)))))
+               resize (gmt/multiply resize))
+
+        {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
+                                                   (geom/size))
+
+        view-box (apply str (interpose " " (:view-box metadata)))
+        xfmt (cond-> (gmt/matrix)
+               (pos? rotation) (rotate shape))
+
         props {:id (str id)
                :x x1
                :y y1
