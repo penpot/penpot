@@ -28,9 +28,18 @@
 (s/def ::mimetype string?)
 (s/def ::thumbnail us/url-str?)
 (s/def ::id uuid?)
+(s/def ::version integer?)
 (s/def ::url us/url-str?)
 (s/def ::collection (s/nilable uuid?))
 (s/def ::user uuid?)
+
+(s/def ::collection-entity
+  (s/keys :req-un [::id
+                   ::name
+                   ::created-at
+                   ::modified-at
+                   ::user
+                   ::version]))
 
 (s/def ::image-entity
   (s/keys :req-un [::id
@@ -42,6 +51,7 @@
                    ::mimetype
                    ::thumbnail
                    ::url
+                   ::version
                    ::collection
                    ::user]))
 
@@ -98,6 +108,7 @@
 
 (defn collections-fetched
   [items]
+  {:pre [(us/valid? (s/every ::collection-entity) items)]}
   (CollectionsFetched. items))
 
 ;; --- Fetch Color Collections
@@ -127,6 +138,7 @@
 
 (defn collection-created
   [item]
+  {:pre [(us/valid? ::collection-entity item)]}
   (CollectionCreated. item))
 
 ;; --- Create Collection
@@ -157,6 +169,7 @@
 
 (defn collection-updated
   [item]
+  {:pre [(us/valid? ::collection-entity item)]}
   (CollectionUpdated. item))
 
 ;; --- Update Collection
