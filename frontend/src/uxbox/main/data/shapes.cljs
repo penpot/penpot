@@ -109,15 +109,21 @@
   [data]
   (AddShape. data))
 
+;; --- Delete Shape
+
+(deftype DeleteShape [id]
+  udp/IPageUpdate
+  ptk/UpdateEvent
+  (update [_ state]
+    (println "DeleteShape$update" id)
+    (let [shape (get-in state [:shapes id])]
+      (impl/dissoc-shape state shape))))
+
 (defn delete-shape
   "Remove the shape using its id."
   [id]
-  (reify
-    udp/IPageUpdate
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [shape (get-in state [:shapes id])]
-        (impl/dissoc-shape state shape)))))
+  {:pre [(uuid? id)]}
+  (DeleteShape. id))
 
 (defn update-shape
   "Just updates in place the shape."
@@ -603,15 +609,19 @@
   []
   (DuplicateSelected.))
 
+;; --- Delete Selected
+
+(deftype DeleteSelected []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [selected (get-in state [:workspace :selected])]
+      (rx/from-coll
+       (into [(deselect-all)] (map #(delete-shape %) selected))))))
+
 (defn delete-selected
   "Deselect all and remove all selected shapes."
   []
-  (reify
-    ptk/WatchEvent
-    (watch [_ state s]
-      (let [selected (get-in state [:workspace :selected])]
-        (rx/from-coll
-         (into [(deselect-all)] (map #(delete-shape %) selected)))))))
+  (DeleteSelected.))
 
 (deftype UpdateSelectedShapesAttrs [attrs]
   ptk/WatchEvent
