@@ -343,6 +343,7 @@
       (if existing
         (rx/empty)
         (->> (rp/req :fetch/image {:id id})
+             (rx/catch rp/client-error? #(rx/empty))
              (rx/map :payload)
              (rx/map image-fetched))))))
 
