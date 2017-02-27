@@ -11,6 +11,7 @@
             [potok.core :as ptk]
             [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
+            [uxbox.main.refs :as refs]
             [uxbox.main.lenses :as ul]
             [uxbox.main.geom :as geom]
             [uxbox.main.workers :as uwrk]
@@ -141,19 +142,23 @@
 
 (declare apply-temporal-displacement)
 
-(defn initial-align-shape
+
+(deftype InitialShapeAlign [id]
+  ptk/WatchEvent
+  (watch [_ state s]
+    (let [{:keys [x1 y1] :as shape} (->> (get-in state [:shapes id])
+                                         (geom/shape->rect-shape state))
+          point1 (gpt/point x1 y1)
+          point2 (gpt/add point1 canvas-coords)]
+      (->> (uwrk/align-point point2)
+           (rx/map #(gpt/subtract % canvas-coords))
+           (rx/map (fn [{:keys [x y] :as pt}]
+                     (apply-temporal-displacement id (gpt/subtract pt point1))))))))
+
+(defn initial-shape-align
   [id]
-  (reify
-    ptk/WatchEvent
-    (watch [_ state s]
-      (let [{:keys [x1 y1] :as shape} (->> (get-in state [:shapes id])
-                                           (geom/shape->rect-shape state))
-            point1 (gpt/point x1 y1)
-            point2 (gpt/add point1 canvas-coords)]
-        (->> (uwrk/align-point point2)
-             (rx/map #(gpt/subtract % canvas-coords))
-             (rx/map (fn [{:keys [x y] :as pt}]
-                       (apply-temporal-displacement id (gpt/subtract pt point1)))))))))
+  {:pre [(uuid? id)]}
+  (InitialShapeAlign. id))
 
 (defn update-rotation
   [sid rotation]
@@ -649,13 +654,10 @@
 
 ;; --- Move Selected
 
-(defn alignment-activated?
-  ;; TODO: use the function defined in uxbox.main.refs
+(defn- alignment-activated?
   [state]
   (let [flags (l/focus ul/workspace-flags state)]
-    (and (contains? flags :grid-indexed)
-         (contains? flags :grid-alignment)
-         (contains? flags :grid))))
+    (refs/alignment-activated? flags)))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
@@ -678,6 +680,11 @@
      :fast (gpt/point (if align? (* 3 gx) 10)
                       (if align? (* 3 gy) 10))}))
 
+;; --- Move Selected
+
+;; Event used for apply displacement transformation
+;; to the selected shapes throught the keyboard shortcuts.
+
 (deftype MoveSelected [direction speed]
   ptk/WatchEvent
   (watch [_ state stream]
@@ -690,7 +697,7 @@
       (rx/concat
        (when align?
          (rx/concat
-          (rx/from-coll (map initial-align-shape selected))
+          (rx/from-coll (map initial-shape-align selected))
           (rx/from-coll (map apply-displacement selected))))
        (rx/from-coll (map #(apply-temporal-displacement % displacement) selected))
        (rx/from-coll (map apply-displacement selected))))))
