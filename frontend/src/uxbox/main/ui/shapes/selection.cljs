@@ -40,165 +40,27 @@
     (mapv #(get-in state [:shapes %]) selected)))
 
 (def ^:private selected-shapes-ref
+  "A customized version of `refs/selected-shapes` that
+  additionally resolves the shapes to the real object
+  instead of just return a set of ids."
   (-> (l/lens focus-selected-shapes)
       (l/derive st/state)))
 
-(def ^:private edition-ref scommon/edition-ref)
-(def ^:private modifiers-ref
+(def ^:private selected-modifers-ref
+  "A customized version of `refs/selected-modifiers`
+  that instead of focus to one concrete id, it focuses
+  on the whole map."
   (-> (l/key :modifiers)
       (l/derive refs/workspace)))
 
 ;; --- Resize Implementation
 
-(defn- calculate-scale-ratio
-  "Calculate the scale factor from one shape to an other."
-  [origin final]
-  [(/ (:width final) (:width origin))
-   (/ (:height final) (:height origin))])
-
-(defn generate-resize-matrix
-  "Generate the resize transformation matrix given
-  a corner-id, shape and the scale factor vector."
-  [vid shape [scalex scaley]]
-  (case vid
-    :top-left
-    (-> (gmt/matrix)
-        (gmt/translate (+ (:x2 shape))
-                       (+ (:y2 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x2 shape))
-                       (- (:y2 shape))))
-
-    :top-right
-    (-> (gmt/matrix)
-        (gmt/translate (+ (:x1 shape))
-                       (+ (:y2 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x1 shape))
-                       (- (:y2 shape))))
-
-    :top
-    (-> (gmt/matrix)
-        (gmt/translate (+ (:x1 shape))
-                       (+ (:y2 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x1 shape))
-                       (- (:y2 shape))))
-
-    :bottom-left
-    (-> (gmt/matrix)
-        (gmt/translate (+ (:x2 shape))
-                       (+ (:y1 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x2 shape))
-                       (- (:y1 shape))))
-
-    :bottom-right
-    (-> (gmt/matrix)
-        (gmt/translate (+ (:x1 shape))
-                       (+ (:y1 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x1 shape))
-                       (- (:y1 shape))))
-
-    :bottom
-    (-> (gmt/matrix)
-        (gmt/translate (+ (:x1 shape))
-                       (+ (:y1 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x1 shape))
-                       (- (:y1 shape))))
-
-    :right
-    (-> (gmt/matrix)
-        (gmt/translate (+ (:x1 shape))
-                       (+ (:y1 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x1 shape))
-                       (- (:y1 shape))))
-
-    :left
-    (-> (gmt/matrix)
-        (gmt/translate (+ (:x2 shape))
-                       (+ (:y1 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x2 shape))
-                       (- (:y1 shape))))))
-
-
-(defn- resize-shape
-  [vid shape {:keys [x y] :as point} ctrl?]
-  (case vid
-    :top-left
-    (let [width (- (:x2 shape) x)
-          height (- (:y2 shape) y)
-          proportion (:proportion shape)]
-      (assoc shape
-             :width width
-             :height (if ctrl? (/ width proportion) height)))
-
-    :top-right
-    (let [width (- x (:x1 shape))
-          height (- (:y2 shape) y)
-          proportion (:proportion shape)]
-      (assoc shape
-             :width width
-             :height (if ctrl? (/ width proportion) height)))
-
-    :top
-    (let [width (- (:x2 shape) (:x1 shape))
-          height (- (:y2 shape) y)
-          proportion (:proportion shape)]
-      (assoc shape
-             :width width
-             :height (if ctrl? (/ width proportion) height)))
-
-    :bottom-left
-    (let [width (- (:x2 shape) x)
-          height (- y (:y1 shape))
-          proportion (:proportion shape)]
-      (assoc shape
-             :width width
-             :height (if ctrl? (/ width proportion) height)))
-
-    :bottom-right
-    (let [width (- x (:x1 shape))
-          height (- y (:y1 shape))
-          proportion (:proportion shape)]
-      (assoc shape
-             :width width
-             :height (if ctrl? (/ width proportion) height)))
-
-    :bottom
-    (let [width (- (:x2 shape) (:x1 shape))
-          height (- y (:y1 shape))
-          proportion (:proportion shape)]
-      (assoc shape
-             :width width
-             :height (if ctrl? (/ width proportion) height)))
-
-    :left
-    (let [width (- (:x2 shape) x)
-          height (- (:y2 shape) (:y1 shape))
-          proportion (:proportion shape)]
-      (assoc shape
-             :width width
-             :height (if ctrl? (/ width proportion) height)))
-
-    :right
-    (let [width (- x (:x1 shape))
-          height (- (:y2 shape) (:y1 shape))
-          proportion (:proportion shape)]
-      (assoc shape
-             :width width
-             :height (if ctrl? (/ width proportion) height)))))
-
 (defn- start-resize
   [vid ids shape]
   (letfn [(on-resize [shape [point lock?]]
-            (let [result (resize-shape vid shape point lock?)
-                  scale (calculate-scale-ratio shape result)
-                  mtx (generate-resize-matrix vid shape scale)
+            (let [result (geom/resize-shape vid shape point lock?)
+                  scale (geom/calculate-scale-ratio shape result)
+                  mtx (geom/generate-resize-matrix vid shape scale)
                   xfm (map #(uds/apply-temporal-resize % mtx))]
               (apply st/emit! (sequence xfm ids))))
 
@@ -343,9 +205,11 @@
 (mx/defc multiple-selection-handlers
   {:mixins [mx/static]}
   [[shape & rest :as shapes] modifiers zoom]
-  (let [selection (-> (map #(geom/selection-rect %) shapes)
-                      (geom/shapes->rect-shape)
-                      (geom/selection-rect))
+  (let [selection (->> shapes
+                       (map #(assoc % :modifiers (get modifiers (:id %))))
+                       (map #(geom/selection-rect %))
+                       (geom/shapes->rect-shape)
+                       (geom/selection-rect))
         shape (geom/shapes->rect-shape shapes)
         on-click #(do (dom/stop-propagation %2)
                       (start-resize %1 (map :id shapes) shape))]
@@ -353,7 +217,7 @@
 
 (mx/defc single-selection-handlers
   {:mixins [mx/static]}
-  [{:keys [id] :as shape} modifiers zoom]
+  [{:keys [id] :as shape} zoom]
   (let [on-click #(do (dom/stop-propagation %2)
                       (start-resize %1 #{id} shape))
         shape (geom/selection-rect shape)]
@@ -377,11 +241,14 @@
   {:mixins [mx/reactive mx/static]}
   []
   (let [shapes (mx/react selected-shapes-ref)
-        modifiers (mx/react modifiers-ref)
-        edition? (mx/react edition-ref)
+        modifiers (mx/react selected-modifers-ref)
+        ;; Edition is a workspace global flag
+        ;; because only one shape can be on
+        ;; the edition mode.
+        edition? (mx/react refs/selected-edition)
         zoom (mx/react refs/selected-zoom)
         num (count shapes)
-        {:keys [type] :as shape} (first shapes)]
+        {:keys [id type] :as shape} (first shapes)]
     (cond
       (zero? num)
       nil
@@ -390,12 +257,15 @@
       (multiple-selection-handlers shapes modifiers zoom)
 
       (and (= type :text) edition?)
-      (text-edition-selection-handlers shape zoom)
+      (-> (assoc shape :modifiers (get modifiers id))
+          (text-edition-selection-handlers zoom))
 
       (= type :path)
-      (if (= @edition-ref (:id shape))
+      (if (= @refs/selected-edition (:id shape))
         (path-edition-selection-handlers shape zoom)
-        (single-selection-handlers shape modifiers zoom))
+        (-> (assoc shape :modifiers (get modifiers id))
+            (single-selection-handlers zoom)))
 
       :else
-      (single-selection-handlers shape modifiers zoom))))
+      (-> (assoc shape :modifiers (get modifiers id))
+          (single-selection-handlers zoom)))))

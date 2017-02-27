@@ -8,11 +8,12 @@
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [potok.core :as ptk]
+            [uxbox.main.geom :as geom]
+            [uxbox.main.refs :as refs]
             [uxbox.main.store :as st]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.data.images :as udi]
-            [uxbox.main.geom :as geom]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.geom.matrix :as gmt]))
 
@@ -36,8 +37,8 @@
                    (st/emit! (udi/fetch-image id)))
                  own)}
   [own {:keys [id image] :as shape}]
-  (let [modifiers (mx/react (common/modifiers-ref id))
-        selected (mx/react common/selected-ref)
+  (let [modifiers (mx/react (refs/selected-modifiers id))
+        selected (mx/react refs/selected-shapes)
         image (mx/react (image-ref image))
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)

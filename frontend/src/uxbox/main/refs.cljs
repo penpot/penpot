@@ -66,16 +66,29 @@
   (-> (l/key :tooltip)
       (l/derive workspace)))
 
+(def selected-drawing-shape
+  (-> (l/key :drawing)
+      (l/derive workspace)))
+
 (def selected-drawing-tool
   (-> (l/key :drawing-tool)
       (l/derive workspace)))
 
+(def selected-edition
+  (-> (l/key :edition)
+      (l/derive workspace)))
+
+(defn selected-modifiers
+  [id]
+  {:pre [(uuid? id)]}
+  (-> (l/in [:modifiers id])
+      (l/derive workspace)))
+
 (defn alignment-activated?
-  [state]
-  (let [flags (l/focus ul/workspace-flags state)]
-    (and (contains? flags :grid-indexed)
-         (contains? flags :grid-alignment)
-         (contains? flags :grid))))
+  [flags]
+  (and (contains? flags :grid-indexed)
+       (contains? flags :grid-alignment)
+       (contains? flags :grid)))
 
 (def selected-alignment
   (-> (l/lens alignment-activated?)

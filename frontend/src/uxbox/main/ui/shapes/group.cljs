@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.group
   (:require [lentes.core :as l]
             [uxbox.main.store :as st]
             [uxbox.main.geom :as geom]
+            [uxbox.main.refs :as refs]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.ui.shapes.icon :as icon]
@@ -53,9 +54,11 @@
 (mx/defc group-component
   {:mixins [mx/static mx/reactive]}
   [{:keys [id x y width height group] :as shape}]
-  (let [selected (mx/react common/selected-ref)
+  (let [modifiers (mx/react (refs/selected-modifiers id))
+        selected (mx/react refs/selected-shapes)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)]
+        on-mouse-down #(common/on-mouse-down % shape selected)
+        shape (assoc shape :modifiers modifiers)]
     [:g.shape.group-shape
      {:class (when selected? "selected")
       :on-mouse-down on-mouse-down}
@@ -65,9 +68,12 @@
 
 (mx/defc group-shape
   {:mixins [mx/static mx/reactive]}
-  [{:keys [id items tmp-resize-xform tmp-displacement] :as shape} factory]
-  (let [xfmt (cond-> (or tmp-resize-xform (gmt/matrix))
-               tmp-displacement (gmt/translate tmp-displacement))
+  [{:keys [id items modifiers] :as shape} factory]
+  (let [{:keys [resize displacement]} modifiers
+
+        xfmt (cond-> (gmt/matrix)
+               resize (gmt/multiply resize)
+               displacement (gmt/multiply displacement))
 
         attrs {:id (str "shape-" id)
                :transform (str xfmt)}]

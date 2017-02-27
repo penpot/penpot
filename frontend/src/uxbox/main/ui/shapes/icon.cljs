@@ -5,9 +5,10 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.icon
-  (:require [uxbox.main.ui.shapes.common :as common]
+  (:require [uxbox.main.geom :as geom]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.main.geom :as geom]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]))
@@ -19,8 +20,8 @@
 (mx/defc icon-component
   {:mixins [mx/static mx/reactive]}
   [{:keys [id] :as shape}]
-  (let [modifiers (mx/react (common/modifiers-ref id))
-        selected (mx/react common/selected-ref)
+  (let [modifiers (mx/react (refs/selected-modifiers id))
+        selected (mx/react refs/selected-shapes)
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)
         shape (assoc shape :modifiers modifiers)]

@@ -166,7 +166,6 @@
                    (:id)))
             (on-fetched [event]
               (let [coll (get-first-with-icons @event)]
-                (println "first" coll)
                 (select-icons-toolbox-collection coll)))]
       (rx/merge
        (rx/of (udi/fetch-collections)

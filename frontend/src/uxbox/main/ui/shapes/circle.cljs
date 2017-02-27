@@ -6,9 +6,10 @@
 
 (ns uxbox.main.ui.shapes.circle
   (:require [lentes.core :as l]
+            [uxbox.main.refs :as refs]
+            [uxbox.main.geom :as geom]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.main.geom :as geom]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.mixins :as mx :include-macros true]))
@@ -20,8 +21,8 @@
 (mx/defc circle-component
   {:mixins [mx/reactive mx/static]}
   [{:keys [id] :as shape}]
-  (let [modifiers (mx/react (common/modifiers-ref id))
-        selected (mx/react common/selected-ref)
+  (let [modifiers (mx/react (refs/selected-modifiers id))
+        selected (mx/react refs/selected-shapes)
         selected? (contains? selected id)
         on-mouse-down #(common/on-mouse-down % shape selected)
         shape (assoc shape :modifiers modifiers)]

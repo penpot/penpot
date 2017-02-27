@@ -42,6 +42,18 @@
   [shape]
   (SelectForDrawing. shape))
 
+
+;; --- Clear Drawing State
+
+(deftype ClearDrawingState []
+  ptk/UpdateEvent
+  (update [_ state]
+    (update state :workspace dissoc :drawing-tool :drawing)))
+
+(defn clear-drawing-state
+  []
+  (ClearDrawingState.))
+
 ;; -- Start Drawing
 
 (declare on-init-draw)
@@ -80,8 +92,8 @@
     (let [shape (get-in state [:workspace :drawing])
           shape (geom/setup shape {:x1 (:x point)
                                    :y1 (:y point)
-                                   :x2 (:x point)
-                                   :y2 (:y point)})]
+                                   :x2 (inc (:x point))
+                                   :y2 (inc (:y point))})]
       (assoc-in state [:workspace :drawing] shape))))
 
 (defn initialize-drawing
@@ -94,7 +106,13 @@
 (deftype UpdateDrawing [position]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :drawing] geom/resize position)))
+    (let [{:keys [id] :as shape} (-> (get-in state [:workspace :drawing])
+                                     (geom/shape->rect-shape)
+                                     (geom/size))
+          result (geom/resize-shape :bottom-right shape position false)
+          scale (geom/calculate-scale-ratio shape result)
+          resize-mtx (geom/generate-resize-matrix :bottom-right shape scale)]
+      (assoc-in state [:workspace :modifiers id] {:resize resize-mtx}))))
 
 (defn update-drawing
   [position]
@@ -106,12 +124,14 @@
 (deftype FinishDrawing []
   ptk/WatchEvent
   (watch [_ state stream]
-    (if-let [shape (get-in state [:workspace :drawing])]
-      (rx/of #(update % :workspace dissoc :drawing :drawing-tool)
-             (uds/add-shape shape)
-             (uds/select-first-shape)
-             ::uev/interrupt)
-      (rx/empty))))
+    (let [{:keys [id] :as shape} (get-in state [:workspace :drawing])
+          resize-mtx (get-in state [:workspace :modifiers id :resize])]
+      (if-not shape
+        (rx/empty)
+        (rx/of (clear-drawing-state)
+               (uds/add-shape (geom/transform shape resize-mtx))
+               (uds/select-first-shape)
+               ::uev/interrupt)))))
 
 (defn finish-drawing
   []

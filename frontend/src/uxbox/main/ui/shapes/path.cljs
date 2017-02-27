@@ -8,6 +8,7 @@
   (:require [potok.core :as ptk]
             [cuerdas.core :as str :include-macros true]
             [uxbox.main.store :as st]
+            [uxbox.main.refs :as refs]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.data.shapes :as uds]
@@ -22,8 +23,8 @@
 (mx/defc path-component
   {:mixins [mx/static mx/reactive]}
   [{:keys [id] :as shape}]
-  (let [modifiers (mx/react (common/modifiers-ref id))
-        selected (mx/react common/selected-ref)
+  (let [modifiers (mx/react (refs/selected-modifiers id))
+        selected (mx/react refs/selected-shapes)
         selected? (contains? selected id)
         shape (assoc shape
                      :modifiers modifiers

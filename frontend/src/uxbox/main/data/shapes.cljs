@@ -220,7 +220,7 @@
 (defn apply-temporal-resize
   "Attach temporal resize transformation to the shape."
   [id xfmt]
-  {:pre [(gmt/matrix? xfmt)]}
+  {:pre [(gmt/matrix? xfmt) (uuid? id)]}
   (ApplyTemporalResize. id xfmt))
 
 ;; --- Apply Resize Matrix

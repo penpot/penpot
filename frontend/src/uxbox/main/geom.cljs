@@ -246,73 +246,162 @@
           (assoc :ry ry)
           (assoc :rx (* ry proportion))))))
 
-;; --- Resize (Absolute)
+;; --- Resize
 
-(declare resize-rect)
-(declare resize-circle)
-(declare normalize-shape)
-(declare equalize-sides)
+(defn calculate-scale-ratio
+  "Calculate the scale factor from one shape to an other.
 
-(defn resize
-  "Resize the shape using absolute position.
-  NOTE: used in draw operation."
-  [shape point]
-  (case (:type shape)
-    :rect (resize-rect shape point)
-    :icon (resize-rect shape point)
-    :image (resize-rect shape point)
-    :text (resize-rect shape point)
-    :path (resize-rect shape point)
-    :circle (resize-circle shape point)))
+  The shapes should be of rect-like type because width
+  and height are used for calculate the ratio."
+  [origin final]
+  [(/ (:width final) (:width origin))
+   (/ (:height final) (:height origin))])
 
-(defn- resize-rect
-  "A specialized function for absolute resize
-  for rect-like shapes."
-  [shape {:keys [x y] :as pos}]
-  (-> (assoc shape :x2 x :y2 y)
-      (normalize-shape)))
+(defn generate-resize-matrix
+  "Generate the resize transformation matrix given a corner-id, shape
+  and the scale factor vector. The shape should be of rect-like type.
 
-(defn- resize-circle
-  "A specialized function for absolute resize
-  for circle shapes."
-  [shape {:keys [x y lock] :as pos}]
-  (let [cx (:cx shape)
-        cy (:cy shape)
+  Mainly used by drawarea and shape resize on workspace."
+  [vid shape [scalex scaley]]
+  (case vid
+    :top-left
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x2 shape))
+                       (+ (:y2 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x2 shape))
+                       (- (:y2 shape))))
 
-        rx (mth/abs (- x cx))
-        ry (mth/abs (- y cy))]
-    (if lock
-      (assoc shape :rx rx :ry rx)
-      (assoc shape :rx rx :ry ry))))
+    :top-right
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y2 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y2 shape))))
 
-(defn- normalize-shape
-  "Normalize shape coordinates."
-  [shape]
-  (let [x1 (min (:x1 shape) (:x2 shape))
-        y1 (min (:y1 shape) (:y2 shape))
-        x2 (max (:x1 shape) (:x2 shape))
-        y2 (max (:y1 shape) (:y2 shape))]
-    (assoc shape :x1 x1 :x2 x2 :y1 y1 :y2 y2)))
+    :top
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y2 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y2 shape))))
 
-(defn- equalize-sides
-  "Fix shape sides to be equal according to the lock mode."
-  [shape]
-  (let [{:keys [x1 x2 y1 y2]} shape
-        x-side (mth/abs (- x2 x1))
-        y-side (mth/abs (- y2 y1))
-        max-side (max x-side y-side)]
-    (cond
-      (and (> x1 x2) (> y1 y2))
-      (assoc shape :x2 (- x1 max-side) :y2 (- y1 max-side))
+    :bottom-left
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x2 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x2 shape))
+                       (- (:y1 shape))))
 
-      (and (< x1 x2) (< y1 y2))
-      (assoc shape :x2 (+ x1 max-side) :y2 (+ y1 max-side))
+    :bottom-right
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y1 shape))))
 
-      (and (> x1 x2) (< y1 y2))
-      (assoc shape :x2 (- x1 max-side) :y2 (+ y1 max-side))
+    :bottom
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y1 shape))))
 
-      (and (< x1 x2) (> y1 y2))
-      (assoc shape :x2 (+ x1 max-side) :y2 (- y1 max-side)))))
+    :right
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x1 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x1 shape))
+                       (- (:y1 shape))))
+
+    :left
+    (-> (gmt/matrix)
+        (gmt/translate (+ (:x2 shape))
+                       (+ (:y1 shape)))
+        (gmt/scale scalex scaley)
+        (gmt/translate (- (:x2 shape))
+                       (- (:y1 shape))))))
+
+
+(defn resize-shape
+  "Apply a resize transformation to a rect-like shape. The shape
+  should have the `width` and `height` attrs, because these attrs
+  are used for the resize transformation.
+
+  Mainly used in drawarea and interactive resize on workspace
+  with the main objective that on the end of resize have a way
+  a calculte the resize ratio with `calculate-scale-ratio`."
+  [vid shape {:keys [x y] :as point} lock?]
+  (case vid
+    :top-left
+    (let [width (- (:x2 shape) x)
+          height (- (:y2 shape) y)
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if lock? (/ width proportion) height)))
+
+    :top-right
+    (let [width (- x (:x1 shape))
+          height (- (:y2 shape) y)
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if lock? (/ width proportion) height)))
+
+    :top
+    (let [width (- (:x2 shape) (:x1 shape))
+          height (- (:y2 shape) y)
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if lock? (/ width proportion) height)))
+
+    :bottom-left
+    (let [width (- (:x2 shape) x)
+          height (- y (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if lock? (/ width proportion) height)))
+
+    :bottom-right
+    (let [width (- x (:x1 shape))
+          height (- y (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if lock? (/ width proportion) height)))
+
+    :bottom
+    (let [width (- (:x2 shape) (:x1 shape))
+          height (- y (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if lock? (/ width proportion) height)))
+
+    :left
+    (let [width (- (:x2 shape) x)
+          height (- (:y2 shape) (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if lock? (/ width proportion) height)))
+
+    :right
+    (let [width (- x (:x1 shape))
+          height (- (:y2 shape) (:y1 shape))
+          proportion (:proportion shape)]
+      (assoc shape
+             :width width
+             :height (if lock? (/ width proportion) height)))))
 
 ;; --- Setup (Initialize)
 
@@ -521,8 +610,8 @@
      (selection-rect-generic state shape))))
 
 (defn- selection-rect-generic
-  [state {:keys [id] :as shape}]
-  (let [{:keys [displacement resize]} (get-in state [:workspace :modifiers id])]
+  [state {:keys [id modifiers] :as shape}]
+  (let [{:keys [displacement resize]} modifiers]
     (-> (shape->rect-shape shape)
         (assoc :type :rect :id id)
         (transform (or resize (gmt/matrix)))
@@ -531,8 +620,8 @@
         (size))))
 
 (defn- selection-rect-group
-  [state {:keys [id group items] :as shape}]
-  (let [{:keys [displacement resize]} (get-in state [:workspace :modifiers id])
+  [state {:keys [id group items modifiers] :as shape}]
+  (let [{:keys [displacement resize]} modifiers
         shapes (->> items
                     (map #(get-in state [:shapes %]))
                     (map #(selection-rect state %)))]

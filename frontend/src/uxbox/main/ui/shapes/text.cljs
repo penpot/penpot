@@ -11,6 +11,7 @@
             [potok.core :as ptk]
             [uxbox.main.store :as st]
             [uxbox.main.geom :as geom]
+            [uxbox.main.refs :as refs]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
@@ -25,8 +26,8 @@
 (defn handle-mouse-down
   [event {:keys [id group] :as shape} selected]
   (if (and (not (:blocked shape))
-           (or @common/drawing-state-ref
-               @common/edition-ref
+           (or @refs/selected-drawing-tool
+               @refs/selected-edition
                (and group (:locked (geom/resolve-parent shape)))))
     (dom/stop-propagation event)
     (common/on-mouse-down event shape selected)))
@@ -40,10 +41,12 @@
 (mx/defcs text-component
   {:mixins [mx/static mx/reactive]}
   [own {:keys [id x1 y1 content group] :as shape}]
-  (let [selected (mx/react common/selected-ref)
-        edition? (= (mx/react common/edition-ref) id)
+  (let [modifiers (mx/react (refs/selected-modifiers id))
+        selected (mx/react refs/selected-shapes)
+        edition? (= (mx/react refs/selected-edition) id)
         selected? (and (contains? selected id)
-                       (= (count selected) 1))]
+                       (= (count selected) 1))
+        shape (assoc shape :modifiers modifiers)]
     (letfn [(on-mouse-down [event]
               (handle-mouse-down event shape selected))
             (on-double-click [event]
@@ -155,26 +158,20 @@
 (mx/defc text-shape-wrapper
   {:did-mount text-shape-wrapper-did-mount
    :did-remount text-shape-wrapper-did-remount}
-  [{:keys [id tmp-resize-xform tmp-displacement drawing?] :as shape}]
-  (let [xfmt (cond-> (gmt/matrix)
-                tmp-displacement (gmt/translate tmp-displacement)
-                tmp-resize-xform (gmt/multiply tmp-resize-xform))
+  [{:keys [id modifiers] :as shape}]
+  (let [{:keys [displacement resize]} modifiers
+        xfmt (cond-> (gmt/matrix)
+               displacement (gmt/multiply displacement)
+               resize (gmt/multiply resize))
 
         {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
                                                    (geom/size))
-        attrs {:x x1
+        props {:x x1
                :y y1
                :id (str id)
                :ref "fobject"
                :width width
-               :height height}
-        props (merge attrs
-                     (when drawing?
-                       {:style {:stroke "#333"
-                                :stroke-width "0.5"
-                                :stroke-opacity "0.5"
-                                :fill "transparent"}}))]
-
+               :height height}]
     [:foreignObject props]))
 
 ;; --- Text Shape Html

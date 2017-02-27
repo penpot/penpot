@@ -23,12 +23,6 @@
             [uxbox.util.geom.path :as path]
             [uxbox.util.dom :as dom]))
 
-;; --- Refs
-
-(def drawing-shape
-  (-> (l/key :drawing)
-      (l/derive refs/workspace)))
-
 ;; --- Components
 
 (declare generic-draw-area)
@@ -37,24 +31,25 @@
 (mx/defc draw-area
   {:mixins [mx/static mx/reactive]}
   [zoom]
-  (when-let [shape (mx/react drawing-shape)]
-    (if (= (:type shape) :path)
-      (path-draw-area shape)
-      (generic-draw-area shape zoom))))
+  (when-let [{:keys [id] :as shape} (mx/react refs/selected-drawing-shape)]
+    (let [modifiers (mx/react (refs/selected-modifiers id))]
+      (if (= (:type shape) :path)
+        (path-draw-area shape)
+        (-> (assoc shape :modifiers modifiers)
+            (generic-draw-area zoom))))))
 
 (mx/defc generic-draw-area
   [shape zoom]
   (let [{:keys [x1 y1 width height]} (geom/selection-rect shape)]
     [:g
-     (-> (assoc shape :drawing? true)
-         (shapes/render-component))
+     (shapes/render-component shape)
      [:rect.main {:x x1 :y y1
                   :width width
                   :height height
                   :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-                  :style {:stroke "#333" :fill "transparent"
+                  :style {:stroke "#333"
+                          :fill "transparent"
                           :stroke-opacity "1"}}]]))
-
 
 (mx/defc path-draw-area
   [{:keys [segments] :as shape}]
@@ -68,8 +63,7 @@
             (st/emit! (udw/set-tooltip nil)))]
     (when-let [{:keys [x y] :as segment} (first segments)]
       [:g
-       (-> (assoc shape :drawing? true)
-           (shapes/render-component))
+       (shapes/render-component shape)
        (when-not (:free shape)
          [:circle.close-bezier {:cx x
                                 :cy y

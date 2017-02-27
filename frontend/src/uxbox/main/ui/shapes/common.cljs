@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.common
   (:require [lentes.core :as l]
@@ -15,28 +15,7 @@
             [uxbox.main.user-events :as uev]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
-
-;; --- Refs
-
-(def edition-ref
-  (-> (l/in [:edition])
-      (l/derive refs/workspace)))
-
-;; TODO: replace with refs/selected-drawing-tool
-(def drawing-state-ref
-  (-> (l/key :drawing-tool)
-      (l/derive refs/workspace)))
-
-(def selected-ref
-  (-> (l/in [:selected])
-      (l/derive refs/workspace)))
-
-(defn modifiers-ref
-  [id]
-  (-> (l/in [:modifiers id])
-      (l/derive refs/workspace)))
 
 ;; --- Movement
 
@@ -57,16 +36,16 @@
                   on-move (partial on-move shape)
                   on-stop (partial on-stop shape)]
               (when @refs/selected-alignment
-                (st/emit! (uds/initial-align-shape shape)))
+                (st/emit! (uds/initial-shape-align shape)))
               (rx/subscribe stream on-move nil on-stop)))]
-    (run! on-start @selected-ref)))
+    (run! on-start @refs/selected-shapes)))
 
 ;; --- Events
 
 (defn on-mouse-down
   [event {:keys [id group] :as shape} selected]
   (let [selected? (contains? selected id)
-        drawing? @drawing-state-ref]
+        drawing? @refs/selected-drawing-tool]
     (when-not (:blocked shape)
       (cond
         (or drawing?
