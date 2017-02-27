@@ -130,11 +130,12 @@
          [:span.title "Download project"]
          [:p.info "Download all pages as svg in a zip file."]
          [:a.btn-primary {:href "#" :on-click download-zip} "Download project"]]
-        [:div.content-col
-         [:span.icon i/file-html]
-         [:span.title "Download as HTML"]
-         [:p.info "Download your project as HTML files."]
-         [:a.btn-primary {:href "#" :on-click download-html} "Download HTML"]]]
+        ; [:div.content-col
+        ;  [:span.icon i/file-html]
+        ;  [:span.title "Download as HTML"]
+        ;  [:p.info "Download your project as HTML files."]
+        ;  [:a.btn-primary {:href "#" :on-click download-html} "Download HTML"]]
+         ]
        [:a.close {:href "#" :on-click on-close} i/close]])))
 
 (defmethod lbx/render-lightbox :download
