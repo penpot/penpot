@@ -2,24 +2,24 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.images
   (:require [lentes.core :as l]
-            [uxbox.util.i18n :as t :refer (tr)]
+            [uxbox.util.i18n :as t :refer [tr]]
             [potok.core :as ptk]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.data :as data :refer (read-string)]
-            [uxbox.util.dom :as dom]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.images :as udi]
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.lightbox :as lbx]))
-
+            [uxbox.main.ui.lightbox :as lbx]
+            [uxbox.util.data :refer [read-string jscoll->vec]]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.uuid :as uuid]))
 
 ;; --- Refs
 
@@ -51,13 +51,15 @@
             (let [{:keys [id name width height]} image
                   shape {:type :image
                          :name name
+                         :id (uuid/random)
                          :metadata {:width width
                                     :height height}
                          :image id}]
               (st/emit! (udw/select-for-drawing shape))
               (udl/close!)))
           (on-files-selected [event]
-            (let [files (dom/get-event-files event)]
+            (let [files (dom/get-event-files event)
+                  files (jscoll->vec files)]
               (st/emit! (udi/create-images nil files on-uploaded))))
           (on-select-from-library [event]
             (dom/prevent-default event)
