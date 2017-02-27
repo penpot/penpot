@@ -110,9 +110,9 @@
         i/redo]]
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
-        {:alt "Export (Ctrl + E)"
+        {:alt "Download (Ctrl + E)"
          :on-click on-download}
-        i/export]
+        i/download]
        [:li.tooltip.tooltip-bottom
         {:alt "Image (Ctrl + I)"
          :on-click on-image}
