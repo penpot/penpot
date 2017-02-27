@@ -115,26 +115,26 @@
             (download-html [event]
               (dom/prevent-default event))]
       [:div.lightbox-body.export-dialog
-       [:h3 "Export options"]
+       [:h3 "Download options"]
        [:div.row-flex
         [:div.content-col
          [:span.icon i/file-svg]
-         [:span.title "Export page"]
+         [:span.title "Download page"]
          [:p.info "Download a single page of your project in SVG."]
          [:select.input-select {:ref "page" :default-value (pr-str current)}
           (for [{:keys [id name]} pages]
             [:option {:value (pr-str id)} name])]
-         [:a.btn-primary {:href "#" :on-click download-page} "Export page"]]
+         [:a.btn-primary {:href "#" :on-click download-page} "Download page"]]
         [:div.content-col
          [:span.icon i/folder-zip]
-         [:span.title "Export project"]
-         [:p.info "Download the whole project as a ZIP file."]
-         [:a.btn-primary {:href "#" :on-click download-zip} "Expor project"]]
+         [:span.title "Download project"]
+         [:p.info "Download all pages as svg in a zip file."]
+         [:a.btn-primary {:href "#" :on-click download-zip} "Download project"]]
         [:div.content-col
          [:span.icon i/file-html]
-         [:span.title "Export as HTML"]
+         [:span.title "Download as HTML"]
          [:p.info "Download your project as HTML files."]
-         [:a.btn-primary {:href "#" :on-click download-html} "Export HTML"]]]
+         [:a.btn-primary {:href "#" :on-click download-html} "Download HTML"]]]
        [:a.close {:href "#" :on-click on-close} i/close]])))
 
 (defmethod lbx/render-lightbox :download
