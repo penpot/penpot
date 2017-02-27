@@ -125,11 +125,13 @@
   ptk/WatchEvent
   (watch [_ state stream]
     (let [{:keys [id] :as shape} (get-in state [:workspace :drawing])
-          resize-mtx (get-in state [:workspace :modifiers id :resize])]
+          resize-mtx (get-in state [:workspace :modifiers id :resize])
+          shape (cond-> shape
+                  resize-mtx (geom/transform resize-mtx))]
       (if-not shape
         (rx/empty)
         (rx/of (clear-drawing-state)
-               (uds/add-shape (geom/transform shape resize-mtx))
+               (uds/add-shape shape)
                (uds/select-first-shape)
                ::uev/interrupt)))))
 
