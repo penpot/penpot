@@ -92,8 +92,8 @@
     (let [shape (get-in state [:workspace :drawing])
           shape (geom/setup shape {:x1 (:x point)
                                    :y1 (:y point)
-                                   :x2 (inc (:x point))
-                                   :y2 (inc (:y point))})]
+                                   :x2 (+ (:x point) 2)
+                                   :y2 (+ (:y point) 2)})]
       (assoc-in state [:workspace :drawing] shape))))
 
 (defn initialize-drawing
@@ -103,21 +103,21 @@
 
 ;; --- Update Draw Area State
 
-(deftype UpdateDrawing [position]
+(deftype UpdateDrawing [position lock?]
   ptk/UpdateEvent
   (update [_ state]
     (let [{:keys [id] :as shape} (-> (get-in state [:workspace :drawing])
                                      (geom/shape->rect-shape)
                                      (geom/size))
-          result (geom/resize-shape :bottom-right shape position false)
+          result (geom/resize-shape :bottom-right shape position lock?)
           scale (geom/calculate-scale-ratio shape result)
           resize-mtx (geom/generate-resize-matrix :bottom-right shape scale)]
       (assoc-in state [:workspace :modifiers id] {:resize resize-mtx}))))
 
 (defn update-drawing
-  [position]
-  {:pre [(gpt/point? position)]}
-  (UpdateDrawing. position))
+  [position lock?]
+  {:pre [(gpt/point? position) (boolean? lock?)]}
+  (UpdateDrawing. position lock?))
 
 ;; --- Finish Drawin
 
@@ -261,7 +261,7 @@
                 (do
                   (st/emit! (initialize-drawing point))
                   (vreset! start? false))
-                (st/emit! (update-drawing (assoc point :lock ctrl?)))))
+                (st/emit! (update-drawing point ctrl?))))
 
             (on-finish []
               (if @start?

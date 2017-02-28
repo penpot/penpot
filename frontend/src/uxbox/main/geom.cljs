@@ -342,7 +342,7 @@
     :top-left
     (let [width (- (:x2 shape) x)
           height (- (:y2 shape) y)
-          proportion (:proportion shape)]
+          proportion (:proportion shape 1)]
       (assoc shape
              :width width
              :height (if lock? (/ width proportion) height)))
@@ -350,7 +350,7 @@
     :top-right
     (let [width (- x (:x1 shape))
           height (- (:y2 shape) y)
-          proportion (:proportion shape)]
+          proportion (:proportion shape 1)]
       (assoc shape
              :width width
              :height (if lock? (/ width proportion) height)))
@@ -358,7 +358,7 @@
     :top
     (let [width (- (:x2 shape) (:x1 shape))
           height (- (:y2 shape) y)
-          proportion (:proportion shape)]
+          proportion (:proportion shape 1)]
       (assoc shape
              :width width
              :height (if lock? (/ width proportion) height)))
@@ -366,7 +366,7 @@
     :bottom-left
     (let [width (- (:x2 shape) x)
           height (- y (:y1 shape))
-          proportion (:proportion shape)]
+          proportion (:proportion shape 1)]
       (assoc shape
              :width width
              :height (if lock? (/ width proportion) height)))
@@ -374,7 +374,7 @@
     :bottom-right
     (let [width (- x (:x1 shape))
           height (- y (:y1 shape))
-          proportion (:proportion shape)]
+          proportion (:proportion shape 1)]
       (assoc shape
              :width width
              :height (if lock? (/ width proportion) height)))
@@ -382,7 +382,7 @@
     :bottom
     (let [width (- (:x2 shape) (:x1 shape))
           height (- y (:y1 shape))
-          proportion (:proportion shape)]
+          proportion (:proportion shape 1)]
       (assoc shape
              :width width
              :height (if lock? (/ width proportion) height)))
@@ -390,7 +390,7 @@
     :left
     (let [width (- (:x2 shape) x)
           height (- (:y2 shape) (:y1 shape))
-          proportion (:proportion shape)]
+          proportion (:proportion shape 1)]
       (assoc shape
              :width width
              :height (if lock? (/ width proportion) height)))
@@ -398,7 +398,7 @@
     :right
     (let [width (- x (:x1 shape))
           height (- (:y2 shape) (:y1 shape))
-          proportion (:proportion shape)]
+          proportion (:proportion shape 1)]
       (assoc shape
              :width width
              :height (if lock? (/ width proportion) height)))))
