@@ -2,13 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.history
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
@@ -18,10 +16,11 @@
             [uxbox.builtins.icons :as i]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.time :as dt]
             [uxbox.util.data :refer (read-string)]
-            [uxbox.util.dom :as dom]))
+            [uxbox.util.dom :as dom]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.time :as dt]))
+
 
 ;; --- Lenses
 
@@ -31,8 +30,9 @@
 
 ;; --- History Item (Component)
 
-(defn history-item-render
-  [own item selected]
+(mx/defc history-item
+  {:mixins [mx/static]}
+  [item selected]
   (letfn [(on-select [event]
             (dom/prevent-default event)
             (st/emit! (udh/select-page-history (:version item))))
@@ -44,24 +44,18 @@
                               :pinned (not (:pinned item)))]
               (st/emit! (udh/update-history-item item))))]
     (let [selected? (= (:version item) selected)]
-      (html
-       [:li {:class (when selected? "current") :on-click on-select}
-        [:div.pin-icon {:on-click on-pinned
-                        :class (when (:pinned item) "selected")}
-         i/pin]
-        [:span (str "Version " (:version item)
-                    " (" (dt/timeago (:created-at item)) ")")]]))))
-
-(def history-item
-  (mx/component
-   {:render history-item-render
-    :name "history-item"
-    :mixins [mx/static]}))
+      [:li {:class (when selected? "current") :on-click on-select}
+       [:div.pin-icon {:on-click on-pinned
+                       :class (when (:pinned item) "selected")}
+        i/pin]
+       [:span (str "Version " (:version item)
+                   " (" (dt/timeago (:created-at item)) ")")]])))
 
 ;; --- History List (Component)
 
-(defn history-list-render
-  [own page history]
+(mx/defc history-list
+  {:mixins [mx/static]}
+  [page history]
   (letfn [(on-select [event]
             (dom/prevent-default event)
             (st/emit! (udh/deselect-page-history (:id page))))
@@ -74,87 +68,67 @@
 
     (let [selected (:selected history)
           show-more? (pos? (:min-version history))]
-      (html
-       [:ul.history-content
-        [:li {:class (when-not selected "current")
-              :on-click on-select}
-         [:div.pin-icon i/pin]
+      [:ul.history-content
+       [:li {:class (when-not selected "current")
+             :on-click on-select}
+        [:div.pin-icon i/pin]
          [:span (str "Version " (:version page) " (current)")]]
-        (for [version (:items history)
-              :let [item (get-in history [:by-version version])]]
-          (-> (history-item item selected)
-              (rum/with-key (str (:id item)))))
-        (if show-more?
-          [:li {:on-click on-load-more}
-           [:a.btn-primary.btn-small
-            "view more"]])]))))
-
-(def history-list
-  (mx/component
-   {:render history-list-render
-    :name "history-list"
-    :mixins [mx/static]}))
+       (for [version (:items history)
+             :let [item (get-in history [:by-version version])]]
+         (-> (history-item item selected)
+             (mx/with-key (str (:id item)))))
+       (if show-more?
+         [:li {:on-click on-load-more}
+          [:a.btn-primary.btn-small
+           "view more"]])])))
 
 ;; --- History Pinned List (Component)
 
-(defn history-pinned-list-render
-  [own history]
-  (html
-   [:ul.history-content
-    (for [version (:pinned-items history)
-          :let [item (get-in history [:by-version version])]]
-      (-> (history-item item (:selected history))
-          (rum/with-key (str (:id item)))))]))
-
-(def history-pinned-list
-  (mx/component
-   {:render history-pinned-list-render
-    :name "history-pinned-list"
-    :mixins [mx/static]}))
+(mx/defc history-pinned-list
+  {:mixins [mx/static]}
+  [history]
+  [:ul.history-content
+   (for [version (:pinned-items history)
+         :let [item (get-in history [:by-version version])]]
+     (-> (history-item item (:selected history))
+         (mx/with-key (str (:id item)))))])
 
 ;; --- History Toolbox (Component)
 
-(defn history-toolbox-render
-  [own]
-  (let [local (:rum/local own)
-        page (mx/react refs/selected-page)
-        history (mx/react history-ref)
+(mx/defcs history-toolbox
+  {:mixins [mx/static mx/reactive (mx/local)]}
+  [{:keys [rum/local] :as own}]
+  (let [page (mx/react refs/selected-page)
+        history (mx/react refs/history)
         section (:section @local :main)
         close #(st/emit! (dw/toggle-flag :document-history))
         main? (= section :main)
         pinned? (= section :pinned)
         show-main #(swap! local assoc :section :main)
         show-pinned #(swap! local assoc :section :pinned)]
-    (html
-     [:div.document-history.tool-window
-      [:div.tool-window-bar
-       [:div.tool-window-icon i/undo-history]
-       [:span (tr "ds.document-history")]
-       [:div.tool-window-close {:on-click close} i/close]]
-      [:div.tool-window-content
-       [:ul.history-tabs
-        [:li {:on-click show-main
-              :class (when main? "selected")}
-         "History"]
-        [:li {:on-click show-pinned
-              :class (when pinned? "selected")}
-         "Pinned"]]
-       (if (= section :pinned)
-         (history-pinned-list history)
-         (history-list page history))]])))
-
-(def history-toolbox
-  (mx/component
-   {:render history-toolbox-render
-    :name "document-history-toolbox"
-    :mixins [mx/static mx/reactive (mx/local)]}))
+    [:div.document-history.tool-window
+     [:div.tool-window-bar
+      [:div.tool-window-icon i/undo-history]
+      [:span (tr "ds.document-history")]
+      [:div.tool-window-close {:on-click close} i/close]]
+     [:div.tool-window-content
+      [:ul.history-tabs
+       [:li {:on-click show-main
+             :class (when main? "selected")}
+        "History"]
+       [:li {:on-click show-pinned
+             :class (when pinned? "selected")}
+        "Pinned"]]
+      (if (= section :pinned)
+        (history-pinned-list history)
+        (history-list page history))]]))
 
 ;; --- History Dialog
 
 (mx/defc history-dialog
   {:mixins [mx/static mx/reactive]}
   [page]
-  (let [history (mx/react history-ref)
+  (let [history (mx/react refs/history)
         version (:selected history)
         on-accept #(st/emit! (udh/apply-selected-history page))
         on-cancel #(st/emit! (udh/deselect-page-history page))]

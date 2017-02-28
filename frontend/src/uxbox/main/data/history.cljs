@@ -147,22 +147,30 @@
 
 ;; --- Deselect Page History
 
-(defrecord DeselectPageHistory [id]
+(defrecord DeselectPageHistory [id ^:mutable noop]
   ptk/UpdateEvent
   (update [_ state]
-    (let [packed (get-in state [:packed-pages id])]
-      (-> (udp/assoc-page state packed)
-          (assoc-in [:workspace :history :deselecting] true)
-          (assoc-in [:workspace :history :selected] nil))))
+    (let [selected (get-in state [:workspace :history :selected])]
+      (if (nil? selected)
+        (do
+          (set! noop true)
+          state)
+        (let [packed (get-in state [:packed-pages id])]
+          (-> (udp/assoc-page state packed)
+              (assoc-in [:workspace :history :deselecting] true)
+              (assoc-in [:workspace :history :selected] nil))))))
 
   ptk/WatchEvent
   (watch [_ state s]
-    (->> (rx/of #(assoc-in % [:workspace :history :deselecting] false))
-         (rx/delay 500))))
+    (if noop
+      (rx/empty)
+      (->> (rx/of #(assoc-in % [:workspace :history :deselecting] false))
+           (rx/delay 500)))))
 
 (defn deselect-page-history
   [id]
-  (DeselectPageHistory. id))
+  {:pre [(uuid? id)]}
+  (DeselectPageHistory. id false))
 
 ;; --- History Item Updated
 

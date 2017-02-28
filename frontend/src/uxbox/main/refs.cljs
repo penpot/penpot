@@ -78,6 +78,10 @@
   (-> (l/key :edition)
       (l/derive workspace)))
 
+(def history
+  (-> (l/key :history)
+      (l/derive workspace)))
+
 (defn selected-modifiers
   [id]
   {:pre [(uuid? id)]}
