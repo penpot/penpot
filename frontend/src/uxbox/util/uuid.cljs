@@ -22,11 +22,7 @@
   [v]
   (= zero v))
 
-(defn v4
+(defn random
   "Generate a v4 (random) UUID."
   []
   (uuid (impl/v4)))
-
-(def random
-  "Alias for `uxbox.util.uuid/v4`."
-  v4)
