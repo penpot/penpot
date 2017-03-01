@@ -16,6 +16,7 @@
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.util.color :as color]
+            [uxbox.util.data :refer [classnames]]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.mixins :as mx :include-macros true])
@@ -166,8 +167,10 @@
 
         {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
                                                    (geom/size))
+        moving? (boolean displacement)
         props {:x x1
                :y y1
+               :class (classnames :move-cursor moving?)
                :id (str id)
                :ref "fobject"
                :width width
@@ -187,16 +190,19 @@
   {:mixins [mx/static]
    :did-mount text-shape-wrapper-did-mount
    :did-remount text-shape-wrapper-did-remount}
-  [{:keys [id content tmp-resize-xform tmp-displacement] :as shape}]
-  (let [xfmt (cond-> (gmt/matrix)
-                tmp-displacement (gmt/translate tmp-displacement)
-                tmp-resize-xform (gmt/multiply tmp-resize-xform))
+  [{:keys [id content modifiers] :as shape}]
+  (let [{:keys [displacement resize]} modifiers
+        xfmt (cond-> (gmt/matrix)
+               displacement (gmt/multiply displacement)
+               resize (gmt/multiply resize))
 
         {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
                                                    (geom/size))
+        moving? (boolean displacement)
         style (make-style shape)]
     [:foreignObject {:x x1
                      :y y1
+                     :class (classnames :move-cursor moving?)
                      :id (str id)
                      :ref "fobject"
                      :width width

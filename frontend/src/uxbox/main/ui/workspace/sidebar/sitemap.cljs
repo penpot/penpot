@@ -9,6 +9,7 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [potok.core :as ptk]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.projects :as dp]
@@ -17,13 +18,12 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.workspace.sidebar.sitemap-pageform]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.builtins.icons :as i]
-            [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.data :refer (classnames)]
+            [uxbox.util.data :refer [classnames]]
             [uxbox.util.dom.dnd :as dnd]
-            [uxbox.util.dom :as dom]))
+            [uxbox.util.dom :as dom]
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Refs
 

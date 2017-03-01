@@ -17,6 +17,7 @@
             [uxbox.main.ui.shapes.text :as text]
             [uxbox.main.ui.shapes.path :as path]
             [uxbox.main.ui.shapes.image :as image]
+            [uxbox.util.data :refer [classnames]]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.mixins :as mx :include-macros true]))
 
@@ -75,7 +76,9 @@
                resize (gmt/multiply resize)
                displacement (gmt/multiply displacement))
 
+        moving? (boolean displacement)
         attrs {:id (str "shape-" id)
+               :class (classnames :move-cursor moving?)
                :transform (str xfmt)}]
     [:g attrs
      (for [item (reverse items)

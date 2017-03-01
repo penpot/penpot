@@ -12,6 +12,7 @@
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.data :refer [classnames]]
             [uxbox.util.dom :as dom]))
 
 ;; --- Rect Component
@@ -53,11 +54,13 @@
         xfmt (cond-> (gmt/matrix)
                (pos? rotation) (rotate shape))
 
+        moving? (boolean displacement)
+
         props {:x x1 :y y1
                :id (str "shape-" id)
+               :class (classnames :move-cursor moving?)
                :width width
                :height height
                :transform (str xfmt)}
-
         attrs (merge (attrs/extract-style-attrs shape) props)]
     [:rect attrs]))

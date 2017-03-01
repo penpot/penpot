@@ -10,6 +10,7 @@
             [uxbox.main.geom :as geom]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
+            [uxbox.util.data :refer [classnames]]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.mixins :as mx :include-macros true]))
@@ -45,10 +46,13 @@
                           (:cy shape))
         rotation (or rotation 0)
 
+        moving? (boolean displacement)
+
         xfmt (-> (gmt/matrix)
                  (gmt/rotate* rotation center))
 
         props {:id (str "shape-" id)
+               :class (classnames :move-cursor moving?)
                :transform (str xfmt)}
 
         attrs (merge props

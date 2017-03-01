@@ -14,8 +14,9 @@
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.data.images :as udi]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.geom.matrix :as gmt]))
+            [uxbox.util.data :refer [classnames]]
+            [uxbox.util.geom.matrix :as gmt]
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Refs
 
@@ -62,9 +63,11 @@
                resize (gmt/multiply resize)
                displacement (gmt/multiply displacement))
 
+        moving? (boolean displacement)
         props {:x x1 :y y1
                :id (str "shape-" id)
                :preserve-aspect-ratio "none"
+               :class (classnames :move-cursor moving?)
                :xlink-href (:url image)
                :transform (str xfmt)
                :width width

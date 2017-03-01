@@ -9,9 +9,11 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.data :refer [classnames]]
             [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.geom.point :as gpt]))
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.mixins :as mx :include-macros true]))
+
 
 ;; --- Icon Component
 
@@ -39,7 +41,6 @@
         center (gpt/point x-center y-center)]
     (gmt/rotate* mt rotation center)))
 
-
 (mx/defc icon-shape
   {:mixins [mx/static]}
   [{:keys [id content metadata rotation x1 y1 modifiers] :as shape}]
@@ -56,10 +57,12 @@
         xfmt (cond-> (gmt/matrix)
                (pos? rotation) (rotate shape))
 
+        moving? (boolean displacement)
         props {:id (str id)
                :x x1
                :y y1
                :view-box view-box
+               :class (classnames :move-cursor moving?)
                :width width
                :height height
                :preserve-aspect-ratio "none"
