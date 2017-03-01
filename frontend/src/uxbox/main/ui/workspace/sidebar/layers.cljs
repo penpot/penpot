@@ -130,12 +130,15 @@
         select #(select-shape selected item %)
         toggle-visibility #(toggle-visibility selected item %)
         toggle-blocking #(toggle-blocking item %)
-        classes (classnames
-                 :selected selected?
-                 :drag-active (:dragging @local)
-                 :drag-top (= :top (:over @local))
-                 :drag-bottom (= :bottom (:over @local))
-                 :drag-inside (= :middle (:over @local)))]
+        li-classes (classnames
+                    :selected selected?
+                    :hide (:dragging @local))
+        body-classes (classnames
+                      :selected selected?
+                      :drag-active (:dragging @local)
+                      :drag-top (= :top (:over @local))
+                      :drag-bottom (= :bottom (:over @local))
+                      :drag-inside (= :middle (:over @local)))]
     (letfn [(on-drag-start [event]
               (let [target (dom/event->target event)]
                 (dnd/set-allowed-effect! event "move")
@@ -161,10 +164,9 @@
               (swap! local assoc :over true))
             (on-drag-leave [event]
               (swap! local assoc :over false))]
-      [:li {:key (str (:id item))
-            :class (when selected? "selected")}
+      [:li {:class li-classes}
        [:div.element-list-body
-        {:class classes
+        {:class body-classes
          :style {:opacity (if (:dragging @local)
                             "0.5"
                             "1")}
