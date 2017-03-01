@@ -70,7 +70,7 @@
      [:div.workspace-options
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
-        {:alt "Shapes (Ctrl + Shift + S)"
+        {:alt "Draw tools (Ctrl + Shift + S)"
          :class (when (contains? flags :drawtools) "selected")
          :on-click (partial toggle :drawtools)}
         i/shapes]
