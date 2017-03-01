@@ -585,10 +585,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :page])
-            used-names (map #(get-in state [:shapes % :name])
-                            (get-in state [:pages pid :shapes]))
             selected (get-in state [:workspace :selected])]
-        (impl/group-shapes state selected used-names pid)))))
+        (impl/group-shapes state selected pid)))))
 
 (defn degroup-selected
   []

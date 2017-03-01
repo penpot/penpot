@@ -310,7 +310,7 @@
     (reduce match #{} (sequence xf shapes))))
 
 (defn group-shapes
-  [state shapes used-names page]
+  [state shapes page]
   (letfn [(replace-first-item [pred coll replacement]
             (into []
               (concat
