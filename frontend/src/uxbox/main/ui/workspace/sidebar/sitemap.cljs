@@ -42,14 +42,16 @@
 
 (mx/defcs page-item
   {:mixins [(mx/local) mx/static mx/reactive]}
-  [own page total active?]
-  (let [local (:rum/local own)
-        classes (classnames
-                 :selected active?
-                 :drag-active (:dragging @local)
-                 :drag-top (= :top (:over @local))
-                 :drag-bottom (= :bottom (:over @local))
-                 :drag-inside (= :middle (:over @local)))]
+  [{:keys [rum/local] :as own} page total active?]
+  (let [body-classes (classnames
+                      :selected active?
+                      :drag-active (:dragging @local)
+                      :drag-top (= :top (:over @local))
+                      :drag-bottom (= :bottom (:over @local))
+                      :drag-inside (= :middle (:over @local)))
+        li-classes (classnames
+                    :selected active?
+                    :hide (:dragging @local))]
     (letfn [(on-edit [event]
               (udl/open! :page-form {:page page}))
 
@@ -96,9 +98,9 @@
               (swap! local assoc :over true))
             (on-drag-leave [event]
               (swap! local assoc :over false))]
-    [:li {:class (when active? "selected")}
+    [:li {:class li-classes}
      [:div.element-list-body
-      {:class classes
+      {:class body-classes
        :style {:opacity (if (:dragging @local)
                           "0.5"
                           "1")}
