@@ -1,7 +1,7 @@
 (ns uxbox.tests.main
   (:require [cljs.test :as test]
-            [uxbox.tests.geom-types]
-            [uxbox.tests.shapes-state]))
+            [uxbox.tests.test-util-geom]
+            [uxbox.tests.test-main-data-shapes-impl]))
 
 (enable-console-print!)
 
@@ -9,8 +9,8 @@
   []
   (test/run-tests
    (test/empty-env)
-   'uxbox.tests.geom-types
-   'uxbox.tests.shapes-state
+   'uxbox.tests.test-util-geom
+   'uxbox.tests.test-main-data-shapes-impl
    ))
 
 (defmethod test/report [:cljs.test/default :end-run-tests]
