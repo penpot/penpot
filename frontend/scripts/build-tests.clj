@@ -1,20 +1,20 @@
 (require '[cljs.build.api :as b])
 
-(println "Building ...")
+(def options
+  {:main 'uxbox.tests.main
+   :parallel-build false
+   :output-to "out/tests.js"
+   :source-map true
+   :output-dir "out/tests"
+   :optimizations :none
+   :static-fns true
+   :pretty-print true
+   :target :nodejs
+   :language-in  :ecmascript6
+   :language-out :ecmascript5
+   :verbose true})
 
 (let [start (System/nanoTime)]
-  (b/build
-   (b/inputs "src" "test")
-   {:main 'uxbox.tests.main
-    :parallel-build false
-    :output-to "out/tests.js"
-    :source-map "out/tests.js.map"
-    :output-dir "out/tests"
-    :optimizations :simple
-    :static-fns true
-    :pretty-print true
-    :target :nodejs
-    :language-in  :ecmascript6
-    :language-out :ecmascript5
-    :verbose true})
+  (println "Building ...")
+  (b/build (b/inputs "src" "test") options)
   (println "... done. Elapsed" (/ (- (System/nanoTime) start) 1e9) "seconds"))

@@ -1,15 +1,17 @@
 (require '[cljs.build.api :as b])
 
-(b/watch (b/inputs "src" "test")
+(def options
   {:main 'uxbox.tests.main
    :parallel-build false
    :output-to "out/tests.js"
-   :source-map "out/tests.js.map"
+   :source-map true
    :output-dir "out/tests"
-   :optimizations :simple
+   :optimizations :none
    :static-fns true
    :pretty-print true
    :target :nodejs
    :language-in  :ecmascript6
    :language-out :ecmascript5
    :verbose true})
+
+(b/watch (b/inputs "src" "test") options)
