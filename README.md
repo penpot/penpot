@@ -1,13 +1,24 @@
 # UXBOX #
 
+![UXBOX](https://www.dropbox.com/s/u6p9ca4d2bzurog/uxbox-ui-home.png?dl=0 "UXBOX")
+
 ## Introduction ##
 
-UXBOX is a SVG based open-source prototyping tool.
+The open-source solution for design and prototyping. UXBOX is currently at an early development stage but we are working hard to bring you the beta version as soon as possible. Follow the project progress in Twitter or Github and stay tuned!
 
+[See SVG specification](https://www.w3.org/Graphics/SVG/)
+
+## SVG based ##
+
+UXBOX works with SVG, a standard format, for all your designs and prototypes . This means that all your stuff in UXBOX is portable and editable in many other vector tools and easy to use on the web.
 
 ## Contributing ##
 
-Plese refer to the [Contributing Guide](./CONTRIBUTING.md)
+**Open to you!**
+
+We love the open source software community. Contributing is our passion and because of this, we'll be glad if you want to participate and improve UXBOX. All your awesome ideas and code are welcome!
+
+Please refer to the [Contributing Guide](./CONTRIBUTING.md)
 
 
 ## License ##
