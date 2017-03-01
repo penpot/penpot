@@ -1,6 +1,6 @@
 # UXBOX #
 
-![UXBOX](https://www.dropbox.com/s/u6p9ca4d2bzurog/uxbox-ui-home.png?dl=0 "UXBOX")
+![UXBOX](https://piweek.com/images/projects/uxbox.jpg)
 
 ## Introduction ##
 
