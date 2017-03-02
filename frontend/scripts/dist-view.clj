@@ -4,9 +4,13 @@
 (def debug?
   (boolean (:uxbox-debug env nil)))
 
+(def demo?
+  (boolean (:uxbox-demo env nil)))
+
 (def defines
   {"uxbox.config.url" "/api"
-   "uxbox.config.viewurl" "/view/"})
+   "uxbox.config.viewurl" "/view/"
+   "uxbox.config.isdemo" demo?})
 
 (def options
   {:main 'uxbox.view

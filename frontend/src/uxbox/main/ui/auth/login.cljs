@@ -9,9 +9,10 @@
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
             [potok.core :as ptk]
+            [uxbox.builtins.icons :as i]
+            [uxbox.config :as cfg]
             [uxbox.main.store :as st]
             [uxbox.main.data.auth :as da]
-            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.mixins :as mx :include-macros true]
@@ -40,8 +41,13 @@
                                    :password (:password data)})))]
       [:form {:on-submit on-submit}
        [:div.login-content
-        [:div.message-inline.hide
-         [:p "UXBOX is currently on alpha version. That means that you're going to use a non-stable environment. Sorry for the inconvenience."]]
+        (when cfg/isdemo
+          [:div.message-inline
+           [:p
+            [:strong "WARNING: "] "this is a " [:strong "demo"] " service."
+            [:br]
+            [:strong "DO NOT USE"] " for real work, " [:br]
+            " the projects will be periodicaly wiped."]])
         [:input.input-text
          {:name "email"
           :tab-index "2"
