@@ -102,12 +102,27 @@
   [project page]
   (InitializeWorkspace. project page))
 
+;; --- Workspace Tooltips
+
+(defrecord SetTooltip [text]
+  ptk/UpdateEvent
+  (update [_ state]
+    (assoc-in state [:workspace :tooltip] text)))
+
+(defn set-tooltip
+  [text]
+  (SetTooltip. text))
+
 ;; --- Workspace Flags
 
 (deftype ActivateFlag [flag]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :flags] conj flag)))
+    (update-in state [:workspace :flags] conj flag))
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (set-tooltip "Drag to use the ruler"))))
 
 (defn activate-flag
   [flag]
@@ -117,7 +132,11 @@
 (deftype DeactivateFlag [flag]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :flags] disj flag)))
+    (update-in state [:workspace :flags] disj flag))
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (set-tooltip nil))))
 
 (defn deactivate-flag
   [flag]
@@ -254,17 +273,6 @@
 (defn reset-zoom
   []
   (ResetZoom.))
-
-;; --- Tooltips
-
-(defrecord SetTooltip [text]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:workspace :tooltip] text)))
-
-(defn set-tooltip
-  [text]
-  (SetTooltip. text))
 
 ;; --- Grid Alignment
 

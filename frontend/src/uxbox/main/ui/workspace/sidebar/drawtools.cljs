@@ -11,7 +11,8 @@
             [potok.core :as ptk]
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
-            [uxbox.main.data.workspace :as dw]
+            [uxbox.main.data.shapes :as uds]
+            [uxbox.main.data.workspace :as udw]
             [uxbox.main.user-events :as uev]
             [uxbox.builtins.icons :as i]
             [uxbox.util.uuid :as uuid]
@@ -91,20 +92,21 @@
 
 ;; --- Draw Toolbox (Component)
 
-(defn- select-for-draw
-  [shape]
-  (st/emit! ::uev/interrupt
-            (dw/select-for-drawing shape)))
-
 (mx/defc draw-toolbox
   {:mixins [mx/static mx/reactive]}
   []
   (let [drawing-tool (mx/react refs/selected-drawing-tool)
         flags (mx/react refs/flags)
-        close #(st/emit! (dw/toggle-flag :drawtools))
+        close #(st/emit! (udw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))
-        toggle-flag #(st/emit! (dw/toggle-flag %))]
+
+        select-drawtool #(st/emit! ::uev/interrupt
+                                   (udw/deactivate-flag :ruler)
+                                   (udw/select-for-drawing %))
+        toggle-flag #(st/emit! (udw/select-for-drawing nil)
+                               (uds/deselect-all)
+                               (udw/toggle-flag %))]
 
     [:div#form-tools.tool-window.drawing-tools
      [:div.tool-window-bar
@@ -118,7 +120,7 @@
          {:alt (:help props)
           :class (when selected? "selected")
           :key (str i)
-          :on-click (partial select-for-draw (:shape props))}
+          :on-click (partial select-drawtool (:shape props))}
          (:icon props)])
 
       [:div.tool-btn.tooltip.tooltip-hover
