@@ -31,6 +31,9 @@
          (seq? v))
      (Point. (first v) (second v))
 
+     (map? v)
+     (Point. (:x v) (:y v))
+
      (number? v)
      (Point. v v)
 
