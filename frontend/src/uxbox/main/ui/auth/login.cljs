@@ -58,7 +58,7 @@
          {:name "login"
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
-          :value "Continue"
+          :value "Sign in"
           :type "submit"}]
         [:div.login-links
          [:a {:on-click #(st/emit! (rt/navigate :auth/recovery-request))}

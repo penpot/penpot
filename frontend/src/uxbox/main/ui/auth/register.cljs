@@ -91,7 +91,7 @@
          {:name "login"
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
-          :value "Register"
+          :value "Get started"
           :type "submit"}]
         [:div.login-links
          [:a {:on-click #(st/emit! (rt/navigate :auth/login))} "Already have an account?"]]]])))
