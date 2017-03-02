@@ -62,7 +62,7 @@
              {:project project
               :zoom 1
               :page page
-              :flags #{:sitemap :drawtools :layers :element-options}
+              :flags #{:sitemap :drawtools :layers :element-options :rules}
               :selected #{}
               :drawing nil
               :drawing-tool nil
