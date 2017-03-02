@@ -119,9 +119,9 @@
         i/image]]
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
-        {:alt "Ruler (Ctrl + R)"
-         :class (when (contains? flags :ruler) "selected")
-         :on-click (partial toggle :ruler)}
+        {:alt "Rules"
+         :class (when (contains? flags :rules) "selected")
+         :on-click (partial toggle :rules)}
         i/ruler]
        [:li.tooltip.tooltip-bottom
         {:alt "Grid (Ctrl + G)"

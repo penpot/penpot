@@ -87,11 +87,7 @@
    {:icon i/pencil
     :help (tr "ds.help.path")
     :shape +draw-tool-curve+
-    :priority 6}
-   {:icon i/ruler-tool
-    :help (tr "ds.help.path")
-    :shape +draw-tool-curve+
-    :priority 7}])
+    :priority 6}])
 
 ;; --- Draw Toolbox (Component)
 
@@ -104,9 +100,12 @@
   {:mixins [mx/static mx/reactive]}
   []
   (let [drawing-tool (mx/react refs/selected-drawing-tool)
+        flags (mx/react refs/flags)
         close #(st/emit! (dw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)
-                   (sort-by (comp :priority second)))]
+                   (sort-by (comp :priority second)))
+        toggle-flag #(st/emit! (dw/toggle-flag %))]
+
     [:div#form-tools.tool-window.drawing-tools
      [:div.tool-window-bar
       [:div.tool-window-icon i/window]
@@ -120,4 +119,11 @@
           :class (when selected? "selected")
           :key (str i)
           :on-click (partial select-for-draw (:shape props))}
-         (:icon props)])]]))
+         (:icon props)])
+
+      [:div.tool-btn.tooltip.tooltip-hover
+       {:alt "Ruler"
+        :on-click (partial toggle-flag :ruler)
+        :class (when (contains? flags :ruler) "selected")}
+       i/ruler-tool]]]))
+

@@ -137,8 +137,11 @@
        (history-dialog page)
 
        ;; Rules
-       (horizontal-rule)
-       (vertical-rule)
+       (when (contains? flags :rules)
+         (horizontal-rule))
+
+       (when (contains? flags :rules)
+         (vertical-rule))
 
        ;; Canvas
        [:section.workspace-canvas
