@@ -87,7 +87,11 @@
    {:icon i/pencil
     :help (tr "ds.help.path")
     :shape +draw-tool-curve+
-    :priority 6}])
+    :priority 6}
+   {:icon i/ruler-tool
+    :help (tr "ds.help.path")
+    :shape +draw-tool-curve+
+    :priority 7}])
 
 ;; --- Draw Toolbox (Component)
 
