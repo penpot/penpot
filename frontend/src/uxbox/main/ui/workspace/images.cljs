@@ -95,6 +95,7 @@
   (letfn [(on-double-click [event]
             (let [shape {:type :image
                          :name name
+                         :id (uuid/random)
                          :metadata {:width width
                                     :height height}
                          :image id}]
