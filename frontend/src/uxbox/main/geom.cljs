@@ -108,6 +108,7 @@
 
 ;; TODO: maybe we can consider apply the rotation
 ;;       directly to the shape coordinates?
+;; FIXME: deprecated, should be removed
 
 (defn rotate
   "Apply the rotation to the shape."

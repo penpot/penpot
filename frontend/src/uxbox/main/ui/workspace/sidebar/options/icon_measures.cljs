@@ -19,8 +19,9 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
-            [uxbox.util.math :refer (precision-or-0)]
-            [uxbox.util.data :refer (parse-int parse-float read-string)]))
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.data :refer (parse-int parse-float read-string)]
+            [uxbox.util.math :refer (precision-or-0)]))
 
 (defn- icon-measures-menu-render
   [own menu shape]
@@ -29,7 +30,7 @@
                   value (parse-int value 0)
                   sid (:id shape)
                   props {attr value}]
-              (st/emit! (uds/update-size sid props))))
+              (st/emit! (uds/update-dimensions sid props))))
           (on-rotation-change [event]
             (let [value (dom/event->value event)
                   value (parse-int value 0)
@@ -39,8 +40,8 @@
             (let [value (dom/event->value event)
                   value (parse-int value nil)
                   sid (:id shape)
-                  props {attr value}]
-              (st/emit! (uds/update-position sid props))))
+                  point (gpt/point {attr value})]
+              (st/emit! (uds/update-position sid point))))
           (on-proportion-lock-change [event]
             (if (:proportion-lock shape)
               (st/emit! (uds/unlock-proportions (:id shape)))

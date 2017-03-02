@@ -92,14 +92,13 @@
   "A generic component that displays the shape name
   if it is available and allows inline edition of it."
   {:mixins [mx/static (mx/local)]}
-  [{:keys [rum/local]} shape]
+  [{:keys [rum/local]} {:keys [id] :as shape}]
   (letfn [(on-blur [event]
             (let [target (dom/event->target event)
                   parent (.-parentNode target)
-                  data {:id (:id shape)
-                        :name (dom/get-value target)}]
+                  name (dom/get-value target)]
               (set! (.-draggable parent) true)
-              (st/emit! (uds/update-shape data))
+              (st/emit! (uds/rename-shape id name))
               (swap! local assoc :edition false)))
           (on-key-down [event]
             (js/console.log event)
@@ -295,8 +294,8 @@
         groups (into #{} xform selected)]
     (= 1 (count groups))))
 
-(defn- allow-degrouping?
-  "Check if the current situation allows degrouping
+(defn- allow-ungrouping?
+  "Check if the current situation allows ungrouping
   of the currently selected shapes."
   [selected shapes-map]
   (let [xform (comp (map shapes-map)
@@ -310,11 +309,11 @@
   [selected shapes-map]
   (let [duplicate #(st/emit! (uds/duplicate-selected))
         group #(st/emit! (uds/group-selected))
-        degroup #(st/emit! (uds/degroup-selected))
+        ungroup #(st/emit! (uds/ungroup-selected))
         delete #(st/emit! (uds/delete-selected))
 
         allow-grouping? (allow-grouping? selected shapes-map)
-        allow-degrouping? (allow-degrouping? selected shapes-map)
+        allow-ungrouping? (allow-ungrouping? selected shapes-map)
         allow-duplicate? (= 1 (count selected))
         allow-deletion? (pos? (count selected))]
     [:div.layers-tools
@@ -331,8 +330,8 @@
        i/folder]
       [:li.degroup-layer.tooltip.tooltip-top
        {:alt "Ungroup"
-        :class (when-not allow-degrouping? "disable")
-        :on-click degroup}
+        :class (when-not allow-ungrouping? "disable")
+        :on-click ungroup}
        i/ungroup]
       [:li.delete-layer.tooltip.tooltip-top
        {:alt "Delete"

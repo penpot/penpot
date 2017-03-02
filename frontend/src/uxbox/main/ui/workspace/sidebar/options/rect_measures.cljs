@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.workspace.sidebar.options.rect-measures
   (:require [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.main.store :as st]
@@ -17,8 +17,9 @@
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.main.geom :as geom]
             [uxbox.util.dom :as dom]
-            [uxbox.util.math :refer (precision-or-0)]
-            [uxbox.util.data :refer (parse-int parse-float read-string)]))
+            [uxbox.util.geom.point :as gpt]
+            [uxbox.util.data :refer [parse-int parse-float read-string]]
+            [uxbox.util.math :refer [precision-or-0]]))
 
 (mx/defc rect-measures-menu
   {:mixins [mx/static]}
@@ -26,15 +27,16 @@
   (letfn [(on-size-change [event attr]
             (let [value (-> (dom/event->value event)
                             (parse-int 0))]
-              (st/emit! (uds/update-size id {attr value}))))
+              (st/emit! (uds/update-dimensions id {attr value}))))
           (on-rotation-change [event]
             (let [value (-> (dom/event->value event)
                             (parse-int 0))]
               (st/emit! (uds/update-rotation id value))))
           (on-pos-change [event attr]
             (let [value (-> (dom/event->value event)
-                            (parse-int nil))]
-              (st/emit! (uds/update-position id {attr value}))))
+                            (parse-int nil))
+                  point (gpt/point {attr value})]
+              (st/emit! (uds/update-position id point))))
           (on-proportion-lock-change [event]
             (if (:proportion-lock shape)
               (st/emit! (uds/unlock-proportions id))

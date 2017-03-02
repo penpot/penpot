@@ -121,7 +121,7 @@
         props {:x x1 :y y1 :width width :height height}]
     (letfn [(on-input [ev]
               (let [content (dom/event->inner-text ev)]
-                (st/emit! (uds/update-text id {:content content}))))]
+                (st/emit! (uds/update-text id content))))]
       [:foreignObject props
        [:div {:style style
               :ref "container"
