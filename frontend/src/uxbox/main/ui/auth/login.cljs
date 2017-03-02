@@ -40,6 +40,8 @@
                                    :password (:password data)})))]
       [:form {:on-submit on-submit}
        [:div.login-content
+        [:div.message-inline.hide
+         [:p "UXBOX is currently on alpha version. That means that you're going to use a non-stable environment. Sorry for the inconvenience."]]
         [:input.input-text
          {:name "email"
           :ref "email"
