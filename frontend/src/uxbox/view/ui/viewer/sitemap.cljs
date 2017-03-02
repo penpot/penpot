@@ -8,9 +8,9 @@
 (ns uxbox.view.ui.viewer.sitemap
   (:require [sablono.core :refer-macros (html)]
             [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.data :refer (parse-int)]
+            [uxbox.util.data :refer [parse-int]]
             [potok.core :as ptk]
             [uxbox.view.store :as st]
             [uxbox.builtins.icons :as i]
@@ -37,7 +37,8 @@
   {:mixins [mx/static mx/reactive]}
   []
   (let [project-name (mx/react project-name-ref)
-        pages (mx/react pages-ref)
+        pages (->> (mx/react pages-ref)
+                   (sort-by #(get-in % [:metadata :order])))
         selected (mx/react selected-ref)
         on-click #(st/emit! (dv/select-page %))]
     [:div.view-sitemap
