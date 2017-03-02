@@ -44,6 +44,7 @@
          [:p "UXBOX is currently on alpha version. That means that you're going to use a non-stable environment. Sorry for the inconvenience."]]
         [:input.input-text
          {:name "email"
+          :tab-index "2"
           :ref "email"
           :value (:email data "")
           :on-change #(on-change % :email)
@@ -51,6 +52,7 @@
           :type "text"}]
         [:input.input-text
          {:name "password"
+          :tab-index "3"
           :ref "password"
           :value (:password data "")
           :on-change #(on-change % :password)
@@ -58,14 +60,17 @@
           :type "password"}]
         [:input.btn-primary
          {:name "login"
+          :tab-index "4"
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
           :value "Sign in"
           :type "submit"}]
         [:div.login-links
-         [:a {:on-click #(st/emit! (rt/navigate :auth/recovery-request))}
+         [:a {:on-click #(st/emit! (rt/navigate :auth/recovery-request))
+              :tab-index "5"}
           "Forgot your password?"]
-         [:a {:on-click #(st/emit! (rt/navigate :auth/register))}
+         [:a {:on-click #(st/emit! (rt/navigate :auth/register))
+              :tab-index "6"}
           "Don't have an account?"]]]])))
 
 (mx/defc login-page

@@ -55,6 +55,7 @@
        [:div.login-content
         [:input.input-text
          {:name "fullname"
+          :tab-index "2"
           :value (:fullname data "")
           :on-change (partial on-change :fullname)
           :placeholder "Full Name"
@@ -63,6 +64,7 @@
 
         [:input.input-text
          {:name "username"
+          :tab-index "3"
           :value (:username data "")
           :on-change (partial on-change :username)
           :placeholder "Username"
@@ -71,6 +73,7 @@
 
         [:input.input-text
          {:name "email"
+          :tab-index "4"
           :ref "email"
           :value (:email data "")
           :on-change (partial on-change :email)
@@ -80,6 +83,7 @@
 
         [:input.input-text
          {:name "password"
+          :tab-index "5"
           :ref "password"
           :value (:password data "")
           :on-change (partial on-change :password)
@@ -89,6 +93,7 @@
 
         [:input.btn-primary
          {:name "login"
+          :tab-index "6"
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
           :value "Get started"
