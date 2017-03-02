@@ -333,7 +333,7 @@
   udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
-    (assoc-in state [:shapes id :proportion-lock] true)))
+    (assoc-in state [:shapes id :proportion-lock] false)))
 
 (defn unlock-proportions
   [id]

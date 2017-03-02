@@ -58,7 +58,7 @@
          [:div.lock-size
           {:class (when (:proportion-lock shape) "selected")
            :on-click on-proportion-lock-change}
-          i/lock]
+           (if (:proportion-lock shape) i/lock i/unlock)]
          [:div.input-element.pixels
           [:input.input-text
            {:placeholder "Height"
