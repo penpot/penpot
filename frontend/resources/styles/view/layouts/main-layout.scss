@@ -214,11 +214,12 @@
 .view-canvas {
   background-color: $secondary-ui-bg;
   width: 100%;
-  overflow: auto;
-
+  overflow: scroll;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  .page-layout {
+    flex-shrink: 0;
+    margin: auto;
+  }
 }
 
 .interaction-mark {
