@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace.sidebar.options
   (:require
    [lentes.core :as l]
-   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as r]
    [potok.core :as ptk]
    [uxbox.main.store :as st]
@@ -17,6 +17,7 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.ui.shapes.attrs :refer [shape-default-attrs]]
    [uxbox.main.ui.workspace.sidebar.options.icon-measures :as options-iconm]
+   [uxbox.main.ui.workspace.sidebar.options.image-measures :as options-imagem]
    [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
    [uxbox.main.ui.workspace.sidebar.options.rect-measures :as options-rectm]
    [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
@@ -37,7 +38,7 @@
    :path [::fill ::stroke ::interactions]
    :circle [::circle-measures ::fill ::stroke ::interactions]
    :text [::fill ::text ::interactions]
-   :image [::interactions]
+   :image [::image-measures ::interactions]
    :group [::fill ::stroke ::interactions]
    ::page [::page-measures ::page-grid-options]})
 
@@ -46,6 +47,10 @@
     :id ::icon-measures
     :icon i/infocard
     :comp options-iconm/icon-measures-menu}
+   {:name "Size, position & rotation"
+    :id ::image-measures
+    :icon i/infocard
+    :comp options-imagem/image-measures-menu}
    {:name "Size, position & rotation"
     :id ::rect-measures
     :icon i/infocard

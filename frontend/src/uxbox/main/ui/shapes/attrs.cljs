@@ -13,6 +13,7 @@
     :stroke-opacity
     :stroke-width
     :stroke-style
+    :opacity
     :rx
     :ry})
 
