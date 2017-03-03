@@ -218,6 +218,7 @@
 ;; --- Apply Displacement
 
 (deftype ApplyDisplacement [id]
+  udp/IPageUpdate
   ptk/WatchEvent
   (watch [_ state stream]
     (let [displacement (get-in state [:workspace :modifiers id :displacement])]

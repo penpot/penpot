@@ -55,8 +55,8 @@
         page (mx/react refs/selected-page)
         flags (mx/react refs/flags)
         toggle #(st/emit! (dw/toggle-flag %))
-        on-undo #(st/emit! (udh/backwards-to-previous-version))
-        on-redo #(st/emit! (udh/forward-to-next-version))
+        on-undo #(st/emit! (udu/undo))
+        on-redo #(st/emit! (udu/redo))
         on-image #(udl/open! :import-image)
         on-download #(udl/open! :download)]
     [:header#workspace-bar.workspace-bar

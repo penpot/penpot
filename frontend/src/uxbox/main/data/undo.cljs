@@ -31,7 +31,6 @@
                            (satisfies? udp/IMetadataUpdate %)))
            (rx/filter #(not (undo? %)))
            (rx/filter #(not (redo? %)))
-           (rx/debounce 500)
            (rx/map #(save-undo-entry id))))))
 
 (defn watch-page-changes
@@ -53,6 +52,7 @@
 
 (defn save-undo-entry
   [id]
+  {:pre [(uuid? id)]}
   (SaveUndoEntry. id))
 
 (defn save-undo-entry?
