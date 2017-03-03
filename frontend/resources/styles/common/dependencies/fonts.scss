@@ -41,15 +41,15 @@ $title-lh: 1.25;
 $title-lh-sm: 1.15;
 
 // Font sources
-@include font-face("sourcesanspro","sourcesanspro-extralight",100);
-@include font-face("sourcesanspro","sourcesanspro-extralightitalic",100,italic);
-@include font-face("sourcesanspro","sourcesanspro-light",200);
-@include font-face("sourcesanspro","sourcesanspro-lightitalic",200,italic);
+@include font-face("sourcesanspro","sourcesanspro-extralight", "100");
+@include font-face("sourcesanspro","sourcesanspro-extralightitalic","100",italic);
+@include font-face("sourcesanspro","sourcesanspro-light","200");
+@include font-face("sourcesanspro","sourcesanspro-lightitalic","200",italic);
 @include font-face("sourcesanspro","sourcesanspro-regular",normal);
 @include font-face("sourcesanspro","sourcesanspro-italic",normal,italic);
-@include font-face("sourcesanspro","sourcesanspro-semibold",500);
-@include font-face("sourcesanspro","sourcesanspro-semibolditalic",500,italic);
+@include font-face("sourcesanspro","sourcesanspro-semibold","500");
+@include font-face("sourcesanspro","sourcesanspro-semibolditalic","500",italic);
 @include font-face("sourcesanspro","sourcesanspro-bold",bold);
 @include font-face("sourcesanspro","sourcesanspro-bolditalic",bold,italic);
-@include font-face("sourcesanspro","sourcesanspro-black",900);
-@include font-face("sourcesanspro","sourcesanspro-blackitalic",900,italic);
+@include font-face("sourcesanspro","sourcesanspro-black","900");
+@include font-face("sourcesanspro","sourcesanspro-blackitalic","900",italic);
