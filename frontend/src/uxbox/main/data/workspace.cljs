@@ -118,11 +118,7 @@
 (deftype ActivateFlag [flag]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :flags] conj flag))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (set-tooltip "Drag to use the ruler"))))
+    (update-in state [:workspace :flags] conj flag)))
 
 (defn activate-flag
   [flag]
@@ -132,11 +128,7 @@
 (deftype DeactivateFlag [flag]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :flags] disj flag))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (set-tooltip nil))))
+    (update-in state [:workspace :flags] disj flag)))
 
 (defn deactivate-flag
   [flag]
@@ -154,6 +146,40 @@
 (defn toggle-flag
   [flag]
   (ToggleFlag. flag))
+
+;; --- Workspace Ruler
+
+(deftype ActivateRuler []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (set-tooltip "Drag to use the ruler")
+           (activate-flag :ruler))))
+
+(defn activate-ruler
+  []
+  (ActivateRuler.))
+
+(deftype DeactivateRuler []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (set-tooltip nil)
+           (deactivate-flag :ruler))))
+
+(defn deactivate-ruler
+  []
+  (DeactivateRuler.))
+
+(deftype ToggleRuler []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [flags (get-in state [:workspace :flags])]
+      (if (contains? flags :ruler)
+        (rx/of (deactivate-ruler))
+        (rx/of (activate-ruler))))))
+
+(defn toggle-ruler
+  []
+  (ToggleRuler.))
 
 ;; --- Icons Toolbox
 

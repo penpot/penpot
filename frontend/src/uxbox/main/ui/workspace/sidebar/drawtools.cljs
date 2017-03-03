@@ -102,11 +102,11 @@
                    (sort-by (comp :priority second)))
 
         select-drawtool #(st/emit! ::uev/interrupt
-                                   (udw/deactivate-flag :ruler)
+                                   (udw/deactivate-ruler)
                                    (udw/select-for-drawing %))
-        toggle-flag #(st/emit! (udw/select-for-drawing nil)
-                               (uds/deselect-all)
-                               (udw/toggle-flag %))]
+        toggle-ruler #(st/emit! (udw/select-for-drawing nil)
+                                (uds/deselect-all)
+                                (udw/toggle-ruler))]
 
     [:div#form-tools.tool-window.drawing-tools
      [:div.tool-window-bar
@@ -125,7 +125,7 @@
 
       [:div.tool-btn.tooltip.tooltip-hover
        {:alt "Ruler"
-        :on-click (partial toggle-flag :ruler)
+        :on-click toggle-ruler
         :class (when (contains? flags :ruler) "selected")}
        i/ruler-tool]]]))
 

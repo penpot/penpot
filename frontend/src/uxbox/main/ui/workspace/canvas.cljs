@@ -93,12 +93,12 @@
   {:mixins [mx/reactive mx/static]}
   [tooltip]
   (let [coords (mx/react refs/window-mouse-position)]
-   [:span.cursor-tooltip
-    {:style
-     {:position "fixed"
-      :left (str (+ (:x coords) 5) "px")
-      :top (str (- (:y coords) 25) "px")}}
-    tooltip]))
+    [:span.cursor-tooltip
+     {:style
+      {:position "fixed"
+       :left (str (+ (:x coords) 5) "px")
+       :top (str (- (:y coords) 25) "px")}}
+     tooltip]))
 
 ;; --- Canvas
 
