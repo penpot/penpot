@@ -16,7 +16,7 @@
    :all-builds
    [{:id "main"
      :figwheel {:on-jsload "uxbox.main.ui/init"}
-     :source-paths ["src"]
+     :source-paths ["src" "vendor"]
      :compiler
      {:main 'uxbox.main
       :cache-analysis false
@@ -32,7 +32,7 @@
 
     {:id "view"
      :figwheel {:on-jsload "uxbox.view.ui/init"}
-     :source-paths ["src"]
+     :source-paths ["src" "vendor"]
      :compiler
      {:main 'uxbox.view
       :parallel-build false
