@@ -24,7 +24,6 @@
                  [cljsjs/react-dom "15.4.2-2"]
                  [cljsjs/react-dom-server "15.4.2-2"]
 
-                 [cljsjs/moment "2.17.1-0"]
                  [funcool/potok "2.0.0"]
                  [funcool/struct "1.0.0"]
                  [funcool/lentes "1.2.0"]

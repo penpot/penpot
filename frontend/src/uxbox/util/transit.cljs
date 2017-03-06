@@ -15,13 +15,11 @@
 
 (def ^:privare +read-handlers+
   {"u" uuid
-   "m" dt/instant-read-handler
    "matrix" gmt/matrix-read-handler
    "point" gpt/point-read-handler})
 
 (def ^:privare +write-handlers+
-  {dt/Instant dt/instant-write-handler
-   gmt/Matrix gmt/matrix-write-handler
+  {gmt/Matrix gmt/matrix-write-handler
    gpt/Point gpt/point-write-handler})
 
 ;; --- Public Api
