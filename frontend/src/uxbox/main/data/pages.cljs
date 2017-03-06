@@ -45,8 +45,8 @@
 (s/def ::version integer?)
 (s/def ::project uuid?)
 (s/def ::user uuid?)
-(s/def ::created-at dt/instant?)
-(s/def ::modified-at dt/instant?)
+(s/def ::created-at inst?)
+(s/def ::modified-at inst?)
 (s/def ::shapes
   (-> (s/coll-of uuid? :kind vector?)
       (s/nilable)))

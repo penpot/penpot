@@ -22,7 +22,7 @@
   "
   ([v] (format v :iso))
   ([v fmt]
-   {:pre [(inst?? v)]}
+   {:pre [(inst? v)]}
    (case fmt
      :offset (.getTime v)
      :iso (.format dateFns v)
@@ -35,5 +35,5 @@
 
 (defn timeago
   [v]
-  {:pre [(inst?? v)]}
+  {:pre [(inst? v)]}
   (.distanceInWordsToNow dateFns v))
