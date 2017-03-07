@@ -22,8 +22,8 @@
 (s/def ::name string?)
 (s/def ::version integer?)
 (s/def ::user uuid?)
-(s/def ::created-at dt/inst?)
-(s/def ::modified-at dt/inst?)
+(s/def ::created-at inst?)
+(s/def ::modified-at inst?)
 
 (s/def ::project-entity
   (s/keys ::req-un [::id
