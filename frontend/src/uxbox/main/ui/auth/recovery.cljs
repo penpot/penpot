@@ -6,42 +6,44 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.auth.recovery
-  (:require [lentes.core :as l]
+  (:require [cljs.spec :as s :include-macros true]
+            [lentes.core :as l]
             [cuerdas.core :as str]
-            [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.data.auth :as uda]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.router :as rt]
-            [uxbox.util.forms :as forms]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.forms :as fm]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.dom :as dom]))
+            [uxbox.util.router :as rt]))
 
+(def form-data (fm/focus-data :recovery st/state))
+(def form-errors (fm/focus-errors :recovery st/state))
+
+(def assoc-value (partial fm/assoc-value :recovery))
+(def assoc-errors (partial fm/assoc-errors :recovery))
+(def clear-form (partial fm/clear-form :recovery))
 
 ;; --- Recovery Form
 
-(def form-data (forms/focus-data :recovery st/state))
-(def set-value! (partial forms/set-value! st/store :recovery))
-
-(def +recovery-form+
-  {:password [forms/required forms/string]})
+(s/def ::password ::fm/non-empty-string)
+(s/def ::recovery-form
+  (s/keys :req-un [::password]))
 
 (mx/defc recovery-form
   {:mixins [mx/static mx/reactive]}
   [token]
-  (let [data (merge (mx/react form-data)
-                    {:token token})
-        valid? (forms/valid? data +recovery-form+)]
+  (let [data (merge (mx/react form-data) {:token token})
+        valid? (fm/valid? ::recovery-form data)]
     (letfn [(on-change [field event]
               (let [value (dom/event->value event)]
-                (set-value! field value)))
+                (st/emit! (assoc-value field value))))
             (on-submit [event]
               (dom/prevent-default event)
               (st/emit! (uda/recovery data)
-                        (forms/clear-form :recovery)
-                        (forms/clear-errors :recovery)))]
+                        (clear-form)))]
       [:form {:on-submit on-submit}
        [:div.login-content
         [:input.input-text
@@ -68,7 +70,7 @@
     own))
 
 (mx/defc recovery-page
-  {:mixins [mx/static (forms/clear-mixin st/store :recovery)]
+  {:mixins [mx/static (fm/clear-mixin st/store :recovery)]
    :will-mount recovery-page-will-mount}
   [token]
   [:div.login

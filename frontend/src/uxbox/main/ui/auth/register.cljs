@@ -2,52 +2,59 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.auth.register
-  (:require [lentes.core :as l]
+  (:require [cljs.spec :as s :include-macros true]
+            [lentes.core :as l]
             [cuerdas.core :as str]
-            [potok.core :as ptk]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.data.auth :as uda]
-            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.router :as rt]
-            [uxbox.util.forms :as forms]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.forms :as fm]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.dom :as dom]))
+            [uxbox.util.router :as rt]))
 
-;; --- Register Form
+(def form-data (fm/focus-data :register st/state))
+(def form-errors (fm/focus-errors :register st/state))
 
-(def form-data (forms/focus-data :register st/state))
-(def form-errors (forms/focus-errors :register st/state))
-(def set-value! (partial forms/set-value! st/store :register))
-(def set-error! (partial forms/set-error! st/store :register))
+(def assoc-value (partial fm/assoc-value :register))
+(def assoc-error (partial fm/assoc-error :register))
+(def clear-form (partial fm/clear-form :register))
 
-(def +register-form+
-  {:username [forms/required forms/string]
-   :fullname [forms/required forms/string]
-   :email [forms/required forms/email]
-   :password [forms/required forms/string]})
+;; TODO: add better password validation
+
+(s/def ::username ::fm/non-empty-string)
+(s/def ::fullname ::fm/non-empty-string)
+(s/def ::password ::fm/non-empty-string)
+(s/def ::email ::fm/email)
+
+(s/def ::register-form
+  (s/keys :req-un [::username
+                   ::fullname
+                   ::email
+                   ::password]))
 
 (mx/defc register-form
   {:mixins [mx/static mx/reactive
-            (forms/clear-mixin st/store :register)]}
+            (fm/clear-mixin st/store :register)]}
   []
   (let [data (mx/react form-data)
         errors (mx/react form-errors)
-        valid? (forms/valid? data +register-form+)]
+        valid? (fm/valid? ::register-form data)]
     (letfn [(on-change [field event]
               (let [value (dom/event->value event)]
-                (set-value! field value)))
+                (st/emit! (assoc-value field value))))
             (on-error [{:keys [type code] :as payload}]
               (case code
                 :uxbox.services.users/email-already-exists
-                (set-error! :email "Email already exists")
+                (st/emit! (assoc-error :email "Email already exists"))
                 :uxbox.services.users/username-already-exists
-                (set-error! :username "Username already exists")))
+                (st/emit! (assoc-error :username "Username already exists"))))
             (on-submit [event]
               (dom/prevent-default event)
               (st/emit! (uda/register data on-error)))]
@@ -60,7 +67,7 @@
           :on-change (partial on-change :fullname)
           :placeholder "Full Name"
           :type "text"}]
-        (forms/input-error errors :fullname)
+        (fm/input-error errors :fullname)
 
         [:input.input-text
          {:name "username"
@@ -69,7 +76,7 @@
           :on-change (partial on-change :username)
           :placeholder "Username"
           :type "text"}]
-        (forms/input-error errors :username)
+        (fm/input-error errors :username)
 
         [:input.input-text
          {:name "email"
@@ -79,7 +86,7 @@
           :on-change (partial on-change :email)
           :placeholder "Email"
           :type "text"}]
-        (forms/input-error errors :email)
+        (fm/input-error errors :email)
 
         [:input.input-text
          {:name "password"
@@ -89,7 +96,7 @@
           :on-change (partial on-change :password)
           :placeholder "Password"
           :type "password"}]
-        (forms/input-error errors :password)
+        (fm/input-error errors :password)
 
         [:input.btn-primary
          {:name "login"

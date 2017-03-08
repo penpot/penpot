@@ -13,11 +13,6 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.messages :as uum]))
 
-(s/def ::fullname string?)
-(s/def ::email us/email?)
-(s/def ::username string?)
-(s/def ::theme string?)
-
 ;; --- Profile Fetched
 
 (deftype ProfileFetched [data]
@@ -68,48 +63,53 @@
            (rx/map profile-updated)
            (rx/catch rp/client-error? handle-error)))))
 
-(s/def ::update-profile-event
-  (s/keys :req-un [::fullname ::email ::username ::theme]))
+(s/def ::fullname string?)
+(s/def ::email us/email?)
+(s/def ::username string?)
+(s/def ::theme string?)
+
+(s/def ::update-profile
+  (s/keys :req-un [::fullname
+                   ::email
+                   ::username
+                   ::theme]))
 
 (defn update-profile
   [data on-success on-error]
-  {:pre [(us/valid? ::update-profile-event data)
+  {:pre [(us/valid? ::update-profile data)
          (fn? on-error)
          (fn? on-success)]}
   (UpdateProfile. data on-success on-error))
 
-;; --- Password Updated
-
-(deftype PasswordUpdated []
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (uum/info (tr "settings.password-saved")))))
-
-(defn password-updated
-  []
-  (PasswordUpdated.))
-
 ;; --- Update Password (Form)
 
-(deftype UpdatePassword [data]
+(deftype UpdatePassword [data on-success on-error]
   ptk/WatchEvent
   (watch [_ state s]
-    (let [params {:old-password (:old-password data)
+    (let [params {:old-password (:password-old data)
                   :password (:password-1 data)}]
-        (->> (rp/req :update/profile-password params)
-             (rx/map password-updated)))))
+      (->> (rp/req :update/profile-password params)
+           (rx/catch rp/client-error? (fn [e]
+                                        (on-error (:payload e))
+                                        (rx/empty)))
+           (rx/do on-success)
+           (rx/ignore)))))
 
 (s/def ::password-1 string?)
 (s/def ::password-2 string?)
-(s/def ::old-password string?)
+(s/def ::password-old string?)
 
-(s/def ::update-password-event
-  (s/keys :req-un [::password-1 ::password-2 ::old-password]))
+(s/def ::update-password
+  (s/keys :req-un [::password-1
+                   ::password-2
+                   ::password-old]))
 
 (defn update-password
-  [data]
-  {:pre [(us/valid? ::update-password-event data)]}
-  (UpdatePassword. data))
+  [data & {:keys [on-success on-error]}]
+  {:pre [(us/valid? ::update-password data)
+         (fn? on-success)
+         (fn? on-error)]}
+  (UpdatePassword. data on-success on-error))
 
 ;; --- Update Photo
 
@@ -123,5 +123,6 @@
 (defn update-photo
   ([file] (update-photo file (constantly nil)))
   ([file done]
-   {:pre [(us/file? file) (fn? done)]}
+   {:pre [(us/file? file)
+          (fn? done)]}
    (UpdatePhoto. file done)))

@@ -10,7 +10,7 @@
   :profiles {:dev {:source-paths ["dev"]}}
 
   :dependencies [[org.clojure/clojure "1.9.0-alpha14" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.494" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.495" :scope "provided"]
 
                  ;; Build
                  [figwheel-sidecar "0.5.9" :scope "provided"]
@@ -24,12 +24,11 @@
                  [cljsjs/react-dom "15.4.2-2"]
                  [cljsjs/react-dom-server "15.4.2-2"]
 
-                 [funcool/potok "2.0.0"]
-                 [funcool/struct "1.0.0"]
-                 [funcool/lentes "1.2.0"]
                  [funcool/beicon "3.1.1"]
+                 [funcool/bide "1.4.0"]
                  [funcool/cuerdas "2.0.3"]
-                 [funcool/bide "1.4.0"]]
+                 [funcool/lentes "1.2.0"]
+                 [funcool/potok "2.0.0"]]
   :plugins [[lein-ancient "0.6.10"]]
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
   )

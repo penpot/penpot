@@ -6,45 +6,47 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.auth.recovery-request
-  (:require [lentes.core :as l]
+  (:require [cljs.spec :as s :include-macros true]
+            [lentes.core :as l]
             [cuerdas.core :as str]
-            [potok.core :as ptk]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.data.auth :as uda]
-            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.router :as rt]
-            [uxbox.util.forms :as forms]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.forms :as fm]
             [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.dom :as dom]))
+            [uxbox.util.router :as rt]))
 
+(def form-data (fm/focus-data :recovery-request st/state))
+(def form-errors (fm/focus-errors :recovery-request st/state))
 
-(def form-data (forms/focus-data :recovery-request st/state))
-(def set-value! (partial forms/set-value! st/store :recovery-request))
+(def assoc-value (partial fm/assoc-value :profile-password))
+(def assoc-errors (partial fm/assoc-errors :profile-password))
+(def clear-form (partial fm/clear-form :profile-password))
 
-(def +recovery-request-form+
-  {:username [forms/required forms/string]})
+(s/def ::username ::fm/non-empty-string)
+(s/def ::recovery-request-form (s/keys :req-un [::username]))
 
 (mx/defc recovery-request-form
   {:mixins [mx/static mx/reactive]}
   []
   (let [data (mx/react form-data)
-        valid? (forms/valid? data +recovery-request-form+)]
-    (letfn [(on-change [field event]
+        valid? (fm/valid? ::recovery-request-form data)]
+    (letfn [(on-change [event]
               (let [value (dom/event->value event)]
-                (set-value! field value)))
+                (st/emit! (assoc-value :username value))))
             (on-submit [event]
               (dom/prevent-default event)
               (st/emit! (uda/recovery-request data)
-                        (forms/clear-form :recovery-request)
-                        (forms/clear-errors :recovery-request)))]
+                        (clear-form)))]
       [:form {:on-submit on-submit}
        [:div.login-content
         [:input.input-text
          {:name "username"
           :value (:username data "")
-          :on-change (partial on-change :username)
+          :on-change on-change
           :placeholder "username or email address"
           :type "text"}]
         [:input.btn-primary
@@ -59,7 +61,7 @@
 ;; --- Recovery Request Page
 
 (mx/defc recovery-request-page
-  {:mixins [mx/static (forms/clear-mixin st/store :recovery-request)]}
+  {:mixins [mx/static (fm/clear-mixin st/store :recovery-request)]}
   []
   [:div.login
    [:div.login-body

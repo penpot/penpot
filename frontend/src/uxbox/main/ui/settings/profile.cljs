@@ -6,7 +6,8 @@
 ;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.settings.profile
-  (:require [cuerdas.core :as str]
+  (:require [cljs.spec :as s :include-macros true]
+            [cuerdas.core :as str]
             [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.main.store :as st]
@@ -14,52 +15,58 @@
             [uxbox.main.ui.settings.header :refer [header]]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.data.users :as udu]
-            [uxbox.util.forms :as forms]
+            [uxbox.util.forms :as fm]
             [uxbox.util.router :as r]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.interop :refer [iterable->seq]]
             [uxbox.util.dom :as dom]))
 
 
-(def form-data (forms/focus-data :profile st/state))
-(def form-errors (forms/focus-errors :profile st/state))
-(def set-value! (partial forms/set-value! st/store :profile))
-(def set-error! (partial forms/set-error! st/store :profile))
-(def clear! (partial forms/clear! st/store :profile))
+(def form-data (fm/focus-data :profile st/state))
+(def form-errors (fm/focus-errors :profile st/state))
+
+(def assoc-value (partial fm/assoc-value :profile))
+(def assoc-error (partial fm/assoc-error :profile))
+(def clear-form (partial fm/clear-form :profile))
 
 (def profile-ref
   (-> (l/key :profile)
       (l/derive st/state)))
 
-(def +profile-form+
-  {:fullname [forms/required forms/string]
-   :email [forms/required forms/email]
-   :username [forms/required forms/string]})
+(s/def ::fullname ::fm/non-empty-string)
+(s/def ::username ::fm/non-empty-string)
+(s/def ::email ::fm/email)
+
+(s/def ::profile-form
+  (s/keys :req-un [::fullname
+                   ::username
+                   ::email]))
 
 ;; --- Profile Form
 
 (mx/defc profile-form
   {:mixins [mx/static mx/reactive
-            (forms/clear-mixin st/store :profile)]}
+            (fm/clear-mixin st/store :profile)]}
   []
-  ;; TODO: properly persist theme
   (let [data (merge {:theme "light"}
                     (mx/react profile-ref)
                     (mx/react form-data))
         errors (mx/react form-errors)
-        valid? (forms/valid? data +profile-form+)
+        valid? (fm/valid? ::profile-form data)
         theme (:theme data)]
     (letfn [(on-change [field event]
               (let [value (dom/event->value event)]
-                (set-value! field value)))
+                (st/emit! (assoc-value field value))))
             (on-error [{:keys [code] :as payload}]
               (case code
                 :uxbox.services.users/email-already-exists
-                (set-error! :email "Email already exists")
+                (st/emit! (assoc-error :email "Email already exists"))
                 :uxbox.services.users/username-already-exists
-                (set-error! :username "Username already exists")))
+                (st/emit! (assoc-error :username "Username already exists"))))
+            (on-success [_]
+              (st/emit! (clear-form)))
             (on-submit [event]
-              (st/emit! (udu/update-profile data clear! on-error)))]
+              (st/emit! (udu/update-profile data on-success on-error)))]
       [:form.profile-form
        [:span.user-settings-label "Name, username and email"]
        [:input.input-text
@@ -72,14 +79,14 @@
          :on-change (partial on-change :username)
          :value (:username data "")
          :placeholder "Your username"}]
-        (forms/input-error errors :username)
+       (fm/input-error errors :username)
 
-        [:input.input-text
-         {:type "email"
-          :on-change (partial on-change :email)
-          :value (:email data "")
-          :placeholder "Your email"}]
-        (forms/input-error errors :email)
+       [:input.input-text
+        {:type "email"
+         :on-change (partial on-change :email)
+         :value (:email data "")
+         :placeholder "Your email"}]
+       (fm/input-error errors :email)
 
         #_[:span.user-settings-label "Choose a color theme"]
         #_[:div.input-radio.radio-primary

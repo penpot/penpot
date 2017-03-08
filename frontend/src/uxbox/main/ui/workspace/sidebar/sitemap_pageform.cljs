@@ -6,41 +6,49 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.sitemap-pageform
-  (:require [lentes.core :as l]
-            [cuerdas.core :as str]
-            [potok.core :as ptk]
+  (:require [cljs.spec :as s :include-macros true]
+            [lentes.core :as l]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.data.pages :as udp]
-            [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.data :refer [parse-int]]
+            [uxbox.util.dom :as dom]
+            [uxbox.util.forms :as fm]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.router :as r]
-            [uxbox.util.forms :as forms]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.data :refer (deep-merge parse-int)]
-            [uxbox.util.dom :as dom]))
+            [uxbox.util.mixins :as mx :include-macros true]))
 
-(def form-data (forms/focus-data :workspace-page-form st/state))
-(def set-value! (partial forms/set-value! st/store :workspace-page-form))
+
+(def form-data (fm/focus-data :workspace-page-form st/state))
+(def form-errors (fm/focus-errors :workspace-page-form st/state))
+
+(def assoc-value (partial fm/assoc-value :workspace-page-form))
+(def assoc-error (partial fm/assoc-error :workspace-page-form))
+(def clear-form (partial fm/clear-form :workspace-page-form))
 
 ;; --- Lightbox
 
-(def +page-form+
-  {:name [forms/required forms/string]
-   :width [forms/required forms/number]
-   :height [forms/required forms/number]
-   :layout [forms/required forms/string]})
+(s/def ::name ::fm/non-empty-string)
+(s/def ::layout ::fm/non-empty-string)
+(s/def ::width number?)
+(s/def ::height number?)
+
+(s/def ::page-form
+  (s/keys :req-un [::name
+                   ::width
+                   ::height
+                   ::layout]))
 
 (mx/defc layout-input
   [data id]
   (let [{:keys [id name width height]} (get c/page-layouts id)]
     (letfn [(on-change [event]
-              (set-value! :layout id)
-              (set-value! :width width)
-              (set-value! :height height))]
+              (st/emit! (assoc-value :layout id)
+                        (assoc-value :width width)
+                        (assoc-value :height height)))]
       [:div
        [:input {:type "radio"
                 :id id
@@ -57,18 +65,18 @@
                     (select-keys page [:name :id :project])
                     (select-keys metadata [:width :height :layout])
                     (mx/react form-data))
-        valid? (forms/valid? data +page-form+)]
+        valid? (fm/valid? ::page-form data)]
     (letfn [(update-size [field e]
               (let [value (dom/event->value e)
                     value (parse-int value)]
-                (set-value! field value)))
+                (st/emit! (assoc-value field value))))
             (update-name [e]
               (let [value (dom/event->value e)]
-                (set-value! :name value)))
+                (st/emit! (assoc-value :name value))))
             (toggle-sizes []
               (let [{:keys [width height]} data]
-                (set-value! :width height)
-                (set-value! :height width)))
+                (st/emit! (assoc-value :width width)
+                          (assoc-value :height height))))
             (on-cancel [e]
               (dom/prevent-default e)
               (udl/close!))
@@ -119,7 +127,7 @@
          :type "button"}]])))
 
 (mx/defc page-form-lightbox
-  {:mixins [mx/static (forms/clear-mixin st/store :workspace-page-form)]}
+  {:mixins [mx/static (fm/clear-mixin st/store :workspace-page-form)]}
   [{:keys [id] :as page}]
   (letfn [(on-cancel [event]
             (dom/prevent-default event)

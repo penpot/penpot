@@ -209,7 +209,7 @@
                       (sort-projects-by ordering))]
     (letfn [(on-click [e]
               (dom/prevent-default e)
-              (udl/open! :new-project))]
+              (udl/open! :create-project))]
       [:section.dashboard-grid
        [:h2 "Your projects"]
        [:div.dashboard-grid-content

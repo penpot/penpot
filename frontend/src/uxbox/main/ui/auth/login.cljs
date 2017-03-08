@@ -6,38 +6,45 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.auth.login
-  (:require [lentes.core :as l]
+  (:require [cljs.spec :as s :include-macros true]
+            [lentes.core :as l]
             [cuerdas.core :as str]
-            [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
             [uxbox.config :as cfg]
             [uxbox.main.store :as st]
             [uxbox.main.data.auth :as da]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.router :as rt]
             [uxbox.util.dom :as dom]
-            [uxbox.util.forms :as forms]))
+            [uxbox.util.forms :as fm]
+            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.router :as rt]))
 
-(def form-data (forms/focus-data :login st/state))
-(def set-value! (partial forms/set-value! st/store :login))
+(def form-data (fm/focus-data :login st/state))
+(def form-errors (fm/focus-errors :login st/state))
 
-(def +login-form+
-  {:email [forms/required forms/string]
-   :password [forms/required forms/string]})
+(def assoc-value (partial fm/assoc-value :login))
+(def assoc-errors (partial fm/assoc-errors :login))
+(def clear-form (partial fm/clear-form :login))
+
+(s/def ::username ::fm/non-empty-string)
+(s/def ::password ::fm/non-empty-string)
+
+(s/def ::login-form
+  (s/keys :req-un [::username ::password]))
+
 
 (mx/defc login-form
   {:mixins [mx/static mx/reactive]}
   []
   (let [data (mx/react form-data)
-        valid? (forms/valid? data +login-form+)]
+        valid? (fm/valid? ::login-form data)]
     (letfn [(on-change [event field]
               (let [value (dom/event->value event)]
-                (set-value! field value)))
+                (st/emit! (assoc-value field value))))
             (on-submit [event]
               (dom/prevent-default event)
-              (st/emit! (da/login {:username (:email data)
+              (st/emit! (da/login {:username (:username data)
                                    :password (:password data)})))]
       [:form {:on-submit on-submit}
        [:div.login-content
@@ -52,8 +59,8 @@
          {:name "email"
           :tab-index "2"
           :ref "email"
-          :value (:email data "")
-          :on-change #(on-change % :email)
+          :value (:username data "")
+          :on-change #(on-change % :username)
           :placeholder "Email or Username"
           :type "text"}]
         [:input.input-text
@@ -80,7 +87,7 @@
           "Don't have an account?"]]]])))
 
 (mx/defc login-page
-  {:mixins [mx/static (forms/clear-mixin st/store :login)]
+  {:mixins [mx/static (fm/clear-mixin st/store :login)]
    :will-mount (fn [own]
                  (when @st/auth-ref
                    (st/emit! (rt/navigate :dashboard/projects)))
