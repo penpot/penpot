@@ -245,25 +245,26 @@
                           :ctrl? ctrl?}]
                 (st/emit! (uev/mouse-event :double-click ctrl? shift?))))]
       [:div
-        (coordinates)
+       (coordinates)
+       [:div.tooltip-container
         (when tooltip
-          (cursor-tooltip tooltip))
-        [:svg.viewport {:width (* c/viewport-width zoom)
-                        :height (* c/viewport-height zoom)
-                        :ref "viewport"
-                        :class (when drawing "drawing")
-                        :on-context-menu on-context-menu
-                        :on-click on-click
-                        :on-double-click on-double-click
-                        :on-mouse-down on-mouse-down
-                        :on-mouse-up on-mouse-up}
-         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
-          (if page
-            (canvas page zoom))
-          (if (contains? flags :grid)
-            (grid))]
-         (when (contains? flags :ruler)
-           (ruler zoom))
-         (selrect)]])))
+          (cursor-tooltip tooltip))]
+       [:svg.viewport {:width (* c/viewport-width zoom)
+                       :height (* c/viewport-height zoom)
+                       :ref "viewport"
+                       :class (when drawing "drawing")
+                       :on-context-menu on-context-menu
+                       :on-click on-click
+                       :on-double-click on-double-click
+                       :on-mouse-down on-mouse-down
+                       :on-mouse-up on-mouse-up}
+        [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
+         (when page
+           (canvas page zoom))
+         (if (contains? flags :grid)
+           (grid))]
+        (when (contains? flags :ruler)
+          (ruler zoom))
+        (selrect)]])))
 
 
