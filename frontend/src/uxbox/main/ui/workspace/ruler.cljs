@@ -32,22 +32,22 @@
                      (mth/precision 2))
         angle (-> (gpt/angle pt center)
                   (mth/precision 2))
-        transform1 (str "translate(" (+ (:x pt) 35) "," (- (:y pt) 10) ")")
-        transform2 (str "translate(" (+ (:x pt) 25) "," (- (:y pt) 30) ")")]
+        translate (-> (str "translate(" (+ (:x pt) 15) "," (- (:y pt) 10) ")"))
+        attrs (-> {:transform translate})
+        tspans (-> (list [:tspan {:x "0"}
+                          (str distance " px")]
+                         [:tspan {:x "0" :y "20"}
+                          (str angle "°")]))]
+
     [:g
-     [:rect {:fill "black"
-             :fill-opacity "0.4"
-             :rx "3"
-             :ry "3"
-             :width "90"
-             :height "50"
-             :transform transform2}]
-     [:text {:transform transform1
-             :fill "white"}
-      [:tspan {:x "0"}
-       (str distance " px")]
-      [:tspan {:x "0" :y "20"}
-       (str angle "°")]]]))
+     [:text
+      (assoc attrs :stroke "white"
+                   :stroke-width "3.4"
+                   :stroke-opacity "0.8")
+      tspans]
+     [:text
+      (assoc attrs :fill "black")
+      tspans]]))
 
 (mx/defc ruler-line
   {:mixins [mx/static]}
