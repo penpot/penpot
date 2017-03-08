@@ -92,7 +92,7 @@
                   (color/rgb->str))]
     (merge
      {:fontSize (str font-size "px")
-      :color fill-color
+      :color color
       :whiteSpace "pre-wrap"
       :textAlign text-align
       :fontFamily font-family
