@@ -288,7 +288,6 @@
   "Check if the current situation allows grouping
   of the currently selected shapes."
   [selected shapes-map]
-  ;; TODO: transducers
   (let [xform (comp (map shapes-map)
                     (map :group))
         groups (into #{} xform selected)]
@@ -298,11 +297,12 @@
   "Check if the current situation allows ungrouping
   of the currently selected shapes."
   [selected shapes-map]
-  (let [xform (comp (map shapes-map)
-                    (map :group))
-        groups (into #{} xform selected)]
-    (and (= 1 (count groups))
-         (not (nil? (first groups))))))
+  (let [shapes (into #{} (map shapes-map) selected)
+        groups (into #{} (map :group) shapes)]
+    (or (and (= 1 (count shapes))
+             (= :group (:type (first shapes))))
+        (and (= 1 (count groups))
+             (not (nil? (first groups)))))))
 
 (mx/defc layers-tools
   "Layers widget options buttons."

@@ -435,13 +435,10 @@
                  :shapes {1 {:id 1 :page 1 :group 3}
                           2 {:id 2 :page 1 :group 3}
                           3 {:id 3 :page 1 :type :group :items [1 2]}}}
-
-        expected (-> initial
-                     (assoc-in [:workspace :selected] #{1 2})
-                     (assoc-in [:pages 1 :shapes] [1 2])
-                     (update-in [:shapes 1] dissoc :group)
-                     (update-in [:shapes 2] dissoc :group)
-                     (update-in [:shapes] dissoc 3))]
+        expected {:workspace {:selected #{1 2}}
+                  :pages {1 {:id 1 :shapes [1 2]}}
+                  :shapes {1 {:id 1 :page 1}
+                           2 {:id 2 :page 1}}}]
     (let [result (impl/degroup-shapes initial [3] 1)]
       ;; (pprint expected)
       ;; (pprint result)
@@ -455,12 +452,10 @@
                           2 {:id 2 :page 1 :type :group :items [3] :group 1}
                           3 {:id 3 :page 1 :group 2}}}
 
-        expected (-> initial
-                     (assoc-in [:workspace :selected] #{3})
-                     (assoc-in [:pages 1 :shapes] [1])
-                     (update-in [:shapes] dissoc 2)
-                     (assoc-in [:shapes 1 :items] [3])
-                     (assoc-in [:shapes 3 :group] 1))]
+        expected {:pages {1 {:id 1, :shapes [1]}},
+                  :shapes {1 {:id 1, :page 1, :type :group, :items [3]},
+                           3 {:id 3, :page 1, :group 1}},
+                  :workspace {:selected #{3}}}]
     (let [result (impl/degroup-shapes initial [2] 1)]
       ;; (pprint expected)
       ;; (pprint result)
@@ -475,13 +470,9 @@
                           3 {:id 3 :page 1 :group 1}
                           4 {:id 4 :page 1 :group 2}}}
 
-        expected (-> initial
-                     (assoc-in [:workspace :selected] #{3 4})
-                     (assoc-in [:pages 1 :shapes] [3 4])
-                     (update :shapes dissoc 1)
-                     (update :shapes dissoc 2)
-                     (update-in [:shapes 3] dissoc :group)
-                     (update-in [:shapes 4] dissoc :group))]
+        expected {:pages {1 {:id 1, :shapes [3 4]}},
+                  :shapes {3 {:id 3, :page 1}, 4 {:id 4, :page 1}},
+                  :workspace {:selected #{4 3}}}]
     (let [result (impl/degroup-shapes initial [1 2] 1)]
       ;; (pprint expected)
       ;; (pprint result)
@@ -495,12 +486,9 @@
                           2 {:id 2 :page 1 :type :group :items [3] :group 1}
                           3 {:id 3 :page 1 :group 2}}}
 
-        expected (-> initial
-                     (assoc-in [:workspace :selected] #{3})
-                     (assoc-in [:pages 1 :shapes] [3])
-                     (update :shapes dissoc 1)
-                     (update :shapes dissoc 2)
-                     (update-in [:shapes 3] dissoc :group))]
+        expected {:pages {1 {:id 1, :shapes [3]}},
+                  :shapes {3 {:id 3, :page 1}},
+                  :workspace {:selected #{3}}}]
     (let [result (impl/degroup-shapes initial [2 1] 1)]
       ;; (pprint expected)
       ;; (pprint result)
@@ -514,12 +502,9 @@
                           2 {:id 2 :page 1 :type :group :items [3] :group 1}
                           3 {:id 3 :page 1 :group 2}}}
 
-        expected (-> initial
-                     (assoc-in [:workspace :selected] #{3})
-                     (assoc-in [:pages 1 :shapes] [3])
-                     (update :shapes dissoc 1)
-                     (update :shapes dissoc 2)
-                     (update-in [:shapes 3] dissoc :group))]
+        expected {:pages {1 {:id 1, :shapes [3]}},
+                  :shapes {3 {:id 3, :page 1}},
+                  :workspace {:selected #{3}}}]
     (let [result (impl/degroup-shapes initial [1 2] 1)]
       ;; (pprint expected)
       ;; (pprint result)
