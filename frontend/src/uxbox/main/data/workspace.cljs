@@ -50,7 +50,7 @@
 (defrecord InitializeWorkspace [project page]
   ptk/UpdateEvent
   (update [_ state]
-    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules :ruler}]
+    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}]
       (if (:workspace state)
         (update state :workspace merge
                 {:project project
