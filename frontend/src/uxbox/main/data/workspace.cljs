@@ -50,23 +50,25 @@
 (defrecord InitializeWorkspace [project page]
   ptk/UpdateEvent
   (update [_ state]
-    (if (:workspace state)
-      (update state :workspace merge
-              {:project project
-               :page page
-               :selected #{}
-               :drawing nil
-               :drawing-tool nil
-               :tooltip nil})
-      (assoc state :workspace
-             {:project project
-              :zoom 1
-              :page page
-              :flags #{:sitemap :drawtools :layers :element-options :rules}
-              :selected #{}
-              :drawing nil
-              :drawing-tool nil
-              :tooltip nil})))
+    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules :ruler}]
+      (if (:workspace state)
+        (update state :workspace merge
+                {:project project
+                 :page page
+                 :selected #{}
+                 :flags default-flags
+                 :drawing nil
+                 :drawing-tool nil
+                 :tooltip nil})
+        (assoc state :workspace
+               {:project project
+                :zoom 1
+                :page page
+                :flags default-flags
+                :selected #{}
+                :drawing nil
+                :drawing-tool nil
+                :tooltip nil}))))
 
   ptk/WatchEvent
   (watch [_ state s]
