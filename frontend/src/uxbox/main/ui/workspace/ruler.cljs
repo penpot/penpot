@@ -25,9 +25,12 @@
       (l/derive refs/workspace)))
 
 (mx/defc ruler-text
-  {:mixins [mx/static]}
+  {:mixins [mx/static mx/reactive]}
+
   [zoom [center pt]]
-  (let [distance (-> (gpt/distance (gpt/divide pt zoom)
+  (let [{:keys [id metadata] :as page} (mx/react refs/selected-page)
+        metadata (merge c/page-metadata metadata)
+        distance (-> (gpt/distance (gpt/divide pt zoom)
                                    (gpt/divide center zoom))
                      (mth/precision 2))
         angle (-> (gpt/angle pt center)
@@ -41,7 +44,7 @@
 
     [:g
      [:text
-      (assoc attrs :stroke "white"
+      (assoc attrs :stroke (or (:background metadata) "#ffffff")
                    :stroke-width "3.4"
                    :stroke-opacity "0.8")
       tspans]
