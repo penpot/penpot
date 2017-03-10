@@ -139,6 +139,9 @@
     [:svg.horizontal-rule
      {:width c/viewport-width
       :height 20}
+     [:rect {:height 20
+             :width c/viewport-width
+             :fill "rgb(233, 234, 235)"}]
      [:g {:transform (str "translate(" translate-x ", 0)")}
       (horizontal-rule-ticks zoom)]]))
 
