@@ -455,11 +455,47 @@
                   :pages {1 {:id 1 :shapes [1 3]}}
                   :shapes {1 {:id 1 :page 1}
                            2 {:id 2 :page 1 :group 3}
-                           3 {:id 3 :page 1 :type :group :items [2]}}}]
-    (let [result (impl/degroup-shapes initial [1] 1)]
-      ;; (pprint expected)
-      ;; (pprint result)
-      (t/is (= result expected)))))
+                           3 {:id 3 :page 1 :type :group :items [2]}}}
+        result (impl/degroup-shapes initial [1] 1)]
+    ;; (pprint expected)
+    ;; (pprint result)
+    (t/is (= result expected))))
+
+
+;; degroup all shapes from group
+
+(t/deftest degroup-shapes-1-2
+  (let [initial {:pages {1 {:id 1 :shapes [3]}}
+                 :shapes {1 {:id 1 :page 1 :group 3}
+                          2 {:id 2 :page 1 :group 3}
+                          3 {:id 3 :page 1 :type :group :items [1 2]}}}
+        expected {:workspace {:selected #{1 2}}
+                  :pages {1 {:id 1 :shapes [1 2]}}
+                  :shapes {1 {:id 1 :page 1}
+                           2 {:id 2 :page 1}}}
+        result (impl/degroup-shapes initial [1 2] 1)]
+    ;; (pprint expected)
+    ;; (pprint result)
+    (t/is (= result expected))))
+
+
+;; degroup all shapes from neested group
+
+(t/deftest degroup-shapes-1-3
+  (let [initial {:pages {1 {:id 1 :shapes [4]}}
+                 :shapes {1 {:id 1 :page 1 :group 3}
+                          2 {:id 2 :page 1 :group 3}
+                          3 {:id 3 :page 1 :group 4 :type :group :items [1 2]}
+                          4 {:id 4 :page 1 :type :group :items [3]}}}
+        expected {:workspace {:selected #{1 2}}
+                  :pages {1 {:id 1 :shapes [4]}}
+                  :shapes {1 {:id 1 :page 1 :group 4}
+                           2 {:id 2 :page 1 :group 4}
+                           4 {:id 4 :page 1 :type :group :items [1 2]}}}
+        result (impl/degroup-shapes initial [1 2] 1)]
+    ;; (pprint expected)
+    ;; (pprint result)
+    (t/is (= result expected))))
 
 ;; degroup group inside a group
 

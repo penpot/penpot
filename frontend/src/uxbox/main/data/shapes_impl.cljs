@@ -419,6 +419,16 @@
             (assert (not (nil? parent-id)) "parent-id should never be nil here")
             (update-in state [:shapes parent-id :items] #(into [] (remove #{id}) %)))
 
+          (strip-empty-groups [state parent-id]
+            (if (nil? parent-id)
+              state
+              (let [group (get-in state [:shapes parent-id])]
+                (if (empty? (:items group))
+                  (-> state
+                      (remove-group group)
+                      (strip-empty-groups (:group group)))
+                  state))))
+
           (selective-degroup [state [shape & rest :as shapes]]
             (let [group (get-in state [:shapes (:group shape)])
                   position (get-relocation-position state group)
@@ -429,7 +439,8 @@
                           (-> state
                               (relocate-shape shape-id parent-id position)
                               (remove-from-parent shape-id (:id group))))
-                        $ shapes))))]
+                        $ (reverse shapes))
+                (strip-empty-groups $ (:id group)))))]
     (let [shapes (into #{} (map #(get-in state [:shapes %])) shapes)
           groups (into #{} (filter #(= (:type %) :group)) shapes)
           parents (into #{} (map :group) shapes)]
