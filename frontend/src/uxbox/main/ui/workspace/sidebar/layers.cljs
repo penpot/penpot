@@ -84,7 +84,8 @@
     :path i/curve
     :rect i/box
     :text i/text
-    :group i/folder))
+    :group i/folder
+    nil))
 
 ;; --- Shape Name (Component)
 

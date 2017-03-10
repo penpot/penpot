@@ -154,7 +154,8 @@
   [state {:keys [group] :as shape}]
   (if-let [group' (get-in state [:shapes group])]
     (if (empty? (:items group'))
-      (dissoc-shape state group')
+      (-> (dissoc-shape state group')
+          (update-in [:workspace :selected] disj (:id group')))
       state)
     state))
 
