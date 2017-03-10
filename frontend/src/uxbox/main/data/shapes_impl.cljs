@@ -382,41 +382,73 @@
         (update $ :workspace assoc :selected #{sid})))))
 
 (defn degroup-shapes
-  [state shapes page]
-  (letfn [(empty-group [state page-id group-id]
-            (let [group (get-in state [:shapes group-id])
-                  parent-id (:group group)
-                  position (if (nil? parent-id)
-                             (index-of (get-in state [:pages page-id :shapes]) group-id)
-                             (index-of (get-in state [:shapes parent-id :items]) group-id))
-                  reduce-func (fn [state item]
-                                (if (nil? parent-id)
-                                  (-> state
-                                    (update-in [:pages page-id :shapes] #(drop-at-index position % item))
-                                    (update-in [:shapes item] dissoc :group))
-                                  (-> state
-                                    (update-in [:shapes parent-id :items] #(drop-at-index position % item))
-                                    (assoc-in [:shapes item :group] parent-id))))]
+  [state shapes page-id]
+  (letfn [(get-relocation-position [state {id :id parent-id :group}]
+            (if (nil? parent-id)
+              (index-of (get-in state [:pages page-id :shapes]) id)
+              (index-of (get-in state [:shapes parent-id :items]) id)))
 
+          (relocate-shape [state shape-id parent-id position]
+            (if (nil? parent-id)
+              (-> state
+                  (update-in [:pages page-id :shapes] #(drop-at-index position % shape-id))
+                  (update-in [:shapes shape-id] dissoc :group))
+              (-> state
+                  (update-in [:shapes parent-id :items] #(drop-at-index position % shape-id))
+                  (assoc-in [:shapes shape-id :group] parent-id))))
+
+          (remove-group [state {id :id parent-id :group}]
+            (let [xform (remove #{id})]
               (as-> state $
-                (reduce reduce-func $ (reverse (:items group)))
+                (update $ :shapes dissoc id)
                 (if (nil? parent-id)
-                  (update-in $ [:pages page-id :shapes] #(into [] (remove #{group-id} %)))
-                  (update-in $ [:shapes parent-id :items] #(into [] (remove #{group-id} %))))
-                (update-in $ [:shapes] dissoc group-id))))
+                  (update-in $ [:pages page-id :shapes] #(into [] xform %))
+                  (update-in $ [:shapes parent-id :items] #(into [] xform %))))))
 
-          (empty-groups [state page-id groups-ids]
-            (reduce (fn [state group-id]
-                      (empty-group state page-id group-id))
-                    state
-                    groups-ids))]
-    (let [shapes' (map #(get-in state [:shapes %]) shapes)
-          groups (filter #(= (:type %) :group) shapes')
-          groups-ids (map :id groups)
-          groups-items (remove (set groups-ids) (mapcat :items groups))]
-      (as-> state $
-        (empty-groups $ page groups-ids)
-        (update $ :workspace assoc :selected (set groups-items))))))
+          (relocate-group-items [state {id :id parent-id :group items :items :as group}]
+            (let [position (get-relocation-position state group)]
+              (as-> state $
+                (reduce #(relocate-shape %1 %2 parent-id position) $ (reverse items))
+                (remove-group $ group))))
+
+          (select-degrouped [state groups]
+            (let [items (into #{} (mapcat :items groups))]
+              (assoc-in state [:workspace :selected] items)))
+
+          (remove-from-parent [state id parent-id]
+            (assert (not (nil? parent-id)) "parent-id should never be nil here")
+            (update-in state [:shapes parent-id :items] #(into [] (remove #{id}) %)))
+
+          (selective-degroup [state [shape & rest :as shapes]]
+            (let [group (get-in state [:shapes (:group shape)])
+                  position (get-relocation-position state group)
+                  parent-id (:group group)]
+              (as-> state $
+                (assoc-in $ [:workspace :selected] (into #{} (map :id shapes)))
+                (reduce (fn [state {shape-id :id}]
+                          (-> state
+                              (relocate-shape shape-id parent-id position)
+                              (remove-from-parent shape-id (:id group))))
+                        $ shapes))))]
+    (let [shapes (into #{} (map #(get-in state [:shapes %])) shapes)
+          groups (into #{} (filter #(= (:type %) :group)) shapes)
+          parents (into #{} (map :group) shapes)]
+      (cond
+        (and (= (count shapes) (count groups))
+             (= 1 (count parents))
+             (not (empty? groups)))
+        (as-> state $
+          (reduce relocate-group-items $ groups)
+          (reduce remove-group $ groups)
+          (select-degrouped $ groups))
+
+        (and (empty? groups)
+             (= 1 (count parents))
+             (not (nil? (first parents))))
+        (selective-degroup state shapes)
+
+        :else
+        (throw (ex-info "invalid condition for degrouping" {}))))))
 
 (defn materialize-xfmt
   [state id xfmt]

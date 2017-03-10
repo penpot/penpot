@@ -430,7 +430,7 @@
 
 ;; degroup a single group
 
-(t/deftest degroup-shapes-1
+(t/deftest degroup-shapes-1-0
   (let [initial {:pages {1 {:id 1 :shapes [3]}}
                  :shapes {1 {:id 1 :page 1 :group 3}
                           2 {:id 2 :page 1 :group 3}
@@ -440,6 +440,23 @@
                   :shapes {1 {:id 1 :page 1}
                            2 {:id 2 :page 1}}}]
     (let [result (impl/degroup-shapes initial [3] 1)]
+      ;; (pprint expected)
+      ;; (pprint result)
+      (t/is (= result expected)))))
+
+;; degroup single shape from group
+
+(t/deftest degroup-shapes-1-1
+  (let [initial {:pages {1 {:id 1 :shapes [3]}}
+                 :shapes {1 {:id 1 :page 1 :group 3}
+                          2 {:id 2 :page 1 :group 3}
+                          3 {:id 3 :page 1 :type :group :items [1 2]}}}
+        expected {:workspace {:selected #{1}}
+                  :pages {1 {:id 1 :shapes [1 3]}}
+                  :shapes {1 {:id 1 :page 1}
+                           2 {:id 2 :page 1 :group 3}
+                           3 {:id 3 :page 1 :type :group :items [2]}}}]
+    (let [result (impl/degroup-shapes initial [1] 1)]
       ;; (pprint expected)
       ;; (pprint result)
       (t/is (= result expected)))))
@@ -473,38 +490,6 @@
         expected {:pages {1 {:id 1, :shapes [3 4]}},
                   :shapes {3 {:id 3, :page 1}, 4 {:id 4, :page 1}},
                   :workspace {:selected #{4 3}}}]
-    (let [result (impl/degroup-shapes initial [1 2] 1)]
-      ;; (pprint expected)
-      ;; (pprint result)
-      (t/is (= result expected)))))
-
-;; degroup multiple groups nested (child first)
-
-(t/deftest degroup-shapes-4
-  (let [initial {:pages {1 {:id 1 :shapes [1]}}
-                 :shapes {1 {:id 1 :page 1 :type :group :items [2]}
-                          2 {:id 2 :page 1 :type :group :items [3] :group 1}
-                          3 {:id 3 :page 1 :group 2}}}
-
-        expected {:pages {1 {:id 1, :shapes [3]}},
-                  :shapes {3 {:id 3, :page 1}},
-                  :workspace {:selected #{3}}}]
-    (let [result (impl/degroup-shapes initial [2 1] 1)]
-      ;; (pprint expected)
-      ;; (pprint result)
-      (t/is (= result expected)))))
-
-;; degroup multiple groups nested (parent first)
-
-(t/deftest degroup-shapes-5
-  (let [initial {:pages {1 {:id 1 :shapes [1]}}
-                 :shapes {1 {:id 1 :page 1 :type :group :items [2]}
-                          2 {:id 2 :page 1 :type :group :items [3] :group 1}
-                          3 {:id 3 :page 1 :group 2}}}
-
-        expected {:pages {1 {:id 1, :shapes [3]}},
-                  :shapes {3 {:id 3, :page 1}},
-                  :workspace {:selected #{3}}}]
     (let [result (impl/degroup-shapes initial [1 2] 1)]
       ;; (pprint expected)
       ;; (pprint result)
