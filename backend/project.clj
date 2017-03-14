@@ -13,7 +13,7 @@
                  [org.clojure/tools.logging "0.3.1"]
                  [funcool/suricatta "1.3.1"]
                  [funcool/promesa "1.8.0"]
-                 [funcool/catacumba "2.0.0"]
+                 [funcool/catacumba "2.1.0"]
                  [funcool/cuerdas "2.0.3"]
                  [funcool/datoteka "1.0.0"]
 
@@ -23,11 +23,10 @@
                  [hiccup "1.0.5"]
                  [org.im4java/im4java "1.4.0"]
 
-                 [org.slf4j/slf4j-simple "1.7.23"]
+                 [org.slf4j/slf4j-simple "1.7.24"]
                  [com.layerware/hugsql-core "0.4.7"
                   :exclusions [org.clojure/tools.reader]]
                  [niwinz/migrante "0.1.0"]
-
 
                  [buddy/buddy-sign "1.4.0"]
                  [buddy/buddy-hashers "1.2.0"]
