@@ -198,6 +198,8 @@
 
 ;; --- Create Page
 
+(declare reorder-pages)
+
 (deftype CreatePage [name project width height layout]
   ptk/WatchEvent
   (watch [this state s]
@@ -207,18 +209,24 @@
                   :metadata {:width width
                              :height height
                              :layout layout
-                             :order 0}}]
-      (->> (rp/req :create/page params)
-           (rx/map :payload)
-           (rx/map page-created)))))
+                             :order -100}}]
+      (rx/concat
+       (->> (rp/req :create/page params)
+            (rx/map :payload)
+            (rx/map page-created))
+       (rx/of (reorder-pages))))))
 
 (s/def ::create-page-event
-  (s/keys :req-un [::name ::project ::width ::height ::layout]))
+  (s/keys :req-un [::name
+                   ::project
+                   ::width
+                   ::height
+                   ::layout]))
 
 (defn create-page
   [{:keys [name project width height layout] :as data}]
   {:pre [(us/valid? ::create-page-event data)]}
-  (->CreatePage name project width height layout))
+  (CreatePage. name project width height layout))
 
 ;; --- Page Persisted
 
