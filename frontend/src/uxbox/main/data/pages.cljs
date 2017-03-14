@@ -301,21 +301,21 @@
   {:pre [(uuid? id)]}
   (PersistMetadata. id))
 
-(deftype PersistPages []
+(deftype PersistPagesMetadata []
   ptk/WatchEvent
   (watch [_ state stream]
-    (letfn [(resolve-pages [state]
-              (let [project (get-in state [:workspace :project])]
-                (->> (vals (:pages state))
-                     (filter #(= project (:project %)))
-                     (sort-by #(get-in % [:metadata :order])))))]
-      (->> (rx/from-coll (resolve-pages state))
-           (rx/map :id)
+    (let [project (get-in state [:workspace :project])
+          xform (comp
+                 (map second)
+                 (filter #(= project (:project %)))
+                 (map :id))]
+      (->> (sequence xform (:pages state))
+           (rx/from-coll)
            (rx/map persist-metadata)))))
 
-(defn persist-pages
+(defn persist-pages-metadata
   []
-  (PersistPages.))
+  (PersistPagesMetadata.))
 
 ;; --- Update Page
 
@@ -343,22 +343,6 @@
   {:pre [(uuid? id) (us/valid? ::metadata metadata)]}
   (UpdateMetadata. id metadata))
 
-;; --- Update Order
-;;
-;; A specialized event for update order
-;; attribute on the page metadata
-
-(deftype UpdateOrder [id order]
-  IMetadataUpdate
-  ptk/UpdateEvent
-  (update [this state]
-    (assoc-in state [:pages id :metadata :order] order)))
-
-(defn update-order
-  [id order]
-  {:pre [(uuid? id) (number? order)]}
-  (UpdateOrder. id order))
-
 ;; --- Reorder Pages
 ;;
 ;; A post processing event that normalizes the
@@ -366,10 +350,9 @@
 ;; operation.
 
 (deftype ReorderPages []
-  IMetadataUpdate
   ptk/UpdateEvent
   (update [this state]
-    (let [project (l/focus ul/selected-project state)
+    (let [project (get-in state [:workspace :project])
           pages (->> (vals (:pages state))
                      (filter #(= project (:project %)))
                      (sort-by #(get-in % [:metadata :order]))
@@ -378,11 +361,34 @@
       (reduce (fn [state [i page]]
                 (assoc-in state [:pages page :metadata :order] (* 10 i)))
               state
-              pages))))
+              pages)))
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (persist-pages-metadata))))
 
 (defn reorder-pages
   []
   (ReorderPages.))
+
+;; --- Update Order
+;;
+;; A specialized event for update order
+;; attribute on the page metadata
+
+(deftype UpdateOrder [id order]
+  ptk/UpdateEvent
+  (update [this state]
+    (assoc-in state [:pages id :metadata :order] order))
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (reorder-pages))))
+
+(defn update-order
+  [id order]
+  {:pre [(uuid? id) (number? order)]}
+  (UpdateOrder. id order))
 
 ;; --- Persist Page Form
 ;;

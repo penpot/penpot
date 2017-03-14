@@ -81,13 +81,9 @@
                     over (:over @local)]
                 (case (:over @local)
                   :top (let [new-order (dec (get-in page [:metadata :order]))]
-                         (st/emit! (udp/update-order id new-order))
-                         (st/emit! (udp/reorder-pages))
-                         (st/emit! (udp/persist-pages)))
+                         (st/emit! (udp/update-order id new-order)))
                   :bottom (let [new-order (inc (get-in page [:metadata :order]))]
-                            (st/emit! (udp/update-order id new-order))
-                            (st/emit! (udp/reorder-pages))
-                            (st/emit! (udp/persist-pages))))
+                            (st/emit! (udp/update-order id new-order))))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
