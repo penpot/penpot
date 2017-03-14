@@ -24,11 +24,11 @@
                  [cljsjs/react-dom "15.4.2-2"]
                  [cljsjs/react-dom-server "15.4.2-2"]
 
-                 [funcool/beicon "3.1.1"]
+                 [funcool/beicon "3.2.0"]
                  [funcool/bide "1.4.0"]
                  [funcool/cuerdas "2.0.3"]
                  [funcool/lentes "1.2.0"]
-                 [funcool/potok "2.0.0"]]
+                 [funcool/potok "2.1.0"]]
   :plugins [[lein-ancient "0.6.10"]]
   :clean-targets ^{:protect false} ["resources/public/js" "target"]
   )
