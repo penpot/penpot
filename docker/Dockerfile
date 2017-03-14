@@ -40,11 +40,11 @@ RUN apt-get update -yq && \
                         libfreetype6-dev libfontconfig1-dev libxt-dev \
                         libexif-dev libjpeg-dev libpng-dev libtiff-dev \
                         libwmf-dev libpango1.0-dev librsvg2-bin librsvg2-dev \
-                        libxml2-dev libwebp-dev webp
+                        libxml2-dev libwebp-dev webp autoconf
 
 RUN git clone https://github.com/ImageMagick/ImageMagick.git imagemagick && \
     cd imagemagick && \
-    git checkout -f 7.0.4-10 && \
+    git checkout -f 7.0.5-0 && \
     ./configure --prefix=/opt/img && \
     make -j2 && \
     make install && \
