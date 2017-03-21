@@ -102,6 +102,8 @@
 (defn initialize
   "Initialize the workspace state."
   [project page]
+  {:pre [(uuid? project)
+         (uuid? page)]}
   (InitializeWorkspace. project page))
 
 ;; --- Workspace Tooltips
