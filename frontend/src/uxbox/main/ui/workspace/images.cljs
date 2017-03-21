@@ -92,7 +92,7 @@
 (mx/defc image-item
   {:mixins [mx/static]}
   [{:keys [thumbnail name id width height] :as image}]
-  (letfn [(on-double-click [event]
+  (letfn [(on-click [event]
             (let [shape {:type :image
                          :name name
                          :id (uuid/random)
@@ -102,7 +102,7 @@
               (st/emit! (udw/select-for-drawing shape))
               (udl/close!)))]
     [:div.library-item {:key (str id)
-                        :on-double-click on-double-click}
+                        :on-click on-click}
      [:div.library-item-th
       {:style {:background-image (str "url('" thumbnail "')")}}]
      [:span name]]))
