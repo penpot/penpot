@@ -47,23 +47,23 @@
 
 (declare initialize-alignment)
 
-(defrecord InitializeWorkspace [project page]
+(defrecord InitializeWorkspace [project-id page-id]
   ptk/UpdateEvent
   (update [_ state]
     (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}]
       (if (:workspace state)
         (update state :workspace merge
-                {:project project
-                 :page page
+                {:project project-id
+                 :page page-id
                  :selected #{}
                  :flags default-flags
                  :drawing nil
                  :drawing-tool nil
                  :tooltip nil})
         (assoc state :workspace
-               {:project project
+               {:project project-id
                 :zoom 1
-                :page page
+                :page page-id
                 :flags default-flags
                 :selected #{}
                 :drawing nil
@@ -71,9 +71,8 @@
                 :tooltip nil}))))
 
   ptk/WatchEvent
-  (watch [_ state s]
-    (let [page-id page
-          page (get-in state [:pages page-id])]
+  (watch [_ state stream]
+    (let [page (get-in state [:pages page-id])]
 
       ;; Activate loaded if page is not fetched.
       (when-not page (reset! st/loader true))
@@ -82,13 +81,14 @@
        (if page
          (rx/of (initialize-alignment page-id))
          (rx/merge
-          (rx/of (udp/fetch-pages project))
-          (->> (rx/filter udp/pages-fetched? s)
+          (rx/of (udp/fetch-pages project-id))
+          (->> (rx/filter udp/pages-fetched? stream)
                (rx/take 1)
                (rx/do #(reset! st/loader false))
                (rx/map #(initialize-alignment page-id)))))
 
        ;; Initial history loading
+       ;; FIXME: move this to the history sidebar component
        (rx/of
         (udh/fetch-page-history page-id)
         (udh/fetch-pinned-page-history page-id)))))
@@ -316,12 +316,8 @@
                   :height c/viewport-height
                   :x-axis (:grid-x-axis metadata c/grid-x-axis)
                   :y-axis (:grid-y-axis metadata c/grid-y-axis)}]
-      (rx/merge
-       (rx/of (deactivate-flag :grid-indexed)
-              (if (:grid-alignment metadata)
-                (activate-flag :grid-alignment)
-                (deactivate-flag :grid-alignment)))
-
+      (rx/concat
+       (rx/of (deactivate-flag :grid-indexed))
        (->> (uwrk/initialize-alignment params)
             (rx/map #(activate-flag :grid-indexed)))))))
 

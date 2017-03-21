@@ -104,7 +104,8 @@
 (defn alignment-activated?
   [state]
   (let [{:keys [page flags]} (:workspace state)
-        metadata (merge c/page-metadata (get-in state [:pages page :metadata]))]
+        metadata (->> (get-in state [:pages page :metadata])
+                      (merge c/page-metadata))]
     (and (contains? flags :grid-indexed)
          (contains? flags :grid)
          (:grid-alignment metadata))))

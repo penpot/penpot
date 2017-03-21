@@ -2,6 +2,7 @@
   (:require [lentes.core :as l]))
 
 ;; --- Workspace
+;; --- FIXME:  remove this ns
 
 (def workspace (l/key :workspace))
 (def workspace-flags (comp workspace (l/key :flags)))
