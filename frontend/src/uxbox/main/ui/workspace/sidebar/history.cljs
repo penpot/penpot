@@ -25,8 +25,8 @@
 ;; --- Lenses
 
 (def history-ref
-  (as-> (l/in [:workspace :history]) $
-    (l/derive $ st/state)))
+  (-> (l/key :history)
+      (l/derive refs/workspace)))
 
 ;; --- History Item (Component)
 
