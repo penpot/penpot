@@ -8,7 +8,6 @@
 (ns uxbox.main.ui.workspace.sidebar.sitemap
   (:require [lentes.core :as l]
             [cuerdas.core :as str]
-            [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]

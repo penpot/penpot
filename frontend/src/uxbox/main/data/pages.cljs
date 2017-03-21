@@ -217,7 +217,7 @@
 
   ptk/WatchEvent
   (watch [_ state stream]
-    (rx/of (reorder-pages (:id data)))))
+    (rx/of (reorder-pages (:project data)))))
 
 (s/def ::page-created
   (s/keys :req-un [::id
