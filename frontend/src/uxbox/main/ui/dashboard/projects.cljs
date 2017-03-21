@@ -134,10 +134,17 @@
     (when url (blob/revoke-uri url))
     own))
 
+(defn- grid-item-thumbnail-did-remount
+  [oldown own]
+  (when-let [url (::url oldown)]
+    (blob/revoke-uri url))
+  (grid-item-thumbnail-will-mount own))
+
 (mx/defcs grid-item-thumbnail
   {:mixins [mx/static]
    :will-mount grid-item-thumbnail-will-mount
-   :will-unmount grid-item-thumbnail-will-unmount}
+   :will-unmount grid-item-thumbnail-will-unmount
+   :did-remount grid-item-thumbnail-did-remount}
   [own project]
   (if-let [url (::url own)]
     [:div.grid-item-th

@@ -83,7 +83,6 @@
              :width c/viewport-width
              :height c/viewport-height}]
      (when-let [points (mx/react ruler-points-ref)]
-       (println points)
        [:g
         (ruler-line zoom points)
         (ruler-text zoom points)])]))

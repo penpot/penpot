@@ -144,22 +144,47 @@
   [state id]
   (update state :packed-pages dissoc id))
 
+;; --- Update Project main page
+;;
+;; A event that handles the project main page
+;; update based on the user selected page ordering.
+
+(deftype UpdateProjectMainPage [id]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [get-order #(get-in % [:metadata :order])
+          page-id (->> (vals (:pages state))
+                       (filter #(= id (:project %)))
+                       (sort-by get-order)
+                       (map :id)
+                       (first))]
+      (assoc-in state [:projects id :page-id] page-id))))
+
+(defn update-project-main-page
+  [id]
+  {:pre [(uuid? id)]}
+  (UpdateProjectMainPage. id))
+
 ;; --- Pages Fetched
 
-(deftype PagesFetched [pages]
+(deftype PagesFetched [id pages]
   IDeref
-  (-deref [_] pages)
+  (-deref [_] (list id pages))
 
   ptk/UpdateEvent
   (update [_ state]
     (as-> state $
       (reduce assoc-page $ pages)
-      (reduce assoc-packed-page $ pages))))
+      (reduce assoc-packed-page $ pages)))
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (update-project-main-page id))))
 
 (defn pages-fetched
-  [pages]
-  {:pre [(coll? pages)]}
-  (PagesFetched. pages))
+  [id pages]
+  {:pre [(uuid? id) (coll? pages)]}
+  (PagesFetched. id pages))
 
 (defn pages-fetched?
   [v]
@@ -172,7 +197,7 @@
   (watch [_ state s]
     (->> (rp/req :fetch/pages-by-project {:project id})
          (rx/map :payload)
-         (rx/map pages-fetched))))
+         (rx/map #(pages-fetched id %)))))
 
 (defn fetch-pages
   [id]
@@ -181,24 +206,31 @@
 
 ;; --- Page Created
 
+(declare reorder-pages)
+
 (deftype PageCreated [data]
   ptk/UpdateEvent
   (update [_ state]
     (-> state
         (assoc-page data)
-        (assoc-packed-page data))))
+        (assoc-packed-page data)))
 
-(s/def ::page-created-event
-  (s/keys :req-un [::id ::name ::project ::metadata]))
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/of (reorder-pages (:id data)))))
+
+(s/def ::page-created
+  (s/keys :req-un [::id
+                   ::name
+                   ::project
+                   ::metadata]))
 
 (defn page-created
   [data]
-  {:pre [(us/valid? ::page-created-event data)]}
+  {:pre [(us/valid? ::page-created data)]}
   (PageCreated. data))
 
 ;; --- Create Page
-
-(declare reorder-pages)
 
 (deftype CreatePage [name project width height layout]
   ptk/WatchEvent
@@ -210,13 +242,11 @@
                              :height height
                              :layout layout
                              :order -100}}]
-      (rx/concat
-       (->> (rp/req :create/page params)
-            (rx/map :payload)
-            (rx/map page-created))
-       (rx/of (reorder-pages))))))
+      (->> (rp/req :create/page params)
+           (rx/map :payload)
+           (rx/map page-created)))))
 
-(s/def ::create-page-event
+(s/def ::create-page
   (s/keys :req-un [::name
                    ::project
                    ::width
@@ -225,7 +255,7 @@
 
 (defn create-page
   [{:keys [name project width height layout] :as data}]
-  {:pre [(us/valid? ::create-page-event data)]}
+  {:pre [(us/valid? ::create-page data)]}
   (CreatePage. name project width height layout))
 
 ;; --- Page Persisted
@@ -309,21 +339,21 @@
   {:pre [(uuid? id)]}
   (PersistMetadata. id))
 
-(deftype PersistPagesMetadata []
+(deftype PersistPagesMetadata [project-id]
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [project (get-in state [:workspace :project])
-          xform (comp
+    (let [xform (comp
                  (map second)
-                 (filter #(= project (:project %)))
+                 (filter #(= project-id (:project %)))
                  (map :id))]
       (->> (sequence xform (:pages state))
            (rx/from-coll)
            (rx/map persist-metadata)))))
 
 (defn persist-pages-metadata
-  []
-  (PersistPagesMetadata.))
+  [project-id]
+  {:pre [(uuid? project-id)]}
+  (PersistPagesMetadata. project-id))
 
 ;; --- Update Page
 
@@ -355,29 +385,31 @@
 ;;
 ;; A post processing event that normalizes the
 ;; page order numbers after a user sorting
-;; operation.
+;; operation for a concrete project.
 
-(deftype ReorderPages []
+(deftype ReorderPages [project-id]
   ptk/UpdateEvent
   (update [this state]
-    (let [project (get-in state [:workspace :project])
+    (let [get-order #(get-in % [:metadata :order])
           pages (->> (vals (:pages state))
-                     (filter #(= project (:project %)))
-                     (sort-by #(get-in % [:metadata :order]))
+                     (filter #(= project-id (:project %)))
+                     (sort-by get-order)
                      (map :id)
                      (map-indexed vector))]
-      (reduce (fn [state [i page]]
-                (assoc-in state [:pages page :metadata :order] (* 10 i)))
+      (reduce (fn [state [order id]]
+                (assoc-in state [:pages id :metadata :order] (* order 10)))
               state
               pages)))
 
   ptk/WatchEvent
   (watch [_ state stream]
-    (rx/of (persist-pages-metadata))))
+    (rx/of (update-project-main-page project-id)
+           (persist-pages-metadata project-id))))
 
 (defn reorder-pages
-  []
-  (ReorderPages.))
+  [id]
+  {:pre [(uuid? id)]}
+  (ReorderPages. id))
 
 ;; --- Update Order
 ;;
@@ -391,7 +423,8 @@
 
   ptk/WatchEvent
   (watch [_ state stream]
-    (rx/of (reorder-pages))))
+    (let [project (get-in state [:pages id :project])]
+      (rx/of (reorder-pages project)))))
 
 (defn update-order
   [id order]

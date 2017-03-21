@@ -14,13 +14,14 @@
             [uxbox.view.ui.viewer :refer [viewer-page]]
             [uxbox.util.router :as rt]
             [uxbox.util.i18n :refer [tr]]
+            [uxbox.util.data :refer [parse-int]]
             [uxbox.util.messages :as uum]
             [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.util.dom :as dom]))
 
 
-(def route-id-ref
-  (-> (l/in [:route :id])
+(def route-ref
+  (-> (l/key :route)
       (l/derive st/state)))
 
 (defn- on-error
@@ -46,16 +47,17 @@
 (mx/defc app
   {:mixins [mx/static mx/reactive]}
   []
-  (let [location (mx/react route-id-ref)]
-    (case location
+  (let [{loc :id params :params}  (mx/react route-ref)]
+    (case loc
       :view/notfound (notfound-page)
-      :view/viewer (viewer-page)
+      :view/viewer (let [{:keys [index token]} params]
+                     (viewer-page token (parse-int index 0)))
       nil)))
 
 ;; --- Routes
 
 (def routes
-  [["/:token/:id" :view/viewer]
+  [["/:token/:index" :view/viewer]
    ["/:token" :view/viewer]
    ["/not-found" :view/notfound]])
 

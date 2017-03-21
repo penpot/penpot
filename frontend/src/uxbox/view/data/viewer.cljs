@@ -47,7 +47,8 @@
   ptk/UpdateEvent
   (update [_ state]
     (let [project (dissoc data :pages)
-          pages (sort-by :created-at (:pages data))]
+          get-order #(get-in % [:metadata :order])
+          pages (sort-by get-order (:pages data))]
       (as-> state $
         (assoc $ :project project)
         (assoc $ :pages [])
@@ -76,7 +77,7 @@
   ptk/WatchEvent
   (watch [_ state stream]
     (let [token (get-in state [:route :params :token])]
-      (rx/of (rt/navigate :view/viewer {:token token :id index})))))
+      (rx/of (rt/navigate :view/viewer {:token token :index index})))))
 
 (defn select-page
   [index]

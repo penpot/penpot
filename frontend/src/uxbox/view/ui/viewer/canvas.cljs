@@ -2,31 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.view.ui.viewer.canvas
-  (:require [sablono.core :refer-macros [html]]
-            [lentes.core :as l]
-            [rum.core :as rum]
-            [uxbox.util.mixins :as mx :include-macros true]
-            [uxbox.util.data :refer (parse-int)]
-            [uxbox.view.store :as st]
-            [uxbox.main.ui.shapes :as uus]
-            [uxbox.builtins.icons :as i]
+  (:require [uxbox.util.mixins :as mx :include-macros true]
             [uxbox.view.ui.viewer.shapes :as shapes]))
-
-;; --- Refs
-
-(defn- resolve-selected-page
-  [state]
-  (let [index (get-in state [:route :params :id])
-        index (parse-int index 0)]
-    (get-in state [:pages index])))
-
-(def page-ref
-  (-> (l/lens resolve-selected-page)
-      (l/derive st/state)))
 
 ;; --- Background (Component)
 
@@ -43,16 +24,14 @@
 (declare shape)
 
 (mx/defc canvas
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [page (rum/react page-ref)
-        metadata (:metadata page)
-        width (:width metadata)
-        height (:height metadata)]
+  {:mixins [mx/static]}
+  [{:keys [metadata] :as page}]
+  (let [{:keys [width height]} metadata]
     [:div.view-canvas
-     [:svg.page-layout {:width width :height height}
+     [:svg.page-layout {:width width
+                        :height height}
       (background)
       (for [id (reverse (:shapes page))]
         (-> (shapes/shape id)
-            (rum/with-key (str id))))]]))
+            (mx/with-key (str id))))]]))
 

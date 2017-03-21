@@ -35,31 +35,11 @@
 
 ;; --- Helpers
 
-(defn assoc-project-page
-  "Assoc to the state the project's embedded page."
-  [state project]
-  {:pre [(us/valid? ::project-entity project)]}
-  (let [page {:id (:page-id project)
-              :name (:page-name project)
-              :version (:page-version project)
-              :project (:id project)
-              :data (:page-data project)
-              :created-at (:page-created-at project)
-              :modified-at (:page-modified-at project)
-              :metadata (:page-metadata project)}]
-    (-> state
-        (udp/assoc-page page)
-        (udp/assoc-packed-page page))))
-
 (defn assoc-project
   "A reduce function for assoc the project to the state map."
   [state {:keys [id] :as project}]
   {:pre [(us/valid? ::project-entity project)]}
-  (let [project (dissoc project
-                        :page-name :page-version
-                        :page-data :page-metadata
-                        :page-created-at :page-modified-at)]
-    (update-in state [:projects id] merge project)))
+  (update-in state [:projects id] merge project))
 
 (defn dissoc-project
   "A reduce function for dissoc the project from the state map."
@@ -89,9 +69,12 @@
 (defrecord ProjectsFetched [projects]
   ptk/UpdateEvent
   (update [_ state]
-    (as-> state $
-      (reduce assoc-project-page $ projects)
-      (reduce assoc-project $ projects))))
+    (reduce assoc-project state projects))
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (->> (rx/from-coll (map :id projects))
+         (rx/map udp/fetch-pages))))
 
 (defn projects-fetched
   [projects]
@@ -106,7 +89,7 @@
 
 (defrecord FetchProjects []
   ptk/WatchEvent
-  (watch [_ state s]
+  (watch [_ state stream]
     (->> (rp/req :fetch/projects)
          (rx/map :payload)
          (rx/map projects-fetched))))
@@ -220,16 +203,12 @@
 (defrecord GoTo [project-id]
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [page-id (get-in state [:projects project-id :page-id])
-          params {:project project-id
-                  :page page-id}]
-      (rx/merge
-       (rx/of (udp/fetch-pages project-id))
-       (->> stream
-            (rx/filter udp/pages-fetched?)
-            (rx/take 1)
-            (rx/map deref)
-            (rx/map go-to-first-page))))))
+    (let [page-id (get-in state [:projects project-id :page-id])]
+      (if-not page-id
+        (rx/empty)
+        (let [params {:project project-id
+                      :page page-id}]
+          (rx/of (rt/navigate :workspace/page params)))))))
 
 (defrecord GoToPage [project-id page-id]
   ptk/WatchEvent

@@ -75,8 +75,6 @@
   (let [data (merge c/project-defaults (mx/react form-data))
         errors (mx/react form-errors)
         valid? (fm/valid? ::project-form data)]
-    (println data)
-    (println valid?)
     (letfn [(on-submit [event]
               (dom/prevent-default event)
               (when valid?
