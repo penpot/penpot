@@ -24,21 +24,6 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.mixins :as mx :include-macros true]))
 
-;; --- Refs
-
-(defn- resolve-pages
-  [state]
-  (let [project (get-in state [:workspace :project])]
-    (->> (vals (:pages state))
-         (filter #(= project (:project %)))
-         (sort-by #(get-in % [:metadata :order])))))
-
-(def pages-ref
-  (-> (l/lens resolve-pages)
-      (l/derive st/state)))
-
-;; --- Component
-
 (mx/defcs page-item
   {:mixins [(mx/local) mx/static mx/reactive]}
   [{:keys [rum/local] :as own} page total active?]
@@ -120,7 +105,7 @@
   {:mixins [mx/static mx/reactive]}
   []
   (let [project (mx/react refs/selected-project)
-        pages (mx/react pages-ref)
+        pages (mx/react refs/selected-project-pages)
         current (mx/react refs/selected-page)
         create #(udl/open! :page-form {:page {:project (:id project)}})
         close #(st/emit! (dw/toggle-flag :sitemap))]

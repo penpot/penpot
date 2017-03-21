@@ -24,12 +24,24 @@
   (let [id (l/focus ul/selected-page state)]
     (get-in state [:pages id])))
 
+(defn- resolve-project-pages
+  [state]
+  (let [project (get-in state [:workspace :project])
+        get-order #(get-in % [:metadata :order])]
+    (->> (vals (:pages state))
+         (filter #(= project (:project %)))
+         (sort-by get-order))))
+
 (def workspace
   (l/derive ul/workspace st/state))
 
 (def selected-project
   "Ref to the current selected project."
   (-> (l/lens resolve-project)
+      (l/derive st/state)))
+
+(def selected-project-pages
+  (-> (l/lens resolve-project-pages)
       (l/derive st/state)))
 
 (def selected-page
