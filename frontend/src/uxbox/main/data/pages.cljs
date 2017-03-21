@@ -15,6 +15,7 @@
             [uxbox.main.lenses :as ul]
             [uxbox.util.spec :as us]
             [uxbox.util.router :as r]
+            [uxbox.util.timers :as ts]
             [uxbox.util.time :as dt]))
 
 ;; --- Specs
@@ -281,7 +282,7 @@
 
 ;; --- Persist Page
 
-(deftype PersistPage [id]
+(deftype PersistPage [id on-success]
   ptk/WatchEvent
   (watch [this state s]
     (let [page (get-in state [:pages id])]
@@ -290,6 +291,8 @@
         (let [page (pack-page state id)]
           (->> (rp/req :update/page page)
                (rx/map :payload)
+               (rx/do #(when (fn? on-success)
+                         (ts/schedule 0 on-success)))
                (rx/map page-persisted)))))))
 
 (defn persist-page?
@@ -297,15 +300,18 @@
   (instance? PersistPage v))
 
 (defn persist-page
-  [id]
-  (PersistPage. id))
+  ([id]
+   {:pre [(uuid? id)]}
+   (PersistPage. id (constantly nil)))
+  ([id on-success]
+   {:pre [(uuid? id)]}
+   (PersistPage. id on-success)))
 
 ;; --- Page Metadata Persisted
 
 (deftype MetadataPersisted [id data]
   ptk/UpdateEvent
   (update [_ state]
-    ;; TODO: page-data update
     (assoc-in state [:pages id :version] (:version data))))
 
 (s/def ::metadata-persisted-event

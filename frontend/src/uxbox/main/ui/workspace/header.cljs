@@ -13,6 +13,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as dw]
+            [uxbox.main.data.pages :as udp]
             [uxbox.main.data.history :as udh]
             [uxbox.main.data.undo :as udu]
             [uxbox.main.data.lightbox :as udl]
@@ -20,9 +21,10 @@
             [uxbox.main.ui.users :as ui.u]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.router :as r]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.data :refer [index-of]]
             [uxbox.util.geom.point :as gpt]
-            [uxbox.util.math :as mth]))
+            [uxbox.util.math :as mth]
+            [uxbox.util.mixins :as mx :include-macros true]))
 
 ;; --- Zoom Widget
 
@@ -43,10 +45,11 @@
 (defn on-view-clicked
   [event project page]
   (let [token (:share-token project)
-        index (:index page)
+        pages (deref refs/selected-project-pages)
+        index (index-of pages page)
         rval (rand-int 1000000)
         url (str cfg/viewurl "?v=" rval "#/" token "/" index)]
-    (js/open url "new tab" "")))
+    (st/emit! (udp/persist-page (:id page) #(js/open url "new tab" "")))))
 
 (mx/defc header
   {:mixins [mx/static mx/reactive]}
