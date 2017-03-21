@@ -225,6 +225,7 @@
       (gpt/divide @refs/selected-zoom)))
 
 (declare on-init-draw-icon)
+(declare on-init-draw-image)
 (declare on-init-draw-path)
 (declare on-init-draw-free-path)
 (declare on-init-draw-generic)
@@ -238,7 +239,7 @@
                     (rx/take 1))]
     (case (:type shape)
       :icon (on-init-draw-icon shape)
-      :image (on-init-draw-icon shape)
+      :image (on-init-draw-image shape)
       :path (if (:free shape)
               (on-init-draw-free-path shape stoper)
               (on-init-draw-path shape stoper))
@@ -279,6 +280,22 @@
                :y1 y
                :x2 (+ x 200)
                :y2 (+ y (/ 200 proportion))}
+        shape (geom/setup shape props)]
+    (st/emit! (uds/add-shape shape)
+              (uds/select-first-shape)
+              (select-for-drawing nil)
+              ::uev/interrupt)))
+
+(defn- on-init-draw-image
+  [{:keys [metadata] :as shape}]
+  (let [{:keys [x y]} (gpt/divide @refs/canvas-mouse-position
+                                  @refs/selected-zoom)
+        {:keys [width height]} metadata
+        proportion (/ width height)
+        props {:x1 x
+               :y1 y
+               :x2 (+ x width)
+               :y2 (+ y height)}
         shape (geom/setup shape props)]
     (st/emit! (uds/add-shape shape)
               (uds/select-first-shape)
