@@ -60,8 +60,7 @@
                        (not (empty? (:interactions shape))))
         rect (geom/shape->rect-shape shape)]
     [:g {:id (str "itx-" (:id shape))
-         :style (when show-itx?
-                  {:cursor "pointer"})}
+         :style {:cursor "pointer"}}
      (factory shape)
      (when show-itx?
        [:circle {:fill "#78dbbe"
