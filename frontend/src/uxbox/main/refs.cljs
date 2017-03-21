@@ -8,6 +8,7 @@
   "A collection of derived refs."
   (:require [lentes.core :as l]
             [beicon.core :as rx]
+            [uxbox.main.constants :as c]
             [uxbox.main.store :as st]
             [uxbox.main.lenses :as ul]))
 
@@ -101,14 +102,16 @@
       (l/derive workspace)))
 
 (defn alignment-activated?
-  [flags]
-  (and (contains? flags :grid-indexed)
-       (contains? flags :grid-alignment)
-       (contains? flags :grid)))
+  [state]
+  (let [{:keys [page flags]} (:workspace state)
+        metadata (merge c/page-metadata (get-in state [:pages page :metadata]))]
+    (and (contains? flags :grid-indexed)
+         (contains? flags :grid)
+         (:grid-alignment metadata))))
 
 (def selected-alignment
   (-> (l/lens alignment-activated?)
-      (l/derive flags)))
+      (l/derive st/state)))
 
 (def canvas-mouse-position
   (-> (l/in [:pointer :canvas])

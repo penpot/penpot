@@ -725,11 +725,6 @@
 
 ;; --- Move Selected
 
-(defn- alignment-activated?
-  [state]
-  (let [flags (l/focus ul/workspace-flags state)]
-    (refs/alignment-activated? flags)))
-
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
   provided direction speed and distances thresholds."
@@ -759,9 +754,8 @@
 (deftype MoveSelected [direction speed]
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [align? (alignment-activated? state)
-          selected (l/focus ul/selected-shapes state)
-          page (l/focus ul/selected-page state)
+    (let [{:keys [page selected]} (:workspace state)
+          align? (refs/alignment-activated? state)
           metadata (merge c/page-metadata (get-in state [:pages page :metadata]))
           distance (get-displacement-distance metadata align?)
           displacement (get-displacement direction speed distance)]
