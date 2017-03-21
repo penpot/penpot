@@ -26,28 +26,13 @@ select p.*
    and p.deleted_at is null;
 
 -- :name get-projects :? :*
-select distinct
-       pr.*,
-       ps.token as share_token,
-       count(pg.id) over win as total_pages,
-       first_value(pg.id) over win as page_id,
-       first_value(pg.data) over win as page_data,
-       first_value(pg.name) over win as page_name,
-       first_value(pg.version) over win as page_version,
-       first_value(pg.created_at) over win as page_created_at,
-       first_value(pg.metadata) over win as page_metadata,
-       first_value(pg.modified_at) over win as page_modified_at
+select pr.*,
+       ps.token as share_token
   from projects as pr
  inner join project_shares as ps
          on (ps.project = pr.id)
-  left join pages as pg
-         on (pg.project = pr.id and pg.deleted_at is null)
  where pr.deleted_at is null
    and pr."user" = :user
-window win as (partition by pr.id
-               order by pg.created_at
-               range between unbounded preceding
-                         and unbounded following)
  order by pr.created_at asc;
 
 -- :name get-project-by-share-token :? :*

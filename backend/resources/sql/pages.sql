@@ -32,7 +32,8 @@ update pages
    and deleted_at is null;
 
 -- :name get-pages :? :*
-select pg.* from pages as pg
+select pg.*
+  from pages as pg
  where pg.user = :user
    and pg.deleted_at is null
  order by created_at asc;
@@ -43,8 +44,7 @@ select pg.* from pages as pg
    and pg.deleted_at is null;
 
 -- :name get-pages-for-user-and-project :? :*
-select pg.*,
-       (row_number() OVER (order by created_at asc) -1) as index
+select pg.*
   from pages as pg
  where pg.user = :user
    and pg.project = :project
@@ -52,8 +52,7 @@ select pg.*,
  order by pg.created_at asc;
 
 -- :name get-pages-for-project :? :*
-select pg.*,
-       (row_number() OVER (order by created_at asc) -1) as index
+select pg.*
   from pages as pg
  where pg.project = :project
    and pg.deleted_at is null
