@@ -53,8 +53,7 @@
     (scroll-to-page-center)
 
     (st/emit! (udp/watch-page-changes pageid)
-              (udu/watch-page-changes pageid)
-              #_(udh/watch-page-changes pageid))
+              (udu/watch-page-changes pageid))
 
     (assoc own ::sub sub)))
 
@@ -72,8 +71,7 @@
       (st/emit! (dw/initialize projectid pageid)
                 ::udp/stop-page-watcher
                 (udp/watch-page-changes pageid)
-                (udu/watch-page-changes pageid)
-                #_(udh/watch-page-changes pageid)))
+                (udu/watch-page-changes pageid))
     state))
 
 (defn- on-scroll
