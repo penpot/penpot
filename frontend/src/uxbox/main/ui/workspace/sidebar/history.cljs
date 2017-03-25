@@ -51,7 +51,6 @@
         page (mx/react refs/selected-page)
         show-more? (pos? min-version)
         load-more #(st/emit! (udh/load-more))]
-    (println "selected" selected)
     [:ul.history-content
      (for [item items
            :let [current? (= (:version item) (:version page))]]
