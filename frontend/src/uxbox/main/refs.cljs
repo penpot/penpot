@@ -9,21 +9,20 @@
   (:require [lentes.core :as l]
             [beicon.core :as rx]
             [uxbox.main.constants :as c]
-            [uxbox.main.store :as st]
-            [uxbox.main.lenses :as ul]))
+            [uxbox.main.store :as st]))
 
 ;; --- Helpers
 
 (defn resolve-project
   "Retrieve the current project."
   [state]
-  (let [id (l/focus ul/selected-project state)]
-    (get-in state [:projects id])))
+  (let [project-id (get-in state [:workspace :project])]
+    (get-in state [:projects project-id])))
 
 (defn resolve-page
   [state]
-  (let [id (l/focus ul/selected-page state)]
-    (get-in state [:pages id])))
+  (let [page-id (get-in state [:workspace :page])]
+    (get-in state [:pages page-id])))
 
 (defn- resolve-project-pages
   [state]
@@ -34,12 +33,18 @@
          (sort-by get-order))))
 
 (def workspace
-  (l/derive ul/workspace st/state))
+  (-> (l/key :workspace)
+      (l/derive st/state)))
 
 (def selected-project
   "Ref to the current selected project."
   (-> (l/lens resolve-project)
       (l/derive st/state)))
+
+(def selected-project-id
+  "Ref to the current selected project id."
+  (-> (l/key :project)
+      (l/derive selected-project)))
 
 (def selected-project-pages
   (-> (l/lens resolve-project-pages)

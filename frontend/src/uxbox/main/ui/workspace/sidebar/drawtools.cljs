@@ -94,9 +94,8 @@
 
 (mx/defc draw-toolbox
   {:mixins [mx/static mx/reactive]}
-  []
+  [flags]
   (let [drawing-tool (mx/react refs/selected-drawing-tool)
-        flags (mx/react refs/flags)
         close #(st/emit! (udw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))

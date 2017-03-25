@@ -51,6 +51,10 @@
   "Create initial tables for image collections."
   :up (mg/resource "migrations/0008.icons.up.sql"))
 
+(defmigration history-0009
+  "Add improvements on how history is managed for pages."
+  :up (mg/resource "migrations/0009.history.improvements.up.sql"))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,7 +69,8 @@
            [:0005 kvstore-0005]
            [:0006 emails-queue-0006]
            [:0007 images-0007]
-           [:0008 icons-0008]]})
+           [:0008 icons-0008]
+           [:0009 history-0009]]})
 
 (defn- migrate
   []

@@ -262,6 +262,9 @@
 ;; --- Page Persisted
 
 (deftype PagePersisted [data]
+  IDeref
+  (-deref [_] data)
+
   ptk/UpdateEvent
   (update [_ state]
     (let [{:keys [id version]} data]

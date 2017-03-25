@@ -160,7 +160,7 @@
       ;; Check inserted history
       (let [sqlv ["SELECT * FROM pages_history WHERE page=?" (:id data)]
             result (sc/fetch conn sqlv)]
-        (t/is (= (count result) 100)))
+        (t/is (= (count result) 101)))
 
       ;; Check retrieve all items
       (with-server {:handler (uft/routes)}
@@ -169,7 +169,7 @@
           ;; (println "RESPONSE:" status result)
           (t/is (= (count result) 10))
           (t/is (= 200 status))
-          (t/is (= 99 (:version (first result))))
+          (t/is (= 100 (:version (first result))))
 
           (let [params {:query {:since (:version (last result))
                                 :max 20}}
@@ -177,7 +177,7 @@
             ;; (println "RESPONSE:" status result)
             (t/is (= (count result) 20))
             (t/is (= 200 status))
-            (t/is (= 89 (:version (first result))))))
+            (t/is (= 90 (:version (first result))))))
         ))))
 
 (t/deftest test-http-page-history-update

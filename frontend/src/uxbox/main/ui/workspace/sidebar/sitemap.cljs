@@ -103,10 +103,9 @@
 
 (mx/defc sitemap-toolbox
   {:mixins [mx/static mx/reactive]}
-  []
+  [current]
   (let [project (mx/react refs/selected-project)
         pages (mx/react refs/selected-project-pages)
-        current (mx/react refs/selected-page)
         create #(udl/open! :page-form {:page {:project (:id project)}})
         close #(st/emit! (dw/toggle-flag :sitemap))]
     [:div.sitemap.tool-window
@@ -120,6 +119,6 @@
        [:div.add-page {:on-click create} i/close]]
       [:ul.element-list
        (for [page pages
-             :let [active? (= (:id page) (:id current))]]
+             :let [active? (= (:id page) current)]]
          (-> (page-item page (count pages) active?)
              (mx/with-key (:id page))))]]]))

@@ -2,160 +2,207 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.history
-  (:require [cuerdas.core :as str]
-            [beicon.core :as rx]
-            [lentes.core :as l]
+  (:require [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.util.router :as r]
-            [uxbox.main.repo :as rp]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.forms :as sc]
             [uxbox.main.data.pages :as udp]
-            [uxbox.main.store :as st]
-            [uxbox.util.time :as dt]
-            [uxbox.util.data :refer (without-keys
-                                     replace-by-id
-                                     index-by)]))
+            [uxbox.main.repo :as rp]
+            [uxbox.util.data :refer [replace-by-id
+                                     index-by]]))
 
-;; --- Watch Page Changes
+;; --- Initialize History State
 
-(declare fetch-page-history)
-(declare fetch-pinned-page-history)
+(declare fetch-history)
+(declare fetch-pinned-history)
 
-(deftype WatchPageChanges [id]
+(deftype Initialize [page-id]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [data {:section :main
+                :selected nil
+                :pinned #{}
+                :items #{}
+                :byver {}}]
+      (assoc-in state [:workspace :history] data)))
+
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [stopper (->> stream
-                       (rx/filter #(= % ::udp/stop-page-watcher))
+    (let [page-id (get-in state [:workspace :page])
+          stopper (->> stream
+                       (rx/filter #(= % ::stop-changes-watcher))
                        (rx/take 1))]
-      (->> stream
-           (rx/take-until stopper)
-           (rx/filter udp/page-persisted?)
-           (rx/debounce 500)
-           (rx/flat-map #(rx/of (fetch-page-history id)
-                                (fetch-pinned-page-history id)))))))
+      (rx/merge
+       (->> stream
+            (rx/take-until stopper)
+            (rx/filter udp/page-persisted?)
+            (rx/flat-map #(rx/of (fetch-history page-id)
+                                 (fetch-pinned-history page-id))))
+       (rx/of (fetch-history page-id)
+              (fetch-pinned-history page-id))))))
 
-(defn watch-page-changes
-  [id]
-  (WatchPageChanges. id))
+(defn initialize
+  [page-id]
+  {:pre [(uuid? page-id)]}
+  (Initialize. page-id))
 
 ;; --- Pinned Page History Fetched
 
-(declare update-history-index)
-
-(defrecord PinnedPageHistoryFetched [history]
+(deftype PinnedPageHistoryFetched [items]
   ptk/UpdateEvent
   (update [_ state]
-    (-> state
-        (assoc-in [:workspace :history :pinned-items] (mapv :version history))
-        (update-history-index history true))))
+    (let [items-map (index-by items :version)
+          items-set (into #{} items)]
+      (update-in state [:workspace :history]
+                 (fn [history]
+                   (-> history
+                       (assoc :pinned items-set)
+                       (update :byver merge items-map)))))))
+
+(defn pinned-page-history-fetched
+  [items]
+  (PinnedPageHistoryFetched. items))
 
 ;; --- Fetch Pinned Page History
 
-(defrecord FetchPinnedPageHistory [id]
+(deftype FetchPinnedPageHistory [id]
   ptk/WatchEvent
   (watch [_ state s]
-    (letfn [(on-success [{history :payload}]
-              (->PinnedPageHistoryFetched (into [] history)))]
-      (let [params {:page id :pinned true}]
-        (->> (rp/req :fetch/page-history params)
-             (rx/map on-success))))))
+    (let [params {:page id :pinned true}]
+      (->> (rp/req :fetch/page-history params)
+           (rx/map :payload)
+           (rx/map pinned-page-history-fetched)))))
 
-(defn fetch-pinned-page-history
+(defn fetch-pinned-history
   [id]
-  (->FetchPinnedPageHistory id))
+  {:pre [(uuid? id)]}
+  (FetchPinnedPageHistory. id))
 
 ;; --- Page History Fetched
 
-(defrecord PageHistoryFetched [history append?]
+(deftype PageHistoryFetched [items]
   ptk/UpdateEvent
   (update [_ state]
-    (letfn [(update-counters [state items]
-              (-> (assoc state :min-version (apply min items))
-                  (assoc :max-version (apply max items))))
+    (let [versions (into #{} (map :version) items)
+          items-map (index-by items :version)
+          min-version (apply min versions)
+          max-version (apply max versions)]
+      (update-in state [:workspace :history]
+                 (fn [history]
+                   (-> history
+                       (assoc :min-version min-version)
+                       (assoc :max-version max-version)
+                       (update :byver merge items-map)
+                       (update :items #(reduce conj % items))))))))
 
-            (update-lists [state items]
-              (if append?
-                (update state :items #(reduce conj %1 items))
-                (assoc state :items items)))]
+;; TODO: add spec to history items
 
-      (let [items (mapv :version history)
-            hstate (-> (get-in state [:workspace :history] {})
-                       (update-counters items)
-                       (update-lists items))]
-        (-> state
-            (assoc-in [:workspace :history] hstate)
-            (update-history-index history append?))))))
+(defn page-history-fetched
+  [items]
+  (PageHistoryFetched. items))
 
 ;; --- Fetch Page History
 
-(defrecord FetchPageHistory [id since max]
+(deftype FetchPageHistory [page-id since max]
   ptk/WatchEvent
   (watch [_ state s]
-    (letfn [(on-success [{history :payload}]
-              (let [history (into [] history)]
-                (->PageHistoryFetched history (not (nil? since)))))]
-      (let [params (merge
-                    {:page id :max (or max 15)}
-                    (when since {:since since}))]
-        (->> (rp/req :fetch/page-history params)
-             (rx/map on-success))))))
+    (let [params (merge {:page page-id
+                         :max (or max 15)}
+                        (when since
+                          {:since since}))]
+      (->> (rp/req :fetch/page-history params)
+           (rx/map :payload)
+           (rx/map page-history-fetched)))))
 
-(defn fetch-page-history
+(defn fetch-history
   ([id]
-   (fetch-page-history id nil))
-  ([id params]
-   (map->FetchPageHistory (assoc params :id id))))
+   (fetch-history id nil))
+  ([id {:keys [since max]}]
+   {:pre [(uuid? id)]}
+   (FetchPageHistory. id since max)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Context Aware Events
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Select Section
+
+(deftype SelectSection [section]
+  ptk/UpdateEvent
+  (update [_ state]
+    (assoc-in state [:workspace :history :section] section)))
+
+(defn select-section
+  [section]
+  {:pre [(keyword? section)]}
+  (SelectSection. section))
+
+;; --- Load More
+
+(deftype LoadMore []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [page-id (get-in state [:workspace :page])
+          since (get-in state [:workspace :history :min-version])]
+      (rx/of (fetch-history page-id {:since since})))))
+
+(defn load-more
+  []
+  (LoadMore.))
 
 ;; --- Select Page History
 
-(defrecord SelectPageHistory [version]
+(deftype SelectPageHistory [version]
   ptk/UpdateEvent
   (update [_ state]
-    (let [item (get-in state [:workspace :history :by-version version])
+    (let [history (get-in state [:workspace :history])
+          item (get-in history [:byver version])
           page (get-in state [:pages (:page item)])
-          page (assoc page
-                      :history true
-                      :data (:data item))]
+
+          page (-> (get-in state [:pages (:page item)])
+                   (assoc :history true
+                          :data (:data item)))]
       (-> state
           (udp/assoc-page page)
           (assoc-in [:workspace :history :selected] version)))))
 
 (defn select-page-history
   [version]
+  {:pre [(integer? version)]}
   (SelectPageHistory. version))
 
-;; --- Apply selected history
+;; --- Apply Selected History
 
-(defrecord ApplySelectedHistory [id]
+(deftype ApplySelectedHistory []
   ptk/UpdateEvent
   (update [_ state]
-    (-> state
-        (update-in [:pages id] dissoc :history)
-        (assoc-in [:workspace :history :selected] nil)))
+    (let [page-id (get-in state [:workspace :page])]
+      (-> state
+          (update-in [:pages page-id] dissoc :history)
+          (assoc-in [:workspace :history :selected] nil))))
 
   ptk/WatchEvent
   (watch [_ state s]
-    (rx/of (udp/persist-page id))))
+    (let [page-id (get-in state [:workspace :page])]
+      (rx/of (udp/persist-page page-id)))))
 
 (defn apply-selected-history
-  [id]
-  (ApplySelectedHistory. id))
+  []
+  (ApplySelectedHistory.))
 
 ;; --- Deselect Page History
 
-(defrecord DeselectPageHistory [id ^:mutable noop]
+(deftype DeselectPageHistory [^:mutable noop]
   ptk/UpdateEvent
   (update [_ state]
-    (let [selected (get-in state [:workspace :history :selected])]
+    (let [page-id (get-in state [:workspace :page])
+          selected (get-in state [:workspace :history :selected])]
       (if (nil? selected)
         (do
           (set! noop true)
           state)
-        (let [packed (get-in state [:packed-pages id])]
+        (let [packed (get-in state [:packed-pages page-id])]
           (-> (udp/assoc-page state packed)
               (assoc-in [:workspace :history :deselecting] true)
               (assoc-in [:workspace :history :selected] nil))))))
@@ -168,18 +215,35 @@
            (rx/delay 500)))))
 
 (defn deselect-page-history
-  [id]
-  {:pre [(uuid? id)]}
-  (DeselectPageHistory. id false))
+  []
+  (DeselectPageHistory. false))
+
+  ;; --- Refresh Page History
+
+(deftype RefreshHistory []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [page-id (get-in state [:workspace :page])
+          history (get-in state [:workspace :history])
+          maxitems (count (:items history))]
+      (rx/of (fetch-history page-id {:max maxitems})
+             (fetch-pinned-history page-id)))))
+
+(defn refres-history
+  []
+  (RefreshHistory.))
 
 ;; --- History Item Updated
 
-(defrecord HistoryItemUpdated [item]
+(deftype HistoryItemUpdated [item]
   ptk/UpdateEvent
   (update [_ state]
-    (-> state
-        (update-in [:workspace :history :items] replace-by-id item)
-        (update-in [:workspace :history :pinned-items] replace-by-id item))))
+    (update-in state [:workspace :history]
+               (fn [history]
+                 (-> history
+                     (update :items #(into #{} (replace-by-id item) %))
+                     (update :pinned #(into #{} (replace-by-id item) %))
+                     (assoc-in [:byver (:id item)] item))))))
 
 (defn history-updated?
   [item]
@@ -189,33 +253,18 @@
   [item]
   (HistoryItemUpdated. item))
 
-;; --- Refresh Page History
-
-(defrecord RefreshPageHistory [id]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [history (get-in state [:workspace :history])
-          maxitems (count (:items history))]
-      (rx/of (fetch-page-history id {:max maxitems})
-             (fetch-pinned-page-history id)))))
-
-(defn refres-page-history
-  [id]
-  (RefreshPageHistory. id))
-
 ;; --- Update History Item
 
-(defrecord UpdateHistoryItem [item]
+(deftype UpdateHistoryItem [item]
   ptk/WatchEvent
-  (watch [_ state s]
-    (letfn [(on-success [{item :payload}]
-              (->HistoryItemUpdated item))]
-      (rx/merge
-       (->> (rp/req :update/page-history item)
-            (rx/map on-success))
-       (->> (rx/filter history-updated? s)
-            (rx/take 1)
-            (rx/map #(refres-page-history (:page item))))))))
+  (watch [_ state stream]
+    (rx/concat
+     (->> (rp/req :update/page-history item)
+          (rx/map :payload)
+          (rx/map history-updated))
+     (->> (rx/filter history-updated? stream)
+          (rx/take 1)
+          (rx/map refres-history)))))
 
 (defn update-history-item
   [item]
@@ -223,7 +272,7 @@
 
 ;; --- Forward to Next Version
 
-(defrecord ForwardToNextVersion []
+(deftype ForwardToNextVersion []
   ptk/WatchEvent
   (watch [_ state s]
     (let [workspace (:workspace state)
@@ -237,7 +286,7 @@
         (rx/of (select-page-history (inc version)))
 
         (> (inc version) (:max-version history))
-        (rx/of (deselect-page-history (:page workspace)))
+        (rx/of (deselect-page-history))
 
         :else
         (rx/empty)))))
@@ -248,7 +297,7 @@
 
 ;; --- Backwards to Previous Version
 
-(defrecord BackwardsToPreviousVersion []
+(deftype BackwardsToPreviousVersion []
   ptk/WatchEvent
   (watch [_ state s]
     (let [workspace (:workspace state)
@@ -265,7 +314,7 @@
           (let [since (:min-version history)
                 page (:page workspace)
                 params {:since since}]
-            (rx/of (fetch-page-history page params)
+            (rx/of (fetch-history page params)
                    (select-page-history (dec version)))))
 
         :else
@@ -274,13 +323,3 @@
 (defn backwards-to-previous-version
   []
   (BackwardsToPreviousVersion.))
-
-;; --- Helpers
-
-(defn- update-history-index
-  [state history append?]
-  (let [index (index-by history :version)]
-    (if append?
-      (update-in state [:workspace :history :by-version] merge index)
-      (assoc-in state [:workspace :history :by-version] index))))
-

@@ -6,27 +6,18 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.history
-  (:require [lentes.core :as l]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
+  (:require [uxbox.builtins.icons :as i]
             [uxbox.main.refs :as refs]
-            [uxbox.main.data.workspace :as dw]
-            [uxbox.main.data.pages :as udp]
+            [uxbox.main.store :as st]
             [uxbox.main.data.history :as udh]
-            [uxbox.builtins.icons :as i]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
-            [uxbox.util.data :refer (read-string)]
+            [uxbox.main.data.pages :as udp]
+            [uxbox.main.data.workspace :as dw]
+            [uxbox.util.data :refer [read-string]]
             [uxbox.util.dom :as dom]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.mixins :as mx :include-macros true]
+            [uxbox.util.router :as r]
             [uxbox.util.time :as dt]))
-
-
-;; --- Lenses
-
-(def history-ref
-  (-> (l/key :history)
-      (l/derive refs/workspace)))
 
 ;; --- History Item (Component)
 
@@ -43,69 +34,83 @@
                               :label "no label"
                               :pinned (not (:pinned item)))]
               (st/emit! (udh/update-history-item item))))]
-    (let [selected? (= (:version item) selected)]
-      [:li {:class (when selected? "current") :on-click on-select}
-       [:div.pin-icon {:on-click on-pinned
-                       :class (when (:pinned item) "selected")}
-        i/pin]
-       [:span (str "Version " (:version item)
-                   " (" (dt/timeago (:created-at item)) ")")]])))
+    [:li {:class (when (= selected (:version item)) "current")
+          :on-click on-select}
+     [:div.pin-icon {:on-click on-pinned
+                     :class (when (:pinned item) "selected")}
+      i/pin]
+     [:span (str "Version " (:version item)
+                 " (" (dt/timeago (:created-at item)) ")")]]))
 
 ;; --- History List (Component)
 
 (mx/defc history-list
-  {:mixins [mx/static]}
-  [page history]
-  (letfn [(on-select [event]
-            (dom/prevent-default event)
-            (st/emit! (udh/deselect-page-history (:id page))))
-
-          (on-load-more [event]
-            (dom/prevent-default event)
-            (let [since (:min-version history)
-                  params {:since since}]
-              (st/emit! (udh/fetch-page-history (:id page) params))))]
-
-    (let [selected (:selected history)
-          show-more? (pos? (:min-version history))]
-      [:ul.history-content
-       [:li {:class (when-not selected "current")
-             :on-click on-select}
-        [:div.pin-icon i/pin]
-         [:span (str "Version " (:version page) " (current)")]]
-       (for [version (:items history)
-             :let [item (get-in history [:by-version version])]]
-         (-> (history-item item selected)
-             (mx/with-key (str (:id item)))))
-       (if show-more?
-         [:li {:on-click on-load-more}
-          [:a.btn-primary.btn-small
-           "view more"]])])))
+  {:mixins [mx/static mx/reactive]}
+  [{:keys [selected items min-version] :as history}]
+  (let [items (reverse (sort-by :version items))
+        page (mx/react refs/selected-page)
+        show-more? (pos? min-version)
+        load-more #(st/emit! (udh/load-more))]
+    (println "selected" selected)
+    [:ul.history-content
+     (for [item items
+           :let [current? (= (:version item) (:version page))]]
+       (-> (history-item item selected current?)
+           (mx/with-key (str (:id item)))))
+     (when show-more?
+       [:li {:on-click load-more}
+        [:a.btn-primary.btn-small
+         "view more"]])]))
 
 ;; --- History Pinned List (Component)
 
 (mx/defc history-pinned-list
   {:mixins [mx/static]}
-  [history]
+  [{:keys [pinned selected] :as history}]
   [:ul.history-content
-   (for [version (:pinned-items history)
-         :let [item (get-in history [:by-version version])]]
-     (-> (history-item item (:selected history))
+   (for [item (reverse (sort-by :version pinned))
+         :let [selected? (= (:version item) selected)]]
+     (-> (history-item item selected?)
          (mx/with-key (str (:id item)))))])
 
 ;; --- History Toolbox (Component)
 
-(mx/defcs history-toolbox
-  {:mixins [mx/static mx/reactive (mx/local)]}
-  [{:keys [rum/local] :as own}]
-  (let [page (mx/react refs/selected-page)
-        history (mx/react refs/history)
-        section (:section @local :main)
+
+(defn- history-toolbox-will-mount
+  [own]
+  (let [[page-id] (:rum/args own)]
+    (st/emit! (udh/initialize page-id))
+    own))
+
+(defn- history-toolbox-did-remount
+  [oldown own]
+  (let [[old-page-id] (:rum/args oldown)
+        [new-page-id] (:rum/args own)]
+    (when-not (= old-page-id new-page-id)
+      (st/emit! ::udh/stop-changes-watcher
+                (udh/initialize new-page-id)))
+    own))
+
+(defn- history-toolbox-will-unmount
+  [own]
+  (st/emit! ::udh/stop-changes-watcher)
+  own)
+
+(mx/defc history-toolbox
+  {:mixins [mx/static mx/reactive]
+   :will-mount history-toolbox-will-mount
+   :will-unmount history-toolbox-will-unmount
+   :did-remount history-toolbox-did-remount}
+  [_]
+  (let [history (mx/react refs/history)
+        section (:section history :main)
+
         close #(st/emit! (dw/toggle-flag :document-history))
         main? (= section :main)
         pinned? (= section :pinned)
-        show-main #(swap! local assoc :section :main)
-        show-pinned #(swap! local assoc :section :pinned)]
+
+        show-main #(st/emit! (udh/select-section :main))
+        show-pinned #(st/emit! (udh/select-section :pinned))]
     [:div.document-history.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/undo-history]
@@ -121,17 +126,17 @@
         "Pinned"]]
       (if (= section :pinned)
         (history-pinned-list history)
-        (history-list page history))]]))
+        (history-list history))]]))
 
 ;; --- History Dialog
 
 (mx/defc history-dialog
   {:mixins [mx/static mx/reactive]}
-  [page]
+  []
   (let [history (mx/react refs/history)
         version (:selected history)
-        on-accept #(st/emit! (udh/apply-selected-history page))
-        on-cancel #(st/emit! (udh/deselect-page-history page))]
+        on-accept #(st/emit! (udh/apply-selected-history))
+        on-cancel #(st/emit! (udh/deselect-page-history))]
     (when (or version (:deselecting history))
       [:div.message-version
        {:class (when (:deselecting history) "hide-message")}

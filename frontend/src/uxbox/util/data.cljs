@@ -57,13 +57,13 @@
                        coll)))
 
 (defn replace-by-id
-  [coll value]
-  {:pre [(vector? coll)]}
-  (mapv (fn [item]
+  ([value]
+   (map (fn [item]
           (if (= (:id item) (:id value))
             value
-            item)) coll))
-
+            item))))
+  ([coll value]
+   (sequence (replace-by-id value) coll)))
 
 (defn deep-merge
   "Like merge, but merges maps recursively."
@@ -79,6 +79,16 @@
   (if (contains? s v)
     (disj s v)
     (conj s v)))
+
+(defn seek
+  ([pred coll]
+   (seek pred coll nil))
+  ([pred coll not-found]
+   (reduce (fn [_ x]
+             (if (pred x)
+               (reduced x)
+               not-found))
+           not-found coll)))
 
 ;; --- String utils
 
