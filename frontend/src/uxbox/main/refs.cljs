@@ -108,12 +108,9 @@
 
 (defn alignment-activated?
   [state]
-  (let [{:keys [page flags]} (:workspace state)
-        metadata (->> (get-in state [:pages page :metadata])
-                      (merge c/page-metadata))]
+  (let [{:keys [flags]} (:workspace state)]
     (and (contains? flags :grid-indexed)
-         (contains? flags :grid)
-         (:grid-alignment metadata))))
+         (contains? flags :grid-snap))))
 
 (def selected-alignment
   (-> (l/lens alignment-activated?)

@@ -134,8 +134,8 @@
         i/grid]
        [:li.tooltip.tooltip-bottom
         {:alt "Snap to grid"
-         :class (when (contains? flags :grid) "selected")
-         :on-click (partial toggle :grid)}
+         :class (when (contains? flags :grid-snap) "selected")
+         :on-click (partial toggle :grid-snap)}
         i/grid-snap]]
        ;; [:li.tooltip.tooltip-bottom
         ;; {:alt "Align (Ctrl + A)"}

@@ -124,10 +124,6 @@
                 (->> (assoc metadata :grid-color value)
                      (udp/update-metadata id)
                      (st/emit!))))
-            (on-magnet-change []
-              (let [checked? (dom/checked? (mx/ref-node own "magnet"))
-                    metadata (assoc metadata :grid-alignment checked?)]
-                (st/emit! (udw/update-metadata id metadata))))
             (show-color-picker [event]
               (let [x (.-clientX event)
                     y (.-clientY event)
@@ -164,15 +160,4 @@
           [:input
            {:on-change on-color-change
             :ref "color"
-            :value (:grid-color metadata "#cccccc")}]]]
-
-        [:span "Magnet option"]
-        [:div.row-flex
-         [:div.input-checkbox.check-primary
-          [:input
-           {:type "checkbox"
-            :ref "magnet"
-            :id "magnet"
-            :on-change on-magnet-change
-            :checked (when (:grid-alignment metadata) "checked")}]
-          [:label {:for "magnet"} "Activate magnet"]]]]])))
+            :value (:grid-color metadata "#cccccc")}]]]]])))
