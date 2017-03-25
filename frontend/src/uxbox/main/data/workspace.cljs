@@ -49,14 +49,12 @@
 (defrecord Initialize [project-id page-id]
   ptk/UpdateEvent
   (update [_ state]
-    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}
-          default-flags #{:document-history}]
+    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}]
       (if (:workspace state)
         (update state :workspace merge
                 {:project project-id
                  :page page-id
                  :selected #{}
-                 ;; :flags default-flags
                  :drawing nil
                  :drawing-tool nil
                  :tooltip nil})
