@@ -71,7 +71,7 @@
       (st/emit! (dw/initialize projectid pageid)
                 ::udp/stop-page-watcher
                 (udp/watch-page-changes pageid)
-                (udu/watch-page-changes pageid))
+                (udu/watch-page-changes pageid)))
     state))
 
 (defn- on-scroll
