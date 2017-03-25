@@ -8,7 +8,6 @@
   (:require [cljs.spec :as s]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [lentes.core :as l]
             [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
             [uxbox.main.lenses :as ul]
@@ -47,16 +46,17 @@
 
 (declare initialize-alignment)
 
-(defrecord InitializeWorkspace [project-id page-id]
+(defrecord Initialize [project-id page-id]
   ptk/UpdateEvent
   (update [_ state]
-    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}]
+    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}
+          default-flags #{:document-history}]
       (if (:workspace state)
         (update state :workspace merge
                 {:project project-id
                  :page page-id
                  :selected #{}
-                 :flags default-flags
+                 ;; :flags default-flags
                  :drawing nil
                  :drawing-tool nil
                  :tooltip nil})
@@ -77,21 +77,15 @@
       ;; Activate loaded if page is not fetched.
       (when-not page (reset! st/loader true))
 
-      (rx/merge
-       (if page
-         (rx/of (initialize-alignment page-id))
-         (rx/merge
-          (rx/of (udp/fetch-pages project-id))
-          (->> (rx/filter udp/pages-fetched? stream)
-               (rx/take 1)
-               (rx/do #(reset! st/loader false))
-               (rx/map #(initialize-alignment page-id)))))
-
-       ;; Initial history loading
-       ;; FIXME: move this to the history sidebar component
-       (rx/of
-        (udh/fetch-page-history page-id)
-        (udh/fetch-pinned-page-history page-id)))))
+      (if page
+        (rx/of (initialize-alignment page-id))
+        (rx/merge
+         (rx/of (udp/fetch-pages project-id))
+         (->> stream
+              (rx/filter udp/pages-fetched?)
+              (rx/take 1)
+              (rx/do #(reset! st/loader false))
+              (rx/map #(initialize-alignment page-id)))))))
 
   ptk/EffectEvent
   (effect [_ state stream]
@@ -104,7 +98,7 @@
   [project page]
   {:pre [(uuid? project)
          (uuid? page)]}
-  (InitializeWorkspace. project page))
+  (Initialize. project page))
 
 ;; --- Workspace Tooltips
 
@@ -306,8 +300,6 @@
 
 ;; --- Grid Alignment
 
-(declare initialize-alignment?)
-
 (defrecord InitializeAlignment [id]
   ptk/WatchEvent
   (watch [_ state stream]
@@ -327,6 +319,7 @@
 
 (defn initialize-alignment
   [id]
+  {:pre [(uuid? id)]}
   (InitializeAlignment. id))
 
 ;; --- Update Metadata

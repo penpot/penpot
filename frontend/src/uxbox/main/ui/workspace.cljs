@@ -7,7 +7,6 @@
 
 (ns uxbox.main.ui.workspace
   (:require [beicon.core :as rx]
-            [potok.core :as ptk]
             [lentes.core :as l]
             [uxbox.main.store :as st]
             [uxbox.main.constants :as c]
@@ -55,7 +54,7 @@
 
     (st/emit! (udp/watch-page-changes pageid)
               (udu/watch-page-changes pageid)
-              (udh/watch-page-changes pageid))
+              #_(udh/watch-page-changes pageid))
 
     (assoc own ::sub sub)))
 
@@ -74,7 +73,7 @@
                 ::udp/stop-page-watcher
                 (udp/watch-page-changes pageid)
                 (udu/watch-page-changes pageid)
-                (udh/watch-page-changes pageid)))
+                #_(udh/watch-page-changes pageid)))
     state))
 
 (defn- on-scroll
@@ -110,10 +109,8 @@
    :mixins [mx/static
             mx/reactive
             shortcuts-mixin]}
-  [own]
+  [own project-id page-id]
   (let [flags (mx/react refs/flags)
-        page  (mx/react workspace-page-ref)
-
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools
@@ -133,8 +130,7 @@
         :on-scroll on-scroll
         :on-wheel (partial on-wheel own)}
 
-
-       (history-dialog page)
+       (history-dialog)
 
        ;; Rules
        (when (contains? flags :rules)
@@ -151,6 +147,6 @@
 
       ;; Aside
       (when left-sidebar?
-        (left-sidebar))
+        (left-sidebar flags page-id))
       (when right-sidebar?
-        (right-sidebar))]]))
+        (right-sidebar flags page-id))]]))

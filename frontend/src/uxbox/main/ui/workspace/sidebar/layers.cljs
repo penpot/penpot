@@ -347,8 +347,6 @@
   []
   (let [selected (mx/react refs/selected-shapes)
         page (mx/react refs/selected-page)
-
-        ;; TODO: dont react to the whole shapes-by-id
         shapes-map (mx/react refs/shapes-by-id)
         close #(st/emit! (udw/toggle-flag :layers))
         dragel (volatile! nil)]
