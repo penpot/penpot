@@ -36,9 +36,9 @@
         decrease #(st/emit! (dw/decrease-zoom))]
     [:ul.options-view
      [:li.zoom-input
-      [:span.add-zoom {:on-click increase} "+"]
+      [:span.remove-zoom {:on-click decrease} "-"]
       [:span (str (mth/round (* 100 zoom)) "%")]
-      [:span.remove-zoom {:on-click decrease} "-"]]]))
+      [:span.add-zoom {:on-click increase} "+"]]]))
 
 ;; --- Header Component
 
