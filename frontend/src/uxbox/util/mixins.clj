@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.mixins
   (:require [rum.core :as rum]
@@ -43,9 +43,11 @@
 (defmacro defc
   [& args]
   (let [[render doc mixins cname] (parse-defc args)]
-    `(def ~cname ~doc (rum/build-defc ~render ~mixins ~(str cname)))))
+    `(def ~cname ~doc (uxbox.util.mixins/lazy-component rum/build-defc ~render ~mixins ~(str cname)))))
 
 (defmacro defcs
   [& args]
   (let [[render doc mixins cname] (parse-defc args)]
-    `(def ~cname ~doc (rum/build-defcs ~render ~mixins ~(str cname)))))
+    `(def ~cname ~doc (uxbox.util.mixins/lazy-component rum/build-defcs ~render ~mixins ~(str cname)))))
+
+

@@ -42,6 +42,12 @@
   ([initial key]
    (rum/local initial key)))
 
+(defn lazy-component
+  [builder render mixins display-name]
+  (let [ctor (delay (builder render mixins display-name))]
+    (fn [& args]
+      (apply @ctor args))))
+
 (def mount rum/mount)
 (def static rum/static)
 (def ref-node rum/ref-node)
