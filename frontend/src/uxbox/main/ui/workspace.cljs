@@ -117,12 +117,12 @@
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?)
                  :scrolling (:viewport-positionig workspace))]
-    [:div
+    [:div {}
      (messages-widget)
      (header)
      (colorpalette)
 
-     [:main.main-content
+     [:main.main-content {}
       [:section.workspace-content
        {:class classes
         :on-scroll on-scroll

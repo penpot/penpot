@@ -89,24 +89,23 @@
                 (st/emit! (udp/update-opts :order value))))
             (on-clear [event]
               (st/emit! (udp/update-opts :filter "")))]
-      [:section.dashboard-bar
-       [:div.dashboard-info
+      [:section.dashboard-bar {}
+       [:div.dashboard-info {}
 
         ;; Counter
-        [:span.dashboard-images (tr "ds.num-projects" (t/c count))]
+        [:span.dashboard-images {} (tr "ds.num-projects" (t/c count))]
 
         ;; Sorting
-        [:div
-         [:span (tr "ds.project-ordering")]
+        [:div {}
+         [:span {} (tr "ds.project-ordering")]
          [:select.input-select
           {:on-change on-ordering-change
            :value (pr-str ordering)}
-          (for [[key value] (seq +ordering-options+)
-                :let [ovalue (pr-str key)
-                      olabel (tr value)]]
-            [:option {:key ovalue :value ovalue} olabel])]]
+          (mx/doseq [[key value] (seq +ordering-options+)]
+            (let [key (pr-str key)]
+              [:option {:key key :value key} (tr value)]))]]
         ;; Search
-        [:form.dashboard-search
+        [:form.dashboard-search {}
          [:input.input-text
           {:key :images-search-box
            :type "text"
@@ -178,7 +177,7 @@
             (swap! local assoc :edition true))]
     [:div.grid-item.project-th {:on-click on-navigate}
      (grid-item-thumbnail project)
-     [:div.item-info
+     [:div.item-info {}
       (if (:edition @local)
         [:input.element-name {:type "text"
                  :auto-focus true
@@ -186,13 +185,13 @@
                  :on-blur on-blur
                  :on-click on-edit
                  :default-value (:name project)}]
-        [:h3 (:name project)])
-      [:span.date
+        [:h3 {} (:name project)])
+      [:span.date {}
        (str "Updated " (dt/timeago (:modified-at project)))]]
-     [:div.project-th-actions
-      [:div.project-th-icon.pages
+     [:div.project-th-actions {}
+      [:div.project-th-icon.pages {}
        i/page
-       [:span (:total-pages project)]]
+       [:span {} (:total-pages project)]]
       #_[:div.project-th-icon.comments
          i/chat
          [:span "0"]]
@@ -216,14 +215,14 @@
     (letfn [(on-click [e]
               (dom/prevent-default e)
               (udl/open! :create-project))]
-      [:section.dashboard-grid
-       [:h2 "Your projects"]
-       [:div.dashboard-grid-content
-        [:div.dashboard-grid-row
+      [:section.dashboard-grid {}
+       [:h2 {} "Your projects"]
+       [:div.dashboard-grid-content {}
+        [:div.dashboard-grid-row {}
          [:div.grid-item.add-project
           {:on-click on-click}
-          [:span "+ New project"]]
-         (for [item projects]
+          [:span {} "+ New project"]]
+         (mx/doseq [item projects]
            (-> (grid-item item)
                (mx/with-key (:id item))))]]])))
 
@@ -246,10 +245,10 @@
   []
   (let [state (mx/react dashboard-ref)
         projects-map (mx/react projects-map-ref)]
-    [:main.dashboard-main
+    [:main.dashboard-main {}
      (messages-widget)
      (header)
-     [:section.dashboard-content
+     [:section.dashboard-content {}
       (menu state projects-map)
       (grid state projects-map)]]))
 

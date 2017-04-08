@@ -34,10 +34,10 @@
   (let [zoom (mx/react refs/selected-zoom)
         increase #(st/emit! (dw/increase-zoom))
         decrease #(st/emit! (dw/decrease-zoom))]
-    [:ul.options-view
-     [:li.zoom-input
+    [:ul.options-view {}
+     [:li.zoom-input {}
       [:span.add-zoom {:on-click decrease} "-"]
-      [:span (str (mth/round (* 100 zoom)) "%")]
+      [:span {} (str (mth/round (* 100 zoom)) "%")]
       [:span.remove-zoom {:on-click increase} "+"]]]))
 
 ;; --- Header Component
@@ -62,17 +62,17 @@
         on-redo #(st/emit! (udu/redo))
         on-image #(udl/open! :import-image)
         on-download #(udl/open! :download)]
-    [:header#workspace-bar.workspace-bar
-     [:div.main-icon
+    [:header#workspace-bar.workspace-bar {}
+     [:div.main-icon {}
       (nav/link (r/route-for :dashboard/projects) i/logo-icon)]
      [:div.project-tree-btn
       {:alt "Sitemap (Ctrl + Shift + M)"
        :class (when (contains? flags :sitemap) "selected")
        :on-click (partial toggle :sitemap)}
       i/project-tree
-      [:span (:name page)]]
-     [:div.workspace-options
-      [:ul.options-btn
+      [:span {} (:name page)]]
+     [:div.workspace-options {}
+      [:ul.options-btn {}
        [:li.tooltip.tooltip-bottom
         {:alt "Draw tools (Ctrl + Shift + S)"
          :class (when (contains? flags :drawtools) "selected")
@@ -103,7 +103,7 @@
          :class (when (contains? flags :document-history) "selected")
          :on-click (partial toggle :document-history)}
         i/undo-history]]
-      [:ul.options-btn
+      [:ul.options-btn {}
        [:li.tooltip.tooltip-bottom
         {:alt "Undo (Ctrl + Z)"
          :on-click on-undo}
@@ -112,7 +112,7 @@
         {:alt "Redo (Ctrl + Shift + Z)"
          :on-click on-redo}
         i/redo]]
-      [:ul.options-btn
+      [:ul.options-btn {}
        [:li.tooltip.tooltip-bottom
         {:alt "Download (Ctrl + E)"
          :on-click on-download}
@@ -121,7 +121,7 @@
         {:alt "Image (Ctrl + I)"
          :on-click on-image}
         i/image]]
-      [:ul.options-btn
+      [:ul.options-btn {}
        [:li.tooltip.tooltip-bottom
         {:alt "Rules"
          :class (when (contains? flags :rules) "selected")
@@ -140,7 +140,7 @@
        ;; [:li.tooltip.tooltip-bottom
         ;; {:alt "Align (Ctrl + A)"}
         ;; i/alignment]]
-      [:ul.options-btn
+      [:ul.options-btn {}
        [:li.tooltip.tooltip-bottom.view-mode
         {:alt "View mode (Ctrl + P)"
          :on-click #(on-view-clicked % project page)}

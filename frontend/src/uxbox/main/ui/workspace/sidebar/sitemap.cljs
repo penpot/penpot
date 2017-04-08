@@ -94,11 +94,11 @@
        :on-drop on-drop
        :draggable true}
 
-       [:div.page-icon i/page]
-       [:span (:name page)]
-       [:div.page-actions
+       [:div.page-icon {} i/page]
+       [:span {} (:name page)]
+       [:div.page-actions {}
         [:a {:on-click on-edit} i/pencil]
-        (if (> total 1)
+        (when (> total 1)
           [:a {:on-click on-delete} i/trash])]]])))
 
 (mx/defc sitemap-toolbox
@@ -108,17 +108,17 @@
         pages (mx/react refs/selected-project-pages)
         create #(udl/open! :page-form {:page {:project (:id project)}})
         close #(st/emit! (dw/toggle-flag :sitemap))]
-    [:div.sitemap.tool-window
-     [:div.tool-window-bar
-      [:div.tool-window-icon i/project-tree]
-      [:span (tr "ds.sitemap")]
+    [:div.sitemap.tool-window {}
+     [:div.tool-window-bar {}
+      [:div.tool-window-icon {} i/project-tree]
+      [:span {} (tr "ds.sitemap")]
       [:div.tool-window-close {:on-click close} i/close]]
-     [:div.tool-window-content
-      [:div.project-title
-       [:span (:name project)]
+     [:div.tool-window-content {}
+      [:div.project-title {}
+       [:span {} (:name project)]
        [:div.add-page {:on-click create} i/close]]
-      [:ul.element-list
-       (for [page pages
-             :let [active? (= (:id page) current)]]
-         (-> (page-item page (count pages) active?)
-             (mx/with-key (:id page))))]]]))
+      [:ul.element-list {}
+       (mx/doseq [page pages]
+         (let [active? (= (:id page) current)]
+           (-> (page-item page (count pages) active?)
+               (mx/with-key (:id page)))))]]]))

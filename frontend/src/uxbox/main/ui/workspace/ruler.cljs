@@ -34,7 +34,7 @@
                   (mth/precision 2))
         transform1 (str "translate(" (+ (:x pt) 35) "," (- (:y pt) 10) ")")
         transform2 (str "translate(" (+ (:x pt) 25) "," (- (:y pt) 30) ")")]
-    [:g
+    [:g {}
      [:rect {:fill "black"
              :fill-opacity "0.4"
              :rx "3"
@@ -83,7 +83,7 @@
              :width c/viewport-width
              :height c/viewport-height}]
      (when-let [points (mx/react ruler-points-ref)]
-       [:g
+       [:g {}
         (ruler-line zoom points)
         (ruler-text zoom points)])]))
 

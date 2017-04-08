@@ -69,10 +69,9 @@
 ;; --- Page Title
 
 (mx/defcs page-title
-  {:mixins [(mx/local {}) mx/static mx/reactive]}
-  [own {:keys [id] :as coll}]
-  (let [local (:rum/local own)
-        dashboard (mx/react dashboard-ref)
+  {:mixins [(mx/local) mx/static mx/reactive]}
+  [{:keys [rum/local] :as own} {:keys [id] :as coll}]
+  (let [dashboard (mx/react dashboard-ref)
         own? (= :own (:type coll))
         edit? (:edit @local)]
     (letfn [(on-save [e]
@@ -96,10 +95,10 @@
               (st/emit! (di/delete-collection id)))
             (on-delete []
               (udl/open! :confirm {:on-accept delete}))]
-      [:div.dashboard-title
-       [:h2
+      [:div.dashboard-title {}
+       [:h2 {}
         (if edit?
-          [:div.dashboard-title-field
+          [:div.dashboard-title-field {}
            [:span.edit
             {:content-editable true
              :ref "input"
@@ -113,7 +112,7 @@
             [:span.dashboard-title-field
              (:name coll "Storage")]))]
        (when (and own? coll)
-         [:div.edition
+         [:div.edition {}
           (if edit?
             [:span {:on-click on-save} i/save]
             [:span {:on-click on-edit} i/pencil])
@@ -157,15 +156,15 @@
             :on-double-click on-double-click
             :class-name (when selected? "current")}
        (if (:edit @local)
-         [:div
+         [:div {}
           [:input.element-title
-            {:value (if (:name @local) (:name @local) (if coll name "Storage"))
-             :on-change on-input-change
-             :on-key-down on-input-keyup}]
+           {:value (if (:name @local) (:name @local) (if coll name "Storage"))
+            :on-change on-input-change
+            :on-key-down on-input-keyup}]
           [:span.close {:on-click on-cancel} i/close]]
-         [:span.element-title
+         [:span.element-title {}
           (if coll name "Storage")])
-       [:span.element-subtitle
+       [:span.element-subtitle {}
         (tr "ds.num-elements" (t/c num-icons))]])))
 
 (mx/defc nav-section
@@ -177,19 +176,18 @@
                 own? (filter #(= :own (:type %)))
                 builtin? (filter #(= :builtin (:type %))))
         colls (sort-by :name colls)]
-    [:ul.library-elements
+    [:ul.library-elements {}
      (when own?
-       [:li
+       [:li {}
         [:a.btn-primary
          {:on-click #(st/emit! (di/create-collection))}
          "+ New collection"]])
      (when own?
        (nav-item nil (nil? selected)))
-     (for [coll colls
-           :let [selected? (= (:id coll) selected)
-                 key (str (:id coll))]]
-       (-> (nav-item coll selected?)
-           (mx/with-key key)))]))
+     (mx/doseq [coll colls]
+       (let [selected? (= (:id coll) selected)]
+         (-> (nav-item coll selected?)
+             (mx/with-key (:id coll)))))]))
 
 (mx/defc nav
   {:mixins [mx/static]}
@@ -203,9 +201,9 @@
                                  (sort-by :name))]
                   (st/emit! (di/select-collection type (:id (first colls)))))
                 (st/emit! (di/select-collection type))))]
-      [:div.library-bar
-       [:div.library-bar-inside
-        [:ul.library-tabs
+      [:div.library-bar {}
+       [:div.library-bar-inside {}
+        [:ul.library-tabs {}
          [:li {:class-name (when own? "current")
                :on-click (partial select-tab :own)}
           "YOUR ICONS"]
@@ -226,7 +224,7 @@
             (let [files (dom/get-event-files event)]
               (st/emit! (di/create-icons coll-id files))))]
     [:div.grid-item.small-item.add-project {:on-click forward-click}
-     [:span "+ New icon"]
+     [:span {} "+ New icon"]
      [:input.upload-image-input
       {:style {:display "none"}
        :multiple true
@@ -251,12 +249,11 @@
                     (dom/prevent-default event)
                     (dom/stop-propagation event)
                     (on-select id))]
-    [:ul.move-list
-     [:li.title title]
-     [:li [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
-     (for [coll colls
-           :let [id (:id coll)
-                 name (:name coll)]]
+    [:ul.move-list {}
+     [:li.title {} title]
+     [:li {}
+      [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
+     (mx/doseq [{:keys [id name] :as coll} colls]
        [:li {:key (str id)}
         [:a {:on-click #(on-select % id)} name]])]))
 
@@ -287,9 +284,9 @@
               (let [selected (first selected)]
                 (st/emit! (di/update-opts :edition selected))))]
       ;; MULTISELECT OPTIONS BAR
-      [:div.multiselect-bar
+      [:div.multiselect-bar {}
        (if editable?
-         [:div.multiselect-nav
+         [:div.multiselect-nav {}
           [:span.move-item.tooltip.tooltip-top
            {:on-click on-toggle-copy :alt "Copy"}
            (when (:show-copy-tooltip @local)
@@ -348,23 +345,23 @@
     [:div.grid-item.small-item.project-th
      {:on-click toggle-selection
       :id (str "grid-item-" id)}
-     [:div.input-checkbox.check-primary
+     [:div.input-checkbox.check-primary {}
       [:input {:type "checkbox"
                :id (:id icon)
                :on-click toggle-selection
                :checked selected?}]
       [:label {:for (:id icon)}]]
-     [:span.grid-item-image
+     [:span.grid-item-image {}
       (icon/icon-svg icon)]
      [:div.item-info
       {:on-click ignore-click}
       (if edition?
         [:input.element-name {:type "text"
-                 :auto-focus true
-                 :on-key-down on-key-down
-                 :on-blur on-blur
-                 :on-click on-edit
-                 :default-value (:name icon)}]
+                              :auto-focus true
+                              :on-key-down on-key-down
+                              :on-blur on-blur
+                              :on-click on-edit
+                              :default-value (:name icon)}]
         [:h3 {:on-double-click on-edit}
          (:name icon)])
       (str "Uploaded at " (dt/format created-at "L"))]]))
@@ -380,20 +377,19 @@
                    (filter #(= id (:collection %)))
                    (filter-icons-by filtering)
                    (sort-icons-by ordering))]
-    [:div.dashboard-grid-content
-     [:div.dashboard-grid-row
+    [:div.dashboard-grid-content {}
+     [:div.dashboard-grid-row {}
       (when editable? (grid-form id))
-      (for [icon icons
-            :let [id (:id icon)
-                  edition? (= edition id)
-                  selected? (contains? selected id)]]
-        (-> (grid-item icon selected? edition?)
-            (mx/with-key (str id))))]]))
+      (mx/doseq [{:keys [id] :as icon} icons]
+        (let [edition? (= edition id)
+              selected? (contains? selected id)]
+          (-> (grid-item icon selected? edition?)
+              (mx/with-key (str id)))))]]))
 
 (mx/defc content
   {:mixins [mx/static]}
   [{:keys [selected] :as state} coll]
-  [:section.dashboard-grid.library
+  [:section.dashboard-grid.library {}
    (page-title coll)
    (grid state)
    (when (seq selected)
@@ -417,24 +413,23 @@
                 (st/emit! (di/update-opts :order value))))
             (on-clear [event]
               (st/emit! (di/update-opts :filter "")))]
-      [:section.dashboard-bar.library-gap
-       [:div.dashboard-info
+      [:section.dashboard-bar.library-gap {}
+       [:div.dashboard-info {}
 
         ;; Counter
-        [:span.dashboard-icons (tr "ds.num-icons" (t/c num-icons))]
+        [:span.dashboard-icons {} (tr "ds.num-icons" (t/c num-icons))]
 
         ;; Sorting
-        [:divi
-         [:span (tr "ds.project-ordering")]
+        [:div {}
+         [:span {} (tr "ds.project-ordering")]
          [:select.input-select
           {:on-change on-ordering-change
            :value (pr-str ordering)}
-          (for [[key value] (seq +ordering-options+)
-                :let [ovalue (pr-str key)
-                      olabel (tr value)]]
-            [:option {:key ovalue :value ovalue} olabel])]]
+          (mx/doseq [[key value] (seq +ordering-options+)]
+            (let [key (pr-str key)]
+              [:option {:key key :value key} (tr value)]))]]
         ;; Search
-        [:form.dashboard-search
+        [:form.dashboard-search {}
          [:input.input-text
           {:key :icons-search-box
            :type "text"
@@ -469,40 +464,9 @@
   (let [state (mx/react dashboard-ref)
         colls (mx/react collections-ref)
         coll (get colls (:id state))]
-    [:main.dashboard-main
+    [:main.dashboard-main {}
      (header)
-     [:section.dashboard-content
+     [:section.dashboard-content {}
       (nav state colls)
       (menu state coll)
       (content state coll)]]))
-
-;; --- New Icon Lightbox (TODO)
-
-;; (defn- new-icon-lightbox-render
-;;   [own]
-;;   (html
-;;    [:div.lightbox-body
-;;     [:h3 "New icon"]
-;;     [:div.row-flex
-;;      [:div.lightbox-big-btn
-;;       [:span.big-svg i/shapes]
-;;       [:span.text "Go to workspace"]
-;;       ]
-;;      [:div.lightbox-big-btn
-;;       [:span.big-svg.upload i/exit]
-;;       [:span.text "Upload file"]
-;;       ]
-;;      ]
-;;     [:a.close {:href "#"
-;;                :on-click #(do (dom/prevent-default %)
-;;                               (udl/close!))}
-;;      i/close]]))
-
-;; (def new-icon-lightbox
-;;   (mx/component
-;;    {:render new-icon-lightbox-render
-;;     :name "new-icon-lightbox"}))
-
-;; (defmethod lbx/render-lightbox :new-icon
-;;   [_]
-;;   (new-icon-lightbox))

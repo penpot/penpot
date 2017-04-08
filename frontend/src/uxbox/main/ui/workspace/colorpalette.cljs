@@ -42,8 +42,8 @@
       [:div.color-cell {:key (str color)
                         :on-click select-color}
        [:span.color {:style {:background color}}]
-       [:span.color-text color]
-       [:span.color-text rgb-color]])))
+       [:span.color-text {} color]
+       [:span.color-text {} rgb-color]])))
 
 (defn- palette-after-render
   [{:keys [rum/local] :as own}]
@@ -79,7 +79,7 @@
        [:div.color-palette-actions
         [:select.input-select {:on-change select-collection
                                :value (pr-str (:id selected-coll))}
-         (for [collection collections]
+         (mx/doseq [collection collections]
            [:option {:key (str (:id collection))
                      :value (pr-str (:id collection))}
             (:name collection)])]
@@ -87,7 +87,7 @@
            [:div.btn-palette.edit.current i/pencil]
            [:div.btn-palette.create i/close]]]
 
-       [:span.left-arrow
+       [:span.left-arrow {}
         (when (> offset 0)
           {:on-click #(swap! local update :offset (fnil dec 1))})
         i/arrow-slide]
@@ -95,13 +95,14 @@
        [:div.color-palette-content {:ref "container"}
         [:div.color-palette-inside {:style {:position "relative"
                                             :right (str (* 86 offset) "px")}}
-         (for [color colors]
+         (mx/doseq [color colors]
            (-> (palette-item color)
                (mx/with-key color)))]]
 
        [:span.right-arrow
-        (when (< offset invisible)
-          {:on-click #(swap! local update :offset (fnil inc 0))})
+        (if (< offset invisible)
+          {:on-click #(swap! local update :offset (fnil inc 0))}
+          {})
         i/arrow-slide]
        [:span.close-palette {:on-click close}
         i/close]])))

@@ -110,7 +110,7 @@
         path (reduce (partial make-vertical-tick zoom) [] +ticks+)
         labels (->> (map (partial horizontal-text-label zoom) +ticks+)
                     (filterv identity))]
-    [:g
+    [:g {}
      [:path {:d (str/join " " path) :stroke "#9da2a6"}]
      labels]))
 
@@ -123,7 +123,7 @@
         path (reduce (partial make-horizontal-tick zoom) [] +ticks+)
         labels (->> (map (partial vertical-text-label zoom) +ticks+)
                     (filterv identity))]
-    [:g
+    [:g {}
      [:path {:d (str/join " " path) :stroke "#9da2a6"}]
      labels]))
 

@@ -10,17 +10,17 @@
             [beicon.core :as rx]
             [potok.core :as ptk]
             [lentes.core :as l]
+            [rumext.core :as mx :include-macros true]
+            [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.exports :as exports]
-            [uxbox.builtins.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.blob :as blob]
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.time :as dt]
             [uxbox.util.dom :as dom]
-            [rumext.core :as mx :include-macros true]
             [uxbox.util.zip :as zip]))
 
 ;; --- Refs
@@ -114,21 +114,21 @@
               (udl/close!))
             (download-html [event]
               (dom/prevent-default event))]
-      [:div.lightbox-body.export-dialog
-       [:h3 "Download options"]
-       [:div.row-flex
-        [:div.content-col
-         [:span.icon i/file-svg]
-         [:span.title "Download page"]
-         [:p.info "Download a single page of your project in SVG."]
+      [:div.lightbox-body.export-dialog {}
+       [:h3 {} "Download options"]
+       [:div.row-flex {}
+        [:div.content-col {}
+         [:span.icon {} i/file-svg]
+         [:span.title {} "Download page"]
+         [:p.info {} "Download a single page of your project in SVG."]
          [:select.input-select {:ref "page" :default-value (pr-str current)}
-          (for [{:keys [id name]} pages]
+          (mx/doseq [{:keys [id name]} pages]
             [:option {:value (pr-str id)} name])]
          [:a.btn-primary {:href "#" :on-click download-page} "Download page"]]
-        [:div.content-col
-         [:span.icon i/folder-zip]
-         [:span.title "Download project"]
-         [:p.info "Download all pages as svg in a zip file."]
+        [:div.content-col {}
+         [:span.icon {} i/folder-zip]
+         [:span.title {} "Download project"]
+         [:p.info {} "Download all pages as svg in a zip file."]
          [:a.btn-primary {:href "#" :on-click download-zip} "Download project"]]
         ; [:div.content-col
         ;  [:span.icon i/file-html]

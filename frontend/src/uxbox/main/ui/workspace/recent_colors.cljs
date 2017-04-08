@@ -43,14 +43,14 @@
         shapes (->> (vals shapes-by-id)
                     (filter #(= (:page %) page)))
         colors (calculate-colors shapes)]
-    [:div
-     [:span (tr "ds.recent-colors")]
-     [:div.row-flex
+    [:div {}
+     [:span {} (tr "ds.recent-colors")]
+     [:div.row-flex {}
       (for [color colors]
         [:span.color-th {:style {:background-color color}
                          :key color
                          :on-click (partial callback color)}])
-      (for [i (range (- 5 (count colors)))]
+      (mx/doseq [i (range (- 5 (count colors)))]
         [:span.color-th {:key (str "empty" i)}])
-      [:span.color-th.palette-th i/picker]]]))
+      [:span.color-th.palette-th {} i/picker]]]))
 

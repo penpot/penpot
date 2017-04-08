@@ -107,21 +107,20 @@
                                 (uds/deselect-all)
                                 (udw/toggle-ruler))]
 
-    [:div#form-tools.tool-window.drawing-tools
-     [:div.tool-window-bar
-      [:div.tool-window-icon i/window]
-      [:span (tr "ds.draw-tools")]
+    [:div#form-tools.tool-window.drawing-tools {}
+     [:div.tool-window-bar {}
+      [:div.tool-window-icon {} i/window]
+      [:span {} (tr "ds.draw-tools")]
       [:div.tool-window-close {:on-click close} i/close]]
-     [:div.tool-window-content
-      (for [[i props] (map-indexed vector tools)
-            :let [selected? (= drawing-tool (:shape props))]]
-        [:div.tool-btn.tooltip.tooltip-hover
-         {:alt (:help props)
-          :class (when selected? "selected")
-          :key (str i)
-          :on-click (partial select-drawtool (:shape props))}
-         (:icon props)])
-
+     [:div.tool-window-content {}
+      (mx/doseq [[i props] (map-indexed vector tools)]
+        (let [selected? (= drawing-tool (:shape props))]
+          [:div.tool-btn.tooltip.tooltip-hover
+           {:alt (:help props)
+            :class (when selected? "selected")
+            :key (str i)
+            :on-click (partial select-drawtool (:shape props))}
+           (:icon props)]))
       [:div.tool-btn.tooltip.tooltip-hover
        {:alt "Ruler"
         :on-click toggle-ruler

@@ -20,8 +20,8 @@
 (mx/defc left-sidebar
   {:mixins [mx/static]}
   [flags page-id]
-  [:aside#settings-bar.settings-bar.settings-bar-left
-   [:div.settings-bar-inside
+  [:aside#settings-bar.settings-bar.settings-bar-left {}
+   [:div.settings-bar-inside {}
     (when (contains? flags :sitemap)
       (sitemap-toolbox page-id))
     (when (contains? flags :document-history)
@@ -34,8 +34,8 @@
 (mx/defc right-sidebar
   {:mixins [mx/static]}
   [flags page-id]
-  [:aside#settings-bar.settings-bar
-   [:div.settings-bar-inside
+  [:aside#settings-bar.settings-bar {}
+   [:div.settings-bar-inside {}
     (when (contains? flags :drawtools)
       (draw-toolbox flags))
     (when (contains? flags :element-options)

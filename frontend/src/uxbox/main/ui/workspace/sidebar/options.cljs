@@ -104,16 +104,16 @@
   (let [menus (get +menus-map+ (:type shape ::page))
         contained-in? (into #{} menus)
         active (:menu @local (first menus))]
-    [:div
+    [:div {}
      (when (> (count menus) 1)
-       [:ul.element-icons
-        (for [menu-id (get +menus-map+ (:type shape ::page))
-              :let [menu (get +menus-by-id+ menu-id)
-                    selected? (= active menu-id)]]
-          [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
-                       :key (str "menu-" (:id menu))
-                       :class (when selected? "selected")}
-           (:icon menu)])])
+       [:ul.element-icons {}
+        (mx/doseq [menu-id (get +menus-map+ (:type shape ::page))]
+          (let [menu (get +menus-by-id+ menu-id)
+                selected? (= active menu-id)]
+            [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
+                         :key (str "menu-" (:id menu))
+                         :class (when selected? "selected")}
+             (:icon menu)]))])
      (when-let [menu (get +menus-by-id+ active)]
        ((:comp menu) menu shape))]))
 
@@ -131,11 +131,11 @@
   (let [shape (->> (mx/react selected-shape-ref)
                    (merge shape-default-attrs))
         close #(st/emit! (udw/toggle-flag :element-options))]
-    [:div.elementa-options.tool-window
-     [:div.tool-window-bar
-      [:div.tool-window-icon i/options]
-      [:span (tr "ds.element-options")]
+    [:div.elementa-options.tool-window {}
+     [:div.tool-window-bar {}
+      [:div.tool-window-icon {} i/options]
+      [:span {} (tr "ds.element-options")]
       [:div.tool-window-close {:on-click close} i/close]]
-     [:div.tool-window-content
-      [:div.element-options
+     [:div.tool-window-content {}
+      [:div.element-options {}
        (options shape)]]]))

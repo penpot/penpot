@@ -180,7 +180,7 @@
          :on-drop on-drop
          :draggable true}
 
-        [:div.element-actions
+        [:div.element-actions {}
          [:div.toggle-element
           {:class (when-not (:hidden item) "selected")
            :on-click toggle-visibility}
@@ -189,7 +189,7 @@
           {:class (when (:blocked item) "selected")
            :on-click toggle-blocking}
           i/lock]]
-        [:div.element-icon (element-icon item)]
+        [:div.element-icon {} (element-icon item)]
         (shape-name item)]])))
 
 ;; --- Layer Group (Component)
@@ -254,7 +254,7 @@
          :on-drag-end on-drag-end
          :on-drop on-drop
          :on-click select}
-        [:div.element-actions
+        [:div.element-actions {}
          [:div.toggle-element
           {:class (when-not (:hidden item) "selected")
            :on-click toggle-visibility}
@@ -274,14 +274,13 @@
           :class (when-not collapsed? "inverse")}
          i/arrow-slide]]
        (if-not collapsed?
-         [:ul
-          (for [shape (map #(get shapes-map %) (:items item))
-                :let [key (str (:id shape))]]
+         [:ul {}
+          (mx/doseq [{:keys [id] :as shape} (map #(get shapes-map %) (:items item))]
             (if (= (:type shape) :group)
               (-> (layer-group shape selected)
-                  (mx/with-key key))
+                  (mx/with-key id))
               (-> (layer-simple shape selected)
-                  (mx/with-key key))))])])))
+                  (mx/with-key id))))])])))
 
 ;; --- Layers Tools (Buttons Component)
 
@@ -317,8 +316,8 @@
         allow-ungrouping? (allow-ungrouping? selected shapes-map)
         allow-duplicate? (= 1 (count selected))
         allow-deletion? (pos? (count selected))]
-    [:div.layers-tools
-     [:ul.layers-tools-content
+    [:div.layers-tools {}
+     [:ul.layers-tools-content {}
       [:li.clone-layer.tooltip.tooltip-top
        {:alt "Duplicate"
         :class (when-not allow-duplicate? "disable")
@@ -350,18 +349,17 @@
         shapes-map (mx/react refs/shapes-by-id)
         close #(st/emit! (udw/toggle-flag :layers))
         dragel (volatile! nil)]
-    [:div#layers.tool-window
-     [:div.tool-window-bar
-      [:div.tool-window-icon i/layers]
-      [:span "Layers"]
+    [:div#layers.tool-window {}
+     [:div.tool-window-bar {}
+      [:div.tool-window-icon {} i/layers]
+      [:span {} "Layers"]
       [:div.tool-window-close {:on-click close} i/close]]
-     [:div.tool-window-content
+     [:div.tool-window-content {}
       [:ul.element-list {}
-       (for [shape (map #(get shapes-map %) (:shapes page))
-             :let [key (str (:id shape))]]
+       (mx/doseq [{:keys [id] :as shape} (map #(get shapes-map %) (:shapes page))]
          (if (= (:type shape) :group)
            (-> (layer-group shape selected)
-               (mx/with-key key))
+               (mx/with-key id))
            (-> (layer-simple shape selected)
-               (mx/with-key key))))]]
+               (mx/with-key id))))]]
      (layers-tools selected shapes-map)]))

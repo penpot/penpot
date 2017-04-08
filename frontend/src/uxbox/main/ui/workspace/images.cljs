@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.workspace.images
   (:require [lentes.core :as l]
-            [uxbox.util.i18n :as t :refer [tr]]
+            [rumext.core :as mx :include-macros true]
             [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
@@ -16,9 +16,9 @@
             [uxbox.main.data.workspace :as udw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.lightbox :as lbx]
+            [uxbox.util.i18n :as t :refer [tr]]
             [uxbox.util.data :refer [read-string jscoll->vec]]
             [uxbox.util.dom :as dom]
-            [rumext.core :as mx :include-macros true]
             [uxbox.util.uuid :as uuid]))
 
 ;; --- Refs
@@ -68,19 +68,17 @@
             (dom/prevent-default event)
             (udl/close!))]
     (let [uploading? (mx/react uploading?-ref)]
-      [:div.lightbox-body
-       [:h3 "New image"]
-       [:div.row-flex
-        [:div.lightbox-big-btn
-         {:on-click on-select-from-library}
-         [:span.big-svg i/image]
-         [:span.text "Select from library"]]
-        [:div.lightbox-big-btn
-         {:on-click on-upload-click}
+      [:div.lightbox-body {}
+       [:h3 {} "New image"]
+       [:div.row-flex {}
+        [:div.lightbox-big-btn {:on-click on-select-from-library}
+         [:span.big-svg {} i/image]
+         [:span.text {} "Select from library"]]
+        [:div.lightbox-big-btn {:on-click on-upload-click}
          (if uploading?
-           [:span.big-svg.upload i/loader-pencil]
-           [:span.big-svg.upload i/exit])
-         [:span.text "Upload file"]
+           [:span.big-svg.upload {} i/loader-pencil]
+           [:span.big-svg.upload {} i/exit])
+         [:span.text {} "Upload file"]
          [:input.upload-image-input
           {:style {:display "none"}
            :accept "image/jpeg,image/png"
@@ -105,13 +103,13 @@
                         :on-click on-click}
      [:div.library-item-th
       {:style {:background-image (str "url('" thumbnail "')")}}]
-     [:span name]]))
+     [:span {} name]]))
 
 (mx/defc image-collection
   {:mixins [mx/static]}
   [images]
-  [:div.library-content
-   (for [image images]
+  [:div.library-content {}
+   (mx/doseq [image images]
      (-> (image-item image)
          (mx/with-key (str (:id image)))))])
 
@@ -159,11 +157,11 @@
               (let [value (dom/event->value event)
                     value (read-string value)]
                 (swap! local assoc :id value)))]
-      [:div.lightbox-body.big-lightbox
-       [:h3 "Import image from library"]
-       [:div.import-img-library
-        [:div.library-actions
-         [:ul.toggle-library
+      [:div.lightbox-body.big-lightbox {}
+       [:h3 {} "Import image from library"]
+       [:div.import-img-library {}
+        [:div.library-actions {}
+         [:ul.toggle-library {}
           [:li.your-images {:class (when own? "current")
                             :on-click #(select-type % :own)}
            "YOUR IMAGES"]
@@ -173,10 +171,10 @@
          [:select.input-select {:on-change on-coll-change}
           (when own?
             [:option {:value (pr-str nil)} "Storage"])
-          (for [coll colls
-                :let [id (:id coll)
-                      name (:name coll)]]
-            [:option {:key (str id) :value (pr-str id)} name])]]
+          (doseq [coll colls]
+            (let [id (:id coll)
+                  name (:name coll)]
+              [:option {:key (str id) :value (pr-str id)} name]))]]
         (image-collection images)]
        [:a.close {:href "#" :on-click on-close} i/close]])))
 

@@ -39,8 +39,8 @@
      [:div.pin-icon {:on-click on-pinned
                      :class (when (:pinned item) "selected")}
       i/pin]
-     [:span (str "Version " (:version item)
-                 " (" (dt/timeago (:created-at item)) ")")]]))
+     [:span {} (str "Version " (:version item)
+                    " (" (dt/timeago (:created-at item)) ")")]]))
 
 ;; --- History List (Component)
 
@@ -51,14 +51,14 @@
         page (mx/react refs/selected-page)
         show-more? (pos? min-version)
         load-more #(st/emit! (udh/load-more))]
-    [:ul.history-content
-     (for [item items
-           :let [current? (= (:version item) (:version page))]]
-       (-> (history-item item selected current?)
-           (mx/with-key (str (:id item)))))
+    [:ul.history-content {}
+     (mx/doseq [item items]
+       (let [current? (= (:version item) (:version page))]
+         (-> (history-item item selected current?)
+             (mx/with-key (str (:id item))))))
      (when show-more?
        [:li {:on-click load-more}
-        [:a.btn-primary.btn-small
+        [:a.btn-primary.btn-small {}
          "view more"]])]))
 
 ;; --- History Pinned List (Component)
@@ -66,11 +66,11 @@
 (mx/defc history-pinned-list
   {:mixins [mx/static]}
   [{:keys [pinned selected] :as history}]
-  [:ul.history-content
-   (for [item (reverse (sort-by :version pinned))
-         :let [selected? (= (:version item) selected)]]
-     (-> (history-item item selected?)
-         (mx/with-key (str (:id item)))))])
+  [:ul.history-content {}
+   (mx/doseq [item (reverse (sort-by :version pinned))]
+     (let [selected? (= (:version item) selected)]
+       (-> (history-item item selected?)
+           (mx/with-key (str (:id item))))))])
 
 ;; --- History Toolbox (Component)
 
@@ -110,13 +110,13 @@
 
         show-main #(st/emit! (udh/select-section :main))
         show-pinned #(st/emit! (udh/select-section :pinned))]
-    [:div.document-history.tool-window
-     [:div.tool-window-bar
-      [:div.tool-window-icon i/undo-history]
-      [:span (tr "ds.document-history")]
+    [:div.document-history.tool-window {}
+     [:div.tool-window-bar {}
+      [:div.tool-window-icon {} i/undo-history]
+      [:span {} (tr "ds.document-history")]
       [:div.tool-window-close {:on-click close} i/close]]
-     [:div.tool-window-content
-      [:ul.history-tabs
+     [:div.tool-window-content {}
+      [:ul.history-tabs {}
        [:li {:on-click show-main
              :class (when main? "selected")}
         "History"]
@@ -139,7 +139,7 @@
     (when (or version (:deselecting history))
       [:div.message-version
        {:class (when (:deselecting history) "hide-message")}
-       [:span (tr "history.alert-message" (or version "00"))
-        [:div.message-action
+       [:span {} (tr "history.alert-message" (or version "00"))
+        [:div.message-action {}
          [:a.btn-transparent {:on-click on-accept} "Accept"]
          [:a.btn-transparent {:on-click on-cancel} "Cancel"]]]])))

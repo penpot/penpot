@@ -41,7 +41,7 @@
 (mx/defc generic-draw-area
   [shape zoom]
   (let [{:keys [x1 y1 width height]} (geom/selection-rect shape)]
-    [:g
+    [:g {}
      (shapes/render-component shape)
      [:rect.main {:x x1 :y y1
                   :width width
@@ -62,7 +62,7 @@
           (on-mouse-leave [event]
             (st/emit! (udw/set-tooltip nil)))]
     (when-let [{:keys [x y] :as segment} (first segments)]
-      [:g
+      [:g {}
        (shapes/render-component shape)
        (when-not (:free shape)
          [:circle.close-bezier {:cx x

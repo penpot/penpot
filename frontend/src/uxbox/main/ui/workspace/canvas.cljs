@@ -52,7 +52,7 @@
         coords (some-> (mx/react refs/canvas-mouse-position)
                        (gpt/divide zoom)
                        (gpt/round 0))]
-   [:ul.coordinates
+   [:ul.coordinates {}
     [:span {:alt "x"}
      (str "X: " (:x coords "-"))]
     [:span {:alt "y"}
@@ -113,9 +113,9 @@
                        :width width
                        :height height}
      (background metadata)
-     [:svg.page-layout
+     [:svg.page-layout {}
       [:g.main {}
-       (for [item (reverse (:shapes page))]
+       (mx/doseq [item (reverse (:shapes page))]
          (-> (uus/shape item)
              (mx/with-key (str item))))
        (selection-handlers)
@@ -244,9 +244,9 @@
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
                 (st/emit! (uev/mouse-event :double-click ctrl? shift?))))]
-      [:div
+      [:div {}
        (coordinates)
-       [:div.tooltip-container
+       [:div.tooltip-container {}
         (when tooltip
           (cursor-tooltip tooltip))]
        [:svg.viewport {:width (* c/viewport-width zoom)
