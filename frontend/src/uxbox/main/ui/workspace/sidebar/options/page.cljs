@@ -18,7 +18,7 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.builtins.icons :as i]
             [uxbox.main.ui.workspace.colorpicker]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.data :refer [parse-int]]
             [uxbox.util.spec :refer [color?]]
             [uxbox.util.dom :as dom]))

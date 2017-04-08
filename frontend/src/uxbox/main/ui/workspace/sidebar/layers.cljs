@@ -19,7 +19,7 @@
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.data :refer (read-string classnames)]
             [uxbox.util.router :as r]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom])
   (:import goog.events.EventType))

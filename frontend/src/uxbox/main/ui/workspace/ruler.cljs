@@ -16,7 +16,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.user-events :as uev]
             [uxbox.util.math :as mth]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
 

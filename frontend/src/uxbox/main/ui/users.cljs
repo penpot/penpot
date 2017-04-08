@@ -14,7 +14,7 @@
             [uxbox.builtins.icons :as i]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.router :as rt]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 ;; --- User Menu
 

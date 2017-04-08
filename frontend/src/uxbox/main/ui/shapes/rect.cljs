@@ -11,7 +11,7 @@
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.data :refer [classnames]]
             [uxbox.util.dom :as dom]))
 

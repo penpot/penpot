@@ -7,7 +7,7 @@
 (ns uxbox.main.ui.loader
   (:require [uxbox.main.store :as st]
             [uxbox.builtins.icons :as i]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 ;; --- Component
 

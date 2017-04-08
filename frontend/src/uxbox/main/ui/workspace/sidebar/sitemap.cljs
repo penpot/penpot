@@ -22,7 +22,7 @@
             [uxbox.util.data :refer [classnames]]
             [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 (mx/defcs page-item
   {:mixins [(mx/local) mx/static mx/reactive]}

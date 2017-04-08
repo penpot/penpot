@@ -19,7 +19,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.common :as scommon]
             [uxbox.main.geom :as geom]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))

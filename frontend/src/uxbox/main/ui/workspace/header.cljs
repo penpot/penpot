@@ -24,7 +24,7 @@
             [uxbox.util.data :refer [index-of]]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.math :as mth]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 ;; --- Zoom Widget
 

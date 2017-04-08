@@ -29,7 +29,7 @@
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer [parse-int]]
-            [uxbox.util.mixins :as mx :include-macros true])
+            [rumext.core :as mx :include-macros true])
   (:import goog.events.EventType))
 
 ;; --- Background

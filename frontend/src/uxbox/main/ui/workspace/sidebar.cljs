@@ -13,7 +13,7 @@
             [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
             [uxbox.main.ui.workspace.sidebar.icons :refer [icons-toolbox]]
             [uxbox.main.ui.workspace.sidebar.drawtools :refer [draw-toolbox]]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 ;; --- Left Sidebar (Component)
 

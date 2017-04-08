@@ -12,7 +12,7 @@
             [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.settings.profile :as profile]
             [uxbox.main.ui.settings.password :as password]

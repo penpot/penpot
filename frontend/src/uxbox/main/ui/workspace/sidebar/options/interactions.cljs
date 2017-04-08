@@ -19,7 +19,7 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer [read-string]]
             [uxbox.util.spec :refer [color?]]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 ;; --- Helpers
 
@@ -442,9 +442,8 @@
      (when (or (not= (:animation form :none) :none)
                (and (only-easing? (:action form))
                     (:element form)))
-       (mx/concat
-        (easing-input form-ref)
-        (duration-input form-ref)))
+       (list (easing-input form-ref)
+             (duration-input form-ref)))
      ]))
 
 ;; --- Form

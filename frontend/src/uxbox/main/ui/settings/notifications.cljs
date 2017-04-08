@@ -12,31 +12,36 @@
             [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.settings.header :refer (header)]))
 
-(defn notifications-page-render
+(mx/defc notifications-page
+  {:mixins [mx/static]}
   [own]
-  (html
-   [:main.dashboard-main
-    (header)
-    [:section.dashboard-content.user-settings
-     [:section.user-settings-content
-      [:span.user-settings-label "Prototype notifications"]
-      [:p "Get a roll up of prototype changes in your inbox."]
+  [:main.dashboard-main
+   (header)
+   [:section.dashboard-content.user-settings
+    [:section.user-settings-content
+     [:span.user-settings-label "Prototype notifications"]
+     [:p "Get a roll up of prototype changes in your inbox."]
      [:div.input-radio.radio-primary
-      [:input {:type "radio" :id "notification-1" :name "notification-1" :value "none"}]
-      [:label {:for "notification-1" :value "None"} "None"]
-      [:input {:type "radio" :id "notification-2" :name "notification-2" :value "every-hour"}]
-      [:label {:for "notification-2" :value "Every hour"} "Every hour"]
-      [:input {:type "radio" :id "notification-3" :name "notification-3" :value "every-day"}]
+      [:input {:type "radio"
+               :id "notification-1"
+               :name "notification-1"
+               :value "none"}]
+      [:label {:for "notification-1"
+               :value "None"} "None"]
+      [:input {:type "radio"
+               :id "notification-2"
+               :name "notification-2"
+               :value "every-hour"}]
+      [:label {:for "notification-2"
+               :value "Every hour"} "Every hour"]
+      [:input {:type "radio"
+               :id "notification-3"
+               :name "notification-3"
+               :value "every-day"}]
       [:label {:for "notification-3" :value "Every day"} "Every day"]]
      [:input.btn-primary {:type "submit" :value "Update settings"}]
-     ]]]))
-
-(def notifications-page
-  (mx/component
-   {:render notifications-page-render
-    :name "notifications-page"
-    :mixins [mx/static]}))
+     ]]])

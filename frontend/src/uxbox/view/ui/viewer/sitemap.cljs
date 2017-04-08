@@ -11,7 +11,7 @@
             [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
             [uxbox.util.i18n :refer [tr]]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.data :refer [parse-int]]
             [uxbox.view.data.viewer :as dv]
             [uxbox.view.store :as st]))

@@ -17,7 +17,7 @@
             [uxbox.main.data.users :as udu]
             [uxbox.util.forms :as fm]
             [uxbox.util.router :as r]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.interop :refer [iterable->seq]]
             [uxbox.util.dom :as dom]))
 

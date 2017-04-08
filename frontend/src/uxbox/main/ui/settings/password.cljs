@@ -19,7 +19,7 @@
             [uxbox.util.forms :as fm]
             [uxbox.util.dom :as dom]
             [uxbox.util.messages :as um]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 (def form-data (fm/focus-data :profile-password st/state))
 (def form-errors (fm/focus-errors :profile-password st/state))

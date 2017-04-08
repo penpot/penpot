@@ -6,15 +6,14 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.confirm
-  (:require [sablono.core :as html :refer-macros [html]]
-            [uxbox.main.data.lightbox :as udl]
+  (:require [uxbox.main.data.lightbox :as udl]
             [uxbox.builtins.icons :as i]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.lightbox :as lbx]))
 
-(defn- confirm-dialog-render
-  [own {:keys [on-accept on-cancel hint] :as ctx}]
+(mx/defc confirm-dialog
+  [{:keys [on-accept on-cancel hint] :as ctx}]
   (letfn [(accept [event]
             (dom/prevent-default event)
             (udl/close!)
@@ -24,29 +23,22 @@
             (udl/close!)
             (when on-cancel
               (on-cancel (dissoc ctx :on-accept :on-cancel))))]
-    (html
-     [:div.lightbox-body.confirm-dialog
-      [:h3 "Are you sure?"]
-      (if hint
-        [:span hint])
-      [:div.row-flex
-       [:input.btn-success.btn-small
-        {:type "button"
-         :value "Ok"
-         :on-click accept}]
-       [:input.btn-delete.btn-small
-        {:type "button"
-         :value "Cancel"
-         :on-click cancel}]]
-         [:a.close {:href "#"
+    [:div.lightbox-body.confirm-dialog
+     [:h3 "Are you sure?"]
+     (if hint
+       [:span hint])
+     [:div.row-flex
+      [:input.btn-success.btn-small
+       {:type "button"
+        :value "Ok"
+        :on-click accept}]
+      [:input.btn-delete.btn-small
+       {:type "button"
+        :value "Cancel"
+        :on-click cancel}]]
+     [:a.close {:href "#"
                 :on-click #(do (dom/prevent-default %)
-                               (udl/close!))} i/close]])))
-
-(def confirm-dialog
-  (mx/component
-   {:render confirm-dialog-render
-    :name "confirm-dialog"
-    :mixins []}))
+                               (udl/close!))} i/close]]))
 
 (defmethod lbx/render-lightbox :confirm
   [context]

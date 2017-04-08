@@ -19,7 +19,7 @@
             [uxbox.util.data :refer [classnames]]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.mixins :as mx :include-macros true])
+            [rumext.core :as mx :include-macros true])
   (:import goog.events.EventType))
 
 ;; --- Events

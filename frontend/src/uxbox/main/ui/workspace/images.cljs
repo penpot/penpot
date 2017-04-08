@@ -18,7 +18,7 @@
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.data :refer [read-string jscoll->vec]]
             [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.uuid :as uuid]))
 
 ;; --- Refs

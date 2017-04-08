@@ -19,7 +19,7 @@
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [uxbox.util.data :refer (read-string)]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]))
 
 ;; --- Refs

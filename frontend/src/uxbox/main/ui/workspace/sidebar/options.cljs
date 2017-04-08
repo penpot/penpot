@@ -28,7 +28,7 @@
    [uxbox.main.geom :as geom]
    [uxbox.util.dom :as dom]
    [uxbox.util.data :as data]
-   [uxbox.util.mixins :as mx :include-macros true]))
+   [rumext.core :as mx :include-macros true]))
 
 ;; --- Constants
 

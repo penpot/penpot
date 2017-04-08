@@ -12,7 +12,7 @@
             [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
             [uxbox.util.timers :as ts]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.data :refer [classnames]]
             [uxbox.util.dom :as dom]))
 

@@ -12,7 +12,7 @@
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.builtins.icons :as i]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.util.dom :as dom]))

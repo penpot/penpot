@@ -19,7 +19,7 @@
             [uxbox.util.forms :as fm]
             [uxbox.util.i18n :refer [tr]]
             [uxbox.util.router :as r]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 
 (def form-data (fm/focus-data :workspace-page-form st/state))

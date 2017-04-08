@@ -19,7 +19,7 @@
             [uxbox.main.ui.colorpicker :as cp]
             [uxbox.main.ui.workspace.recent-colors :refer [recent-colors]]
             [uxbox.util.router :as rt]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer [parse-int parse-float read-string]]))
 

@@ -7,13 +7,14 @@
 
 (ns uxbox.main.ui.workspace.clipboard
   (:require [lentes.core :as l]
+            [sablono.core :refer-macros [html]]
             [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.workspace :as udw]
             [uxbox.builtins.icons :as i]
             [uxbox.main.ui.lightbox :as lbx]
             [potok.core :as ptk]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.time :as dt]))
 
@@ -30,15 +31,13 @@
           (on-close [event]
             (dom/prevent-default event)
             (udl/close!))]
-    [:div.lightbox-body.clipboard
-     [:div.clipboard-list
-      (for [item (mx/react clipboard-ref)]
-        [:div.clipboard-item
-         {:key (str (:id item))
-          :on-click (partial on-paste item)}
-         [:span.clipboard-icon i/box]
-         [:span (str "Copied (" (dt/timeago (:created-at item)) ")")]])]
-     [:a.close {:href "#" :on-click on-close} i/close]]))
+    [:div.lightbox-body.clipboard {}
+     [:div.clipboard-list {}
+      (mx/doseq [item (mx/react clipboard-ref)]
+        [:div.clipboard-item {:key (str (:id item))}
+         [:span.clipboard-icon {} ^:inline i/box]
+         [:span {} ^String (str "Copied (" (dt/timeago (:created-at item)) ")")]])]
+     [:a.close {:href "#"} ^:inline i/close]]))
 
 (defmethod lbx/render-lightbox :clipboard
   [_]

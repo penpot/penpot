@@ -16,7 +16,7 @@
             [uxbox.util.data :refer [classnames]]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 ;; --- Path Component
 
 (declare path-shape)

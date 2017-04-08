@@ -16,7 +16,7 @@
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.dom :as dom]
             [uxbox.util.forms :as fm]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.router :as rt]))
 
 (def form-data (fm/focus-data :recovery st/state))

@@ -18,11 +18,12 @@
 
                  ;; Runtime
                  [com.cognitect/transit-cljs "0.8.239"]
+
+                 [funcool/rumext "1.0.0"]
                  [rum "0.10.8" :exclusions [cljsjs/react cljsjs/react-dom]]
-                 ;; [cljsjs/react-with-addons "15.4.2-2"]
-                 [cljsjs/react "15.4.2-2"]
-                 [cljsjs/react-dom "15.4.2-2"]
-                 [cljsjs/react-dom-server "15.4.2-2"]
+                 [cljsjs/react "15.5.0-0"]
+                 [cljsjs/react-dom "15.5.0-0"]
+                 [cljsjs/react-dom-server "15.5.0-0"]
 
                  [funcool/beicon "3.2.0"]
                  [funcool/bide "1.4.0"]

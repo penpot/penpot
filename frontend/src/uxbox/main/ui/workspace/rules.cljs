@@ -13,7 +13,7 @@
             [uxbox.main.constants :as c]
             [uxbox.main.refs :as refs]
             [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 ;; --- Constants & Helpers
 

@@ -2,7 +2,7 @@
   (:require [lentes.core :as l]
             [uxbox.main.store :as st]
             [uxbox.util.messages :as uum]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 (def ^:private message-ref
   (-> (l/key :message)

@@ -19,7 +19,7 @@
             [uxbox.main.ui.shapes.image :as image]
             [uxbox.util.data :refer [classnames]]
             [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 ;; --- Helpers
 

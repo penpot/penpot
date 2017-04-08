@@ -18,7 +18,7 @@
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.data :refer (read-string)]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.time :as dt]
             [potok.core :as ptk]
             [uxbox.util.forms :as sc]

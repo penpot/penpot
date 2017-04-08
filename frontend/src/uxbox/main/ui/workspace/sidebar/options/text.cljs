@@ -15,7 +15,7 @@
             [uxbox.builtins.icons :as i]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.math :refer (precision-or-0)]
             [uxbox.util.data :refer (parse-int

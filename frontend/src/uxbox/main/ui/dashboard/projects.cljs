@@ -24,7 +24,7 @@
             [uxbox.util.data :refer [read-string]]
             [uxbox.util.dom :as dom]
             [uxbox.util.blob :as blob]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.time :as dt]))
 
 ;; --- Helpers & Constants

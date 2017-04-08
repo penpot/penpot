@@ -16,7 +16,7 @@
             [uxbox.util.i18n :refer [tr]]
             [uxbox.util.data :refer [parse-int]]
             [uxbox.util.messages :as uum]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]))
 
 

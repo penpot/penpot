@@ -14,7 +14,7 @@
             [uxbox.main.ui.shapes.path :refer [path-shape]]
             [uxbox.main.ui.shapes.circle :refer [circle-shape]]
             [uxbox.main.ui.shapes.image :refer [image-shape]]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 (def ^:dynamic *state* st/state)
 

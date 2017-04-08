@@ -20,7 +20,7 @@
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.time :as dt]
             [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.zip :as zip]))
 
 ;; --- Refs

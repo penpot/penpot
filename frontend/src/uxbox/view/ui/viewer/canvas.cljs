@@ -6,7 +6,7 @@
 ;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.view.ui.viewer.canvas
-  (:require [uxbox.util.mixins :as mx :include-macros true]
+  (:require [rumext.core :as mx :include-macros true]
             [uxbox.view.ui.viewer.shapes :as shapes]))
 
 ;; --- Background (Component)

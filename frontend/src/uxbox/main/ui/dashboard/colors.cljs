@@ -23,7 +23,7 @@
             [uxbox.util.dom :as dom]
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.lens :as ul]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 ;; --- Refs
 

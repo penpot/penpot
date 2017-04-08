@@ -10,7 +10,7 @@
             [lentes.core :as l]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Form Validation Api

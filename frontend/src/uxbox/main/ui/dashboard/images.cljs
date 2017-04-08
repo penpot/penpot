@@ -14,7 +14,7 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.images :as di]
             [uxbox.builtins.icons :as i]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.dashboard.header :refer [header]]

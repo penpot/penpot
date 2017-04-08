@@ -21,7 +21,7 @@
             [uxbox.util.data :refer (read-string)]
             [uxbox.util.color :refer (hex->rgb)]
             [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 (defn- get-selected-collection
   [local collections]

@@ -1,13 +1,11 @@
 (ns uxbox.main.ui.lightbox
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.main.ui.keyboard :as k]
             [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (classnames)]
+            [uxbox.util.data :refer [classnames]]
             [goog.events :as events])
   (:import goog.events.EventType))
 
@@ -47,23 +45,17 @@
   (events/unlistenByKey (::key own))
   (dissoc own ::key))
 
-(defn- lightbox-render
+(mx/defcs lightbox
+  {:mixins [mx/reactive]
+   :will-mount lightbox-will-mount
+   :will-unmount lightbox-will-umount}
   [own]
   (let [data (mx/react lightbox-ref)
         classes (classnames
                  :hide (nil? data)
                  :transparent (:transparent? data))]
-    (html
-     [:div.lightbox
-      {:class classes
-       :ref "parent"
-       :on-click (partial on-out-clicked own)}
-      (render-lightbox data)])))
-
-(def lightbox
-  (mx/component
-   {:name "lightbox"
-    :render lightbox-render
-    :will-mount lightbox-will-mount
-    :will-unmount lightbox-will-umount
-    :mixins [mx/reactive]}))
+    [:div.lightbox
+     {:class classes
+      :ref "parent"
+      :on-click (partial on-out-clicked own)}
+     (render-lightbox data)]))

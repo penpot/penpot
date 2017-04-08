@@ -12,7 +12,7 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.data.workspace :as dw]
             [uxbox.builtins.icons :as i]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.i18n :refer (tr)]))
 

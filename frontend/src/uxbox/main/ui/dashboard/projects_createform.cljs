@@ -20,7 +20,7 @@
             [uxbox.util.forms :as fm]
             [uxbox.util.i18n :as t :refer [tr]]
             [uxbox.util.router :as r]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.time :as dt]))
 
 (def form-data (fm/focus-data :create-project st/state))

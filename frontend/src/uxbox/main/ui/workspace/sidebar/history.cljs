@@ -15,7 +15,7 @@
             [uxbox.util.data :refer [read-string]]
             [uxbox.util.dom :as dom]
             [uxbox.util.i18n :refer [tr]]
-            [uxbox.util.mixins :as mx :include-macros true]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.router :as r]
             [uxbox.util.time :as dt]))
 

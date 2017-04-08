@@ -29,7 +29,7 @@
             [uxbox.util.i18n :refer [tr]]
             [uxbox.util.data :refer [parse-int uuid-str?]]
             [uxbox.util.dom :as dom]
-            [uxbox.util.mixins :as mx :include-macros true]))
+            [rumext.core :as mx :include-macros true]))
 
 ;; --- Constants
 
