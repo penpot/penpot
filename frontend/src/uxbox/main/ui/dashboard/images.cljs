@@ -8,13 +8,12 @@
 (ns uxbox.main.ui.dashboard.images
   (:require [cuerdas.core :as str]
             [lentes.core :as l]
+            [rumext.core :as mx :include-macros true]
             [uxbox.util.i18n :as t :refer [tr]]
             [uxbox.main.store :as st]
-            [potok.core :as ptk]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.data.images :as di]
             [uxbox.builtins.icons :as i]
-            [rumext.core :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.dashboard.header :refer [header]]
@@ -94,10 +93,10 @@
               (st/emit! (di/delete-collection id)))
             (on-delete []
               (udl/open! :confirm {:on-accept delete}))]
-      [:div.dashboard-title
-       [:h2
+      [:div.dashboard-title {}
+       [:h2 {}
         (if edit?
-          [:div.dashboard-title-field
+          [:div.dashboard-title-field {}
            [:span.edit
             {:content-editable true
              :ref "input"
@@ -111,11 +110,11 @@
             [:span.dashboard-title-field
              (:name coll "Storage")]))]
        (when (and own? coll)
-         [:div.edition
+         [:div.edition {}
           (if edit?
-            [:span {:on-click on-save} i/save]
-            [:span {:on-click on-edit} i/pencil])
-          [:span {:on-click on-delete} i/trash]])])))
+            [:span {:on-click on-save} ^:inline i/save]
+            [:span {:on-click on-edit} ^:inline i/pencil])
+          [:span {:on-click on-delete} ^:inline i/trash]])])))
 
 ;; --- Nav
 
@@ -128,42 +127,40 @@
 
 (mx/defcs nav-item
   {:mixins [(mx/local) mx/static mx/reactive]}
-  [own {:keys [id type name num-images] :as coll} selected?]
-  (let [editable? (= type :own)
-        local (:rum/local own)]
-    (letfn [(on-click [event]
-              (let [type (or type :own)]
-                (st/emit! (di/select-collection type id))))
-            (on-input-change [event]
+  [{:keys [rum/local] :as own} {:keys [id type name num-images] :as coll} selected?]
+  (letfn [(on-click [event]
+            (let [type (or type :own)]
+              (st/emit! (di/select-collection type id))))
+          (on-input-change [event]
+            (let [value (dom/get-target event)
+                  value (dom/get-value value)]
+              (swap! local assoc :name value)))
+          (on-cancel [event]
+            (swap! local dissoc :name)
+            (swap! local dissoc :edit))
+          (on-double-click [event]
+            (when (= type :own)
+              (swap! local assoc :edit true)))
+          (on-input-keyup [event]
+            (when (kbd/enter? event)
               (let [value (dom/get-target event)
                     value (dom/get-value value)]
-                (swap! local assoc :name value)))
-            (on-cancel [event]
-                (swap! local dissoc :name)
-                (swap! local dissoc :edit))
-            (on-double-click [event]
-              (when editable?
-                (swap! local assoc :edit true)))
-            (on-input-keyup [event]
-              (when (kbd/enter? event)
-                (let [value (dom/get-target event)
-                      value (dom/get-value value)]
-                  (st/emit! (di/rename-collection id (str/trim (:name @local))))
-                  (swap! local assoc :edit false))))]
-      [:li {:on-click on-click
-            :on-double-click on-double-click
-            :class-name (when selected? "current")}
-       (if (:edit @local)
-         [:div
-          [:input.element-title
-            {:value (if (:name @local) (:name @local) (if coll name "Storage"))
-             :on-change on-input-change
-             :on-key-down on-input-keyup}]
-          [:span.close {:on-click on-cancel} i/close]]
-         [:span.element-title
-          (if coll name "Storage")])
-       [:span.element-subtitle
-        (tr "ds.num-elements" (t/c (or num-images (react-count-images id))))]])))
+                (st/emit! (di/rename-collection id (str/trim (:name @local))))
+                (swap! local assoc :edit false))))]
+    [:li {:on-click on-click
+          :on-double-click on-double-click
+          :class-name (when selected? "current")}
+     (if (:edit @local)
+       [:div {}
+        [:input.element-title
+         {:value (if (:name @local) (:name @local) (if coll name "Storage"))
+          :on-change on-input-change
+          :on-key-down on-input-keyup}]
+        [:span.close {:on-click on-cancel} ^:inline i/close]]
+       [:span.element-title {}
+        (if coll name "Storage")])
+     [:span.element-subtitle
+      (tr "ds.num-elements" (t/c (or num-images (react-count-images id))))]]))
 
 (mx/defc nav-section
   {:mixins [mx/static]}
@@ -174,19 +171,19 @@
                       own? (filter #(= :own (:type %)))
                       builtin? (filter #(= :builtin (:type %)))
                       own? (sort-by :name))]
-    [:ul.library-elements
+    [:ul.library-elements {}
      (when own?
-       [:li
+       [:li {}
         [:a.btn-primary
          {:on-click #(st/emit! (di/create-collection))}
          "+ New library"]])
      (when own?
        (nav-item nil (nil? selected)))
-     (for [coll collections
-           :let [selected? (= (:id coll) selected)
-                 key (str (:id coll))]]
-       (-> (nav-item coll selected?)
-           (mx/with-key key)))]))
+     (mx/doseq [coll collections]
+       (let [selected? (= (:id coll) selected)
+             key (str (:id coll))]
+         (-> (nav-item coll selected?)
+             (mx/with-key key))))]))
 
 (mx/defc nav
   {:mixins [mx/static]}
@@ -203,9 +200,9 @@
                   (if coll
                     (st/emit! (di/select-collection type (:id coll)))
                     (st/emit! (di/select-collection type))))))]
-      [:div.library-bar
-       [:div.library-bar-inside
-        [:ul.library-tabs
+      [:div.library-bar {}
+       [:div.library-bar-inside {}
+        [:ul.library-tabs {}
          [:li {:class-name (when own? "current")
                :on-click (partial select-tab :own)}
           "YOUR IMAGES"]
@@ -229,8 +226,8 @@
     (let [uploading? (mx/react uploading?-ref)]
       [:div.grid-item.add-project {:on-click forward-click}
        (if uploading?
-         [:div i/loader-pencil]
-         [:span "+ New image"])
+         [:div {} ^:inline i/loader-pencil]
+         [:span {} "+ New image"])
        [:input.upload-image-input
         {:style {:display "none"}
          :multiple true
@@ -255,76 +252,76 @@
                     (dom/prevent-default event)
                     (dom/stop-propagation event)
                     (on-select id))]
-    [:ul.move-list
-     [:li.title title]
-     [:li [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
-     (for [coll colls
-           :let [id (:id coll)
-                 name (:name coll)]]
+    [:ul.move-list {}
+     [:li.title {} title]
+     [:li {}
+      [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
+     (mx/doseq [{:keys [id name] :as coll} colls]
        [:li {:key (str id)}
         [:a {:on-click #(on-select % id)} name]])]))
 
 (mx/defcs grid-options
   {:mixins [(mx/local) mx/static]}
-  [own {:keys [type id] :as coll} selected]
-  (let [editable? (or (= type :own) (nil? coll))
-        local (:rum/local own)]
-    (letfn [(delete []
-              (st/emit! (di/delete-selected)))
-            (on-delete [event]
-              (udl/open! :confirm {:on-accept delete}))
-            (on-toggle-copy [event]
-              (swap! local update :show-copy-tooltip not))
-            (on-toggle-move [event]
-              (swap! local update :show-move-tooltip not))
-            (on-copy [selected]
-              (swap! local assoc
-                     :show-move-tooltip false
-                     :show-copy-tooltip false)
-              (st/emit! (di/copy-selected selected)))
-            (on-move [selected]
-              (swap! local assoc
-                     :show-move-tooltip false
-                     :show-copy-tooltip false)
-              (st/emit! (di/move-selected selected)))
-            (on-rename [event]
-              (let [selected (first selected)]
-                (st/emit! (di/update-opts :edition selected))))]
-      ;; MULTISELECT OPTIONS BAR
-      [:div.multiselect-bar
-       (if editable?
-         [:div.multiselect-nav
+  [{:keys [rum/local] :as own} {:keys [type id] :as coll} selected]
+  (letfn [(delete []
+            (st/emit! (di/delete-selected)))
+          (on-delete [event]
+            (udl/open! :confirm {:on-accept delete}))
+          (on-toggle-copy [event]
+            (swap! local update :show-copy-tooltip not))
+          (on-toggle-move [event]
+            (swap! local update :show-move-tooltip not))
+          (on-copy [selected]
+            (swap! local assoc
+                   :show-move-tooltip false
+                   :show-copy-tooltip false)
+            (st/emit! (di/copy-selected selected)))
+          (on-move [selected]
+            (swap! local assoc
+                   :show-move-tooltip false
+                   :show-copy-tooltip false)
+            (st/emit! (di/move-selected selected)))
+          (on-rename [event]
+            (let [selected (first selected)]
+              (st/emit! (di/update-opts :edition selected))))]
+    ;; MULTISELECT OPTIONS BAR
+    [:div.multiselect-bar {}
+     (if (or (= type :own) (nil? coll))
+       ;; If editable
+       [:div.multiselect-nav {}
+        [:span.move-item.tooltip.tooltip-top
+         {:on-click on-toggle-copy :alt "Copy"}
+         (when (:show-copy-tooltip @local)
+           (grid-options-tooltip :selected id
+                                       :title "Copy to library"
+                                       :on-select on-copy))
+         ^:inline i/copy]
+        [:span.move-item.tooltip.tooltip-top
+         {:on-click on-toggle-move :alt "Move"}
+         (when (:show-move-tooltip @local)
+           (grid-options-tooltip :selected id
+                                 :title "Move to library"
+                                 :on-select on-move))
+         ^:inline i/move]
+        (when (= 1 (count selected))
           [:span.move-item.tooltip.tooltip-top
-           {:on-click on-toggle-copy :alt "Copy"}
-           (when (:show-copy-tooltip @local)
-             (grid-options-tooltip :selected id
-                                   :title "Copy to library"
-                                   :on-select on-copy))
-           i/copy]
-          [:span.move-item.tooltip.tooltip-top
-           {:on-click on-toggle-move :alt "Move"}
-           (when (:show-move-tooltip @local)
-             (grid-options-tooltip :selected id
-                                   :title "Move to library"
-                                   :on-select on-move))
-           i/move]
-          (when (= 1 (count selected))
-            [:span.move-item.tooltip.tooltip-top
-             {:alt "Rename"
-              :on-click on-rename}
-             i/pencil])
-          [:span.delete.tooltip.tooltip-top
-           {:alt "Delete"
-            :on-click on-delete}
-           i/trash]]
-         [:div.multiselect-nav
-          [:span.move-item.tooltip.tooltip-top
-           {:on-click on-toggle-copy}
-           (when (:show-copy-tooltip @local)
-             (grid-options-tooltip :selected id
-                                   :title "Copy to library"
-                                   :on-select on-copy))
-           i/organize]])])))
+           {:alt "Rename"
+            :on-click on-rename}
+           ^:inline i/pencil])
+        [:span.delete.tooltip.tooltip-top
+         {:alt "Delete"
+          :on-click on-delete}
+         ^:inline i/trash]]
+
+       ;; If not editable
+       [:div.multiselect-nav {}
+        [:span.move-item.tooltip.tooltip-top
+         {:on-click on-toggle-copy}
+         (when (:show-copy-tooltip @local)
+           (grid-options-tooltip :selected id
+                                 :title "Copy to library"
+                                 :on-select on-copy))
+         ^:inline i/organize]])]))
 
 (mx/defc grid-item
   {:mixins [mx/static]}
@@ -343,28 +340,25 @@
             (dom/stop-propagation event)
             (dom/prevent-default event)
             (st/emit! (di/update-opts :edition id)))]
-    [:div.grid-item.images-th
-     [:div.grid-item-th
-      {:on-click toggle-selection
-       :style {:background-image (str "url('" (:thumbnail image) "')")}}
-      [:div.input-checkbox.check-primary
+    [:div.grid-item.images-th {}
+     [:div.grid-item-th {:on-click toggle-selection
+                         :style {:background-image (str "url('" (:thumbnail image) "')")}}
+      [:div.input-checkbox.check-primary {}
        [:input {:type "checkbox"
                 :id (:id image)
                 :on-click toggle-selection
                 :checked selected?}]
        [:label {:for (:id image)}]]]
-     [:div.item-info
+     [:div.item-info {}
       (if edition?
         [:input.element-name {:type "text"
-                 :auto-focus true
-                 :on-key-down on-key-down
-                 :on-blur on-blur
-                 :on-click on-edit
-                 :default-value (:name image)}]
-        [:h3 {:on-double-click on-edit}
-         (:name image)])
-      [:span.date
-       (str "Uploaded at " (dt/format created-at "L"))]]]))
+                              :auto-focus true
+                              :on-key-down on-key-down
+                              :on-blur on-blur
+                              :on-click on-edit
+                              :default-value (:name image)}]
+        [:h3 {:on-double-click on-edit} (:name image)])
+      [:span.date {} (str "Uploaded at " (dt/format created-at "L"))]]]))
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}
@@ -377,20 +371,20 @@
                     (filter #(= id (:collection %)))
                     (filter-images-by filtering)
                     (sort-images-by ordering))]
-    [:div.dashboard-grid-content
-     [:div.dashboard-grid-row
-      (when editable? (grid-form id))
-      (for [image images
-            :let [id (:id image)
-                  edition? (= edition id)
-                  selected? (contains? selected id)]]
-        (-> (grid-item image selected? edition?)
-            (mx/with-key (str id))))]]))
+    [:div.dashboard-grid-content {}
+     [:div.dashboard-grid-row {}
+      (when editable?
+        (grid-form id))
+      (mx/doseq [{:keys [id] :as image} images]
+        (let [edition? (= edition id)
+              selected? (contains? selected id)]
+          (-> (grid-item image selected? edition?)
+              (mx/with-key (str id)))))]]))
 
 (mx/defc content
   {:mixins [mx/static]}
   [{:keys [selected] :as state} coll]
-  [:section.dashboard-grid.library
+  [:section.dashboard-grid.library {}
    (page-title coll)
    (grid state)
    (when (seq selected)
@@ -415,31 +409,29 @@
                 (st/emit! (di/update-opts :order value))))
             (on-clear [event]
               (st/emit! (di/update-opts :filter "")))]
-      [:section.dashboard-bar.library-gap
-       [:div.dashboard-info
+      [:section.dashboard-bar.library-gap {}
+       [:div.dashboard-info {}
 
         ;; Counter
-        [:span.dashboard-images (tr "ds.num-images" (t/c icount))]
+        [:span.dashboard-images {} (tr "ds.num-images" (t/c icount))]
 
         ;; Sorting
-        [:div
-         [:span (tr "ds.project-ordering")]
-         [:select.input-select
-          {:on-change on-ordering-change
-           :value (pr-str ordering)}
-          (for [[key value] (seq +ordering-options+)
-                :let [ovalue (pr-str key)
-                      olabel (tr value)]]
-            [:option {:key ovalue :value ovalue} olabel])]]
+        [:div {}
+         [:span {} (tr "ds.project-ordering")]
+         [:select.input-select {:on-change on-ordering-change
+                                :value (pr-str ordering)}
+          (mx/doseq [[key value] (seq +ordering-options+)]
+            (let [key (pr-str key)
+                  label (tr value)]
+              [:option {:key key :value key} label]))]]
         ;; Search
-        [:form.dashboard-search
-         [:input.input-text
-          {:key :images-search-box
-           :type "text"
-           :on-change on-term-change
-           :auto-focus true
-           :placeholder (tr "ds.project-search.placeholder")
-           :value (or filtering "")}]
+        [:form.dashboard-search {}
+         [:input.input-text {:key :images-search-box
+                             :type "text"
+                             :on-change on-term-change
+                             :auto-focus true
+                             :placeholder (tr "ds.project-search.placeholder")
+                             :value (or filtering "")}]
          [:div.clear-search {:on-click on-clear} i/close]]]])))
 
 ;; --- Images Page
@@ -467,9 +459,9 @@
   (let [state (mx/react dashboard-ref)
         colls (mx/react collections-ref)
         coll (get colls (:id state))]
-    [:main.dashboard-main
+    [:main.dashboard-main {}
      (header)
-     [:section.dashboard-content
+     [:section.dashboard-content {}
       (nav state colls)
       (menu coll)
       (content state coll)]]))
