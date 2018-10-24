@@ -1,3 +1,6 @@
+
+[![Build Status](https://travis-ci.org/uxbox/uxbox.svg)](https://travis-ci.org/uxbox/uxbox)
+
 # UXBOX #
 
 ![UXBOX](https://piweek.com/images/projects/uxbox.jpg)
