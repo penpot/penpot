@@ -1,0 +1,31 @@
+dist: trusty
+sudo: required
+
+services: docker
+
+language: bash
+
+branches:
+  only:
+    - master
+
+before_script:
+  - env | sort
+  - name="uxbox"
+  - image="madmath03/uxbox:${VERSION}"
+  - dir="docker/"
+
+script:
+  - travis_retry docker build -t "$image" "$dir"
+
+after_script:
+  - docker images
+  - docker run --name "$name" -d "$image" "$dir"
+  - docker ps
+  - docker logs "$name"
+
+notifications:
+  email: false
+
+env: # Environments
+    - VERSION=beta
