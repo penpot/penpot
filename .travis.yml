@@ -8,6 +8,8 @@ language: bash
 branches:
   only:
     - master
+    - wip
+    - develop
 
 before_script:
   - env | sort
