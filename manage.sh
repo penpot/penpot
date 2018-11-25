@@ -41,7 +41,7 @@ function release_image {
 
     cd ../backend
     rm -rf ./dist
-    ./scripts/dist
+    ./scripts/dist.sh
     echo "Backend release generated in $(pwd)/dist"
 
     cd ..

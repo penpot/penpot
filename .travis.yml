@@ -15,7 +15,8 @@ before_script:
   - env | sort
 
 script:
-  - manager.sh run
+  - ls -l
+  - ./manager.sh run
 
 after_script:
   - docker images
