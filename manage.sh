@@ -4,8 +4,8 @@ REV=`git rev-parse --short HEAD`
 IMGNAME="uxbox"
 
 function kill_container {
-    if $(sudo docker ps |grep -q $IMGNAME); then
-        sudo docker ps |grep $IMGNAME | awk '{print $1}' | xargs --no-run-if-empty sudo docker kill
+    if $(sudo docker ps | grep -q $IMGNAME); then
+        sudo docker ps | grep $IMGNAME | awk '{print $1}' | xargs --no-run-if-empty sudo docker kill
     fi
 }
 
@@ -17,7 +17,7 @@ function build_image {
 function run_image {
     kill_container
 
-    if ! $(sudo docker images|grep $IMGNAME |grep -q $REV); then
+    if ! $(sudo docker images | grep $IMGNAME | grep -q $REV); then
         build_image
     fi
 
@@ -30,8 +30,25 @@ function run_image {
          -p 3449:3449 -p 6060:6060 -p 9090:9090 $IMGNAME:$REV
 }
 
+function release_image {
+    cd frontend
+    rm -rf ./dist
+    npm run dist
+    ./scripts/dist-main
+    ./scripts/dist-view
+    ./scripts/dist-worker
+    echo "Frontend release generated in $(pwd)/dist"
+
+    cd ../backend
+    rm -rf ./dist
+    ./scripts/dist
+    echo "Backend release generated in $(pwd)/dist"
+
+    cd ..
+}
+
 function usage {
-    echo "USAGE: $0 [ build | run]"
+    echo "USAGE: $0 [ build | run | release ]"
 }
 
 case $1 in
@@ -40,6 +57,9 @@ case $1 in
         ;;
     run)
         run_image
+        ;;
+    release)
+        release_image
         ;;
     *)
         usage

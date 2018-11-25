@@ -198,6 +198,7 @@ gulp.task("dist:brotli", function() {
 gulp.task("dist", function(next) {
   runseq(["dist:clean"],
          ["dist:template", "dist:scss", "dist:copy"],
-         ["dist:gzip", "dist:brotli"], next);
+         //["dist:gzip", "dist:brotli"], 
+         next);
 });
 

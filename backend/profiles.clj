@@ -8,4 +8,6 @@
  {:jar-exclusions [#"\.swp|\.swo|user\.clj" #"^media"]
   :jar-name "uxbox.jar"
   :uberjar-name "uxbox-backend.jar"
+  :main uxbox.main
+  :aot :all
   :target-path "dist/"}}
