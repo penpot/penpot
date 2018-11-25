@@ -33,6 +33,7 @@ function run_image {
 function release_image {
     cd frontend
     rm -rf ./dist
+    npm install
     npm run dist
     ./scripts/dist-main
     ./scripts/dist-view
