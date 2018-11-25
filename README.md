@@ -1,5 +1,9 @@
 
-[![Build Status](https://travis-ci.org/uxbox/uxbox.svg)](https://travis-ci.org/uxbox/uxbox)
+[uri_license]: https://www.mozilla.org/en-US/MPL/2.0
+[uri_license_image]: https://img.shields.io/badge/MPL-2.0-blue.svg
+
+[![License: MPL-2.0][uri_license_image]][uri_license]
+[![Build Status](https://travis-ci.org/Monogramm/uxbox.svg)](https://travis-ci.org/Monogramm/uxbox)
 
 # UXBOX #
 
