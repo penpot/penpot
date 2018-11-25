@@ -4,6 +4,7 @@ REV=`git rev-parse --short HEAD`
 IMGNAME="uxbox"
 
 function kill_container {
+    echo "Cleaning development image..."
     if $(sudo docker ps | grep -q $IMGNAME); then
         sudo docker ps | grep $IMGNAME | awk '{print $1}' | xargs --no-run-if-empty sudo docker kill
     fi
@@ -11,6 +12,7 @@ function kill_container {
 
 function build_image {
     kill_container
+    echo "Building development image..."
     sudo docker build --rm=true -t $IMGNAME:$REV docker/
 }
 
@@ -23,6 +25,7 @@ function run_image {
 
     mkdir -p $HOME/.m2
 
+    echo "Running development image..."
     sudo docker run -ti \
          -v `pwd`:/home/uxbox/uxbox  \
          -v $HOME/.m2:/home/uxbox/.m2 \
@@ -32,6 +35,7 @@ function run_image {
 
 function release_image {
     cd frontend
+    echo "Building frontend release..."
     rm -rf ./dist
     npm install
     npm run dist
@@ -41,6 +45,7 @@ function release_image {
     echo "Frontend release generated in $(pwd)/dist"
 
     cd ../backend
+    echo "Building backend release..."
     rm -rf ./dist
     ./scripts/dist.sh
     echo "Backend release generated in $(pwd)/dist"
