@@ -15,7 +15,7 @@ before_script:
   - env | sort
 
 script:
-  - ./manage.sh run
+  - ./manage.sh build
   - ./manage.sh release
 
 after_script:
