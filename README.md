@@ -4,6 +4,8 @@
 
 [![License: MPL-2.0][uri_license_image]][uri_license]
 [![Build Status](https://travis-ci.org/Monogramm/uxbox.svg)](https://travis-ci.org/Monogramm/uxbox)
+[![Docker Automated buid](https://img.shields.io/docker/build/monogramm/uxbox.svg)](https://hub.docker.com/r/monogramm/uxbox/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/monogramm/uxbox.svg)](https://hub.docker.com/r/monogramm/uxbox/)
 
 # UXBOX #
 
@@ -18,6 +20,20 @@ The open-source solution for design and prototyping. UXBOX is currently at an ea
 ## SVG based ##
 
 UXBOX works with SVG, a standard format, for all your designs and prototypes . This means that all your stuff in UXBOX is portable and editable in many other vector tools and easy to use on the web.
+
+## Persistent data
+The UXBOX installation and all data are stored in the database (file uploads, etc). The docker daemon will store that data within the docker directory `/var/lib/docker/volumes/...`. That means your data is saved even if the container crashes, is stopped or deleted.
+
+To make your data persistent to upgrading and get access for backups is using named docker volume or mount a host folder. To achieve this you need one volume for your database container.
+
+Database:
+- `/var/lib/mysql` MySQL / MariaDB Data
+- `/var/lib/postgresql/data` PostgreSQL Data
+```console
+$ docker run -d \
+    -v db:/var/lib/postgresql/data \
+    postgresql
+```
 
 ## Contributing ##
 
