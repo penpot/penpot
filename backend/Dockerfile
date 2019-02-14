@@ -41,19 +41,14 @@ RUN apt-get update && \
     git clone https://github.com/creationix/nvm.git .nvm; \
     bash -c "source .nvm/nvm.sh && nvm install v7.7.1"; \
     bash -c "source .nvm/nvm.sh && nvm alias default v7.7.1"; \
-    useradd -m -g users -s /bin/bash uxbox; \
-    passwd uxbox -d; \
-    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-USER uxbox
-WORKDIR /home/uxbox
+    .nvm/nvm.sh
 
 COPY ./scripts/lein /home/uxbox/.local/bin/lein
 RUN bash -c "/home/uxbox/.local/bin/lein version"
 
 # Copy backend source and build release
 COPY ./* /home/uxbox/backend/
-RUN /home/uxbox/backend/scripts/dist
+RUN bash -c "/home/uxbox/backend/scripts/dist"
 
 
 
