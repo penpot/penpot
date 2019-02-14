@@ -48,11 +48,11 @@ RUN apt-get update && \
 USER uxbox
 WORKDIR /home/uxbox
 
-COPY ../backend/scripts/lein /home/uxbox/.local/bin/lein
+COPY ./scripts/lein /home/uxbox/.local/bin/lein
 RUN bash -c "/home/uxbox/.local/bin/lein version"
 
 # Copy backend source and build release
-COPY ../backend /home/uxbox/backend
+COPY . /home/uxbox/backend
 RUN /home/uxbox/backend/scripts/dist
 
 

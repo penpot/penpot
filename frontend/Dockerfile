@@ -48,13 +48,13 @@ RUN apt-get update && \
 USER uxbox
 WORKDIR /home/uxbox
 
-COPY ../frontend/scripts/lein /home/uxbox/.local/bin/lein
+COPY ./scripts/lein /home/uxbox/.local/bin/lein
 RUN bash -c "/home/uxbox/.local/bin/lein version"
 
 ENV API_URL http://127.0.0.1:6060/api
 
 # Copy frontend source and build release
-COPY ../frontend /home/uxbox/frontend
+COPY . /home/uxbox/frontend
 RUN cd /home/uxbox/frontend; \
     sed -i \
         -e 's/"uxbox.config.url" ".*"/"uxbox.config.url" "${API_URL}/api"/g' \
