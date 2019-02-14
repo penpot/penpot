@@ -39,8 +39,6 @@ RUN apt-get update && \
     cd .. && \
     rm -rf ./imagemagick
 
-ENV NVM_DIR="/home/uxbox/.nvm"
-
 RUN useradd -m -g users -s /bin/bash uxbox; \
     passwd uxbox -d; \
     echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
@@ -48,18 +46,25 @@ RUN useradd -m -g users -s /bin/bash uxbox; \
 USER uxbox
 WORKDIR /home/uxbox
 
+ENV NODE_VERSION=7.7.1
+
 COPY ./scripts/lein /home/uxbox/.local/bin/lein
 RUN git clone https://github.com/creationix/nvm.git .nvm; \
-    bash -c "source .nvm/nvm.sh && nvm install v7.7.1"; \
-    bash -c "source .nvm/nvm.sh && nvm alias default v7.7.1"; \
-    bash -c ".nvm/nvm.sh"; \
+    bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
+    bash -c "source .nvm/nvm.sh && nvm alias default $NODE_VERSION"; \
+    bash -c "source .nvm/nvm.sh && nvm use default"; \
     bash -c "/home/uxbox/.local/bin/lein version"
+
+# add node and npm to path so the commands are available
+ENV NVM_DIR /home/uxbox/.nvm
+ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
 ENV API_URL http://127.0.0.1:6060/api
 
 # Copy frontend source and build release
 COPY ./* /home/uxbox/frontend/
-RUN cd /home/uxbox/frontend; \
+RUN cd /frontend; \
     sed -i \
         -e 's/"uxbox.config.url" ".*"/"uxbox.config.url" "${API_URL}/api"/g' \
         scripts/figwheel.clj; \
