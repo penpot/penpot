@@ -24,6 +24,7 @@ function run_image {
     fi
 
     mkdir -p $HOME/.m2
+    rm -rf ./frontend/node_modules
 
     echo "Running development image..."
     sudo docker run -ti \
@@ -37,6 +38,7 @@ function release_image {
     cd frontend
     echo "Building frontend release..."
     rm -rf ./dist
+    rm -rf ./node_modules
     npm install
     npm run dist
     ./scripts/dist-main
