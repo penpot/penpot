@@ -37,14 +37,23 @@ RUN apt-get update && \
     make -j2 && \
     make install && \
     cd .. && \
-    rm -rf ./imagemagick; \
-    git clone https://github.com/creationix/nvm.git .nvm; \
-    bash -c "source .nvm/nvm.sh && nvm install v7.7.1"; \
-    bash -c "source .nvm/nvm.sh && nvm alias default v7.7.1"; \
-    .nvm/nvm.sh
+    rm -rf ./imagemagick
+
+ENV NVM_DIR="/home/uxbox/.nvm"
+
+RUN useradd -m -g users -s /bin/bash uxbox; \
+    passwd uxbox -d; \
+    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER uxbox
+WORKDIR /home/uxbox
 
 COPY ./scripts/lein /home/uxbox/.local/bin/lein
-RUN bash -c "/home/uxbox/.local/bin/lein version"
+RUN git clone https://github.com/creationix/nvm.git .nvm; \
+    bash -c "source .nvm/nvm.sh && nvm install v7.7.1"; \
+    bash -c "source .nvm/nvm.sh && nvm alias default v7.7.1"; \
+    bash -c ".nvm/nvm.sh"; \
+    bash -c "/home/uxbox/.local/bin/lein version"
 
 ENV API_URL http://127.0.0.1:6060/api
 

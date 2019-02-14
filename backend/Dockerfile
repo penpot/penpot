@@ -37,25 +37,9 @@ RUN apt-get update && \
     make -j2 && \
     make install && \
     cd .. && \
-    rm -rf ./imagemagick; \
-    git clone https://github.com/creationix/nvm.git .nvm; \
-    bash -c "source .nvm/nvm.sh && nvm install v7.7.1"; \
-    bash -c "source .nvm/nvm.sh && nvm alias default v7.7.1"; \
-    .nvm/nvm.sh
+    rm -rf ./imagemagick
 
-COPY ./scripts/lein /home/uxbox/.local/bin/lein
-RUN bash -c "/home/uxbox/.local/bin/lein version"
-
-# Copy backend source and build release
-COPY ./* /home/uxbox/backend/
-RUN bash -c "/home/uxbox/backend/scripts/dist"
-
-
-
-# Once application has been built, prepare production image
-FROM openjdk:8-alpine
-
-LABEL maintainer="mathieu.brunot at monogramm dot io"
+ENV NVM_DIR="/home/uxbox/.nvm"
 
 RUN useradd -m -g users -s /bin/bash uxbox; \
     passwd uxbox -d; \
@@ -64,16 +48,41 @@ RUN useradd -m -g users -s /bin/bash uxbox; \
 USER uxbox
 WORKDIR /home/uxbox
 
+COPY ./scripts/lein /home/uxbox/.local/bin/lein
+RUN git clone https://github.com/creationix/nvm.git .nvm; \
+    bash -c "source .nvm/nvm.sh && nvm install v7.7.1"; \
+    bash -c "source .nvm/nvm.sh && nvm alias default v7.7.1"; \
+    bash -c ".nvm/nvm.sh"; \
+    bash -c "/home/uxbox/.local/bin/lein version"
+
+# Copy backend source and build release
+COPY ./* /home/uxbox/backend/
+RUN bash -c "/home/uxbox/backend/scripts/dist"
+
+
+
+# Once application has been built, prepare production image
+FROM openjdk:8-jre-alpine
+
+LABEL maintainer="mathieu.brunot at monogramm dot io"
+
 # Add uxbox as provided by builder
-COPY --from=0 /home/uxbox/backend/dist/uxbox-backend.jar /home/uxbox
+COPY --from=0 /home/uxbox/backend/dist/uxbox-backend.jar /srv/uxbox/app.jar
+
+VOLUME /srv/uxbox/resources/public
+
+WORKDIR /srv/uxbox/
 
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen; \
-    locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=C.UTF-8
-
+    locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=C.UTF-8; \
+    mkdir -p /srv/uxbox/resources/public/media; \
+    mkdir -p /srv/uxbox/resources/public/static;
 
 ENV \
     # Locale setup
     LANG=en_US.UTF-8 LC_ALL=C.UTF-8 \
+    # Application configuration
+    UXBOX_CONFIG=/srv/uxbox/config/application.properties \
     # Security setup
     UXBOX_SECRET=youshouldoverwritethiswithsomethingelse \
     # Debug setup
@@ -99,5 +108,5 @@ ENV \
 
 EXPOSE 6060
 
-COPY docker-entrypoint.sh .start.sh
-CMD .start.sh
+ENTRYPOINT ["sh", "/entrypoint.sh"]
+CMD ["java", "-jar", "app.jar"]

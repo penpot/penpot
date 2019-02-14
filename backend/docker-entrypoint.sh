@@ -1,33 +1,56 @@
 #!/usr/bin/env bash
+set -e
 
-echo 'UXBOX backend'
+echo "UXBOX backend Docker entrypoint initialization..."
 
-cd uxbox/backend
 
-echo 'Backend configuration'
-sed -i \
-    -e "s/:secret .*/:secret \"${UXBOX_SECRET}\"/g" \
-    \
-    -e "s/:host .*/:host \"${UXBOX_DEBUG}\"/g" \
-    \
-    -e "s/:host .*/:host \"${UXBOX_SMTP_HOST}\"/g" \
-    -e "s/:port .*/:port \"${UXBOX_SMTP_PORT}\"/g" \
-    -e "s/:user .*/:user \"${UXBOX_SMTP_USER}\"/g" \
-    -e "s/:pass .*/:pass \"${UXBOX_SMTP_PASSWORD}\"/g" \
-    -e "s/:ssl .*/:ssl \"${UXBOX_SMTP_SSL}\"/g" \
-    -e "s/:tls .*/:tls \"${UXBOX_SMTP_TLS}\"/g" \
-    -e "s/:enabled .*/:enabled \"${UXBOX_SMTP_ENABLED}\"/g" \
-    \
-    -e "s/:host .*/:host \"${UXBOX_MAIL_REPLY}\"/g" \
-    -e "s/:port .*/:port \"${UXBOX_MAIL_FROM}\"/g" \
-    \
-    -e "s/:adapter .*/:adapter \"${UXBOX_DB_TYPE}\"/g" \
-    -e "s/:username .*/:username \"${UXBOX_DB_USER}\"/g" \
-    -e "s/:password .*/:password \"${UXBOX_DB_PASSWORD}\"/g" \
-    -e "s/:database-name .*/:database-name \"${UXBOX_DB_NAME}\"/g" \
-    -e "s/:server-name .*/:server-name \"${UXBOX_DB_HOST}\"/g" \
-    -e "s/:port-number .*/:port-number \"${UXBOX_DB_PORT}\"/g" \
-    ./config/default.edn
+echo 'Backend configuration...'
+
+# If no config provided in volume, setup a default config from environment variables
+if [ ! -f $APP_CONFIG ]; then
+	echo "Setting up initial application configuration..."
+	echo "# Initial configuration generated at $(date +%Y-%m-%dT%H:%M:%S%z)" > $APP_CONFIG
+
+	echo "# ~~~~~" >>  $APP_CONFIG
+	echo "# Security Configuration" >>  $APP_CONFIG
+	echo "# ~~~~~" >>  $APP_CONFIG
+    echo "secret=${UXBOX_SECRET}" >>  $APP_CONFIG
+
+    -e "s/:host .*/:host \"${UXBOX_DEBUG}" >>  $APP_CONFIG
+
+	echo "# ~~~~~" >>  $APP_CONFIG
+	echo "# SMTP Configuration" >>  $APP_CONFIG
+	echo "# ~~~~~" >>  $APP_CONFIG
+    echo "smtp.host=${UXBOX_SMTP_HOST}" >>  $APP_CONFIG
+    echo "smtp.port=${UXBOX_SMTP_PORT}" >>  $APP_CONFIG
+    echo "smtp.user=${UXBOX_SMTP_USER}" >>  $APP_CONFIG
+    echo "smtp.pass=${UXBOX_SMTP_PASSWORD}" >>  $APP_CONFIG
+    echo "smtp.ssl=${UXBOX_SMTP_SSL}" >>  $APP_CONFIG
+    echo "smtp.tls=${UXBOX_SMTP_TLS}" >>  $APP_CONFIG
+    echo "smtp.enabled=${UXBOX_SMTP_ENABLED}" >>  $APP_CONFIG
+
+	echo "# ~~~~~" >>  $APP_CONFIG
+	echo "# Email Configuration" >>  $APP_CONFIG
+	echo "# ~~~~~" >>  $APP_CONFIG
+    echo "email.host=${UXBOX_MAIL_REPLY}" >>  $APP_CONFIG
+    echo "email.port=${UXBOX_MAIL_FROM}" >>  $APP_CONFIG
+
+	echo "# ~~~~~" >>  $APP_CONFIG
+	echo "# Database Configuration" >>  $APP_CONFIG
+	echo "# ~~~~~" >>  $APP_CONFIG
+    echo "database.adapter=${UXBOX_DB_TYPE}" >>  $APP_CONFIG
+    echo "database.username=${UXBOX_DB_USER}" >>  $APP_CONFIG
+    echo "database.password=${UXBOX_DB_PASSWORD}" >>  $APP_CONFIG
+    echo "database.database-name=${UXBOX_DB_NAME}" >>  $APP_CONFIG
+    echo "database.server-name=${UXBOX_DB_HOST}" >>  $APP_CONFIG
+    echo "database.port-number=${UXBOX_DB_PORT}" >>  $APP_CONFIG
+
+	echo "Configuration generated."
+else
+	echo "Configuration found."
+fi
+
+# TODO Find how to actually pass configuration file to JAR
 
 echo 'Running backend'
-java -jar /home/uxbox/uxbox-backend.jar
+exec "$@"
