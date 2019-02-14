@@ -64,7 +64,7 @@ ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
 # Copy backend source and build release
-COPY ./* /home/uxbox/backend/
+COPY . /home/uxbox/backend
 RUN set -ex; \
     ls -l backend; \
     bash -c "/home/uxbox/backend/scripts/dist"

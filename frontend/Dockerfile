@@ -66,7 +66,7 @@ ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 ENV API_URL http://127.0.0.1:6060/api
 
 # Copy frontend source and build release
-COPY ./* /home/uxbox/frontend/
+COPY . /home/uxbox/frontend
 RUN set -ex; \
     ls -l frontend; \
     cd frontend; \
