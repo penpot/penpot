@@ -66,7 +66,7 @@ ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 # Copy backend source and build release
 COPY ./* /home/uxbox/backend/
 RUN set -ex; \
-    ls -l; \
+    ls -l backend; \
     bash -c "/home/uxbox/backend/scripts/dist"
 
 
@@ -88,6 +88,7 @@ RUN set -ex; \
     locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=C.UTF-8; \
     mkdir -p /srv/uxbox/resources/public/media; \
     mkdir -p /srv/uxbox/resources/public/static;
+
 
 ENV \
     # Locale setup

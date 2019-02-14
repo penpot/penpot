@@ -68,7 +68,7 @@ ENV API_URL http://127.0.0.1:6060/api
 # Copy frontend source and build release
 COPY ./* /home/uxbox/frontend/
 RUN set -ex; \
-    ls - l; \
+    ls -l frontend; \
     cd frontend; \
     sed -i \
         -e 's/"uxbox.config.url" ".*"/"uxbox.config.url" "${API_URL}/api"/g' \
