@@ -40,12 +40,6 @@ RUN set -ex; \
     cd .. && \
     rm -rf ./imagemagick
 
-RUN set -ex; \
-    useradd -m -g users -s /bin/bash uxbox; \
-    passwd uxbox -d; \
-    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-USER uxbox
 WORKDIR /home/uxbox
 
 ENV NODE_VERSION=7.7.1
@@ -70,7 +64,7 @@ COPY . /home/uxbox/frontend
 RUN set -ex; \
     rm -f Dockerfile; \
     cd frontend; \
-    sudo sed -i \
+    sed -i \
         -e 's|"uxbox.config.url" ".*"|"uxbox.config.url" "${API_URL}/api"|g' \
         scripts/figwheel.clj; \
     npm install; \

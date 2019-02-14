@@ -40,12 +40,6 @@ RUN set -ex; \
     cd .. && \
     rm -rf ./imagemagick
 
-RUN set -ex; \
-    useradd -m -g users -s /bin/bash uxbox; \
-    passwd uxbox -d; \
-    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-USER uxbox
 WORKDIR /home/uxbox
 
 ENV NODE_VERSION=7.7.1
