@@ -9,7 +9,7 @@ RUN locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=C.UTF-8
 
 ENV LANG en_US.UTF-8
 ENV LC_ALL C.UTF-8
-ENV API_URL http://127.0.0.1:6060/api
+ENV API_URL https://demo.uxbox.io/api
 
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -

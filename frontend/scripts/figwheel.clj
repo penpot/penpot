@@ -2,8 +2,8 @@
          '[figwheel-sidecar.repl-api :as ra])
 
 (def options
-  {;;"uxbox.config.url" "http://127.0.0.1:6060/api"
-   "uxbox.config.url" "https://demo.uxbox.io/api"
+  {
+   "uxbox.config.url" "http://127.0.0.1:6060/api"
    })
 
 (ra/start-figwheel!
