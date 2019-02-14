@@ -1,7 +1,8 @@
 FROM ubuntu:xenial
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
-RUN apt-get update && \
+RUN set -ex; \
+    apt-get update && \
     apt-get install -yq \
         locales \
         ca-certificates \
@@ -39,7 +40,8 @@ RUN apt-get update && \
     cd .. && \
     rm -rf ./imagemagick
 
-RUN useradd -m -g users -s /bin/bash uxbox; \
+RUN set -ex; \
+    useradd -m -g users -s /bin/bash uxbox; \
     passwd uxbox -d; \
     echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
@@ -49,7 +51,8 @@ WORKDIR /home/uxbox
 ENV NODE_VERSION=7.7.1
 
 COPY ./scripts/lein /home/uxbox/.local/bin/lein
-RUN git clone https://github.com/creationix/nvm.git .nvm; \
+RUN set -ex; \
+    git clone https://github.com/creationix/nvm.git .nvm; \
     bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm alias default $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm use default"; \
@@ -64,7 +67,9 @@ ENV API_URL http://127.0.0.1:6060/api
 
 # Copy frontend source and build release
 COPY ./* /home/uxbox/frontend/
-RUN cd /frontend; \
+RUN set -ex; \
+    ls - l; \
+    cd frontend; \
     sed -i \
         -e 's/"uxbox.config.url" ".*"/"uxbox.config.url" "${API_URL}/api"/g' \
         scripts/figwheel.clj; \
@@ -79,10 +84,11 @@ FROM nginx:alpine
 
 LABEL maintainer="mathieu.brunot at monogramm dot io"
 
-# Copy built app to wwwroot
+# Copy built app to www root
 COPY --from=0 /home/uxbox/frontend/dist /usr/share/nginx/html
 
-RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen; \
+RUN set -ex; \
+    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen; \
     locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=C.UTF-8
 
 
