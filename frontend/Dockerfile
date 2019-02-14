@@ -70,7 +70,7 @@ COPY . /home/uxbox/frontend
 RUN set -ex; \
     rm -f Dockerfile; \
     cd frontend; \
-    sed -i \
+    sudo sed -i \
         -e 's|"uxbox.config.url" ".*"|"uxbox.config.url" "${API_URL}/api"|g' \
         scripts/figwheel.clj; \
     npm install; \

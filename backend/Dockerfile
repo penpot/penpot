@@ -67,6 +67,7 @@ ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 COPY . /home/uxbox/backend
 RUN set -ex; \
     rm -f Dockerfile docker-entrypoint.sh; \
+    cd backend; \
     bash -c "/home/uxbox/backend/scripts/dist.sh"
 
 
