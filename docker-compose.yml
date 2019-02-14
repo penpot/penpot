@@ -1,0 +1,62 @@
+version: '2'
+
+volumes:
+  uxbox_front:
+  uxbox_back:
+  uxbox_db:
+
+services:
+    uxbox_postgres:
+        image: postgres:latest
+        restart: always
+        ports:
+            - "5432:5432"
+        environment:
+            - "POSTGRES_DB=uxbox"
+            - "POSTGRES_USER=uxbox"
+            - "POSTGRES_PASSWORD=youshouldoverwritethiswithsomethingelse"
+        volumes:
+            - uxbox_db:/var/lib/postgresql/data
+
+    uxbox_backend:
+        build: ./backend-docker
+        #image: Monogramm/uxbox-backend
+        restart: always
+        depends_on:
+            - uxbox_postgres
+        ports:
+            - "6060:6060"
+        environment:
+            # Security setup
+            - "UXBOX_SECRET=youshouldoverwritethiswithsomethingelse"
+            # Debug setup
+            - "UXBOX_DEBUG=false"
+            # STMP setup
+            - "UXBOX_SMTP_HOST=localhost"
+            - "UXBOX_SMTP_PORT=25"
+            - "UXBOX_SMTP_USER=uxbox"
+            - "UXBOX_SMTP_PASSWORD=youshouldoverwritethiswithsomethingelse"
+            - "UXBOX_SMTP_SSL=false"
+            - "UXBOX_SMTP_TLS=false"
+            - "UXBOX_SMTP_ENABLED=false"
+            # Mail setup
+            - "UXBOX_MAIL_REPLY=no-reply@uxbox.io"
+            - "UXBOX_MAIL_FROM=no-reply@uxbox.io"
+            # Database setup
+            - "UXBOX_DB_TYPE=postgresql"
+            - "UXBOX_DB_USER=uxbox"
+            - "UXBOX_DB_PASSWORD=youshouldoverwritethiswithsomethingelse"
+            - "UXBOX_DB_NAME=uxbox"
+            - "UXBOX_DB_HOST=uxbox-postgres"
+            - "UXBOX_DB_PORT=5432"
+
+    uxbox_frontend:
+        build: ./frontend-docker
+        #image: Monogramm/uxbox-frontend
+        restart: always
+        depends_on:
+            - uxbox_backend
+        ports:
+            - 80:80
+        environment:
+            - "API_URL=http://127.0.0.1:6060/api"
