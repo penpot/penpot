@@ -52,7 +52,7 @@ COPY ./scripts/lein /home/uxbox/.local/bin/lein
 RUN bash -c "/home/uxbox/.local/bin/lein version"
 
 # Copy backend source and build release
-COPY ./* /home/uxbox/backend
+COPY ./* /home/uxbox/backend/
 RUN /home/uxbox/backend/scripts/dist
 
 
