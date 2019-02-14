@@ -66,8 +66,8 @@ ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 # Copy backend source and build release
 COPY . /home/uxbox/backend
 RUN set -ex; \
-    ls -l backend; \
-    bash -c "/home/uxbox/backend/scripts/dist"
+    rm -f Dockerfile docker-entrypoint.sh; \
+    bash -c "/home/uxbox/backend/scripts/dist.sh"
 
 
 

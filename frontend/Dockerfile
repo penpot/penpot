@@ -68,10 +68,10 @@ ENV API_URL http://127.0.0.1:6060/api
 # Copy frontend source and build release
 COPY . /home/uxbox/frontend
 RUN set -ex; \
-    ls -l frontend; \
+    rm -f Dockerfile; \
     cd frontend; \
     sed -i \
-        -e 's/"uxbox.config.url" ".*"/"uxbox.config.url" "${API_URL}/api"/g' \
+        -e 's|"uxbox.config.url" ".*"|"uxbox.config.url" "${API_URL}/api"|g' \
         scripts/figwheel.clj; \
     npm install; \
     npm run dist; \
