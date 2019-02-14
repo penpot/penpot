@@ -104,5 +104,5 @@ ENV \
 
 EXPOSE 6060
 
-COPY entrypoint.sh .start.sh
+COPY docker-entrypoint.sh .start.sh
 CMD .start.sh

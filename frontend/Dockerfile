@@ -84,4 +84,4 @@ ENV \
     API_URL=http://127.0.0.1:6060/api
 
 # NGINX configurations
-COPY ./nginx/conf.d /etc/nginx/conf.d
+COPY ./docker-nginx/conf.d /etc/nginx/conf.d

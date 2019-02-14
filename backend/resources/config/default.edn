@@ -8,7 +8,8 @@
   :user nil         ;; Username to authenticate with (if authenticating).
   :pass nil         ;; Password to authenticate with (if authenticating).
   :ssl false        ;; Enables SSL encryption if value is truthy.
-  :tls false       ;; Enables TLS encryption if value is truthy.
+  :tls false        ;; Enables TLS encryption if value is truthy.
+  :enabled false    ;; Enables SMTP if value is truthy.
   :noop true}
 
  :auth-options {:alg :a256kw :enc :a128cbc-hs256}
