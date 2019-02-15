@@ -28,9 +28,14 @@ RUN set -ex; \
     mkdir -p /srv/uxbox/resources/public/static;
 
 
-ENV UXBOX_CONFIG=/srv/uxbox/config/application.properties \
-    UXBOX_SECRET=youshouldoverwritethiswithsomethingelse \
-    UXBOX_DEBUG=false \
+ENV UXBOX_HTTP_SERVER_DEBUG=false \
+    UXBOX_DATABASE_USERNAME=uxbox \
+    UXBOX_DATABASE_PASSWORD=youshouldoverwritethiswithsomethingelse \
+    UXBOX_DATABASE_NAME=uxbox \
+    UXBOX_DATABASE_SERVER=localhost \
+    UXBOX_DATABASE_PORT=5432 \
+    UXBOX_EMAIL_REPLY_TO=no-reply@uxbox.io \
+    UXBOX_EMAIL_FROM=no-reply@uxbox.io \
     UXBOX_SMTP_HOST=localhost \
     UXBOX_SMTP_PORT=25 \
     UXBOX_SMTP_USER=uxbox \
@@ -38,14 +43,7 @@ ENV UXBOX_CONFIG=/srv/uxbox/config/application.properties \
     UXBOX_SMTP_SSL=false \
     UXBOX_SMTP_TLS=false \
     UXBOX_SMTP_ENABLED=false \
-    UXBOX_MAIL_REPLY=no-reply@uxbox.io \
-    UXBOX_MAIL_FROM=no-reply@uxbox.io \
-    UXBOX_DB_TYPE=postgresql \
-    UXBOX_DB_USER=uxbox \
-    UXBOX_DB_PASSWORD=youshouldoverwritethiswithsomethingelse \
-    UXBOX_DB_NAME=uxbox \
-    UXBOX_DB_HOST=localhost \
-    UXBOX_DB_PORT=5432
+    UXBOX_SECRET=youshouldoverwritethiswithsomethingelse 
 
 EXPOSE 6060
 

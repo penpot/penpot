@@ -27,10 +27,17 @@ services:
         ports:
             - "6060:6060"
         environment:
-            # Security setup
-            - "UXBOX_SECRET=youshouldoverwritethiswithsomethingelse"
-            # Debug setup
-            - "UXBOX_DEBUG=false"
+            # HTTP setup
+            - "UXBOX_HTTP_SERVER_DEBUG=false"
+            # Database setup
+            - "UXBOX_DATABASE_USERNAME=uxbox"
+            - "UXBOX_DATABASE_PASSWORD=youshouldoverwritethiswithsomethingelse"
+            - "UXBOX_DATABASE_NAME=uxbox"
+            - "UXBOX_DATABASE_SERVER=db"
+            - "UXBOX_DATABASE_PORT=5432"
+            # Mail setup
+            - "UXBOX_EMAIL_REPLY_TO=no-reply@uxbox.io"
+            - "UXBOX_EMAIL_FROM=no-reply@uxbox.io"
             # STMP setup
             - "UXBOX_SMTP_HOST=localhost"
             - "UXBOX_SMTP_PORT=25"
@@ -39,16 +46,8 @@ services:
             - "UXBOX_SMTP_SSL=false"
             - "UXBOX_SMTP_TLS=false"
             - "UXBOX_SMTP_ENABLED=false"
-            # Mail setup
-            - "UXBOX_MAIL_REPLY=no-reply@uxbox.io"
-            - "UXBOX_MAIL_FROM=no-reply@uxbox.io"
-            # Database setup
-            - "UXBOX_DB_TYPE=postgresql"
-            - "UXBOX_DB_USER=uxbox"
-            - "UXBOX_DB_PASSWORD=youshouldoverwritethiswithsomethingelse"
-            - "UXBOX_DB_NAME=uxbox"
-            - "UXBOX_DB_HOST=db"
-            - "UXBOX_DB_PORT=5432"
+            # Security setup
+            - "UXBOX_SECRET=youshouldoverwritethiswithsomethingelse"
 
     frontend:
         build: ./frontend

@@ -35,6 +35,31 @@ $ docker run -d \
     postgresql
 ```
 
+## Auto configuration via environment variables
+
+The following environment variables are also honored for configuring your UXBOX instance:
+
+### Frontend
+-	`-e API_URL=...` (defaults to http://127.0.0.1:6060/api. **Only available at build time!**
+
+### Backend
+-	`-e UXBOX_HTTP_SERVER_DEBUG=...` (defaults to false)
+-	`-e UXBOX_DATABASE_USERNAME=...` (defaults to uxbox)
+-	`-e UXBOX_DATABASE_PASSWORD=...` (defaults to youshouldoverwritethiswithsomethingelse)
+-	`-e UXBOX_DATABASE_NAME=...` (defaults to uxbox)
+-	`-e UXBOX_DATABASE_SERVER=...` (defaults to localhost)
+-	`-e UXBOX_DATABASE_PORT=...` (defaults to 5432)
+-	`-e UXBOX_EMAIL_REPLY_TO=...` (defaults to no-reply@uxbox.io)
+-	`-e UXBOX_EMAIL_FROM=...` (defaults to no-reply@uxbox.io)
+-	`-e UXBOX_SMTP_HOST=...` (defaults to localhost)
+-	`-e UXBOX_SMTP_PORT=...` (defaults to 25)
+-	`-e UXBOX_SMTP_USER=...` (defaults to uxbox)
+-	`-e UXBOX_SMTP_PASSWORD=...` (defaults to youshouldoverwritethiswithsomethingelse)
+-	`-e UXBOX_SMTP_SSL=...` (defaults to false)
+-	`-e UXBOX_SMTP_TLS=...` (defaults to false)
+-	`-e UXBOX_SMTP_ENABLED=...` (defaults to false)
+-	`-e UXBOX_SECRET=...` (defaults to youshouldoverwritethiswithsomethingelse)
+
 ## Contributing ##
 
 **Open to you!**
