@@ -1,9 +1,9 @@
-dist: trusty
+dist: xenial
 sudo: required
 
 services: docker
 
-language: bash
+language: node
 
 branches:
   only:
@@ -13,6 +13,7 @@ branches:
 
 before_script:
   - env | sort
+  - apt-get install openjdk-8-jdk imagemagick
 
 script:
   - ./manage.sh build
