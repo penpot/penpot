@@ -3,7 +3,13 @@ sudo: required
 
 services: docker
 
-language: node
+language: java
+
+jdk:
+  - oraclejdk8
+
+env:
+  - NODE_VERSION=10.15.1
 
 branches:
   only:
@@ -13,7 +19,10 @@ branches:
 
 before_script:
   - env | sort
-  - apt-get install openjdk-8-jdk imagemagick
+  - nvm install $NODE_VERSION
+  - npm install
+  - nvm use $NODE_VERSION
+  - npm test
 
 script:
   - ./manage.sh build
