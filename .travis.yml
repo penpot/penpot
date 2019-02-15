@@ -16,9 +16,8 @@ before_script:
 
 script:
   - ./manage.sh build
-  - ./manage.sh release
-  - docker build -t uxbox-backend backend/
-  - docker build -t uxbox-frontend frontend/
+  - ./manage.sh release-local
+  - ./manage.sh release-docker
 
 after_script:
   - docker images

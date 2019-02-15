@@ -69,6 +69,9 @@ RUN set -ex; \
         scripts/figwheel.clj; \
     npm install; \
     npm run dist; \
+    ./scripts/dist-main; \
+    ./scripts/dist-view; \
+    ./scripts/dist-worker; \
     rm -rf ./dist/**/*.gz ./dist/**/*.br
 
 

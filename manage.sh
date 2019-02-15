@@ -34,7 +34,7 @@ function run_image {
          -p 3449:3449 -p 6060:6060 -p 9090:9090 $IMGNAME:$REV
 }
 
-function release_image {
+function release_local {
     cd frontend
     echo "Building frontend release..."
     rm -rf ./dist
@@ -55,8 +55,20 @@ function release_image {
     cd ..
 }
 
+function release_image {
+    echo "Building frontend release..."
+    rm -rf ./frontend/dist ./frontend/node_modules ./frontend/dist
+    sudo docker build --rm=true -t $IMGNAME-frontend:$REV frontend/
+    echo "Frontend release image generated"
+
+    echo "Building backend release..."
+    rm -rf ./backend/dist
+    sudo docker build --rm=true -t $IMGNAME-backend:$REV backend/
+    echo "Backend release image generated"
+}
+
 function usage {
-    echo "USAGE: $0 [ build | run | release ]"
+    echo "USAGE: $0 [ build | run | release-local | release-docker ]"
 }
 
 case $1 in
@@ -66,7 +78,10 @@ case $1 in
     run)
         run_image
         ;;
-    release)
+    release-local)
+        release_local
+        ;;
+    release-docker)
         release_image
         ;;
     *)
