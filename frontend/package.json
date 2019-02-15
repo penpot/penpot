@@ -1,6 +1,7 @@
 {
   "name": "uxbox",
   "version": "0.1.0",
+  "description": "The Open-Source prototyping tool",
   "author": "Uxbox",
   "license": "SEE LICENSE IN <LICENSE>",
   "repository": {
