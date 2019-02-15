@@ -85,7 +85,7 @@ function run_release {
         release_image
     fi
 
-    echo "Running development image..."
+    echo "Running production images..."
     sudo docker-compose up -d
 }
 

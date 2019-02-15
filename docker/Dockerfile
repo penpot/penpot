@@ -1,11 +1,48 @@
 FROM ubuntu:xenial
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
-RUN apt-get update && \
-    apt-get install -yq locales ca-certificates wget && \
-    rm -rf /var/lib/apt/lists/*
-RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
-RUN locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=C.UTF-8
+RUN set -ex; \
+    apt-get update && \
+    apt-get install -yq \
+        locales \
+        ca-certificates \
+        wget \
+    ; \
+    rm -rf /var/lib/apt/lists/*; \
+    apt-get update -yq &&  \
+    apt-get install -yq \
+        bash \
+        git \
+        vim \
+        openjdk-8-jdk \
+        rlwrap \
+        build-essential \
+        imagemagick \
+        webp \
+        sudo \
+    ; \
+    mkdir -p /etc/resolvconf/resolv.conf.d; \
+    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; \
+    apt-get update -yq; \
+    apt-get install -yq \
+        libbz2-dev liblzma-dev zlib1g-dev libfftw3-dev \
+        libfreetype6-dev libfontconfig1-dev libxt-dev \
+        libexif-dev libjpeg-dev libpng-dev libtiff-dev \
+        libwmf-dev libpango1.0-dev librsvg2-bin librsvg2-dev \
+        libxml2-dev libwebp-dev webp autoconf \
+    ; \
+    git clone https://github.com/ImageMagick/ImageMagick.git imagemagick && \
+    cd imagemagick && \
+    git checkout -f 7.0.8-27 && \
+    ./configure --prefix=/opt/img && \
+    make -j2 && \
+    make install && \
+    cd .. && \
+    rm -rf ./imagemagick
+
+WORKDIR /home/uxbox
+
+ENV NODE_VERSION=8.15.0
 
 ENV LANG en_US.UTF-8
 ENV LC_ALL C.UTF-8
@@ -15,16 +52,9 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
 RUN apt-get update -yq &&  \
-    apt-get install -yq bash git tmux vim openjdk-8-jdk rlwrap build-essential \
-                        postgresql-9.6 postgresql-contrib-9.6 imagemagick webp \
-                        sudo
-
-RUN mkdir -p /etc/resolvconf/resolv.conf.d
-RUN echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail
-
-RUN useradd -m -g users -s /bin/bash uxbox
-RUN passwd uxbox -d
-RUN echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    apt-get install -yq  \
+        postgresql-9.6 \
+        postgresql-contrib-9.6
 
 COPY files/pg_hba.conf /etc/postgresql/9.6/main/pg_hba.conf
 # COPY files/postgresql.conf /etc/postgresql/9.5/main/postgresql.conf
@@ -37,35 +67,20 @@ RUN /etc/init.d/postgresql start \
     && createdb -U uxbox test \
     && /etc/init.d/postgresql stop
 
-RUN apt-get update -yq && \
-    apt-get install -yq libbz2-dev liblzma-dev zlib1g-dev libfftw3-dev \
-                        libfreetype6-dev libfontconfig1-dev libxt-dev \
-                        libexif-dev libjpeg-dev libpng-dev libtiff-dev \
-                        libwmf-dev libpango1.0-dev librsvg2-bin librsvg2-dev \
-                        libxml2-dev libwebp-dev webp autoconf
-
-RUN git clone https://github.com/ImageMagick/ImageMagick.git imagemagick && \
-    cd imagemagick && \
-    git checkout -f 7.0.5-0 && \
-    ./configure --prefix=/opt/img && \
-    make -j2 && \
-    make install && \
-    cd .. && \
-    rm -rf ./imagemagick
-
 EXPOSE 3449
 EXPOSE 6060
 EXPOSE 9090
 
 USER uxbox
-WORKDIR /home/uxbox
-
-RUN git clone https://github.com/creationix/nvm.git .nvm
-RUN bash -c "source .nvm/nvm.sh && nvm install v7.7.1"
-RUN bash -c "source .nvm/nvm.sh && nvm alias default v7.7.1"
 
 COPY files/lein /home/uxbox/.local/bin/lein
-RUN bash -c "/home/uxbox/.local/bin/lein version"
+RUN set -ex; \
+	chmod 755 /home/uxbox/.local/bin/lein; \
+    git clone https://github.com/creationix/nvm.git .nvm; \
+    bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
+    bash -c "source .nvm/nvm.sh && nvm alias default $NODE_VERSION"; \
+    bash -c "source .nvm/nvm.sh && nvm use default"; \
+    bash -c "/home/uxbox/.local/bin/lein version"
 
 COPY files/bashrc /home/uxbox/.bashrc
 COPY files/vimrc /home/uxbox/.vimrc
