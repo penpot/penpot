@@ -81,7 +81,6 @@ WORKDIR /home/uxbox
 
 COPY files/lein /home/uxbox/.local/bin/lein
 RUN set -ex; \
-	chmod 755 /home/uxbox/.local/bin/lein; \
     git clone https://github.com/creationix/nvm.git .nvm; \
     bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm alias default $NODE_VERSION"; \
