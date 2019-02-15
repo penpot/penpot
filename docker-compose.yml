@@ -23,7 +23,7 @@ services:
         #image: monogramm/uxbox:backend
         #restart: always
         depends_on:
-            - uxbox_db
+            - db
         ports:
             - "6060:6060"
         environment:
@@ -55,7 +55,7 @@ services:
         #image: monogramm/uxbox:frontend
         #restart: always
         depends_on:
-            - uxbox_backend
+            - backend
         ports:
             - 80:80
         environment:
