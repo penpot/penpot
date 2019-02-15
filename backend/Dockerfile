@@ -79,22 +79,13 @@ VOLUME /srv/uxbox/resources/public
 WORKDIR /srv/uxbox/
 
 RUN set -ex; \
-    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen; \
-    locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=C.UTF-8; \
     mkdir -p /srv/uxbox/resources/public/media; \
     mkdir -p /srv/uxbox/resources/public/static;
 
 
-ENV \
-    # Locale setup
-    LANG=en_US.UTF-8 LC_ALL=C.UTF-8 \
-    # Application configuration
-    UXBOX_CONFIG=/srv/uxbox/config/application.properties \
-    # Security setup
+ENV UXBOX_CONFIG=/srv/uxbox/config/application.properties \
     UXBOX_SECRET=youshouldoverwritethiswithsomethingelse \
-    # Debug setup
     UXBOX_DEBUG=false \
-    # STMP setup
     UXBOX_SMTP_HOST=localhost \
     UXBOX_SMTP_PORT=25 \
     UXBOX_SMTP_USER=uxbox \
@@ -102,10 +93,8 @@ ENV \
     UXBOX_SMTP_SSL=false \
     UXBOX_SMTP_TLS=false \
     UXBOX_SMTP_ENABLED=false \
-    # Mail setup
     UXBOX_MAIL_REPLY=no-reply@uxbox.io \
     UXBOX_MAIL_FROM=no-reply@uxbox.io \
-    # Database setup
     UXBOX_DB_TYPE=postgresql \
     UXBOX_DB_USER=uxbox \
     UXBOX_DB_PASSWORD=youshouldoverwritethiswithsomethingelse \

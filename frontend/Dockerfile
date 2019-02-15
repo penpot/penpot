@@ -81,16 +81,5 @@ LABEL maintainer="mathieu.brunot at monogramm dot io"
 # Copy built app to www root
 COPY --from=0 /home/uxbox/frontend/dist /usr/share/nginx/html
 
-RUN set -ex; \
-    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen; \
-    locale-gen && update-locale LANG=en_US.UTF-8 LC_ALL=C.UTF-8
-
-
-ENV \
-    # Locale setup
-    LANG=en_US.UTF-8 LC_ALL=C.UTF-8 \
-    # Backend setup
-    API_URL=http://127.0.0.1:6060/api
-
 # NGINX configurations
 COPY ./docker-nginx/conf.d /etc/nginx/conf.d
