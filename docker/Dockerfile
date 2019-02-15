@@ -40,28 +40,28 @@ RUN set -ex; \
     cd .. && \
     rm -rf ./imagemagick
 
-WORKDIR /home/uxbox
-
 ENV NODE_VERSION=8.15.0
 
 ENV LANG en_US.UTF-8
 ENV LC_ALL C.UTF-8
 ENV API_URL https://demo.uxbox.io/api
 
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-
-RUN apt-get update -yq &&  \
+RUN set -ex; \
+	echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list; \
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -; \
+	apt-get update -yq &&  \
     apt-get install -yq  \
         postgresql-9.6 \
-        postgresql-contrib-9.6
+        postgresql-contrib-9.6 \
+    ;
 
 COPY files/pg_hba.conf /etc/postgresql/9.6/main/pg_hba.conf
 # COPY files/postgresql.conf /etc/postgresql/9.5/main/postgresql.conf
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
 
-RUN /etc/init.d/postgresql start \
+RUN set -ex; \
+	/etc/init.d/postgresql start \
     && createuser -U postgres -sl uxbox \
     && createdb -U uxbox uxbox \
     && createdb -U uxbox test \
@@ -71,10 +71,13 @@ EXPOSE 3449
 EXPOSE 6060
 EXPOSE 9090
 
-RUN useradd -m -g users -s /bin/bash uxbox; \
+RUN set -ex; \
+	useradd -m -g users -s /bin/bash uxbox; \
     passwd uxbox -d; \
-    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers; \
+    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
 USER uxbox
+WORKDIR /home/uxbox
 
 COPY files/lein /home/uxbox/.local/bin/lein
 RUN set -ex; \
