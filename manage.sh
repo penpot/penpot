@@ -69,21 +69,17 @@ function release_local {
 function release_image {
     echo "Building frontend release..."
     rm -rf ./frontend/dist ./frontend/node_modules ./frontend/dist
-    sudo docker build --rm=true -t $IMGNAME-frontend:$REV frontend/
+    sudo docker build --rm=true -t ${IMGNAME}_frontend:$REV frontend/
     echo "Frontend release image generated"
 
     echo "Building backend release..."
     rm -rf ./backend/dist
-    sudo docker build --rm=true -t $IMGNAME-backend:$REV backend/
+    sudo docker build --rm=true -t ${IMGNAME}_backend:$REV backend/
     echo "Backend release image generated"
 }
 
 function run_release {
     kill_container
-
-    if ! $(sudo docker images | grep $IMGNAME-frontend | grep -q $REV); then
-        release_image
-    fi
 
     echo "Running production images..."
     sudo docker-compose up -d

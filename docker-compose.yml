@@ -6,7 +6,7 @@ volumes:
   uxbox_db:
 
 services:
-    uxbox_db:
+    db:
         image: postgres:latest
         restart: always
         ports:
@@ -18,10 +18,10 @@ services:
         volumes:
             - uxbox_db:/var/lib/postgresql/data
 
-    uxbox_backend:
+    backend:
         build: ./backend
         #image: monogramm/uxbox:backend
-        restart: always
+        #restart: always
         depends_on:
             - uxbox_db
         ports:
@@ -47,13 +47,13 @@ services:
             - "UXBOX_DB_USER=uxbox"
             - "UXBOX_DB_PASSWORD=youshouldoverwritethiswithsomethingelse"
             - "UXBOX_DB_NAME=uxbox"
-            - "UXBOX_DB_HOST=uxbox_db"
+            - "UXBOX_DB_HOST=db"
             - "UXBOX_DB_PORT=5432"
 
-    uxbox_frontend:
+    frontend:
         build: ./frontend
         #image: monogramm/uxbox:frontend
-        restart: always
+        #restart: always
         depends_on:
             - uxbox_backend
         ports:

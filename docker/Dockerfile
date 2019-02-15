@@ -71,6 +71,9 @@ EXPOSE 3449
 EXPOSE 6060
 EXPOSE 9090
 
+RUN useradd -m -g users -s /bin/bash uxbox; \
+    passwd uxbox -d; \
+    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers; \
 USER uxbox
 
 COPY files/lein /home/uxbox/.local/bin/lein
