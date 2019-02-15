@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -ex
 
 REV=`git rev-parse --short HEAD`
 IMGNAME="uxbox"
@@ -34,6 +35,18 @@ function run_image {
          -p 3449:3449 -p 6060:6060 -p 9090:9090 $IMGNAME:$REV
 }
 
+function test {
+    kill_container
+
+    echo "Testing frontend..."
+    cd ./frontend
+    ./scripts/build-tests
+    nvm install $NODE_VERSION
+    node --version
+    node ./out/tests.js
+    cd ..
+}
+
 function release_local {
     cd frontend
     echo "Building frontend release..."
@@ -67,8 +80,20 @@ function release_image {
     echo "Backend release image generated"
 }
 
+function run_release {
+    kill_container
+
+    if ! $(sudo docker images | grep $IMGNAME-frontend | grep -q $REV); then
+        release_image
+    fi
+
+    echo "Running development image..."
+    sudo docker-compose up -d
+}
+
 function usage {
-    echo "USAGE: $0 [ build | run | release-local | release-docker ]"
+    echo "UXBOX build & release manager v$REV"
+    echo "USAGE: $0 [ build | run | test | release-local | release-docker | run-release ]"
 }
 
 case $1 in
@@ -78,11 +103,17 @@ case $1 in
     run)
         run_image
         ;;
+    test)
+        test
+        ;;
     release-local)
         release_local
         ;;
     release-docker)
         release_image
+        ;;
+    run-release)
+        run_release
         ;;
     *)
         usage

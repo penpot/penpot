@@ -5,8 +5,6 @@ sudo: required
 lein: lein
 jdk:
   - openjdk8
-  - openjdk10
-  - openjdk11
 services:
   - docker
 
@@ -17,20 +15,13 @@ branches:
     - develop
 
 install:
-  - ./manage.sh build
+  - ./manage.sh help
 
 before_script:
   - env | sort
 
 script:
-  - cd ./frontend
-  - ./scripts/build-tests
-  - nvm install $NODE_VERSION
-  - node --version
-  - node ./out/tests.js
-  - cd ..
-  - ./manage.sh release-local
-  - ./manage.sh release-docker
+  - ./manage.sh $COMMAND
 
 after_script:
   - docker images
@@ -40,5 +31,11 @@ notifications:
   email: false
 
 env:
-  - NODE_VERSION=7.7.1
-  - NODE_VERSION=10.15.1
+  - NODE_VERSION=7.7.1 COMMAND=build
+  - NODE_VERSION=7.7.1 COMMAND=test
+  - NODE_VERSION=7.7.1 COMMAND=release-local
+  - NODE_VERSION=7.7.1 COMMAND=release-docker
+  - NODE_VERSION=10.15.1 COMMAND=build
+  - NODE_VERSION=10.15.1 COMMAND=test
+  - NODE_VERSION=10.15.1 COMMAND=release-local
+  - NODE_VERSION=10.15.1 COMMAND=release-docker

@@ -19,8 +19,8 @@ services:
             - uxbox_db:/var/lib/postgresql/data
 
     uxbox_backend:
-        build: ./backend-docker
-        #image: Monogramm/uxbox-backend
+        build: ./backend
+        #image: monogramm/uxbox:backend
         restart: always
         depends_on:
             - uxbox_postgres
@@ -51,8 +51,8 @@ services:
             - "UXBOX_DB_PORT=5432"
 
     uxbox_frontend:
-        build: ./frontend-docker
-        #image: Monogramm/uxbox-frontend
+        build: ./frontend
+        #image: monogramm/uxbox:frontend
         restart: always
         depends_on:
             - uxbox_backend
