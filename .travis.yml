@@ -16,6 +16,8 @@ branches:
 
 install:
   - ./manage.sh help
+  - nvm install $NODE_VERSION
+  - node --version
 
 before_script:
   - env | sort

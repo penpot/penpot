@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -ex
+set -e
 
 REV=`git rev-parse --short HEAD`
 IMGNAME="uxbox"
@@ -41,8 +41,6 @@ function test {
     echo "Testing frontend..."
     cd ./frontend
     ./scripts/build-tests
-    nvm install $NODE_VERSION
-    node --version
     node ./out/tests.js
     cd ..
 }
