@@ -23,10 +23,10 @@ before_script:
   - env | sort
 
 script:
-  - ./scripts/build-tests
+  - ./frontend/scripts/build-tests
   - nvm install $NODE_VERSION
   - node --version
-  - node out/tests.js
+  - node ./frontend/out/tests.js
   - ./manage.sh release-local
   - ./manage.sh release-docker
 
@@ -38,4 +38,4 @@ notifications:
   email: false
 
 env:
-  - NODE_VERSION=10.15.1
+  - NODE_VERSION=7.7.1

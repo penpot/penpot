@@ -1,5 +1,7 @@
 FROM monogramm/docker-uxbox-builder:latest
 
+ENV LEIN_ROOT=TRUE
+
 # Copy backend source and build release
 COPY . /home/uxbox/backend
 RUN set -ex; \

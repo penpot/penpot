@@ -1,6 +1,7 @@
 FROM monogramm/docker-uxbox-builder:latest
 
-ENV API_URL http://127.0.0.1:6060/api
+ENV API_URL=http://127.0.0.1:6060/api
+ENV LEIN_ROOT=TRUE
 
 # Copy frontend source and build release
 COPY . /home/uxbox/frontend
