@@ -4,9 +4,9 @@ language: clojure
 sudo: required
 lein: lein
 jdk:
-  - oraclejdk10
-  - oraclejdk11
-  - oraclejdk12
+  - openjdk8
+  - openjdk10
+  - openjdk11
 services:
   - docker
 
