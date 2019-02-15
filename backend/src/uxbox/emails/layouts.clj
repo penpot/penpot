@@ -206,7 +206,7 @@
                       :src (md/resolve-asset "images/email/twitter.png")}]]
               [:a {:href "#" :target "_blank"}
                [:img {:style "display: inline-block; width: 25px; margin-right: 5px;"
-                      :src (md/resolve-asset "images/email/facebook.png")}]]
+                      :src (md/resolve-asset "images/email/github.png")}]]
               [:a {:href "#" :target "_blank"}
                [:img {:style "display: inline-block; width: 25px; margin-right: 5px;"
                       :src (md/resolve-asset "images/email/linkedin.png")}]]]]]
