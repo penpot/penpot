@@ -16,11 +16,17 @@ branches:
     - wip
     - develop
 
+install:
+  - ./manage.sh build
+
 before_script:
   - env | sort
 
 script:
-  - ./manage.sh build
+  - ./scripts/build-tests
+  - nvm install $NODE_VERSION
+  - node --version
+  - node out/tests.js
   - ./manage.sh release-local
   - ./manage.sh release-docker
 
@@ -31,5 +37,5 @@ after_script:
 notifications:
   email: false
 
-env: # Environments
-    - VERSION=beta
+env:
+  - NODE_VERSION=10.15.1
