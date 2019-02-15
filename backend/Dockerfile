@@ -5,8 +5,8 @@ ENV LEIN_ROOT=TRUE
 # Copy backend source and build release
 COPY . /home/uxbox/backend
 RUN set -ex; \
-    rm -f Dockerfile docker-entrypoint.sh; \
     cd backend; \
+    rm -f Dockerfile docker-entrypoint.sh; \
     bash -c "/home/uxbox/backend/scripts/dist.sh"
 
 

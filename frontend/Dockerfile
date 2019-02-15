@@ -6,17 +6,17 @@ ENV LEIN_ROOT=TRUE
 # Copy frontend source and build release
 COPY . /home/uxbox/frontend
 RUN set -ex; \
-    rm -f Dockerfile; \
     cd frontend; \
+    rm -f Dockerfile; \
+    rm -rf ./dist ./node_modules; \
     sed -i \
         -e 's|"uxbox.config.url" ".*"|"uxbox.config.url" "${API_URL}/api"|g' \
         scripts/figwheel.clj; \
     npm install; \
     npm run dist; \
-    ./scripts/dist-main; \
-    ./scripts/dist-view; \
-    ./scripts/dist-worker; \
-    rm -rf ./dist/**/*.gz ./dist/**/*.br
+    bash -c "/home/uxbox/frontend/scripts/dist-main"; \
+    bash -c "/home/uxbox/frontend/scripts/dist-view"; \
+    bash -c "/home/uxbox/frontend/scripts/dist-worker"
 
 
 
