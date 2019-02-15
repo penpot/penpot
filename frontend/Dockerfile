@@ -1,4 +1,4 @@
-FROM monogramm:docker-uxbox-builder
+FROM monogramm/docker-uxbox-builder:latest
 
 ENV API_URL http://127.0.0.1:6060/api
 

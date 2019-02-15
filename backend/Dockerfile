@@ -1,4 +1,4 @@
-FROM monogramm:docker-uxbox-builder
+FROM monogramm/docker-uxbox-builder:latest
 
 # Copy backend source and build release
 COPY . /home/uxbox/backend
