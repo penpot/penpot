@@ -1,15 +1,14 @@
 dist: xenial
+
+language: clojure
 sudo: required
-
-services: docker
-
-language: java
-
+lein: lein
 jdk:
-  - oraclejdk8
-
-env:
-  - NODE_VERSION=10.15.1
+  - oraclejdk10
+  - oraclejdk11
+  - oraclejdk12
+services:
+  - docker
 
 branches:
   only:
@@ -19,10 +18,6 @@ branches:
 
 before_script:
   - env | sort
-  - nvm install $NODE_VERSION
-  - npm install
-  - nvm use $NODE_VERSION
-  - npm test
 
 script:
   - ./manage.sh build
