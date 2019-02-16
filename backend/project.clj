@@ -28,8 +28,8 @@
                   :exclusions [org.clojure/tools.reader]]
                  [niwinz/migrante "0.1.0"]
 
-                 [buddy/buddy-sign "1.4.0"]
-                 [buddy/buddy-hashers "1.2.0"]
+                 [buddy/buddy-sign "2.2.0"]
+                 [buddy/buddy-hashers "1.3.0"]
 
                  [org.xerial.snappy/snappy-java "1.1.2.6"]
                  [com.github.spullara.mustache.java/compiler "0.9.4"]

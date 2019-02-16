@@ -17,7 +17,7 @@
   using urlsafe variant of base64."
   []
   (-> (nonce/random-bytes 1024)
-      (hash/blake2b-256)
+      (hash/blake2b-512)
       (b64/encode true)
       (codecs/bytes->str)))
 
