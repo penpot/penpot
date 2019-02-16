@@ -14,7 +14,7 @@ services:
         environment:
             - "POSTGRES_DB=uxbox"
             - "POSTGRES_USER=uxbox"
-            - "POSTGRES_PASSWORD=youshouldoverwritethiswithsomethingelse"
+            - "POSTGRES_PASSWORD=uxbox_postgres_password"
         volumes:
             - uxbox_db:/var/lib/postgresql/data
 
@@ -31,7 +31,7 @@ services:
             - "UXBOX_HTTP_SERVER_DEBUG=false"
             # Database setup
             - "UXBOX_DATABASE_USERNAME=uxbox"
-            - "UXBOX_DATABASE_PASSWORD=youshouldoverwritethiswithsomethingelse"
+            - "UXBOX_DATABASE_PASSWORD=uxbox_postgres_password"
             - "UXBOX_DATABASE_NAME=uxbox"
             - "UXBOX_DATABASE_SERVER=db"
             - "UXBOX_DATABASE_PORT=5432"
