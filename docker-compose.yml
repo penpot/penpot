@@ -58,7 +58,7 @@ services:
     uxfrontend:
         build: ./frontend
         #image: monogramm/uxbox:frontend
-        container_name: frontend
+        container_name: uxfrontend
         #hostname: uxbox.${DOMAIN}
         #restart: always
         depends_on:
