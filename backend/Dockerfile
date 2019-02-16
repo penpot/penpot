@@ -6,7 +6,7 @@ ENV LEIN_ROOT=TRUE
 COPY . /home/uxbox/backend
 RUN set -ex; \
     cd backend; \
-    rm -f Dockerfile docker-entrypoint.sh; \
+    rm -f Dockerfile; \
     bash -c "/home/uxbox/backend/scripts/dist.sh"
 
 
@@ -18,6 +18,7 @@ LABEL maintainer="mathieu.brunot at monogramm dot io"
 
 # Add uxbox as provided by builder
 COPY --from=0 /home/uxbox/backend/dist/uxbox-backend.jar /srv/uxbox/app.jar
+COPY --from=0 /home/uxbox/backend/docker-entrypoint.sh /entrypoint.sh
 
 ENV UXBOX_HTTP_SERVER_DEBUG=false \
     UXBOX_DATABASE_USERNAME=uxbox \
@@ -35,8 +36,6 @@ ENV UXBOX_HTTP_SERVER_DEBUG=false \
     UXBOX_SMTP_TLS=false \
     UXBOX_SMTP_ENABLED=false \
     UXBOX_SECRET=youshouldoverwritethiswithsomethingelse
-
-COPY docker-entrypoint.sh /entrypoint.sh
 
 RUN set -ex; \
     chmod 755 /entrypoint.sh; \
