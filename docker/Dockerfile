@@ -13,13 +13,11 @@ RUN set -ex; \
     apt-get install -yq \
         bash \
         git \
-        vim \
         openjdk-8-jdk \
         rlwrap \
         build-essential \
         imagemagick \
         webp \
-        sudo \
     ; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
     echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; \
@@ -53,6 +51,9 @@ RUN set -ex; \
     apt-get install -yq  \
         postgresql-9.6 \
         postgresql-contrib-9.6 \
+        sudo \
+        tmux \
+        vim \
     ;
 
 COPY files/pg_hba.conf /etc/postgresql/9.6/main/pg_hba.conf
