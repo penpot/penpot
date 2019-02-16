@@ -35,7 +35,9 @@ ENV UXBOX_HTTP_SERVER_DEBUG=false \
     UXBOX_SMTP_SSL=false \
     UXBOX_SMTP_TLS=false \
     UXBOX_SMTP_ENABLED=false \
-    UXBOX_SECRET=youshouldoverwritethiswithsomethingelse
+    # WARNING: this is a default secret key and
+    # it should be overwritten in production env.
+    UXBOX_SECRET=5qjiAn-QUpawUNqGP10UZKklSqbLKcdGY3sJpq0UUACpVXGg2HOFJCBejDWVHskhRyp7iHb4rjOLXX2ZjF-5cw
 
 RUN set -ex; \
     chmod 755 /entrypoint.sh; \

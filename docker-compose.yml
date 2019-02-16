@@ -51,7 +51,9 @@ services:
             - "UXBOX_SMTP_TLS=false"
             - "UXBOX_SMTP_ENABLED=false"
             # Security setup
-            - "UXBOX_SECRET=youshouldoverwritethiswithsomethingelse"
+            # WARNING: this is a default secret key and
+            # it should be overwritten in production env.
+            - "UXBOX_SECRET=5qjiAn-QUpawUNqGP10UZKklSqbLKcdGY3sJpq0UUACpVXGg2HOFJCBejDWVHskhRyp7iHb4rjOLXX2ZjF-5cw"
         volumes:
             - /srv/uxbox/backend/resources:/srv/uxbox/resources
             - /etc/localtime:/etc/localtime:ro
