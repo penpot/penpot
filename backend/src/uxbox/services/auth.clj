@@ -10,7 +10,6 @@
             [buddy.hashers :as hashers]
             [buddy.sign.jwt :as jwt]
             [buddy.core.hash :as hash]
-            [clj-ldap.client :as ldap]
             [uxbox.config :as cfg]
             [uxbox.util.spec :as us]
             [uxbox.db :as db]
