@@ -19,15 +19,6 @@ LABEL maintainer="mathieu.brunot at monogramm dot io"
 # Add uxbox as provided by builder
 COPY --from=0 /home/uxbox/backend/dist/uxbox-backend.jar /srv/uxbox/app.jar
 
-VOLUME /srv/uxbox/resources/public
-
-WORKDIR /srv/uxbox/
-
-RUN set -ex; \
-    mkdir -p /srv/uxbox/resources/public/media; \
-    mkdir -p /srv/uxbox/resources/public/static;
-
-
 ENV UXBOX_HTTP_SERVER_DEBUG=false \
     UXBOX_DATABASE_USERNAME=uxbox \
     UXBOX_DATABASE_PASSWORD=youshouldoverwritethiswithsomethingelse \
@@ -43,7 +34,18 @@ ENV UXBOX_HTTP_SERVER_DEBUG=false \
     UXBOX_SMTP_SSL=false \
     UXBOX_SMTP_TLS=false \
     UXBOX_SMTP_ENABLED=false \
-    UXBOX_SECRET=youshouldoverwritethiswithsomethingelse 
+    UXBOX_SECRET=youshouldoverwritethiswithsomethingelse
+
+COPY docker-entrypoint.sh /entrypoint.sh
+
+RUN set -ex; \
+    chmod 755 /entrypoint.sh; \
+    mkdir -p /srv/uxbox/resources/public/media; \
+    mkdir -p /srv/uxbox/resources/public/static;
+
+VOLUME /srv/uxbox/resources/public
+
+WORKDIR /srv/uxbox/
 
 EXPOSE 6060
 

@@ -1,13 +1,14 @@
 version: '2'
 
 volumes:
-  uxbox_front:
-  uxbox_back:
-  uxbox_db:
+  frontend_data:
+  backend_data:
+  db_data:
 
 services:
     db:
         image: postgres:latest
+        container_name: db
         restart: always
         ports:
             - "5432:5432"
@@ -16,11 +17,12 @@ services:
             - "POSTGRES_USER=uxbox"
             - "POSTGRES_PASSWORD=uxbox_postgres_password"
         volumes:
-            - uxbox_db:/var/lib/postgresql/data
+            - db_data:/var/lib/postgresql/data
 
-    backend:
+    uxbackend:
         build: ./backend
         #image: monogramm/uxbox:backend
+        container_name: uxbackend
         #restart: always
         depends_on:
             - db
@@ -48,14 +50,24 @@ services:
             - "UXBOX_SMTP_ENABLED=false"
             # Security setup
             - "UXBOX_SECRET=youshouldoverwritethiswithsomethingelse"
+        volumes:
+            - /srv/uxbox/backend/resources:/srv/uxbox/resources
+            - /etc/localtime:/etc/localtime:ro
+            - /etc/timezone:/etc/timezone:ro
 
-    frontend:
+    uxfrontend:
         build: ./frontend
         #image: monogramm/uxbox:frontend
+        container_name: frontend
+        #hostname: uxbox.${DOMAIN}
         #restart: always
         depends_on:
-            - backend
+            - uxbackend
         ports:
             - 80:80
         environment:
-            - "API_URL=http://127.0.0.1:6060/api"
+            #- "API_URL=http://uxbox.${DOMAIN}/api/"
+        volumes:
+            #- /srv/uxbox/frontend/html:/usr/share/nginx/html
+            - /etc/localtime:/etc/localtime:ro
+            - /etc/timezone:/etc/timezone:ro
