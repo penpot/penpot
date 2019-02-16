@@ -18,6 +18,8 @@ services:
             - "POSTGRES_PASSWORD=uxbox_postgres_password"
         volumes:
             - db_data:/var/lib/postgresql/data
+            - /etc/localtime:/etc/localtime:ro
+            - /etc/timezone:/etc/timezone:ro
 
     uxbackend:
         build: ./backend
@@ -59,14 +61,15 @@ services:
         build: ./frontend
         #image: monogramm/uxbox:frontend
         container_name: uxfrontend
-        #hostname: uxbox.${DOMAIN}
+        #hostname: uxbox.io
         #restart: always
         depends_on:
             - uxbackend
         ports:
             - 80:80
         environment:
-            #- "API_URL=http://uxbox.${DOMAIN}/api/"
+            - "API_URL=http://localhost:6060/api/"
+            #- "API_URL=http://uxbox.io/api/"
         volumes:
             #- /srv/uxbox/frontend/html:/usr/share/nginx/html
             - /etc/localtime:/etc/localtime:ro
