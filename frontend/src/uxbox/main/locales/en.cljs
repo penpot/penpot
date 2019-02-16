@@ -75,7 +75,7 @@
    "errors.profile.update-password" "Error updating password, probably your old password is wrong."
 
    "errors.network" "Unable to connect to backend server."
-   "errors.generic" "Something work has happened."
+   "errors.generic" "Something wrong has happened."
    "errors.conflict" "Conflict on saving data, please refresh and try again."
 
    })
