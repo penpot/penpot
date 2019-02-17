@@ -161,7 +161,7 @@
                 :code ::username-already-exists))))
 
 (defn- register-user
-  "Create the user entry onthe database with limited input
+  "Create the user entry on the database with limited input
   filling all the other fields with defaults."
   [conn {:keys [username fullname email password] :as params}]
   (check-user-registred! conn params)
