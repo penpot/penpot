@@ -86,7 +86,7 @@
     :shape +draw-tool-path+
     :priority 5}
    {:icon i/pencil
-    :help "ds.help.path"
+    :help "ds.help.curve"
     :shape +draw-tool-curve+
     :priority 6}])
 
