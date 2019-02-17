@@ -21,7 +21,9 @@ The open-source solution for design and prototyping. UXBOX is currently at an ea
 
 UXBOX works with SVG, a standard format, for all your designs and prototypes . This means that all your stuff in UXBOX is portable and editable in many other vector tools and easy to use on the web.
 
-## Persistent data
+## Docker
+
+### Persistent data
 The UXBOX installation and all data are stored in the database (file uploads, etc). The docker daemon will store that data within the docker directory `/var/lib/docker/volumes/...`. That means your data is saved even if the container crashes, is stopped or deleted.
 
 To make your data persistent to upgrading and get access for backups is using named docker volume or mount a host folder. To achieve this you need one volume for your database container.
@@ -35,30 +37,32 @@ $ docker run -d \
     postgresql
 ```
 
-## Auto configuration via environment variables
+### Auto configuration via environment variables
 
 The following environment variables are also honored for configuring your UXBOX instance:
 
-### Frontend
+#### Frontend
 -	`-e API_URL=...` (defaults to http://127.0.0.1:6060/api. **Only available at build time!**
 
-### Backend
+#### Backend
 -	`-e UXBOX_HTTP_SERVER_DEBUG=...` (defaults to false)
--	`-e UXBOX_DATABASE_USERNAME=...` (defaults to uxbox)
--	`-e UXBOX_DATABASE_PASSWORD=...` (defaults to youshouldoverwritethiswithsomethingelse)
--	`-e UXBOX_DATABASE_NAME=...` (defaults to uxbox)
--	`-e UXBOX_DATABASE_SERVER=...` (defaults to localhost)
+-	`-e UXBOX_DATABASE_USERNAME="..."` (defaults to uxbox)
+-	`-e UXBOX_DATABASE_PASSWORD="..."` (defaults to youshouldoverwritethiswithsomethingelse)
+-	`-e UXBOX_DATABASE_NAME="..."` (defaults to uxbox)
+-	`-e UXBOX_DATABASE_SERVER="..."` (defaults to localhost)
 -	`-e UXBOX_DATABASE_PORT=...` (defaults to 5432)
--	`-e UXBOX_EMAIL_REPLY_TO=...` (defaults to no-reply@uxbox.io)
--	`-e UXBOX_EMAIL_FROM=...` (defaults to no-reply@uxbox.io)
--	`-e UXBOX_SMTP_HOST=...` (defaults to localhost)
+-	`-e UXBOX_EMAIL_REPLY_TO="..."` (defaults to no-reply@uxbox.io)
+-	`-e UXBOX_EMAIL_FROM="..."` (defaults to no-reply@uxbox.io)
+-	`-e UXBOX_SMTP_HOST="..."` (defaults to localhost)
 -	`-e UXBOX_SMTP_PORT=...` (defaults to 25)
--	`-e UXBOX_SMTP_USER=...` (defaults to uxbox)
--	`-e UXBOX_SMTP_PASSWORD=...` (defaults to youshouldoverwritethiswithsomethingelse)
+-	`-e UXBOX_SMTP_USER="..."` (defaults to uxbox)
+-	`-e UXBOX_SMTP_PASSWORD="..."` (defaults to youshouldoverwritethiswithsomethingelse)
 -	`-e UXBOX_SMTP_SSL=...` (defaults to false)
 -	`-e UXBOX_SMTP_TLS=...` (defaults to false)
 -	`-e UXBOX_SMTP_ENABLED=...` (defaults to false)
--	`-e UXBOX_SECRET=...` (defaults to youshouldoverwritethiswithsomethingelse)
+-	`-e UXBOX_SECRET="..."` (defaults to youshouldoverwritethiswithsomethingelse)
+
+**Important note:** make sure to use quotation marks for string variables or the backend might try to interpret the values as symbols and have weird issues.
 
 ## Contributing ##
 
