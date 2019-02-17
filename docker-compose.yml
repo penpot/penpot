@@ -32,28 +32,26 @@ services:
             - "6060:6060"
         environment:
             # HTTP setup
-            - "UXBOX_HTTP_SERVER_DEBUG=false"
+            - UXBOX_HTTP_SERVER_DEBUG=false
             # Database setup
-            - "UXBOX_DATABASE_USERNAME=uxbox"
-            - "UXBOX_DATABASE_PASSWORD=uxbox_postgres_password"
-            - "UXBOX_DATABASE_NAME=uxbox"
-            - "UXBOX_DATABASE_SERVER=db"
-            - "UXBOX_DATABASE_PORT=5432"
+            - UXBOX_DATABASE_USERNAME="uxbox"
+            - UXBOX_DATABASE_PASSWORD="uxbox_postgres_password"
+            - UXBOX_DATABASE_NAME="uxbox"
+            - UXBOX_DATABASE_SERVER="db"
+            - UXBOX_DATABASE_PORT=5432
             # Mail setup
-            - "UXBOX_EMAIL_REPLY_TO=no-reply@uxbox.io"
-            - "UXBOX_EMAIL_FROM=no-reply@uxbox.io"
+            - UXBOX_EMAIL_REPLY_TO="no-reply@uxbox.io"
+            - UXBOX_EMAIL_FROM="no-reply@uxbox.io"
             # STMP setup
-            - "UXBOX_SMTP_HOST=localhost"
-            - "UXBOX_SMTP_PORT=25"
-            - "UXBOX_SMTP_USER=uxbox"
-            - "UXBOX_SMTP_PASSWORD=youshouldoverwritethiswithsomethingelse"
-            - "UXBOX_SMTP_SSL=false"
-            - "UXBOX_SMTP_TLS=false"
-            - "UXBOX_SMTP_ENABLED=false"
+            - UXBOX_SMTP_HOST="localhost"
+            - UXBOX_SMTP_PORT=25
+            - UXBOX_SMTP_USER="uxbox"
+            - UXBOX_SMTP_PASSWORD="youshouldoverwritethiswithsomethingelse"
+            - UXBOX_SMTP_SSL=false
+            - UXBOX_SMTP_TLS=false
+            - UXBOX_SMTP_ENABLED=false
             # Security setup
-            # WARNING: this is a default secret key and
-            # it should be overwritten in production env.
-            - "UXBOX_SECRET=5qjiAn-QUpawUNqGP10UZKklSqbLKcdGY3sJpq0UUACpVXGg2HOFJCBejDWVHskhRyp7iHb4rjOLXX2ZjF-5cw"
+            - UXBOX_SECRET=""
         volumes:
             - /srv/uxbox/backend/resources:/srv/uxbox/resources
             - /etc/localtime:/etc/localtime:ro

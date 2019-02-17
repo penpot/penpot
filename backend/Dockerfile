@@ -21,23 +21,21 @@ COPY --from=0 /home/uxbox/backend/dist/uxbox-backend.jar /srv/uxbox/app.jar
 COPY --from=0 /home/uxbox/backend/docker-entrypoint.sh /entrypoint.sh
 
 ENV UXBOX_HTTP_SERVER_DEBUG=false \
-    UXBOX_DATABASE_USERNAME=uxbox \
-    UXBOX_DATABASE_PASSWORD=youshouldoverwritethiswithsomethingelse \
-    UXBOX_DATABASE_NAME=uxbox \
-    UXBOX_DATABASE_SERVER=localhost \
+    UXBOX_DATABASE_USERNAME="uxbox" \
+    UXBOX_DATABASE_PASSWORD="youshouldoverwritethiswithsomethingelse" \
+    UXBOX_DATABASE_NAME="uxbox" \
+    UXBOX_DATABASE_SERVER="localhost" \
     UXBOX_DATABASE_PORT=5432 \
-    UXBOX_EMAIL_REPLY_TO=no-reply@uxbox.io \
-    UXBOX_EMAIL_FROM=no-reply@uxbox.io \
-    UXBOX_SMTP_HOST=localhost \
+    UXBOX_EMAIL_REPLY_TO="no-reply@uxbox.io" \
+    UXBOX_EMAIL_FROM="no-reply@uxbox.io" \
+    UXBOX_SMTP_HOST="localhost" \
     UXBOX_SMTP_PORT=25 \
-    UXBOX_SMTP_USER=uxbox \
-    UXBOX_SMTP_PASSWORD=youshouldoverwritethiswithsomethingelse \
+    UXBOX_SMTP_USER="uxbox" \
+    UXBOX_SMTP_PASSWORD="youshouldoverwritethiswithsomethingelse" \
     UXBOX_SMTP_SSL=false \
     UXBOX_SMTP_TLS=false \
     UXBOX_SMTP_ENABLED=false \
-    # WARNING: this is a default secret key and
-    # it should be overwritten in production env.
-    UXBOX_SECRET=5qjiAn-QUpawUNqGP10UZKklSqbLKcdGY3sJpq0UUACpVXGg2HOFJCBejDWVHskhRyp7iHb4rjOLXX2ZjF-5cw
+    UXBOX_SECRET=""
 
 RUN set -ex; \
     chmod 755 /entrypoint.sh; \
