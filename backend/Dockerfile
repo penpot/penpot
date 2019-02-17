@@ -38,6 +38,9 @@ ENV UXBOX_HTTP_SERVER_DEBUG=false \
     UXBOX_SECRET=""
 
 RUN set -ex; \
+	apk add --no-cache \
+		libc6-compat \
+	; \
     chmod 755 /entrypoint.sh; \
     mkdir -p /srv/uxbox/resources/public/media; \
     mkdir -p /srv/uxbox/resources/public/static;
