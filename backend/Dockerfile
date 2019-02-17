@@ -12,7 +12,7 @@ RUN set -ex; \
 
 
 # Once application has been built, prepare production image
-FROM openjdk:8-jre-alpine
+FROM openjdk:8-jre
 
 LABEL maintainer="mathieu.brunot at monogramm dot io"
 
@@ -38,9 +38,6 @@ ENV UXBOX_HTTP_SERVER_DEBUG=false \
     UXBOX_SECRET=""
 
 RUN set -ex; \
-	apk add --no-cache \
-		libc6-compat \
-	; \
     chmod 755 /entrypoint.sh; \
     mkdir -p /srv/uxbox/resources/public/media; \
     mkdir -p /srv/uxbox/resources/public/static;
