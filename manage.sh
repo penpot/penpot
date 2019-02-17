@@ -14,7 +14,7 @@ function kill_container {
 function build_image {
     kill_container
     echo "Building development image..."
-    sudo docker build --rm=true -t $IMGNAME:$REV docker/
+    #sudo docker build --rm=true -t $IMGNAME:$REV docker/
 }
 
 function run_image {
@@ -32,7 +32,9 @@ function run_image {
          -v `pwd`:/home/uxbox/uxbox  \
          -v $HOME/.m2:/home/uxbox/.m2 \
          -v $HOME/.gitconfig:/home/uxbox/.gitconfig \
-         -p 3449:3449 -p 6060:6060 -p 9090:9090 $IMGNAME:$REV
+         -p 3449:3449 -p 6060:6060 -p 9090:9090 
+         $IMGNAME:develop
+         #$IMGNAME:$REV
 }
 
 function test {
