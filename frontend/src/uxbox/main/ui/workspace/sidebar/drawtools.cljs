@@ -70,23 +70,23 @@
 
 (def +draw-tools+
   [{:icon i/box
-    :help (tr "ds.help.rect")
+    :help "ds.help.rect"
     :shape +draw-tool-rect+
     :priority 1}
    {:icon i/circle
-    :help (tr "ds.help.circle")
+    :help "ds.help.circle"
     :shape +draw-tool-circle+
     :priority 2}
    {:icon i/text
-    :help (tr "ds.help.text")
+    :help "ds.help.text"
     :shape +draw-tool-text+
     :priority 4}
    {:icon i/curve
-    :help (tr "ds.help.path")
+    :help "ds.help.path"
     :shape +draw-tool-path+
     :priority 5}
    {:icon i/pencil
-    :help (tr "ds.help.path")
+    :help "ds.help.path"
     :shape +draw-tool-curve+
     :priority 6}])
 
@@ -116,13 +116,13 @@
       (mx/doseq [[i props] (map-indexed vector tools)]
         (let [selected? (= drawing-tool (:shape props))]
           [:div.tool-btn.tooltip.tooltip-hover
-           {:alt (:help props)
+           {:alt (tr :help props)
             :class (when selected? "selected")
             :key (str i)
             :on-click (partial select-drawtool (:shape props))}
            (:icon props)]))
       [:div.tool-btn.tooltip.tooltip-hover
-       {:alt "Ruler"
+       {:alt (tr "ds.help.ruler")
         :on-click toggle-ruler
         :class (when (contains? flags :ruler) "selected")}
        i/ruler-tool]]]))

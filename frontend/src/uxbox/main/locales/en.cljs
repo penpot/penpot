@@ -46,6 +46,7 @@
    "ds.help.rect" "Box (Ctrl + B)"
    "ds.help.circle" "Circle (Ctrl + E)"
    "ds.help.line" "Line (Ctrl + L)"
+   "ds.help.ruler" "Ruler"
 
    "auth.message.recovery-token-sent" "Password recovery link sent to your inbox."
    "auth.message.password-recovered" "Password successfully recovered."
