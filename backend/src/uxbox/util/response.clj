@@ -27,7 +27,7 @@
 
 (defn digest
   [^bytes data]
-  (-> (hash/blake2b-512 data)
+  (-> (hash/blake2b-256 data)
       (b64/encode true)
       (codecs/bytes->str)))
 

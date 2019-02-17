@@ -77,7 +77,7 @@
     (when-not secret
       (ex/raise :code ::missing-secret-key
                 :message "Missing `:secret` key in config."))
-    (hash/blake2b-512 secret)))
+    (hash/blake2b-256 secret)))
 
 (defstate secret
   :start (initialize-secret config))
