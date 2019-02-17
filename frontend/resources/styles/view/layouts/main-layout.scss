@@ -93,6 +93,7 @@
   flex-shrink: 0;
   height: 55px;
   width: 100%;
+  overflow: scroll;
 
   .sitemap-title {
     border-bottom: 1px solid $soft-ui-border;
