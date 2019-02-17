@@ -7,6 +7,7 @@ jdk:
   - openjdk8
 services:
   - docker
+  - postgresql
 
 branches:
   only:

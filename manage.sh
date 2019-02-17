@@ -40,6 +40,11 @@ function run_image {
 function test {
     kill_container
 
+    echo "TODO Testing backend..."
+    cd ./backend
+    #lein test
+    cd ..
+
     echo "Testing frontend..."
     cd ./frontend
     ./scripts/build-tests
