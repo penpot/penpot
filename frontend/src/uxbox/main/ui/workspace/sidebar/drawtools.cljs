@@ -116,7 +116,7 @@
       (mx/doseq [[i props] (map-indexed vector tools)]
         (let [selected? (= drawing-tool (:shape props))]
           [:div.tool-btn.tooltip.tooltip-hover
-           {:alt (tr :help props)
+           {:alt (tr (:help props))
             :class (when selected? "selected")
             :key (str i)
             :on-click (partial select-drawtool (:shape props))}
