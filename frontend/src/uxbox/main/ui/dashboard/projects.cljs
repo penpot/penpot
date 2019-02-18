@@ -148,7 +148,7 @@
     [:div.grid-item-th
      {:style {:background-image (str "url('" url "')")}}]
     [:div.grid-item-th
-     {:style {:background-image "url('/images/project-placeholder.svg')"}}]))
+     [:img.img-th {:src "/images/project-placeholder.svg" :alt "Project title"}]]))
 
 ;; --- Grid Item
 
@@ -251,4 +251,3 @@
      [:section.dashboard-content {}
       (menu state projects-map)
       (grid state projects-map)]]))
-

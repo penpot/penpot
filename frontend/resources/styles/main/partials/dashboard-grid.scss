@@ -317,8 +317,15 @@
   border-top-left-radius: $br-medium;
   border-top-right-radius: $br-medium;
   height: 70%;
+  overflow: hidden;
   position: relative;
   width: 100%;
+
+  .img-th {
+    height: auto;
+    width: 100%;
+  }
+
 }
 
 // MULTISELECT OPTIONS BAR
