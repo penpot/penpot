@@ -237,3 +237,14 @@
     width: 15px;
   }
 }
+
+.interaction-bullet {
+  fill: $color-primary;
+  fill-opacity: 1;
+}
+
+.interaction-hightlight {
+  fill: $color-primary;
+  fill-opacity: 0.3;
+  stroke: $color-primary;
+}
