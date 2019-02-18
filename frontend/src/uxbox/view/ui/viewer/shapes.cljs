@@ -63,15 +63,16 @@
          :style {:cursor "pointer"}}
      (factory shape)
      (when show-itx?
-       [:circle {:class "interaction-bullet"
-                 :cx (:x1 rect)
-                 :cy (:y1 rect)
-                 :r 5}]
        [:rect {:class "interaction-hightlight"
                  :x (:x1 rect)
                  :y (:y1 rect)
                  :width (:width rect)
-                 :height (:height rect)}])]))
+                 :height (:height rect)}]))
+
+;;       [:circle {:class "interaction-bullet"
+;;                 :cx (:x1 rect)
+;;                 :cy (:y1 rect)
+;;                 :r 5}])]
 
 ;; --- Image Shape Wrapper
 ;;
