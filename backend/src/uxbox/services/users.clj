@@ -187,7 +187,7 @@
 (defmethod core/novelty :register-profile
   [params]
   (s/assert ::register params)
-  (if (= (:registration-enabled config) true)
+  (if (= (:registration-enabled cfg/config) true)
     (with-open [conn (db/connection)]
       (sc/apply-atomic conn register-user params))
     (ex/raise :type :validation
