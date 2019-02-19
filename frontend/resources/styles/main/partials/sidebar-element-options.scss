@@ -206,6 +206,11 @@
       color: darken($intense-ui-text, 8%);
     }
 
+    option {
+      color: $intense-ui-text;
+      background: $secondary-ui-bg;
+      font-size: $fs12;
+    }
   }
 
   span {
@@ -265,11 +270,13 @@
       top: 0;
       left: 0;
       border: none;
-      color: $color-white;
+      color: transparent;
+      background-color: transparent;
       width: 100%;
 
       option {
         color: $intense-ui-text;
+        background: $secondary-ui-bg;
         font-size: $fs12;
       }
     }
@@ -278,7 +285,7 @@
 
 .color-th {
   background-color: $color-gray-lighter;
-  border: 1px solid #aaa;
+  border: 1px solid $intense-ui-border;
   border-radius: 50%;
   cursor: pointer;
   flex-shrink: 0;
