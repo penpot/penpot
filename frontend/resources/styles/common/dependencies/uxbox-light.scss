@@ -41,3 +41,6 @@ $soft-ui-text: mix($ui-flavour, $color-white, $mix-percentage-light);
 // Canvas colors
 $canvas-bg: mix($ui-flavour, $color-white, $mix-percentage-lighter);
 $scrollbar-bg: mix($ui-flavour, $color-white, $mix-percentage-light);
+
+// Input colors
+$input-bg: $color-light-bg;

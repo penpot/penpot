@@ -18,7 +18,7 @@ $intense-main-ui-color: darken($main-ui-color, 25%);
 // Background colors
 $primary-ui-bg: #2C2C2C;
 $secondary-ui-bg: #3d3f40;
-$dark-ui-bg: #232323;
+$dark-ui-bg: #181818;
 
 // Border color
 $intense-ui-border: #a9adaf;
@@ -38,3 +38,6 @@ $soft-ui-text: #4e4f50;
 // Canvas colors
 $canvas-bg: #3d3f40;
 $scrollbar-bg: #878c8e;
+
+// Input colors
+$input-bg: $color-dark-bg;

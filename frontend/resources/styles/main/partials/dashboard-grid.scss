@@ -25,13 +25,13 @@
       width: 100%;
       .edit {
           padding: 5px 10px;
-          background: $color-white;
+          background: $primary-ui-bg;
           border: none;
           height: 100%;
       }
       .close {
           padding: 5px 10px;
-          background: $color-white;
+          background: $primary-ui-bg;
           cursor: pointer;
           svg {
             transform: rotate(45deg);
@@ -169,8 +169,8 @@
 
       // PROJECTS, ELEMENTS & ICONS GRID
       &.project-th {
-        background-color: $color-white;
-        border-bottom: 2px solid lighten($color-gray-light, 12%);
+        background-color: $primary-ui-bg;
+        border-bottom: 2px solid lighten($soft-ui-border, 12%);
 
         &:hover {
           border-color: $main-ui-color;
@@ -252,7 +252,7 @@
 
       // IMAGES SECTION
       &.images-th {
-        background-color: $color-white;
+        background-color: $primary-ui-bg;
         border-bottom: 2px solid lighten($color-gray-light, 12%);
 
         &:hover {
@@ -332,7 +332,7 @@
 .multiselect-bar {
   @include animation(0,.5s,fadeInUp);
   align-items: center;
-  background-color: $color-white;
+  background-color: $primary-ui-bg;
   display: flex;
   left: 0;
   justify-content: center;
@@ -387,7 +387,7 @@
   position: relative;
 
   .move-list {
-    background-color: $color-white;
+    background-color: $dark-ui-bg;
     border-radius: $br-small;
     bottom: 30px;
     display: flex;

@@ -8,8 +8,8 @@
 .color-palette {
   @include animation(0,.5s,fadeInUp);
   align-items: center;
-  background-color: $color-white;
-  border-top: 1px solid $color-gray-lighter;
+  background-color: $primary-ui-bg;
+  border-top: 1px solid $soft-ui-border;
   bottom: 0;
   display: flex;
   left: 0;

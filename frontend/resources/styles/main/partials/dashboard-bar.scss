@@ -32,7 +32,7 @@
 
     .input-select {
       background-color: transparent;
-      border-color: $color-gray;
+      border-color: $soft-ui-border;
       font-size: $fs14;
       margin-bottom: 0;
       margin-left: $medium;
@@ -47,7 +47,7 @@
     margin-left: $small;
 
     .input-text {
-      background: rgba(255,255,255,.4);
+      background: $input-bg;
       border: 0;
       color: $intense-ui-text;
       padding: 4px 8px;
@@ -57,7 +57,7 @@
 
     .clear-search {
       align-items: center;
-      background: rgba(255,255,255,.4);
+      background: $input-bg;
       cursor: pointer;
       display: flex;
       height: 28px;

@@ -6,7 +6,7 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .library-bar {
-  background-color: $color-white;
+  background-color: $primary-ui-bg;
   bottom: 0;
   height: 100%;
   left: 0;
@@ -21,14 +21,14 @@
 
     .library-tabs {
       align-items: center;
-      background-color: $color-gray-lighter;
+      background-color: $secondary-ui-bg;
       display: flex;
       justify-content: space-around;
       margin: 0;
       padding-top: 12px;
 
       li {
-        background-color: darken($color-gray-lighter, 10%);
+        background-color: darken($secondary-ui-bg, 10%);
         border-top-left-radius: 3px;
         border-top-right-radius: 3px;
         color: $color-gray;
@@ -44,7 +44,7 @@
         }
 
         &.current {
-          background-color: $color-white;
+          background-color: $primary-ui-bg;
           color: $main-ui-color;
         }
 
@@ -60,7 +60,7 @@
       padding-bottom: 20px;
 
       li {
-        border-bottom: 1px solid $color-gray-lighter;
+        border-bottom: 1px solid $secondary-ui-bg;
         cursor: pointer;
         display: flex;
         flex-direction: column;
@@ -83,7 +83,7 @@
         }
 
         .close {
-            background: $color-white;
+            background: $primary-ui-bg;
             cursor: pointer;
             padding: 5px 10px;
 
