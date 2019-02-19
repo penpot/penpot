@@ -49,8 +49,8 @@
         photo (if (str/empty? (:photo profile ""))
                 "/images/avatar.jpg"
                 (:photo profile))]
-    [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)
-                     :on-mouse-leave #(swap! local assoc :open false)}
+    [:div.user-zone {:on-mouse-down #(swap! local assoc :open true)
+                     :on-mouse-up #(swap! local assoc :open false)}
      [:span (:fullname profile)]
      [:img {:src photo}]
      (user-menu (:open @local))]))
