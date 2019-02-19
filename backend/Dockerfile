@@ -21,6 +21,8 @@ COPY --from=0 /home/uxbox/backend/dist/uxbox-backend.jar /srv/uxbox/app.jar
 COPY --from=0 /home/uxbox/backend/docker-entrypoint.sh /entrypoint.sh
 
 ENV UXBOX_HTTP_SERVER_DEBUG=false \
+    UXBOX_MEDIA_BASEURI="http://localhost:6060/media/" \
+    UXBOX_STATIC_BASEURI="http://localhost:6060/static/" \
     UXBOX_DATABASE_USERNAME="uxbox" \
     UXBOX_DATABASE_PASSWORD="youshouldoverwritethiswithsomethingelse" \
     UXBOX_DATABASE_NAME="uxbox" \
