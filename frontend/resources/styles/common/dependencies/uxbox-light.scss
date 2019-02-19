@@ -15,7 +15,7 @@ $main-ui-color: $color-primary;
 $intense-main-ui-color: darken($main-ui-color, 25%);
 
 // Set the UI flavour
-$ui-flavour: #90969d;
+$ui-flavour: $color-gray;
 
 // Change next colors for more customization
 // Background colors
