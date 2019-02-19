@@ -1,7 +1,8 @@
 FROM monogramm/docker-uxbox-builder:latest
 
-ENV API_URL=http://127.0.0.1:6060/api
-ENV LEIN_ROOT=TRUE
+ENV LEIN_ROOT=TRUE \
+    API_URL=http://127.0.0.1:6060/api \
+    IS_DEMO=false
 
 # Copy frontend source and build release
 COPY . /home/uxbox/frontend
@@ -13,7 +14,7 @@ RUN set -ex; \
         -e 's|"uxbox.config.url" ".*"|"uxbox.config.url" "${API_URL}/api"|g' \
         scripts/figwheel.clj; \
     npm install; \
-    npm run dist; \
+    npm run prod; \
     bash -c "/home/uxbox/frontend/scripts/dist-main"; \
     bash -c "/home/uxbox/frontend/scripts/dist-view"; \
     bash -c "/home/uxbox/frontend/scripts/dist-worker"

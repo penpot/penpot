@@ -11,6 +11,7 @@
   "scripts": {
     "watch": "gulp",
     "dist": "gulp dist",
+    "prod": "gulp dist --production",
     "clean": "gulp clean",
     "figwheel": "PATH=./scripts:$PATH ./scripts/build-worker && PATH=./scripts:$PATH ./scripts/figwheel",
     "test-watch": "PATH=./scripts:$PATH ./scripts/watch",
