@@ -40,7 +40,28 @@ ENV UXBOX_HTTP_SERVER_DEBUG=false \
 RUN set -ex; \
     chmod 755 /entrypoint.sh; \
     mkdir -p /srv/uxbox/resources/public/media; \
-    mkdir -p /srv/uxbox/resources/public/static;
+    mkdir -p /srv/uxbox/resources/public/static; \
+    apt-get update -yq &&  \
+    apt-get install -yq \
+        imagemagick \
+        webp \
+    ; \
+    apt-get update -yq; \
+    apt-get install -yq \
+        libbz2-dev liblzma-dev zlib1g-dev libfftw3-dev \
+        libfreetype6-dev libfontconfig1-dev libxt-dev \
+        libexif-dev libjpeg-dev libpng-dev libtiff-dev \
+        libwmf-dev libpango1.0-dev librsvg2-bin librsvg2-dev \
+        libxml2-dev libwebp-dev webp \
+    ; \
+    git clone https://github.com/ImageMagick/ImageMagick.git imagemagick && \
+    cd imagemagick && \
+    git checkout -f 7.0.8-27 && \
+    ./configure --prefix=/opt/img && \
+    make -j2 && \
+    make install && \
+    cd .. && \
+    rm -rf ./imagemagick
 
 VOLUME /srv/uxbox/resources/public
 
