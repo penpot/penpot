@@ -33,8 +33,10 @@ services:
         environment:
             # HTTP setup
             - UXBOX_HTTP_SERVER_DEBUG=false
-            - UXBOX_MEDIA_BASEURI=http://localhost:6060/media/
-            - UXBOX_STATIC_BASEURI=http://localhost:6060/static/
+            - UXBOX_MEDIA_URI="/media/"
+            #- UXBOX_MEDIA_URI="http://uxbox.io/media/"
+            - UXBOX_ASSETS_URI="/static/"
+            #- UXBOX_ASSETS_URI="http://uxbox.io/static/"
             # Database setup
             - UXBOX_DATABASE_USERNAME="uxbox"
             - UXBOX_DATABASE_PASSWORD="uxbox_postgres_password"
@@ -70,8 +72,8 @@ services:
         ports:
             - 80:80
         environment:
-            - "API_URL=http://localhost:6060/api/"
-            #- "API_URL=http://uxbox.io/api/"
+            - API_URL="http://localhost:6060/api/"
+            #- API_URL="http://uxbox.io/api/"
         volumes:
             #- /srv/uxbox/frontend/html:/usr/share/nginx/html
             - /srv/uxbox/backend/resources:/srv/uxbox/resources:ro

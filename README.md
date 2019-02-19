@@ -46,8 +46,8 @@ The following environment variables are also honored for configuring your UXBOX 
 
 #### Backend
 -	`-e UXBOX_HTTP_SERVER_DEBUG=...` (defaults to false)
--	`-e UXBOX_MEDIA_BASEURI=...` (defaults to http://localhost:6060/media/)
--	`-e UXBOX_STATIC_BASEURI=...` (defaults to http://localhost:6060/static/)
+-	`-e UXBOX_MEDIA_URI=...` (defaults to http://localhost:6060/media/)
+-	`-e UXBOX_ASSETS_URI=...` (defaults to http://localhost:6060/static/)
 -	`-e UXBOX_DATABASE_USERNAME="..."` (defaults to uxbox)
 -	`-e UXBOX_DATABASE_PASSWORD="..."` (defaults to youshouldoverwritethiswithsomethingelse)
 -	`-e UXBOX_DATABASE_NAME="..."` (defaults to uxbox)

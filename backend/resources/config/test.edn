@@ -2,12 +2,12 @@
  {:verbose false}
 
  :media
- {:basedir "/tmp/uxbox/media"
-  :baseuri "http://localhost:6060/media/"}
+ {:directory "/tmp/uxbox/media"
+  :uri "http://localhost:6060/media/"}
 
  :static
- {:basedir "/tmp/uxbox/static"
-  :baseuri "http://localhost:6060/static/"}
+ {:directory "/tmp/uxbox/static"
+  :uri "http://localhost:6060/static/"}
 
  :database
  {:adapter "postgresql"
