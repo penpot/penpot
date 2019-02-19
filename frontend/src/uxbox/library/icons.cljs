@@ -23,7 +23,7 @@
             [uxbox.library.icons.material.toggle :as md-toggle]
             ))
 
-(def collections-list
+(def collections
   [{:name "Material design (actions)"
     :id #uuid "00000000-0000-0000-0000-100000000001"
     :created-at 1
@@ -99,6 +99,3 @@
     :created-at 15
     :type :builtin
     :icons md-toggle/+icons+}])
-
-(def collections
-  (index-by collections-list :id))
