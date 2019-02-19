@@ -43,6 +43,7 @@ RUN set -ex; \
     mkdir -p /srv/uxbox/resources/public/static; \
     apt-get update -yq &&  \
     apt-get install -yq \
+        git \
         imagemagick \
         webp \
     ; \
