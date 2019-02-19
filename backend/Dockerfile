@@ -22,7 +22,9 @@ COPY --from=0 /home/uxbox/backend/docker-entrypoint.sh /entrypoint.sh
 
 ENV UXBOX_HTTP_SERVER_DEBUG=false \
     UXBOX_MEDIA_URI="http://localhost:6060/media/" \
+    UXBOX_MEDIA_DIRECTORY="resources/public/media" \
     UXBOX_ASSETS_URI="http://localhost:6060/static/" \
+    UXBOX_ASSETS_DIRECTORY="resources/public/static" \
     UXBOX_DATABASE_USERNAME="uxbox" \
     UXBOX_DATABASE_PASSWORD="youshouldoverwritethiswithsomethingelse" \
     UXBOX_DATABASE_NAME="uxbox" \

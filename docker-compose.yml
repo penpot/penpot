@@ -35,8 +35,10 @@ services:
             - UXBOX_HTTP_SERVER_DEBUG=false
             - UXBOX_MEDIA_URI="/media/"
             #- UXBOX_MEDIA_URI="http://uxbox.io/media/"
+            - UXBOX_MEDIA_DIRECTORY="resources/public/media"
             - UXBOX_ASSETS_URI="/static/"
             #- UXBOX_ASSETS_URI="http://uxbox.io/static/"
+            - UXBOX_ASSETS_DIRECTORY="resources/public/static"
             # Database setup
             - UXBOX_DATABASE_USERNAME="uxbox"
             - UXBOX_DATABASE_PASSWORD="uxbox_postgres_password"
