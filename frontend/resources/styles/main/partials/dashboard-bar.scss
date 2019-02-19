@@ -37,6 +37,11 @@
       margin-bottom: 0;
       margin-left: $medium;
       padding: 3px 25px 3px 3px;
+
+      option {
+        color: $intense-ui-text;
+        background: $secondary-ui-bg;
+      }
     }
 
   }
