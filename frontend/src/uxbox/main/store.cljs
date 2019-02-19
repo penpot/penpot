@@ -9,6 +9,7 @@
             [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.builtins.colors :as colors]
+            [uxbox.library.icons :as icons]
             [uxbox.util.storage :refer [storage]]))
 
 (enable-console-print!)
@@ -44,7 +45,7 @@
    :workspace nil
    :images-collections nil
    :images nil
-   :icons-collections nil
+   :icons-collections icons/collections
    :icons nil
    :colors-collections colors/collections
    :shapes nil
