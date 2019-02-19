@@ -62,6 +62,7 @@
 
    "history.alert-message" "You are seeing version %s"
    "errors.api.form.old-password-not-match" "Incorrect old password"
+   "errors.api.form.registration-disabled" "The registration is currently disabled."
    "errors.api.form.email-already-exists" "The email is already in use by another user."
    "errors.api.form.username-already-exists" "The username is already in use by another user."
    "errors.api.form.user-not-exists" "Username or email does not matches any existing user."

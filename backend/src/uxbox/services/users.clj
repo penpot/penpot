@@ -12,6 +12,7 @@
             [buddy.sign.jwe :as jwe]
             [uxbox.sql :as sql]
             [uxbox.db :as db]
+            [uxbox.config :as cfg]
             [uxbox.util.spec :as us]
             [uxbox.emails :as emails]
             [uxbox.services.core :as core]
@@ -186,8 +187,11 @@
 (defmethod core/novelty :register-profile
   [params]
   (s/assert ::register params)
-  (with-open [conn (db/connection)]
-    (sc/apply-atomic conn register-user params)))
+  (if (= (:registration-enabled config) true)
+    (with-open [conn (db/connection)]
+      (sc/apply-atomic conn register-user params))
+    (ex/raise :type :validation
+              :code ::registration-disabled)))
 
 ;; --- Password Recover
 

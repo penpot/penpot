@@ -56,6 +56,8 @@
    :smtp-ssl (lookup-env env :uxbox-smtp-ssl false)
    :smtp-enabled (lookup-env env :uxbox-smtp-enabled false)
 
+   :registration-enabled (lookup-env env :uxbox-registration-enabled true)
+
    :secret (lookup-env env :uxbox-secret "5qjiAndGY3")})
 
 (defn read-test-config

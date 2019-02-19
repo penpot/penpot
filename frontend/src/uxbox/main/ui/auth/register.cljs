@@ -51,6 +51,8 @@
                 (st/emit! (assoc-value field value))))
             (on-error [{:keys [type code] :as payload}]
               (case code
+                :uxbox.services.users/registration-disabled
+                (st/emit! "Registration is disabled")
                 :uxbox.services.users/email-already-exists
                 (st/emit! (assoc-error :email "Email already exists"))
                 :uxbox.services.users/username-already-exists
