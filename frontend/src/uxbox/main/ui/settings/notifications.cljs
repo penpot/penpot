@@ -28,19 +28,19 @@
      [:div.input-radio.radio-primary
       [:input {:type "radio"
                :id "notification-1"
-               :name "notification-1"
+               :name "notification"
                :value "none"}]
       [:label {:for "notification-1"
                :value "None"} "None"]
       [:input {:type "radio"
                :id "notification-2"
-               :name "notification-2"
+               :name "notification"
                :value "every-hour"}]
       [:label {:for "notification-2"
                :value "Every hour"} "Every hour"]
       [:input {:type "radio"
                :id "notification-3"
-               :name "notification-3"
+               :name "notification"
                :value "every-day"}]
       [:label {:for "notification-3" :value "Every day"} "Every day"]]
      [:input.btn-primary {:type "submit" :value "Update settings"}]
