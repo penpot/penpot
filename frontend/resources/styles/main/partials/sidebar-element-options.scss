@@ -184,7 +184,7 @@
   padding: $small $x-small;
 
   .input-text {
-    background-color: transparent;
+    background-color: $input-bg;
     border-color: $soft-ui-border;
     color: $intense-ui-text;
     font-size: $fs13;
