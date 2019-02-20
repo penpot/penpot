@@ -88,12 +88,12 @@
            [:div.btn-palette.create i/close]]]
 
        [:span.left-arrow {}
-        (if (> (:position @local) 0)
-          {:on-click #(swap! local update :position dec)}
-          {:class :disabled})
+        ;;(if (> (:position @local) 0)
+        ;;  {:on-click #(swap! local update :position dec)}
+        ;;  {:class :disabled})
         ;; FIXME Objects are not valid as a React child (found: :on-click).
-        ;;(when (> offset 0)
-        ;;  {:on-click #(swap! local update :offset (fnil dec 1))})
+        (when (> offset 0)
+          {:on-click #(swap! local update :offset (fnil dec 1))})
         i/arrow-slide]
 
        [:div.color-palette-content {:ref "container"}
@@ -104,13 +104,13 @@
                (mx/with-key color)))]]
 
        [:span.right-arrow
-        (if (< (* (+ 1 (:position @local)) 10) (count (:colors selected-coll)))
-          {:on-click #(swap! local update :position inc)}
-          {:class :disabled})
+        ;;(if (< (* (+ 1 (:position @local)) 10) (count (:colors selected-coll)))
+        ;;  {:on-click #(swap! local update :position inc)}
+        ;;  {:class :disabled})
         ;; FIXME Objects are not valid as a React child (found: :on-click).
-        ;;(if (< offset invisible)
-        ;;  {:on-click #(swap! local update :offset (fnil inc 0))}
-        ;;  {})
+        (if (< offset invisible)
+          {:on-click #(swap! local update :offset (fnil inc 0))}
+          {})
         i/arrow-slide]
        [:span.close-palette {:on-click close}
         i/close]])))
