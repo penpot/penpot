@@ -23,7 +23,7 @@
    :workspace nil
    :images-collections nil
    :images nil
-   :icons-collections icons/collections
+   :icons-collections nil
    :icons nil
    :colors-collections colors/collections
    :shapes nil
