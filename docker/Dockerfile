@@ -38,11 +38,10 @@ RUN set -ex; \
     cd .. && \
     rm -rf ./imagemagick
 
-ENV NODE_VERSION=8.15.0
-
-ENV LANG en_US.UTF-8
-ENV LC_ALL C.UTF-8
-ENV API_URL https://demo.uxbox.io/api
+ENV NODE_VERSION=8.15.0 \
+    LANG=en_US.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    UXBOX_CONFIG_URL="/api"
 
 RUN set -ex; \
 	echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list; \

@@ -20,7 +20,9 @@ LABEL maintainer="mathieu.brunot at monogramm dot io"
 COPY --from=0 /home/uxbox/backend/dist/uxbox-backend.jar /srv/uxbox/app.jar
 COPY --from=0 /home/uxbox/backend/docker-entrypoint.sh /entrypoint.sh
 
-ENV UXBOX_HTTP_SERVER_DEBUG=false \
+ENV LANG=en_US.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    UXBOX_HTTP_SERVER_DEBUG=false \
     UXBOX_MEDIA_URI="http://localhost:6060/media/" \
     UXBOX_MEDIA_DIRECTORY="resources/public/media" \
     UXBOX_ASSETS_URI="http://localhost:6060/static/" \

@@ -42,9 +42,21 @@ $ docker run -d \
 The following environment variables are also honored for configuring your UXBOX instance:
 
 #### Frontend
--	`-e API_URL=...` (defaults to http://127.0.0.1:6060/api. **Only available at build time!**
+
+**Only available at build time!**
+-	`-e UXBOX_CONFIG_URL=...` (defaults to http://127.0.0.1:6060/api)
+-	`-e UXBOX_DEMO=...` (defaults to false)
+-	`-e UXBOX_DEBUG=...` (defaults to false)
+
+Available at runtime:
+-	`-e LANG=...` (defaults to en_US.UTF-8)
+-	`-e LC_ALL=...` (defaults to C.UTF-8)
 
 #### Backend
+
+Available at runtime:
+-	`-e LANG=...` (defaults to en_US.UTF-8)
+-	`-e LC_ALL=...` (defaults to C.UTF-8)
 -	`-e UXBOX_HTTP_SERVER_DEBUG=...` (defaults to false)
 -	`-e UXBOX_MEDIA_URI=...` (defaults to http://localhost:6060/media/)
 -	`-e UXBOX_MEDIA_DIRECTORY=...` (defaults to resources/public/media)

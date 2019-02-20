@@ -1,8 +1,9 @@
 FROM monogramm/docker-uxbox-builder:latest
 
 ENV LEIN_ROOT=TRUE \
-    API_URL=http://127.0.0.1:6060/api \
-    IS_DEMO=false
+    UXBOX_CONFIG_URL="/api" \
+    UXBOX_DEMO=false \
+    UXBOX_DEBUG=false
 
 # Copy frontend source and build release
 COPY . /home/uxbox/frontend
@@ -11,8 +12,11 @@ RUN set -ex; \
     rm -f Dockerfile; \
     rm -rf ./dist ./node_modules; \
     sed -i \
-        -e 's|"uxbox.config.url" ".*"|"uxbox.config.url" "${API_URL}/api"|g' \
+        -e 's|"uxbox.config.url" ".*"|"uxbox.config.url" "${UXBOX_CONFIG_URL}"|g' \
         scripts/figwheel.clj; \
+    sed -i \
+        -e 's|url ".*")|url "${UXBOX_CONFIG_URL}")|g' \
+        src/uxbox/config.cljs; \
     npm install; \
     npm run prod; \
     bash -c "/home/uxbox/frontend/scripts/dist-main"; \
@@ -25,6 +29,9 @@ RUN set -ex; \
 FROM nginx:alpine
 
 LABEL maintainer="mathieu.brunot at monogramm dot io"
+
+ENV LANG=en_US.UTF-8 \
+    LC_ALL=C.UTF-8
 
 # Copy built app to www root
 COPY --from=0 /home/uxbox/frontend/dist /usr/share/nginx/html
