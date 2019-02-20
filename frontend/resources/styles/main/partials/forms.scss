@@ -11,7 +11,7 @@ input,
 select,
 textarea {
   &.invalid {
-    border-color: red;
-    color: red;
+    border-color: $color-danger;
+    color: $color-danger;
   }
 }
