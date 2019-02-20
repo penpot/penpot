@@ -5,14 +5,23 @@ REV=`git rev-parse --short HEAD`
 IMGNAME="uxbox"
 
 function kill_container {
-    echo "Cleaning development image $IMGNAME:$REV..."
+    echo "Cleaning development container $IMGNAME:$REV..."
     if $(sudo docker ps | grep -q $IMGNAME); then
         sudo docker ps | grep $IMGNAME | awk '{print $1}' | xargs --no-run-if-empty sudo docker kill
     fi
+    if $(sudo docker ps -a | grep -q $IMGNAME); then
+        sudo docker ps -a | grep $IMGNAME | awk '{print $1}' | xargs --no-run-if-empty sudo docker rm
+    fi
+}
+
+function remove_image {
+    echo "Clean old development image $IMGNAME..."
+    sudo docker images | grep $IMGNAME | awk '{print $3}' | xargs --no-run-if-empty sudo docker rmi
 }
 
 function build_image {
     kill_container
+    remove_image
     echo "Building development image $IMGNAME:$REV..."
     sudo docker build --rm=true -t $IMGNAME:$REV docker/
 }
@@ -27,20 +36,22 @@ function run_image {
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
 
-    echo "Running development image..."
+    CONTAINER=$IMGNAME:$REV
+    #CONTAINER=monogramm/uxbox:develop
+
+    echo "Running development image $CONTAINER..."
     sudo docker run -ti \
          -v `pwd`:/home/uxbox/uxbox  \
          -v $HOME/.m2:/home/uxbox/.m2 \
          -v $HOME/.gitconfig:/home/uxbox/.gitconfig \
          -p 3449:3449 -p 6060:6060 -p 9090:9090 \
-         $IMGNAME:$REV
-         #monogramm/uxbox:develop
+         $CONTAINER
 }
 
 function test {
     kill_container
 
-    echo "TODO Testing backend..."
+    echo "TODO Testing backend (require running postgresql)..."
     cd ./backend
     #lein test
     cd ..
@@ -94,10 +105,14 @@ function run_release {
 
 function usage {
     echo "UXBOX build & release manager v$REV"
-    echo "USAGE: $0 [ build | run | test | release-local | release-docker | run-release ]"
+    echo "USAGE: $0 [ clean | build | run | test | release-local | release-docker | run-release ]"
 }
 
 case $1 in
+    clean)
+        kill_container
+        remove_image
+        ;;
     build)
         build_image
         ;;
