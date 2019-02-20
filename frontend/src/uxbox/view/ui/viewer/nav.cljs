@@ -9,6 +9,7 @@
   (:require [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
             [rumext.core :as mx :include-macros true]
+            [uxbox.main.data.lightbox :as udl]
             [uxbox.view.store :as st]
             [uxbox.view.data.viewer :as dv]))
 
@@ -17,7 +18,8 @@
   (let [toggle-sitemap #(st/emit! (dv/toggle-flag :sitemap))
         toggle-interactions #(st/emit! (dv/toggle-flag :interactions))
         sitemap? (contains? flags :sitemap)
-        interactions? (contains? flags :interactions)]
+        interactions? (contains? flags :interactions)
+        on-download #(udl/open! :download)]
     [:div.view-nav
      [:ul.view-options-btn
       [:li.tooltip.tooltip-right
@@ -33,4 +35,6 @@
       [:li.tooltip.tooltip-right
        {:alt "share"} i/export]
       [:li.tooltip.tooltip-right
-       {:alt "save SVG"} i/save]]]))
+       {:alt "save SVG"
+        :on-click on-download}
+       i/save]]]))
