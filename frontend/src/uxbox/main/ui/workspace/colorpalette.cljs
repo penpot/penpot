@@ -31,7 +31,7 @@
 
 (mx/defc palette-item
   {:mixins [mx/static]}
-  [color position]
+  [color]
   (letfn [(select-color [event]
             (let [attrs (if (kbd/shift? event)
                           {:stroke-color color}
@@ -50,7 +50,7 @@
   (let [dom (mx/ref-node own "container")
         width (.-clientWidth dom)]
     (when (not= (:width @local) width)
-      (swap! local assoc :width width))
+      (swap! local assoc :width :width width))
     own))
 
 (defn- document-width
@@ -88,12 +88,9 @@
            [:div.btn-palette.create i/close]]]
 
        [:span.left-arrow {}
-        ;;(if (> (:position @local) 0)
-        ;;  {:on-click #(swap! local update :position dec)}
-        ;;  {:class :disabled})
-        ;; FIXME Objects are not valid as a React child (found: :on-click).
+        ;; FIXME
         (when (> offset 0)
-          {:on-click #(swap! local update :offset (fnil dec 1))})
+          {:on-click #(swap! local (fnil dec 1) offset)})
         i/arrow-slide]
 
        [:div.color-palette-content {:ref "container"}
@@ -104,12 +101,9 @@
                (mx/with-key color)))]]
 
        [:span.right-arrow
-        ;;(if (< (* (+ 1 (:position @local)) 10) (count (:colors selected-coll)))
-        ;;  {:on-click #(swap! local update :position inc)}
-        ;;  {:class :disabled})
-        ;; FIXME Objects are not valid as a React child (found: :on-click).
+        ;; FIXME
         (if (< offset invisible)
-          {:on-click #(swap! local update :offset (fnil inc 0))}
+          {:on-click #(swap! local (fnil inc 0) offset)}
           {})
         i/arrow-slide]
        [:span.close-palette {:on-click close}
