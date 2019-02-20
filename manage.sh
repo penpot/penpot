@@ -5,7 +5,7 @@ REV=`git rev-parse --short HEAD`
 IMGNAME="uxbox"
 
 function kill_container {
-    echo "Cleaning development image..."
+    echo "Cleaning development image $IMGNAME:$REV..."
     if $(sudo docker ps | grep -q $IMGNAME); then
         sudo docker ps | grep $IMGNAME | awk '{print $1}' | xargs --no-run-if-empty sudo docker kill
     fi
@@ -13,8 +13,8 @@ function kill_container {
 
 function build_image {
     kill_container
-    echo "Building development image..."
-    #sudo docker build --rm=true -t $IMGNAME:$REV docker/
+    echo "Building development image $IMGNAME:$REV..."
+    sudo docker build --rm=true -t $IMGNAME:$REV docker/
 }
 
 function run_image {
@@ -32,9 +32,9 @@ function run_image {
          -v `pwd`:/home/uxbox/uxbox  \
          -v $HOME/.m2:/home/uxbox/.m2 \
          -v $HOME/.gitconfig:/home/uxbox/.gitconfig \
-         -p 3449:3449 -p 6060:6060 -p 9090:9090 
-         $IMGNAME:develop
-         #$IMGNAME:$REV
+         -p 3449:3449 -p 6060:6060 -p 9090:9090 \
+         $IMGNAME:$REV
+         #monogramm/uxbox:develop
 }
 
 function test {

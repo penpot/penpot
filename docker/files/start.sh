@@ -11,7 +11,8 @@ tmux send-keys -t uxbox 'npm run figwheel' enter
 tmux new-window -t uxbox:2 -n 'backend'
 tmux select-window -t uxbox:2
 tmux send-keys -t uxbox 'cd uxbox/backend' enter C-l
-tmux send-keys -t uxbox 'bash ./scripts/fixtures.sh' enter
+tmux send-keys -t uxbox 'bash ./scripts/fixtures.sh' enter C-l
+tmux send-keys -t uxbox 'bash ./scripts/run.sh' enter
 
 tmux new-window -t uxbox:3 -n 'services'
 tmux select-window -t uxbox:3
