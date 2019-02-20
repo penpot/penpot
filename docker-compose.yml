@@ -22,8 +22,8 @@ services:
             - /etc/timezone:/etc/timezone:ro
 
     uxbackend:
-        build: ./backend
-        #image: monogramm/uxbox:backend
+        #build: ./backend
+        image: monogramm/uxbox:backend
         container_name: uxbackend
         #restart: always
         depends_on:
@@ -64,8 +64,8 @@ services:
             - /etc/timezone:/etc/timezone:ro
 
     uxfrontend:
-        build: ./frontend
-        #image: monogramm/uxbox:frontend
+        #build: ./frontend
+        image: monogramm/uxbox:frontend
         container_name: uxfrontend
         #hostname: uxbox.io
         #restart: always
@@ -74,8 +74,8 @@ services:
         ports:
             - 80:80
         environment:
-            - API_URL="http://localhost:6060/api/"
-            #- API_URL="http://uxbox.io/api/"
+            - UXBOX_CONFIG_URL="http://localhost:6060/api/"
+            #- UXBOX_CONFIG_URL="http://uxbox.io/api/"
         volumes:
             #- /srv/uxbox/frontend/html:/usr/share/nginx/html
             - /srv/uxbox/backend/resources:/srv/uxbox/resources:ro
