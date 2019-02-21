@@ -15,7 +15,8 @@
    :build-ids ["main", "view"]
    :all-builds
    [{:id "main"
-     :figwheel {:on-jsload "uxbox.main.ui/init"}
+     :figwheel {:websocket-host :js-client-host
+                :on-jsload "uxbox.main.ui/init"}
      :source-paths ["src" "vendor"]
      :compiler
      {:main 'uxbox.main
@@ -31,7 +32,8 @@
       :verbose true}}
 
     {:id "view"
-     :figwheel {:on-jsload "uxbox.view.ui/init"}
+     :figwheel {:websocket-host :js-client-host
+                :on-jsload "uxbox.view.ui/init"}
      :source-paths ["src" "vendor"]
      :compiler
      {:main 'uxbox.view
