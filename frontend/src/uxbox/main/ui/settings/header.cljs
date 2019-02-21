@@ -42,6 +42,8 @@
       [:li {:class (when password? "current")}
        (header-link :settings/password (tr "settings.password"))]
       [:li {:class (when notifications? "current")}
-       (header-link :settings/notifications (tr "settings.notifications"))]]
+       (header-link :settings/notifications (tr "settings.notifications"))]
+      [:li {:on-click #(st/emit! (da/logout))}
+       (header-link :settings/profile (tr "ds.user.exit"))]]
      (user)]))
 
