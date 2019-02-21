@@ -24,7 +24,7 @@
    (header)
    [:section.dashboard-content.user-settings
     [:section.user-settings-content
-     [:span.user-settings-label (tr "settings.notifications.none")]
+     [:span.user-settings-label (tr "settings.notifications.notifications-saved")]
      [:p (tr "settings.notifications.description")]
      [:div.input-radio.radio-primary
       [:input {:type "radio"
