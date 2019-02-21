@@ -55,9 +55,9 @@
                 :uxbox.services.users/registration-disabled
                 (st/emit! (tr "errors.api.form.registration-disabled"))
                 :uxbox.services.users/email-already-exists
-                (st/emit! (assoc-error :email (tr "errors.api.form.email-already-exists"))
+                (st/emit! (assoc-error :email (tr "errors.api.form.email-already-exists")))
                 :uxbox.services.users/username-already-exists
-                (st/emit! (assoc-error :username (tr "errors.api.form.username-already-exists"))))
+                (st/emit! (assoc-error :username (tr "errors.api.form.username-already-exists")))))
             (on-submit [event]
               (dom/prevent-default event)
               (st/emit! (uda/register data on-error)))]
