@@ -185,7 +185,7 @@ ul.slider-dots {
 
     &.current,
     &:hover {
-      background-color: $color-white;
+      background-color: $dark-ui-bg;
     }
 
   }
@@ -489,7 +489,7 @@ input.element-name {
       width: 20px;
       height: 20px;
       margin-right: 10px;
-      background-color: $color-white;
+      background-color: $primary-ui-bg;
       border: 1px solid $soft-ui-border;
       box-shadow: inset 0 0 0 0 $main-ui-color ;
       box-sizing: border-box;
@@ -855,7 +855,7 @@ input[type=range]:focus::-ms-fill-upper {
   &:hover {
 
     &::after {
-      background-color: $color-white;
+      background-color: $dark-ui-bg;
       border-radius: $br-small;
       color: $medium-ui-text;
       content: attr(alt);

@@ -153,7 +153,7 @@
     margin-left: 1.5rem;
     .color {
       align-items: center;
-      background-color: $color-white;
+      background-color: $primary-ui-bg;
       border: 3px dashed $color-gray-lighter;
       cursor: pointer;
       display: flex;
@@ -201,7 +201,7 @@
 }
 
 .color-tooltip {
-  background-color: $color-white;
+  background-color: $primary-ui-bg;
   border: 1px solid $color-gray-lighter;
   border-radius: 3px;
   left: -102px;
@@ -217,7 +217,7 @@
       max-width: 100px;
     }
     &::after {
-      background-color: $color-white;
+      background-color: $primary-ui-bg;
       bottom: -32px;
       border-bottom: 1px solid $color-gray-lighter;
       border-right: 1px solid $color-gray-lighter;

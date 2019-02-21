@@ -154,7 +154,7 @@
   position: relative;
 
   &::after {
-    background-color: $color-white;
+    background-color: $primary-ui-bg;
     bottom: -3px;
     content: "...";
     padding-left: 10px;
