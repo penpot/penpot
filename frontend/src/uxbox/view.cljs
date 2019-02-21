@@ -12,6 +12,7 @@
 
 (defn ^:export init
   []
+  (lc/init)
   (st/init)
   (ui/init-routes)
   (ui/init))
