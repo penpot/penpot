@@ -139,12 +139,12 @@
          [:span {:class (when (= text-align "left") "current")
                  :on-click #(on-font-align-change % "left")}
           i/align-left]
-         [:span {:class (when (= text-align "right") "current")
-                 :on-click #(on-font-align-change % "right")}
-          i/align-right]
          [:span {:class (when (= text-align "center") "current")
                  :on-click #(on-font-align-change % "center")}
           i/align-center]
+         [:span {:class (when (= text-align "right") "current")
+                 :on-click #(on-font-align-change % "right")}
+          i/align-right]
          [:span {:class (when (= text-align "justify") "current")
                  :on-click #(on-font-align-change % "justify")}
           i/align-justify]]]])))
