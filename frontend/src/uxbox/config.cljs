@@ -7,5 +7,5 @@
 (ns uxbox.config)
 
 (goog-define url "http://127.0.0.1:6060/api")
-(goog-define viewurl "http://127.0.0.1:3449/view/index.html")
+(goog-define viewurl "/view/index.html")
 (goog-define isdemo false)
