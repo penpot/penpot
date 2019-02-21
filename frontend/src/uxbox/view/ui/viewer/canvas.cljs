@@ -12,12 +12,13 @@
 ;; --- Background (Component)
 
 (mx/defc background
-  []
+  {:mixins [mx/static]}
+  [{:keys [background] :as metadata}]
   [:rect
    {:x 0 :y 0
     :width "100%"
     :height "100%"
-    :fill "white"}])
+    :fill (or background "#ffffff")}])
 
 ;; --- Canvas (Component)
 
@@ -25,12 +26,12 @@
 
 (mx/defc canvas
   {:mixins [mx/static]}
-  [{:keys [metadata] :as page}]
+  [{:keys [metadata id] :as page}]
   (let [{:keys [width height]} metadata]
-    [:div.view-canvas
+    [:div.view-canvas {:ref (str "canvas" id)}
      [:svg.page-layout {:width width
                         :height height}
-      (background)
+      (background metadata)
       (for [id (reverse (:shapes page))]
         (-> (shapes/shape id)
             (mx/with-key (str id))))]]))
