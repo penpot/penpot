@@ -49,11 +49,11 @@
               (let [value (dom/event->value event)]
                 (st/emit! (assoc-value field value))))
             (on-success []
-              (st/emit! (um/info (tr "settings.password-saved"))))
+              (st/emit! (um/info (tr "settings.password.password-saved"))))
             (on-error [{:keys [code] :as payload}]
               (case code
                 :uxbox.services.users/old-password-not-match
-                (st/emit! (assoc-error :password-old (tr "settings.wrong-old-password")))
+                (st/emit! (assoc-error :password-old (tr "settings.password.wrong-old-password")))
 
                 :else
                 (throw (ex-info "unexpected" {:error payload}))))
@@ -62,27 +62,27 @@
                                              :on-success on-success
                                              :on-error on-error)))]
       [:form.password-form
-       [:span.user-settings-label (tr "settings.change-password")]
+       [:span.user-settings-label (tr "settings.password.change-password")]
        [:input.input-text
         {:type "password"
          :class (fm/error-class errors :password-old)
          :value (:password-old data "")
          :on-change (partial on-change :password-old)
-         :placeholder (tr "settings.old-password")}]
+         :placeholder (tr "settings.password.old-password")}]
        (fm/input-error errors :password-old)
        [:input.input-text
         {:type "password"
          :class (fm/error-class errors :password-1)
          :value (:password-1 data "")
          :on-change (partial on-change :password-1)
-         :placeholder (tr "settings.new-password")}]
+         :placeholder (tr "settings.password.new-password")}]
        (fm/input-error errors :password-1)
        [:input.input-text
         {:type "password"
          :class (fm/error-class errors :password-2)
          :value (:password-2 data "")
          :on-change (partial on-change :password-2)
-         :placeholder (tr "settings.confirm-password")}]
+         :placeholder (tr "settings.password.confirm-password")}]
        (fm/input-error errors :password-2)
        [:input.btn-primary
         {:type "button"

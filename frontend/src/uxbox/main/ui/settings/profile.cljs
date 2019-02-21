@@ -71,24 +71,24 @@
             (on-submit [event]
               (st/emit! (udu/update-profile data on-success on-error)))]
       [:form.profile-form
-       [:span.user-settings-label (tr "settings.name-username-email")]
+       [:span.user-settings-label (tr "settings.profile.profile.profile-saved")]
        [:input.input-text
         {:type "text"
          :on-change (partial on-change :fullname)
          :value (:fullname data "")
-         :placeholder (tr "settings.your-name")}]
+         :placeholder (tr "settings.profile.your-name")}]
        [:input.input-text
         {:type "text"
          :on-change (partial on-change :username)
          :value (:username data "")
-         :placeholder (tr "settings.your-username")}]
+         :placeholder (tr "settings.profile.your-username")}]
        (fm/input-error errors :username)
 
        [:input.input-text
         {:type "email"
          :on-change (partial on-change :email)
          :value (:email data "")
-         :placeholder (tr "settings.your-email")}]
+         :placeholder (tr "settings.profile.your-email")}]
        (fm/input-error errors :email)
 
         #_[:span.user-settings-label (tr "settings.choose-color-theme")]
@@ -99,7 +99,7 @@
                   :id "light-theme"
                   :name "theme"
                   :value "light"}]
-         [:label {:for "light-theme"} (tr "settings.light-theme")]
+         [:label {:for "light-theme"} (tr "settings.profile.light-theme")]
 
          [:input {:type "radio"
                   :checked (when (= theme "dark") "checked")
@@ -107,7 +107,7 @@
                   :id "dark-theme"
                   :name "theme"
                   :value "dark"}]
-         [:label {:for "dark-theme"} (tr "settings.dark-theme")]
+         [:label {:for "dark-theme"} (tr "settings.profile.dark-theme")]
 
          [:input {:type "radio"
                   :checked (when (= theme "high-contrast") "checked")
@@ -115,7 +115,7 @@
                   :id "high-contrast-theme"
                   :name "theme"
                   :value "high-contrast"}]
-         [:label {:for "high-contrast-theme"} (tr "settings.high-contrast-theme")]]
+         [:label {:for "high-contrast-theme"} (tr "settings.profile.high-contrast-theme")]]
 
         [:input.btn-primary
          {:type "button"
@@ -156,6 +156,6 @@
    (header)
    [:section.dashboard-content.user-settings
     [:section.user-settings-content
-     [:span.user-settings-label (tr "settings.your-avatar")]
+     [:span.user-settings-label (tr "settings.profile.your-avatar")]
      (profile-photo-form)
      (profile-form)]]])

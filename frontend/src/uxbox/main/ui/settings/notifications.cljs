@@ -24,25 +24,29 @@
    (header)
    [:section.dashboard-content.user-settings
     [:section.user-settings-content
-     [:span.user-settings-label "Prototype notifications"]
-     [:p "Get a roll up of prototype changes in your inbox."]
+     [:span.user-settings-label (tr "settings.notifications.none")]
+     [:p (tr "settings.notifications.description")]
      [:div.input-radio.radio-primary
       [:input {:type "radio"
                :id "notification-1"
                :name "notification"
                :value "none"}]
       [:label {:for "notification-1"
-               :value "None"} "None"]
+               :value (tr "settings.notifications.none")} (tr "settings.notifications.none")]
       [:input {:type "radio"
                :id "notification-2"
                :name "notification"
                :value "every-hour"}]
       [:label {:for "notification-2"
-               :value "Every hour"} "Every hour"]
+               :value (tr "settings.notifications.every-hour")} (tr "settings.notifications.every-hour")]
       [:input {:type "radio"
                :id "notification-3"
                :name "notification"
                :value "every-day"}]
-      [:label {:for "notification-3" :value "Every day"} "Every day"]]
-     [:input.btn-primary {:type "submit" :value "Update settings"}]
+      [:label {:for "notification-3"
+               :value (tr "settings.notifications.every-day")} (tr "settings.notifications.every-day")]]
+     [:input.btn-primary {:type "submit"
+                          :class "btn-disabled"
+                          :disabled true
+                          :value (tr "settings.update-settings")}]
      ]]])

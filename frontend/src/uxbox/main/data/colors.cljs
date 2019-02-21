@@ -92,7 +92,7 @@
 (defrecord CreateCollection [id]
   ptk/UpdateEvent
   (update [_ state]
-    (let [item {:name (str "Unnamed Collection (" (gensym "c") ")")
+    (let [item {:name (tr "ds.default-library-title" (gensym "c"))
                 :id id
                 :created-at (dt/now)
                 :type :own

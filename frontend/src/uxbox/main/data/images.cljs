@@ -11,6 +11,7 @@
             [potok.core :as ptk]
             [uxbox.main.store :as st]
             [uxbox.main.repo :as rp]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.data :refer (jscoll->vec)]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.time :as ts]
@@ -146,7 +147,7 @@
 (defrecord CreateCollection []
   ptk/WatchEvent
   (watch [_ state s]
-    (let [coll {:name (str "Unnamed Collection (" (gensym "c") ")")
+    (let [coll {:name (tr "ds.default-library-title" (gensym "c"))
                 :id (uuid/random)}]
       (->> (rp/req :create/image-collection coll)
            (rx/map :payload)

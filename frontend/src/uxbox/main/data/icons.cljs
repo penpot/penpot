@@ -108,7 +108,7 @@
 (defrecord CreateCollection []
   ptk/WatchEvent
   (watch [_ state s]
-    (let [name (str "Unnamed Collection (" (gensym "c") ")")
+    (let [name (tr "ds.default-library-title" (gensym "c"))
           coll {:name name}]
       (->> (rp/req :create/icon-collection coll)
            (rx/map :payload)

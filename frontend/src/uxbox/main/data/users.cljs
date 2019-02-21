@@ -43,7 +43,7 @@
   ptk/WatchEvent
   (watch [_ state s]
     (rx/of (profile-fetched data)
-           (uum/info (tr "settings.profile-saved")))))
+           (uum/info (tr "settings.profile.profile-saved")))))
 
 (defn profile-updated
   [data]
