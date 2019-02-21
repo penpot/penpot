@@ -225,15 +225,16 @@
        ;; if editable
        [:div.multiselect-nav {}
         [:span.move-item.tooltip.tooltip-top
-         {:on-click on-toggle-copy :alt (tr "ds.multiselect-bar.copy")}
+         {:alt (tr "ds.multiselect-bar.copy")
+          :on-click on-toggle-copy}
          (when (:show-copy-tooltip @local)
            (grid-options-tooltip :selected id
                                  :title (tr "ds.multiselect-bar.copy-to-library")
                                  :on-select on-copy))
-
          i/copy]
         [:span.move-item.tooltip.tooltip-top
-         {:on-click on-toggle-move :alt (tr "ds.multiselect-bar.move")}
+         {:alt (tr "ds.multiselect-bar.move")
+          :on-click on-toggle-move}
          (when (:show-move-tooltip @local)
            (grid-options-tooltip :selected id
                                  :title (tr "ds.multiselect-bar.move-to-library")
@@ -247,7 +248,8 @@
        ;; if not editable
        [:div.multiselect-nav {}
         [:span.move-item.tooltip.tooltip-top
-         {:on-click on-toggle-copy}
+         {:alt (tr "ds.multiselect-bar.copy")
+          :on-click on-toggle-copy}
          (when (:show-copy-tooltip @local)
            (grid-options-tooltip :selected id
                                  :title (tr "ds.multiselect-bar.copy-to-library")
