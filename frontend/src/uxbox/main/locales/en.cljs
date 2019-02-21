@@ -116,6 +116,7 @@
    "settings.profile" "PROFILE"
    "settings.password" "PASSWORD"
    "settings.notifications" "NOTIFICATIONS"
+   "settings.exit" "EXIT"
 
    "settings.profile.profile-saved" "Profile saved successfully!"
    "settings.profile.profile.profile-saved" "Name, username and email"

@@ -116,6 +116,7 @@
    "settings.profile" "PROFIL"
    "settings.password" "MOT DE PASSE"
    "settings.notifications" "NOTIFICATIONS"
+   "settings.exit" "QUITTER"
 
    "settings.profile.profile-saved" "Profil enregistré avec succès !"
    "settings.profile.profile.profile-saved" "Nom, nom d'utilisateur et adresse email"
