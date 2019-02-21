@@ -9,6 +9,7 @@
   (:require [uxbox.main.data.lightbox :as udl]
             [uxbox.builtins.icons :as i]
             [rumext.core :as mx :include-macros true]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.lightbox :as lbx]))
 
@@ -24,17 +25,17 @@
             (when on-cancel
               (on-cancel (dissoc ctx :on-accept :on-cancel))))]
     [:div.lightbox-body.confirm-dialog
-     [:h3 "Are you sure?"]
+     [:h3 (tr "ds.confirm-title")]
      (if hint
        [:span hint])
      [:div.row-flex
       [:input.btn-success.btn-small
        {:type "button"
-        :value "Ok"
+        :value (tr "ds.confirm-ok")
         :on-click accept}]
       [:input.btn-delete.btn-small
        {:type "button"
-        :value "Cancel"
+        :value (tr "ds.confirm-cancel")
         :on-click cancel}]]
      [:a.close {:href "#"
                 :on-click #(do (dom/prevent-default %)

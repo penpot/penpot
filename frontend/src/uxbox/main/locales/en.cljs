@@ -12,30 +12,63 @@
    "ds.num-projects" ["No projects"
                       "%s project"
                       "%s projects"]
-   "ds.num-colors" ["No colors"
-                    "%s color"
-                    "%s colors"]
-   "ds.num-images" ["No images"
-                    "%s image"
-                    "%s images"]
+   "ds.project-title" "Your projects"
+   "ds.project-new" "+ New project"
+
+   "ds.ordering" "Sort by"
+   "ds.ordering.by-name" "name"
+   "ds.ordering.by-last-update" "last update"
+   "ds.ordering.by-creation-date" "creation date"
+   "ds.search.placeholder" "Search..."
+   "ds.uploaded-at" "Uploaded at %s"
+
+   "ds.confirm-title" "Are you sure?"
+   "ds.confirm-ok" "Ok"
+   "ds.confirm-cancel" "Cancel"
+
+   "ds.multiselect-bar.copy" "Copy"
+   "ds.multiselect-bar.copy-to-library" "Copy to library"
+   "ds.multiselect-bar.move" "Move"
+   "ds.multiselect-bar.move-to-library" "Move to library"
+   "ds.multiselect-bar.rename" "Rename"
+   "ds.multiselect-bar.delete" "Delete"
+
+   "ds.elements" "ELEMENTS"
+   "ds.num-elements" ["%s element"
+                      "%s elements"]
+
+   "ds.icons" "ICONS"
    "ds.num-icons" ["No icons"
                    "%s icon"
                    "%s icons"]
-   "ds.project-ordering" "Sort by"
-   "ds.project-ordering.by-name" "name"
-   "ds.project-ordering.by-last-update" "last update"
-   "ds.project-ordering.by-creation-date" "creation date"
-   "ds.project-search.placeholder" "Search..."
+   "ds.your-icons-title" "YOUR ICONS"
+   "ds.store-icons-title" "ICONS STORE"
+   "ds.icons-collection.new" "+ New collection"
+   "ds.icon.new" "+ New icon"
 
-   "ds.elements" "ELEMENTS"
-   "ds.icons" "ICONS"
    "ds.images" "IMAGES"
+   "ds.num-images" ["No images"
+                    "%s image"
+                    "%s images"]
+   "ds.your-images-title" "YOUR IMAGES"
+   "ds.store-images-title" "IMAGES STORE"
+   "ds.images-collection.new" "+ New library"
+   "ds.image-new" "+ New image"
+
    "ds.colors" "COLORS"
+   "ds.num-colors" ["No colors"
+                    "%s color"
+                    "%s colors"]
+   "ds.your-colors-title" "YOUR COLORS"
+   "ds.store-colors-title" "COLORS STORE"
+   "ds.colors-collection.new" "+ New library"
+   "ds.color-new" "+ New color"
+   "ds.color-lightbox.title" "New color"
+   "ds.color-lightbox.add" "+ Add color"
+
    "ds.library-title" "Library: "
    "ds.standard-title" "STANDARD"
    "ds.your-libraries-title" "YOUR LIBRARIES"
-   "ds.num-elements" ["%s element"
-                      "%s elements"]
 
    "ds.recent-colors" "Recent colors"
    "ds.element-options" "Element options"
@@ -51,6 +84,11 @@
    "ds.help.curve" "Curve"
    "ds.help.ruler" "Ruler"
 
+   "ds.user.profile" "Profile"
+   "ds.user.password" "Password"
+   "ds.user.notifications" "Notifications"
+   "ds.user.exit" "Exit"
+   
    "auth.message.recovery-token-sent" "Password recovery link sent to your inbox."
    "auth.message.password-recovered" "Password successfully recovered."
 
@@ -59,6 +97,12 @@
    "settings.notifications" "NOTIFICATIONS"
    "settings.profile-saved" "Profile saved successfully!"
    "settings.password-saved" "Password saved successfully!"
+   "settings.wrong-old-password" "Wrong old password"
+   "settings.change-password" "Change password"
+   "settings.old-password" "Old password"
+   "settings.new-password" "New password"
+   "settings.confirm-password" "Confirm password"
+   "settings.update-settings" "Update settings"
 
    "history.alert-message" "You are seeing version %s"
    "errors.api.form.old-password-not-match" "Incorrect old password"

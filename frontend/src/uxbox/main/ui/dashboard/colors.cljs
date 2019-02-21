@@ -137,7 +137,7 @@
     [:ul.library-elements {}
      (when own?
        [:li {}
-        [:a.btn-primary {:on-click #(st/emit! (dc/create-collection))} "+ New library"]])
+        [:a.btn-primary {:on-click #(st/emit! (dc/create-collection))} (tr "ds.colors-collection.new")]])
      (mx/doseq [{:keys [id] :as coll} colls]
        (let [selected? (= (:id coll) selected)]
          (-> (nav-item coll selected?)
@@ -161,10 +161,10 @@
       [:ul.library-tabs {}
        [:li {:class-name (when (= type :own) "current")
              :on-click (partial select-tab :own)}
-        "YOUR COLORS"]
+        (tr "ds.your-colors-title")]
        [:li {:class-name (when (= type :builtin) "current")
              :on-click (partial select-tab :builtin)}
-        "COLORS STORE"]]
+        (tr "ds.store-colors-title")]]
         (nav-section type id colls)]]))
 
 ;; --- Grid
@@ -172,7 +172,7 @@
 (mx/defc grid-form
   [coll-id]
   [:div.grid-item.small-item.add-project {:on-click #(udl/open! :color-form {:coll coll-id})}
-   [:span {} "+ New color"]])
+   [:span {} (tr "ds.color-new")]])
 
 (mx/defc grid-options-tooltip
   {:mixins [mx/reactive mx/static]}
@@ -225,22 +225,22 @@
        ;; if editable
        [:div.multiselect-nav {}
         [:span.move-item.tooltip.tooltip-top
-         {:on-click on-toggle-copy :alt "Copy"}
+         {:on-click on-toggle-copy :alt (tr "ds.multiselect-bar.copy")}
          (when (:show-copy-tooltip @local)
            (grid-options-tooltip :selected id
-                                 :title "Copy to library"
+                                 :title (tr "ds.multiselect-bar.copy-to-library")
                                  :on-select on-copy))
 
          i/copy]
         [:span.move-item.tooltip.tooltip-top
-         {:on-click on-toggle-move :alt "Move"}
+         {:on-click on-toggle-move :alt (tr "ds.multiselect-bar.move")}
          (when (:show-move-tooltip @local)
            (grid-options-tooltip :selected id
-                                 :title "Move to library"
+                                 :title (tr "ds.multiselect-bar.move-to-library")
                                  :on-select on-move))
          i/move]
         [:span.delete.tooltip.tooltip-top
-         {:alt "Delete"
+         {:alt (tr "ds.multiselect-bar.delete")
           :on-click on-delete}
          i/trash]]
 
@@ -250,7 +250,7 @@
          {:on-click on-toggle-copy}
          (when (:show-copy-tooltip @local)
            (grid-options-tooltip :selected id
-                                 :title "Copy to library"
+                                 :title (tr "ds.multiselect-bar.copy-to-library")
                                  :on-select on-copy))
          i/organize]])]))
 
@@ -342,14 +342,14 @@
           (on-close [event]
             (udl/close!))]
     [:div.lightbox-body {}
-     [:h3 {} "New color"]
+     [:h3 {} (tr "ds.color-lightbox.title")]
      [:form {}
       [:div.row-flex.center {}
        (colorpicker
         :value (or (:hex @local) color "#00ccff")
         :on-change #(swap! local assoc :hex %))]
 
-      [:input#project-btn.btn-primary {:value "+ Add color"
+      [:input#project-btn.btn-primary {:value (tr "ds.color-lightbox.add")
                                        :on-click on-submit
                                        :type "button"}]]
      [:a.close {:on-click on-close} i/close]]))

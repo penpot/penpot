@@ -13,6 +13,7 @@
             [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
             [rumext.core :as mx :include-macros true]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.dom :as dom]
             [uxbox.main.ui.settings.header :refer (header)]))
 

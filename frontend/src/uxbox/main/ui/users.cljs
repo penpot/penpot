@@ -13,6 +13,7 @@
             [uxbox.main.data.lightbox :as udl]
             [uxbox.builtins.icons :as i]
             [uxbox.main.ui.navigation :as nav]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as rt]
             [rumext.core :as mx :include-macros true]))
 
@@ -24,16 +25,16 @@
   [:ul.dropdown {:class (when-not open? "hide")}
    [:li {:on-click #(st/emit! (rt/navigate :settings/profile))}
     i/user
-    [:span "Profile"]]
+    [:span (tr "ds.user.profile")]]
    [:li {:on-click #(st/emit! (rt/navigate :settings/password))}
     i/lock
-    [:span "Password"]]
+    [:span (tr "ds.user.password")]]
    [:li {:on-click #(st/emit! (rt/navigate :settings/notifications))}
     i/mail
-    [:span "Notifications"]]
+    [:span (tr "ds.user.notifications")]]
    [:li {:on-click #(st/emit! (da/logout))}
     i/exit
-    [:span "Exit"]]])
+    [:span (tr "ds.user.exit")]]])
 
 ;; --- User Widget
 
@@ -49,7 +50,8 @@
         photo (if (str/empty? (:photo profile ""))
                 "/images/avatar.jpg"
                 (:photo profile))]
-    [:div.user-zone {:on-mouse-enter #(swap! local assoc :open true)
+    [:div.user-zone {:on-click #(st/emit! (rt/navigate :settings/profile))
+                     :on-mouse-enter #(swap! local assoc :open true)
                      :on-mouse-leave #(swap! local assoc :open false)}
      [:span (:fullname profile)]
      [:img {:src photo}]

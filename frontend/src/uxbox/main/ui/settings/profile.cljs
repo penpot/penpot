@@ -15,6 +15,7 @@
             [uxbox.main.ui.settings.header :refer [header]]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.data.users :as udu]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.forms :as fm]
             [uxbox.util.router :as r]
             [rumext.core :as mx :include-macros true]

@@ -29,8 +29,8 @@
 ;; --- Helpers & Constants
 
 (def +ordering-options+
-  {:name "ds.project-ordering.by-name"
-   :created "ds.project-ordering.by-creation-date"})
+  {:name "ds.ordering.by-name"
+   :created "ds.ordering.by-creation-date"})
 
 (defn- sort-icons-by
   [ordering icons]
@@ -181,7 +181,7 @@
        [:li {}
         [:a.btn-primary
          {:on-click #(st/emit! (di/create-collection))}
-         "+ New collection"]])
+         (tr "ds.icons-collection.new")]])
      (when own?
        (nav-item nil (nil? selected)))
      (mx/doseq [coll colls]
@@ -206,10 +206,10 @@
         [:ul.library-tabs {}
          [:li {:class-name (when own? "current")
                :on-click (partial select-tab :own)}
-          "YOUR ICONS"]
+          (tr "ds.your-icons-title")]
          [:li {:class-name (when builtin? "current")
                :on-click (partial select-tab :builtin)}
-          "ICONS STORE"]]
+          (tr "ds.store-icons-title")]]
 
         (nav-section type id colls)]])))
 
@@ -224,7 +224,7 @@
             (let [files (dom/get-event-files event)]
               (st/emit! (di/create-icons coll-id files))))]
     [:div.grid-item.small-item.add-project {:on-click forward-click}
-     [:span {} "+ New icon"]
+     [:span {} (tr "ds.icon.new")]
      [:input.upload-image-input
       {:style {:display "none"}
        :multiple true
@@ -288,26 +288,26 @@
        (if editable?
          [:div.multiselect-nav {}
           [:span.move-item.tooltip.tooltip-top
-           {:on-click on-toggle-copy :alt "Copy"}
+           {:on-click on-toggle-copy :alt (tr "ds.multiselect-bar.copy")}
            (when (:show-copy-tooltip @local)
              (grid-options-tooltip :selected id
-                                   :title "Copy to library"
+                                   :title (tr "ds.multiselect-bar.copy-to-library")
                                    :on-select on-copy))
            i/copy]
           [:span.move-item.tooltip.tooltip-top
-           {:on-click on-toggle-move :alt "Move"}
+           {:on-click on-toggle-move :alt (tr "ds.multiselect-bar.move")}
            (when (:show-move-tooltip @local)
              (grid-options-tooltip :selected id
-                                   :title "Move to library"
+                                   :title (tr "ds.multiselect-bar.move-to-library")
                                    :on-select on-move))
            i/move]
           (when (= 1 (count selected))
             [:span.move-item.tooltip.tooltip-top
-             {:alt "Rename"
+             {:alt (tr "ds.multiselect-bar.rename")
               :on-click on-rename}
              i/pencil])
           [:span.delete.tooltip.tooltip-top
-           {:alt "Delete"
+           {:alt (tr "ds.multiselect-bar.delete")
             :on-click on-delete}
            i/trash]]
          [:div.multiselect-nav
@@ -315,7 +315,7 @@
            {:on-click on-toggle-copy}
            (when (:show-copy-tooltip @local)
              (grid-options-tooltip :selected id
-                                   :title "Copy to library"
+                                   :title (tr "ds.multiselect-bar.copy-to-library")
                                    :on-select on-copy))
            i/organize]])])))
 
@@ -364,7 +364,7 @@
                               :default-value (:name icon)}]
         [:h3 {:on-double-click on-edit}
          (:name icon)])
-      (str "Uploaded at " (dt/format created-at "L"))]]))
+      (str (tr "ds.uploaded-at" (dt/format created-at "L")))]]))
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}
@@ -421,7 +421,7 @@
 
         ;; Sorting
         [:div {}
-         [:span {} (tr "ds.project-ordering")]
+         [:span {} (tr "ds.ordering")]
          [:select.input-select
           {:on-change on-ordering-change
            :value (pr-str ordering)}
@@ -435,7 +435,7 @@
            :type "text"
            :on-change on-term-change
            :auto-focus true
-           :placeholder (tr "ds.project-search.placeholder")
+           :placeholder (tr "ds.search.placeholder")
            :value (or filtering "")}]
          [:div.clear-search {:on-click on-clear} i/close]]]])))
 

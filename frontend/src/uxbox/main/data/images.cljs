@@ -146,7 +146,7 @@
 (defrecord CreateCollection []
   ptk/WatchEvent
   (watch [_ state s]
-    (let [coll {:name "Unnamed collection"
+    (let [coll {:name (str "Unnamed Collection (" (gensym "c") ")")
                 :id (uuid/random)}]
       (->> (rp/req :create/image-collection coll)
            (rx/map :payload)

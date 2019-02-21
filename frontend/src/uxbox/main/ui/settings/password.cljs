@@ -53,7 +53,7 @@
             (on-error [{:keys [code] :as payload}]
               (case code
                 :uxbox.services.users/old-password-not-match
-                (st/emit! (assoc-error :password-old "Wrong old password"))
+                (st/emit! (assoc-error :password-old (tr "settings.wrong-old-password")))
 
                 :else
                 (throw (ex-info "unexpected" {:error payload}))))
@@ -62,34 +62,34 @@
                                              :on-success on-success
                                              :on-error on-error)))]
       [:form.password-form
-       [:span.user-settings-label "Change password"]
+       [:span.user-settings-label (tr "settings.change-password")]
        [:input.input-text
         {:type "password"
          :class (fm/error-class errors :password-old)
          :value (:password-old data "")
          :on-change (partial on-change :password-old)
-         :placeholder "Old password"}]
+         :placeholder (tr "settings.old-password")}]
        (fm/input-error errors :password-old)
        [:input.input-text
         {:type "password"
          :class (fm/error-class errors :password-1)
          :value (:password-1 data "")
          :on-change (partial on-change :password-1)
-         :placeholder "New password"}]
+         :placeholder (tr "settings.new-password")}]
        (fm/input-error errors :password-1)
        [:input.input-text
         {:type "password"
          :class (fm/error-class errors :password-2)
          :value (:password-2 data "")
          :on-change (partial on-change :password-2)
-         :placeholder "Confirm password"}]
+         :placeholder (tr "settings.confirm-password")}]
        (fm/input-error errors :password-2)
        [:input.btn-primary
         {:type "button"
          :class (when-not valid? "btn-disabled")
          :disabled (not valid?)
          :on-click on-submit
-         :value "Update settings"}]])))
+         :value (tr "settings.update-settings")}]])))
 
 ;; --- Password Page
 

@@ -24,8 +24,8 @@
 ;; --- Helpers & Constants
 
 (def +ordering-options+
-  {:name "ds.project-ordering.by-name"
-   :created "ds.project-ordering.by-creation-date"})
+  {:name "ds.ordering.by-name"
+   :created "ds.ordering.by-creation-date"})
 
 (defn- sort-images-by
   [ordering images]
@@ -176,7 +176,7 @@
        [:li {}
         [:a.btn-primary
          {:on-click #(st/emit! (di/create-collection))}
-         "+ New library"]])
+         (tr "ds.images-collection.new")]])
      (when own?
        (nav-item nil (nil? selected)))
      (mx/doseq [coll collections]
@@ -205,10 +205,10 @@
         [:ul.library-tabs {}
          [:li {:class-name (when own? "current")
                :on-click (partial select-tab :own)}
-          "YOUR IMAGES"]
+          (tr "ds.your-images-title")]
          [:li {:class-name (when builtin? "current")
                :on-click (partial select-tab :builtin)}
-          "IMAGES STORE"]]
+          (tr "ds.store-images-title")]]
 
         (nav-section type id colls)]])))
 
@@ -227,7 +227,7 @@
       [:div.grid-item.add-project {:on-click forward-click}
        (if uploading?
          [:div {} ^:inline i/loader-pencil]
-         [:span {} "+ New image"])
+         [:span {} (tr "ds.image-new")])
        [:input.upload-image-input
         {:style {:display "none"}
          :multiple true
@@ -290,26 +290,26 @@
        ;; If editable
        [:div.multiselect-nav {}
         [:span.move-item.tooltip.tooltip-top
-         {:on-click on-toggle-copy :alt "Copy"}
+         {:on-click on-toggle-copy :alt (tr "ds.multiselect-bar.copy")}
          (when (:show-copy-tooltip @local)
            (grid-options-tooltip :selected id
-                                       :title "Copy to library"
+                                       :title (tr "ds.multiselect-bar.copy-to-library")
                                        :on-select on-copy))
          ^:inline i/copy]
         [:span.move-item.tooltip.tooltip-top
-         {:on-click on-toggle-move :alt "Move"}
+         {:on-click on-toggle-move :alt (tr "ds.multiselect-bar.move")}
          (when (:show-move-tooltip @local)
            (grid-options-tooltip :selected id
-                                 :title "Move to library"
+                                 :title (tr "ds.multiselect-bar.move-to-library")
                                  :on-select on-move))
          ^:inline i/move]
         (when (= 1 (count selected))
           [:span.move-item.tooltip.tooltip-top
-           {:alt "Rename"
+           {:alt (tr "ds.multiselect-bar.rename")
             :on-click on-rename}
            ^:inline i/pencil])
         [:span.delete.tooltip.tooltip-top
-         {:alt "Delete"
+         {:alt (tr "ds.multiselect-bar.delete")
           :on-click on-delete}
          ^:inline i/trash]]
 
@@ -319,7 +319,7 @@
          {:on-click on-toggle-copy}
          (when (:show-copy-tooltip @local)
            (grid-options-tooltip :selected id
-                                 :title "Copy to library"
+                                 :title (tr "ds.multiselect-bar.copy-to-library")
                                  :on-select on-copy))
          ^:inline i/organize]])]))
 
@@ -358,7 +358,7 @@
                               :on-click on-edit
                               :default-value (:name image)}]
         [:h3 {:on-double-click on-edit} (:name image)])
-      [:span.date {} (str "Uploaded at " (dt/format created-at "L"))]]]))
+      [:span.date {} (str (tr "ds.uploaded-at" (dt/format created-at "L")))]]]))
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}
@@ -417,7 +417,7 @@
 
         ;; Sorting
         [:div {}
-         [:span {} (tr "ds.project-ordering")]
+         [:span {} (tr "ds.ordering")]
          [:select.input-select {:on-change on-ordering-change
                                 :value (pr-str ordering)}
           (mx/doseq [[key value] (seq +ordering-options+)]
@@ -430,7 +430,7 @@
                              :type "text"
                              :on-change on-term-change
                              :auto-focus true
-                             :placeholder (tr "ds.project-search.placeholder")
+                             :placeholder (tr "ds.search.placeholder")
                              :value (or filtering "")}]
          [:div.clear-search {:on-click on-clear} i/close]]]])))
 

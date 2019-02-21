@@ -30,8 +30,8 @@
 ;; --- Helpers & Constants
 
 (def +ordering-options+
-  {:name "ds.project-ordering.by-name"
-   :created "ds.project-ordering.by-creation-date"})
+  {:name "ds.ordering.by-name"
+   :created "ds.ordering.by-creation-date"})
 
 ;; --- Refs
 
@@ -97,7 +97,7 @@
 
         ;; Sorting
         [:div {}
-         [:span {} (tr "ds.project-ordering")]
+         [:span {} (tr "ds.ordering")]
          [:select.input-select
           {:on-change on-ordering-change
            :value (pr-str ordering)}
@@ -111,7 +111,7 @@
            :type "text"
            :on-change on-term-change
            :auto-focus true
-           :placeholder (tr "ds.project-search.placeholder")
+           :placeholder (tr "ds.search.placeholder")
            :value (or filtering "")}]
          [:div.clear-search {:on-click on-clear} i/close]]]])))
 
@@ -216,12 +216,12 @@
               (dom/prevent-default e)
               (udl/open! :create-project))]
       [:section.dashboard-grid {}
-       [:h2 {} "Your projects"]
+       [:h2 {} (tr "ds.project-title")]
        [:div.dashboard-grid-content {}
         [:div.dashboard-grid-row {}
          [:div.grid-item.add-project
           {:on-click on-click}
-          [:span {} "+ New project"]]
+          [:span {} (tr "ds.project-new")]]
          (mx/doseq [item projects]
            (-> (grid-item item)
                (mx/with-key (:id item))))]]])))

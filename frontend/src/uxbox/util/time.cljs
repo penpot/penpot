@@ -12,7 +12,7 @@
 
 (defn format
   "Returns a string representation of the Instant
-  instace with optional `fmt` format parameter.
+  instance with optional `fmt` format parameter.
 
   You can use `:iso` and `:unix` shortcuts as
   format parameter.
