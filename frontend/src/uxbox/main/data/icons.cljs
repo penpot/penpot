@@ -10,6 +10,7 @@
             [uxbox.util.data :refer (jscoll->vec)]
             [uxbox.util.uuid :as uuid]
             [potok.core :as ptk]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.router :as r]
             [uxbox.util.dom :as dom]
             [uxbox.util.files :as files]

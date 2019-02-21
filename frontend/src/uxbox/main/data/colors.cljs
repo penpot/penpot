@@ -10,6 +10,7 @@
             [uxbox.util.time :as dt]
             [uxbox.util.uuid :as uuid]
             [potok.core :as ptk]
+            [uxbox.util.i18n :refer [tr]]
             [uxbox.util.router :as r]
             [uxbox.util.color :as color]
             [uxbox.main.store :as st]
