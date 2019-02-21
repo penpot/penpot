@@ -15,6 +15,7 @@
             [uxbox.main.data.auth :as da]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.util.dom :as dom]
             [uxbox.util.forms :as fm]
             [rumext.core :as mx :include-macros true]
@@ -61,7 +62,7 @@
           :ref "email"
           :value (:username data "")
           :on-change #(on-change % :username)
-          :placeholder "Email or Username"
+          :placeholder (tr "auth.email-or-username")
           :type "text"}]
         [:input.input-text
          {:name "password"
@@ -69,22 +70,22 @@
           :ref "password"
           :value (:password data "")
           :on-change #(on-change % :password)
-          :placeholder "Password"
+          :placeholder (tr "auth.password")
           :type "password"}]
         [:input.btn-primary
          {:name "login"
           :tab-index "4"
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
-          :value "Sign in"
+          :value (tr "auth.signin")
           :type "submit"}]
         [:div.login-links
          [:a {:on-click #(st/emit! (rt/navigate :auth/recovery-request))
               :tab-index "5"}
-          "Forgot your password?"]
+          (tr "auth.forgot-password")]
          [:a {:on-click #(st/emit! (rt/navigate :auth/register))
               :tab-index "6"}
-          "Don't have an account?"]]]])))
+          (tr "auth.no-account")]]]])))
 
 (mx/defc login-page
   {:mixins [mx/static (fm/clear-mixin st/store :login)]

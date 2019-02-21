@@ -14,6 +14,7 @@
             [uxbox.main.data.auth :as uda]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.util.dom :as dom]
             [uxbox.util.forms :as fm]
             [rumext.core :as mx :include-macros true]
@@ -52,11 +53,11 @@
             (on-error [{:keys [type code] :as payload}]
               (case code
                 :uxbox.services.users/registration-disabled
-                (st/emit! "Registration is disabled")
+                (st/emit! (tr "errors.api.form.registration-disabled"))
                 :uxbox.services.users/email-already-exists
-                (st/emit! (assoc-error :email "Email already exists"))
+                (st/emit! (assoc-error :email (tr "errors.api.form.email-already-exists"))
                 :uxbox.services.users/username-already-exists
-                (st/emit! (assoc-error :username "Username already exists"))))
+                (st/emit! (assoc-error :username (tr "errors.api.form.username-already-exists"))))
             (on-submit [event]
               (dom/prevent-default event)
               (st/emit! (uda/register data on-error)))]
@@ -67,7 +68,7 @@
           :tab-index "2"
           :value (:fullname data "")
           :on-change (partial on-change :fullname)
-          :placeholder "Full Name"
+          :placeholder (tr "register.fullname.placeholder")
           :type "text"}]
         (fm/input-error errors :fullname)
 
@@ -76,7 +77,7 @@
           :tab-index "3"
           :value (:username data "")
           :on-change (partial on-change :username)
-          :placeholder "Username"
+          :placeholder (tr "register.username.placeholder")
           :type "text"}]
         (fm/input-error errors :username)
 
@@ -86,7 +87,7 @@
           :ref "email"
           :value (:email data "")
           :on-change (partial on-change :email)
-          :placeholder "Email"
+          :placeholder (tr "register.email.placeholder")
           :type "text"}]
         (fm/input-error errors :email)
 
@@ -96,7 +97,7 @@
           :ref "password"
           :value (:password data "")
           :on-change (partial on-change :password)
-          :placeholder "Password"
+          :placeholder (tr "register.password.placeholder")
           :type "password"}]
         (fm/input-error errors :password)
 
@@ -105,10 +106,10 @@
           :tab-index "6"
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
-          :value "Get started"
+          :value (tr "register.get-started")
           :type "submit"}]
         [:div.login-links
-         [:a {:on-click #(st/emit! (rt/navigate :auth/login))} "Already have an account?"]]]])))
+         [:a {:on-click #(st/emit! (rt/navigate :auth/login))} (tr "register.already-have-account")]]]])))
 
 ;; --- Register Page
 

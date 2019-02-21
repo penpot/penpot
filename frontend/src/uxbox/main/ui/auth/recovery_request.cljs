@@ -14,6 +14,7 @@
             [uxbox.main.data.auth :as uda]
             [uxbox.main.ui.messages :refer [messages-widget]]
             [uxbox.main.ui.navigation :as nav]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.util.dom :as dom]
             [uxbox.util.forms :as fm]
             [rumext.core :as mx :include-macros true]
@@ -47,16 +48,16 @@
          {:name "username"
           :value (:username data "")
           :on-change on-change
-          :placeholder "username or email address"
+          :placeholder (tr "recovery-request.username-or-email.placeholder")
           :type "text"}]
         [:input.btn-primary
          {:name "login"
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
-          :value "Recover password"
+          :value (tr "recovery-request.recover-password")
           :type "submit"}]
         [:div.login-links
-         [:a {:on-click #(st/emit! (rt/navigate :auth/login))} "Go back!"]]]])))
+         [:a {:on-click #(st/emit! (rt/navigate :auth/login))} (tr "recovery-request.go-back")]]]])))
 
 ;; --- Recovery Request Page
 

@@ -61,37 +61,37 @@
             (on-error [{:keys [code] :as payload}]
               (case code
                 :uxbox.services.users/registration-disabled
-                (st/emit! "Registration is disabled")
+                (st/emit! (tr "errors.api.form.registration-disabled"))
                 :uxbox.services.users/email-already-exists
-                (st/emit! (assoc-error :email "Email already exists"))
+                (st/emit! (assoc-error :email (tr "errors.api.form.email-already-exists")))
                 :uxbox.services.users/username-already-exists
-                (st/emit! (assoc-error :username "Username already exists"))))
+                (st/emit! (assoc-error :username (tr "errors.api.form.username-already-exists")))))
             (on-success [_]
               (st/emit! (clear-form)))
             (on-submit [event]
               (st/emit! (udu/update-profile data on-success on-error)))]
       [:form.profile-form
-       [:span.user-settings-label "Name, username and email"]
+       [:span.user-settings-label (tr "settings.name-username-email")]
        [:input.input-text
         {:type "text"
          :on-change (partial on-change :fullname)
          :value (:fullname data "")
-         :placeholder "Your name"}]
+         :placeholder (tr "settings.your-name")}]
        [:input.input-text
         {:type "text"
          :on-change (partial on-change :username)
          :value (:username data "")
-         :placeholder "Your username"}]
+         :placeholder (tr "settings.your-username")}]
        (fm/input-error errors :username)
 
        [:input.input-text
         {:type "email"
          :on-change (partial on-change :email)
          :value (:email data "")
-         :placeholder "Your email"}]
+         :placeholder (tr "settings.your-email")}]
        (fm/input-error errors :email)
 
-        #_[:span.user-settings-label "Choose a color theme"]
+        #_[:span.user-settings-label (tr "settings.choose-color-theme")]
         #_[:div.input-radio.radio-primary
          [:input {:type "radio"
                   :checked (when (= theme "light") "checked")
@@ -99,7 +99,7 @@
                   :id "light-theme"
                   :name "theme"
                   :value "light"}]
-         [:label {:for "light-theme"} "Light theme"]
+         [:label {:for "light-theme"} (tr "settings.light-theme")]
 
          [:input {:type "radio"
                   :checked (when (= theme "dark") "checked")
@@ -107,7 +107,7 @@
                   :id "dark-theme"
                   :name "theme"
                   :value "dark"}]
-         [:label {:for "dark-theme"} "Dark theme"]
+         [:label {:for "dark-theme"} (tr "settings.dark-theme")]
 
          [:input {:type "radio"
                   :checked (when (= theme "high-contrast") "checked")
@@ -115,14 +115,14 @@
                   :id "high-contrast-theme"
                   :name "theme"
                   :value "high-contrast"}]
-         [:label {:for "high-contrast-theme"} "High-contrast theme"]]
+         [:label {:for "high-contrast-theme"} (tr "settings.high-contrast-theme")]]
 
         [:input.btn-primary
          {:type "button"
           :class (when-not valid? "btn-disabled")
           :disabled (not valid?)
           :on-click on-submit
-          :value "Update settings"}]])))
+          :value (tr "settings.update-settings")}]])))
 
 ;; --- Profile Photo Form
 
@@ -156,6 +156,6 @@
    (header)
    [:section.dashboard-content.user-settings
     [:section.user-settings-content
-     [:span.user-settings-label "Your avatar"]
+     [:span.user-settings-label (tr "settings.your-avatar")]
      (profile-photo-form)
      (profile-form)]]])
