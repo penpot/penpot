@@ -77,11 +77,23 @@
   ptk/WatchEvent
   (watch [_ state stream]
     (let [token (get-in state [:route :params :token])]
-      (rx/of (rt/navigate :view/viewer {:token token :index index})))))
+      (rx/of (rt/navigate :view/viewer {:token token :index index :id nil})))))
 
 (defn select-page
   [index]
   (SelectPage. index))
+
+;; --- Go to Page
+
+(defrecord GoToPage [id]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [token (get-in state [:route :params :token])]
+      (rx/of (rt/navigate :view/viewer {:token token :index nil :id id})))))
+
+(defn go-to-page
+  [id]
+  (GoToPage id))
 
 ;; --- Toggle Flag
 

@@ -46,7 +46,7 @@
   {:mixins [mx/static mx/reactive]
    :will-mount viewer-page-will-mount
    :did-remount viewer-page-did-remount}
-  [token index]
+  [token index id]
   (let [flags (mx/react flags-ref)
         sitemap? (contains? flags :sitemap)
         get-order #(get-in % [:metadata :order])
@@ -55,4 +55,6 @@
      (when sitemap?
        (sitemap pages index))
      (nav flags)
-     (canvas (nth pages index))]))
+     (canvas (if (= id nil)
+               (nth pages index)
+               (some #(= id (:id %)) pages)))]))

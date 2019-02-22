@@ -36,6 +36,7 @@
             :let [selected? (= i selected)]]
         [:li {:class (when selected? "selected")
               :on-click (partial on-click i)
+              :id (str "page-" (:id page))
               :key (str i)}
          [:div.page-icon i/page]
          [:span (:name page)]])]]))

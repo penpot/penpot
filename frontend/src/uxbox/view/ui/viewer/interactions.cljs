@@ -81,7 +81,6 @@
                      :strokeOpacity "1"
                      :easing (translate-ease easing)
                      :delay delay
-                     :class "itx-displayed"
                      :duration duration}))))
 
 (defn- run-hide-interaction
@@ -94,14 +93,13 @@
                      :strokeOpacity "0"
                      :easing (translate-ease easing)
                      :delay delay
-                     :class "itx-hidden"
                      :duration duration}))))
 
 (defn- run-toggle-interaction
   [{:keys [element easing delay duration
            animation direction] :as itx}]
   (let [dom (dom/get-element (str "shape-" element))]
-    (if (= (:class dom) "itx-hidden")
+    (if (= direction :reverse)
       (run-show-interaction itx)
       (run-hide-interaction itx))))
 
@@ -173,7 +171,7 @@
 
 (defn- run-gotopage-interaction
   [{:keys [page]}]
-  (st/emit! (dv/select-page page)))
+  (st/emit! (dv/go-to-page page)))
 
 (defn- run-color-interaction
   [{:keys [element fill-color stroke-color direction easing delay duration]}]
