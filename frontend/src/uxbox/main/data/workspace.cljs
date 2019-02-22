@@ -247,6 +247,7 @@
   (CopyToClipboard.))
 
 (defrecord PasteFromClipboard [id]
+  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (let [page (get-in state [:workspace :page])
