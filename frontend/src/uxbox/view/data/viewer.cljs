@@ -93,7 +93,7 @@
 
 (defn go-to-page
   [id]
-  (GoToPage id))
+  (GoToPage. id))
 
 ;; --- Toggle Flag
 
