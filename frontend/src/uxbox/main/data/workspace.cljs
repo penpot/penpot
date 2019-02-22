@@ -234,6 +234,7 @@
                 :created-at (dt/now)
                 :items selected}
           clipboard (-> (:clipboard state)
+                        empty
                         (conj item))]
       (assoc state :clipboard
              (if (> (count clipboard) 5)
