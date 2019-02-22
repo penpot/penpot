@@ -81,6 +81,7 @@
                      :strokeOpacity "1"
                      :easing (translate-ease easing)
                      :delay delay
+                     :class "itx-displayed"
                      :duration duration}))))
 
 (defn- run-hide-interaction
@@ -93,7 +94,16 @@
                      :strokeOpacity "0"
                      :easing (translate-ease easing)
                      :delay delay
+                     :class "itx-hidden"
                      :duration duration}))))
+
+(defn- run-toggle-interaction
+  [{:keys [element easing delay duration
+           animation direction] :as itx}]
+  (let [dom (dom/get-element (str "shape-" element))]
+    (if (= (:class dom) "itx-hidden")
+      (run-show-interaction itx)
+      (run-hide-interaction itx))))
 
 (defn- run-opacity-interaction
   [{:keys [element opacity easing delay
@@ -130,13 +140,32 @@
                      :width resize-width
                      :height resize-height}))))
 
+(defn- run-size-interaction-circle
+  [{:keys [x1 y1 rotation] :as shape}
+   {:keys [resize-width resize-height easing
+           element delay duration direction] :as opts}]
+  (let [{:keys [width height]} (geom/size shape)
+        dom (dom/get-element (str "shape-" element))]
+    (if (= direction :reverse)
+      (animate* dom {:easing (translate-ease easing)
+                     :delay delay
+                     :duration duration
+                     :rx width
+                     :ry height})
+      (animate* dom {:easing (translate-ease easing)
+                     :delay delay
+                     :duration duration
+                     :rx resize-width
+                     :ry resize-height}))))
+
 (defn- run-size-interaction
   [{:keys [element] :as opts}]
   (let [shape (get-in @st/state [:shapes element])]
     (case (:type shape)
       :icon (run-size-interaction-rect shape opts)
       :image (run-size-interaction-rect shape opts)
-      :rect (run-size-interaction-rect shape opts))))
+      :rect (run-size-interaction-rect shape opts)
+      :circle (run-size-interaction-circle shape opts))))
 
 (defn- run-gotourl-interaction
   [{:keys [url]}]
@@ -188,6 +217,7 @@
     :moveby (run-moveby-interaction itx)
     :show (run-show-interaction itx)
     :hide (run-hide-interaction itx)
+    :toggle (run-toggle-interaction itx)
     :size (run-size-interaction itx)
     :opacity (run-opacity-interaction itx)
     :color (run-color-interaction itx)
