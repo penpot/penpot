@@ -8,7 +8,7 @@
 (def +icons+
   [{:name "Add To photos"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -17,7 +17,7 @@
 
    {:name "Adjust"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -26,7 +26,7 @@
 
    {:name "Assistant Photo"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -34,7 +34,7 @@
 
    {:name "Audiotrack"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -43,7 +43,7 @@
 
    {:name "Blur Circular"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -52,7 +52,7 @@
 
    {:name "Blur Linear"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -61,7 +61,7 @@
 
    {:name "Blur Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -70,7 +70,7 @@
 
    {:name "Blur On"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -79,7 +79,7 @@
 
    {:name "Brightness"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:circle {:style {:stroke nil}
                     :r "20"
@@ -88,7 +88,7 @@
 
    {:name "Brightness 2"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -97,7 +97,7 @@
 
    {:name "Brightness 3"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -106,7 +106,7 @@
 
    {:name "Brightness 4"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -115,7 +115,7 @@
 
    {:name "Brightness 5"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -124,7 +124,7 @@
 
    {:name "Brightness 6"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -133,7 +133,7 @@
 
    {:name "Brightness 7"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -142,7 +142,7 @@
 
    {:name "Brush"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -151,7 +151,7 @@
 
    {:name "Camera"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -160,7 +160,7 @@
 
    {:name "Camera Alt"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -169,7 +169,7 @@
 
    {:name "Camera Front"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -178,7 +178,7 @@
 
    {:name "Camera Rear"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -187,7 +187,7 @@
 
    {:name "Camera Roll"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -196,7 +196,7 @@
 
    {:name "Center Focus Strong"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -205,7 +205,7 @@
 
    {:name "Center Focus Weak"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -214,7 +214,7 @@
 
    {:name "Collections"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -223,7 +223,7 @@
 
    {:name "Color Lens"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -232,7 +232,7 @@
 
    {:name "Colorize"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -241,7 +241,7 @@
 
    {:name "Compare"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -250,7 +250,7 @@
 
    {:name "Control Point"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -259,7 +259,7 @@
 
    {:name "Control Point Duplicate"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -268,7 +268,7 @@
 
    {:name "Crop 16:9"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -277,7 +277,7 @@
 
    {:name "Crop"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -286,7 +286,7 @@
 
    {:name "Crop 3:2"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -295,7 +295,7 @@
 
    {:name "Crop 5:4"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -304,7 +304,7 @@
 
    {:name "Crop 7:5"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -313,7 +313,7 @@
 
    {:name "Crop Din"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -322,7 +322,7 @@
 
    {:name "Crop Free"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -331,7 +331,7 @@
 
    {:name "Crop Landscape"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -340,7 +340,7 @@
 
    {:name "Crop Original"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -349,7 +349,7 @@
 
    {:name "Crop Portrait"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -358,7 +358,7 @@
 
    {:name "Crop Square"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -367,7 +367,7 @@
 
    {:name "Dehaze"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -375,7 +375,7 @@
 
    {:name "Details"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -383,7 +383,7 @@
 
    {:name "Edit"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -392,7 +392,7 @@
 
    {:name "Exposure"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -401,7 +401,7 @@
 
    {:name "Exposure Minus 1"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -410,7 +410,7 @@
 
    {:name "Exposure Minus 2"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -419,7 +419,7 @@
 
    {:name "Exposure Plus 1"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -428,7 +428,7 @@
 
    {:name "Exposure Plus 2"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -437,7 +437,7 @@
 
    {:name "Exposure Zero"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -446,7 +446,7 @@
 
    {:name "Filter 1"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -455,7 +455,7 @@
 
    {:name "Filter 2"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -464,7 +464,7 @@
 
    {:name "Filter 3"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -473,7 +473,7 @@
 
    {:name "Filter 4"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -482,7 +482,7 @@
 
    {:name "Filter 5"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -491,7 +491,7 @@
 
    {:name "Filter 6"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -500,7 +500,7 @@
 
    {:name "Filter 7"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -509,7 +509,7 @@
 
    {:name "Filter 8"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -518,7 +518,7 @@
 
    {:name "Filter b and w"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -527,7 +527,7 @@
 
    {:name "Filter Center Focus"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -536,7 +536,7 @@
 
    {:name "Filter Drama"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -545,7 +545,7 @@
 
    {:name "Filter Frames"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -554,7 +554,7 @@
 
    {:name "Filter HDR"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -563,7 +563,7 @@
 
    {:name "Filter None"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -572,7 +572,7 @@
 
    {:name "Filter Tilt Shift"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -581,7 +581,7 @@
 
    {:name "Filter Vintage"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -590,7 +590,7 @@
 
    {:name "Flare"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -599,7 +599,7 @@
 
    {:name "Flash Auto"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -608,7 +608,7 @@
 
    {:name "Flash Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -617,14 +617,14 @@
 
    {:name "Flash On"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil}
                   :d "M14 4v22h6v18l14-24h-8l8-16z"}]}
 
    {:name "Flip"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -633,7 +633,7 @@
 
    {:name "Gradient"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -642,7 +642,7 @@
 
    {:name "Grain"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -651,7 +651,7 @@
 
    {:name "Grid Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -660,7 +660,7 @@
 
    {:name "Grid On"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -669,7 +669,7 @@
 
    {:name "HDR Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -678,7 +678,7 @@
 
    {:name "HDR On"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -687,7 +687,7 @@
 
    {:name "HDR Strong"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -696,7 +696,7 @@
 
    {:name "HDR Weak"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -705,7 +705,7 @@
 
    {:name "Healing"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -714,7 +714,7 @@
 
    {:name "Image"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -723,7 +723,7 @@
 
    {:name "Image Aspect Ratio"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -732,7 +732,7 @@
 
    {:name "Iso"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -741,7 +741,7 @@
 
    {:name "Landscape"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -750,7 +750,7 @@
 
    {:name "Leak Add"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -759,7 +759,7 @@
 
    {:name "Leak Remove"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -768,7 +768,7 @@
 
    {:name "Lens"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -777,7 +777,7 @@
 
    {:name "Looks 3"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -786,7 +786,7 @@
 
    {:name "Looks 4"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -795,7 +795,7 @@
 
    {:name "Looks 5"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -804,7 +804,7 @@
 
    {:name "Looks 6"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -813,7 +813,7 @@
 
    {:name "Looks"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -822,7 +822,7 @@
 
    {:name "Looks One"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -831,7 +831,7 @@
 
    {:name "Looks Two"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -840,7 +840,7 @@
 
    {:name "Loupe"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -849,7 +849,7 @@
 
    {:name "Movie Creation"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -858,7 +858,7 @@
 
    {:name "Nature"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -867,7 +867,7 @@
 
    {:name "Navigate Before"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -875,7 +875,7 @@
 
    {:name "Navigate Next"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -883,7 +883,7 @@
 
    {:name "Palette"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -892,7 +892,7 @@
 
    {:name "Panorama"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -901,7 +901,7 @@
 
    {:name "Panorama Fisheye"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -910,7 +910,7 @@
 
    {:name "Panorama Horizontal"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -919,7 +919,7 @@
 
    {:name "Panorama Vertical"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -928,7 +928,7 @@
 
    {:name "Panorama Wide Angle"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -937,7 +937,7 @@
 
    {:name "Photo"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -946,7 +946,7 @@
 
    {:name "Photo Album"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -955,7 +955,7 @@
 
    {:name "Photo Camera"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:circle {:r "6.4"
@@ -968,7 +968,7 @@
 
    {:name "Photo Library"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -977,7 +977,7 @@
 
    {:name "Portrait"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -986,7 +986,7 @@
 
    {:name "Remove Red Eye"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -995,7 +995,7 @@
 
    {:name "Rotate Left"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1004,7 +1004,7 @@
 
    {:name "Rotate Right"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1013,7 +1013,7 @@
 
    {:name "Slideshow"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1022,7 +1022,7 @@
 
    {:name "Straighten"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1031,7 +1031,7 @@
 
    {:name "Style"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1040,7 +1040,7 @@
 
    {:name "Switch Camera"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1049,7 +1049,7 @@
 
    {:name "Switch Video"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1058,7 +1058,7 @@
 
    {:name "Tag Faces"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1067,7 +1067,7 @@
 
    {:name "Texture"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1076,7 +1076,7 @@
 
    {:name "Timelapse"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1085,7 +1085,7 @@
 
    {:name "Timer 3"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1094,7 +1094,7 @@
 
    {:name "Timer"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1103,7 +1103,7 @@
 
    {:name "Timer Auto"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1112,7 +1112,7 @@
 
    {:name "Timer Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1121,7 +1121,7 @@
 
    {:name "Tonality"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1130,7 +1130,7 @@
 
    {:name "Transform"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1139,7 +1139,7 @@
 
    {:name "Tune"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1148,7 +1148,7 @@
 
    {:name "WB Auto"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1157,7 +1157,7 @@
 
    {:name "WB Cloudy"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1166,7 +1166,7 @@
 
    {:name "WB Incandescent"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1175,7 +1175,7 @@
 
    {:name "WB Irradescent"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -1184,7 +1184,7 @@
 
    {:name "WB Sunny"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

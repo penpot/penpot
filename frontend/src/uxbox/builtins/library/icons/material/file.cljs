@@ -8,7 +8,7 @@
 (def +icons+
   [{:name "Attachment"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -16,7 +16,7 @@
 
    {:name "Cloud"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -24,7 +24,7 @@
 
    {:name "Cloud Circle"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -32,7 +32,7 @@
 
    {:name "Cloud Done"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -40,7 +40,7 @@
 
    {:name "Cloud Download"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:d
@@ -48,7 +48,7 @@
 
    {:name "Cloud Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -57,7 +57,7 @@
 
    {:name "Cloud Queue"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -66,7 +66,7 @@
 
    {:name "Cloud Upload"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -75,7 +75,7 @@
 
    {:name "File Download"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -83,7 +83,7 @@
 
    {:name "File Upload"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -91,7 +91,7 @@
 
    {:name "Folder"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -100,7 +100,7 @@
 
    {:name "Folder Open"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -109,7 +109,7 @@
 
    {:name "Folder Shared"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

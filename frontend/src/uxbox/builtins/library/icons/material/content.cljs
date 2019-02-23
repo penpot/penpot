@@ -8,7 +8,7 @@
 (def +icons+
   [{:name "Add"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -16,7 +16,7 @@
 
    {:name "Add Box"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -25,7 +25,7 @@
 
    {:name "Add Circle"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -34,7 +34,7 @@
 
    {:name "Add Circle Outline"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -43,7 +43,7 @@
 
    {:name "Archive"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -52,7 +52,7 @@
 
    {:name "Archive"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -61,7 +61,7 @@
 
    {:name "Block"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -70,7 +70,7 @@
 
    {:name "Clear"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -79,7 +79,7 @@
 
    {:name "Content Copy"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -88,7 +88,7 @@
 
    {:name "Content Cut"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -97,7 +97,7 @@
 
    {:name "Content Paste"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -106,7 +106,7 @@
 
    {:name "Create"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -115,7 +115,7 @@
 
    {:name "Drafts"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -124,7 +124,7 @@
 
    {:name "Filter List"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -132,7 +132,7 @@
 
    {:name "Flag"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -140,7 +140,7 @@
 
    {:name "Forward"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -148,7 +148,7 @@
 
    {:name "Gesture"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -157,7 +157,7 @@
 
    {:name "Inbox"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -166,7 +166,7 @@
 
    {:name "Link"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -175,7 +175,7 @@
 
    {:name "Mail"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -184,7 +184,7 @@
 
    {:name "Redo"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -193,14 +193,14 @@
 
    {:name "Remove"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil}
                   :d "M38 26h-28v-4h28v4z"}]}
 
    {:name "Remove Outline"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -209,7 +209,7 @@
 
    {:name "Remove Outline Circle"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -218,7 +218,7 @@
 
    {:name "Reply"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -227,7 +227,7 @@
 
    {:name "Reply All"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -236,7 +236,7 @@
 
    {:name "Report"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -245,7 +245,7 @@
 
    {:name "Save"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -254,7 +254,7 @@
 
    {:name "Select All"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -263,7 +263,7 @@
 
    {:name "Send"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -271,7 +271,7 @@
 
    {:name "Sort"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -279,7 +279,7 @@
 
    {:name "Text Format"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -288,7 +288,7 @@
 
    {:name "Undo"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

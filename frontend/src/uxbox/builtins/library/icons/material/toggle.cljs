@@ -8,7 +8,7 @@
 (def +icons+
   [{:name "Check Box"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -17,7 +17,7 @@
 
    {:name "Check Box Outline Blank"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -26,7 +26,7 @@
 
    {:name "Radio Button Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -35,7 +35,7 @@
 
    {:name "Radio Button On"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -44,7 +44,7 @@
 
    {:name "Star"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -53,7 +53,7 @@
 
    {:name "Star Half"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -62,7 +62,7 @@
 
    {:name "Star Outline"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

@@ -9,7 +9,7 @@
 (def +icons+
   [{:name "Access Alarm"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -18,7 +18,7 @@
 
    {:name "Access Alarms"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -27,7 +27,7 @@
 
    {:name "Access Times"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g {}
            [:path
@@ -44,7 +44,7 @@
 
    {:name "Add Alarm"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -53,7 +53,7 @@
 
    {:name "Airplanemode Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -62,7 +62,7 @@
 
    {:name "Airplanemode On"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -71,7 +71,7 @@
 
    {:name "Battery 20"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g [:path
                {:style {:stroke nil}
@@ -85,7 +85,7 @@
 
    {:name "Battery 30"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -100,7 +100,7 @@
 
    {:name "Battery 50"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -115,7 +115,7 @@
 
    {:name "Battery 60"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -130,7 +130,7 @@
 
    {:name "Battery 80"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -145,7 +145,7 @@
 
    {:name "Battery 90"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -160,7 +160,7 @@
 
    {:name "Battery Alert"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -169,7 +169,7 @@
 
    {:name "Battery Charging 20"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -184,7 +184,7 @@
 
    {:name "Battery Charging 30"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -199,7 +199,7 @@
 
    {:name "Battery Charging 50"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -214,7 +214,7 @@
 
    {:name "Battery Charging 60"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -229,7 +229,7 @@
 
    {:name "Battery Charging 80"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -244,7 +244,7 @@
 
    {:name "Battery Charging 90"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -259,7 +259,7 @@
 
    {:name "Battery Charging Full"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -268,7 +268,7 @@
 
    {:name "Battery Full"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -277,7 +277,7 @@
 
    {:name "Battery Std"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -286,7 +286,7 @@
 
    {:name "Battery Unknown"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -295,7 +295,7 @@
 
    {:name "Bluetooth"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -304,7 +304,7 @@
 
    {:name "Bluetooth Connected"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -313,7 +313,7 @@
 
    {:name "Bluetooth Disabled"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -322,7 +322,7 @@
 
    {:name "Bluetooth Searching"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -331,7 +331,7 @@
 
    {:name "Brightness Auto"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -340,7 +340,7 @@
 
    {:name "Brightness High"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -349,7 +349,7 @@
 
    {:name "Brightness Low"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -358,7 +358,7 @@
 
    {:name "Brightness Medium"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -367,7 +367,7 @@
 
    {:name "Data Usage"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -376,7 +376,7 @@
 
    {:name "Developer Mode"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -385,7 +385,7 @@
 
    {:name "Devices"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -394,7 +394,7 @@
 
    {:name "DVR"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -403,7 +403,7 @@
 
    {:name "GPS Fixed"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -412,7 +412,7 @@
 
    {:name "GPS Not Fixed"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -421,7 +421,7 @@
 
    {:name "GPS Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -430,7 +430,7 @@
 
    {:name "Location Disabled"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -439,7 +439,7 @@
 
    {:name "Location Searching"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -448,7 +448,7 @@
 
    {:name "Multitrack Audio"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -457,7 +457,7 @@
 
    {:name "Network Cell"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -468,7 +468,7 @@
 
    {:name "Network Wifi"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -483,7 +483,7 @@
 
    {:name "NFC"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -492,7 +492,7 @@
 
    {:name "Now Wallpaper"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -501,7 +501,7 @@
 
    {:name "Now Widgets"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -510,7 +510,7 @@
 
    {:name "Screen Lock Landscape"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -519,7 +519,7 @@
 
    {:name "Screen Lock Portrait"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -528,7 +528,7 @@
 
    {:name "Screen Lock Rotation"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -537,7 +537,7 @@
 
    {:name "Screen Rotation"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -546,7 +546,7 @@
 
    {:name "SD Storage"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -555,7 +555,7 @@
 
    {:name "System Settings Daydream"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -564,7 +564,7 @@
 
    {:name "Signal Cellular 0 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -573,7 +573,7 @@
 
    {:name "Signal Cellular 1 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -584,7 +584,7 @@
 
    {:name "Signal Cellular 2 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -595,7 +595,7 @@
 
    {:name "Signal Cellular 3 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -606,14 +606,14 @@
 
    {:name "Signal Cellular 4 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path {:style {:stroke nil}
                   :d "M4 44h40v-40z"}]}
 
    {:name "Signal Cellular Connected No Internet 0 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path {:style {:stroke nil}
@@ -625,7 +625,7 @@
 
    {:name "Signal Cellular Connected No Internet 1 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -638,7 +638,7 @@
 
    {:name "Signal Cellular Connected No Internet 2 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -651,7 +651,7 @@
 
    {:name "Signal Cellular Connected No Internet 3 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -664,7 +664,7 @@
 
    {:name "Signal Cellular No Sim"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -673,7 +673,7 @@
 
    {:name "Signal Cellular Null"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -681,7 +681,7 @@
 
    {:name "Signal Cellular Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -690,7 +690,7 @@
 
    {:name "Signal Wifi 0 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -700,7 +700,7 @@
 
    {:name "Signal Wifi 1 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -715,7 +715,7 @@
 
    {:name "Signal Wifi 2 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -730,7 +730,7 @@
 
    {:name "Signal Wifi 3 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -745,7 +745,7 @@
 
    {:name "Signal Wifi 4 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -754,7 +754,7 @@
 
    {:name "Signal Wifi Off"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -763,7 +763,7 @@
 
    {:name "Signal Wifi Statusbar 0 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -773,7 +773,7 @@
 
    {:name "Signal Wifi Statusbar 1 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -788,7 +788,7 @@
 
    {:name "Signal Wifi Statusbar 2 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -803,7 +803,7 @@
 
    {:name "Signal Wifi Statusbar 3 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
            [:path
@@ -818,7 +818,7 @@
 
    {:name "Signal Wifi Statusbar 4 Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -827,7 +827,7 @@
 
    {:name "Signal Wifi Statusbar Null"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -836,7 +836,7 @@
 
    {:name "Storage"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -845,7 +845,7 @@
 
    {:name "Usb"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -854,7 +854,7 @@
 
    {:name "Wifi Lock"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}
@@ -863,7 +863,7 @@
 
    {:name "Wifi Tethering"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
            {:style {:stroke nil}

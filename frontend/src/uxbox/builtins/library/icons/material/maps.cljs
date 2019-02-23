@@ -8,7 +8,7 @@
 (def +icons+
   [{:name "Been Here"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -17,7 +17,7 @@
 
     {:name "Direction"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -26,7 +26,7 @@
 
     {:name "Direction Bike"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -35,7 +35,7 @@
 
     {:name "Direction Bus"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -44,7 +44,7 @@
 
     {:name "Direction Car"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -53,7 +53,7 @@
 
     {:name "Direction Ferry"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -62,7 +62,7 @@
 
     {:name "Direction Subway"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -71,7 +71,7 @@
 
     {:name "Direction Train"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -80,7 +80,7 @@
 
     {:name "Direction Transit"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -89,7 +89,7 @@
 
     {:name "Direction Walk"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -98,7 +98,7 @@
 
     {:name "Flight"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
      [:path {:d "M20.36 18"}]
@@ -109,7 +109,7 @@
 
     {:name "Hotel"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -118,7 +118,7 @@
 
     {:name "Layers"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -127,7 +127,7 @@
 
     {:name "Layers Clear"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -136,7 +136,7 @@
 
     {:name "Local Airport"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -145,7 +145,7 @@
 
     {:name "Local ATM"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -154,7 +154,7 @@
 
     {:name "Local Attraction"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -163,7 +163,7 @@
 
     {:name "Local Bar"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -172,7 +172,7 @@
 
     {:name "Local Cafe"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -181,7 +181,7 @@
 
     {:name "Local Car Wash"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -190,7 +190,7 @@
 
     {:name "Local Convenience Store"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -199,7 +199,7 @@
 
     {:name "Local Drink"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -208,7 +208,7 @@
 
     {:name "Local Florist"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -217,7 +217,7 @@
 
     {:name "Local Gas Station"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -226,7 +226,7 @@
 
     {:name "Local Grocery Store"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -235,7 +235,7 @@
 
     {:name "Local Hospital"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -244,7 +244,7 @@
 
     {:name "Local Hotel"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -253,7 +253,7 @@
 
     {:name "Local Laundry Service"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -262,7 +262,7 @@
 
     {:name "Local Library"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -271,7 +271,7 @@
 
     {:name "Local Mall"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -280,7 +280,7 @@
 
     {:name "Local Movies"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -289,7 +289,7 @@
 
     {:name "Local Offer"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -298,7 +298,7 @@
 
     {:name "Local Parking"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -307,7 +307,7 @@
 
     {:name "Local Pharmacy"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -316,7 +316,7 @@
 
     {:name "Local Phone"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -325,7 +325,7 @@
 
     {:name "Local Pizza"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -334,7 +334,7 @@
 
     {:name "Local Play"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -343,7 +343,7 @@
 
     {:name "Local Post Office"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -352,7 +352,7 @@
 
     {:name "Local Print Shop"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -361,7 +361,7 @@
 
     {:name "Local Restaurant"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -370,7 +370,7 @@
 
     {:name "Local See"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:g
      [:circle {:r "6.4"
@@ -383,7 +383,7 @@
 
     {:name "Local Shipping"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -392,7 +392,7 @@
 
     {:name "Local Taxi"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -401,7 +401,7 @@
 
     {:name "Location History"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -410,7 +410,7 @@
 
     {:name "Map"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -419,7 +419,7 @@
 
     {:name "My Location"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -428,7 +428,7 @@
 
     {:name "Navigation"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -436,7 +436,7 @@
 
     {:name "Pin Drop"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -445,7 +445,7 @@
 
     {:name "Place"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -454,7 +454,7 @@
 
     {:name "Rate Review"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -463,7 +463,7 @@
 
     {:name "Restaurant Menu"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -472,7 +472,7 @@
 
     {:name "Satellite"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -481,7 +481,7 @@
 
     {:name "Store Mall Directory"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -490,7 +490,7 @@
 
     {:name "Terrain"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
@@ -499,7 +499,7 @@
 
     {:name "Traffic"
     :id (uuid/random)
-    :type :builtin/icon
+    :type :builtin
     :view-box [0 0 48 48]
     :data [:path
      {:style {:stroke nil}
