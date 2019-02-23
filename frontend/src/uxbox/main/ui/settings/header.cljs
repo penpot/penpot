@@ -45,6 +45,6 @@
       [:li {:class (when notifications? "current")}
        (header-link :settings/notifications (tr "settings.notifications"))]
       [:li {:on-click #(st/emit! (da/logout))}
-       (header-link :settings/profile (tr "settings.exit"))]]
+       (header-link :auth/login (tr "settings.exit"))]]
      (user)]))
 
