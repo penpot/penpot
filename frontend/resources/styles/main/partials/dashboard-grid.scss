@@ -264,10 +264,11 @@
       .grid-item-image {
 
         svg {
-          height: 20%;
-          max-width: 120px;
+          max-height: 100px;
+          max-width: 100px;
           min-height: 40px;
-          width: 3vw;
+          min-width: 40px;
+          width: 8vw;
         }
 
       }
