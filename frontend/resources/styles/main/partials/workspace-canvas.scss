@@ -124,6 +124,9 @@
     rect {
       fill: $canvas-bg;
     }
+    path {
+      stroke: $medium-ui-text;
+    }
   }
 
 }
