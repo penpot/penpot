@@ -33,10 +33,11 @@
      [:span.sitemap-title project-name]
      [:ul.sitemap-list
       (for [[i page] (map-indexed vector pages)
-            :let [selected? (= i selected)]]
+            :let [selected? (= i selected)
+                  id (:id page)]]
         [:li {:class (when selected? "selected")
               :on-click (partial on-click i)
-              :id (str "page-" (:id page))
+              :id (str "page-" id)
               :key (str i)}
          [:div.page-icon i/page]
          [:span (:name page)]])]]))
