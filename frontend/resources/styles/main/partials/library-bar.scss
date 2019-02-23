@@ -55,7 +55,8 @@
     .library-elements {
       display: flex;
       flex-direction: column;
-      height: 85%;
+      height: calc(95% - 1rem);
+      margin-bottom: 1rem;
       overflow-y: auto;
       padding-bottom: 20px;
 
