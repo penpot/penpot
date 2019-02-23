@@ -41,6 +41,7 @@
    :ctrl+shift+v #(udl/open! :clipboard)
    :ctrl+z #(st/emit! (udu/undo))
    :ctrl+shift+z #(st/emit! (udu/redo))
+   :ctrl+y #(st/emit! (udu/redo))
    :ctrl+b #(st/emit! (dw/select-for-drawing wsd/+draw-tool-rect+))
    :ctrl+e #(st/emit! (dw/select-for-drawing wsd/+draw-tool-circle+))
    :ctrl+t #(st/emit! (dw/select-for-drawing wsd/+draw-tool-text+))

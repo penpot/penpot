@@ -55,6 +55,6 @@
      (when sitemap?
        (sitemap pages index))
      (nav flags)
-     (canvas (if (= id nil)
+     (canvas (if (nil? id)
                (nth pages index)
                (some #(= id (:id %)) pages)))]))
