@@ -6,7 +6,7 @@
 
 (ns uxbox.main.state
   (:require [uxbox.builtins.colors :as colors]
-            [uxbox.library.icons :as icons]
+            [uxbox.builtins.library.icons :as icons]
             [uxbox.util.storage :refer [storage]]))
 
 (defn initial-state

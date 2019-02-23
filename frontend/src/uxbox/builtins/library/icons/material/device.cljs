@@ -2,7 +2,7 @@
 ;; The original source can be found here:
 ;; https://github.com/google/material-design-icons
 
-(ns uxbox.library.icons.material.device
+(ns uxbox.builtins.library.icons.material.device
   (:require [sablono.core :as html :refer-macros [html]]
             [uxbox.util.uuid :as uuid]))
 

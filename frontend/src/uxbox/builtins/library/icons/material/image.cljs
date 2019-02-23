@@ -2,7 +2,7 @@
 ;; The original source can be found here:
 ;; https://github.com/google/material-design-icons
 
-(ns uxbox.library.icons.material.image
+(ns uxbox.builtins.library.icons.material.image
   (:require [uxbox.util.uuid :as uuid]))
 
 (def +icons+
