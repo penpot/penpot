@@ -167,7 +167,7 @@
 
 (defn- run-gotourl-interaction
   [{:keys [url]}]
-  (set! (.-href js/location) url))
+  (js/window.open url "_blank"))
 
 (defn- run-gotopage-interaction
   [{:keys [page]}]
