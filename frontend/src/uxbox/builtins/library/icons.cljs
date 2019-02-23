@@ -7,7 +7,7 @@
 
 (ns uxbox.builtins.library.icons
   (:require [uxbox.builtins.library.icons.material.actions :as md-actions]
-            [uxbox.builtins.library.icons.material.alerts :as md-alerts]:id #uuid (uuid/random)
+            [uxbox.builtins.library.icons.material.alerts :as md-alerts]
             [uxbox.builtins.library.icons.material.av :as md-av]
             [uxbox.builtins.library.icons.material.communication :as md-comm]
             [uxbox.builtins.library.icons.material.content :as md-content]
@@ -26,77 +26,77 @@
 
 (def collections-list
   [{:name "Material design (actions)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 1
     :icons md-actions/+icons+}
    {:name "Material design (alerts)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 2
     :icons md-alerts/+icons+}
    {:name "Material design (Av)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 3
     :icons md-av/+icons+}
    {:name "Material design (Communication)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 4
     :icons md-comm/+icons+}
    {:name "Material design (Content)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 5
     :icons md-content/+icons+}
    {:name "Material design (Device)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 6
     :icons md-device/+icons+}
    {:name "Material design (Editor)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 7
     :icons md-editor/+icons+}
    {:name "Material design (File)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 8
     :icons md-file/+icons+}
    {:name "Material design (Hardware)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 9
     :icons md-hardware/+icons+}
    {:name "Material design (Image)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 10
     :icons md-image/+icons+}
    {:name "Material design (Maps)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 11
     :icons md-maps/+icons+}
    {:name "Material design (Navigation)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 12
     :icons md-nav/+icons+}
    {:name "Material design (Notifications)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 13
     :icons md-not/+icons+}
    {:name "Material design (Social)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 14
     :icons md-social/+icons+}
    {:name "Material design (Toggle)"
-    :id #uuid (uuid/random)
+    :id (uuid/random)
     :type :builtin
     :created-at 15
     :icons md-toggle/+icons+}])
