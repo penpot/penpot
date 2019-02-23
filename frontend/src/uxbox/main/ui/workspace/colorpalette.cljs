@@ -87,25 +87,28 @@
            [:div.btn-palette.edit.current i/pencil]
            [:div.btn-palette.create i/close]]]
 
+       ;; FIXME Scroll on click does not work
        [:span.left-arrow {}
-        ;; FIXME
         (when (> offset 0)
-          {:on-click #(swap! local (fnil dec 1) offset)})
+          {:on-click #(.scrollBy (dom/get-element "color-palette-inside") (- offset) 0)})
         i/arrow-slide]
 
        [:div.color-palette-content {:ref "container"}
-        [:div.color-palette-inside {:style {:position "relative"
+        [:div.color-palette-inside {:id "color-palette-inside"
+                                    :ref "color-palette-inside"
+                                    :style {:position "relative"
                                             :right (str (* 86 offset) "px")}}
          (mx/doseq [color colors]
            (-> (palette-item color)
                (mx/with-key color)))]]
 
+       ;; FIXME Scroll on click does not work
        [:span.right-arrow
-        ;; FIXME
         (if (< offset invisible)
-          {:on-click #(swap! local (fnil inc 0) offset)}
+          {:on-click #(.scrollBy (dom/get-element "color-palette-inside") offset 0)}
           {})
         i/arrow-slide]
+
        [:span.close-palette {:on-click close}
         i/close]])))
 

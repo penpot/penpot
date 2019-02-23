@@ -98,6 +98,7 @@
   transition: all .6s ease;
   width: 100%;
   overflow-x: scroll;
+  scroll-behavior: smooth;
 }
 
 .color-cell {
