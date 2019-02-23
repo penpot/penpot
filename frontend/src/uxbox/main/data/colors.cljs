@@ -223,7 +223,7 @@
   {:pre [(color/hex? color)]}
   (ToggleColorSelection. color))
 
-;; --- Copy Selected Icon
+;; --- Copy Selected Color
 
 (defrecord CopySelected [id]
   ptk/UpdateEvent
@@ -240,7 +240,7 @@
   {:pre [(or (uuid? id) (nil? id))]}
   (CopySelected. id))
 
-;; --- Move Selected Icon
+;; --- Move Selected Color
 
 (defrecord MoveSelected [from to]
   ptk/UpdateEvent

@@ -234,6 +234,7 @@
             (prepare [[content metadata]]
               {:collection id
                :content content
+               ;; TODO Keep the name of the original icon
                :name (str "Icon " (gensym "i"))
                :metadata metadata})]
       (->> (rx/from-coll (jscoll->vec files))
