@@ -10,6 +10,7 @@
             [uxbox.builtins.icons :as i]
             [uxbox.view.store :as st]
             [uxbox.view.ui.loader :refer [loader]]
+            [uxbox.view.ui.lightbox :refer [lightbox]]
             [uxbox.view.ui.notfound :refer [notfound-page]]
             [uxbox.view.ui.viewer :refer [viewer-page]]
             [uxbox.util.router :as rt]
@@ -70,4 +71,5 @@
 (defn init
   []
   (mx/mount (app) (dom/get-element "app"))
+  (mx/mount (lightbox) (dom/get-element "lightbox"))
   (mx/mount (loader) (dom/get-element "loader")))
