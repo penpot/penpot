@@ -9,31 +9,56 @@
             [uxbox.util.data :refer (index-by)]))
 
 (def collections-list
-  [{:name "Grays"
+  [{:name "UXBOX"
     :id #uuid "00000000-0000-0000-0000-000000000001"
-    :created-at 1
     :type :builtin
-    :colors #{"#D3D3D3"
+    :created-at 1
+    :colors #{"#78dbbe"
+              "#b6dd75"
+              "#a599c6"
+              "#e6a16f"
+              "#de4762"
+              "#59b9e2"
+              "#ffffff"
+              "#000000"
+              "#90969d"
+              "#D3D3D3"
               "#C0C0C0"
               "#A9A9A9"
               "#DCDCDC"
               "#808080"
-              "#696969"
-              "#000000"}}
+              "#696969"}}
 
-   {:name "Silver"
+   {:name "UXBOX (Light)"
     :id #uuid "00000000-0000-0000-0000-000000000002"
     :type :builtin
     :created-at 2
-    :colors #{"#D3D3D3"
-              "#C0C0C0"
-              "#A9A9A9"
-              "#808080"}}
+    :colors #{"#e9eaeb"
+              "#a6abb1"
+              "#90969d"
+              "#d7d9dc"
+              "#757a7f"
+              "#565a5e"}}
 
-   {:name "Blues"
+   {:name "UXBOX (Dark)"
     :id #uuid "00000000-0000-0000-0000-000000000003"
     :type :builtin
     :created-at 3
+    :colors #{"#2C2C2C"
+              "#3d3f40"
+              "#181818"
+              "#a9adaf"
+              "#808386"
+              "#4a4e52"
+              "#e0e6e9"
+              "#8d9496"
+              "#4e4f50"
+              "#878c8e"}}
+
+   {:name "UXBOX (Blues)"
+    :id #uuid "00000000-0000-0000-0000-000000000004"
+    :type :builtin
+    :created-at 4
     :colors #{"#F0F8FF"
               "#E6E6FA"
               "#B0E0E6"
@@ -58,116 +83,11 @@
               "#8A2BE2"
               "#4B0082"}}
 
-   {:name "UXBOX"
-    :id #uuid "00000000-0000-0000-0000-000000000004"
-    :type :builtin
-    :created-at 4
-    :colors #{"#78dbbe"
-              "#b6dd75"
-              "#a599c6"
-              "#e6a16f"
-              "#de4762"
-              "#59b9e2"
-              "#ffffff"
-              "#000000"
-              "#90969d"
-              "#2C2C2C"
-              "#3d3f40"
-              "#181818"
-              "#a9adaf"
-              "#808386"
-              "#4a4e52"
-              "#e0e6e9"
-              "#8d9496"
-              "#4e4f50"
-              "#878c8e"}}
-
-   ;; https://github.com/redpik/social-media-colors
-   {:name "Social"
+   ;; https://github.com/twbs/bootstrap
+   {:name "Bootstrap"
     :id #uuid "00000000-0000-0000-0000-000000000005"
     :type :builtin
     :created-at 5
-    :colors #{"#3B5998" ;; FACEBOOK
-              "#D8DFEA"
-              "#F03D25"
-              ;; TWITTER
-              "#55ACEE"
-              ;; WHATSAPP
-              "#00e676"
-              "#1ebea5"
-              ;; GOOGLE+
-              "#dd4b39"
-              "#427FED"
-              ;; LINKEDIN
-              "#0976B4"
-              ;; PINTEREST
-              "#cd1d1f"
-              ;; FOURSQUARE
-              "#0072b1"
-              "#0cbadf"
-              "#8fd400"
-              "#ff7900"
-              ;; YOUTUBE
-              "#CC181E"
-              "#110f10"
-              ;; INSTAGRAM
-              "#3F729B"
-              ;; FLICKR
-              "#0063dd"
-              "#ff0085"
-              ;; VIMEO
-              "#1ab7ea"
-              "#162221"
-              ;; TUMBLR
-              "#35465d"
-              ;; STUMBLEUPON
-              "#EB4924"
-              "#333333"
-              ;; MYSPACE
-              "#008DDE"
-              "#313131"
-              "#1D1D1D"
-              ;; DRIBBBLE
-              "#ea4c89"
-              "#444444"
-              "#8aba56"
-              ;; DAILYMOTION
-              "#0079b8"
-              "#fed417"
-              ;; DELICIOUS
-              "#3274D0"
-              "#D3D2D2"
-              "#222222"
-              "#0B79E5"
-              ;; SOUNDCLOUD
-              "#FF3D00"
-              ;; GITHUB
-              "#171515"
-              "#4183c4"
-              ;; QUORA
-              "#BC2016"
-              ;; BEHANCE
-              "#1769FF"
-              "#242424"
-              ;; VINE
-              "#00B489"
-              ;; VKONTAKTE
-              "#587fa4"
-              "#e9edf1"
-              ;; REDDIT
-              "#F64720"
-              "#CEE3F8"
-              ;; DROPBOX
-              "#007ee5"
-              "#7B8994"
-              "#47525D"
-              "#3D464D"}}
-
-   ;; https://github.com/twbs/bootstrap
-   {:name "Bootstrap"
-    :id #uuid "00000000-0000-0000-0000-000000000006"
-    :type :builtin
-    :created-at 6
     :colors #{"#ffffff"
               "#f8f9fa"
               "#e9ecef"
@@ -190,11 +110,11 @@
               "#20c997"
               "#17a2b8"}}
 
-   ;; https://github.com/shuhei/material-colors
-   {:name "Material Design"
-    :id #uuid "00000000-0000-0000-0000-000000000007"
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Red)"
+    :id #uuid "00000000-0000-0000-0000-000000000006"
     :type :builtin
-    :created-at 7
+    :created-at 6
     :colors #{"#ffebee"
               "#ffcdd2"
               "#ef9a9a"
@@ -208,8 +128,14 @@
               "#ff8a80"
               "#ff5252"
               "#ff1744"
-              "#d50000"
-              "#fce4ec"
+              "#d50000"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Pink)"
+    :id #uuid "00000000-0000-0000-0000-000000000007"
+    :type :builtin
+    :created-at 7
+    :colors #{"#fce4ec"
               "#f8bbd0"
               "#f48fb1"
               "#f06292"
@@ -222,8 +148,14 @@
               "#ff80ab"
               "#ff4081"
               "#f50057"
-              "#c51162"
-              "#f3e5f5"
+              "#c51162"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Purple)"
+    :id #uuid "00000000-0000-0000-0000-000000000008"
+    :type :builtin
+    :created-at 8
+    :colors #{"#f3e5f5"
               "#e1bee7"
               "#ce93d8"
               "#ba68c8"
@@ -236,8 +168,14 @@
               "#ea80fc"
               "#e040fb"
               "#d500f9"
-              "#aa00ff"
-              "#ede7f6"
+              "#aa00ff"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Deep Purple)"
+    :id #uuid "00000000-0000-0000-0000-000000000009"
+    :type :builtin
+    :created-at 9
+    :colors #{"#ede7f6"
               "#d1c4e9"
               "#b39ddb"
               "#9575cd"
@@ -250,8 +188,14 @@
               "#b388ff"
               "#7c4dff"
               "#651fff"
-              "#6200ea"
-              "#e8eaf6"
+              "#6200ea"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Indigo)"
+    :id #uuid "00000000-0000-0000-0000-000000000010"
+    :type :builtin
+    :created-at 10
+    :colors #{"#e8eaf6"
               "#c5cae9"
               "#9fa8da"
               "#7986cb"
@@ -264,8 +208,14 @@
               "#8c9eff"
               "#536dfe"
               "#3d5afe"
-              "#304ffe"
-              "#e3f2fd"
+              "#304ffe"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Blue)"
+    :id #uuid "00000000-0000-0000-0000-000000000011"
+    :type :builtin
+    :created-at 11
+    :colors #{"#e3f2fd"
               "#bbdefb"
               "#90caf9"
               "#64b5f6"
@@ -278,8 +228,14 @@
               "#82b1ff"
               "#448aff"
               "#2979ff"
-              "#2962ff"
-              "#e1f5fe"
+              "#2962ff"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Light Blue)"
+    :id #uuid "00000000-0000-0000-0000-000000000012"
+    :type :builtin
+    :created-at 12
+    :colors #{"#e1f5fe"
               "#b3e5fc"
               "#81d4fa"
               "#4fc3f7"
@@ -292,8 +248,14 @@
               "#80d8ff"
               "#40c4ff"
               "#00b0ff"
-              "#0091ea"
-              "#e0f7fa"
+              "#0091ea"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Cyan)"
+    :id #uuid "00000000-0000-0000-0000-000000000013"
+    :type :builtin
+    :created-at 13
+    :colors #{"#e0f7fa"
               "#b2ebf2"
               "#80deea"
               "#4dd0e1"
@@ -306,8 +268,14 @@
               "#84ffff"
               "#18ffff"
               "#00e5ff"
-              "#00b8d4"
-              "#e0f2f1"
+              "#00b8d4"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Teal)"
+    :id #uuid "00000000-0000-0000-0000-000000000014"
+    :type :builtin
+    :created-at 14
+    :colors #{"#e0f2f1"
               "#b2dfdb"
               "#80cbc4"
               "#4db6ac"
@@ -320,8 +288,14 @@
               "#a7ffeb"
               "#64ffda"
               "#1de9b6"
-              "#00bfa5"
-              "#e8f5e9"
+              "#00bfa5"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Green)"
+    :id #uuid "00000000-0000-0000-0000-000000000015"
+    :type :builtin
+    :created-at 15
+    :colors #{"#e8f5e9"
               "#c8e6c9"
               "#a5d6a7"
               "#81c784"
@@ -334,8 +308,14 @@
               "#b9f6ca"
               "#69f0ae"
               "#00e676"
-              "#00c853"
-              "#f1f8e9"
+              "#00c853"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Light Green)"
+    :id #uuid "00000000-0000-0000-0000-000000000016"
+    :type :builtin
+    :created-at 16
+    :colors #{"#f1f8e9"
               "#dcedc8"
               "#c5e1a5"
               "#aed581"
@@ -348,8 +328,14 @@
               "#ccff90"
               "#b2ff59"
               "#76ff03"
-              "#64dd17"
-              "#f9fbe7"
+              "#64dd17"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Lime)"
+    :id #uuid "00000000-0000-0000-0000-000000000017"
+    :type :builtin
+    :created-at 17
+    :colors #{"#f9fbe7"
               "#f0f4c3"
               "#e6ee9c"
               "#dce775"
@@ -362,8 +348,14 @@
               "#f4ff81"
               "#eeff41"
               "#c6ff00"
-              "#aeea00"
-              "#fffde7"
+              "#aeea00"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Yellow)"
+    :id #uuid "00000000-0000-0000-0000-000000000018"
+    :type :builtin
+    :created-at 18
+    :colors #{"#fffde7"
               "#fff9c4"
               "#fff59d"
               "#fff176"
@@ -376,8 +368,14 @@
               "#ffff8d"
               "#ffff00"
               "#ffea00"
-              "#ffd600"
-              "#fff8e1"
+              "#ffd600"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Amber)"
+    :id #uuid "00000000-0000-0000-0000-000000000019"
+    :type :builtin
+    :created-at 19
+    :colors #{"#fff8e1"
               "#ffecb3"
               "#ffe082"
               "#ffd54f"
@@ -390,8 +388,14 @@
               "#ffe57f"
               "#ffd740"
               "#ffc400"
-              "#ffab00"
-              "#fff3e0"
+              "#ffab00"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Orange)"
+    :id #uuid "00000000-0000-0000-0000-000000000020"
+    :type :builtin
+    :created-at 20
+    :colors #{"#fff3e0"
               "#ffe0b2"
               "#ffcc80"
               "#ffb74d"
@@ -404,8 +408,14 @@
               "#ffd180"
               "#ffab40"
               "#ff9100"
-              "#ff6d00"
-              "#fbe9e7"
+              "#ff6d00"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Deep Orange)"
+    :id #uuid "00000000-0000-0000-0000-000000000021"
+    :type :builtin
+    :created-at 21
+    :colors #{"#fbe9e7"
               "#ffccbc"
               "#ffab91"
               "#ff8a65"
@@ -418,8 +428,14 @@
               "#ff9e80"
               "#ff6e40"
               "#ff3d00"
-              "#dd2c00"
-              "#efebe9"
+              "#dd2c00"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Brown)"
+    :id #uuid "00000000-0000-0000-0000-000000000022"
+    :type :builtin
+    :created-at 22
+    :colors #{"#efebe9"
               "#d7ccc8"
               "#bcaaa4"
               "#a1887f"
@@ -428,8 +444,14 @@
               "#6d4c41"
               "#5d4037"
               "#4e342e"
-              "#3e2723"
-              "#fafafa"
+              "#3e2723"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Gray)"
+    :id #uuid "00000000-0000-0000-0000-000000000023"
+    :type :builtin
+    :created-at 23
+    :colors #{"#fafafa"
               "#f5f5f5"
               "#eeeeee"
               "#e0e0e0"
@@ -438,8 +460,14 @@
               "#757575"
               "#616161"
               "#424242"
-              "#212121"
-              "#eceff1"
+              "#212121"}}
+
+   ;; https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+   {:name "Material Design (Blue Gray)"
+    :id #uuid "00000000-0000-0000-0000-000000000024"
+    :type :builtin
+    :created-at 24
+    :colors #{"#eceff1"
               "#cfd8dc"
               "#b0bec5"
               "#90a4ae"
@@ -448,9 +476,200 @@
               "#546e7a"
               "#455a64"
               "#37474f"
-              "#263238"
-              "#000000"
-              "#ffffff"}}])
+              "#263238"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (FACEBOOK)"
+    :id #uuid "00000000-0000-0000-0000-000000000025"
+    :type :builtin
+    :created-at 25
+    :colors #{"#3B5998"
+              "#D8DFEA"
+              "#F03D25"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (TWITTER)"
+    :id #uuid "00000000-0000-0000-0000-000000000026"
+    :type :builtin
+    :created-at 26
+    :colors #{"#55ACEE"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (WHATSAPP)"
+    :id #uuid "00000000-0000-0000-0000-000000000027"
+    :type :builtin
+    :created-at 27
+    :colors #{"#00e676"
+              "#1ebea5"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (LINKEDIN)"
+    :id #uuid "00000000-0000-0000-0000-000000000028"
+    :type :builtin
+    :created-at 28
+    :colors #{"#0976B4"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (PINTEREST)"
+    :id #uuid "00000000-0000-0000-0000-000000000029"
+    :type :builtin
+    :created-at 29
+    :colors #{"#cd1d1f"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (FOURSQUARE)"
+    :id #uuid "00000000-0000-0000-0000-000000000030"
+    :type :builtin
+    :created-at 30
+    :colors #{"#0072b1"
+              "#0cbadf"
+              "#8fd400"
+              "#ff7900"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (YOUTUBE)"
+    :id #uuid "00000000-0000-0000-0000-000000000031"
+    :type :builtin
+    :created-at 31
+    :colors #{"#CC181E"
+              "#110f10"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (INSTAGRAM)"
+    :id #uuid "00000000-0000-0000-0000-000000000032"
+    :type :builtin
+    :created-at 32
+    :colors #{"#3F729B"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (FLICKR)"
+    :id #uuid "00000000-0000-0000-0000-000000000033"
+    :type :builtin
+    :created-at 33
+    :colors #{"#0063dd"
+              "#ff0085"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (VIMEO)"
+    :id #uuid "00000000-0000-0000-0000-000000000034"
+    :type :builtin
+    :created-at 34
+    :colors #{"#1ab7ea"
+              "#162221"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (TUMBLR)"
+    :id #uuid "00000000-0000-0000-0000-000000000035"
+    :type :builtin
+    :created-at 35
+    :colors #{"#35465d"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (STUMBLEUPON)"
+    :id #uuid "00000000-0000-0000-0000-000000000036"
+    :type :builtin
+    :created-at 36
+    :colors #{"#EB4924"
+              "#333333"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (MYSPACE)"
+    :id #uuid "00000000-0000-0000-0000-000000000037"
+    :type :builtin
+    :created-at 37
+    :colors #{"#008DDE"
+              "#313131"
+              "#1D1D1D"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (DRIBBBLE)"
+    :id #uuid "00000000-0000-0000-0000-000000000038"
+    :type :builtin
+    :created-at 38
+    :colors #{"#ea4c89"
+              "#444444"
+              "#8aba56"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (DAILYMOTION)"
+    :id #uuid "00000000-0000-0000-0000-000000000039"
+    :type :builtin
+    :created-at 39
+    :colors #{"#0079b8"
+              "#fed417"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (DELICIOUS)"
+    :id #uuid "00000000-0000-0000-0000-000000000040"
+    :type :builtin
+    :created-at 40
+    :colors #{"#3274D0"
+              "#D3D2D2"
+              "#222222"
+              "#0B79E5"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (SOUNDCLOUD)"
+    :id #uuid "00000000-0000-0000-0000-000000000041"
+    :type :builtin
+    :created-at 41
+    :colors #{"#FF3D00"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (GITHUB)"
+    :id #uuid "00000000-0000-0000-0000-000000000042"
+    :type :builtin
+    :created-at 42
+    :colors #{"#171515"
+              "#4183c4"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (QUORA)"
+    :id #uuid "00000000-0000-0000-0000-000000000043"
+    :type :builtin
+    :created-at 43
+    :colors #{"#BC2016"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (BEHANCE)"
+    :id #uuid "00000000-0000-0000-0000-000000000044"
+    :type :builtin
+    :created-at 44
+    :colors #{"#1769FF"
+              "#242424"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (VINE)"
+    :id #uuid "00000000-0000-0000-0000-000000000045"
+    :type :builtin
+    :created-at 45
+    :colors #{"#00B489"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (VKONTAKTE)"
+    :id #uuid "00000000-0000-0000-0000-000000000046"
+    :type :builtin
+    :created-at 46
+    :colors #{"#587fa4"
+              "#e9edf1"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (REDDIT)"
+    :id #uuid "00000000-0000-0000-0000-000000000047"
+    :type :builtin
+    :created-at 47
+    :colors #{"#F64720"
+              "#CEE3F8"}}
+
+   ;; https://github.com/redpik/social-media-colors
+   {:name "Social Media (DROPBOX)"
+    :id #uuid "00000000-0000-0000-0000-000000000048"
+    :type :builtin
+    :created-at 48
+    :colors #{"#007ee5"
+              "#7B8994"
+              "#47525D"
+              "#3D464D"}}])
 
 (def collections
   (index-by collections-list :id))
