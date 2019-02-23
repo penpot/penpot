@@ -111,7 +111,7 @@
         labels (->> (map (partial horizontal-text-label zoom) +ticks+)
                     (filterv identity))]
     [:g {}
-     [:path {:d (str/join " " path) :stroke "#9da2a6"}]
+     [:path {:d (str/join " " path)}]
      labels]))
 
 ;; --- Vertical Rule Ticks (Component)
@@ -124,7 +124,7 @@
         labels (->> (map (partial vertical-text-label zoom) +ticks+)
                     (filterv identity))]
     [:g {}
-     [:path {:d (str/join " " path) :stroke "#9da2a6"}]
+     [:path {:d (str/join " " path)}]
      labels]))
 
 ;; --- Horizontal Rule (Component)
@@ -140,8 +140,7 @@
      {:width c/viewport-width
       :height 20}
      [:rect {:height 20
-             :width c/viewport-width
-             :fill "rgb(233, 234, 235)"}]
+             :width c/viewport-width}]
      [:g {:transform (str "translate(" translate-x ", 0)")}
       (horizontal-rule-ticks zoom)]]))
 
@@ -163,5 +162,4 @@
      [:rect {:x 0
              :y 0
              :height 20
-             :width 20
-             :fill "rgb(233, 234, 235)"}]]))
+             :width 20}]]))

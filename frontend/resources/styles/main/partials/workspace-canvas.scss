@@ -102,12 +102,23 @@
     position: absolute;
     pointer-events: none;
     top: 0px;
+
+    rect {
+      fill: $canvas-bg;
+    }
+    path {
+      stroke: $medium-ui-text;
+    }
   }
 
   .vertical-rule {
     transition: none;
     pointer-events: none;
     left: 0px;
+
+    rect {
+      fill: $canvas-bg;
+    }
   }
 
 }
