@@ -25,78 +25,78 @@
             [uxbox.util.uuid :as uuid]))
 
 (def collections-list
-  [{:name "Material design (actions)"
-    :id (uuid/random)
+  [{:name "Material design (Actions)"
+    :id md-actions/+collection-icons-id+
     :type :builtin
     :created-at 1
     :icons md-actions/+icons+}
-   {:name "Material design (alerts)"
-    :id (uuid/random)
+   {:name "Material design (Alerts)"
+    :id md-alerts/+collection-icons-id+
     :type :builtin
     :created-at 2
     :icons md-alerts/+icons+}
    {:name "Material design (Av)"
-    :id (uuid/random)
+    :id md-av/+collection-icons-id+
     :type :builtin
     :created-at 3
     :icons md-av/+icons+}
    {:name "Material design (Communication)"
-    :id (uuid/random)
+    :id md-comm/+collection-icons-id+
     :type :builtin
     :created-at 4
     :icons md-comm/+icons+}
    {:name "Material design (Content)"
-    :id (uuid/random)
+    :id md-content/+collection-icons-id+
     :type :builtin
     :created-at 5
     :icons md-content/+icons+}
    {:name "Material design (Device)"
-    :id (uuid/random)
+    :id md-device/+collection-icons-id+
     :type :builtin
     :created-at 6
     :icons md-device/+icons+}
    {:name "Material design (Editor)"
-    :id (uuid/random)
+    :id md-editor/+collection-icons-id+
     :type :builtin
     :created-at 7
     :icons md-editor/+icons+}
    {:name "Material design (File)"
-    :id (uuid/random)
+    :id md-file/+collection-icons-id+
     :type :builtin
     :created-at 8
     :icons md-file/+icons+}
    {:name "Material design (Hardware)"
-    :id (uuid/random)
+    :id md-hardware/+collection-icons-id+
     :type :builtin
     :created-at 9
     :icons md-hardware/+icons+}
    {:name "Material design (Image)"
-    :id (uuid/random)
+    :id md-image/+collection-icons-id+
     :type :builtin
     :created-at 10
     :icons md-image/+icons+}
    {:name "Material design (Maps)"
-    :id (uuid/random)
+    :id md-maps/+collection-icons-id+
     :type :builtin
     :created-at 11
     :icons md-maps/+icons+}
    {:name "Material design (Navigation)"
-    :id (uuid/random)
+    :id md-nav/+collection-icons-id+
     :type :builtin
     :created-at 12
     :icons md-nav/+icons+}
    {:name "Material design (Notifications)"
-    :id (uuid/random)
+    :id md-not/+collection-icons-id+
     :type :builtin
     :created-at 13
     :icons md-not/+icons+}
    {:name "Material design (Social)"
-    :id (uuid/random)
+    :id md-social/+collection-icons-id+
     :type :builtin
     :created-at 14
     :icons md-social/+icons+}
    {:name "Material design (Toggle)"
-    :id (uuid/random)
+    :id md-toggle/+collection-icons-id+
     :type :builtin
     :created-at 15
     :icons md-toggle/+icons+}])
