@@ -234,6 +234,7 @@
             (prepare [[content metadata]]
               {:collection id
                :content content
+               :id (uuid/random)
                ;; TODO Keep the name of the original icon
                :name (str "Icon " (gensym "i"))
                :metadata metadata})]

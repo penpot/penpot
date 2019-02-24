@@ -285,7 +285,8 @@
                 (st/emit! (di/update-opts :edition selected))))]
       ;; MULTISELECT OPTIONS BAR
       [:div.multiselect-bar {}
-       (if editable?
+       (if (or (= type :own) (nil? coll))
+         ;; if editable
          [:div.multiselect-nav {}
           [:span.move-item.tooltip.tooltip-top
            {:alt (tr "ds.multiselect-bar.copy")
