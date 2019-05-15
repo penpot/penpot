@@ -28,7 +28,7 @@ RUN set -ex; \
 # Once application has been built, prepare production image
 FROM nginx:alpine
 
-LABEL maintainer="mathieu.brunot at monogramm dot io"
+LABEL maintainer="Monogramm Maintainers <opensource at monogramm dot io>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8

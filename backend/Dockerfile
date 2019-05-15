@@ -14,7 +14,7 @@ RUN set -ex; \
 # Once application has been built, prepare production image
 FROM openjdk:8-jre
 
-LABEL maintainer="mathieu.brunot at monogramm dot io"
+LABEL maintainer="Monogramm Maintainers <opensource at monogramm dot io>"
 
 # Add uxbox as provided by builder
 COPY --from=0 /home/uxbox/backend/dist/uxbox-backend.jar /srv/uxbox/app.jar
