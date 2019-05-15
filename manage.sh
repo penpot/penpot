@@ -106,6 +106,14 @@ function run_release {
 function usage {
     echo "UXBOX build & release manager v$REV"
     echo "USAGE: $0 [ clean | build | run | test | release-local | release-docker | run-release ]"
+    echo "Options:"
+    echo "- clean           Stop and clean up docker containers"
+    echo "- build           Build docker container for development with tmux"
+    echo "- run             Run (and build if necessary) development container (frontend at localhost:3449, backend at localhost:6060)"
+    echo "- test            Execute frontend unit tests (backend unit tests no available yet)"
+    echo "- release-local   Build a 'production ready' release"
+    echo "- release-docker  Build a 'production ready' docker container"
+    echo "- run-release     Run a 'production ready' docker-compose environment (frontend at localhost:80, backend at localhost:6060)"
 }
 
 case $1 in

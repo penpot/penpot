@@ -88,6 +88,9 @@ We love the open source software community. Contributing is our passion and beca
 
 Please refer to the [Contributing Guide](./CONTRIBUTING.md)
 
+## Development ##
+
+Most of the main operations can be done through the helper script `manage.sh`.
 
 ## License ##
 
