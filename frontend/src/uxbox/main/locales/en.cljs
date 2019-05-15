@@ -123,6 +123,8 @@
    "settings.profile.your-name" "Your name"
    "settings.profile.your-username" "Your username"
    "settings.profile.your-email" "Your email"
+
+   "settings.choose-color-theme" "Choose a theme"
    "settings.profile.light-theme" "Light theme"
    "settings.profile.dark-theme" "Dark theme"
    "settings.profile.high-contrast-theme" "High-contrast theme"
