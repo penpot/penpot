@@ -92,6 +92,8 @@ Please refer to the [Contributing Guide](./CONTRIBUTING.md)
 
 Most of the main operations can be done through the helper script `manage.sh`.
 
+The development requires of UXBOX is done through a single docker container. Each main service is opened in a different [tmux](https://github.com/tmux/tmux) sessions.
+
 ## License ##
 
 ```
