@@ -855,7 +855,7 @@ input[type=range]:focus::-ms-fill-upper {
   &:hover {
 
     &::after {
-      background-color: $dark-ui-bg;
+      background-color: $primary-ui-bg;
       border-radius: $br-small;
       color: $medium-ui-text;
       content: attr(alt);
