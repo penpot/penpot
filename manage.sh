@@ -37,7 +37,6 @@ function run_image {
     rm -rf ./frontend/node_modules
 
     CONTAINER=$IMGNAME:$REV
-    #CONTAINER=monogramm/uxbox:develop
 
     echo "Running development image $CONTAINER..."
     sudo docker run -ti \

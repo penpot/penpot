@@ -22,14 +22,15 @@ services:
             - /etc/timezone:/etc/timezone:ro
 
     uxbackend:
-        #build: ./backend
-        image: monogramm/uxbox:backend
+        build: ./backend
+        #image: monogramm/uxbox:backend
+        #image: uxbox-backend:beta
         container_name: uxbackend
         #restart: always
         depends_on:
             - uxdb
         ports:
-            - "6060:6060"
+            - 6060:6060
         environment:
             # HTTP setup
             - UXBOX_HTTP_SERVER_DEBUG=false
@@ -64,8 +65,9 @@ services:
             - /etc/timezone:/etc/timezone:ro
 
     uxfrontend:
-        #build: ./frontend
-        image: monogramm/uxbox:frontend
+        build: ./frontend
+        #image: monogramm/uxbox:frontend
+        #image: uxbox-frontend:beta
         container_name: uxfrontend
         #hostname: uxbox.io
         #restart: always
