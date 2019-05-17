@@ -4,8 +4,9 @@
 
 [![License: MPL-2.0][uri_license_image]][uri_license]
 [![Build Status](https://travis-ci.org/Monogramm/uxbox.svg)](https://travis-ci.org/Monogramm/uxbox)
-[![Docker Automated buid](https://img.shields.io/docker/build/monogramm/uxbox.svg)](https://hub.docker.com/r/monogramm/uxbox/)
+[![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/monogramm/uxbox.svg)](https://hub.docker.com/r/monogramm/uxbox/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/monogramm/uxbox.svg)](https://hub.docker.com/r/monogramm/uxbox/)
+[![Docker layers](https://images.microbadger.com/badges/image/monogramm/uxbox.svg)](https://microbadger.com/images/monogramm/uxbox)
 
 # UXBOX #
 
