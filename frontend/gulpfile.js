@@ -1,9 +1,6 @@
 const gulp = require("gulp");
 const scss = require("gulp-sass");
-// const plumber = require("gulp-plumber");
 const autoprefixer = require('gulp-autoprefixer');
-// const watch = require("gulp-watch");
-// const cssmin = require("gulp-cssmin");
 const rimraf = require("rimraf");
 const mustache = require("gulp-mustache");
 const rename = require("gulp-rename");
