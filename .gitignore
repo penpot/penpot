@@ -13,6 +13,7 @@ node_modules
 /backend/resources/media
 /backend/dist/
 /backend/-
+/frontend/.cpcache
 /frontend/npm-debug.log
 /frontend/target/
 /frontend/dist/
