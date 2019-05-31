@@ -18,22 +18,19 @@
     "test-build": "PATH=./scripts:$PATH ./scripts/build"
   },
   "devDependencies": {
-    "gulp": "3.9.1",
-    "gulp-autoprefixer": "3.1.1",
-    "gulp-brotli": "1.2.0",
-    "gulp-css-base64": "1.3.4",
-    "gulp-cssmin": "0.1.7",
-    "gulp-gzip": "1.4.0",
-    "gulp-if": "2.0.2",
-    "gulp-mustache": "2.3.0",
-    "gulp-plumber": "1.1.0",
-    "gulp-rename": "1.2.2",
-    "gulp-sass": "3.1.0",
-    "gulp-watch": "4.3.11",
-    "rimraf": "2.6.1",
-    "run-sequence": "1.2.2"
+    "gulp": "4.0.2",
+    "gulp-autoprefixer": "^6.1.0",
+    "gulp-css-base64": "^1.3.4",
+    "gulp-gzip": "^1.4.2",
+    "gulp-if": "^2.0.2",
+    "gulp-mustache": "^2.3.0",
+    "gulp-plumber": "^1.2.1",
+    "gulp-rename": "^1.4.0",
+    "gulp-sass": "^4.0.2",
+    "gulp-watch": "^5.0.1",
+    "rimraf": "^2.6.3"
   },
   "dependencies": {
-    "source-map-support": "0.4.11"
+    "source-map-support": "^0.5.12"
   }
 }

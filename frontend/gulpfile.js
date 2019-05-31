@@ -1,16 +1,14 @@
 const gulp = require("gulp");
-const runseq = require('run-sequence');
 const scss = require("gulp-sass");
-const plumber = require("gulp-plumber");
+// const plumber = require("gulp-plumber");
 const autoprefixer = require('gulp-autoprefixer');
-const watch = require("gulp-watch");
-const cssmin = require("gulp-cssmin");
+// const watch = require("gulp-watch");
+// const cssmin = require("gulp-cssmin");
 const rimraf = require("rimraf");
 const mustache = require("gulp-mustache");
 const rename = require("gulp-rename");
 const gulpif = require("gulp-if");
 const gzip = require("gulp-gzip");
-const brotli = require("gulp-brotli");
 
 const paths = {};
 paths.app = "./resources/";
@@ -55,10 +53,10 @@ function scssPipeline(options) {
     const output = options.output;
 
     return gulp.src(input)
-      .pipe(plumber())
+      // .pipe(plumber())
       .pipe(scss({style: "expanded"}))
       .pipe(makeAutoprefixer())
-      .pipe(gulpif(isProduction, cssmin()))
+      // .pipe(gulpif(isProduction, cssmin()))
       .pipe(gulp.dest(output));
   };
 }
@@ -73,7 +71,7 @@ gulp.task("scss:view", scssPipeline({
   output: paths.output + "css/"
 }));
 
-gulp.task("scss", ["scss:main", "scss:view"]);
+gulp.task("scss", gulp.parallel("scss:main", "scss:view"));
 
 // Templates
 
@@ -112,14 +110,18 @@ gulp.task("template:view", templatePipeline({
   csspath: "/css/view.css"
 }));
 
-gulp.task("template", ["template:view",
-                       "template:main"]);
+gulp.task("template", gulp.parallel("template:view", "template:main"));
 
 // Entry Point
 
-gulp.task("default", ["scss", "template"], function () {
-  gulp.watch(paths.scss, ["scss"]);
+gulp.task("watch:main", function() {
+  gulp.watch(paths.scss, gulp.task("scss"));
 });
+
+gulp.task("watch", gulp.series(
+  gulp.parallel("scss", "template"),
+  gulp.task("watch:main")
+));
 
 /***********************************************
  * Production
@@ -145,8 +147,7 @@ gulp.task("dist:template:view", templatePipeline({
   csspath: "/css/view.css"
 }));
 
-gulp.task("dist:template", ["dist:template:view",
-                            "dist:template:main"]);
+gulp.task("dist:template", gulp.parallel("dist:template:view", "dist:template:main"));
 
 // Styles
 
@@ -160,8 +161,7 @@ gulp.task("dist:scss:view", scssPipeline({
   output: paths.dist + "css/"
 }));
 
-gulp.task("dist:scss", ["dist:scss:main",
-                        "dist:scss:view"]);
+gulp.task("dist:scss", gulp.parallel("dist:scss:main", "dist:scss:view"));
 
 // Copy
 
@@ -176,8 +176,7 @@ gulp.task("dist:copy:images", function() {
 });
 
 
-gulp.task("dist:copy", ["dist:copy:fonts",
-                        "dist:copy:images"]);
+gulp.task("dist:copy", gulp.parallel("dist:copy:fonts", "dist:copy:images"));
 
 // GZip
 
@@ -187,18 +186,14 @@ gulp.task("dist:gzip", function() {
     .pipe(gulp.dest(paths.dist));
 });
 
-gulp.task("dist:brotli", function() {
-  return gulp.src(`${paths.dist}**/!(*.gz|*.br|*.jpg|*.png)`)
-    .pipe(brotli.compress({quality: 10}))
-    .pipe(gulp.dest(paths.dist));
-});
-
 // Entry Point
 
-gulp.task("dist", function(next) {
-  runseq(["dist:clean"],
-         ["dist:template", "dist:scss", "dist:copy"],
-         //["dist:gzip", "dist:brotli"], 
-         next);
-});
+gulp.task("dist", gulp.series(
+  gulp.task("dist:clean"),
+  gulp.parallel(
+    gulp.task("dist:template"),
+    gulp.task("dist:scss"),
+    gulp.task("dist:copy")
+  )
+));
 
