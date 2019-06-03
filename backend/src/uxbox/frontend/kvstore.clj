@@ -6,7 +6,7 @@
 
 (ns uxbox.frontend.kvstore
   (:refer-clojure :exclude [update])
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [promesa.core :as p]
             [catacumba.http :as http]
             [uxbox.media :as media]

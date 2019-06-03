@@ -6,7 +6,7 @@
 ;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.settings.profile
-  (:require [cljs.spec :as s :include-macros true]
+  (:require [cljs.spec.alpha :as s :include-macros true]
             [cuerdas.core :as str]
             [lentes.core :as l]
             [potok.core :as ptk]

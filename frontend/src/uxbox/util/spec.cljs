@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.spec
-  (:require [cljs.spec :as s]))
+  (:require [cljs.spec.alpha :as s]))
 
 ;; --- Constants
 

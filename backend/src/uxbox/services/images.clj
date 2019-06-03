@@ -6,7 +6,7 @@
 
 (ns uxbox.services.images
   "Images library related services."
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [promesa.core :as p]
             [suricatta.core :as sc]
             [datoteka.storages :as st]

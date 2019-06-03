@@ -6,7 +6,7 @@
 
 (ns uxbox.cli.collimp
   "Collection importer command line helper."
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.pprint :refer [pprint]]
             [clojure.java.io :as io]
             [mount.core :as mount]

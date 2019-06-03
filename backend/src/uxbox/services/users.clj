@@ -5,7 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.users
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [mount.core :as mount :refer (defstate)]
             [suricatta.core :as sc]
             [buddy.hashers :as hashers]

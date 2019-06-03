@@ -5,7 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.kvstore
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [suricatta.core :as sc]
             [buddy.core.codecs :as codecs]
             [uxbox.config :as ucfg]

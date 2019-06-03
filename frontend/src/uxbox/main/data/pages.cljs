@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.pages
-  (:require [cljs.spec :as s]
+  (:require [cljs.spec.alpha :as s]
             [cuerdas.core :as str]
             [beicon.core :as rx]
             [lentes.core :as l]
@@ -322,7 +322,7 @@
 
 (defn metadata-persisted?
   [v]
-  (instance? MetadataPersisted. v))
+  (instance? MetadataPersisted v))
 
 (defn metadata-persisted
   [{:keys [id] :as data}]

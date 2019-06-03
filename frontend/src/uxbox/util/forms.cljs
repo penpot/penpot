@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.forms
-  (:require [cljs.spec :as s :include-macros true]
+  (:require [cljs.spec.alpha :as s :include-macros true]
             [cuerdas.core :as str]
             [lentes.core :as l]
             [beicon.core :as rx]

@@ -6,7 +6,7 @@
 
 (ns uxbox.images
   "Image postprocessing."
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.java.io :as io]
             [datoteka.storages :as st]
             [datoteka.core :as fs]

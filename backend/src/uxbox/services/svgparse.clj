@@ -5,7 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.svgparse
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [cuerdas.core :as str]
             [uxbox.util.spec :as us]
             [uxbox.services.core :as core]

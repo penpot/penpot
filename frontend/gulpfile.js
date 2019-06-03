@@ -26,6 +26,10 @@ gulp.task("clean", function(next) {
   });
 });
 
+gulp.task("dist:clean", function(next) {
+  rimraf(paths.dist, next);
+});
+
 function makeAutoprefixer() {
   return autoprefixer('last 2 version',
                       'safari 5',
@@ -185,12 +189,9 @@ gulp.task("dist:gzip", function() {
 
 // Entry Point
 
-gulp.task("dist", gulp.series(
-  gulp.task("dist:clean"),
-  gulp.parallel(
-    gulp.task("dist:template"),
-    gulp.task("dist:scss"),
-    gulp.task("dist:copy")
-  )
+gulp.task("dist", gulp.parallel(
+  gulp.task("dist:template"),
+  gulp.task("dist:scss"),
+  gulp.task("dist:copy")
 ));
 

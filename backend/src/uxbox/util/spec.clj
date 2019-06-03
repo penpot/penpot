@@ -6,7 +6,7 @@
 
 (ns uxbox.util.spec
   (:refer-clojure :exclude [keyword uuid vector boolean map set])
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [cuerdas.core :as str]
             [uxbox.util.exceptions :as ex])
   (:import java.time.Instant))

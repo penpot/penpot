@@ -6,7 +6,7 @@
 
 (ns uxbox.frontend.svgparse
   "A frontend exposed endpoints for svgparse functionality."
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [promesa.core :as p]
             [catacumba.http :as http]
             [uxbox.util.spec :as us]

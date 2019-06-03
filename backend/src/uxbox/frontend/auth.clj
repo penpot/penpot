@@ -5,7 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.frontend.auth
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [catacumba.core :as ct]
             [catacumba.http :as http]
             [promesa.core :as p]

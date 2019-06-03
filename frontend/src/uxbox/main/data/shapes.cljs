@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.shapes
-  (:require [cljs.spec :as s :include-macros true]
+  (:require [cljs.spec.alpha :as s :include-macros true]
             [lentes.core :as l]
             [beicon.core :as rx]
             [potok.core :as ptk]

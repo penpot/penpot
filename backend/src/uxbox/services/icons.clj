@@ -6,7 +6,7 @@
 
 (ns uxbox.services.icons
   "Icons library related services."
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [suricatta.core :as sc]
             [uxbox.util.spec :as us]
             [uxbox.sql :as sql]

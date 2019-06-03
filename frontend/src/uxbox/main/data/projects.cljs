@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.projects
-  (:require [cljs.spec :as s]
+  (:require [cljs.spec.alpha :as s]
             [cuerdas.core :as str]
             [beicon.core :as rx]
             [potok.core :as ptk]

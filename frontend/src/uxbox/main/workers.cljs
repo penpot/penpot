@@ -6,7 +6,7 @@
 
 (ns uxbox.main.workers
   "A interface to webworkers exposed functionality."
-  (:require [cljs.spec :as s]
+  (:require [cljs.spec.alpha :as s]
             [beicon.core :as rx]
             [potok.core :as ptk]
             [uxbox.util.spec :as us]

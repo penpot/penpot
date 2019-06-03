@@ -1,0 +1,30 @@
+{:deps {org.clojure/clojurescript {:mvn/version "1.10.516"}
+        org.clojure/clojure {:mvn/version "1.10.0"}
+        funcool/rumext {:mvn/version  "1.0.0"}
+        funcool/promesa {:mvn/version "2.0.0"}
+        com.cognitect/transit-cljs {:mvn/version "0.8.239"}
+        rum/rum {:mvn/version "0.10.8" :exclusions [cljsjs/react cljsjs/react-dom]}
+
+        cljsjs/react {:mvn/version "15.5.0-0"}
+        cljsjs/react-dom {:mvn/version "15.5.0-0"}
+        cljsjs/react-dom-server {:mvn/version "15.5.0-0"}
+        environ/environ {:mvn/version "1.1.0"}
+
+        funcool/beicon {:mvn/version "3.2.0"}
+        funcool/bide {:mvn/version "1.6.0"}
+        funcool/cuerdas {:mvn/version "2.2.0"}
+        funcool/lentes {:mvn/version "1.2.0"}
+        funcool/potok {:mvn/version "2.1.0"}
+    }
+ :paths ["src" "vendor"]
+ :aliases
+ {:dev
+  {:extra-deps {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
+                com.bhauman/rebel-readline {:mvn/version "0.1.4"}
+                com.bhauman/figwheel-main {:mvn/version "0.2.0"}
+                org.clojure/tools.namespace {:mvn/version "0.2.11"}
+                }
+
+   :extra-paths ["test" "resources"]}
+  }}
+

@@ -9,13 +9,16 @@
     "url": "https://github.com/uxbox/uxbox"
   },
   "scripts": {
-    "watch": "gulp",
-    "dist": "gulp dist",
+    "watch": "gulp watch",
+    "dist:clean": "gulp dist:clean",
+    "dist:main": "clojure -Adev tools.clj dist main",
+    "dist:view": "clojure -Adev tools.clj dist view",
+    "dist:worker": "clojure -Adev tools.clj dist worker",
+    "dist:assets": "gulp dist",
     "prod": "gulp dist --production",
-    "clean": "gulp clean",
-    "figwheel": "PATH=./scripts:$PATH ./scripts/build-worker && PATH=./scripts:$PATH ./scripts/figwheel",
-    "test-watch": "PATH=./scripts:$PATH ./scripts/watch",
-    "test-build": "PATH=./scripts:$PATH ./scripts/build"
+    "start": "npm run build:worker && npm run figwheel",
+    "build:worker": "clojure -Adev tools.clj build worker",
+    "figwheel": "clojure -Adev tools.clj figwheel"
   },
   "devDependencies": {
     "gulp": "4.0.2",

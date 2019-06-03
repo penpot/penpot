@@ -5,7 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.auth
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [suricatta.core :as sc]
             [buddy.hashers :as hashers]
             [buddy.sign.jwt :as jwt]

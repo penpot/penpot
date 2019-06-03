@@ -6,7 +6,7 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.auth.recovery-request
-  (:require [cljs.spec :as s :include-macros true]
+  (:require [cljs.spec.alpha :as s :include-macros true]
             [lentes.core :as l]
             [cuerdas.core :as str]
             [uxbox.builtins.icons :as i]

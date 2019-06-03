@@ -40,9 +40,9 @@
    :database-name (lookup-env env :uxbox-database-name "uxbox")
    :database-server (lookup-env env :uxbox-database-server "localhost")
    :database-port (lookup-env env :uxbox-database-port 5432)
-   :media-directory (lookup-env env :uxbox-media-directory "resources/media")
+   :media-directory (lookup-env env :uxbox-media-directory "resources/public/media")
    :media-uri (lookup-env env :uxbox-media-uri "http://localhost:6060/media/")
-   :assets-directory (lookup-env env :uxbox-assets-directory "resources/static")
+   :assets-directory (lookup-env env :uxbox-assets-directory "resources/public/static")
    :assets-uri (lookup-env env :uxbox-assets-uri "http://localhost:6060/static/")
 
    :email-reply-to (lookup-env env :uxbox-email-reply-to "no-reply@uxbox.io")
