@@ -21,8 +21,8 @@
    "uxbox.config.isdemo" demo?})
 
 (def default-build-options
-  {:cache-analysis false
-   :parallel-build false
+  {:cache-analysis true
+   :parallel-build true
    :language-in  :ecmascript6
    :language-out :ecmascript5
    :closure-defines closure-defines
@@ -35,19 +35,20 @@
 (defn get-output-options
   [name dist? map?]
   (let [prefix (if dist? "dist/js" "resources/public/js")
-        opts {:main (symbol (str "uxbox." name))
-              :output-to (str prefix "/" name ".js")
-              :output-dir (str prefix "/" name)
-              :source-map (str prefix "/" name ".js.map")
-              :asset-path (str "js/" name)}]
-    (cond-> opts
-      dist? (dissoc opts :source-map))))
+        srcmap (if (= map? ::path)
+                 (str prefix "/" name ".js.map")
+                 map?)]
+    {:main (symbol (str "uxbox." name))
+     :output-to (str prefix "/" name ".js")
+     :output-dir (str prefix "/" name)
+     :source-map srcmap
+     :asset-path (str "/js/" name)}))
 
 (defmethod task "dist"
   [[_ name]]
   (api/build (api/inputs "src" "test")
              (merge default-build-options
-                    (get-output-options name true true)
+                    (get-output-options name true ::path)
                     {:optimizations :advanced
                      :static-fns true
                      :elide-asserts true})))
@@ -56,7 +57,7 @@
   [[_ name]]
   (api/build (api/inputs "src" "test")
              (merge default-build-options
-                    (get-output-options name false true)
+                    (get-output-options name false ::path)
                     {:optimizations :simple})))
 
 (defmethod task "figwheel"
@@ -66,13 +67,18 @@
     :auto-testing false
     :css-dirs ["resources/public/css"
                "resources/public/view/css"]
+    :ring-server-options {:port 3449 :host "0.0.0.0"}
     :watch-dirs ["src" "test"]}
    {:id "main"
     :options (merge default-build-options
-                    (get-output-options "main" false false))}
+                    (get-output-options "main" false true))}
    {:id "view"
     :options (merge default-build-options
-                    (get-output-options "view" false false))}))
+                    (get-output-options "view" false true))}
+   {:id "worker"
+    :options (merge default-build-options
+                    {:target :webworker}
+                    (get-output-options "worker" false true))}))
 
 ;;; Build script entrypoint. This should be the last expression.
 
