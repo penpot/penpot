@@ -9,6 +9,7 @@ pom.xml
 .repl
 .nrepl-port
 node_modules
+/backend/.cpcache
 /backend/target/
 /backend/resources/media
 /backend/dist/
@@ -23,6 +24,8 @@ node_modules
 /frontend/resources/public/js
 /frontend/resources/public/view
 /frontend/resources/public/index.html
+/docker/release.frontend/dist
+/docker/release.backend/dist
 /media
 /deploy
 /web

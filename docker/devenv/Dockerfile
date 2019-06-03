@@ -1,6 +1,13 @@
 FROM ubuntu:xenial
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
+ARG EXTERNAL_UID=1000
+
+ENV NODE_VERSION=v10.16.0 \
+    LANG=en_US.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    UXBOX_CONFIG_URL="/api"
+
 RUN set -ex; \
     apt-get update && \
     apt-get install -yq \
@@ -20,28 +27,7 @@ RUN set -ex; \
         webp \
     ; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
-    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; \
-    apt-get update -yq; \
-    apt-get install -yq \
-        libbz2-dev liblzma-dev zlib1g-dev libfftw3-dev \
-        libfreetype6-dev libfontconfig1-dev libxt-dev \
-        libexif-dev libjpeg-dev libpng-dev libtiff-dev \
-        libwmf-dev libpango1.0-dev librsvg2-bin librsvg2-dev \
-        libxml2-dev libwebp-dev webp autoconf \
-    ; \
-    git clone https://github.com/ImageMagick/ImageMagick.git imagemagick && \
-    cd imagemagick && \
-    git checkout -f 7.0.8-27 && \
-    ./configure --prefix=/opt/img && \
-    make -j2 && \
-    make install && \
-    cd .. && \
-    rm -rf ./imagemagick
-
-ENV NODE_VERSION=8.15.0 \
-    LANG=en_US.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    UXBOX_CONFIG_URL="/api"
+    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; 
 
 RUN set -ex; \
 	echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list; \
@@ -53,10 +39,10 @@ RUN set -ex; \
         sudo \
         tmux \
         vim \
+        curl \
     ;
 
 COPY files/pg_hba.conf /etc/postgresql/9.6/main/pg_hba.conf
-# COPY files/postgresql.conf /etc/postgresql/9.5/main/postgresql.conf
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
 
@@ -72,24 +58,30 @@ EXPOSE 6060
 EXPOSE 9090
 
 RUN set -ex; \
-	useradd -m -g users -s /bin/bash uxbox; \
+	useradd -m -g users -s /bin/bash -u $EXTERNAL_UID uxbox; \
     passwd uxbox -d; \
     echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+RUN set -ex; \
+    wget https://download.clojure.org/install/linux-install-1.10.0.442.sh; \
+    chmod +x linux-install-1.10.0.442.sh; \
+    ./linux-install-1.10.0.442.sh; \
+    rm -rf linux-install-1.10.0.442.sh
 
 USER uxbox
 WORKDIR /home/uxbox
 
-COPY files/lein /home/uxbox/.local/bin/lein
 RUN set -ex; \
     git clone https://github.com/creationix/nvm.git .nvm; \
     bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm alias default $NODE_VERSION"; \
-    bash -c "source .nvm/nvm.sh && nvm use default"; \
-    bash -c "/home/uxbox/.local/bin/lein version"
+    bash -c "source .nvm/nvm.sh && nvm use default";
 
 COPY files/bashrc /home/uxbox/.bashrc
 COPY files/vimrc /home/uxbox/.vimrc
-COPY files/start.sh /home/uxbox/.start.sh
+COPY files/start.sh /home/uxbox/start-tmux.sh
 COPY files/tmux.conf /home/uxbox/.tmux.conf
+COPY files/entrypoint.sh /home/uxbox/
 
-CMD /home/uxbox/.start.sh
+ENTRYPOINT ["bash", "/home/uxbox/entrypoint.sh"]
+CMD ["/home/uxbox/start-tmux.sh"]

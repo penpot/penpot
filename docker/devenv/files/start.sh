@@ -5,8 +5,7 @@ tmux -2 new-session -d -s uxbox
 tmux new-window -t uxbox:1 -n 'figwheel'
 tmux select-window -t uxbox:1
 tmux send-keys -t uxbox 'cd uxbox/frontend' enter C-l
-tmux send-keys -t uxbox "sed -i -e 's/\"uxbox.config.url\" \".*\"/\"uxbox.config.url\" \"${UXBOX_CONFIG_URL}\"/g' figwheel.clj" enter C-l
-tmux send-keys -t uxbox 'npm run figwheel' enter
+tmux send-keys -t uxbox 'npm run start' enter
 
 tmux new-window -t uxbox:2 -n 'backend'
 tmux select-window -t uxbox:2
