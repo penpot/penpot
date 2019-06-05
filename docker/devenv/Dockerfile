@@ -13,10 +13,11 @@ RUN set -ex; \
         locales \
         ca-certificates \
         wget \
-    ; \
-    rm -rf /var/lib/apt/lists/*; \
-    apt-get update -yq &&  \
-    apt-get install -yq \
+        sudo \
+        tmux \
+        vim \
+        curl \
+        zsh \
         bash \
         git \
         openjdk-8-jdk \
@@ -25,29 +26,28 @@ RUN set -ex; \
         imagemagick \
         webp \
     ; \
-    mkdir -p /etc/resolvconf/resolv.conf.d; \
-    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; 
+    rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-	echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list; \
+echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list; \
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -; \
-	apt-get update -yq &&  \
+    apt-get update -yq &&  \
     apt-get install -yq  \
         postgresql-9.6 \
         postgresql-contrib-9.6 \
-        sudo \
-        tmux \
-        vim \
-        curl \
-        zsh \
-    ;
+    ;\
+    rm -rf /var/lib/apt/lists/*;
+
+RUN set -ex; \
+    mkdir -p /etc/resolvconf/resolv.conf.d; \
+    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail;
 
 COPY files/pg_hba.conf /etc/postgresql/9.6/main/pg_hba.conf
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
 
 RUN set -ex; \
-	/etc/init.d/postgresql start \
+    /etc/init.d/postgresql start \
     && createuser -U postgres -sl uxbox \
     && createdb -U uxbox uxbox \
     && createdb -U uxbox test \
@@ -58,7 +58,7 @@ EXPOSE 6060
 EXPOSE 9090
 
 RUN set -ex; \
-	useradd -m -g users -s /bin/zsh -u $EXTERNAL_UID uxbox; \
+    useradd -m -g users -s /bin/zsh -u $EXTERNAL_UID uxbox; \
     passwd uxbox -d; \
     echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
