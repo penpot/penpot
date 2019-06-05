@@ -34,7 +34,11 @@
  {:dev
   {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}
                 org.clojure/tools.namespace {:mvn/version "0.2.11"}
+                clj-http/clj-http {:mvn/version "2.1.0"}
                 }
    :extra-paths ["test"]}
+  :repl {:main-opts  ["-m" "rebel-readline.main"]}
   }}
+
+
 
