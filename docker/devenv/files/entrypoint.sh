@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 set -e
 echo "UXBOX Docker entrypoint initialization..."
 

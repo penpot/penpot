@@ -1,0 +1,56 @@
+#!/usr/bin/env zsh
+
+export EDITOR=vim
+
+bindkey    "^[[3~"          delete-char
+bindkey    "^[3;5~"         delete-char
+bindkey    '^R'             history-incremental-search-backward
+
+bindkey -e
+
+autoload -U promptinit
+promptinit
+prompt zefram
+
+#------------------------------
+## Comp stuff
+##------------------------------
+zmodload zsh/complist
+autoload -Uz compinit
+compinit
+
+#------------------------------
+# Alias stuff
+#------------------------------
+alias cp='cp -r'
+alias ls='ls -F'
+alias l='ls -Flha'
+alias rm='rm -r'
+alias ls='ls --color -F'
+alias lsd='ls -d *(/)'
+alias lsf='ls -h *(.)'
+
+#-----------------
+# Options
+#-----------------
+
+setopt AUTO_CD               # implicate cd for non-commands
+setopt CORRECT_ALL            # correct spelling
+setopt COMPLETE_IN_WORD    # complete commands anywhere in the word
+setopt NOTIFY              # Notify when jobs finish
+setopt BASH_AUTO_LIST      # Autolist options on repeition of ambiguous args
+setopt AUTO_PUSHD          # Push dirs into history
+setopt MULTIOS             # Allow Multiple pipes
+setopt MAGIC_EQUAL_SUBST   # Expand inside equals
+setopt EXTENDED_GLOB
+setopt NOBEEP
+setopt INC_APPEND_HISTORY
+export HISTSIZE=100000
+export SAVEHIST=100000
+export HISTFILE=~/.zhistory
+setopt hist_ignore_all_dups
+setopt hist_ignore_space
+
+export PATH=$HOME/.local/bin:$PATH
+export NVM_DIR="/home/uxbox/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm

@@ -5,8 +5,7 @@ ARG EXTERNAL_UID=1000
 
 ENV NODE_VERSION=v10.16.0 \
     LANG=en_US.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    UXBOX_CONFIG_URL="/api"
+    LC_ALL=C.UTF-8
 
 RUN set -ex; \
     apt-get update && \
@@ -40,6 +39,7 @@ RUN set -ex; \
         tmux \
         vim \
         curl \
+        zsh \
     ;
 
 COPY files/pg_hba.conf /etc/postgresql/9.6/main/pg_hba.conf
@@ -58,7 +58,7 @@ EXPOSE 6060
 EXPOSE 9090
 
 RUN set -ex; \
-	useradd -m -g users -s /bin/bash -u $EXTERNAL_UID uxbox; \
+	useradd -m -g users -s /bin/zsh -u $EXTERNAL_UID uxbox; \
     passwd uxbox -d; \
     echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
@@ -78,10 +78,11 @@ RUN set -ex; \
     bash -c "source .nvm/nvm.sh && nvm use default";
 
 COPY files/bashrc /home/uxbox/.bashrc
+COPY files/zshrc /home/uxbox/.zshrc
 COPY files/vimrc /home/uxbox/.vimrc
 COPY files/start.sh /home/uxbox/start-tmux.sh
 COPY files/tmux.conf /home/uxbox/.tmux.conf
 COPY files/entrypoint.sh /home/uxbox/
 
-ENTRYPOINT ["bash", "/home/uxbox/entrypoint.sh"]
+ENTRYPOINT ["zsh", "/home/uxbox/entrypoint.sh"]
 CMD ["/home/uxbox/start-tmux.sh"]
