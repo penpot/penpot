@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-REV=`git rev-parse --short HEAD`
+REV=`git log -n 1 --pretty=format:%h -- docker/`
 IMGNAME="uxbox"
 
 function kill-container {
