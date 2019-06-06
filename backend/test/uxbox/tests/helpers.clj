@@ -3,7 +3,9 @@
   (:require [clj-http.client :as http]
             [buddy.hashers :as hashers]
             [buddy.core.codecs :as codecs]
+            [cuerdas.core :as str]
             [catacumba.serializers :as sz]
+            [ring.adapter.jetty :as jetty]
             [mount.core :as mount]
             [datoteka.storages :as st]
             [suricatta.core :as sc]
@@ -15,6 +17,7 @@
             [uxbox.db :as db]
             [uxbox.config :as cfg]))
 
+;; TODO: parametrize this
 (def +base-url+ "http://localhost:5050")
 
 (defn state-init
@@ -64,19 +67,26 @@
 
 (defn- strip-response
   [{:keys [status headers body]}]
-  (if (= (get headers "content-type") "application/transit+json")
+  (if (str/starts-with? (get headers "Content-Type") "application/transit+json")
     [status (-> (codecs/str->bytes body)
                 (t/decode))]
     [status body]))
 
+(defn get-auth-headers
+  [user]
+  (let [store (ring.middleware.session.cookie/cookie-store {:key "a 16-byte secret"})
+        result (ring.middleware.session/session-response
+                {:session {:user-id (:id user)}} {}
+                {:store store :cookie-name "session"})]
+    {"cookie" (first (get-in result [:headers "Set-Cookie"]))}))
+
 (defn http-get
   ([user uri] (http-get user uri nil))
   ([user uri {:keys [query] :as opts}]
-   (let [headers (when user
-                   {"Authorization" (str "Token " (usa/generate-token user))})
-         params (merge {:headers headers}
-                       (when query
-                         {:query-params query}))]
+   (let [headers (assoc (get-auth-headers user)
+                        "accept" "application/transit+json")
+         params (cond-> {:headers headers}
+                  query (assoc :query-params query))]
      (try
        (strip-response (http/get uri params))
        (catch clojure.lang.ExceptionInfo e
@@ -88,10 +98,9 @@
   ([user uri {:keys [body] :as params}]
    (let [body (-> (t/encode body)
                   (codecs/bytes->str))
-         headers (merge
-                  {"content-type" "application/transit+json"}
-                  (when user
-                    {"Authorization" (str "Token " (usa/generate-token user))}))
+         headers (assoc (get-auth-headers user)
+                        "accept" "application/transit+json"
+                        "content-type" "application/transit+json")
          params {:headers headers :body body}]
      (try
        (strip-response (http/post uri params))
@@ -100,9 +109,8 @@
 
 (defn http-multipart
   [user uri params]
-  (let [headers (merge
-                  (when user
-                    {"Authorization" (str "Token " (usa/generate-token user))}))
+  (let [headers (assoc (get-auth-headers user)
+                       "accept" "application/transit+json")
         params {:headers headers
                 :multipart params}]
     (try
@@ -116,10 +124,9 @@
   ([user uri {:keys [body] :as params}]
    (let [body (-> (t/encode body)
                   (codecs/bytes->str))
-         headers (merge
-                  {"content-type" "application/transit+json"}
-                  (when user
-                    {"Authorization" (str "Token " (usa/generate-token user))}))
+         headers (assoc (get-auth-headers user)
+                        "accept" "application/transit+json"
+                        "content-type" "application/transit+json")
          params {:headers headers :body body}]
      (try
        (strip-response (http/put uri params))
@@ -130,8 +137,9 @@
   ([uri]
    (http-delete nil uri))
   ([user uri]
-   (let [headers (when user
-                   {"Authorization" (str "Token " (usa/generate-token user))})
+   (let [headers (assoc (get-auth-headers user)
+                        "accept" "application/transit+json"
+                        "content-type" "application/transit+json")
          params {:headers headers}]
      (try
        (strip-response (http/delete uri params))
@@ -156,9 +164,7 @@
                body)
         headers (cond-> headers
                   body (assoc "content-type" "application/transit+json")
-                  raw? (assoc "content-type" "application/octet-stream")
-                  user (assoc "authorization"
-                              (str "Token " (usa/generate-token user))))
+                  raw? (assoc "content-type" "application/octet-stream"))
         params {:headers headers :body body}
         uri (str +base-url+ path)]
     (try
@@ -206,4 +212,22 @@
   [e code]
   (let [data (ex-data e)]
     (= code (:code data))))
+
+(defn run-server
+  [handler]
+  (jetty/run-jetty handler {:join? false
+                            :async? true
+                            :daemon? true
+                            :port 5050}))
+
+(defmacro with-server
+  "Evaluate code in context of running catacumba server."
+  [{:keys [handler sleep] :or {sleep 50} :as options} & body]
+  `(let [server# (run-server ~handler)]
+     (try
+       ~@body
+       (finally
+         (.stop server#)
+         (Thread/sleep ~sleep)))))
+
 

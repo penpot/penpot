@@ -23,7 +23,6 @@
             [uxbox.frontend.kvstore :as kvstore]
             [uxbox.frontend.svgparse :as svgparse]
             [uxbox.frontend.debug-emails :as dbgemails]
-            [uxbox.services.auth :refer [auth-opts]]
             [uxbox.util.response :refer [rsp]]
             [uxbox.util.uuid :as uuid]))
 
@@ -52,6 +51,9 @@
    :allow-headers #{:x-requested-with :content-type :authorization}})
 
 ;; --- Routes
+
+(def auth-opts
+  {:alg :a256kw :enc :a128cbc-hs256})
 
 (defn routes
   ([] (routes cfg/config))
@@ -157,6 +159,6 @@
                 :max-body-size 52428800}]
     (ct/run-server (routes config) config)))
 
-(defstate server
-  :start (start-server cfg/config)
-  :stop (.stop server))
+;; (defstate server
+;;   :start (start-server cfg/config)
+;;   :stop (.stop server))

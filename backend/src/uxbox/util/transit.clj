@@ -15,11 +15,8 @@
 
 ;; --- Handlers
 
-(def ^:private +reader-handlers+
-  dt/+read-handlers+)
-
-(def ^:private +write-handlers+
-  dt/+write-handlers+)
+(def +read-handlers+ dt/+read-handlers+)
+(def +write-handlers+ dt/+write-handlers+)
 
 ;; --- Low-Level Api
 
@@ -27,7 +24,7 @@
   ([istream]
    (reader istream nil))
   ([istream {:keys [type] :or {type :json}}]
-   (t/reader istream type {:handlers +reader-handlers+})))
+   (t/reader istream type {:handlers +read-handlers+})))
 
 (defn read!
   "Read value from streamed transit reader."

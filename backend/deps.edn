@@ -3,9 +3,17 @@
         org.clojure/data.xml {:mvn/version "0.1.0-beta2"}
         funcool/suricatta {:mvn/version "1.3.1"}
         funcool/promesa {:mvn/version "2.0.0"}
-        funcool/catacumba {:mvn/version "2.1.0"}
         funcool/cuerdas {:mvn/version "2.2.0"}
         funcool/datoteka {:mvn/version "1.0.0"}
+        funcool/catacumba {:mvn/version "2.1.0"}
+        funcool/struct {:mvn/version "1.4.0"}
+
+        ring/ring {:mvn/version "1.7.1"}
+        metosin/reitit-core {:mvn/version "0.3.7"}
+        metosin/reitit-ring {:mvn/version "0.3.7"}
+        metosin/reitit-middleware {:mvn/version "0.3.7"}
+        metosin/reitit-spec {:mvn/version "0.3.7"}
+        ;; metosin/reitit-dev {:mvn/version "0.3.7"}
 
         org.jsoup/jsoup {:mvn/version "1.10.2"}
         hiccup/hiccup {:mvn/version "1.0.5"}
@@ -35,9 +43,12 @@
   {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}
                 org.clojure/tools.namespace {:mvn/version "0.2.11"}
                 clj-http/clj-http {:mvn/version "2.1.0"}
+                ring/ring-mock {:mvn/version "0.4.0"}
                 }
    :extra-paths ["test"]}
   :repl {:main-opts  ["-m" "rebel-readline.main"]}
+  :nrepl {:extra-deps {nrepl/nrepl {:mvn/version "0.6.0"}}
+          :main-opts ["-m" "nrepl.cmdline"]}
   }}
 
 

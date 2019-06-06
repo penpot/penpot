@@ -6,7 +6,7 @@
             [catacumba.testing :refer (with-server)]
             [catacumba.serializers :as sz]
             [uxbox.db :as db]
-            [uxbox.frontend :as uft]
+            [uxbox.api :as uapi]
             [uxbox.services.projects :as uspr]
             [uxbox.services.pages :as uspg]
             [uxbox.services :as usv]
@@ -22,17 +22,16 @@
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)
           proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (with-server {:handler (uft/routes)}
+      (th/with-server {:handler uapi/app}
         (let [uri (str th/+base-url+ "/api/projects")
               [status data] (th/http-get user uri)]
-          ;; (println "RESPONSE:" status data)
           (t/is (= 200 status))
           (t/is (= 1 (count data))))))))
 
 (t/deftest test-http-project-create
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)]
-      (with-server {:handler (uft/routes)}
+      (th/with-server {:handler uapi/app}
         (let [uri (str th/+base-url+ "/api/projects")
               params {:body {:name "proj1"}}
               [status data] (th/http-post user uri params)]
@@ -45,11 +44,11 @@
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)
           proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (with-server {:handler (uft/routes)}
+      (th/with-server {:handler uapi/app}
         (let [uri (str th/+base-url+ "/api/projects/" (:id proj))
               params {:body (assoc proj :name "proj2")}
               [status data] (th/http-put user uri params)]
-          ;; (println "RESPONSE:" status data)
+          (prn "RESPONSE:" status data)
           (t/is (= 200 status))
           (t/is (= (:user data) (:id user)))
           (t/is (= (:name data) "proj2")))))))
@@ -58,7 +57,7 @@
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)
           proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (with-server {:handler (uft/routes)}
+      (th/with-server {:handler uapi/app}
         (let [uri (str th/+base-url+ "/api/projects/" (:id proj))
               [status data] (th/http-delete user uri)]
           (t/is (= 204 status))
@@ -82,9 +81,9 @@
                                        :height 200
                                        :layout "mobil"})
           shares (uspr/get-share-tokens-for-project conn (:id proj))]
-      (with-server {:handler (uft/routes)}
+      (th/with-server {:handler uapi/app}
         (let [token (:token (first shares))
-              uri (str th/+base-url+ "/api/projects-by-token/" token)
+              uri (str th/+base-url+ "/api/projects/by-token/" token)
               [status data] (th/http-get user uri)]
           ;; (println "RESPONSE:" status data)
           (t/is (= status 200))
