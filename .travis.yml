@@ -13,6 +13,7 @@ branches:
     - master
     - wip
     - develop
+    - build-refactor
 
 install:
   - ./manage.sh help
@@ -33,13 +34,9 @@ notifications:
   email: false
 
 env:
-  - NODE_VERSION=7.7.1 COMMAND=build
-  - NODE_VERSION=7.7.1 COMMAND=test
-  - NODE_VERSION=7.7.1 COMMAND=release-local
-  - NODE_VERSION=7.7.1 COMMAND=release-docker
-  - NODE_VERSION=7.7.1 COMMAND=run-release
-  - NODE_VERSION=8.15.0 COMMAND=build
-  - NODE_VERSION=8.15.0 COMMAND=test
-  - NODE_VERSION=8.15.0 COMMAND=release-local
-  - NODE_VERSION=8.15.0 COMMAND=release-docker
-  - NODE_VERSION=8.15.0 COMMAND=run-release
+  - NODE_VERSION=10.16.0 COMMAND=clean
+  - NODE_VERSION=10.16.0 COMMAND=build-devenv
+  #- NODE_VERSION=10.16.0 COMMAND=run-devenv
+  #- NODE_VERSION=10.16.0 COMMAND=test
+  - NODE_VERSION=10.16.0 COMMAND=build-release
+  #- NODE_VERSION=10.16.0 COMMAND=run-release
