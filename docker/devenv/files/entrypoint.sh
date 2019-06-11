@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
 set -e
-echo "UXBOX Docker entrypoint initialization..."
+echo "UXBOX Docker Dev entrypoint initialization..."
 
 exec "$@"

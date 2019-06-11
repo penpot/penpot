@@ -51,13 +51,19 @@ function build-release-frontend-local {
         build-devenv
     fi
 
+    mkdir -p $HOME/.m2
+    rm -rf ./frontend/node_modules
+
+    CONTAINER=$IMGNAME:latest
+
+    echo "Running development image $CONTAINER to build frontend release..."
     docker run -ti --rm \
            -w /home/uxbox/uxbox/frontend \
            -v `pwd`:/home/uxbox/uxbox  \
            -v $HOME/.m2:/home/uxbox/.m2 \
            -e UXBOX_API_URL="/api" \
            -e UXBOX_VIEW_URL="/view" \
-           $IMGNAME:latest ./scripts/build-release.sh
+           $CONTAINER cd /home/uxbox/uxbox/frontend && ./scripts/build-release.sh
 }
 
 function build-release-frontend {
@@ -69,6 +75,17 @@ function build-release-frontend {
 }
 
 function build-release-backend-local {
+    #if ! $(docker images | grep $IMGNAME | grep -q $REV); then
+    #    build-devenv
+    #fi
+    #mkdir -p $HOME/.m2
+    #CONTAINER=$IMGNAME:latest
+    #echo "Running development image $CONTAINER to build backend release..."
+    #docker run -ti --rm \
+    #       -w /home/uxbox/uxbox/backend \
+    #       -v `pwd`:/home/uxbox/uxbox  \
+    #       -v $HOME/.m2:/home/uxbox/.m2 \
+    #       $CONTAINER cd /home/uxbox/uxbox/backend && ./scripts/prepare-release.sh
     rm -rf backend/dist || exit 1;
     rsync -avr \
           --exclude="/test" \
