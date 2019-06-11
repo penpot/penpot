@@ -53,6 +53,7 @@ function build-release-frontend-local {
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
+    chmod 777 ./frontend
 
     CONTAINER=$IMGNAME:latest
 
@@ -63,7 +64,7 @@ function build-release-frontend-local {
            -v $HOME/.m2:/home/uxbox/.m2 \
            -e UXBOX_API_URL="/api" \
            -e UXBOX_VIEW_URL="/view" \
-           $CONTAINER cd /home/uxbox/uxbox/frontend && ./scripts/build-release.sh
+           $CONTAINER ./scripts/build-release.sh
 }
 
 function build-release-frontend {
@@ -85,7 +86,7 @@ function build-release-backend-local {
     #       -w /home/uxbox/uxbox/backend \
     #       -v `pwd`:/home/uxbox/uxbox  \
     #       -v $HOME/.m2:/home/uxbox/.m2 \
-    #       $CONTAINER cd /home/uxbox/uxbox/backend && ./scripts/prepare-release.sh
+    #       $CONTAINER ./scripts/prepare-release.sh
     rm -rf backend/dist || exit 1;
     rsync -avr \
           --exclude="/test" \
