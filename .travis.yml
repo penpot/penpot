@@ -39,4 +39,4 @@ env:
   #- NODE_VERSION=10.16.0 COMMAND=run-devenv
   #- NODE_VERSION=10.16.0 COMMAND=test
   - NODE_VERSION=10.16.0 COMMAND=build-release
-  #- NODE_VERSION=10.16.0 COMMAND=run-release
+  - NODE_VERSION=10.16.0 COMMAND=run-release
