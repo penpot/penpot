@@ -29,9 +29,9 @@ script:
 after_script:
   - docker images
   - docker ps
-  - sleep 120
+  - sleep 180
   - docker ps
-  - for c in $(docker ps -q); do docker logs $c; done
+  - for c in $(docker ps -q); do echo "> docker logs $c"; docker logs $c; done
 
 notifications:
   email: false
