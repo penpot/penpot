@@ -29,7 +29,7 @@ script:
 after_script:
   - docker images
   - docker ps
-  - sleep 180
+  - if [ "$COMMAND" = "run-release" ]; then sleep 180; fi
   - docker ps
   - for c in $(docker ps -q); do echo "> docker logs $c"; docker logs $c; done
 
