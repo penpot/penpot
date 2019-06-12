@@ -29,6 +29,8 @@ script:
 after_script:
   - docker images
   - docker ps
+  - sleep 120
+  - docker ps
 
 notifications:
   email: false
