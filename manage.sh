@@ -53,7 +53,9 @@ function build-release-frontend-local {
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
+    # FIXME Ugly... should be a better way
     chmod 777 ./frontend
+    chmod -R 777 $HOME/.m2
 
     CONTAINER=$IMGNAME:latest
 
