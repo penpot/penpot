@@ -26,9 +26,9 @@
   "Create page for a project"
   {:parameters {:body {:data [st/required]
                        :metadata [st/required]
-                       :project [st/required st/uuid-str]
+                       :project [st/required st/uuid]
                        :name [st/required st/string]
-                       :id [st/uuid-str]}}}
+                       :id [st/uuid]}}}
   [{:keys [user parameters]}]
   (let [data (get parameters :body)
         message (assoc data :user user :type :create-page)]
@@ -42,10 +42,10 @@
   {:parameters {:path {:id [st/required st/uuid-str]}
                 :body {:data [st/required]
                        :metadata [st/required]
-                       :project [st/required st/uuid-str]
+                       :project [st/required st/uuid]
                        :name [st/required st/string]
                        :version [st/required st/integer]
-                       :id [st/uuid-str]}}}
+                       :id [st/uuid]}}}
   [{:keys [user parameters]}]
   (let [id (get-in parameters [:path :id])
         data (get parameters :body)
@@ -56,9 +56,9 @@
 (defn update-metadata
   "Update page metadata"
   {:parameters {:path {:id [st/required st/uuid-str]}
-                :body {:id [st/required st/uuid-str]
+                :body {:id [st/required st/uuid]
                        :metadata [st/required]
-                       :project [st/required st/uuid-str]
+                       :project [st/required st/uuid]
                        :name [st/required st/string]}}}
   [{:keys [user parameters]}]
   (let [id (get-in parameters [:path :id])
@@ -86,4 +86,18 @@
         data (get parameters :query)
         message (assoc data :id id :type :list-page-history :user user)]
     (->> (sv/query message)
+         (p/map #(http/ok %)))))
+
+(defn update-history
+  {:parameters {:path {:id [st/required st/uuid-str]
+                       :hid [st/required st/uuid-str]}
+                :body {:label [st/required st/string]
+                       ::pinned [st/required st/boolean]}}}
+  [{:keys [user parameters]}]
+  (let [{:keys [id hid]} (get parameters :path)
+        message (assoc (get parameters :body)
+                       :type :update-page-history
+                       :id hid
+                       :user user)]
+    (->> (sv/novelty message)
          (p/map #(http/ok %)))))

@@ -5,19 +5,21 @@
 ;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.api.middleware
-  (:require [reitit.core :as rc]
-            [struct.core :as st]
+  (:require [muuntaja.core :as m]
             [promesa.core :as p]
+            [reitit.core :as rc]
+            [reitit.ring.middleware.multipart :as multipart]
+            [reitit.ring.middleware.muuntaja :as muuntaja]
+            [reitit.ring.middleware.parameters :as parameters]
+            [ring.middleware.session :refer [wrap-session]]
+            [ring.middleware.session.cookie :refer [cookie-store]]
+            [struct.core :as st]
+            [uxbox.api.errors :as api-errors]
             [uxbox.util.data :refer [normalize-attrs]]
-            [uxbox.util.exceptions :as ex]))
+            [uxbox.util.exceptions :as ex]
+            [uxbox.util.transit :as t]))
 
-;; (extend-protocol rc/Expand
-;;   clojure.lang.Var
-;;   (expand [this opts]
-;;     (merge (rc/expand (deref this) opts)
-;;            {::handler-metadata (meta this)})))
-
-(defn transform-handler
+(defn- transform-handler
   [handler]
   (fn [request respond raise]
     (try
@@ -30,17 +32,7 @@
       (catch Exception e
         (raise e)))))
 
-(defn handler
-  [invar]
-  (let [metadata (meta invar)
-        hlrdata (-> metadata
-                    (dissoc :arglist :line :column :file :ns)
-                    (assoc :handler (transform-handler (var-get invar))
-                           :fullname (symbol (str (:ns metadata)) (str (:name metadata)))))]
-    (cond-> hlrdata
-      (:doc metadata) (assoc :description (:doc metadata)))))
-
-(def normalize-params-middleware
+(def ^:private normalize-params-middleware
   {:name ::normalize-params-middleware
    :wrap (fn [handler]
            (letfn [(transform-request [request]
@@ -58,9 +50,7 @@
                       (raise e))))))))})
 
 
-;; --- Validation
-
-(def parameters-validation-middleware
+(def ^:private parameters-validation-middleware
   (letfn [(prepare [parameters]
             (reduce-kv
              (fn [acc key spec]
@@ -81,21 +71,72 @@
                    (ex/raise :type :parameters-validation
                              :code (:key spec)
                              :context errors
+                             :value (get req key)
                              :message "Invalid data")
-
                    (assoc-in req [:parameters (:key spec)] result))))
-             request parameters))]
+             request parameters))
 
+          (compile [route opts]
+            (when-let [parameters (:parameters route)]
+              (let [parameters (prepare parameters)]
+                (fn [handler]
+                  (fn
+                    ([request]
+                     (handler (validate request parameters)))
+                    ([request respond raise]
+                     (try
+                       (handler (validate request parameters false) respond raise)
+                       (catch Exception e
+                         (raise e)))))))))]
     {:name ::parameters-validation-middleware
-     :compile (fn [route opts]
-                (when-let [parameters (:parameters route)]
-                  (let [parameters (prepare parameters)]
-                    (fn [handler]
-                      (fn
-                        ([request]
-                         (handler (validate request parameters)))
-                        ([request respond raise]
-                         (try
-                           (handler (validate request parameters false) respond raise)
-                           (catch Exception e
-                             (raise e)))))))))}))
+     :compile compile}))
+
+(def ^:private session-middleware
+  (let [options {:store (cookie-store {:key "a 16-byte secret"})
+                 :cookie-name "session"
+                 :cookie-attrs {:same-site :lax :http-only true}}]
+    {:name ::session-middleware
+     :wrap #(wrap-session % options)}))
+
+;; (def ^:private cors-middleware
+;;   {:name ::cors-middleware
+;;    :wrap #(wrap-cors %
+;;                      :access-control-allow-origin [#".*"]
+;;                      :access-control-allow-methods [:get :put :post :delete]
+;;                      :access-control-allow-headers ["x-requested-with"
+;;                                                     "content-type"
+;;                                                     "authorization"])})
+
+(def ^:private muuntaja-instance
+  (m/create (update-in m/default-options [:formats "application/transit+json"]
+                       merge {:encoder-opts {:handlers t/+write-handlers+}
+                              :decoder-opts {:handlers t/+read-handlers+}})))
+(def router-options
+  {;;:reitit.middleware/transform dev/print-request-diffs
+   :data {:muuntaja muuntaja-instance
+          :middleware [session-middleware
+                       parameters/parameters-middleware
+                       normalize-params-middleware
+                       ;; content-negotiation
+                       muuntaja/format-negotiate-middleware
+                       ;; encoding response body
+                       muuntaja/format-response-middleware
+                       ;; exception handling
+                       api-errors/exception-middleware
+                       ;; decoding request body
+                       muuntaja/format-request-middleware
+                       ;; validation
+                       parameters-validation-middleware
+                       ;; multipart
+                       multipart/multipart-middleware]}})
+
+(defn handler
+  [invar]
+  (let [metadata (meta invar)
+        hlrdata (-> metadata
+                    (dissoc :arglist :line :column :file :ns)
+                    (assoc :handler (transform-handler (var-get invar))
+                           :fullname (symbol (str (:ns metadata)) (str (:name metadata)))))]
+    (cond-> hlrdata
+      (:doc metadata) (assoc :description (:doc metadata)))))
+
