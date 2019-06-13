@@ -5,7 +5,6 @@
 ;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns user
-  (:refer-clojure :exclude [test])
   (:require [clojure.tools.namespace.repl :as repl]
             [clojure.walk :refer [macroexpand-all]]
             [clojure.pprint :refer [pprint]]
@@ -41,7 +40,7 @@
                     #'uxbox.migrations/migrations})
       (mount/start)))
 
-(defn- test
+(defn- run-test
   ([] (test #"^uxbox.tests.*"))
   ([o]
    (repl/refresh)
