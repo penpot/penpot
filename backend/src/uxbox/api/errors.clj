@@ -58,6 +58,9 @@
     (instance? java.util.concurrent.CompletionException error)
     (errors-handler context (.getCause error))
 
+    java.util.concurrent.ExecutionException
+    (errors-handler context (.getCause error))
+
     (instance? org.jooq.exception.DataAccessException error)
     (handle-data-access-exception error)
 
