@@ -90,26 +90,31 @@
 ;;           :opt-un [::us/id ::collection]))
 
 (defn create-image
-  [{user :identity data :data}]
-  #_(let [{:keys [file id width height
-                mimetype collection]} (us/conform ::create-image data)
-        id (or id (uuid/random))
-        filename (fs/name file)
+  {:parameters {:multipart {:upload [st/required]
+                            :id [st/uuid-str]
+                            :width [st/required st/integer-str]
+                            :height [st/required st/integer-str]
+                            :mimetype [st/required st/string]
+                            :collection [st/uuid-str]}}}
+  [{:keys [user parameters] :as ctx}]
+  (prn "create-image" (:body-params ctx) (:multipart-params ctx))
+  (let [params (get parameters :multipart)
+        upload (get params :upload)
+        filename (fs/name (:filename upload))
+        tempfile (:tempfile upload)
         storage media/images-storage]
     (letfn [(persist-image-entry [path]
-              (sv/novelty {:id id
-                           :type :create-image
-                           :user user
-                           :width width
-                           :height height
-                           :mimetype mimetype
-                           :collection collection
-                           :name filename
-                           :path (str path)}))
+              (let [message (select-keys params [:id :width :height :collection :mimetype])]
+                (sv/novelty (assoc message
+                                   :id (or (:id params) (uuid/random))
+                                   :type :create-image
+                                   :name filename
+                                   :path (str path)
+                                   :user user))))
             (create-response [entry]
               (let [loc (str "/api/library/images/" (:id entry))]
-                (http/created loc (rsp entry))))]
-      (->> (st/save storage filename file)
+                (http/created loc entry)))]
+      (->> (ds/save storage filename tempfile)
            (p/mapcat persist-image-entry)
            (p/map populate-thumbnails)
            (p/map populate-urls)

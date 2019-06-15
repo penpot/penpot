@@ -72,20 +72,24 @@
                 result (sc/fetch conn sqlv)]
             (t/is (empty? result))))))))
 
-;; ;; (t/deftest test-http-create-image
-;; ;;   (with-open [conn (db/connection)]
-;; ;;     (let [user (th/create-user conn 1)]
-;; ;;       (with-server {:handler (uft/routes)}
-;; ;;         (let [uri (str th/+base-url+ "/api/library/images")
-;; ;;               params [{:name "sample.jpg"
-;; ;;                        :part-name "file"
-;; ;;                        :content (io/input-stream
-;; ;;                                  (io/resource "uxbox/tests/_files/sample.jpg"))}]
-;; ;;               [status data] (th/http-multipart user uri params)]
-;; ;;           ;; (println "RESPONSE:" status data)
-;; ;;           (t/is (= 201 status))
-;; ;;           (t/is (= (:user data) (:id user)))
-;; ;;           (t/is (= (:name data) "sample.jpg")))))))
+(t/deftest test-http-create-image
+  (with-open [conn (db/connection)]
+    (let [user (th/create-user conn 1)]
+      (th/with-server {:handler uapi/app}
+        (let [uri (str th/+base-url+ "/api/library/images")
+              parts [{:name "sample.jpg"
+                      :part-name "upload"
+                      :content (io/input-stream
+                                (io/resource "uxbox/tests/_files/sample.jpg"))}
+                     {:part-name "user" :content (str (:id user))}
+                     {:part-name "width" :content "100"}
+                     {:part-name "height" :content "100"}
+                     {:part-name "mimetype" :content "image/png"}]
+              [status data] (th/http-multipart user uri parts)]
+          ;; (println "RESPONSE:" status data)
+          (t/is (= 201 status))
+          (t/is (= (:user data) (:id user)))
+          (t/is (= (:name data) "sample.jpg")))))))
 
 (t/deftest test-http-update-image
   (with-open [conn (db/connection)]
