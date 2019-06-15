@@ -8,9 +8,11 @@
   (:require [muuntaja.core :as m]
             [promesa.core :as p]
             [reitit.core :as rc]
+            [reitit.dev.pretty :as pretty]
             [reitit.ring.middleware.multipart :as multipart]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.middleware.parameters :as parameters]
+            [reitit.ring.middleware.exception :as exception]
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :refer [cookie-store]]
             [struct.core :as st]
@@ -68,7 +70,7 @@
              (fn [req key spec]
                (let [[errors, result] ((:fn spec) (get req key))]
                  (if errors
-                   (ex/raise :type :parameters-validation
+                   (ex/raise :type :validation
                              :code (:key spec)
                              :context errors
                              :value (get req key)
@@ -91,6 +93,8 @@
     {:name ::parameters-validation-middleware
      :compile compile}))
 
+
+
 (def ^:private session-middleware
   (let [options {:store (cookie-store {:key "a 16-byte secret"})
                  :cookie-name "session"
@@ -107,12 +111,20 @@
 ;;                                                     "content-type"
 ;;                                                     "authorization"])})
 
+(def ^:private exception-middleware
+  (exception/create-exception-middleware
+   (assoc exception/default-handlers
+          ::exception/default api-errors/errors-handler
+          ::exception/wrap api-errors/wrap-print-errors)))
+
+
 (def ^:private muuntaja-instance
   (m/create (update-in m/default-options [:formats "application/transit+json"]
                        merge {:encoder-opts {:handlers t/+write-handlers+}
                               :decoder-opts {:handlers t/+read-handlers+}})))
 (def router-options
   {;;:reitit.middleware/transform dev/print-request-diffs
+   :exception pretty/exception
    :data {:muuntaja muuntaja-instance
           :middleware [session-middleware
                        parameters/parameters-middleware
@@ -122,7 +134,7 @@
                        ;; encoding response body
                        muuntaja/format-response-middleware
                        ;; exception handling
-                       api-errors/exception-middleware
+                       exception-middleware
                        ;; decoding request body
                        muuntaja/format-request-middleware
                        ;; validation

@@ -5,26 +5,18 @@
 ;; Copyright (c) 20162019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.api.errors
-  "A errors handling for api."
-  (:require [reitit.ring.middleware.exception :as exception]))
-
+  "A errors handling for api.")
 
 (defmulti handle-exception #(:type (ex-data %)))
 
 (defmethod handle-exception :validation
   [err]
-  ;; (println "\n*********** stack trace ***********")
-  ;; (.printStackTrace err)
-  ;; (println "\n********* end stack trace *********")
   (let [response (ex-data err)]
     {:status 400
      :body response}))
 
 (defmethod handle-exception :default
   [err]
-  ;; (println "\n*********** stack trace ***********")
-  ;; (.printStackTrace err)
-  ;; (println "\n********* end stack trace *********")
   (let [response (ex-data err)]
     {:status 500
      :body response}))
@@ -78,9 +70,3 @@
   (.printStackTrace error)
   (println "\n********* end stack trace *********")
   (handler error request))
-
-(def exception-middleware
-  (exception/create-exception-middleware
-    (assoc exception/default-handlers
-           ::exception/default errors-handler
-           ::exception/wrap wrap-print-errors)))

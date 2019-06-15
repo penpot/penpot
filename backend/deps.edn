@@ -13,7 +13,7 @@
         metosin/reitit-ring {:mvn/version "0.3.7"}
         metosin/reitit-middleware {:mvn/version "0.3.7"}
         metosin/reitit-spec {:mvn/version "0.3.7"}
-        ;; metosin/reitit-dev {:mvn/version "0.3.7"}
+        metosin/reitit-dev {:mvn/version "0.3.7"}
 
         org.jsoup/jsoup {:mvn/version "1.10.2"}
         hiccup/hiccup {:mvn/version "1.0.5"}
