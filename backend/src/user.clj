@@ -41,7 +41,7 @@
       (mount/start)))
 
 (defn- run-test
-  ([] (test #"^uxbox.tests.*"))
+  ([] (run-test #"^uxbox.tests.*"))
   ([o]
    (repl/refresh)
    (cond
