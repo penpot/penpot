@@ -11,6 +11,7 @@
             [uxbox.services :as usv]
             [uxbox.tests.helpers :as th]))
 
+(t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest test-http-retrieve-profile

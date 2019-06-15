@@ -3,8 +3,6 @@
             [promesa.core :as p]
             [suricatta.core :as sc]
             [clj-uuid :as uuid]
-            [catacumba.testing :refer (with-server)]
-            [catacumba.serializers :as sz]
             [uxbox.db :as db]
             [uxbox.api :as uapi]
             [uxbox.services.projects :as uspr]
@@ -12,11 +10,8 @@
             [uxbox.services :as usv]
             [uxbox.tests.helpers :as th]))
 
+(t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Frontend Test
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (t/deftest test-http-project-list
   (with-open [conn (db/connection)]

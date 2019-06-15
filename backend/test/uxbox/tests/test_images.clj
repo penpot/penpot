@@ -12,6 +12,7 @@
             [uxbox.services :as usv]
             [uxbox.tests.helpers :as th]))
 
+(t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest test-http-list-image-collections
@@ -166,6 +167,6 @@
       (th/with-server {:handler uapi/app}
         (let [uri (str th/+base-url+ "/api/library/images")
               [status data] (th/http-get user uri)]
-          (println "RESPONSE:" status data)
+          ;; (println "RESPONSE:" status data)
           (t/is (= 200 status))
           (t/is (= 1 (count data))))))))

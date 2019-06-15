@@ -10,11 +10,8 @@
             [uxbox.services :as usv]
             [uxbox.tests.helpers :as th]))
 
+(t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Frontend Test
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (t/deftest test-http-page-create
   (with-open [conn (db/connection)]
