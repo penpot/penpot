@@ -5,10 +5,8 @@
 ;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.api.middleware
-  (:require [muuntaja.core :as m]
-            [promesa.core :as p]
+  (:require [promesa.core :as p]
             [reitit.core :as rc]
-            [reitit.dev.pretty :as pretty]
             [reitit.ring.middleware.multipart :as multipart]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.middleware.parameters :as parameters]
@@ -18,9 +16,9 @@
             [ring.middleware.multipart-params :refer [wrap-multipart-params]]
             [struct.core :as st]
             [uxbox.api.errors :as api-errors]
+            [uxbox.util.http :as http]
             [uxbox.util.data :refer [normalize-attrs]]
-            [uxbox.util.exceptions :as ex]
-            [uxbox.util.transit :as t]))
+            [uxbox.util.exceptions :as ex]))
 
 (defn- transform-handler
   [handler]
@@ -101,8 +99,6 @@
     {:name ::parameters-validation-middleware
      :compile compile}))
 
-
-
 (def ^:private session-middleware
   (let [options {:store (cookie-store {:key "a 16-byte secret"})
                  :cookie-name "session"
@@ -125,30 +121,35 @@
           ::exception/default api-errors/errors-handler
           ::exception/wrap api-errors/wrap-print-errors)))
 
+(def authorization-middleware
+  {:name ::authorization-middleware
+   :wrap (fn [handler]
+           (fn
+             ([request]
+              (if-let [identity (get-in request [:session :user-id])]
+                (handler (assoc request :identity identity :user identity))
+                (http/forbidden nil)))
+             ([request respond raise]
+              (if-let [identity (get-in request [:session :user-id])]
+                (handler (assoc request :identity identity :user identity) respond raise)
+                (respond (http/forbidden nil))))))})
 
-(def ^:private muuntaja-instance
-  (m/create (update-in m/default-options [:formats "application/transit+json"]
-                       merge {:encoder-opts {:handlers t/+write-handlers+}
-                              :decoder-opts {:handlers t/+read-handlers+}})))
-(def router-options
-  {;;:reitit.middleware/transform dev/print-request-diffs
-   :exception pretty/exception
-   :data {:muuntaja muuntaja-instance
-          :middleware [session-middleware
-                       parameters/parameters-middleware
-                       muuntaja/format-negotiate-middleware
-                       ;; encoding response body
-                       muuntaja/format-response-middleware
-                       ;; exception handling
-                       exception-middleware
-                       ;; decoding request body
-                       muuntaja/format-request-middleware
-                       ;; multipart
-                       multipart-params-middleware
-                       ;; parameters normalization
-                       normalize-params-middleware
-                       ;; parameters validation
-                       parameters-validation-middleware]}})
+(def middleware
+  [session-middleware
+   parameters/parameters-middleware
+   muuntaja/format-negotiate-middleware
+   ;; encoding response body
+   muuntaja/format-response-middleware
+   ;; exception handling
+   exception-middleware
+   ;; decoding request body
+   muuntaja/format-request-middleware
+   ;; multipart
+   multipart-params-middleware
+   ;; parameters normalization
+   normalize-params-middleware
+   ;; parameters validation
+   parameters-validation-middleware])
 
 (defn handler
   [invar]

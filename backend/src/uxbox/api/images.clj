@@ -97,7 +97,6 @@
                             :mimetype [st/required st/string]
                             :collection [st/uuid-str]}}}
   [{:keys [user parameters] :as ctx}]
-  (prn "create-image" (:body-params ctx) (:multipart-params ctx))
   (let [params (get parameters :multipart)
         upload (get params :upload)
         filename (fs/name (:filename upload))
