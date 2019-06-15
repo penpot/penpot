@@ -15,6 +15,7 @@
             [reitit.ring.middleware.exception :as exception]
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :refer [cookie-store]]
+            [ring.middleware.multipart-params :refer [wrap-multipart-params]]
             [struct.core :as st]
             [uxbox.api.errors :as api-errors]
             [uxbox.util.data :refer [normalize-attrs]]
@@ -37,20 +38,26 @@
 (def ^:private normalize-params-middleware
   {:name ::normalize-params-middleware
    :wrap (fn [handler]
-           (letfn [(transform-request [request]
-                     (if-let [data (get request :query-params)]
-                       (assoc request :query-params (normalize-attrs data))
-                       request))]
+           (letfn [(transform-request [request key]
+                     (if-let [data (get request key)]
+                       (assoc request key (normalize-attrs data))
+                       request))
+                   (transform [request]
+                     (-> request
+                         (transform-request :query-params)
+                         (transform-request :multipart-params)))]
              (fn
-               ([request] (handler (transform-request request)))
+               ([request] (handler (transform request)))
                ([request respond raise]
                 (try
                   (try
-                    (let [request (transform-request request)]
-                      (handler (transform-request request) respond raise))
+                    (handler (transform request) respond raise)
                     (catch Exception e
                       (raise e))))))))})
 
+(def ^:private multipart-params-middleware
+  {:name ::multipart-params-middleware
+   :wrap wrap-multipart-params})
 
 (def ^:private parameters-validation-middleware
   (letfn [(prepare [parameters]
@@ -60,6 +67,7 @@
                               :path :path-params
                               :query :query-params
                               :body :body-params
+                              :multipart :multipart-params
                               (throw (ex-info "Not supported key on :parameters" {})))]
                  (assoc acc newkey {:key key
                                     :fn #(st/validate % spec)})))
@@ -128,8 +136,6 @@
    :data {:muuntaja muuntaja-instance
           :middleware [session-middleware
                        parameters/parameters-middleware
-                       normalize-params-middleware
-                       ;; content-negotiation
                        muuntaja/format-negotiate-middleware
                        ;; encoding response body
                        muuntaja/format-response-middleware
@@ -137,10 +143,12 @@
                        exception-middleware
                        ;; decoding request body
                        muuntaja/format-request-middleware
-                       ;; validation
-                       parameters-validation-middleware
                        ;; multipart
-                       multipart/multipart-middleware]}})
+                       multipart-params-middleware
+                       ;; parameters normalization
+                       normalize-params-middleware
+                       ;; parameters validation
+                       parameters-validation-middleware]}})
 
 (defn handler
   [invar]
