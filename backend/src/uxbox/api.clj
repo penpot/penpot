@@ -6,16 +6,22 @@
 
 (ns uxbox.api
   (:require [mount.core :refer [defstate]]
-            [uxbox.config :as cfg]
+            [muuntaja.core :as m]
             [ring.adapter.jetty :as jetty]
             [reitit.ring :as ring]
-            [uxbox.api.middleware :refer [handler router-options]]
+            [reitit.dev.pretty :as pretty]
+            [uxbox.config :as cfg]
+            [uxbox.api.middleware :refer [handler middleware authorization-middleware]]
             [uxbox.api.auth :as api-auth]
             [uxbox.api.pages :as api-pages]
             [uxbox.api.users :as api-users]
             [uxbox.api.icons :as api-icons]
             [uxbox.api.images :as api-images]
-            [uxbox.api.projects :as api-projects]))
+            [uxbox.api.kvstore :as api-kvstore]
+            [uxbox.api.projects :as api-projects]
+            [uxbox.api.svg :as api-svg]
+            [uxbox.util.transit :as t]))
+
 
 ;; --- Top Level Handlers
 
@@ -33,15 +39,40 @@
 
 ;; --- Routes
 
+(def ^:private muuntaja-instance
+  (m/create (update-in m/default-options [:formats "application/transit+json"]
+                       merge {:encoder-opts {:handlers t/+write-handlers+}
+                              :decoder-opts {:handlers t/+read-handlers+}})))
+
+(def ^:private router-options
+  {;;:reitit.middleware/transform dev/print-request-diffs
+   :exception pretty/exception
+   :data {:muuntaja muuntaja-instance
+          :middleware middleware}})
+
 (def routes
   (ring/router
    [["/media/*" (ring/create-resource-handler {:root "public/media"})]
     ["/static/*" (ring/create-resource-handler {:root "public/static"})]
 
-    ["/auth/login" {:post (handler #'api-auth/login)}]
+    ["/auth"
+     ["/login" {:post (handler #'api-auth/login)}]
+     ["/register" {:post (handler #'api-auth/register)}]
+     ["/recovery/:token" {:get (handler #'api-auth/register)}]
+     ["/recovery" {:post (handler #'api-auth/request-recovery)
+                   :get (handler #'api-auth/recover-password)}]]
 
-    ["/api" {:middleware [api-auth/authorization-middleware]}
+    ["/api" {:middleware [authorization-middleware]}
      ["/echo" (handler #'welcome-api)]
+
+     ;; KVStore
+     ["/kvstore/:key" {:put (handler #'api-kvstore/upsert)
+                       :get (handler #'api-kvstore/retrieve)
+                       :delete (handler #'api-kvstore/delete)}]
+
+     ["/svg/parse" {:post (handler #'api-svg/parse)}]
+
+     ;; Projects
      ["/projects" {:get (handler #'api-projects/list)
                    :post (handler #'api-projects/create)}]
      ["/projects/by-token/:token" {:get (handler #'api-projects/get-by-share-token)}]

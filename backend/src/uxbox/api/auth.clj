@@ -6,6 +6,7 @@
 
 (ns uxbox.api.auth
   (:require [clojure.spec.alpha :as s]
+            [promesa.core :as p]
             [struct.core :as st]
             [uxbox.services :as sv]
             [uxbox.util.http :as http]
@@ -18,19 +19,47 @@
                        :password [st/required st/string]
                        :scope [st/required st/string]}}}
   [ctx]
-  (let [data (get-in ctx [:parameters :body])
-        user @(sv/novelty (assoc data :type :login))]
-    (-> (http/no-content)
-        (assoc :session {:user-id (get user :id)}))))
+  (let [data (get-in ctx [:parameters :body])]
+    (->> (sv/novelty (assoc data :type :login))
+         (p/map (fn [{:keys [id] :as user}]
+                  (-> (http/no-content)
+                      (assoc :session {:user-id id})))))))
 
-(defn authorization-middleware
-  [handler]
-  (fn
-    ([request]
-     (if-let [identity (get-in request [:session :user-id])]
-       (handler (assoc request :identity identity :user identity))
-       (http/forbidden nil)))
-    ([request respond raise]
-     (if-let [identity (get-in request [:session :user-id])]
-       (handler (assoc request :identity identity :user identity) respond raise)
-       (respond (http/forbidden nil))))))
+(defn register
+  {:parameters {:body {:username [st/required st/string]
+                       :email [st/required st/email]
+                       :password [st/required st/string]
+                       :fullname [st/required st/string]}}}
+  [{:keys [parameters]}]
+  (let [data (get parameters :body)
+        message (assoc data :type :register-profile)]
+    (->> (sv/novelty message)
+         (p/map http/ok))))
+
+(defn request-recovery
+  {:parameters {:body {:username [st/required st/string]}}}
+  [{:keys [parameters]}]
+  (let [data (get parameters :body)
+        message (assoc data :type :request-profile-password-recovery)]
+    (->> (sv/novelty message)
+         (p/map (constantly (http/no-content))))))
+
+(defn recover-password
+  {:parameters {:body {:token [st/required st/string]
+                       :password [st/required st/string]}}}
+  [{:keys [parameters]}]
+  (let [data (get parameters :body)
+        message (assoc data :type :recover-profile-password)]
+    (->> (sv/novelty message)
+         (p/map (constantly (http/no-content))))))
+
+(defn validate-recovery-token
+  {:parameters {:path {:token [st/required st/string]}}}
+  [{:keys [parameters]}]
+  (let [message {:type :validate-profile-password-recovery-token
+                 :token (get-in parameters [:path :token])}]
+    (->> (sv/query message)
+         (p/map (fn [v]
+                  (if v
+                    (http/no-content)
+                    (http/not-found "")))))))
