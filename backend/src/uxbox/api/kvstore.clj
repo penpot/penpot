@@ -10,7 +10,7 @@
             [promesa.core :as p]
             [uxbox.services :as sv]
             [uxbox.media :as media]
-            [uxbox.util.http :as http]
+            [uxbox.http.response :as rsp]
             [uxbox.util.spec :as us]
             [uxbox.util.uuid :as uuid]))
 
@@ -22,7 +22,7 @@
                  :type :retrieve-kvstore
                  :user user}]
     (->> (sv/query message)
-         (p/map http/ok))))
+         (p/map rsp/ok))))
 
 (defn upsert
   {:parameters {:path {:key [st/required st/string]}
@@ -38,7 +38,7 @@
                  :type :update-kvstore
                  :user user}]
     (->> (sv/novelty message)
-         (p/map http/ok))))
+         (p/map rsp/ok))))
 
 (defn delete
   {:parameters {:path {:key [st/required st/string]}}}
@@ -48,6 +48,6 @@
                  :type :delete-kvstore
                  :user user}]
     (->> (sv/novelty message)
-         (p/map (constantly (http/no-content))))))
+         (p/map (constantly (rsp/no-content))))))
 
 

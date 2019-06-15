@@ -4,12 +4,14 @@
 ;;
 ;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.api.middleware
+(ns uxbox.http.middleware
   (:require [promesa.core :as p]
-            [buddy.core.hash :as hash]
-            [buddy.core.codecs :as codecs]
-            [buddy.core.codecs.base64 :as b64]
-            [reitit.core :as rc]
+            [cuerdas.core :as str]
+            ;; [buddy.core.hash :as hash]
+            ;; [buddy.core.codecs :as codecs]
+            ;; [buddy.core.codecs.base64 :as b64]
+            [struct.core :as st]
+            [reitit.ring :as rr]
             [reitit.ring.middleware.multipart :as multipart]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.middleware.parameters :as parameters]
@@ -17,9 +19,8 @@
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :refer [cookie-store]]
             [ring.middleware.multipart-params :refer [wrap-multipart-params]]
-            [struct.core :as st]
-            [uxbox.api.errors :as api-errors]
-            [uxbox.util.http :as http]
+            [uxbox.http.errors :as errors]
+            [uxbox.http.response :as rsp]
             [uxbox.util.data :refer [normalize-attrs]]
             [uxbox.util.exceptions :as ex]))
 
@@ -54,6 +55,7 @@
                   (try
                     (handler (transform request) respond raise)
                     (catch Exception e
+                      (prn handler)
                       (raise e))))))))})
 
 (def ^:private multipart-params-middleware
@@ -133,8 +135,8 @@
 (def ^:private exception-middleware
   (exception/create-exception-middleware
    (assoc exception/default-handlers
-          ::exception/default api-errors/errors-handler
-          ::exception/wrap api-errors/wrap-print-errors)))
+          ::exception/default errors/errors-handler
+          ::exception/wrap errors/wrap-print-errors)))
 
 (def authorization-middleware
   {:name ::authorization-middleware
@@ -143,11 +145,11 @@
              ([request]
               (if-let [identity (get-in request [:session :user-id])]
                 (handler (assoc request :identity identity :user identity))
-                (http/forbidden nil)))
+                (rsp/forbidden nil)))
              ([request respond raise]
               (if-let [identity (get-in request [:session :user-id])]
                 (handler (assoc request :identity identity :user identity) respond raise)
-                (respond (http/forbidden nil))))))})
+                (respond (rsp/forbidden nil))))))})
 
 (def middleware
   [session-middleware
@@ -176,3 +178,8 @@
     (cond-> hlrdata
       (:doc metadata) (assoc :description (:doc metadata)))))
 
+(defn options-handler
+  [request respond raise]
+  (let [methods (->> request rr/get-match :result (keep (fn [[k v]] (if v k))))
+        allow (->> methods (map (comp str/upper name)) (str/join ","))]
+    (respond {:status 200, :body "", :headers {"Allow" allow}})))

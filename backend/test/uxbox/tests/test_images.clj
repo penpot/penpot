@@ -7,7 +7,7 @@
             [uxbox.db :as db]
             [uxbox.sql :as sql]
             [uxbox.media :as media]
-            [uxbox.api :as uapi]
+            [uxbox.http :as http]
             [uxbox.services.images :as images]
             [uxbox.services :as usv]
             [uxbox.tests.helpers :as th]))
@@ -21,7 +21,7 @@
           data {:user (:id user)
                 :name "coll1"}
           coll (images/create-collection conn data)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/library/image-collections")
               [status data] (th/http-get user uri)]
           ;; (println "RESPONSE:" status data)
@@ -31,7 +31,7 @@
 (t/deftest test-http-create-image-collection
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/library/image-collections")
               data {:user (:id user)
                     :name "coll1"}
@@ -48,7 +48,7 @@
           data {:user (:id user)
                 :name "coll1"}
           coll (images/create-collection conn data)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/library/image-collections/" (:id coll))
               params {:body (assoc coll :name "coll2")}
               [status data] (th/http-put user uri params)]
@@ -64,7 +64,7 @@
                 :name "coll1"
                 :data #{1}}
           coll (images/create-collection conn data)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/library/image-collections/" (:id coll))
               [status data] (th/http-delete user uri)]
           (t/is (= 204 status))
@@ -75,7 +75,7 @@
 (t/deftest test-http-create-image
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/library/images")
               parts [{:name "sample.jpg"
                       :part-name "upload"
@@ -102,7 +102,7 @@
                 :mimetype "image/png"
                 :collection nil}
           img (images/create-image conn data)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/library/images/" (:id img))
               params {:body (assoc img :name "my stuff")}
               [status data] (th/http-put user uri params)]
@@ -126,7 +126,7 @@
                 :mimetype "image/jpg"
                 :collection nil}
           img (images/create-image conn data)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/library/images/" (:id img) "/copy")
               body {:id (:id img)
                     :collection nil}
@@ -149,7 +149,7 @@
                 :mimetype "image/png"
                 :collection nil}
           img (images/create-image conn data)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/library/images/" (:id img))
               [status data] (th/http-delete user uri)]
           (t/is (= 204 status))
@@ -168,7 +168,7 @@
                 :mimetype "image/png"
                 :collection nil}
           img (images/create-image conn data)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/library/images")
               [status data] (th/http-get user uri)]
           ;; (println "RESPONSE:" status data)

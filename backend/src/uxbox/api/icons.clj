@@ -8,7 +8,7 @@
   (:require [struct.core :as st]
             [promesa.core :as p]
             [uxbox.services :as sv]
-            [uxbox.util.http :as http]
+            [uxbox.http.response :as rsp]
             [uxbox.util.spec :as us]
             [uxbox.util.uuid :as uuid]))
 
@@ -23,7 +23,7 @@
     (->> (sv/novelty message)
          (p/map (fn [result]
                   (let [loc (str "/api/library/icons/" (:id result))]
-                    (http/created loc result)))))))
+                    (rsp/created loc result)))))))
 
 (defn update-collection
   {:parameters {:path {:id [st/required st/uuid-str]}
@@ -37,7 +37,7 @@
                        :type :update-icon-collection
                        :user user)]
     (-> (sv/novelty message)
-        (p/then #(http/ok %)))))
+        (p/then #(rsp/ok %)))))
 
 
 (defn delete-collection
@@ -47,13 +47,13 @@
                  :type :delete-icon-collection
                  :user user}]
     (-> (sv/novelty message)
-        (p/then (fn [v] (http/no-content))))))
+        (p/then (fn [v] (rsp/no-content))))))
 
 (defn list-collections
   [{:keys [user]}]
   (let [params {:user user :type :list-icon-collections}]
     (-> (sv/query params)
-        (p/then #(http/ok %)))))
+        (p/then #(rsp/ok %)))))
 
 ;; (def metadata-spec
 ;;   {:width [st/number st/positive]
@@ -82,7 +82,7 @@
     (->> (sv/novelty message)
          (p/map (fn [entry]
                   (let [loc (str "/api/library/icons/" (:id entry))]
-                    (http/created loc entry)))))))
+                    (rsp/created loc entry)))))))
 
 (defn update-icon
   {:parameters {:path {:id [st/required st/uuid-str]}
@@ -96,7 +96,7 @@
                        :type :update-icon
                        :user user)]
     (->> (sv/novelty message)
-         (p/map #(http/ok %)))))
+         (p/map rsp/ok))))
 
 (defn copy-icon
   {:parameters {:path {:id [st/required st/uuid-str]}
@@ -108,7 +108,7 @@
                  :user user
                  :type :copy-icon}]
     (->> (sv/novelty message)
-         (p/map #(http/ok %)))))
+         (p/map rsp/ok))))
 
 (defn delete-icon
   {:parameters {:path {:id [st/required st/uuid-str]}}}
@@ -117,7 +117,7 @@
                  :type :delete-icon
                  :user user}]
     (->> (sv/novelty message)
-         (p/map (fn [v] (http/no-content))))))
+         (p/map (fn [v] (rsp/no-content))))))
 
 (defn list-icons
   {:parameters {:query {:collection [st/uuid-str]}}}
@@ -127,5 +127,5 @@
                  :type :list-icons
                  :user user}]
     (->> (sv/query message)
-         (p/map http/ok))))
+         (p/map rsp/ok))))
 

@@ -9,7 +9,7 @@
             [promesa.core :as p]
             [struct.core :as st]
             [uxbox.services :as sv]
-            [uxbox.util.http :as http]
+            [uxbox.http.response :as rsp]
             [uxbox.util.spec :as us]
             [uxbox.util.uuid :as uuid]))
 
@@ -22,7 +22,7 @@
   (let [data (get-in ctx [:parameters :body])]
     (->> (sv/novelty (assoc data :type :login))
          (p/map (fn [{:keys [id] :as user}]
-                  (-> (http/no-content)
+                  (-> (rsp/no-content)
                       (assoc :session {:user-id id})))))))
 
 (defn register
@@ -34,7 +34,7 @@
   (let [data (get parameters :body)
         message (assoc data :type :register-profile)]
     (->> (sv/novelty message)
-         (p/map http/ok))))
+         (p/map rsp/ok))))
 
 (defn request-recovery
   {:parameters {:body {:username [st/required st/string]}}}
@@ -42,7 +42,7 @@
   (let [data (get parameters :body)
         message (assoc data :type :request-profile-password-recovery)]
     (->> (sv/novelty message)
-         (p/map (constantly (http/no-content))))))
+         (p/map (constantly (rsp/no-content))))))
 
 (defn recover-password
   {:parameters {:body {:token [st/required st/string]
@@ -51,7 +51,7 @@
   (let [data (get parameters :body)
         message (assoc data :type :recover-profile-password)]
     (->> (sv/novelty message)
-         (p/map (constantly (http/no-content))))))
+         (p/map (constantly (rsp/no-content))))))
 
 (defn validate-recovery-token
   {:parameters {:path {:token [st/required st/string]}}}
@@ -61,5 +61,5 @@
     (->> (sv/query message)
          (p/map (fn [v]
                   (if v
-                    (http/no-content)
-                    (http/not-found "")))))))
+                    (rsp/no-content)
+                    (rsp/not-found "")))))))

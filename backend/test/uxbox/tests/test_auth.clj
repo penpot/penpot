@@ -1,10 +1,9 @@
 (ns uxbox.tests.test-auth
   (:require [clojure.test :as t]
             [promesa.core :as p]
-            [clj-http.client :as http]
             [buddy.hashers :as hashers]
             [uxbox.db :as db]
-            [uxbox.api :as uapi]
+            [uxbox.http :as http]
             [uxbox.services.users :as usu]
             [uxbox.services :as usv]
             [uxbox.tests.helpers :as th]))
@@ -20,7 +19,7 @@
               :email "user1@uxbox.io"}
         user (with-open [conn (db/connection)]
                (usu/create-user conn data))]
-    (th/with-server {:handler uapi/app}
+    (th/with-server {:handler http/app}
       (let [data {:username "user1"
                   :password "user1"
                   :metadata "1"
@@ -38,7 +37,7 @@
               :email "user1@uxbox.io"}
         user (with-open [conn (db/connection)]
                (usu/create-user conn data))]
-    (th/with-server {:handler uapi/app}
+    (th/with-server {:handler http/app}
       (let [data {:username "user1"
                   :password "user2"
                   :metadata "2"

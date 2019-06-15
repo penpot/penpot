@@ -9,7 +9,7 @@
             [uxbox.config :as cfg]
             [uxbox.migrations]
             [uxbox.db]
-            [uxbox.api]
+            [uxbox.http]
             [uxbox.scheduled-jobs])
   (:gen-class))
 

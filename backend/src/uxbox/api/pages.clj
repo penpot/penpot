@@ -9,21 +9,19 @@
             [struct.core :as st]
             [promesa.core :as p]
             [uxbox.services :as sv]
-            [uxbox.util.http :as http]
+            [uxbox.http.response :as rsp]
             [uxbox.util.spec :as us]
             [uxbox.util.uuid :as uuid]))
 
-(defn list
-  "List pages in a project"
+(defn list-pages
   {:parameters {:query {:project [st/required st/uuid-str]}}}
   [{:keys [user parameters]}]
   (let [project (get-in parameters [:query :project])
         message {:user user :project project :type :list-pages-by-project}]
     (-> (sv/query message)
-        (p/then #(http/ok %)))))
+        (p/then rsp/ok))))
 
-(defn create
-  "Create page for a project"
+(defn create-page
   {:parameters {:body {:data [st/required]
                        :metadata [st/required]
                        :project [st/required st/uuid]
@@ -35,10 +33,9 @@
     (->> (sv/novelty message)
          (p/map (fn [result]
                   (let [loc (str "/api/pages/" (:id result))]
-                    (http/created loc result)))))))
+                    (rsp/created loc result)))))))
 
-(defn update
-  "Update page"
+(defn update-page
   {:parameters {:path {:id [st/required st/uuid-str]}
                 :body {:data [st/required]
                        :metadata [st/required]
@@ -51,10 +48,9 @@
         data (get parameters :body)
         message (assoc data :id id :type :update-page :user user)]
     (->> (sv/novelty message)
-         (p/map #(http/ok %)))))
+         (p/map #(rsp/ok %)))))
 
-(defn update-metadata
-  "Update page metadata"
+(defn update-page-metadata
   {:parameters {:path {:id [st/required st/uuid-str]}
                 :body {:id [st/required st/uuid]
                        :metadata [st/required]
@@ -65,17 +61,17 @@
         data (get parameters :body)
         message (assoc data :id id :type :update-page-metadata :user user)]
     (->> (sv/novelty message)
-         (p/map #(http/ok %)))))
+         (p/map rsp/ok))))
 
-(defn delete
+(defn delete-page
   {:parameters {:path {:id [st/required st/uuid-str]}}}
   [{:keys [user parameters]}]
   (let [id (get-in parameters [:path :id])
         message {:id id :type :delete-page :user user}]
     (-> (sv/novelty message)
-        (p/then (fn [v] (http/no-content))))))
+        (p/then (constantly (rsp/no-content))))))
 
-(defn retrieve-history
+(defn retrieve-page-history
   "Retrieve the page history"
   {:parameters {:path {:id [st/required st/uuid-str]}
                 :query {:max [st/integer-str]
@@ -86,9 +82,9 @@
         data (get parameters :query)
         message (assoc data :id id :type :list-page-history :user user)]
     (->> (sv/query message)
-         (p/map #(http/ok %)))))
+         (p/map rsp/ok))))
 
-(defn update-history
+(defn update-page-history
   {:parameters {:path {:id [st/required st/uuid-str]
                        :hid [st/required st/uuid-str]}
                 :body {:label [st/required st/string]
@@ -100,4 +96,4 @@
                        :id hid
                        :user user)]
     (->> (sv/novelty message)
-         (p/map #(http/ok %)))))
+         (p/map rsp/ok))))

@@ -4,8 +4,8 @@
 ;;
 ;; Copyright (c) 20162019 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.api.errors
-  "A errors handling for api.")
+(ns uxbox.http.errors
+  "A errors handling for the http server.")
 
 (defmulti handle-exception #(:type (ex-data %)))
 

@@ -4,7 +4,7 @@
             [suricatta.core :as sc]
             [clj-uuid :as uuid]
             [uxbox.db :as db]
-            [uxbox.api :as uapi]
+            [uxbox.http :as http]
             [uxbox.services.projects :as uspr]
             [uxbox.services.pages :as uspg]
             [uxbox.services :as usv]
@@ -17,7 +17,7 @@
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)
           proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/projects")
               [status data] (th/http-get user uri)]
           (t/is (= 200 status))
@@ -26,7 +26,7 @@
 (t/deftest test-http-project-create
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/projects")
               params {:body {:name "proj1"}}
               [status data] (th/http-post user uri params)]
@@ -39,7 +39,7 @@
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)
           proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/projects/" (:id proj))
               params {:body (assoc proj :name "proj2")}
               [status data] (th/http-put user uri params)]
@@ -52,7 +52,7 @@
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)
           proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [uri (str th/+base-url+ "/api/projects/" (:id proj))
               [status data] (th/http-delete user uri)]
           (t/is (= 204 status))
@@ -76,7 +76,7 @@
                                        :height 200
                                        :layout "mobil"})
           shares (uspr/get-share-tokens-for-project conn (:id proj))]
-      (th/with-server {:handler uapi/app}
+      (th/with-server {:handler http/app}
         (let [token (:token (first shares))
               uri (str th/+base-url+ "/api/projects/by-token/" token)
               [status data] (th/http-get user uri)]

@@ -1,7 +1,7 @@
 (ns uxbox.tests.test-svgparse
   (:require [clojure.test :as t]
             [clojure.java.io :as io]
-            [uxbox.api :as uapi]
+            [uxbox.http :as http]
             [uxbox.services :as usv]
             [uxbox.services.svgparse :as svg]
             [uxbox.tests.helpers :as th]))
@@ -59,7 +59,7 @@
   ;;     (let [image (slurp (io/resource "uxbox/tests/_files/sample2.svg"))
   ;;           path "/api/svg/parse"
   ;;           user (th/create-user conn 1)]
-  ;;       (th/with-server {:handler uapi/app}
+  ;;       (th/with-server {:handler http/app}
   ;;         (let [rsp (th/request {:method :post
   ;;                                :path path
   ;;                                :body image
