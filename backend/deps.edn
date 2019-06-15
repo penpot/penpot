@@ -1,47 +1,47 @@
-{:deps {org.clojure/clojure {:mvn/version "1.10.0"}
+{:deps {org.clojure/clojure {:mvn/version "1.10.1"}
         org.clojure/tools.logging {:mvn/version "0.3.1"}
         org.clojure/data.xml {:mvn/version "0.1.0-beta2"}
         funcool/suricatta {:mvn/version "1.3.1"}
-        funcool/promesa {:mvn/version "2.0.0"}
+        funcool/promesa {:mvn/version "2.0.1"}
         funcool/cuerdas {:mvn/version "2.2.0"}
         funcool/datoteka {:mvn/version "1.0.0"}
         funcool/struct {:mvn/version "1.4.0"}
 
         ring/ring {:mvn/version "1.7.1"}
-        metosin/reitit-core {:mvn/version "0.3.7"}
-        metosin/reitit-ring {:mvn/version "0.3.7"}
-        metosin/reitit-middleware {:mvn/version "0.3.7"}
-        metosin/reitit-spec {:mvn/version "0.3.7"}
-        metosin/reitit-dev {:mvn/version "0.3.7"}
+        metosin/reitit-core {:mvn/version "0.3.8"}
+        metosin/reitit-ring {:mvn/version "0.3.8"}
+        metosin/reitit-middleware {:mvn/version "0.3.8"}
+        metosin/reitit-spec {:mvn/version "0.3.8"}
+        metosin/reitit-dev {:mvn/version "0.3.8"}
 
         danlentz/clj-uuid {:mvn/version "0.1.9"}
-        org.jsoup/jsoup {:mvn/version "1.10.2"}
+        org.jsoup/jsoup {:mvn/version "1.12.1"}
         hiccup/hiccup {:mvn/version "1.0.5"}
         org.im4java/im4java {:mvn/version "1.4.0"}
         org.slf4j/slf4j-simple {:mvn/version "1.7.24"}
-        com.layerware/hugsql-core {:mvn/version "0.4.7"
+        com.layerware/hugsql-core {:mvn/version "0.4.9"
                                    :exclusions [org.clojure/tools.reader]}
         niwinz/migrante {:mvn/version "0.1.0"}
-        buddy/buddy-sign {:mvn/version "2.2.0"}
+        buddy/buddy-sign {:mvn/version "3.0.0"}
         buddy/buddy-hashers {:mvn/version "1.3.0"}
 
         org.xerial.snappy/snappy-java {:mvn/version "1.1.2.6"}
-        com.github.spullara.mustache.java/compiler {:mvn/version "0.9.4"}
-        org.postgresql/postgresql {:mvn/version "42.0.0"}
-        org.quartz-scheduler/quartz {:mvn/version "2.2.3"}
-        org.quartz-scheduler/quartz-jobs {:mvn/version "2.2.3"}
-        commons-io/commons-io {:mvn/version "2.5"}
-        com.draines/postal {:mvn/version "2.0.2"
+        com.github.spullara.mustache.java/compiler {:mvn/version "0.9.6"}
+        org.postgresql/postgresql {:mvn/version "42.2.5"}
+        org.quartz-scheduler/quartz {:mvn/version "2.3.1"}
+        org.quartz-scheduler/quartz-jobs {:mvn/version "2.3.1"}
+        commons-io/commons-io {:mvn/version "2.6"}
+        com.draines/postal {:mvn/version "2.0.3"
                             :exclusions [commons-codec/commons-codec]}
         hikari-cp/hikari-cp {:mvn/version "1.7.5"}
-        mount/mount {:mvn/version "0.1.11"}
+        mount/mount {:mvn/version "0.1.16"}
         environ/environ {:mvn/version "1.1.0"}
     }
  :paths ["src" "vendor" "resources"]
  :aliases
  {:dev
   {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-                org.clojure/tools.namespace {:mvn/version "0.2.11"}
+                org.clojure/tools.namespace {:mvn/version "0.3.0"}
                 clj-http/clj-http {:mvn/version "2.1.0"}
                 ring/ring-mock {:mvn/version "0.4.0"}
                 }
@@ -49,6 +49,8 @@
   :repl {:main-opts  ["-m" "rebel-readline.main"]}
   :nrepl {:extra-deps {nrepl/nrepl {:mvn/version "0.6.0"}}
           :main-opts ["-m" "nrepl.cmdline"]}
+  :ancient {:main-opts ["-m" "deps-ancient.deps-ancient"]
+            :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}
   }}
 
 
