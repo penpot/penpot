@@ -21,8 +21,7 @@
             [uxbox.util.transit :as t]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.data :as data])
-  (:import ratpack.form.UploadedFile
-           org.apache.commons.io.FilenameUtils))
+  (:import org.apache.commons.io.FilenameUtils))
 
 (s/def ::width integer?)
 (s/def ::height integer?)

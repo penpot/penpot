@@ -6,6 +6,9 @@
 
 (ns uxbox.api.middleware
   (:require [promesa.core :as p]
+            [buddy.core.hash :as hash]
+            [buddy.core.codecs :as codecs]
+            [buddy.core.codecs.base64 :as b64]
             [reitit.core :as rc]
             [reitit.ring.middleware.multipart :as multipart]
             [reitit.ring.middleware.muuntaja :as muuntaja]
@@ -114,6 +117,18 @@
 ;;                      :access-control-allow-headers ["x-requested-with"
 ;;                                                     "content-type"
 ;;                                                     "authorization"])})
+
+;; (defn digest
+;;   [^bytes data]
+;;   (-> (hash/blake2b-256 data)
+;;       (b64/encode true)
+;;       (codecs/bytes->str)))
+
+;; (defn- etag-match?
+;;   [^Request request ^String new-tag]
+;;   (let [^Headers headers (.getHeaders request)]
+;;     (when-let [etag (.get headers "if-none-match")]
+;;       (= etag new-tag))))
 
 (def ^:private exception-middleware
   (exception/create-exception-middleware

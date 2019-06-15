@@ -16,8 +16,6 @@
             [uxbox.util.data :refer (dissoc-in)])
   (:import java.io.InputStream
            java.io.ByteArrayInputStream
-           ratpack.form.UploadedFile
-           ratpack.http.TypedData
            org.im4java.core.IMOperation
            org.im4java.core.ConvertCmd))
 
@@ -106,28 +104,4 @@
         (-> entry
             (dissoc-in src)
             (assoc-in dst url))))))
-
-;; --- Impl
-
-(extend-type UploadedFile
-  pt/IPath
-  (-path [this]
-    (pt/-path (.getFileName ^UploadedFile this))))
-
-(extend-type TypedData
-  pt/IContent
-  (-input-stream [this]
-    (.getInputStream this))
-
-  io/IOFactory
-  (make-reader [td opts]
-    (let [^InputStream is (.getInputStream td)]
-      (io/make-reader is opts)))
-  (make-writer [path opts]
-    (throw (UnsupportedOperationException. "read only object")))
-  (make-input-stream [td opts]
-    (let [^InputStream is (.getInputStream td)]
-      (io/make-input-stream is opts)))
-  (make-output-stream [path opts]
-    (throw (UnsupportedOperationException. "read only object"))))
 

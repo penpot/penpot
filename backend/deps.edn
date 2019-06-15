@@ -5,7 +5,6 @@
         funcool/promesa {:mvn/version "2.0.0"}
         funcool/cuerdas {:mvn/version "2.2.0"}
         funcool/datoteka {:mvn/version "1.0.0"}
-        funcool/catacumba {:mvn/version "2.1.0"}
         funcool/struct {:mvn/version "1.4.0"}
 
         ring/ring {:mvn/version "1.7.1"}
@@ -15,6 +14,7 @@
         metosin/reitit-spec {:mvn/version "0.3.7"}
         metosin/reitit-dev {:mvn/version "0.3.7"}
 
+        danlentz/clj-uuid {:mvn/version "0.1.9"}
         org.jsoup/jsoup {:mvn/version "1.10.2"}
         hiccup/hiccup {:mvn/version "1.0.5"}
         org.im4java/im4java {:mvn/version "1.4.0"}

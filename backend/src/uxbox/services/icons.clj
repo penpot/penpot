@@ -17,8 +17,7 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.util.blob :as blob]
             [uxbox.util.data :as data])
-  (:import ratpack.form.UploadedFile
-           org.apache.commons.io.FilenameUtils))
+  (:import org.apache.commons.io.FilenameUtils))
 
 ;; --- Helpers & Specs
 

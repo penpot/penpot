@@ -104,7 +104,7 @@
 (s/def ::uuid-string (s/conformer uuid-conformer str))
 (s/def ::boolean-string (s/conformer boolean-conformer boolean-unformer))
 (s/def ::positive-integer #(< 0 % Long/MAX_VALUE))
-(s/def ::uploaded-file #(instance? ratpack.form.UploadedFile %))
+(s/def ::uploaded-file any?)
 (s/def ::uuid uuid?)
 (s/def ::bytes bytes?)
 (s/def ::path path?)

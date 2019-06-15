@@ -4,7 +4,6 @@
             [buddy.hashers :as hashers]
             [buddy.core.codecs :as codecs]
             [cuerdas.core :as str]
-            [catacumba.serializers :as sz]
             [ring.adapter.jetty :as jetty]
             [mount.core :as mount]
             [datoteka.storages :as st]
