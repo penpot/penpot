@@ -148,7 +148,6 @@
         [:put "profile/me" #'users/update-profile]
         [:put "profile/me/password" #'users/update-password]
         [:post "profile/me/photo" #'users/update-photo]]]))))
-
 ;; --- State Initialization
 
 (defn- start-server

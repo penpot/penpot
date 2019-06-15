@@ -92,7 +92,7 @@
   {:parameters {:path {:id [st/required st/uuid-str]
                        :hid [st/required st/uuid-str]}
                 :body {:label [st/required st/string]
-                       ::pinned [st/required st/boolean]}}}
+                       :pinned [st/required st/boolean]}}}
   [{:keys [user parameters]}]
   (let [{:keys [id hid]} (get parameters :path)
         message (assoc (get parameters :body)
