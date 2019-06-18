@@ -19,6 +19,7 @@
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :refer [cookie-store]]
             [ring.middleware.multipart-params :refer [wrap-multipart-params]]
+            [uxbox.http.cors :refer [wrap-cors]]
             [uxbox.http.errors :as errors]
             [uxbox.http.response :as rsp]
             [uxbox.util.data :refer [normalize-attrs]]
@@ -107,9 +108,21 @@
 (def ^:private session-middleware
   (let [options {:store (cookie-store {:key "a 16-byte secret"})
                  :cookie-name "session"
-                 :cookie-attrs {:same-site :lax :http-only true}}]
+                 :cookie-attrs {:same-site :lax
+                                :http-only false}}]
     {:name ::session-middleware
      :wrap #(wrap-session % options)}))
+
+(def cors-conf
+  {:origin #{"http://127.0.0.1:3449"}
+   :max-age 3600
+   :allow-credentials true
+   :allow-methods #{:post :put :get :delete}
+   :allow-headers #{:x-requested-with :content-type :cookie}})
+
+(def ^:private cors-middleware
+  {:name ::cors-middleware
+   :wrap #(wrap-cors % cors-conf)})
 
 ;; (def ^:private cors-middleware
 ;;   {:name ::cors-middleware
@@ -152,7 +165,8 @@
                 (respond (rsp/forbidden nil))))))})
 
 (def middleware
-  [session-middleware
+  [cors-middleware
+   session-middleware
    parameters/parameters-middleware
    muuntaja/format-negotiate-middleware
    ;; encoding response body

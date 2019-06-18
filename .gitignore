@@ -15,6 +15,7 @@ node_modules
 /backend/dist/
 /backend/-
 /backend/.rebel_readline_history
+/frontend/.rebel_readline_history
 /frontend/.cpcache
 /frontend/npm-debug.log
 /frontend/target/
