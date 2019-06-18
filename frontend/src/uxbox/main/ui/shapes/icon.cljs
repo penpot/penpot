@@ -9,7 +9,7 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.data :refer [classnames]]
+            [uxbox.util.data :refer [classnames normalize-props]]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [rumext.core :as mx :include-macros true]))
@@ -81,4 +81,4 @@
         props {:view-box view-box
                :id (str "shape-" id)
                :dangerouslySetInnerHTML {:__html content}}]
-    [:svg props]))
+    [:> :svg (normalize-props props)]))

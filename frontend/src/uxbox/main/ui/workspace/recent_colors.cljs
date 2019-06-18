@@ -50,7 +50,7 @@
         [:span.color-th {:style {:background-color color}
                          :key color
                          :on-click (partial callback color)}])
-      (mx/doseq [i (range (- 5 (count colors)))]
+      (for [i (range (- 5 (count colors)))]
         [:span.color-th {:key (str "empty" i)}])
       [:span.color-th.palette-th {} i/picker]]]))
 

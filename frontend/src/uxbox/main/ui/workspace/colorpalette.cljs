@@ -79,7 +79,7 @@
        [:div.color-palette-actions
         [:select.input-select {:on-change select-collection
                                :value (pr-str (:id selected-coll))}
-         (mx/doseq [collection collections]
+         (for [collection collections]
            [:option {:key (str (:id collection))
                      :value (pr-str (:id collection))}
             (:name collection)])]
@@ -98,7 +98,7 @@
                                     :ref "color-palette-inside"
                                     :style {:position "relative"
                                             :right (str (* 86 offset) "px")}}
-         (mx/doseq [color colors]
+         (for [color colors]
            (-> (palette-item color)
                (mx/with-key color)))]]
 

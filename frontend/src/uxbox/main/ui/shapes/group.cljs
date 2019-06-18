@@ -76,13 +76,11 @@
                resize (gmt/multiply resize)
                displacement (gmt/multiply displacement))
 
-        moving? (boolean displacement)
-        attrs {:id (str "shape-" id)
-               :class (classnames :move-cursor moving?)
-               :transform (str xfmt)}]
-    [:g attrs
-     (for [item (reverse items)
-           :let [key (str item)]]
+        moving? (boolean displacement)]
+    [:g {:id (str "shape-" id)
+         :class (classnames :move-cursor moving?)
+         :transform (str xfmt)}
+     (for [item (reverse items)]
        (-> (factory item)
-           (mx/with-key key)))]))
+           (mx/with-key (str item))))]))
 

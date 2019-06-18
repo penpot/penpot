@@ -122,7 +122,7 @@
          [:span.title {} "Download page"]
          [:p.info {} "Download a single page of your project in SVG."]
          [:select.input-select {:ref "page" :default-value (pr-str current)}
-          (mx/doseq [{:keys [id name]} pages]
+          (for [{:keys [id name]} pages]
             [:option {:value (pr-str id)} name])]
          [:a.btn-primary {:href "#" :on-click download-page} "Download page"]]
         [:div.content-col {}

@@ -27,7 +27,7 @@
    :language-out :ecmascript5
    :closure-defines closure-defines
    :optimizations :none
-   :verbose true
+   :verbose false
    :static-fns false
    :pretty-print true
    :elide-asserts false})

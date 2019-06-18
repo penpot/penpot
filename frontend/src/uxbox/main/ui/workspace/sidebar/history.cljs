@@ -52,7 +52,7 @@
         show-more? (pos? min-version)
         load-more #(st/emit! (udh/load-more))]
     [:ul.history-content {}
-     (mx/doseq [item items]
+     (for [item items]
        (let [current? (= (:version item) (:version page))]
          (-> (history-item item selected current?)
              (mx/with-key (str (:id item))))))
@@ -67,7 +67,7 @@
   {:mixins [mx/static]}
   [{:keys [pinned selected] :as history}]
   [:ul.history-content {}
-   (mx/doseq [item (reverse (sort-by :version pinned))]
+   (for [item (reverse (sort-by :version pinned))]
      (let [selected? (= (:version item) selected)]
        (-> (history-item item selected?)
            (mx/with-key (str (:id item))))))])

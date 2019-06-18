@@ -275,7 +275,7 @@
          i/arrow-slide]]
        (if-not collapsed?
          [:ul {}
-          (mx/doseq [{:keys [id] :as shape} (map #(get shapes-map %) (:items item))]
+          (for [{:keys [id] :as shape} (map #(get shapes-map %) (:items item))]
             (if (= (:type shape) :group)
               (-> (layer-group shape selected)
                   (mx/with-key id))
@@ -356,7 +356,7 @@
       [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content {}
       [:ul.element-list {}
-       (mx/doseq [{:keys [id] :as shape} (map #(get shapes-map %) (:shapes page))]
+       (for [{:keys [id] :as shape} (map #(get shapes-map %) (:shapes page))]
          (if (= (:type shape) :group)
            (-> (layer-group shape selected)
                (mx/with-key id))

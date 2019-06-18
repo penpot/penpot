@@ -101,7 +101,7 @@
          [:select.input-select
           {:on-change on-ordering-change
            :value (pr-str ordering)}
-          (mx/doseq [[key value] (seq +ordering-options+)]
+          (for [[key value] (seq +ordering-options+)]
             (let [key (pr-str key)]
               [:option {:key key :value key} (tr value)]))]]
         ;; Search
@@ -222,7 +222,7 @@
          [:div.grid-item.add-project
           {:on-click on-click}
           [:span {} (tr "ds.project-new")]]
-         (mx/doseq [item projects]
+         (for [item projects]
            (-> (grid-item item)
                (mx/with-key (:id item))))]]])))
 

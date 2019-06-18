@@ -123,7 +123,7 @@
               (let [content (dom/event->inner-text ev)]
                 (st/emit! (uds/update-text id content))))]
       [:foreignObject props
-       [:div {:style style
+       [:div {:style (normalize-props style)
               :ref "container"
               :on-input on-input
               :contentEditable true}]])))
@@ -167,15 +167,14 @@
 
         {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
                                                    (geom/size))
-        moving? (boolean displacement)
-        props {:x x1
-               :y y1
-               :class (classnames :move-cursor moving?)
-               :id (str id)
+        moving? (boolean displacement)]
+    [:foreignObject {:x x1
+                     :y y1
+                     :class (classnames :move-cursor moving?)
+                     :id (str id)
                :ref "fobject"
-               :width width
-               :height height}]
-    [:foreignObject props]))
+                     :width width
+                     :height height}]))
 
 ;; --- Text Shape Html
 

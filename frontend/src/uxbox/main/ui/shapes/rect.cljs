@@ -12,7 +12,7 @@
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [rumext.core :as mx :include-macros true]
-            [uxbox.util.data :refer [classnames]]
+            [uxbox.util.data :refer [classnames normalize-props]]
             [uxbox.util.dom :as dom]))
 
 ;; --- Rect Component
@@ -58,9 +58,9 @@
 
         props {:x x1 :y y1
                :id (str "shape-" id)
-               :class (classnames :move-cursor moving?)
+               :class-name (classnames :move-cursor moving?)
                :width width
                :height height
                :transform (str xfmt)}
         attrs (merge (attrs/extract-style-attrs shape) props)]
-    [:rect attrs]))
+    [:> :rect (normalize-props attrs)]))

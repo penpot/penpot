@@ -51,7 +51,7 @@
         (assoc :stroke-dasharray (stroke-type->dasharray stroke-style))
         (dissoc :stroke-style))))
 
-(defn- extract-style-attrs
+(defn extract-style-attrs
   "Extract predefinet attrs from shapes."
   [shape]
   (-> (select-keys shape shape-style-attrs)

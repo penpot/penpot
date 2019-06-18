@@ -179,7 +179,7 @@
          (tr "ds.images-collection.new")]])
      (when own?
        (nav-item nil (nil? selected)))
-     (mx/doseq [coll collections]
+     (for [coll collections]
        (let [selected? (= (:id coll) selected)
              key (str (:id coll))]
          (-> (nav-item coll selected?)
@@ -256,7 +256,7 @@
      [:li.title {} title]
      [:li {}
       [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
-     (mx/doseq [{:keys [id name] :as coll} colls]
+     (for [{:keys [id name] :as coll} colls]
        [:li {:key (str id)}
         [:a {:on-click #(on-select % id)} name]])]))
 
@@ -378,7 +378,7 @@
      [:div.dashboard-grid-row {}
       (when editable?
         (grid-form id))
-      (mx/doseq [{:keys [id] :as image} images]
+      (for [{:keys [id] :as image} images]
         (let [edition? (= edition id)
               selected? (contains? selected id)]
           (-> (grid-item image selected? edition?)
@@ -423,7 +423,7 @@
          [:span {} (tr "ds.ordering")]
          [:select.input-select {:on-change on-ordering-change
                                 :value (pr-str ordering)}
-          (mx/doseq [[key value] (seq +ordering-options+)]
+          (for [[key value] (seq +ordering-options+)]
             (let [key (pr-str key)
                   label (tr value)]
               [:option {:key key :value key} label]))]]

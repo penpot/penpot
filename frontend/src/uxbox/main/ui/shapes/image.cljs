@@ -14,7 +14,7 @@
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.main.data.images :as udi]
-            [uxbox.util.data :refer [classnames]]
+            [uxbox.util.data :refer [classnames normalize-props]]
             [uxbox.util.geom.matrix :as gmt]
             [rumext.core :as mx :include-macros true]))
 
@@ -73,4 +73,4 @@
                :width width
                :height height}
         attrs (merge props (attrs/extract-style-attrs shape))]
-    [:image attrs]))
+    [:> :image (normalize-props attrs)]))

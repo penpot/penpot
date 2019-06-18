@@ -19,8 +19,9 @@
 
 (defmethod request :fetch/pages-by-project
   [type {:keys [project] :as params}]
-  (let [url (str url "/projects/" project "/pages")]
-    (send! {:method :get :url url})))
+  (let [url (str url "/pages")
+        params {:project project}]
+    (send! {:method :get :url url :query params})))
 
 (defmethod request :fetch/page-history
   [type {:keys [page] :as params}]

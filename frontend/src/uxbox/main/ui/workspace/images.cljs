@@ -109,7 +109,7 @@
   {:mixins [mx/static]}
   [images]
   [:div.library-content {}
-   (mx/doseq [image images]
+   (for [image images]
      (-> (image-item image)
          (mx/with-key (str (:id image)))))])
 
@@ -171,7 +171,7 @@
          [:select.input-select {:on-change on-coll-change}
           (when own?
             [:option {:value (pr-str nil)} "Storage"])
-          (doseq [coll colls]
+          (for [coll colls]
             (let [id (:id coll)
                   name (:name coll)]
               [:option {:key (str id) :value (pr-str id)} name]))]]

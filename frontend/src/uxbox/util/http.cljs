@@ -59,10 +59,10 @@
     (.toString uri)))
 
 (defn- fetch
-  [{:keys [method url query-string query-params headers body] :as request}
+  [{:keys [method url query-string query headers body] :as request}
    {:keys [timeout credentials? response-type]
     :or {timeout 0 credentials? false response-type :text}}]
-  (let [uri (create-url url query-string query-params)
+  (let [uri (create-url url query-string query)
         headers (if headers (clj->js headers) #js {})
         method (translate-method method)
         xhr (doto (XhrIo.)

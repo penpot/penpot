@@ -118,7 +118,7 @@
        [:span {} (:name project)]
        [:div.add-page {:on-click create} i/close]]
       [:ul.element-list {}
-       (mx/doseq [page pages]
+       (for [page pages]
          (let [active? (= (:id page) current)]
            (-> (page-item page (count pages) active?)
                (mx/with-key (:id page)))))]]]))

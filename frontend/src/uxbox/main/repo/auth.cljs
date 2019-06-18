@@ -17,7 +17,7 @@
 
 (defmethod request :fetch/token
   [type data]
-  (let [url (str url "/auth/token")]
+  (let [url (str url "/auth/login")]
     (send! {:url url
                 :method :post
                 :auth false

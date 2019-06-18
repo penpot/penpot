@@ -13,7 +13,7 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.data :refer [classnames]]
+            [uxbox.util.data :refer [classnames normalize-props]]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [rumext.core :as mx :include-macros true]))
@@ -84,5 +84,5 @@
                :fill "transparent"
                :stroke-width "20px"
                :d pdata}]
-       [:path attrs]]
-      [:path attrs])))
+       [:> :path (normalize-props attrs)]]
+      [:> :path (normalize-props attrs)])))

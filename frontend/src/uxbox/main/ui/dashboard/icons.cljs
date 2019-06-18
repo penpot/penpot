@@ -58,11 +58,11 @@
   (-> (l/in [:dashboard :icons])
       (l/derive st/state)))
 
-(def ^:private collections-ref
+(def collections-ref
   (-> (l/key :icons-collections)
       (l/derive st/state)))
 
-(def ^:private icons-ref
+(def icons-ref
   (-> (l/key :icons)
       (l/derive st/state)))
 
@@ -184,7 +184,7 @@
          (tr "ds.icons-collection.new")]])
      (when own?
        (nav-item nil (nil? selected)))
-     (mx/doseq [coll colls]
+     (for [coll colls]
        (let [selected? (= (:id coll) selected)]
          (-> (nav-item coll selected?)
              (mx/with-key (:id coll)))))]))
@@ -253,7 +253,7 @@
      [:li.title {} title]
      [:li {}
       [:a {:href "#" :on-click #(on-select % nil)} "Storage"]]
-     (mx/doseq [{:keys [id name] :as coll} colls]
+     (for [{:keys [id name] :as coll} colls]
        [:li {:key (str id)}
         [:a {:on-click #(on-select % id)} name]])]))
 
@@ -333,14 +333,14 @@
           (toggle-selection-shifted [event]
             (when (kbd/shift? event)
               (toggle-selection event)))
-          (on-key-down [event]
-            (when (kbd/enter? event)
-              (on-blur event)))
           (on-blur [event]
             (let [target (dom/event->target event)
                   name (dom/get-value target)]
               (st/emit! (di/update-opts :edition false)
                         (di/rename-icon id name))))
+          (on-key-down [event]
+            (when (kbd/enter? event)
+              (on-blur event)))
           (ignore-click [event]
             (dom/stop-propagation event)
             (dom/prevent-default event))
@@ -386,7 +386,7 @@
     [:div.dashboard-grid-content {}
      [:div.dashboard-grid-row {}
       (when editable? (grid-form id))
-      (mx/doseq [{:keys [id] :as icon} icons]
+      (for [{:keys [id] :as icon} icons]
         (let [edition? (= edition id)
               selected? (contains? selected id)]
           (-> (grid-item icon selected? edition?)
@@ -431,7 +431,7 @@
          [:select.input-select
           {:on-change on-ordering-change
            :value (pr-str ordering)}
-          (mx/doseq [[key value] (seq +ordering-options+)]
+          (for [[key value] (seq +ordering-options+)]
             (let [key (pr-str key)]
               [:option {:key key :value key} (tr value)]))]]
         ;; Search

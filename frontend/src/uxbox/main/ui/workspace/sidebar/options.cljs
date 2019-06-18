@@ -107,7 +107,7 @@
     [:div {}
      (when (> (count menus) 1)
        [:ul.element-icons {}
-        (mx/doseq [menu-id (get +menus-map+ (:type shape ::page))]
+        (for [menu-id (get +menus-map+ (:type shape ::page))]
           (let [menu (get +menus-by-id+ menu-id)
                 selected? (= active menu-id)]
             [:li#e-info {:on-click #(swap! local assoc :menu menu-id)

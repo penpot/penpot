@@ -10,7 +10,7 @@
             [uxbox.main.geom :as geom]
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.data :refer [classnames]]
+            [uxbox.util.data :refer [classnames normalize-props]]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [rumext.core :as mx :include-macros true]))
@@ -58,4 +58,4 @@
         attrs (merge props
                      (attrs/extract-style-attrs shape)
                      (select-keys shape [:cx :cy :rx :ry]))]
-    [:ellipse attrs]))
+    [:> :ellipse (normalize-props attrs)]))

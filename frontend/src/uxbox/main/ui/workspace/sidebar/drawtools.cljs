@@ -113,7 +113,7 @@
       [:span {} (tr "ds.draw-tools")]
       [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content {}
-      (mx/doseq [[i props] (map-indexed vector tools)]
+      (for [[i props] (map-indexed vector tools)]
         (let [selected? (= drawing-tool (:shape props))]
           [:div.tool-btn.tooltip.tooltip-hover
            {:alt (tr (:help props))

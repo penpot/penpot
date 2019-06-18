@@ -138,8 +138,9 @@
      (when own?
        [:li {}
         [:a.btn-primary {:on-click #(st/emit! (dc/create-collection))} (tr "ds.colors-collection.new")]])
-     (mx/doseq [{:keys [id] :as coll} colls]
-       (let [selected? (= (:id coll) selected)]
+     (for [coll colls]
+       (let [id (:id coll)
+             selected? (= id selected)]
          (-> (nav-item coll selected?)
              (mx/with-key id))))]))
 
@@ -191,7 +192,7 @@
                     (on-select id))]
     [:ul.move-list {}
      [:li.title {} title]
-     (mx/doseq [{:keys [id name] :as coll} colls]
+     (for [{:keys [id name] :as coll} colls]
        [:li {:key (str id)}
         [:a {:on-click #(on-select % id)} name]])]))
 
@@ -281,7 +282,7 @@
     [:div.dashboard-grid-content {}
      [:div.dashboard-grid-row {}
       (when editable? (grid-form id))
-      (mx/doseq [color colors]
+      (for [color colors]
         (let [selected? (contains? selected color)]
           (-> (grid-item color selected?)
               (mx/with-key (str color)))))]]))

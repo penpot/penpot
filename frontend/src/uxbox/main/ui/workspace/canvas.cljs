@@ -115,7 +115,7 @@
      (background metadata)
      [:svg.page-layout {}
       [:g.main {}
-       (mx/doseq [item (reverse (:shapes page))]
+       (for [item (reverse (:shapes page))]
          (-> (uus/shape item)
              (mx/with-key (str item))))
        (selection-handlers)

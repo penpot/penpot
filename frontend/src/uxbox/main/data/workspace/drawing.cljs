@@ -376,11 +376,6 @@
               (vreset! last-point point)
               (st/emit! (insert-drawing-path-point point)))
 
-            (on-draw [[point ctrl? counter]]
-              (if ctrl?
-                (on-assisted-draw point counter)
-                (on-generic-draw point counter)))
-
             (on-generic-draw [point counter]
               (st/emit! (update-drawing-path-point counter point)))
 
@@ -390,6 +385,11 @@
                             (align-position (gpt/angle $) $)
                             (gpt/add $ @last-point))]
                 (st/emit! (update-drawing-path-point counter point))))
+
+            (on-draw [[point ctrl? counter]]
+              (if ctrl?
+                (on-assisted-draw point counter)
+                (on-generic-draw point counter)))
 
               (on-finish []
                 (st/emit! (finish-path-drawing)

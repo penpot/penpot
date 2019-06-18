@@ -7,6 +7,7 @@
 (ns uxbox.main.repo.impl
   (:require [clojure.walk :as walk]
             [beicon.core :as rx]
+            [cuerdas.core :as str]
             [uxbox.config :refer (url)]
             [uxbox.util.http :as http]
             [uxbox.util.storage :refer (storage)]
@@ -15,9 +16,10 @@
 
 (defn- conditional-decode
   [{:keys [body headers] :as response}]
-  (if (= (get headers "content-type") "application/transit+json")
-    (assoc response :body (t/decode body))
-    response))
+  (let [contentype (get headers "content-type")]
+    (if (str/starts-with? contentype "application/transit+json")
+      (assoc response :body (t/decode body))
+      response)))
 
 (defn- handle-http-status
   [{:keys [body status] :as response}]
@@ -28,11 +30,6 @@
 (def ^:private +headers+
   {"content-type" "application/transit+json"})
 
-(defn- auth-headers
-  []
-  (when-let [auth (:auth storage)]
-    {"authorization" (str "Token " (:token auth "no-token"))}))
-
 (defn- encode-query
   [params]
   (let [data (QueryData.)]
@@ -42,16 +39,16 @@
 (defn send!
   [{:keys [body headers auth method query url response-type]
     :or {auth true response-type :text}}]
-  (let [headers (merge {}
+  (let [headers (merge {"accept" "application/transit+json,*/*"}
                        (when (map? body) +headers+)
-                       headers
-                       (when auth (auth-headers)))
+                       headers)
         request {:method method
                  :url url
                  :headers headers
                  :query-string (when query (encode-query query))
                  :body (if (map? body) (t/encode body) body)}
-        options {:response-type response-type}]
+        options {:response-type response-type
+                 :credentials? true}]
     (->> (http/send! request options)
          (rx/map conditional-decode)
          (rx/mapcat handle-http-status))))

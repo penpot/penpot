@@ -154,6 +154,31 @@
                         []
                         (partition 2 params))))
 
+;; (defn normalize-attrs
+;;   [m]
+;;   (letfn [(transform [[k v]]
+;;             (cond
+;;               (or (= k :class) (= k :class-name))
+;;               ["className" v]
+
+;;               (or (keyword? k) (string? k))
+;;               [(str/camel (name k)) v]
+
+;;               :else
+;;               [k v]))
+;;           (walker [x]
+;;             (if (map? x)
+;;               (into {} (map tf) x)
+;;               x))]
+;;     (walk/postwalk walker m)))
+
+(defn normalize-props
+  [props]
+  (clj->js props :keyword-fn (fn [key]
+                               (if (or (= key :class) (= key :class-name))
+                                 "className"
+                                 (str/camel (name key))))))
+
 
 ;; (defmacro mirror-map [& fields]
 ;;   (let [keys# (map #(keyword (name %)) fields)

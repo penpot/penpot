@@ -5,8 +5,7 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.undo
-  (:require #_[cljs.pprint :as pp]
-            [beicon.core :as rx]
+  (:require [beicon.core :as rx]
             [potok.core :as ptk]
             [uxbox.main.data.pages :as udp]
             [uxbox.main.store :as st]))

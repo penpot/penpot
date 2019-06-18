@@ -32,7 +32,7 @@
             (udl/close!))]
     [:div.lightbox-body.clipboard {}
      [:div.clipboard-list {}
-      (mx/doseq [item (mx/react clipboard-ref)]
+      (for [item (mx/react clipboard-ref)]
         [:div.clipboard-item
          {:key (str (:id item))
           :on-click (partial on-paste item)}
