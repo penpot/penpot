@@ -1,16 +1,11 @@
 {:deps {org.clojure/clojurescript {:mvn/version "1.10.516"}
         org.clojure/clojure {:mvn/version "1.10.1"}
-        ;; funcool/rumext {:mvn/version  "1.0.0"}
         funcool/promesa {:mvn/version "2.0.0"}
         com.cognitect/transit-cljs {:mvn/version "0.8.239"}
-        ;; rum/rum {:mvn/version "0.11.3" :exclusions [cljsjs/react cljsjs/react-dom]}
 
         funcool/rumext {:git/url "https://github.com/funcool/rumext.git",
                         :sha "3d598e749ba429eae6544e532fc9f81369b307f5"}
 
-        ;; cljsjs/react {:mvn/version "15.5.0-0"}
-        ;; cljsjs/react-dom {:mvn/version "15.5.0-0"}
-        ;; cljsjs/react-dom-server {:mvn/version "15.5.0-0"}
         cljsjs/react {:mvn/version "16.8.6-0"}
         cljsjs/react-dom {:mvn/version "16.8.6-0"}
         cljsjs/react-dom-server {:mvn/version "16.8.6-0"}
