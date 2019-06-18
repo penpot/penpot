@@ -16,7 +16,7 @@
             [uxbox.main.ui.shapes.common :as common]
             [uxbox.main.ui.shapes.attrs :as attrs]
             [uxbox.util.color :as color]
-            [uxbox.util.data :refer [classnames]]
+            [uxbox.util.data :refer [classnames normalize-props]]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.matrix :as gmt]
             [rumext.core :as mx :include-macros true])
