@@ -40,10 +40,9 @@
 
 (defmethod request :fetch/icons
   [_ {:keys [coll]}]
-  (let [url (if coll
-              (str url "/library/icon-collections/" coll "/icons")
-              (str url "/library/icon-collections/icons"))
-        params {:url url :method :get}]
+  (let [url (str url "/library/icons")
+        qp (if coll {:collection coll} nil)
+        params {:url url :method :get :query qp}]
     (send! params)))
 
 (defmethod request :fetch/icon

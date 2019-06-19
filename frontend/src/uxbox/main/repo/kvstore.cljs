@@ -7,6 +7,7 @@
 (ns uxbox.main.repo.kvstore
   "A main interface for access to remote resources."
   (:require [beicon.core :as rx]
+            [cuerdas.core :as str]
             [uxbox.config :refer (url)]
             [uxbox.main.repo.impl :refer (request send!)]
             [uxbox.util.transit :as t]))
@@ -17,7 +18,7 @@
         params {:url url :method :get}]
     (->> (send! params)
          (rx/map (fn [{:keys [payload] :as response}]
-                   (if (nil? payload)
+                   (if (or (nil? payload) (str/empty? payload))
                      (assoc response :payload {:key id :value nil :version nil})
                      response))))))
 

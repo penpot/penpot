@@ -40,10 +40,9 @@
 
 (defmethod request :fetch/images
   [_ {:keys [coll]}]
-  (let [url (if coll
-              (str url "/library/image-collections/" coll "/images")
-              (str url "/library/image-collections/images"))
-        params {:url url :method :get}]
+  (let [url (str url "/library/images")
+        qp  (when coll {:collection coll})
+        params {:url url :method :get :query qp}]
     (send! params)))
 
 (defmethod request :fetch/image
