@@ -357,8 +357,7 @@
                :on-click toggle-selection
                :checked selected?}]
       [:label {:for (:id icon)}]]
-     [:span.grid-item-image {}
-      (icon/icon-svg icon)]
+     [:span.grid-item-image (icon/icon-svg icon)]
      [:div.item-info
       {:on-click ignore-click}
       (if edition?
@@ -370,7 +369,7 @@
                               :default-value (:name icon)}]
         [:h3 {:on-double-click on-edit}
          (:name icon)])
-      (str (tr "ds.uploaded-at" (dt/format created-at "L")))]]))
+      (str (tr "ds.uploaded-at" (dt/format created-at "DD/MM/YYYY")))]]))
 
 (mx/defc grid
   {:mixins [mx/static mx/reactive]}

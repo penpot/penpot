@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.locales.en)
+(ns uxbox.main.locales.fr)
 
 (defonce locales
   {"ds.projects" "PROJETS"

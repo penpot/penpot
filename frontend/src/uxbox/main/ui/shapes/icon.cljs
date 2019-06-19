@@ -70,7 +70,7 @@
 
         attrs (merge props (attrs/extract-style-attrs shape))]
     [:g {:transform (str xfmt)}
-     [:svg attrs]]))
+     [:> :svg (normalize-props attrs) ]]))
 
 ;; --- Icon SVG
 
@@ -80,5 +80,5 @@
   (let [view-box (apply str (interpose " " (:view-box metadata)))
         props {:view-box view-box
                :id (str "shape-" id)
-               :dangerouslySetInnerHTML {:__html content}}]
+               :dangerouslySetInnerHTML #js {:__html content}}]
     [:> :svg (normalize-props props)]))

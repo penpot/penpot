@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.ui
+(ns ^:figwheel-hooks uxbox.main.ui
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [cuerdas.core :as str]
@@ -165,8 +165,18 @@
   []
   (rt/init st/store routes {:default :auth/login}))
 
-(defn init
+(defn ^:export init
   []
   (mx/mount (app) (dom/get-element "app"))
   (mx/mount (lightbox) (dom/get-element "lightbox"))
   (mx/mount (loader) (dom/get-element "loader")))
+
+(defn reinit
+  []
+  (.unmountComponentAtNode js/ReactDOM (dom/get-element "app"))
+  (.unmountComponentAtNode js/ReactDOM (dom/get-element "lightbox"))
+  (.unmountComponentAtNode js/ReactDOM (dom/get-element "loader"))
+  (init))
+
+(defn ^:after-load my-after-reload-callback []
+  (reinit))

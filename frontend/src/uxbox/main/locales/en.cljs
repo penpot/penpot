@@ -89,7 +89,7 @@
    "ds.user.password" "Password"
    "ds.user.notifications" "Notifications"
    "ds.user.exit" "Exit"
-   
+
    "auth.email-or-username" "Email or Username"
    "auth.password" "Password"
    "auth.signin" "Sign in"

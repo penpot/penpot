@@ -6,13 +6,24 @@
 
 (ns uxbox.view
   (:require [uxbox.config]
-            [uxbox.view.locales :as lc]
             [uxbox.view.store :as st]
-            [uxbox.view.ui :as ui]))
+            [uxbox.view.ui :as ui]
+            [uxbox.main.locales.en :as en]
+            [uxbox.main.locales.fr :as fr]
+            [uxbox.util.i18n :as i18n]))
+
+(i18n/update-locales! (fn [locales]
+                        (-> locales
+                            (assoc :en en/locales)
+                            (assoc :fr fr/locales))))
+
+(i18n/on-locale-change!
+ (fn [new old]
+   (println "Locale changed from" old " to " new)
+   (ui/init)))
 
 (defn ^:export init
   []
-  (lc/init)
   (st/init)
   (ui/init-routes)
   (ui/init))

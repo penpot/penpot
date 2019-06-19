@@ -14,8 +14,7 @@
             [uxbox.main.ui.users :as ui.u]
             [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
-            [rumext.core :as mx :include-macros true]
-            [potok.core :as ptk]))
+            [rumext.core :as mx :include-macros true]))
 
 (def header-ref
   (-> (l/key :dashboard)
