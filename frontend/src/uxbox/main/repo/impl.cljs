@@ -39,7 +39,7 @@
 (defn send!
   [{:keys [body headers auth method query url response-type]
     :or {auth true response-type :text}}]
-  (let [headers (merge {"accept" "application/transit+json,*/*"}
+  (let [headers (merge {"Accept" "application/transit+json,*/*"}
                        (when (map? body) +headers+)
                        headers)
         request {:method method
