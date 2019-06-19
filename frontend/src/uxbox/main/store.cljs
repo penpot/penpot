@@ -9,7 +9,6 @@
             [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.builtins.colors :as colors]
-            [uxbox.builtins.library.icons :as icons]
             [uxbox.util.storage :refer [storage]]))
 
 (enable-console-print!)
@@ -31,7 +30,7 @@
   ([event & events]
    (apply ptk/emit! store (cons event events))))
 
-(defn- initial-state
+(defn initial-state
   []
   {:dashboard {:project-order :name
                :project-filter ""
@@ -45,7 +44,7 @@
    :workspace nil
    :images-collections nil
    :images nil
-   :icons-collections icons/collections
+   :icons-collections nil
    :icons nil
    :colors-collections colors/collections
    :shapes nil

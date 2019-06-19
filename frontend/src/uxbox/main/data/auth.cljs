@@ -10,7 +10,7 @@
             [potok.core :as ptk]
             [uxbox.main.store :as st]
             [uxbox.main.repo :as rp]
-            [uxbox.main.state :refer [initial-state]]
+            [uxbox.main.store :refer [initial-state]]
             [uxbox.main.data.projects :as udp]
             [uxbox.main.data.users :as udu]
             [uxbox.util.messages :as uum]
