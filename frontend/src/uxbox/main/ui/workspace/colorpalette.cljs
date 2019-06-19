@@ -83,7 +83,7 @@
            [:option {:key (str (:id collection))
                      :value (pr-str (:id collection))}
             (:name collection)])]
-        #_[:div.color-palette-buttons
+        [:div.color-palette-buttons
            [:div.btn-palette.edit.current i/pencil]
            [:div.btn-palette.create i/close]]]
 
@@ -104,9 +104,9 @@
 
        ;; FIXME Scroll on click does not work
        [:span.right-arrow
-        (if (< offset invisible)
-          {:on-click #(.scrollBy (dom/get-element "color-palette-inside") offset 0)}
-          {})
+        {:on-click (fn [event]
+                     (when (< offset invisible)
+                       (.scrollBy (dom/get-element "color-palette-inside") offset 0)))}
         i/arrow-slide]
 
        [:span.close-palette {:on-click close}
