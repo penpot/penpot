@@ -142,7 +142,7 @@
   [own]
   (let [[shape] (:rum/args own)
         dom (mx/ref-node own "fobject")
-        html (mx/render-static-html (text-shape-html shape))]
+        html (dom/render-to-html (text-shape-html shape))]
     (set! (.-innerHTML dom) html))
     own)
 
@@ -152,7 +152,7 @@
         [shape] (:rum/args own)]
     (when (not= shape old-shape)
       (let [dom (mx/ref-node own "fobject")
-            html (mx/render-static-html (text-shape-html shape))]
+            html (dom/render-to-html (text-shape-html shape))]
         (set! (.-innerHTML dom) html)))
     own))
 

@@ -6,7 +6,8 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.util.dom
-  (:require [goog.dom :as dom]))
+  (:require [goog.dom :as dom]
+            [cljsjs.react.dom.server]))
 
 ;; --- Deprecated methods
 
@@ -23,6 +24,10 @@
   (.-target e))
 
 ;; --- New methods
+
+(defn render-to-html
+  [component]
+  (.renderToStatciMarkup js/ReactDOMServer component))
 
 (defn get-element-by-class
   ([classname]

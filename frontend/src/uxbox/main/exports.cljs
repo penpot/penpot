@@ -14,6 +14,7 @@
             [uxbox.main.ui.shapes.path :refer [path-shape]]
             [uxbox.main.ui.shapes.circle :refer [circle-shape]]
             [uxbox.main.ui.shapes.image :refer [image-shape]]
+            [uxbox.util.dom :as dom]
             [rumext.core :as mx :include-macros true]))
 
 (def ^:dynamic *state* st/state)
@@ -67,6 +68,6 @@
   (try
     (let [page (get-in @*state* [:pages id])]
       (when (:shapes page)
-        (mx/render-static-html (page-svg page))))
+        (dom/render-to-html (page-svg page))))
     (catch :default e
       nil)))
