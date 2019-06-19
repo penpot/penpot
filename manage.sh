@@ -49,6 +49,53 @@ function run-devenv {
          $CONTAINER
 }
 
+function test-devenv {
+    echo "Testing frontend..."
+    test-devenv-frontend || exit 1;
+    echo "Testing backend..."
+    test-devenv-backend || exit 1;
+}
+
+function test-devenv-frontend {
+    # TODO Add frontend unit tests call
+    echo "Not yet implemented!"
+
+#    if ! $(docker images | grep $IMGNAME | grep -q $REV); then
+#        build-devenv
+#    fi
+#
+#    CONTAINER=$IMGNAME:latest
+#
+#    echo "Running development image $CONTAINER to test backend..."
+#    docker run -ti --rm \
+#           -w /home/uxbox/uxbox/backend \
+#           -v `pwd`:/home/uxbox/uxbox  \
+#           -v $HOME/.m2:/home/uxbox/.m2 \
+#           -e UXBOX_API_URL="/api" \
+#           -e UXBOX_VIEW_URL="/view" \
+#           $CONTAINER ./scripts/build-tests.sh
+}
+
+function test-devenv-backend {
+    # TODO Add backend unit tests call
+    echo "Not yet implemented!"
+
+#    if ! $(docker images | grep $IMGNAME | grep -q $REV); then
+#        build-devenv
+#    fi
+#
+#    CONTAINER=$IMGNAME:latest
+#
+#    echo "Running development image $CONTAINER to test frontend..."
+#    docker run -ti --rm \
+#           -w /home/uxbox/uxbox/frontend \
+#           -v `pwd`:/home/uxbox/uxbox  \
+#           -v $HOME/.m2:/home/uxbox/.m2 \
+#           -e UXBOX_API_URL="/api" \
+#           -e UXBOX_VIEW_URL="/view" \
+#           $CONTAINER ./scripts/build-tests.sh
+}
+
 function build-release-frontend-local {
     if ! $(docker images | grep $IMGNAME | grep -q $REV); then
         build-devenv
@@ -135,9 +182,9 @@ function usage {
     echo "- clean                   Stop and clean up docker containers"
     echo "- build-devenv            Build docker container for development with tmux"
     echo "- run-devenv              Run (and build if necessary) development container (frontend at localhost:3449, backend at localhost:6060)"
-    echo "- test                    Execute unit tests for both backend and frontend"
-    echo "- test-frontend           Execute unit tests for frontend only"
-    echo "- test-backend            Execute unit tests for backend only"
+    echo "- test-devenv             Execute unit tests for both backend and frontend"
+    echo "- test-devenv-frontend    Execute unit tests for frontend only"
+    echo "- test-devenv-backend     Execute unit tests for backend only"
     echo "- build-release           Build 'production ready' docker images for both backend and frontend"
     echo "- build-release-frontend  Build a 'production ready' docker images for frontend only"
     echo "- build-release-backend   Build a 'production ready' docker images for backend only"
@@ -155,14 +202,14 @@ case $1 in
     run-devenv)
         run-devenv
         ;;
-    test)
-        test
+    test-devenv)
+        test-devenv
         ;;
-    test-frontend)
-        test-frontend
+    test-devenv-frontend)
+        test-devenv-frontend
         ;;
-    test-backend)
-        test-backend
+    test-devenv-backend)
+        test-devenv-backend
         ;;
     build-release)
         build-release

@@ -40,8 +40,7 @@ env:
   - NODE_VERSION=10.16.0 COMMAND=clean
   - NODE_VERSION=10.16.0 COMMAND=build-devenv
   #- NODE_VERSION=10.16.0 COMMAND=run-devenv
-  # TODO Add unit test command(s)
-  #- NODE_VERSION=10.16.0 COMMAND=test
+  - NODE_VERSION=10.16.0 COMMAND=test-devenv
   - NODE_VERSION=10.16.0 COMMAND=build-release
   - NODE_VERSION=10.16.0 COMMAND=build-release-frontend
   - NODE_VERSION=10.16.0 COMMAND=build-release-backend
