@@ -34,6 +34,9 @@ function run-devenv {
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
+    mkdir -p \
+        ./frontend/resources/public/css \
+        ./frontend/resources/public/view/css
 
     CONTAINER=$IMGNAME:latest
 
@@ -132,10 +135,9 @@ function usage {
     echo "- clean                   Stop and clean up docker containers"
     echo "- build-devenv            Build docker container for development with tmux"
     echo "- run-devenv              Run (and build if necessary) development container (frontend at localhost:3449, backend at localhost:6060)"
-    # TODO Add unit test command(s)
-    #echo "- test                    Execute unit tests for both backend and frontend"
-    #echo "- test-frontend           Execute unit tests for frontend only"
-    #echo "- test-backend            Execute unit tests for backend only"
+    echo "- test                    Execute unit tests for both backend and frontend"
+    echo "- test-frontend           Execute unit tests for frontend only"
+    echo "- test-backend            Execute unit tests for backend only"
     echo "- build-release           Build 'production ready' docker images for both backend and frontend"
     echo "- build-release-frontend  Build a 'production ready' docker images for frontend only"
     echo "- build-release-backend   Build a 'production ready' docker images for backend only"
@@ -152,6 +154,15 @@ case $1 in
         ;;
     run-devenv)
         run-devenv
+        ;;
+    test)
+        test
+        ;;
+    test-frontend)
+        test-frontend
+        ;;
+    test-backend)
+        test-backend
         ;;
     build-release)
         build-release
