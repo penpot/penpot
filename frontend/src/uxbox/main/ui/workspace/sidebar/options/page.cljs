@@ -68,7 +68,7 @@
            {:type "text"
             :ref "name"
             :on-change on-name-change
-            :value (:name page)
+            :value (str (:name page))
             :placeholder "page name"}]]]
 
         [:span "Size"]
@@ -78,15 +78,16 @@
            {:type "number"
             :ref "width"
             :on-change #(on-size-change :width)
-            :value (:width metadata)
+            :value (str (:width metadata))
             :placeholder "width"}]]
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
             :ref "height"
             :on-change #(on-size-change :height)
-            :value (:height metadata)
+            :value (str (:height metadata))
             :placeholder "height"}]]]
+
         [:span "Background color"]
         [:div.row-flex.color-data
          [:span.color-th
