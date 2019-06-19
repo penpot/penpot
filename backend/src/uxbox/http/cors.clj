@@ -10,7 +10,6 @@
 
 (defn- allow-origin?
   [value {:keys [origin]}]
-  (prn "allow-origin?" value origin)
   (cond
     (nil? value) value
     (= origin "*") origin

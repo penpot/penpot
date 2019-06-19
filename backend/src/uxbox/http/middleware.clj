@@ -7,9 +7,6 @@
 (ns uxbox.http.middleware
   (:require [promesa.core :as p]
             [cuerdas.core :as str]
-            ;; [buddy.core.hash :as hash]
-            ;; [buddy.core.codecs :as codecs]
-            ;; [buddy.core.codecs.base64 :as b64]
             [struct.core :as st]
             [reitit.ring :as rr]
             [reitit.ring.middleware.multipart :as multipart]
@@ -19,6 +16,7 @@
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :refer [cookie-store]]
             [ring.middleware.multipart-params :refer [wrap-multipart-params]]
+            [uxbox.http.etag :refer [wrap-etag]]
             [uxbox.http.cors :refer [wrap-cors]]
             [uxbox.http.errors :as errors]
             [uxbox.http.response :as rsp]
@@ -124,26 +122,9 @@
   {:name ::cors-middleware
    :wrap #(wrap-cors % cors-conf)})
 
-;; (def ^:private cors-middleware
-;;   {:name ::cors-middleware
-;;    :wrap #(wrap-cors %
-;;                      :access-control-allow-origin [#".*"]
-;;                      :access-control-allow-methods [:get :put :post :delete]
-;;                      :access-control-allow-headers ["x-requested-with"
-;;                                                     "content-type"
-;;                                                     "authorization"])})
-
-;; (defn digest
-;;   [^bytes data]
-;;   (-> (hash/blake2b-256 data)
-;;       (b64/encode true)
-;;       (codecs/bytes->str)))
-
-;; (defn- etag-match?
-;;   [^Request request ^String new-tag]
-;;   (let [^Headers headers (.getHeaders request)]
-;;     (when-let [etag (.get headers "if-none-match")]
-;;       (= etag new-tag))))
+(def ^:private etag-middleware
+  {:name ::etag-middleware
+   :wrap wrap-etag})
 
 (def ^:private exception-middleware
   (exception/create-exception-middleware
@@ -167,6 +148,10 @@
 (def middleware
   [cors-middleware
    session-middleware
+
+   ;; etag
+   etag-middleware
+
    parameters/parameters-middleware
    muuntaja/format-negotiate-middleware
    ;; encoding response body
@@ -175,6 +160,7 @@
    exception-middleware
    ;; decoding request body
    muuntaja/format-request-middleware
+
    ;; multipart
    multipart-params-middleware
    ;; parameters normalization
