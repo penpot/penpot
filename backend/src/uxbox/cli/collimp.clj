@@ -198,7 +198,8 @@
 
 (defn- start-system
   []
-  (mount/start))
+  (-> (mount/except #{#'uxbox.http/server})
+      (mount/start)))
 
 (defn- stop-system
   []

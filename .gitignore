@@ -11,7 +11,7 @@ pom.xml
 node_modules
 /backend/.cpcache
 /backend/target/
-/backend/resources/media
+/backend/resources/public/media
 /backend/dist/
 /backend/-
 /backend/.rebel_readline_history
