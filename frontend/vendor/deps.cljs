@@ -2,6 +2,9 @@
  [{:file "snapsvg/snap.svg.js"
    :file-min "snapsvg/snap.svg.min.js"
    :provides ["vendor.snapsvg"]}
+  {:file "date-fns/src/index.js"
+   :module-type :es6
+   :provides ["vendor2.dateFns"]}
   {:file "jszip/jszip.js"
    :file-min "jszip/jszip.min.js"
    :provides ["vendor.jszip"]}
