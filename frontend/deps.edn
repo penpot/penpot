@@ -20,16 +20,12 @@
     }
  :paths ["src" "vendor"]
  :aliases
- {:dev
-  {:extra-deps {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
-                com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-                com.bhauman/figwheel-main {:mvn/version "0.2.1-SNAPSHOT"}
-                org.clojure/tools.namespace {:mvn/version "0.2.11"}
-                }
+ {:dev {:extra-deps {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
+                     com.bhauman/rebel-readline {:mvn/version "0.1.4"}
+                     com.bhauman/figwheel-main {:mvn/version "0.2.1-SNAPSHOT"}
+                     org.clojure/tools.namespace {:mvn/version "0.2.11"}}
+        :extra-paths ["test"]}
 
-   :extra-paths ["test" "resources"]}
-
-  :repl {:main-opts  ["-m" "rebel-readline.main"]
-         :extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}}
+  :repl {:main-opts  ["-m" "rebel-readline.main"]}
   }}
 
