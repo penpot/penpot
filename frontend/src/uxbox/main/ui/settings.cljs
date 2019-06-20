@@ -6,14 +6,12 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.settings
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [cuerdas.core :as str]
-            [uxbox.util.router :as r]
+  (:require [cuerdas.core :as str]
             [potok.core :as ptk]
-            [uxbox.builtins.icons :as i]
             [rumext.core :as mx :include-macros true]
+            [uxbox.builtins.icons :as i]
             [uxbox.util.dom :as dom]
+            [uxbox.util.router :as r]
             [uxbox.main.ui.settings.profile :as profile]
             [uxbox.main.ui.settings.password :as password]
             [uxbox.main.ui.settings.notifications :as notifications]

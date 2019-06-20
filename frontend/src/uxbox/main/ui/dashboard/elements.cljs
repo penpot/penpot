@@ -6,9 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.elements
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [potok.core :as ptk]
+  (:require [potok.core :as ptk]
             [uxbox.main.data.dashboard :as dd]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.builtins.icons :as i]

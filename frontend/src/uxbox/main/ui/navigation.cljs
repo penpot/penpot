@@ -1,5 +1,5 @@
 (ns uxbox.main.ui.navigation
-  (:require [sablono.core :as html :refer-macros [html]]
+  (:require [rumext.core :refer-macros [html]]
             [goog.events :as events]
             [uxbox.util.dom :as dom]))
 

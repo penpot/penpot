@@ -6,8 +6,7 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.rules
-  (:require [sablono.core :refer-macros [html]]
-            [cuerdas.core :as str]
+  (:require [cuerdas.core :as str]
             [beicon.core :as rx]
             [uxbox.main.store :as s]
             [uxbox.main.constants :as c]
@@ -66,7 +65,7 @@
 
 ;; --- Horizontal Text Label
 
-(defn- horizontal-text-label
+(mx/defc horizontal-text-label
   [zoom value]
   (let [big-ticks-mod (big-ticks-mod zoom)
         pos (+ (* value zoom)
@@ -74,17 +73,16 @@
                (* c/canvas-start-x zoom)
                c/canvas-scroll-padding)]
     (when (< (mod value big-ticks-mod) step-size)
-      (html
-       [:text {:x (+ pos 2)
-               :y 13
-               :key (str pos)
-               :fill "#9da2a6"
-               :style {:font-size "12px"}}
-        value]))))
+      [:text {:x (+ pos 2)
+              :y 13
+              :key (str pos)
+              :fill "#9da2a6"
+              :style {:font-size "12px"}}
+       value])))
 
 ;; --- Horizontal Text Label
 
-(defn- vertical-text-label
+(mx/defc vertical-text-label
   [zoom value]
   (let [big-ticks-mod (big-ticks-mod zoom)
         pos (+ (* value zoom)
@@ -92,14 +90,13 @@
                ;; c/canvas-start-x
                c/canvas-scroll-padding)]
     (when (< (mod value big-ticks-mod) step-size)
-      (html
-       [:text {:y (- pos 3)
-               :x 5
-               :key (str pos)
-               :fill "#9da2a6"
-               :transform (str/format "rotate(90 0 %s)" pos)
-               :style {:font-size "12px"}}
-        value]))))
+      [:text {:y (- pos 3)
+              :x 5
+              :key (str pos)
+              :fill "#9da2a6"
+              :transform (str/format "rotate(90 0 %s)" pos)
+              :style {:font-size "12px"}}
+       value])))
 
 ;; --- Horizontal Rule Ticks (Component)
 
@@ -112,7 +109,9 @@
                     (filterv identity))]
     [:g {}
      [:path {:d (str/join " " path)}]
-     labels]))
+     (for [tick +ticks+]
+       (-> (horizontal-text-label zoom tick)
+           (mx/with-key (str tick))))]))
 
 ;; --- Vertical Rule Ticks (Component)
 
@@ -125,7 +124,9 @@
                     (filterv identity))]
     [:g {}
      [:path {:d (str/join " " path)}]
-     labels]))
+     (for [tick +ticks+]
+       (-> (vertical-text-label zoom tick)
+           (mx/with-key (str tick))))]))
 
 ;; --- Horizontal Rule (Component)
 

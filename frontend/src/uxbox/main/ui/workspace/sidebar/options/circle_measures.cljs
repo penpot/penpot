@@ -6,22 +6,20 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.options.circle-measures
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
+  (:require [lentes.core :as l]
             [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.builtins.icons :as i]
             [rumext.core :as mx :include-macros true]
+            [uxbox.builtins.icons :as i]
+            [uxbox.main.data.shapes :as uds]
+            [uxbox.main.data.workspace :as udw]
             [uxbox.main.geom :as geom]
+            [uxbox.main.store :as st]
+            [uxbox.util.data :refer (parse-int parse-float read-string)]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.point :as gpt]
-            [uxbox.util.data :refer (parse-int parse-float read-string)]
-            [uxbox.util.math :refer (precision-or-0)]))
+            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.math :refer (precision-or-0)]
+            [uxbox.util.router :as r]))
 
 (mx/defc circle-measures-menu
   {:mixins [mx/static]}

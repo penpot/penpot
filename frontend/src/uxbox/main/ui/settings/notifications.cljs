@@ -6,9 +6,7 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.settings.notifications
-  (:require [sablono.core :as html :refer-macros [html]]
-            [rum.core :as rum]
-            [cuerdas.core :as str]
+  (:require [cuerdas.core :as str]
             [uxbox.util.router :as r]
             [potok.core :as ptk]
             [uxbox.builtins.icons :as i]

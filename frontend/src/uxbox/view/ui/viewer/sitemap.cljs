@@ -6,8 +6,7 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.view.ui.viewer.sitemap
-  (:require [sablono.core :refer-macros (html)]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.builtins.icons :as i]
             [uxbox.util.i18n :refer [tr]]

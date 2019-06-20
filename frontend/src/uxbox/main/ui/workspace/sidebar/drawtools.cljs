@@ -6,8 +6,7 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.drawtools
-  (:require [sablono.core :as html :refer-macros [html]]
-            [lentes.core :as l]
+  (:require [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
