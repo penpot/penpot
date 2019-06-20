@@ -46,7 +46,7 @@
 
 (defmethod task "dist"
   [[_ name]]
-  (api/build (api/inputs "src" "test")
+  (api/build (api/inputs "src")
              (merge default-build-options
                     (get-output-options name true ::path)
                     {:optimizations :advanced
@@ -55,10 +55,22 @@
 
 (defmethod task "build"
   [[_ name]]
-  (api/build (api/inputs "src" "test")
+  (api/build (api/inputs "src")
              (merge default-build-options
                     (get-output-options name false ::path)
                     {:optimizations :simple})))
+
+(defmethod task "build-tests"
+  [& args]
+  (api/build (api/inputs "src" "test")
+             (assoc default-build-options
+                    :main 'uxbox.tests.main
+                    :verbose true
+                    :target :nodejs
+                    :source-map true
+                    :output-to "target/tests/main.js"
+                    :output-dir "target/tests/main"
+                    :optimizations :none)))
 
 (defmethod task "figwheel"
   [args]
