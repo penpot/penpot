@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-if [ ! -d "$1" ] || [ ! -d "$2" ]; then
-        echo "Expecting path to backend and destination directory"
+
+if [ "$#" -ne 0 ]; then
+        echo "Expecting parameters: 1=path to backend; 2=destination directory"
         exit 1
 fi
 
