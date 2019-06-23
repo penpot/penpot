@@ -128,26 +128,17 @@ function build-release-frontend {
 }
 
 function build-release-backend-local {
-    #if ! $(docker images | grep $IMGNAME | grep -q $REV); then
-    #    build-devenv
-    #fi
-    #mkdir -p $HOME/.m2
-    #CONTAINER=$IMGNAME:latest
-    #echo "Running development image $CONTAINER to build backend release..."
-    #docker run -ti --rm \
-    #       -w /home/uxbox/uxbox/backend \
-    #       -v `pwd`:/home/uxbox/uxbox  \
-    #       -v $HOME/.m2:/home/uxbox/.m2 \
-    #       $CONTAINER ./scripts/prepare-release.sh
-    rm -rf backend/dist || exit 1;
-    rsync -avr \
-          --exclude="/test" \
-          --exclude="/resources/public/media" \
-          --exclude="/target" \
-          --exclude="/scripts" \
-          --exclude="/.*" \
-          backend/ backend/dist/;
-}
+    echo "Prepare backend release..."
+    ./backend/scripts/prepare-release.sh backend/ backend/dist/
+    #rm -rf backend/dist || exit 1;
+    #rsync -avr \
+    #      --exclude="/test" \
+    #      --exclude="/resources/public/media" \
+    #      --exclude="/target" \
+    #      --exclude="/scripts" \
+    #      --exclude="/.*" \
+    #      backend/ backend/dist/;
+}#
 
 function build-release-backend {
     build-release-backend-local || exit 1;

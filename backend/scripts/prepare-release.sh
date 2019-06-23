@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-rm -rf ../dist || exit 1;
+if [ ! -d "$1" ] || [ ! -d "$2" ]; then
+        echo "Expecting path to backend and destination directory"
+        exit 1
+fi
+
+rm -rf $2 || exit 1;
 
 rsync -avr \
         --exclude="/test" \
@@ -7,4 +12,4 @@ rsync -avr \
         --exclude="/target" \
         --exclude="/scripts" \
         --exclude="/.*" \
-        ../ ../dist/;
+        $1 $2;
