@@ -129,7 +129,7 @@ function build-release-frontend {
 
 function build-release-backend-local {
     echo "Prepare backend release..."
-    ./backend/scripts/prepare-release.sh backend/ backend/dist/
+    ./backend/scripts/prepare-release.sh ./backend/ ./backend/dist/
     #rm -rf backend/dist || exit 1;
     #rsync -avr \
     #      --exclude="/test" \

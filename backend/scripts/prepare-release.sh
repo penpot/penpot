@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "$#" -ne 0 ]; then
+if [ "$#" -e 0 ]; then
         echo "Expecting parameters: 1=path to backend; 2=destination directory"
         exit 1
 fi
