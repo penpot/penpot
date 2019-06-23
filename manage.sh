@@ -138,7 +138,7 @@ function build-release-backend-local {
     #      --exclude="/scripts" \
     #      --exclude="/.*" \
     #      backend/ backend/dist/;
-}#
+}
 
 function build-release-backend {
     build-release-backend-local || exit 1;
