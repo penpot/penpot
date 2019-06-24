@@ -66,7 +66,7 @@
                :width width
                :height height
                :preserve-aspect-ratio "none"
-               :dangerouslySetInnerHTML {:__html content}}
+               :dangerouslySetInnerHTML #js {:__html content}}
 
         attrs (merge props (attrs/extract-style-attrs shape))]
     [:g {:transform (str xfmt)}
