@@ -67,8 +67,13 @@
       (ex/raise :type :validation
                 :code ::invalid-input
                 :message "Input does not seems to be a valid svg."))
+
+    (catch org.jsoup.UncheckedIOException e
+      (ex/raise :type :validation
+                :code ::invalid-input
+                :message "Input does not seems to be a valid svg."))
+
     (catch Exception e
-      (.printStackTrace e)
       (ex/raise :code ::unexpected))))
 
 ;; --- Public Api
