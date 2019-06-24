@@ -45,7 +45,6 @@
   (fn [request respond raise]
     (handler request
              (fn [response]
-               (prn "wrap-etag" (= (:request-method request) :get))
                (if (= (:request-method request) :get)
                  (respond (or (handle-response request response) response))
                  (respond response)))

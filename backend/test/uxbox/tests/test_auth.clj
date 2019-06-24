@@ -24,9 +24,9 @@
                   :password "user1"
                   :metadata "1"
                   :scope "foobar"}
-            uri (str th/+base-url+ "/auth/login")
+            uri (str th/+base-url+ "/api/auth/login")
             [status data] (th/http-post uri {:body data})]
-        (println "RESPONSE:" status data)
+        ;; (println "RESPONSE:" status data)
         (t/is (= status 204))))))
 
 (t/deftest test-http-failed-auth
@@ -42,7 +42,7 @@
                   :password "user2"
                   :metadata "2"
                   :scope "foobar"}
-            uri (str th/+base-url+ "/auth/login")
+            uri (str th/+base-url+ "/api/auth/login")
             [status data] (th/http-post uri {:body data})]
         ;; (prn "RESPONSE:" status data)
         (t/is (= 400 status))
