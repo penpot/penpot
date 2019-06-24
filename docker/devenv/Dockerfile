@@ -4,6 +4,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ARG EXTERNAL_UID=1000
 
 ENV NODE_VERSION=v10.16.0 \
+    CLOJURE_VERSION=1.10.0.442 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -63,10 +64,10 @@ RUN set -ex; \
     echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 RUN set -ex; \
-    wget https://download.clojure.org/install/linux-install-1.10.0.442.sh; \
-    chmod +x linux-install-1.10.0.442.sh; \
-    ./linux-install-1.10.0.442.sh; \
-    rm -rf linux-install-1.10.0.442.sh
+    wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
+    chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
+    "./linux-install-$CLOJURE_VERSION.sh"; \
+    rm -rf "linux-install-$CLOJURE_VERSION.sh"
 
 USER uxbox
 WORKDIR /home/uxbox
