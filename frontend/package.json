@@ -17,6 +17,7 @@
     "dist:assets": "gulp dist",
     "prod": "gulp dist --production",
     "start": "npm run figwheel",
+    "build:test": "clojure -Adev tools.clj build-tests",
     "build:main": "clojure -Adev tools.clj build main",
     "build:view": "clojure -Adev tools.clj build view",
     "build:worker": "clojure -Adev tools.clj build worker",

@@ -1,47 +1,38 @@
 dist: xenial
 
-language: clojure
+language: generic
 sudo: required
-lein: lein
-jdk:
-  - openjdk8
+
+cache:
+  directories:
+    - $HOME/.m2
+
 services:
   - docker
 
 branches:
   only:
     - master
-    - wip
     - develop
-    - build-refactor
 
 install:
-  - ./manage.sh help
-  - nvm install $NODE_VERSION
-  - node --version
+  - curl -O https://download.clojure.org/install/linux-install-1.10.1.447.sh
+  - chmod +x linux-install-1.10.1.447.sh
+  - sudo ./linux-install-1.10.1.447.sh
 
 before_script:
   - env | sort
 
 script:
-  - ./manage.sh $COMMAND
+  - ./manage.sh build-devenv
+  - ./manage.sh run-frontend-tests
+  - ./manage.sh run-backend-tests
 
 after_script:
   - docker images
-  - docker ps
-  - if [ "$COMMAND" = "run-release" ]; then sleep 180; fi
-  - docker ps
-  - for c in $(docker ps -q); do echo "> docker logs $c"; docker logs $c; done
 
 notifications:
   email: false
 
 env:
-  - NODE_VERSION=10.16.0 COMMAND=clean
-  - NODE_VERSION=10.16.0 COMMAND=build-devenv
-  #- NODE_VERSION=10.16.0 COMMAND=run-devenv
-  - NODE_VERSION=10.16.0 COMMAND=test-devenv
-  - NODE_VERSION=10.16.0 COMMAND=build-release
-  - NODE_VERSION=10.16.0 COMMAND=build-release-frontend
-  - NODE_VERSION=10.16.0 COMMAND=build-release-backend
-  - NODE_VERSION=10.16.0 COMMAND=run-release
+  - NODE_VERSION=10.16.0
