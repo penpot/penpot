@@ -16,6 +16,7 @@
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.cookie :refer [cookie-store]]
             [ring.middleware.multipart-params :refer [wrap-multipart-params]]
+            [uxbox.config :as cfg]
             [uxbox.http.etag :refer [wrap-etag]]
             [uxbox.http.cors :refer [wrap-cors]]
             [uxbox.http.errors :as errors]
@@ -112,7 +113,7 @@
      :wrap #(wrap-session % options)}))
 
 (def cors-conf
-  {:origin #{"http://127.0.0.1:3449"}
+  {:origin #{"http://localhost:3449"}
    :max-age 3600
    :allow-credentials true
    :allow-methods #{:post :put :get :delete}
@@ -120,7 +121,12 @@
 
 (def ^:private cors-middleware
   {:name ::cors-middleware
-   :wrap #(wrap-cors % cors-conf)})
+   :wrap (fn [handler]
+           (let [cors (:http-server-cors cfg/config)]
+             (if (string? cors)
+               (->> (assoc cors-conf :origin #{cors})
+                    (wrap-cors handler))
+               handler)))})
 
 (def ^:private etag-middleware
   {:name ::etag-middleware

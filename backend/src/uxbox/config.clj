@@ -35,6 +35,7 @@
   []
   {:http-server-port (lookup-env env :uxbox-http-server-port 6060)
    :http-server-debug (lookup-env env :uxbox-http-server-debug true)
+   :http-server-cors (lookup-env env :uxbox-http-server-cors "http://localhost:3449")
    :database-username (lookup-env env :uxbox-database-username nil)
    :database-password (lookup-env env :uxbox-database-password nil)
    :database-name (lookup-env env :uxbox-database-name "uxbox")
