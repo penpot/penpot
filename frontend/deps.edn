@@ -1,7 +1,7 @@
-{:deps {org.clojure/clojurescript {:mvn/version "1.10.516"}
+{:deps {org.clojure/clojurescript {:mvn/version "1.10.520"}
         org.clojure/clojure {:mvn/version "1.10.1"}
-        funcool/promesa {:mvn/version "2.0.0"}
-        com.cognitect/transit-cljs {:mvn/version "0.8.239"}
+        funcool/promesa {:mvn/version "2.0.1"}
+        com.cognitect/transit-cljs {:mvn/version "0.8.256"}
 
         funcool/rumext {:git/url "https://github.com/funcool/rumext.git",
                         :sha "3d598e749ba429eae6544e532fc9f81369b307f5"}
@@ -12,20 +12,25 @@
 
         environ/environ {:mvn/version "1.1.0"}
 
-        funcool/beicon {:mvn/version "3.2.0"}
-        funcool/bide {:mvn/version "1.6.0"}
+        metosin/reitit-core {:mvn/version "0.3.9"}
+        metosin/reitit-frontend {:mvn/version "0.3.9"}
+
+        funcool/beicon {:mvn/version "5.0.0"}
+        funcool/bide {:mvn/version "1.6.1-SNAPSHOT"}
         funcool/cuerdas {:mvn/version "2.2.0"}
         funcool/lentes {:mvn/version "1.2.0"}
-        funcool/potok {:mvn/version "2.1.0"}
+        funcool/potok {:mvn/version "2.3.0"}
     }
- :paths ["src" "vendor"]
+ :paths ["src" "vendor" "resources"]
  :aliases
  {:dev {:extra-deps {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
                      com.bhauman/rebel-readline {:mvn/version "0.1.4"}
                      com.bhauman/figwheel-main {:mvn/version "0.2.1-SNAPSHOT"}
-                     org.clojure/tools.namespace {:mvn/version "0.2.11"}}
+                     org.clojure/tools.namespace {:mvn/version "0.3.0"}}
         :extra-paths ["test"]}
 
   :repl {:main-opts  ["-m" "rebel-readline.main"]}
+  :ancient {:main-opts ["-m" "deps-ancient.deps-ancient"]
+            :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}
   }}
 
