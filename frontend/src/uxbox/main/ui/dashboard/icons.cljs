@@ -16,6 +16,7 @@
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.main.ui.keyboard :as kbd]
+            [uxbox.util.router :as rt]
             [uxbox.util.i18n :as t :refer (tr)]
             [uxbox.util.data :refer (read-string)]
             [rumext.core :as mx :include-macros true]
@@ -135,7 +136,7 @@
         local (:rum/local own)]
     (letfn [(on-click [event]
               (let [type (or type :own)]
-                (st/emit! (di/select-collection type id))))
+                (st/emit! (rt/navigate :dashboard/icons {} {:type type :id id}))))
             (on-input-change [event]
               (let [value (dom/get-target event)
                     value (dom/get-value value)]
@@ -199,8 +200,8 @@
                 (let [colls (->> (map second colls)
                                  (filter #(= :builtin (:type %)))
                                  (sort-by :name))]
-                  (st/emit! (di/select-collection type (:id (first colls)))))
-                (st/emit! (di/select-collection type))))]
+                  (st/emit! (rt/navigate :dashboard/icons {} {:type type :id (first colls)})))
+                (st/emit! (rt/navigate :dashboard/icons {} {:type type}))))]
       [:div.library-bar {}
        [:div.library-bar-inside {}
         [:ul.library-tabs {}

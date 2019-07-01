@@ -16,15 +16,15 @@
 (def demo? (boolean (:uxbox-demo env nil)))
 
 (def closure-defines
-  {"uxbox.config.url" (:uxbox-api-url env "http://127.0.0.1:6060/api")
-   "uxbox.config.viewurl" (:uxbox-view-url env "/view/")
+  {"uxbox.config.url" (:uxbox-api-url env "http://localhost:6060/api")
+   "uxbox.config.viewurl" (:uxbox-view-url env "/view/index.html")
    "uxbox.config.isdemo" demo?})
 
 (def default-build-options
   {:cache-analysis true
    :parallel-build true
    :language-in  :ecmascript6
-   :language-out :ecmascript5
+   :language-out :ecmascript6
    :closure-defines closure-defines
    :optimizations :none
    :verbose false
@@ -76,6 +76,7 @@
   [args]
   (figwheel/start
    {:open-url false
+    :load-warninged-code true
     :auto-testing false
     :css-dirs ["resources/public/css"
                "resources/public/view/css"]

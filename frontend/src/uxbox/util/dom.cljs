@@ -27,7 +27,7 @@
 
 (defn render-to-html
   [component]
-  (.renderToStatciMarkup js/ReactDOMServer component))
+  (.renderToStaticMarkup js/ReactDOMServer component))
 
 (defn get-element-by-class
   ([classname]

@@ -13,7 +13,7 @@
             [uxbox.builtins.icons :as i]
             [uxbox.main.ui.users :as ui.u]
             [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
+            [uxbox.util.router :as rt]
             [rumext.core :as mx :include-macros true]))
 
 (def header-ref
@@ -22,8 +22,8 @@
 
 (mx/defc header-link
   [section content]
-  (let [link (r/route-for section)]
-    [:a {:href (str "/#" link)} content]))
+  (let [on-click #(st/emit! (rt/navigate section))]
+    [:a {:on-click on-click} content]))
 
 (mx/defc header
   {:mixins [mx/static mx/reactive]}

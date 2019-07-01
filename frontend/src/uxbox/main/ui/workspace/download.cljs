@@ -123,7 +123,7 @@
          [:p.info {} "Download a single page of your project in SVG."]
          [:select.input-select {:ref "page" :default-value (pr-str current)}
           (for [{:keys [id name]} pages]
-            [:option {:value (pr-str id)} name])]
+            [:option {:value (pr-str id) :key (pr-str id)} name])]
          [:a.btn-primary {:href "#" :on-click download-page} "Download page"]]
         [:div.content-col {}
          [:span.icon {} i/folder-zip]
