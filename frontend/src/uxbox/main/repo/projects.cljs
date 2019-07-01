@@ -21,7 +21,7 @@
 
 (defmethod request :fetch/project-by-token
   [_ token]
-  (send! {:url (str url "/projects-by-token/" token)
+  (send! {:url (str url "/projects/by-token/" token)
           :method :get}))
 
 (defmethod request :create/project

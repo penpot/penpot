@@ -12,6 +12,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.repo :as rp]
             [uxbox.util.i18n :refer [tr]]
+            [uxbox.util.router :as rt]
             [uxbox.util.data :refer (jscoll->vec)]
             [uxbox.util.uuid :as uuid]
             [uxbox.util.time :as ts]
@@ -80,21 +81,6 @@
   [type id]
   (Initialize. type id))
 
-;; --- Select a Collection
-
-(defrecord SelectCollection [type id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (r/navigate :dashboard/images
-                       {:type type :id id}))))
-
-(defn select-collection
-  ([type]
-   (select-collection type nil))
-  ([type id]
-   {:pre [(keyword? type)]}
-   (SelectCollection. type id)))
-
 ;; --- Color Collections Fetched
 
 (defrecord CollectionsFetched [items]
@@ -135,7 +121,7 @@
 
   ptk/WatchEvent
   (watch [_ state stream]
-    (rx/of (select-collection :own (:id item)))))
+    (rx/of (rt/nav :dashboard/images nil {:type :own :id (:id item)}))))
 
 (defn collection-created
   [item]
@@ -213,7 +199,7 @@
   (watch [_ state s]
     (let [type (get-in state [:dashboard :images :type])]
       (->> (rp/req :delete/image-collection id)
-           (rx/map #(select-collection type))))))
+           (rx/map #(rt/nav :dashboard/images nil {:type type}))))))
 
 (defn delete-collection
   [id]

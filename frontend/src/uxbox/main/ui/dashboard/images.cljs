@@ -17,6 +17,7 @@
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.main.ui.dashboard.header :refer [header]]
+            [uxbox.util.router :as rt]
             [uxbox.util.time :as dt]
             [uxbox.util.data :refer [read-string jscoll->vec]]
             [uxbox.util.dom :as dom]))
@@ -130,7 +131,7 @@
   [{:keys [rum/local] :as own} {:keys [id type name num-images] :as coll} selected?]
   (letfn [(on-click [event]
             (let [type (or type :own)]
-              (st/emit! (di/select-collection type id))))
+              (st/emit! (rt/nav :dashboard/images {} {:type type :id id}))))
           (on-input-change [event]
             (let [value (dom/get-target event)
                   value (dom/get-value value)]
@@ -192,14 +193,14 @@
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
               (if own?
-                (st/emit! (di/select-collection type))
+                (st/emit! (rt/nav :dashboard/images nil {:type type}))
                 (let [coll (->> (map second colls)
                                  (filter #(= type (:type %)))
                                  (sort-by :name)
                                  (first))]
                   (if coll
-                    (st/emit! (di/select-collection type (:id coll)))
-                    (st/emit! (di/select-collection type))))))]
+                    (st/emit! (rt/nav :dashboard/images nil {:type type :id (:id coll)}))
+                    (st/emit! (rt/nav :dashboard/images nil {:type type}))))))]
       [:div.library-bar {}
        [:div.library-bar-inside {}
         [:ul.library-tabs {}

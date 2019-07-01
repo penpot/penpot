@@ -70,4 +70,5 @@
       (when (:shapes page)
         (dom/render-to-html (page-svg page))))
     (catch :default e
+      (js/console.log e)
       nil)))

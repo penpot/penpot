@@ -10,7 +10,6 @@
             [potok.core :as ptk]
             [uxbox.builtins.colors :as colors]
             [uxbox.util.storage :refer [storage]]))
-
 (enable-console-print!)
 
 (def ^:dynamic *on-error* identity)
@@ -30,13 +29,13 @@
   ([event & events]
    (apply ptk/emit! store (cons event events))))
 
-(defn initial-state
-  []
+(def initial-state
   {:dashboard {:project-order :name
                :project-filter ""
                :images-order :name
                :images-filter ""}
    :route nil
+   :router nil
    :auth (:auth storage nil)
    :clipboard #queue []
    :undo {}
@@ -53,6 +52,7 @@
 
 (defn init
   "Initialize the state materialization."
-  []
-  (emit! initial-state)
-  (rx/to-atom store state))
+  ([] (init {}))
+  ([props]
+   (emit! #(merge % initial-state props))
+   (rx/to-atom store state)))
