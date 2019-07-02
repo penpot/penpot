@@ -25,6 +25,13 @@
                   (-> (rsp/no-content)
                       (assoc :session {:user-id id})))))))
 
+(defn logout
+  {:description "User logout endpoint"}
+  [req]
+  (-> (rsp/no-content)
+      (assoc :session nil)
+      (p/resolved)))
+
 (defn register
   {:parameters {:body {:username [st/required st/string]
                        :email [st/required st/email]
