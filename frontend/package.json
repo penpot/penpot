@@ -26,14 +26,12 @@
   "devDependencies": {
     "gulp": "4.0.2",
     "gulp-autoprefixer": "^6.1.0",
-    "gulp-css-base64": "^1.3.4",
     "gulp-gzip": "^1.4.2",
     "gulp-if": "^2.0.2",
-    "gulp-mustache": "^2.3.0",
+    "gulp-mustache": "^4.1.1",
     "gulp-plumber": "^1.2.1",
     "gulp-rename": "^1.4.0",
     "gulp-sass": "^4.0.2",
-    "gulp-watch": "^5.0.1",
     "rimraf": "^2.6.3"
   },
   "dependencies": {
