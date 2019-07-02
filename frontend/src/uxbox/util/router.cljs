@@ -94,10 +94,12 @@
       (prn "Navigate:" id params qparams "| Match:" (resolve-url router id params qparams))
       (navigate! router id params qparams))))
 
-(defn navigate
+(defn nav
   ([id] (navigate id nil nil))
   ([id params] (navigate id params nil))
   ([id params qparams]
    {:pre [(keyword? id)]}
    (Navigate. id params qparams)))
+
+(def navigate nav)
 

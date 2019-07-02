@@ -65,28 +65,21 @@
 (set! st/*on-error* on-error)
 
 (def routes
-  [["/auth/login" :auth/login]
-   ["/auth/register" :auth/register]
-   ["/auth/recovery/request" :auth/recovery-request]
-   ["/auth/recovery/token/:token" :auth/recovery]
-   ["/settings/profile" :settings/profile]
-   ["/settings/password" :settings/password]
-   ["/settings/notifications" :settings/notifications]
-   ["/dashboard/projects" :dashboard/projects]
-   ["/dashboard/elements" :dashboard/elements]
-
-   ["/dashboard/icons" :dashboard/icons]
-   ;; ["/dashboard/icons/:type/:id" :dashboard/icons]
-   ;; ["/dashboard/icons/:type" :dashboard/icons]
-
-   ;; ["/dashboard/images" :dashboard/images]
-   ;; ["/dashboard/images/:type/:id" :dashboard/images]
-   ;; ["/dashboard/images/:type" :dashboard/images]
-
-   ;; ["/dashboard/colors" :dashboard/colors]
-   ;; ["/dashboard/colors/:type/:id" :dashboard/colors]
-   ;; ["/dashboard/colors/:type" :dashboard/colors]
-
+  [["/auth"
+    ["/login" :auth/login]
+    ["/register" :auth/register]
+    ["/recovery/request" :auth/recovery-request]
+    ["/recovery/token/:token" :auth/recovery]]
+   ["/settings"
+    ["/profile" :settings/profile]
+    ["/password" :settings/password]
+    ["/notifications" :settings/notifications]]
+   ["/dashboard"
+    ["/projects" :dashboard/projects]
+    ["/elements" :dashboard/elements]
+    ["/icons" :dashboard/icons]
+    ["/images" :dashboard/images]
+    ["/colors" :dashboard/colors]]
    ["/workspace/:project/:page" :workspace/page]])
 
 (defn- on-navigate
@@ -103,33 +96,35 @@
       :else
       (st/emit! #(assoc % :route match)))))
 
-(defn init-store
+(defn init-ui
   []
   (let [router (rt/init routes)
         cpath (deref html-history/path)]
-    (st/init {:router router})
-    (add-watch html-history/path ::main #(on-navigate router %4))
-    (on-navigate router cpath)))
 
-(defn init-ui
-  []
-  (mx/mount (app) (dom/get-element "app"))
-  (mx/mount (lightbox) (dom/get-element "lightbox"))
-  (mx/mount (loader) (dom/get-element "loader")))
+    (st/emit! #(assoc % :router router))
+    (add-watch html-history/path ::main #(on-navigate router %4))
+
+    (mx/mount (app) (dom/get-element "app"))
+    (mx/mount (lightbox) (dom/get-element "lightbox"))
+    (mx/mount (loader) (dom/get-element "loader"))
+
+    (on-navigate router cpath)))
 
 (defn ^:export init
   []
-  (init-store)
+  (st/init)
   (init-ui))
 
 (defn reinit
   []
+  (remove-watch html-history/path ::main)
   (.unmountComponentAtNode js/ReactDOM (dom/get-element "app"))
   (.unmountComponentAtNode js/ReactDOM (dom/get-element "lightbox"))
   (.unmountComponentAtNode js/ReactDOM (dom/get-element "loader"))
   (init-ui))
 
-(defn ^:after-load my-after-reload-callback []
+(defn ^:after-load after-load
+  []
   (reinit))
 
 

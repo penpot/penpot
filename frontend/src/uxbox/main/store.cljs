@@ -52,6 +52,7 @@
 
 (defn init
   "Initialize the state materialization."
-  [props]
-  (emit! #(merge % initial-state props))
-  (rx/to-atom store state))
+  ([] (init {}))
+  ([props]
+   (emit! #(merge % initial-state props))
+   (rx/to-atom store state)))

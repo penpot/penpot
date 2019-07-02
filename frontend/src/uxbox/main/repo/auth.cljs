@@ -15,13 +15,19 @@
   (let [url (str url "/profile/me")]
     (send! {:method :get :url url})))
 
-(defmethod request :fetch/token
+(defmethod request :auth/login
   [type data]
   (let [url (str url "/auth/login")]
     (send! {:url url
                 :method :post
                 :auth false
                 :body data})))
+
+
+(defmethod request :auth/logout
+  [type data]
+  (let [url (str url "/auth/logout")]
+    (send! {:url url :method :post :auth false})))
 
 (defmethod request :update/profile
   [type data]

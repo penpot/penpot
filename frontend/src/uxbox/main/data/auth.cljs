@@ -51,7 +51,7 @@
 (defrecord Login [username password]
   ptk/UpdateEvent
   (update [_ state]
-    (merge state (dissoc (initial-state) :route)))
+    (merge state (dissoc initial-state :route :router)))
 
   ptk/WatchEvent
   (watch [this state s]
@@ -59,7 +59,7 @@
                   :password password
                   :scope "webapp"}
           on-error #(rx/of (uum/error (tr "errors.auth.unauthorized")))]
-      (->> (rp/req :fetch/token params)
+      (->> (rp/req :auth/login params)
            (rx/map :payload)
            (rx/map logged-in)
            (rx/catch rp/client-error? on-error)))))
@@ -78,11 +78,12 @@
   ptk/UpdateEvent
   (update [_ state]
     (swap! storage dissoc :auth)
-    (merge state (dissoc (initial-state) :route)))
+    (merge state (dissoc initial-state :route :router)))
 
   ptk/WatchEvent
   (watch [_ state s]
-    (rx/of (rt/navigate :auth/login))))
+    (->> (rp/req :auth/logout)
+         (rx/map (constantly (rt/nav :auth/login))))))
 
 (defn logout
   []

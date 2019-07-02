@@ -33,15 +33,6 @@
 
 ;; --- Constants
 
-;; (def +unrestricted+
-;;   #{:auth/login
-;;     :auth/register
-;;     :auth/recovery-request
-;;     :auth/recovery})
-
-;; (def restricted?
-;;   (complement +unrestricted+))
-
 (def route-ref
   (-> (l/key :route)
       (l/derive st/state)))
@@ -60,9 +51,7 @@
   []
   (let [route (mx/react route-ref)
         auth (mx/react st/auth-ref)]
-    (prn "app" (:path route) (:params route))
-    ;; (if (and (restricted? location) (not auth))
-    ;; (do (ts/schedule 0 #(st/emit! (rt/navigate :auth/login))) nil)
+    (prn "main$app" route)
     (case (get-in route [:data :name])
       :auth/login (auth/login-page)
       :auth/register (auth/register-page)
@@ -72,7 +61,7 @@
       :dashboard/projects (dashboard/projects-page)
       ;; ;; :dashboard/elements (dashboard/elements-page)
 
-      :dashboard/icons (let [{:keys [id type]} (get-in route [:params :query ])
+      :dashboard/icons (let [{:keys [id type]} (get-in route [:params :query])
                              id (cond
                                   (str/digits? id) (parse-int id)
                                   (uuid-str? id) (uuid id)
@@ -80,24 +69,24 @@
                              type (when (str/alpha? type) (keyword type))]
                          (dashboard/icons-page type id))
 
-      ;; :dashboard/images (let [{:keys [id type]} params
-      ;;                         type (when (str/alpha? type) (keyword type))
-      ;;                         id (cond
-      ;;                              (str/digits? id) (parse-int id)
-      ;;                              (uuid-str? id) (uuid id)
-      ;;                              :else nil)]
-      ;;                     (dashboard/images-page type id))
+      :dashboard/images (let [{:keys [id type]} (get-in route [:params :query])
+                             id (cond
+                                  (str/digits? id) (parse-int id)
+                                  (uuid-str? id) (uuid id)
+                                   :else nil)
+                             type (when (str/alpha? type) (keyword type))]
+                          (dashboard/images-page type id))
 
-      ;; :dashboard/colors (let [{:keys [id type]} params
-      ;;                         type (when (str/alpha? type) (keyword type))
-      ;;                         id (cond
-      ;;                              (str/digits? id) (parse-int id)
-      ;;                              (uuid-str? id) (uuid id)
-      ;;                              :else nil)]
-      ;;                     (dashboard/colors-page type id))
-      ;; :settings/profile (settings/profile-page)
-      ;; :settings/password (settings/password-page)
-      ;; :settings/notifications (settings/notifications-page)
+      :dashboard/colors (let [{:keys [id type]} (get-in route [:params :query])
+                              type (when (str/alpha? type) (keyword type))
+                              id (cond
+                                   (str/digits? id) (parse-int id)
+                                   (uuid-str? id) (uuid id)
+                                   :else nil)]
+                          (dashboard/colors-page type id))
+      :settings/profile (settings/profile-page)
+      :settings/password (settings/password-page)
+      :settings/notifications (settings/notifications-page)
       :workspace/page (let [projectid (uuid (get-in route [:params :path :project]))
                             pageid (uuid (get-in route [:params :path :page]))]
                         (workspace projectid pageid))
