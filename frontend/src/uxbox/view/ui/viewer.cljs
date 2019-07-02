@@ -18,12 +18,15 @@
 
 ;; --- Refs
 
-(def flags-ref
-  (-> (l/key :flags)
-      (l/derive st/state)))
+(defn- sort-pages
+  [{:keys [pages] :as state}]
+  (let [get-order #(get-in % [:metadata :order])]
+    (assoc state :pages (->> (sort-by get-order pages)
+                             (into [])))))
 
-(def pages-ref
-  (-> (l/key :pages)
+(def state-ref
+  (-> (comp (l/select-keys [:flags :pages :project])
+            (l/lens sort-pages))
       (l/derive st/state)))
 
 ;; --- Component
@@ -39,7 +42,7 @@
   (let [[old-token] (:rum/args oldown)
         [new-token] (:rum/args own)]
     (when (not= old-token new-token)
-      (st/emit! (dv/initialize old-token)))
+      (st/emit! (dv/initialize new-token)))
     own))
 
 (mx/defc viewer-page
@@ -47,14 +50,13 @@
    :will-mount viewer-page-will-mount
    :did-remount viewer-page-did-remount}
   [token index id]
-  (let [flags (mx/react flags-ref)
-        sitemap? (contains? flags :sitemap)
-        get-order #(get-in % [:metadata :order])
-        pages (mx/react pages-ref)]
-    [:section.view-content
-     (when sitemap?
-       (sitemap pages index))
-     (nav flags)
-     (canvas (if (nil? id)
-               (nth pages index)
-               (some #(= id (:id %)) pages)))]))
+  (let [{:keys [project pages flags]} (mx/react state-ref)
+        sitemap? (contains? flags :sitemap)]
+    (when (seq pages)
+      [:section.view-content
+       (when sitemap?
+         (sitemap project pages index))
+       (nav flags)
+       (canvas (if (nil? id)
+                 (nth pages index)
+                 (some #(= id (:id %)) pages)))])))

@@ -2,31 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.view.ui.viewer.sitemap
-  (:require [lentes.core :as l]
-            [potok.core :as ptk]
-            [uxbox.builtins.icons :as i]
-            [uxbox.util.i18n :refer [tr]]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.data :refer [parse-int]]
-            [uxbox.view.data.viewer :as dv]
-            [uxbox.view.store :as st]))
-
-;; --- Refs
-
-(def project-name-ref
-  (-> (l/in [:project :name])
-      (l/derive st/state)))
-
-;; --- Component
+  (:require
+   [lentes.core :as l]
+   [rumext.core :as mx :include-macros true]
+   [uxbox.builtins.icons :as i]
+   [uxbox.view.data.viewer :as dv]
+   [uxbox.view.store :as st]))
 
 (mx/defc sitemap
   {:mixins [mx/static mx/reactive]}
-  [pages selected]
-  (let [project-name (mx/react project-name-ref)
+  [project pages selected]
+  (let [project-name (:name project)
         on-click #(st/emit! (dv/select-page %))]
     [:div.view-sitemap
      [:span.sitemap-title project-name]
