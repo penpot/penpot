@@ -20,56 +20,20 @@
             [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]))
 
-
 (def route-ref
   (-> (l/key :route)
       (l/derive st/state)))
-
-(defn- on-error
-  "A default error handler."
-  [error]
-  (cond
-    ;; Network error
-    (= (:status error) 0)
-    (do
-      (st/emit! (uum/error (tr "errors.network")))
-      (js/console.error "Stack:" (.-stack error)))
-
-    ;; Something else
-    :else
-    (do
-      (st/emit! (uum/error (tr "errors.generic")))
-      (js/console.error "Stack:" (.-stack error)))))
-
-(set! st/*on-error* on-error)
 
 ;; --- Main App (Component)
 
 (mx/defc app
   {:mixins [mx/static mx/reactive]}
   []
-  (let [{loc :id params :params}  (mx/react route-ref)]
-    (case loc
+  (let [route (mx/react route-ref)]
+    (prn "view$app" route)
+    (case (get-in route [:data :name])
       :view/notfound (notfound-page)
-      :view/viewer (let [{:keys [index token]} params]
+      :view/viewer (let [{:keys [index token]} (get-in route [:params :path])]
                      (viewer-page token (parse-int index 0)))
       nil)))
 
-;; --- Routes
-
-(def routes
-  [["/:token/:index" :view/viewer]
-   ["/:token" :view/viewer]
-   ["/not-found" :view/notfound]])
-
-;; --- Main Entry Point
-
-(defn init-routes
-  []
-  (rt/init st/store routes {:default :view/notfound}))
-
-(defn init
-  []
-  (mx/mount (app) (dom/get-element "app"))
-  (mx/mount (lightbox) (dom/get-element "lightbox"))
-  (mx/mount (loader) (dom/get-element "loader")))

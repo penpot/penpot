@@ -76,8 +76,8 @@
 (defrecord SelectPage [index]
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [token (get-in state [:route :params :token])]
-      (rx/of (rt/navigate :view/viewer {:token token :index index :id nil})))))
+    (let [token (get-in state [:route :params :path :token])]
+      (rx/of (rt/nav :view/viewer {:token token :index index})))))
 
 (defn select-page
   [index]

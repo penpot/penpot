@@ -48,7 +48,7 @@
         pages (deref refs/selected-project-pages)
         index (index-of pages page)
         rval (rand-int 1000000)
-        url (str cfg/viewurl "?v=" rval "#/" token "/" index)]
+        url (str cfg/viewurl "?v=" rval "#/preview/" token "/" index)]
     (st/emit! (udp/persist-page (:id page) #(js/open url "new tab" "")))))
 
 (mx/defc header

@@ -26,8 +26,7 @@
   ([event & events]
    (apply ptk/emit! store (cons event events))))
 
-(defn- initial-state
-  []
+(def initial-state
   {:route nil
    :project nil
    :pages nil
