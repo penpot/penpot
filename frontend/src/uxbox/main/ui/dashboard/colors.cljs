@@ -6,23 +6,25 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.colors
-  (:require [cuerdas.core :as str]
-            [lentes.core :as l]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.main.data.colors :as dc]
-            [uxbox.main.data.dashboard :as dd]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.store :as st]
-            [uxbox.main.ui.messages :refer [messages-widget]]
-            [uxbox.main.ui.colorpicker :refer [colorpicker]]
-            [uxbox.main.ui.dashboard.header :refer [header]]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.keyboard :as k]
-            [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.util.color :refer [hex->rgb]]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.i18n :as t :refer [tr]]
-            [uxbox.util.lens :as ul]))
+  (:require
+   [cuerdas.core :as str]
+   [lentes.core :as l]
+   [rumext.core :as mx :include-macros true]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.colors :as dc]
+   [uxbox.main.data.dashboard :as dd]
+   [uxbox.main.data.lightbox :as udl]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.colorpicker :refer [colorpicker]]
+   [uxbox.main.ui.dashboard.header :refer [header]]
+   [uxbox.main.ui.keyboard :as k]
+   [uxbox.main.ui.lightbox :as lbx]
+   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.util.color :refer [hex->rgb]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.i18n :as t :refer [tr]]
+   [uxbox.util.lens :as ul]
+   [uxbox.util.router :as rt]))
 
 ;; --- Refs
 
@@ -93,7 +95,7 @@
         editable? (= type :own)]
     (letfn [(on-click [event]
               (let [type (or type :own)]
-                (st/emit! (dc/select-collection type id))))
+                (st/emit! (rt/navigate :dashboard/colors nil {:type type :id id}))))
             (on-input-change [event]
               (let [value (dom/get-target event)
                     value (dom/get-value value)]
@@ -137,7 +139,8 @@
     [:ul.library-elements {}
      (when own?
        [:li {}
-        [:a.btn-primary {:on-click #(st/emit! (dc/create-collection))} (tr "ds.colors-collection.new")]])
+        [:a.btn-primary {:on-click #(st/emit! (dc/create-collection))}
+         (tr "ds.colors-collection.new")]])
      (for [coll colls]
        (let [id (:id coll)
              selected? (= id selected)]
@@ -146,18 +149,15 @@
 
 (mx/defc nav
   {:mixins [mx/static]}
-  [{:keys [id type] :as state} colls]
+  [{:keys [id type] :as state} colls]2
   (letfn [(select-tab [type]
-            (if (= type :own)
-              (st/emit! (dc/select-collection type))
-              (let [coll (->> (map second colls)
-                              (filter #(= type (:type %)))
-                              (sort-by :created-at)
-                              (first))]
-                (if coll
-                  (st/emit! (dc/select-collection type (:id coll)))
-                  (st/emit! (dc/select-collection type))))))]
-    [:div.library-bar {}
+            (if-let [coll (->> (map second colls)
+                               (filter #(= type (:type %)))
+                               (sort-by :created-at)
+                               (first))]
+              (st/emit! (rt/nav :dashboard/colors nil {:type type :id (:id coll)}))
+              (st/emit! (rt/nav :dashboard/colors nil {:type type}))))]
+  [:div.library-bar {}
      [:div.library-bar-inside {}
       [:ul.library-tabs {}
        [:li {:class-name (when (= type :own) "current")

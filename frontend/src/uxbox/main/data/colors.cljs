@@ -5,16 +5,17 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.colors
-  (:require [clojure.set :as set]
-            [beicon.core :as rx]
-            [uxbox.util.time :as dt]
-            [uxbox.util.uuid :as uuid]
-            [potok.core :as ptk]
-            [uxbox.util.i18n :refer [tr]]
-            [uxbox.util.router :as r]
-            [uxbox.util.color :as color]
-            [uxbox.main.store :as st]
-            [uxbox.main.repo :as rp]))
+  (:require
+   [beicon.core :as rx]
+   [clojure.set :as set]
+   [potok.core :as ptk]
+   [uxbox.main.repo :as rp]
+   [uxbox.main.store :as st]
+   [uxbox.util.color :as color]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.router :as rt]
+   [uxbox.util.time :as dt]
+   [uxbox.util.uuid :as uuid]))
 
 ;; --- Initialize
 
@@ -39,22 +40,8 @@
 
 (defn initialize
   [type id]
+  (prn "colors$initialize" type id)
   (Initialize. type id))
-
-;; --- Select a Collection
-
-(defrecord SelectCollection [type id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (r/navigate :dashboard/colors
-                       {:type type :id id}))))
-
-(defn select-collection
-  ([type]
-   (select-collection type nil))
-  ([type id]
-   {:pre [(keyword? type)]}
-   (SelectCollection. type id)))
 
 ;; --- Collections Fetched
 
@@ -103,7 +90,7 @@
   ptk/WatchEvent
   (watch [_ state stream]
     (rx/of (persist-collections)
-           (select-collection :own id))))
+           (rt/nav :dashboard/colors nil {:type :own :id id}))))
 
 (defn create-collection
   []
@@ -120,10 +107,10 @@
           version (or (get state ::version) -1)
           value (->> (get state :colors-collections)
                      (into {} xform))
-          store {:key "color-collections"
-                 :version version
-                 :value value}]
-      (->> (rp/req :update/kvstore store)
+          data {:id "color-collections"
+                :version version
+                :value value}]
+      (->> (rp/req :update/kvstore data)
            (rx/map :payload)
            (rx/map collections-fetched)))))
 
@@ -157,7 +144,7 @@
   (watch [_ state s]
     (let [type (get-in state [:dashboard :colors :type])]
       (rx/of (persist-collections)
-             (select-collection type)))))
+             (rt/nav :dashboard/colors nil {:type type})))))
 
 (defn delete-collection
   [id]

@@ -23,7 +23,7 @@
                      response))))))
 
 (defmethod request :update/kvstore
-  [_ data]
-  (let [url (str url "/kvstore")
+  [_ {:keys [id] :as data}]
+  (let [url (str url "/kvstore/" id)
         params {:url url :method :put :body data}]
     (send! params)))

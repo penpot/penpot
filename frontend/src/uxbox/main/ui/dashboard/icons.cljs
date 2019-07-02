@@ -196,12 +196,12 @@
   (let [own? (= type :own)
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
-              (if (= type :builtin)
-                (let [colls (->> (map second colls)
-                                 (filter #(= :builtin (:type %)))
-                                 (sort-by :name))]
-                  (st/emit! (rt/navigate :dashboard/icons {} {:type type :id (first colls)})))
-                (st/emit! (rt/navigate :dashboard/icons {} {:type type}))))]
+            (if-let [coll (->> (map second colls)
+                               (filter #(= type (:type %)))
+                               (sort-by :created-at)
+                               (first))]
+              (st/emit! (rt/nav :dashboard/icons nil {:type type :id (:id coll)}))
+              (st/emit! (rt/nav :dashboard/icons nil {:type type}))))]
       [:div.library-bar {}
        [:div.library-bar-inside {}
         [:ul.library-tabs {}
@@ -211,7 +211,6 @@
          [:li {:class-name (when builtin? "current")
                :on-click (partial select-tab :builtin)}
           (tr "ds.store-icons-title")]]
-
         (nav-section type id colls)]])))
 
 ;; --- Grid

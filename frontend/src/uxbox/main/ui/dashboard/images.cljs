@@ -192,15 +192,12 @@
   (let [own? (= type :own)
         builtin? (= type :builtin)]
     (letfn [(select-tab [type]
-              (if own?
-                (st/emit! (rt/nav :dashboard/images nil {:type type}))
-                (let [coll (->> (map second colls)
+              (if-let [coll (->> (map second colls)
                                  (filter #(= type (:type %)))
                                  (sort-by :name)
                                  (first))]
-                  (if coll
-                    (st/emit! (rt/nav :dashboard/images nil {:type type :id (:id coll)}))
-                    (st/emit! (rt/nav :dashboard/images nil {:type type}))))))]
+                (st/emit! (rt/nav :dashboard/images nil {:type type :id (:id coll)}))
+                (st/emit! (rt/nav :dashboard/images nil {:type type}))))]
       [:div.library-bar {}
        [:div.library-bar-inside {}
         [:ul.library-tabs {}
