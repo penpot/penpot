@@ -19,7 +19,7 @@
               :email "user1@uxbox.io"}
         user (with-open [conn (db/connection)]
                (usu/create-user conn data))]
-    (th/with-server {:handler http/app}
+    (th/with-server {:handler @http/app}
       (let [data {:username "user1"
                   :password "user1"
                   :metadata "1"
@@ -37,7 +37,7 @@
               :email "user1@uxbox.io"}
         user (with-open [conn (db/connection)]
                (usu/create-user conn data))]
-    (th/with-server {:handler http/app}
+    (th/with-server {:handler @http/app}
       (let [data {:username "user1"
                   :password "user2"
                   :metadata "2"

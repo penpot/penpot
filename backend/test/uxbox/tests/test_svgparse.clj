@@ -59,7 +59,7 @@
   ;;     (let [image (slurp (io/resource "uxbox/tests/_files/sample2.svg"))
   ;;           path "/api/svg/parse"
   ;;           user (th/create-user conn 1)]
-  ;;       (th/with-server {:handler http/app}
+  ;;       (th/with-server {:handler @http/app}
   ;;         (let [rsp (th/request {:method :post
   ;;                                :path path
   ;;                                :body image

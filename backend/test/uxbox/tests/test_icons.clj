@@ -18,7 +18,7 @@
           data {:user (:id user)
                 :name "coll1"}
           coll (icons/create-collection conn data)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/icon-collections")
               [status data] (th/http-get user uri)]
           ;; (println "RESPONSE:" status data)
@@ -28,7 +28,7 @@
 (t/deftest test-http-create-icon-collection
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/icon-collections")
               data {:user (:id user)
                     :name "coll1"}
@@ -45,7 +45,7 @@
           data {:user (:id user)
                 :name "coll1"}
           coll (icons/create-collection conn data)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/icon-collections/" (:id coll))
               params {:body (assoc coll :name "coll2")}
               [status data] (th/http-put user uri params)]
@@ -61,7 +61,7 @@
                 :name "coll1"
                 :data #{1}}
           coll (icons/create-collection conn data)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/icon-collections/" (:id coll))
               [status data] (th/http-delete user uri)]
           (t/is (= 204 status))
@@ -72,7 +72,7 @@
 (t/deftest test-http-create-icon
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/icons")
               data {:name "sample.jpg"
                     :content "<g></g>"
@@ -99,7 +99,7 @@
                 :metadata {}
                 :collection nil}
           icon (icons/create-icon conn data)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/icons/" (:id icon))
               params {:body (assoc icon :name "my stuff")}
               [status data] (th/http-put user uri params)]
@@ -117,7 +117,7 @@
                 :metadata {}
                 :collection nil}
           icon (icons/create-icon conn data)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/icons/" (:id icon) "/copy")
               body {:collection nil}
               params {:body body}
@@ -137,7 +137,7 @@
                 :metadata {}
                 :collection nil}
           icon (icons/create-icon conn data)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/icons/" (:id icon))
               [status data] (th/http-delete user uri)]
           (t/is (= 204 status))
@@ -154,7 +154,7 @@
                 :metadata {}
                 :collection nil}
           icon (icons/create-icon conn data)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/icons")
               [status data] (th/http-get user uri)]
           ;; (println "RESPONSE:" status data)

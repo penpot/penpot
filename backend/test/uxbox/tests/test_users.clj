@@ -16,7 +16,7 @@
 (t/deftest test-http-retrieve-profile
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/profile/me")
               [status data] (th/http-get user uri)]
           ;; (println "RESPONSE:" status data)
@@ -30,7 +30,7 @@
 (t/deftest test-http-update-profile
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/profile/me")
               data (assoc user
                           :fullname "Full Name"
@@ -49,7 +49,7 @@
 (t/deftest test-http-update-profile-photo
   (with-open [conn (db/connection)]
     (let [user (th/create-user conn 1)]
-      (th/with-server {:handler http/app}
+      (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/profile/me/photo")
               params [{:name "sample.jpg"
                        :part-name "file"

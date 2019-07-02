@@ -55,7 +55,6 @@
                   (try
                     (handler (transform request) respond raise)
                     (catch Exception e
-                      (prn handler)
                       (raise e))))))))})
 
 (def ^:private multipart-params-middleware
