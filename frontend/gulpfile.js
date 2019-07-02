@@ -6,6 +6,7 @@ const mustache = require("gulp-mustache");
 const rename = require("gulp-rename");
 const gulpif = require("gulp-if");
 const gzip = require("gulp-gzip");
+const cleancss = require("gulp-clean-css");
 
 const paths = {};
 paths.app = "./resources/";
@@ -54,10 +55,14 @@ function scssPipeline(options) {
     const output = options.output;
 
     return gulp.src(input)
-      // .pipe(plumber())
-      .pipe(scss({style: "expanded"}))
+      .pipe(scss({
+        style: "expanded",
+        errLogToConsole: false
+      }).on("error", (err) => {
+        console.log(err.messageFormatted);
+      }))
       .pipe(makeAutoprefixer())
-      // .pipe(gulpif(isProduction, cssmin()))
+      .pipe(gulpif(isProduction, cleancss()))
       .pipe(gulp.dest(output));
   };
 }

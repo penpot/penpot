@@ -14,8 +14,7 @@
     "dist:main": "clojure -Adev tools.clj dist main",
     "dist:view": "clojure -Adev tools.clj dist view",
     "dist:worker": "clojure -Adev tools.clj dist worker",
-    "dist:assets": "gulp dist",
-    "prod": "gulp dist --production",
+    "dist:assets": "NODE_ENV=production gulp dist",
     "start": "npm run figwheel",
     "build:test": "clojure -Adev tools.clj build-tests",
     "build:main": "clojure -Adev tools.clj build main",
@@ -26,6 +25,7 @@
   "devDependencies": {
     "gulp": "4.0.2",
     "gulp-autoprefixer": "^6.1.0",
+    "gulp-clean-css": "^4.2.0",
     "gulp-gzip": "^1.4.2",
     "gulp-if": "^2.0.2",
     "gulp-mustache": "^4.1.1",
