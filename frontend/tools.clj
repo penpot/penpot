@@ -72,26 +72,43 @@
                     :output-dir "target/tests/main"
                     :optimizations :none)))
 
+
+(def figwheel-builds
+  {:main {:id "main"
+          :options (merge default-build-options
+                          (get-output-options "main" false true))}
+   :view {:id "view"
+          :options (merge default-build-options
+                          (get-output-options "view" false true))}
+   :worker {:id "worker"
+            :options (merge default-build-options
+                            {:target :webworker}
+                            (get-output-options "worker" false true))}})
+
+(def figwheel-options
+  {:open-url false
+   :load-warninged-code true
+   :auto-testing false
+   :css-dirs ["resources/public/css"
+              "resources/public/view/css"]
+   :ring-server-options {:port 3449 :host "0.0.0.0"}
+   :watch-dirs ["src" "test"]})
+
 (defmethod task "figwheel"
-  [args]
+  [& args]
   (figwheel/start
-   {:open-url false
-    :load-warninged-code true
-    :auto-testing false
-    :css-dirs ["resources/public/css"
-               "resources/public/view/css"]
-    :ring-server-options {:port 3449 :host "0.0.0.0"}
-    :watch-dirs ["src" "test"]}
-   {:id "main"
-    :options (merge default-build-options
-                    (get-output-options "main" false true))}
-   {:id "view"
-    :options (merge default-build-options
-                    (get-output-options "view" false true))}
-   {:id "worker"
-    :options (merge default-build-options
-                    {:target :webworker}
-                    (get-output-options "worker" false true))}))
+   figwheel-options
+   (:main figwheel-builds)
+   (:view figwheel-builds)
+   (:worker figwheel-builds)))
+
+(defmethod task "figwheel-single"
+  [[_ name]]
+  (when-let [build (get figwheel-builds (keyword name))]
+    (figwheel/start
+     figwheel-options
+     build
+     (:worker figwheel-builds))))
 
 ;;; Build script entrypoint. This should be the last expression.
 
