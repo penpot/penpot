@@ -121,7 +121,7 @@
   [config]
   (jetty/run-jetty @app {:join? false
                          :async? true
-                         :daemon? true
+                         :daemon? false
                          :port (:http-server-port config)}))
 
 (defstate server
