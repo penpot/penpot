@@ -32,5 +32,5 @@ WORKDIR /srv/uxbox/
 
 EXPOSE 6060
 
-ENTRYPOINT ["sh", "/entrypoint.sh"]
+ENTRYPOINT ["bash", "/entrypoint.sh"]
 CMD ["clojure", "-m", "uxbox.main"]

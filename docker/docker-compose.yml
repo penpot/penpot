@@ -10,11 +10,11 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.177.57.0/24
+        - subnet: 172.177.12.0/24
 
 services:
   uxdb:
-    image: postgres:latest
+    image: postgres:11
     container_name: uxdb
     restart: always
     ports:
@@ -32,7 +32,7 @@ services:
   uxbackend:
     image: uxbox-backend:latest
     container_name: uxbackend
-    restart: always
+    # restart: always
     depends_on:
       - uxdb
     ports:

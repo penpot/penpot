@@ -30,12 +30,12 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list; \
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list; \
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -; \
     apt-get update -yq &&  \
     apt-get install -yq  \
-        postgresql-9.6 \
-        postgresql-contrib-9.6 \
+        postgresql-11 \
+        postgresql-contrib-11 \
     ;\
     rm -rf /var/lib/apt/lists/*;
 
@@ -43,7 +43,7 @@ RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
     echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail;
 
-COPY files/pg_hba.conf /etc/postgresql/9.6/main/pg_hba.conf
+COPY files/pg_hba.conf /etc/postgresql/11/main/pg_hba.conf
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
 

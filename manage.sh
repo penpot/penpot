@@ -2,35 +2,37 @@
 set -e
 
 REV=`git log -n 1 --pretty=format:%h -- docker/`
-IMGNAME="uxbox"
+IMGNAME="uxbox-devenv"
 
-function kill-container {
+function kill-devenv-container {
     echo "Cleaning development container $IMGNAME:$REV..."
-    if $(docker ps | grep -q $IMGNAME); then
-        docker ps | grep $IMGNAME | awk '{print $1}' | xargs --no-run-if-empty docker kill
-    fi
-    if $(docker ps -a | grep -q $IMGNAME); then
-        docker ps -a | grep $IMGNAME | awk '{print $1}' | xargs --no-run-if-empty docker rm
-    fi
+    docker ps -a -f name=$IMGNAME -q | xargs --no-run-if-empty docker kill
 }
 
-function remove-image {
+function remove-devenv-images {
     echo "Clean old development image $IMGNAME..."
-    docker images | grep $IMGNAME | awk '{print $3}' | xargs --no-run-if-empty docker rmi
+    docker images $IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
 }
 
 function build-devenv {
-    kill-container
     echo "Building development image $IMGNAME:$REV..."
-    docker build --rm=true -t $IMGNAME:$REV --build-arg EXTERNAL_UID=$(id -u)  -t $IMGNAME:latest docker/devenv
+    docker build --rm=true \
+           -t $IMGNAME:$REV \
+           -t $IMGNAME:latest \
+           --build-arg EXTERNAL_UID=$(id -u) \
+           --label="io.uxbox.devenv" \
+           docker/devenv
+}
+
+function build-devenv-if-not-exists {
+    if [[ ! $(docker images $IMGNAME:$REV -q) ]]; then
+        build-devenv
+    fi
 }
 
 function run-devenv {
-    kill-container
-
-    if ! $(docker images | grep $IMGNAME | grep -q $REV); then
-        build-devenv
-    fi
+    kill-devenv-container;
+    build-devenv-if-not-exists;
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
@@ -46,6 +48,7 @@ function run-devenv {
          -v $HOME/.m2:/home/uxbox/.m2 \
          -v $HOME/.gitconfig:/home/uxbox/.gitconfig \
          -p 3449:3449 -p 6060:6060 -p 9090:9090 \
+         --name "uxbox-devenv" \
          $CONTAINER
 }
 
@@ -57,24 +60,20 @@ function run-all-tests {
 }
 
 function run-frontend-tests {
-   if ! $(docker images | grep $IMGNAME | grep -q $REV); then
-       build-devenv
-   fi
+    build-devenv-if-not-exists;
 
-   CONTAINER=$IMGNAME:latest
+    CONTAINER=$IMGNAME:latest
 
-   echo "Running development image $CONTAINER to test backend..."
-   docker run -ti --rm \
-          -w /home/uxbox/uxbox/frontend \
-          -v `pwd`:/home/uxbox/uxbox \
-          -v $HOME/.m2:/home/uxbox/.m2 \
-          $CONTAINER ./scripts/build-and-run-tests.sh
+    echo "Running development image $CONTAINER to test backend..."
+    docker run -ti --rm \
+           -w /home/uxbox/uxbox/frontend \
+           -v `pwd`:/home/uxbox/uxbox \
+           -v $HOME/.m2:/home/uxbox/.m2 \
+           $CONTAINER ./scripts/build-and-run-tests.sh
 }
 
 function run-backend-tests {
-    if ! $(docker images | grep $IMGNAME | grep -q $REV); then
-        build-devenv
-    fi
+    build-devenv-if-not-exists;
 
     CONTAINER=$IMGNAME:latest
 
@@ -86,9 +85,7 @@ function run-backend-tests {
 }
 
 function build-release-frontend-local {
-    if ! $(docker images | grep $IMGNAME | grep -q $REV); then
-        build-devenv
-    fi
+    build-devenv-if-not-exists;
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
@@ -108,13 +105,20 @@ function build-release-frontend-local {
 function build-release-frontend {
     build-release-frontend-local || exit 1;
     rm -rf docker/release.frontend/dist || exit 1;
-    cp -r frontend/dist docker/release.frontend/ || exit 1;
-    docker build --rm=true -t ${IMGNAME}-frontend:$REV -t ${IMGNAME}-frontend:latest docker/release.frontend/
+    cp -vr frontend/dist docker/release.frontend/ || exit 1;
+
+    docker build --rm=true \
+           -t ${IMGNAME}-frontend:$REV \
+           -t ${IMGNAME}-frontend:latest \
+           docker/release.frontend/;
+
     rm -rf docker/release.frontend/dist || exit 1;
 }
 
 function build-release-backend-local {
     echo "Prepare backend release..."
+
+    rm -rf ./backend/dist
 
     rsync -avr \
       --exclude="/test" \
@@ -128,8 +132,13 @@ function build-release-backend-local {
 function build-release-backend {
     build-release-backend-local || exit 1;
     rm -rf docker/release.backend/dist || exit 1;
-    cp -r backend/dist docker/release.backend/ || exit 1;
-    docker build --rm=true -t ${IMGNAME}-backend:$REV -t ${IMGNAME}-backend:latest docker/release.backend/
+    cp -vr backend/dist docker/release.backend/ || exit 1;
+
+    docker build --rm=true \
+           -t ${IMGNAME}-backend:$REV \
+           -t ${IMGNAME}-backend:latest \
+           docker/release.backend/;
+
     rm -rf docker/release.backend/dist || exit 1;
 }
 
@@ -141,9 +150,11 @@ function build-release {
 }
 
 function run-release {
-    kill-container
+    if [[ ! $(docker images uxbox-backend:latest) ]]; then
+        build-release
+    fi
 
-    if ! $(docker images | grep $IMGNAME-backend | grep -q $REV); then
+    if [[ ! $(docker images uxbox-frontend:latest) ]]; then
         build-release
     fi
 
@@ -169,8 +180,8 @@ function usage {
 
 case $1 in
     clean)
-        kill-container
-        remove-image
+        kill-devenv-container
+        remove-devenv-images
         ;;
     build-devenv)
         build-devenv

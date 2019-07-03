@@ -1,4 +1,3 @@
-# Once application has been built, prepare production image
 FROM nginx:alpine
 
 LABEL maintainer="Monogramm Maintainers <opensource at monogramm dot io>"

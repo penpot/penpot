@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-set -e
-echo "UXBOX Docker Dev entrypoint initialization..."
+set -ex
+sudo pg_ctlcluster 11 main start
 
 exec "$@"
