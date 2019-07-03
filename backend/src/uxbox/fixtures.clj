@@ -6,18 +6,20 @@
 
 (ns uxbox.fixtures
   "A initial fixtures."
-  (:require [buddy.hashers :as hashers]
-            [buddy.core.codecs :as codecs]
-            [mount.core :as mount]
-            [clj-uuid :as uuid]
-            [suricatta.core :as sc]
-            [uxbox.config :as cfg]
-            [uxbox.db :as db]
-            [uxbox.migrations]
-            [uxbox.util.transit :as t]
-            [uxbox.services.users :as susers]
-            [uxbox.services.projects :as sproj]
-            [uxbox.services.pages :as spag]))
+  (:require
+   [buddy.core.codecs :as codecs]
+   [buddy.hashers :as hashers]
+   [clj-uuid :as uuid]
+   [mount.core :as mount]
+   [suricatta.core :as sc]
+   [uxbox.config :as cfg]
+   [uxbox.db :as db]
+   [uxbox.media :as media]
+   [uxbox.migrations]
+   [uxbox.services.pages :as spag]
+   [uxbox.services.projects :as sproj]
+   [uxbox.services.users :as susers]
+   [uxbox.util.transit :as t]))
 
 (defn- mk-uuid
   [prefix i]
@@ -68,7 +70,15 @@
 
 (defn -main
   [& args]
-  (mount/start)
+  (-> (mount/only #{#'uxbox.config/config
+                    #'uxbox.config/secret
+                    #'uxbox.db/datasource
+                    #'uxbox.migrations/migrations
+                    #'uxbox.media/assets-storage
+                    #'uxbox.media/media-storage
+                    #'uxbox.media/images-storage
+                    #'uxbox.media/thumbnails-storage})
+      (mount/start))
   (with-open [conn (db/connection)]
     (sc/atomic conn
       (doseq [i (range num-users)]
