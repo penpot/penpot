@@ -17,4 +17,5 @@
 
 (defn -main
   [& args]
-  (mount/start))
+  (mount/start)
+  (.join uxbox.http/server))
