@@ -8,6 +8,7 @@
   (:require
    [rumext.core :as mx :include-macros true]
    [uxbox.main.data.auth :refer [logout]]
+   [uxbox.main.data.users :as udu]
    [uxbox.main.locales.en :as en]
    [uxbox.main.locales.fr :as fr]
    [uxbox.main.store :as st]
@@ -103,6 +104,8 @@
 
     (st/emit! #(assoc % :router router))
     (add-watch html-history/path ::main #(on-navigate router %4))
+
+    (st/emit! (udu/fetch-profile))
 
     (mx/mount (app) (dom/get-element "app"))
     (mx/mount (lightbox) (dom/get-element "lightbox"))

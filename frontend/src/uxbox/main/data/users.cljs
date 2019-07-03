@@ -5,20 +5,26 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.users
-  (:require [cljs.spec.alpha :as s]
-            [beicon.core :as rx]
-            [potok.core :as ptk]
-            [uxbox.main.repo :as rp]
-            [uxbox.util.spec :as us]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.messages :as uum]))
+  (:require
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [potok.core :as ptk]
+   [uxbox.main.repo :as rp]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.messages :as uum]
+   [uxbox.util.spec :as us]
+   [uxbox.util.storage :refer [storage]]))
 
 ;; --- Profile Fetched
 
 (deftype ProfileFetched [data]
   ptk/UpdateEvent
   (update [this state]
-    (assoc state :profile data)))
+    (assoc state :profile data))
+
+  ptk/EffectEvent
+  (effect [this state stream]
+    (swap! storage assoc :profile data)))
 
 (defn profile-fetched
   [data]

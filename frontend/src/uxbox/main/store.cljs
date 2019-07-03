@@ -10,6 +10,7 @@
             [potok.core :as ptk]
             [uxbox.builtins.colors :as colors]
             [uxbox.util.storage :refer [storage]]))
+
 (enable-console-print!)
 
 (def ^:dynamic *on-error* identity)
@@ -36,10 +37,10 @@
                :images-filter ""}
    :route nil
    :router nil
-   :auth (:auth storage nil)
+   :auth (:auth storage)
+   :profile (:profile storage)
    :clipboard #queue []
    :undo {}
-   :profile nil
    :workspace nil
    :images-collections nil
    :images nil

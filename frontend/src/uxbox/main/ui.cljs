@@ -13,7 +13,6 @@
             [uxbox.builtins.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.data.projects :as dp]
-            [uxbox.main.data.users :as udu]
             [uxbox.main.data.auth :refer [logout]]
             [uxbox.main.ui.loader :refer [loader]]
             [uxbox.main.ui.lightbox :refer [lightbox]]
@@ -39,15 +38,8 @@
 
 ;; --- Main App (Component)
 
-(defn app-will-mount
-  [own]
-  (when @st/auth-ref
-    (st/emit! (udu/fetch-profile)))
-  own)
-
 (mx/defc app
-  {:will-mount app-will-mount
-   :mixins [mx/reactive]}
+  {:mixins [mx/reactive]}
   []
   (let [route (mx/react route-ref)
         auth (mx/react st/auth-ref)]
@@ -56,39 +48,48 @@
       :auth/login (auth/login-page)
       :auth/register (auth/register-page)
       :auth/recovery-request (auth/recovery-request-page)
-      :auth/recovery (let [token (get-in route [:params :path :token])]
-                       (auth/recovery-page token))
+
+      :auth/recovery
+      (let [token (get-in route [:params :path :token])]
+        (auth/recovery-page token))
+
       :dashboard/projects (dashboard/projects-page)
-      ;; ;; :dashboard/elements (dashboard/elements-page)
-
-      :dashboard/icons (let [{:keys [id type]} (get-in route [:params :query])
-                             id (cond
-                                  (str/digits? id) (parse-int id)
-                                  (uuid-str? id) (uuid id)
-                                   :else nil)
-                             type (when (str/alpha? type) (keyword type))]
-                         (dashboard/icons-page type id))
-
-      :dashboard/images (let [{:keys [id type]} (get-in route [:params :query])
-                             id (cond
-                                  (str/digits? id) (parse-int id)
-                                  (uuid-str? id) (uuid id)
-                                   :else nil)
-                             type (when (str/alpha? type) (keyword type))]
-                          (dashboard/images-page type id))
-
-      :dashboard/colors (let [{:keys [id type]} (get-in route [:params :query])
-                              type (when (str/alpha? type) (keyword type))
-                              id (cond
-                                   (str/digits? id) (parse-int id)
-                                   (uuid-str? id) (uuid id)
-                                   :else nil)]
-                          (dashboard/colors-page type id))
       :settings/profile (settings/profile-page)
       :settings/password (settings/password-page)
       :settings/notifications (settings/notifications-page)
-      :workspace/page (let [projectid (uuid (get-in route [:params :path :project]))
-                            pageid (uuid (get-in route [:params :path :page]))]
-                        (workspace projectid pageid))
+      ;; ;; :dashboard/elements (dashboard/elements-page)
+
+      :dashboard/icons
+      (let [{:keys [id type]} (get-in route [:params :query])
+            id (cond
+                 (str/digits? id) (parse-int id)
+                 (uuid-str? id) (uuid id)
+                 :else nil)
+            type (when (str/alpha? type) (keyword type))]
+        (dashboard/icons-page type id))
+
+      :dashboard/images
+      (let [{:keys [id type]} (get-in route [:params :query])
+            id (cond
+                 (str/digits? id) (parse-int id)
+                 (uuid-str? id) (uuid id)
+                 :else nil)
+            type (when (str/alpha? type) (keyword type))]
+        (dashboard/images-page type id))
+
+      :dashboard/colors
+      (let [{:keys [id type]} (get-in route [:params :query])
+            type (when (str/alpha? type) (keyword type))
+            id (cond
+                 (str/digits? id) (parse-int id)
+                 (uuid-str? id) (uuid id)
+                 :else nil)]
+        (dashboard/colors-page type id))
+
+      :workspace/page
+      (let [projectid (uuid (get-in route [:params :path :project]))
+            pageid (uuid (get-in route [:params :path :page]))]
+        (workspace projectid pageid))
+
       nil
       )))
