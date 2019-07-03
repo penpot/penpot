@@ -12,7 +12,7 @@
    [uxbox.main.locales.en :as en]
    [uxbox.main.locales.fr :as fr]
    [uxbox.main.store :as st]
-   [uxbox.main.ui :refer [app]]
+   [uxbox.main.ui :as ui]
    [uxbox.main.ui.lightbox :refer [lightbox]]
    [uxbox.main.ui.loader :refer [loader]]
    [uxbox.util.dom :as dom]
@@ -65,24 +65,6 @@
 
 (set! st/*on-error* on-error)
 
-(def routes
-  [["/auth"
-    ["/login" :auth/login]
-    ["/register" :auth/register]
-    ["/recovery/request" :auth/recovery-request]
-    ["/recovery/token/:token" :auth/recovery]]
-   ["/settings"
-    ["/profile" :settings/profile]
-    ["/password" :settings/password]
-    ["/notifications" :settings/notifications]]
-   ["/dashboard"
-    ["/projects" :dashboard/projects]
-    ["/elements" :dashboard/elements]
-    ["/icons" :dashboard/icons]
-    ["/images" :dashboard/images]
-    ["/colors" :dashboard/colors]]
-   ["/workspace/:project/:page" :workspace/page]])
-
 (defn- on-navigate
   [router path]
   (let [match (rt/match router path)]
@@ -99,7 +81,7 @@
 
 (defn init-ui
   []
-  (let [router (rt/init routes)
+  (let [router (rt/init ui/routes)
         cpath (deref html-history/path)]
 
     (st/emit! #(assoc % :router router))
@@ -107,7 +89,7 @@
 
     (st/emit! (udu/fetch-profile))
 
-    (mx/mount (app) (dom/get-element "app"))
+    (mx/mount (ui/app) (dom/get-element "app"))
     (mx/mount (lightbox) (dom/get-element "lightbox"))
     (mx/mount (loader) (dom/get-element "loader"))
 

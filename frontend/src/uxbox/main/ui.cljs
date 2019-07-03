@@ -30,20 +30,38 @@
             [uxbox.util.dom :as dom]
             [rumext.core :as mx :include-macros true]))
 
-;; --- Constants
+;; --- Refs
 
 (def route-ref
   (-> (l/key :route)
       (l/derive st/state)))
+
+;; --- Routes
+
+(def routes
+  [["/auth"
+    ["/login" :auth/login]
+    ["/register" :auth/register]
+    ["/recovery/request" :auth/recovery-request]
+    ["/recovery/token/:token" :auth/recovery]]
+   ["/settings"
+    ["/profile" :settings/profile]
+    ["/password" :settings/password]
+    ["/notifications" :settings/notifications]]
+   ["/dashboard"
+    ["/projects" :dashboard/projects]
+    ["/elements" :dashboard/elements]
+    ["/icons" :dashboard/icons]
+    ["/images" :dashboard/images]
+    ["/colors" :dashboard/colors]]
+   ["/workspace/:project/:page" :workspace/page]])
 
 ;; --- Main App (Component)
 
 (mx/defc app
   {:mixins [mx/reactive]}
   []
-  (let [route (mx/react route-ref)
-        auth (mx/react st/auth-ref)]
-    (prn "main$app" route)
+  (let [route (mx/react route-ref)]
     (case (get-in route [:data :name])
       :auth/login (auth/login-page)
       :auth/register (auth/register-page)
