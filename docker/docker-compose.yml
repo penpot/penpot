@@ -30,7 +30,7 @@ services:
       # - /etc/timezone:/etc/timezone:ro
 
   uxbackend:
-    image: uxbox-backend:latest
+    image: uxbox-production-backend:latest
     container_name: uxbackend
     # restart: always
     depends_on:
@@ -69,7 +69,7 @@ services:
       - UXBOX_SECRET="foobar"
 
   uxfrontend:
-    image: uxbox-frontend:latest
+    image: uxbox-production-frontend:latest
     container_name: uxfrontend
     #hostname: uxbox.io
     restart: always

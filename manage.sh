@@ -108,8 +108,8 @@ function build-release-frontend {
     cp -vr frontend/dist docker/release.frontend/ || exit 1;
 
     docker build --rm=true \
-           -t ${IMGNAME}-frontend:$REV \
-           -t ${IMGNAME}-frontend:latest \
+           -t uxbox-production-frontend:$REV \
+           -t uxbox-production-frontend:latest \
            docker/release.frontend/;
 
     rm -rf docker/release.frontend/dist || exit 1;
@@ -135,8 +135,8 @@ function build-release-backend {
     cp -vr backend/dist docker/release.backend/ || exit 1;
 
     docker build --rm=true \
-           -t ${IMGNAME}-backend:$REV \
-           -t ${IMGNAME}-backend:latest \
+           -t uxbox-production-backend:$REV \
+           -t uxbox-production-backend:latest \
            docker/release.backend/;
 
     rm -rf docker/release.backend/dist || exit 1;
