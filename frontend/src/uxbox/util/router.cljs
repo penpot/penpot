@@ -95,8 +95,8 @@
       (navigate! router id params qparams))))
 
 (defn nav
-  ([id] (navigate id nil nil))
-  ([id params] (navigate id params nil))
+  ([id] (nav id nil nil))
+  ([id params] (nav id params nil))
   ([id params qparams]
    {:pre [(keyword? id)]}
    (Navigate. id params qparams)))
