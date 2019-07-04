@@ -10,15 +10,14 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.177.12.0/24
+        - subnet: 172.177.10.0/24
 
 services:
   uxdb:
     image: postgres:11
-    # container_name: uxdb
     restart: always
     ports:
-      - 5432
+      - 5432:5432
     environment:
       - POSTGRES_INITDB_ARGS="--data-checksums"
       - POSTGRES_DB=uxbox
@@ -70,7 +69,6 @@ services:
 
   uxfrontend:
     image: uxbox-production-frontend:latest
-    # container_name: uxfrontend
     #hostname: uxbox.io
     restart: always
     depends_on:
@@ -81,3 +79,16 @@ services:
       - backend_data:/srv/uxbox/
       # - /etc/localtime:/etc/localtime:ro
       # - /etc/timezone:/etc/timezone:ro
+
+  uxfrontend-dev:
+    image: uxbox-develop-frontend:latest
+    restart: always
+    depends_on:
+      - uxbackend
+    ports:
+      - 8081:8080
+    volumes:
+      - backend_data:/srv/uxbox/
+      # - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+

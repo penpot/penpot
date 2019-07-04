@@ -156,22 +156,16 @@ function build-release-backend-image {
     rm -rf docker/release.backend/dist || exit 1;
 }
 
-function build-release-images {
+function build-images {
     echo "Building frontend release image ..."
     build-release-frontend-image || exit 1;
+    echo "Building frontend develop image ..."
+    build-develop-frontend-image || exit 1;
     echo "Building backend release image ..."
     build-release-backend-image || exit 1;
 }
 
-function build-develop-images {
-    echo "Building frontend develop image ..."
-    build-develop-frontend-image || exit 1;
-
-    echo "Building backend develop image (same as release)..."
-    build-release-backend-image || exit 1;
-}
-
-function run-release {
+function run {
     if [[ ! $(docker images uxbox-release-backend:latest) ]]; then
         build-release-backend-image
     fi
@@ -180,21 +174,12 @@ function run-release {
         build-release-frontend-image
     fi
 
-    echo "Running production images..."
-    sudo docker-compose -p uxbox-release -f ./docker/docker-compose.yml up -d
-}
-
-function run-develop {
-    if [[ ! $(docker images uxbox-release-backend:latest) ]]; then
-        build-release-backend-image
-    fi
-
     if [[ ! $(docker images uxbox-develop-frontend:latest) ]]; then
         build-develop-frontend-image
     fi
 
-    echo "Running develop images..."
-    sudo docker-compose -p uxbox-develop -f ./docker/docker-compose-develop.yml up -d
+    echo "Running production images..."
+    sudo docker-compose -p uxbox-release -f ./docker/docker-compose.yml up -d
 }
 
 function usage {
@@ -208,13 +193,10 @@ function usage {
     echo "- run-frontend-tests            Execute unit tests for frontend only"
     echo "- run-backend-tests             Execute unit tests for backend only"
     echo "- build-release-images          Build 'production ready' docker images for both backend and frontend"
+    echo "- build-develop-frontend-image  Build a 'develop' docker images for frontend only"
     echo "- build-release-frontend-image  Build a 'production ready' docker images for frontend only"
     echo "- build-release-backend-image   Build a 'production ready' docker images for backend only"
-    echo "- build-develop-images          Build 'develop' docker images for both backend and frontend"
-    echo "- build-develop-frontend-image  Build a 'develop' docker images for frontend only"
-    echo "- build-develop-backend-image   Build a 'develop' docker images for backend only"
-    echo "- run-release                   Run 'production ready' docker images for both backend and frontend using docker compose"
-    echo "- run-develop                   Run 'develop' docker images for both backend and frontend using docker compose"
+    echo "- run                           Run 'production ready' docker images for both backend and frontend using docker compose"
 }
 
 case $1 in
@@ -238,29 +220,20 @@ case $1 in
         run-backend-tests
         ;;
 
-    build-release-images)
-        build-release-images
+    build-images)
+        build-images
         ;;
-
     build-release-frontend-image)
         build-release-frontend-image
-        ;;
-    build-release-backend-image)
-        build-release-backend-image
-        ;;
-    run-release)
-        run-release
-        ;;
-
-
-    build-develop-images)
-        build-develop-images
         ;;
     build-develop-frontend-image)
         build-develop-frontend-image
         ;;
-    run-develop)
-        run-develop
+    build-release-backend-image)
+        build-release-backend-image
+        ;;
+    run)
+        run
         ;;
 
     *)
