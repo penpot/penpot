@@ -110,6 +110,18 @@
      build
      (:worker figwheel-builds))))
 
+(defmethod task "build-all"
+  [args]
+  (task ["build" "main"])
+  (task ["build" "view"])
+  (task ["build" "worker"]))
+
+(defmethod task "dist-all"
+  [args]
+  (task ["dist" "main"])
+  (task ["dist" "view"])
+  (task ["dist" "worker"]))
+
 ;;; Build script entrypoint. This should be the last expression.
 
 (task *command-line-args*)

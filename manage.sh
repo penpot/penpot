@@ -134,7 +134,7 @@ function build-backend-local {
 
     rm -rf ./backend/dist
 
-    rsync -avr \
+    rsync -ar \
       --exclude="/test" \
       --exclude="/resources/public/media" \
       --exclude="/target" \
@@ -193,7 +193,7 @@ function run-develop {
         build-develop-frontend-image
     fi
 
-    echo "Running production images..."
+    echo "Running develop images..."
     sudo docker-compose -p uxbox-develop -f ./docker/docker-compose-develop.yml up -d
 }
 
