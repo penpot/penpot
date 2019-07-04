@@ -3,7 +3,7 @@ version: "3"
 volumes:
   backend_m2:
   backend_data:
-  db_data:
+  pgdb_data:
 
 networks:
   default:
@@ -13,7 +13,7 @@ networks:
         - subnet: 172.177.10.0/24
 
 services:
-  uxdb:
+  pgdb:
     image: postgres:11
     restart: always
     ports:
@@ -24,16 +24,15 @@ services:
       - POSTGRES_USER=uxbox
       - POSTGRES_PASSWORD=uxbox_postgres_password
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - pgdb_data:/var/lib/postgresql/data
       # - /etc/localtime:/etc/localtime:ro
       # - /etc/timezone:/etc/timezone:ro
 
-  uxbackend:
-    image: uxbox-production-backend:latest
-    # container_name: uxbackend
+  backend:
+    image: uxbox-backend-production:latest
     restart: always
     depends_on:
-      - uxdb
+      - pgdb
     ports:
       - 6060
     volumes:
@@ -67,12 +66,11 @@ services:
       # Security setup
       - UXBOX_SECRET="foobar"
 
-  uxfrontend:
-    image: uxbox-production-frontend:latest
-    #hostname: uxbox.io
+  frontend:
+    image: uxbox-frontend-production:latest
     restart: always
     depends_on:
-      - uxbackend
+      - backend
     ports:
       - 8080:8080
     volumes:
@@ -80,11 +78,11 @@ services:
       # - /etc/localtime:/etc/localtime:ro
       # - /etc/timezone:/etc/timezone:ro
 
-  uxfrontend-dev:
-    image: uxbox-develop-frontend:latest
+  frontend-dev:
+    image: uxbox-frontend-develop:latest
     restart: always
     depends_on:
-      - uxbackend
+      - backend
     ports:
       - 8081:8080
     volumes:

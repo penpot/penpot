@@ -26,8 +26,8 @@ node_modules
 /frontend/resources/public/js
 /frontend/resources/public/view
 /frontend/resources/public/index.html
-/docker/release.frontend/dist
-/docker/release.backend/dist
+/docker/frontend/dist
+/docker/backend/dist
 /media
 /deploy
 /web
