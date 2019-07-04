@@ -179,7 +179,12 @@ function run {
     fi
 
     echo "Running production images..."
-    sudo docker-compose -p uxbox-release -f ./docker/docker-compose.yml up -d
+    sudo docker-compose -p uxbox -f ./docker/docker-compose.yml up -d
+}
+
+function stop {
+    echo "Stoping containers..."
+    sudo docker-compose -p uxbox -f ./docker/docker-compose.yml stop -d
 }
 
 function usage {
@@ -196,7 +201,8 @@ function usage {
     echo "- build-develop-frontend-image  Build a 'develop' docker images for frontend only"
     echo "- build-release-frontend-image  Build a 'production ready' docker images for frontend only"
     echo "- build-release-backend-image   Build a 'production ready' docker images for backend only"
-    echo "- run                           Run 'production ready' docker images for both backend and frontend using docker compose"
+    echo "- run                           Run 'production ready' docker compose"
+    echo "- stop                          Stop 'production ready' docker compose"
 }
 
 case $1 in
@@ -232,8 +238,12 @@ case $1 in
     build-release-backend-image)
         build-release-backend-image
         ;;
+
     run)
         run
+        ;;
+    stop)
+        stop
         ;;
 
     *)
