@@ -2,6 +2,7 @@
 source ~/.bashrc
 
 npm install
+
 npm run dist:clean || exit 1;
 npm run dist:assets || exit 1;
 npm run dist:main || exit 1;

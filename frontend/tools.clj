@@ -57,8 +57,8 @@
   [[_ name]]
   (api/build (api/inputs "src")
              (merge default-build-options
-                    (get-output-options name false ::path)
-                    {:optimizations :simple})))
+                    (get-output-options name true true)
+                    {:optimizations :none})))
 
 (defmethod task "build-tests"
   [& args]

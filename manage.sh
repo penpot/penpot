@@ -84,26 +84,27 @@ function run-backend-tests {
            $CONTAINER ./scripts/run-tests-in-docker.sh
 }
 
-function build-release-frontend-local {
+function build-frontend-local {
     build-devenv-if-not-exists;
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
 
-    CONTAINER=$IMGNAME:latest
+    CONTAINER=$IMGNAME:latest;
+    BUILD_TYPE=$1;
 
-    echo "Running development image $CONTAINER to build frontend release..."
+    echo "Running development image $CONTAINER to build frontend $BUILD_TYPE ..."
     docker run -ti --rm \
            -w /home/uxbox/uxbox/frontend \
            -v `pwd`:/home/uxbox/uxbox  \
            -v $HOME/.m2:/home/uxbox/.m2 \
            -e UXBOX_API_URL="/api" \
            -e UXBOX_VIEW_URL="/view" \
-           $CONTAINER ./scripts/build-release.sh
+           $CONTAINER ./scripts/build-$BUILD_TYPE.sh
 }
 
-function build-release-frontend {
-    build-release-frontend-local || exit 1;
+function build-release-frontend-image {
+    build-frontend-local "release" || exit 1;
     rm -rf docker/release.frontend/dist || exit 1;
     cp -vr frontend/dist docker/release.frontend/ || exit 1;
 
@@ -115,7 +116,20 @@ function build-release-frontend {
     rm -rf docker/release.frontend/dist || exit 1;
 }
 
-function build-release-backend-local {
+function build-develop-frontend-image {
+    build-frontend-local "develop" || exit 1;
+    rm -rf docker/release.frontend/dist || exit 1;
+    cp -vr frontend/dist docker/release.frontend/ || exit 1;
+
+    docker build --rm=true \
+           -t uxbox-develop-frontend:$REV \
+           -t uxbox-develop-frontend:latest \
+           docker/release.frontend/;
+
+    rm -rf docker/release.frontend/dist || exit 1;
+}
+
+function build-backend-local {
     echo "Prepare backend release..."
 
     rm -rf ./backend/dist
@@ -129,8 +143,8 @@ function build-release-backend-local {
       ./backend/ ./backend/dist/
 }
 
-function build-release-backend {
-    build-release-backend-local || exit 1;
+function build-release-backend-image {
+    build-backend-local || exit 1;
     rm -rf docker/release.backend/dist || exit 1;
     cp -vr backend/dist docker/release.backend/ || exit 1;
 
@@ -142,40 +156,65 @@ function build-release-backend {
     rm -rf docker/release.backend/dist || exit 1;
 }
 
-function build-release {
-    echo "Building frontend release..."
-    build-release-frontend || exit 1;
-    echo "Building backend release..."
-    build-release-backend || exit 1;
+function build-release-images {
+    echo "Building frontend release image ..."
+    build-release-frontend-image || exit 1;
+    echo "Building backend release image ..."
+    build-release-backend-image || exit 1;
+}
+
+function build-develop-images {
+    echo "Building frontend develop image ..."
+    build-develop-frontend-image || exit 1;
+
+    echo "Building backend develop image (same as release)..."
+    build-release-backend-image || exit 1;
 }
 
 function run-release {
-    if [[ ! $(docker images uxbox-backend:latest) ]]; then
-        build-release
+    if [[ ! $(docker images uxbox-release-backend:latest) ]]; then
+        build-release-backend-image
     fi
 
-    if [[ ! $(docker images uxbox-frontend:latest) ]]; then
-        build-release
+    if [[ ! $(docker images uxbox-release-frontend:latest) ]]; then
+        build-release-frontend-image
     fi
 
     echo "Running production images..."
-    sudo docker-compose -f ./docker/docker-compose.yml up -d
+    sudo docker-compose -p uxbox-release -f ./docker/docker-compose.yml up -d
+}
+
+function run-develop {
+    if [[ ! $(docker images uxbox-release-backend:latest) ]]; then
+        build-release-backend-image
+    fi
+
+    if [[ ! $(docker images uxbox-develop-frontend:latest) ]]; then
+        build-develop-frontend-image
+    fi
+
+    echo "Running production images..."
+    sudo docker-compose -p uxbox-develop -f ./docker/docker-compose-develop.yml up -d
 }
 
 function usage {
     echo "UXBOX build & release manager v$REV"
     echo "USAGE: $0 OPTION"
     echo "Options:"
-    echo "- clean                   Stop and clean up docker containers"
-    echo "- build-devenv            Build docker container for development with tmux"
-    echo "- run-devenv              Run (and build if necessary) development container (frontend at localhost:3449, backend at localhost:6060)"
-    echo "- run-all-tests           Execute unit tests for both backend and frontend"
-    echo "- run-frontend-tests      Execute unit tests for frontend only"
-    echo "- run-backend-tests       Execute unit tests for backend only"
-    echo "- build-release           Build 'production ready' docker images for both backend and frontend"
-    echo "- build-release-frontend  Build a 'production ready' docker images for frontend only"
-    echo "- build-release-backend   Build a 'production ready' docker images for backend only"
-    echo "- run-release             Run 'production ready' docker images for both backend and frontend"
+    echo "- clean                         Stop and clean up docker containers"
+    echo "- build-devenv                  Build docker container for development with tmux"
+    echo "- run-devenv                    Run (and build if necessary) development container (frontend at localhost:3449, backend at localhost:6060)"
+    echo "- run-all-tests                 Execute unit tests for both backend and frontend"
+    echo "- run-frontend-tests            Execute unit tests for frontend only"
+    echo "- run-backend-tests             Execute unit tests for backend only"
+    echo "- build-release-images          Build 'production ready' docker images for both backend and frontend"
+    echo "- build-release-frontend-image  Build a 'production ready' docker images for frontend only"
+    echo "- build-release-backend-image   Build a 'production ready' docker images for backend only"
+    echo "- build-develop-images          Build 'develop' docker images for both backend and frontend"
+    echo "- build-develop-frontend-image  Build a 'develop' docker images for frontend only"
+    echo "- build-develop-backend-image   Build a 'develop' docker images for backend only"
+    echo "- run-release                   Run 'production ready' docker images for both backend and frontend using docker compose"
+    echo "- run-develop                   Run 'develop' docker images for both backend and frontend using docker compose"
 }
 
 case $1 in
@@ -198,18 +237,32 @@ case $1 in
     run-backend-tests)
         run-backend-tests
         ;;
-    build-release)
-        build-release
+
+    build-release-images)
+        build-release-images
         ;;
-    build-release-frontend)
-        build-release-frontend
+
+    build-release-frontend-image)
+        build-release-frontend-image
         ;;
-    build-release-backend)
-        build-release-backend
+    build-release-backend-image)
+        build-release-backend-image
         ;;
     run-release)
         run-release
         ;;
+
+
+    build-develop-images)
+        build-develop-images
+        ;;
+    build-develop-frontend-image)
+        build-develop-frontend-image
+        ;;
+    run-develop)
+        run-develop
+        ;;
+
     *)
         usage
         ;;

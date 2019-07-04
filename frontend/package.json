@@ -15,11 +15,12 @@
     "dist:view": "clojure -Adev tools.clj dist view",
     "dist:worker": "clojure -Adev tools.clj dist worker",
     "dist:assets": "NODE_ENV=production gulp dist",
-    "start": "npm run figwheel",
-    "build:test": "clojure -Adev tools.clj build-tests",
     "build:main": "clojure -Adev tools.clj build main",
     "build:view": "clojure -Adev tools.clj build view",
     "build:worker": "clojure -Adev tools.clj build worker",
+    "build:assets": "gulp dist",
+    "start": "npm run figwheel",
+    "build:test": "clojure -Adev tools.clj build-tests",
     "figwheel": "clojure -Adev tools.clj figwheel"
   },
   "devDependencies": {
