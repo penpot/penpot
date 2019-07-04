@@ -3,7 +3,7 @@ version: "3"
 volumes:
   backend_m2:
   backend_data:
-  pgdb_data:
+  postgres_data:
 
 networks:
   default:
@@ -13,7 +13,7 @@ networks:
         - subnet: 172.177.10.0/24
 
 services:
-  pgdb:
+  postgres:
     image: postgres:11
     restart: always
     ports:
@@ -24,7 +24,7 @@ services:
       - POSTGRES_USER=uxbox
       - POSTGRES_PASSWORD=uxbox_postgres_password
     volumes:
-      - pgdb_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       # - /etc/localtime:/etc/localtime:ro
       # - /etc/timezone:/etc/timezone:ro
 
@@ -32,7 +32,7 @@ services:
     image: uxbox-backend-production:latest
     restart: always
     depends_on:
-      - pgdb
+      - postgres
     ports:
       - 6060
     volumes:
