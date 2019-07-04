@@ -49,6 +49,8 @@
   (api/build (api/inputs "src")
              (merge default-build-options
                     (get-output-options name true ::path)
+                    (when (= name "worker")
+                      {:target :webworker})
                     {:optimizations :advanced
                      :static-fns true
                      :elide-asserts true})))
@@ -58,6 +60,8 @@
   (api/build (api/inputs "src")
              (merge default-build-options
                     (get-output-options name true true)
+                    (when (= name "worker")
+                      {:target :webworker})
                     {:optimizations :none})))
 
 (defmethod task "build-tests"
