@@ -50,7 +50,7 @@ services:
       - UXBOX_DATABASE_USERNAME="uxbox"
       - UXBOX_DATABASE_PASSWORD="uxbox_postgres_password"
       - UXBOX_DATABASE_NAME="uxbox"
-      - UXBOX_DATABASE_SERVER="uxdb"
+      - UXBOX_DATABASE_SERVER="postgres"
       - UXBOX_DATABASE_PORT=5432
       # Mail setup
       - UXBOX_EMAIL_REPLY_TO="no-reply@uxbox.io"
