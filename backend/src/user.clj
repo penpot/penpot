@@ -27,7 +27,8 @@
 
 (defn- start
   []
-  (mount/start))
+  (-> (mount/except #{#'uxbox.scheduled-jobs/scheduler})
+      (mount/start)))
 
 (defn- stop
   []

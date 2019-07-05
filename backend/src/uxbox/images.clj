@@ -6,18 +6,20 @@
 
 (ns uxbox.images
   "Image postprocessing."
-  (:require [clojure.spec.alpha :as s]
-            [clojure.java.io :as io]
-            [datoteka.storages :as st]
-            [datoteka.core :as fs]
-            [datoteka.proto :as pt]
-            [uxbox.util.spec :as us]
-            [uxbox.media :as media]
-            [uxbox.util.data :refer (dissoc-in)])
-  (:import java.io.InputStream
-           java.io.ByteArrayInputStream
-           org.im4java.core.IMOperation
-           org.im4java.core.ConvertCmd))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.spec.alpha :as s]
+   [datoteka.core :as fs]
+   [datoteka.proto :as pt]
+   [datoteka.storages :as st]
+   [uxbox.media :as media]
+   [uxbox.util.data :refer (dissoc-in)]
+   [uxbox.util.spec :as us])
+  (:import
+   java.io.ByteArrayInputStream
+   java.io.InputStream
+   org.im4java.core.ConvertCmd
+   org.im4java.core.IMOperation))
 
 ;; --- Thumbnails Generation
 
@@ -59,13 +61,11 @@
   {:pre [(us/valid? ::thumbnail-opts opts)
          (or (string? input)
              (fs/path input))]}
-  (let [parent (fs/parent input)
-        [filename ext] (fs/split-ext (fs/name input))
-
+  (let [[filename ext] (fs/split-ext (fs/name input))
         suffix (->> [width height quality format]
                     (interpose ".")
                     (apply str))
-        thumbnail-path (fs/path parent (str filename "-" suffix))
+        thumbnail-path (fs/path input (str "thumb-" suffix))
         images-storage media/images-storage
         thumbs-storage media/thumbnails-storage]
     (if @(st/exists? thumbs-storage thumbnail-path)

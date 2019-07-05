@@ -5,7 +5,7 @@
         funcool/cuerdas {:mvn/version "2.2.0"}
 
         funcool/datoteka {:git/url "https://github.com/funcool/datoteka.git"
-                          :sha "b75f08fd59013577dd5e743d0b013dede6c6dc66"}
+                          :sha "bae298a642b40e84e92dc195a68444bc63e807d9"}
 
         funcool/struct {:mvn/version "1.4.0"}
 

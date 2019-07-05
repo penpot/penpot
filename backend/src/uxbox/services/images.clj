@@ -199,10 +199,18 @@
 
 ;; --- Delete Image
 
+(defn- delete-image-from-storage
+  [{:keys [path] :as image}]
+  (when @(st/exists? media/images-storage path)
+    @(st/delete media/images-storage path))
+  (when @(st/exists? media/thumbnails-storage path)
+    @(st/delete media/thumbnails-storage path)))
+
 (defn delete-image
   [conn {:keys [user id]}]
   (let [sqlv (sql/delete-image {:id id :user user})]
-    (pos? (sc/execute conn sqlv))))
+    (some-> (sc/fetch-one conn sqlv)
+            (delete-image-from-storage))))
 
 (s/def ::delete-image
   (s/keys :req-un [::user]
@@ -212,7 +220,7 @@
   [params]
   (s/assert ::delete-image params)
   (with-open [conn (db/connection)]
-    (delete-image conn params)))
+    (sc/apply-atomic conn delete-image params)))
 
 ;; --- List Images
 

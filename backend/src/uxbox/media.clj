@@ -9,10 +9,39 @@
   (:require [mount.core :refer [defstate]]
             [clojure.java.io :as io]
             [cuerdas.core :as str]
+            [datoteka.core :as fs]
+            [datoteka.proto :as stp]
             [datoteka.storages :as st]
             [datoteka.storages.local :refer [localfs]]
             [datoteka.storages.misc :refer [hashed scoped]]
             [uxbox.config :refer [config]]))
+
+;; --- Backends
+
+(defn- normalize-filename
+  [path]
+  (let [parent (or (fs/parent path) "")
+        [name ext] (fs/split-ext (fs/name path))]
+    (fs/path parent (str (str/uslug name) ext))))
+
+(defrecord FilenameSlugifiedBackend [storage]
+  stp/IPublicStorage
+  (-public-uri [_ path]
+    (stp/-public-uri storage path))
+
+  stp/IStorage
+  (-save [_ path content]
+    (let [^Path path (normalize-filename path)]
+      (stp/-save storage path content)))
+
+  (-delete [_ path]
+    (stp/-delete storage path))
+
+  (-exists? [this path]
+    (stp/-exists? storage path))
+
+  (-lookup [_ path]
+    (stp/-lookup storage path)))
 
 ;; --- State
 
@@ -29,10 +58,12 @@
 (defstate images-storage
   :start (-> media-storage
              (scoped "images")
-             (hashed)))
+             (hashed)
+             (->FilenameSlugifiedBackend)))
 
 (defstate thumbnails-storage
-  :start (scoped media-storage "thumbs"))
+  :start (-> media-storage
+             (scoped "thumbs")))
 
 ;; --- Public Api
 

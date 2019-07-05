@@ -63,4 +63,5 @@ returning *;
 -- :name delete-image :! :n
 update images
    set deleted_at = clock_timestamp()
- where id = :id and "user" = :user;
+ where id = :id and "user" = :user
+returning *;
