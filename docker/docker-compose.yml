@@ -36,7 +36,7 @@ services:
     ports:
       - 6060
     volumes:
-      - backend_data:/srv/uxbox/resources/public
+      - backend_data:/srv/uxbox/data
       - backend_m2:/root/.m2
       # - /etc/localtime:/etc/localtime:ro
       # - /etc/timezone:/etc/timezone:ro
@@ -46,6 +46,8 @@ services:
       - UXBOX_HTTP_SERVER_DEBUG=false
       - UXBOX_MEDIA_URI="/media/"
       - UXBOX_ASSETS_URI="/static/"
+      - UXBOX_MEDIA_DIRECTORY="data/media"
+      - UXBOX_ASSETS_DIRECTORY="data/static"
       # Database setup
       - UXBOX_DATABASE_USERNAME="uxbox"
       - UXBOX_DATABASE_PASSWORD="uxbox_postgres_password"

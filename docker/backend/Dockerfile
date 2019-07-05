@@ -10,6 +10,7 @@ RUN set -ex; \
     apt-get update -yq &&  \
     apt-get install -yq \
         curl \
+        rsync \
         git \
         imagemagick \
         webp
@@ -25,9 +26,8 @@ COPY ./dist /srv/uxbox
 
 RUN set -ex; \
     chmod 755 /entrypoint.sh; \
-    mkdir -p /srv/uxbox/resources/media
+    mkdir /srv/uxbox/data;
 
-VOLUME /srv/uxbox/resources/public
 WORKDIR /srv/uxbox/
 
 EXPOSE 6060
