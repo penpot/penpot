@@ -83,6 +83,7 @@
                    (ex/raise :type :validation
                              :code (:key spec)
                              :context errors
+                             :prop key
                              :value (get req key)
                              :message "Invalid data")
                    (assoc-in req [:parameters (:key spec)] result))))

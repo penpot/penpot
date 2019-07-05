@@ -8,12 +8,20 @@
   (:require [cognitect.transit :as t]
             [uxbox.util.time :as dt])
   (:import java.io.ByteArrayInputStream
-           java.io.ByteArrayOutputStream))
+           java.io.ByteArrayOutputStream
+           java.io.File))
 
 ;; --- Handlers
 
+(def ^:private file-write-handler
+  (t/write-handler
+   (constantly "file")
+   (fn [v] (str v))))
+
 (def +read-handlers+ dt/+read-handlers+)
-(def +write-handlers+ dt/+write-handlers+)
+(def +write-handlers+
+  (assoc dt/+write-handlers+
+         File file-write-handler))
 
 ;; --- Low-Level Api
 

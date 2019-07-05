@@ -60,7 +60,7 @@
          (or (string? input)
              (fs/path input))]}
   (let [parent (fs/parent input)
-        [filename ext] (fs/split-ext input)
+        [filename ext] (fs/split-ext (fs/name input))
 
         suffix (->> [width height quality format]
                     (interpose ".")

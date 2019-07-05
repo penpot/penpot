@@ -18,11 +18,13 @@
 
 (defstate assets-storage
   :start (localfs {:basedir (:assets-directory config)
-                   :baseuri (:assets-uri config)}))
+                   :baseuri (:assets-uri config)
+                   :transform-filename str/uslug}))
 
 (defstate media-storage
   :start (localfs {:basedir (:media-directory config)
-                   :baseuri (:media-uri config)}))
+                   :baseuri (:media-uri config)
+                   :transform-filename str/uslug}))
 
 (defstate images-storage
   :start (-> media-storage

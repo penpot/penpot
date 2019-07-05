@@ -85,12 +85,8 @@
                         (rsp/ok))
                     (rsp/not-found "")))))))
 
-;; (s/def ::create-image
-;;   (s/keys :req-un [::file ::width ::height ::mimetype]
-;;           :opt-un [::us/id ::collection]))
-
 (defn create-image
-  {:parameters {:multipart {:upload [st/required]
+  {:parameters {:multipart {:file [st/required]
                             :id [st/uuid-str]
                             :width [st/required st/integer-str]
                             :height [st/required st/integer-str]
@@ -98,7 +94,7 @@
                             :collection [st/uuid-str]}}}
   [{:keys [user parameters] :as ctx}]
   (let [params (get parameters :multipart)
-        upload (get params :upload)
+        upload (get params :file)
         filename (fs/name (:filename upload))
         tempfile (:tempfile upload)
         storage media/images-storage]
