@@ -49,7 +49,7 @@
     (and (:status error)
          (or (= (:status error) 403)
              (= (:status error) 419)))
-    (ts/schedule 100 #(st/emit! (logout)))
+    (ts/schedule 0 #(st/emit! (rt/nav :auth-login)))
 
     ;; Conflict
     (= status 412)

@@ -2,33 +2,34 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui
-  (:require [beicon.core :as rx]
-            [lentes.core :as l]
-            [cuerdas.core :as str]
-            [potok.core :as ptk]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.projects :as dp]
-            [uxbox.main.data.auth :refer [logout]]
-            [uxbox.main.ui.loader :refer [loader]]
-            [uxbox.main.ui.lightbox :refer [lightbox]]
-            [uxbox.main.ui.auth :as auth]
-            [uxbox.main.ui.dashboard :as dashboard]
-            [uxbox.main.ui.settings :as settings]
-            [uxbox.main.ui.workspace :refer [workspace]]
-            [uxbox.main.ui.shapes]
-            [uxbox.util.messages :as uum]
-            [uxbox.util.html-history :as html-history]
-            [uxbox.util.router :as rt]
-            [uxbox.util.timers :as ts]
-            [uxbox.util.i18n :refer [tr]]
-            [uxbox.util.data :refer [parse-int uuid-str?]]
-            [uxbox.util.dom :as dom]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [lentes.core :as l]
+   [potok.core :as ptk]
+   [rumext.core :as mx :include-macros true]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.auth :refer [logout]]
+   [uxbox.main.data.projects :as dp]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.auth :as auth]
+   [uxbox.main.ui.dashboard :as dashboard]
+   [uxbox.main.ui.lightbox :refer [lightbox]]
+   [uxbox.main.ui.loader :refer [loader]]
+   [uxbox.main.ui.settings :as settings]
+   [uxbox.main.ui.shapes]
+   [uxbox.main.ui.workspace :refer [workspace]]
+   [uxbox.util.data :refer [parse-int uuid-str?]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.html-history :as html-history]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.messages :as uum]
+   [uxbox.util.router :as rt]
+   [uxbox.util.timers :as ts]))
 
 ;; --- Refs
 

@@ -55,12 +55,14 @@
   [_ {:keys [collection id file width height mimetype] :as body}]
   (let [body (doto (js/FormData.)
                (.append "mimetype" mimetype)
-               (.append "collection" (str collection))
                (.append "file" file)
                (.append "width" width)
                (.append "height" height)
                (.append "id" id))
-        params {:url (str url "/library/images/")
+        _    (when collection
+               (.append body "collection" (str collection)))
+
+        params {:url (str url "/library/images")
                 :method :post
                 :body body}]
     (send! params)))
