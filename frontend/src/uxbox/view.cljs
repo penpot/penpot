@@ -9,7 +9,7 @@
    [rumext.core :as mx :include-macros true]
    [uxbox.config]
    [uxbox.util.dom :as dom]
-   [uxbox.util.html-history :as html-history]
+   [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]

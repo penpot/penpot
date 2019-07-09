@@ -16,7 +16,7 @@
    [uxbox.main.ui.lightbox :refer [lightbox]]
    [uxbox.main.ui.loader :refer [loader]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.html-history :as html-history]
+   [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]

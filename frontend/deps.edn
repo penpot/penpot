@@ -4,19 +4,17 @@
         com.cognitect/transit-cljs {:mvn/version "0.8.256"}
 
         funcool/rumext {:git/url "https://github.com/funcool/rumext.git",
-                        :sha "3d598e749ba429eae6544e532fc9f81369b307f5"}
+                        :sha "3d598e749ba429eae6544e532fc9f81369b307f5"
+                        :exclusions [org.omcljs/om sablono/sablono]}
 
         cljsjs/react {:mvn/version "16.8.6-0"}
         cljsjs/react-dom {:mvn/version "16.8.6-0"}
         cljsjs/react-dom-server {:mvn/version "16.8.6-0"}
 
         environ/environ {:mvn/version "1.1.0"}
-
         metosin/reitit-core {:mvn/version "0.3.9"}
-        metosin/reitit-frontend {:mvn/version "0.3.9"}
 
         funcool/beicon {:mvn/version "5.0.0"}
-        funcool/bide {:mvn/version "1.6.1-SNAPSHOT"}
         funcool/cuerdas {:mvn/version "2.2.0"}
         funcool/lentes {:mvn/version "1.2.0"}
         funcool/potok {:mvn/version "2.3.0"}

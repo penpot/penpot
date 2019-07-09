@@ -25,7 +25,7 @@
    [uxbox.main.ui.workspace :refer [workspace]]
    [uxbox.util.data :refer [parse-int uuid-str?]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.html-history :as html-history]
+   [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]

@@ -8,7 +8,7 @@
   (:require [reitit.core :as r]
             [cuerdas.core :as str]
             [potok.core :as ptk]
-            [uxbox.util.html-history :as html-history])
+            [uxbox.util.html.history :as html-history])
   (:import goog.Uri
            goog.Uri.QueryData))
 
