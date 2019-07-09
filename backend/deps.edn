@@ -6,9 +6,7 @@
         funcool/suricatta {:git/url "https://github.com/funcool/suricatta.git"
                            :sha "80ef2dfdb3248f94f987b476a6bc1a6cfbe5f306"}
 
-        funcool/datoteka {:git/url "https://github.com/funcool/datoteka.git"
-                          :sha "bae298a642b40e84e92dc195a68444bc63e807d9"}
-
+        funcool/datoteka {:mvn/version "1.1.0"}
         funcool/struct {:mvn/version "1.4.0"}
 
         ring/ring {:mvn/version "1.7.1"}
