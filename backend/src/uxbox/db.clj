@@ -6,18 +6,20 @@
 
 (ns uxbox.db
   "Database access layer for UXBOX."
-  (:require [mount.core :as mount :refer (defstate)]
-            [promesa.core :as p]
-            [hikari-cp.core :as hikari]
-            [executors.core :as exec]
-            [suricatta.core :as sc]
-            [suricatta.proto :as scp]
-            [suricatta.types :as sct]
-            [suricatta.transaction :as sctx]
-            [uxbox.config :as cfg])
-  (:import org.jooq.TransactionContext
-           org.jooq.TransactionProvider
-           org.jooq.Configuration))
+  (:require
+   [executors.core :as exec]
+   [hikari-cp.core :as hikari]
+   [mount.core :as mount :refer (defstate)]
+   [promesa.core :as p]
+   [suricatta.core :as sc]
+   [suricatta.impl :as si]
+   [suricatta.proto :as sp]
+   [uxbox.config :as cfg])
+  (:import
+   org.jooq.Configuration
+   org.jooq.TransactionContext
+   org.jooq.TransactionProvider
+   ))
 
 ;; --- State
 
@@ -26,22 +28,11 @@
    :idle-timeout 600000
    :max-lifetime 1800000
    :minimum-idle 10
-   :maximum-pool-size 10
-   :adapter "postgresql"
-   :username ""
-   :password ""
-   :database-name ""
-   :server-name "localhost"
-   :port-number 5432})
+   :maximum-pool-size 10})
 
 (defn get-db-config
   [config]
-  (assoc connection-defaults
-         :username (:database-username config)
-         :password (:database-password config)
-         :database-name (:database-name config)
-         :server-name (:database-server config)
-         :port-number (:database-port config)))
+  (assoc connection-defaults :jdbc-url (:database-uri config)))
 
 (defn create-datasource
   [config]
@@ -58,15 +49,15 @@
   "Asynchronous transaction handling."
   {:internal true}
   [ctx func]
-  (let [^Configuration conf (.derive (scp/-config ctx))
-        ^TransactionContext txctx (sctx/transaction-context conf)
+  (let [^Configuration conf (.derive (sp/-config ctx))
+        ^TransactionContext txctx (si/transaction-context conf)
         ^TransactionProvider provider (.transactionProvider conf)]
     (doto conf
       (.data "suricatta.rollback" false)
       (.data "suricatta.transaction" true))
     (try
       (.begin provider txctx)
-      (->> (func (sct/context conf))
+      (->> (func (si/make-context conf))
            (p/map (fn [result]
                     (if (.data conf "suricatta.rollback")
                       (.rollback provider txctx)

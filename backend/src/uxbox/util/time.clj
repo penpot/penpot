@@ -5,7 +5,8 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.time
-  (:require [suricatta.proto :as proto]
+  (:require [suricatta.proto :as sp]
+            [suricatta.impl :as si]
             [cognitect.transit :as t])
   (:import java.time.Instant
            java.sql.Timestamp))
@@ -36,22 +37,17 @@
 ;; Persistence Layer Conversions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(extend-protocol proto/IParamType
+(extend-protocol sp/IParam
   Instant
-  (-render [self ctx]
-    (if (proto/-inline? ctx)
-      (str "'" (.toString self) "'::timestamptz")
-      "?::timestamptz"))
+  (-param [self ctx]
+    (si/sql->param "{0}::timestamptz" (.toString self))))
 
-  (-bind [self ctx]
-    (when-not (proto/-inline? ctx)
-      (let [stmt (proto/-statement ctx)
-            idx  (proto/-next-bind-index ctx)
-            obj (Timestamp/from self)]
-        (.setTimestamp stmt idx obj)))))
-
-(extend-protocol proto/ISQLType
+(extend-protocol sp/ISQLType
   Timestamp
+  (-convert [self]
+    (.toInstant self))
+
+  java.time.OffsetDateTime
   (-convert [self]
     (.toInstant self)))
 

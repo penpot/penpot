@@ -78,7 +78,7 @@
       (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/library/images")
               parts [{:name "sample.jpg"
-                      :part-name "upload"
+                      :part-name "file"
                       :content (io/input-stream
                                 (io/resource "uxbox/tests/_files/sample.jpg"))}
                      {:part-name "user" :content (str (:id user))}
