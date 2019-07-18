@@ -39,7 +39,7 @@
     (when (dom/equals? parent current)
       (udl/close!))))
 
-(defn- lightbox-will-mount
+(defn- lightbox-init
   [own]
   (let [key (events/listen js/document
                            EventType.KEYDOWN
@@ -53,7 +53,7 @@
 
 (mx/defcs lightbox
   {:mixins [mx/reactive]
-   :will-mount lightbox-will-mount
+   :init lightbox-init
    :will-unmount lightbox-will-umount}
   [own]
   (let [data (mx/react lightbox-ref)

@@ -2,23 +2,24 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.auth.recovery
-  (:require [cljs.spec.alpha :as s :include-macros true]
-            [lentes.core :as l]
-            [cuerdas.core :as str]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.auth :as uda]
-            [uxbox.main.ui.messages :refer [messages-widget]]
-            [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.forms :as fm]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.router :as rt]))
+  (:require
+   [cljs.spec.alpha :as s :include-macros true]
+   [cuerdas.core :as str]
+   [lentes.core :as l]
+   [rumext.core :as mx :include-macros true]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.auth :as uda]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.main.ui.navigation :as nav]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.forms :as fm]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.router :as rt]))
 
 (def form-data (fm/focus-data :recovery st/state))
 (def form-errors (fm/focus-errors :recovery st/state))
@@ -64,15 +65,15 @@
 
 ;; --- Recovery Page
 
-(defn- recovery-page-will-mount
+(defn- recovery-page-init
   [own]
-  (let [[token] (:rum/args own)]
+  (let [[token] (::mx/args own)]
     (st/emit! (uda/validate-recovery-token token))
     own))
 
 (mx/defc recovery-page
   {:mixins [mx/static (fm/clear-mixin st/store :recovery)]
-   :will-mount recovery-page-will-mount}
+   :init recovery-page-init}
   [token]
   [:div.login
    [:div.login-body

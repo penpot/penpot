@@ -120,7 +120,6 @@
             :cy cy}])
 
 (mx/defc controls
-  {:mixins [mx/static]}
   [{:keys [x1 y1 width height] :as shape} zoom on-mouse-down]
   (let [radius (if (> (max width height) handler-size-threshold) 6.0 4.0)]
     [:g.controls
@@ -226,7 +225,6 @@
     (controls selection zoom on-click)))
 
 (mx/defc single-selection-handlers
-  {:mixins [mx/static]}
   [{:keys [id] :as shape} zoom]
   (let [on-click #(do (dom/stop-propagation %2)
                       (start-resize %1 #{id} shape))
@@ -247,35 +245,37 @@
                           :stroke-opacity "0.5"
                           :fill "transparent"}}]]))
 
-(mx/defc selection-handlers
-  {:mixins [mx/reactive mx/static]}
-  []
-  (let [shapes (mx/react selected-shapes-ref)
-        modifiers (mx/react selected-modifers-ref)
-        ;; Edition is a workspace global flag
-        ;; because only one shape can be on
-        ;; the edition mode.
-        edition? (mx/react refs/selected-edition)
-        zoom (mx/react refs/selected-zoom)
-        num (count shapes)
-        {:keys [id type] :as shape} (first shapes)]
-    (cond
-      (zero? num)
-      nil
+(mx/def selection-handlers
+  :mixins [mx/reactive mx/static]
+  :render
+  (fn [own props]
+    (let [shapes (mx/react selected-shapes-ref)
+          modifiers (mx/react selected-modifers-ref)
+          ;; Edition is a workspace global flag
+          ;; because only one shape can be on
+          ;; the edition mode.
+          edition? (mx/react refs/selected-edition)
+          zoom (mx/react refs/selected-zoom)
+          num (count shapes)
+          {:keys [id type] :as shape} (first shapes)]
 
-      (> num 1)
-      (multiple-selection-handlers shapes modifiers zoom)
+      (cond
+        (zero? num)
+        nil
 
-      (and (= type :text) edition?)
-      (-> (assoc shape :modifiers (get modifiers id))
-          (text-edition-selection-handlers zoom))
+        (> num 1)
+        (multiple-selection-handlers shapes modifiers zoom)
 
-      (= type :path)
-      (if (= @refs/selected-edition (:id shape))
-        (path-edition-selection-handlers shape zoom)
+        (and (= type :text) edition?)
         (-> (assoc shape :modifiers (get modifiers id))
-            (single-selection-handlers zoom)))
+            (text-edition-selection-handlers zoom))
 
-      :else
-      (-> (assoc shape :modifiers (get modifiers id))
-          (single-selection-handlers zoom)))))
+        (= type :path)
+        (if (= @refs/selected-edition (:id shape))
+          (path-edition-selection-handlers shape zoom)
+          (-> (assoc shape :modifiers (get modifiers id))
+              (single-selection-handlers zoom)))
+
+        :else
+        (-> (assoc shape :modifiers (get modifiers id))
+            (single-selection-handlers zoom))))))

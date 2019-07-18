@@ -89,7 +89,7 @@
 
 (mx/defc login-page
   {:mixins [mx/static (fm/clear-mixin st/store :login)]
-   :will-mount (fn [own]
+   :init (fn [own]
                  (when @st/auth-ref
                    (st/emit! (rt/navigate :dashboard/projects)))
                  own)}

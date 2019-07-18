@@ -68,7 +68,7 @@
 (defn- on-navigate
   [router path]
   (let [match (rt/match router path)]
-    (prn "on-navigate" path match)
+    ;; (prn "on-navigate" path match)
     (cond
       (and (= path "") (nil? match))
       (html-history/set-path! "/dashboard/projects")

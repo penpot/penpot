@@ -102,7 +102,7 @@
 
 (mx/defcs colorpicker
   {:mixins [mx/static (mx/local)]}
-  [{:keys [rum/local] :as own} & {:keys [value on-change theme]
+  [{:keys [::mx/local] :as own} & {:keys [value on-change theme]
                                   :or {value "#d4edfb" theme :default}}]
   (let [value-rgb (color/hex->rgb value)
         classes (case theme

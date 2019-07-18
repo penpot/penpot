@@ -31,12 +31,6 @@
    [uxbox.util.router :as rt]
    [uxbox.util.timers :as ts]))
 
-;; --- Refs
-
-(def route-ref
-  (-> (l/key :route)
-      (l/derive st/state)))
-
 ;; --- Routes
 
 (def routes
@@ -59,56 +53,53 @@
 
 ;; --- Main App (Component)
 
-(mx/defc app
-  {:mixins [mx/reactive]}
-  []
-  (let [route (mx/react route-ref)]
-    (case (get-in route [:data :name])
-      :auth/login (auth/login-page)
-      :auth/register (auth/register-page)
-      :auth/recovery-request (auth/recovery-request-page)
+(defn- parse-dashboard-params
+  [route section]
+  (let [{:keys [id type]} (get-in route [:params :query])
+        id (cond
+             (str/digits? id) (parse-int id)
+             (uuid-str? id) (uuid id)
+             :else nil)
+        type (when (str/alpha? type) (keyword type))]
+    {:section section
+     :id id
+     :type type}))
 
-      :auth/recovery
-      (let [token (get-in route [:params :path :token])]
-        (auth/recovery-page token))
 
-      :dashboard/projects (dashboard/projects-page)
-      :settings/profile (settings/profile-page)
-      :settings/password (settings/password-page)
-      :settings/notifications (settings/notifications-page)
-      ;; ;; :dashboard/elements (dashboard/elements-page)
+(mx/def app
+  :mixins [mx/reactive]
 
-      :dashboard/icons
-      (let [{:keys [id type]} (get-in route [:params :query])
-            id (cond
-                 (str/digits? id) (parse-int id)
-                 (uuid-str? id) (uuid id)
-                 :else nil)
-            type (when (str/alpha? type) (keyword type))]
-        (dashboard/icons-page type id))
+  :init
+  (fn [own props]
+    (assoc own ::route-ref (l/derive (l/key :route) st/state)))
 
-      :dashboard/images
-      (let [{:keys [id type]} (get-in route [:params :query])
-            id (cond
-                 (str/digits? id) (parse-int id)
-                 (uuid-str? id) (uuid id)
-                 :else nil)
-            type (when (str/alpha? type) (keyword type))]
-        (dashboard/images-page type id))
+  :render
+  (fn [own props]
+    (let [route (mx/react (::route-ref own))]
+      (case (get-in route [:data :name])
+        :auth/login (auth/login-page)
+        :auth/register (auth/register-page)
+        :auth/recovery-request (auth/recovery-request-page)
 
-      :dashboard/colors
-      (let [{:keys [id type]} (get-in route [:params :query])
-            type (when (str/alpha? type) (keyword type))
-            id (cond
-                 (str/digits? id) (parse-int id)
-                 (uuid-str? id) (uuid id)
-                 :else nil)]
-        (dashboard/colors-page type id))
+        :auth/recovery
+        (let [token (get-in route [:params :path :token])]
+          (auth/recovery-page token))
 
-      :workspace/page
-      (let [projectid (uuid (get-in route [:params :path :project]))
-            pageid (uuid (get-in route [:params :path :page]))]
-        (workspace projectid pageid))
+        :settings/profile (settings/profile-page)
+        :settings/password (settings/password-page)
+        :settings/notifications (settings/notifications-page)
 
-      nil
-      )))
+        :dashboard/projects (dashboard/dashboard {:section :projects})
+        :dashboard/icons (-> (parse-dashboard-params route :icons)
+                             (dashboard/dashboard))
+        :dashboard/images (-> (parse-dashboard-params route :images)
+                              (dashboard/dashboard))
+        :dashboard/colors (-> (parse-dashboard-params route :colors)
+                              (dashboard/dashboard))
+        :workspace/page
+        (let [project (uuid (get-in route [:params :path :project]))
+              page (uuid (get-in route [:params :path :page]))]
+          (workspace {:project project :page page}))
+
+        nil
+        ))))

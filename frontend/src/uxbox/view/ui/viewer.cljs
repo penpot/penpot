@@ -31,24 +31,16 @@
 
 ;; --- Component
 
-(defn- viewer-page-will-mount
+(defn- viewer-page-init
   [own]
-  (let [[token] (:rum/args own)]
+  (let [[token] (::mx/args own)]
     (st/emit! (dv/initialize token))
-    own))
-
-(defn- viewer-page-did-remount
-  [oldown own]
-  (let [[old-token] (:rum/args oldown)
-        [new-token] (:rum/args own)]
-    (when (not= old-token new-token)
-      (st/emit! (dv/initialize new-token)))
     own))
 
 (mx/defc viewer-page
   {:mixins [mx/static mx/reactive]
-   :will-mount viewer-page-will-mount
-   :did-remount viewer-page-did-remount}
+   :init viewer-page-init
+   :key-fn vector}
   [token index id]
   (let [{:keys [project pages flags]} (mx/react state-ref)
         sitemap? (contains? flags :sitemap)]

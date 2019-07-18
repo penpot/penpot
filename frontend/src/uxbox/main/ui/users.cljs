@@ -2,20 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.users
-  (:require [cuerdas.core :as str]
-            [lentes.core :as l]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.auth :as da]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as rt]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [cuerdas.core :as str]
+   [lentes.core :as l]
+   [potok.core :as ptk]
+   [rumext.core :as mx :include-macros true]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.auth :as da]
+   [uxbox.main.data.lightbox :as udl]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.navigation :as nav]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.router :as rt]))
 
 ;; --- User Menu
 
@@ -46,7 +47,7 @@
   {:mixins [mx/static mx/reactive (mx/local {:open false})]}
   [own]
   (let [profile (mx/react profile-ref)
-        local (:rum/local own)
+        local (::mx/local own)
         photo (if (str/empty? (:photo profile ""))
                 "/images/avatar.jpg"
                 (:photo profile))]
