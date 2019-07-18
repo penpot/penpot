@@ -5,13 +5,14 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.forms
-  (:require [cljs.spec.alpha :as s :include-macros true]
-            [cuerdas.core :as str]
-            [lentes.core :as l]
-            [beicon.core :as rx]
-            [potok.core :as ptk]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.i18n :refer [tr]]))
+  (:require
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s :include-macros true]
+   [cuerdas.core :as str]
+   [lentes.core :as l]
+   [potok.core :as ptk]
+   [rumext.core :as mx :include-macros true]
+   [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Form Validation Api
 

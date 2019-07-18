@@ -31,9 +31,15 @@
   (update [_ state]
     (dissoc state :lightbox)))
 
+;; TODO: revemo this alias
 (defn hide-lightbox
   []
   (HideLightbox.))
+
+(defn close-lightbox
+  []
+  (HideLightbox.))
+
 
 ;; --- Direct Call Api
 
@@ -42,5 +48,6 @@
   (st/emit! (apply show-lightbox args)))
 
 (defn close!
+  {:deperecated true}
   [& args]
   (st/emit! (apply hide-lightbox args)))

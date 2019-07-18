@@ -6,7 +6,7 @@
 
 (ns ^:figwheel-hooks uxbox.main
   (:require
-   [rumext.core :as mx :include-macros true]
+   [rumext.core :as mx]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.users :as udu]
    [uxbox.main.locales.en :as en]
@@ -38,40 +38,13 @@
 
 ;; --- Error Handling
 
-(defn- on-error
-  "A default error handler."
-  [{:keys [status] :as error}]
-  (js/console.error "on-error:" (pr-str error))
-  (js/console.error (.-stack error))
-  (reset! st/loader false)
-  (cond
-    ;; Unauthorized or Auth timeout
-    (and (:status error)
-         (or (= (:status error) 403)
-             (= (:status error) 419)))
-    (ts/schedule 0 #(st/emit! (rt/nav :auth-login)))
-
-    ;; Conflict
-    (= status 412)
-    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.conflict"))))
-
-    ;; Network error
-    (= (:status error) 0)
-    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.network"))))
-
-    ;; Something else
-    :else
-    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.generic"))))))
-
-(set! st/*on-error* on-error)
-
 (defn- on-navigate
   [router path]
   (let [match (rt/match router path)]
     ;; (prn "on-navigate" path match)
     (cond
-      (and (= path "") (nil? match))
-      (html-history/set-path! "/dashboard/projects")
+      #_(and (= path "") (nil? match))
+      #_(html-history/set-path! "/dashboard/projects")
 
       (nil? match)
       (prn "TODO 404")

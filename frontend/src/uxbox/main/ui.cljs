@@ -11,7 +11,8 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [potok.core :as ptk]
-   [rumext.core :as mx :include-macros true]
+   [rumext.core :as mx]
+   [rumext.func :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.projects :as dp]
@@ -51,6 +52,35 @@
     ["/colors" :dashboard/colors]]
    ["/workspace/:project/:page" :workspace/page]])
 
+;; --- Error Handling
+
+(defn- on-error
+  "A default error handler."
+  [{:keys [status] :as error}]
+  (js/console.error "on-error:" (pr-str error))
+  (js/console.error (.-stack error))
+  (reset! st/loader false)
+  (cond
+    ;; Unauthorized or Auth timeout
+    (and (:status error)
+         (or (= (:status error) 403)
+             (= (:status error) 419)))
+    (ts/schedule 0 #(st/emit! (rt/nav :auth/login)))
+
+    ;; Conflict
+    (= status 412)
+    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.conflict"))))
+
+    ;; Network error
+    (= (:status error) 0)
+    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.network"))))
+
+    ;; Something else
+    :else
+    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.generic"))))))
+
+(set! st/*on-error* on-error)
+
 ;; --- Main App (Component)
 
 (defn- parse-dashboard-params
@@ -77,7 +107,7 @@
   (fn [own props]
     (let [route (mx/react (::route-ref own))]
       (case (get-in route [:data :name])
-        :auth/login (auth/login-page)
+        :auth/login (mf/element auth/login-page)
         :auth/register (auth/register-page)
         :auth/recovery-request (auth/recovery-request-page)
 

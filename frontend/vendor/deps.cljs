@@ -7,7 +7,8 @@
    :provides ["vendor.jszip"]}
   {:file "datefns/datefns.js"
    :file-min "datefns/datefns.min.js"
-   :provides ["vendor.datefns"]}]
+   :provides ["vendor.datefns"]}
+  ]
  :externs ["main.externs.js"
            "snapsvg/externs.js"
            "jszip/externs.js"

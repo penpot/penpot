@@ -6,20 +6,22 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.auth.login
-  (:require [cljs.spec.alpha :as s :include-macros true]
-            [lentes.core :as l]
-            [cuerdas.core :as str]
-            [uxbox.builtins.icons :as i]
-            [uxbox.config :as cfg]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.auth :as da]
-            [uxbox.main.ui.messages :refer [messages-widget]]
-            [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.forms :as fm]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.router :as rt]))
+  (:require
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [lentes.core :as l]
+   [rumext.core :as mx]
+   [rumext.func :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.config :as cfg]
+   [uxbox.main.data.auth :as da]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.main.ui.navigation :as nav]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.forms :as fm]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.router :as rt]))
 
 (def form-data (fm/focus-data :login st/state))
 (def form-errors (fm/focus-errors :login st/state))
@@ -34,68 +36,72 @@
 (s/def ::login-form
   (s/keys :req-un [::username ::password]))
 
+(defn- on-change
+  [event field]
+  (let [value (dom/event->value event)]
+    (st/emit! (assoc-value field value))))
 
-(mx/defc login-form
-  {:mixins [mx/static mx/reactive]}
+(defn- on-submit
+  [event data]
+  (dom/prevent-default event)
+  (st/emit! (da/login {:username (:username data)
+                       :password (:password data)})))
+
+(mf/defc demo-warning
+  [_]
+  [:div.message-inline
+   [:p
+    [:strong "WARNING: "] "this is a " [:strong "demo"] " service."
+    [:br]
+    [:strong "DO NOT USE"] " for real work, " [:br]
+    " the projects will be periodicaly wiped."]])
+
+(mf/defc login-form
+  {:wrap [mf/reactive]}
   []
-  (let [data (mx/react form-data)
+  (let [data (mf/react form-data)
         valid? (fm/valid? ::login-form data)]
-    (letfn [(on-change [event field]
-              (let [value (dom/event->value event)]
-                (st/emit! (assoc-value field value))))
-            (on-submit [event]
-              (dom/prevent-default event)
-              (st/emit! (da/login {:username (:username data)
-                                   :password (:password data)})))]
-      [:form {:on-submit on-submit}
-       [:div.login-content
-        (when cfg/isdemo
-          [:div.message-inline
-           [:p
-            [:strong "WARNING: "] "this is a " [:strong "demo"] " service."
-            [:br]
-            [:strong "DO NOT USE"] " for real work, " [:br]
-            " the projects will be periodicaly wiped."]])
-        [:input.input-text
-         {:name "email"
-          :tab-index "2"
-          :ref "email"
-          :value (:username data "")
-          :on-change #(on-change % :username)
-          :placeholder (tr "auth.email-or-username")
-          :type "text"}]
-        [:input.input-text
-         {:name "password"
-          :tab-index "3"
-          :ref "password"
-          :value (:password data "")
-          :on-change #(on-change % :password)
-          :placeholder (tr "auth.password")
-          :type "password"}]
-        [:input.btn-primary
-         {:name "login"
-          :tab-index "4"
-          :class (when-not valid? "btn-disabled")
-          :disabled (not valid?)
-          :value (tr "auth.signin")
-          :type "submit"}]
-        [:div.login-links
-         [:a {:on-click #(st/emit! (rt/navigate :auth/recovery-request))
-              :tab-index "5"}
-          (tr "auth.forgot-password")]
-         [:a {:on-click #(st/emit! (rt/navigate :auth/register))
-              :tab-index "6"}
-          (tr "auth.no-account")]]]])))
+    [:form {:on-submit #(on-submit % data)}
+     [:div.login-content
+      (when cfg/isdemo
+        [:& demo-warning])
+      [:input.input-text
+       {:name "email"
+        :tab-index "2"
+        :value (:username data "")
+        :on-change #(on-change % :username)
+        :placeholder (tr "auth.email-or-username")
+        :type "text"}]
+      [:input.input-text
+       {:name "password"
+        :tab-index "3"
+        :value (:password data "")
+        :on-change #(on-change % :password)
+        :placeholder (tr "auth.password")
+        :type "password"}]
+      [:input.btn-primary
+       {:name "login"
+        :tab-index "4"
+        :class (when-not valid? "btn-disabled")
+        :disabled (not valid?)
+        :value (tr "auth.signin")
+        :type "submit"}]
+      [:div.login-links
+       [:a {:on-click #(st/emit! (rt/nav :auth/recovery-request))
+            :tab-index "5"}
+        (tr "auth.forgot-password")]
+       [:a {:on-click #(st/emit! (rt/nav :auth/register))
+            :tab-index "6"}
+        (tr "auth.no-account")]]]]))
 
-(mx/defc login-page
-  {:mixins [mx/static (fm/clear-mixin st/store :login)]
-   :init (fn [own]
-                 (when @st/auth-ref
-                   (st/emit! (rt/navigate :dashboard/projects)))
-                 own)}
+
+;; {:mixins [mx/static (fm/clear-mixin st/store :login)]}
+
+(mf/defc login-page
   []
+  (mf/use-effect :end #(st/emit! (fm/clear-form :login)))
   [:div.login
    [:div.login-body
     (messages-widget)
     [:a i/logo]
-    (login-form)]])
+    [:& login-form]]])

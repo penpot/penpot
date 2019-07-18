@@ -6,26 +6,27 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.projects-createform
-  (:require [cljs.spec.alpha :as s :include-macros true]
-            [lentes.core :as l]
-            [cuerdas.core :as str]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.store :as st]
-            [uxbox.main.constants :as c]
-            [uxbox.main.data.projects :as udp]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.util.data :refer [read-string parse-int]]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.forms :as fm]
-            [uxbox.util.i18n :as t :refer [tr]]
-            [uxbox.util.router :as r]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.time :as dt]))
+  (:require
+   [cljs.spec.alpha :as s :include-macros true]
+   [cuerdas.core :as str]
+   [lentes.core :as l]
+   [rumext.core :as mx]
+   [rumext.func :as mxf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.constants :as c]
+   [uxbox.main.data.lightbox :as udl]
+   [uxbox.main.data.projects :as udp]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.lightbox :as lbx]
+   [uxbox.util.data :refer [read-string parse-int]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.forms :as fm]
+   [uxbox.util.i18n :as t :refer [tr]]
+   [uxbox.util.router :as r]
+   [uxbox.util.time :as dt]))
 
 (def form-data (fm/focus-data :create-project st/state))
 (def form-errors (fm/focus-errors :create-project st/state))
-
 (def assoc-value (partial fm/assoc-value :create-project))
 (def clear-form (partial fm/clear-form :create-project))
 
@@ -42,9 +43,8 @@
 
 ;; --- Create Project Form
 
-(mx/defc layout-input
-  {:mixins [mx/static]}
-  [data layout-id]
+(mxf/defc layout-input
+  [{:keys [::layout-id] :as data}]
   (let [layout (get c/page-layouts layout-id)]
     [:div
      [:input {:type "radio"
@@ -52,7 +52,7 @@
               :id layout-id
               :name "project-layout"
               :value (:name layout)
-              :checked (when (= layout-id (:layout data)) "checked")
+              :checked (= layout-id (:layout data))
               :on-change #(st/emit! (assoc-value :layout layout-id)
                                     (assoc-value :width (:width layout))
                                     (assoc-value :height (:height layout)))}]
@@ -60,89 +60,90 @@
               :for layout-id}
       (:name layout)]]))
 
-(mx/defc layout-selector
-  {:mixins [mx/static]}
-  [data]
+(mxf/defc layout-selector
+  [props]
   [:div.input-radio.radio-primary
-   (layout-input data "mobile")
-   (layout-input data "tablet")
-   (layout-input data "notebook")
-   (layout-input data "desktop")])
+   (layout-input (assoc props ::layout-id "mobile"))
+   (layout-input (assoc props ::layout-id "tablet"))
+   (layout-input (assoc props ::layout-id "notebook"))
+   (layout-input (assoc props ::layout-id "desktop"))])
 
-(mx/defc create-project-form
-  {:mixins [mx/reactive mx/static]}
-  []
-  (let [data (merge c/project-defaults (mx/react form-data))
-        errors (mx/react form-errors)
-        valid? (fm/valid? ::project-form data)]
-    (letfn [(on-submit [event]
-              (dom/prevent-default event)
-              (when valid?
-                (st/emit! (udp/create-project data))
-                (udl/close!)))
+(mx/def create-project-form
+  :mixins #{mx/reactive}
+  :render
+  (fn [own props]
+    (let [data (merge c/project-defaults (mx/react form-data))
+          valid? (fm/valid? ::project-form data)]
+      (letfn [(on-submit [event]
+                (dom/prevent-default event)
+                (when valid?
+                  (st/emit! (udp/create-project data)
+                            (udl/close-lightbox))))
 
-            (update-size [field e]
-              (let [value (dom/event->value e)
-                    value (parse-int value)]
-                (st/emit! (assoc-value field value))))
+              (update-size [field e]
+                (let [value (dom/event->value e)
+                      value (parse-int value)]
+                  (st/emit! (assoc-value field value))))
 
-            (update-name [e]
-              (let [value (dom/event->value e)]
-                (st/emit! (assoc-value :name value))))
-            (swap-size []
-              (st/emit! (assoc-value :width (:height data))
-                        (assoc-value :height (:width data))))]
-      [:form {:on-submit on-submit}
-       [:input#project-name.input-text
-        {:placeholder "New project name"
-         :type "text"
-         :value (:name data)
-         :auto-focus true
-         :on-change update-name}]
-       [:div.project-size
-        [:div.input-element.pixels
-         [:span "Width"]
-         [:input#project-witdh.input-text
-          {:placeholder "Width"
-           :type "number"
-           :min 0 ;;TODO check this value
-           :max 666666 ;;TODO check this value
-           :value (:width data)
-           :on-change (partial update-size :width)}]]
-        [:a.toggle-layout {:on-click swap-size} i/toggle]
-        [:div.input-element.pixels
-         [:span "Height"]
-         [:input#project-height.input-text
-          {:placeholder "Height"
-           :type "number"
-           :min 0 ;;TODO check this value
-           :max 666666 ;;TODO check this value
-           :value (:height data)
-           :on-change (partial update-size :height)}]]]
+              (update-name [e]
+                (let [value (dom/event->value e)]
+                  (st/emit! (assoc-value :name value))))
+              (swap-size []
+                (st/emit! (assoc-value :width (:height data))
+                          (assoc-value :height (:width data))))]
+        [:form {:on-submit on-submit}
+         [:input#project-name.input-text
+          {:placeholder "New project name"
+           :type "text"
+           :value (:name data)
+           :auto-focus true
+           :on-change update-name}]
+         [:div.project-size
+          [:div.input-element.pixels
+           [:span "Width"]
+           [:input#project-witdh.input-text
+            {:placeholder "Width"
+             :type "number"
+             :min 0 ;;TODO check this value
+             :max 666666 ;;TODO check this value
+             :value (str (:width data))
+             :on-change (partial update-size :width)}]]
+          [:a.toggle-layout {:on-click swap-size} i/toggle]
+          [:div.input-element.pixels
+           [:span "Height"]
+           [:input#project-height.input-text
+            {:placeholder "Height"
+             :type "number"
+             :min 0 ;;TODO check this value
+             :max 666666 ;;TODO check this value
+             :value (str (:height data))
+             :on-change (partial update-size :height)}]]]
 
-       ;; Layout selector
-       (layout-selector data)
+         ;; Layout selector
+         (layout-selector data)
 
-       ;; Submit
-       [:input#project-btn.btn-primary
-        {:value "Go go go!"
-         :class (when-not valid? "btn-disabled")
-         :disabled (not valid?)
-         :type "submit"}]])))
+         ;; Submit
+         [:input#project-btn.btn-primary
+          {:value "Go go go!"
+           :class (when-not valid? "btn-disabled")
+           :disabled (not valid?)
+           :type "submit"}]]))))
 
 ;; --- Create Project Lightbox
 
-(mx/defcs create-project-lightbox
-  {:mixins [mx/static mx/reactive
-            (fm/clear-mixin st/store :create-project)]}
-  [own]
-  (letfn [(close []
-            (udl/close!)
-            (st/emit! (clear-form)))]
+(mx/def create-project-lightbox
+  :will-unmount
+  (fn [own]
+    (st/emit! (fm/clear-form :create-project))
+    own)
+
+  :render
+  (fn [own]
     [:div.lightbox-body
      [:h3 "New project"]
      (create-project-form)
-     [:a.close {:on-click #(udl/close!)} i/close]]))
+     [:a.close {:on-click #(st/emit! (udl/close-lightbox))}
+      i/close]]))
 
 (defmethod lbx/render-lightbox :create-project
   [_]
