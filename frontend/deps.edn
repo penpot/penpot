@@ -3,12 +3,9 @@
         funcool/promesa {:mvn/version "2.0.1"}
         com.cognitect/transit-cljs {:mvn/version "0.8.256"}
 
-        funcool/rumext {:git/url "https://github.com/funcool/rumext.git",
-                        :sha "3d598e749ba429eae6544e532fc9f81369b307f5"
-                        :exclusions [org.omcljs/om sablono/sablono]}
+        funcool/rumext {:git/url "https://github.com/funcool/rumext.git"
+                        :sha "1abe07bd1c2ff82c572c2495f4cae082d2b73625"}
 
-        cljsjs/react {:mvn/version "16.8.6-0"}
-        cljsjs/react-dom {:mvn/version "16.8.6-0"}
         cljsjs/react-dom-server {:mvn/version "16.8.6-0"}
 
         environ/environ {:mvn/version "1.1.0"}
@@ -23,7 +20,7 @@
  :aliases
  {:dev {:extra-deps {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
                      com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-                     com.bhauman/figwheel-main {:mvn/version "0.2.1-SNAPSHOT"}
+                     com.bhauman/figwheel-main {:mvn/version "0.2.1"}
                      org.clojure/tools.namespace {:mvn/version "0.3.0"}}
         :extra-paths ["test"]}
 
