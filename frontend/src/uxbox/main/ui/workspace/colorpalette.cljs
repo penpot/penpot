@@ -46,7 +46,7 @@
        [:span.color-text {} rgb-color]])))
 
 (defn- palette-after-render
-  [{:keys [rum/local] :as own}]
+  [{:keys [::mx/local] :as own}]
   (let [dom (mx/ref-node own "container")
         width (.-clientWidth dom)]
     (when (not= (:width @local) width)
@@ -60,7 +60,7 @@
 (mx/defcs palette
   {:mixins [mx/static mx/reactive (mx/local)]
    :after-render palette-after-render}
-  [{:keys [rum/local] :as own}]
+  [{:keys [::mx/local] :as own}]
   (let [collections (->> (mx/react collections-ref)
                          (vals)
                          (filter :id)
@@ -112,14 +112,14 @@
        [:span.close-palette {:on-click close}
         i/close]])))
 
-(defn- colorpalette-will-mount
+(defn- colorpalette-init
   [own]
   (st/emit! (dc/fetch-collections))
   own)
 
 (mx/defc colorpalette
   {:mixins [mx/static mx/reactive]
-   :will-mount colorpalette-will-mount}
+   :init colorpalette-init}
   []
   (let [flags (mx/react refs/flags)]
     (when (contains? flags :colorpalette)

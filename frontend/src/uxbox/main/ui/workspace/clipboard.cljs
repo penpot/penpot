@@ -30,13 +30,13 @@
           (on-close [event]
             (dom/prevent-default event)
             (udl/close!))]
-    [:div.lightbox-body.clipboard {}
-     [:div.clipboard-list {}
+    [:div.lightbox-body.clipboard
+     [:div.clipboard-list
       (for [item (mx/react clipboard-ref)]
         [:div.clipboard-item
          {:key (str (:id item))
           :on-click (partial on-paste item)}
-         [:span.clipboard-icon {} i/box]
+         [:span.clipboard-icon i/box]
          [:span {} (str "Copied (" (dt/timeago (:created-at item)) ")")]])]
      [:a.close {:href "#" :on-click on-close} i/close]]))
 

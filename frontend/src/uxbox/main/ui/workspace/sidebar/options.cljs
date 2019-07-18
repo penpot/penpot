@@ -8,27 +8,27 @@
 (ns uxbox.main.ui.workspace.sidebar.options
   (:require
    [lentes.core :as l]
-   [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.router :as r]
    [potok.core :as ptk]
-   [uxbox.main.store :as st]
-   [uxbox.main.data.workspace :as udw]
-   [uxbox.main.data.shapes :as uds]
+   [rumext.core :as mx :include-macros true]
    [uxbox.builtins.icons :as i]
+   [uxbox.main.data.shapes :as uds]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.geom :as geom]
+   [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :refer [shape-default-attrs]]
+   [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
+   [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
    [uxbox.main.ui.workspace.sidebar.options.icon-measures :as options-iconm]
    [uxbox.main.ui.workspace.sidebar.options.image-measures :as options-imagem]
-   [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
-   [uxbox.main.ui.workspace.sidebar.options.rect-measures :as options-rectm]
-   [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
-   [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
-   [uxbox.main.ui.workspace.sidebar.options.page :as options-page]
    [uxbox.main.ui.workspace.sidebar.options.interactions :as options-interactions]
-   [uxbox.main.geom :as geom]
-   [uxbox.util.dom :as dom]
+   [uxbox.main.ui.workspace.sidebar.options.page :as options-page]
+   [uxbox.main.ui.workspace.sidebar.options.rect-measures :as options-rectm]
+   [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
+   [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
    [uxbox.util.data :as data]
-   [rumext.core :as mx :include-macros true]))
+   [uxbox.util.dom :as dom]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.router :as r]))
 
 ;; --- Constants
 
@@ -89,18 +89,10 @@
 
 ;; --- Options
 
-(defn- options-did-remount
-  [old-own own]
-  (let [[prev-shape] (:rum/args old-own)
-        [curr-shape] (:rum/args own)]
-    (when-not (= (:id prev-shape) (:id curr-shape))
-      (reset! (:rum/local own) {}))
-    own))
-
 (mx/defcs options
   {:mixins [mx/static (mx/local)]
-   :did-remount options-did-remount}
-  [{:keys [rum/local] :as own} shape]
+   :key-fn #(pr-str (:id %1))}
+  [{:keys [::mx/local] :as own} shape]
   (let [menus (get +menus-map+ (:type shape ::page))
         contained-in? (into #{} menus)
         active (:menu @local (first menus))]

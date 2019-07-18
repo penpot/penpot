@@ -2,77 +2,41 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.workspace
-  (:require [beicon.core :as rx]
-            [lentes.core :as l]
-            [uxbox.main.store :as st]
-            [uxbox.main.constants :as c]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.streams :as streams]
-            [uxbox.main.data.workspace :as dw]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.main.data.history :as udh]
-            [uxbox.main.data.undo :as udu]
-            [uxbox.main.user-events :as uev]
-            [uxbox.main.ui.messages :refer [messages-widget]]
-            [uxbox.main.ui.confirm]
-            [uxbox.main.ui.workspace.images]
-            [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.main.ui.workspace.scroll :as scroll]
-            [uxbox.main.ui.workspace.download]
-            [uxbox.main.ui.workspace.shortcuts :refer [shortcuts-mixin]]
-            [uxbox.main.ui.workspace.header :refer [header]]
-            [uxbox.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
-            [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
-            [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
-            [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
-            [uxbox.main.ui.workspace.canvas :refer [viewport]]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.data :refer [classnames]]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [beicon.core :as rx]
+   [lentes.core :as l]
+   [rumext.core :as mx :include-macros true]
+   [uxbox.main.constants :as c]
+   [uxbox.main.data.history :as udh]
+   [uxbox.main.data.pages :as udp]
+   [uxbox.main.data.undo :as udu]
+   [uxbox.main.data.workspace :as dw]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.streams :as streams]
+   [uxbox.main.ui.confirm]
+   [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.main.ui.workspace.canvas :refer [viewport]]
+   [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
+   [uxbox.main.ui.workspace.download]
+   [uxbox.main.ui.workspace.header :refer [header]]
+   [uxbox.main.ui.workspace.images]
+   [uxbox.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
+   [uxbox.main.ui.workspace.scroll :as scroll]
+   [uxbox.main.ui.workspace.shortcuts :refer [shortcuts-mixin]]
+   [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
+   [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
+   [uxbox.main.user-events :as uev]
+   [uxbox.util.data :refer [classnames]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.geom.point :as gpt]))
 
 ;; --- Workspace
-
-(defn- workspace-will-mount
-  [own]
-  (let [[projectid pageid] (:rum/args own)]
-    (st/emit! (dw/initialize projectid pageid))
-    own))
-
-(defn- workspace-did-mount
-  [own]
-  (let [[projectid pageid] (:rum/args own)
-        dom (mx/ref-node own "workspace-canvas")
-        scroll-to-page-center #(scroll/scroll-to-page-center dom @refs/selected-page)
-        sub (rx/subscribe streams/page-id-ref-s scroll-to-page-center)]
-
-    (scroll-to-page-center)
-
-    (st/emit! (udp/watch-page-changes pageid)
-              (udu/watch-page-changes pageid))
-
-    (assoc own ::sub sub)))
-
-(defn- workspace-will-unmount
-  [own]
-  (st/emit! ::udp/stop-page-watcher)
-  (rx/cancel! (::sub own))
-  (dissoc own ::sub))
-
-(defn- workspace-did-remount
-  [old-state state]
-  (let [[projectid pageid] (:rum/args state)
-        [oldprojectid oldpageid] (:rum/args old-state)]
-    (when (not= pageid oldpageid)
-      (st/emit! (dw/initialize projectid pageid)
-                ::udp/stop-page-watcher
-                (udp/watch-page-changes pageid)
-                (udu/watch-page-changes pageid)))
-    state))
 
 (defn- on-scroll
   [event]
@@ -99,52 +63,76 @@
   (-> (l/key :page)
       (l/derive refs/workspace)))
 
-(mx/defcs workspace
-  {:did-remount workspace-did-remount
-   :will-mount workspace-will-mount
-   :will-unmount workspace-will-unmount
-   :did-mount workspace-did-mount
-   :mixins [mx/static
+(mx/def workspace
+  :key-fn vector
+  :mixins #{mx/static
             mx/reactive
-            shortcuts-mixin]}
-  [own project-id page-id]
-  (let [flags (mx/react refs/flags)
-        left-sidebar? (not (empty? (keep flags [:layers :sitemap
-                                                :document-history])))
-        right-sidebar? (not (empty? (keep flags [:icons :drawtools
-                                                 :element-options])))
-        classes (classnames
-                 :no-tool-bar-right (not right-sidebar?)
-                 :no-tool-bar-left (not left-sidebar?)
-                 :scrolling (:viewport-positionig workspace))]
-    [:div {}
-     (messages-widget)
-     (header)
-     (colorpalette)
+            shortcuts-mixin}
 
-     [:main.main-content {}
-      [:section.workspace-content
-       {:class classes
-        :on-scroll on-scroll
-        :on-wheel (partial on-wheel own)}
+  :init
+  (fn [own {:keys [project page] :as props}]
+    (st/emit! (dw/initialize project page))
+    (assoc own ::canvas (mx/create-ref)))
 
-       (history-dialog)
+  :did-mount
+  (fn [own]
+    (let [{:keys [project page]} (::mx/props own)
+          ;; dom (mx/ref-node own "workspace-canvas")
+          dom (mx/ref-node (::canvas own))
+          scroll-to-page-center #(scroll/scroll-to-page-center dom @refs/selected-page)
+          sub (rx/subscribe streams/page-id-ref-s scroll-to-page-center)]
+      (scroll-to-page-center)
+      (st/emit! (udp/watch-page-changes page)
+                (udu/watch-page-changes page))
+      (assoc own ::sub sub)))
 
-       ;; Rules
-       (when (contains? flags :rules)
-         (horizontal-rule))
+  :will-unmount
+  (fn [own]
+    (st/emit! ::udp/stop-page-watcher)
+    (rx/cancel! (::sub own))
+    (dissoc own ::sub))
 
-       (when (contains? flags :rules)
-         (vertical-rule))
+  :render
+  (fn [own props]
+    ;; [own project-id page-id]
+    (let [flags (mx/react refs/flags)
+          project-id (get-in own [::mx/props :project])
+          page-id (get-in own [::mx/props :page])
+          left-sidebar? (not (empty? (keep flags [:layers :sitemap
+                                                  :document-history])))
+          right-sidebar? (not (empty? (keep flags [:icons :drawtools
+                                                   :element-options])))
+          classes (classnames
+                   :no-tool-bar-right (not right-sidebar?)
+                   :no-tool-bar-left (not left-sidebar?)
+                   :scrolling (:viewport-positionig workspace))]
+      [:*
+       (messages-widget)
+       (header)
+       (colorpalette)
 
-       ;; Canvas
-       [:section.workspace-canvas
-        {:id "workspace-canvas"
-         :ref "workspace-canvas"}
-        (viewport)]]
+       [:main.main-content
+        [:section.workspace-content
+         {:class classes
+          :on-scroll on-scroll
+          :on-wheel (partial on-wheel own)}
 
-      ;; Aside
-      (when left-sidebar?
-        (left-sidebar flags page-id))
-      (when right-sidebar?
-        (right-sidebar flags page-id))]]))
+         (history-dialog)
+
+         ;; Rules
+         (when (contains? flags :rules)
+           (horizontal-rule))
+
+         (when (contains? flags :rules)
+           (vertical-rule))
+
+         ;; Canvas
+         [:section.workspace-canvas {:id "workspace-canvas"
+                                     :ref (::canvas own)}
+          (viewport)]]
+
+        ;; Aside
+        (when left-sidebar?
+          (left-sidebar {:flags flags :page-id page-id}))
+        (when right-sidebar?
+          (right-sidebar {:flags flags :page-id page-id}))]])))

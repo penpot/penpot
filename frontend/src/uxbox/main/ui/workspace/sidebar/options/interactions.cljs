@@ -2,24 +2,25 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.workspace.sidebar.options.interactions
-  (:require [lentes.core :as l]
-            [uxbox.builtins.icons :as i]
-            [uxbox.util.i18n :refer [tr]]
-            [uxbox.util.router :as r]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.colorpicker :as cp]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer [read-string]]
-            [uxbox.util.spec :refer [color?]]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [lentes.core :as l]
+   [rumext.core :as mx :include-macros true]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.lightbox :as udl]
+   [uxbox.main.data.shapes :as uds]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.colorpicker :as cp]
+   [uxbox.main.ui.lightbox :as lbx]
+   [uxbox.util.data :refer [read-string]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.router :as r]
+   [uxbox.util.spec :refer [color?]]))
 
 ;; --- Helpers
 
@@ -473,7 +474,7 @@
 (mx/defcs interactions-menu
   {:mixins [mx/static (mx/local)]}
   [own menu shape]
-  (let [local (:rum/local own)
+  (let [local (::mx/local own)
         form-ref (l/derive (l/key :form) local)
         interactions (:interactions shape)
         create-interaction #(reset! form-ref {})]

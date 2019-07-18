@@ -6,13 +6,14 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.rules
-  (:require [cuerdas.core :as str]
-            [beicon.core :as rx]
-            [uxbox.main.store :as s]
-            [uxbox.main.constants :as c]
-            [uxbox.main.refs :as refs]
-            [uxbox.util.dom :as dom]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [rumext.core :as mx]
+   [uxbox.main.constants :as c]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as s]
+   [uxbox.util.dom :as dom]))
 
 ;; --- Constants & Helpers
 
@@ -65,102 +66,103 @@
 
 ;; --- Horizontal Text Label
 
-(mx/defc horizontal-text-label
-  [zoom value]
-  (let [big-ticks-mod (big-ticks-mod zoom)
-        pos (+ (* value zoom)
-               rule-padding
-               (* c/canvas-start-x zoom)
-               c/canvas-scroll-padding)]
-    (when (< (mod value big-ticks-mod) step-size)
-      [:text {:x (+ pos 2)
-              :y 13
-              :key (str pos)
-              :fill "#9da2a6"
-              :style {:font-size "12px"}}
-       value])))
+(mx/def horizontal-text-label
+  :key-fn second
+  :render
+  (fn [own [zoom value]]
+    (let [big-ticks-mod (big-ticks-mod zoom)
+          pos (+ (* value zoom)
+                 rule-padding
+                 (* c/canvas-start-x zoom)
+                 c/canvas-scroll-padding)]
+      (when (< (mod value big-ticks-mod) step-size)
+        [:text {:x (+ pos 2)
+                :y 13
+                :key (str pos)
+                :fill "#9da2a6"
+                :style {:font-size "12px"}}
+         value]))))
 
 ;; --- Horizontal Text Label
 
-(mx/defc vertical-text-label
-  [zoom value]
-  (let [big-ticks-mod (big-ticks-mod zoom)
-        pos (+ (* value zoom)
-               (* c/canvas-start-x zoom)
-               ;; c/canvas-start-x
-               c/canvas-scroll-padding)]
-    (when (< (mod value big-ticks-mod) step-size)
-      [:text {:y (- pos 3)
-              :x 5
-              :key (str pos)
-              :fill "#9da2a6"
-              :transform (str/format "rotate(90 0 %s)" pos)
-              :style {:font-size "12px"}}
-       value])))
+(mx/def vertical-text-label
+  :key-fn second
+  :render
+  (fn [own [zoom value]]
+    (let [big-ticks-mod (big-ticks-mod zoom)
+          pos (+ (* value zoom)
+                 (* c/canvas-start-x zoom)
+                 c/canvas-scroll-padding)]
+      (when (< (mod value big-ticks-mod) step-size)
+        [:text {:y (- pos 3)
+                :x 5
+                :key (str pos)
+                :fill "#9da2a6"
+                :transform (str/format "rotate(90 0 %s)" pos)
+                :style {:font-size "12px"}}
+         value]))))
 
 ;; --- Horizontal Rule Ticks (Component)
 
-(mx/defc horizontal-rule-ticks
-  {:mixins [mx/static]}
-  [zoom]
-  (let [zoom (or zoom 1)
-        path (reduce (partial make-vertical-tick zoom) [] +ticks+)
-        labels (->> (map (partial horizontal-text-label zoom) +ticks+)
-                    (filterv identity))]
-    [:g {}
-     [:path {:d (str/join " " path)}]
-     (for [tick +ticks+]
-       (-> (horizontal-text-label zoom tick)
-           (mx/with-key (str tick))))]))
+(mx/def horizontal-rule-ticks
+  :mixins #{mx/static}
+  :render
+  (fn [own zoom]
+    (let [zoom (or zoom 1)
+          path (reduce (partial make-vertical-tick zoom) [] +ticks+)]
+      [:g
+       [:path {:d (str/join " " path)}]
+       (for [tick +ticks+]
+         (horizontal-text-label [zoom tick]))])))
 
 ;; --- Vertical Rule Ticks (Component)
 
-(mx/defc vertical-rule-ticks
-  {:mixins [mx/static]}
-  [zoom]
-  (let [zoom (or zoom 1)
-        path (reduce (partial make-horizontal-tick zoom) [] +ticks+)
-        labels (->> (map (partial vertical-text-label zoom) +ticks+)
-                    (filterv identity))]
-    [:g {}
-     [:path {:d (str/join " " path)}]
-     (for [tick +ticks+]
-       (-> (vertical-text-label zoom tick)
-           (mx/with-key (str tick))))]))
+(mx/def vertical-rule-ticks
+  :mixins #{mx/static}
+  :render
+  (fn [own zoom]
+    (let [zoom (or zoom 1)
+          path (reduce (partial make-horizontal-tick zoom) [] +ticks+)]
+      [:g
+       [:path {:d (str/join " " path)}]
+       (for [tick +ticks+]
+         (vertical-text-label [zoom tick]))])))
 
 ;; --- Horizontal Rule (Component)
 
-(mx/defc horizontal-rule
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [scroll (mx/react refs/workspace-scroll)
-        zoom (mx/react refs/selected-zoom)
-        scroll-x (:x scroll)
-        translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
-    [:svg.horizontal-rule
-     {:width c/viewport-width
-      :height 20}
-     [:rect {:height 20
-             :width c/viewport-width}]
-     [:g {:transform (str "translate(" translate-x ", 0)")}
-      (horizontal-rule-ticks zoom)]]))
+(mx/def horizontal-rule
+  :mixins #{mx/static mx/reactive}
+  :render
+  (fn [own props]
+    (let [scroll (mx/react refs/workspace-scroll)
+          zoom (mx/react refs/selected-zoom)
+          scroll-x (:x scroll)
+          translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
+      [:svg.horizontal-rule
+       {:width c/viewport-width
+        :height 20}
+       [:rect {:height 20
+               :width c/viewport-width}]
+       [:g {:transform (str "translate(" translate-x ", 0)")}
+        (horizontal-rule-ticks zoom)]])))
 
 ;; --- Vertical Rule (Component)
 
-(mx/defc vertical-rule
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [scroll (mx/react refs/workspace-scroll)
-        zoom (mx/react refs/selected-zoom)
-        scroll-y (:y scroll)
-        translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
-    [:svg.vertical-rule
-     {:width 20
-      :height c/viewport-height}
+(mx/def vertical-rule
+  :mixins #{mx/static mx/reactive}
+  :render
+  (fn [own props]
+    (let [scroll (mx/react refs/workspace-scroll)
+          zoom (mx/react refs/selected-zoom)
+          scroll-y (:y scroll)
+          translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
+      [:svg.vertical-rule
+       {:width 20
+        :height c/viewport-height}
 
-     [:g {:transform (str  "translate(0, " translate-y ")")}
-      (vertical-rule-ticks zoom)]
-     [:rect {:x 0
-             :y 0
-             :height 20
-             :width 20}]]))
+       [:g {:transform (str  "translate(0, " translate-y ")")}
+        (vertical-rule-ticks zoom)]
+       [:rect {:x 0
+               :y 0
+               :height 20
+               :width 20}]])))

@@ -22,7 +22,7 @@
 
 (mx/defcs stroke-menu
   {:mixins [mx/static (mx/local)]}
-  [{:keys [rum/local]} menu {:keys [id] :as shape}]
+  [{:keys [::mx/local]} menu {:keys [id] :as shape}]
   (letfn [(on-width-change [event]
             (let [value (-> (dom/event->value event)
                             (parse-float 1))]

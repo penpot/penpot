@@ -40,14 +40,14 @@
   [icon]
   (icon/icon-svg icon))
 
-(defn- icons-toolbox-will-mount
+(defn- icons-toolbox-init
   [own]
   (st/emit! (udw/initialize-icons-toolbox))
   own)
 
 (mx/defc icons-toolbox
   {:mixins [mx/static mx/reactive]
-   :will-mount icons-toolbox-will-mount}
+   :init icons-toolbox-init}
   []
   (let [drawing (mx/react drawing-shape-ref)
         selected (mx/react icons-toolbox-ref)

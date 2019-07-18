@@ -244,7 +244,7 @@
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
                 (st/emit! (uev/mouse-event :double-click ctrl? shift?))))]
-      [:div {}
+      [:*
        (coordinates)
        [:div.tooltip-container {}
         (when tooltip

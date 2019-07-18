@@ -89,43 +89,42 @@
 
 ;; --- Shape Name (Component)
 
-(mx/defcs shape-name
-  "A generic component that displays the shape name
-  if it is available and allows inline edition of it."
-  {:mixins [mx/static (mx/local)]}
-  [{:keys [rum/local]} {:keys [id] :as shape}]
-  (letfn [(on-blur [event]
-            (let [target (dom/event->target event)
-                  parent (.-parentNode target)
-                  name (dom/get-value target)]
-              (set! (.-draggable parent) true)
-              (st/emit! (uds/rename-shape id name))
-              (swap! local assoc :edition false)))
-          (on-key-down [event]
-            (js/console.log event)
-            (when (kbd/enter? event)
-              (on-blur event)))
-          (on-click [event]
-            (dom/prevent-default event)
-            (let [parent (.-parentNode (.-target event))]
-              (set! (.-draggable parent) false))
-            (swap! local assoc :edition true))]
-    (if (:edition @local)
-      [:input.element-name
-       {:type "text"
-        :on-blur on-blur
-        :on-key-down on-key-down
-        :auto-focus true
-        :default-value (:name shape "")}]
-      [:span.element-name
-       {:on-double-click on-click}
-       (:name shape "")])))
+(mx/def shape-name
+  :mixins [mx/static (mx/local)]
+  :render
+  (fn [{:keys [::mx/local] :as own} {:keys [id] :as shape}]
+    (letfn [(on-blur [event]
+              (let [target (dom/event->target event)
+                    parent (.-parentNode target)
+                    name (dom/get-value target)]
+                (set! (.-draggable parent) true)
+                (st/emit! (uds/rename-shape id name))
+                (swap! local assoc :edition false)))
+            (on-key-down [event]
+              (js/console.log event)
+              (when (kbd/enter? event)
+                (on-blur event)))
+            (on-click [event]
+              (dom/prevent-default event)
+              (let [parent (.-parentNode (.-target event))]
+                (set! (.-draggable parent) false))
+              (swap! local assoc :edition true))]
+      (if (:edition @local)
+        [:input.element-name
+         {:type "text"
+          :on-blur on-blur
+          :on-key-down on-key-down
+          :auto-focus true
+          :default-value (:name shape "")}]
+        [:span.element-name
+         {:on-double-click on-click}
+         (:name shape "")]))))
 
 ;; --- Layer Simple (Component)
 
 (mx/defcs layer-simple
   {:mixins [mx/static (mx/local)]}
-  [{:keys [rum/local]} item selected]
+  [{:keys [::mx/local]} item selected]
   (let [selected? (contains? selected (:id item))
         select #(select-shape selected item %)
         toggle-visibility #(toggle-visibility selected item %)
@@ -189,14 +188,14 @@
           {:class (when (:blocked item) "selected")
            :on-click toggle-blocking}
           i/lock]]
-        [:div.element-icon {} (element-icon item)]
+        [:div.element-icon (element-icon item)]
         (shape-name item)]])))
 
 ;; --- Layer Group (Component)
 
 (mx/defcs layer-group
   {:mixins [mx/static mx/reactive (mx/local)]}
-  [{:keys [rum/local]} {:keys [id] :as item} selected]
+  [{:keys [::mx/local]} {:keys [id] :as item} selected]
   (let [selected? (contains? selected (:id item))
         collapsed? (:collapsed item true)
         shapes-map (mx/react refs/shapes-by-id)

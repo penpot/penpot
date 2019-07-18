@@ -98,7 +98,7 @@
 
 ;; --- Mixin
 
-(defn- will-mount
+(defn- init
   [own]
   (assoc own ::sub (initialize)))
 
@@ -108,5 +108,5 @@
   (dissoc own ::sub))
 
 (def shortcuts-mixin
-  {:will-mount will-mount
+  {:init init
    :will-unmount will-unmount})
