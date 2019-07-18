@@ -6,26 +6,25 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.projects
-  (:require [lentes.core :as l]
-            [cuerdas.core :as str]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.store :as st]
-            [uxbox.main.constants :as c]
-            [uxbox.main.data.projects :as udp]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.dashboard.header :refer [header]]
-            [uxbox.main.ui.dashboard.projects-createform]
-            [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.messages :refer [messages-widget]]
-            [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.main.exports :as exports]
-            [uxbox.util.i18n :as t :refer (tr)]
-            [uxbox.util.router :as r]
-            [uxbox.util.data :refer [read-string]]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.blob :as blob]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.time :as dt]))
+  (:require
+   [cuerdas.core :as str]
+   [lentes.core :as l]
+   [rumext.core :as mx]
+   [rumext.func :as mxf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.constants :as c]
+   [uxbox.main.data.lightbox :as udl]
+   [uxbox.main.data.projects :as udp]
+   [uxbox.main.exports :as exports]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.dashboard.projects-createform]
+   [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.util.blob :as blob]
+   [uxbox.util.data :refer [read-string]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.i18n :as t :refer (tr)]
+   [uxbox.util.router :as r]
+   [uxbox.util.time :as dt]))
 
 ;; --- Helpers & Constants
 
@@ -35,21 +34,9 @@
 
 ;; --- Refs
 
-(def projects-map-ref
-  (-> (l/key :projects)
-      (l/derive st/state)))
-
-(def dashboard-ref
+(def opts-ref
   (-> (l/in [:dashboard :projects])
       (l/derive st/state)))
-
-(def project-ordering-ref
-  (-> (l/key :project-order)
-      (l/derive dashboard-ref)))
-
-(def project-filtering-ref
-  (-> (l/in [:project-filter])
-      (l/derive dashboard-ref)))
 
 ;; --- Helpers
 
@@ -73,181 +60,180 @@
 
 ;; --- Menu (Filter & Sort)
 
-(mx/defc menu
-  {:mixins [mx/static]}
-  [state projects]
-  (let [ordering (:order state :created)
-        filtering (:filter state "")
-        count (count projects)]
-    (letfn [(on-term-change [event]
-              (let [term (-> (dom/get-target event)
-                             (dom/get-value))]
-                (st/emit! (udp/update-opts :filter term))))
-            (on-ordering-change [event]
-              (let [value (dom/event->value event)
-                    value (read-string value)]
-                (st/emit! (udp/update-opts :order value))))
-            (on-clear [event]
-              (st/emit! (udp/update-opts :filter "")))]
-      [:section.dashboard-bar {}
-       [:div.dashboard-info {}
+(mx/def menu
+  :mixins #{mx/static mx/reactive}
+  :init
+  (fn [own props]
+    (assoc own ::num-projects (-> (comp (l/key :projects)
+                                        (l/lens #(-> % vals count)))
+                                  (l/derive st/state))))
+  :render
+  (fn [own props]
+    (let [ordering (:order props :created)
+          filtering (:filter props "")
+          num-projects (mx/react (::num-projects own))]
+      (letfn [(on-term-change [event]
+                (let [term (-> (dom/get-target event)
+                               (dom/get-value))]
+                  (st/emit! (udp/update-opts :filter term))))
+              (on-ordering-change [event]
+                (let [value (dom/event->value event)
+                      value (read-string value)]
+                  (st/emit! (udp/update-opts :order value))))
+              (on-clear [event]
+                (st/emit! (udp/update-opts :filter "")))]
+        [:section.dashboard-bar
+         [:div.dashboard-info
 
-        ;; Counter
-        [:span.dashboard-images {} (tr "ds.num-projects" (t/c count))]
+          ;; Counter
+          [:span.dashboard-images (tr "ds.num-projects" (t/c num-projects))]
 
-        ;; Sorting
-        [:div {}
-         [:span {} (tr "ds.ordering")]
-         [:select.input-select
-          {:on-change on-ordering-change
-           :value (pr-str ordering)}
-          (for [[key value] (seq +ordering-options+)]
-            (let [key (pr-str key)]
-              [:option {:key key :value key} (tr value)]))]]
-        ;; Search
-        [:form.dashboard-search {}
-         [:input.input-text
-          {:key :images-search-box
-           :type "text"
-           :on-change on-term-change
-           :auto-focus true
-           :placeholder (tr "ds.search.placeholder")
-           :value (or filtering "")}]
-         [:div.clear-search {:on-click on-clear} i/close]]]])))
+          ;; Sorting
+          [:div
+           [:span (tr "ds.ordering")]
+           [:select.input-select
+            {:on-change on-ordering-change
+             :value (pr-str ordering)}
+            (for [[key value] (seq +ordering-options+)]
+              (let [key (pr-str key)]
+                [:option {:key key :value key} (tr value)]))]]
+          ;; Search
+          [:form.dashboard-search
+           [:input.input-text
+            {:key :images-search-box
+             :type "text"
+             :on-change on-term-change
+             :auto-focus true
+             :placeholder (tr "ds.search.placeholder")
+             :value (or filtering "")}]
+           [:div.clear-search {:on-click on-clear} i/close]]]]))))
 
 ;; --- Grid Item Thumbnail
 
-(defn- grid-item-thumbnail-will-mount
-  [own]
-  (let [[project] (:rum/args own)
-        svg (exports/render-page (:page-id project))
-        url (some-> svg
-                    (blob/create "image/svg+xml")
-                    (blob/create-uri))]
-    (assoc own ::url url)))
+(mx/def grid-item-thumbnail
+  :mixins #{mx/static}
 
-(defn- grid-item-thumbnail-will-unmount
-  [own]
-  (let [url (::url own)]
-    (when url (blob/revoke-uri url))
-    own))
+  :init
+  (fn [own project]
+    (let [svg (exports/render-page (:page-id project))
+          url (some-> svg
+                      (blob/create "image/svg+xml")
+                      (blob/create-uri))]
+      (assoc own ::url url)))
 
-(defn- grid-item-thumbnail-did-remount
-  [oldown own]
-  (when-let [url (::url oldown)]
-    (blob/revoke-uri url))
-  (grid-item-thumbnail-will-mount own))
+  :will-unmount
+  (fn [own]
+    (let [url (::url own)]
+      (when url (blob/revoke-uri url))
+      own))
 
-(mx/defcs grid-item-thumbnail
-  {:mixins [mx/static]
-   :will-mount grid-item-thumbnail-will-mount
-   :will-unmount grid-item-thumbnail-will-unmount
-   :did-remount grid-item-thumbnail-did-remount}
-  [own project]
-  (if-let [url (::url own)]
-    [:div.grid-item-th
-     {:style {:background-image (str "url('" url "')")}}]
-    [:div.grid-item-th
-     [:img.img-th {:src "/images/project-placeholder.svg" :alt "Project title"}]]))
+  :render
+  (fn [own project]
+    (if-let [url (::url own)]
+      [:div.grid-item-th
+       {:style {:background-image (str "url('" url "')")}}]
+      [:div.grid-item-th
+       [:img.img-th {:src "/images/project-placeholder.svg"
+                     :alt "Project title"}]])))
 
 ;; --- Grid Item
 
-(mx/defcs grid-item
-  {:mixins [mx/static (mx/local)]}
-  [{:keys [rum/local] :as own} project]
-  (letfn [(on-navigate [event]
-            (st/emit! (udp/go-to (:id project))))
-          (delete []
-            (st/emit! (udp/delete-project project)))
-          (on-delete [event]
-            (dom/stop-propagation event)
-            (udl/open! :confirm {:on-accept delete}))
-          (on-key-down [event]
-            (when (kbd/enter? event)
-              (on-blur event)))
-          (on-blur [event]
-            (let [target (dom/event->target event)
-                  name (dom/get-value target)
-                  id (:id project)]
-              (swap! local assoc :edition false)
-              (st/emit! (udp/rename-project id name))))
-          (on-edit [event]
-            (dom/stop-propagation event)
-            (dom/prevent-default event)
-            (swap! local assoc :edition true))]
-    [:div.grid-item.project-th {:on-click on-navigate}
-     (grid-item-thumbnail project)
-     [:div.item-info {}
-      (if (:edition @local)
-        [:input.element-name {:type "text"
-                 :auto-focus true
-                 :on-key-down on-key-down
-                 :on-blur on-blur
-                 :on-click on-edit
-                 :default-value (:name project)}]
-        [:h3 {} (:name project)])
-      [:span.date {}
-       (str "Updated " (dt/timeago (:modified-at project)))]]
-     [:div.project-th-actions {}
-      [:div.project-th-icon.pages {}
-       i/page
-       [:span {} (:total-pages project)]]
-      #_[:div.project-th-icon.comments
-         i/chat
-         [:span "0"]]
-      [:div.project-th-icon.edit
-       {:on-click on-edit}
-       i/pencil]
-      [:div.project-th-icon.delete
-       {:on-click on-delete}
-       i/trash]]]))
+(mx/def grid-item
+  :key-fn :id
+  :mixins #{mx/static (mx/local)}
+
+  :render
+  (fn [{:keys [::mx/local] :as own} project]
+    (letfn [(on-navigate [event]
+              (st/emit! (udp/go-to (:id project))))
+            (delete []
+              (st/emit! (udp/delete-project project)))
+            (on-delete [event]
+              (dom/stop-propagation event)
+              (udl/open! :confirm {:on-accept delete}))
+            (on-key-down [event]
+              (when (kbd/enter? event)
+                (on-blur event)))
+            (on-blur [event]
+              (let [target (dom/event->target event)
+                    name (dom/get-value target)
+                    id (:id project)]
+                (swap! local assoc :edition false)
+                (st/emit! (udp/rename-project id name))))
+            (on-edit [event]
+              (dom/stop-propagation event)
+              (dom/prevent-default event)
+              (swap! local assoc :edition true))]
+      [:div.grid-item.project-th {:on-click on-navigate}
+       (grid-item-thumbnail project)
+       [:div.item-info
+        (if (:edition @local)
+          [:input.element-name {:type "text"
+                                :auto-focus true
+                                :on-key-down on-key-down
+                                :on-blur on-blur
+                                :on-click on-edit
+                                :default-value (:name project)}]
+          [:h3 (:name project)])
+        [:span.date
+         (str "Updated " (dt/timeago (:modified-at project)))]]
+       [:div.project-th-actions
+        [:div.project-th-icon.pages
+         i/page
+         [:span (:total-pages project)]]
+        #_[:div.project-th-icon.comments
+           i/chat
+           [:span "0"]]
+        [:div.project-th-icon.edit
+         {:on-click on-edit}
+         i/pencil]
+        [:div.project-th-icon.delete
+         {:on-click on-delete}
+         i/trash]]])))
 
 ;; --- Grid
 
-(mx/defc grid
-  {:mixins [mx/static]}
-  [state projects]
-  (let [ordering (:order state :created)
-        filtering (:filter state "")
-        projects (->> (vals projects)
-                      (filter-projects-by filtering)
-                      (sort-projects-by ordering))]
-    (letfn [(on-click [e]
-              (dom/prevent-default e)
-              (udl/open! :create-project))]
-      [:section.dashboard-grid {}
-       [:h2 {} (tr "ds.project-title")]
-       [:div.dashboard-grid-content {}
-        [:div.dashboard-grid-row {}
-         [:div.grid-item.add-project
-          {:on-click on-click}
-          [:span {} (tr "ds.project-new")]]
+(mx/def grid
+  :mixins #{mx/static mx/reactive}
+
+  :init
+  (fn [own props]
+    (assoc own ::projects (-> (l/key :projects)
+                              (l/derive st/state))))
+
+  :render
+  (fn [own props]
+    (let [ordering (:order props :created)
+          filtering (:filter props "")
+          projects (->> (vals (mx/react (::projects own)))
+                        (filter-projects-by filtering)
+                        (sort-projects-by ordering))]
+      [:section.dashboard-grid
+       [:h2 (tr "ds.project-title")]
+       [:div.dashboard-grid-content
+        [:div.dashboard-grid-row
+         [:div.grid-item.add-project {:on-click (fn [e]
+                                                  (dom/prevent-default e)
+                                                  (udl/open! :create-project))}
+          [:span (tr "ds.project-new")]]
          (for [item projects]
-           (-> (grid-item item)
-               (mx/with-key (:id item))))]]])))
+           (grid-item item))]]])))
 
 ;; --- Projects Page
 
-(defn projects-page-will-mount
-  [own]
-  (st/emit! (udp/initialize))
-  own)
+(mx/def projects-page
+  :mixins [mx/static mx/reactive]
 
-(defn projects-page-did-remount
-  [old-own own]
-  (st/emit! (udp/initialize))
-  own)
+  :init
+  (fn [own props]
+    (st/emit! (udp/initialize))
+    own)
 
-(mx/defc projects-page
-  {:will-mount projects-page-will-mount
-   :did-remount projects-page-did-remount
-   :mixins [mx/static mx/reactive]}
-  []
-  (let [state (mx/react dashboard-ref)
-        projects-map (mx/react projects-map-ref)]
-    [:main.dashboard-main {}
-     (messages-widget)
-     (header)
-     [:section.dashboard-content {}
-      (menu state projects-map)
-      (grid state projects-map)]]))
+  :render
+  (fn [own props]
+    (let [opts (mx/react opts-ref)
+          props (merge opts props)]
+      [:section.dashboard-content
+       (menu props)
+       (grid props)])))
+

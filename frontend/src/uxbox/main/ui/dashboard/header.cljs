@@ -16,38 +16,45 @@
             [uxbox.util.router :as rt]
             [rumext.core :as mx :include-macros true]))
 
-(def header-ref
-  (-> (l/key :dashboard)
-      (l/derive st/state)))
-
 (mx/defc header-link
-  [section content]
+  [{:keys [section content] :as props}]
   (let [on-click #(st/emit! (rt/navigate section))]
     [:a {:on-click on-click} content]))
 
-(mx/defc header
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [local (mx/react header-ref)
-        projects? (= (:section local) :dashboard/projects)
-        elements? (= (:section local) :dashboard/elements)
-        icons? (= (:section local) :dashboard/icons)
-        images? (= (:section local) :dashboard/images)
-        colors? (= (:section local) :dashboard/colors)]
+(mx/def header
+  :mixins [mx/static mx/reactive]
+  :init
+  (fn [own props]
+    (assoc own ::section-ref (-> (l/in [:dashboard :section])
+                                 (l/derive st/state))))
+
+  :render
+  (fn [own props]
+    (let [section (mx/react (::section-ref own))
+          projects? (= section :dashboard/projects)
+          elements? (= section :dashboard/elements)
+          icons? (= section :dashboard/icons)
+          images? (= section :dashboard/images)
+          colors? (= section :dashboard/colors)]
     [:header#main-bar.main-bar
      [:div.main-logo
-      (header-link :dashboard/projects i/logo)]
+      (header-link {:section :dashboard/projects
+                    :content i/logo})]
      [:ul.main-nav
       [:li {:class (when projects? "current")}
-       (header-link :dashboard/projects (tr "ds.projects"))]
+       (header-link {:section :dashboard/projects
+                     :content (tr "ds.projects")})]
       #_[:li {:class (when elements? "current")}
        (header-link :dashboard/elements (tr "ds.elements"))]
       [:li {:class (when icons? "current")}
-       (header-link :dashboard/icons (tr "ds.icons"))]
+       (header-link {:section :dashboard/icons
+                     :content (tr "ds.icons")})]
       [:li {:class (when images? "current")}
-       (header-link :dashboard/images (tr "ds.images"))]
+       (header-link {:section :dashboard/images
+                     :content (tr "ds.images")})]
       [:li {:class (when colors? "current")}
-       (header-link :dashboard/colors (tr "ds.colors"))]]
-     (ui.u/user)]))
+       (header-link {:section :dashboard/colors
+                     :content (tr "ds.colors")})]]
+     (ui.u/user)])))
 
 
