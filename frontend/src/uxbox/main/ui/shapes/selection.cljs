@@ -19,7 +19,8 @@
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.ui.shapes.common :as scommon]
             [uxbox.main.geom :as geom]
-            [rumext.core :as mx :include-macros true]
+            [rumext.core :as mx]
+            [rumext.alpha :as mf]
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.dom :as dom]))
@@ -245,17 +246,17 @@
                           :stroke-opacity "0.5"
                           :fill "transparent"}}]]))
 
-(mx/def selection-handlers
-  :mixins [mx/reactive mx/static]
+(mf/def selection-handlers
+  :mixins [mf/reactive mf/static]
   :render
   (fn [own props]
-    (let [shapes (mx/react selected-shapes-ref)
-          modifiers (mx/react selected-modifers-ref)
+    (let [shapes (mf/react selected-shapes-ref)
+          modifiers (mf/react selected-modifers-ref)
           ;; Edition is a workspace global flag
           ;; because only one shape can be on
           ;; the edition mode.
-          edition? (mx/react refs/selected-edition)
-          zoom (mx/react refs/selected-zoom)
+          edition? (mf/react refs/selected-edition)
+          zoom (mf/react refs/selected-zoom)
           num (count shapes)
           {:keys [id type] :as shape} (first shapes)]
 

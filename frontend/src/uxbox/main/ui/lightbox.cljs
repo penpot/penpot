@@ -3,6 +3,7 @@
    [goog.events :as events]
    [lentes.core :as l]
    [rumext.core :as mx]
+   [rumext.alpha :as mf]
    [uxbox.main.data.lightbox :as udl]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as k]
@@ -29,20 +30,20 @@
 
 (defn- on-out-clicked
   [own event]
-  (let [parent (mx/ref-node (::parent own))
+  (let [parent (mf/ref-node (::parent own))
         current (dom/get-target event)]
     (when (dom/equals? parent current)
       (st/emit! (udl/hide-lightbox)))))
 
-(mx/def lightbox
-  :mixins #{mx/reactive}
+(mf/def lightbox
+  :mixins #{mf/reactive}
 
   :init
   (fn [own props]
     (let [key (events/listen js/document EventType.KEYDOWN on-esc-clicked)]
       (assoc own
              ::key-listener key
-             ::parent (mx/create-ref))))
+             ::parent (mf/create-ref))))
 
   :will-unmount
   (fn [own]
@@ -51,7 +52,7 @@
 
   :render
   (fn [own props]
-    (let [data (mx/react lightbox-ref)
+    (let [data (mf/react lightbox-ref)
           classes (classnames
                    :hide (nil? data)
                    :transparent (:transparent? data))]

@@ -6,22 +6,24 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.header
-  (:require [lentes.core :as l]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.projects :as dp]
-            [uxbox.main.ui.navigation :as nav]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.users :as ui.u]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as rt]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [lentes.core :as l]
+   [rumext.core :as mx]
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.projects :as dp]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.navigation :as nav]
+   [uxbox.main.ui.users :as ui.u]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.router :as rt]))
 
 (mx/defc header-link
   [{:keys [section content] :as props}]
   (let [on-click #(st/emit! (rt/navigate section))]
     [:a {:on-click on-click} content]))
 
-(mx/def header
+(mf/def header
   :mixins [mx/static mx/reactive]
   :init
   (fn [own props]

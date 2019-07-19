@@ -9,7 +9,7 @@
   (:require
    [cuerdas.core :as str]
    [lentes.core :as l]
-   [rumext.core :as mx :include-macros true]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.lightbox :as udl]
    [uxbox.main.data.pages :as udp]
@@ -25,12 +25,12 @@
    [uxbox.util.i18n :refer (tr)]
    [uxbox.util.router :as r]))
 
-(mx/def page-item
-  :mixins [(mx/local) mx/static mx/reactive]
+(mf/def page-item
+  :mixins [(mf/local) mf/static mf/reactive]
   :key-fn :id
 
   :render
-  (fn [{:keys [::mx/local] :as own}
+  (fn [{:keys [::mf/local] :as own}
        {:keys [::deletable? ::selected?] :as page}]
     (let [body-classes (classnames
                         :selected selected?
@@ -106,13 +106,13 @@
            (when deletable?
              [:a {:on-click on-delete} i/trash])]]]))))
 
-(mx/def sitemap-toolbox
-  :mixins [mx/static mx/reactive]
+(mf/def sitemap-toolbox
+  :mixins [mf/static mf/reactive]
 
   :render
   (fn [own current-page-id]
-    (let [project (mx/react refs/selected-project)
-          pages (mx/react refs/selected-project-pages)
+    (let [project (mf/react refs/selected-project)
+          pages (mf/react refs/selected-project-pages)
           create #(udl/open! :page-form {:page {:project (:id project)}})
           close #(st/emit! (dw/toggle-flag :sitemap))
           deletable? (> (count pages) 1)]

@@ -19,7 +19,8 @@
             [uxbox.main.ui.keyboard :as kbd]
             [uxbox.util.data :refer (read-string classnames)]
             [uxbox.util.router :as r]
-            [rumext.core :as mx :include-macros true]
+            [rumext.core :as mx]
+            [rumext.alpha :as mf]
             [uxbox.util.dom.dnd :as dnd]
             [uxbox.util.dom :as dom])
   (:import goog.events.EventType))
@@ -89,10 +90,10 @@
 
 ;; --- Shape Name (Component)
 
-(mx/def shape-name
-  :mixins [mx/static (mx/local)]
+(mf/def shape-name
+  :mixins [mf/static (mf/local)]
   :render
-  (fn [{:keys [::mx/local] :as own} {:keys [id] :as shape}]
+  (fn [{:keys [::mf/local] :as own} {:keys [id] :as shape}]
     (letfn [(on-blur [event]
               (let [target (dom/event->target event)
                     parent (.-parentNode target)

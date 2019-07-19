@@ -9,7 +9,8 @@
   (:require
    [beicon.core :as rx]
    [lentes.core :as l]
-   [rumext.core :as mx :include-macros true]
+   [rumext.core :as mx]
+   [rumext.alpha :as mf]
    [uxbox.main.constants :as c]
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.pages :as udp]
@@ -49,7 +50,7 @@
   [own event]
   (when (kbd/ctrl? event)
     (let [prev-zoom @refs/selected-zoom
-          dom (mx/ref-node own "workspace-canvas")
+          dom (mf/ref-node (::canvas own))
           scroll-position (scroll/get-current-position-absolute dom)
           mouse-point @refs/viewport-mouse-position]
       (dom/prevent-default event)
@@ -63,22 +64,22 @@
   (-> (l/key :page)
       (l/derive refs/workspace)))
 
-(mx/def workspace
+(mf/def workspace
   :key-fn vector
-  :mixins #{mx/static
-            mx/reactive
+  :mixins #{mf/static
+            mf/reactive
             shortcuts-mixin}
 
   :init
   (fn [own {:keys [project page] :as props}]
     (st/emit! (dw/initialize project page))
-    (assoc own ::canvas (mx/create-ref)))
+    (assoc own ::canvas (mf/create-ref)))
 
   :did-mount
   (fn [own]
-    (let [{:keys [project page]} (::mx/props own)
-          ;; dom (mx/ref-node own "workspace-canvas")
-          dom (mx/ref-node (::canvas own))
+    (let [{:keys [project page]} (::mf/props own)
+          ;; dom (mf/ref-node own "workspace-canvas")
+          dom (mf/ref-node (::canvas own))
           scroll-to-page-center #(scroll/scroll-to-page-center dom @refs/selected-page)
           sub (rx/subscribe streams/page-id-ref-s scroll-to-page-center)]
       (scroll-to-page-center)
@@ -94,10 +95,9 @@
 
   :render
   (fn [own props]
-    ;; [own project-id page-id]
-    (let [flags (mx/react refs/flags)
-          project-id (get-in own [::mx/props :project])
-          page-id (get-in own [::mx/props :page])
+    (let [flags (mf/react refs/flags)
+          project-id (get props :project)
+          page-id (get props :page)
           left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                   :document-history])))
           right-sidebar? (not (empty? (keep flags [:icons :drawtools

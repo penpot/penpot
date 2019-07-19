@@ -15,14 +15,14 @@
             [uxbox.util.data :refer [read-string]]
             [uxbox.util.dom :as dom]
             [uxbox.util.i18n :refer [tr]]
-            [rumext.core :as mx :include-macros true]
+            [rumext.alpha :as mf]
             [uxbox.util.router :as r]
             [uxbox.util.time :as dt]))
 
 ;; --- History Item (Component)
 
-(mx/def history-item
-  :mixins [mx/static]
+(mf/def history-item
+  :mixins [mf/static]
   :key-fn :id
   :render
   (fn [own {:keys [::selected] :as item}]
@@ -46,12 +46,12 @@
 
 ;; --- History List (Component)
 
-(mx/def history-list
-  :mixins [mx/static mx/reactive]
+(mf/def history-list
+  :mixins [mf/static mf/reactive]
   :render
   (fn [own {:keys [selected items min-version] :as history}]
     (let [items (reverse (sort-by :version items))
-          page (mx/react refs/selected-page)
+          page (mf/react refs/selected-page)
           show-more? (pos? min-version)
           load-more #(st/emit! (udh/load-more))]
       [:ul.history-content
@@ -64,8 +64,8 @@
 
 ;; --- History Pinned List (Component)
 
-(mx/def history-pinned-list
-  :mixins [mx/static]
+(mf/def history-pinned-list
+  :mixins [mf/static]
   :render
   (fn [own {:keys [pinned selected] :as history}]
     [:ul.history-content
@@ -75,8 +75,8 @@
 
 ;; --- History Toolbox (Component)
 
-(mx/def history-toolbox
-  :mixins [mx/static mx/reactive]
+(mf/def history-toolbox
+  :mixins [mf/static mf/reactive]
 
   :init
   (fn [own page-id]
@@ -90,7 +90,7 @@
 
   :render
   (fn [own page-id]
-    (let [history (mx/react refs/history)
+    (let [history (mf/react refs/history)
           section (:section history :main)
 
           close #(st/emit! (dw/toggle-flag :document-history))
@@ -118,11 +118,11 @@
 
 ;; --- History Dialog
 
-(mx/def history-dialog
-  :mixins [mx/static mx/reactive]
+(mf/def history-dialog
+  :mixins [mf/static mf/reactive]
   :render
   (fn [own]
-    (let [history (mx/react refs/history)
+    (let [history (mf/react refs/history)
           version (:selected history)
           on-accept #(st/emit! (udh/apply-selected-history))
           on-cancel #(st/emit! (udh/deselect-page-history))]

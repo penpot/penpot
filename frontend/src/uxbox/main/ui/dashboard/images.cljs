@@ -9,7 +9,8 @@
   (:require
    [cuerdas.core :as str]
    [lentes.core :as l]
-   [rumext.core :as mx :include-macros true]
+   [rumext.core :as mx]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.images :as di]
    [uxbox.main.data.lightbox :as udl]
@@ -59,11 +60,11 @@
 
 ;; --- Page Title
 
-(mx/def page-title
-  :mixins [(mx/local) mx/reactive]
+(mf/def page-title
+  :mixins [(mf/local) mf/reactive]
 
   :render
-  (fn [{:keys [::mx/local] :as own}
+  (fn [{:keys [::mf/local] :as own}
        {:keys [id type] :as coll}]
     (let [own? (= :own (:type coll))
           edit? (:edit @local)]
@@ -120,16 +121,16 @@
               (l/lens selector))
         (l/derive st/state))))
 
-(mx/def nav-item
+(mf/def nav-item
   :key-fn :id
-  :mixins [(mx/local) mx/static mx/reactive]
+  :mixins [(mf/local) mf/static mf/reactive]
 
   :init
   (fn [own {:keys [id] :as props}]
     (assoc own ::num-images-ref (num-images-ref id)))
 
   :render
-  (fn [{:keys [::mx/local] :as own}
+  (fn [{:keys [::mf/local] :as own}
        {:keys [id type name num-images selected?] :as coll}]
     (letfn [(on-click [event]
             (let [type (or type :own)]
@@ -163,16 +164,16 @@
          [:span.element-title {}
           (if id name "Storage")])
        [:span.element-subtitle
-        (tr "ds.num-elements" (t/c (or num-images (mx/react (::num-images-ref own)))))]])))
+        (tr "ds.num-elements" (t/c (or num-images (mf/react (::num-images-ref own)))))]])))
 
-(mx/def nav
-  :mixins [mx/static mx/reactive]
+(mf/def nav
+  :mixins [mf/static mf/reactive]
 
   :render
   (fn [own {:keys [id type] :as props}]
     (let [own? (= type :own)
           builtin? (= type :builtin)
-          colls (mx/react collections-ref)
+          colls (mf/react collections-ref)
           select-tab (fn [type]
                        (if-let [coll (->> (vals colls)
                                           (filter #(= type (:type %)))
@@ -207,17 +208,17 @@
 
 ;; --- Grid
 
-(mx/def grid-form
-  :mixins #{mx/static}
+(mf/def grid-form
+  :mixins #{mf/static}
 
   :init
   (fn [own props]
-    (assoc own ::file-input (mx/create-ref)))
+    (assoc own ::file-input (mf/create-ref)))
 
   :render
   (fn [own {:keys [id] :as props}]
     (letfn [(forward-click [event]
-              (dom/click (mx/ref-node (::file-input own))))
+              (dom/click (mf/ref-node (::file-input own))))
             (on-file-selected [event]
               (let [files (dom/get-event-files event)
                     files (jscoll->vec files)]
@@ -236,15 +237,15 @@
          :type "file"
          :on-change on-file-selected}]]))))
 
-(mx/def grid-options-tooltip
-  :mixins [mx/reactive mx/static]
+(mf/def grid-options-tooltip
+  :mixins [mf/reactive mf/static]
 
   :render
   (fn [own {:keys [selected on-select title]}]
     {:pre [(uuid? selected)
            (fn? on-select)
            (string? title)]}
-    (let [colls (mx/react collections-ref)
+    (let [colls (mf/react collections-ref)
           colls (->> (vals colls)
                      (filter #(= :own (:type %)))
                      (remove #(= selected (:id %)))
@@ -261,11 +262,11 @@
          [:li {:key (pr-str id)}
           [:a {:on-click #(on-select % id)} name]])])))
 
-(mx/def grid-options
-  :mixins [(mx/local)]
+(mf/def grid-options
+  :mixins [(mf/local)]
 
   :render
-  (fn [{:keys [::mx/local] :as own}
+  (fn [{:keys [::mf/local] :as own}
        {:keys [id type selected] :as props}]
     (letfn [(delete []
               (st/emit! (di/delete-selected)))
@@ -330,9 +331,9 @@
                                     :on-select on-copy}))
            ^:inline i/organize]])])))
 
-(mx/def grid-item
+(mf/def grid-item
   :key-fn :id
-  :mixins [mx/static]
+  :mixins [mf/static]
 
   :render
   (fn [own {:keys [id created-at ::selected? ::edition?] :as image}]
@@ -369,8 +370,8 @@
           [:h3 {:on-double-click on-edit} (:name image)])
         [:span.date (str (tr "ds.uploaded-at" (dt/format created-at "DD/MM/YYYY")))]]])))
 
-(mx/def grid
-  :mixins [mx/reactive]
+(mf/def grid
+  :mixins [mf/reactive]
   :init
   (fn [own {:keys [id] :as props}]
     (let [selector (fn [images]
@@ -383,7 +384,7 @@
   :render
   (fn [own {:keys [selected edition id type] :as props}]
     (let [editable? (or (= type :own) (nil? id))
-          images (->> (mx/react (::images-ref own))
+          images (->> (mf/react (::images-ref own))
                       (filter-images-by (:filter props ""))
                       (sort-images-by (:order props :name)))]
       [:div.dashboard-grid-content
@@ -397,8 +398,8 @@
 
 ;; --- Menu
 
-(mx/def menu
-  :mixins [mx/reactive mx/static]
+(mf/def menu
+  :mixins [mf/reactive mf/static]
 
   ;; :init
   ;; (fn [own {:keys [id] :as props}]
@@ -446,8 +447,8 @@
            [:div.clear-search {:on-click on-clear}
             i/close]]]]))))
 
-(mx/def content
-  :mixins [mx/reactive mx/static]
+(mf/def content
+  :mixins [mf/reactive mf/static]
 
   :init
   (fn [own {:keys [id] :as props}]
@@ -456,8 +457,8 @@
 
   :render
   (fn [own props]
-    (let [opts (mx/react opts-ref)
-          coll (mx/react (::coll-ref own))
+    (let [opts (mf/react opts-ref)
+          coll (mf/react (::coll-ref own))
           props (merge opts props)]
       [:*
        (menu (assoc props ::coll coll))
@@ -469,13 +470,13 @@
 
 ;; --- Images Page
 
-(mx/def images-page
+(mf/def images-page
   :key-fn identity
-  :mixins #{mx/static mx/reactive}
+  :mixins #{mf/static mf/reactive}
 
   :init
   (fn [own props]
-    (let [{:keys [type id]} (::mx/props own)]
+    (let [{:keys [type id]} (::mf/props own)]
       (st/emit! (di/initialize type id))
       own))
 

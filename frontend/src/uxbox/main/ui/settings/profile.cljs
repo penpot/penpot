@@ -12,7 +12,7 @@
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.core :as mx]
-   [rumext.func :as mf]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
@@ -62,14 +62,14 @@
     (st/emit! (assoc-value field value))))
 
 ;; --- Profile Form
-(mx/def profile-form
-  :mixins [mx/static mx/reactive mx/sync-render (fm/clear-mixin st/store :profile)]
+(mf/def profile-form
+  :mixins [mf/static mf/reactive mf/sync-render (fm/clear-mixin st/store :profile)]
   :render
   (fn [own props]
     (let [data (merge {:theme "light"}
-                      (mx/react profile-ref)
-                      (mx/react form-data))
-          errors (mx/react form-errors)
+                      (mf/react profile-ref)
+                      (mf/react form-data))
+          errors (mf/react form-errors)
           valid? (fm/valid? ::profile-form data)
           theme (:theme data)
           on-success #(st/emit! (clear-form))

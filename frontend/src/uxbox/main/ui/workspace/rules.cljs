@@ -9,7 +9,7 @@
   (:require
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [rumext.core :as mx]
+   [rumext.alpha :as mf]
    [uxbox.main.constants :as c]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as s]
@@ -66,7 +66,7 @@
 
 ;; --- Horizontal Text Label
 
-(mx/def horizontal-text-label
+(mf/def horizontal-text-label
   :key-fn second
   :render
   (fn [own [zoom value]]
@@ -85,7 +85,7 @@
 
 ;; --- Horizontal Text Label
 
-(mx/def vertical-text-label
+(mf/def vertical-text-label
   :key-fn second
   :render
   (fn [own [zoom value]]
@@ -104,8 +104,8 @@
 
 ;; --- Horizontal Rule Ticks (Component)
 
-(mx/def horizontal-rule-ticks
-  :mixins #{mx/static}
+(mf/def horizontal-rule-ticks
+  :mixins #{mf/static}
   :render
   (fn [own zoom]
     (let [zoom (or zoom 1)
@@ -117,8 +117,8 @@
 
 ;; --- Vertical Rule Ticks (Component)
 
-(mx/def vertical-rule-ticks
-  :mixins #{mx/static}
+(mf/def vertical-rule-ticks
+  :mixins #{mf/static}
   :render
   (fn [own zoom]
     (let [zoom (or zoom 1)
@@ -130,12 +130,12 @@
 
 ;; --- Horizontal Rule (Component)
 
-(mx/def horizontal-rule
-  :mixins #{mx/static mx/reactive}
+(mf/def horizontal-rule
+  :mixins #{mf/static mf/reactive}
   :render
   (fn [own props]
-    (let [scroll (mx/react refs/workspace-scroll)
-          zoom (mx/react refs/selected-zoom)
+    (let [scroll (mf/react refs/workspace-scroll)
+          zoom (mf/react refs/selected-zoom)
           scroll-x (:x scroll)
           translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
       [:svg.horizontal-rule
@@ -148,12 +148,12 @@
 
 ;; --- Vertical Rule (Component)
 
-(mx/def vertical-rule
-  :mixins #{mx/static mx/reactive}
+(mf/def vertical-rule
+  :mixins #{mf/static mf/reactive}
   :render
   (fn [own props]
-    (let [scroll (mx/react refs/workspace-scroll)
-          zoom (mx/react refs/selected-zoom)
+    (let [scroll (mf/react refs/workspace-scroll)
+          zoom (mf/react refs/selected-zoom)
           scroll-y (:y scroll)
           translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
       [:svg.vertical-rule

@@ -10,7 +10,7 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.core :as mx]
-   [rumext.func :as mxf]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.lightbox :as udl]
@@ -60,8 +60,8 @@
 
 ;; --- Menu (Filter & Sort)
 
-(mx/def menu
-  :mixins #{mx/static mx/reactive}
+(mf/def menu
+  :mixins #{mf/static mf/reactive}
   :init
   (fn [own props]
     (assoc own ::num-projects (-> (comp (l/key :projects)
@@ -71,7 +71,7 @@
   (fn [own props]
     (let [ordering (:order props :created)
           filtering (:filter props "")
-          num-projects (mx/react (::num-projects own))]
+          num-projects (mf/react (::num-projects own))]
       (letfn [(on-term-change [event]
                 (let [term (-> (dom/get-target event)
                                (dom/get-value))]
@@ -110,8 +110,8 @@
 
 ;; --- Grid Item Thumbnail
 
-(mx/def grid-item-thumbnail
-  :mixins #{mx/static}
+(mf/def grid-item-thumbnail
+  :mixins #{mf/static}
 
   :init
   (fn [own project]
@@ -138,12 +138,12 @@
 
 ;; --- Grid Item
 
-(mx/def grid-item
+(mf/def grid-item
   :key-fn :id
-  :mixins #{mx/static (mx/local)}
+  :mixins #{mf/static (mf/local)}
 
   :render
-  (fn [{:keys [::mx/local] :as own} project]
+  (fn [{:keys [::mf/local] :as own} project]
     (letfn [(on-navigate [event]
               (st/emit! (udp/go-to (:id project))))
             (delete []
@@ -193,8 +193,8 @@
 
 ;; --- Grid
 
-(mx/def grid
-  :mixins #{mx/static mx/reactive}
+(mf/def grid
+  :mixins #{mf/static mf/reactive}
 
   :init
   (fn [own props]
@@ -205,7 +205,7 @@
   (fn [own props]
     (let [ordering (:order props :created)
           filtering (:filter props "")
-          projects (->> (vals (mx/react (::projects own)))
+          projects (->> (vals (mf/react (::projects own)))
                         (filter-projects-by filtering)
                         (sort-projects-by ordering))]
       [:section.dashboard-grid
@@ -221,8 +221,8 @@
 
 ;; --- Projects Page
 
-(mx/def projects-page
-  :mixins [mx/static mx/reactive]
+(mf/def projects-page
+  :mixins [mf/static mf/reactive]
 
   :init
   (fn [own props]
@@ -231,7 +231,7 @@
 
   :render
   (fn [own props]
-    (let [opts (mx/react opts-ref)
+    (let [opts (mf/react opts-ref)
           props (merge opts props)]
       [:section.dashboard-content
        (menu props)

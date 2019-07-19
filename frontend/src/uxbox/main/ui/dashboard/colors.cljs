@@ -9,7 +9,8 @@
   (:require
    [cuerdas.core :as str]
    [lentes.core :as l]
-   [rumext.core :as mx :include-macros true]
+   [rumext.core :as mx]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.colors :as dc]
    [uxbox.main.data.dashboard :as dd]
@@ -39,11 +40,11 @@
 
 ;; --- Page Title
 
-(mx/def page-title
-  :mixins [(mx/local) mx/static mx/reactive]
+(mf/def page-title
+  :mixins [(mf/local) mf/static mf/reactive]
 
   :render
-  (fn [{:keys [::mx/local] :as own}
+  (fn [{:keys [::mf/local] :as own}
        {:keys [id] :as coll}]
     (let [own? (= :own (:type coll))
           edit? (:edit @local)]
@@ -91,11 +92,11 @@
 
 ;; --- Nav
 
-(mx/def nav-item
-  :mixins [(mx/local) mx/static]
+(mf/def nav-item
+  :mixins [(mf/local) mf/static]
 
   :render
-  (fn [{:keys [::mx/local] :as own}
+  (fn [{:keys [::mf/local] :as own}
        {:keys [id type name ::selected?] :as coll}]
     (let [colors (count (:colors coll))
           editable? (= type :own)]
@@ -132,14 +133,14 @@
          [:span.element-subtitle
           (tr "ds.num-elements" (t/c colors))]]))))
 
-(mx/def nav
-  :mixins [mx/static mx/reactive]
+(mf/def nav
+  :mixins [mf/static mf/reactive]
 
   :render
   (fn [own {:keys [id type] :as props}]
     (let [own? (= type :own)
           builtin? (= type :builtin)
-          colls (mx/react collections-ref)
+          colls (mf/react collections-ref)
           select-tab (fn [type]
                        (if-let [coll (->> (vals colls)
                                           (filter #(= type (:type %)))
@@ -177,15 +178,15 @@
    {:on-click #(udl/open! :color-form {:coll coll-id})}
    [:span (tr "ds.color-new")]])
 
-(mx/def grid-options-tooltip
-  :mixins [mx/reactive mx/static]
+(mf/def grid-options-tooltip
+  :mixins [mf/reactive mf/static]
 
   :render
   (fn [own {:keys [selected on-select title]}]
     {:pre [(uuid? selected)
            (fn? on-select)
            (string? title)]}
-    (let [colls (mx/react collections-ref)
+    (let [colls (mf/react collections-ref)
           colls (->> (vals colls)
                      (filter #(= :own (:type %)))
                      (remove #(= selected (:id %)))
@@ -200,11 +201,11 @@
          [:li {:key (str id)}
           [:a {:on-click #(on-select % id)} name]])])))
 
-(mx/def grid-options
-  :mixins [mx/static (mx/local)]
+(mf/def grid-options
+  :mixins [mf/static (mf/local)]
 
   :render
-  (fn [{:keys [::mx/local] :as own}
+  (fn [{:keys [::mf/local] :as own}
        {:keys [type id] :as coll}]
     (letfn [(delete [event]
               (st/emit! (dc/delete-selected-colors)))
@@ -264,9 +265,9 @@
                                     :on-select on-copy}))
            i/organize]])])))
 
-(mx/def grid-item
+(mf/def grid-item
   :key-fn :color
-  :mixins [mx/static]
+  :mixins [mf/static]
 
   :render
   (fn [own {:keys [color selected?] :as props}]
@@ -283,8 +284,8 @@
        [:span.color-data color]
        [:span.color-data (apply str "RGB " (interpose ", " (hex->rgb color)))]])))
 
-(mx/def grid
-  :mixins [mx/static]
+(mf/def grid
+  :mixins [mf/static]
 
   :render
   (fn [own {:keys [selected ::coll] :as props}]
@@ -299,8 +300,8 @@
           (let [selected? (contains? selected color)]
             (grid-item {:color color :selected? selected?})))]])))
 
-(mx/def content
-  :mixins [mx/reactive mx/static]
+(mf/def content
+  :mixins [mf/reactive mf/static]
 
   :init
   (fn [own {:keys [id] :as props}]
@@ -309,8 +310,8 @@
 
   :render
   (fn [own props]
-    (let [opts (mx/react opts-ref)
-          coll (mx/react (::coll-ref own))
+    (let [opts (mf/react opts-ref)
+          coll (mf/react (::coll-ref own))
           props (merge opts props)]
       [:section.dashboard-grid.library
        (page-title coll)
@@ -320,13 +321,13 @@
 
 ;; --- Colors Page
 
-(mx/def colors-page
+(mf/def colors-page
   :key-fn identity
-  :mixins #{mx/static mx/reactive}
+  :mixins #{mf/static mf/reactive}
 
   :init
   (fn [own props]
-    (let [{:keys [type id]} (::mx/props own)]
+    (let [{:keys [type id]} (::mf/props own)]
       (st/emit! (dc/initialize type id))
       own))
 

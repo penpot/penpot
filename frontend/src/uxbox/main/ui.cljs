@@ -12,7 +12,7 @@
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.core :as mx]
-   [rumext.func :as mf]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.projects :as dp]
@@ -96,7 +96,7 @@
      :type type}))
 
 
-(mx/def app
+(mf/def app
   :mixins [mx/reactive]
 
   :init

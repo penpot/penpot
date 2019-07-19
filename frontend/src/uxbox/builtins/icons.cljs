@@ -6,7 +6,7 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.builtins.icons
-  (:require [rumext.core :refer-macros [html]]))
+  (:require [rumext.alpha :refer-macros [html]]))
 
 (def logo
   (html

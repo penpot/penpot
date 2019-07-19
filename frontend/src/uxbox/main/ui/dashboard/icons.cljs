@@ -10,7 +10,8 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [potok.core :as ptk]
-   [rumext.core :as mx :include-macros true]
+   [rumext.core :as mx]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.icons :as di]
    [uxbox.main.data.lightbox :as udl]
@@ -71,11 +72,11 @@
 
 ;; --- Page Title
 
-(mx/def page-title
-  :mixins [(mx/local) mx/static]
+(mf/def page-title
+  :mixins [(mf/local) mf/static]
 
   :render
-  (fn [{:keys [::mx/local] :as own} {:keys [id type] :as coll}]
+  (fn [{:keys [::mf/local] :as own} {:keys [id type] :as coll}]
     (let [own? (= :own (:type coll))
           edit? (:edit @local)]
       (letfn [(on-save [e]
@@ -131,18 +132,18 @@
               (l/lens selector))
         (l/derive st/state))))
 
-(mx/def nav-item
+(mf/def nav-item
   :key-fn :id
-  :mixins [(mx/local) mx/static mx/reactive]
+  :mixins [(mf/local) mf/static mf/reactive]
 
   :init
   (fn [own {:keys [id] :as props}]
     (assoc own ::num-icons-ref (num-icons-ref id)))
 
   :render
-  (fn [{:keys [::mx/local] :as own}
+  (fn [{:keys [::mf/local] :as own}
        {:keys [id type name num-icons ::selected?] :as coll}]
-    (let [num-icons (or num-icons (mx/react (::num-icons-ref own)))
+    (let [num-icons (or num-icons (mf/react (::num-icons-ref own)))
           editable? (= type :own)]
       (letfn [(on-click [event]
                 (let [type (or type :own)]
@@ -178,14 +179,14 @@
          [:span.element-subtitle
           (tr "ds.num-elements" (t/c num-icons))]]))))
 
-(mx/def nav
-  :mixins [mx/static mx/reactive]
+(mf/def nav
+  :mixins [mf/static mf/reactive]
 
   :render
   (fn [own {:keys [id type] :as props}]
     (let [own? (= type :own)
           builtin? (= type :builtin)
-          colls (mx/react collections-ref)
+          colls (mf/react collections-ref)
           select-tab (fn [type]
                        (if-let [coll (->> (vals colls)
                                           (filter #(= type (:type %)))
@@ -237,15 +238,15 @@
        :type "file"
        :on-change on-file-selected}]]))
 
-(mx/def grid-options-tooltip
-  :mixins [mx/reactive mx/static]
+(mf/def grid-options-tooltip
+  :mixins [mf/reactive mf/static]
 
   :render
   (fn [own {:keys [selected on-select title]}]
     {:pre [(uuid? selected)
            (fn? on-select)
            (string? title)]}
-    (let [colls (mx/react collections-ref)
+    (let [colls (mf/react collections-ref)
           colls (->> (vals colls)
                      (filter #(= :own (:type %)))
                      (remove #(= selected (:id %)))
@@ -262,11 +263,11 @@
          [:li {:key (pr-str id)}
           [:a {:on-click #(on-select % id)} name]])])))
 
-(mx/def grid-options
-  :mixins [(mx/local) mx/static]
+(mf/def grid-options
+  :mixins [(mf/local) mf/static]
 
   :render
-  (fn [{:keys [::mx/local] :as own}
+  (fn [{:keys [::mf/local] :as own}
        {:keys [id type selected] :as props}]
     (letfn [(delete []
               (st/emit! (di/delete-selected)))
@@ -332,9 +333,9 @@
                                     :on-select on-copy}))
            i/organize]])])))
 
-(mx/def grid-item
+(mf/def grid-item
   :key-fn :id
-  :mixins [mx/static]
+  :mixins [mf/static]
   :render
   (fn [own {:keys [id created-at ::selected? ::edition?] :as icon}]
     (letfn [(toggle-selection [event]
@@ -375,8 +376,8 @@
            (:name icon)])
         (str (tr "ds.uploaded-at" (dt/format created-at "DD/MM/YYYY")))]])))
 
-(mx/def grid
-  :mixins [mx/reactive]
+(mf/def grid
+  :mixins [mf/reactive]
   :init
   (fn [own {:keys [id] :as props}]
     (let [selector (fn [icons]
@@ -389,7 +390,7 @@
   :render
   (fn [own {:keys [selected edition id type] :as props}]
     (let [editable? (or (= type :own) (nil? id))
-          icons (->> (mx/react (::icons-ref own))
+          icons (->> (mf/react (::icons-ref own))
                      (filter-icons-by (:filter props ""))
                      (sort-icons-by (:order props :name)))]
 
@@ -403,8 +404,8 @@
 
 ;; --- Menu
 
-(mx/def menu
-  :mixins [mx/static mx/reactive]
+(mf/def menu
+  :mixins [mf/static mf/reactive]
 
   :init
   (fn [own {:keys [id] :as props}]
@@ -413,7 +414,7 @@
   :render
   (fn [own props]
     (let [{:keys [id num-icons] :as coll} (::coll props)
-          num-icons (or num-icons (mx/react (::num-icons-ref own)))]
+          num-icons (or num-icons (mf/react (::num-icons-ref own)))]
       (letfn [(on-term-change [event]
                 (let [term (-> (dom/get-target event)
                                (dom/get-value))]
@@ -447,8 +448,8 @@
            [:div.clear-search {:on-click on-clear}
             i/close]]]]))))
 
-(mx/def content
-  :mixins [mx/reactive mx/static]
+(mf/def content
+  :mixins [mf/reactive mf/static]
 
   :init
   (fn [own {:keys [id] :as props}]
@@ -457,8 +458,8 @@
 
   :render
   (fn [own props]
-    (let [opts (mx/react opts-ref)
-          coll (mx/react (::coll-ref own))
+    (let [opts (mf/react opts-ref)
+          coll (mf/react (::coll-ref own))
           props (merge opts props)]
       [:*
        (menu (assoc props ::coll coll))
@@ -471,13 +472,13 @@
 
 ;; --- Icons Page
 
-(mx/def icons-page
+(mf/def icons-page
   :key-fn identity
-  :mixins #{mx/static mx/reactive}
+  :mixins #{mf/static mf/reactive}
 
   :init
   (fn [own props]
-    (let [{:keys [type id]} (::mx/props own)]
+    (let [{:keys [type id]} (::mf/props own)]
       (st/emit! (di/initialize type id))
       own))
 

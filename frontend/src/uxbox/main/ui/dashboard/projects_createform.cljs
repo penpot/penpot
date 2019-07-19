@@ -7,11 +7,11 @@
 
 (ns uxbox.main.ui.dashboard.projects-createform
   (:require
-   [cljs.spec.alpha :as s :include-macros true]
+   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.core :as mx]
-   [rumext.func :as mxf]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.lightbox :as udl]
@@ -43,7 +43,7 @@
 
 ;; --- Create Project Form
 
-(mxf/defc layout-input
+(mx/defc layout-input
   [{:keys [::layout-id] :as data}]
   (let [layout (get c/page-layouts layout-id)]
     [:div
@@ -60,7 +60,7 @@
               :for layout-id}
       (:name layout)]]))
 
-(mxf/defc layout-selector
+(mx/defc layout-selector
   [props]
   [:div.input-radio.radio-primary
    (layout-input (assoc props ::layout-id "mobile"))
@@ -68,11 +68,11 @@
    (layout-input (assoc props ::layout-id "notebook"))
    (layout-input (assoc props ::layout-id "desktop"))])
 
-(mx/def create-project-form
-  :mixins #{mx/reactive}
+(mf/def create-project-form
+  :mixins #{mf/reactive}
   :render
   (fn [own props]
-    (let [data (merge c/project-defaults (mx/react form-data))
+    (let [data (merge c/project-defaults (mf/react form-data))
           valid? (fm/valid? ::project-form data)]
       (letfn [(on-submit [event]
                 (dom/prevent-default event)
@@ -131,7 +131,7 @@
 
 ;; --- Create Project Lightbox
 
-(mx/def create-project-lightbox
+(mf/def create-project-lightbox
   :will-unmount
   (fn [own]
     (st/emit! (fm/clear-form :create-project))

@@ -52,6 +52,7 @@
                     (when (= name "worker")
                       {:target :webworker})
                     {:optimizations :advanced
+                     :pretty-print false
                      :static-fns true
                      :elide-asserts true})))
 
