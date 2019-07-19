@@ -36,6 +36,8 @@
   {:http-server-port (lookup-env env :uxbox-http-server-port 6060)
    :http-server-debug (lookup-env env :uxbox-http-server-debug true)
    :http-server-cors (lookup-env env :uxbox-http-server-cors "http://localhost:3449")
+   :database-username (lookup-env env :uxbox-database-username nil)
+   :database-password (lookup-env env :uxbox-database-password nil)
    :database-uri (lookup-env env :uxbox-database-uri "jdbc:postgresql://127.0.0.1/uxbox")
    :media-directory (lookup-env env :uxbox-media-directory "resources/public/media")
    :media-uri (lookup-env env :uxbox-media-uri "http://localhost:6060/media/")
