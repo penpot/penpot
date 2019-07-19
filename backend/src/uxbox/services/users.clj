@@ -54,7 +54,8 @@
       (ex/raise :type :validation
                 :code ::email-already-exists))
     (when (:val (sc/fetch-one conn sqlv2))
-      (ex/raise ::username-already-exists))))
+      (ex/raise :type :validation
+                :code ::username-already-exists))))
 
 (defn- update-profile
   [conn {:keys [id username email fullname metadata] :as params}]
