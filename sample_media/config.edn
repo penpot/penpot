@@ -1,0 +1,47 @@
+{:icons
+ [{:name "Material Design (Action)"
+   :path "./icons/material-action"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Alert)"
+   :path "./icons/material-alert"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Av)"
+   :path "./icons/material-av"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Content)"
+   :path "./icons/material-content"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Device)"
+   :path "./icons/material-device"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Editor)"
+   :path "./icons/material-editor"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (File)"
+   :path "./icons/material-file"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Hardware)"
+   :path "./icons/material-hardware"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Image)"
+   :path "./icons/material-image"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Maps)"
+   :path "./icons/material-maps"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Navigation)"
+   :path "./icons/material-navigation"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Notification)"
+   :path "./icons/material-notification"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Places)"
+   :path "./icons/material-places"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Social)"
+   :path "./icons/material-social"
+   :regex #"^.*_48px\.svg$"}
+  {:name "Material Design (Toggle)"
+   :path "./icons/material-toggle"
+   :regex #"^.*_48px\.svg$"}
+  ]}

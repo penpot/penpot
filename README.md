@@ -103,6 +103,38 @@ Available at runtime:
 
 **Important note:** make sure to use quotation marks for string variables or the backend might try to interpret the values as symbols and have weird issues.
 
+## Collections import
+
+You can easily import icons and images as global stores with the backend collection importer:
+
+* Create a `media` folder with the following sample structure:
+```
+media
+    icons
+        my-icons-collection
+    images
+        my-images-collection
+```
+* Add some icons (SVG format) and images to your collection
+* Create a `config.edn` file with the following content
+```clojure
+{:icons
+ [{:name "Generic Icons 1"
+   :path "./icons/my-icons-collection/"
+   :regex #"^.*_48px\.svg$"}
+  ]
+ :images
+ [{:name "Generic Images 1"
+   :path "./images/my-images-collection/"
+   :regex #"^.*\.(png|jpg|webp)$"}]}
+```
+* Then go to the backend directory and import collections:
+```sh
+clojure -Adev -m uxbox.cli.collimp ../media/config.edn
+```
+
+Take a look at the `sample_media` directory for a sample configuration.
+
 ## Contributing ##
 
 **Open to you!**
