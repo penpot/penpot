@@ -81,6 +81,7 @@ Available at runtime:
 -	`-e UXBOX_HTTP_SERVER_DEBUG=...` (defaults to `true`)
 -	`-e UXBOX_DATABASE_USERNAME="..."` (defaults to `nil`)
 -	`-e UXBOX_DATABASE_PASSWORD="..."` (defaults to `nil`)
+-	`-e UXBOX_DATABASE_URI="..."` (defaults to ` `, will be computed based on other DATABASE parameters if empty)
 -	`-e UXBOX_DATABASE_NAME="..."` (defaults to `"uxbox"`)
 -	`-e UXBOX_DATABASE_SERVER="..."` (defaults to `"localhost"`)
 -	`-e UXBOX_DATABASE_PORT=...` (defaults to `5432`)
