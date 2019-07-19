@@ -115,7 +115,7 @@
         (let [token (get-in route [:params :path :token])]
           (auth/recovery-page token))
 
-        :settings/profile (settings/profile-page)
+        :settings/profile (mf/element settings/profile-page)
         :settings/password (settings/password-page)
         :settings/notifications (settings/notifications-page)
 
