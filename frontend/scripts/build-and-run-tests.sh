@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 source ~/.bashrc
 
+set -ex;
+
 npm ci
-npm run build:test || exit 1;
+
+clojure -Adev tools.clj build-tests
 
 node ./target/tests/main

@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 source ~/.bashrc
 
+set -ex
+
 npm ci
 
-npm run dist:clean || exit 1;
-npm run build:assets || exit 1;
-npm run build:all || exit 1;
+npx gulp dist:clean || exit 1
+npx gulp dist || exit 1
+
+clojure -Adev tools.clj build-all || exit 1
