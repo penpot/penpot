@@ -9,7 +9,7 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [potok.core :as ptk]
-   [rumext.core :as mx :include-macros true]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :as da]
    [uxbox.main.data.lightbox :as udl]
@@ -20,17 +20,16 @@
 
 ;; --- User Menu
 
-(mx/defc user-menu
-  {:mixins [mx/static]}
-  [open?]
-  [:ul.dropdown {:class (when-not open? "hide")}
-   [:li {:on-click #(st/emit! (rt/navigate :settings/profile))}
+(mf/defc user-menu
+  [props]
+  [:ul.dropdown #_{:class (when-not open? "hide")}
+   [:li {:on-click #(st/emit! (rt/nav :settings/profile))}
     i/user
     [:span (tr "ds.user.profile")]]
-   [:li {:on-click #(st/emit! (rt/navigate :settings/password))}
+   [:li {:on-click #(st/emit! (rt/nav :settings/password))}
     i/lock
     [:span (tr "ds.user.password")]]
-   [:li {:on-click #(st/emit! (rt/navigate :settings/notifications))}
+   [:li {:on-click #(st/emit! (rt/nav :settings/notifications))}
     i/mail
     [:span (tr "ds.user.notifications")]]
    [:li {:on-click #(st/emit! (da/logout))}
@@ -43,17 +42,19 @@
   (-> (l/key :profile)
       (l/derive st/state)))
 
-(mx/defcs user
-  {:mixins [mx/static mx/reactive (mx/local {:open false})]}
-  [own]
-  (let [profile (mx/react profile-ref)
-        local (::mx/local own)
-        photo (if (str/empty? (:photo profile ""))
-                "/images/avatar.jpg"
-                (:photo profile))]
-    [:div.user-zone {:on-click #(st/emit! (rt/navigate :settings/profile))
-                     :on-mouse-enter #(swap! local assoc :open true)
-                     :on-mouse-leave #(swap! local assoc :open false)}
-     [:span (:fullname profile)]
-     [:img {:src photo}]
-     (user-menu (:open @local))]))
+(mf/def user
+  :mixins [mf/static mf/reactive (mf/local false)]
+
+  :render
+  (fn [{:keys [::mf/local] :as own} props]
+    (let [profile (mf/react profile-ref)
+          photo (if (str/empty? (:photo profile ""))
+                  "/images/avatar.jpg"
+                  (:photo profile))]
+      [:div.user-zone {:on-click #(st/emit! (rt/navigate :settings/profile))
+                       :on-mouse-enter #(reset! local true)
+                       :on-mouse-leave #(reset! local false)}
+       [:span (:fullname profile)]
+       [:img {:src photo}]
+       (when @local
+         [:& user-menu])])))

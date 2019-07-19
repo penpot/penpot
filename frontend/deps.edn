@@ -20,7 +20,7 @@
  :aliases
  {:dev {:extra-deps {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
                      com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-                     com.bhauman/figwheel-main {:mvn/version "0.2.1"}
+                     com.bhauman/figwheel-main {:mvn/version "0.2.3"}
                      org.clojure/tools.namespace {:mvn/version "0.3.0"}}
         :extra-paths ["test"]}
 

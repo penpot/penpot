@@ -278,5 +278,3 @@
           (when (contains? flags :ruler)
             (ruler zoom))
           (selrect)]]))))
-
-

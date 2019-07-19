@@ -6,36 +6,38 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.grid
-  (:require [cuerdas.core :as str]
-            [uxbox.main.constants :as c]
-            [uxbox.main.refs :as refs]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]
+   [uxbox.main.constants :as c]
+   [uxbox.main.refs :as refs]))
 
 ;; --- Grid (Component)
 
 (declare vertical-line)
 (declare horizontal-line)
 
-(mx/defcs grid
-  {:mixins [mx/static mx/reactive]}
-  [own]
-  (let [options (:metadata (mx/react refs/selected-page))
-        color (:grid-color options "#cccccc")
-        width c/viewport-width
-        height c/viewport-height
-        x-ticks (range (- 0 c/canvas-start-x)
-                       (- width c/canvas-start-x)
-                       (:grid-x-axis options 10))
+(mf/def grid
+  :mixins [mf/static mf/reactive]
+  :render
+  (fn [own props]
+    (let [options (:metadata (mf/react refs/selected-page))
+          color (:grid-color options "#cccccc")
+          width c/viewport-width
+          height c/viewport-height
+          x-ticks (range (- 0 c/canvas-start-x)
+                         (- width c/canvas-start-x)
+                         (:grid-x-axis options 10))
 
-        y-ticks (range (- 0 c/canvas-start-x)
-                       (- height c/canvas-start-x)
-                       (:grid-y-axis options 10))
+          y-ticks (range (- 0 c/canvas-start-x)
+                         (- height c/canvas-start-x)
+                         (:grid-y-axis options 10))
 
-        path (as-> [] $
-               (reduce (partial vertical-line height) $ x-ticks)
-               (reduce (partial horizontal-line width) $ y-ticks))]
-    [:g.grid {:style {:pointer-events "none"}}
-     [:path {:d (str/join " " path) :stroke color :opacity "0.3"}]]))
+          path (as-> [] $
+                 (reduce (partial vertical-line height) $ x-ticks)
+                 (reduce (partial horizontal-line width) $ y-ticks))]
+      [:g.grid {:style {:pointer-events "none"}}
+       [:path {:d (str/join " " path) :stroke color :opacity "0.3"}]])))
 
 ;; --- Helpers
 

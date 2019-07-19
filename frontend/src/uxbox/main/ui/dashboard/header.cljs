@@ -20,7 +20,7 @@
 
 (mx/defc header-link
   [{:keys [section content] :as props}]
-  (let [on-click #(st/emit! (rt/navigate section))]
+  (let [on-click #(st/emit! (rt/nav section))]
     [:a {:on-click on-click} content]))
 
 (mf/def header

@@ -6,45 +6,51 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.settings.header
-  (:require [potok.core :as ptk]
-            [lentes.core :as l]
-            [uxbox.util.i18n :refer [tr]]
-            [uxbox.util.router :as r]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.auth :as da]
-            [uxbox.main.data.projects :as dp]
-            [uxbox.main.ui.navigation :as nav]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.users :refer [user]]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [lentes.core :as l]
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.auth :as da]
+   [uxbox.main.data.projects :as dp]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.navigation :as nav]
+   [uxbox.main.ui.users :refer [user]]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.router :as rt]))
 
 (def ^:private section-ref
   (-> (l/in [:route :id])
       (l/derive st/state)))
 
-(mx/defc header-link
-  [section content]
-  (let [link (r/route-for section)]
-    [:a {:href (str "/#" link)} content]))
+(mf/defc header-link
+  [{:keys [section content] :as props}]
+  (let [on-click #(st/emit! (rt/nav section))]
+    [:a {:on-click on-click} content]))
 
-(mx/defc header
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [section (mx/react section-ref)
-        profile? (= section :settings/profile)
-        password? (= section :settings/password)
-        notifications? (= section :settings/notifications)]
-    [:header#main-bar.main-bar
-     [:div.main-logo
-      (header-link :dashboard/projects i/logo)]
-     [:ul.main-nav
-      [:li {:class (when profile? "current")}
-       (header-link :settings/profile (tr "settings.profile"))]
-      [:li {:class (when password? "current")}
-       (header-link :settings/password (tr "settings.password"))]
-      [:li {:class (when notifications? "current")}
-       (header-link :settings/notifications (tr "settings.notifications"))]
-      [:li {:on-click #(st/emit! (da/logout))}
-       (header-link :auth/login (tr "settings.exit"))]]
-     (user)]))
+(mf/def header
+  :mixins [mf/static mf/reactive]
+  :render
+  (fn [own props]
+    (let [section (mf/react section-ref)
+          profile? (= section :settings/profile)
+          password? (= section :settings/password)
+          notifications? (= section :settings/notifications)]
+      [:header#main-bar.main-bar
+       [:div.main-logo
+        [:& header-link {:section :dashboard/projects
+                         :content i/logo}]]
+       [:ul.main-nav
+        [:li {:class (when profile? "current")}
+         [:& header-link {:setion :settings/profile
+                          :content (tr "settings.profile")}]]
+        [:li {:class (when password? "current")}
+         [:& header-link {:section :settings/password
+                          :content (tr "settings.password")}]]
+        [:li {:class (when notifications? "current")}
+         [:& header-link {:section :settings/notifications
+                          :content (tr "settings.notifications")}]]
+        [:li {:on-click #(st/emit! (da/logout))}
+         [:& header-link {:section :auth/login
+                          :content (tr "settings.exit")}]]]
+       (user)])))
 
