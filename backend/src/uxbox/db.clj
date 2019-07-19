@@ -32,7 +32,10 @@
 
 (defn get-db-config
   [config]
-  (assoc connection-defaults :jdbc-url (:database-uri config)))
+  (assoc connection-defaults
+         :username (:database-username config)
+         :password (:database-password config)
+         :jdbc-url (:database-uri config)))
 
 (defn create-datasource
   [config]
