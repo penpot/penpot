@@ -27,6 +27,8 @@ script:
   - ./manage.sh build-devenv
   - ./manage.sh run-frontend-tests
   - ./manage.sh run-backend-tests
+  - ./manage.sh build-images
+  - ./manage.sh run
 
 after_script:
   - docker images
