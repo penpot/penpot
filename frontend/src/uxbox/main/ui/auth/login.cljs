@@ -57,7 +57,7 @@
     " the projects will be periodicaly wiped."]])
 
 (mf/defc login-form
-  {:wrap [mf/reactive]}
+  {:wrap [mf/reactive*]}
   []
   (let [data (mf/react form-data)
         valid? (fm/valid? ::login-form data)]

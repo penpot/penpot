@@ -19,11 +19,11 @@
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.main.ui.settings.header :refer [header]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.data :refer [read-string]]
    [uxbox.util.forms :as fm]
-   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.interop :refer [iterable->seq]]
-   [uxbox.util.router :as r]
-))
+   [uxbox.util.router :as r]))
 
 
 (def form-data (fm/focus-data :profile st/state))
@@ -63,7 +63,7 @@
 
 ;; --- Profile Form
 (mf/def profile-form
-  :mixins [mf/static mf/reactive mf/sync-render (fm/clear-mixin st/store :profile)]
+  :mixins [mf/memo mf/reactive mf/sync-render (fm/clear-mixin st/store :profile)]
   :render
   (fn [own props]
     (let [data (merge {:theme "light"}
@@ -73,9 +73,13 @@
           valid? (fm/valid? ::profile-form data)
           theme (:theme data)
           on-success #(st/emit! (clear-form))
-          on-submit #(st/emit! (udu/update-profile data on-success on-error))]
+          on-submit #(st/emit! (udu/update-profile data on-success on-error))
+          on-lang-change (fn [event]
+                           (let [lang (read-string (dom/event->value event))]
+                             (prn "on-lang-change" lang)
+                             (i18n/set-current-locale! lang)))]
       [:form.profile-form
-       [:span.user-settings-label (tr "settings.profile.profile.profile-saved")]
+       [:span.user-settings-label (tr "settings.profile.section-basic-data")]
        [:input.input-text
         {:type "text"
          :on-change #(on-field-change % :fullname)
@@ -87,13 +91,18 @@
          :value (:username data "")
          :placeholder (tr "settings.profile.your-username")}]
        (fm/input-error errors :username)
-
        [:input.input-text
         {:type "email"
          :on-change #(on-field-change % :email)
          :value (:email data "")
          :placeholder (tr "settings.profile.your-email")}]
        (fm/input-error errors :email)
+
+       [:span.user-settings-label (tr "settings.profile.section-i18n-data")]
+       [:select.input-select {:value (pr-str (mf/deref i18n/locale))
+                              :on-change on-lang-change}
+        [:option {:value ":en"} "English"]
+        [:option {:value ":fr"} "Français"]]
 
        [:input.btn-primary
         {:type "button"
@@ -105,7 +114,7 @@
 ;; --- Profile Photo Form
 
 (mf/defc profile-photo-form
-  {:wrap [mf/reactive]}
+  {:wrap [mf/reactive*]}
   []
   (letfn [(on-change [event]
             (let [target (dom/get-target event)
@@ -128,11 +137,8 @@
 
 (mf/defc profile-page
   []
-  [:main.dashboard-main
-   (messages-widget)
-   (header)
-   [:section.dashboard-content.user-settings
-    [:section.user-settings-content
-     [:span.user-settings-label (tr "settings.profile.your-avatar")]
-     [:& profile-photo-form]
-     (profile-form)]]])
+  [:section.dashboard-content.user-settings
+   [:section.user-settings-content
+    [:span.user-settings-label (tr "settings.profile.your-avatar")]
+    [:& profile-photo-form]
+    (profile-form)]])

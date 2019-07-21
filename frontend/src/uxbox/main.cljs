@@ -22,8 +22,6 @@
    [uxbox.util.router :as rt]
    [uxbox.util.timers :as ts]))
 
-
-
 ;; --- i18n
 
 (declare reinit)

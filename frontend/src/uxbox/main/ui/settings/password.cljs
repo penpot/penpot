@@ -94,11 +94,7 @@
 ;; --- Password Page
 
 (mx/defc password-page
-  {:mixins [mx/static]}
   []
-  [:main.dashboard-main
-   (messages-widget)
-   (header)
-   [:section.dashboard-content.user-settings
-    [:section.user-settings-content
-     (password-form)]]])
+  [:section.dashboard-content.user-settings
+   [:section.user-settings-content
+    (password-form)]])

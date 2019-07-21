@@ -119,7 +119,9 @@
    "settings.exit" "QUITTER"
 
    "settings.profile.profile-saved" "Profil enregistré avec succès !"
-   "settings.profile.profile.profile-saved" "Nom, nom d'utilisateur et adresse email"
+   "settings.profile.section-basic-data" "Nom, nom d'utilisateur et adresse email"
+   "settings.profile.section-i18n-data" nil ;; TODO
+
    "settings.profile.your-name" "Votre nom complet"
    "settings.profile.your-username" "Votre nom d'utilisateur"
    "settings.profile.your-email" "Votre adresse email"

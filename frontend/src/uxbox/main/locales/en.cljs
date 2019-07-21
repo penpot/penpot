@@ -119,7 +119,8 @@
    "settings.exit" "EXIT"
 
    "settings.profile.profile-saved" "Profile saved successfully!"
-   "settings.profile.profile.profile-saved" "Name, username and email"
+   "settings.profile.section-basic-data" "Name, username and email"
+   "settings.profile.section-i18n-data" "Default language"
    "settings.profile.your-name" "Your name"
    "settings.profile.your-username" "Your username"
    "settings.profile.your-email" "Your email"

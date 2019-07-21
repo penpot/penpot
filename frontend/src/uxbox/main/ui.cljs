@@ -91,9 +91,9 @@
              (uuid-str? id) (uuid id)
              :else nil)
         type (when (str/alpha? type) (keyword type))]
-    {:section section
-     :id id
-     :type type}))
+    #js {:section section
+         :id id
+         :type type}))
 
 
 (mf/def app
@@ -105,9 +105,10 @@
 
   :render
   (fn [own props]
-    (let [route (mx/react (::route-ref own))]
-      (case (get-in route [:data :name])
-        :auth/login (mf/element auth/login-page)
+    (let [route (mx/react (::route-ref own))
+          route-id (get-in route [:data :name])]
+      (case route-id
+        :auth/login (mf/elem auth/login-page)
         :auth/register (auth/register-page)
         :auth/recovery-request (auth/recovery-request-page)
 
@@ -115,17 +116,22 @@
         (let [token (get-in route [:params :path :token])]
           (auth/recovery-page token))
 
-        :settings/profile (mf/element settings/profile-page)
-        :settings/password (settings/password-page)
-        :settings/notifications (settings/notifications-page)
+        (:settings/profile
+         :settings/password
+         :settings/notifications)
+        (mf/elem settings/settings {:route route})
 
-        :dashboard/projects (dashboard/dashboard {:section :projects})
-        :dashboard/icons (-> (parse-dashboard-params route :icons)
-                             (dashboard/dashboard))
-        :dashboard/images (-> (parse-dashboard-params route :images)
-                              (dashboard/dashboard))
-        :dashboard/colors (-> (parse-dashboard-params route :colors)
-                              (dashboard/dashboard))
+        ;; :settings/profile (mf/elem settings/settings {:section :profile})
+        ;; :settings/password (mf/elem settings/settings {:section :password})
+        ;; :settings/notifications (mf/elem settings/notifications-page)
+
+        :dashboard/projects (mf/elem dashboard/dashboard {:section :projects})
+        :dashboard/icons (->> (parse-dashboard-params route :icons)
+                              (mf/element dashboard/dashboard))
+        :dashboard/images (->> (parse-dashboard-params route :images)
+                               (mf/element dashboard/dashboard))
+        :dashboard/colors (->> (parse-dashboard-params route :colors)
+                               (mf/element dashboard/dashboard))
         :workspace/page
         (let [project (uuid (get-in route [:params :path :project]))
               page (uuid (get-in route [:params :path :page]))]

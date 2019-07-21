@@ -10,24 +10,23 @@
   (:require [cuerdas.core :as str]
             [uxbox.util.storage :refer (storage)]))
 
-(defonce state (atom {:current-locale (get storage ::locale :en)}))
+(defonce locale (atom (get storage ::locale :en)))
+(defonce state (atom {}))
 
 (defn update-locales!
   [callback]
   (swap! state callback))
 
 (defn set-current-locale!
-  [locale]
-  (swap! storage assoc ::locale locale)
-  (swap! state assoc :current-locale locale))
+  [v]
+  (swap! storage assoc ::locale v)
+  (reset! locale v))
 
 (defn on-locale-change!
   [callback]
-  (add-watch state ::main (fn [_ _ old new]
-                            (let [old-locale (:current-locale old)
-                                  new-locale (:current-locale new)]
-                              (when (not= old-locale new-locale)
-                                (callback new-locale old-locale))))))
+  (add-watch locale ::main (fn [_ _ old-locale new-locale]
+                             (when (not= old-locale new-locale)
+                               (callback new-locale old-locale)))))
 
 ;; A marker type that is used just for mark
 ;; a parameter that reprsentes the counter.
@@ -50,13 +49,14 @@
   "Translate the string."
   ([t]
    (let [default (name t)
-         locale (get @state :current-locale)
-         value (get-in @state [locale t] default)]
+         locale  (deref locale)
+         value  (or (get-in @state [locale t])
+                    default)]
      (if (vector? value)
        (or (second value) default)
        value)))
   ([t & args]
-   (let [locale (get @state :current-locale)
+   (let [locale (deref locale)
          value (get-in @state [locale t] (name t))
          plural (first (filter c? args))
          args (mapv #(if (c? %) @% %) args)
