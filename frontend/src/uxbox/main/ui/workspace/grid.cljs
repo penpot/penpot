@@ -18,7 +18,7 @@
 (declare horizontal-line)
 
 (mf/def grid
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
   :render
   (fn [own props]
     (let [options (:metadata (mf/react refs/selected-page))

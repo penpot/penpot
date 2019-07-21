@@ -22,7 +22,7 @@
 ;; --- History Item (Component)
 
 (mf/def history-item
-  :mixins [mf/static]
+  :mixins [mf/memo]
   :key-fn :id
   :render
   (fn [own {:keys [::selected] :as item}]
@@ -47,7 +47,7 @@
 ;; --- History List (Component)
 
 (mf/def history-list
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
   :render
   (fn [own {:keys [selected items min-version] :as history}]
     (let [items (reverse (sort-by :version items))
@@ -65,7 +65,7 @@
 ;; --- History Pinned List (Component)
 
 (mf/def history-pinned-list
-  :mixins [mf/static]
+  :mixins [mf/memo]
   :render
   (fn [own {:keys [pinned selected] :as history}]
     [:ul.history-content
@@ -76,7 +76,7 @@
 ;; --- History Toolbox (Component)
 
 (mf/def history-toolbox
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
 
   :init
   (fn [own page-id]
@@ -119,7 +119,7 @@
 ;; --- History Dialog
 
 (mf/def history-dialog
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
   :render
   (fn [own]
     (let [history (mf/react refs/history)

@@ -1,6 +1,6 @@
 (ns uxbox.main.ui.dashboard
   (:require
-   [rumext.core :as mx :include-macros true]
+   [rumext.alpha :as mf]
    [uxbox.main.ui.dashboard.header :refer [header]]
    [uxbox.main.ui.dashboard.projects :as projects]
    ;; [uxbox.main.ui.dashboard.elements :as elements]
@@ -15,9 +15,8 @@
 (def images-page images/images-page)
 (def colors-page colors/colors-page)
 
-(mx/defc dashboard
+(mf/defc dashboard
   [props]
-  (prn "dashboard" props)
   [:main.dashboard-main
    (messages-widget)
    (header)

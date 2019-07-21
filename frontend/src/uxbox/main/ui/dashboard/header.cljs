@@ -14,7 +14,7 @@
    [uxbox.main.data.projects :as dp]
    [uxbox.main.store :as st]
    [uxbox.main.ui.navigation :as nav]
-   [uxbox.main.ui.users :as ui.u]
+   [uxbox.main.ui.users :refer [user]]
    [uxbox.util.i18n :refer (tr)]
    [uxbox.util.router :as rt]))
 
@@ -57,6 +57,6 @@
       [:li {:class (when colors? "current")}
        (header-link {:section :dashboard/colors
                      :content (tr "ds.colors")})]]
-     (ui.u/user)])))
+     [:& user]])))
 
 

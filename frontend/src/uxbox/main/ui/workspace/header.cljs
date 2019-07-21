@@ -18,7 +18,7 @@
             [uxbox.main.data.undo :as udu]
             [uxbox.main.data.lightbox :as udl]
             [uxbox.main.ui.workspace.clipboard]
-            [uxbox.main.ui.users :as ui.u]
+            [uxbox.main.ui.users :refer [user]]
             [uxbox.main.ui.navigation :as nav]
             [uxbox.util.router :as r]
             [uxbox.util.data :refer [index-of]]
@@ -146,4 +146,4 @@
          :on-click #(on-view-clicked % project page)}
         i/play]]
       (zoom-widget)]
-     (ui.u/user)]))
+     [:& user]]))

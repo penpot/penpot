@@ -26,7 +26,7 @@
    [uxbox.util.router :as r]))
 
 (mf/def page-item
-  :mixins [(mf/local) mf/static mf/reactive]
+  :mixins [(mf/local) mf/memo mf/reactive]
   :key-fn :id
 
   :render
@@ -107,7 +107,7 @@
              [:a {:on-click on-delete} i/trash])]]]))))
 
 (mf/def sitemap-toolbox
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
 
   :render
   (fn [own current-page-id]

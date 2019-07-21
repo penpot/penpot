@@ -105,7 +105,7 @@
 ;; --- Horizontal Rule Ticks (Component)
 
 (mf/def horizontal-rule-ticks
-  :mixins #{mf/static}
+  :mixins #{mf/memo}
   :render
   (fn [own zoom]
     (let [zoom (or zoom 1)
@@ -118,7 +118,7 @@
 ;; --- Vertical Rule Ticks (Component)
 
 (mf/def vertical-rule-ticks
-  :mixins #{mf/static}
+  :mixins #{mf/memo}
   :render
   (fn [own zoom]
     (let [zoom (or zoom 1)
@@ -131,7 +131,7 @@
 ;; --- Horizontal Rule (Component)
 
 (mf/def horizontal-rule
-  :mixins #{mf/static mf/reactive}
+  :mixins #{mf/memo mf/reactive}
   :render
   (fn [own props]
     (let [scroll (mf/react refs/workspace-scroll)
@@ -149,7 +149,7 @@
 ;; --- Vertical Rule (Component)
 
 (mf/def vertical-rule
-  :mixins #{mf/static mf/reactive}
+  :mixins #{mf/memo mf/reactive}
   :render
   (fn [own props]
     (let [scroll (mf/react refs/workspace-scroll)

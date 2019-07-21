@@ -61,7 +61,7 @@
 ;; --- Menu (Filter & Sort)
 
 (mf/def menu
-  :mixins #{mf/static mf/reactive}
+  :mixins #{mf/memo mf/reactive}
   :init
   (fn [own props]
     (assoc own ::num-projects (-> (comp (l/key :projects)
@@ -111,7 +111,7 @@
 ;; --- Grid Item Thumbnail
 
 (mf/def grid-item-thumbnail
-  :mixins #{mf/static}
+  :mixins #{mf/memo}
 
   :init
   (fn [own project]
@@ -140,7 +140,7 @@
 
 (mf/def grid-item
   :key-fn :id
-  :mixins #{mf/static (mf/local)}
+  :mixins #{mf/memo (mf/local)}
 
   :render
   (fn [{:keys [::mf/local] :as own} project]
@@ -194,7 +194,7 @@
 ;; --- Grid
 
 (mf/def grid
-  :mixins #{mf/static mf/reactive}
+  :mixins #{mf/memo mf/reactive}
 
   :init
   (fn [own props]
@@ -222,7 +222,7 @@
 ;; --- Projects Page
 
 (mf/def projects-page
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
 
   :init
   (fn [own props]

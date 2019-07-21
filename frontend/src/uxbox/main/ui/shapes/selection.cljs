@@ -247,7 +247,7 @@
                           :fill "transparent"}}]]))
 
 (mf/def selection-handlers
-  :mixins [mf/reactive mf/static]
+  :mixins [mf/reactive mf/memo]
   :render
   (fn [own props]
     (let [shapes (mf/react selected-shapes-ref)

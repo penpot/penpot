@@ -66,7 +66,7 @@
 
 (mf/def workspace
   :key-fn vector
-  :mixins #{mf/static
+  :mixins #{mf/memo
             mf/reactive
             shortcuts-mixin}
 

@@ -41,7 +41,7 @@
 ;; --- Page Title
 
 (mf/def page-title
-  :mixins [(mf/local) mf/static mf/reactive]
+  :mixins [(mf/local) mf/memo mf/reactive]
 
   :render
   (fn [{:keys [::mf/local] :as own}
@@ -93,7 +93,7 @@
 ;; --- Nav
 
 (mf/def nav-item
-  :mixins [(mf/local) mf/static]
+  :mixins [(mf/local) mf/memo]
 
   :render
   (fn [{:keys [::mf/local] :as own}
@@ -134,7 +134,7 @@
           (tr "ds.num-elements" (t/c colors))]]))))
 
 (mf/def nav
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
 
   :render
   (fn [own {:keys [id type] :as props}]
@@ -179,7 +179,7 @@
    [:span (tr "ds.color-new")]])
 
 (mf/def grid-options-tooltip
-  :mixins [mf/reactive mf/static]
+  :mixins [mf/reactive mf/memo]
 
   :render
   (fn [own {:keys [selected on-select title]}]
@@ -202,7 +202,7 @@
           [:a {:on-click #(on-select % id)} name]])])))
 
 (mf/def grid-options
-  :mixins [mf/static (mf/local)]
+  :mixins [mf/memo (mf/local)]
 
   :render
   (fn [{:keys [::mf/local] :as own}
@@ -267,7 +267,7 @@
 
 (mf/def grid-item
   :key-fn :color
-  :mixins [mf/static]
+  :mixins [mf/memo]
 
   :render
   (fn [own {:keys [color selected?] :as props}]
@@ -285,7 +285,7 @@
        [:span.color-data (apply str "RGB " (interpose ", " (hex->rgb color)))]])))
 
 (mf/def grid
-  :mixins [mf/static]
+  :mixins [mf/memo]
 
   :render
   (fn [own {:keys [selected ::coll] :as props}]
@@ -301,7 +301,7 @@
             (grid-item {:color color :selected? selected?})))]])))
 
 (mf/def content
-  :mixins [mf/reactive mf/static]
+  :mixins [mf/reactive mf/memo]
 
   :init
   (fn [own {:keys [id] :as props}]
@@ -323,7 +323,7 @@
 
 (mf/def colors-page
   :key-fn identity
-  :mixins #{mf/static mf/reactive}
+  :mixins #{mf/memo mf/reactive}
 
   :init
   (fn [own props]

@@ -37,7 +37,7 @@
 ;; --- Background
 
 (mf/def background
-  :mixins [mf/static]
+  :mixins [mf/memo]
   :render
   (fn [own {:keys [background] :as metadata}]
     [:rect
@@ -49,7 +49,7 @@
 ;; --- Coordinates Widget
 
 (mf/def coordinates
-  :mixins [mf/reactive mf/static]
+  :mixins [mf/reactive mf/memo]
   :render
   (fn [own props]
     (let [zoom (mf/react refs/selected-zoom)
@@ -69,7 +69,7 @@
       (l/derive refs/workspace)))
 
 (mf/def selrect
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
   :render
   (fn [own props]
     (when-let [rect (mf/react selrect-ref)]
@@ -95,7 +95,7 @@
     nil))
 
 (mf/def cursor-tooltip
-  :mixins [mf/reactive mf/static]
+  :mixins [mf/reactive mf/memo]
   :render
   (fn [own tooltip]
     (let [coords (mf/react refs/window-mouse-position)]
@@ -109,7 +109,7 @@
 ;; --- Canvas
 
 (mf/def canvas
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
   :render
   (fn [own {:keys [page zoom] :as props}]
     (let [{:keys [metadata id]} page

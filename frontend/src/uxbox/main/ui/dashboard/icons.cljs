@@ -73,7 +73,7 @@
 ;; --- Page Title
 
 (mf/def page-title
-  :mixins [(mf/local) mf/static]
+  :mixins [(mf/local) mf/memo]
 
   :render
   (fn [{:keys [::mf/local] :as own} {:keys [id type] :as coll}]
@@ -134,7 +134,7 @@
 
 (mf/def nav-item
   :key-fn :id
-  :mixins [(mf/local) mf/static mf/reactive]
+  :mixins [(mf/local) mf/memo mf/reactive]
 
   :init
   (fn [own {:keys [id] :as props}]
@@ -180,7 +180,7 @@
           (tr "ds.num-elements" (t/c num-icons))]]))))
 
 (mf/def nav
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
 
   :render
   (fn [own {:keys [id type] :as props}]
@@ -239,7 +239,7 @@
        :on-change on-file-selected}]]))
 
 (mf/def grid-options-tooltip
-  :mixins [mf/reactive mf/static]
+  :mixins [mf/reactive mf/memo]
 
   :render
   (fn [own {:keys [selected on-select title]}]
@@ -264,7 +264,7 @@
           [:a {:on-click #(on-select % id)} name]])])))
 
 (mf/def grid-options
-  :mixins [(mf/local) mf/static]
+  :mixins [(mf/local) mf/memo]
 
   :render
   (fn [{:keys [::mf/local] :as own}
@@ -335,7 +335,7 @@
 
 (mf/def grid-item
   :key-fn :id
-  :mixins [mf/static]
+  :mixins [mf/memo]
   :render
   (fn [own {:keys [id created-at ::selected? ::edition?] :as icon}]
     (letfn [(toggle-selection [event]
@@ -405,7 +405,7 @@
 ;; --- Menu
 
 (mf/def menu
-  :mixins [mf/static mf/reactive]
+  :mixins [mf/memo mf/reactive]
 
   :init
   (fn [own {:keys [id] :as props}]
@@ -449,7 +449,7 @@
             i/close]]]]))))
 
 (mf/def content
-  :mixins [mf/reactive mf/static]
+  :mixins [mf/reactive mf/memo]
 
   :init
   (fn [own {:keys [id] :as props}]
@@ -474,7 +474,7 @@
 
 (mf/def icons-page
   :key-fn identity
-  :mixins #{mf/static mf/reactive}
+  :mixins #{mf/memo mf/reactive}
 
   :init
   (fn [own props]

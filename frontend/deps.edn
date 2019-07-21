@@ -4,7 +4,7 @@
         com.cognitect/transit-cljs {:mvn/version "0.8.256"}
 
         funcool/rumext {:git/url "https://github.com/funcool/rumext.git"
-                        :sha "19d7a87725bdd621084dc6e5e160f57bf2534d5a"}
+                        :sha "18739f966f12ff7aab3a9bde1fe37a5594f46b8d"}
 
         cljsjs/react-dom-server {:mvn/version "16.8.6-0"}
 

@@ -91,7 +91,7 @@
 ;; --- Shape Name (Component)
 
 (mf/def shape-name
-  :mixins [mf/static (mf/local)]
+  :mixins [mf/memo (mf/local)]
   :render
   (fn [{:keys [::mf/local] :as own} {:keys [id] :as shape}]
     (letfn [(on-blur [event]
