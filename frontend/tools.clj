@@ -54,6 +54,7 @@
                     {:optimizations :advanced
                      :pretty-print false
                      :static-fns true
+                     ;; :fn-invoke-direct true
                      :elide-asserts true})))
 
 (defmethod task "build"

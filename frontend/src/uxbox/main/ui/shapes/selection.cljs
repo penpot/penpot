@@ -199,18 +199,25 @@
       (rx/subscribe stream on-move))))
 
 (mx/defc path-edition-selection-handlers
-  [{:keys [id segments] :as shape} zoom]
+  [{:keys [id segments modifiers] :as shape} zoom]
   (letfn [(on-mouse-down [index event]
             (dom/stop-propagation event)
             (start-path-edition id index))]
-    [:g.controls
-     (for [[index {:keys [x y]}] (map-indexed vector segments)]
-       [:circle {:cx x :cy y
-                 :r (/ 6.0 zoom)
-                 :on-mouse-down (partial on-mouse-down index)
-                 :fill "#31e6e0"
-                 :stroke "#28c4d4"
-                 :style {:cursor "pointer"}}])]))
+
+    (let [{:keys [displacement]} modifiers
+          segments (if displacement
+                     (map #(gpt/transform % displacement) segments)
+                     segments)]
+
+      [:g.controls
+       (for [[index {:keys [x y]}] (map-indexed vector segments)]
+         [:circle {:cx x :cy y
+                   :r (/ 6.0 zoom)
+                   :key index
+                   :on-mouse-down (partial on-mouse-down index)
+                   :fill "#31e6e0"
+                   :stroke "#28c4d4"
+                   :style {:cursor "pointer"}}])])))
 
 (mx/defc multiple-selection-handlers
   {:mixins [mx/static]}
@@ -272,8 +279,9 @@
             (text-edition-selection-handlers zoom))
 
         (= type :path)
-        (if (= @refs/selected-edition (:id shape))
-          (path-edition-selection-handlers shape zoom)
+        (if (= edition? (:id shape))
+          (-> (assoc shape :modifiers (get modifiers id))
+              (path-edition-selection-handlers zoom))
           (-> (assoc shape :modifiers (get modifiers id))
               (single-selection-handlers zoom)))
 

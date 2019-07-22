@@ -10,20 +10,15 @@
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [lentes.core :as l]
-   [potok.core :as ptk]
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.messages :refer [messages-widget]]
-   [uxbox.main.ui.settings.header :refer [header]]
    [uxbox.util.dom :as dom]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :as i18n :refer [tr]]
-   [uxbox.util.interop :refer [iterable->seq]]
-   [uxbox.util.router :as r]))
+   [uxbox.util.interop :refer [iterable->seq]]))
 
 
 (def form-data (fm/focus-data :profile st/state))
