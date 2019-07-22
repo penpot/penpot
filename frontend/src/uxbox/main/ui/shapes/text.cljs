@@ -5,22 +5,22 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.text
-  (:require [cuerdas.core :as str]
-            [lentes.core :as l]
-            [goog.events :as events]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.geom :as geom]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.shapes.common :as common]
-            [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.color :as color]
-            [uxbox.util.data :refer [classnames normalize-props]]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.geom.matrix :as gmt]
-            [rumext.core :as mx :include-macros true])
-  (:import goog.events.EventType))
+  (:require
+   [cuerdas.core :as str]
+   [goog.events :as events]
+   [lentes.core :as l]
+   [rumext.core :as mx]
+   [rumext.alpha :as mf]
+   [uxbox.main.data.shapes :as uds]
+   [uxbox.main.geom :as geom]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.shapes.attrs :as attrs]
+   [uxbox.main.ui.shapes.common :as common]
+   [uxbox.util.color :as color]
+   [uxbox.util.data :refer [classnames normalize-props]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.geom.matrix :as gmt]))
 
 ;; --- Events
 
@@ -39,29 +39,29 @@
 (declare text-shape-wrapper)
 (declare text-shape-edit)
 
-(mx/defcs text-component
-  {:mixins [mx/static mx/reactive]}
-  [own {:keys [id x1 y1 content group] :as shape}]
-  (let [modifiers (mx/react (refs/selected-modifiers id))
-        selected (mx/react refs/selected-shapes)
-        edition? (= (mx/react refs/selected-edition) id)
-        selected? (and (contains? selected id)
-                       (= (count selected) 1))
-        shape (assoc shape :modifiers modifiers)]
-    (letfn [(on-mouse-down [event]
-              (handle-mouse-down event shape selected))
-            (on-double-click [event]
-              ;; TODO: handle grouping event propagation
-              ;; TODO: handle actions locking properly
-              (dom/stop-propagation event)
-              (st/emit! (uds/start-edition-mode id)))]
-      [:g.shape {:class (when selected? "selected")
-                 :ref "main"
-                 :on-double-click on-double-click
-                 :on-mouse-down on-mouse-down}
-       (if edition?
-         (text-shape-edit shape)
-         (text-shape-wrapper shape))])))
+(mf/def text-component
+  :mixins [mf/memo mx/reactive]
+  :render
+  (fn [own {:keys [id x1 y1 content group] :as shape}]
+    (let [modifiers (mx/react (refs/selected-modifiers id))
+          selected (mx/react refs/selected-shapes)
+          edition? (= (mx/react refs/selected-edition) id)
+          selected? (and (contains? selected id)
+                         (= (count selected) 1))
+          shape (assoc shape :modifiers modifiers)]
+      (letfn [(on-mouse-down [event]
+                (handle-mouse-down event shape selected))
+              (on-double-click [event]
+                ;; TODO: handle grouping event propagation
+                ;; TODO: handle actions locking properly
+                (dom/stop-propagation event)
+                (st/emit! (uds/start-edition-mode id)))]
+        [:g.shape {:class (when selected? "selected")
+                   :on-double-click on-double-click
+                   :on-mouse-down on-mouse-down}
+         (if edition?
+           (text-shape-edit shape)
+           (text-shape-wrapper shape))]))))
 
 ;; --- Text Styles Helpers
 
@@ -104,97 +104,130 @@
 
 ;; --- Text Shape Edit
 
-(defn- text-shape-edit-did-mount
-  [own]
-  (let [[shape] (::mx/props own)
-        dom (mx/ref-node own "container")]
-    (set! (.-textContent dom) (:content shape ""))
-    (.focus dom)
-    own))
+(mf/def text-shape-edit
+  :mixins [mf/memo]
 
-(mx/defc text-shape-edit
-  {:did-mount text-shape-edit-did-mount
-   :mixins [mx/static]}
-  [{:keys [id x1 y1 content] :as shape}]
-  (let [{:keys [width height]} (geom/size shape)
-        style (make-style shape)
-        props {:x x1 :y y1 :width width :height height}]
-    (letfn [(on-input [ev]
-              (let [content (dom/event->inner-text ev)]
-                (st/emit! (uds/update-text id content))))]
-      [:foreignObject props
+  :init
+  (fn [own props]
+    (assoc own ::container (mf/create-ref)))
+
+  :did-mount
+  (fn [own]
+    (let [shape (::mf/props own)
+          dom (mx/ref-node (::container own))]
+      (set! (.-textContent dom) (:content shape ""))
+      (.focus dom)
+      own))
+
+  :render
+  (fn [own {:keys [id x1 y1 content] :as shape}]
+    (let [{:keys [width height]} (geom/size shape)
+          style (make-style shape)
+          on-input (fn [ev]
+                     (let [content (dom/event->inner-text ev)]
+                       (st/emit! (uds/update-text id content))))]
+      [:foreignObject {:x x1 :y y1 :width width :height height}
        [:div {:style (normalize-props style)
-              :ref "container"
+              :ref (::container own)
               :on-input on-input
               :contentEditable true}]])))
 
 ;; --- Text Shape Wrapper
 
-;; NOTE: this is a hack for the browser rendering.
-;;
-;; Without forcing rerender, when the shape is displaced
-;; and only x and y attrs are updated in dom, the whole content
-;; of the foreignObject becomes sometimes partially or
-;; completelly invisible. The complete dom rerender fixes that
-;; problem.
+(mf/def text-shape-wrapper
+  :mixins [mf/memo]
+  :key-fn pr-str
 
-(defn text-shape-wrapper-did-mount
-  [own]
-  (let [[shape] (::mx/props own)
-        dom (mx/ref-node own "fobject")
-        html (dom/render-to-html (text-shape-html shape))]
-    (set! (.-innerHTML dom) html))
+  :init
+  (fn [own props]
+    (assoc own ::fobject (mf/create-ref)))
+
+  ;; NOTE: this is a hack for the browser rendering.
+  ;;
+  ;; Without forcing rerender, when the shape is displaced
+  ;; and only x and y attrs are updated in dom, the whole content
+  ;; of the foreignObject becomes sometimes partially or
+  ;; completelly invisible. The complete dom rerender fixes that
+  ;; problem.
+
+  :did-mount
+  (fn [own]
+    (let [shape (::mf/props own)
+          dom (mf/ref-node (::fobject own))
+          html (dom/render-to-html (text-shape-html shape))]
+      (set! (.-innerHTML dom) html))
     own)
 
-(mx/defc text-shape-wrapper
-  {:did-mount text-shape-wrapper-did-mount
-   :key-fn #(pr-str %1)}
-  [{:keys [id modifiers] :as shape}]
-  (let [{:keys [displacement resize]} modifiers
-        xfmt (cond-> (gmt/matrix)
-               displacement (gmt/multiply displacement)
-               resize (gmt/multiply resize))
+  :render
+  (fn [own {:keys [id modifiers] :as shape}]
+    (let [{:keys [displacement resize]} modifiers
+          xfmt (cond-> (gmt/matrix)
+                 displacement (gmt/multiply displacement)
+                 resize (gmt/multiply resize))
 
-        {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
-                                                   (geom/size))
-        moving? (boolean displacement)]
-    [:foreignObject {:x x1
-                     :y y1
-                     :class (classnames :move-cursor moving?)
-                     :id (str id)
-               :ref "fobject"
-                     :width width
-                     :height height}]))
+          {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
+                                                     (geom/size))
+          moving? (boolean displacement)]
+      [:foreignObject {:x x1
+                       :y y1
+                       :class (classnames :move-cursor moving?)
+                       :id (str id)
+                       :ref (::fobject own)
+                       :width width
+                       :height height}])))
 
 ;; --- Text Shape Html
 
-(mx/defc text-shape-html
-  [{:keys [content] :as shape}]
-  (let [style (make-style shape)]
-    [:div {:style style} content]))
+(mf/def text-shape-html
+  :mixins [mf/memo]
+  :render
+  (fn [own {:keys [content] :as shape}]
+    (let [style (make-style shape)]
+      [:div {:style style} content])))
 
 ;; --- Text Shape Html
 
-(mx/defc text-shape
-  {:mixins [mx/static]
-   :did-mount text-shape-wrapper-did-mount
-   :key-fn #(pr-str %1)}
-  [{:keys [id content modifiers] :as shape}]
-  (let [{:keys [displacement resize]} modifiers
-        xfmt (cond-> (gmt/matrix)
-               displacement (gmt/multiply displacement)
-               resize (gmt/multiply resize))
+(mf/def text-shape
+  :mixins [mf/memo]
+  :key-fn pr-str
 
-        {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
-                                                   (geom/size))
-        moving? (boolean displacement)
-        style (make-style shape)]
-    [:foreignObject {:x x1
-                     :y y1
-                     :class (classnames :move-cursor moving?)
-                     :id (str id)
-                     :ref "fobject"
-                     :width width
-                     :height height}
-     [:div {:style style}
-      [:p content]]]))
+  :init
+  (fn [own props]
+    (assoc own ::fobject (mf/create-ref)))
+
+  ;; NOTE: this is a hack for the browser rendering.
+  ;;
+  ;; Without forcing rerender, when the shape is displaced
+  ;; and only x and y attrs are updated in dom, the whole content
+  ;; of the foreignObject becomes sometimes partially or
+  ;; completelly invisible. The complete dom rerender fixes that
+  ;; problem.
+
+  :did-mount
+  (fn [own]
+    (let [shape (::mf/props own)
+          dom (mf/ref-node (::fobject own))
+          html (dom/render-to-html (text-shape-html shape))]
+      (set! (.-innerHTML dom) html))
+    own)
+
+  :render
+  (fn [own {:keys [id content modifiers] :as shape}]
+    (let [{:keys [displacement resize]} modifiers
+          xfmt (cond-> (gmt/matrix)
+                 displacement (gmt/multiply displacement)
+                 resize (gmt/multiply resize))
+
+          {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
+                                                     (geom/size))
+          moving? (boolean displacement)
+          style (make-style shape)]
+      [:foreignObject {:x x1
+                       :y y1
+                       :class (classnames :move-cursor moving?)
+                       :id (str id)
+                       :ref (::fobject own)
+                       :width width
+                       :height height}
+       [:div {:style style}
+        [:p content]]])))
