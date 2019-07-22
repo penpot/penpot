@@ -61,8 +61,8 @@
   (let [match (rt/match router path)]
     (prn "on-navigate" path match)
     (cond
-      (and (= path "") (nil? match))
-      (html-history/set-path! "/not-found")
+      ;; (and (= path "") (nil? match))
+      ;; (html-history/set-path! "/not-found")
 
       (nil? match)
       (prn "TODO 404")

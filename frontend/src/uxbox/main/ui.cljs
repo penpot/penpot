@@ -83,19 +83,6 @@
 
 ;; --- Main App (Component)
 
-(defn- parse-dashboard-params
-  [route section]
-  (let [{:keys [id type]} (get-in route [:params :query])
-        id (cond
-             (str/digits? id) (parse-int id)
-             (uuid-str? id) (uuid id)
-             :else nil)
-        type (when (str/alpha? type) (keyword type))]
-    #js {:section section
-         :id id
-         :type type}))
-
-
 (mf/def app
   :mixins [mx/reactive]
 
@@ -121,17 +108,12 @@
          :settings/notifications)
         (mf/elem settings/settings {:route route})
 
-        ;; :settings/profile (mf/elem settings/settings {:section :profile})
-        ;; :settings/password (mf/elem settings/settings {:section :password})
-        ;; :settings/notifications (mf/elem settings/notifications-page)
+        (:dashboard/projects
+         :dashboard/icons
+         :dashboard/images
+         :dashboard/colors)
+        (mf/elem dashboard/dashboard {:route route})
 
-        :dashboard/projects (mf/elem dashboard/dashboard {:section :projects})
-        :dashboard/icons (->> (parse-dashboard-params route :icons)
-                              (mf/element dashboard/dashboard))
-        :dashboard/images (->> (parse-dashboard-params route :images)
-                               (mf/element dashboard/dashboard))
-        :dashboard/colors (->> (parse-dashboard-params route :colors)
-                               (mf/element dashboard/dashboard))
         :workspace/page
         (let [project (uuid (get-in route [:params :path :project]))
               page (uuid (get-in route [:params :path :page]))]
