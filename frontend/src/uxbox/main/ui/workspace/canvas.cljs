@@ -135,20 +135,23 @@
   :mixins [mf/reactive]
 
   :init
-  (fn [own props]
-    (assoc own ::viewport-ref (mf/create-ref)))
+  (fn [own {:keys [page project] :as props}]
+    (assoc own
+           ::viewport (mf/create-ref)
+           ::page-ref (-> (l/in [:pages page])
+                          (l/derive st/state))))
 
   :did-mount
   (fn [own]
     (letfn [(translate-point-to-viewport [pt]
-              (let [viewport (mf/ref-node (::viewport-ref own))
+              (let [viewport (mf/ref-node (::viewport own))
                     brect (.getBoundingClientRect viewport)
                     brect (gpt/point (parse-int (.-left brect))
                                      (parse-int (.-top brect)))]
                 (gpt/subtract pt brect)))
 
             (translate-point-to-canvas [pt]
-              (let [viewport (mf/ref-node (::viewport-ref own))]
+              (let [viewport (mf/ref-node (::viewport own))]
                 (when-let [canvas (dom/get-element-by-class "page-canvas" viewport)]
                   (let [brect (.getBoundingClientRect canvas)
                         bbox (.getBBox canvas)
@@ -209,9 +212,11 @@
     (events/unlistenByKey (::key3 own))
     (dissoc own ::key1 ::key2 ::key3))
 
+
+  ;; TODO: use an ad-hoc ref for required keys from workspace state
   :render
   (fn [own props]
-    (let [page (mf/react refs/selected-page)
+    (let [page (mf/deref (::page-ref own))
           flags (mf/react refs/flags)
           drawing (mf/react refs/selected-drawing-tool)
           tooltip (or (mf/react refs/selected-tooltip)
@@ -263,7 +268,7 @@
             (cursor-tooltip tooltip))]
          [:svg.viewport {:width (* c/viewport-width zoom)
                          :height (* c/viewport-height zoom)
-                         :ref (::viewport-ref own)
+                         :ref (::viewport own)
                          :class (when drawing "drawing")
                          :on-context-menu on-context-menu
                          :on-click on-click

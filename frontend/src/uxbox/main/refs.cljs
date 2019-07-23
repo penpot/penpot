@@ -50,11 +50,13 @@
   (-> (l/lens resolve-project-pages)
       (l/derive st/state)))
 
+;; DEPRECATED
 (def selected-page
   "Ref to the current selected page."
   (-> (l/lens resolve-page)
       (l/derive st/state)))
 
+;; DEPRECATED
 (def selected-page-id
   "Ref to the current selected page id."
   (-> (l/key :id)

@@ -95,7 +95,7 @@
     (let [route (mx/react (::route-ref own))
           route-id (get-in route [:data :name])]
       (case route-id
-        :auth/login (mf/elem auth/login-page)
+        :auth/login (mf/element auth/login-page)
         :auth/register (auth/register-page)
         :auth/recovery-request (auth/recovery-request-page)
 
@@ -106,18 +106,18 @@
         (:settings/profile
          :settings/password
          :settings/notifications)
-        (mf/elem settings/settings {:route route})
+        (mf/element settings/settings {:route route})
 
         (:dashboard/projects
          :dashboard/icons
          :dashboard/images
          :dashboard/colors)
-        (mf/elem dashboard/dashboard {:route route})
+        (mf/element dashboard/dashboard {:route route})
 
         :workspace/page
         (let [project (uuid (get-in route [:params :path :project]))
               page (uuid (get-in route [:params :path :page]))]
-          (workspace {:project project :page page}))
+          [:& workspace {:project project :page page}])
 
         nil
         ))))

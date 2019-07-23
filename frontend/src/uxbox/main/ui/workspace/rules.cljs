@@ -66,41 +66,37 @@
 
 ;; --- Horizontal Text Label
 
-(mf/def horizontal-text-label
-  :key-fn second
-  :render
-  (fn [own [zoom value]]
-    (let [big-ticks-mod (big-ticks-mod zoom)
-          pos (+ (* value zoom)
-                 rule-padding
-                 (* c/canvas-start-x zoom)
-                 c/canvas-scroll-padding)]
-      (when (< (mod value big-ticks-mod) step-size)
-        [:text {:x (+ pos 2)
-                :y 13
-                :key (str pos)
-                :fill "#9da2a6"
-                :style {:font-size "12px"}}
-         value]))))
+(mf/defc horizontal-text-label
+  [{:keys [zoom value] :as props}]
+  (let [big-ticks-mod (big-ticks-mod zoom)
+        pos (+ (* value zoom)
+               rule-padding
+               (* c/canvas-start-x zoom)
+               c/canvas-scroll-padding)]
+    (when (< (mod value big-ticks-mod) step-size)
+      [:text {:x (+ pos 2)
+              :y 13
+              :key (str pos)
+              :fill "#9da2a6"
+              :style {:font-size "12px"}}
+       value])))
 
 ;; --- Horizontal Text Label
 
-(mf/def vertical-text-label
-  :key-fn second
-  :render
-  (fn [own [zoom value]]
-    (let [big-ticks-mod (big-ticks-mod zoom)
-          pos (+ (* value zoom)
-                 (* c/canvas-start-x zoom)
-                 c/canvas-scroll-padding)]
-      (when (< (mod value big-ticks-mod) step-size)
-        [:text {:y (- pos 3)
-                :x 5
-                :key (str pos)
-                :fill "#9da2a6"
-                :transform (str/format "rotate(90 0 %s)" pos)
-                :style {:font-size "12px"}}
-         value]))))
+(mf/defc vertical-text-label
+  [{:keys [zoom value] :as props}]
+  (let [big-ticks-mod (big-ticks-mod zoom)
+        pos (+ (* value zoom)
+               (* c/canvas-start-x zoom)
+               c/canvas-scroll-padding)]
+    (when (< (mod value big-ticks-mod) step-size)
+      [:text {:y (- pos 3)
+              :x 5
+              :key (str pos)
+              :fill "#9da2a6"
+              :transform (str/format "rotate(90 0 %s)" pos)
+              :style {:font-size "12px"}}
+       value])))
 
 ;; --- Horizontal Rule Ticks (Component)
 
@@ -113,7 +109,7 @@
       [:g
        [:path {:d (str/join " " path)}]
        (for [tick +ticks+]
-         (horizontal-text-label [zoom tick]))])))
+         [:& horizontal-text-label {:zoom zoom :value tick :key tick}])])))
 
 ;; --- Vertical Rule Ticks (Component)
 
@@ -126,7 +122,7 @@
       [:g
        [:path {:d (str/join " " path)}]
        (for [tick +ticks+]
-         (vertical-text-label [zoom tick]))])))
+         [:& vertical-text-label {:zoom zoom :value tick :key tick}])])))
 
 ;; --- Horizontal Rule (Component)
 

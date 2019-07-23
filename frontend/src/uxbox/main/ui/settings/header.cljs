@@ -13,7 +13,6 @@
    [uxbox.main.data.auth :as da]
    [uxbox.main.data.projects :as dp]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.navigation :as nav]
    [uxbox.main.ui.users :refer [user]]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
@@ -24,7 +23,6 @@
     [:a {:on-click on-click} content]))
 
 (mf/defc header
-  {:wrap [mf/memo*]}
   [{:keys [section] :as props}]
   (let [profile? (= section :settings/profile)
         password? (= section :settings/password)

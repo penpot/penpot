@@ -25,9 +25,9 @@
      (messages-widget)
      [:& header {:section section}]
      (case section
-       :settings/profile (mf/elem profile/profile-page)
-       :settings/password (mf/elem password/password-page)
-       :settings/notifications (mf/elem notifications/notifications-page))]))
+       :settings/profile (mf/element profile/profile-page)
+       :settings/password (mf/element password/password-page)
+       :settings/notifications (mf/element notifications/notifications-page))]))
 
 
 

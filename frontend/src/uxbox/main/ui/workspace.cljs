@@ -60,12 +60,8 @@
         (st/emit! (dw/increase-zoom)))
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
-(def ^:private workspace-page-ref
-  (-> (l/key :page)
-      (l/derive refs/workspace)))
-
 (mf/def workspace
-  :key-fn vector
+  :key-fn identity
   :mixins #{mf/memo
             mf/reactive
             shortcuts-mixin}
@@ -78,7 +74,6 @@
   :did-mount
   (fn [own]
     (let [{:keys [project page]} (::mf/props own)
-          ;; dom (mf/ref-node own "workspace-canvas")
           dom (mf/ref-node (::canvas own))
           scroll-to-page-center #(scroll/scroll-to-page-center dom @refs/selected-page)
           sub (rx/subscribe streams/page-id-ref-s scroll-to-page-center)]
@@ -95,7 +90,7 @@
 
   :render
   (fn [own props]
-    (let [flags (mf/react refs/flags)
+    (let [flags (mf/deref refs/flags)
           project-id (get props :project)
           page-id (get props :page)
           left-sidebar? (not (empty? (keep flags [:layers :sitemap
@@ -129,7 +124,9 @@
          ;; Canvas
          [:section.workspace-canvas {:id "workspace-canvas"
                                      :ref (::canvas own)}
-          (viewport)]]
+          [:& viewport {:project project-id
+                        :page page-id
+                        :key [project-id page-id]}]]]
 
         ;; Aside
         (when left-sidebar?

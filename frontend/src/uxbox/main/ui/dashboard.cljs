@@ -11,12 +11,6 @@
    [uxbox.main.ui.dashboard.colors :as colors]
    [uxbox.main.ui.messages :refer [messages-widget]]))
 
-(def projects-page projects/projects-page)
-;; (def elements-page elements/elements-page)
-(def icons-page icons/icons-page)
-(def images-page images/images-page)
-(def colors-page colors/colors-page)
-
 (defn- parse-route
   [{:keys [params data] :as route}]
   (let [{:keys [id type]} (:query params)
@@ -35,9 +29,9 @@
   (let [{:keys [section] :as props} (parse-route route)]
     [:main.dashboard-main
      (messages-widget)
-     (header) ;; TODO: pass section to header
+     [:& header props]
      (case section
-       :dashboard/icons (icons/icons-page props)
-       :dashboard/images (images/images-page props)
-       :dashboard/projects (projects/projects-page props)
-       :dashboard/colors (colors/colors-page props))]))
+       :dashboard/icons (mf/element icons/icons-page props)
+       :dashboard/images (mf/element images/images-page props)
+       :dashboard/projects (mf/element projects/projects-page props)
+       :dashboard/colors (mf/element colors/colors-page props))]))
