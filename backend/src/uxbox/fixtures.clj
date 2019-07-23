@@ -37,7 +37,7 @@
                       {:username (str "user" i)
                        :id (mk-uuid "user" i)
                        :fullname (str "User " i)
-                       :metadata (data-encode {})
+                       :metadata {}
                        :password "123123"
                        :email (str "user" i ".test@uxbox.io")}))
 
