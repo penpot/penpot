@@ -8,10 +8,15 @@
 (ns uxbox.util.i18n
   "A i18n foundation."
   (:require [cuerdas.core :as str]
-            [uxbox.util.storage :refer (storage)]))
+            [uxbox.config :as cfg]
+            [uxbox.util.storage :refer [storage]]))
 
-(defonce locale (atom (get storage ::locale :en)))
+(defonce locale (atom (get storage ::locale cfg/default-language)))
 (defonce state (atom {}))
+
+(defn set-default-locale!
+  []
+  (set-current-locale! cfg/default-language))
 
 (defn update-locales!
   [callback]

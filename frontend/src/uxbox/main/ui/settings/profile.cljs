@@ -28,17 +28,26 @@
 (def assoc-error (partial fm/assoc-error :profile))
 (def clear-form (partial fm/clear-form :profile))
 
+(defn profile->form
+  [profile]
+  (let [language (get-in profile [:metadata :language])]
+    (-> (select-keys profile [:fullname :username :email])
+        (cond-> language (assoc :language language)))))
+
 (def profile-ref
-  (-> (l/key :profile)
+  (-> (comp (l/key :profile)
+            (l/lens profile->form))
       (l/derive st/state)))
 
 (s/def ::fullname ::fm/non-empty-string)
 (s/def ::username ::fm/non-empty-string)
 (s/def ::email ::fm/email)
+(s/def ::language #{"en" "fr"})
 
 (s/def ::profile-form
   (s/keys :req-un [::fullname
                    ::username
+                   ::language
                    ::email]))
 
 (defn- on-error
@@ -61,18 +70,13 @@
   :mixins [mf/memo mf/reactive mf/sync-render (fm/clear-mixin st/store :profile)]
   :render
   (fn [own props]
-    (let [data (merge {:theme "light"}
+    (let [data (merge {:language @i18n/locale}
                       (mf/react profile-ref)
                       (mf/react form-data))
           errors (mf/react form-errors)
           valid? (fm/valid? ::profile-form data)
-          theme (:theme data)
           on-success #(st/emit! (clear-form))
-          on-submit #(st/emit! (udu/update-profile data on-success on-error))
-          on-lang-change (fn [event]
-                           (let [lang (read-string (dom/event->value event))]
-                             (prn "on-lang-change" lang)
-                             (i18n/set-current-locale! lang)))]
+          on-submit #(st/emit! (udu/update-profile data on-success on-error))]
       [:form.profile-form
        [:span.user-settings-label (tr "settings.profile.section-basic-data")]
        [:input.input-text
@@ -94,10 +98,10 @@
        (fm/input-error errors :email)
 
        [:span.user-settings-label (tr "settings.profile.section-i18n-data")]
-       [:select.input-select {:value (pr-str (mf/deref i18n/locale))
-                              :on-change on-lang-change}
-        [:option {:value ":en"} "English"]
-        [:option {:value ":fr"} "Français"]]
+       [:select.input-select {:value (:language data)
+                              :on-change #(on-field-change % :language)}
+        [:option {:value "en"} "English"]
+        [:option {:value "fr"} "Français"]]
 
        [:input.btn-primary
         {:type "button"

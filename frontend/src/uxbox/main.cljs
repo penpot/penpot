@@ -6,7 +6,7 @@
 
 (ns ^:figwheel-hooks uxbox.main
   (:require
-   [rumext.core :as mx]
+   [rumext.alpha :as mf]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.users :as udu]
    [uxbox.main.locales.en :as en]
@@ -20,6 +20,7 @@
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]
+   [uxbox.util.storage :refer [storage]]
    [uxbox.util.timers :as ts]))
 
 ;; --- i18n
@@ -28,8 +29,8 @@
 
 (i18n/update-locales! (fn [locales]
                         (-> locales
-                            (assoc :en en/locales)
-                            (assoc :fr fr/locales))))
+                            (assoc "en" en/locales)
+                            (assoc "fr" fr/locales))))
 
 (i18n/on-locale-change!
  (fn [new old]
@@ -60,11 +61,12 @@
     (st/emit! #(assoc % :router router))
     (add-watch html-history/path ::main #(on-navigate router %4))
 
-    (st/emit! (udu/fetch-profile))
+    (when (:auth storage)
+      (st/emit! (udu/fetch-profile)))
 
-    (mx/mount (ui/app) (dom/get-element "app"))
-    (mx/mount (lightbox) (dom/get-element "lightbox"))
-    (mx/mount (loader) (dom/get-element "loader"))
+    (mf/mount (ui/app) (dom/get-element "app"))
+    (mf/mount (lightbox) (dom/get-element "lightbox"))
+    (mf/mount (loader) (dom/get-element "loader"))
 
     (on-navigate router cpath)))
 
@@ -76,9 +78,9 @@
 (defn reinit
   []
   (remove-watch html-history/path ::main)
-  (.unmountComponentAtNode js/ReactDOM (dom/get-element "app"))
-  (.unmountComponentAtNode js/ReactDOM (dom/get-element "lightbox"))
-  (.unmountComponentAtNode js/ReactDOM (dom/get-element "loader"))
+  (mf/unmount (dom/get-element "app"))
+  (mf/unmount (dom/get-element "lightbox"))
+  (mf/unmount (dom/get-element "loader"))
   (init-ui))
 
 (defn ^:after-load after-load

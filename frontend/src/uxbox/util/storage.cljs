@@ -30,6 +30,10 @@
     (when (not= *target* "nodejs")
       (add-watch data :sub #(persist alias %4)))
     (reify
+      Object
+      (toString [_]
+        (str "Storage" (pr-str @data)))
+
       ICounted
       (-count [_]
         (count @data))
@@ -40,7 +44,7 @@
 
       IReset
       (-reset! [self newval]
-        (-reset! data newval))
+        (reset! data newval))
 
       ISwap
       (-swap! [self f]

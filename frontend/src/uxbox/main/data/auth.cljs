@@ -16,7 +16,7 @@
             [uxbox.util.messages :as uum]
             [uxbox.util.router :as rt]
             [uxbox.util.spec :as us]
-            [uxbox.util.i18n :refer (tr)]
+            [uxbox.util.i18n :as i18n :refer [tr]]
             [uxbox.util.storage :refer [storage]]))
 
 (s/def ::username string?)
@@ -74,16 +74,26 @@
 
 ;; --- Logout
 
-(defrecord Logout []
+(defrecord ClearUserData []
   ptk/UpdateEvent
   (update [_ state]
-    (swap! storage dissoc :auth)
     (merge state (dissoc initial-state :route :router)))
 
   ptk/WatchEvent
   (watch [_ state s]
     (->> (rp/req :auth/logout)
-         (rx/map (constantly (rt/nav :auth/login))))))
+         (rx/ignore)))
+
+  ptk/EffectEvent
+  (effect [_ state s]
+    (reset! storage {})
+    (i18n/set-default-locale!)))
+
+(defrecord Logout []
+  ptk/WatchEvent
+  (watch [_ state s]
+    (rx/of (rt/nav :auth/login)
+           (->ClearUserData))))
 
 (defn logout
   []
