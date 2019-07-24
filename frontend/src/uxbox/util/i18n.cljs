@@ -14,10 +14,6 @@
 (defonce locale (atom (get storage ::locale cfg/default-language)))
 (defonce state (atom {}))
 
-(defn set-default-locale!
-  []
-  (set-current-locale! cfg/default-language))
-
 (defn update-locales!
   [callback]
   (swap! state callback))
@@ -26,6 +22,10 @@
   [v]
   (swap! storage assoc ::locale v)
   (reset! locale v))
+
+(defn set-default-locale!
+  []
+  (set-current-locale! cfg/default-language))
 
 (defn on-locale-change!
   [callback]

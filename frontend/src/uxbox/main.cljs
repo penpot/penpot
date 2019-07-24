@@ -43,9 +43,13 @@
   [router path]
   (let [match (rt/match router path)]
     (prn "main$on-navigate" path)
+
     (cond
-      #_(and (= path "") (nil? match))
-      #_(html-history/set-path! "/dashboard/projects")
+      (and (= path "") (:auth storage))
+      (st/emit! (rt/nav :dashboard/projects))
+
+      (and (= path "") (not (:auth storage)))
+      (st/emit! (rt/nav :auth/login))
 
       (nil? match)
       (prn "TODO 404 main")
