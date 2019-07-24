@@ -59,7 +59,7 @@
                       :type :update-profile-password
                       :user user)]
     (-> (sv/novelty message)
-        (p/then #(http/ok %)))))
+        (p/then (fn [_] (http/no-content))))))
 
 ;; TODO: validate {:multipart {:file {:filename "sample.jpg", :content-type "application/octet-stream", :tempfile #file "/tmp/ring-multipart-7913603702731714635.tmp", :size 312043}}}
 
