@@ -8,6 +8,7 @@
   (:require
    [beicon.core :as rx]
    [potok.core :as ptk]
+   [uxbox.config :as cfg]
    [uxbox.main.store :as st]
    [uxbox.main.constants :as c]
    [uxbox.main.lenses :as ul]
@@ -29,7 +30,7 @@
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.time :as dt]
    [uxbox.util.math :as mth]
-   [uxbox.util.data :refer (index-of)]))
+   [uxbox.util.data :refer [index-of]]))
 
 ;; --- Expose inner functions
 

@@ -1,4 +1,6 @@
 (ns uxbox.main.ui.navigation
+
+  ;; TODO: deprecated
   (:require [rumext.alpha :refer-macros [html]]
             [goog.events :as events]
             [uxbox.util.dom :as dom]))

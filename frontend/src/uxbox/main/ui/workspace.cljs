@@ -61,15 +61,16 @@
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/def workspace
-  :key-fn identity
-  :mixins #{mf/memo
-            mf/reactive
+  :mixins #{mf/reactive
             shortcuts-mixin}
 
   :init
   (fn [own {:keys [project page] :as props}]
     (st/emit! (dw/initialize project page))
-    (assoc own ::canvas (mf/create-ref)))
+    (assoc own
+           ::canvas (mf/create-ref)
+           ::page-ref (-> (l/in [:pages page])
+                          (l/derive st/state))))
 
   :did-mount
   (fn [own]
@@ -91,8 +92,9 @@
   :render
   (fn [own props]
     (let [flags (mf/deref refs/flags)
-          project-id (get props :project)
-          page-id (get props :page)
+          page (mf/deref (::page-ref own))
+          ;; project-id (get props :project)
+          ;; page-id (get props :page)
           left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                   :document-history])))
           right-sidebar? (not (empty? (keep flags [:icons :drawtools
@@ -103,7 +105,9 @@
                    :scrolling (:viewport-positionig workspace))]
       [:*
        (messages-widget)
-       (header)
+       [:& header {:page page
+                   :flags flags
+                   :key (:id page)}]
        (colorpalette)
 
        [:main.main-content
@@ -116,20 +120,20 @@
 
          ;; Rules
          (when (contains? flags :rules)
-           (horizontal-rule))
+           [:& horizontal-rule])
 
          (when (contains? flags :rules)
-           (vertical-rule))
+           [:& vertical-rule])
 
          ;; Canvas
          [:section.workspace-canvas {:id "workspace-canvas"
                                      :ref (::canvas own)}
-          [:& viewport {:project project-id
-                        :page page-id
-                        :key [project-id page-id]}]]]
+          [:& viewport {:page page
+                        :flags flags
+                        :key (:id page)}]]]
 
         ;; Aside
         (when left-sidebar?
-          (left-sidebar {:flags flags :page-id page-id}))
+          [:& left-sidebar {:flags flags :page-id (:id page)}])
         (when right-sidebar?
-          (right-sidebar {:flags flags :page-id page-id}))]])))
+          [:& right-sidebar {:flags flags :page-id (:id page)}])]])))

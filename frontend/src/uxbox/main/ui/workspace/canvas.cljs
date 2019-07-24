@@ -135,11 +135,8 @@
   :mixins [mf/reactive]
 
   :init
-  (fn [own {:keys [page project] :as props}]
-    (assoc own
-           ::viewport (mf/create-ref)
-           ::page-ref (-> (l/in [:pages page])
-                          (l/derive st/state))))
+  (fn [own props]
+    (assoc own ::viewport (mf/create-ref)))
 
   :did-mount
   (fn [own]
@@ -215,10 +212,8 @@
 
   ;; TODO: use an ad-hoc ref for required keys from workspace state
   :render
-  (fn [own props]
-    (let [page (mf/deref (::page-ref own))
-          flags (mf/react refs/flags)
-          drawing (mf/react refs/selected-drawing-tool)
+  (fn [own {:keys [page flags] :as props}]
+    (let [drawing (mf/react refs/selected-drawing-tool)
           tooltip (or (mf/react refs/selected-tooltip)
                       (get-shape-tooltip drawing))
           zoom (or (mf/react refs/selected-zoom) 1)]

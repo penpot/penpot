@@ -117,7 +117,7 @@
         :workspace/page
         (let [project (uuid (get-in route [:params :path :project]))
               page (uuid (get-in route [:params :path :page]))]
-          [:& workspace {:project project :page page}])
+          [:& workspace {:project project :page page :key page}])
 
         nil
         ))))

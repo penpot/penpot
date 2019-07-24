@@ -102,6 +102,8 @@
          (when deletable?
            [:a {:on-click on-delete} i/trash])]]])))
 
+;; TODO: refactor this to not use global refs
+
 (mf/def sitemap-toolbox
   :mixins [mf/memo mf/reactive]
 

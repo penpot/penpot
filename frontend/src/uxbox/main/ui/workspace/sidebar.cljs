@@ -6,18 +6,18 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar
-  (:require [uxbox.main.refs :as refs]
-            [uxbox.main.ui.workspace.sidebar.options :refer [options-toolbox]]
-            [uxbox.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
-            [uxbox.main.ui.workspace.sidebar.sitemap :refer [sitemap-toolbox]]
-            [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
-            [uxbox.main.ui.workspace.sidebar.icons :refer [icons-toolbox]]
-            [uxbox.main.ui.workspace.sidebar.drawtools :refer [draw-toolbox]]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [rumext.alpha :as mf]
+   [uxbox.main.ui.workspace.sidebar.drawtools :refer [draw-toolbox]]
+   [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
+   [uxbox.main.ui.workspace.sidebar.icons :refer [icons-toolbox]]
+   [uxbox.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
+   [uxbox.main.ui.workspace.sidebar.options :refer [options-toolbox]]
+   [uxbox.main.ui.workspace.sidebar.sitemap :refer [sitemap-toolbox]]))
 
 ;; --- Left Sidebar (Component)
 
-(mx/defc left-sidebar
+(mf/defc left-sidebar
   [{:keys [flags page-id] :as props}]
   [:aside#settings-bar.settings-bar.settings-bar-left
    [:div.settings-bar-inside
@@ -30,7 +30,7 @@
 
 ;; --- Right Sidebar (Component)
 
-(mx/defc right-sidebar
+(mf/defc right-sidebar
   [{:keys [flags page-id] :as props}]
   [:aside#settings-bar.settings-bar
    [:div.settings-bar-inside

@@ -6,73 +6,59 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.header
-  (:require [beicon.core :as rx]
-            [uxbox.config :as cfg]
-            [potok.core :as ptk]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.store :as st]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.data.workspace :as dw]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.main.data.history :as udh]
-            [uxbox.main.data.undo :as udu]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.ui.workspace.clipboard]
-            [uxbox.main.ui.users :refer [user]]
-            [uxbox.main.ui.navigation :as nav]
-            [uxbox.util.router :as r]
-            [uxbox.util.data :refer [index-of]]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.math :as mth]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [rumext.core :as mx]
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.config :as cfg]
+   [uxbox.main.data.history :as udh]
+   [uxbox.main.data.lightbox :as udl]
+   [uxbox.main.data.pages :as udp]
+   [uxbox.main.data.undo :as udu]
+   [uxbox.main.data.workspace :as dw]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.users :refer [user]]
+   [uxbox.main.ui.workspace.clipboard]
+   [uxbox.util.data :refer [index-of]]
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.math :as mth]
+   [uxbox.util.router :as rt]))
 
 ;; --- Zoom Widget
 
-(mx/defc zoom-widget
-  {:mixins [mx/reactive mx/static]}
-  []
-  (let [zoom (mx/react refs/selected-zoom)
+(mf/defc zoom-widget
+  {:wrap [mf/reactive*]}
+  [props]
+  (let [zoom (mf/react refs/selected-zoom)
         increase #(st/emit! (dw/increase-zoom))
         decrease #(st/emit! (dw/decrease-zoom))]
-    [:ul.options-view {}
-     [:li.zoom-input {}
+    [:ul.options-view
+     [:li.zoom-input
       [:span.add-zoom {:on-click decrease} "-"]
       [:span {} (str (mth/round (* 100 zoom)) "%")]
       [:span.remove-zoom {:on-click increase} "+"]]]))
 
 ;; --- Header Component
 
-(defn on-view-clicked
-  [event project page]
-  (let [token (:share-token project)
-        pages (deref refs/selected-project-pages)
-        index (index-of pages page)
-        rval (rand-int 1000000)
-        url (str cfg/viewurl "?v=" rval "#/preview/" token "/" index)]
-    (st/emit! (udp/persist-page (:id page) #(js/open url "new tab" "")))))
-
-(mx/defc header
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [project (mx/react refs/selected-project)
-        page (mx/react refs/selected-page)
-        flags (mx/react refs/flags)
-        toggle #(st/emit! (dw/toggle-flag %))
+(mf/defc header
+  [{:keys [page flags] :as props}]
+  (let [toggle #(st/emit! (dw/toggle-flag %))
         on-undo #(st/emit! (udu/undo))
         on-redo #(st/emit! (udu/redo))
         on-image #(udl/open! :import-image)
         on-download #(udl/open! :download)]
-    [:header#workspace-bar.workspace-bar {}
-     [:div.main-icon {}
-      (nav/link (r/route-for :dashboard/projects) i/logo-icon)]
+    [:header#workspace-bar.workspace-bar
+     [:div.main-icon
+      [:a {:on-click #(st/emit! (rt/nav :dashboard/projects))} i/logo-icon]]
      [:div.project-tree-btn
       {:alt "Sitemap (Ctrl + Shift + M)"
        :class (when (contains? flags :sitemap) "selected")
        :on-click (partial toggle :sitemap)}
       i/project-tree
       [:span {} (:name page)]]
-     [:div.workspace-options {}
-      [:ul.options-btn {}
+     [:div.workspace-options
+      [:ul.options-btn
        [:li.tooltip.tooltip-bottom
         {:alt "Draw tools (Ctrl + Shift + S)"
          :class (when (contains? flags :drawtools) "selected")
@@ -103,7 +89,7 @@
          :class (when (contains? flags :document-history) "selected")
          :on-click (partial toggle :document-history)}
         i/undo-history]]
-      [:ul.options-btn {}
+      [:ul.options-btn
        [:li.tooltip.tooltip-bottom
         {:alt "Undo (Ctrl + Z)"
          :on-click on-undo}
@@ -112,7 +98,7 @@
         {:alt "Redo (Ctrl + Shift + Z)"
          :on-click on-redo}
         i/redo]]
-      [:ul.options-btn {}
+      [:ul.options-btn
        [:li.tooltip.tooltip-bottom
         {:alt "Download (Ctrl + E)"
          :on-click on-download}
@@ -121,7 +107,7 @@
         {:alt "Image (Ctrl + I)"
          :on-click on-image}
         i/image]]
-      [:ul.options-btn {}
+      [:ul.options-btn
        [:li.tooltip.tooltip-bottom
         {:alt "Rules"
          :class (when (contains? flags :rules) "selected")
@@ -137,13 +123,14 @@
          :class (when (contains? flags :grid-snap) "selected")
          :on-click (partial toggle :grid-snap)}
         i/grid-snap]]
-       ;; [:li.tooltip.tooltip-bottom
-        ;; {:alt "Align (Ctrl + A)"}
-        ;; i/alignment]]
-      [:ul.options-btn {}
+      ;; [:li.tooltip.tooltip-bottom
+      ;; {:alt "Align (Ctrl + A)"}
+      ;; i/alignment]]
+      [:ul.options-btn
        [:li.tooltip.tooltip-bottom.view-mode
         {:alt "View mode (Ctrl + P)"
-         :on-click #(on-view-clicked % project page)}
+         :on-click #(st/emit! (dw/->OpenView (:id page)))
+         }
         i/play]]
-      (zoom-widget)]
+      [:& zoom-widget]]
      [:& user]]))
