@@ -59,13 +59,10 @@
 (defn- on-navigate
   [router path]
   (let [match (rt/match router path)]
-    (prn "on-navigate" path match)
+    (prn "view$on-navigate" path)
     (cond
-      ;; (and (= path "") (nil? match))
-      ;; (html-history/set-path! "/not-found")
-
       (nil? match)
-      (prn "TODO 404")
+      (prn "TODO 404 view" match)
 
       :else
       (st/emit! #(assoc % :route match)))))
@@ -84,21 +81,25 @@
 
     (on-navigate router cpath)))
 
+(def app-sym (.for js/Symbol "uxbox.app"))
+
 (defn ^:export init
   []
+  (unchecked-set js/window app-sym "view")
   (st/init)
   (init-ui))
 
 (defn reinit
   []
   (remove-watch html-history/path ::view)
-  (.unmountComponentAtNode js/ReactDOM (dom/get-element "app"))
-  (.unmountComponentAtNode js/ReactDOM (dom/get-element "lightbox"))
-  (.unmountComponentAtNode js/ReactDOM (dom/get-element "loader"))
+  (mf/unmount (dom/get-element "app"))
+  (mf/unmount (dom/get-element "lightbox"))
+  (mf/unmount (dom/get-element "loader"))
   (init-ui))
 
 (defn ^:after-load after-load
   []
-  (reinit))
+  (when (= "view" (unchecked-get js/window app-sym))
+    (reinit)))
 
 

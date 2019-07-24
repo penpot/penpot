@@ -42,13 +42,13 @@
 (defn- on-navigate
   [router path]
   (let [match (rt/match router path)]
-    ;; (prn "on-navigate" path match)
+    (prn "main$on-navigate" path)
     (cond
       #_(and (= path "") (nil? match))
       #_(html-history/set-path! "/dashboard/projects")
 
       (nil? match)
-      (prn "TODO 404")
+      (prn "TODO 404 main")
 
       :else
       (st/emit! #(assoc % :route match)))))
@@ -70,8 +70,11 @@
 
     (on-navigate router cpath)))
 
+(def app-sym (.for js/Symbol "uxbox.app"))
+
 (defn ^:export init
   []
+  (unchecked-set js/window app-sym "main")
   (st/init)
   (init-ui))
 
@@ -85,4 +88,5 @@
 
 (defn ^:after-load after-load
   []
-  (reinit))
+  (when (= "main" (unchecked-get js/window app-sym))
+    (reinit)))
