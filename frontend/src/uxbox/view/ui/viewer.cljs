@@ -6,15 +6,17 @@
 ;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.view.ui.viewer
-  (:require [lentes.core :as l]
-            [uxbox.builtins.icons :as i]
-            [uxbox.util.i18n :refer [tr]]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.view.store :as st]
-            [uxbox.view.data.viewer :as dv]
-            [uxbox.view.ui.viewer.nav :refer [nav]]
-            [uxbox.view.ui.viewer.canvas :refer [canvas]]
-            [uxbox.view.ui.viewer.sitemap :refer [sitemap]]))
+  (:require
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.data :refer [seek]]
+   [uxbox.view.data.viewer :as dv]
+   [uxbox.view.store :as st]
+   [uxbox.view.ui.viewer.canvas :refer [canvas]]
+   [uxbox.view.ui.viewer.nav :refer [nav]]
+   [uxbox.view.ui.viewer.sitemap :refer [sitemap]]
+   [lentes.core :as l]))
 
 ;; --- Refs
 
@@ -31,24 +33,17 @@
 
 ;; --- Component
 
-(defn- viewer-page-init
-  [own]
-  (let [[token] (::mx/args own)]
-    (st/emit! (dv/initialize token))
-    own))
-
-(mx/defc viewer-page
-  {:mixins [mx/static mx/reactive]
-   :init viewer-page-init
-   :key-fn vector}
-  [token index id]
-  (let [{:keys [project pages flags]} (mx/react state-ref)
-        sitemap? (contains? flags :sitemap)]
+(mf/defc viewer-page
+  {:wrap [mf/reactive*]}
+  [{:keys [token id]}]
+  (let [{:keys [project pages flags]} (mf/deref state-ref)]
+    (mf/use-effect
+     {:init #(st/emit! (dv/initialize token))})
     (when (seq pages)
       [:section.view-content
-       (when sitemap?
-         (sitemap project pages index))
-       (nav flags)
-       (canvas (if (nil? id)
-                 (nth pages index)
-                 (some #(= id (:id %)) pages)))])))
+       (when (contains? flags :sitemap)
+         [:& sitemap {:project project
+                      :pages pages
+                      :selected id}])
+       [:& nav {:flags flags}]
+       [:& canvas {:page (seek #(= id (:id %)) pages)}]])))

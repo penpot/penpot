@@ -8,25 +8,24 @@
 (ns uxbox.view.ui.viewer.sitemap
   (:require
    [lentes.core :as l]
-   [rumext.core :as mx :include-macros true]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.view.data.viewer :as dv]
    [uxbox.view.store :as st]))
 
-(mx/defc sitemap
-  {:mixins [mx/static mx/reactive]}
-  [project pages selected]
+(mf/defc sitemap
+  [{:keys [project pages selected] :as props}]
   (let [project-name (:name project)
         on-click #(st/emit! (dv/select-page %))]
     [:div.view-sitemap
      [:span.sitemap-title project-name]
      [:ul.sitemap-list
-      (for [[i page] (map-indexed vector pages)
-            :let [selected? (= i selected)
-                  id (:id page)]]
-        [:li {:class (when selected? "selected")
-              :on-click (partial on-click i)
-              :id (str "page-" id)
-              :key (str i)}
-         [:div.page-icon i/page]
-         [:span (:name page)]])]]))
+      (for [page pages]
+        (let [selected? (= (:id page) selected)
+              page-id (:id page)]
+          [:li {:class (when selected? "selected")
+                :on-click (partial on-click page-id)
+                :id (str "page-" page-id)
+                :key page-id}
+           [:div.page-icon i/page]
+           [:span (:name page)]]))]]))

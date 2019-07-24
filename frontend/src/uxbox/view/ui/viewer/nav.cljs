@@ -6,16 +6,16 @@
 ;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.view.ui.viewer.nav
-  (:require [potok.core :as ptk]
-            [uxbox.builtins.icons :as i]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.view.store :as st]
-            [uxbox.view.data.viewer :as dv]))
+  (:require
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.lightbox :as udl]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.view.data.viewer :as dv]
+   [uxbox.view.store :as st]))
 
-(mx/defc nav
-  [flags]
+(mf/defc nav
+  [{:keys [flags] :as props}]
   (let [toggle-sitemap #(st/emit! (dv/toggle-flag :sitemap))
         toggle-interactions #(st/emit! (dv/toggle-flag :interactions))
         sitemap? (contains? flags :sitemap)

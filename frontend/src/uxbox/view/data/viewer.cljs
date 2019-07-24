@@ -73,23 +73,23 @@
 
 ;; --- Select Page
 
-(defrecord SelectPage [index]
+(defrecord SelectPage [id]
   ptk/WatchEvent
   (watch [_ state stream]
     (let [token (get-in state [:route :params :path :token])]
-      (rx/of (rt/nav :view/viewer {:token token :index index})))))
+      (rx/of (rt/nav :view/viewer {:token token :id id})))))
 
 (defn select-page
-  [index]
-  (SelectPage. index))
+  [id]
+  (SelectPage. id))
 
 ;; --- Go to Page
 
 (defrecord GoToPage [id]
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [token (get-in state [:route :params :token])]
-      (rx/of (rt/navigate :view/viewer {:token token :index nil :id id})))))
+    (let [token (get-in state [:route :params :path :token])]
+      (rx/of (rt/nav :view/viewer {:token token :id id})))))
 
 (defn go-to-page
   [id]

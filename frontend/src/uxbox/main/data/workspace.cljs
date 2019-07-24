@@ -337,3 +337,17 @@
   [id metadata]
   {:pre [(uuid? id) (us/valid? ::udp/metadata metadata)]}
   (UpdateMetadata. id metadata))
+
+(defrecord OpenView [page-id]
+  ptk/WatchEvent
+  (watch [_ state s]
+    (let [page-id (get-in state [:workspace :page])]
+      (rx/of (udp/persist-page page-id))))
+
+  ptk/EffectEvent
+  (effect [_ state s]
+    (let [rval (rand-int 1000000)
+          page (get-in state [:pages page-id])
+          project (get-in state [:projects (:project page)])
+          url (str cfg/viewurl "?v=" rval "#/preview/" (:share-token project) "/" page-id)]
+      (js/open url "new tab" ""))))

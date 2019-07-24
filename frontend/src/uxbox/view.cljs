@@ -6,24 +6,23 @@
 
 (ns ^:figwheel-hooks uxbox.view
   (:require
-   [rumext.core :as mx :include-macros true]
-   [uxbox.config]
+   [rumext.core :as mx]
+   [rumext.alpha :as mf]
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :as i18n :refer [tr]]
-   [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]
    [uxbox.view.locales.en :as en]
    [uxbox.view.locales.fr :as fr]
    [uxbox.view.store :as st]
-   [uxbox.view.ui :refer [app]]
+   [uxbox.view.ui :as ui]
    [uxbox.view.ui.lightbox :refer [lightbox]]
    [uxbox.view.ui.loader :refer [loader]]))
 
 (i18n/update-locales! (fn [locales]
                         (-> locales
-                            (assoc :en en/locales)
-                            (assoc :fr fr/locales))))
+                            (assoc "en" en/locales)
+                            (assoc "fr" fr/locales))))
 
 (declare reinit)
 
@@ -31,30 +30,6 @@
  (fn [new old]
    (println "Locale changed from" old " to " new)
    (reinit)))
-
-(defn- on-error
-  "A default error handler."
-  [error]
-  (cond
-    ;; Network error
-    (= (:status error) 0)
-    (do
-      (st/emit! (uum/error (tr "errors.network")))
-      (js/console.error "Stack:" (.-stack error)))
-
-    ;; Something else
-    :else
-    (do
-      (st/emit! (uum/error (tr "errors.generic")))
-      (js/console.error "Stack:" (.-stack error)))))
-
-(set! st/*on-error* on-error)
-
-;; --- Routes
-
-(def routes
-  [["/preview/:token/:index" :view/viewer]
-   ["/not-found" :view/notfound]])
 
 (defn- on-navigate
   [router path]
@@ -69,15 +44,15 @@
 
 (defn init-ui
   []
-  (let [router (rt/init routes)
+  (let [router (rt/init ui/routes)
         cpath (deref html-history/path)]
 
     (st/emit! #(assoc % :router router))
     (add-watch html-history/path ::view #(on-navigate router %4))
 
-    (mx/mount (app) (dom/get-element "app"))
-    (mx/mount (lightbox) (dom/get-element "lightbox"))
-    (mx/mount (loader) (dom/get-element "loader"))
+    (mf/mount (mf/element ui/app) (dom/get-element "app"))
+    (mf/mount (lightbox) (dom/get-element "lightbox"))
+    (mf/mount (loader) (dom/get-element "loader"))
 
     (on-navigate router cpath)))
 

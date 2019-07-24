@@ -6,13 +6,14 @@
 ;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.view.ui.viewer.canvas
-  (:require [rumext.core :as mx :include-macros true]
-            [uxbox.view.ui.viewer.shapes :as shapes]))
+  (:require
+   [rumext.alpha :as mf]
+   [uxbox.view.ui.viewer.shapes :as shapes]))
 
 ;; --- Background (Component)
 
-(mx/defc background
-  {:mixins [mx/static]}
+(mf/defc background
+  {:wrap [mf/memo*]}
   [{:keys [background] :as metadata}]
   [:rect
    {:x 0 :y 0
@@ -24,15 +25,16 @@
 
 (declare shape)
 
-(mx/defc canvas
-  {:mixins [mx/static]}
-  [{:keys [metadata id] :as page}]
-  (let [{:keys [width height]} metadata]
-    [:div.view-canvas {:ref (str "canvas" id)}
+(mf/defc canvas
+  {:wrap [mf/memo*]}
+  [{:keys [page] :as props}]
+  (let [{:keys [metadata id]} page
+        {:keys [width height]} metadata]
+    [:div.view-canvas
      [:svg.page-layout {:width width
                         :height height}
-      (background metadata)
+      [:& background metadata]
       (for [id (reverse (:shapes page))]
         (-> (shapes/shape id)
-            (mx/with-key (str id))))]]))
+            (mf/with-key (str id))))]]))
 
