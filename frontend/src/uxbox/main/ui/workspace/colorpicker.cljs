@@ -2,70 +2,43 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.workspace.colorpicker
-  (:require [lentes.core :as l]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.geom :as geom]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.colorpicker :as cp]
-            [uxbox.main.ui.workspace.recent-colors :refer [recent-colors]]
-            [uxbox.util.router :as rt]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer [parse-int parse-float read-string]]))
+  (:require
+   [lentes.core :as l]
+   [rumext.alpha :as mf]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.colorpicker :as cp]))
 
-(defn- focus-shape
-  [id]
-  (-> (l/in [:shapes id])
+;; --- Recent Colors Calc. Algorithm
+
+(defn- lookup-colors
+  [state]
+  (as-> {} $
+    (reduce (fn [acc shape]
+              (-> acc
+                  (update (:fill-color shape) (fnil inc 0))
+                  (update (:stroke-color shape) (fnil inc 0))))
+            $ (vals (:shapes state)))
+    (reverse (sort-by second $))
+    (map first $)
+    (remove nil? $)))
+
+(def most-used-colors
+  (-> (l/lens lookup-colors)
       (l/derive st/state)))
 
-(mx/defcs shape-colorpicker
-  {:mixins [mx/reactive mx/static]}
-  [own {:keys [x y shape attr] :as opts}]
-  (let [{:keys [id] :as shape} (mx/react (focus-shape shape))
-        left (- x 260)
-        top (- y 50)]
-    (letfn [(change-color [color]
-              (st/emit! (uds/update-attrs id {attr color})))]
-      [:div.colorpicker-tooltip
-       {:style {:left (str left "px")
-                :top (str top "px")}}
+;; --- Color Picker Modal
 
-       (cp/colorpicker
-        :theme :small
-        :value (get shape attr "#000000")
-        :on-change change-color)
-       (recent-colors shape change-color)])))
+(mf/defc colorpicker-modal
+  [{:keys [x y default value page on-change] :as props}]
+  [:div.colorpicker-tooltip
+   {:style {:left (str (- x 260) "px")
+            :top (str (- y 50) "px")}}
+   [:& cp/colorpicker {:value (or value default)
+                       :colors (into-array @most-used-colors)
+                       :on-change on-change}]])
 
-(mx/defcs page-colorpicker
-  {:mixins [mx/reactive mx/static]}
-  [own {:keys [x y attr default] :as opts}]
-  (let [{:keys [id metadata] :as page} (mx/react refs/selected-page)]
-    (letfn [(change-color [color]
-              (let [metadata (assoc metadata attr color)]
-                (st/emit! (udp/update-metadata id metadata))))]
-      [:div.colorpicker-tooltip
-       {:style {:left (str (- x 260) "px")
-                :top (str (- y 50) "px")}}
 
-       (cp/colorpicker
-        :theme :small
-        :value (get metadata attr default)
-        :on-change change-color)])))
-
-(defmethod lbx/render-lightbox :workspace/shape-colorpicker
-  [params]
-  (shape-colorpicker params))
-
-(defmethod lbx/render-lightbox :workspace/page-colorpicker
-  [params]
-  (page-colorpicker params))

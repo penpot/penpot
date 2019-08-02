@@ -34,9 +34,9 @@
 ;; --- Component
 
 (mf/defc viewer-page
-  {:wrap [mf/reactive*]}
+  {:wrap [mf/wrap-reactive]}
   [{:keys [token id]}]
-  (let [{:keys [project pages flags]} (mf/deref state-ref)]
+  (let [{:keys [project pages flags]} (mf/react state-ref)]
     (mf/use-effect
      {:init #(st/emit! (dv/initialize token))})
     (when (seq pages)

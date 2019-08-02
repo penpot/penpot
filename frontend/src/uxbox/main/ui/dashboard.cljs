@@ -19,19 +19,23 @@
              (uuid-str? id) (uuid id)
              :else nil)
         type (when (str/alpha? type) (keyword type))]
-    {:section (:name data)
-     :type type
-     :id id}))
+    [(:name data) type id]))
 
 (mf/defc dashboard
-  {:wrap [mf/memo*]}
   [{:keys [route] :as props}]
-  (let [{:keys [section] :as props} (parse-route route)]
+  (let [[section type id] (parse-route route)]
     [:main.dashboard-main
      (messages-widget)
-     [:& header props]
+     [:& header {:section section}]
      (case section
-       :dashboard/icons (mf/element icons/icons-page props)
-       :dashboard/images (mf/element images/images-page props)
-       :dashboard/projects (mf/element projects/projects-page props)
-       :dashboard/colors (mf/element colors/colors-page props))]))
+       :dashboard/icons
+       [:& icons/icons-page {:type type :id id}]
+
+       :dashboard/images
+       [:& images/images-page {:type type :id id}]
+
+       :dashboard/projects
+       [:& projects/projects-page]
+
+       :dashboard/colors
+       [:& colors/colors-page {:type type :id id}])]))

@@ -12,7 +12,6 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]
             [uxbox.main.user-events :as uev]
-            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.point :as gpt]))
 
@@ -43,8 +42,9 @@
 (deftype StartRuler []
   ptk/UpdateEvent
   (update [_ state]
-    (let [pos (get-in state [:workspace :pointer :viewport])]
-      (assoc-in state [:workspace :ruler] [pos pos])))
+    (let [pid (get-in state [:workspace :current])
+          pos (get-in state [:workspace :pointer :viewport])]
+      (assoc-in state [:workspace pid :ruler] {:start pos :end pos})))
 
   ptk/WatchEvent
   (watch [_ state stream]
@@ -65,13 +65,15 @@
 (deftype UpdateRuler [point ctrl?]
   ptk/UpdateEvent
   (update [_ state]
-    (let [[start end] (get-in state [:workspace :ruler])]
+    (let [pid (get-in state [:workspace :current])
+          ruler (get-in state [:workspace pid :ruler])]
       (if-not ctrl?
-        (assoc-in state [:workspace :ruler] [start point])
-        (let [end (-> (gpt/subtract point start)
+        (assoc-in state [:workspace pid :ruler :end] point)
+        (let [start (get-in state [:workspace pid :ruler :start])
+              end (-> (gpt/subtract point start)
                       (align-position)
                       (gpt/add start))]
-          (assoc-in state [:workspace :ruler] [start end]))))))
+          (assoc-in state [:workspace pid :ruler :end] end))))))
 
 (defn update-ruler
   [point ctrl?]
@@ -84,7 +86,8 @@
 (deftype ClearRuler []
   ptk/UpdateEvent
   (update [_ state]
-    (update state :workspace dissoc :ruler)))
+    (let [pid (get-in state [:workspace :current])]
+      (update-in state [:workspace pid] dissoc :ruler))))
 
 (defn clear-ruler
   []

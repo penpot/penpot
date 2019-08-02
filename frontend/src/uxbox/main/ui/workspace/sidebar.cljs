@@ -18,26 +18,31 @@
 ;; --- Left Sidebar (Component)
 
 (mf/defc left-sidebar
-  [{:keys [flags page-id] :as props}]
-  [:aside#settings-bar.settings-bar.settings-bar-left
-   [:div.settings-bar-inside
-    (when (contains? flags :sitemap)
-      (sitemap-toolbox page-id))
-    (when (contains? flags :document-history)
-      (history-toolbox page-id))
-    (when (contains? flags :layers)
-      (layers-toolbox))]])
+  [{:keys [wst page] :as props}]
+  (let [{:keys [flags selected]} wst]
+    [:aside#settings-bar.settings-bar.settings-bar-left
+     [:div.settings-bar-inside
+      (when (contains? flags :sitemap)
+        [:& sitemap-toolbox {:page page}])
+      #_(when (contains? flags :document-history)
+          (history-toolbox page-id))
+      (when (contains? flags :layers)
+        [:& layers-toolbox {:page page
+                            :selected selected}])]]))
 
 ;; --- Right Sidebar (Component)
 
 (mf/defc right-sidebar
-  [{:keys [flags page-id] :as props}]
-  [:aside#settings-bar.settings-bar
-   [:div.settings-bar-inside
-    (when (contains? flags :drawtools)
-      (draw-toolbox flags))
-    (when (contains? flags :element-options)
-      (options-toolbox))
-    (when (contains? flags :icons)
-      (icons-toolbox))]])
+  [{:keys [wst page] :as props}]
+  (let [flags (:flags wst)
+        dtool (:drawing-tool wst)]
+    [:aside#settings-bar.settings-bar
+     [:div.settings-bar-inside
+      (when (contains? flags :drawtools)
+        [:& draw-toolbox {:flags flags :drawing-tool dtool}])
+      (when (contains? flags :element-options)
+        [:& options-toolbox {:page page
+                             :selected (:selected wst)}])
+      (when (contains? flags :icons)
+        #_(icons-toolbox))]]))
 

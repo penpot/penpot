@@ -73,9 +73,9 @@
                                         (l/lens #(-> % vals count)))
                                   (l/derive st/state))))
   :render
-  (fn [own props]
-    (let [ordering (:order props :created)
-          filtering (:filter props "")
+  (fn [own {:keys [opts] :as props}]
+    (let [ordering (:order opts :created)
+          filtering (:filter opts "")
           num-projects (mf/react (::num-projects own))]
       (letfn [(on-term-change [event]
                 (let [term (-> (dom/get-target event)
@@ -119,7 +119,7 @@
   [{:keys [project] :as props}]
   (let [url (mf/use-state nil)]
     (mf/use-effect
-     {:watch (:page-id project)
+     {:deps #js [(:page-id project)]
       :init (fn []
               (when-let [page-id (:page-id project)]
                 (let [svg (exports/render-page page-id)
@@ -141,6 +141,7 @@
 ;; --- Grid Item
 
 (mf/defc grid-item
+  {:wrap [mf/wrap-memo]}
   [{:keys [project] :as props}]
   (let [local (mf/use-state {})
         on-navigate #(st/emit! (udp/go-to (:id project)))
@@ -188,9 +189,11 @@
 ;; --- Grid
 
 (mf/defc grid
-  {:wrap [mf/reactive*]}
-  [{:keys [order filter] :or {order :created filter ""} :as props}]
-  (let [projects (->> (vals (mf/deref projects-ref))
+  [{:keys [opts] :as props}]
+  (let [order (:order opts :created)
+        filter (:filter opts "")
+        projects (mf/deref projects-ref)
+        projects (->> (vals projects)
                       (filter-projects-by filter)
                       (sort-projects-by order))
         on-click #(do
@@ -208,13 +211,10 @@
 ;; --- Projects Page
 
 (mf/defc projects-page
-  {:wrap [mf/reactive*]}
-  [props]
-  (let [opts (mf/deref opts-ref)
-        props (merge opts props)]
-    (mf/use-effect
-     {:init #(st/emit! (udp/initialize))})
+  [_]
+  (mf/use-effect
+   {:init #(st/emit! (udp/initialize))})
+  (let [opts (mf/deref opts-ref)]
     [:section.dashboard-content
-     [:& menu props]
-     [:& grid props]]))
-
+     [:& menu {:opts opts}]
+     [:& grid {:opts opts}]]))

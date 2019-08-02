@@ -104,13 +104,33 @@
 
 ;; TODO: refactor this to not use global refs
 
+(defn- pages-selector
+  [project-id]
+  (let [get-order #(get-in % [:metadata :order])]
+    (fn [state]
+      ;; NOTE: this function will be executed on every state change
+      ;; when we are on workspace page, that is ok but we need to
+      ;; think in a better approach (maybe materialize the result
+      ;; after pages fetching...)
+      (->> (vals (:pages state))
+           (filter #(= project-id (:project %)))
+           (sort-by get-order)))))
+
 (mf/def sitemap-toolbox
   :mixins [mf/memo mf/reactive]
 
+  :init
+  (fn [own {:keys [page] :as props}]
+    (assoc own
+           ::project-ref (-> (l/in [:projects (:project page)])
+                             (l/derive st/state))
+           ::pages-ref (-> (l/lens (pages-selector (:project page)))
+                           (l/derive st/state))))
+
   :render
-  (fn [own current-page-id]
-    (let [project (mf/react refs/selected-project)
-          pages (mf/react refs/selected-project-pages)
+  (fn [own {:keys [page] :as props}]
+    (let [project (mf/react (::project-ref own))
+          pages (mf/react (::pages-ref own))
           create #(udl/open! :page-form {:page {:project (:id project)}})
           close #(st/emit! (dw/toggle-flag :sitemap))
           deletable? (> (count pages) 1)]
@@ -124,9 +144,9 @@
          [:span (:name project)]
          [:div.add-page {:on-click create} i/close]]
         [:ul.element-list
-         (for [page pages]
-           (let [selected? (= (:id page) current-page-id)]
-             [:& page-item {:page page
+         (for [item pages]
+           (let [selected? (= (:id item) (:id page))]
+             [:& page-item {:page item
                             :deletable? deletable?
                             :selected? selected?
-                            :key (:id page)}]))]]])))
+                            :key (:id item)}]))]]])))

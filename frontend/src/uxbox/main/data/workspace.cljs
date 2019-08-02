@@ -7,41 +7,49 @@
 (ns uxbox.main.data.workspace
   (:require
    [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
    [potok.core :as ptk]
    [uxbox.config :as cfg]
-   [uxbox.main.store :as st]
    [uxbox.main.constants :as c]
-   [uxbox.main.lenses :as ul]
-   [uxbox.main.workers :as uwrk]
-   [uxbox.main.data.projects :as dp]
-   [uxbox.main.data.pages :as udp]
-   [uxbox.main.data.shapes :as uds]
-   [uxbox.main.data.icons :as udi]
-   [uxbox.main.data.shapes-impl :as shimpl]
-   [uxbox.main.data.lightbox :as udl]
    [uxbox.main.data.history :as udh]
-   [uxbox.main.data.workspace.scroll :as wscroll]
-   [uxbox.main.data.workspace.drawing :as wdrawing]
-   [uxbox.main.data.workspace.selrect :as wselrect]
+   [uxbox.main.data.icons :as udi]
+   [uxbox.main.data.lightbox :as udl]
+   [uxbox.main.data.pages :as udp]
+   [uxbox.main.data.projects :as dp]
+   [uxbox.main.data.shapes :as uds]
+   [uxbox.main.data.shapes-impl :as simpl]
+   ;; [uxbox.main.data.workspace.drawing :as wdrawing]
    [uxbox.main.data.workspace.ruler :as wruler]
-   [uxbox.util.uuid :as uuid]
-   [uxbox.util.spec :as us]
+   [uxbox.main.data.workspace.scroll :as wscroll]
+   [uxbox.main.lenses :as ul]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.streams :as streams]
+   [uxbox.main.user-events :as uev]
+   [uxbox.main.workers :as uwrk]
+   [uxbox.util.data :refer [index-of]]
    [uxbox.util.forms :as sc]
+   [uxbox.main.geom :as geom]
    [uxbox.util.geom.point :as gpt]
-   [uxbox.util.time :as dt]
+   [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.math :as mth]
-   [uxbox.util.data :refer [index-of]]))
+   [uxbox.util.spec :as us]
+   [uxbox.util.time :as dt]
+   [uxbox.util.uuid :as uuid]))
 
 ;; --- Expose inner functions
 
 (def start-viewport-positioning wscroll/start-viewport-positioning)
 (def stop-viewport-positioning wscroll/stop-viewport-positioning)
-(def start-drawing wdrawing/start-drawing)
-(def close-drawing-path wdrawing/close-drawing-path)
-(def select-for-drawing wdrawing/select-for-drawing)
-(def start-selrect wselrect/start-selrect)
+;; (def start-drawing wdrawing/start-drawing)
+;; (def close-drawing-path wdrawing/close-drawing-path)
+;; (def select-for-drawing wdrawing/select-for-drawing)
 (def start-ruler wruler/start-ruler)
 (def clear-ruler wruler/clear-ruler)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; General workspace events
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- Initialize Workspace
 
@@ -50,24 +58,18 @@
 (defrecord Initialize [project-id page-id]
   ptk/UpdateEvent
   (update [_ state]
-    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}]
-      (if (:workspace state)
-        (update state :workspace merge
-                {:project project-id
-                 :page page-id
-                 :selected #{}
-                 :drawing nil
-                 :drawing-tool nil
-                 :tooltip nil})
-        (assoc state :workspace
-               {:project project-id
-                :zoom 1
-                :page page-id
-                :flags default-flags
-                :selected #{}
-                :drawing nil
-                :drawing-tool nil
-                :tooltip nil}))))
+    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}
+          initial-workspace {:project-id project-id
+                             :page-id page-id
+                             :zoom 1
+                             :flags default-flags
+                             :selected #{}
+                             :drawing nil
+                             :drawing-tool nil
+                             :tooltip nil}]
+      (-> state
+          (update-in [:workspace page-id] #(if (nil? %) initial-workspace %))
+          (assoc-in [:workspace :current] page-id))))
 
   ptk/WatchEvent
   (watch [_ state stream]
@@ -104,7 +106,8 @@
 (defrecord SetTooltip [text]
   ptk/UpdateEvent
   (update [_ state]
-    (assoc-in state [:workspace :tooltip] text)))
+    (let [page-id (get-in state [:workspace :current])]
+      (assoc-in state [:workspace page-id :tooltip] text))))
 
 (defn set-tooltip
   [text]
@@ -112,30 +115,33 @@
 
 ;; --- Workspace Flags
 
-(deftype ActivateFlag [flag]
+(defrecord ActivateFlag [flag]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :flags] conj flag)))
+    (let [page-id (get-in state [:workspace :current])]
+      (update-in state [:workspace page-id :flags] conj flag))))
 
 (defn activate-flag
   [flag]
   {:pre [(keyword? flag)]}
   (ActivateFlag. flag))
 
-(deftype DeactivateFlag [flag]
+(defrecord DeactivateFlag [flag]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :flags] disj flag)))
+    (let [page-id (get-in state [:workspace :current])]
+      (update-in state [:workspace page-id :flags] disj flag))))
 
 (defn deactivate-flag
   [flag]
   {:pre [(keyword? flag)]}
   (DeactivateFlag. flag))
 
-(deftype ToggleFlag [flag]
+(defrecord ToggleFlag [flag]
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [flags (get-in state [:workspace :flags])]
+    (let [page-id (get-in state [:workspace :current])
+          flags (get-in state [:workspace page-id :flags])]
       (if (contains? flags flag)
         (rx/of (deactivate-flag flag))
         (rx/of (activate-flag flag))))))
@@ -146,7 +152,7 @@
 
 ;; --- Workspace Ruler
 
-(deftype ActivateRuler []
+(defrecord ActivateRuler []
   ptk/WatchEvent
   (watch [_ state stream]
     (rx/of (set-tooltip "Drag to use the ruler")
@@ -156,7 +162,7 @@
   []
   (ActivateRuler.))
 
-(deftype DeactivateRuler []
+(defrecord DeactivateRuler []
   ptk/WatchEvent
   (watch [_ state stream]
     (rx/of (set-tooltip nil)
@@ -166,10 +172,11 @@
   []
   (DeactivateRuler.))
 
-(deftype ToggleRuler []
+(defrecord ToggleRuler []
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [flags (get-in state [:workspace :flags])]
+    (let [page-id (get-in state [:workspace :current])
+          flags (get-in state [:workspace page-id :flags])]
       (if (contains? flags :ruler)
         (rx/of (deactivate-ruler))
         (rx/of (activate-ruler))))))
@@ -180,10 +187,11 @@
 
 ;; --- Icons Toolbox
 
-(deftype SelectIconsToolboxCollection [id]
+(defrecord SelectIconsToolboxCollection [id]
   ptk/UpdateEvent
   (update [_ state]
-    (assoc-in state [:workspace :icons-toolbox] id))
+    (let [page-id (get-in state [:workspace :current])]
+      (assoc-in state [:workspace page-id :icons-toolbox] id)))
 
   ptk/WatchEvent
   (watch [_ state stream]
@@ -194,11 +202,7 @@
   {:pre [(or (nil? id) (uuid? id))]}
   (SelectIconsToolboxCollection. id))
 
-(deftype InitializeIconsToolbox []
-  ptk/UpdateEvent
-  (update [_ state]
-    state)
-
+(defrecord InitializeIconsToolbox []
   ptk/WatchEvent
   (watch [_ state stream]
     (letfn [(get-first-with-icons [colls]
@@ -215,7 +219,8 @@
 
        ;; Only perform the autoselection if it is not
        ;; previously already selected by the user.
-       (when-not (contains? (:workspace state) :icons-toolbox)
+       ;; TODO
+       #_(when-not (contains? (:workspace state) :icons-toolbox)
          (->> stream
               (rx/filter udi/collections-fetched?)
               (rx/take 1)
@@ -230,7 +235,8 @@
 (defrecord CopyToClipboard []
   ptk/UpdateEvent
   (update [_ state]
-    (let [selected (get-in state [:workspace :selected])
+    (let [page-id (get-in state [:workspace :current])
+          selected (get-in state [:workspace page-id :selected])
           item {:id (uuid/random)
                 :created-at (dt/now)
                 :items selected}
@@ -251,13 +257,13 @@
   udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
-    (let [page (get-in state [:workspace :page])
+    (let [page-id (get-in state [:workspace :current])
           selected (if (nil? id)
                      (first (:clipboard state))
                      (->> (:clipboard state)
                           (filter #(= id (:id %)))
                           (first)))]
-      (shimpl/duplicate-shapes state (:items selected) page))))
+      (simpl/duplicate-shapes state (:items selected) page-id))))
 
 (defn paste-from-clipboard
   "Copy selected shapes to clipboard."
@@ -266,34 +272,37 @@
 
 ;; --- Zoom Management
 
-(deftype IncreaseZoom []
+(defrecord IncreaseZoom []
   ptk/UpdateEvent
   (update [_ state]
     (let [increase #(nth c/zoom-levels
                          (+ (index-of c/zoom-levels %) 1)
-                         (last c/zoom-levels))]
-      (update-in state [:workspace :zoom] (fnil increase 1)))))
+                         (last c/zoom-levels))
+          page-id (get-in state [:workspace :current])]
+      (update-in state [:workspace page-id :zoom] (fnil increase 1)))))
 
 (defn increase-zoom
   []
   (IncreaseZoom.))
 
-(deftype DecreaseZoom []
+(defrecord DecreaseZoom []
   ptk/UpdateEvent
   (update [_ state]
     (let [decrease #(nth c/zoom-levels
                          (- (index-of c/zoom-levels %) 1)
-                         (first c/zoom-levels))]
-      (update-in state [:workspace :zoom] (fnil decrease 1)))))
+                         (first c/zoom-levels))
+          page-id (get-in state [:workspace :current])]
+      (update-in state [:workspace page-id :zoom] (fnil decrease 1)))))
 
 (defn decrease-zoom
   []
   (DecreaseZoom.))
 
-(deftype ResetZoom []
+(defrecord ResetZoom []
   ptk/UpdateEvent
   (update [_ state]
-    (assoc-in state [:workspace :zoom] 1)))
+    (let [page-id (get-in state [:workspace :current])]
+      (assoc-in state [:workspace page-id :zoom] 1))))
 
 (defn reset-zoom
   []
@@ -322,6 +331,434 @@
   [id]
   {:pre [(uuid? id)]}
   (InitializeAlignment. id))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shapes on Workspace events
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrecord SelectShape [id]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [page-id (get-in state [:workspace :current])
+          selected (get-in state [:workspace page-id :selected])]
+      (if (contains? selected id)
+        (update-in state [:workspace page-id :selected] disj id)
+        (update-in state [:workspace page-id :selected] conj id))))
+
+  ptk/WatchEvent
+  (watch [_ state s]
+    (rx/of (activate-flag :element-options))))
+
+(defn select-shape
+  "Mark a shape selected for drawing in the canvas."
+  [id]
+  {:pre [(uuid? id)]}
+  (SelectShape. id))
+
+(defrecord DeselectAll []
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [page-id (get-in state [:workspace :current])]
+      (assoc-in state [:workspace page-id :selected] #{})))
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (rx/just ::uev/interrupt)))
+
+(defn deselect-all
+  "Clear all possible state of drawing, edition
+  or any similar action taken by the user."
+  []
+  (DeselectAll.))
+
+;; --- Select First Shape
+
+(deftype SelectFirstShape []
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [pid (get-in state [:workspace :current])
+          sid (first (get-in state [:pages pid :shapes]))]
+      (assoc-in state [:workspace pid :selected] #{sid}))))
+
+(defn select-first-shape
+  "Mark a shape selected for drawing in the canvas."
+  []
+  (SelectFirstShape.))
+
+;; --- Select Shapes (By selrect)
+
+(defrecord SelectShapesBySelrect [selrect]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [page-id (get-in state [:workspace :current])
+          shapes (simpl/match-by-selrect state page-id selrect)]
+      (assoc-in state [:workspace page-id :selected] shapes))))
+
+(defn select-shapes-by-selrect
+  "Select shapes that matches the select rect."
+  [selrect]
+  {:pre [(us/valid? ::uds/rect-like-shape selrect)]}
+  (SelectShapesBySelrect. selrect))
+
+;; --- Update Shape Attrs
+
+(deftype UpdateShapeAttrs [id attrs]
+  ptk/UpdateEvent
+  (update [_ state]
+    (update-in state [:shapes id] merge attrs)))
+
+(defn update-shape-attrs
+  [id attrs]
+  {:pre [(uuid? id) (us/valid? ::uds/attributes attrs)]}
+  (let [atts (us/extract attrs ::uds/attributes)]
+    (UpdateShapeAttrs. id attrs)))
+
+;; --- Update Selected Shapes attrs
+
+
+(deftype UpdateSelectedShapesAttrs [attrs]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [pid (get-in state [:workspace :current])
+          selected (get-in state [:workspace pid :selected])]
+      (rx/from-coll (map #(update-shape-attrs % attrs) selected)))))
+
+(defn update-selected-shapes-attrs
+  [attrs]
+  {:pre [(us/valid? ::uds/attributes attrs)]}
+  (UpdateSelectedShapesAttrs. attrs))
+
+
+;; --- Move Selected
+
+;; Event used for apply displacement transformation
+;; to the selected shapes throught the keyboard shortcuts.
+
+(defn- get-displacement
+  "Retrieve the correct displacement delta point for the
+  provided direction speed and distances thresholds."
+  [direction speed distance]
+  (case direction
+    :up (gpt/point 0 (- (get-in distance [speed :y])))
+    :down (gpt/point 0 (get-in distance [speed :y]))
+    :left (gpt/point (- (get-in distance [speed :x])) 0)
+    :right (gpt/point (get-in distance [speed :x]) 0)))
+
+(defn- get-displacement-distance
+  "Retrieve displacement distances thresholds for
+  defined displacement speeds."
+  [metadata align?]
+  (let [gx (:grid-x-axis metadata)
+        gy (:grid-y-axis metadata)]
+    {:std (gpt/point (if align? gx 1)
+                     (if align? gy 1))
+     :fast (gpt/point (if align? (* 3 gx) 10)
+                      (if align? (* 3 gy) 10))}))
+
+(declare apply-temporal-displacement)
+(declare initial-shape-align)
+(declare apply-displacement)
+
+(defrecord MoveSelected [direction speed]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [page-id (get-in state [:workspace :current])
+          workspace (get-in state [:workspace page-id])
+          selected (:selected workspace)
+          flags (:flags workspace)
+          align? (refs/alignment-activated? flags)
+          metadata (merge c/page-metadata (get-in state [:pages page-id :metadata]))
+          distance (get-displacement-distance metadata align?)
+          displacement (get-displacement direction speed distance)]
+      (rx/concat
+       (when align?
+         (rx/concat
+          (rx/from-coll (map initial-shape-align selected))
+          (rx/from-coll (map apply-displacement selected))))
+       (rx/from-coll (map #(apply-temporal-displacement % displacement) selected))
+       (rx/from-coll (map apply-displacement selected))))))
+
+(s/def ::direction #{:up :down :right :left})
+(s/def ::speed #{:std :fast})
+
+(defn move-selected
+  [direction speed]
+  {:pre [(us/valid? ::direction direction)
+         (us/valid? ::speed speed)]}
+  (MoveSelected. direction speed))
+
+;; --- Move Selected Layer
+
+(defrecord MoveSelectedLayer [loc]
+  udp/IPageUpdate
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [id (get-in state [:workspace :current])
+          selected (get-in state [:workspace id :selected])]
+      (simpl/move-layer state selected loc))))
+
+(defn move-selected-layer
+  [loc]
+  {:pre [(us/valid? ::direction loc)]}
+  (MoveSelectedLayer. loc))
+
+;; --- Delete Selected
+
+(defrecord DeleteSelected []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [id (get-in state [:workspace :current])
+          selected (get-in state [:workspace id :selected])]
+      (rx/from-coll
+       (into [(deselect-all)] (map #(uds/delete-shape %) selected))))))
+
+(defn delete-selected
+  "Deselect all and remove all selected shapes."
+  []
+  (DeleteSelected.))
+
+;; --- Shape Transformations
+
+(def ^:private canvas-coords
+  (gpt/point c/canvas-start-x
+             c/canvas-start-y))
+
+(defrecord InitialShapeAlign [id]
+  ptk/WatchEvent
+  (watch [_ state s]
+    (let [{:keys [x1 y1] :as shape} (->> (get-in state [:shapes id])
+                                         (geom/shape->rect-shape state))
+          point1 (gpt/point x1 y1)
+          point2 (gpt/add point1 canvas-coords)]
+      (->> (uwrk/align-point point2)
+           (rx/map #(gpt/subtract % canvas-coords))
+           (rx/map (fn [{:keys [x y] :as pt}]
+                     (apply-temporal-displacement id (gpt/subtract pt point1))))))))
+
+(defn initial-shape-align
+  [id]
+  {:pre [(uuid? id)]}
+  (InitialShapeAlign. id))
+
+;; --- Apply Temporal Displacement
+
+(defrecord ApplyTemporalDisplacement [id delta]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [pid (get-in state [:workspace :current])
+          prev (get-in state [:workspace pid :modifiers id :displacement] (gmt/matrix))
+          curr (gmt/translate prev delta)]
+      (assoc-in state [:workspace pid :modifiers id :displacement] curr))))
+
+(defn apply-temporal-displacement
+  [id pt]
+  {:pre [(uuid? id) (gpt/point? pt)]}
+  (ApplyTemporalDisplacement. id pt))
+
+;; --- Apply Displacement
+
+(defrecord ApplyDisplacement [id]
+  udp/IPageUpdate
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [pid (get-in state [:workspace :current])
+          displacement (get-in state [:workspace pid :modifiers id :displacement])]
+      (if (gmt/matrix? displacement)
+        (rx/of #(simpl/materialize-xfmt % id displacement)
+               #(update-in % [:workspace pid :modifiers id] dissoc :displacement)
+               ::udp/page-update)
+        (rx/empty)))))
+
+(defn apply-displacement
+  [id]
+  {:pre [(uuid? id)]}
+  (ApplyDisplacement. id))
+
+;; --- Apply Temporal Resize Matrix
+
+(deftype ApplyTemporalResize [id xfmt]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [pid (get-in state [:workspace :current])]
+      (assoc-in state [:workspace pid :modifiers id :resize] xfmt))))
+
+(defn apply-temporal-resize
+  "Attach temporal resize transformation to the shape."
+  [id xfmt]
+  {:pre [(gmt/matrix? xfmt) (uuid? id)]}
+  (ApplyTemporalResize. id xfmt))
+
+;; --- Apply Resize Matrix
+
+(deftype ApplyResize [id]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [pid (get-in state [:workspace :current])
+          resize (get-in state [:workspace pid :modifiers id :resize])]
+      (if (gmt/matrix? resize)
+        (rx/of #(simpl/materialize-xfmt % id resize)
+               #(update-in % [:workspace pid :modifiers id] dissoc :resize)
+               ::udp/page-update)
+        (rx/empty)))))
+
+(defn apply-resize
+  "Apply definitivelly the resize matrix transformation to the shape."
+  [id]
+  {:pre [(uuid? id)]}
+  (ApplyResize. id))
+
+;; --- Shape Movement (by mouse)
+
+(defrecord StartMove [id]
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [pid (get-in state [:workspace :current])
+          wst (get-in state [:workspace pid])
+          stoper (->> streams/events
+                      (rx/filter uev/mouse-up?)
+                      (rx/take 1))
+          stream (->> streams/mouse-position-deltas
+                      (rx/take-until stoper))]
+      (rx/concat
+       (when (refs/alignment-activated? (:flags wst))
+         (rx/of (initial-shape-align id)))
+       (rx/map #(apply-temporal-displacement id %) stream)
+       (rx/of (apply-displacement id))))))
+
+(defn start-move
+  [id]
+  {:pre [(uuid? id)]}
+  (StartMove. id))
+
+(defrecord StartMoveSelected []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [pid (get-in state [:workspace :current])
+          selected (get-in state [:workspace pid :selected])]
+      (rx/from-coll (map start-move selected)))))
+
+(defn start-move-selected
+  []
+  (StartMoveSelected.))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Selection Rect Events
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare stop-selrect)
+(declare update-selrect)
+(declare get-selection-stoper)
+(declare selection->rect)
+(declare translate-to-canvas)
+
+;; --- Start Selrect
+
+(defrecord StartSelrect []
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [id (get-in state [:workspace :current])
+          position (get-in state [:workspace :pointer :viewport])
+          selection {::start position ::stop position}]
+      (assoc-in state [:workspace id :selrect] (selection->rect selection))))
+
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [stoper (get-selection-stoper stream)]
+      ;; NOTE: the `viewport-mouse-position` can be derived from `stream`
+      ;; but it used from `streams/` ns just for convenience
+      (rx/concat
+       (->> streams/viewport-mouse-position
+            (rx/take-until stoper)
+            (rx/map update-selrect))
+       (rx/just (stop-selrect))))))
+
+(defn start-selrect
+  []
+  (StartSelrect.))
+
+;; --- Update Selrect
+
+(defrecord UpdateSelrect [position]
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [id (get-in state [:workspace :current])]
+      (-> state
+          (assoc-in [:workspace id :selrect ::stop] position)
+          (update-in [:workspace id :selrect] selection->rect)))))
+
+(defn update-selrect
+  [position]
+  {:pre [(gpt/point? position)]}
+  (UpdateSelrect. position))
+
+;; --- Clear Selrect
+
+(defrecord ClearSelrect []
+  ptk/UpdateEvent
+  (update [_ state]
+    (let [id (get-in state [:workspace :current])]
+      (update-in state [:workspace id] dissoc :selrect))))
+
+(defn clear-selrect
+  []
+  (ClearSelrect.))
+
+;; --- Stop Selrect
+
+(defrecord StopSelrect []
+  ptk/WatchEvent
+  (watch [_ state stream]
+    (let [id (get-in state [:workspace :current])
+          zoom (get-in state [:workspace id :zoom])
+          rect (-> (get-in state [:workspace id :selrect])
+                   (translate-to-canvas zoom))]
+      (rx/of
+       (clear-selrect)
+       (deselect-all)
+       (select-shapes-by-selrect rect)))))
+
+(defn stop-selrect
+  []
+  (StopSelrect.))
+
+;; --- Impl
+
+(defn- selection->rect
+  [data]
+  (let [start (::start data)
+        stop (::stop data)
+        start-x (min (:x start) (:x stop))
+        start-y (min (:y start) (:y stop))
+        end-x (max (:x start) (:x stop))
+        end-y (max (:y start) (:y stop))]
+    (assoc data
+           :x1 start-x
+           :y1 start-y
+           :x2 end-x
+           :y2 end-y
+           :type :rect)))
+
+(defn- get-selection-stoper
+  [stream]
+  (->> (rx/merge (rx/filter #(= % ::uev/interrupt) stream)
+                 (rx/filter uev/mouse-up? stream))
+       (rx/take 1)))
+
+(defn- translate-to-canvas
+  "Translate the given rect to the canvas coordinates system."
+  [rect zoom]
+  (let [startx (* c/canvas-start-x zoom)
+        starty (* c/canvas-start-y zoom)]
+    (assoc rect
+           :x1 (/ (- (:x1 rect) startx) zoom)
+           :y1 (/ (- (:y1 rect) starty) zoom)
+           :x2 (/ (- (:x2 rect) startx) zoom)
+           :y2 (/ (- (:y2 rect) starty) zoom))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Server Interactions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 ;; --- Update Metadata
 

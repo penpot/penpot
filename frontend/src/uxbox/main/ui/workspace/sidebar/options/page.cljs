@@ -7,57 +7,55 @@
 
 (ns uxbox.main.ui.workspace.sidebar.options.page
   "Page options menu entries."
-  (:require [lentes.core :as l]
-            [potok.core :as ptk]
-            [cuerdas.core :as str]
-            [uxbox.main.store :as st]
-            [uxbox.main.constants :as c]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.workspace.colorpicker]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.data :refer [parse-int]]
-            [uxbox.util.spec :refer [color?]]
-            [uxbox.util.dom :as dom]))
+  (:require
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.constants :as c]
+   [uxbox.main.data.pages :as udp]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.modal :as modal]
+   [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
+   [uxbox.util.data :refer [parse-int]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.spec :refer [color?]]))
 
-(mx/defcs measures-menu
-  {:mixins [mx/static mx/reactive]}
-  [own menu]
-  (let [{:keys [id metadata] :as page} (mx/react refs/selected-page)
+(mf/defc measures-menu
+  [{:keys [menu page] :as props}]
+  (let [metadata (:metadata page)
         metadata (merge c/page-metadata metadata)]
-    (letfn [(on-size-change [attr]
-              (when-let [value (-> (mx/ref-node own (name attr))
-                                   (dom/get-value)
-                                   (parse-int nil))]
+    (letfn [(on-size-change [event attr]
+              (let [value (-> (dom/event->value event)
+                              (parse-int nil))]
                 (st/emit! (->> (assoc metadata attr value)
-                               (udp/update-metadata id)))))
+                               (udp/update-metadata (:id page))))))
 
-            (on-color-change []
-              (when-let [value (-> (mx/ref-node own "color")
-                                   (dom/get-value)
-                                   (#(if (color? %) % nil)))]
-                (->> (assoc metadata :background value)
-                     (udp/update-metadata id)
-                     (st/emit!))))
+            (change-color [color]
+              (st/emit! (->> (assoc metadata :background color)
+                             (udp/update-metadata (:id page)))))
 
-            (on-name-change []
-              (when-let [value (-> (mx/ref-node own "name")
-                                   (dom/get-value)
-                                   (str/trim))]
+            (on-color-change [event]
+              (let [value (dom/event->value event)]
+                (change-color value)))
+
+            (on-name-change [event]
+              (let [value (-> (dom/event->value event)
+                              (str/trim))]
                 (st/emit! (->> (assoc page :name value)
-                               (udp/update-page id)))))
+                               (udp/update-page (:id page))))))
 
             (show-color-picker [event]
               (let [x (.-clientX event)
                     y (.-clientY event)
-                    opts {:x x :y y
-                          :default "#ffffff"
-                          :transparent? true
-                          :attr :background}]
-                (udl/open! :workspace/page-colorpicker opts)))]
+                    props {:x x :y y
+                           :default "#ffffff"
+                           :value (:background metadata)
+                           :transparent? true
+                           :on-change change-color}]
+                (modal/show! colorpicker-modal props)))]
+
       [:div.element-set
        [:div.element-set-title (:name menu)]
        [:div.element-set-content
@@ -66,7 +64,6 @@
          [:div.input-element
           [:input.input-text
            {:type "text"
-            :ref "name"
             :on-change on-name-change
             :value (str (:name page))
             :placeholder "page name"}]]]
@@ -76,15 +73,13 @@
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
-            :ref "width"
-            :on-change #(on-size-change :width)
+            :on-change #(on-size-change % :width)
             :value (str (:width metadata))
             :placeholder "width"}]]
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
-            :ref "height"
-            :on-change #(on-size-change :height)
+            :on-change #(on-size-change % :height)
             :value (str (:height metadata))
             :placeholder "height"}]]]
 
@@ -96,43 +91,39 @@
          [:div.color-info
           [:input
            {:on-change on-color-change
-            :ref "color"
             :value (:background metadata)}]]]]])))
 
-(mx/defcs grid-options-menu
-  {:mixins [mx/static mx/reactive]}
-  [own menu]
-  (let [{:keys [id metadata] :as page} (mx/react refs/selected-page)
+(mf/defc grid-options-menu
+  [{:keys [menu page] :as props}]
+  (let [metadata (:metadata page)
         metadata (merge c/page-metadata metadata)]
-    (letfn [(on-x-change []
-              (when-let [value (-> (mx/ref-node own "x-axis")
-                                   (dom/get-value)
-                                   (parse-int nil))]
-                (st/emit!
-                 (->> (assoc metadata :grid-x-axis value)
-                      (udw/update-metadata id)))))
-            (on-y-change []
-              (when-let [value (-> (mx/ref-node own "y-axis")
-                                   (dom/get-value)
-                                   (parse-int nil))]
-                (st/emit!
-                 (->> (assoc metadata :grid-y-axis value)
-                      (udw/update-metadata id)))))
-            (on-color-change []
-              (when-let [value (-> (mx/ref-node own "color")
-                                   (dom/get-value)
-                                   (#(if (color? %) % nil)))]
-                (->> (assoc metadata :grid-color value)
-                     (udp/update-metadata id)
-                     (st/emit!))))
+    (letfn [(on-x-change [event]
+              (let [value (-> (dom/event->value event)
+                              (parse-int nil))]
+                (st/emit! (->> (assoc metadata :grid-x-axis value)
+                               (udp/update-metadata (:id page))))))
+            (on-y-change [event]
+              (let [value (-> (dom/event->value event)
+                              (parse-int nil))]
+                (st/emit! (->> (assoc metadata :grid-y-axis value)
+                               (udp/update-metadata (:id page))))))
+
+            (change-color [color]
+              (st/emit! (->> (assoc metadata :grid-color color)
+                             (udp/update-metadata (:id page)))))
+            (on-color-change [event]
+              (let [value (dom/event->value event)]
+                (change-color value)))
+
             (show-color-picker [event]
               (let [x (.-clientX event)
                     y (.-clientY event)
-                    opts {:x x :y y
-                          :transparent? true
-                          :default "#cccccc"
-                          :attr :grid-color}]
-                (udl/open! :workspace/page-colorpicker opts)))]
+                    props {:x x :y y
+                           :transparent? true
+                           :default "#cccccc"
+                           :attr :grid-color
+                           :on-change change-color}]
+                (modal/show! colorpicker-modal props)))]
       [:div.element-set
        [:div.element-set-title (:name menu)]
        [:div.element-set-content
@@ -141,14 +132,12 @@
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
-            :ref "x-axis"
             :value (:grid-x-axis metadata)
             :on-change on-x-change
             :placeholder "x"}]]
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
-            :ref "y-axis"
             :value (:grid-y-axis metadata)
             :on-change on-y-change
             :placeholder "y"}]]]
@@ -160,5 +149,4 @@
          [:div.color-info
           [:input
            {:on-change on-color-change
-            :ref "color"
             :value (:grid-color metadata "#cccccc")}]]]]])))

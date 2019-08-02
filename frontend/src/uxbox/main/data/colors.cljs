@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.colors
   (:require
@@ -23,25 +23,14 @@
 (declare persist-collections)
 (declare collections-fetched?)
 
-(defrecord Initialize [type id]
+(defrecord Initialize []
   ptk/UpdateEvent
   (update [_ state]
-    (let [type (or type :own)
-          data {:type type
-                :id id
-                :selected #{}}]
-      (-> state
-          (assoc-in [:dashboard :colors] data)
-          (assoc-in [:dashboard :section] :dashboard/colors))))
-
-  ptk/WatchEvent
-  (watch [_ state s]
-    (rx/of (fetch-collections))))
+    (assoc-in state [:dashboard :colors] {:selected #{}})))
 
 (defn initialize
-  [type id]
-  (prn "colors$initialize" type id)
-  (Initialize. type id))
+  []
+  (Initialize.))
 
 ;; --- Collections Fetched
 
@@ -142,9 +131,7 @@
 
   ptk/WatchEvent
   (watch [_ state s]
-    (let [type (get-in state [:dashboard :colors :type])]
-      (rx/of (persist-collections)
-             (rt/nav :dashboard/colors nil {:type type})))))
+    (rx/of (persist-collections))))
 
 (defn delete-collection
   [id]
@@ -152,20 +139,19 @@
 
 ;; --- Replace Color
 
-(defrecord ReplaceColor [id from to]
+(defrecord AddColor [coll-id color]
   ptk/UpdateEvent
   (update [_ state]
-    (let [replacer #(-> (disj % from) (conj to))]
-      (update-in state [:colors-collections id :colors] (fnil replacer #{}))))
+    (update-in state [:colors-collections coll-id :colors] set/union #{color}))
 
   ptk/WatchEvent
   (watch [_ state s]
     (rx/of (persist-collections))))
 
-(defn replace-color
+(defn add-color
   "Add or replace color in a collection."
-  [{:keys [id from to] :as params}]
-  (ReplaceColor. id from to))
+  [coll-id color]
+  (AddColor. coll-id color))
 
 ;; --- Remove Color
 
@@ -247,15 +233,17 @@
          (or (uuid? to) (nil? to))]}
   (MoveSelected. from to))
 
-;; --- Delete Selected Colors
+;; --- Delete Colors
 
-(defrecord DeleteSelectedColors []
+(defrecord DeleteColors [coll-id colors]
+  ptk/UpdateEvent
+  (update [_ state]
+    (assoc-in state [:dashboard :colors :selected] #{}))
+
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [{:keys [id selected]} (get-in state [:dashboard :colors])]
-      (rx/of (remove-colors id selected)
-             #(assoc-in % [:dashboard :colors :selected] #{})))))
+    (rx/of (remove-colors coll-id colors))))
 
-(defn delete-selected-colors
-  []
-  (DeleteSelectedColors.))
+(defn delete-colors
+  [coll-id colors]
+  (DeleteColors. coll-id colors))

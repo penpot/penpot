@@ -8,8 +8,8 @@
 (ns uxbox.main.ui.workspace.sidebar.options
   (:require
    [lentes.core :as l]
-   [potok.core :as ptk]
-   [rumext.core :as mx :include-macros true]
+   [rumext.alpha :as mf]
+   [rumext.core :as mx]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.shapes :as uds]
    [uxbox.main.data.workspace :as udw]
@@ -27,20 +27,18 @@
    [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
    [uxbox.util.data :as data]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.router :as r]))
+   [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Constants
 
 (def ^:private +menus-map+
-  {:icon [::icon-measures ::fill ::stroke ::interactions]
-   :rect [::rect-measures ::fill ::stroke ::interactions]
-   :path [::fill ::stroke ::interactions]
-   :circle [::circle-measures ::fill ::stroke ::interactions]
-   :text [::fill ::text ::interactions]
-   :image [::image-measures ::interactions]
-   :group [::fill ::stroke ::interactions]
-   ::page [::page-measures ::page-grid-options]})
+  {:icon   [::icon-measures ::fill ::stroke]
+   :rect   [::rect-measures ::fill ::stroke]
+   :path   [::fill ::stroke ::interactions]
+   :circle [::circle-measures ::fill ::stroke]
+   :text   [::fill ::text]
+   :image  [::image-measures]
+   ::page  [::page-measures ::page-grid-options]})
 
 (def ^:private +menus+
   [{:name "Size, position & rotation"
@@ -89,45 +87,37 @@
 
 ;; --- Options
 
-(mx/defcs options
-  {:mixins [mx/static (mx/local)]
-   :key-fn #(pr-str (:id %1))}
-  [{:keys [::mx/local] :as own} shape]
-  (let [menus (get +menus-map+ (:type shape ::page))
-        contained-in? (into #{} menus)
-        active (:menu @local (first menus))]
-    [:div {}
-     (when (> (count menus) 1)
-       [:ul.element-icons {}
-        (for [menu-id (get +menus-map+ (:type shape ::page))]
-          (let [menu (get +menus-by-id+ menu-id)
-                selected? (= active menu-id)]
-            [:li#e-info {:on-click #(swap! local assoc :menu menu-id)
-                         :key (str "menu-" (:id menu))
-                         :class (when selected? "selected")}
-             (:icon menu)]))])
-     (when-let [menu (get +menus-by-id+ active)]
-       ((:comp menu) menu shape))]))
+(mf/defc shape-options
+  [{:keys [sid] :as props}]
+  (let [shape-iref (mf/use-memo {:deps sid
+                                 :init #(-> (l/in [:shapes sid])
+                                            (l/derive st/state))})
+        shape (mf/deref shape-iref)
+        menus (get +menus-map+ (:type shape))]
+    [:div
+     (for [mid menus]
+       (let [{:keys [comp] :as menu} (get +menus-by-id+ mid)]
+         [:& comp {:menu menu :shape shape :key mid}]))]))
 
-(def selected-shape-ref
-  (letfn [(getter [state]
-            (let [selected (get-in state [:workspace :selected])]
-              (when (= 1 (count selected))
-                (get-in state [:shapes (first selected)]))))]
-    (-> (l/lens getter)
-        (l/derive st/state))))
+(mf/defc page-options
+  [{:keys [page] :as props}]
+  (let [menus (get +menus-map+ ::page)]
+    [:div
+     (for [mid menus]
+       (let [{:keys [comp] :as menu} (get +menus-by-id+ mid)]
+         [:& comp {:menu menu :page page :key mid}]))]))
 
-(mx/defc options-toolbox
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [shape (->> (mx/react selected-shape-ref)
-                   (merge shape-default-attrs))
-        close #(st/emit! (udw/toggle-flag :element-options))]
-    [:div.elementa-options.tool-window {}
-     [:div.tool-window-bar {}
-      [:div.tool-window-icon {} i/options]
-      [:span {} (tr "ds.element-options")]
+(mf/defc options-toolbox
+  {:wrap [mf/wrap-memo]}
+  [{:keys [page selected] :as props}]
+  (let [close #(st/emit! (udw/toggle-flag :element-options))]
+    [:div.elementa-options.tool-window
+     [:div.tool-window-bar
+      [:div.tool-window-icon i/options]
+      [:span (tr "ds.element-options")]
       [:div.tool-window-close {:on-click close} i/close]]
-     [:div.tool-window-content {}
-      [:div.element-options {}
-       (options shape)]]]))
+     [:div.tool-window-content
+      [:div.element-options
+       (if (= (count selected) 1)
+         [:& shape-options {:sid (first selected)}]
+         [:& page-options {:page page}])]]]))

@@ -7,8 +7,7 @@
 
 (ns uxbox.main.ui.workspace.sidebar.options.interactions
   (:require
-   [lentes.core :as l]
-   [rumext.core :as mx :include-macros true]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.lightbox :as udl]
    [uxbox.main.data.shapes :as uds]
@@ -19,7 +18,6 @@
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.router :as r]
    [uxbox.util.spec :refer [color?]]))
 
 ;; --- Helpers
@@ -53,11 +51,11 @@
     ;; :holdrelease "Hold release"
     (pr-str trigger)))
 
-(mx/defc interactions-list
-  [shape form-ref]
+(mf/defc interactions-list
+  [{:keys [shape form] :as props}]
   (letfn [(on-edit [item event]
             (dom/prevent-default event)
-            (reset! form-ref item))
+            (reset! form item))
           (delete [item]
             (let [sid (:id shape)
                   id (:id item)]
@@ -78,16 +76,17 @@
 
 ;; --- Trigger Input
 
-(mx/defc trigger-input
-  [form-ref]
-  (when-not (:trigger @form-ref)
-    (swap! form-ref assoc :trigger :click))
+(mf/defc trigger-input
+  [{:keys [form] :as props}]
+  ;; (mf/use-effect
+  ;;  {:init #(when-not (:trigger @form) (swap! form assoc :trigger :click))
+  ;;   :deps true})
   [:div
    [:span "Trigger"]
    [:div.row-flex
     [:select.input-select {:placeholder "Choose a trigger"
-                           :on-change (partial on-change form-ref :trigger)
-                           :value (pr-str (:trigger @form-ref))}
+                           :on-change (partial on-change form :trigger)
+                           :value (pr-str (:trigger @form))}
      [:option {:value ":click"} "Click"]
      [:option {:value ":doubleclick"} "Double-click"]
      [:option {:value ":rightclick"} "Right-click"]
@@ -105,15 +104,15 @@
 
 ;; --- URL Input
 
-(mx/defc url-input
-  [form-ref]
+(mf/defc url-input
+  [form]
   [:div
    [:span "Url"]
    [:div.row-flex
     [:input.input-text
      {:placeholder "http://"
-      :on-change (partial on-change form-ref :url)
-      :value (:url @form-ref "")
+      :on-change (partial on-change form :url)
+      :value (:url @form "")
       :type "url"}]]])
 
 ;; --- Elements Input
@@ -129,16 +128,16 @@
                   (conj acc shape))))]
       (reduce resolve-shape [] shapes))))
 
-(mx/defc elements-input
-  [page form-ref]
-  (let [shapes (collect-shapes @st/state page)]
+(mf/defc elements-input
+  [{:keys [page-id form] :as props}]
+  (let [shapes (collect-shapes @st/state page-id)]
     [:div
      [:span "Element"]
      [:div.row-flex
       [:select.input-select
        {:placeholder "Choose an element"
-        :on-change (partial on-change form-ref :element)
-        :value (pr-str (:element @form-ref))}
+        :on-change (partial on-change form :element)
+        :value (pr-str (:element @form))}
        [:option {:value "nil"} "---"]
        (for [shape shapes
              :let [key (pr-str (:id shape))]]
@@ -146,11 +145,10 @@
 
 ;; --- Page Input
 
-(mx/defc pages-input
-  {:mixins [mx/reactive]}
+(mf/defc pages-input
   [form-ref path]
   ;; FIXME: react on ref
-  (let [pages (mx/react refs/selected-project-pages)]
+  #_(let [pages (mx/react refs/selected-project-pages)]
     (when (and (not (:page @form-ref))
                (pos? (count pages)))
       (swap! form-ref assoc :page (:id (first pages))))
@@ -166,124 +164,124 @@
 
 ;; --- Animation
 
-(mx/defc animation-input
-  [form-ref]
-  (when-not (:action @form-ref)
-    (swap! form-ref assoc :animation :none))
+(mf/defc animation-input
+  [{:keys [form] :as props}]
+  (when-not (:action @form)
+    (swap! form assoc :animation :none))
   [:div
    [:span "Animation"]
    [:div.row-flex
     [:select.input-select
      {:placeholder "Animation"
-      :on-change (partial on-change form-ref :animation)
-      :value (pr-str (:animation @form-ref))}
+      :on-change (partial on-change form :animation)
+      :value (pr-str (:animation @form))}
      [:option {:value ":none"} "None"]
      [:option {:value ":fade"} "Fade"]
      [:option {:value ":slide"} "Slide"]]]])
 
 ;; --- MoveTo Input
 
-(mx/defc moveto-input
-  [form-ref]
-  (when-not (:moveto-x @form-ref)
-    (swap! form-ref assoc :moveto-x 0))
-  (when-not (:moveto-y @form-ref)
-    (swap! form-ref assoc :moveto-y 0))
+(mf/defc moveto-input
+  [{:keys [form] :as props}]
+  (when-not (:moveto-x @form)
+    (swap! form assoc :moveto-x 0))
+  (when-not (:moveto-y @form)
+    (swap! form assoc :moveto-y 0))
   [:div
    [:span "Move to position"]
    [:div.row-flex
     [:div.input-element.pixels
      [:input.input-text
       {:placeholder "X"
-       :on-change (partial on-change form-ref :moveto-x)
+       :on-change (partial on-change form :moveto-x)
        :type "number"
-       :value (:moveto-x @form-ref "")}]]
+       :value (:moveto-x @form "")}]]
     [:div.input-element.pixels
      [:input.input-text
       {:placeholder "Y"
-       :on-change (partial on-change form-ref :moveto-y)
+       :on-change (partial on-change form :moveto-y)
        :type "number"
-       :value (:moveto-y @form-ref "")}]]]])
+       :value (:moveto-y @form "")}]]]])
 
 ;; --- MoveBy Input
 
-(mx/defc moveby-input
-  [form-ref]
-  (when-not (:moveby-x @form-ref)
-    (swap! form-ref assoc :moveby-x 0))
-  (when-not (:moveby-y @form-ref)
-    (swap! form-ref assoc :moveby-y 0))
+(mf/defc moveby-input
+  [{:keys [form] :as props}]
+  (when-not (:moveby-x @form)
+    (swap! form assoc :moveby-x 0))
+  (when-not (:moveby-y @form)
+    (swap! form assoc :moveby-y 0))
   [:div
    [:span "Move to position"]
    [:div.row-flex
     [:div.input-element.pixels
      [:input.input-text
       {:placeholder "X"
-       :on-change (partial on-change form-ref :moveby-x)
+       :on-change (partial on-change form :moveby-x)
        :type "number"
-       :value (:moveby-x @form-ref "")}]]
+       :value (:moveby-x @form "")}]]
     [:div.input-element.pixels
      [:input.input-text
       {:placeholder "Y"
-       :on-change (partial on-change form-ref :moveby-y)
+       :on-change (partial on-change form :moveby-y)
        :type "number"
-       :value (:moveby-y @form-ref "")}]]]])
+       :value (:moveby-y @form "")}]]]])
 
 ;; --- Opacity Input
 
-(mx/defc opacity-input
-  [form-ref]
-  (when-not (:opacity @form-ref)
-    (swap! form-ref assoc :opacity 100))
+(mf/defc opacity-input
+  [{:keys [form] :as props}]
+  (when-not (:opacity @form)
+    (swap! form assoc :opacity 100))
   [:div
    [:span "Opacity"]
    [:div.row-flex
     [:div.input-element.percentail
      [:input.input-text
       {:placeholder "%"
-       :on-change (partial on-change form-ref :opacity)
+       :on-change (partial on-change form :opacity)
        :min "0"
        :max "100"
        :type "number"
-       :value (:opacity @form-ref "")}]]]])
+       :value (:opacity @form "")}]]]])
 
 ;; --- Rotate Input
 
-(mx/defc rotate-input
-  [form-ref]
-  [:div
-   [:span "Rotate (dg)"]
-   [:div.row-flex
-    [:div.input-element.degrees
-     [:input.input-text
-      {:placeholder "dg"
-       :on-change (partial on-change form-ref :rotation)
-       :type "number"
-       :value (:rotation @form-ref "")}]]]])
+;; (mx/defc rotate-input
+;;   [form]
+;;   [:div
+;;    [:span "Rotate (dg)"]
+;;    [:div.row-flex
+;;     [:div.input-element.degrees
+;;      [:input.input-text
+;;       {:placeholder "dg"
+;;        :on-change (partial on-change form :rotation)
+;;        :type "number"
+;;        :value (:rotation @form "")}]]]])
 
 ;; --- Resize Input
 
-(mx/defc resize-input
-  [form-ref]
+(mf/defc resize-input
+  [{:keys [form] :as props}]
   [:div
    [:span "Resize"]
    [:div.row-flex
     [:div.input-element.pixels
      [:input.input-text
       {:placeholder "Width"
-       :on-change (partial on-change form-ref :resize-width)
+       :on-change (partial on-change form :resize-width)
        :type "number"
-       :value (:resize-width @form-ref "")}]]
+       :value (:resize-width @form "")}]]
     [:div.input-element.pixels
      [:input.input-text
       {:placeholder "Height"
-       :on-change (partial on-change form-ref :resize-height)
+       :on-change (partial on-change form :resize-height)
        :type "number"
-       :value (:resize-height @form-ref "")}]]]])
+       :value (:resize-height @form "")}]]]])
 
 ;; --- Color Input
 
-(mx/defc colorpicker
+(mf/defc colorpicker
   [{:keys [x y on-change value]}]
   (let [left (- x 260)
         top (- y 50)]
@@ -300,14 +298,14 @@
   [params]
   (colorpicker params))
 
-(mx/defc color-input
-  [form-ref]
-  (when-not (:fill-color @form-ref)
-    (swap! form-ref assoc :fill-color "#000000"))
-  (when-not (:stroke-color @form-ref)
-    (swap! form-ref assoc :stroke-color "#000000"))
+(mf/defc color-input
+  [{:keys [form] :as props}]
+  (when-not (:fill-color @form)
+    (swap! form assoc :fill-color "#000000"))
+  (when-not (:stroke-color @form)
+    (swap! form assoc :stroke-color "#000000"))
   (letfn [(on-change [attr color]
-            (swap! form-ref assoc attr color))
+            (swap! form assoc attr color))
           (on-change-fill-color [event]
             (let [value (dom/event->value event)]
               (when (color? value)
@@ -321,11 +319,11 @@
                   y (.-clientY event)
                   opts {:x x :y y
                         :on-change (partial on-change attr)
-                        :value (get @form-ref attr)
+                        :value (get @form attr)
                         :transparent? true}]
               (udl/open! :interactions/colorpicker opts)))]
-    (let [stroke-color (:stroke-color @form-ref)
-          fill-color (:fill-color @form-ref)]
+    (let [stroke-color (:stroke-color @form)
+          fill-color (:fill-color @form)]
       [:div
        [:div.row-flex
         [:div.column-half
@@ -351,17 +349,17 @@
 
 ;; --- Easing Input
 
-(mx/defc easing-input
-  [form-ref]
-  (when-not (:easing @form-ref)
-    (swap! form-ref assoc :easing :linear))
+(mf/defc easing-input
+  [{:keys [form] :as props}]
+  (when-not (:easing @form)
+    (swap! form assoc :easing :linear))
   [:div
    [:span "Easing"]
    [:div.row-flex
     [:select.input-select
      {:placeholder "Easing"
-      :on-change (partial on-change form-ref :easing)
-      :value (pr-str (:easing @form-ref))}
+      :on-change (partial on-change form :easing)
+      :value (pr-str (:easing @form))}
      [:option {:value ":linear"} "Linear"]
      [:option {:value ":easein"} "Ease in"]
      [:option {:value ":easeout"} "Ease out"]
@@ -369,12 +367,12 @@
 
 ;; --- Duration Input
 
-(mx/defc duration-input
-  [form-ref]
-  (when-not (:duration @form-ref)
-    (swap! form-ref assoc :duration 300))
-  (when-not (:delay @form-ref)
-    (swap! form-ref assoc :delay 0))
+(mf/defc duration-input
+  [{:keys [form] :as props}]
+  (when-not (:duration @form)
+    (swap! form assoc :duration 300))
+  (when-not (:delay @form)
+    (swap! form assoc :delay 0))
   [:div
    [:span "Duration  |  Delay"]
    [:div.row-flex
@@ -382,21 +380,21 @@
      [:input.input-text
       {:placeholder "Duration"
        :type "number"
-       :on-change (partial on-change form-ref :duration)
-       :value (pr-str (:duration @form-ref))}]]
+       :on-change (partial on-change form :duration)
+       :value (pr-str (:duration @form))}]]
     [:div.input-element.miliseconds
      [:input.input-text {:placeholder "Delay"
                          :type "number"
-                         :on-change (partial on-change form-ref :delay)
-                         :value (pr-str (:delay @form-ref))}]]]])
+                         :on-change (partial on-change form :delay)
+                         :value (pr-str (:delay @form))}]]]])
 
 ;; --- Action Input
 
-(mx/defc action-input
-  [page form-ref]
-  (when-not (:action @form-ref)
-    (swap! form-ref assoc :action :show))
-  (let [form @form-ref
+(mf/defc action-input
+  [{:keys [shape form] :as props}]
+  ;; (when-not (:action @form)
+  ;;   (swap! form assoc :action :show))
+  (let [form-data (deref form)
         simple? #{:gotourl :gotopage}
         elements? (complement simple?)
         animation? #{:show :hide :toggle}
@@ -406,8 +404,8 @@
      [:div.row-flex
       [:select.input-select
        {:placeholder "Choose an action"
-        :on-change (partial on-change form-ref :action [:trigger])
-        :value (pr-str (:action form))}
+        :on-change (partial on-change form :action [:trigger])
+        :value (pr-str (:action form-data))}
        [:option {:value ":show"} "Show"]
        [:option {:value ":hide"} "Hide"]
        [:option {:value ":toggle"} "Toggle"]
@@ -422,47 +420,49 @@
        #_[:option {:value ":goback"} "Go back"]
        [:option {:value ":scrolltoelement"} "Scroll to element"]]]
 
-     (case (:action form)
-       :gotourl (url-input form-ref)
-       :gotopage (pages-input form-ref)
-       :color (color-input form-ref)
-       ;; :rotate (rotate-input form-ref)
-       :size (resize-input form-ref)
-       :moveto (moveto-input form-ref)
-       :moveby (moveby-input form-ref)
-       :opacity (opacity-input form-ref)
+     (case (:action form-data)
+       :gotourl   [:& url-input {:form form}]
+       ;; :gotopage (pages-input form)
+       :color     [:& color-input {:form form}]
+       ;; :rotate (rotate-input form)
+       :size      [:& resize-input {:form form}]
+       :moveto    [:& moveto-input {:form form}]
+       :moveby    [:& moveby-input {:form form}]
+       :opacity   [:& opacity-input {:form form}]
        nil)
 
-     (when (elements? (:action form))
-       (elements-input page form-ref))
+     (when (elements? (:action form-data))
+       [:& elements-input {:page-id (:page shape)
+                           :form form}])
 
-     (when (and (animation? (:action form))
-                (:element @form-ref))
-       (animation-input form-ref))
+     (when (and (animation? (:action form-data))
+                (:element form-data))
+       [:& animation-input {:form form}])
 
-     (when (or (not= (:animation form :none) :none)
-               (and (only-easing? (:action form))
-                    (:element form)))
-       (list (easing-input form-ref)
-             (duration-input form-ref)))
-     ]))
+     (when (or (not= (:animation form-data :none) :none)
+               (and (only-easing? (:action form-data))
+                    (:element form-data)))
+       [:*
+        [:& easing-input {:form form}]
+        [:& duration-input {:form form}]])]))
+
 
 ;; --- Form
 
-(mx/defc interactions-form
-  [shape form-ref]
+(mf/defc interactions-form
+  [{:keys [shape form] :as props}]
   (letfn [(on-submit [event]
             (dom/prevent-default event)
-            (let [shape-id (:id shape)
-                  data (deref form-ref)]
-              (st/emit! (uds/update-interaction shape-id data))
-              (reset! form-ref nil)))
+            (let [sid (:id shape)
+                  data (deref form)]
+              (st/emit! (uds/update-interaction sid data))
+              (reset! form nil)))
           (on-cancel [event]
             (dom/prevent-default event)
-            (reset! form-ref nil))]
+            (reset! form nil))]
     [:form {:on-submit on-submit}
-     (trigger-input form-ref)
-     (action-input (:page shape) form-ref)
+     [:& trigger-input {:form form}]
+     [:& action-input {:shape shape :form form}]
      [:div.row-flex
       [:input.btn-primary.btn-small.save-btn
         {:value "Save" :type "submit"}]
@@ -471,23 +471,24 @@
 
 ;; --- Interactions Menu
 
-(mx/defcs interactions-menu
-  {:mixins [mx/static (mx/local)]}
-  [own menu shape]
-  (let [local (::mx/local own)
-        form-ref (l/derive (l/key :form) local)
-        interactions (:interactions shape)
-        create-interaction #(reset! form-ref {})]
+(def +initial-form+
+  {:trigger :click
+   :action :show})
+
+(mf/defc interactions-menu
+  [{:keys [menu shape] :as props}]
+  (let [form (mf/use-state nil)
+        interactions (:interactions shape)]
     [:div.element-set {:key (str (:id menu))}
      [:div.element-set-title (:name menu)]
      [:div.element-set-content
-      (if @form-ref
-        (interactions-form shape form-ref)
+      (if form
+        [:& interactions-form {:form form :shape shape}]
         [:div
-         (interactions-list shape form-ref)
+         [:& interactions-list {:form form :shape shape}]
          [:input.btn-primary.btn-small
           {:value "New interaction"
-           :on-click create-interaction
+           :on-click #(reset! form +initial-form+)
            :type "button"}]])]]))
 
 ;; --- Not implemented stuff

@@ -19,11 +19,9 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.auth :as auth]
    [uxbox.main.ui.dashboard :as dashboard]
-   [uxbox.main.ui.lightbox :refer [lightbox]]
-   [uxbox.main.ui.loader :refer [loader]]
    [uxbox.main.ui.settings :as settings]
    [uxbox.main.ui.shapes]
-   [uxbox.main.ui.workspace :refer [workspace]]
+   [uxbox.main.ui.workspace :refer [workspace-page]]
    [uxbox.util.data :refer [parse-int uuid-str?]]
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
@@ -106,18 +104,20 @@
         (:settings/profile
          :settings/password
          :settings/notifications)
-        (mf/element settings/settings {:route route})
+        (mf/element settings/settings #js {:route route})
 
         (:dashboard/projects
          :dashboard/icons
          :dashboard/images
          :dashboard/colors)
-        (mf/element dashboard/dashboard {:route route})
+        (mf/element dashboard/dashboard #js {:route route})
 
         :workspace/page
-        (let [project (uuid (get-in route [:params :path :project]))
-              page (uuid (get-in route [:params :path :page]))]
-          [:& workspace {:project project :page page :key page}])
+        (let [project-id (uuid (get-in route [:params :path :project]))
+              page-id (uuid (get-in route [:params :path :page]))]
+          [:& workspace-page {:project-id project-id
+                              :page-id page-id
+                              :key page-id}])
 
         nil
         ))))

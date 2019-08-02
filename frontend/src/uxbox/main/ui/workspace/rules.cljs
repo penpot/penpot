@@ -100,65 +100,57 @@
 
 ;; --- Horizontal Rule Ticks (Component)
 
-(mf/def horizontal-rule-ticks
-  :mixins #{mf/memo}
-  :render
-  (fn [own zoom]
-    (let [zoom (or zoom 1)
-          path (reduce (partial make-vertical-tick zoom) [] +ticks+)]
-      [:g
-       [:path {:d (str/join " " path)}]
-       (for [tick +ticks+]
-         [:& horizontal-text-label {:zoom zoom :value tick :key tick}])])))
+(mf/defc horizontal-rule-ticks
+  {:wrap [mf/wrap-memo]}
+  [{:keys [zoom]}]
+  (let [zoom (or zoom 1)
+        path (reduce (partial make-vertical-tick zoom) [] +ticks+)]
+    [:g
+     [:path {:d (str/join " " path)}]
+     (for [tick +ticks+]
+       [:& horizontal-text-label {:zoom zoom :value tick :key tick}])]))
 
 ;; --- Vertical Rule Ticks (Component)
 
-(mf/def vertical-rule-ticks
-  :mixins #{mf/memo}
-  :render
-  (fn [own zoom]
-    (let [zoom (or zoom 1)
-          path (reduce (partial make-horizontal-tick zoom) [] +ticks+)]
-      [:g
-       [:path {:d (str/join " " path)}]
-       (for [tick +ticks+]
-         [:& vertical-text-label {:zoom zoom :value tick :key tick}])])))
+(mf/defc vertical-rule-ticks
+  {:wrap [mf/wrap-memo]}
+  [{:keys [zoom]}]
+  (let [zoom (or zoom 1)
+        path (reduce (partial make-horizontal-tick zoom) [] +ticks+)]
+    [:g
+     [:path {:d (str/join " " path)}]
+     (for [tick +ticks+]
+       [:& vertical-text-label {:zoom zoom :value tick :key tick}])]))
 
 ;; --- Horizontal Rule (Component)
 
-(mf/def horizontal-rule
-  :mixins #{mf/memo mf/reactive}
-  :render
-  (fn [own props]
-    (let [scroll (mf/react refs/workspace-scroll)
-          zoom (mf/react refs/selected-zoom)
-          scroll-x (:x scroll)
-          translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
-      [:svg.horizontal-rule
-       {:width c/viewport-width
-        :height 20}
-       [:rect {:height 20
-               :width c/viewport-width}]
-       [:g {:transform (str "translate(" translate-x ", 0)")}
-        (horizontal-rule-ticks zoom)]])))
+(mf/defc horizontal-rule
+  [{:keys [zoom] :as props}]
+  (let [scroll (mf/deref refs/workspace-scroll)
+        scroll-x (:x scroll)
+        translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
+    [:svg.horizontal-rule
+     {:width c/viewport-width
+      :height 20}
+     [:rect {:height 20
+             :width c/viewport-width}]
+     [:g {:transform (str "translate(" translate-x ", 0)")}
+      [:& horizontal-rule-ticks {:zoom zoom}]]]))
 
 ;; --- Vertical Rule (Component)
 
-(mf/def vertical-rule
-  :mixins #{mf/memo mf/reactive}
-  :render
-  (fn [own props]
-    (let [scroll (mf/react refs/workspace-scroll)
-          zoom (mf/react refs/selected-zoom)
-          scroll-y (:y scroll)
-          translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
-      [:svg.vertical-rule
-       {:width 20
-        :height c/viewport-height}
+(mf/defc vertical-rule
+  [{:keys [zoom] :as props}]
+  (let [scroll (mf/deref refs/workspace-scroll)
+        scroll-y (:y scroll)
+        translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
+    [:svg.vertical-rule
+     {:width 20
+      :height c/viewport-height}
 
-       [:g {:transform (str  "translate(0, " translate-y ")")}
-        (vertical-rule-ticks zoom)]
-       [:rect {:x 0
-               :y 0
-               :height 20
-               :width 20}]])))
+     [:g {:transform (str  "translate(0, " translate-y ")")}
+      [:& vertical-rule-ticks {:zoom zoom}]]
+     [:rect {:x 0
+             :y 0
+             :height 20
+             :width 20}]]))

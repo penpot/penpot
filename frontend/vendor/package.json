@@ -1,0 +1,34 @@
+{
+  "name": "uxbox-vendor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "NODE_ENV=production rollup -c",
+    "minify:react-color": "terser react-color/react-color.bundle.js -c -m -o react-color/react-color.bundle.min.js",
+    "minify:datefns": "terser datefns/datefns.bundle.js -c -m -o datefns/datefns.bundle.min.js",
+    "dist": "npm run build && npm run minify:react-color && npm run minify:datefns"
+  },
+  "author": "",
+  "license": "MPL2",
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.4",
+    "@babel/plugin-proposal-class-properties": "^7.5.5",
+    "@babel/plugin-proposal-export-default-from": "^7.5.2",
+    "@babel/preset-env": "^7.4.4",
+    "@babel/preset-react": "^7.0.0",
+    "rollup": "^1.12.3",
+    "rollup-plugin-babel": "^4.3.2",
+    "rollup-plugin-commonjs": "^10.0.0",
+    "rollup-plugin-node-builtins": "^2.1.2",
+    "rollup-plugin-node-globals": "^1.4.0",
+    "rollup-plugin-node-resolve": "^5.0.0",
+    "terser": "^4.1.2"
+  },
+  "dependencies": {
+    "date-fns": "^1.30.1",
+    "react-color": "^2.17.3",
+    "snapsvg": "^0.5.1"
+  }
+}

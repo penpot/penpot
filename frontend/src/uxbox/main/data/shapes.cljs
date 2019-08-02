@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.shapes
-  (:require [cljs.spec.alpha :as s :include-macros true]
+  (:require [cljs.spec.alpha :as s]
             [lentes.core :as l]
             [beicon.core :as rx]
             [potok.core :as ptk]
@@ -55,6 +55,14 @@
 (s/def ::y1 number?)
 (s/def ::x2 number?)
 (s/def ::y2 number?)
+(s/def ::id uuid?)
+(s/def ::page uuid?)
+(s/def ::type #{:rect
+                :group
+                :path
+                :circle
+                :image
+                :text})
 
 (s/def ::attributes
   (s/keys :opt-un [::fill-color
@@ -80,23 +88,11 @@
                    ::blocked
                    ::locked]))
 
-(s/def ::id uuid?)
-(s/def ::page uuid?)
-(s/def ::type #{:rect
-                :group
-                :path
-                :circle
-                :image
-                :text})
-
 (s/def ::shape
   (s/merge (s/keys ::req-un [::id ::page ::type]) ::attributes))
 
 (s/def ::rect-like-shape
   (s/keys :req-un [::x1 ::y1 ::x2 ::y2 ::type]))
-
-(s/def ::direction #{:up :down :right :left})
-(s/def ::speed #{:std :fast})
 
 ;; --- Shapes CRUD
 
@@ -105,8 +101,8 @@
   ptk/UpdateEvent
   (update [_ state]
     (let [shape (geom/setup-proportions data)
-          page (get-in state [:workspace :page])]
-      (impl/assoc-shape-to-page state shape page))))
+          page-id (get-in state [:workspace :current])]
+      (impl/assoc-shape-to-page state shape page-id))))
 
 (defn add-shape
   [data]
@@ -140,31 +136,6 @@
   [id name]
   {:pre [(uuid? id) (string? name)]}
   (RenameShape. id name))
-
-;; --- Shape Transformations
-
-(def ^:private canvas-coords
-  (gpt/point c/canvas-start-x
-             c/canvas-start-y))
-
-(declare apply-temporal-displacement)
-
-(deftype InitialShapeAlign [id]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [{:keys [x1 y1] :as shape} (->> (get-in state [:shapes id])
-                                         (geom/shape->rect-shape state))
-          point1 (gpt/point x1 y1)
-          point2 (gpt/add point1 canvas-coords)]
-      (->> (uwrk/align-point point2)
-           (rx/map #(gpt/subtract % canvas-coords))
-           (rx/map (fn [{:keys [x y] :as pt}]
-                     (apply-temporal-displacement id (gpt/subtract pt point1))))))))
-
-(defn initial-shape-align
-  [id]
-  {:pre [(uuid? id)]}
-  (InitialShapeAlign. id))
 
 ;; --- Update Rotation
 
@@ -201,69 +172,6 @@
   {:pre [(uuid? id) (us/valid? ::update-dimensions-opts opts)]}
   (UpdateDimensions. id opts))
 
-;; --- Apply Temporal Displacement
-
-(deftype ApplyTemporalDisplacement [id delta]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [prev (get-in state [:workspace :modifiers id :displacement] (gmt/matrix))
-          curr (gmt/translate prev delta)]
-      (assoc-in state [:workspace :modifiers id :displacement] curr))))
-
-(defn apply-temporal-displacement
-  [id pt]
-  {:pre [(uuid? id) (gpt/point? pt)]}
-  (ApplyTemporalDisplacement. id pt))
-
-;; --- Apply Displacement
-
-(deftype ApplyDisplacement [id]
-  udp/IPageUpdate
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [displacement (get-in state [:workspace :modifiers id :displacement])]
-      (if (gmt/matrix? displacement)
-        (rx/of #(impl/materialize-xfmt % id displacement)
-               #(update-in % [:workspace :modifiers id] dissoc :displacement)
-               ::udp/page-update)
-        (rx/empty)))))
-
-(defn apply-displacement
-  [id]
-  {:pre [(uuid? id)]}
-  (ApplyDisplacement. id))
-
-;; --- Apply Temporal Resize Matrix
-
-(deftype ApplyTemporalResize [id xfmt]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:workspace :modifiers id :resize] xfmt)))
-
-(defn apply-temporal-resize
-  "Attach temporal resize transformation to the shape."
-  [id xfmt]
-  {:pre [(gmt/matrix? xfmt) (uuid? id)]}
-  (ApplyTemporalResize. id xfmt))
-
-;; --- Apply Resize Matrix
-
-(deftype ApplyResize [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [resize (get-in state [:workspace :modifiers id :resize])]
-      (if (gmt/matrix? resize)
-        (rx/of #(impl/materialize-xfmt % id resize)
-               #(update-in % [:workspace :modifiers id] dissoc :resize)
-               ::udp/page-update)
-        (rx/empty)))))
-
-(defn apply-resize
-  "Apply definitivelly the resize matrix transformation to the shape."
-  [id]
-  {:pre [(uuid? id)]}
-  (ApplyResize. id))
-
 ;; --- Update Shape Position
 
 (deftype UpdateShapePosition [id point]
@@ -294,7 +202,7 @@
 ;; --- Update Shape Attrs
 
 (declare UpdateAttrs)
-
+;; TODO: moved
 (deftype UpdateAttrs [id attrs]
   ptk/WatchEvent
   (watch [_ state stream]
@@ -496,52 +404,6 @@
          (keyword? loc)]}
   (DropShape. sid tid loc))
 
-;; --- Select First Shape
-
-(deftype SelectFirstShape []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [page (get-in state [:workspace :page])
-          id (first (get-in state [:pages page :shapes]))]
-      (assoc-in state [:workspace :selected] #{id}))))
-
-(defn select-first-shape
-  "Mark a shape selected for drawing in the canvas."
-  []
-  (SelectFirstShape.))
-
-;; --- Mark Shape Selected
-
-(deftype SelectShape [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [selected (get-in state [:workspace :selected])
-          state (if (contains? selected id)
-                  (update-in state [:workspace :selected] disj id)
-                  (update-in state [:workspace :selected] conj id))]
-      (update-in state [:workspace :flags] conj :element-options))))
-
-(defn select-shape
-  "Mark a shape selected for drawing in the canvas."
-  [id]
-  {:pre [(uuid? id)]}
-  (SelectShape. id))
-
-;; --- Select Shapes (By selrect)
-
-(deftype SelectShapesBySelrect [selrect]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [page (get-in state [:workspace :page])
-          shapes (impl/match-by-selrect state page selrect)]
-      (assoc-in state [:workspace :selected] shapes))))
-
-(defn select-shapes-by-selrect
-  "Select shapes that matches the select rect."
-  [selrect]
-  {:pre [(us/valid? ::rect-like-shape selrect)]}
-  (SelectShapesBySelrect. selrect))
-
 ;; --- Update Interaction
 
 (deftype UpdateInteraction [shape interaction]
@@ -582,6 +444,10 @@
   [id index delta]
   {:pre [(uuid? id) (number? index) (gpt/point? delta)]}
   (UpdatePath. id index delta))
+
+(def ^:private canvas-coords
+  (gpt/point c/canvas-start-x
+             c/canvas-start-y))
 
 (deftype InitialPathPointAlign [id index]
   ptk/WatchEvent
@@ -624,6 +490,7 @@
 
 ;; --- Events (implicit) (for selected)
 
+;; NOTE: moved to workspace
 (deftype DeselectAll []
   ptk/UpdateEvent
   (update [_ state]
@@ -684,91 +551,4 @@
   []
   (DuplicateSelected.))
 
-;; --- Delete Selected
 
-(deftype DeleteSelected []
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [selected (get-in state [:workspace :selected])]
-      (rx/from-coll
-       (into [(deselect-all)] (map #(delete-shape %) selected))))))
-
-(defn delete-selected
-  "Deselect all and remove all selected shapes."
-  []
-  (DeleteSelected.))
-
-(deftype UpdateSelectedShapesAttrs [attrs]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [xf (map #(update-attrs % attrs))]
-      (rx/from-coll (sequence xf (get-in state [:workspace :selected]))))))
-
-(defn update-selected-shapes-attrs
-  [attrs]
-  {:pre [(us/valid? ::attributes attrs)]}
-  (UpdateSelectedShapesAttrs. attrs))
-
-;; --- Move Selected Layer
-
-(deftype MoveSelectedLayer [loc]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [selected (get-in state [:workspace :selected])]
-      (impl/move-layer state selected loc))))
-
-(defn move-selected-layer
-  [loc]
-  {:pre [(us/valid? ::direction loc)]}
-  (MoveSelectedLayer. loc))
-
-;; --- Move Selected
-
-(defn- get-displacement
-  "Retrieve the correct displacement delta point for the
-  provided direction speed and distances thresholds."
-  [direction speed distance]
-  (case direction
-    :up (gpt/point 0 (- (get-in distance [speed :y])))
-    :down (gpt/point 0 (get-in distance [speed :y]))
-    :left (gpt/point (- (get-in distance [speed :x])) 0)
-    :right (gpt/point (get-in distance [speed :x]) 0)))
-
-(defn- get-displacement-distance
-  "Retrieve displacement distances thresholds for
-  defined displacement speeds."
-  [metadata align?]
-  (let [gx (:grid-x-axis metadata)
-        gy (:grid-y-axis metadata)]
-    {:std (gpt/point (if align? gx 1)
-                     (if align? gy 1))
-     :fast (gpt/point (if align? (* 3 gx) 10)
-                      (if align? (* 3 gy) 10))}))
-
-;; --- Move Selected
-
-;; Event used for apply displacement transformation
-;; to the selected shapes throught the keyboard shortcuts.
-
-(deftype MoveSelected [direction speed]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [{:keys [page selected]} (:workspace state)
-          align? (refs/alignment-activated? state)
-          metadata (merge c/page-metadata (get-in state [:pages page :metadata]))
-          distance (get-displacement-distance metadata align?)
-          displacement (get-displacement direction speed distance)]
-      (rx/concat
-       (when align?
-         (rx/concat
-          (rx/from-coll (map initial-shape-align selected))
-          (rx/from-coll (map apply-displacement selected))))
-       (rx/from-coll (map #(apply-temporal-displacement % displacement) selected))
-       (rx/from-coll (map apply-displacement selected))))))
-
-(defn move-selected
-  [direction speed]
-  {:pre [(us/valid? ::direction direction)
-         (us/valid? ::speed speed)]}
-  (MoveSelected. direction speed))

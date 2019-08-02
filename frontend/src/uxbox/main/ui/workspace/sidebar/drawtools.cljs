@@ -2,34 +2,20 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.workspace.sidebar.drawtools
-  (:require [lentes.core :as l]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.main.user-events :as uev]
-            [uxbox.builtins.icons :as i]
-            [uxbox.util.uuid :as uuid]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
-            [uxbox.util.data :refer (read-string)]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.dom :as dom]))
-
-;; --- Refs
-
-(def ^:private drawing-shape-id-ref
-  "A focused vision of the drawing property
-  of the workspace status. This avoids
-  rerender the whole toolbox on each workspace
-  change."
-  (-> (l/key :drawing-tool)
-      (l/derive refs/workspace)))
+  (:require
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.shapes :as uds]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace-drawing :as udwd]
+   [uxbox.main.store :as st]
+   [uxbox.main.user-events :as uev]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.uuid :as uuid]))
 
 ;; --- Constants
 
@@ -91,33 +77,32 @@
 
 ;; --- Draw Toolbox (Component)
 
-(mx/defc draw-toolbox
-  {:mixins [mx/static mx/reactive]}
-  [flags]
-  (let [drawing-tool (mx/react refs/selected-drawing-tool)
-        close #(st/emit! (udw/toggle-flag :drawtools))
+(mf/defc draw-toolbox
+  {:wrap [mf/wrap-memo]}
+  [{:keys [flags drawing-tool] :as props}]
+  (let [close #(st/emit! (udw/toggle-flag :drawtools))
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))
 
         select-drawtool #(st/emit! ::uev/interrupt
                                    (udw/deactivate-ruler)
-                                   (udw/select-for-drawing %))
-        toggle-ruler #(st/emit! (udw/select-for-drawing nil)
+                                   (udwd/select-for-drawing %))
+        toggle-ruler #(st/emit! (udwd/select-for-drawing nil)
                                 (uds/deselect-all)
                                 (udw/toggle-ruler))]
 
-    [:div#form-tools.tool-window.drawing-tools {}
-     [:div.tool-window-bar {}
-      [:div.tool-window-icon {} i/window]
-      [:span {} (tr "ds.draw-tools")]
+    [:div#form-tools.tool-window.drawing-tools
+     [:div.tool-window-bar
+      [:div.tool-window-icon i/window]
+      [:span (tr "ds.draw-tools")]
       [:div.tool-window-close {:on-click close} i/close]]
-     [:div.tool-window-content {}
+     [:div.tool-window-content
       (for [[i props] (map-indexed vector tools)]
         (let [selected? (= drawing-tool (:shape props))]
           [:div.tool-btn.tooltip.tooltip-hover
            {:alt (tr (:help props))
             :class (when selected? "selected")
-            :key (str i)
+            :key i
             :on-click (partial select-drawtool (:shape props))}
            (:icon props)]))
       [:div.tool-btn.tooltip.tooltip-hover

@@ -14,6 +14,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui :as ui]
    [uxbox.main.ui.lightbox :refer [lightbox]]
+   [uxbox.main.ui.modal :refer [modal]]
    [uxbox.main.ui.loader :refer [loader]]
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
@@ -70,6 +71,7 @@
 
     (mf/mount (ui/app) (dom/get-element "app"))
     (mf/mount (lightbox) (dom/get-element "lightbox"))
+    (mf/mount (mf/element modal) (dom/get-element "modal"))
     (mf/mount (loader) (dom/get-element "loader"))
 
     (on-navigate router cpath)))

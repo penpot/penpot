@@ -1,4 +1,5 @@
 (ns uxbox.main.ui.lightbox
+  "DEPRECATED: should be replaced by uxbox.main.ui.modal"
   (:require
    [goog.events :as events]
    [lentes.core :as l]

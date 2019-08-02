@@ -18,7 +18,7 @@
    [uxbox.main.ui.settings.profile :as profile]))
 
 (mf/defc settings
-  {:wrap [mf/memo*]}
+  {:wrap [mf/wrap-memo]}
   [{:keys [route] :as props}]
   (let [section (get-in route [:data :name])]
     [:main.dashboard-main

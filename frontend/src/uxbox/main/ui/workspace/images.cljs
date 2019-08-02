@@ -15,6 +15,7 @@
    [uxbox.main.data.lightbox :as udl]
    [uxbox.main.data.shapes :as uds]
    [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace-drawing :as udwd]
    [uxbox.main.store :as st]
    [uxbox.main.ui.lightbox :as lbx]
    [uxbox.util.data :refer [read-string jscoll->vec]]
@@ -56,7 +57,7 @@
                          :metadata {:width width
                                     :height height}
                          :image id}]
-              (st/emit! (udw/select-for-drawing shape))
+              (st/emit! (udwd/select-for-drawing shape))
               (udl/close!)))
           (on-files-selected [event]
             (let [files (dom/get-event-files event)
@@ -98,7 +99,7 @@
                          :metadata {:width width
                                     :height height}
                          :image id}]
-              (st/emit! (udw/select-for-drawing shape))
+              (st/emit! (udwd/select-for-drawing shape))
               (udl/close!)))]
     [:div.library-item {:key (str id)
                         :on-click on-click}

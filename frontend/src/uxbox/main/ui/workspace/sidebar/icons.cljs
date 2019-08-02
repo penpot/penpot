@@ -12,6 +12,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.lenses :as ul]
             [uxbox.main.data.workspace :as udw]
+            [uxbox.main.data.workspace-drawing :as udwd]
             [uxbox.main.data.icons :as udi]
             [uxbox.main.ui.shapes.icon :as icon]
             [uxbox.main.ui.dashboard.icons :as icons]
@@ -61,10 +62,10 @@
     (letfn [(on-close [event]
               (st/emit! (udw/toggle-flag :icons)))
             (on-select [icon event]
-              (st/emit! (udw/select-for-drawing icon)))
+              (st/emit! (udwd/select-for-drawing icon)))
             (on-change [event]
               (let [value (read-string (dom/event->value event))]
-                (st/emit! (udw/select-for-drawing nil)
+                (st/emit! (udwd/select-for-drawing nil)
                           (udw/select-icons-toolbox-collection value))))]
       [:div#form-figures.tool-window
        [:div.tool-window-bar

@@ -2,24 +2,25 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.group
-  (:require [lentes.core :as l]
-            [uxbox.main.store :as st]
-            [uxbox.main.geom :as geom]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.ui.shapes.common :as common]
-            [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.main.ui.shapes.icon :as icon]
-            [uxbox.main.ui.shapes.rect :as rect]
-            [uxbox.main.ui.shapes.circle :as circle]
-            [uxbox.main.ui.shapes.text :as text]
-            [uxbox.main.ui.shapes.path :as path]
-            [uxbox.main.ui.shapes.image :as image]
-            [uxbox.util.data :refer [classnames]]
-            [uxbox.util.geom.matrix :as gmt]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [lentes.core :as l]
+   [rumext.core :as mx]
+   [uxbox.main.geom :as geom]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.shapes.attrs :as attrs]
+   [uxbox.main.ui.shapes.circle :as circle]
+   [uxbox.main.ui.shapes.common :as common]
+   [uxbox.main.ui.shapes.icon :as icon]
+   [uxbox.main.ui.shapes.image :as image]
+   [uxbox.main.ui.shapes.path :as path]
+   [uxbox.main.ui.shapes.rect :as rect]
+   [uxbox.main.ui.shapes.text :as text]
+   [uxbox.util.data :refer [classnames]]
+   [uxbox.util.geom.matrix :as gmt]))
 
 ;; --- Helpers
 

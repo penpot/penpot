@@ -56,9 +56,9 @@
       (l/derive st/state)))
 
 (mf/defc app
-  {:wrap [mf/reactive*]}
+  {:wrap [mf/wrap-reactive]}
   []
-  (let [route (mf/deref route-ref)]
+  (let [route (mf/react route-ref)]
     (case (get-in route [:data :name])
       :view/notfound (notfound-page)
       :view/viewer (let [{:keys [token id]} (get-in route [:params :path])]

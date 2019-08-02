@@ -91,7 +91,7 @@
   ptk/EffectEvent
   (effect [_ state stream]
     (let [router (:router state)]
-      (prn "Navigate:" id params qparams "| Match:" (resolve-url router id params qparams))
+      ;; (prn "Navigate:" id params qparams "| Match:" (resolve-url router id params qparams))
       (navigate! router id params qparams))))
 
 (defn nav

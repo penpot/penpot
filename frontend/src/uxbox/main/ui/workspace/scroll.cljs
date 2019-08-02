@@ -15,6 +15,7 @@
             [uxbox.util.geom.point :as gpt]))
 
 ;; FIXME: revisit this ns in order to find a better location for its functions
+;; TODO: this need a good refactor (probably move to events with access to the state)
 
 (defn set-scroll-position
   [dom position]
@@ -25,8 +26,8 @@
   [dom center]
   (let [viewport-width (.-offsetWidth dom)
         viewport-height (.-offsetHeight dom)
-        position-x (- (* (:x center) @refs/selected-zoom) (/ viewport-width 2))
-        position-y (- (* (:y center) @refs/selected-zoom) (/ viewport-height 2))
+        position-x (- (* (:x center) 1 #_@refs/selected-zoom) (/ viewport-width 2))
+        position-y (- (* (:y center) 1 #_@refs/selected-zoom) (/ viewport-height 2))
         position (gpt/point position-x position-y)]
     (set-scroll-position dom position)))
 

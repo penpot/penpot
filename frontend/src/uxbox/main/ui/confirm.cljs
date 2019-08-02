@@ -6,22 +6,22 @@
 ;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.confirm
-  (:require [uxbox.main.data.lightbox :as udl]
-            [uxbox.builtins.icons :as i]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.dom :as dom]
-            [uxbox.main.ui.lightbox :as lbx]))
+  (:require
+   [uxbox.builtins.icons :as i]
+   [rumext.alpha :as mf]
+   [uxbox.main.ui.modal :as modal]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.dom :as dom]))
 
-(mx/defc confirm-dialog
+(mf/defc confirm-dialog
   [{:keys [on-accept on-cancel hint] :as ctx}]
   (letfn [(accept [event]
             (dom/prevent-default event)
-            (udl/close!)
+            (modal/hide!)
             (on-accept (dissoc ctx :on-accept :on-cancel)))
           (cancel [event]
             (dom/prevent-default event)
-            (udl/close!)
+            (modal/hide!)
             (when on-cancel
               (on-cancel (dissoc ctx :on-accept :on-cancel))))]
     [:div.lightbox-body.confirm-dialog
@@ -38,9 +38,7 @@
         :value (tr "ds.confirm-cancel")
         :on-click cancel}]]
      [:a.close {:href "#"
-                :on-click #(do (dom/prevent-default %)
-                               (udl/close!))} i/close]]))
-
-(defmethod lbx/render-lightbox :confirm
-  [context]
-  (confirm-dialog context))
+                :on-click #(do
+                             (dom/prevent-default %)
+                             (modal/hide!))}
+      i/close]]))

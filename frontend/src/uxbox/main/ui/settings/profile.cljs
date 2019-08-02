@@ -113,7 +113,7 @@
 ;; --- Profile Photo Form
 
 (mf/defc profile-photo-form
-  {:wrap [mf/reactive*]}
+  {:wrap [mf/wrap-reactive]}
   []
   (letfn [(on-change [event]
             (let [target (dom/get-target event)

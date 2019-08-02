@@ -301,13 +301,13 @@
     acc))
 
 (defn match-by-selrect
-  [state page selrect]
+  [state page-id selrect]
   (let [xf (comp (map #(get-in state [:shapes %]))
                  (remove :hidden)
                  (remove :blocked)
                  (map geom/selection-rect))
         match (partial try-match-shape xf selrect)
-        shapes (get-in state [:pages page :shapes])]
+        shapes (get-in state [:pages page-id :shapes])]
     (reduce match #{} (sequence xf shapes))))
 
 (defn group-shapes

@@ -71,7 +71,6 @@
    "ds.your-libraries-title" "VOS LIBRAIRIES"
    "ds.default-library-title" "Collection sans nom (%s)"
 
-   "ds.recent-colors" "Couleurs récentes"
    "ds.element-options" "Options d'élément"
    "ds.draw-tools" "Outils de dessin"
    "ds.sitemap" "Plan du site"
@@ -169,5 +168,5 @@
    "errors.network" "Impossible de se connecter au serveur principal."
    "errors.generic" "Quelque chose c'est mal passé."
    "errors.conflict" "Conflit sur la sauvegarde des données, actualisez et réessayez."
-   
+
 })

@@ -2,61 +2,41 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.workspace.sidebar.options.stroke
-  (:require [lentes.core :as l]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.builtins.icons :as i]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (parse-int parse-float read-string)]
-            [uxbox.util.math :refer (precision-or-0)]
-            [uxbox.util.spec :refer (color?)]))
+  (:require
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.modal :as modal]
+   [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
+   [uxbox.util.data :refer [parse-int parse-float read-string]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.math :refer [precision-or-0]]))
 
-(mx/defcs stroke-menu
-  {:mixins [mx/static (mx/local)]}
-  [{:keys [::mx/local]} menu {:keys [id] :as shape}]
-  (letfn [(on-width-change [event]
-            (let [value (-> (dom/event->value event)
-                            (parse-float 1))]
-              (st/emit! (uds/update-attrs id {:stroke-width value}))))
-          (on-opacity-change [event]
-            (let [value (-> (dom/event->value event)
-                            (parse-float 1)
-                            (/ 10000))]
-              (st/emit! (uds/update-attrs id {:stroke-opacity value}))))
-          (on-stroke-style-change [event]
-            (let [value (-> (dom/event->value event)
-                            (read-string))]
-              (st/emit! (uds/update-attrs id {:stroke-style value}))))
-          (on-stroke-color-change [event]
-            (let [value (dom/event->value event)]
-              (when (color? value)
-                (st/emit! (uds/update-attrs id {:stroke-color value})))))
-          (on-border-change [event attr]
-            (let [value (-> (dom/event->value event)
-                            (parse-int nil))]
-              (if (:border-lock @local)
-                (st/emit! (uds/update-attrs id {:rx value :ry value}))
-                (st/emit! (uds/update-attrs id {attr value})))))
-          (on-border-proportion-lock [event]
-            (swap! local update :border-lock not))
-          (show-color-picker [event]
-            (let [x (.-clientX event)
-                  y (.-clientY event)
-                  opts {:x x :y y
-                        :shape (:id shape)
-                        :attr :stroke-color
-                        :transparent? true}]
-              (udl/open! :workspace/shape-colorpicker opts)))]
-    [:div.element-set {:key (str (:id menu))}
+(declare on-width-change)
+(declare on-opacity-change)
+(declare on-stroke-style-change)
+(declare on-stroke-color-change)
+(declare on-border-change)
+(declare show-color-picker)
+
+(mf/defc stroke-menu
+  [{:keys [menu shape] :as props}]
+  (let [local (mf/use-state {})
+        on-border-lock #(swap! local update :border-lock not)
+        on-stroke-style-change #(on-stroke-style-change % shape)
+        on-width-change #(on-width-change % shape)
+        on-stroke-color-change #(on-stroke-color-change % shape)
+        on-border-change-rx #(on-border-change % shape local :rx)
+        on-border-change-ry #(on-border-change % shape local :ry)
+        on-opacity-change #(on-opacity-change % shape)
+        show-color-picker #(show-color-picker % shape)]
+    [:div.element-set
      [:div.element-set-title (:name menu)]
      [:div.element-set-content
       [:span "Style"]
@@ -94,17 +74,17 @@
          {:placeholder "rx"
           :type "number"
           :value (precision-or-0 (:rx shape 0) 2)
-          :on-change #(on-border-change % :rx)}]]
+          :on-change on-border-change-rx}]]
        [:div.lock-size
         {:class (when (:border-lock @local) "selected")
-         :on-click on-border-proportion-lock}
+         :on-click on-border-lock}
         i/lock]
        [:div.input-element.pixels
         [:input.input-text
          {:placeholder "ry"
           :type "number"
           :value (precision-or-0 (:ry shape 0) 2)
-          :on-change #(on-border-change % :ry)}]]]
+          :on-change on-border-change-ry}]]]
 
       [:span "Opacity"]
       [:div.row-flex
@@ -112,6 +92,50 @@
         {:type "range"
          :min "0"
          :max "10000"
-         :value (* 10000 (:stroke-opacity shape))
+         :value (* 10000 (:stroke-opacity shape 1))
          :step "1"
          :on-change on-opacity-change}]]]]))
+
+(defn- on-width-change
+  [event shape]
+  (let [value (-> (dom/event->value event)
+                  (parse-float 1))]
+    (st/emit! (udw/update-shape-attrs (:id shape) {:stroke-width value}))))
+
+(defn- on-opacity-change
+  [event shape]
+  (let [value (-> (dom/event->value event)
+                  (parse-float 1)
+                  (/ 10000))]
+    (st/emit! (udw/update-shape-attrs (:id shape) {:stroke-opacity value}))))
+
+(defn- on-stroke-style-change
+  [event shape]
+  (let [value (-> (dom/event->value event)
+                  (read-string))]
+    (st/emit! (udw/update-shape-attrs (:id shape) {:stroke-style value}))))
+
+(defn- on-stroke-color-change
+  [event shape]
+  (let [value (dom/event->value event)]
+    (st/emit! (udw/update-shape-attrs (:id shape) {:stroke-color value}))))
+
+(defn- on-border-change
+  [event shape local attr]
+  (let [value (-> (dom/event->value event)
+                  (parse-int nil))
+        id (:id shape)]
+    (if (:border-lock @local)
+      (st/emit! (udw/update-shape-attrs id {:rx value :ry value}))
+      (st/emit! (udw/update-shape-attrs id {attr value})))))
+
+(defn- show-color-picker
+  [event shape]
+  (let [x (.-clientX event)
+        y (.-clientY event)
+        props {:x x :y y
+               :default "#ffffff"
+               :value (:stroke-color shape)
+               :on-change #(st/emit! (udw/update-shape-attrs (:id shape) {:stroke-color %}))
+               :transparent? true}]
+    (modal/show! colorpicker-modal props)))

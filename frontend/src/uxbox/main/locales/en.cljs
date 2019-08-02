@@ -71,7 +71,6 @@
    "ds.your-libraries-title" "YOUR LIBRARIES"
    "ds.default-library-title" "Unnamed Collection (%s)"
 
-   "ds.recent-colors" "Recent colors"
    "ds.element-options" "Element options"
    "ds.draw-tools" "Draw tools"
    "ds.sitemap" "Sitemap"

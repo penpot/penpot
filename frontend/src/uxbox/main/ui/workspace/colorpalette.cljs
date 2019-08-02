@@ -6,121 +6,115 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.colorpalette
-  (:require [beicon.core :as rx]
-            [lentes.core :as l]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.data.workspace :as dw]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.data.colors :as dc]
-            [uxbox.main.ui.dashboard.colors :refer (collections-ref)]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.util.lens :as ul]
-            [uxbox.util.data :refer (read-string)]
-            [uxbox.util.color :refer (hex->rgb)]
-            [uxbox.util.dom :as dom]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [beicon.core :as rx]
+   [lentes.core :as l]
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.colors :as udc]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.util.color :refer [hex->rgb]]
+   [uxbox.util.data :refer [read-string seek]]
+   [uxbox.util.dom :as dom]))
 
-(defn- get-selected-collection
-  [local collections]
-  (if-let [selected (:selected @local)]
-    (first (filter #(= selected (:id %)) collections))
-    (first (filter #(and (:id %) (> (count (:colors %)) 0)) collections))))
+;; --- Refs
 
-(mx/defc palette-item
-  {:mixins [mx/static]}
-  [color]
+(def collections-iref
+  (-> (l/key :colors-collections)
+      (l/derive st/state)))
+
+;; --- Components
+
+(mf/defc palette-item
+  [{:keys [color] :as props}]
   (letfn [(select-color [event]
             (let [attrs (if (kbd/shift? event)
                           {:stroke-color color}
                           {:fill-color color})]
-              (st/emit! (uds/update-selected-shapes-attrs attrs))))]
+              (st/emit! (udw/update-selected-shapes-attrs attrs))))]
     (let [rgb-vec (hex->rgb color)
           rgb-color (apply str "" (interpose ", " rgb-vec))]
       [:div.color-cell {:key (str color)
                         :on-click select-color}
        [:span.color {:style {:background color}}]
-       [:span.color-text {} color]
-       [:span.color-text {} rgb-color]])))
-
-(defn- palette-after-render
-  [{:keys [::mx/local] :as own}]
-  (let [dom (mx/ref-node own "container")
-        width (.-clientWidth dom)]
-    (when (not= (:width @local) width)
-      (swap! local assoc :width :width width))
-    own))
+       [:span.color-text color]
+       [:span.color-text rgb-color]])))
 
 (defn- document-width
   []
   (.. js/document -documentElement -clientWidth))
 
-(mx/defcs palette
-  {:mixins [mx/static mx/reactive (mx/local)]
-   :after-render palette-after-render}
-  [{:keys [::mx/local] :as own}]
-  (let [collections (->> (mx/react collections-ref)
-                         (vals)
-                         (filter :id)
-                         (sort-by :name))
-        {:keys [colors] :as selected-coll} (get-selected-collection local collections)
+(mf/defc palette
+  [{:keys [colls] :as props}]
+  (let [local (mf/use-state {})
+        colls (->> colls
+                   (filter :id)
+                   (sort-by :name))
+        coll  (or (:selected @local)
+                  (first colls))
+
         width (:width @local (* (document-width) 0.84))
         offset (:offset @local 0)
         visible (/ width 86)
-        invisible (- (count colors) visible)]
-    (letfn [(select-collection [event]
-              (let [value (read-string (dom/event->value event))]
-                (swap! local assoc :selected value :position 0)))
-            (close [event]
-              (st/emit! (dw/toggle-flag :colorpalette)))]
+        invisible (- (count (:colors coll)) visible)
+        close #(st/emit! (udw/toggle-flag :colorpalette))
+
+        container (mf/use-ref* nil)
+        container-child (mf/use-ref* nil)]
+
+    (letfn [(select-coll [event]
+              (let [id (read-string (dom/event->value event))
+                    selected (seek #(= id (:id %)) colls)]
+                (swap! local assoc :selected selected :position 0)))
+            (on-left-arrow-click [event]
+              (when (> offset 0)
+                (let [element (mf/ref-node container-child)]
+                  (swap! local update :offset dec))))
+            (on-right-arrow-click [event]
+              (when (< offset invisible)
+                (let [element (mf/ref-node container-child)]
+                  (swap! local update :offset inc))))
+            (on-scroll [event]
+              (if (pos? (.. event -nativeEvent -deltaY))
+                (on-right-arrow-click event)
+                (on-left-arrow-click event)))
+            (after-render []
+              (let [dom (mf/ref-node container)
+                    width (.-clientWidth dom)]
+                (when (not= (:width @local) width)
+                  (swap! local assoc :width width))))]
+
+      (mf/use-effect {:deps true :init after-render})
+
       [:div.color-palette
        [:div.color-palette-actions
-        [:select.input-select {:on-change select-collection
-                               :value (pr-str (:id selected-coll))}
-         (for [collection collections]
-           [:option {:key (str (:id collection))
-                     :value (pr-str (:id collection))}
-            (:name collection)])]
-        [:div.color-palette-buttons
-           [:div.btn-palette.edit.current i/pencil]
-           [:div.btn-palette.create i/close]]]
+        [:select.input-select {:on-change select-coll
+                               :default-value (pr-str (:id coll))}
+         (for [item colls]
+           [:option {:key (:id item) :value (pr-str (:id item))}
+            (:name item)])]
 
-       ;; FIXME Scroll on click does not work
-       [:span.left-arrow {}
-        (when (> offset 0)
-          {:on-click #(.scrollBy (dom/get-element "color-palette-inside") (- offset) 0)})
-        i/arrow-slide]
+        #_[:div.color-palette-buttons
+         [:div.btn-palette.edit.current i/pencil]
+         [:div.btn-palette.create i/close]]]
 
-       [:div.color-palette-content {:ref "container"}
-        [:div.color-palette-inside {:id "color-palette-inside"
-                                    :ref "color-palette-inside"
+       [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
+
+       [:div.color-palette-content {:ref container :on-wheel on-scroll}
+        [:div.color-palette-inside {:ref container-child
                                     :style {:position "relative"
+                                            :width (str (* 86 (count (:colors coll))) "px")
                                             :right (str (* 86 offset) "px")}}
-         (for [color colors]
-           (-> (palette-item color)
-               (mx/with-key color)))]]
+         (for [color (:colors coll)]
+           [:& palette-item {:color color :key color}])]]
 
-       ;; FIXME Scroll on click does not work
-       [:span.right-arrow
-        {:on-click (fn [event]
-                     (when (< offset invisible)
-                       (.scrollBy (dom/get-element "color-palette-inside") offset 0)))}
-        i/arrow-slide]
+       [:span.right-arrow {:on-click on-right-arrow-click}  i/arrow-slide]
+       [:span.close-palette {:on-click close} i/close]])))
 
-       [:span.close-palette {:on-click close}
-        i/close]])))
-
-(defn- colorpalette-init
-  [own]
-  (st/emit! (dc/fetch-collections))
-  own)
-
-(mx/defc colorpalette
-  {:mixins [mx/static mx/reactive]
-   :init colorpalette-init}
-  []
-  (let [flags (mx/react refs/flags)]
-    (when (contains? flags :colorpalette)
-      (palette))))
+(mf/defc colorpalette
+  [props]
+  (let [colls (mf/deref collections-iref)]
+    (mf/use-effect {:init #(st/emit! (udc/fetch-collections))})
+    [:& palette {:colls (vals colls)}]))

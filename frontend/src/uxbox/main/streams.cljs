@@ -13,8 +13,6 @@
             [uxbox.main.workers :as uwrk]
             [uxbox.util.geom.point :as gpt]))
 
-(def page-id-ref-s (rx/from-atom refs/selected-page-id))
-
 ;; --- Events
 
 (defn- user-interaction-event?

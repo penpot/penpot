@@ -13,7 +13,7 @@
 ;; --- Background (Component)
 
 (mf/defc background
-  {:wrap [mf/memo*]}
+  {:wrap [mf/wrap-memo]}
   [{:keys [background] :as metadata}]
   [:rect
    {:x 0 :y 0
@@ -26,7 +26,7 @@
 (declare shape)
 
 (mf/defc canvas
-  {:wrap [mf/memo*]}
+  {:wrap [mf/wrap-memo]}
   [{:keys [page] :as props}]
   (let [{:keys [metadata id]} page
         {:keys [width height]} metadata]

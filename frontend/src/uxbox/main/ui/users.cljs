@@ -49,7 +49,7 @@
       (l/derive st/state)))
 
 (mf/defc user
-  {:wrap [mf/reactive*]}
+  {:wrap [mf/wrap-reactive]}
   [_]
   (let [open (mf/use-state false)
         profile (mf/react profile-ref)

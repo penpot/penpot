@@ -92,7 +92,7 @@
 (mx/defcs download-dialog
   {:mixins [mx/static mx/reactive]}
   [own]
-  (let [project (mx/react refs/selected-project)
+  #_(let [project (mx/react refs/selected-project)
         pages (mx/react pages-ref)
         current (mx/react current-page-ref)]
     (letfn [(on-close [event]

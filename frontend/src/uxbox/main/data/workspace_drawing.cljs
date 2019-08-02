@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.main.data.workspace.drawing
+(ns uxbox.main.data.workspace-drawing
   "Workspace drawing data events and impl."
   (:require [beicon.core :as rx]
             [potok.core :as ptk]
@@ -14,6 +14,7 @@
             [uxbox.main.refs :as refs]
             [uxbox.main.streams :as streams]
             [uxbox.main.data.shapes :as uds]
+            [uxbox.main.data.workspace :as udw]
             [uxbox.main.geom :as geom]
             [uxbox.main.workers :as uwrk]
             [uxbox.main.user-events :as uev]
@@ -30,13 +31,14 @@
 (deftype SelectForDrawing [shape]
   ptk/UpdateEvent
   (update [_ state]
-    (let [current (l/focus ul/selected-drawing state)]
+    (let [pid (get-in state [:workspace :current])
+          current (l/focus ul/selected-drawing state)]
       (if (or (nil? shape)
               (= shape current))
-        (update state :workspace dissoc :drawing :drawing-tool)
-        (update state :workspace assoc
-                :drawing shape
-                :drawing-tool shape)))))
+        (update-in state [:workspace pid] dissoc :drawing :drawing-tool)
+        (update-in state [:workspace pid] assoc
+                   :drawing shape
+                   :drawing-tool shape)))))
 
 (defn select-for-drawing
   [shape]
@@ -48,7 +50,8 @@
 (deftype ClearDrawingState []
   ptk/UpdateEvent
   (update [_ state]
-    (update state :workspace dissoc :drawing-tool :drawing)))
+    (let [pid (get-in state [:workspace :current])]
+      (update-in state [:workspace pid] dissoc :drawing-tool :drawing))))
 
 (defn clear-drawing-state
   []
@@ -89,12 +92,13 @@
 (deftype InitializeDrawing [point]
   ptk/UpdateEvent
   (update [_ state]
-    (let [shape (get-in state [:workspace :drawing])
+    (let [pid (get-in state [:workspace :current])
+          shape (get-in state [:workspace pid :drawing])
           shape (geom/setup shape {:x1 (:x point)
                                    :y1 (:y point)
                                    :x2 (+ (:x point) 2)
                                    :y2 (+ (:y point) 2)})]
-      (assoc-in state [:workspace :drawing] shape))))
+      (assoc-in state [:workspace pid :drawing] shape))))
 
 (defn initialize-drawing
   [point]
@@ -106,13 +110,14 @@
 (deftype UpdateDrawing [position lock?]
   ptk/UpdateEvent
   (update [_ state]
-    (let [{:keys [id] :as shape} (-> (get-in state [:workspace :drawing])
+    (let [pid (get-in state [:workspace :current])
+          {:keys [id] :as shape} (-> (get-in state [:workspace pid :drawing])
                                      (geom/shape->rect-shape)
                                      (geom/size))
           result (geom/resize-shape :bottom-right shape position lock?)
           scale (geom/calculate-scale-ratio shape result)
           resize-mtx (geom/generate-resize-matrix :bottom-right shape scale)]
-      (assoc-in state [:workspace :modifiers id] {:resize resize-mtx}))))
+      (assoc-in state [:workspace pid :modifiers id] {:resize resize-mtx}))))
 
 (defn update-drawing
   [position lock?]
@@ -124,15 +129,17 @@
 (deftype FinishDrawing []
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [{:keys [id] :as shape} (get-in state [:workspace :drawing])
-          resize-mtx (get-in state [:workspace :modifiers id :resize])
+    (let [pid (get-in state [:workspace :current])
+          {:keys [id] :as shape} (get-in state [:workspace pid :drawing])
+          resize-mtx (get-in state [:workspace pid :modifiers id :resize])
           shape (cond-> shape
                   resize-mtx (geom/transform resize-mtx))]
+      (prn "finish-drawing" shape)
       (if-not shape
         (rx/empty)
         (rx/of (clear-drawing-state)
                (uds/add-shape shape)
-               (uds/select-first-shape)
+               (udw/select-first-shape)
                ::uev/interrupt)))))
 
 (defn finish-drawing
@@ -144,7 +151,8 @@
 (deftype FinishPathDrawing []
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :drawing :segments] #(vec (butlast %)))))
+    (let [pid (get-in state [:workspace :current])]
+      (update-in state [:workspace pid :drawing :segments] #(vec (butlast %))))))
 
 (defn finish-path-drawing
   []
@@ -155,7 +163,8 @@
 (deftype InsertDrawingPathPoint [point]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :drawing :segments] (fnil conj []) point)))
+    (let [pid (get-in state [:workspace :current])]
+      (update-in state [:workspace pid :drawing :segments] (fnil conj []) point))))
 
 (defn insert-drawing-path-point
   [point]
@@ -167,10 +176,11 @@
 (deftype UpdateDrawingPathPoint [index point]
   ptk/UpdateEvent
   (update [_ state]
-    (let [segments (count (get-in state [:workspace :drawing :segments]))
+    (let [pid (get-in state [:workspace :current])
+          segments (count (get-in state [:workspace pid :drawing :segments]))
           exists? (< -1 index segments)]
       (cond-> state
-        exists? (assoc-in [:workspace :drawing :segments index] point)))))
+        exists? (assoc-in [:workspace pid :drawing :segments index] point)))))
 
 (defn update-drawing-path-point
   [index point]
@@ -182,7 +192,8 @@
 (deftype CloseDrawingPath []
   ptk/UpdateEvent
   (update [_ state]
-    (assoc-in state [:workspace :drawing :close?] true))
+    (let [pid (get-in state [:workspace :current])]
+      (assoc-in state [:workspace pid :drawing :close?] true)))
 
   ptk/WatchEvent
   (watch [_ state stream]
@@ -197,7 +208,8 @@
 (deftype SimplifyDrawingPath [tolerance]
   ptk/UpdateEvent
   (update [_ state]
-    (update-in state [:workspace :drawing :segments] pth/simplify tolerance)))
+    (let [pid (get-in state [:workspace :current])]
+      (update-in state [:workspace pid :drawing :segments] pth/simplify tolerance))))
 
 (defn simplify-drawing-path
   [tolerance]
@@ -282,7 +294,7 @@
                :y2 (+ y (/ 200 proportion))}
         shape (geom/setup shape props)]
     (st/emit! (uds/add-shape shape)
-              (uds/select-first-shape)
+              (udw/select-first-shape)
               (select-for-drawing nil)
               ::uev/interrupt)))
 
@@ -298,7 +310,7 @@
                :y2 (+ y height)}
         shape (geom/setup shape props)]
     (st/emit! (uds/add-shape shape)
-              (uds/select-first-shape)
+              (udw/select-first-shape)
               (select-for-drawing nil)
               ::uev/interrupt)))
 
@@ -401,5 +413,3 @@
 
       (rx/subscribe points on-point)
       (rx/subscribe stream on-draw nil on-finish))))
-
-

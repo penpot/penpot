@@ -5,11 +5,15 @@
   {:file "jszip/jszip.js"
    :file-min "jszip/jszip.min.js"
    :provides ["vendor.jszip"]}
-  {:file "datefns/datefns.js"
-   :file-min "datefns/datefns.min.js"
+  {:file "datefns/datefns.bundle.js"
+   :file-min "datefns/datefns.bundle.min.js"
    :provides ["vendor.datefns"]}
-  ]
+  {:file "react-color/react-color.bundle.js"
+   :file-min "react-color/react-color.bundle.min.js"
+   :requires ["cljsjs.react"]
+   :provides ["vendor.react-color"]}]
  :externs ["main.externs.js"
            "snapsvg/externs.js"
            "jszip/externs.js"
+           "react-color/externs.js"
            "datefns/externs.js"]}

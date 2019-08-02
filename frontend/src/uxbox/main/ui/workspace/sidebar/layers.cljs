@@ -6,31 +6,27 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.layers
-  (:require [lentes.core :as l]
-            [cuerdas.core :as str]
-            [goog.events :as events]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.ui.shapes.icon :as icon]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.keyboard :as kbd]
-            [uxbox.util.data :refer (read-string classnames)]
-            [uxbox.util.router :as r]
-            [rumext.core :as mx]
-            [rumext.alpha :as mf]
-            [uxbox.util.dom.dnd :as dnd]
-            [uxbox.util.dom :as dom])
+  (:require
+   [cuerdas.core :as str]
+   [goog.events :as events]
+   [lentes.core :as l]
+   [potok.core :as ptk]
+   [rumext.alpha :as mf]
+   [rumext.core :as mx]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.shapes :as uds]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.ui.shapes.icon :as icon]
+   [uxbox.util.data :refer (read-string classnames)]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.dom.dnd :as dnd]
+   [uxbox.util.router :as r])
   (:import goog.events.EventType))
 
 ;; --- Helpers
-
-(defn- focus-page
-  [id]
-  (-> (l/in [:pages id])
-      (l/derive st/state)))
 
 (defn- select-shape
   [selected item event]
@@ -42,18 +38,18 @@
       nil
 
       (.-ctrlKey event)
-      (st/emit! (uds/select-shape id))
+      (st/emit! (udw/select-shape id))
 
       (> (count selected) 1)
-      (st/emit! (uds/deselect-all)
-                (uds/select-shape id))
+      (st/emit! (udw/deselect-all)
+                (udw/select-shape id))
 
       (contains? selected id)
-      (st/emit! (uds/select-shape id))
+      (st/emit! (udw/select-shape id))
 
       :else
-      (st/emit! (uds/deselect-all)
-                (uds/select-shape id)))))
+      (st/emit! (udw/deselect-all)
+                (udw/select-shape id)))))
 
 (defn- toggle-visibility
   [selected item event]
@@ -64,7 +60,7 @@
       (st/emit! (uds/show-shape id))
       (st/emit! (uds/hide-shape id)))
     (when (contains? selected id)
-      (st/emit! (uds/select-shape id)))))
+      (st/emit! (udw/select-shape id)))))
 
 (defn- toggle-blocking
   [item event]
@@ -90,46 +86,45 @@
 
 ;; --- Shape Name (Component)
 
-(mf/def shape-name
-  :mixins [mf/memo (mf/local)]
-  :render
-  (fn [{:keys [::mf/local] :as own} {:keys [id] :as shape}]
-    (letfn [(on-blur [event]
-              (let [target (dom/event->target event)
-                    parent (.-parentNode target)
-                    name (dom/get-value target)]
-                (set! (.-draggable parent) true)
-                (st/emit! (uds/rename-shape id name))
-                (swap! local assoc :edition false)))
-            (on-key-down [event]
-              (js/console.log event)
-              (when (kbd/enter? event)
-                (on-blur event)))
-            (on-click [event]
-              (dom/prevent-default event)
-              (let [parent (.-parentNode (.-target event))]
-                (set! (.-draggable parent) false))
-              (swap! local assoc :edition true))]
-      (if (:edition @local)
-        [:input.element-name
-         {:type "text"
-          :on-blur on-blur
-          :on-key-down on-key-down
-          :auto-focus true
-          :default-value (:name shape "")}]
-        [:span.element-name
-         {:on-double-click on-click}
-         (:name shape "")]))))
+(mf/defc layer-name
+  [{:keys [shape] :as props}]
+  (let [local (mf/use-state {})
+        on-blur (fn [event]
+                  (let [target (dom/event->target event)
+                        parent (.-parentNode target)
+                        name (dom/get-value target)]
+                    (set! (.-draggable parent) true)
+                    (st/emit! (uds/rename-shape (:id shape) name))
+                    (swap! local assoc :edition false)))
+        on-key-down (fn [event]
+                      (js/console.log event)
+                      (when (kbd/enter? event)
+                        (on-blur event)))
+        on-click (fn [event]
+                   (dom/prevent-default event)
+                   (let [parent (.-parentNode (.-target event))]
+                     (set! (.-draggable parent) false))
+                   (swap! local assoc :edition true))]
+    (if (:edition @local)
+      [:input.element-name
+       {:type "text"
+        :on-blur on-blur
+        :on-key-down on-key-down
+        :auto-focus true
+        :default-value (:name shape "")}]
+      [:span.element-name
+       {:on-double-click on-click}
+       (:name shape "")])))
 
 ;; --- Layer Simple (Component)
 
-(mx/defcs layer-simple
-  {:mixins [mx/static (mx/local)]}
-  [{:keys [::mx/local]} item selected]
-  (let [selected? (contains? selected (:id item))
-        select #(select-shape selected item %)
-        toggle-visibility #(toggle-visibility selected item %)
-        toggle-blocking #(toggle-blocking item %)
+(mf/defc layer-item
+  [{:keys [shape selected] :as props}]
+  (let [local (mf/use-state {})
+        selected? (contains? selected (:id shape))
+        select #(select-shape selected shape %)
+        toggle-visibility #(toggle-visibility selected shape %)
+        toggle-blocking #(toggle-blocking shape %)
         li-classes (classnames
                     :selected selected?
                     :hide (:dragging @local))
@@ -142,7 +137,7 @@
     (letfn [(on-drag-start [event]
               (let [target (dom/event->target event)]
                 (dnd/set-allowed-effect! event "move")
-                (dnd/set-data! event (:id item))
+                (dnd/set-data! event (:id shape))
                 (dnd/set-image! event target 50 10)
                 (swap! local assoc :dragging true)))
             (on-drag-end [event]
@@ -152,8 +147,8 @@
               (let [id (dnd/get-data event)
                     over (:over @local)]
                 (case (:over @local)
-                  :top (st/emit! (uds/drop-shape id (:id item) :before))
-                  :bottom (st/emit! (uds/drop-shape id (:id item) :after)))
+                  :top (st/emit! (uds/drop-shape id (:id shape) :before))
+                  :bottom (st/emit! (uds/drop-shape id (:id shape) :after)))
                 (swap! local assoc :dragging false :over nil)))
             (on-drag-over [event]
               (dom/prevent-default event)
@@ -180,21 +175,21 @@
          :on-drop on-drop
          :draggable true}
 
-        [:div.element-actions {}
+        [:div.element-actions
          [:div.toggle-element
-          {:class (when-not (:hidden item) "selected")
+          {:class (when-not (:hidden shape) "selected")
            :on-click toggle-visibility}
           i/eye]
          [:div.block-element
-          {:class (when (:blocked item) "selected")
+          {:class (when (:blocked shape) "selected")
            :on-click toggle-blocking}
           i/lock]]
-        [:div.element-icon (element-icon item)]
-        (shape-name item)]])))
+        [:div.element-icon (element-icon shape)]
+        [:& layer-name {:shape shape}]]])))
 
 ;; --- Layer Group (Component)
 
-(mx/defcs layer-group
+#_(mx/defcs layer-group
   {:mixins [mx/static mx/reactive (mx/local)]}
   [{:keys [::mx/local]} {:keys [id] :as item} selected]
   (let [selected? (contains? selected (:id item))
@@ -284,40 +279,44 @@
 
 ;; --- Layers Tools (Buttons Component)
 
-(defn- allow-grouping?
-  "Check if the current situation allows grouping
-  of the currently selected shapes."
-  [selected shapes-map]
-  (let [xform (comp (map shapes-map)
-                    (map :group))
-        groups (into #{} xform selected)]
-    (= 1 (count groups))))
+;; (defn- allow-grouping?
+;;   "Check if the current situation allows grouping
+;;   of the currently selected shapes."
+;;   [selected shapes-map]
+;;   (let [xform (comp (map shapes-map)
+;;                     (map :group))
+;;         groups (into #{} xform selected)]
+;;     (= 1 (count groups))))
 
-(defn- allow-ungrouping?
-  "Check if the current situation allows ungrouping
-  of the currently selected shapes."
-  [selected shapes-map]
-  (let [shapes (into #{} (map shapes-map) selected)
-        groups (into #{} (map :group) shapes)]
-    (or (and (= 1 (count shapes))
-             (= :group (:type (first shapes))))
-        (and (= 1 (count groups))
-             (not (nil? (first groups)))))))
+;; (defn- allow-ungrouping?
+;;   "Check if the current situation allows ungrouping
+;;   of the currently selected shapes."
+;;   [selected shapes-map]
+;;   (let [shapes (into #{} (map shapes-map) selected)
+;;         groups (into #{} (map :group) shapes)]
+;;     (or (and (= 1 (count shapes))
+;;              (= :group (:type (first shapes))))
+;;         (and (= 1 (count groups))
+;;              (not (nil? (first groups)))))))
 
-(mx/defc layers-tools
+(mf/defc layers-tools
   "Layers widget options buttons."
-  [selected shapes-map]
-  (let [duplicate #(st/emit! (uds/duplicate-selected))
+  [{:keys [selected shapes] :as props}]
+  #_(let [duplicate #(st/emit! (uds/duplicate-selected))
         group #(st/emit! (uds/group-selected))
         ungroup #(st/emit! (uds/ungroup-selected))
-        delete #(st/emit! (uds/delete-selected))
+        delete #(st/emit! (udw/delete-selected))
 
-        allow-grouping? (allow-grouping? selected shapes-map)
-        allow-ungrouping? (allow-ungrouping? selected shapes-map)
+        ;; allow-grouping? (allow-grouping? selected shapes)
+        ;; allow-ungrouping? (allow-ungrouping? selected shapes)
+        ;; NOTE: the grouping functionallity will be removed/replaced
+        ;; with elements.
+        allow-ungrouping? false
+        allow-grouping? false
         allow-duplicate? (= 1 (count selected))
         allow-deletion? (pos? (count selected))]
-    [:div.layers-tools {}
-     [:ul.layers-tools-content {}
+    [:div.layers-tools
+     [:ul.layers-tools-content
       [:li.clone-layer.tooltip.tooltip-top
        {:alt "Duplicate"
         :class (when-not allow-duplicate? "disable")
@@ -341,25 +340,30 @@
 
 ;; --- Layers Toolbox (Component)
 
-(mx/defc layers-toolbox
-  {:mixins [mx/static mx/reactive]}
-  []
-  (let [selected (mx/react refs/selected-shapes)
-        page (mx/react refs/selected-page)
-        shapes-map (mx/react refs/shapes-by-id)
-        close #(st/emit! (udw/toggle-flag :layers))
-        dragel (volatile! nil)]
-    [:div#layers.tool-window {}
-     [:div.tool-window-bar {}
-      [:div.tool-window-icon {} i/layers]
-      [:span {} "Layers"]
-      [:div.tool-window-close {:on-click close} i/close]]
-     [:div.tool-window-content {}
-      [:ul.element-list {}
-       (for [{:keys [id] :as shape} (map #(get shapes-map %) (:shapes page))]
-         (if (= (:type shape) :group)
-           (-> (layer-group shape selected)
-               (mx/with-key id))
-           (-> (layer-simple shape selected)
-               (mx/with-key id))))]]
-     (layers-tools selected shapes-map)]))
+(mf/def layers-toolbox
+  :mixins [mx/static mx/reactive]
+
+  :init
+  (fn [own {:keys [id]}]
+    (assoc own ::shapes-ref (-> (l/key :shapes)
+                                (l/derive st/state))))
+
+  :render
+  (fn [own {:keys [page selected] :as props}]
+    (let [shapes (mx/react (::shapes-ref own))
+          close #(st/emit! (udw/toggle-flag :layers))
+          dragel (volatile! nil)]
+      [:div#layers.tool-window
+       [:div.tool-window-bar
+        [:div.tool-window-icon i/layers]
+        [:span "Layers"]
+        [:div.tool-window-close {:on-click close} i/close]]
+       [:div.tool-window-content
+        [:ul.element-list
+         (for [id (:shapes page)]
+           (let [shape (get shapes id)]
+             [:& layer-item {:shape shape
+                             :key id
+                             :selected selected}]))]]
+       [:& layers-tools {:selected selected
+                         :shapes shapes}]])))

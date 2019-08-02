@@ -22,8 +22,8 @@
 
 (s/def ::grid-x-axis number?)
 (s/def ::grid-y-axis number?)
-(s/def ::grid-color us/color?)
-(s/def ::background us/color?)
+(s/def ::grid-color string?)
+(s/def ::background string?)
 (s/def ::background-opacity number?)
 (s/def ::grid-alignment boolean?)
 (s/def ::width number?)

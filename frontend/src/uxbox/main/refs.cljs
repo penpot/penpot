@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2017-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.refs
   "A collection of derived refs."
@@ -10,6 +10,8 @@
             [beicon.core :as rx]
             [uxbox.main.constants :as c]
             [uxbox.main.store :as st]))
+
+;; TODO: move inside workspaces because this is workspace only refs
 
 ;; --- Helpers
 
@@ -32,35 +34,19 @@
          (filter #(= project (:project %)))
          (sort-by get-order))))
 
-(def workspace
-  (-> (l/key :workspace)
-      (l/derive st/state)))
-
-(def selected-project
-  "Ref to the current selected project."
-  (-> (l/lens resolve-project)
-      (l/derive st/state)))
-
-(def selected-project-id
-  "Ref to the current selected project id."
-  (-> (l/key :project)
-      (l/derive selected-project)))
-
-(def selected-project-pages
-  (-> (l/lens resolve-project-pages)
-      (l/derive st/state)))
-
-;; DEPRECATED
-(def selected-page
+(def ^:deprecated selected-page
   "Ref to the current selected page."
   (-> (l/lens resolve-page)
       (l/derive st/state)))
 
-;; DEPRECATED
-(def selected-page-id
-  "Ref to the current selected page id."
-  (-> (l/key :id)
-      (l/derive selected-page)))
+;; --- NOT DEPRECATED
+
+(def workspace
+  (letfn [(selector [state]
+            (let [id (get-in state [:workspace :current])]
+              (get-in state [:workspace id])))]
+    (-> (l/lens selector)
+        (l/derive st/state))))
 
 (def selected-shapes
   (-> (l/key :selected)
@@ -73,10 +59,6 @@
 (def flags
   (-> (l/key :flags)
       (l/derive workspace)))
-
-(def shapes-by-id
-  (-> (l/key :shapes)
-      (l/derive st/state)))
 
 (def selected-zoom
   (-> (l/key :zoom)
@@ -109,31 +91,40 @@
       (l/derive workspace)))
 
 (defn alignment-activated?
-  [state]
-  (let [{:keys [flags]} (:workspace state)]
-    (and (contains? flags :grid-indexed)
-         (contains? flags :grid-snap))))
+  [flags]
+  (and (contains? flags :grid-indexed)
+       (contains? flags :grid-snap)))
 
 (def selected-alignment
-  (-> (l/lens alignment-activated?)
+  (-> (comp (l/key :flags)
+            (l/lens alignment-activated?))
+      (l/derive workspace)))
+
+;; ...
+
+(def mouse-position
+  (-> (l/in [:workspace :pointer])
       (l/derive st/state)))
 
 (def canvas-mouse-position
-  (-> (l/in [:pointer :canvas])
-      (l/derive workspace)))
+  (-> (l/key :canvas)
+      (l/derive mouse-position)))
 
 (def viewport-mouse-position
-  (-> (l/in [:pointer :viewport])
-      (l/derive workspace)))
+  (-> (l/key :viewport)
+      (l/derive mouse-position)))
 
 (def window-mouse-position
-  (-> (l/in [:pointer :window])
-      (l/derive workspace)))
+  (-> (l/key :window)
+      (l/derive mouse-position)))
 
 (def workspace-scroll
-  (-> (l/key :scroll)
-      (l/derive workspace)))
+  (-> (l/in [:workspace :scroll])
+      (l/derive st/state)))
 
+(def shapes-by-id
+  (-> (l/key :shapes)
+      (l/derive st/state)))
 
 
 
