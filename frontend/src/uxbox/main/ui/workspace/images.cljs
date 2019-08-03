@@ -8,16 +8,13 @@
 (ns uxbox.main.ui.workspace.images
   (:require
    [lentes.core :as l]
-   [potok.core :as ptk]
-   [rumext.core :as mx :include-macros true]
+   [rumext.alpha :as mf]
+   [rumext.core :as mx]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.images :as udi]
-   [uxbox.main.data.lightbox :as udl]
-   [uxbox.main.data.shapes :as uds]
-   [uxbox.main.data.workspace :as udw]
    [uxbox.main.data.workspace-drawing :as udwd]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.lightbox :as lbx]
+   [uxbox.main.ui.modal :as modal]
    [uxbox.util.data :refer [read-string jscoll->vec]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as t :refer [tr]]
@@ -25,166 +22,143 @@
 
 ;; --- Refs
 
-(def ^:private dashboard-ref
-  (-> (l/in [:dashboard :images])
-      (l/derive st/state)))
-
-(def ^:private collections-ref
+(def ^:private collections-iref
   (-> (l/key :images-collections)
       (l/derive st/state)))
 
-(def ^:private images-ref
+(def ^:private images-iref
   (-> (l/key :images)
       (l/derive st/state)))
 
-(def ^:private uploading?-ref
-  (-> (l/key :uploading)
-      (l/derive dashboard-ref)))
+(def ^:private uploading-iref
+  (-> (l/in [:dashboard :images :uploading])
+      (l/derive st/state)))
 
-;; --- Components
+;; --- Import Image Modal
 
-(mx/defcs import-image-lightbox
-  {:mixins [mx/static mx/reactive]}
-  [own]
-  (letfn [(on-upload-click [event]
-            (let [input (mx/ref-node own "input")]
-              (dom/click input)))
-          (on-uploaded [[image]]
-            (let [{:keys [id name width height]} image
-                  shape {:type :image
-                         :name name
-                         :id (uuid/random)
-                         :metadata {:width width
-                                    :height height}
-                         :image id}]
-              (st/emit! (udwd/select-for-drawing shape))
-              (udl/close!)))
-          (on-files-selected [event]
-            (let [files (dom/get-event-files event)
-                  files (jscoll->vec files)]
-              (st/emit! (udi/create-images nil files on-uploaded))))
-          (on-select-from-library [event]
-            (dom/prevent-default event)
-            (udl/open! :import-image-from-collections))
-          (on-close [event]
-            (dom/prevent-default event)
-            (udl/close!))]
-    (let [uploading? (mx/react uploading?-ref)]
-      [:div.lightbox-body {}
-       [:h3 {} "New image"]
-       [:div.row-flex {}
+(declare import-image-from-coll-modal)
+
+(mf/defc import-image-modal
+  [props]
+  (let [input (mf/use-ref* nil)
+        uploading? (mf/deref uploading-iref)]
+    (letfn [(on-upload-click [event]
+              (let [input-el (mf/ref-node input)]
+                (dom/click input-el)))
+
+            (on-uploaded [[image]]
+              (let [{:keys [id name width height]} image
+                    shape {:type :image
+                           :name name
+                           :id (uuid/random)
+                           :metadata {:width width
+                                      :height height}
+                           :image id}]
+                (st/emit! (udwd/select-for-drawing shape))
+                (modal/hide!)))
+
+            (on-files-selected [event]
+              (let [files (dom/get-event-files event)
+                    files (jscoll->vec files)]
+                (st/emit! (udi/create-images nil files on-uploaded))))
+
+            (on-select-from-library [event]
+              (dom/prevent-default event)
+              (modal/show! import-image-from-coll-modal {}))
+
+            (on-close [event]
+              (dom/prevent-default event)
+              (modal/hide!))]
+      [:div.lightbox-body
+       [:h3 "New image"]
+       [:div.row-flex
         [:div.lightbox-big-btn {:on-click on-select-from-library}
-         [:span.big-svg {} i/image]
-         [:span.text {} "Select from library"]]
+         [:span.big-svg i/image]
+         [:span.text "Select from library"]]
         [:div.lightbox-big-btn {:on-click on-upload-click}
          (if uploading?
-           [:span.big-svg.upload {} i/loader-pencil]
-           [:span.big-svg.upload {} i/exit])
-         [:span.text {} "Upload file"]
+           [:span.big-svg.upload i/loader-pencil]
+           [:span.big-svg.upload i/exit])
+         [:span.text "Upload file"]
          [:input.upload-image-input
           {:style {:display "none"}
            :accept "image/jpeg,image/png"
            :type "file"
-           :ref "input"
+           :ref input
            :on-change on-files-selected}]]]
        [:a.close {:on-click on-close} i/close]])))
 
-(mx/defc image-item
-  {:mixins [mx/static]}
-  [{:keys [thumbnail name id width height] :as image}]
+;; --- Import Image from Collection Modal
+
+(mf/defc image-item
+  [{:keys [image] :as props}]
   (letfn [(on-click [event]
             (let [shape {:type :image
-                         :name name
+                         :name (:name image)
                          :id (uuid/random)
-                         :metadata {:width width
-                                    :height height}
-                         :image id}]
+                         :metadata {:width (:width image)
+                                    :height (:height image)}
+                         :image (:id image)}]
               (st/emit! (udwd/select-for-drawing shape))
-              (udl/close!)))]
-    [:div.library-item {:key (str id)
-                        :on-click on-click}
+              (modal/hide!)))]
+    [:div.library-item {:on-click on-click}
      [:div.library-item-th
-      {:style {:background-image (str "url('" thumbnail "')")}}]
-     [:span {} name]]))
+      {:style {:background-image (str "url('" (:thumbnail image) "')")}}]
+     [:span (:name image)]]))
 
-(mx/defc image-collection
-  {:mixins [mx/static]}
-  [images]
-  [:div.library-content {}
+(mf/defc image-collection
+  [{:keys [images] :as props}]
+  [:div.library-content
    (for [image images]
-     (-> (image-item image)
-         (mx/with-key (str (:id image)))))])
+     [:& image-item {:image image :key (:id image)}])])
 
-(defn init
-  [own]
-  (let [local (::mx/local own)]
-    (st/emit! (udi/fetch-collections))
-    (st/emit! (udi/fetch-images nil))
-    (add-watch local ::key (fn [_ _ _ v]
-                             (st/emit! (udi/fetch-images (:id v)))))
-    own))
-
-(defn will-unmount
-  [own]
-  (let [local (::mx/local own)]
-    (remove-watch local ::key)
-    own))
-
-(mx/defcs image-collections-lightbox
-  {:mixins [mx/reactive (mx/local)]
-   :init init
-   :will-unmount will-unmount}
-  [own]
-  (let [local (::mx/local own)
+(mf/defc import-image-from-coll-modal
+  [props]
+  (let [local (mf/use-state {:id nil :type :own})
         id (:id @local)
-        type (:type @local :own)
+        type (:type @local)
         own? (= type :own)
         builtin? (= type :builtin)
-        colls (mx/react collections-ref)
+        colls (mf/deref collections-iref)
         colls (->> (vals colls)
                    (filter #(= type (:type %)))
                    (sort-by :name))
-        id (if (and (nil? id) builtin?)
-             (:id (first colls) ::no-value)
-             id)
-        images (mx/react images-ref)
+        images (mf/deref images-iref)
         images (->> (vals images)
-                    (filter #(= id (:collection %))))]
-    (letfn [(on-close [event]
-              (dom/prevent-default event)
-              (udl/close!))
-            (select-type [event type]
-              (swap! local assoc :type type))
-            (on-coll-change [event]
-              (let [value (dom/event->value event)
-                    value (read-string value)]
-                (swap! local assoc :id value)))]
-      [:div.lightbox-body.big-lightbox {}
-       [:h3 {} "Import image from library"]
-       [:div.import-img-library {}
-        [:div.library-actions {}
-         [:ul.toggle-library {}
-          [:li.your-images {:class (when own? "current")
-                            :on-click #(select-type % :own)}
-           "YOUR IMAGES"]
-          [:li.standard {:class (when builtin? "current")
-                         :on-click #(select-type % :builtin)}
-           "IMAGES STORE"]]
-         [:select.input-select {:on-change on-coll-change}
-          (when own?
-            [:option {:value (pr-str nil)} "Storage"])
-          (for [coll colls]
-            (let [id (:id coll)
-                  name (:name coll)]
-              [:option {:key (str id) :value (pr-str id)} name]))]]
-        (image-collection images)]
-       [:a.close {:href "#" :on-click on-close} i/close]])))
+                    (filter #(= id (:collection %))))
+        on-close #(do (dom/prevent-default %)
+                      (modal/hide!))
+        select-type #(swap! local assoc :type %)
+        on-change #(-> (dom/event->value %)
+                       (read-string)
+                       (swap! local assoc :id))]
 
-(defmethod lbx/render-lightbox :import-image
-  [_]
-  (import-image-lightbox))
+    (mf/use-effect
+     {:init #(do (st/emit! (udi/fetch-collections))
+                 (st/emit! (udi/fetch-images nil)))})
 
+    (mf/use-effect
+     {:deps #js [type id]
+      :init #(st/emit! (udi/fetch-images id))})
 
-(defmethod lbx/render-lightbox :import-image-from-collections
-  [_]
-  (image-collections-lightbox))
+    [:div.lightbox-body.big-lightbox
+     [:h3 "Import image from library"]
+     [:div.import-img-library
+      [:div.library-actions
+       [:ul.toggle-library
+        [:li.your-images {:class (when own? "current")
+                          :on-click #(select-type :own)}
+         "YOUR IMAGES"]
+        [:li.standard {:class (when builtin? "current")
+                       :on-click #(select-type :builtin)}
+         "IMAGES STORE"]]
+       [:select.input-select {:on-change on-change}
+        (when own?
+          [:option {:value (pr-str nil)} "Storage"])
+        (for [coll colls]
+          (let [id (:id coll)
+                name (:name coll)]
+            [:option {:key (str id) :value (pr-str id)} name]))]]
+
+      [:& image-collection {:images images}]]
+     [:a.close {:href "#" :on-click on-close} i/close]]))

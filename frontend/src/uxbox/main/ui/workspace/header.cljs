@@ -12,10 +12,11 @@
    [uxbox.builtins.icons :as i]
    [uxbox.config :as cfg]
    [uxbox.main.data.history :as udh]
-   [uxbox.main.data.lightbox :as udl]
    [uxbox.main.data.pages :as udp]
    [uxbox.main.data.undo :as udu]
    [uxbox.main.data.workspace :as dw]
+   [uxbox.main.ui.workspace.images :refer [import-image-modal]]
+   [uxbox.main.ui.modal :as modal]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.users :refer [user]]
@@ -46,8 +47,9 @@
   (let [toggle #(st/emit! (dw/toggle-flag %))
         on-undo #(st/emit! (udu/undo))
         on-redo #(st/emit! (udu/redo))
-        on-image #(udl/open! :import-image)
-        on-download #(udl/open! :download)]
+        on-image #(modal/show! import-image-modal {})
+        ;;on-download #(udl/open! :download)
+        ]
     [:header#workspace-bar.workspace-bar
      [:div.main-icon
       [:a {:on-click #(st/emit! (rt/nav :dashboard/projects))} i/logo-icon]]
@@ -101,7 +103,8 @@
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
         {:alt "Download (Ctrl + E)"
-         :on-click on-download}
+         ;; :on-click on-download
+         }
         i/download]
        [:li.tooltip.tooltip-bottom
         {:alt "Image (Ctrl + I)"
