@@ -13,6 +13,7 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.colors :as dc]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.dashboard.common :as common]
    [uxbox.main.ui.colorpicker :refer [colorpicker]]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.keyboard :as k]
@@ -51,55 +52,22 @@
 
 ;; --- Page Title
 
-(mf/defc page-title
-  [{:keys [coll] :as props}]
-  (let [edit? (mf/use-state false)
-        input (mf/use-ref* nil)
-        own? (= :own (:type coll))]
-    (letfn [(save []
-              (let [dom (mf/ref-node input)
-                    name (dom/get-inner-text dom)
-                    id (:id coll)]
-                (st/emit! (dc/rename-collection id (str/trim name)))
-                (reset! edit? false)))
-            (cancel []
-              (reset! edit? false))
-            (edit []
-              (reset! edit? true))
-            (on-input-keydown [e]
-              (cond
-                (k/esc? e) (cancel)
-                (k/enter? e)
-                (do
-                  (dom/prevent-default e)
-                  (dom/stop-propagation e)
-                  (save))))
-            (delete []
-              (st/emit! (dc/delete-collection (:id coll))
-                        (rt/nav :dashboard/colors nil {:type (:type coll)})))
 
-            (on-delete []
-              (modal/show! confirm-dialog {:on-accept delete}))]
-      [:div.dashboard-title
-       [:h2
-        (if @edit?
-          [:div.dashboard-title-field
-           [:span.edit {:content-editable true
-                        :ref input
-                        :on-key-down on-input-keydown
-                        :dangerouslySetInnerHTML {"__html" (:name coll)}}]
-           [:span.close {:on-click cancel} i/close]]
-          (if own?
-            [:span.dashboard-title-field {:on-double-click edit}
-             (:name coll)]
-            [:span.dashboard-title-field
-             (:name coll)]))]
-       (when (and own? coll)
-         [:div.edition
-          (if @edit?
-            [:span {:on-click save} i/save]
-            [:span {:on-click edit} i/pencil])
-          [:span {:on-click on-delete} i/trash]])])))
+(mf/defc grid-header
+  [{:keys [coll] :as props}]
+  (letfn [(on-change [name]
+            (st/emit! (dc/rename-collection (:id coll) name)))
+
+          (delete []
+            (st/emit!
+             (dc/delete-collection (:id coll))
+             (rt/nav :dashboard/colors nil {:type (:type coll)})))
+
+          (on-delete []
+            (modal/show! confirm-dialog {:on-accept delete}))]
+    [:& common/grid-header {:value (:name coll)
+                            :on-change on-change
+                            :on-delete on-delete}]))
 
 ;; --- Nav
 
@@ -291,7 +259,7 @@
   [{:keys [id type coll] :as props}]
   (let [selected (mf/deref selected-colors-iref)]
     [:section.dashboard-grid.library
-     [:& page-title {:coll coll}]
+     [:& grid-header {:coll coll}]
      [:& grid {:coll coll :id id  :type type :selected selected}]
      (when (seq selected)
        [:& grid-options {:id id :type type

@@ -59,27 +59,14 @@
 
 ;; --- Initialize
 
-(declare fetch-images)
-(declare fetch-collections)
-(declare collections-fetched?)
-
-(defrecord Initialize [type id]
+(defrecord Initialize []
   ptk/UpdateEvent
   (update [_ state]
-    (let [type (or type :own)
-          data {:type type :id id :selected #{}}]
-      (-> state
-          (assoc-in [:dashboard :images] data)
-          (assoc-in [:dashboard :section] :dashboard/images))))
-
-  ptk/WatchEvent
-  (watch [_ state s]
-    (rx/merge (rx/of (fetch-collections))
-              (rx/of (fetch-images id)))))
+    (assoc-in state [:dashboard :images] {:selected #{}})))
 
 (defn initialize
-  [type id]
-  (Initialize. type id))
+  []
+  (Initialize.))
 
 ;; --- Color Collections Fetched
 
