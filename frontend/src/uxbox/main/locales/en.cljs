@@ -44,7 +44,7 @@
    "ds.your-icons-title" "YOUR ICONS"
    "ds.store-icons-title" "ICONS STORE"
    "ds.icons-collection.new" "+ New collection"
-   "ds.icon.new" "+ New icon"
+   "ds.icon-new" "+ New icon"
 
    "ds.images" "IMAGES"
    "ds.num-images" ["No images"

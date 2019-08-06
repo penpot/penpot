@@ -15,7 +15,6 @@
    [uxbox.main.data.images :as di]
    [uxbox.main.data.lightbox :as udl]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.dashboard.header :refer [header]]
    [uxbox.main.ui.dashboard.common :as common]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.lightbox :as lbx]
@@ -53,11 +52,11 @@
 
 ;; --- Refs
 
-(def collections-ref
+(def collections-iref
   (-> (l/key :images-collections)
       (l/derive st/state)))
 
-(def opts-ref
+(def opts-iref
   (-> (l/in [:dashboard :images])
       (l/derive st/state)))
 
@@ -71,7 +70,7 @@
           (delete []
             (st/emit!
              (di/delete-collection (:id coll))
-             (rt/nav :dashboard/mages nil {:type (:type coll)})))
+             (rt/nav :dashboard/images nil {:type (:type coll)})))
 
           (on-delete []
             (modal/show! confirm-dialog {:on-accept delete}))]
@@ -166,7 +165,7 @@
   {:pre [(uuid? selected)
          (fn? on-select)
          (string? title)]}
-  (let [colls (mf/deref collections-ref)
+  (let [colls (mf/deref collections-iref)
         colls (->> (vals colls)
                    (filter #(= :own (:type %)))
                    (remove #(= selected (:id %)))
@@ -190,7 +189,7 @@
     (letfn [(delete []
               (st/emit! (di/delete-selected)))
             (on-delete [event]
-              (udl/open! :confirm {:on-accept delete}))
+              (modal/show! confirm-dialog {:on-accept delete}))
             (on-toggle-copy [event]
               (swap! local update :show-copy-tooltip not))
             (on-toggle-move [event]
@@ -248,7 +247,7 @@
            i/organize]])])))
 
 (mf/defc grid-item
-[{:keys [image selected? edition?] :as props}]
+  [{:keys [image selected? edition?] :as props}]
   (letfn [(toggle-selection [event]
             (st/emit! (di/toggle-image-selection (:id image))))
           (on-key-down [event]
@@ -283,6 +282,8 @@
       [:span.date (str (tr "ds.uploaded-at"
                            (dt/format (:created-at image) "DD/MM/YYYY")))]]]))
 
+;; --- Grid Form
+
 (mf/defc grid-form
   [{:keys [id type uploading?] :as props}]
   (let [input (mf/use-ref* nil)
@@ -302,6 +303,8 @@
        :accept "image/jpeg,image/png"
        :type "file"
        :on-change on-select}]]))
+
+;; --- Grid
 
 (defn- make-images-iref
   [id]
@@ -371,7 +374,7 @@
 
 (mf/defc content
   [{:keys [id type coll] :as props}]
-  (let [opts (mf/deref opts-ref)]
+  (let [opts (mf/deref opts-iref)]
     [:*
      [:& menu {:opts opts :coll coll}]
      [:section.dashboard-grid.library
@@ -389,7 +392,7 @@
 (mf/defc images-page
   [{:keys [id type] :as props}]
   (let [type (or type :own)
-        colls (mf/deref collections-ref)
+        colls (mf/deref collections-iref)
         colls (cond->> (vals colls)
                 (= type :own) (filter #(= :own (:type %)))
                 (= type :builtin) (filter #(= :builtin (:type %)))

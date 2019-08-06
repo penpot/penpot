@@ -50,7 +50,7 @@
   {:mixins [mx/static mx/reactive]
    :init icons-toolbox-init}
   []
-  (let [drawing (mx/react drawing-shape-ref)
+  #_(let [drawing (mx/react drawing-shape-ref)
         selected (mx/react icons-toolbox-ref)
         colls (mx/react icons/collections-ref)
         selected-coll (get colls selected)

@@ -19,25 +19,14 @@
 
 ;; --- Initialize
 
-(declare fetch-icons)
-(declare fetch-collections)
-(declare collections-fetched?)
-
-(defrecord Initialize [type id]
+(defrecord Initialize []
   ptk/UpdateEvent
   (update [_ state]
-    (-> state
-        (assoc-in [:dashboard :icons] {:selected #{}})
-        (assoc-in [:dashboard :section] :dashboard/icons)))
-
-  ptk/WatchEvent
-  (watch [_ state s]
-    (rx/merge (rx/of (fetch-collections))
-              (rx/of (fetch-icons id)))))
+    (assoc-in state [:dashboard :icons] {:selected #{}})))
 
 (defn initialize
-  [type id]
-  (Initialize. type id))
+  []
+  (Initialize.))
 
 ;; --- Select a Collection
 
@@ -236,7 +225,7 @@
                ;; TODO Keep the name of the original icon
                :name (str "Icon " (gensym "i"))
                :metadata metadata})]
-      (->> (rx/from-coll (jscoll->vec files))
+      (->> (rx/from-coll files)
            (rx/filter allowed?)
            (rx/flat-map parse)
            (rx/map prepare)

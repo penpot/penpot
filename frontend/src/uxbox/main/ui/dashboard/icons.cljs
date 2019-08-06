@@ -9,23 +9,19 @@
   (:require
    [cuerdas.core :as str]
    [lentes.core :as l]
-   [potok.core :as ptk]
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.icons :as di]
-   [uxbox.main.data.lightbox :as udl]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.dashboard.header :refer (header)]
+   [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.dashboard.common :as common]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.lightbox :as lbx]
+   [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.shapes.icon :as icon]
-   [uxbox.util.data :refer (read-string)]
+   [uxbox.util.components :refer [chunked-list]]
+   [uxbox.util.data :refer [read-string jscoll->vec seek]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.forms :as sc]
-   [uxbox.util.i18n :as t :refer (tr)]
-   [uxbox.util.i18n :refer (tr)]
-   [uxbox.util.lens :as ul]
+   [uxbox.util.i18n :as t :refer [tr]]
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]))
 
@@ -57,186 +53,133 @@
 
 ;; --- Refs
 
-(def collections-ref
+(def collections-iref
   (-> (l/key :icons-collections)
       (l/derive st/state)))
 
-(def opts-ref
+(def opts-iref
   (-> (l/in [:dashboard :icons])
-      (l/derive st/state)))
-
-;; TODO: remove when sidebar is refactored
-(def icons-ref
-  (-> (l/key :icons)
       (l/derive st/state)))
 
 ;; --- Page Title
 
-(mf/def page-title
-  :mixins [(mf/local) mf/memo]
-
-  :render
-  (fn [{:keys [::mf/local] :as own} {:keys [id type] :as coll}]
-    (let [own? (= :own (:type coll))
-          edit? (:edit @local)]
-      (letfn [(on-save [e]
-                (let [dom (mx/ref-node own "input")
-                      name (.-innerText dom)]
-                  (st/emit! (di/rename-collection id (str/trim name)))
-                  (swap! local assoc :edit false)))
-              (on-cancel [e]
-                (swap! local assoc :edit false))
-              (on-edit [e]
-                (swap! local assoc :edit true))
-              (on-input-keydown [e]
-                (cond
-                  (kbd/esc? e) (on-cancel e)
-                  (kbd/enter? e)
-                  (do
-                    (dom/prevent-default e)
-                    (dom/stop-propagation e)
-                    (on-save e))))
-              (delete []
-                (st/emit! (di/delete-collection id)))
-              (on-delete []
-                (udl/open! :confirm {:on-accept delete}))]
-        [:div.dashboard-title
-         [:h2
-          (if edit?
-            [:div.dashboard-title-field
-             [:span.edit
-              {:content-editable true
-               :ref "input"
-               :on-key-down on-input-keydown}
-              (:name coll)]
-             [:span.close {:on-click on-cancel} i/close]]
-            (if own?
-              [:span.dashboard-title-field
-               {:on-double-click on-edit}
-               (:name coll)]
-              [:span.dashboard-title-field
-               (:name coll "Storage")]))]
-         (when (and own? coll)
-           [:div.edition
-            (if edit?
-              [:span {:on-click on-save} i/save]
-              [:span {:on-click on-edit} i/pencil])
-            [:span {:on-click on-delete} i/trash]])]))))
+(mf/defc grid-header
+  [{:keys [coll] :as props}]
+  (letfn [(on-change [name]
+            (st/emit! (di/rename-collection (:id coll) name)))
+          (delete []
+            (st/emit!
+             (di/delete-collection (:id coll))
+             (rt/nav :dashboard/icons nil {:type (:type coll)})))
+          (on-delete []
+            (modal/show! confirm-dialog {:on-accept delete}))]
+    [:& common/grid-header {:value (:name coll)
+                            :on-change on-change
+                            :on-delete on-delete}]))
 
 ;; --- Nav
 
-(defn num-icons-ref
+(defn- make-num-icons-iref
   [id]
-  (let [selector (fn [icons] (count (filter #(= id (:collection %)) (vals icons))))]
+  (letfn [(selector [icons]
+            (->> (vals icons)
+                 (filter #(= id (:collection %)))
+                 (count)))]
     (-> (comp (l/key :icons)
               (l/lens selector))
         (l/derive st/state))))
 
-(mf/def nav-item
-  :key-fn :id
-  :mixins [(mf/local) mf/memo mf/reactive]
+(mf/defc nav-item
+  [{:keys [coll selected?] :as props}]
+  (let [local (mf/use-state {})
+        {:keys [id type name num-icons]} coll
+        ;; TODO: recalculate the num-icons on crud operations for
+        ;; avod doing this on UI.
+        ;; num-icons-iref (mf/use-memo {:deps #js [id]
+        ;;                               :init #(make-num-icons-iref (:id coll))})
+        ;; num-icons (mf/deref num-icons-iref)
+        editable? (= type :own)]
+    (letfn [(on-click [event]
+              (let [type (or type :own)]
+                (st/emit! (rt/nav :dashboard/icons {} {:type type :id id}))))
+            (on-input-change [event]
+              (-> (dom/get-target event)
+                  (dom/get-value)
+                  (swap! local assoc :name)))
+          (on-cancel [event]
+            (swap! local dissoc :name :edit))
+          (on-double-click [event]
+            (when editable?
+              (swap! local assoc :edit true)))
+          (on-input-keyup [event]
+            (when (kbd/enter? event)
+              (let [value (-> (dom/get-target event) (dom/get-value))]
+                (st/emit! (di/rename-collection id (str/trim (:name @local))))
+                (swap! local assoc :edit false))))]
+      [:li {:on-click on-click
+            :on-double-click on-double-click
+            :class-name (when selected? "current")}
+       (if (:edit @local)
+         [:div
+          [:input.element-title {:value (if (:name @local)
+                                          (:name @local)
+                                          (if id name "Storage"))
+                                 :on-change on-input-change
+                                 :on-key-down on-input-keyup}]
+          [:span.close {:on-click on-cancel} i/close]]
+         [:span.element-title (if id name "Storage")])
+       [:span.element-subtitle (tr "ds.num-elements" (t/c num-icons))]])))
 
-  :init
-  (fn [own {:keys [id] :as props}]
-    (assoc own ::num-icons-ref (num-icons-ref id)))
 
-  :render
-  (fn [{:keys [::mf/local] :as own}
-       {:keys [id type name num-icons ::selected?] :as coll}]
-    (let [num-icons (or num-icons (mf/react (::num-icons-ref own)))
-          editable? (= type :own)]
-      (letfn [(on-click [event]
-                (let [type (or type :own)]
-                  (st/emit! (rt/navigate :dashboard/icons {} {:type type :id id}))))
-              (on-input-change [event]
-                (let [value (dom/get-target event)
-                      value (dom/get-value value)]
-                  (swap! local assoc :name value)))
-              (on-cancel [event]
-                (swap! local dissoc :name)
-                (swap! local dissoc :edit))
-              (on-double-click [event]
-                (when editable?
-                  (swap! local assoc :edit true)))
-              (on-input-keyup [event]
-                (when (kbd/enter? event)
-                  (let [value (dom/get-target event)
-                        value (dom/get-value value)]
-                    (st/emit! (di/rename-collection id (str/trim (:name @local))))
-                    (swap! local assoc :edit false))))]
-        [:li {:on-click on-click
-              :on-double-click on-double-click
-              :class-name (when selected? "current")}
-         (if (:edit @local)
-           [:div
-            [:input.element-title
-             {:value (if (:name @local) (:name @local) (if id name "Storage"))
-              :on-change on-input-change
-              :on-key-down on-input-keyup}]
-            [:span.close {:on-click on-cancel} i/close]]
-           [:span.element-title
-            (if id name "Storage")])
-         [:span.element-subtitle
-          (tr "ds.num-elements" (t/c num-icons))]]))))
+(mf/defc nav
+  [{:keys [id type colls selected-coll] :as props}]
+  (let [own? (= type :own)
+        builtin? (= type :builtin)
+        select-tab #(st/emit! (rt/nav :dashboard/icons nil {:type %}))]
+    [:div.library-bar
+     [:div.library-bar-inside
+      [:ul.library-tabs
+       [:li {:class-name (when own? "current")
+             :on-click (partial select-tab :own)}
+        (tr "ds.your-icons-title")]
+       [:li {:class-name (when builtin? "current")
+             :on-click (partial select-tab :builtin)}
+        (tr "ds.store-icons-title")]]
 
-(mf/def nav
-  :mixins [mf/memo mf/reactive]
+      [:ul.library-elements
+       (when own?
+         [:li
+          [:a.btn-primary {:on-click #(st/emit! (di/create-collection))}
+           (tr "ds.icons-collection.new")]])
+       (when own?
+         [:& nav-item {:selected? (nil? id)}])
+       (for [item colls]
+         [:& nav-item {:coll item
+                       :selected? (= (:id item) id)
+                       :key (:id item)}])]]]))
 
-  :render
-  (fn [own {:keys [id type] :as props}]
-    (let [own? (= type :own)
-          builtin? (= type :builtin)
-          colls (mf/react collections-ref)
-          select-tab (fn [type]
-                       (if-let [coll (->> (vals colls)
-                                          (filter #(= type (:type %)))
-                                          (sort-by :created-at)
-                                          (first))]
-                         (st/emit! (rt/nav :dashboard/icons nil {:type type :id (:id coll)}))
-                         (st/emit! (rt/nav :dashboard/icons nil {:type type}))))]
-      [:div.library-bar
-       [:div.library-bar-inside
-        [:ul.library-tabs
-         [:li {:class-name (when own? "current")
-               :on-click (partial select-tab :own)}
-          (tr "ds.your-icons-title")]
-         [:li {:class-name (when builtin? "current")
-               :on-click (partial select-tab :builtin)}
-          (tr "ds.store-icons-title")]]
-        [:ul.library-elements
-         (when own?
-           [:li
-            [:a.btn-primary {:on-click #(st/emit! (di/create-collection))}
-             (tr "ds.icons-collection.new")]])
-         (when own?
-           (nav-item {::selected? (nil? id)}))
-         (for [coll (cond->> (vals colls)
-                      own? (filter #(= :own (:type %)))
-                      builtin? (filter #(= :builtin (:type %)))
-                      true (sort-by :name))]
-           (let [selected? (= (:id coll) id)]
-             (nav-item (assoc coll ::selected? selected?))))]]])))
 
 ;; --- Grid
 
-(mx/defcs grid-form
-  {:mixins [mx/static]}
-  [own coll-id]
-  (letfn [(forward-click [event]
-            (dom/click (mx/ref-node own "file-input")))
-          (on-file-selected [event]
-            (let [files (dom/get-event-files event)]
-              (st/emit! (di/create-icons coll-id files))))]
-    [:div.grid-item.small-item.add-project {:on-click forward-click}
-     [:span (tr "ds.icon.new")]
-     [:input.upload-image-input
+(mf/defc grid-form
+  [{:keys [id type uploading?] :as props}]
+  (let [input (mf/use-ref* nil)
+        on-click #(dom/click (mf/ref-node input))
+        on-select #(st/emit! (->> (dom/get-event-files %)
+                                  (jscoll->vec)
+                                  (di/create-icons id)))]
+    [:div.grid-item.add-project {:on-click on-click}
+     (if uploading?
+       [:div i/loader-pencil]
+       [:span (tr "ds.icon-new")])
+     [:input.upload-icon-input
       {:style {:display "none"}
        :multiple true
-       :ref "file-input"
+       :ref input
        :value ""
-       :accept "image/svg+xml"
+       :accept "icon/svg+xml"
        :type "file"
-       :on-change on-file-selected}]]))
+       :on-change on-select}]]))
 
 (mf/def grid-options-tooltip
   :mixins [mf/reactive mf/memo]
@@ -246,7 +189,7 @@
     {:pre [(uuid? selected)
            (fn? on-select)
            (string? title)]}
-    (let [colls (mf/react collections-ref)
+    (let [colls (mf/react collections-iref)
           colls (->> (vals colls)
                      (filter #(= :own (:type %)))
                      (remove #(= selected (:id %)))
@@ -272,7 +215,7 @@
     (letfn [(delete []
               (st/emit! (di/delete-selected)))
             (on-delete [event]
-              (udl/open! :confirm {:on-accept delete}))
+              (modal/show! confirm-dialog {:on-accept delete}))
             (on-toggle-copy [event]
               (swap! local update :show-copy-tooltip not))
             (on-toggle-move [event]
@@ -333,159 +276,164 @@
                                     :on-select on-copy}))
            i/organize]])])))
 
-(mf/def grid-item
-  :key-fn :id
-  :mixins [mf/memo]
-  :render
-  (fn [own {:keys [id created-at ::selected? ::edition?] :as icon}]
-    (letfn [(toggle-selection [event]
-              (prn "toggle-selection")
-              (st/emit! (di/toggle-icon-selection id)))
-            (on-key-down [event]
-              (when (kbd/enter? event)
-                (on-blur event)))
-            (on-blur [event]
-              (let [target (dom/event->target event)
-                    name (dom/get-value target)]
-                (st/emit! (di/update-opts :edition false)
-                          (di/rename-icon id name))))
-            (ignore-click [event]
-              (dom/stop-propagation event)
-              (dom/prevent-default event))
-            (on-edit [event]
-              (dom/stop-propagation event)
-              (dom/prevent-default event)
-              (st/emit! (di/update-opts :edition id)))]
-      [:div.grid-item.small-item.project-th {:id (str "grid-item-" id)}
-       [:div.input-checkbox.check-primary
-        [:input {:type "checkbox"
-                 :id (:id icon)
-                 :on-change toggle-selection
-                 :checked selected?}]
-        [:label {:for (:id icon)}]]
-       [:span.grid-item-image (icon/icon-svg icon)]
-       [:div.item-info {:on-click ignore-click}
-        (if edition?
-          [:input.element-name {:type "text"
-                                :auto-focus true
-                                :on-key-down on-key-down
-                                :on-blur on-blur
-                                :on-click on-edit
-                                :default-value (:name icon)}]
-          [:h3 {:on-double-click on-edit}
-           (:name icon)])
-        (str (tr "ds.uploaded-at" (dt/format created-at "DD/MM/YYYY")))]])))
+;; --- Grid Item
 
-(mf/def grid
-  :mixins [mf/reactive]
-  :init
-  (fn [own {:keys [id] :as props}]
-    (let [selector (fn [icons]
-                     (->> (vals icons)
-                          (filter #(= id (:collection %)))))]
-      (assoc own ::icons-ref (-> (comp (l/key :icons)
-                                       (l/lens selector))
-                                 (l/derive st/state)))))
+(mf/defc grid-item
+  [{:keys [icon selected? edition?] :as props}]
+  (letfn [(toggle-selection [event]
+            (st/emit! (di/toggle-icon-selection (:id icon))))
+          (on-key-down [event]
+            (when (kbd/enter? event)
+              (on-blur event)))
+          (on-blur [event]
+            (let [target (dom/event->target event)
+                  name (dom/get-value target)]
+              (st/emit! (di/update-opts :edition false)
+                        (di/rename-icon (:id icon) name))))
+          (ignore-click [event]
+            (dom/stop-propagation event)
+            (dom/prevent-default event))
+          (on-edit [event]
+            (dom/stop-propagation event)
+            (dom/prevent-default event)
+            (st/emit! (di/update-opts :edition (:id icon))))]
+    [:div.grid-item.small-item.project-th
+     [:div.input-checkbox.check-primary
+      [:input {:type "checkbox"
+               :id (:id icon)
+               :on-change toggle-selection
+               :checked selected?}]
+      [:label {:for (:id icon)}]]
+     [:span.grid-item-icon (icon/icon-svg icon)]
+     [:div.item-info {:on-click ignore-click}
+      (if edition?
+        [:input.element-name {:type "text"
+                              :auto-focus true
+                              :on-key-down on-key-down
+                              :on-blur on-blur
+                              :on-click on-edit
+                              :default-value (:name icon)}]
+        [:h3 {:on-double-click on-edit}
+         (:name icon)])
+      (str (tr "ds.uploaded-at" (dt/format (:created-at icon) "DD/MM/YYYY")))]]))
 
-  :render
-  (fn [own {:keys [selected edition id type] :as props}]
-    (let [editable? (or (= type :own) (nil? id))
-          icons (->> (mf/react (::icons-ref own))
-                     (filter-icons-by (:filter props ""))
-                     (sort-icons-by (:order props :name)))]
+;; --- Grid
 
-      [:div.dashboard-grid-content
-       [:div.dashboard-grid-row
-        (when editable? (grid-form id))
-        (for [icon icons]
-          (let [edition? (= edition (:id icon))
-                selected? (contains? selected (:id icon))]
-            (grid-item (assoc icon ::selected? selected? ::edition? edition?))))]])))
+(defn- make-icons-iref
+  [id]
+  (-> (comp (l/key :icons)
+            (l/lens (fn [icons]
+                      (->> (vals icons)
+                           (filter #(= id (:collection %)))))))
+      (l/derive st/state)))
+
+(mf/defc grid
+  [{:keys [id type coll opts] :as props}]
+  (let [editable? (or (= type :own) (nil? id))
+        icons-iref (mf/use-memo {:deps #js [id] :init #(make-icons-iref id)})
+        icons (->> (mf/deref icons-iref)
+                   (filter-icons-by (:filter opts ""))
+                   (sort-icons-by (:order opts :name)))]
+    [:div.dashboard-grid-content
+     [:div.dashboard-grid-row
+      (when editable?
+        [:& grid-form {:id id :type type :uploading? (:uploading opts)}])
+
+      [:& chunked-list {:items icons
+                        :initial-size 30
+                        :chunk-size 30
+                        :key (str type id (count icons))}
+       (fn [icon]
+         [:& grid-item {:icon icon
+                        :key (:id icon)
+                        :selected (contains? (:selected opts) (:id icon))
+                        :edition? (= (:edition opts) (:id icon))}])]]]))
 
 ;; --- Menu
 
-(mf/def menu
-  :mixins [mf/memo mf/reactive]
+(mf/defc menu
+  [{:keys [opts coll] :as props}]
+  (let [ordering (:order opts :name)
+        filtering (:filter opts "")
+        icount (count (:icons coll))]
+    (letfn [(on-term-change [event]
+              (let [term (-> (dom/get-target event)
+                             (dom/get-value))]
+                (st/emit! (di/update-opts :filter term))))
+            (on-ordering-change [event]
+              (let [value (dom/event->value event)
+                    value (read-string value)]
+                (st/emit! (di/update-opts :order value))))
+            (on-clear [event]
+              (st/emit! (di/update-opts :filter "")))]
+      [:section.dashboard-bar.library-gap
+       [:div.dashboard-info
 
-  :init
-  (fn [own {:keys [id] :as props}]
-    (assoc own ::num-icons-ref (num-icons-ref id)))
+        ;; Counter
+        [:span.dashboard-icons (tr "ds.num-icons" (t/c icount))]
 
-  :render
-  (fn [own props]
-    (let [{:keys [id num-icons] :as coll} (::coll props)
-          num-icons (or num-icons (mf/react (::num-icons-ref own)))]
-      (letfn [(on-term-change [event]
-                (let [term (-> (dom/get-target event)
-                               (dom/get-value))]
-                  (st/emit! (di/update-opts :filter term))))
-              (on-ordering-change [event]
-                (let [value (dom/event->value event)
-                      value (read-string value)]
-                  (st/emit! (di/update-opts :order value))))
-              (on-clear [event]
-                (st/emit! (di/update-opts :filter "")))]
-        [:section.dashboard-bar.library-gap
-         [:div.dashboard-info
-          ;; Counter
-          [:span.dashboard-icons (tr "ds.num-icons" (t/c num-icons))]
+        ;; Sorting
+        [:div
+         [:span (tr "ds.ordering")]
+         [:select.input-select {:on-change on-ordering-change
+                                :value (pr-str ordering)}
+          (for [[key value] (seq +ordering-options+)]
+            [:option {:key key :value (pr-str key)} (tr value)])]]
 
-          ;; Sorting
-          [:div
-           [:span (tr "ds.ordering")]
-           [:select.input-select {:on-change on-ordering-change
-                                  :value (pr-str (:order props :name))}
-            (for [[key value] (seq +ordering-options+)]
-              [:option {:key key :value (pr-str key)} (tr value)])]]
-          ;; Search
-          [:form.dashboard-search
-           [:input.input-text {:key :icons-search-box
-                               :type "text"
-                               :on-change on-term-change
-                               :auto-focus true
-                               :placeholder (tr "ds.search.placeholder")
-                               :value (:filter props "")}]
-           [:div.clear-search {:on-click on-clear}
-            i/close]]]]))))
+        ;; Search
+        [:form.dashboard-search
+         [:input.input-text {:key :icons-search-box
+                             :type "text"
+                             :on-change on-term-change
+                             :auto-focus true
+                             :placeholder (tr "ds.search.placeholder")
+                             :value filtering}]
+         [:div.clear-search {:on-click on-clear} i/close]]]])))
 
-(mf/def content
-  :mixins [mf/reactive mf/memo]
+;; --- Content
 
-  :init
-  (fn [own {:keys [id] :as props}]
-    (assoc own ::coll-ref (-> (l/in [:icons-collections id])
-                              (l/derive st/state))))
-
-  :render
-  (fn [own props]
-    (let [opts (mf/react opts-ref)
-          coll (mf/react (::coll-ref own))
-          props (merge opts props)]
-      [:*
-       (menu (assoc props ::coll coll))
-       [:section.dashboard-grid.library
-        (page-title coll)
-        (grid props)
-        (when (seq (:selected opts))
-          (grid-options props))]])))
-
+(mf/defc content
+  [{:keys [id type coll] :as props}]
+  (let [opts (mf/deref opts-iref)]
+    [:*
+     [:& menu {:opts opts :coll coll}]
+     [:section.dashboard-grid.library
+      (when coll
+        [:& grid-header {:coll coll}])
+      [:& grid {:id id
+                :key [id type]
+                :type type
+                :coll coll
+                :opts opts}]
+      (when (seq (:selected opts))
+        [:& grid-options {:id id :type type :selected (:selected opts)}])]]))
 
 ;; --- Icons Page
 
-(mf/def icons-page
-  :key-fn identity
-  :mixins #{mf/memo mf/reactive}
+(mf/defc icons-page
+  [{:keys [id type] :as props}]
+  (let [type (or type :own)
+        colls (mf/deref collections-iref)
+        colls (cond->> (vals colls)
+                (= type :own) (filter #(= :own (:type %)))
+                (= type :builtin) (filter #(= :builtin (:type %)))
+                true (sort-by :created-at))
+        selected-coll (cond
+                        (and (= type :own) (nil? id)) nil
+                        (uuid? id) (seek #(= id (:id %)) colls)
+                        :else (first colls))
+        id (:id selected-coll)]
 
-  :init
-  (fn [own props]
-    (let [{:keys [type id]} (::mf/props own)]
-      (st/emit! (di/initialize type id))
-      own))
+    (mf/use-effect {:init #(st/emit! (di/fetch-collections))})
+    (mf/use-effect {:init #(st/emit! (di/initialize)
+                                     (di/fetch-icons id))
+                    :deps #js [id type]})
 
-  :render
-  (fn [own {:keys [type] :as props}]
-    (let [type (or type :own)
-          props (assoc props :type type)]
-      [:section.dashboard-content
-       (nav props)
-       (content props)])))
+    [:section.dashboard-content
+     [:& nav {:type type
+              :id id
+              :colls colls
+              :selected-coll selected-coll}]
+     [:& content {:type type
+                  :id id
+                  :coll selected-coll}]]))
