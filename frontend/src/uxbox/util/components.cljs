@@ -34,7 +34,7 @@
           state   (mf/use-state initial)]
       (mf/use-effect {:deps true
                       :init #(when (pos? (:pending-num @state))
-                               (swap! state update-state))
+                               (schedule-on-idle (fn [] (swap! state update-state))))
                       :end #(when % (rx/cancel! %))})
       (for [item (:current @state)]
         (children item)))))
