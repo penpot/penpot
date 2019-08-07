@@ -6,11 +6,15 @@
 
 (ns uxbox.worker
   (:require [beicon.core :as rx]
+            [cuerdas.core :as str]
             [uxbox.util.transit :as t]
+            [uxbox.util.uuid :as uuid]
             [uxbox.worker.impl :as impl]
             [uxbox.worker.align]))
 
 (enable-console-print!)
+
+(defonce id (uuid/random))
 
 (defn- on-message
   [event]
@@ -19,3 +23,5 @@
 
 (defonce _
   (.addEventListener js/self "message" on-message))
+
+(println (str/format "Worker with id '%s' is initialized." id))

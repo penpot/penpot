@@ -25,13 +25,11 @@
 
 ;; This excludes webworker instantiation on nodejs where
 ;; the tests are run.
-
 (when (not= *target* "nodejs")
   (defonce worker (uw/init "/js/worker.js")))
 
 (defn align-point
   [point]
-
   (let [message {:cmd :grid-align :point point}]
     (->> (uw/ask! worker message)
          (rx/map :point))))
