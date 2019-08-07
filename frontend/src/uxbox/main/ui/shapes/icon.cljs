@@ -5,31 +5,32 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.icon
-  (:require [uxbox.main.geom :as geom]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.ui.shapes.common :as common]
-            [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.data :refer [classnames normalize-props]]
-            [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.geom.point :as gpt]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [rumext.alpha :as mf]
+   [rumext.core :as mx]
+   [uxbox.main.geom :as geom]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.ui.shapes.attrs :as attrs]
+   [uxbox.main.ui.shapes.common :as common]
+   [uxbox.util.data :refer [classnames normalize-props]]
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.geom.point :as gpt]))
 
 
 ;; --- Icon Component
 
 (declare icon-shape)
 
-(mx/defc icon-component
-  {:mixins [mx/static mx/reactive]}
-  [{:keys [id] :as shape}]
-  (let [modifiers (mx/react (refs/selected-modifiers id))
-        selected (mx/react refs/selected-shapes)
+(mf/defc icon-component
+  [{:keys [shape] :as props}]
+  (let [id (:id shape)
+        modifiers (mf/deref (refs/selected-modifiers id))
+        selected (mf/deref refs/selected-shapes)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)
-        shape (assoc shape :modifiers modifiers)]
+        on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     (icon-shape shape)]))
+     [:& icon-shape {:shape shape :modifiers modifiers}]]))
 
 ;; --- Icon Shape
 
@@ -41,10 +42,10 @@
         center (gpt/point x-center y-center)]
     (gmt/rotate* mt rotation center)))
 
-(mx/defc icon-shape
-  {:mixins [mx/static]}
-  [{:keys [id content metadata rotation x1 y1 modifiers] :as shape}]
-  (let [{:keys [resize displacement]} modifiers
+(mf/defc icon-shape
+  [{:keys [shape modifiers] :as props}]
+  (let [{:keys [id content metadata rotation x1 y1]} shape
+        {:keys [resize displacement]} modifiers
 
         xfmt (cond-> (gmt/matrix)
                displacement (gmt/multiply displacement)
@@ -74,10 +75,10 @@
 
 ;; --- Icon SVG
 
-(mx/defc icon-svg
-  {:mixins [mx/static]}
-  [{:keys [content id metadata] :as shape}]
-  (let [view-box (apply str (interpose " " (:view-box metadata)))
+(mf/defc icon-svg
+  [{:keys [shape] :as props}]
+  (let [{:keys [content id metadata]} shape
+        view-box (apply str (interpose " " (:view-box metadata)))
         props {:view-box view-box
                :id (str "shape-" id)
                :dangerouslySetInnerHTML #js {:__html content}}]

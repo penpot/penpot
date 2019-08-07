@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.text
   (:require
@@ -28,8 +28,7 @@
   [event {:keys [id group] :as shape} selected]
   (if (and (not (:blocked shape))
            (or @refs/selected-drawing-tool
-               @refs/selected-edition
-               (and group (:locked (geom/resolve-parent shape)))))
+               @refs/selected-edition))
     (dom/stop-propagation event)
     (common/on-mouse-down event shape selected)))
 
@@ -40,12 +39,13 @@
 (declare text-shape-edit)
 
 (mf/def text-component
-  :mixins [mf/memo mx/reactive]
+  :mixins [mf/memo mf/reactive]
   :render
-  (fn [own {:keys [id x1 y1 content group] :as shape}]
-    (let [modifiers (mx/react (refs/selected-modifiers id))
-          selected (mx/react refs/selected-shapes)
-          edition? (= (mx/react refs/selected-edition) id)
+  (fn [own {:keys [shape] :as props}]
+    (let [{:keys [id x1 y1 content group]} shape
+          modifiers (mf/react (refs/selected-modifiers id))
+          selected (mf/react refs/selected-shapes)
+          edition? (= (mf/react refs/selected-edition) id)
           selected? (and (contains? selected id)
                          (= (count selected) 1))
           shape (assoc shape :modifiers modifiers)]
@@ -60,8 +60,8 @@
                    :on-double-click on-double-click
                    :on-mouse-down on-mouse-down}
          (if edition?
-           (text-shape-edit shape)
-           (text-shape-wrapper shape))]))))
+           [:& text-shape-edit {:shape shape}]
+           [:& text-shape-wrapper {:shape shape}])]))))
 
 ;; --- Text Styles Helpers
 
@@ -113,15 +113,15 @@
 
   :did-mount
   (fn [own]
-    (let [shape (::mf/props own)
-          dom (mx/ref-node (::container own))]
+    (let [shape (get-in own [::mf/props :shape])
+          dom (mf/ref-node (::container own))]
       (set! (.-textContent dom) (:content shape ""))
       (.focus dom)
       own))
 
   :render
-  (fn [own {:keys [id x1 y1 content] :as shape}]
-    (let [{:keys [width height]} (geom/size shape)
+  (fn [own {:keys [shape] :as props}]
+    (let [{:keys [id x1 y1 content width height]} (geom/size shape)
           style (make-style shape)
           on-input (fn [ev]
                      (let [content (dom/event->inner-text ev)]
@@ -136,7 +136,6 @@
 
 (mf/def text-shape-wrapper
   :mixins [mf/memo]
-  :key-fn pr-str
 
   :init
   (fn [own props]
@@ -152,15 +151,16 @@
 
   :did-mount
   (fn [own]
-    (let [shape (::mf/props own)
+    (let [shape (get-in own [::mf/props :shape])
           dom (mf/ref-node (::fobject own))
           html (dom/render-to-html (text-shape-html shape))]
       (set! (.-innerHTML dom) html))
     own)
 
   :render
-  (fn [own {:keys [id modifiers] :as shape}]
-    (let [{:keys [displacement resize]} modifiers
+  (fn [own {:keys [shape] :as props}]
+    (let [{:keys [id modifiers]} shape
+          {:keys [displacement resize]} modifiers
           xfmt (cond-> (gmt/matrix)
                  displacement (gmt/multiply displacement)
                  resize (gmt/multiply resize))

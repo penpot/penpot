@@ -67,7 +67,6 @@
 
 (defn- start-resize
   [vid ids shape]
-  (prn "start-resize" vid ids shape)
   (letfn [(on-resize [shape [point lock?]]
             (let [result (geom/resize-shape vid shape point lock?)
                   scale (geom/calculate-scale-ratio shape result)

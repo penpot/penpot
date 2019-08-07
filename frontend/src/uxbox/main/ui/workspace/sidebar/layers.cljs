@@ -23,6 +23,7 @@
    [uxbox.util.data :refer (read-string classnames)]
    [uxbox.util.dom :as dom]
    [uxbox.util.dom.dnd :as dnd]
+   [uxbox.util.timers :as tm]
    [uxbox.util.router :as r])
   (:import goog.events.EventType))
 
@@ -134,12 +135,13 @@
                       :drag-top (= :top (:over @local))
                       :drag-bottom (= :bottom (:over @local))
                       :drag-inside (= :middle (:over @local)))]
+    ;; TODO: consider using http://react-dnd.github.io/react-dnd/docs/overview
     (letfn [(on-drag-start [event]
               (let [target (dom/event->target event)]
                 (dnd/set-allowed-effect! event "move")
                 (dnd/set-data! event (:id shape))
                 (dnd/set-image! event target 50 10)
-                (swap! local assoc :dragging true)))
+                (tm/schedule #(swap! local assoc :dragging true))))
             (on-drag-end [event]
               (swap! local assoc :dragging false :over nil))
             (on-drop [event]
@@ -188,94 +190,6 @@
         [:& layer-name {:shape shape}]]])))
 
 ;; --- Layer Group (Component)
-
-#_(mx/defcs layer-group
-  {:mixins [mx/static mx/reactive (mx/local)]}
-  [{:keys [::mx/local]} {:keys [id] :as item} selected]
-  (let [selected? (contains? selected (:id item))
-        collapsed? (:collapsed item true)
-        shapes-map (mx/react refs/shapes-by-id)
-        classes (classnames
-                 :selected selected?
-                 :drag-top (= :top (:over @local))
-                 :drag-bottom (= :bottom (:over @local))
-                 :drag-inside (= :middle (:over @local)))
-        select #(select-shape selected item %)
-        toggle-visibility #(toggle-visibility selected item %)
-        toggle-blocking #(toggle-blocking item %)]
-    (letfn [(toggle-collapse [event]
-              (dom/stop-propagation event)
-              (if (:collapsed item true)
-                (st/emit! (uds/uncollapse-shape id))
-                (st/emit! (uds/collapse-shape id))))
-            (toggle-locking [event]
-              (dom/stop-propagation event)
-              (if (:locked item)
-                (st/emit! (uds/unlock-shape id))
-                (st/emit! (uds/lock-shape id))))
-            (on-drag-start [event]
-              (let [target (dom/event->target event)]
-                (dnd/set-allowed-effect! event "move")
-                (dnd/set-data! event (:id item))
-                (swap! local assoc :dragging true)))
-            (on-drag-end [event]
-              (swap! local assoc :dragging false :over nil))
-            (on-drop [event]
-              (dom/stop-propagation event)
-              (let [coming-id (dnd/get-data event)
-                    over (:over @local)]
-                (case (:over @local)
-                  :top (st/emit! (uds/drop-shape coming-id id :before))
-                  :bottom (st/emit! (uds/drop-shape coming-id id :after))
-                  :middle (st/emit! (uds/drop-shape coming-id id :inside)))
-                (swap! local assoc :dragging false :over nil)))
-            (on-drag-over [event]
-              (dom/prevent-default event)
-              (dnd/set-drop-effect! event "move")
-              (let [over (dnd/get-hover-position event true)]
-                (swap! local assoc :over over)))
-            (on-drag-enter [event]
-              (swap! local assoc :over true))
-            (on-drag-leave [event]
-              (swap! local assoc :over false))]
-      [:li.group {:class (when-not collapsed? "open")}
-       [:div.element-list-body
-        {:class classes
-         :draggable true
-         :on-drag-start on-drag-start
-         :on-drag-enter on-drag-enter
-         :on-drag-leave on-drag-leave
-         :on-drag-over on-drag-over
-         :on-drag-end on-drag-end
-         :on-drop on-drop
-         :on-click select}
-        [:div.element-actions {}
-         [:div.toggle-element
-          {:class (when-not (:hidden item) "selected")
-           :on-click toggle-visibility}
-          i/eye]
-         [:div.block-element
-          {:class (when (:blocked item) "selected")
-           :on-click toggle-blocking}
-          i/lock]
-         [:div.chain-element
-          {:class (when (:locked item) "selected")
-           :on-click toggle-locking}
-          i/chain]]
-        [:div.element-icon i/folder]
-        (shape-name item)
-        [:span.toggle-content
-         {:on-click toggle-collapse
-          :class (when-not collapsed? "inverse")}
-         i/arrow-slide]]
-       (if-not collapsed?
-         [:ul {}
-          (for [{:keys [id] :as shape} (map #(get shapes-map %) (:items item))]
-            (if (= (:type shape) :group)
-              (-> (layer-group shape selected)
-                  (mx/with-key id))
-              (-> (layer-simple shape selected)
-                  (mx/with-key id))))])])))
 
 ;; --- Layers Tools (Buttons Component)
 
@@ -340,30 +254,25 @@
 
 ;; --- Layers Toolbox (Component)
 
-(mf/def layers-toolbox
-  :mixins [mx/static mx/reactive]
+(def ^:private shapes-iref
+  (-> (l/key :shapes)
+      (l/derive st/state)))
 
-  :init
-  (fn [own {:keys [id]}]
-    (assoc own ::shapes-ref (-> (l/key :shapes)
-                                (l/derive st/state))))
+(mf/defc layers-toolbox
+  [{:keys [page selected] :as props}]
+  (let [shapes (mf/deref shapes-iref)
+        on-click #(st/emit! (udw/toggle-flag :layers))]
+    [:div#layers.tool-window
+     [:div.tool-window-bar
+      [:div.tool-window-icon i/layers]
+      [:span "Layers"]
+      [:div.tool-window-close {:on-click on-click} i/close]]
+     [:div.tool-window-content
+      [:ul.element-list
+       (for [id (:shapes page)]
+         [:& layer-item {:shape (get shapes id)
+                         :selected selected
+                         :key id}])]]
+     [:& layers-tools {:selected selected
+                       :shapes shapes}]]))
 
-  :render
-  (fn [own {:keys [page selected] :as props}]
-    (let [shapes (mx/react (::shapes-ref own))
-          close #(st/emit! (udw/toggle-flag :layers))
-          dragel (volatile! nil)]
-      [:div#layers.tool-window
-       [:div.tool-window-bar
-        [:div.tool-window-icon i/layers]
-        [:span "Layers"]
-        [:div.tool-window-close {:on-click close} i/close]]
-       [:div.tool-window-content
-        [:ul.element-list
-         (for [id (:shapes page)]
-           (let [shape (get shapes id)]
-             [:& layer-item {:shape shape
-                             :key id
-                             :selected selected}]))]]
-       [:& layers-tools {:selected selected
-                         :shapes shapes}]])))

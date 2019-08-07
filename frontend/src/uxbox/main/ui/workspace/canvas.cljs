@@ -43,9 +43,8 @@
      [:& background metadata]
      [:svg.page-layout
       [:g.main
-       (for [item (reverse (:shapes page))]
-         (-> (uus/shape item)
-             (mf/with-key (str item))))
+       (for [id (reverse (:shapes page))]
+         [:& uus/shape-component {:id id :key id}])
        [:& selection-handlers {:wst wst}]
        (when-let [dshape (:drawing wst)]
          [:& draw-area {:shape dshape

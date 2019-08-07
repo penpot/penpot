@@ -5,31 +5,33 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.rect
-  (:require [uxbox.main.geom :as geom]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.ui.shapes.common :as common]
-            [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.geom.point :as gpt]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.data :refer [classnames normalize-props]]
-            [uxbox.util.dom :as dom]))
+  (:require
+   [rumext.alpha :as mf]
+   [uxbox.main.geom :as geom]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.ui.shapes.attrs :as attrs]
+   [uxbox.main.ui.shapes.common :as common]
+   [uxbox.util.data :refer [classnames normalize-props]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.geom.point :as gpt]))
 
 ;; --- Rect Component
 
 (declare rect-shape)
 
-(mx/defc rect-component
-  {:mixins [mx/reactive mx/static]}
-  [{:keys [id] :as shape}]
-  (let [modifiers (mx/react (refs/selected-modifiers id))
-        selected (mx/react refs/selected-shapes)
+(mf/defc rect-component
+  [{:keys [shape] :as props}]
+  (let [id (:id shape)
+        modifiers (mf/deref (refs/selected-modifiers id))
+        selected (mf/deref refs/selected-shapes)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)
-        shape (assoc shape :modifiers modifiers)]
+        on-mouse-down #(common/on-mouse-down % shape selected)]
+        ;; shape (assoc shape :modifiers modifiers)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     (rect-shape shape identity)]))
+     [:& rect-shape {:shape shape
+                     :modifiers modifiers}]]))
 
 ;; --- Rect Shape
 
@@ -40,10 +42,11 @@
         center (gpt/point x-center y-center)]
     (gmt/rotate* mt rotation center)))
 
-(mx/defc rect-shape
-  {:mixins [mx/static]}
-  [{:keys [id rotation modifiers] :as shape}]
-  (let [{:keys [displacement resize]} modifiers
+(mf/defc rect-shape
+  [{:keys [shape modifiers] :as props}]
+  (let [{:keys [id rotation]} shape
+        {:keys [displacement resize]} modifiers
+
         xfmt (cond-> (gmt/matrix)
                displacement (gmt/multiply displacement)
                resize (gmt/multiply resize))

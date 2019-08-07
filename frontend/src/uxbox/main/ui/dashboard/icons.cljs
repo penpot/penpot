@@ -304,7 +304,8 @@
                :on-change toggle-selection
                :checked selected?}]
       [:label {:for (:id icon)}]]
-     [:span.grid-item-icon (icon/icon-svg icon)]
+     [:span.grid-item-icon
+      [:& icon/icon-svg {:shape icon}]]
      [:div.item-info {:on-click ignore-click}
       (if edition?
         [:input.element-name {:type "text"

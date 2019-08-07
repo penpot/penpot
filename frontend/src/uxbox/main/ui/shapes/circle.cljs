@@ -2,41 +2,39 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.circle
-  (:require [lentes.core :as l]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.geom :as geom]
-            [uxbox.main.ui.shapes.common :as common]
-            [uxbox.main.ui.shapes.attrs :as attrs]
-            [uxbox.util.data :refer [classnames normalize-props]]
-            [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.geom.point :as gpt]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [rumext.alpha :as mf]
+   [uxbox.main.geom :as geom]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.ui.shapes.attrs :as attrs]
+   [uxbox.main.ui.shapes.common :as common]
+   [uxbox.util.data :refer [classnames normalize-props]]
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.geom.point :as gpt]))
 
 ;; --- Circle Component
 
 (declare circle-shape)
 
-(mx/defc circle-component
-  {:mixins [mx/reactive mx/static]}
+(mf/defc circle-component
   [{:keys [id] :as shape}]
-  (let [modifiers (mx/react (refs/selected-modifiers id))
-        selected (mx/react refs/selected-shapes)
+  (let [modifiers (mf/deref (refs/selected-modifiers id))
+        selected (mf/deref refs/selected-shapes)
         selected? (contains? selected id)
-        on-mouse-down #(common/on-mouse-down % shape selected)
-        shape (assoc shape :modifiers modifiers)]
+        on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     (circle-shape shape)]))
+     [:& circle-shape {:shape shape :modifiers modifiers}]]))
 
 ;; --- Circle Shape
 
-(mx/defc circle-shape
-  {:mixins [mx/static]}
-  [{:keys [id modifiers rotation cx cy] :as shape}]
-  (let [{:keys [resize displacement]} modifiers
+(mf/defc circle-shape
+  [{:keys [shape modifiers] :as props}]
+  (let [{:keys [id rotation cx cy]} shape
+        {:keys [resize displacement]} modifiers
 
         shape (cond-> shape
                 displacement (geom/transform displacement)

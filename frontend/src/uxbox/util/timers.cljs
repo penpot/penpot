@@ -8,11 +8,13 @@
   (:require [beicon.core :as rx]))
 
 (defn schedule
-  [ms func]
-  (let [sem (js/setTimeout #(func) ms)]
-    (reify rx/ICancellable
-      (-cancel [_]
-        (js/clearTimeout sem)))))
+  ([func]
+   (schedule 0 func))
+  ([ms func]
+   (let [sem (js/setTimeout #(func) ms)]
+     (reify rx/ICancellable
+       (-cancel [_]
+         (js/clearTimeout sem))))))
 
 (defn interval
   [ms func]
