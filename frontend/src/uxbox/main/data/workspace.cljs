@@ -576,11 +576,11 @@
 
 ;; --- Apply Temporal Resize Matrix
 
-(deftype ApplyTemporalResize [id xfmt]
+(deftype ApplyTemporalResize [sid xfmt]
   ptk/UpdateEvent
   (update [_ state]
     (let [pid (get-in state [:workspace :current])]
-      (assoc-in state [:workspace pid :modifiers id :resize] xfmt))))
+      (assoc-in state [:workspace pid :modifiers sid :resize] xfmt))))
 
 (defn apply-temporal-resize
   "Attach temporal resize transformation to the shape."

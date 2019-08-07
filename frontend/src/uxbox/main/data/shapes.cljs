@@ -28,7 +28,7 @@
 
 ;; --- Specs
 
-(s/def ::fill-color us/color?)
+(s/def ::fill-color string?)
 (s/def ::fill-opacity number?)
 (s/def ::line-height number?)
 (s/def ::letter-spacing number?)
@@ -39,7 +39,7 @@
 (s/def ::font-size number?)
 (s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
 (s/def ::stroke-width number?)
-(s/def ::stroke-color us/color?)
+(s/def ::stroke-color string?)
 (s/def ::stroke-opacity number?)
 (s/def ::rx number?)
 (s/def ::ry number?)
