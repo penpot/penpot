@@ -22,7 +22,7 @@ paths.scss = paths.app + "styles/**/*.scss";
 gulp.task("clean", function(next) {
   rimraf(paths.output + "css/", function() {
     rimraf(paths.output + "js/", function() {
-      rimraf(paths.target, next);
+      next()
     });
   });
 });
@@ -85,14 +85,9 @@ function templatePipeline(options) {
   return function() {
     const input = options.input;
     const output = options.output;
-    const jspath = options.jspath;
-    const csspath = options.csspath;
-
     const ts = Math.floor(new Date());
-
     const tmpl = mustache({
-      jsfile: `${jspath}?v=${ts}`,
-      cssfile: `${csspath}?v=${ts}`
+      ts: ts
     });
 
     return gulp.src(input)
@@ -105,8 +100,6 @@ function templatePipeline(options) {
 gulp.task("template:main", templatePipeline({
   input: paths.app + "index.mustache",
   output: paths.output,
-  jspath: "/js/main.js",
-  csspath: "/css/main.css"
 }));
 
 gulp.task("template:view", templatePipeline({
@@ -142,15 +135,11 @@ gulp.task("dist:clean", function(next) {
 gulp.task("dist:template:main", templatePipeline({
   input: paths.app + "index.mustache",
   output: paths.dist,
-  jspath: "/js/main.js",
-  csspath: "/css/main.css"
 }));
 
 gulp.task("dist:template:view", templatePipeline({
   input: paths.app + "view.mustache",
   output: paths.dist + "view/",
-  jspath: "/js/view.js",
-  csspath: "/css/view.css"
 }));
 
 gulp.task("dist:template", gulp.parallel("dist:template:view", "dist:template:main"));

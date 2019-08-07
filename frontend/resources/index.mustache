@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>UXBOX - The Open-Source prototyping tool</title>
-    <link href="{{& cssfile}}" rel="stylesheet" type="text/css" />
+    <link href="/css/main.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
     <link rel="icon" href="/images/favicon.png" />
   </head>
   <body>
@@ -12,7 +12,10 @@
     <section id="lightbox"></section>
     <section id="loader"></section>
     <section id="modal"></section>
-    <script src="{{& jsfile}}"></script>
+
+    <script src="/js/cljs_base.js?ts={{& ts}}"></script>
+    <script src="/js/common.js?ts={{& ts}}"></script>
+    <script src="/js/main.js?ts={{& ts}}"></script>
     <script>uxbox.main.init()</script>
   </body>
 </html>

@@ -1,3 +1,4 @@
+(require '[clojure.pprint :refer [pprint]])
 (require '[clojure.java.shell :as shell])
 (require '[figwheel.main.api :as figwheel])
 (require '[cljs.build.api :as api])
@@ -12,6 +13,8 @@
     (println "Unknown or missing task. Choose one of:" interposed)
     (System/exit 1)))
 
+;; --- Generic Build Options
+
 (def debug? (boolean (:uxbox-debug env nil)))
 (def demo? (boolean (:uxbox-demo env nil)))
 
@@ -24,47 +27,107 @@
   {:cache-analysis true
    :parallel-build true
    :language-in  :ecmascript6
-   :language-out :ecmascript6
+   :language-out :ecmascript5
    :closure-defines closure-defines
    :optimizations :none
-   :verbose false
+   :verbose true
+   :source-map true
    :static-fns false
    :pretty-print true
    :elide-asserts false})
 
-(defn get-output-options
-  [name dist? map?]
-  (let [prefix (if dist? "dist/js" "resources/public/js")
-        srcmap (if (= map? ::path)
-                 (str prefix "/" name ".js.map")
-                 map?)]
-    {:main (symbol (str "uxbox." name))
-     :output-to (str prefix "/" name ".js")
-     :output-dir (str prefix "/" name)
-     :source-map srcmap
-     :asset-path (str "/js/" name)}))
+(def dist-build-options
+  {:optimizations :advanced
+   :pretty-print false
+   :static-fns true
+   ;; :fn-invoke-direct true
+   :elide-asserts true})
 
-(defmethod task "dist"
-  [[_ name]]
-  (api/build (api/inputs "src")
-             (merge default-build-options
-                    (get-output-options name true ::path)
-                    (when (= name "worker")
-                      {:target :webworker})
-                    {:optimizations :advanced
-                     :pretty-print false
-                     :static-fns true
-                     ;; :fn-invoke-direct true
-                     :elide-asserts true})))
+;; --- Specific Build Options
 
-(defmethod task "build"
-  [[_ name]]
-  (api/build (api/inputs "src")
-             (merge default-build-options
-                    (get-output-options name true true)
-                    (when (= name "worker")
-                      {:target :webworker})
-                    {:optimizations :none})))
+(def main-build-options
+  {:output-dir "resources/public/js"
+   :asset-path "/js"
+   :modules {:common {:entries #{}
+                      :output-to "resources/public/js/common.js"}
+             :main {:entries #{"uxbox.main"}
+                    :output-to "resources/public/js/main.js"
+                    :depends-on #{:common}}
+             :view {:entries #{"uxbox.view"}
+                    :output-to "resources/public/js/view.js"
+                    :depends-on #{:common}}}})
+
+(def worker-build-options
+  {:main 'uxbox.worker
+   :target :webworker
+   :output-to "resources/public/js/worker.js"
+   :output-dir "resources/public/js/worker"
+   :asset-path "/js/worker"})
+
+(def main-dist-build-options
+  (-> (merge default-build-options
+             main-build-options
+             dist-build-options)
+      (assoc :output-dir "dist/js")
+      (assoc-in [:modules :common :output-to] "dist/js/common.js")
+      (assoc-in [:modules :main :output-to] "dist/js/main.js")
+      (assoc-in [:modules :view :output-to] "dist/js/view.js")))
+
+(def main-build-build-options
+  (merge main-dist-build-options
+         {:optimizations :none}))
+
+(def worker-dist-build-options
+  (merge default-build-options
+         worker-build-options
+         dist-build-options
+         {:output-to "dist/js/worker.js"
+          :output-dir "dist/js/worker"
+          :source-map "dist/js/worker.js.map"}))
+
+(def worker-build-build-options
+  (merge worker-dist-build-options
+         {:optimizations :none
+          :source-map true}))
+
+;; --- Tasks Definitions
+
+(defmethod task "dist:main"
+  [args]
+  (let [cfg main-dist-build-options]
+    ;; (pprint cfg)
+    (api/build (api/inputs "src") cfg)))
+
+(defmethod task "dist:worker"
+  [args]
+  (let [cfg worker-dist-build-options]
+    ;; (pprint cfg)
+    (api/build (api/inputs "src") cfg)))
+
+(defmethod task "build:main"
+  [args]
+  (let [cfg main-build-build-options]
+    ;; (pprint cfg)
+    (api/build (api/inputs "src") cfg)))
+
+(defmethod task "build:worker"
+  [args]
+  (let [cfg worker-build-build-options]
+    ;; (pprint cfg)
+    (api/build (api/inputs "src") cfg)))
+
+(defmethod task "build:all"
+  [args]
+  (task ["build:main"])
+  (task ["build:worker"]))
+
+(defmethod task "dist:all"
+  [args]
+  (task ["dist:main"])
+  (task ["dist:worker"]))
+
+
+;; --- Tests Tasks
 
 (defmethod task "build-tests"
   [& args]
@@ -78,25 +141,20 @@
                     :output-dir "target/tests/main"
                     :optimizations :none)))
 
+;; --- Figwheel Config & Tasks
 
 (def figwheel-builds
   {:main {:id "main"
-          :options (merge default-build-options
-                          (get-output-options "main" false true))}
-   :view {:id "view"
-          :options (merge default-build-options
-                          (get-output-options "view" false true))}
+          :options (merge default-build-options main-build-options)}
    :worker {:id "worker"
-            :options (merge default-build-options
-                            {:target :webworker}
-                            (get-output-options "worker" false true))}})
+            :options (merge default-build-options worker-build-options)}})
 
 (def figwheel-options
   {:open-url false
+   :pprint-config false
    :load-warninged-code true
    :auto-testing false
-   :css-dirs ["resources/public/css"
-              "resources/public/view/css"]
+   :css-dirs ["resources/public/css"]
    :ring-server-options {:port 3449 :host "0.0.0.0"}
    :watch-dirs ["src" "test"]})
 
@@ -105,28 +163,7 @@
   (figwheel/start
    figwheel-options
    (:main figwheel-builds)
-   (:view figwheel-builds)
    (:worker figwheel-builds)))
-
-(defmethod task "figwheel-single"
-  [[_ name]]
-  (when-let [build (get figwheel-builds (keyword name))]
-    (figwheel/start
-     figwheel-options
-     build
-     (:worker figwheel-builds))))
-
-(defmethod task "build-all"
-  [args]
-  (task ["build" "main"])
-  (task ["build" "view"])
-  (task ["build" "worker"]))
-
-(defmethod task "dist-all"
-  [args]
-  (task ["dist" "main"])
-  (task ["dist" "view"])
-  (task ["dist" "worker"]))
 
 ;;; Build script entrypoint. This should be the last expression.
 

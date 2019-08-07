@@ -5,14 +5,18 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UXBOX-view - The Open-Source prototyping tool</title>
-    <link href="{{& cssfile}}" rel="stylesheet" type="text/css" />
+    <link href="/css/view.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
     <link rel="icon" href="/images/favicon.png" />
   </head>
   <body>
     <section id="app" tabindex="1"></section>
     <section id="lightbox" tabindex="2"></section>
+    <section id="modal"></section>
     <section id="loader" tabindex="3"></section>
-    <script src="{{& jsfile}}"></script>
+
+    <script src="/js/cljs_base.js?ts={{& ts}}"></script>
+    <script src="/js/common.js?ts={{& ts}}"></script>
+    <script src="/js/view.js?ts={{& ts}}"></script>
     <script>uxbox.view.init()</script>
   </body>
 </html>
