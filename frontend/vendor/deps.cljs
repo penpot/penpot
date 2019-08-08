@@ -11,9 +11,14 @@
   {:file "react-color/react-color.bundle.js"
    :file-min "react-color/react-color.bundle.min.js"
    :requires ["cljsjs.react"]
-   :provides ["vendor.react-color"]}]
+   :provides ["vendor.react-color"]}
+  {:file "react-dnd/react-dnd.bundle.js"
+   :file-min "react-dnd/react-dnd.bundle.min.js"
+   :requires ["cljsjs.react"]
+   :provides ["vendor.react-dnd"]}]
  :externs ["main.externs.js"
            "snapsvg/externs.js"
            "jszip/externs.js"
            "react-color/externs.js"
+           "react-dnd/externs.js"
            "datefns/externs.js"]}

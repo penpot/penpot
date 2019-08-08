@@ -7,7 +7,8 @@
     "build": "NODE_ENV=production rollup -c",
     "minify:react-color": "terser react-color/react-color.bundle.js -c -m -o react-color/react-color.bundle.min.js",
     "minify:datefns": "terser datefns/datefns.bundle.js -c -m -o datefns/datefns.bundle.min.js",
-    "dist": "npm run build && npm run minify:react-color && npm run minify:datefns"
+    "minify:react-dnd": "terser react-dnd/react-dnd.bundle.js -c -m -o react-dnd/react-dnd.bundle.min.js",
+    "dist": "npm run build && npm run minify:react-color && npm run minify:datefns && npm run minify:react-dnd"
   },
   "author": "",
   "license": "MPL2",
@@ -29,6 +30,8 @@
   "dependencies": {
     "date-fns": "^1.30.1",
     "react-color": "^2.17.3",
+    "react-dnd": "^9.3.4",
+    "react-dnd-html5-backend": "^9.3.4",
     "snapsvg": "^0.5.1"
   }
 }

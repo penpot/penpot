@@ -41,6 +41,18 @@ export default [{
   },
   plugins: plugins
 }, {
+  input: "./react-dnd/react-dnd.js",
+  external: ["react"],
+  output: {
+    globals: {
+      "react": "React",
+    },
+    compact: true,
+    file: './react-dnd/react-dnd.bundle.js',
+    format: 'iife',
+  },
+  plugins: plugins
+}, {
   input: "./datefns/datefns.js",
   output: {
     compact: true,
