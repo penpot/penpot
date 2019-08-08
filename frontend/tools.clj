@@ -75,7 +75,9 @@
 
 (def main-build-build-options
   (merge main-dist-build-options
-         {:optimizations :none}))
+         {:optimizations :advanced
+          :pseudo-names true
+          :pretty-print true}))
 
 (def worker-dist-build-options
   (merge default-build-options
@@ -87,8 +89,9 @@
 
 (def worker-build-build-options
   (merge worker-dist-build-options
-         {:optimizations :none
-          :source-map true}))
+         {:optimizations :advanced
+          :pseudo-names true
+          :pretty-print true}))
 
 ;; --- Tasks Definitions
 
