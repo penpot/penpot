@@ -23,15 +23,15 @@
 (declare path-shape)
 
 (mf/defc path-component
-  [{:keys [id] :as shape}]
-  (let [modifiers (mf/deref (refs/selected-modifiers id))
+  [{:keys [shape] :as props}]
+  (let [modifiers (mf/deref (refs/selected-modifiers (:id shape)))
         selected (mf/deref refs/selected-shapes)
-        selected? (contains? selected id)]
+        selected? (contains? selected (:id shape))]
     (letfn [(on-mouse-down [event]
               (common/on-mouse-down event shape selected))
             (on-double-click [event]
               (when selected?
-                (st/emit! (uds/start-edition-mode id))))]
+                (st/emit! (uds/start-edition-mode (:id shape)))))]
       [:g.shape {:class (when selected? "selected")
                  :on-double-click on-double-click
                  :on-mouse-down on-mouse-down}

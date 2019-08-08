@@ -247,9 +247,11 @@ case $1 in
     run)
         run
         ;;
+
     log)
         log
         ;;
+
     stop)
         stop
         ;;

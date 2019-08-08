@@ -65,7 +65,7 @@
        [:div.color-info
         [:input
          {:on-change on-stroke-color-change
-          :value (:stroke-color shape)}]]]
+          :value (:stroke-color shape "")}]]]
 
       [:span "Radius"]
       [:div.row-flex

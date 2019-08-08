@@ -20,10 +20,10 @@
 (declare circle-shape)
 
 (mf/defc circle-component
-  [{:keys [id] :as shape}]
-  (let [modifiers (mf/deref (refs/selected-modifiers id))
+  [{:keys [shape] :as props}]
+  (let [modifiers (mf/deref (refs/selected-modifiers (:id shape)))
         selected (mf/deref refs/selected-shapes)
-        selected? (contains? selected id)
+        selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
