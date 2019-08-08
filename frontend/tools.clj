@@ -30,6 +30,7 @@
    :language-out :ecmascript5
    :closure-defines closure-defines
    :optimizations :none
+   :infer-externs true
    :verbose true
    :source-map true
    :static-fns false

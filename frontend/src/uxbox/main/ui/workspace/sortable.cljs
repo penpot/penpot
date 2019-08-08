@@ -22,14 +22,14 @@
         [_, drop] (rdnd/useDrop
                    #js {:accept type
                         :hover (fn [item monitor]
-                                 (when (.-current ref)
+                                 (when (unchecked-get ref "current")
                                    (on-hover (unchecked-get item "data") monitor)))
                         :drop (fn [item monitor]
-                                (when (.-current ref)
+                                (when (unchecked-get ref "current")
                                   (on-drop (unchecked-get item "data") monitor)))})
         [props, drag] (rdnd/useDrag
                        #js {:item #js {:type type :data data}
-                            :collect (fn [monitor]
+                            :collect (fn [^js/ReactDnd.Monitor monitor]
                                        #js {:dragging? (.isDragging monitor)})})]
     [(mfu/obj->map props)
      (drag (drop ref))]))
