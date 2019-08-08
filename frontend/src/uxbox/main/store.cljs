@@ -26,9 +26,11 @@
 
 (defn emit!
   ([event]
-   (ptk/emit! store event))
+   (ptk/emit! store event)
+   nil)
   ([event & events]
-   (apply ptk/emit! store (cons event events))))
+   (apply ptk/emit! store (cons event events))
+   nil))
 
 (def initial-state
   {:dashboard {:project-order :name

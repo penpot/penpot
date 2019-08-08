@@ -517,6 +517,21 @@
   []
   (DeleteSelected.))
 
+;; --- Change Shape Order (Ordering)
+
+(defn change-shape-order
+  [{:keys [id index] :as params}]
+  {:pre [(uuid? id) (number? index)]}
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (get-in state [:shapes id :page])
+            shapes (get-in state [:pages page-id :shapes])
+            shapes (into [] (remove #(= % id)) shapes)
+            [before after] (split-at index shapes)
+            shapes (vec (concat before [id] after))]
+        (assoc-in state [:pages page-id :shapes] shapes)))))
+
 ;; --- Shape Transformations
 
 (def ^:private canvas-coords

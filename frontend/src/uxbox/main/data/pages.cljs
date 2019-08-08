@@ -145,27 +145,6 @@
   [state id]
   (update state :packed-pages dissoc id))
 
-;; --- Update Project main page
-;;
-;; A event that handles the project main page
-;; update based on the user selected page ordering.
-
-(deftype UpdateProjectMainPage [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [get-order #(get-in % [:metadata :order])
-          page-id (->> (vals (:pages state))
-                       (filter #(= id (:project %)))
-                       (sort-by get-order)
-                       (map :id)
-                       (first))]
-      (assoc-in state [:projects id :page-id] page-id))))
-
-(defn update-project-main-page
-  [id]
-  {:pre [(uuid? id)]}
-  (UpdateProjectMainPage. id))
-
 ;; --- Pages Fetched
 
 (deftype PagesFetched [id pages]
@@ -174,13 +153,15 @@
 
   ptk/UpdateEvent
   (update [_ state]
+    (let [get-order #(get-in % [:metadata :order])
+          pages (sort-by get-order pages)
+          page-ids (into [] (map :id) pages)]
     (as-> state $
+      (assoc-in $ [:projects id :pages] page-ids)
+      ;; TODO: this is a workaround
+      (assoc-in $ [:projects id :page-id] (first page-ids))
       (reduce assoc-page $ pages)
-      (reduce assoc-packed-page $ pages)))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (update-project-main-page id))))
+      (reduce assoc-packed-page $ pages)))))
 
 (defn pages-fetched
   [id pages]
@@ -295,7 +276,7 @@
           (->> (rp/req :update/page page)
                (rx/map :payload)
                (rx/do #(when (fn? on-success)
-                         (ts/schedule 0 on-success)))
+                         (ts/schedule-on-idle on-success)))
                (rx/map page-persisted)))))))
 
 (defn persist-page?
@@ -335,34 +316,16 @@
 ;; that does not sends the heavyweiht `:data` attribute
 ;; and only serves for update other page data.
 
-(deftype PersistMetadata [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [page (get-in state [:pages id])]
-      (->> (rp/req :update/page-metadata page)
-           (rx/map :payload)
-           (rx/map metadata-persisted)))))
-
 (defn persist-metadata
   [id]
   {:pre [(uuid? id)]}
-  (PersistMetadata. id))
-
-(deftype PersistPagesMetadata [project-id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [xform (comp
-                 (map second)
-                 (filter #(= project-id (:project %)))
-                 (map :id))]
-      (->> (sequence xform (:pages state))
-           (rx/from-coll)
-           (rx/map persist-metadata)))))
-
-(defn persist-pages-metadata
-  [project-id]
-  {:pre [(uuid? project-id)]}
-  (PersistPagesMetadata. project-id))
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page (get-in state [:pages id])]
+        (->> (rp/req :update/page-metadata page)
+             (rx/map :payload)
+             (rx/map metadata-persisted))))))
 
 ;; --- Update Page
 
@@ -396,49 +359,37 @@
 ;; page order numbers after a user sorting
 ;; operation for a concrete project.
 
-(deftype ReorderPages [project-id]
-  ptk/UpdateEvent
-  (update [this state]
-    (let [get-order #(get-in % [:metadata :order])
-          pages (->> (vals (:pages state))
-                     (filter #(= project-id (:project %)))
-                     (sort-by get-order)
-                     (map :id)
-                     (map-indexed vector))]
-      (reduce (fn [state [order id]]
-                (assoc-in state [:pages id :metadata :order] (* order 10)))
-              state
-              pages)))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (update-project-main-page project-id)
-           (persist-pages-metadata project-id))))
-
 (defn reorder-pages
-  [id]
-  {:pre [(uuid? id)]}
-  (ReorderPages. id))
+  [project-id]
+  {:pre [(uuid? project-id)]}
+  (reify
+    ptk/UpdateEvent
+    (update [this state]
+      (let [page-ids (get-in state [:projects project-id :pages])]
+        (reduce (fn [state [index id]]
+                  (assoc-in state [:pages id :metadata :order] index))
+                ;; TODO: this is workaround
+                (assoc-in state [:projects project-id :page-id] (first page-ids))
+                (map-indexed vector page-ids))))
 
-;; --- Update Order
-;;
-;; A specialized event for update order
-;; attribute on the page metadata
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-ids (get-in state [:projects project-id :pages])]
+        (->> (rx/from-coll page-ids)
+             (rx/map persist-metadata))))))
 
-(deftype UpdateOrder [id order]
-  ptk/UpdateEvent
-  (update [this state]
-    (assoc-in state [:pages id :metadata :order] order))
+;; --- Move Page (Ordering)
 
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [project (get-in state [:pages id :project])]
-      (rx/of (reorder-pages project)))))
-
-(defn update-order
-  [id order]
-  {:pre [(uuid? id) (number? order)]}
-  (UpdateOrder. id order))
+(defn move-page
+  [{:keys [page-id project-id index] :as params}]
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pages (get-in state [:projects project-id :pages])
+            pages (into [] (remove #(= % page-id)) pages)
+            [before after] (split-at index pages)
+            pages (vec (concat before [page-id] after))]
+        (assoc-in state [:projects project-id :pages] pages)))))
 
 ;; --- Persist Page Form
 ;;

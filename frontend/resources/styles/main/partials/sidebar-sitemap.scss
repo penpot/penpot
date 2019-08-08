@@ -269,18 +269,10 @@
 
       }
 
-      &.drag-top {
-        border-top: 40px solid $soft-ui-border !important;
+      &.dragging {
+        // TODO: revisit this
+        background-color: #eee;
       }
-
-      &.drag-bottom {
-        border-bottom: 40px solid $soft-ui-border !important;
-      }
-
-      &.drag-inside {
-        border: 2px solid $main-ui-color !important;
-      }
-
     }
   }
 

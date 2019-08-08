@@ -13,7 +13,8 @@
    [uxbox.main.ui.workspace.sidebar.icons :refer [icons-toolbox]]
    [uxbox.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [uxbox.main.ui.workspace.sidebar.options :refer [options-toolbox]]
-   [uxbox.main.ui.workspace.sidebar.sitemap :refer [sitemap-toolbox]]))
+   [uxbox.main.ui.workspace.sidebar.sitemap :refer [sitemap-toolbox]]
+   [uxbox.util.rdnd :as rdnd]))
 
 ;; --- Left Sidebar (Component)
 
@@ -21,14 +22,17 @@
   [{:keys [wst page] :as props}]
   (let [{:keys [flags selected]} wst]
     [:aside#settings-bar.settings-bar.settings-bar-left
-     [:div.settings-bar-inside
-      (when (contains? flags :sitemap)
-        [:& sitemap-toolbox {:page page}])
-      #_(when (contains? flags :document-history)
-          (history-toolbox page-id))
-      (when (contains? flags :layers)
-        [:& layers-toolbox {:page page
-                            :selected selected}])]]))
+     [:> rdnd/provider {:backend rdnd/html5}
+      [:div.settings-bar-inside
+       (when (contains? flags :sitemap)
+         [:& sitemap-toolbox {:project-id (:project page)
+                              :current-page-id (:id page)
+                              :page page}])
+       #_(when (contains? flags :document-history)
+           (history-toolbox page-id))
+       (when (contains? flags :layers)
+         [:& layers-toolbox {:page page
+                             :selected selected}])]]]))
 
 ;; --- Right Sidebar (Component)
 

@@ -118,7 +118,7 @@
 (mf/defc grid-item-thumbnail
   [{:keys [project] :as props}]
   (let [url (mf/use-state nil)]
-    (mf/use-effect
+    #_(mf/use-effect
      {:deps #js [(:page-id project)]
       :init (fn []
               (when-let [page-id (:page-id project)]
@@ -160,7 +160,8 @@
                    (dom/prevent-default %)
                    (swap! local assoc :edition true))]
     [:div.grid-item.project-th {:on-click on-navigate}
-     [:& grid-item-thumbnail {:project project :key (select-keys project [:id :page-id])}]
+     [:& grid-item-thumbnail {:project project
+                              :key (select-keys project [:id :page-id])}]
      [:div.item-info
       (if (:edition @local)
         [:input.element-name {:type "text"

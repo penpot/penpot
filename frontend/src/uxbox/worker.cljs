@@ -18,8 +18,9 @@
 
 (defn- on-message
   [event]
-  (let [message (t/decode (.-data event))]
-    (impl/handler message)))
+  (when (nil? (.-source event))
+    (let [message (t/decode (.-data event))]
+      (impl/handler message))))
 
 (defonce _
   (.addEventListener js/self "message" on-message))

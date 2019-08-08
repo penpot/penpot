@@ -10,6 +10,7 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [rumext.util :as mfu]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.lightbox :as udl]
    [uxbox.main.data.pages :as udp]
@@ -19,80 +20,46 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.lightbox :as lbx]
    [uxbox.main.ui.workspace.sidebar.sitemap-pageform]
+   [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.dom.dnd :as dnd]
    [uxbox.util.i18n :refer (tr)]
-   [uxbox.util.router :as r]))
+   [uxbox.util.router :as rt]))
+
+;; --- Page Item
 
 (mf/defc page-item
-  [{:keys [page deletable? selected?] :as props}]
-  (let [local (mf/use-state {})
-        body-classes (classnames
-                      :selected selected?
-                      :drag-active (:dragging @local)
-                      :drag-top (= :top (:over @local))
-                      :drag-bottom (= :bottom (:over @local))
-                      :drag-inside (= :middle (:over @local)))
-        li-classes (classnames
-                    :selected selected?
-                    :hide (:dragging @local))]
-    (letfn [(on-edit [event]
-              (udl/open! :page-form {:page page}))
+  [{:keys [page index deletable? selected?] :as props}]
+  (letfn [(on-edit [event]
+            (udl/open! :page-form {:page page}))
+          (delete []
+            (let [next #(st/emit! (dp/go-to (:project page)))]
+              (st/emit! (udp/delete-page (:id page) next))))
 
-            (on-navigate [event]
-              (st/emit! (dp/go-to (:project page) (:id page))))
-
-            (delete []
-              (let [next #(st/emit! (dp/go-to (:project page)))]
-                (st/emit! (udp/delete-page (:id page) next))))
-
-            (on-delete [event]
-              (dom/prevent-default event)
-              (dom/stop-propagation event)
-              (udl/open! :confirm {:on-accept delete}))
-
-            (on-drag-start [event]
-              (let [target (dom/event->target event)]
-                (dnd/set-allowed-effect! event "move")
-                (dnd/set-data! event (:id page))
-                (dnd/set-image! event target 50 10)
-                (swap! local assoc :dragging true)))
-            (on-drag-end [event]
-              (swap! local assoc :dragging false :over nil))
-            (on-drop [event]
-              (dom/stop-propagation event)
-              (let [id (dnd/get-data event)
-                    over (:over @local)]
-                (case (:over @local)
-                  :top (let [new-order (dec (get-in page [:metadata :order]))]
-                         (st/emit! (udp/update-order id new-order)))
-                  :bottom (let [new-order (inc (get-in page [:metadata :order]))]
-                            (st/emit! (udp/update-order id new-order))))
-                (swap! local assoc :dragging false :over nil)))
-            (on-drag-over [event]
-              (dom/prevent-default event)
-              (dnd/set-drop-effect! event "move")
-              (let [over (dnd/get-hover-position event false)]
-                (swap! local assoc :over over)))
-            (on-drag-enter [event]
-              (swap! local assoc :over true))
-            (on-drag-leave [event]
-              (swap! local assoc :over false))]
-      [:li {:class li-classes}
+          (on-delete [event]
+            (dom/prevent-default event)
+            (dom/stop-propagation event)
+            (udl/open! :confirm {:on-accept delete}))
+          (on-drop [item monitor]
+            (st/emit! (udp/reorder-pages (:project page))))
+          (on-hover [item monitor]
+            (st/emit! (udp/move-page {:project-id (:project-id item)
+                                      :page-id (:page-id item)
+                                      :index index})))]
+    (let [[dprops ref] (use-sortable {:type "page-item"
+                                      :data {:page-id (:id page)
+                                             :project-id (:project page)
+                                             :index index}
+                                      :on-hover on-hover
+                                      :on-drop on-drop})]
+      [:li {:ref ref :class (classnames :selected selected?)}
        [:div.element-list-body
-        {:class body-classes
-         :style {:opacity (if (:dragging @local)
-                            "0.5"
-                            "1")}
-         :on-click on-navigate
+        {:class (classnames :selected selected?
+                            :dragging (:dragging? dprops))
+         :on-click #(st/emit! (rt/nav :workspace/page {:project (:project page)
+                                                       :page (:id page)}))
          :on-double-click #(dom/stop-propagation %)
-         :on-drag-start on-drag-start
-         :on-drag-enter on-drag-enter
-         :on-drag-leave on-drag-leave
-         :on-drag-over on-drag-over
-         :on-drag-end on-drag-end
-         :on-drop on-drop
          :draggable true}
 
         [:div.page-icon i/page]
@@ -102,51 +69,47 @@
          (when deletable?
            [:a {:on-click on-delete} i/trash])]]])))
 
-;; TODO: refactor this to not use global refs
+;; --- Pages List
 
-(defn- pages-selector
-  [project-id]
-  (let [get-order #(get-in % [:metadata :order])]
-    (fn [state]
-      ;; NOTE: this function will be executed on every state change
-      ;; when we are on workspace page, that is ok but we need to
-      ;; think in a better approach (maybe materialize the result
-      ;; after pages fetching...)
-      (->> (vals (:pages state))
-           (filter #(= project-id (:project %)))
-           (sort-by get-order)))))
+(defn- make-pages-iref
+  [{:keys [id pages] :as project}]
+  (letfn [(selector [state]
+            (into [] (map #(get-in state [:pages %])) pages))]
+    (-> (l/lens selector)
+        (l/derive st/state))))
 
-(mf/def sitemap-toolbox
-  :mixins [mf/memo mf/reactive]
+(mf/defc pages-list
+  [{:keys [project current-page-id] :as props}]
+  (let [pages-iref (mf/use-memo {:deps #js [project]
+                                 :init #(make-pages-iref project)})
+        pages (mf/deref pages-iref)
+        deletable? (> (count pages) 1)]
+    [:ul.element-list
+     (for [[index item] (map-indexed vector pages)]
+       [:& page-item {:page item
+                      :index index
+                      :deletable? deletable?
+                      :selected? (= (:id item) current-page-id)
+                      :key (:id item)}])]))
 
-  :init
-  (fn [own {:keys [page] :as props}]
-    (assoc own
-           ::project-ref (-> (l/in [:projects (:project page)])
-                             (l/derive st/state))
-           ::pages-ref (-> (l/lens (pages-selector (:project page)))
-                           (l/derive st/state))))
+;; --- Sitemap Toolbox
 
-  :render
-  (fn [own {:keys [page] :as props}]
-    (let [project (mf/react (::project-ref own))
-          pages (mf/react (::pages-ref own))
-          create #(udl/open! :page-form {:page {:project (:id project)}})
-          close #(st/emit! (dw/toggle-flag :sitemap))
-          deletable? (> (count pages) 1)]
-      [:div.sitemap.tool-window
-       [:div.tool-window-bar
-        [:div.tool-window-icon i/project-tree]
-        [:span (tr "ds.sitemap")]
-        [:div.tool-window-close {:on-click close} i/close]]
-       [:div.tool-window-content
-        [:div.project-title
-         [:span (:name project)]
-         [:div.add-page {:on-click create} i/close]]
-        [:ul.element-list
-         (for [item pages]
-           (let [selected? (= (:id item) (:id page))]
-             [:& page-item {:page item
-                            :deletable? deletable?
-                            :selected? selected?
-                            :key (:id item)}]))]]])))
+(mf/defc sitemap-toolbox
+  [{:keys [project-id current-page-id] :as props}]
+  (let [project-iref (mf/use-memo {:deps #js [project-id]
+                                   :init #(-> (l/in [:projects project-id])
+                                              (l/derive st/state))})
+        project (mf/deref project-iref)
+        create #(udl/open! :page-form {:page {:project project-id}})
+        close #(st/emit! (dw/toggle-flag :sitemap))]
+    [:div.sitemap.tool-window
+     [:div.tool-window-bar
+      [:div.tool-window-icon i/project-tree]
+      [:span (tr "ds.sitemap")]
+      [:div.tool-window-close {:on-click close} i/close]]
+     [:div.tool-window-content
+      [:div.project-title
+       [:span (:name project)]
+       [:div.add-page {:on-click create} i/close]]
+      [:& pages-list {:project project
+                      :current-page-id current-page-id}]]]))

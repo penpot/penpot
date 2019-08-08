@@ -102,6 +102,10 @@
     flex-direction: column;
     width: 100%;
 
+    &.dragging-TODO {
+      background-color: #eee;
+    }
+
     &.open {
 
       ul {
