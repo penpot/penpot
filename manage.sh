@@ -182,6 +182,10 @@ function run {
     docker-compose -p uxbox -f ./docker/docker-compose.yml up -d
 }
 
+function log {
+    docker-compose -p uxbox -f docker/docker-compose.yml logs -f --tail=50
+}
+
 function stop {
     echo "Stoping containers..."
     docker-compose -p uxbox -f ./docker/docker-compose.yml stop
@@ -241,6 +245,9 @@ case $1 in
 
     run)
         run
+        ;;
+    log)
+        log
         ;;
     stop)
         stop
