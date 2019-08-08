@@ -1,4 +1,5 @@
 var TopLevel = {
+  "isDragging": function() {},
   "offsetX": function() {},
   "offsetY": function() {},
   "nativeEvent": function() {},
