@@ -13,6 +13,8 @@
 
 ;; --- Page Item
 
+(set! *warn-on-infer* true)
+
 (defn use-sortable
   [{:keys [type data on-hover on-drop]
     :or {on-hover (constantly nil)

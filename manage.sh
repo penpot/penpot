@@ -103,27 +103,27 @@ function build-frontend-local {
            $CONTAINER ./scripts/build-$BUILD_TYPE.sh
 }
 
-function build-frontend-production-image {
-    build-frontend-local "production" || exit 1;
+function build-frontend-image {
+    build-frontend-local "dist" || exit 1;
     rm -rf docker/frontend/dist || exit 1;
     cp -vr frontend/dist docker/frontend/ || exit 1;
 
     docker build --rm=true \
-           -t uxbox-frontend-production:$REV \
-           -t uxbox-frontend-production:latest \
+           -t uxbox-frontend:$REV \
+           -t uxbox-frontend:latest \
            docker/frontend/;
 
     rm -rf docker/frontend/dist || exit 1;
 }
 
-function build-frontend-develop-image {
-    build-frontend-local "develop" || exit 1;
+function build-frontend-dbg-image {
+    build-frontend-local "dbg-dist" || exit 1;
     rm -rf docker/frontend/dist || exit 1;
     cp -vr frontend/dist docker/frontend/ || exit 1;
 
     docker build --rm=true \
-           -t uxbox-frontend-develop:$REV \
-           -t uxbox-frontend-develop:latest \
+           -t uxbox-frontend-dbg:$REV \
+           -t uxbox-frontend-dbg:latest \
            docker/frontend/;
 
     rm -rf docker/frontend/dist || exit 1;
@@ -143,42 +143,42 @@ function build-backend-local {
       ./backend/ ./backend/dist/
 }
 
-function build-backend-production-image {
+function build-backend-image {
     build-backend-local || exit 1;
     rm -rf docker/backend/dist || exit 1;
     cp -vr backend/dist docker/backend/ || exit 1;
 
     docker build --rm=true \
-           -t uxbox-backend-production:$REV \
-           -t uxbox-backend-production:latest \
+           -t uxbox-backend:$REV \
+           -t uxbox-backend:latest \
            docker/backend/;
 
     rm -rf docker/backend/dist || exit 1;
 }
 
 function build-images {
-    echo "Building frontend production image ..."
-    build-frontend-production-image || exit 1;
-    echo "Building frontend develop image ..."
-    build-frontend-develop-image || exit 1;
-    echo "Building backend production image ..."
-    build-backend-production-image || exit 1;
+    echo "Building frontend image ..."
+    build-frontend-image || exit 1;
+    echo "Building frontend dbg image ..."
+    build-frontend-dbg-image || exit 1;
+    echo "Building backend image ..."
+    build-backend-image || exit 1;
 }
 
 function run {
-    if [[ ! $(docker images uxbox-backend-production:latest) ]]; then
-        build-production-backend-image
+    if [[ ! $(docker images uxbox-backend:latest) ]]; then
+        build-backend-image
     fi
 
-    if [[ ! $(docker images uxbox-frontend-production:latest) ]]; then
-        build-production-frontend-image
+    if [[ ! $(docker images uxbox-frontend:latest) ]]; then
+        build-frontend-image
     fi
 
-    if [[ ! $(docker images uxbox-frontend-develop:latest) ]]; then
-        build-develop-frontend-image
+    if [[ ! $(docker images uxbox-frontend-dbg:latest) ]]; then
+        build-frontend-dbg-image
     fi
 
-    echo "Running production images..."
+    echo "Running images..."
     docker-compose -p uxbox -f ./docker/docker-compose.yml up -d
 }
 
@@ -202,9 +202,10 @@ function usage {
     echo "- run-frontend-tests               Execute unit tests for frontend only"
     echo "- run-backend-tests                Execute unit tests for backend only"
     echo "- build-images                     Build a 'release ready' docker images for both backend and frontend"
-    echo "- build-frontend-develop-image     Build a 'release ready' docker image for frontend (develop build)"
-    echo "- build-frontend-production-image  Build a 'release ready' docker images for frontend"
-    echo "- build-backend-production-image   Build a 'release ready' docker images for backend"
+    echo "- build-frontend-image             Build a 'release ready' docker image for frontend (debug version)"
+    echo "- build-frontend-dbg-image         Build a 'release ready' docker images for frontend"
+    echo "- build-backend-image   Build a 'release ready' docker images for backend"
+    echo "- log                              Attach to docker logs."
     echo "- run                              Run 'production ready' docker compose"
     echo "- stop                             Stop 'production ready' docker compose"
 }
@@ -233,14 +234,14 @@ case $1 in
     build-images)
         build-images
         ;;
-    build-frontend-develop-image)
-        build-frontend-develop-image;
+    build-frontend-dbg-image)
+        build-frontend-dbg-image;
         ;;
-    build-frontend-production-image)
-        build-frontend-production-image;
+    build-frontend-image)
+        build-frontend-image;
         ;;
-    build-backend-production-image)
-        build-backend-production-image;
+    build-backend-image)
+        build-backend-image;
         ;;
 
     run)

@@ -74,7 +74,7 @@
       (assoc-in [:modules :main :output-to] "dist/js/main.js")
       (assoc-in [:modules :view :output-to] "dist/js/view.js")))
 
-(def main-build-build-options
+(def main-dbg-dist-build-options
   (merge main-dist-build-options
          {:optimizations :advanced
           :pseudo-names true
@@ -88,7 +88,7 @@
           :output-dir "dist/js/worker"
           :source-map "dist/js/worker.js.map"}))
 
-(def worker-build-build-options
+(def worker-dbg-dist-build-options
   (merge worker-dist-build-options
          {:optimizations :advanced
           :pseudo-names true
@@ -108,27 +108,29 @@
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
-(defmethod task "build:main"
+(defmethod task "dbg-dist:main"
   [args]
-  (let [cfg main-build-build-options]
+  (let [cfg main-dbg-dist-build-options]
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
-(defmethod task "build:worker"
+(defmethod task "dbg-dist:worker"
   [args]
-  (let [cfg worker-build-build-options]
+  (let [cfg worker-dbg-dist-build-options]
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
-
-(defmethod task "build:all"
-  [args]
-  (task ["build:main"])
-  (task ["build:worker"]))
 
 (defmethod task "dist:all"
   [args]
   (task ["dist:main"])
   (task ["dist:worker"]))
+
+(defmethod task "dbg-dist:all"
+  [args]
+  (task ["dbg-dist:main"])
+  (task ["dbg-dist:worker"]))
+
+
 
 
 ;; --- Tests Tasks
