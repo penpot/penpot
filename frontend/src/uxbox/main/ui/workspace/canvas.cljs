@@ -13,8 +13,7 @@
    [uxbox.main.ui.shapes :as uus]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
-   [uxbox.util.geom.point :as gpt])
-  (:import goog.events.EventType))
+   [uxbox.util.geom.point :as gpt]))
 
 ;; --- Background
 
@@ -32,7 +31,6 @@
 
 (mf/defc canvas
   [{:keys [page wst] :as props}]
-  (prn "canvas")
   (let [{:keys [metadata id]} page
         zoom (:zoom wst 1)  ;; NOTE: maybe forward wst to draw-area
         width (:width metadata)

@@ -125,8 +125,10 @@
 ;; --- Horizontal Rule (Component)
 
 (mf/defc horizontal-rule
-  [{:keys [zoom] :as props}]
+  {:wrap [mf/wrap-memo]}
+  [props]
   (let [scroll (mf/deref refs/workspace-scroll)
+        zoom (mf/deref refs/selected-zoom)
         scroll-x (:x scroll)
         translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
     [:svg.horizontal-rule
@@ -140,8 +142,10 @@
 ;; --- Vertical Rule (Component)
 
 (mf/defc vertical-rule
-  [{:keys [zoom] :as props}]
+  {:wrap [mf/wrap-memo]}
+  [props]
   (let [scroll (mf/deref refs/workspace-scroll)
+        zoom (mf/deref refs/selected-zoom)
         scroll-y (:y scroll)
         translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
     [:svg.vertical-rule

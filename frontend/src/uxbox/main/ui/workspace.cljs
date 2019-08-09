@@ -35,7 +35,8 @@
    [uxbox.main.user-events :as uev]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.rdnd :as rdnd]))
 
 ;; --- Workspace
 
@@ -77,8 +78,9 @@
 
 (mf/defc workspace
   [{:keys [page wst] :as props}]
-  (let [flags (:flags wst)
+  (let [flags (mf/deref refs/flags)
         canvas (mf/use-ref* nil)
+
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools
@@ -87,6 +89,8 @@
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?)
                  :scrolling (:viewport-positionig workspace))]
+    (prn "workspace.render")
+
     (mf/use-effect {:deps (:id page)
                     :init #(subscibe canvas page)
                     :end unsubscribe})
@@ -109,43 +113,34 @@
 
        ;; Rules
        (when (contains? flags :rules)
-         [:& horizontal-rule {:zoom (:zoom wst)}])
+         [:& horizontal-rule])
 
        (when (contains? flags :rules)
-         [:& vertical-rule {:zoom (:zoom wst)}])
+         [:& vertical-rule])
 
        ;; Canvas
-       [:section.workspace-canvas {:id "workspace-canvas"
-                                   :ref canvas}
-        [:& viewport {:page page
-                      :wst wst
-                      :key (:id page)}]]]
+       [:section.workspace-canvas {:id "workspace-canvas" :ref canvas}
+        [:& viewport {:page page :key (:id page)}]]]
 
       ;; Aside
       (when left-sidebar?
-        [:& left-sidebar {:page page
-                          :selected (:selected wst)
-                          :flags (:flags wst)}])
+        [:& left-sidebar {:page page :flags flags}])
       (when right-sidebar?
-        [:& right-sidebar {:wst wst :page page}])]]))
+        [:& right-sidebar {:page page :flags flags}])]]))
 
+(mf/defc workspace-page
+  [{:keys [project-id page-id] :as props}]
+  (let [page-iref (mf/use-memo {:deps #js [project-id page-id]
+                                :init #(-> (l/in [:pages page-id])
+                                           (l/derive st/state))})
+        page (mf/deref page-iref)]
 
-;; TODO: consider using `derive-state` instead of `key` for
-;; performance reasons
+    (mf/use-effect
+     {:deps #js [project-id page-id]
+      :init #(st/emit! (dw/initialize project-id page-id))})
 
-(mf/def workspace-page
-  :mixins [mf/reactive]
-  :init
-  (fn [own {:keys [project-id page-id] :as props}]
-    (st/emit! (dw/initialize project-id page-id))
-    (assoc own
-           ::page-ref (-> (l/in [:pages page-id])
-                          (l/derive st/state))
-           ::workspace-ref (-> (l/in [:workspace page-id])
-                               (l/derive st/state))))
-  :render
-  (fn [own props]
-    (let [wst (mf/react (::workspace-ref own))
-          page (mf/react (::page-ref own))]
-      (when page
-        [:& workspace {:page page :wst wst}]))))
+    ;; (prn "workspace-page.render" (:id page) props)
+
+    [:> rdnd/provider {:backend rdnd/html5}
+     (when page
+       [:& workspace {:page page}])]))

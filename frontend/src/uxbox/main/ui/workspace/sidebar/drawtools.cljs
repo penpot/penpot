@@ -12,6 +12,7 @@
    [uxbox.main.data.shapes :as uds]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.data.workspace-drawing :as udwd]
+   [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.user-events :as uev]
    [uxbox.util.i18n :refer (tr)]
@@ -79,8 +80,9 @@
 
 (mf/defc draw-toolbox
   {:wrap [mf/wrap-memo]}
-  [{:keys [flags drawing-tool] :as props}]
+  [{:keys [flags] :as props}]
   (let [close #(st/emit! (udw/toggle-flag :drawtools))
+        dtool (mf/deref refs/selected-drawing-tool)
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))
 
@@ -98,7 +100,7 @@
       [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content
       (for [[i props] (map-indexed vector tools)]
-        (let [selected? (= drawing-tool (:shape props))]
+        (let [selected? (= dtool (:shape props))]
           [:div.tool-btn.tooltip.tooltip-hover
            {:alt (tr (:help props))
             :class (when selected? "selected")

@@ -15,6 +15,7 @@
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.geom :as geom]
    [uxbox.main.store :as st]
+   [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :refer [shape-default-attrs]]
    [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
    [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
@@ -110,7 +111,8 @@
 (mf/defc options-toolbox
   {:wrap [mf/wrap-memo]}
   [{:keys [page selected] :as props}]
-  (let [close #(st/emit! (udw/toggle-flag :element-options))]
+  (let [close #(st/emit! (udw/toggle-flag :element-options))
+        selected (mf/deref refs/selected-shapes)]
     [:div.elementa-options.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/options]

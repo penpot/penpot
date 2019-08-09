@@ -120,7 +120,11 @@
   ptk/UpdateEvent
   (update [_ state]
     (let [page-id (get-in state [:workspace :current])]
-      (update-in state [:workspace page-id :flags] conj flag))))
+      (update-in state [:workspace page-id :flags]
+                 (fn [flags]
+                   (if (contains? flags flag)
+                     flags
+                     (conj flags flag)))))))
 
 (defn activate-flag
   [flag]
@@ -574,7 +578,6 @@
 ;; --- Apply Displacement
 
 (defrecord ApplyDisplacement [id]
-  udp/IPageUpdate
   ptk/WatchEvent
   (watch [_ state stream]
     (let [pid (get-in state [:workspace :current])
@@ -656,7 +659,6 @@
 (defn start-move-selected
   []
   (StartMoveSelected.))
-
 
 ;; --- Start shape "edition mode"
 

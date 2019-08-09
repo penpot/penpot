@@ -156,13 +156,14 @@
     (events/unlistenByKey (::key3 own))
     (dissoc own ::key1 ::key2 ::key3))
 
+  :mixins [mf/reactive]
+
   :render
-  (fn [own {:keys [page wst] :as props}]
-    (let [{:keys [drawing-tool tooltip zoom flags edition]} wst
+  (fn [own {:keys [page] :as props}]
+    (let [{:keys [drawing-tool tooltip zoom flags edition] :as wst} (mf/react refs/workspace)
           tooltip (or tooltip (get-shape-tooltip drawing-tool))
           zoom (or zoom 1)]
       (letfn [(on-mouse-down [event]
-                (prn "viewport.on-mouse-down")
                 (dom/stop-propagation event)
                 (let [ctrl? (kbd/ctrl? event)
                       shift? (kbd/shift? event)
@@ -189,7 +190,6 @@
                             :ctrl? ctrl?}]
                   (st/emit! (uev/mouse-event :up ctrl? shift?))))
               (on-click [event]
-                (js/console.log "viewport.on-click" event)
                 (dom/stop-propagation event)
                 (let [ctrl? (kbd/ctrl? event)
                       shift? (kbd/shift? event)
@@ -216,8 +216,7 @@
                          :on-click on-click
                          :on-double-click on-double-click
                          :on-mouse-down on-mouse-down
-                         :on-mouse-up on-mouse-up
-                         }
+                         :on-mouse-up on-mouse-up}
           [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
            (when page
              [:& canvas {:page page :wst wst}])

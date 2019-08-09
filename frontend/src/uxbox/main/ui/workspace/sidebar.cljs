@@ -20,7 +20,7 @@
 
 (mf/defc left-sidebar
   {:wrap [mf/wrap-memo]}
-  [{:keys [flags selected page] :as props}]
+  [{:keys [flags page] :as props}]
   [:aside#settings-bar.settings-bar.settings-bar-left
    [:> rdnd/provider {:backend rdnd/html5}
     [:div.settings-bar-inside
@@ -31,22 +31,18 @@
      #_(when (contains? flags :document-history)
          (history-toolbox page-id))
      (when (contains? flags :layers)
-       [:& layers-toolbox {:page page
-                           :selected selected}])]]])
+       [:& layers-toolbox {:page page}])]]])
 
 ;; --- Right Sidebar (Component)
 
 (mf/defc right-sidebar
-  [{:keys [wst page] :as props}]
-  (let [flags (:flags wst)
-        dtool (:drawing-tool wst)]
-    [:aside#settings-bar.settings-bar
-     [:div.settings-bar-inside
-      (when (contains? flags :drawtools)
-        [:& draw-toolbox {:flags flags :drawing-tool dtool}])
-      (when (contains? flags :element-options)
-        [:& options-toolbox {:page page
-                             :selected (:selected wst)}])
-      (when (contains? flags :icons)
-        #_(icons-toolbox))]]))
+  [{:keys [flags page] :as props}]
+  [:aside#settings-bar.settings-bar
+   [:div.settings-bar-inside
+    (when (contains? flags :drawtools)
+      [:& draw-toolbox {:flags flags}])
+    (when (contains? flags :element-options)
+      [:& options-toolbox {:page page}])
+    (when (contains? flags :icons)
+      #_(icons-toolbox))]])
 

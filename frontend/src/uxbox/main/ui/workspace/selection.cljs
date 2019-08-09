@@ -212,19 +212,19 @@
                   (geom/selection-rect))]
     [:& controls {:shape shape :zoom zoom :on-click on-click}]))
 
-;; (mx/defc text-edition-selection-handlers
-;;   {:mixins [mx/static]}
-;;   [{:keys [id] :as shape} zoom]
-;;   (let [{:keys [x1 y1 width height] :as shape} (geom/selection-rect shape)]
-;;     [:g.controls
-;;      [:rect.main {:x x1 :y y1
-;;                   :width width
-;;                   :height height
-;;                   ;; :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-;;                   :style {:stroke "#333"
-;;                           :stroke-width "0.5"
-;;                           :stroke-opacity "0.5"
-;;                           :fill "transparent"}}]]))
+(mf/defc text-edition-selection-handlers
+  [{:keys [shape modifiers zoom] :as props}]
+  (let [{:keys [x1 y1 width height] :as shape} (-> (assoc shape :modifiers modifiers)
+                                                   (geom/selection-rect))]
+    [:g.controls
+     [:rect.main {:x x1 :y y1
+                  :width width
+                  :height height
+                  ;; :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
+                  :style {:stroke "#333"
+                          :stroke-width "0.5"
+                          :stroke-opacity "0.5"
+                          :fill "transparent"}}]]))
 
 (def ^:private shapes-map-iref
   (-> (l/key :shapes)
@@ -250,15 +250,17 @@
                                        :modifiers modifiers
                                        :zoom zoom}]
 
-      ;; (and (= type :text) edition?)
-      ;; (-> (assoc shape :modifiers (get modifiers id))
-      ;;     (text-edition-selection-handlers zoom))
-
+      (and (= type :text)
+           (= edition? (:id shape)))
+      [:& text-edition-selection-handlers {:shape shape
+                                           :modifiers (get modifiers id)
+                                           :zoom zoom}]
       (and (= type :path)
            (= edition? (:id shape)))
       [:& path-edition-selection-handlers {:shape shape
                                            :zoom zoom
                                            :modifiers (get modifiers id)}]
+
 
       :else
       [:& single-selection-handlers {:shape shape

@@ -13,6 +13,7 @@
    [uxbox.main.data.pages :as udp]
    [uxbox.main.data.shapes :as uds]
    [uxbox.main.data.workspace :as udw]
+   [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes.icon :as icon]
@@ -164,7 +165,8 @@
 
 (mf/defc layers-toolbox
   [{:keys [page selected] :as props}]
-  (let [on-click #(st/emit! (udw/toggle-flag :layers))]
+  (let [on-click #(st/emit! (udw/toggle-flag :layers))
+        selected (mf/deref refs/selected-shapes)]
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]
