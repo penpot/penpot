@@ -468,26 +468,6 @@
          (not (neg? index))]}
   (InitialPathPointAlign. id index))
 
-;; --- Start shape "edition mode"
-
-(deftype StartEditionMode [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:workspace :edition] id))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    ;; Stop edition on interrupt event
-    (->> stream
-         (rx/filter #(= % ::uev/interrupt))
-         (rx/take 1)
-         (rx/map (fn [_] #(dissoc-in % [:workspace :edition]))))))
-
-(defn start-edition-mode
-  [id]
-  {:pre [(uuid? id)]}
-  (StartEditionMode. id))
-
 ;; --- Events (implicit) (for selected)
 
 ;; NOTE: moved to workspace

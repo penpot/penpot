@@ -19,20 +19,20 @@
 ;; --- Left Sidebar (Component)
 
 (mf/defc left-sidebar
-  [{:keys [wst page] :as props}]
-  (let [{:keys [flags selected]} wst]
-    [:aside#settings-bar.settings-bar.settings-bar-left
-     [:> rdnd/provider {:backend rdnd/html5}
-      [:div.settings-bar-inside
-       (when (contains? flags :sitemap)
-         [:& sitemap-toolbox {:project-id (:project page)
-                              :current-page-id (:id page)
-                              :page page}])
-       #_(when (contains? flags :document-history)
-           (history-toolbox page-id))
-       (when (contains? flags :layers)
-         [:& layers-toolbox {:page page
-                             :selected selected}])]]]))
+  {:wrap [mf/wrap-memo]}
+  [{:keys [flags selected page] :as props}]
+  [:aside#settings-bar.settings-bar.settings-bar-left
+   [:> rdnd/provider {:backend rdnd/html5}
+    [:div.settings-bar-inside
+     (when (contains? flags :sitemap)
+       [:& sitemap-toolbox {:project-id (:project page)
+                            :current-page-id (:id page)
+                            :page page}])
+     #_(when (contains? flags :document-history)
+         (history-toolbox page-id))
+     (when (contains? flags :layers)
+       [:& layers-toolbox {:page page
+                           :selected selected}])]]])
 
 ;; --- Right Sidebar (Component)
 

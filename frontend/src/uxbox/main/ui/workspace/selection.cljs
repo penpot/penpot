@@ -2,17 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.workspace.selection
-  "Multiple selection handlers component."
+  "Selection handlers component."
   (:require
    [beicon.core :as rx]
    [lentes.core :as l]
-   [potok.core :as ptk]
    [rumext.alpha :as mf]
-   [rumext.core :as mx]
    [uxbox.main.constants :as c]
    [uxbox.main.data.shapes :as uds]
    [uxbox.main.data.workspace :as udw]
@@ -23,7 +21,6 @@
    [uxbox.main.user-events :as uev]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
 
 ;; --- Refs & Constants
@@ -36,34 +33,9 @@
    :fill "#31e6e0"
    :stroke "#28c4d4"})
 
-(defn- focus-selected-shapes
-  [state]
-  (let [selected (get-in state [:workspace :selected])]
-    (mapv #(get-in state [:shapes %]) selected)))
-
-(def ^:private selected-shapes-ref
-  "A customized version of `refs/selected-shapes` that
-  additionally resolves the shapes to the real object
-  instead of just return a set of ids."
-  (-> (l/lens focus-selected-shapes)
-      (l/derive st/state)))
-
-(def ^:private selected-modifers-ref
-  "A customized version of `refs/selected-modifiers`
-  that instead of focus to one concrete id, it focuses
-  on the whole map."
-  (-> (l/key :modifiers)
-      (l/derive refs/workspace)))
-
 ;; --- Resize Implementation
+
 ;; TODO: this function need to be refactored
-
-;; (defrecord StartResizeSelected [vid ids shape]
-;;   ptk/WatchEvent
-;;   (watch [_ state stream]
-;;     (let [pid (get-in state [:workspace :current])
-;;           wst (get-in state [:workspace pid])
-
 
 (defn- start-resize
   [vid ids shape]
@@ -184,46 +156,40 @@
 
 ;; --- Selection Handlers (Component)
 
-;; (defn get-path-edition-stoper
-;;   [stream]
-;;   (letfn [(stoper-event? [{:keys [type shift] :as event}]
-;;             (and (uev/mouse-event? event) (= type :up)))]
-;;     (rx/merge
-;;      (rx/filter stoper-event? stream)
-;;      (->> stream
-;;           (rx/filter #(= % ::uev/interrupt))
-;;           (rx/take 1)))))
+(mf/defc path-edition-selection-handlers
+  [{:keys [shape modifiers zoom] :as props}]
+  (letfn [(on-mouse-down [event index]
+            (dom/stop-propagation event)
 
-;; (defn start-path-edition
-;;   [shape-id index]
-;;   (letfn [(on-move [delta]
-;;             (st/emit! (uds/update-path shape-id index delta)))]
-;;     (let [stoper (get-path-edition-stoper streams/events)
-;;           stream (rx/take-until stoper streams/mouse-position-deltas)]
-;;       (when @refs/selected-alignment
-;;         (st/emit! (uds/initial-path-point-align shape-id index)))
-;;       (rx/subscribe stream on-move))))
+            (let [stoper (get-edition-stream-stoper streams/events)
+                  stream (rx/take-until stoper streams/mouse-position-deltas)]
+              (when @refs/selected-alignment
+                (st/emit! (uds/initial-path-point-align (:id shape) index)))
+              (rx/subscribe stream #(on-handler-move % index))))
 
-;; (mx/defc path-edition-selection-handlers
-;;   [{:keys [id segments modifiers] :as shape} zoom]
-;;   (letfn [(on-click [index event]
-;;             (dom/stop-propagation event)
-;;             (start-path-edition id index))]
+          (get-edition-stream-stoper [stream]
+            (let [stoper? #(and (uev/mouse-event? %) (= (:type %) :up))]
+              (rx/merge
+               (rx/filter stoper? stream)
+               (->> stream
+                    (rx/filter #(= % ::uev/interrupt))
+                    (rx/take 1)))))
 
-;;     (let [{:keys [displacement]} modifiers
-;;           segments (if displacement
-;;                      (map #(gpt/transform % displacement) segments)
-;;                      segments)]
+          (on-handler-move [delta index]
+            (st/emit! (uds/update-path (:id shape) index delta)))]
 
-;;       [:g.controls
-;;        (for [[index {:keys [x y]}] (map-indexed vector segments)]
-;;          [:circle {:cx x :cy y
-;;                    :r (/ 6.0 zoom)
-;;                    :key index
-;;                    :on-click (partial on-click index)
-;;                    :fill "#31e6e0"
-;;                    :stroke "#28c4d4"
-;;                    :style {:cursor "pointer"}}])])))
+    (let [displacement (:displacement modifiers)
+          segments (cond->> (:segments shape)
+                     displacement (map #(gpt/transform % displacement)))]
+      [:g.controls
+       (for [[index {:keys [x y]}] (map-indexed vector segments)]
+         [:circle {:cx x :cy y
+                   :r (/ 6.0 zoom)
+                   :key index
+                   :on-mouse-down #(on-mouse-down % index)
+                   :fill "#31e6e0"
+                   :stroke "#28c4d4"
+                   :style {:cursor "pointer"}}])])))
 
 (mf/defc multiple-selection-handlers
   [{:keys [shapes modifiers zoom] :as props}]
@@ -239,10 +205,11 @@
                   :on-click on-click}]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom] :as props}]
+  [{:keys [shape zoom modifiers] :as props}]
   (let [on-click #(do (dom/stop-propagation %2)
                       (start-resize %1 #{(:id shape)} shape))
-        shape (geom/selection-rect shape)]
+        shape (-> (assoc shape :modifiers modifiers)
+                  (geom/selection-rect))]
     [:& controls {:shape shape :zoom zoom :on-click on-click}]))
 
 ;; (mx/defc text-edition-selection-handlers
@@ -259,18 +226,20 @@
 ;;                           :stroke-opacity "0.5"
 ;;                           :fill "transparent"}}]]))
 
-(defn- focus-shapes
-  [selected]
-  (mapv #(get-in @st/state [:shapes %]) selected))
+(def ^:private shapes-map-iref
+  (-> (l/key :shapes)
+      (l/derive st/state)))
 
 (mf/defc selection-handlers
   [{:keys [wst] :as props}]
-  (let [shapes (focus-shapes (:selected wst))
+  (let [shapes-map (mf/deref shapes-map-iref)
+        shapes (map #(get shapes-map %) (:selected wst))
         edition? (:edition wst)
         modifiers (:modifiers wst)
         zoom (:zoom wst 1)
         num (count shapes)
         {:keys [id type] :as shape} (first shapes)]
+
 
     (cond
       (zero? num)
@@ -285,14 +254,13 @@
       ;; (-> (assoc shape :modifiers (get modifiers id))
       ;;     (text-edition-selection-handlers zoom))
 
-      ;; (= type :path)
-      ;; (if (= edition? (:id shape))
-      ;;   (-> (assoc shape :modifiers (get modifiers id))
-      ;;       (path-edition-selection-handlers zoom))
-      ;;   (-> (assoc shape :modifiers (get modifiers id))
-      ;;       (single-selection-handlers zoom)))
+      (and (= type :path)
+           (= edition? (:id shape)))
+      [:& path-edition-selection-handlers {:shape shape
+                                           :zoom zoom
+                                           :modifiers (get modifiers id)}]
 
       :else
-      [:& single-selection-handlers
-       {:shape (assoc shape :modifiers (get modifiers id))
-        :zoom zoom}])))
+      [:& single-selection-handlers {:shape shape
+                                     :modifiers (get modifiers id)
+                                     :zoom zoom}])))

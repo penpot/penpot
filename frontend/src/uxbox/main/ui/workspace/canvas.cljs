@@ -32,6 +32,7 @@
 
 (mf/defc canvas
   [{:keys [page wst] :as props}]
+  (prn "canvas")
   (let [{:keys [metadata id]} page
         zoom (:zoom wst 1)  ;; NOTE: maybe forward wst to draw-area
         width (:width metadata)
@@ -45,7 +46,8 @@
       [:g.main
        (for [id (reverse (:shapes page))]
          [:& uus/shape-component {:id id :key id}])
-       [:& selection-handlers {:wst wst}]
+       (when (seq (:selected wst))
+         [:& selection-handlers {:wst wst}])
        (when-let [dshape (:drawing wst)]
          [:& draw-area {:shape dshape
                         :zoom (:zoom wst)

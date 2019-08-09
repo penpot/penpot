@@ -73,16 +73,17 @@
 
 (defn- make-pages-iref
   [{:keys [id pages] :as project}]
-  (letfn [(selector [state]
-            (into [] (map #(get-in state [:pages %])) pages))]
-    (-> (l/lens selector)
-        (l/derive st/state))))
+  (-> (l/lens (fn [s] (into [] (map #(get-in s [:pages %])) pages)))
+      (l/derive st/state {:equals? =})))
+
+(def ^:private pages-map-iref
+  (-> (l/key :pages)
+      (l/derive st/state)))
 
 (mf/defc pages-list
   [{:keys [project current-page-id] :as props}]
-  (let [pages-iref (mf/use-memo {:deps #js [project]
-                                 :init #(make-pages-iref project)})
-        pages (mf/deref pages-iref)
+  (let [pages-map (mf/deref pages-map-iref)
+        pages (map #(get pages-map %) (:pages project))
         deletable? (> (count pages) 1)]
     [:ul.element-list
      (for [[index item] (map-indexed vector pages)]

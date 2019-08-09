@@ -6,6 +6,7 @@
 
 (ns uxbox.main.data.workspace
   (:require
+   ;; [uxbox.main.data.workspace.drawing :as wdrawing]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
@@ -18,20 +19,20 @@
    [uxbox.main.data.projects :as dp]
    [uxbox.main.data.shapes :as uds]
    [uxbox.main.data.shapes-impl :as simpl]
-   ;; [uxbox.main.data.workspace.drawing :as wdrawing]
    [uxbox.main.data.workspace.ruler :as wruler]
    [uxbox.main.data.workspace.scroll :as wscroll]
+   [uxbox.main.geom :as geom]
    [uxbox.main.lenses :as ul]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as streams]
    [uxbox.main.user-events :as uev]
    [uxbox.main.workers :as uwrk]
+   [uxbox.util.data :refer [dissoc-in]]
    [uxbox.util.data :refer [index-of]]
    [uxbox.util.forms :as sc]
-   [uxbox.main.geom :as geom]
-   [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]
    [uxbox.util.spec :as us]
    [uxbox.util.time :as dt]
@@ -655,6 +656,26 @@
 (defn start-move-selected
   []
   (StartMoveSelected.))
+
+
+;; --- Start shape "edition mode"
+
+(defn start-edition-mode
+  [id]
+  {:pre [(uuid? id)]}
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspace :current])]
+        (assoc-in state [:workspace pid :edition] id)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [pid (get-in state [:workspace :current])]
+        (->> stream
+             (rx/filter #(= % ::uev/interrupt))
+             (rx/take 1)
+             (rx/map (fn [_] #(dissoc-in % [:workspace pid :edition]))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Selection Rect Events

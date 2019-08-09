@@ -123,7 +123,9 @@
 
       ;; Aside
       (when left-sidebar?
-        [:& left-sidebar {:wst wst :page page}])
+        [:& left-sidebar {:page page
+                          :selected (:selected wst)
+                          :flags (:flags wst)}])
       (when right-sidebar?
         [:& right-sidebar {:wst wst :page page}])]]))
 

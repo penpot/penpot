@@ -158,19 +158,21 @@
 
   :render
   (fn [own {:keys [page wst] :as props}]
-    (let [{:keys [drawing-tool tooltip zoom flags]} wst
+    (let [{:keys [drawing-tool tooltip zoom flags edition]} wst
           tooltip (or tooltip (get-shape-tooltip drawing-tool))
           zoom (or zoom 1)]
       (letfn [(on-mouse-down [event]
+                (prn "viewport.on-mouse-down")
                 (dom/stop-propagation event)
                 (let [ctrl? (kbd/ctrl? event)
                       shift? (kbd/shift? event)
                       opts {:shift? shift?
                             :ctrl? ctrl?}]
                   (st/emit! (uev/mouse-event :down ctrl? shift?)))
-                (if drawing-tool
-                  (st/emit! (udwd/start-drawing drawing-tool))
-                  (st/emit! ::uev/interrupt (udw/start-selrect))))
+                (when (not edition)
+                  (if drawing-tool
+                    (st/emit! (udwd/start-drawing drawing-tool))
+                    (st/emit! ::uev/interrupt (udw/start-selrect)))))
               (on-context-menu [event]
                 (dom/prevent-default event)
                 (dom/stop-propagation event)
@@ -187,6 +189,7 @@
                             :ctrl? ctrl?}]
                   (st/emit! (uev/mouse-event :up ctrl? shift?))))
               (on-click [event]
+                (js/console.log "viewport.on-click" event)
                 (dom/stop-propagation event)
                 (let [ctrl? (kbd/ctrl? event)
                       shift? (kbd/shift? event)
@@ -213,7 +216,8 @@
                          :on-click on-click
                          :on-double-click on-double-click
                          :on-mouse-down on-mouse-down
-                         :on-mouse-up on-mouse-up}
+                         :on-mouse-up on-mouse-up
+                         }
           [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
            (when page
              [:& canvas {:page page :wst wst}])

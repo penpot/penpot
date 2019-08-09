@@ -12,6 +12,7 @@
    [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.main.data.shapes :as uds]
+   [uxbox.main.data.workspace :as udw]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -55,7 +56,7 @@
                 ;; TODO: handle grouping event propagation
                 ;; TODO: handle actions locking properly
                 (dom/stop-propagation event)
-                (st/emit! (uds/start-edition-mode id)))]
+                (st/emit! (udw/start-edition-mode id)))]
         [:g.shape {:class (when selected? "selected")
                    :on-double-click on-double-click
                    :on-mouse-down on-mouse-down}
