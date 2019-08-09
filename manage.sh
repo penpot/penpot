@@ -236,13 +236,13 @@ case $1 in
         build-images
         ;;
     build-frontend-dbg-image)
-        build-frontend-dbg-image;
+        build-frontend-dbg-image
         ;;
     build-frontend-image)
-        build-frontend-image;
+        build-frontend-image
         ;;
     build-backend-image)
-        build-backend-image;
+        build-backend-image
         ;;
 
     run)
