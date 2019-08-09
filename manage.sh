@@ -15,24 +15,25 @@ function remove-devenv-images {
 }
 
 function build-devenv-image {
-    echo "Building development image $IMGNAME:$REV..."
+    local EXTERNAL_UID=${1:-$(id -u)}
+    echo "Building development image $IMGNAME:$REV with UID $EXTERNAL_UID..."
     docker build --rm=true \
            -t $IMGNAME:$REV \
            -t $IMGNAME:latest \
-           --build-arg EXTERNAL_UID=$(id -u) \
+           --build-arg EXTERNAL_UID=$EXTERNAL_UID \
            --label="io.uxbox.devenv" \
            docker/devenv
 }
 
 function build-devenv-image-if-not-exists {
     if [[ ! $(docker images $IMGNAME:$REV -q) ]]; then
-        build-devenv-image
+        build-devenv-image $@
     fi
 }
 
 function run-devenv {
     kill-devenv-container;
-    build-devenv-image-if-not-exists;
+    build-devenv-image-if-not-exists $@;
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
@@ -54,13 +55,13 @@ function run-devenv {
 
 function run-all-tests {
     echo "Testing frontend..."
-    run-frontend-tests || exit 1;
+    run-frontend-tests $@ || exit 1;
     echo "Testing backend..."
-    run-backend-tests || exit 1;
+    run-backend-tests $@ || exit 1;
 }
 
 function run-frontend-tests {
-    build-devenv-image-if-not-exists;
+    build-devenv-image-if-not-exists $@;
 
     CONTAINER=$IMGNAME:latest
 
@@ -73,7 +74,7 @@ function run-frontend-tests {
 }
 
 function run-backend-tests {
-    build-devenv-image-if-not-exists;
+    build-devenv-image-if-not-exists $@;
 
     CONTAINER=$IMGNAME:latest
 
@@ -85,7 +86,7 @@ function run-backend-tests {
 }
 
 function build-frontend-local {
-    build-devenv-image-if-not-exists;
+    build-devenv-image-if-not-exists $@;
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
@@ -196,11 +197,11 @@ function usage {
     echo "USAGE: $0 OPTION"
     echo "Options:"
     echo "- clean                            Stop and clean up docker containers"
-    echo "- build-devenv-image               Build docker container for development with tmux"
-    echo "- run-devenv                       Run (and build if necessary) development container (frontend at localhost:3449, backend at localhost:6060)"
-    echo "- run-all-tests                    Execute unit tests for both backend and frontend"
-    echo "- run-frontend-tests               Execute unit tests for frontend only"
-    echo "- run-backend-tests                Execute unit tests for backend only"
+    echo "- build-devenv-image               Build docker container for development with tmux. Can specify external user id in parameter"
+    echo "- run-devenv                       Run (and build if necessary) development container (frontend at localhost:3449, backend at localhost:6060). Can specify external user id in parameter"
+    echo "- run-all-tests                    Execute unit tests for both backend and frontend. Can specify external user id in parameter"
+    echo "- run-frontend-tests               Execute unit tests for frontend only. Can specify external user id in parameter"
+    echo "- run-backend-tests                Execute unit tests for backend only. Can specify external user id in parameter"
     echo "- build-images                     Build a 'release ready' docker images for both backend and frontend"
     echo "- build-frontend-image             Build a 'release ready' docker image for frontend (debug version)"
     echo "- build-frontend-dbg-image         Build a 'release ready' docker images for frontend"
@@ -216,19 +217,19 @@ case $1 in
         remove-devenv-images
         ;;
     build-devenv-image)
-        build-devenv-image
+        build-devenv-image ${@:2}
         ;;
     run-devenv)
-        run-devenv
+        run-devenv ${@:2}
         ;;
     run-all-tests)
-        run-all-tests
+        run-all-tests ${@:2}
         ;;
     run-frontend-tests)
-        run-frontend-tests
+        run-frontend-tests ${@:2}
         ;;
     run-backend-tests)
-        run-backend-tests
+        run-backend-tests ${@:2}
         ;;
 
     build-images)
