@@ -177,6 +177,7 @@ Available at runtime:
 -	`-e LC_ALL=...` (defaults to `C.UTF-8`)
 -	`-e UXBOX_HTTP_SERVER_PORT=...` (defaults to `6060`)
 -	`-e UXBOX_HTTP_SERVER_DEBUG=...` (defaults to `true`)
+-	`-e UXBOX_HTTP_SERVER_CORS=...` (defaults to `http://localhost:3449`)
 -	`-e UXBOX_DATABASE_USERNAME="..."` (defaults to `nil`)
 -	`-e UXBOX_DATABASE_PASSWORD="..."` (defaults to `nil`)
 -	`-e UXBOX_DATABASE_URI="..."` (defaults to ` `, will be computed based on other DATABASE parameters if empty)
