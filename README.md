@@ -3,6 +3,7 @@
 [uri_license_image]: https://img.shields.io/badge/MPL-2.0-blue.svg
 
 [![License: MPL-2.0][uri_license_image]][uri_license]
+[![Managed with Taiga.io](https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg)](https://tree.taiga.io/project/uxbox/ "Managed with Taiga.io")
 [![Build Status](https://travis-ci.org/uxbox/uxbox.svg)](https://travis-ci.org/uxbox/uxbox)
 
 # UXBOX #
