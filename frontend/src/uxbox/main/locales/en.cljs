@@ -125,6 +125,14 @@
    "header.align" "Align (Ctrl + A)"
    "header.view-mode" "View mode (Ctrl + P)"
 
+   "element.measures" "Size, position & rotation"
+   "element.fill" "Fill"
+   "element.stroke" "Stroke"
+   "element.text" "Text"
+   "element.interactions" "Interactions"
+   "element.page-measures" "Page settings"
+   "element.page-grid-options" "Grid settings"
+
    "auth.email-or-username" "Email or Username"
    "auth.password" "Password"
    "auth.signin" "Sign in"

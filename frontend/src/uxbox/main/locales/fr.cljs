@@ -125,6 +125,14 @@
    "header.align" "Aligner (Ctrl + A)"
    "header.view-mode" "Mode visualisation (Ctrl + P)"
 
+   "element.measures" "Taille, position et rotation"
+   "element.fill" "Fond"
+   "element.stroke" "Contour"
+   "element.text" "Texte"
+   "element.interactions" "Interactions"
+   "element.page-measures" "Paramètres de la page"
+   "element.page-grid-options" "Paramètres de la grille"
+
    "auth.email-or-username" "adresse email ou nom d'utilisateur"
    "auth.password" "Mot de passe"
    "auth.signin" "Se connecter"
