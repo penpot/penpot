@@ -18,7 +18,6 @@
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.streams :as streams]
    [uxbox.main.ui.confirm]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.messages :refer [messages-widget]]
@@ -32,7 +31,7 @@
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
-   [uxbox.main.user-events :as uev]
+   [uxbox.main.ui.workspace.streams :as ws]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
@@ -42,10 +41,11 @@
 
 (defn- on-scroll
   [event]
-  (let [target (.-target event)
+  ;; TODO: refactor
+  #_(let [target (.-target event)
         top (.-scrollTop target)
         left (.-scrollLeft target)]
-    (st/emit! (uev/scroll-event (gpt/point left top)))))
+    (ws/emit! (ws/scroll-event (gpt/point left top)))))
 
 (defn- on-wheel
   [event canvas]

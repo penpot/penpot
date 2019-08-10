@@ -6,7 +6,6 @@
 
 (ns uxbox.main.data.workspace
   (:require
-   ;; [uxbox.main.data.workspace.drawing :as wdrawing]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
@@ -25,8 +24,6 @@
    [uxbox.main.lenses :as ul]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.streams :as streams]
-   [uxbox.main.user-events :as uev]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.data :refer [dissoc-in]]
    [uxbox.util.data :refer [index-of]]
@@ -368,7 +365,7 @@
 
   ptk/WatchEvent
   (watch [_ state stream]
-    (rx/just ::uev/interrupt)))
+    (rx/just :interrupt)))
 
 (defn deselect-all
   "Clear all possible state of drawing, edition
@@ -626,40 +623,6 @@
   {:pre [(uuid? id)]}
   (ApplyResize. id))
 
-;; --- Shape Movement (by mouse)
-
-(defrecord StartMove [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [pid (get-in state [:workspace :current])
-          wst (get-in state [:workspace pid])
-          stoper (->> streams/events
-                      (rx/filter uev/mouse-up?)
-                      (rx/take 1))
-          stream (->> streams/mouse-position-deltas
-                      (rx/take-until stoper))]
-      (rx/concat
-       (when (refs/alignment-activated? (:flags wst))
-         (rx/of (initial-shape-align id)))
-       (rx/map #(apply-temporal-displacement id %) stream)
-       (rx/of (apply-displacement id))))))
-
-(defn start-move
-  [id]
-  {:pre [(uuid? id)]}
-  (StartMove. id))
-
-(defrecord StartMoveSelected []
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [pid (get-in state [:workspace :current])
-          selected (get-in state [:workspace pid :selected])]
-      (rx/from-coll (map start-move selected)))))
-
-(defn start-move-selected
-  []
-  (StartMoveSelected.))
-
 ;; --- Start shape "edition mode"
 
 (defn start-edition-mode
@@ -675,96 +638,36 @@
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])]
         (->> stream
-             (rx/filter #(= % ::uev/interrupt))
+             (rx/filter #(= % :interrupt))
              (rx/take 1)
              (rx/map (fn [_] #(dissoc-in % [:workspace pid :edition]))))))))
 
+;; --- Select for Drawing
+
+(defn select-for-drawing
+  [shape]
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspace :current])
+            current (get-in state [:workspace pid :drawing-tool])]
+        (if (or (nil? shape)
+                (= shape current))
+          (update-in state [:workspace pid] dissoc :drawing :drawing-tool)
+          (update-in state [:workspace pid] assoc
+                     :drawing shape
+                     :drawing-tool shape))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Selection Rect Events
+;; Selection Rect IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare stop-selrect)
-(declare update-selrect)
-(declare get-selection-stoper)
-(declare selection->rect)
-(declare translate-to-canvas)
+;; TODO: move to shapes impl maybe...
 
-;; --- Start Selrect
-
-(defrecord StartSelrect []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [id (get-in state [:workspace :current])
-          position (get-in state [:workspace :pointer :viewport])
-          selection {::start position ::stop position}]
-      (assoc-in state [:workspace id :selrect] (selection->rect selection))))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [stoper (get-selection-stoper stream)]
-      ;; NOTE: the `viewport-mouse-position` can be derived from `stream`
-      ;; but it used from `streams/` ns just for convenience
-      (rx/concat
-       (->> streams/viewport-mouse-position
-            (rx/take-until stoper)
-            (rx/map update-selrect))
-       (rx/just (stop-selrect))))))
-
-(defn start-selrect
-  []
-  (StartSelrect.))
-
-;; --- Update Selrect
-
-(defrecord UpdateSelrect [position]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [id (get-in state [:workspace :current])]
-      (-> state
-          (assoc-in [:workspace id :selrect ::stop] position)
-          (update-in [:workspace id :selrect] selection->rect)))))
-
-(defn update-selrect
-  [position]
-  {:pre [(gpt/point? position)]}
-  (UpdateSelrect. position))
-
-;; --- Clear Selrect
-
-(defrecord ClearSelrect []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [id (get-in state [:workspace :current])]
-      (update-in state [:workspace id] dissoc :selrect))))
-
-(defn clear-selrect
-  []
-  (ClearSelrect.))
-
-;; --- Stop Selrect
-
-(defrecord StopSelrect []
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [id (get-in state [:workspace :current])
-          zoom (get-in state [:workspace id :zoom])
-          rect (-> (get-in state [:workspace id :selrect])
-                   (translate-to-canvas zoom))]
-      (rx/of
-       (clear-selrect)
-       (deselect-all)
-       (select-shapes-by-selrect rect)))))
-
-(defn stop-selrect
-  []
-  (StopSelrect.))
-
-;; --- Impl
-
-(defn- selection->rect
+(defn selection->rect
   [data]
-  (let [start (::start data)
-        stop (::stop data)
+  (let [start (:start data)
+        stop (:stop data)
         start-x (min (:x start) (:x stop))
         start-y (min (:y start) (:y stop))
         end-x (max (:x start) (:x stop))
@@ -776,13 +679,7 @@
            :y2 end-y
            :type :rect)))
 
-(defn- get-selection-stoper
-  [stream]
-  (->> (rx/merge (rx/filter #(= % ::uev/interrupt) stream)
-                 (rx/filter uev/mouse-up? stream))
-       (rx/take 1)))
-
-(defn- translate-to-canvas
+(defn translate-to-canvas
   "Translate the given rect to the canvas coordinates system."
   [rect zoom]
   (let [startx (* c/canvas-start-x zoom)

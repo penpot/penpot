@@ -11,7 +11,7 @@
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
-   [uxbox.main.user-events :as uev]
+   [uxbox.main.ui.workspace.streams :as ws]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]))
@@ -56,14 +56,14 @@
   [{:keys [ruler zoom] :as props}]
   (letfn [(on-mouse-down [event]
             (dom/stop-propagation event)
-            (st/emit! ::uev/interrupt
+            (st/emit! :interrupt
                       (udw/set-tooltip nil)
                       (udw/start-ruler)))
           (on-mouse-up [event]
             (dom/stop-propagation event)
-            (st/emit! ::uev/interrupt))
+            (st/emit! :interrupt))
           (on-unmount []
-            (st/emit! ::uev/interrupt
+            (st/emit! :interrupt
                       (udw/clear-ruler)))]
     (mf/use-effect {:end on-unmount})
     [:svg {:on-mouse-down on-mouse-down

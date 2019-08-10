@@ -7,11 +7,12 @@
 
 (ns uxbox.main.ui.workspace.viewport
   (:require
+   [beicon.core :as rx]
    [goog.events :as events]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.workspace :as udw]
-   [uxbox.main.data.workspace-drawing :as udwd]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -19,7 +20,8 @@
    [uxbox.main.ui.workspace.canvas :refer [canvas]]
    [uxbox.main.ui.workspace.grid :refer [grid]]
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
-   [uxbox.main.user-events :as uev]
+   [uxbox.main.ui.workspace.streams :as uws]
+   [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
    [uxbox.util.data :refer [parse-int]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt])
@@ -67,11 +69,53 @@
 
 ;; --- Selection Rect
 
+(defn stop-selrect
+  []
+  (letfn [(clear-state [state]
+            (prn "clear-state")
+            (let [id (get-in state [:workspace :current])]
+              (update-in state [:workspace id] dissoc :selrect)))]
+    (reify
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [id (get-in state [:workspace :current])
+              zoom (get-in state [:workspace id :zoom])
+              rect (some-> (get-in state [:workspace id :selrect])
+                           (dw/translate-to-canvas zoom))]
+          (if rect
+            (rx/of clear-state
+                   (dw/deselect-all)
+                   (dw/select-shapes-by-selrect rect))
+            (rx/of (dw/deselect-all))))))))
+
+(defn start-selrect
+  []
+  (letfn [(update-state [state position]
+            (let [id (get-in state [:workspace :current])
+                  selrect (get-in state [:workspace id :selrect])]
+              (if selrect
+                (assoc-in state [:workspace id :selrect] (dw/selection->rect (assoc selrect :stop position)))
+                (assoc-in state [:workspace id :selrect] (dw/selection->rect {:start position :stop position})))))
+
+          (selection-stoper [stream]
+            (->> (rx/merge (rx/filter #(= % :interrupt) stream)
+                           (rx/filter uws/mouse-up? stream))
+                 (rx/take 1)))]
+
+    (reify
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (rx/concat
+         (->> uws/viewport-mouse-position
+              (rx/take-until (selection-stoper stream))
+              (rx/map (fn [pos] #(update-state % pos))))
+         (rx/of (stop-selrect)))))))
+
 (mf/defc selrect
   {:wrap [mf/wrap-memo]}
-  [{rect :value}]
-  (when rect
-    (let [{:keys [x1 y1 width height]} (geom/size rect)]
+  [{:keys [data] :as props}]
+  (when data
+    (let [{:keys [x1 y1 width height]} (geom/size data)]
       [:rect.selection-rect
        {:x x1
         :y y1
@@ -112,9 +156,9 @@
                     opts {:key key
                           :shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uev/keyboard-event :down key ctrl? shift?))
+                (st/emit! (uws/keyboard-event :down key ctrl? shift?))
                 (when (kbd/space? event)
-                  (st/emit! (udw/start-viewport-positioning)))))
+                  (st/emit! (dw/start-viewport-positioning)))))
 
             (on-key-up [event]
               (let [key (.-keyCode event)
@@ -124,8 +168,8 @@
                           :shift? shift?
                           :ctrl? ctrl?}]
                 (when (kbd/space? event)
-                  (st/emit! (udw/stop-viewport-positioning)))
-                (st/emit! (uev/keyboard-event :up key ctrl? shift?))))
+                  (st/emit! (dw/stop-viewport-positioning)))
+                (st/emit! (uws/keyboard-event :up key ctrl? shift?))))
 
             (on-mousemove [event]
               (let [wpt (gpt/point (.-clientX event)
@@ -139,7 +183,7 @@
                            :window-coords wpt
                            :viewport-coords vpt
                            :canvas-coords cpt}]
-                (st/emit! (uev/pointer-event wpt vpt cpt ctrl? shift?))))]
+                (st/emit! (uws/pointer-event wpt vpt cpt ctrl? shift?))))]
 
       (let [key1 (events/listen js/document EventType.MOUSEMOVE on-mousemove)
             key2 (events/listen js/document EventType.KEYDOWN on-key-down)
@@ -169,11 +213,11 @@
                       shift? (kbd/shift? event)
                       opts {:shift? shift?
                             :ctrl? ctrl?}]
-                  (st/emit! (uev/mouse-event :down ctrl? shift?)))
+                  (st/emit! (uws/mouse-event :down ctrl? shift?)))
                 (when (not edition)
                   (if drawing-tool
-                    (st/emit! (udwd/start-drawing drawing-tool))
-                    (st/emit! ::uev/interrupt (udw/start-selrect)))))
+                    (st/emit! (start-drawing drawing-tool))
+                    (st/emit! :interrupt (start-selrect)))))
               (on-context-menu [event]
                 (dom/prevent-default event)
                 (dom/stop-propagation event)
@@ -181,28 +225,28 @@
                       shift? (kbd/shift? event)
                       opts {:shift? shift?
                             :ctrl? ctrl?}]
-                  (st/emit! (uev/mouse-event :context-menu ctrl? shift?))))
+                  (st/emit! (uws/mouse-event :context-menu ctrl? shift?))))
               (on-mouse-up [event]
                 (dom/stop-propagation event)
                 (let [ctrl? (kbd/ctrl? event)
                       shift? (kbd/shift? event)
                       opts {:shift? shift?
                             :ctrl? ctrl?}]
-                  (st/emit! (uev/mouse-event :up ctrl? shift?))))
+                  (st/emit! (uws/mouse-event :up ctrl? shift?))))
               (on-click [event]
                 (dom/stop-propagation event)
                 (let [ctrl? (kbd/ctrl? event)
                       shift? (kbd/shift? event)
                       opts {:shift? shift?
                             :ctrl? ctrl?}]
-                  (st/emit! (uev/mouse-event :click ctrl? shift?))))
+                  (st/emit! (uws/mouse-event :click ctrl? shift?))))
               (on-double-click [event]
                 (dom/stop-propagation event)
                 (let [ctrl? (kbd/ctrl? event)
                       shift? (kbd/shift? event)
                       opts {:shift? shift?
                             :ctrl? ctrl?}]
-                  (st/emit! (uev/mouse-event :double-click ctrl? shift?))))]
+                  (st/emit! (uws/mouse-event :double-click ctrl? shift?))))]
         [:*
          [:& coordinates {:zoom zoom}]
          [:div.tooltip-container
@@ -224,4 +268,4 @@
              [:& grid {:page page}])]
           (when (contains? flags :ruler)
             [:& ruler {:zoom zoom :ruler (:ruler wst)}])
-          [:& selrect {:value (:selrect wst)}]]]))))
+          [:& selrect {:data (:selrect wst)}]]]))))

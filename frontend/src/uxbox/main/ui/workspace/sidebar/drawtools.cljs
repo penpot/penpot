@@ -9,13 +9,10 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.shapes :as uds]
-   [uxbox.main.data.workspace :as udw]
-   [uxbox.main.data.workspace-drawing :as udwd]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.user-events :as uev]
-   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.i18n :refer [tr]]
    [uxbox.util.uuid :as uuid]))
 
 ;; --- Constants
@@ -81,17 +78,17 @@
 (mf/defc draw-toolbox
   {:wrap [mf/wrap-memo]}
   [{:keys [flags] :as props}]
-  (let [close #(st/emit! (udw/toggle-flag :drawtools))
+  (let [close #(st/emit! (dw/toggle-flag :drawtools))
         dtool (mf/deref refs/selected-drawing-tool)
         tools (->> (into [] +draw-tools+)
                    (sort-by (comp :priority second)))
 
-        select-drawtool #(st/emit! ::uev/interrupt
-                                   (udw/deactivate-ruler)
-                                   (udwd/select-for-drawing %))
-        toggle-ruler #(st/emit! (udwd/select-for-drawing nil)
-                                (uds/deselect-all)
-                                (udw/toggle-ruler))]
+        select-drawtool #(st/emit! :interrupt
+                                   (dw/deactivate-ruler)
+                                   (dw/select-for-drawing %))
+        toggle-ruler #(st/emit! (dw/select-for-drawing nil)
+                                (dw/deselect-all)
+                                (dw/toggle-ruler))]
 
     [:div#form-tools.tool-window.drawing-tools
      [:div.tool-window-bar

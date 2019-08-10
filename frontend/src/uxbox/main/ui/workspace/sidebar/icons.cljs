@@ -6,20 +6,19 @@
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.icons
-  (:require [lentes.core :as l]
-            [uxbox.util.router :as r]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.lenses :as ul]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.main.data.workspace-drawing :as udwd]
-            [uxbox.main.data.icons :as udi]
-            [uxbox.main.ui.shapes.icon :as icon]
-            [uxbox.main.ui.dashboard.icons :as icons]
-            [uxbox.builtins.icons :as i]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (read-string)]))
+  (:require
+   [lentes.core :as l]
+   [rumext.core :as mx]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.icons :as udi]
+   [uxbox.main.data.workspace :as dw]
+   [uxbox.main.lenses :as ul]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.dashboard.icons :as icons]
+   [uxbox.main.ui.shapes.icon :as icon]
+   [uxbox.util.data :refer (read-string)]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.router :as r]))
 
 ;; --- Refs
 
@@ -43,7 +42,7 @@
 
 (defn- icons-toolbox-init
   [own]
-  (st/emit! (udw/initialize-icons-toolbox))
+  (st/emit! (dw/initialize-icons-toolbox))
   own)
 
 (mx/defc icons-toolbox
@@ -60,13 +59,13 @@
         icons (->> (vals (mx/react icons/icons-ref))
                    (filter #(= (:id selected-coll) (:collection %))))]
     (letfn [(on-close [event]
-              (st/emit! (udw/toggle-flag :icons)))
+              (st/emit! (dw/toggle-flag :icons)))
             (on-select [icon event]
-              (st/emit! (udwd/select-for-drawing icon)))
+              (st/emit! (dw/select-for-drawing icon)))
             (on-change [event]
               (let [value (read-string (dom/event->value event))]
-                (st/emit! (udwd/select-for-drawing nil)
-                          (udw/select-icons-toolbox-collection value))))]
+                (st/emit! (dw/select-for-drawing nil)
+                          (dw/select-icons-toolbox-collection value))))]
       [:div#form-figures.tool-window
        [:div.tool-window-bar
         [:div.tool-window-icon i/icon-set]

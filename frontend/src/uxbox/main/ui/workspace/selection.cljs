@@ -17,8 +17,7 @@
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.streams :as streams]
-   [uxbox.main.user-events :as uev]
+   [uxbox.main.ui.workspace.streams :as ws]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]))
@@ -69,14 +68,14 @@
 
     (let [shape  (->> (geom/shape->rect-shape shape)
                       (geom/size))
-          stoper (->> streams/events
-                      (rx/filter uev/mouse-up?)
+          stoper (->> ws/interaction-events
+                      (rx/filter ws/mouse-up?)
                       (rx/take 1))
-          stream (->> streams/canvas-mouse-position
+          stream (->> ws/canvas-mouse-position
                       (rx/take-until stoper)
                       (rx/map apply-zoom)
                       (rx/mapcat apply-grid-alignment)
-                      (rx/with-latest vector streams/mouse-position-ctrl)
+                      (rx/with-latest vector ws/mouse-position-ctrl)
                       (rx/map normalize-proportion-lock))]
       (rx/subscribe stream (partial on-resize shape) nil on-end))))
 
@@ -161,18 +160,18 @@
   (letfn [(on-mouse-down [event index]
             (dom/stop-propagation event)
 
-            (let [stoper (get-edition-stream-stoper streams/events)
-                  stream (rx/take-until stoper streams/mouse-position-deltas)]
+            (let [stoper (get-edition-stream-stoper ws/interaction-events)
+                  stream (rx/take-until stoper ws/mouse-position-deltas)]
               (when @refs/selected-alignment
                 (st/emit! (uds/initial-path-point-align (:id shape) index)))
               (rx/subscribe stream #(on-handler-move % index))))
 
           (get-edition-stream-stoper [stream]
-            (let [stoper? #(and (uev/mouse-event? %) (= (:type %) :up))]
+            (let [stoper? #(and (ws/mouse-event? %) (= (:type %) :up))]
               (rx/merge
                (rx/filter stoper? stream)
                (->> stream
-                    (rx/filter #(= % ::uev/interrupt))
+                    (rx/filter #(= % :interrupt))
                     (rx/take 1)))))
 
           (on-handler-move [delta index]

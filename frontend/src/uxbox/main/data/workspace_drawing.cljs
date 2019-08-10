@@ -4,6 +4,8 @@
 ;;
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
+;; TODO: DEPRECTATED, maintained just for temporal documentation, delete on near future
+
 (ns uxbox.main.data.workspace-drawing
   "Workspace drawing data events and impl."
   (:require [beicon.core :as rx]
@@ -26,390 +28,359 @@
 ;; Data Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- Select for Drawing
-
-(deftype SelectForDrawing [shape]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])
-          current (l/focus ul/selected-drawing state)]
-      (if (or (nil? shape)
-              (= shape current))
-        (update-in state [:workspace pid] dissoc :drawing :drawing-tool)
-        (update-in state [:workspace pid] assoc
-                   :drawing shape
-                   :drawing-tool shape)))))
-
-(defn select-for-drawing
-  [shape]
-  (SelectForDrawing. shape))
-
-
-;; --- Clear Drawing State
-
-(deftype ClearDrawingState []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])]
-      (update-in state [:workspace pid] dissoc :drawing-tool :drawing))))
-
-(defn clear-drawing-state
-  []
-  (ClearDrawingState.))
-
 ;; -- Start Drawing
 
-(declare on-init-draw)
+;; (declare on-init-draw)
 
-(deftype StartDrawing [id object]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:workspace :drawing-lock] #(if (nil? %) id %)))
+;; (deftype StartDrawing [id object]
+;;   ptk/UpdateEvent
+;;   (update [_ state]
+;;     (update-in state [:workspace :drawing-lock] #(if (nil? %) id %)))
 
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [lock (get-in state [:workspace :drawing-lock])]
-      (if (= lock id)
-        (->> stream
-             (rx/filter #(= % ::uev/interrupt))
-             (rx/take 1)
-             (rx/map (fn [_] #(update % :workspace dissoc :drawing-lock))))
-        (rx/empty))))
+;;   ptk/WatchEvent
+;;   (watch [_ state stream]
+;;     (let [lock (get-in state [:workspace :drawing-lock])]
+;;       (if (= lock id)
+;;         (->> stream
+;;              (rx/filter #(= % :interrupt))
+;;              (rx/take 1)
+;;              (rx/map (fn [_] #(update % :workspace dissoc :drawing-lock))))
+;;         (rx/empty))))
 
-  ptk/EffectEvent
-  (effect [_ state stream]
-    (let [lock (get-in state [:workspace :drawing-lock])]
-      (when (= lock id)
-        (on-init-draw object stream)))))
+;;   ptk/EffectEvent
+;;   (effect [_ state stream]
+;;     (let [lock (get-in state [:workspace :drawing-lock])]
+;;       (when (= lock id)
+;;         (on-init-draw object stream)))))
 
-(defn start-drawing
-  [object]
-  (let [id (gensym "drawing")]
-    (StartDrawing. id object)))
+;; (defn start-drawing
+;;   [object]
+;;   (let [id (gensym "drawing")]
+;;     (StartDrawing. id object)))
 
-;; --- Initialize Draw Area
+;; ;; --- Initialize Draw Area
 
-(deftype InitializeDrawing [point]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])
-          shape (get-in state [:workspace pid :drawing])
-          shape (geom/setup shape {:x1 (:x point)
-                                   :y1 (:y point)
-                                   :x2 (+ (:x point) 2)
-                                   :y2 (+ (:y point) 2)})]
-      (assoc-in state [:workspace pid :drawing] shape))))
+;; (deftype InitializeDrawing [point]
+;;   ptk/UpdateEvent
+;;   (update [_ state]
+;;     (let [pid (get-in state [:workspace :current])
+;;           shape (get-in state [:workspace pid :drawing])
+;;           shape (geom/setup shape {:x1 (:x point)
+;;                                    :y1 (:y point)
+;;                                    :x2 (+ (:x point) 2)
+;;                                    :y2 (+ (:y point) 2)})]
+;;       (assoc-in state [:workspace pid :drawing] shape))))
 
-(defn initialize-drawing
-  [point]
-  {:pre [(gpt/point? point)]}
-  (InitializeDrawing. point))
+;; (defn initialize-drawing
+;;   [point]
+;;   {:pre [(gpt/point? point)]}
+;;   (InitializeDrawing. point))
 
-;; --- Update Draw Area State
+;; ;; --- Update Draw Area State
 
-(deftype UpdateDrawing [position lock?]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])
-          {:keys [id] :as shape} (-> (get-in state [:workspace pid :drawing])
-                                     (geom/shape->rect-shape)
-                                     (geom/size))
-          result (geom/resize-shape :bottom-right shape position lock?)
-          scale (geom/calculate-scale-ratio shape result)
-          resize-mtx (geom/generate-resize-matrix :bottom-right shape scale)]
-      (assoc-in state [:workspace pid :modifiers id] {:resize resize-mtx}))))
+;; (deftype UpdateDrawing [position lock?]
+;;   ptk/UpdateEvent
+;;   (update [_ state]
+;;     (let [pid (get-in state [:workspace :current])
+;;           {:keys [id] :as shape} (-> (get-in state [:workspace pid :drawing])
+;;                                      (geom/shape->rect-shape)
+;;                                      (geom/size))
+;;           result (geom/resize-shape :bottom-right shape position lock?)
+;;           scale (geom/calculate-scale-ratio shape result)
+;;           resize-mtx (geom/generate-resize-matrix :bottom-right shape scale)]
+;;       (assoc-in state [:workspace pid :modifiers id] {:resize resize-mtx}))))
 
-(defn update-drawing
-  [position lock?]
-  {:pre [(gpt/point? position) (boolean? lock?)]}
-  (UpdateDrawing. position lock?))
+;; (defn update-drawing
+;;   [position lock?]
+;;   {:pre [(gpt/point? position) (boolean? lock?)]}
+;;   (UpdateDrawing. position lock?))
 
-;; --- Finish Drawin
+;; ;; --- Finish Drawin
 
-(deftype FinishDrawing []
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [pid (get-in state [:workspace :current])
-          {:keys [id] :as shape} (get-in state [:workspace pid :drawing])
-          resize-mtx (get-in state [:workspace pid :modifiers id :resize])
-          shape (cond-> shape
-                  resize-mtx (geom/transform resize-mtx))]
-      (prn "finish-drawing" shape)
-      (if-not shape
-        (rx/empty)
-        (rx/of (clear-drawing-state)
-               (uds/add-shape shape)
-               (udw/select-first-shape)
-               ::uev/interrupt)))))
+;; (deftype FinishDrawing []
+;;   ptk/WatchEvent
+;;   (watch [_ state stream]
+;;     (let [pid (get-in state [:workspace :current])
+;;           {:keys [id] :as shape} (get-in state [:workspace pid :drawing])
+;;           resize-mtx (get-in state [:workspace pid :modifiers id :resize])
+;;           shape (cond-> shape
+;;                   resize-mtx (geom/transform resize-mtx))]
+;;       (prn "finish-drawing" shape)
+;;       (if-not shape
+;;         (rx/empty)
+;;         (rx/of (clear-drawing-state)
+;;                (uds/add-shape shape)
+;;                (udw/select-first-shape)
+;;                :interrupt)))))
 
-(defn finish-drawing
-  []
-  (FinishDrawing.))
+;; (defn finish-drawing
+;;   []
+;;   (FinishDrawing.))
 
-;; --- Finish Path Drawing
+;; ;; --- Finish Path Drawing
 
-(deftype FinishPathDrawing []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])]
-      (update-in state [:workspace pid :drawing :segments] #(vec (butlast %))))))
+;; (deftype FinishPathDrawing []
+;;   ptk/UpdateEvent
+;;   (update [_ state]
+;;     (let [pid (get-in state [:workspace :current])]
+;;       (update-in state [:workspace pid :drawing :segments] #(vec (butlast %))))))
 
-(defn finish-path-drawing
-  []
-  (FinishPathDrawing.))
+;; (defn finish-path-drawing
+;;   []
+;;   (FinishPathDrawing.))
 
-;; --- Insert Drawing Path Point
+;; ;; --- Insert Drawing Path Point
 
-(deftype InsertDrawingPathPoint [point]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])]
-      (update-in state [:workspace pid :drawing :segments] (fnil conj []) point))))
+;; (deftype InsertDrawingPathPoint [point]
+;;   ptk/UpdateEvent
+;;   (update [_ state]
+;;     (let [pid (get-in state [:workspace :current])]
+;;       (update-in state [:workspace pid :drawing :segments] (fnil conj []) point))))
 
-(defn insert-drawing-path-point
-  [point]
-  {:pre [(gpt/point? point)]}
-  (InsertDrawingPathPoint. point))
+;; (defn insert-drawing-path-point
+;;   [point]
+;;   {:pre [(gpt/point? point)]}
+;;   (InsertDrawingPathPoint. point))
 
-;; --- Update Drawing Path Point
+;; ;; --- Update Drawing Path Point
 
-(deftype UpdateDrawingPathPoint [index point]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])
-          segments (count (get-in state [:workspace pid :drawing :segments]))
-          exists? (< -1 index segments)]
-      (cond-> state
-        exists? (assoc-in [:workspace pid :drawing :segments index] point)))))
+;; (deftype UpdateDrawingPathPoint [index point]
+;;   ptk/UpdateEvent
+;;   (update [_ state]
+;;     (let [pid (get-in state [:workspace :current])
+;;           segments (count (get-in state [:workspace pid :drawing :segments]))
+;;           exists? (< -1 index segments)]
+;;       (cond-> state
+;;         exists? (assoc-in [:workspace pid :drawing :segments index] point)))))
 
-(defn update-drawing-path-point
-  [index point]
-  {:pre [(integer? index) (gpt/point? point)]}
-  (UpdateDrawingPathPoint. index point))
+;; (defn update-drawing-path-point
+;;   [index point]
+;;   {:pre [(integer? index) (gpt/point? point)]}
+;;   (UpdateDrawingPathPoint. index point))
 
-;; --- Close Drawing Path
+;; ;; --- Close Drawing Path
 
-(deftype CloseDrawingPath []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])]
-      (assoc-in state [:workspace pid :drawing :close?] true)))
+;; (deftype CloseDrawingPath []
+;;   ptk/UpdateEvent
+;;   (update [_ state]
+;;     (let [pid (get-in state [:workspace :current])]
+;;       (assoc-in state [:workspace pid :drawing :close?] true)))
 
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of ::uev/interrupt)))
+;;   ptk/WatchEvent
+;;   (watch [_ state stream]
+;;     (rx/of :interrupt)))
 
-(defn close-drawing-path
-  []
-  (CloseDrawingPath.))
+;; (defn close-drawing-path
+;;   []
+;;   (CloseDrawingPath.))
 
-;; --- Simplify Drawing Path
+;; ;; --- Simplify Drawing Path
 
-(deftype SimplifyDrawingPath [tolerance]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])]
-      (update-in state [:workspace pid :drawing :segments] pth/simplify tolerance))))
+;; (deftype SimplifyDrawingPath [tolerance]
+;;   ptk/UpdateEvent
+;;   (update [_ state]
+;;     (let [pid (get-in state [:workspace :current])]
+;;       (update-in state [:workspace pid :drawing :segments] pth/simplify tolerance))))
 
-(defn simplify-drawing-path
-  [tolerance]
-  {:pre [(number? tolerance)]}
-  (SimplifyDrawingPath. tolerance))
+;; (defn simplify-drawing-path
+;;   [tolerance]
+;;   {:pre [(number? tolerance)]}
+;;   (SimplifyDrawingPath. tolerance))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Drawing Implementation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; Drawing Implementation
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private canvas-coords
-  (gpt/point c/canvas-start-x
-             c/canvas-start-y))
+;; (def ^:private canvas-coords
+;;   (gpt/point c/canvas-start-x
+;;              c/canvas-start-y))
 
-(defn- conditional-align
-  [point]
-  (if @refs/selected-alignment
-    (uwrk/align-point point)
-    (rx/of point)))
+;; (defn- conditional-align
+;;   [point]
+;;   (if @refs/selected-alignment
+;;     (uwrk/align-point point)
+;;     (rx/of point)))
 
-(defn- translate-to-canvas
-  [point]
-  (-> point
-      (gpt/subtract (gpt/multiply canvas-coords @refs/selected-zoom))
-      (gpt/divide @refs/selected-zoom)))
+;; (defn- translate-to-canvas
+;;   [point]
+;;   (-> point
+;;       (gpt/subtract (gpt/multiply canvas-coords @refs/selected-zoom))
+;;       (gpt/divide @refs/selected-zoom)))
 
-(declare on-init-draw-icon)
-(declare on-init-draw-image)
-(declare on-init-draw-path)
-(declare on-init-draw-free-path)
-(declare on-init-draw-generic)
+;; (declare on-init-draw-icon)
+;; (declare on-init-draw-image)
+;; (declare on-init-draw-path)
+;; (declare on-init-draw-free-path)
+;; (declare on-init-draw-generic)
 
-(defn- on-init-draw
-  "Function execution when draw shape operation is requested.
-  This is a entry point for the draw interaction."
-  [shape stream]
-  (let [stoper (->> stream
-                    (rx/filter #(= % ::uev/interrupt))
-                    (rx/take 1))]
-    (case (:type shape)
-      :icon (on-init-draw-icon shape)
-      :image (on-init-draw-image shape)
-      :path (if (:free shape)
-              (on-init-draw-free-path shape stoper)
-              (on-init-draw-path shape stoper))
-      (on-init-draw-generic shape stoper))))
+;; (defn- on-init-draw
+;;   "Function execution when draw shape operation is requested.
+;;   This is a entry point for the draw interaction."
+;;   [shape stream]
+;;   (let [stoper (->> stream
+;;                     (rx/filter #(= % :interrupt))
+;;                     (rx/take 1))]
+;;     (case (:type shape)
+;;       :icon (on-init-draw-icon shape)
+;;       :image (on-init-draw-image shape)
+;;       :path (if (:free shape)
+;;               (on-init-draw-free-path shape stoper)
+;;               (on-init-draw-path shape stoper))
+;;       (on-init-draw-generic shape stoper))))
 
-(defn- on-init-draw-generic
-  [shape stoper]
-  (let [stoper (rx/merge stoper (->> streams/events
-                                     (rx/filter uev/mouse-up?)
-                                     (rx/take 1)))
-        start? (volatile! true)
-        mouse (->> streams/viewport-mouse-position
-                   (rx/take-until stoper)
-                   (rx/mapcat conditional-align)
-                   (rx/map translate-to-canvas)
-                   (rx/with-latest vector streams/mouse-position-ctrl))]
+;; (defn- on-init-draw-generic
+;;   [shape stoper]
+;;   (let [stoper (rx/merge stoper (->> streams/events
+;;                                      (rx/filter uev/mouse-up?)
+;;                                      (rx/take 1)))
+;;         start? (volatile! true)
+;;         mouse (->> streams/viewport-mouse-position
+;;                    (rx/take-until stoper)
+;;                    (rx/mapcat conditional-align)
+;;                    (rx/map translate-to-canvas)
+;;                    (rx/with-latest vector streams/mouse-position-ctrl))]
 
-    (letfn [(on-position [[point ctrl?]]
-              (if @start?
-                (do
-                  (st/emit! (initialize-drawing point))
-                  (vreset! start? false))
-                (st/emit! (update-drawing point ctrl?))))
+;;     (letfn [(on-position [[point ctrl?]]
+;;               (if @start?
+;;                 (do
+;;                   (st/emit! (initialize-drawing point))
+;;                   (vreset! start? false))
+;;                 (st/emit! (update-drawing point ctrl?))))
 
-            (on-finish []
-              (if @start?
-                (st/emit! ::uev/interrupt)
-                (st/emit! (finish-drawing))))]
-      (rx/subscribe mouse on-position nil on-finish))))
+;;             (on-finish []
+;;               (if @start?
+;;                 (st/emit! ::uev/interrupt)
+;;                 (st/emit! (finish-drawing))))]
+;;       (rx/subscribe mouse on-position nil on-finish))))
 
-(defn- on-init-draw-icon
-  [{:keys [metadata] :as shape}]
-  (let [{:keys [x y]} (gpt/divide @refs/canvas-mouse-position
-                                  @refs/selected-zoom)
-        {:keys [width height]} metadata
-        proportion (/ width height)
-        props {:x1 x
-               :y1 y
-               :x2 (+ x 200)
-               :y2 (+ y (/ 200 proportion))}
-        shape (geom/setup shape props)]
-    (st/emit! (uds/add-shape shape)
-              (udw/select-first-shape)
-              (select-for-drawing nil)
-              ::uev/interrupt)))
+;; (defn- on-init-draw-icon
+;;   [{:keys [metadata] :as shape}]
+;;   (let [{:keys [x y]} (gpt/divide @refs/canvas-mouse-position
+;;                                   @refs/selected-zoom)
+;;         {:keys [width height]} metadata
+;;         proportion (/ width height)
+;;         props {:x1 x
+;;                :y1 y
+;;                :x2 (+ x 200)
+;;                :y2 (+ y (/ 200 proportion))}
+;;         shape (geom/setup shape props)]
+;;     (st/emit! (uds/add-shape shape)
+;;               (udw/select-first-shape)
+;;               (select-for-drawing nil)
+;;               ::uev/interrupt)))
 
-(defn- on-init-draw-image
-  [{:keys [metadata] :as shape}]
-  (let [{:keys [x y]} (gpt/divide @refs/canvas-mouse-position
-                                  @refs/selected-zoom)
-        {:keys [width height]} metadata
-        proportion (/ width height)
-        props {:x1 x
-               :y1 y
-               :x2 (+ x width)
-               :y2 (+ y height)}
-        shape (geom/setup shape props)]
-    (st/emit! (uds/add-shape shape)
-              (udw/select-first-shape)
-              (select-for-drawing nil)
-              ::uev/interrupt)))
+;; (defn- on-init-draw-image
+;;   [{:keys [metadata] :as shape}]
+;;   (let [{:keys [x y]} (gpt/divide @refs/canvas-mouse-position
+;;                                   @refs/selected-zoom)
+;;         {:keys [width height]} metadata
+;;         proportion (/ width height)
+;;         props {:x1 x
+;;                :y1 y
+;;                :x2 (+ x width)
+;;                :y2 (+ y height)}
+;;         shape (geom/setup shape props)]
+;;     (st/emit! (uds/add-shape shape)
+;;               (udw/select-first-shape)
+;;               (select-for-drawing nil)
+;;               ::uev/interrupt)))
 
-(def ^:private immanted-zones
-  (let [transform #(vector (- % 7) (+ % 7) %)]
-    (concat
-     (mapv transform (range 0 181 15))
-     (mapv (comp transform -) (range 0 181 15)))))
+;; (def ^:private immanted-zones
+;;   (let [transform #(vector (- % 7) (+ % 7) %)]
+;;     (concat
+;;      (mapv transform (range 0 181 15))
+;;      (mapv (comp transform -) (range 0 181 15)))))
 
-(defn- align-position
-  [angle pos]
-  (reduce (fn [pos [a1 a2 v]]
-            (if (< a1 angle a2)
-              (reduced (gpt/update-angle pos v))
-              pos))
-          pos
-          immanted-zones))
+;; (defn- align-position
+;;   [angle pos]
+;;   (reduce (fn [pos [a1 a2 v]]
+;;             (if (< a1 angle a2)
+;;               (reduced (gpt/update-angle pos v))
+;;               pos))
+;;           pos
+;;           immanted-zones))
 
-(defn- get-path-stoper-stream
-  ([stoper] (get-path-stoper-stream stoper false))
-  ([stoper mouseup?]
-   (letfn [(stoper-event? [{:keys [type shift] :as event}]
-             (or (and (uev/mouse-event? event)
-                      (or (and (= type :double-click) shift)
-                          (= type :context-menu)
-                          (and mouseup? (= type :up))))
-                 (and (uev/keyboard-event? event)
-                      (= type :down)
-                      (= 13 (:key event)))))]
-     (->> (rx/filter stoper-event? streams/events)
-          (rx/merge stoper)
-          (rx/take 1)
-          (rx/share)))))
+;; (defn- get-path-stoper-stream
+;;   ([stoper] (get-path-stoper-stream stoper false))
+;;   ([stoper mouseup?]
+;;    (letfn [(stoper-event? [{:keys [type shift] :as event}]
+;;              (or (and (uev/mouse-event? event)
+;;                       (or (and (= type :double-click) shift)
+;;                           (= type :context-menu)
+;;                           (and mouseup? (= type :up))))
+;;                  (and (uev/keyboard-event? event)
+;;                       (= type :down)
+;;                       (= 13 (:key event)))))]
+;;      (->> (rx/filter stoper-event? streams/events)
+;;           (rx/merge stoper)
+;;           (rx/take 1)
+;;           (rx/share)))))
 
-(defn- get-path-point-stream
-  []
-  (->> streams/events
-       (rx/filter uev/mouse-click?)
-       (rx/filter #(false? (:shift %)))))
+;; (defn- get-path-point-stream
+;;   []
+;;   (->> streams/events
+;;        (rx/filter uev/mouse-click?)
+;;        (rx/filter #(false? (:shift %)))))
 
-(defn- on-init-draw-free-path
-  [shape stoper]
-  (let [stoper (get-path-stoper-stream stoper true)
-        mouse (->> streams/viewport-mouse-position
-                   (rx/mapcat conditional-align)
-                   (rx/map translate-to-canvas))
+;; (defn- on-init-draw-free-path
+;;   [shape stoper]
+;;   (let [stoper (get-path-stoper-stream stoper true)
+;;         mouse (->> streams/viewport-mouse-position
+;;                    (rx/mapcat conditional-align)
+;;                    (rx/map translate-to-canvas))
 
-        stream (rx/take-until stoper mouse)]
-    (letfn [(on-draw [point]
-              (st/emit! (insert-drawing-path-point point)))
-            (on-end []
-              (st/emit! (simplify-drawing-path 0.3)
-                        (finish-drawing)))]
-      (rx/subscribe stream on-draw nil on-end))))
+;;         stream (rx/take-until stoper mouse)]
+;;     (letfn [(on-draw [point]
+;;               (st/emit! (insert-drawing-path-point point)))
+;;             (on-end []
+;;               (st/emit! (simplify-drawing-path 0.3)
+;;                         (finish-drawing)))]
+;;       (rx/subscribe stream on-draw nil on-end))))
 
-(defn- on-init-draw-path
-  [shape stoper]
-  (let [last-point (volatile! @refs/canvas-mouse-position)
-        stoper (get-path-stoper-stream stoper)
-        mouse (->> (rx/sample 10 streams/viewport-mouse-position)
-                   (rx/mapcat conditional-align)
-                   (rx/map translate-to-canvas))
-        points (->> (get-path-point-stream)
-                    (rx/with-latest vector mouse)
-                    (rx/map second)
-                    (rx/take-until stoper))
-        counter (rx/merge (rx/scan #(inc %) 1 points) (rx/of 1))
-        stream (->> mouse
-                    (rx/with-latest vector streams/mouse-position-ctrl)
-                    (rx/with-latest vector counter)
-                    (rx/map flatten)
-                    (rx/take-until stoper))]
+;; (defn- on-init-draw-path
+;;   [shape stoper]
+;;   (let [last-point (volatile! @refs/canvas-mouse-position)
+;;         stoper (get-path-stoper-stream stoper)
+;;         mouse (->> (rx/sample 10 streams/viewport-mouse-position)
+;;                    (rx/mapcat conditional-align)
+;;                    (rx/map translate-to-canvas))
+;;         points (->> (get-path-point-stream)
+;;                     (rx/with-latest vector mouse)
+;;                     (rx/map second)
+;;                     (rx/take-until stoper))
+;;         counter (rx/merge (rx/scan #(inc %) 1 points) (rx/of 1))
+;;         stream (->> mouse
+;;                     (rx/with-latest vector streams/mouse-position-ctrl)
+;;                     (rx/with-latest vector counter)
+;;                     (rx/map flatten)
+;;                     (rx/take-until stoper))]
 
-    (letfn [(on-point [point]
-              (vreset! last-point point)
-              (st/emit! (insert-drawing-path-point point)))
+;;     (letfn [(on-point [point]
+;;               (vreset! last-point point)
+;;               (st/emit! (insert-drawing-path-point point)))
 
-            (on-generic-draw [point counter]
-              (st/emit! (update-drawing-path-point counter point)))
+;;             (on-generic-draw [point counter]
+;;               (st/emit! (update-drawing-path-point counter point)))
 
-            (on-assisted-draw [point counter]
-              (let [point (as-> point $
-                            (gpt/subtract $ @last-point)
-                            (align-position (gpt/angle $) $)
-                            (gpt/add $ @last-point))]
-                (st/emit! (update-drawing-path-point counter point))))
+;;             (on-assisted-draw [point counter]
+;;               (let [point (as-> point $
+;;                             (gpt/subtract $ @last-point)
+;;                             (align-position (gpt/angle $) $)
+;;                             (gpt/add $ @last-point))]
+;;                 (st/emit! (update-drawing-path-point counter point))))
 
-            (on-draw [[point ctrl? counter]]
-              (if ctrl?
-                (on-assisted-draw point counter)
-                (on-generic-draw point counter)))
+;;             (on-draw [[point ctrl? counter]]
+;;               (if ctrl?
+;;                 (on-assisted-draw point counter)
+;;                 (on-generic-draw point counter)))
 
-              (on-finish []
-                (st/emit! (finish-path-drawing)
-                          (finish-drawing)))]
+;;             (on-finish []
+;;               (st/emit! (finish-path-drawing)
+;;                         (finish-drawing)))]
 
-      ;; Initialize path drawing
-      (st/emit! (insert-drawing-path-point @last-point)
-                (insert-drawing-path-point @last-point))
+;;       ;; Initialize path drawing
+;;       (st/emit! (insert-drawing-path-point @last-point)
+;;                 (insert-drawing-path-point @last-point))
 
-      (rx/subscribe points on-point)
-      (rx/subscribe stream on-draw nil on-finish))))
+;;       (rx/subscribe points on-point)
+;;       (rx/subscribe stream on-draw nil on-finish))))

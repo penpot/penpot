@@ -409,19 +409,15 @@
 (declare setup-rect)
 (declare setup-image)
 (declare setup-circle)
-(declare setup-group)
 
 (defn setup
   "A function that initializes the first coordinates for
   the shape. Used mainly for draw operations."
   [shape props]
   (case (:type shape)
-    :rect (setup-rect shape props)
-    :icon (setup-rect shape props)
     :image (setup-image shape props)
-    :text (setup-rect shape props)
     :circle (setup-circle shape props)
-    :group (setup-group shape props)))
+    (setup-rect shape props)))
 
 (defn- setup-rect
   "A specialized function for setup rect-like shapes."
@@ -431,11 +427,6 @@
          :y1 y1
          :x2 x2
          :y2 y2))
-
-(defn- setup-group
-  "A specialized function for setup group shapes."
-  [shape {:keys [x1 y1 x2 y2] :as props}]
-  (assoc shape :initial props))
 
 (defn- setup-circle
   "A specialized function for setup circle shapes."
@@ -447,8 +438,8 @@
          :ry (mth/abs (- y2 y1))))
 
 (defn- setup-image
-  [{:keys [view-box] :as shape} {:keys [x1 y1 x2 y2] :as props}]
-  (let [[_ _ width height] view-box]
+  [{:keys [metadata] :as shape} {:keys [x1 y1 x2 y2] :as props}]
+  (let [{:keys [width height]} metadata]
     (assoc shape
            :x1 x1
            :y1 y1
@@ -470,7 +461,6 @@
    (case type
      :circle (circle->rect-shape state shape)
      :path (path->rect-shape state shape)
-     :group (group->rect-shape state shape)
      shape)))
 
 (defn shapes->rect-shape
@@ -487,13 +477,6 @@
       :x2 maxx
       :y2 maxy
       :type :rect})))
-
-(defn- group->rect-shape
-  [state {:keys [id items rotation] :as group}]
-  (let [shapes (map #(get-in state [:shapes %]) items)]
-    (-> (shapes->rect-shape state shapes)
-        (assoc :rotation rotation)
-        (assoc :id id))))
 
 (defn- path->rect-shape
   [state {:keys [segments] :as shape}]
@@ -606,32 +589,13 @@
   ([shape]
    (selection-rect @st/state shape))
   ([state shape]
-   (case (:type shape)
-     :group (selection-rect-group state shape)
-     (selection-rect-generic state shape))))
-
-(defn- selection-rect-generic
-  [state {:keys [id modifiers] :as shape}]
-  (let [{:keys [displacement resize]} modifiers]
-    (-> (shape->rect-shape shape)
-        (assoc :type :rect :id id)
-        (transform (or resize (gmt/matrix)))
-        (transform (or displacement (gmt/matrix)))
-        (rotate-shape)
-        (size))))
-
-(defn- selection-rect-group
-  [state {:keys [id group items modifiers] :as shape}]
-  (let [{:keys [displacement resize]} modifiers
-        shapes (->> items
-                    (map #(get-in state [:shapes %]))
-                    (map #(selection-rect state %)))]
-    (-> (shapes->rect-shape shapes)
-        (assoc :id id)
-        (transform (or resize (gmt/matrix)))
-        (transform (or displacement (gmt/matrix)))
-        (rotate-shape)
-        (size))))
+   (let [{:keys [displacement resize]} (:modifiers shape)]
+     (-> (shape->rect-shape shape)
+         (assoc :type :rect :id (:id shape))
+         (transform (or resize (gmt/matrix)))
+         (transform (or displacement (gmt/matrix)))
+         (rotate-shape)
+         (size)))))
 
 ;; --- Helpers
 

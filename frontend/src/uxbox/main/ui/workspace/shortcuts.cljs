@@ -10,9 +10,8 @@
             [beicon.core :as rx]
             [potok.core :as ptk]
             [uxbox.main.store :as st]
-            [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.main.data.workspace-drawing :as udwd]
+            [uxbox.main.data.lightbox :as dl]
+            [uxbox.main.data.workspace :as dw]
             [uxbox.main.data.shapes :as uds]
             [uxbox.main.data.undo :as udu]
             [uxbox.main.data.history :as udh]
@@ -27,39 +26,39 @@
 ;; --- Shortcuts
 
 (defonce +shortcuts+
-  {:shift+g #(st/emit! (udw/toggle-flag :grid))
+  {:shift+g #(st/emit! (dw/toggle-flag :grid))
    :ctrl+g #(st/emit! (uds/group-selected))
    :ctrl+shift+g #(st/emit! (uds/ungroup-selected))
-   :ctrl+shift+m #(st/emit! (udw/toggle-flag :sitemap))
-   :ctrl+shift+f #(st/emit! (udw/toggle-flag :drawtools))
-   :ctrl+shift+i #(st/emit! (udw/toggle-flag :icons))
-   :ctrl+shift+l #(st/emit! (udw/toggle-flag :layers))
-   :ctrl+0 #(st/emit! (udw/reset-zoom))
-   :ctrl+r #(st/emit! (udw/toggle-flag :ruler))
+   :ctrl+shift+m #(st/emit! (dw/toggle-flag :sitemap))
+   :ctrl+shift+f #(st/emit! (dw/toggle-flag :drawtools))
+   :ctrl+shift+i #(st/emit! (dw/toggle-flag :icons))
+   :ctrl+shift+l #(st/emit! (dw/toggle-flag :layers))
+   :ctrl+0 #(st/emit! (dw/reset-zoom))
+   :ctrl+r #(st/emit! (dw/toggle-flag :ruler))
    :ctrl+d #(st/emit! (uds/duplicate-selected))
-   :ctrl+c #(st/emit! (udw/copy-to-clipboard))
-   :ctrl+v #(st/emit! (udw/paste-from-clipboard))
-   :ctrl+shift+v #(udl/open! :clipboard)
+   :ctrl+c #(st/emit! (dw/copy-to-clipboard))
+   :ctrl+v #(st/emit! (dw/paste-from-clipboard))
+   :ctrl+shift+v #(dl/open! :clipboard)
    :ctrl+z #(st/emit! (udu/undo))
    :ctrl+shift+z #(st/emit! (udu/redo))
    :ctrl+y #(st/emit! (udu/redo))
-   :ctrl+b #(st/emit! (udwd/select-for-drawing wsd/+draw-tool-rect+))
-   :ctrl+e #(st/emit! (udwd/select-for-drawing wsd/+draw-tool-circle+))
-   :ctrl+t #(st/emit! (udwd/select-for-drawing wsd/+draw-tool-text+))
-   :esc #(st/emit! (udw/deselect-all))
-   :delete #(st/emit! (udw/delete-selected))
-   :ctrl+up #(st/emit! (udw/move-selected-layer :up))
-   :ctrl+down #(st/emit! (udw/move-selected-layer :down))
-   :ctrl+shift+up #(st/emit! (udw/move-selected-layer :top))
-   :ctrl+shift+down #(st/emit! (udw/move-selected-layer :bottom))
-   :shift+up #(st/emit! (udw/move-selected :up :fast))
-   :shift+down #(st/emit! (udw/move-selected :down :fast))
-   :shift+right #(st/emit! (udw/move-selected :right :fast))
-   :shift+left #(st/emit! (udw/move-selected :left :fast))
-   :up #(st/emit! (udw/move-selected :up :std))
-   :down #(st/emit! (udw/move-selected :down :std))
-   :right #(st/emit! (udw/move-selected :right :std))
-   :left #(st/emit! (udw/move-selected :left :std))
+   :ctrl+b #(st/emit! (dw/select-for-drawing wsd/+draw-tool-rect+))
+   :ctrl+e #(st/emit! (dw/select-for-drawing wsd/+draw-tool-circle+))
+   :ctrl+t #(st/emit! (dw/select-for-drawing wsd/+draw-tool-text+))
+   :esc #(st/emit! (dw/deselect-all))
+   :delete #(st/emit! (dw/delete-selected))
+   :ctrl+up #(st/emit! (dw/move-selected-layer :up))
+   :ctrl+down #(st/emit! (dw/move-selected-layer :down))
+   :ctrl+shift+up #(st/emit! (dw/move-selected-layer :top))
+   :ctrl+shift+down #(st/emit! (dw/move-selected-layer :bottom))
+   :shift+up #(st/emit! (dw/move-selected :up :fast))
+   :shift+down #(st/emit! (dw/move-selected :down :fast))
+   :shift+right #(st/emit! (dw/move-selected :right :fast))
+   :shift+left #(st/emit! (dw/move-selected :left :fast))
+   :up #(st/emit! (dw/move-selected :up :std))
+   :down #(st/emit! (dw/move-selected :down :std))
+   :right #(st/emit! (dw/move-selected :right :std))
+   :left #(st/emit! (dw/move-selected :left :std))
    })
 
 ;; --- Shortcuts Setup Functions

@@ -6,13 +6,45 @@
 
 (ns uxbox.main.ui.shapes.common
   (:require
-   [uxbox.main.data.workspace :as udw]
+   [potok.core :as ptk]
+   [beicon.core :as rx]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.ui.workspace.streams :as ws]
    [uxbox.util.dom :as dom]))
 
-;; --- Events
+;; --- Shape Movement (by mouse)
+
+(defn start-move
+  [id]
+  {:pre [(uuid? id)]}
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [pid (get-in state [:workspace :current])
+            wst (get-in state [:workspace pid])
+            stoper (->> ws/interaction-events
+                        (rx/filter ws/mouse-up?)
+                        (rx/take 1))
+            stream (->> ws/mouse-position-deltas
+                        (rx/take-until stoper))]
+      (rx/concat
+       (when (refs/alignment-activated? (:flags wst))
+         (rx/of (dw/initial-shape-align id)))
+       (rx/map #(dw/apply-temporal-displacement id %) stream)
+       (rx/of (dw/apply-displacement id)))))))
+
+(defn start-move-selected
+  []
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [pid (get-in state [:workspace :current])
+            selected (get-in state [:workspace pid :selected])]
+        (rx/from-coll (map start-move selected))))))
+
 
 (defn on-mouse-down
   [event {:keys [id group] :as shape} selected]
@@ -26,18 +58,18 @@
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
-          (st/emit! (udw/select-shape id)
-                    (udw/start-move-selected)))
+          (st/emit! (dw/select-shape id)
+                    (start-move-selected)))
 
         (and (not selected?) (not (empty? selected)))
         (do
           (dom/stop-propagation event)
           (if (kbd/shift? event)
-            (st/emit! (udw/select-shape id))
-            (st/emit! (udw/deselect-all)
-                      (udw/select-shape id)
-                      (udw/start-move-selected))))
+            (st/emit! (dw/select-shape id))
+            (st/emit! (dw/deselect-all)
+                      (dw/select-shape id)
+                      (start-move-selected))))
         :else
         (do
           (dom/stop-propagation event)
-          (st/emit! (udw/start-move-selected)))))))
+          (st/emit! (start-move-selected)))))))

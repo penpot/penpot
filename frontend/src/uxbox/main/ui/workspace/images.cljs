@@ -12,7 +12,7 @@
    [rumext.core :as mx]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.images :as udi]
-   [uxbox.main.data.workspace-drawing :as udwd]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
    [uxbox.util.data :refer [read-string jscoll->vec]]
@@ -54,7 +54,7 @@
                            :metadata {:width width
                                       :height height}
                            :image id}]
-                (st/emit! (udwd/select-for-drawing shape))
+                (st/emit! (dw/select-for-drawing shape))
                 (modal/hide!)))
 
             (on-files-selected [event]
@@ -99,7 +99,7 @@
                          :metadata {:width (:width image)
                                     :height (:height image)}
                          :image (:id image)}]
-              (st/emit! (udwd/select-for-drawing shape))
+              (st/emit! (dw/select-for-drawing shape))
               (modal/hide!)))]
     [:div.library-item {:on-click on-click}
      [:div.library-item-th
