@@ -24,6 +24,8 @@
 
   &.no-tool-bar-right {
     padding-right: 0;
+    width: calc(100% - 230px);
+    right: 0;
 
     .coordinates {
       right: 10px;
@@ -32,6 +34,11 @@
 
   &.no-tool-bar-left {
     padding-left: 0;
+    width: calc(100% - 230px);
+    
+    &.no-tool-bar-right {
+      width: 100%;
+    }
   }
 
   .coordinates {
