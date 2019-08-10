@@ -71,7 +71,7 @@
       [:div#form-figures.tool-window
        [:div.tool-window-bar
         [:div.tool-window-icon i/icon-set]
-        [:span (tr "ds.icons")]
+        [:span (tr "ds.settings.icons")]
         [:div.tool-window-close {:on-click on-close} i/close]]
        [:div.tool-window-content
         [:div.figures-catalog

@@ -81,19 +81,19 @@
    "ds.accept" "Accept"
    "ds.cancel" "Cancel"
 
-   "ds.icons" "Icons"
-   "ds.element-options" "Element options"
-   "ds.draw-tools" "Draw tools"
-   "ds.sitemap" "Sitemap"
-   "ds.layers" "Layers"
-   "ds.document-history" "Document history"
+   "ds.settings.icons" "Icons"
+   "ds.settings.element-options" "Element options"
+   "ds.settings.draw-tools" "Draw tools"
+   "ds.settings.sitemap" "Sitemap"
+   "ds.settings.layers" "Layers"
+   "ds.settings.document-history" "Document history"
 
    "ds.page.placeholder" "Page name"
    "ds.page.new" "New page"
    "ds.page.edit" "Edit page"
 
-   "ds.history-versions" "History"
-   "ds.pinned-version" "Pinned"
+   "ds.history.versions" "History"
+   "ds.history.pinned" "Pinned"
 
    "ds.help.rect" "Box (Ctrl + B)"
    "ds.help.circle" "Circle (Ctrl + E)"

@@ -76,24 +76,24 @@
 
    "ds.width" "Largeur"
    "ds.height" "Hauteur"
-   "ds.go" "Go go go!"
+   "ds.go" "C'est parti !"
 
    "ds.accept" "Accepter"
    "ds.cancel" "Annuler"
 
-   "ds.icons" "Icônes"
-   "ds.element-options" "Options d'élément"
-   "ds.draw-tools" "Outils de dessin"
-   "ds.sitemap" "Plan du site"
-   "ds.layers" "Couches"
-   "ds.document-history" "Historique du document"
+   "ds.settings.icons" "Icônes"
+   "ds.settings.element-options" "Options d'élément"
+   "ds.settings.draw-tools" "Outils de dessin"
+   "ds.settings.sitemap" "Plan du site"
+   "ds.settings.layers" "Couches"
+   "ds.settings.document-history" "Historique du document"
 
    "ds.page.placeholder" "Nom de la page"
    "ds.page.new" "Nouvelle page"
    "ds.page.edit" "Éditer la page"
 
-   "ds.history-versions" "Historique"
-   "ds.pinned-version" "Épinglés"
+   "ds.history.versions" "Historique"
+   "ds.history.pinned" "Épinglés"
 
    "ds.help.rect" "Boîte (Ctrl + B)"
    "ds.help.circle" "Cercle (Ctrl + E)"

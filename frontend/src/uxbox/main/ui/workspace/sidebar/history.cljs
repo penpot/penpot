@@ -102,16 +102,16 @@
       [:div.document-history.tool-window {}
        [:div.tool-window-bar {}
         [:div.tool-window-icon {} i/undo-history]
-        [:span {} (tr "ds.document-history")]
+        [:span {} (tr "ds.settings.document-history")]
         [:div.tool-window-close {:on-click close} i/close]]
        [:div.tool-window-content {}
         [:ul.history-tabs {}
          [:li {:on-click show-main
                :class (when main? "selected")}
-          (tr "ds.history-versions")]
+          (tr "ds.history.versions")]
          [:li {:on-click show-pinned
                :class (when pinned? "selected")}
-          (tr "ds.pinned-version")]]
+          (tr "ds.history.pinned")]]
         (if (= section :pinned)
           (history-pinned-list history)
           (history-list history))]])))
