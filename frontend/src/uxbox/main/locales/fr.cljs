@@ -78,18 +78,22 @@
    "ds.height" "Hauteur"
    "ds.go" "Go go go!"
 
+   "ds.accept" "Accepter"
+   "ds.cancel" "Annuler"
+
+   "ds.icons" "Icônes"
    "ds.element-options" "Options d'élément"
    "ds.draw-tools" "Outils de dessin"
    "ds.sitemap" "Plan du site"
    "ds.layers" "Couches"
    "ds.document-history" "Historique du document"
 
-   "ds.project.placeholder" "New project name"
-   "ds.project.new" "New project"
+   "ds.page.placeholder" "Nom de la page"
+   "ds.page.new" "Nouvelle page"
+   "ds.page.edit" "Éditer la page"
 
-   "ds.page.placeholder" "Page name"
-   "ds.page.new" "New page"
-   "ds.page.edit" "Edit page"
+   "ds.history-versions" "Historique"
+   "ds.pinned-version" "Épinglés"
 
    "ds.help.rect" "Boîte (Ctrl + B)"
    "ds.help.circle" "Cercle (Ctrl + E)"
@@ -162,6 +166,7 @@
    "settings.update-settings" "Mettre à jour les paramètres"
 
    "history.alert-message" "Vous voyez la version %s"
+
    "errors.api.form.old-password-not-match" "Ancien mot de passe incorrect"
    "errors.api.form.registration-disabled" "L'enregistrement est actuellement désactivé."
    "errors.api.form.email-already-exists" "L'email est déjà utilisé par un autre utilisateur."
@@ -184,4 +189,4 @@
    "errors.generic" "Quelque chose c'est mal passé."
    "errors.conflict" "Conflit sur la sauvegarde des données, actualisez et réessayez."
 
-})
+   })

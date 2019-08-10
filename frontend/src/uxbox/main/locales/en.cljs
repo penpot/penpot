@@ -78,18 +78,22 @@
    "ds.height" "Height"
    "ds.go" "Go go go!"
 
+   "ds.accept" "Accept"
+   "ds.cancel" "Cancel"
+
+   "ds.icons" "Icons"
    "ds.element-options" "Element options"
    "ds.draw-tools" "Draw tools"
    "ds.sitemap" "Sitemap"
    "ds.layers" "Layers"
    "ds.document-history" "Document history"
 
-   "ds.project.placeholder" "New project name"
-   "ds.project.new" "New project"
-
    "ds.page.placeholder" "Page name"
    "ds.page.new" "New page"
    "ds.page.edit" "Edit page"
+
+   "ds.history-versions" "History"
+   "ds.pinned-version" "Pinned"
 
    "ds.help.rect" "Box (Ctrl + B)"
    "ds.help.circle" "Circle (Ctrl + E)"
@@ -162,6 +166,7 @@
    "settings.update-settings" "Update settings"
 
    "history.alert-message" "You are seeing version %s"
+
    "errors.api.form.old-password-not-match" "Incorrect old password"
    "errors.api.form.registration-disabled" "The registration is currently disabled."
    "errors.api.form.email-already-exists" "The email is already in use by another user."

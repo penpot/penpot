@@ -108,10 +108,10 @@
         [:ul.history-tabs {}
          [:li {:on-click show-main
                :class (when main? "selected")}
-          "History"]
+          (tr "ds.history-versions")]
          [:li {:on-click show-pinned
                :class (when pinned? "selected")}
-          "Pinned"]]
+          (tr "ds.pinned-version")]]
         (if (= section :pinned)
           (history-pinned-list history)
           (history-list history))]])))
@@ -131,5 +131,5 @@
          {:class (when (:deselecting history) "hide-message")}
          [:span {} (tr "history.alert-message" (or version "00"))
           [:div.message-action {}
-           [:a.btn-transparent {:on-click on-accept} "Accept"]
-           [:a.btn-transparent {:on-click on-cancel} "Cancel"]]]]))))
+           [:a.btn-transparent {:on-click on-accept} (tr "ds.accept")]
+           [:a.btn-transparent {:on-click on-cancel} (tr "ds.cancel")]]]]))))

@@ -14,7 +14,8 @@
             [uxbox.util.timers :as ts]
             [rumext.core :as mx :include-macros true]
             [uxbox.util.data :refer [classnames]]
-            [uxbox.util.dom :as dom]))
+            [uxbox.util.dom :as dom]
+            [uxbox.util.i18n :refer [tr]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Events
@@ -135,10 +136,10 @@
         [:div.message-action
          [:a.btn-transparent.btn-small
           {:on-click accept}
-          "Accept"]
+          (tr "ds.accept")]
          [:a.btn-transparent.btn-small
           {:on-click cancel}
-          "Cancel"]]]])))
+          (tr "ds.cancel")]]]])))
 
 ;; --- Main Component (entry point)
 

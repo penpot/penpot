@@ -19,7 +19,8 @@
             [uxbox.builtins.icons :as i]
             [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
-            [uxbox.util.data :refer (read-string)]))
+            [uxbox.util.data :refer (read-string)]
+            [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Refs
 
@@ -70,7 +71,7 @@
       [:div#form-figures.tool-window
        [:div.tool-window-bar
         [:div.tool-window-icon i/icon-set]
-        [:span "Icons"]
+        [:span (tr "ds.icons")]
         [:div.tool-window-close {:on-click on-close} i/close]]
        [:div.tool-window-content
         [:div.figures-catalog
