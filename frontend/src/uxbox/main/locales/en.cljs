@@ -71,10 +71,25 @@
    "ds.your-libraries-title" "YOUR LIBRARIES"
    "ds.default-library-title" "Unnamed Collection (%s)"
 
+   "ds.project.placeholder" "New project name"
+   "ds.project.new" "New project"
+
+   "ds.width" "Width"
+   "ds.height" "Height"
+   "ds.go" "Go go go!"
+
    "ds.element-options" "Element options"
    "ds.draw-tools" "Draw tools"
    "ds.sitemap" "Sitemap"
+   "ds.layers" "Layers"
    "ds.document-history" "Document history"
+
+   "ds.project.placeholder" "New project name"
+   "ds.project.new" "New project"
+
+   "ds.page.placeholder" "Page name"
+   "ds.page.new" "New page"
+   "ds.page.edit" "Edit page"
 
    "ds.help.rect" "Box (Ctrl + B)"
    "ds.help.circle" "Circle (Ctrl + E)"

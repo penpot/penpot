@@ -93,16 +93,16 @@
                           (assoc-value :height (:width data))))]
         [:form {:on-submit on-submit}
          [:input#project-name.input-text
-          {:placeholder "New project name"
+          {:placeholder (tr "ds.project.placeholder")
            :type "text"
            :value (:name data)
            :auto-focus true
            :on-change update-name}]
          [:div.project-size
           [:div.input-element.pixels
-           [:span "Width"]
+           [:span (tr "ds.width")]
            [:input#project-witdh.input-text
-            {:placeholder "Width"
+            {:placeholder (tr "ds.width")
              :type "number"
              :min 0 ;;TODO check this value
              :max 666666 ;;TODO check this value
@@ -110,9 +110,9 @@
              :on-change (partial update-size :width)}]]
           [:a.toggle-layout {:on-click swap-size} i/toggle]
           [:div.input-element.pixels
-           [:span "Height"]
+           [:span (tr "ds.height")]
            [:input#project-height.input-text
-            {:placeholder "Height"
+            {:placeholder (tr "ds.height")
              :type "number"
              :min 0 ;;TODO check this value
              :max 666666 ;;TODO check this value
@@ -124,7 +124,7 @@
 
          ;; Submit
          [:input#project-btn.btn-primary
-          {:value "Go go go!"
+          {:value (tr "ds.go")
            :class (when-not valid? "btn-disabled")
            :disabled (not valid?)
            :type "submit"}]]))))
@@ -140,7 +140,7 @@
   :render
   (fn [own]
     [:div.lightbox-body
-     [:h3 "New project"]
+     [:h3 (tr "ds.project.new")]
      (create-project-form)
      [:a.close {:on-click #(st/emit! (udl/close-lightbox))}
       i/close]]))

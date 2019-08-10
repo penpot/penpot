@@ -18,7 +18,8 @@
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.data :refer [classnames]]
-   [uxbox.util.dom :as dom]))
+   [uxbox.util.dom :as dom]
+   [uxbox.util.i18n :refer (tr)]))
 
 ;; --- Helpers
 
@@ -168,7 +169,7 @@
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]
-      [:span "Layers"]
+      [:span (tr "ds.layers")]
       [:div.tool-window-close {:on-click on-click} i/close]]
      [:& layers-list {:shapes (:shapes page)
                       :selected selected}]]))
