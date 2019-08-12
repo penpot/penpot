@@ -28,24 +28,23 @@
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
 
    [uxbox.util.data :refer [parse-int]]
+   [uxbox.util.components :refer [use-rxsub]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget
 
-(mf/def coordinates
-  :mixins [mf/reactive mf/memo]
-  :render
-  (fn [own {:keys [zoom] :as props}]
-    (let [coords (some-> (mf/react refs/canvas-mouse-position)
-                         (gpt/divide zoom)
-                         (gpt/round 0))]
-      [:ul.coordinates
-       [:span {:alt "x"}
-        (str "X: " (:x coords "-"))]
-       [:span {:alt "y"}
-        (str "Y: " (:y coords "-"))]])))
+(mf/defc coordinates
+  [{:keys [zoom] :as props}]
+  (let [coords (some-> (use-rxsub uws/viewport-mouse-position)
+                       (gpt/divide zoom)
+                       (gpt/round 0))]
+    [:ul.coordinates
+     [:span {:alt "x"}
+      (str "X: " (:x coords "-"))]
+     [:span {:alt "y"}
+      (str "Y: " (:y coords "-"))]]))
 
 ;; --- Cursor tooltip
 
