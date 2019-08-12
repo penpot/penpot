@@ -40,7 +40,7 @@
                        :width width
                        :height height}
      [:& background metadata]
-     [:svg.page-layout
+     #_[:svg.page-layout
       [:g.main
        (for [id (reverse (:shapes page))]
          [:& uus/shape-component {:id id :key id}])

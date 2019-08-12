@@ -35,7 +35,7 @@
   &.no-tool-bar-left {
     padding-left: 0;
     width: calc(100% - 230px);
-    
+
     &.no-tool-bar-right {
       width: 100%;
     }
@@ -68,7 +68,7 @@
     text-align: center;
   }
 
-  .workspace-canvas {
+  .workspace-viewport {
     height: calc(95% - 20px);
     overflow: scroll;
     transition: none;
@@ -86,19 +86,16 @@
         stroke-width: 0.1px;
       }
 
-      svg {
-        g.controls {
-          rect.main { pointer-events: none; }
-          circle.top-left { cursor: nwse-resize; }
-          circle.bottom-right { cursor: nwse-resize; }
-          circle.top-right { cursor: nesw-resize; }
-          circle.bottom-left { cursor: nesw-resize; }
-          circle.top { cursor: ns-resize; }
-          circle.bottom { cursor: ns-resize; }
-          circle.left { cursor: ew-resize; }
-          circle.right { cursor: ew-resize; }
-        }
-
+      g.controls {
+        rect.main { pointer-events: none; }
+        circle.top-left { cursor: nwse-resize; }
+        circle.bottom-right { cursor: nwse-resize; }
+        circle.top-right { cursor: nesw-resize; }
+        circle.bottom-left { cursor: nesw-resize; }
+        circle.top { cursor: ns-resize; }
+        circle.bottom { cursor: ns-resize; }
+        circle.left { cursor: ew-resize; }
+        circle.right { cursor: ew-resize; }
       }
     }
 

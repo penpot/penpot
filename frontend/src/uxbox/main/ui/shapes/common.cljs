@@ -47,7 +47,7 @@
 
 
 (defn on-mouse-down
-  [event {:keys [id group] :as shape} selected]
+  [event {:keys [id] :as shape} selected]
   (let [selected? (contains? selected id)
         drawing? @refs/selected-drawing-tool]
     (when-not (:blocked shape)

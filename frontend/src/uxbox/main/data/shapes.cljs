@@ -445,18 +445,12 @@
   {:pre [(uuid? id) (number? index) (gpt/point? delta)]}
   (UpdatePath. id index delta))
 
-(def ^:private canvas-coords
-  (gpt/point c/canvas-start-x
-             c/canvas-start-y))
-
 (deftype InitialPathPointAlign [id index]
   ptk/WatchEvent
   (watch [_ state s]
     (let [shape (get-in state [:shapes id])
-          point (get-in shape [:segments index])
-          point (gpt/add point canvas-coords)]
+          point (get-in shape [:segments index])]
       (->> (uwrk/align-point point)
-           (rx/map #(gpt/subtract % point))
            (rx/map #(update-path id index %))))))
 
 (defn initial-path-point-align

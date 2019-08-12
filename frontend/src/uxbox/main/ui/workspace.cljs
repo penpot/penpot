@@ -31,7 +31,7 @@
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
-   [uxbox.main.ui.workspace.streams :as ws]
+   [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
@@ -41,11 +41,10 @@
 
 (defn- on-scroll
   [event]
-  ;; TODO: refactor
-  #_(let [target (.-target event)
+  (let [target (.-target event)
         top (.-scrollTop target)
         left (.-scrollLeft target)]
-    (ws/emit! (ws/scroll-event (gpt/point left top)))))
+    (st/emit! (uws/scroll-event (gpt/point left top)))))
 
 (defn- on-wheel
   [event canvas]
@@ -53,7 +52,7 @@
     (let [prev-zoom @refs/selected-zoom
           dom (mf/ref-node canvas)
           scroll-position (scroll/get-current-position-absolute dom)
-          mouse-point @refs/viewport-mouse-position]
+          mouse-point @uws/viewport-mouse-position]
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
@@ -89,7 +88,7 @@
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?)
                  :scrolling (:viewport-positionig workspace))]
-    (prn "workspace.render")
+    ;; (prn "workspace.render")
 
     (mf/use-effect {:deps (:id page)
                     :init #(subscibe canvas page)
@@ -118,8 +117,7 @@
        (when (contains? flags :rules)
          [:& vertical-rule])
 
-       ;; Canvas
-       [:section.workspace-canvas {:id "workspace-canvas" :ref canvas}
+       [:section.workspace-viewport {:id "workspace-viewport" :ref canvas}
         [:& viewport {:page page :key (:id page)}]]]
 
       ;; Aside

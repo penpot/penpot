@@ -22,6 +22,11 @@
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
+
+   [uxbox.main.ui.shapes :as uus]
+   [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
+   [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
+
    [uxbox.util.data :refer [parse-int]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt])
@@ -69,47 +74,32 @@
 
 ;; --- Selection Rect
 
-(defn stop-selrect
-  []
-  (letfn [(clear-state [state]
-            (prn "clear-state")
+(def ^:private handle-selrect
+  (letfn [(update-state [state position]
+            (let [id (get-in state [:workspace :current])
+                  selrect (get-in state [:workspace id :selrect])]
+              (if selrect
+                (assoc-in state [:workspace id :selrect]
+                          (dw/selection->rect (assoc selrect :stop position)))
+                (assoc-in state [:workspace id :selrect]
+                          (dw/selection->rect {:start position :stop position})))))
+
+          (clear-state [state]
             (let [id (get-in state [:workspace :current])]
               (update-in state [:workspace id] dissoc :selrect)))]
     (reify
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [id (get-in state [:workspace :current])
-              zoom (get-in state [:workspace id :zoom])
-              rect (some-> (get-in state [:workspace id :selrect])
-                           (dw/translate-to-canvas zoom))]
-          (if rect
-            (rx/of clear-state
-                   (dw/deselect-all)
-                   (dw/select-shapes-by-selrect rect))
-            (rx/of (dw/deselect-all))))))))
-
-(defn start-selrect
-  []
-  (letfn [(update-state [state position]
-            (let [id (get-in state [:workspace :current])
-                  selrect (get-in state [:workspace id :selrect])]
-              (if selrect
-                (assoc-in state [:workspace id :selrect] (dw/selection->rect (assoc selrect :stop position)))
-                (assoc-in state [:workspace id :selrect] (dw/selection->rect {:start position :stop position})))))
-
-          (selection-stoper [stream]
-            (->> (rx/merge (rx/filter #(= % :interrupt) stream)
-                           (rx/filter uws/mouse-up? stream))
-                 (rx/take 1)))]
-
-    (reify
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (rx/concat
-         (->> uws/viewport-mouse-position
-              (rx/take-until (selection-stoper stream))
-              (rx/map (fn [pos] #(update-state % pos))))
-         (rx/of (stop-selrect)))))))
+        (let [stoper (->> (rx/merge (rx/filter #(= % :interrupt) stream)
+                                    (rx/filter uws/mouse-up? stream))
+                          (rx/take 1))]
+          (rx/concat
+           (->> uws/viewport-mouse-position
+                (rx/map (fn [pos] #(update-state % pos)))
+                (rx/take-until stoper))
+           (rx/of (dw/deselect-all)
+                  dw/select-shapes-by-current-selrect
+                  clear-state)))))))
 
 (mf/defc selrect
   {:wrap [mf/wrap-memo]}
@@ -121,6 +111,27 @@
         :y y1
         :width width
         :height height}])))
+
+
+;; --- Viewport Positioning
+
+(def handle-viewport-positioning
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stoper (->> (rx/filter #(= ::finish-positioning %) stream)
+                        (rx/take 1))
+            reference @uws/viewport-mouse-position
+            dom (dom/get-element "workspace-viewport")]
+        (->> uws/viewport-mouse-position
+             (rx/map (fn [point]
+                       (let [{:keys [x y]} (gpt/subtract point reference)
+                             cx (.-scrollLeft dom)
+                             cy (.-scrollTop dom)]
+                         (set! (.-scrollLeft dom) (- cx x))
+                         (set! (.-scrollTop dom) (- cy y)))))
+             (rx/take-until stoper)
+             (rx/ignore))))))
 
 ;; --- Viewport
 
@@ -138,27 +149,19 @@
                                      (parse-int (.-top brect)))]
                 (gpt/subtract pt brect)))
 
-            (translate-point-to-canvas [pt]
-              (let [viewport (mf/ref-node (::viewport own))]
-                (when-let [canvas (dom/get-element-by-class "page-canvas" viewport)]
-                  (let [brect (.getBoundingClientRect canvas)
-                        bbox (.getBBox canvas)
-                        brect (gpt/point (parse-int (.-left brect))
-                                         (parse-int (.-top brect)))
-                        bbox (gpt/point (.-x bbox) (.-y bbox))]
-                    (-> (gpt/add pt bbox)
-                        (gpt/subtract brect))))))
-
             (on-key-down [event]
-              (let [key (.-keyCode event)
+              (let [bevent (.getBrowserEvent event)
+                    key (.-keyCode event)
                     ctrl? (kbd/ctrl? event)
                     shift? (kbd/shift? event)
                     opts {:key key
                           :shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/keyboard-event :down key ctrl? shift?))
-                (when (kbd/space? event)
-                  (st/emit! (dw/start-viewport-positioning)))))
+                (when-not (.-repeat bevent)
+                  (st/emit! (uws/keyboard-event :down key ctrl? shift?))
+                  (when (kbd/space? event)
+                    (st/emit! handle-viewport-positioning)
+                    #_(st/emit! (dw/start-viewport-positioning))))))
 
             (on-key-up [event]
               (let [key (.-keyCode event)
@@ -168,22 +171,20 @@
                           :shift? shift?
                           :ctrl? ctrl?}]
                 (when (kbd/space? event)
-                  (st/emit! (dw/stop-viewport-positioning)))
+                  (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
                 (st/emit! (uws/keyboard-event :up key ctrl? shift?))))
 
             (on-mousemove [event]
               (let [wpt (gpt/point (.-clientX event)
                                    (.-clientY event))
                     vpt (translate-point-to-viewport wpt)
-                    cpt (translate-point-to-canvas wpt)
                     ctrl? (kbd/ctrl? event)
                     shift? (kbd/shift? event)
                     event {:ctrl ctrl?
                            :shift shift?
                            :window-coords wpt
-                           :viewport-coords vpt
-                           :canvas-coords cpt}]
-                (st/emit! (uws/pointer-event wpt vpt cpt ctrl? shift?))))]
+                           :viewport-coords vpt}]
+                (st/emit! (uws/pointer-event wpt vpt ctrl? shift?))))]
 
       (let [key1 (events/listen js/document EventType.MOUSEMOVE on-mousemove)
             key2 (events/listen js/document EventType.KEYDOWN on-key-down)
@@ -217,7 +218,7 @@
                 (when (not edition)
                   (if drawing-tool
                     (st/emit! (start-drawing drawing-tool))
-                    (st/emit! :interrupt (start-selrect)))))
+                    (st/emit! :interrupt handle-selrect))))
               (on-context-menu [event]
                 (dom/prevent-default event)
                 (dom/stop-propagation event)
@@ -264,6 +265,22 @@
           [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
            (when page
              [:& canvas {:page page :wst wst}])
+
+           (when page
+             [:*
+              (for [id (reverse (:shapes page))]
+                [:& uus/shape-component {:id id :key id}])
+
+              (when (seq (:selected wst))
+                [:& selection-handlers {:wst wst}])
+
+              (when-let [dshape (:drawing wst)]
+                [:& draw-area {:shape dshape
+                               :zoom (:zoom wst)
+                               :modifiers (:modifiers wst)}])])
+
+
+
            (if (contains? flags :grid)
              [:& grid {:page page}])]
           (when (contains? flags :ruler)

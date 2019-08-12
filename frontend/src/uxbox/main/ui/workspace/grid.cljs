@@ -15,29 +15,21 @@
 
 (defn- horizontal-line
   [width acc value]
-  (let [pos (+ value c/canvas-start-y)]
+  (let [pos value]
     (conj acc (str/format "M %s %s L %s %s" 0 pos width pos))))
 
 (defn- vertical-line
   [height acc value]
-  (let [pos (+ value c/canvas-start-y)]
+  (let [pos value]
     (conj acc (str/format "M %s %s L %s %s" pos 0 pos height))))
 
 (defn- make-grid-path
   [metadata]
-  (let [width c/viewport-width
-        height c/viewport-height
-
-        x-ticks (range (- 0 c/canvas-start-x)
-                       (- width c/canvas-start-x)
-                       (:grid-x-axis metadata 10))
-
-        y-ticks (range (- 0 c/canvas-start-x)
-                       (- height c/canvas-start-x)
-                       (:grid-y-axis metadata 10))]
+  (let [x-ticks (range 0 c/viewport-width (:grid-x-axis metadata 10))
+        y-ticks (range 0 c/viewport-height (:grid-y-axis metadata 10))]
     (as-> [] $
-      (reduce (partial vertical-line height) $ x-ticks)
-      (reduce (partial horizontal-line width) $ y-ticks)
+      (reduce (partial vertical-line c/viewport-height) $ x-ticks)
+      (reduce (partial horizontal-line c/viewport-width) $ y-ticks)
       (str/join " " $))))
 
 (mf/defc grid

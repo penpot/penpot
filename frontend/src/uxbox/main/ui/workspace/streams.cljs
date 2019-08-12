@@ -54,21 +54,17 @@
 
 (defrecord PointerEvent [window
                          viewport
-                         canvas
                          ctrl
                          shift])
 
 (defn pointer-event
-  [window viewport canvas ctrl shift]
+  [window viewport ctrl shift]
   {:pre [(gpt/point? window)
          (gpt/point? viewport)
-         (or (gpt/point? canvas)
-             (nil? canvas))
          (boolean? ctrl)
          (boolean? shift)]}
   (PointerEvent. window
                  viewport
-                 canvas
                  ctrl
                  shift))
 
@@ -76,12 +72,23 @@
   [v]
   (instance? PointerEvent v))
 
-;; --- Derived streams
+(defrecord ScrollEvent [point])
+
+(defn scroll-event
+  [pt]
+  {:pre [(gpt/point? pt)]}
+  (ScrollEvent. pt))
+
+(defn scroll-event?
+  [v]
+  (instance? ScrollEvent v))
 
 (defn interaction-event?
   [event]
   (or (keyboard-event? event)
       (mouse-event? event)))
+
+;; --- Derived streams
 
 ;; TODO: this shoul be DEPRECATED
 (defonce interaction-events
@@ -89,12 +96,6 @@
 
 (defonce mouse-position
   (rx/filter pointer-event? st/stream))
-
-(defonce canvas-mouse-position
-  (let [sub (rx/behavior-subject nil)]
-    (-> (rx/map :canvas mouse-position)
-        (rx/subscribe-with sub))
-    sub))
 
 (defonce viewport-mouse-position
   (let [sub (rx/behavior-subject nil)]
@@ -126,3 +127,11 @@
        (rx/map (fn [[old new]]
                  (gpt/subtract new old)))
        (rx/share)))
+
+(defonce viewport-scroll
+  (let [sub (rx/behavior-subject nil)
+        sob (->> (rx/filter scroll-event? st/stream)
+                 (rx/map :point))]
+    (rx/subscribe-with sob sub)
+    sub))
+

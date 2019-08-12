@@ -71,7 +71,7 @@
           stoper (->> ws/interaction-events
                       (rx/filter ws/mouse-up?)
                       (rx/take 1))
-          stream (->> ws/canvas-mouse-position
+          stream (->> ws/viewport-mouse-position
                       (rx/take-until stoper)
                       (rx/map apply-zoom)
                       (rx/mapcat apply-grid-alignment)

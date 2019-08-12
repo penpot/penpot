@@ -24,10 +24,6 @@
    [uxbox.util.geom.path :as path]
    [uxbox.util.geom.point :as gpt]))
 
-(def ^:private canvas-coords
-  (gpt/point c/canvas-start-x
-             c/canvas-start-y))
-
 ;; --- Events
 
 (declare handle-drawing)
@@ -55,16 +51,10 @@
                       (rx/of (handle-drawing object)))
             (rx/empty)))))))
 
-(defn- translate-to-canvas [point zoom]
-  (-> point
-      (gpt/subtract (gpt/multiply canvas-coords zoom))
-      (gpt/divide zoom)))
-
 (defn- conditional-align [point align?]
   (if align?
     (uwrk/align-point point)
     (rx/of point)))
-
 
 ;; TODO: maybe this should be a simple function
 (defn handle-drawing
@@ -126,10 +116,12 @@
 
               mouse (->> uws/viewport-mouse-position
                          (rx/mapcat #(conditional-align % align?))
-                         (rx/map #(translate-to-canvas % zoom))
                          (rx/with-latest vector uws/mouse-position-ctrl))]
           (rx/concat
-           (rx/of #(initialize-drawing % @uws/canvas-mouse-position))
+           (->> uws/viewport-mouse-position
+                (rx/take 1)
+                (rx/mapcat #(conditional-align % align?))
+                (rx/map (fn [pt] #(initialize-drawing % pt))))
            (->> mouse
                 (rx/map (fn [[pt ctrl?]] #(update-drawing % pt ctrl?)))
                 (rx/take-until stoper))
@@ -174,14 +166,13 @@
               flags (get-in state [:workspace pid :flags])
               align? (refs/alignment-activated? flags)
 
-              last-point (volatile! @uws/canvas-mouse-position)
+              last-point (volatile! @uws/viewport-mouse-position)
 
               stoper (->> (rx/filter stoper-event? stream)
                           (rx/take 1))
 
               mouse (->> (rx/sample 10 uws/viewport-mouse-position)
-                         (rx/mapcat #(conditional-align % align?))
-                         (rx/map #(translate-to-canvas % zoom)))
+                         (rx/mapcat #(conditional-align % align?)))
 
               points (->> stream
                           (rx/filter uws/mouse-click?)
@@ -259,8 +250,7 @@
                           (rx/take 1))
 
               mouse (->> (rx/sample 10 uws/viewport-mouse-position)
-                         (rx/mapcat #(conditional-align % align?))
-                         (rx/map #(translate-to-canvas % zoom)))]
+                         (rx/mapcat #(conditional-align % align?)))]
           (rx/concat
            (rx/of initialize-drawing)
            (->> mouse

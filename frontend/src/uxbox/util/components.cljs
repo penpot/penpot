@@ -38,3 +38,13 @@
                       :end #(when % (rx/cancel! %))})
       (for [item (:current @state)]
         (children item)))))
+
+(defn use-rxsub
+  [ob]
+  (let [[state reset-state!] (mf/use-state* @ob)]
+    (mf/use-effect*
+     (fn []
+       (let [sub (rx/subscribe ob #(reset-state! %))]
+         #(rx/cancel! sub)))
+     #js [ob])
+    state))

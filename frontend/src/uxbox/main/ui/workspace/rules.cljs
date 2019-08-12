@@ -13,21 +13,23 @@
    [uxbox.main.constants :as c]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as s]
+   [uxbox.main.ui.workspace.streams :as uws]
+   [uxbox.util.components :refer [use-rxsub]]
    [uxbox.util.dom :as dom]))
 
 ;; --- Constants & Helpers
 
+(def rule-padding 20)
 (def step-padding 20)
 (def step-size 10)
+(def scroll-padding 50)
+
+(def +ticks+ (range 0 c/viewport-width step-size))
 
 (defn big-ticks-mod [zoom] (/ 100 zoom))
 (defn mid-ticks-mod [zoom] (/ 50 zoom))
 
-(def +ticks+
-  (concat (range (- (/ c/viewport-width 1)) 0 step-size)
-          (range 0 (/ c/viewport-width 1) step-size)))
 
-(def rule-padding 20)
 
 (defn- make-vertical-tick
   [zoom acc value]
@@ -35,8 +37,7 @@
         mid-ticks-mod (mid-ticks-mod zoom)
         pos (+ (* value zoom)
                rule-padding
-               (* c/canvas-start-x zoom)
-               c/canvas-scroll-padding)]
+               scroll-padding)]
     (cond
       (< (mod value big-ticks-mod) step-size)
       (conj acc (str/format "M %s %s L %s %s" pos 5 pos step-padding))
@@ -52,8 +53,7 @@
   (let [big-ticks-mod (big-ticks-mod zoom)
         mid-ticks-mod (mid-ticks-mod zoom)
         pos (+ (* value zoom)
-               (* c/canvas-start-x zoom)
-               c/canvas-scroll-padding)]
+               scroll-padding)]
     (cond
       (< (mod value big-ticks-mod) step-size)
       (conj acc (str/format "M %s %s L %s %s" 5 pos step-padding pos))
@@ -71,8 +71,7 @@
   (let [big-ticks-mod (big-ticks-mod zoom)
         pos (+ (* value zoom)
                rule-padding
-               (* c/canvas-start-x zoom)
-               c/canvas-scroll-padding)]
+               scroll-padding)]
     (when (< (mod value big-ticks-mod) step-size)
       [:text {:x (+ pos 2)
               :y 13
@@ -87,8 +86,7 @@
   [{:keys [zoom value] :as props}]
   (let [big-ticks-mod (big-ticks-mod zoom)
         pos (+ (* value zoom)
-               (* c/canvas-start-x zoom)
-               c/canvas-scroll-padding)]
+               scroll-padding)]
     (when (< (mod value big-ticks-mod) step-size)
       [:text {:y (- pos 3)
               :x 5
@@ -103,8 +101,7 @@
 (mf/defc horizontal-rule-ticks
   {:wrap [mf/wrap-memo]}
   [{:keys [zoom]}]
-  (let [zoom (or zoom 1)
-        path (reduce (partial make-vertical-tick zoom) [] +ticks+)]
+  (let [path (reduce (partial make-vertical-tick zoom) [] +ticks+)]
     [:g
      [:path {:d (str/join " " path)}]
      (for [tick +ticks+]
@@ -115,8 +112,7 @@
 (mf/defc vertical-rule-ticks
   {:wrap [mf/wrap-memo]}
   [{:keys [zoom]}]
-  (let [zoom (or zoom 1)
-        path (reduce (partial make-horizontal-tick zoom) [] +ticks+)]
+  (let [path (reduce (partial make-horizontal-tick zoom) [] +ticks+)]
     [:g
      [:path {:d (str/join " " path)}]
      (for [tick +ticks+]
@@ -127,10 +123,9 @@
 (mf/defc horizontal-rule
   {:wrap [mf/wrap-memo]}
   [props]
-  (let [scroll (mf/deref refs/workspace-scroll)
+  (let [scroll (use-rxsub  uws/viewport-scroll)
         zoom (mf/deref refs/selected-zoom)
-        scroll-x (:x scroll)
-        translate-x (- (- c/canvas-scroll-padding) (:x scroll))]
+        translate-x (- (- scroll-padding) (:x scroll))]
     [:svg.horizontal-rule
      {:width c/viewport-width
       :height 20}
@@ -144,13 +139,15 @@
 (mf/defc vertical-rule
   {:wrap [mf/wrap-memo]}
   [props]
-  (let [scroll (mf/deref refs/workspace-scroll)
-        zoom (mf/deref refs/selected-zoom)
+  (let [scroll (use-rxsub uws/viewport-scroll)
+        zoom (or (mf/deref refs/selected-zoom) 1)
         scroll-y (:y scroll)
-        translate-y (- (- c/canvas-scroll-padding) (:y scroll))]
-    [:svg.vertical-rule
-     {:width 20
-      :height c/viewport-height}
+        translate-y (+ (- scroll-padding)
+                       (- (:y scroll)))
+        ]
+    [:svg.vertical-rule {:width 20
+                         ;; :x 0 :y 0
+                         :height c/viewport-height}
 
      [:g {:transform (str  "translate(0, " translate-y ")")}
       [:& vertical-rule-ticks {:zoom zoom}]]

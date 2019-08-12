@@ -19,7 +19,6 @@
    [uxbox.main.data.shapes :as uds]
    [uxbox.main.data.shapes-impl :as simpl]
    [uxbox.main.data.workspace.ruler :as wruler]
-   [uxbox.main.data.workspace.scroll :as wscroll]
    [uxbox.main.geom :as geom]
    [uxbox.main.lenses :as ul]
    [uxbox.main.refs :as refs]
@@ -37,11 +36,6 @@
 
 ;; --- Expose inner functions
 
-(def start-viewport-positioning wscroll/start-viewport-positioning)
-(def stop-viewport-positioning wscroll/stop-viewport-positioning)
-;; (def start-drawing wdrawing/start-drawing)
-;; (def close-drawing-path wdrawing/close-drawing-path)
-;; (def select-for-drawing wdrawing/select-for-drawing)
 (def start-ruler wruler/start-ruler)
 (def clear-ruler wruler/clear-ruler)
 
@@ -352,7 +346,7 @@
     (rx/of (activate-flag :element-options))))
 
 (defn select-shape
-  "Mark a shape selected for drawing in the canvas."
+  "Mark a shape selected for drawing."
   [id]
   {:pre [(uuid? id)]}
   (SelectShape. id))
@@ -383,24 +377,20 @@
       (assoc-in state [:workspace pid :selected] #{sid}))))
 
 (defn select-first-shape
-  "Mark a shape selected for drawing in the canvas."
+  "Mark a shape selected for drawing."
   []
   (SelectFirstShape.))
 
 ;; --- Select Shapes (By selrect)
 
-(defrecord SelectShapesBySelrect [selrect]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [page-id (get-in state [:workspace :current])
-          shapes (simpl/match-by-selrect state page-id selrect)]
-      (assoc-in state [:workspace page-id :selected] shapes))))
-
-(defn select-shapes-by-selrect
-  "Select shapes that matches the select rect."
-  [selrect]
-  {:pre [(us/valid? ::uds/rect-like-shape selrect)]}
-  (SelectShapesBySelrect. selrect))
+(def select-shapes-by-current-selrect
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspace :current])
+            selrect (get-in state [:workspace pid :selrect])
+            shapes (simpl/match-by-selrect state pid selrect)]
+        (assoc-in state [:workspace pid :selected] shapes)))))
 
 ;; --- Update Shape Attrs
 
@@ -536,21 +526,15 @@
 
 ;; --- Shape Transformations
 
-(def ^:private canvas-coords
-  (gpt/point c/canvas-start-x
-             c/canvas-start-y))
-
 (defrecord InitialShapeAlign [id]
   ptk/WatchEvent
   (watch [_ state s]
     (let [{:keys [x1 y1] :as shape} (->> (get-in state [:shapes id])
                                          (geom/shape->rect-shape state))
-          point1 (gpt/point x1 y1)
-          point2 (gpt/add point1 canvas-coords)]
-      (->> (uwrk/align-point point2)
-           (rx/map #(gpt/subtract % canvas-coords))
+          point (gpt/point x1 y1)]
+      (->> (uwrk/align-point point)
            (rx/map (fn [{:keys [x y] :as pt}]
-                     (apply-temporal-displacement id (gpt/subtract pt point1))))))))
+                     (apply-temporal-displacement id (gpt/subtract pt point))))))))
 
 (defn initial-shape-align
   [id]
@@ -679,21 +663,9 @@
            :y2 end-y
            :type :rect)))
 
-(defn translate-to-canvas
-  "Translate the given rect to the canvas coordinates system."
-  [rect zoom]
-  (let [startx (* c/canvas-start-x zoom)
-        starty (* c/canvas-start-y zoom)]
-    (assoc rect
-           :x1 (/ (- (:x1 rect) startx) zoom)
-           :y1 (/ (- (:y1 rect) starty) zoom)
-           :x2 (/ (- (:x2 rect) startx) zoom)
-           :y2 (/ (- (:y2 rect) starty) zoom))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Server Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;; --- Update Metadata
 

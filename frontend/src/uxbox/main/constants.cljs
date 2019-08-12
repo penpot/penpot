@@ -11,9 +11,6 @@
 
 (def canvas-start-x 1200)
 (def canvas-start-y 1200)
-(def canvas-scroll-padding 50)
-(def canvas-start-scroll-x (- canvas-start-x canvas-scroll-padding))
-(def canvas-start-scroll-y (- canvas-start-y canvas-scroll-padding))
 
 (def grid-x-axis 10)
 (def grid-y-axis 10)
