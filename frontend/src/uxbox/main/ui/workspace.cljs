@@ -76,8 +76,8 @@
   (rx/cancel! shortcuts-subscription))
 
 (mf/defc workspace
-  [{:keys [page wst] :as props}]
-  (let [flags (mf/deref refs/flags)
+  [{:keys [page] :as props}]
+  (let [flags  (or (mf/deref refs/flags) #{})
         canvas (mf/use-ref* nil)
 
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
@@ -88,7 +88,6 @@
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?)
                  :scrolling (:viewport-positionig workspace))]
-    ;; (prn "workspace.render")
 
     (mf/use-effect {:deps (:id page)
                     :init #(subscibe canvas page)
