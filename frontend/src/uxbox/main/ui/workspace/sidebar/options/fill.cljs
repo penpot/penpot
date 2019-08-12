@@ -15,7 +15,7 @@
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.util.data :refer [parse-float]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :refer [tr]]))
+   [uxbox.util.i18n :refer (tr)]))
 
 (mf/defc fill-menu
   [{:keys [menu shape]}]

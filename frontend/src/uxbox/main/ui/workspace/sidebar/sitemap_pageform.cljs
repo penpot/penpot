@@ -17,7 +17,7 @@
             [uxbox.util.data :refer [parse-int]]
             [uxbox.util.dom :as dom]
             [uxbox.util.forms :as fm]
-            [uxbox.util.i18n :refer [tr]]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [rumext.core :as mx :include-macros true]))
 

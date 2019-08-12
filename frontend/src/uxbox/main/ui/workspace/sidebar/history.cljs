@@ -14,7 +14,7 @@
             [uxbox.main.data.workspace :as dw]
             [uxbox.util.data :refer [read-string]]
             [uxbox.util.dom :as dom]
-            [uxbox.util.i18n :refer [tr]]
+            [uxbox.util.i18n :refer (tr)]
             [rumext.alpha :as mf]
             [uxbox.util.router :as r]
             [uxbox.util.time :as dt]))

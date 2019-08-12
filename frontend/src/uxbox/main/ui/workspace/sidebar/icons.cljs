@@ -20,7 +20,7 @@
             [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.data :refer (read-string)]
-            [uxbox.util.i18n :refer [tr]]))
+            [uxbox.util.i18n :refer (tr)]))
 
 ;; --- Refs
 

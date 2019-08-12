@@ -14,6 +14,7 @@
                       "%s projects"]
    "ds.project-title" "Your projects"
    "ds.project-new" "+ New project"
+   "ds.project-thumbnail.alt" "Project title"
 
    "ds.ordering" "Sort by"
    "ds.ordering.by-name" "name"
@@ -21,6 +22,7 @@
    "ds.ordering.by-creation-date" "creation date"
    "ds.search.placeholder" "Search..."
    "ds.uploaded-at" "Uploaded at %s"
+   "ds.updated-at" "Updated %s"
 
    "ds.confirm-title" "Are you sure?"
    "ds.confirm-ok" "Ok"
