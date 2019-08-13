@@ -24,7 +24,7 @@
         [_, drop] (rdnd/useDrop
                    #js {:accept type
                         :hover (fn [item monitor]
-                                 (when (mf/rev-val ref)
+                                 (when (mf/ref-val ref)
                                    (on-hover (unchecked-get item "data") monitor)))
                         :drop (fn [item monitor]
                                 (when (mf/ref-val ref)
