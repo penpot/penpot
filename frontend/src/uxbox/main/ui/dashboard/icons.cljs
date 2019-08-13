@@ -96,7 +96,7 @@
         ;; TODO: recalculate the num-icons on crud operations for
         ;; avod doing this on UI.
         ;; num-icons-iref (mf/use-memo {:deps #js [id]
-        ;;                               :init #(make-num-icons-iref (:id coll))})
+        ;;                              :fn #(make-num-icons-iref (:id coll))})
         ;; num-icons (mf/deref num-icons-iref)
         editable? (= type :own)]
     (letfn [(on-click [event]
@@ -163,7 +163,7 @@
 
 (mf/defc grid-form
   [{:keys [id type uploading?] :as props}]
-  (let [input (mf/use-ref* nil)
+  (let [input (mf/use-ref nil)
         on-click #(dom/click (mf/ref-node input))
         on-select #(st/emit! (->> (dom/get-event-files %)
                                   (jscoll->vec)
@@ -331,7 +331,7 @@
 (mf/defc grid
   [{:keys [id type coll opts] :as props}]
   (let [editable? (or (= type :own) (nil? id))
-        icons-iref (mf/use-memo {:deps #js [id] :init #(make-icons-iref id)})
+        icons-iref (mf/use-memo #(make-icons-iref id) #js [id])
         icons (->> (mf/deref icons-iref)
                    (filter-icons-by (:filter opts ""))
                    (sort-icons-by (:order opts :name)))]
@@ -425,9 +425,9 @@
                         :else (first colls))
         id (:id selected-coll)]
 
-    (mf/use-effect {:init #(st/emit! (di/fetch-collections))})
-    (mf/use-effect {:init #(st/emit! (di/initialize)
-                                     (di/fetch-icons id))
+    (mf/use-effect #(st/emit! (di/fetch-collections)))
+    (mf/use-effect {:fn #(st/emit! (di/initialize)
+                                   (di/fetch-icons id))
                     :deps #js [id type]})
 
     [:section.dashboard-content

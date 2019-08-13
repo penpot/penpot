@@ -37,6 +37,6 @@
   (let [metadata (:metadata page)
         color (:grid-color metadata "#cccccc")
         path (mf/use-memo {:deps #js [metadata]
-                           :init #(make-grid-path metadata)})]
+                           :fn #(make-grid-path metadata)})]
     [:g.grid {:style {:pointer-events "none"}}
      [:path {:d path :stroke color :opacity "0.3"}]]))

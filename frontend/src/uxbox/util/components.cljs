@@ -28,21 +28,22 @@
             (let [chunk-size (if (> pending-num chunk-size) chunk-size pending-num)]
               {:current (into current (take chunk-size pending))
                :pending (drop chunk-size pending)
-               :pending-num (- pending-num chunk-size)}))]
+               :pending-num (- pending-num chunk-size)}))
+          (after-render [state]
+            (when (pos? (:pending-num @state))
+              (let [sem (schedule-on-idle (fn [] (swap! state update-state)))]
+                #(rx/cancel! sem))))]
 
-    (let [initial (mf/use-memo {:init initial-state})
+    (let [initial (mf/use-memo initial-state)
           state   (mf/use-state initial)]
-      (mf/use-effect {:deps true
-                      :init #(when (pos? (:pending-num @state))
-                               (schedule-on-idle (fn [] (swap! state update-state))))
-                      :end #(when % (rx/cancel! %))})
+      (mf/use-effect {:deps true :fn #(after-render state)})
       (for [item (:current @state)]
         (children item)))))
 
 (defn use-rxsub
   [ob]
-  (let [[state reset-state!] (mf/use-state* @ob)]
-    (mf/use-effect*
+  (let [[state reset-state!] (mf/useState @ob)]
+    (mf/useEffect
      (fn []
        (let [sub (rx/subscribe ob #(reset-state! %))]
          #(rx/cancel! sub)))

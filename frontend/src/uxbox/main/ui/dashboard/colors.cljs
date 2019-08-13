@@ -38,7 +38,7 @@
 
 (mf/defc color-modal
   [{:keys [on-submit value] :as props}]
-  (let [local (mf/use-ref value)]
+  (let [local (mf/use-var value)]
     [:div.lightbox-body
      [:h3 (tr "ds.color-lightbox.title")]
      [:form
@@ -282,8 +282,8 @@
                         (first colls))
         id (:id selected-coll)]
 
-    (mf/use-effect {:init #(st/emit! (dc/initialize)) :deps #js [id type]})
-    (mf/use-effect {:init #(st/emit! (dc/fetch-collections))})
+    (mf/use-effect #(st/emit! (dc/initialize)) #js [id type])
+    (mf/use-effect #(st/emit! (dc/fetch-collections)))
 
     [:section.dashboard-content
      [:& nav {:type type

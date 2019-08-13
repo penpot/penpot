@@ -213,8 +213,7 @@
 
 (mf/defc projects-page
   [_]
-  (mf/use-effect
-   {:init #(st/emit! (udp/initialize))})
+  (mf/use-effect #(st/emit! (udp/initialize)))
   (let [opts (mf/deref opts-ref)]
     [:section.dashboard-content
      [:& menu {:opts opts}]

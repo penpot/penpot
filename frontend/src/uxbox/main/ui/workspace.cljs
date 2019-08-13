@@ -60,25 +60,19 @@
         (st/emit! (dw/increase-zoom)))
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
-(defn- subscibe
+(defn- subscribe
   [canvas page]
-  (let [canvas-dom (mf/ref-node canvas)]
-    ;; TODO: scroll stuff need to be refactored
-    (scroll/scroll-to-page-center canvas-dom page)
-    (st/emit! (udp/watch-page-changes (:id page))
-              (udu/watch-page-changes (:id page)))
-
-    (shortcuts/init)))
-
-(defn- unsubscribe
-  [shortcuts-subscription]
-  (st/emit! ::udp/stop-page-watcher)
-  (rx/cancel! shortcuts-subscription))
+  (scroll/scroll-to-page-center (mf/ref-node canvas) page)
+  (st/emit! (udp/watch-page-changes (:id page))
+            (udu/watch-page-changes (:id page)))
+  (let [sub (shortcuts/init)]
+    #(do (st/emit! ::udp/stop-page-watcher)
+         (rx/cancel! sub))))
 
 (mf/defc workspace
   [{:keys [page] :as props}]
   (let [flags  (or (mf/deref refs/flags) #{})
-        canvas (mf/use-ref* nil)
+        canvas (mf/use-ref nil)
 
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
@@ -89,9 +83,8 @@
                  :no-tool-bar-left (not left-sidebar?)
                  :scrolling (:viewport-positionig workspace))]
 
-    (mf/use-effect {:deps (:id page)
-                    :init #(subscibe canvas page)
-                    :end unsubscribe})
+    (mf/use-effect {:deps #js [canvas page]
+                    :fn #(subscribe canvas page)})
     [:*
      (messages-widget)
      [:& header {:page page
@@ -128,13 +121,13 @@
 (mf/defc workspace-page
   [{:keys [project-id page-id] :as props}]
   (let [page-iref (mf/use-memo {:deps #js [project-id page-id]
-                                :init #(-> (l/in [:pages page-id])
-                                           (l/derive st/state))})
+                                :fn #(-> (l/in [:pages page-id])
+                                         (l/derive st/state))})
         page (mf/deref page-iref)]
 
     (mf/use-effect
      {:deps #js [project-id page-id]
-      :init #(st/emit! (dw/initialize project-id page-id))})
+      :fn #(st/emit! (dw/initialize project-id page-id))})
 
     ;; (prn "workspace-page.render" (:id page) props)
 

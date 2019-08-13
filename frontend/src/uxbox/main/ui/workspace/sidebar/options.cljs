@@ -90,9 +90,9 @@
 
 (mf/defc shape-options
   [{:keys [sid] :as props}]
-  (let [shape-iref (mf/use-memo {:deps sid
-                                 :init #(-> (l/in [:shapes sid])
-                                            (l/derive st/state))})
+  (let [shape-iref (mf/use-memo {:deps #js [sid]
+                                 :fn #(-> (l/in [:shapes sid])
+                                          (l/derive st/state))})
         shape (mf/deref shape-iref)
         menus (get +menus-map+ (:type shape))]
     [:div

@@ -36,10 +36,12 @@
 (mf/defc modal-wrapper
   [{:keys [component props]}]
   (mf/use-effect
-   {:init #(events/listen js/document EventType.KEYDOWN on-esc-clicked)
-    :end #(events/unlistenByKey %)})
+   (fn []
+     (let [key (events/listen js/document EventType.KEYDOWN on-esc-clicked)]
+       #(events/unlistenByKey %))))
+
   (let [classes (classnames :transparent (:transparent? props))
-        parent-ref (mf/use-ref* nil)]
+        parent-ref (mf/use-ref nil)]
     [:div.lightbox {:class classes
                     :ref parent-ref
                     :on-click #(on-parent-clicked % parent-ref)}

@@ -99,7 +99,7 @@
 
 (mf/defc login-page
   []
-  (mf/use-effect {:end #(st/emit! (fm/clear-form :login))})
+  (mf/use-effect (constantly #(st/emit! (fm/clear-form :login))))
   [:div.login
    [:div.login-body
     (messages-widget)

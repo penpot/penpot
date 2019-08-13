@@ -65,7 +65,7 @@
           (on-unmount []
             (st/emit! :interrupt
                       (udw/clear-ruler)))]
-    (mf/use-effect {:end on-unmount})
+    (mf/use-effect (constantly on-unmount))
     [:svg {:on-mouse-down on-mouse-down
            :on-mouse-up on-mouse-up}
      [:rect {:style {:fill "transparent"

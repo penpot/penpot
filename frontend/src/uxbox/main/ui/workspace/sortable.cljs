@@ -20,14 +20,14 @@
     :or {on-hover (constantly nil)
          on-drop (constantly nil)}
     :as options}]
-  (let [ref (mf/use-ref* nil)
+  (let [ref (mf/use-ref nil)
         [_, drop] (rdnd/useDrop
                    #js {:accept type
                         :hover (fn [item monitor]
-                                 (when (unchecked-get ref "current")
+                                 (when (mf/rev-val ref)
                                    (on-hover (unchecked-get item "data") monitor)))
                         :drop (fn [item monitor]
-                                (when (unchecked-get ref "current")
+                                (when (mf/ref-val ref)
                                   (on-drop (unchecked-get item "data") monitor)))})
         [props, drag] (rdnd/useDrag
                        #js {:item #js {:type type :data data}

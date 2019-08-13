@@ -61,8 +61,8 @@
         invisible (- (count (:colors coll)) visible)
         close #(st/emit! (udw/toggle-flag :colorpalette))
 
-        container (mf/use-ref* nil)
-        container-child (mf/use-ref* nil)]
+        container (mf/use-ref nil)
+        container-child (mf/use-ref nil)]
 
     (letfn [(select-coll [event]
               (let [id (read-string (dom/event->value event))
@@ -86,7 +86,7 @@
                 (when (not= (:width @local) width)
                   (swap! local assoc :width width))))]
 
-      (mf/use-effect {:deps true :init after-render})
+      (mf/use-effect {:deps true :fn after-render})
 
       [:div.color-palette
        [:div.color-palette-actions
@@ -116,5 +116,5 @@
 (mf/defc colorpalette
   [props]
   (let [colls (mf/deref collections-iref)]
-    (mf/use-effect {:init #(st/emit! (udc/fetch-collections))})
+    (mf/use-effect #(st/emit! (udc/fetch-collections)))
     [:& palette {:colls (vals colls)}]))

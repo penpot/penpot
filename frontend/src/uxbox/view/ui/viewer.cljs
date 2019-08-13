@@ -38,7 +38,7 @@
   [{:keys [token id]}]
   (let [{:keys [project pages flags]} (mf/react state-ref)]
     (mf/use-effect
-     {:init #(st/emit! (dv/initialize token))})
+     {:fn #(st/emit! (dv/initialize token))})
     (when (seq pages)
       [:section.view-content
        (when (contains? flags :sitemap)

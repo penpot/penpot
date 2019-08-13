@@ -98,8 +98,8 @@
 (mf/defc sitemap-toolbox
   [{:keys [project-id current-page-id] :as props}]
   (let [project-iref (mf/use-memo {:deps #js [project-id]
-                                   :init #(-> (l/in [:projects project-id])
-                                              (l/derive st/state))})
+                                   :fn #(-> (l/in [:projects project-id])
+                                            (l/derive st/state))})
         project (mf/deref project-iref)
         create #(udl/open! :page-form {:page {:project project-id}})
         close #(st/emit! (dw/toggle-flag :sitemap))]

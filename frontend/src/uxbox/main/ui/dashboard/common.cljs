@@ -18,7 +18,7 @@
 (mf/defc grid-header
   [{:keys [on-change on-delete value read-only?] :as props}]
   (let [edit? (mf/use-state false)
-        input (mf/use-ref* nil)]
+        input (mf/use-ref nil)]
     (letfn [(save []
               (let [new-value (-> (mf/ref-node input)
                                   (dom/get-inner-text)

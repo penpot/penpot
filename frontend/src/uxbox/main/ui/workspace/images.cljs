@@ -40,7 +40,7 @@
 
 (mf/defc import-image-modal
   [props]
-  (let [input (mf/use-ref* nil)
+  (let [input (mf/use-ref nil)
         uploading? (mf/deref uploading-iref)]
     (letfn [(on-upload-click [event]
               (let [input-el (mf/ref-node input)]
@@ -134,12 +134,12 @@
                        (swap! local assoc :id))]
 
     (mf/use-effect
-     {:init #(do (st/emit! (udi/fetch-collections))
-                 (st/emit! (udi/fetch-images nil)))})
+     {:fn #(do (st/emit! (udi/fetch-collections))
+               (st/emit! (udi/fetch-images nil)))})
 
     (mf/use-effect
      {:deps #js [type id]
-      :init #(st/emit! (udi/fetch-images id))})
+      :fn #(st/emit! (udi/fetch-images id))})
 
     [:div.lightbox-body.big-lightbox
      [:h3 "Import image from library"]

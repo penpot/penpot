@@ -36,8 +36,7 @@
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape selected)]
 
-    (mf/use-effect
-     {:init #(st/emit! (udi/fetch-image (:image shape)))})
+    (mf/use-effect #(st/emit! (udi/fetch-image (:image shape))))
 
     (when image
       [:g.shape {:class (when selected? "selected")

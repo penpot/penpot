@@ -31,8 +31,8 @@
   {:wrap [mf/wrap-memo]}
   [{:keys [id] :as props}]
   (let [shape-iref (mf/use-memo {:deps #js [id]
-                                 :init #(-> (l/in [:shapes id])
-                                            (l/derive st/state))})]
+                                 :fn #(-> (l/in [:shapes id])
+                                          (l/derive st/state))})]
     (when-let [shape (mf/deref shape-iref)]
       (when-not (:hidden shape)
         (render-shape shape)))))
