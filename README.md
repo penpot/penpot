@@ -10,36 +10,56 @@
 
 ![UXBOX](https://piweek.com/images/projects/uxbox.jpg)
 
+
 ## Introduction ##
 
-The open-source solution for design and prototyping. UXBOX is currently at an early development stage but we are working hard to bring you the beta version as soon as possible. Follow the project progress in Twitter or Github and stay tuned!
+The open-source solution for design and prototyping. UXBOX is
+currently at an early development stage but we are working hard to
+bring you the beta version as soon as possible. Follow the project
+progress in Twitter or Github and stay tuned!
 
 [See SVG specification](https://www.w3.org/Graphics/SVG/)
 
 ## SVG based ##
 
-UXBOX works with SVG, a standard format, for all your designs and prototypes . This means that all your stuff in UXBOX is portable and editable in many other vector tools and easy to use on the web.
+UXBOX works with SVG, a standard format, for all your designs and
+prototypes . This means that all your stuff in UXBOX is portable and
+editable in many other vector tools and easy to use on the web.
 
 ## Development ##
 
-Most of the main operations can be done through the helper script `manage.sh`.
+Most of the main operations can be done through the helper script
+`manage.sh`.
 
-The development requires of UXBOX is done through a single docker container. Each main service is opened in a different [tmux](https://github.com/tmux/tmux) sessions.
+The development requires of UXBOX is done through a single docker
+container. Each main service is opened in a different
+[tmux](https://github.com/tmux/tmux) sessions.
+
 
 ## Docker
 
-Docker is also used to build release images for backend and frontend. Use the helper script `manage.sh` to build the images.
-You can run locally UXBOX through a docker-compose or by manually running the containers.
+Docker is also used to build release images for backend and
+frontend. Use the helper script `manage.sh` to build the images.  You
+can run locally UXBOX through a docker-compose or by manually running
+the containers.
 
-Complementary to the docker images you can build locally from this repository, you can find additionnal flavors for backend and frontend on external repositories:
+Complementary to the docker images you can build locally from this
+repository, you can find additionnal flavors for backend and frontend
+on external repositories:
 * [Monogramm/docker-uxbox-frontend](https://github.com/Monogramm/docker-uxbox-frontend)
 * [Monogramm/docker-uxbox-backend](https://github.com/Monogramm/docker-uxbox-backend)
 
 
 ### Persistent data
-The UXBOX installation and all data are stored in the database (file uploads, etc). The docker daemon will store that data within the docker directory `/var/lib/docker/volumes/...`. That means your data is saved even if the container crashes, is stopped or deleted.
 
-To make your data persistent to upgrading and get access for backups is using named docker volume or mount a host folder. To achieve this you need one volume for your database container.
+The UXBOX installation and all data are stored in the database (file
+uploads, etc). The docker daemon will store that data within the
+docker directory `/var/lib/docker/volumes/...`. That means your data
+is saved even if the container crashes, is stopped or deleted.
+
+To make your data persistent to upgrading and get access for backups
+is using named docker volume or mount a host folder. To achieve this
+you need one volume for your database container.
 
 Database:
 - `/var/lib/postgresql/data` PostgreSQL Data
@@ -49,8 +69,12 @@ $ docker run -d \
     postgresql
 ```
 
-You also need to persist the UXBOX backend public resources (media and assets) to not lose images uploaded and allow the frontend to expose assets.
+You also need to persist the UXBOX backend public resources (media and
+assets) to not lose images uploaded and allow the frontend to expose
+assets.
+
 - `/srv/uxbox/resources/public` UXBOX backend public resources
+
 ```console
 $ docker run -d \
     -v db:/srv/uxbox/resources/public \
@@ -59,7 +83,8 @@ $ docker run -d \
 
 ### Auto configuration via environment variables
 
-The following environment variables are also honored for configuring your UXBOX instance:
+The following environment variables are also honored for configuring
+your UXBOX instance:
 
 #### Frontend
 
@@ -103,13 +128,17 @@ Available at runtime:
 -	`-e UXBOX_REGISTRATION_ENABLED=...` (defaults to `true`)
 -	`-e UXBOX_SECRET="..."` (defaults to `"5qjiAndGY3"`)
 
-**Important note:** make sure to use quotation marks for string variables or the backend might try to interpret the values as symbols and have weird issues.
+**Important note:** make sure to use quotation marks for string
+variables or the backend might try to interpret the values as symbols
+and have weird issues.
 
 ## Collections import
 
-You can easily import icons and images as global stores with the backend collection importer:
+You can easily import icons and images as global stores with the
+backend collection importer:
 
 * Create a `media` folder with the following sample structure:
+
 ```
 media
     icons
@@ -117,8 +146,10 @@ media
     images
         my-images-collection
 ```
+
 * Add some icons (SVG format) and images to your collection
 * Create a `config.edn` file with the following content
+
 ```clojure
 {:icons
  [{:name "Generic Icons 1"
@@ -130,7 +161,9 @@ media
    :path "./images/my-images-collection/"
    :regex #"^.*\.(png|jpg|webp)$"}]}
 ```
+
 * Then go to the backend directory and import collections:
+
 ```sh
 clojure -Adev -m uxbox.cli.collimp ../media/config.edn
 ```
@@ -141,7 +174,9 @@ Take a look at the `sample_media` directory for a sample configuration.
 
 **Open to you!**
 
-We love the open source software community. Contributing is our passion and because of this, we'll be glad if you want to participate and improve UXBOX. All your awesome ideas and code are welcome!
+We love the open source software community. Contributing is our
+passion and because of this, we'll be glad if you want to participate
+and improve UXBOX. All your awesome ideas and code are welcome!
 
 Please refer to the [Contributing Guide](./CONTRIBUTING.md)
 
