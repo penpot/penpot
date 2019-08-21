@@ -26,6 +26,7 @@
     :image (move-rect shape dpoint)
     :rect (move-rect shape dpoint)
     :text (move-rect shape dpoint)
+    :curve (move-path shape dpoint)
     :path (move-path shape dpoint)
     :circle (move-circle shape dpoint)
     :group (move-group shape dpoint)))
@@ -125,12 +126,12 @@
   "Calculate the size of the shape."
   [shape]
   (case (:type shape)
-    :group (assoc shape :width 100 :height 100)
     :circle (size-circle shape)
     :text (size-rect shape)
     :rect (size-rect shape)
     :icon (size-rect shape)
     :image (size-rect shape)
+    :curve (size-path shape)
     :path (size-path shape)))
 
 (defn- size-path
@@ -184,6 +185,7 @@
     :icon (setup-proportions-image shape)
     :image (setup-proportions-image shape)
     :text shape
+    :curve (setup-proportions-rect shape)
     :path (setup-proportions-rect shape)))
 
 (defn setup-proportions-image
@@ -461,6 +463,7 @@
    (case type
      :circle (circle->rect-shape state shape)
      :path (path->rect-shape state shape)
+     :curve (path->rect-shape state shape)
      shape)))
 
 (defn shapes->rect-shape
@@ -517,6 +520,7 @@
     :text (transform-rect shape xfmt)
     :image (transform-rect shape xfmt)
     :path (transform-path shape xfmt)
+    :curve (transform-path shape xfmt)
     :circle (transform-circle shape xfmt)))
 
 (defn- transform-rect

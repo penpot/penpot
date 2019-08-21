@@ -20,6 +20,7 @@
   [shape]
   (mf/html
    (case (:type shape)
+     :curve [:& path/path-component {:shape shape}]
      :text [:& text/text-component {:shape shape}]
      :icon [:& icon/icon-component {:shape shape}]
      :rect [:& rect/rect-component {:shape shape}]

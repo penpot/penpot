@@ -8,45 +8,46 @@
 (ns uxbox.main.ui.workspace.canvas
   (:require
    [rumext.alpha :as mf]
+   [lentes.core :as l]
    [uxbox.main.constants :as c]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes :as uus]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
+   [uxbox.main.ui.workspace.streams :as uws]
+   [uxbox.util.data :refer [parse-int]]
+   [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]))
 
-;; --- Background
+(def selected-canvas
+  (-> (l/key :selected-canvas)
+      (l/derive refs/workspace)))
 
-(mf/def background
-  :mixins [mf/memo]
-  :render
-  (fn [own {:keys [background] :as metadata}]
-    [:rect
-     {:x 0 :y 0
-      :width "100%"
-      :height "100%"
-      :fill (or background "#ffffff")}]))
-
-;; --- Canvas
+(defn- make-canvas-iref
+  [id]
+  (-> (l/in [:canvas id])
+      (l/derive st/state)))
 
 (mf/defc canvas
-  [{:keys [page wst] :as props}]
-  (let [{:keys [metadata id]} page
-        zoom (:zoom wst 1)  ;; NOTE: maybe forward wst to draw-area
-        width (:width metadata)
-        height (:height metadata)]
-    [:svg.page-canvas {:x c/canvas-start-x
-                       :y c/canvas-start-y
-                       :width width
-                       :height height}
-     [:& background metadata]
-     #_[:svg.page-layout
-      [:g.main
-       (for [id (reverse (:shapes page))]
-         [:& uus/shape-component {:id id :key id}])
-       (when (seq (:selected wst))
-         [:& selection-handlers {:wst wst}])
-       (when-let [dshape (:drawing wst)]
-         [:& draw-area {:shape dshape
-                        :zoom (:zoom wst)
-                        :modifiers (:modifiers wst)}])]]]))
+  [{:keys [id] :as props}]
+  (letfn [(on-double-click [event]
+            (dom/prevent-default event)
+            (st/emit! (dw/select-canvas id)))]
+    (let [canvas-iref (mf/use-memo #(make-canvas-iref id) #js [id])
+          canvas (mf/deref canvas-iref)
+          selected (mf/deref selected-canvas)
+          selected? (= id selected)]
+      [:rect.page-canvas
+       {:x (:x canvas)
+        :class (when selected? "selected")
+        :y (:y canvas)
+        :fill (:background canvas "#ffffff")
+        :width (:width canvas)
+        :height (:height canvas)
+        :on-double-click on-double-click}])))
+
+
+

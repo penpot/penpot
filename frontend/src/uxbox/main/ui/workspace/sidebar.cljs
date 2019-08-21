@@ -21,17 +21,16 @@
 (mf/defc left-sidebar
   {:wrap [mf/wrap-memo]}
   [{:keys [flags page] :as props}]
-  [:aside#settings-bar.settings-bar.settings-bar-left
-   [:> rdnd/provider {:backend rdnd/html5}
-    [:div.settings-bar-inside
-     (when (contains? flags :sitemap)
-       [:& sitemap-toolbox {:project-id (:project page)
-                            :current-page-id (:id page)
-                            :page page}])
-     #_(when (contains? flags :document-history)
-         (history-toolbox page-id))
-     (when (contains? flags :layers)
-       [:& layers-toolbox {:page page}])]]])
+  [:aside.settings-bar.settings-bar-left
+   [:div.settings-bar-inside
+    (when (contains? flags :sitemap)
+      [:& sitemap-toolbox {:project-id (:project page)
+                           :current-page-id (:id page)
+                           :page page}])
+    #_(when (contains? flags :document-history)
+        (history-toolbox page-id))
+    (when (contains? flags :layers)
+      [:& layers-toolbox {:page page}])]])
 
 ;; --- Right Sidebar (Component)
 
@@ -43,6 +42,5 @@
       [:& draw-toolbox {:flags flags}])
     (when (contains? flags :element-options)
       [:& options-toolbox {:page page}])
-    (when (contains? flags :icons)
-      #_(icons-toolbox))]])
-
+    #_(when (contains? flags :icons)
+      (icons-toolbox))]])

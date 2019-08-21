@@ -25,7 +25,7 @@
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])
             wst (get-in state [:workspace pid])
-            stoper (->> ws/interaction-events
+            stoper (->> stream
                         (rx/filter ws/mouse-up?)
                         (rx/take 1))
             stream (->> ws/mouse-position-deltas
@@ -58,7 +58,8 @@
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
-          (st/emit! (dw/select-shape id)
+          (st/emit! (dw/deselect-all)
+                    (dw/select-shape id)
                     (start-move-selected)))
 
         (and (not selected?) (not (empty? selected)))

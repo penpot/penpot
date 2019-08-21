@@ -6,23 +6,7 @@
 
 ;; TODO: DEPRECTATED, maintained just for temporal documentation, delete on near future
 
-(ns uxbox.main.data.workspace-drawing
-  "Workspace drawing data events and impl."
-  (:require [beicon.core :as rx]
-            [potok.core :as ptk]
-            [lentes.core :as l]
-            [uxbox.main.store :as st]
-            [uxbox.main.constants :as c]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.streams :as streams]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.main.geom :as geom]
-            [uxbox.main.workers :as uwrk]
-            [uxbox.main.user-events :as uev]
-            [uxbox.main.lenses :as ul]
-            [uxbox.util.geom.path :as pth]
-            [uxbox.util.geom.point :as gpt]))
+(ns uxbox.main.data.workspace-drawing)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Events
@@ -234,7 +218,7 @@
 ;;                                      (rx/filter uev/mouse-up?)
 ;;                                      (rx/take 1)))
 ;;         start? (volatile! true)
-;;         mouse (->> streams/viewport-mouse-position
+;;         mouse (->> streams/mouse-position
 ;;                    (rx/take-until stoper)
 ;;                    (rx/mapcat conditional-align)
 ;;                    (rx/map translate-to-canvas)
@@ -325,7 +309,7 @@
 ;; (defn- on-init-draw-free-path
 ;;   [shape stoper]
 ;;   (let [stoper (get-path-stoper-stream stoper true)
-;;         mouse (->> streams/viewport-mouse-position
+;;         mouse (->> streams/mouse-position
 ;;                    (rx/mapcat conditional-align)
 ;;                    (rx/map translate-to-canvas))
 
@@ -341,7 +325,7 @@
 ;;   [shape stoper]
 ;;   (let [last-point (volatile! @refs/canvas-mouse-position)
 ;;         stoper (get-path-stoper-stream stoper)
-;;         mouse (->> (rx/sample 10 streams/viewport-mouse-position)
+;;         mouse (->> (rx/sample 10 streams/mouse-position)
 ;;                    (rx/mapcat conditional-align)
 ;;                    (rx/map translate-to-canvas))
 ;;         points (->> (get-path-point-stream)

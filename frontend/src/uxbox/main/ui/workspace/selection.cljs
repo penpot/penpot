@@ -11,9 +11,7 @@
    [beicon.core :as rx]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.main.constants :as c]
-   [uxbox.main.data.shapes :as uds]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -42,11 +40,11 @@
             (let [result (geom/resize-shape vid shape point lock?)
                   scale (geom/calculate-scale-ratio shape result)
                   mtx (geom/generate-resize-matrix vid shape scale)
-                  xfm (map #(udw/apply-temporal-resize % mtx))]
+                  xfm (map #(dw/apply-temporal-resize % mtx))]
               (apply st/emit! (sequence xfm ids))))
 
           (on-end []
-            (apply st/emit! (map udw/apply-resize ids)))
+            (apply st/emit! (map dw/apply-resize ids)))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Ctrl key and the shapes own proportion
@@ -68,10 +66,10 @@
 
     (let [shape  (->> (geom/shape->rect-shape shape)
                       (geom/size))
-          stoper (->> ws/interaction-events
+          stoper (->> st/stream
                       (rx/filter ws/mouse-up?)
                       (rx/take 1))
-          stream (->> ws/viewport-mouse-position
+          stream (->> ws/mouse-position
                       (rx/take-until stoper)
                       (rx/map apply-zoom)
                       (rx/mapcat apply-grid-alignment)
@@ -160,22 +158,23 @@
   (letfn [(on-mouse-down [event index]
             (dom/stop-propagation event)
 
-            (let [stoper (get-edition-stream-stoper ws/interaction-events)
+            ;; TODO: this need code ux refactor
+            (let [stoper (get-edition-stream-stoper)
                   stream (rx/take-until stoper ws/mouse-position-deltas)]
               (when @refs/selected-alignment
-                (st/emit! (uds/initial-path-point-align (:id shape) index)))
+                (st/emit! (dw/initial-path-point-align (:id shape) index)))
               (rx/subscribe stream #(on-handler-move % index))))
 
-          (get-edition-stream-stoper [stream]
+          (get-edition-stream-stoper []
             (let [stoper? #(and (ws/mouse-event? %) (= (:type %) :up))]
               (rx/merge
-               (rx/filter stoper? stream)
-               (->> stream
+               (rx/filter stoper? st/stream)
+               (->> st/stream
                     (rx/filter #(= % :interrupt))
                     (rx/take 1)))))
 
           (on-handler-move [delta index]
-            (st/emit! (uds/update-path (:id shape) index delta)))]
+            (st/emit! (dw/update-path (:id shape) index delta)))]
 
     (let [displacement (:displacement modifiers)
           segments (cond->> (:segments shape)
