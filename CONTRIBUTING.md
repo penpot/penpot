@@ -74,6 +74,7 @@ Where type is:
 - `:whale:` a commit for docker related stuff
 - `:rewind:` a commit that reverts changes
 - `:paperclip:` a commit with other not relevant changes
+- `:arrow_up:` a commit with dependencies updates
 
 More info: https://gist.github.com/parmentf/035de27d6ed1dce0b36a
 
