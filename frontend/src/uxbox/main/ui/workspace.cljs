@@ -83,8 +83,8 @@
                  :no-tool-bar-left (not left-sidebar?)
                  :scrolling (:viewport-positionig workspace))]
 
-    (mf/use-effect {:deps #js [canvas page]
-                    :fn #(subscribe canvas page)})
+    (mf/use-effect #(subscribe canvas page)
+                   #js [(:id page)])
     [:*
      (messages-widget)
      [:& header {:page page

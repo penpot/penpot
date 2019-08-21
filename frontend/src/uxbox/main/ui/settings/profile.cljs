@@ -67,7 +67,7 @@
 
 ;; --- Profile Form
 (mf/def profile-form
-  :mixins [mf/memo mf/reactive mf/sync-render (fm/clear-mixin st/store :profile)]
+  :mixins [mf/memo mf/reactive (fm/clear-mixin st/store :profile)]
   :render
   (fn [own props]
     (let [data (merge {:language @i18n/locale}
@@ -113,7 +113,6 @@
 ;; --- Profile Photo Form
 
 (mf/defc profile-photo-form
-  {:wrap [mf/wrap-reactive]}
   []
   (letfn [(on-change [event]
             (let [target (dom/get-target event)
@@ -122,7 +121,7 @@
                            (first))]
               (st/emit! (udu/update-photo file))
               (dom/clean-value! target)))]
-    (let [{:keys [photo]} (mf/react profile-ref)
+    (let [{:keys [photo]} (mf/deref profile-ref)
           photo (if (or (str/empty? photo) (nil? photo))
                   "images/avatar.jpg"
                   photo)]

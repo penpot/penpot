@@ -49,10 +49,9 @@
       (l/derive st/state)))
 
 (mf/defc user
-  {:wrap [mf/wrap-reactive]}
   [_]
   (let [open (mf/use-state false)
-        profile (mf/react profile-ref)
+        profile (mf/deref profile-ref)
         photo (if (str/empty? (:photo profile ""))
                 "/images/avatar.jpg"
                 (:photo profile))]
