@@ -11,7 +11,6 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [potok.core :as ptk]
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :refer [logout]]
@@ -81,43 +80,40 @@
 
 ;; --- Main App (Component)
 
-(mf/def app
-  :mixins [mx/reactive]
+(def route-iref
+  (-> (l/key :route)
+      (l/derive st/state)))
 
-  :init
-  (fn [own props]
-    (assoc own ::route-ref (l/derive (l/key :route) st/state)))
+(mf/defc app
+  [props]
+  (let [route (mf/deref route-iref)
+        route-id (get-in route [:data :name])]
+    (case route-id
+      :auth/login (mf/element auth/login-page)
+      :auth/register (auth/register-page)
+      :auth/recovery-request (auth/recovery-request-page)
 
-  :render
-  (fn [own props]
-    (let [route (mx/react (::route-ref own))
-          route-id (get-in route [:data :name])]
-      (case route-id
-        :auth/login (mf/element auth/login-page)
-        :auth/register (auth/register-page)
-        :auth/recovery-request (auth/recovery-request-page)
+      :auth/recovery
+      (let [token (get-in route [:params :path :token])]
+        (auth/recovery-page token))
 
-        :auth/recovery
-        (let [token (get-in route [:params :path :token])]
-          (auth/recovery-page token))
+      (:settings/profile
+       :settings/password
+       :settings/notifications)
+      (mf/element settings/settings #js {:route route})
 
-        (:settings/profile
-         :settings/password
-         :settings/notifications)
-        (mf/element settings/settings #js {:route route})
+      (:dashboard/projects
+       :dashboard/icons
+       :dashboard/images
+       :dashboard/colors)
+      (mf/element dashboard/dashboard #js {:route route})
 
-        (:dashboard/projects
-         :dashboard/icons
-         :dashboard/images
-         :dashboard/colors)
-        (mf/element dashboard/dashboard #js {:route route})
+      :workspace/page
+      (let [project-id (uuid (get-in route [:params :path :project]))
+            page-id (uuid (get-in route [:params :path :page]))]
+        [:& workspace-page {:project-id project-id
+                            :page-id page-id
+                            :key page-id}])
 
-        :workspace/page
-        (let [project-id (uuid (get-in route [:params :path :project]))
-              page-id (uuid (get-in route [:params :path :page]))]
-          [:& workspace-page {:project-id project-id
-                              :page-id page-id
-                              :key page-id}])
+      nil)))
 
-        nil
-        ))))

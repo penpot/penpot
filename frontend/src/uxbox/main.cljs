@@ -69,7 +69,7 @@
     (when (:auth storage)
       (st/emit! (udu/fetch-profile)))
 
-    (mf/mount (ui/app) (dom/get-element "app"))
+    (mf/mount (mf/element ui/app) (dom/get-element "app"))
     (mf/mount (lightbox) (dom/get-element "lightbox"))
     (mf/mount (mf/element modal) (dom/get-element "modal"))
     (mf/mount (loader) (dom/get-element "loader"))
