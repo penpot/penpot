@@ -54,14 +54,17 @@
 (defn- on-error
   "A default error handler."
   [{:keys [status] :as error}]
-  (js/console.error "on-error:" (pr-str error))
-  (js/console.error (.-stack error))
+  (js/console.error "Unhandled Error:"
+                    "\n - message:" (ex-message error)
+                    "\n - data:" (pr-str (ex-data error))
+                    "\n - stack:" (.-stack error))
   (reset! st/loader false)
   (cond
     ;; Unauthorized or Auth timeout
     (and (:status error)
          (or (= (:status error) 403)
              (= (:status error) 419)))
+
     (ts/schedule 0 #(st/emit! (rt/nav :auth/login)))
 
     ;; Conflict
