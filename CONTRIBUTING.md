@@ -61,7 +61,8 @@ The commit message format is:
 Where type is:
 
 - `:bug:` a commit that fixes a bug
-- `:sparkles:` a commit that adds feature
+- `:sparkles:` a commit that an improvement
+- `:tada:` a commit with new feature
 - `:recycle:` a commit that introduces a refactor
 - `:lipstick:` a commit with cosmetic changes
 - `:ambulance:` a commit that fixes critical bug
