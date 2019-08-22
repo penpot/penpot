@@ -10,6 +10,7 @@
   (:require
    [beicon.core :as rx]
    [lentes.core :as l]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
@@ -32,19 +33,13 @@
 
 ;; --- Resize Implementation
 
-;; TODO: this function need to be refactored
-
 (defn- start-resize
   [vid ids shape]
-  (letfn [(on-resize [shape [point lock?]]
+  (letfn [(resize [shape [point lock?]]
             (let [result (geom/resize-shape vid shape point lock?)
                   scale (geom/calculate-scale-ratio shape result)
-                  mtx (geom/generate-resize-matrix vid shape scale)
-                  xfm (map #(dw/assoc-temporal-modifier % mtx))]
-              (apply st/emit! (sequence xfm ids))))
-
-          (on-end []
-            (apply st/emit! (map dw/materialize-current-modifier ids)))
+                  mtx (geom/generate-resize-matrix vid shape scale)]
+              (apply rx/of (map #(dw/assoc-temporal-modifier % mtx) ids))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Ctrl key and the shapes own proportion
@@ -63,19 +58,23 @@
           ;; Apply the current zoom factor to the point.
           (apply-zoom [point]
             (gpt/divide point @refs/selected-zoom))]
+    (reify
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [shape  (->> (geom/shape->rect-shape shape)
+                          (geom/size))
+              stoper (rx/filter ws/mouse-up? stream)]
+          (rx/concat
+           (->> ws/mouse-position
+                (rx/map apply-zoom)
+                (rx/mapcat apply-grid-alignment)
+                (rx/with-latest vector ws/mouse-position-ctrl)
+                (rx/map normalize-proportion-lock)
+                (rx/mapcat (partial resize shape))
+                (rx/take-until stoper))
+           (rx/from-coll (map dw/materialize-current-modifier ids))))))))
 
-    (let [shape  (->> (geom/shape->rect-shape shape)
-                      (geom/size))
-          stoper (->> st/stream
-                      (rx/filter ws/mouse-up?)
-                      (rx/take 1))
-          stream (->> ws/mouse-position
-                      (rx/take-until stoper)
-                      (rx/map apply-zoom)
-                      (rx/mapcat apply-grid-alignment)
-                      (rx/with-latest vector ws/mouse-position-ctrl)
-                      (rx/map normalize-proportion-lock))]
-      (rx/subscribe stream (partial on-resize shape) nil on-end))))
+      ;; (rx/subscribe stream (partial on-resize shape) nil on-end))))
 
 ;; --- Controls (Component)
 
@@ -196,7 +195,7 @@
                    (geom/shapes->rect-shape)
                    (geom/selection-rect))
         on-click #(do (dom/stop-propagation %2)
-                      (start-resize %1 (map :id shapes) shape))]
+                      (st/emit! (start-resize %1 (mapv :id shapes) shape)))]
     [:& controls {:shape shape
                   :zoom zoom
                   :on-click on-click}]))
@@ -217,7 +216,7 @@
 (mf/defc single-selection-handlers
   [{:keys [shape zoom] :as props}]
   (let [on-click #(do (dom/stop-propagation %2)
-                      (start-resize %1 #{(:id shape)} shape))
+                      (st/emit! (start-resize %1 #{(:id shape)} shape)))
         shape (geom/selection-rect shape)]
     [:& controls {:shape shape :zoom zoom :on-click on-click}]))
 
