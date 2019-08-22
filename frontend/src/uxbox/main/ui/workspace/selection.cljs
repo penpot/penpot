@@ -229,7 +229,7 @@
   [{:keys [wst] :as props}]
   (let [shapes-map (mf/deref shapes-map-iref)
         shapes (map #(get shapes-map %) (:selected wst))
-        edition? (:edition wst)
+        edition (:edition wst)
         zoom (:zoom wst 1)
         num (count shapes)
         {:keys [id type] :as shape} (first shapes)]
@@ -243,11 +243,12 @@
                                        :zoom zoom}]
 
       (and (= type :text)
-           (= edition? (:id shape)))
+           (= edition (:id shape)))
       [:& text-edition-selection-handlers {:shape shape
                                            :zoom zoom}]
-      (and (= type :path)
-           (= edition? (:id shape)))
+      (and (or (= type :path)
+               (= type :curve))
+           (= edition (:id shape)))
       [:& path-edition-selection-handlers {:shape shape
                                            :zoom zoom}]
 

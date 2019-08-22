@@ -8,7 +8,7 @@
   (:require
    [cuerdas.core :as str :include-macros true]
    [rumext.alpha :as mf]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -29,8 +29,8 @@
               (common/on-mouse-down event shape selected))
             (on-double-click [event]
               (when selected?
-                (prn "on-double-click")
-                (st/emit! (udw/start-edition-mode (:id shape)))))]
+                (prn "path-component$on-double-click")
+                (st/emit! (dw/start-edition-mode (:id shape)))))]
       [:g.shape {:class (when selected? "selected")
                  :on-double-click on-double-click
                  :on-mouse-down on-mouse-down}
