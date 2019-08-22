@@ -22,6 +22,7 @@
    [uxbox.util.math :as mth]
    [uxbox.util.dom :as dom]
    [uxbox.util.data :refer [seek]]
+   [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.path :as path]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.uuid :as uuid]))
@@ -289,23 +290,17 @@
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])
             shape (get-in state [:workspace pid :drawing])]
-        (if (::initialized? shape)
-          (let [resize-mtx (get-in state [:workspace pid :modifiers (:id shape) :resize])
-                shape (cond-> shape
-                        resize-mtx (geom/transform resize-mtx))]
-            (rx/of
-             ;; Remove the stalled modifiers
-             ;; TODO: maybe a specific event for "clear modifiers"
-             #(update-in % [:workspace pid :modifiers] dissoc (:id shape))
-
-             ;; Unselect the drawing tool
-             ;; TODO; maybe a specific event for clear draw-tool
-             dw/clear-drawing
-
+        (rx/concat
+         (rx/of dw/clear-drawing)
+         (when (::initialized? shape)
+           (let [modifier-mtx (:modifier-mtx shape)
+                 shape (if (gmt/matrix? modifier-mtx)
+                         (geom/transform shape modifier-mtx)
+                         shape)
+                 shape (dissoc shape ::initialized? :modifier-mtx)]
              ;; Add & select the cred shape to the workspace
-             (dw/add-shape (dissoc shape ::initialized?))
-             (dw/select-first-shape)))
-          (rx/of #(update-in % [:workspace pid] dissoc :drawing :drawing-tool)))))))
+             (rx/of (dw/add-shape shape)
+                    (dw/select-first-shape)))))))))
 
 (def close-drawing-path
   (reify
