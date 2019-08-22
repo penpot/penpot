@@ -89,9 +89,8 @@
 
 (mf/defc app
   [props]
-  (let [route (mf/deref route-iref)
-        route-id (get-in route [:data :name])]
-    (case route-id
+  (let [route (mf/deref route-iref)]
+    (case (get-in route [:data :name])
       :auth/login (mf/element auth/login-page)
       :auth/register (auth/register-page)
       :auth/recovery-request (auth/recovery-request-page)
