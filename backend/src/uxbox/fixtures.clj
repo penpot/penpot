@@ -59,16 +59,17 @@
                      :user (mk-uuid "user" ui)
                      :project (mk-uuid "project" pi)
                      :data {:canvas [{:id (mk-uuid "canvas" i 1)
-                                      :x 200
-                                      :y 200
-                                      :width 1024
-                                      :height 768}
+                                      :name "Canvas 1"
+                                      :x1 200
+                                      :y1 200
+                                      :x2 1224
+                                      :y2 968}
                                      {:id (mk-uuid "canvas" i 2)
-                                      :x 1324
-                                      :y 200
-                                      :width 1024
-                                      :height 768}
-                                      ]
+                                      :name "Canvas 2"
+                                      :x1 1324
+                                      :y1 200
+                                      :x2 2348
+                                      :y2 968}]
                             :shapes []
                             :shapes-map {}}
                      :metadata {:width 1024
