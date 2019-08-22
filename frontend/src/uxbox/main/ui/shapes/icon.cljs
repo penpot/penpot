@@ -23,14 +23,12 @@
 
 (mf/defc icon-component
   [{:keys [shape] :as props}]
-  (let [id (:id shape)
-        modifiers (mf/deref (refs/selected-modifiers id))
-        selected (mf/deref refs/selected-shapes)
-        selected? (contains? selected id)
+  (let [selected (mf/deref refs/selected-shapes)
+        selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     [:& icon-shape {:shape shape :modifiers modifiers}]]))
+     [:& icon-shape {:shape shape}]]))
 
 ;; --- Icon Shape
 
@@ -43,22 +41,20 @@
     (gmt/rotate* mt rotation center)))
 
 (mf/defc icon-shape
-  [{:keys [shape modifiers] :as props}]
-  (let [{:keys [id content metadata rotation x1 y1]} shape
-        {:keys [resize displacement]} modifiers
+  [{:keys [shape] :as props}]
+  (let [{:keys [id content metadata rotation modifier-mtx]} shape
 
-        xfmt (cond-> (gmt/matrix)
-               displacement (gmt/multiply displacement)
-               resize (gmt/multiply resize))
+        shape (cond
+                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
+                :else shape)
 
-        {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
-                                                   (geom/size))
+        {:keys [x1 y1 width height] :as shape} (geom/size shape)
+
+        transform (when (pos? rotation)
+                    (str (rotate (gmt/matrix) shape)))
 
         view-box (apply str (interpose " " (:view-box metadata)))
-        xfmt (cond-> (gmt/matrix)
-               (pos? rotation) (rotate shape))
-
-        moving? (boolean displacement)
+        moving? (boolean modifier-mtx)
         props {:id (str id)
                :x x1
                :y y1
@@ -70,7 +66,7 @@
                :dangerouslySetInnerHTML #js {:__html content}}
 
         attrs (merge props (attrs/extract-style-attrs shape))]
-    [:g {:transform (str xfmt)}
+    [:g {:transform transform}
      [:> :svg (normalize-props attrs) ]]))
 
 ;; --- Icon SVG

@@ -81,15 +81,17 @@
         ob  (->> st/stream
                  (rx/filter pointer-event?)
                  (rx/filter #(= :viewport (:source %)))
-                 (rx/map :pt)
-                 )]
+                 (rx/map :pt))]
     (rx/subscribe-with ob sub)
     sub))
 
 (defonce mouse-position-ctrl
-  (let [sub (rx/behavior-subject nil)]
-    (-> (rx/map :ctrl mouse-position)
-        (rx/subscribe-with sub))
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter pointer-event?)
+                 (rx/map :ctrl)
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
     sub))
 
 (defonce mouse-position-deltas

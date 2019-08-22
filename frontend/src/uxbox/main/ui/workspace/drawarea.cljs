@@ -26,10 +26,6 @@
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.uuid :as uuid]))
 
-(defn- rxfinalize
-  [f ob]
-  (.pipe ob (.finalize js/rxjs.operators f)))
-
 ;; --- Events
 
 (declare handle-drawing)
@@ -64,6 +60,7 @@
   [{:type :rect
     :name "Rect"
     :stroke-color "#000000"}
+   {:type :image}
    {:type :circle
     :name "Circle"}
    {:type :path
@@ -74,6 +71,9 @@
     :fill-color "#000000"
     :fill-opacity 0
     :segments []}
+   {:type :canvas
+    :name "Canvas"
+    :stroke-color "#000000"}
    {:type :curve
     :name "Path"
     :stroke-style :solid
@@ -98,8 +98,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :current])
-            shape (make-minimal-shape type)]
-        (assoc-in state [:workspace pid :drawing] shape)))
+            data (make-minimal-shape type)]
+        (update-in state [:workspace pid :drawing] merge data)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -118,7 +118,7 @@
                                            :y2 (+ (:y point) 2)})]
               (assoc-in state [:workspace pid :drawing] (assoc shape ::initialized? true))))
 
-          ;; TODO: this is a new approach for resizing, when all the
+          ;; NOTE: this is a new approach for resizing, when all the
           ;; subsystem are migrated to the new resize approach, this
           ;; function should be moved into uxbox.main.geom ns.
           (resize-shape [shape point lock?]
@@ -331,11 +331,12 @@
 (declare path-draw-area)
 
 (mf/defc draw-area
-  [{:keys [zoom shape modifiers] :as props}]
-  (case (:type shape)
-    (:path :curve) [:& path-draw-area {:shape shape}]
-    [:& generic-draw-area {:shape (assoc shape :modifiers modifiers)
-                           :zoom zoom}]))
+  [{:keys [zoom shape] :as props}]
+  (when (:id shape)
+    (case (:type shape)
+      (:path :curve) [:& path-draw-area {:shape shape}]
+      [:& generic-draw-area {:shape shape
+                             :zoom zoom}])))
 
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]

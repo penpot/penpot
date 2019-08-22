@@ -40,11 +40,11 @@
             (let [result (geom/resize-shape vid shape point lock?)
                   scale (geom/calculate-scale-ratio shape result)
                   mtx (geom/generate-resize-matrix vid shape scale)
-                  xfm (map #(dw/apply-temporal-resize % mtx))]
+                  xfm (map #(dw/assoc-temporal-modifier % mtx))]
               (apply st/emit! (sequence xfm ids))))
 
           (on-end []
-            (apply st/emit! (map dw/apply-resize ids)))
+            (apply st/emit! (map dw/materialize-current-modifier ids)))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Ctrl key and the shapes own proportion

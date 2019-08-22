@@ -7,11 +7,12 @@
 
 (ns uxbox.main.ui.workspace.canvas
   (:require
-   [rumext.alpha :as mf]
    [lentes.core :as l]
+   [rumext.alpha :as mf]
    [uxbox.main.constants :as c]
-   [uxbox.main.refs :as refs]
    [uxbox.main.data.workspace :as dw]
+   [uxbox.main.geom :as geom]
+   [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes :as uus]
@@ -33,20 +34,26 @@
 
 (mf/defc canvas
   [{:keys [id] :as props}]
-  (letfn [(on-double-click [event]
-            (dom/prevent-default event)
-            (st/emit! (dw/select-canvas id)))]
-    (let [canvas-iref (mf/use-memo #(make-canvas-iref id) #js [id])
-          canvas (mf/deref canvas-iref)
-          selected (mf/deref selected-canvas)
-          selected? (= id selected)]
+  (let [canvas-iref (mf/use-memo #(make-canvas-iref id) #js [id])
+        canvas (-> (mf/deref canvas-iref)
+                   (geom/size))
+        selected (mf/deref selected-canvas)
+        selected? (= id selected)]
+    (letfn [(on-double-click [event]
+              (dom/prevent-default event)
+              (st/emit! (dw/select-canvas id)))
+            (on-mouse-down [event]
+              (when selected?
+                (dom/stop-propagation event)
+                #_(st/emit! (start-move id))))]
       [:rect.page-canvas
-       {:x (:x canvas)
+       {:x (:x1 canvas)
         :class (when selected? "selected")
-        :y (:y canvas)
+        :y (:y1 canvas)
         :fill (:background canvas "#ffffff")
         :width (:width canvas)
         :height (:height canvas)
+        :on-mouse-down on-mouse-down
         :on-double-click on-double-click}])))
 
 

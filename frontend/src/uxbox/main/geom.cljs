@@ -127,12 +127,9 @@
   [shape]
   (case (:type shape)
     :circle (size-circle shape)
-    :text (size-rect shape)
-    :rect (size-rect shape)
-    :icon (size-rect shape)
-    :image (size-rect shape)
     :curve (size-path shape)
-    :path (size-path shape)))
+    :path (size-path shape)
+    (size-rect shape)))
 
 (defn- size-path
   [{:keys [segments x1 y1 x2 y2] :as shape}]

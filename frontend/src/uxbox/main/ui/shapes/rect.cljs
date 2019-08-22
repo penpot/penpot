@@ -22,16 +22,13 @@
 
 (mf/defc rect-component
   [{:keys [shape] :as props}]
-  (let [id (:id shape)
-        modifiers (mf/deref (refs/selected-modifiers id))
-        selected (mf/deref refs/selected-shapes)
-        selected? (contains? selected id)
+  (let [selected (mf/deref refs/selected-shapes)
+        selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape selected)]
         ;; shape (assoc shape :modifiers modifiers)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     [:& rect-shape {:shape shape
-                     :modifiers modifiers}]]))
+     [:& rect-shape {:shape shape}]]))
 
 ;; --- Rect Shape
 
@@ -43,27 +40,25 @@
     (gmt/rotate* mt rotation center)))
 
 (mf/defc rect-shape
-  [{:keys [shape modifiers] :as props}]
-  (let [{:keys [id rotation]} shape
-        {:keys [displacement resize]} modifiers
+  [{:keys [shape] :as props}]
+  (let [{:keys [id rotation modifier-mtx]} shape
 
-        xfmt (cond-> (gmt/matrix)
-               displacement (gmt/multiply displacement)
-               resize (gmt/multiply resize))
+        shape (cond
+                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
+                :else shape)
 
-        {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
-                                                   (geom/size))
+        {:keys [x1 y1 width height] :as shape} (geom/size shape)
 
-        xfmt (cond-> (gmt/matrix)
-               (pos? rotation) (rotate shape))
+        transform (when (pos? rotation)
+                    (str (rotate (gmt/matrix) shape)))
 
-        moving? (boolean displacement)
+        moving? (boolean modifier-mtx)
 
         props {:x x1 :y y1
                :id (str "shape-" id)
                :class-name (classnames :move-cursor moving?)
                :width width
                :height height
-               :transform (str xfmt)}
+               :transform transform}
         attrs (merge (attrs/extract-style-attrs shape) props)]
     [:> :rect (normalize-props attrs)]))

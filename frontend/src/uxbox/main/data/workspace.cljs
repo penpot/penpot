@@ -479,9 +479,11 @@
      :fast (gpt/point (if align? (* 3 gx) 10)
                       (if align? (* 3 gy) 10))}))
 
-(declare apply-temporal-displacement)
 (declare initial-shape-align)
 (declare apply-displacement)
+(declare assoc-temporal-modifier)
+(declare materialize-current-modifier)
+(declare apply-temporal-displacement)
 
 (defrecord MoveSelected [direction speed]
   ptk/WatchEvent
@@ -500,7 +502,7 @@
           (rx/from-coll (map initial-shape-align selected))
           (rx/from-coll (map apply-displacement selected))))
        (rx/from-coll (map #(apply-temporal-displacement % displacement) selected))
-       (rx/from-coll (map apply-displacement selected))))))
+       (rx/from-coll (map materialize-current-modifier selected))))))
 
 (s/def ::direction #{:up :down :right :left})
 (s/def ::speed #{:std :fast})
@@ -597,69 +599,38 @@
 
 ;; --- Apply Temporal Displacement
 
-(defrecord ApplyTemporalDisplacement [id delta]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])
-          prev (get-in state [:workspace pid :modifiers id :displacement] (gmt/matrix))
-          curr (gmt/translate prev delta)]
-      (assoc-in state [:workspace pid :modifiers id :displacement] curr))))
-
 (defn apply-temporal-displacement
-  [id pt]
-  {:pre [(uuid? id) (gpt/point? pt)]}
-  (ApplyTemporalDisplacement. id pt))
+  [id delta]
+  {:pre [(uuid? id) (gpt/point? delta)]}
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [prev (get-in state [:shapes id :modifier-mtx] (gmt/matrix))
+            curr (gmt/translate prev delta)]
+        (rx/of (assoc-temporal-modifier id curr))))))
 
-;; --- Apply Displacement
+;; --- Modifiers
 
-(defrecord ApplyDisplacement [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [pid (get-in state [:workspace :current])
-          displacement (get-in state [:workspace pid :modifiers id :displacement])]
-      (if (gmt/matrix? displacement)
-        (rx/of #(ds/materialize-xfmt % id displacement)
-               #(update-in % [:workspace pid :modifiers id] dissoc :displacement)
-               ::udp/page-update)
-        (rx/empty)))))
-
-(defn apply-displacement
-  [id]
-  {:pre [(uuid? id)]}
-  (ApplyDisplacement. id))
-
-;; --- Apply Temporal Resize Matrix
-
-(deftype ApplyTemporalResize [sid xfmt]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])]
-      (assoc-in state [:workspace pid :modifiers sid :resize] xfmt))))
-
-(defn apply-temporal-resize
-  "Attach temporal resize transformation to the shape."
+(defn assoc-temporal-modifier
   [id xfmt]
-  {:pre [(gmt/matrix? xfmt) (uuid? id)]}
-  (ApplyTemporalResize. id xfmt))
+  {:pre [(uuid? id)
+         (gmt/matrix? xfmt)]}
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:shapes id :modifier-mtx] xfmt))))
 
-;; --- Apply Resize Matrix
-
-(deftype ApplyResize [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [pid (get-in state [:workspace :current])
-          resize (get-in state [:workspace pid :modifiers id :resize])]
-      (if (gmt/matrix? resize)
-        (rx/of #(ds/materialize-xfmt % id resize)
-               #(update-in % [:workspace pid :modifiers id] dissoc :resize)
-               ::udp/page-update)
-        (rx/empty)))))
-
-(defn apply-resize
-  "Apply definitivelly the resize matrix transformation to the shape."
+(defn materialize-current-modifier
   [id]
   {:pre [(uuid? id)]}
-  (ApplyResize. id))
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [xfmt (get-in state [:shapes id :modifier-mtx])]
+        (when (gmt/matrix? xfmt)
+          (rx/of #(update-in % [:shapes id] geom/transform xfmt)
+                 #(update-in % [:shapes id] dissoc :modifier-mtx)
+                 ::udp/page-update))))))
 
 ;; --- Start shape "edition mode"
 
@@ -694,16 +665,16 @@
   (= (::type (meta e)) ::select-for-drawing))
 
 (defn select-for-drawing
-  [tool]
-  (reify
-    IMeta
-    (-meta [_] {::type ::select-for-drawing})
+  ([tool] (select-for-drawing tool nil))
+  ([tool data]
+   (reify
+     IMeta
+     (-meta [_] {::type ::select-for-drawing})
 
-    ptk/UpdateEvent
-    (update [_ state]
-      (prn "select-for-drawing" tool)
-      (let [pid (get-in state [:workspace :current])]
-        (update-in state [:workspace pid] assoc :drawing-tool tool)))))
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [pid (get-in state [:workspace :current])]
+         (update-in state [:workspace pid] assoc :drawing-tool tool :drawing data))))))
 
 ;; --- Shape Proportions
 
