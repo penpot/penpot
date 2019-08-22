@@ -565,7 +565,6 @@
 ;; --- Outer Rect
 
 (declare selection-rect-generic)
-(declare selection-rect-group)
 
 (defn rotation-matrix
   "Generate a rotation matrix from shape."
@@ -590,24 +589,14 @@
   ([shape]
    (selection-rect @st/state shape))
   ([state shape]
-   (let [{:keys [displacement resize]} (:modifiers shape)]
+   (let [modifier (:modifier-mtx shape)]
      (-> (shape->rect-shape shape)
          (assoc :type :rect :id (:id shape))
-         (transform (or resize (gmt/matrix)))
-         (transform (or displacement (gmt/matrix)))
+         (transform (or modifier (gmt/matrix)))
          (rotate-shape)
          (size)))))
 
 ;; --- Helpers
-
-(defn resolve-parent
-  "Recursively resolve the real shape parent."
-  ([shape]
-   (resolve-parent @st/state shape))
-  ([state {:keys [group] :as shape}]
-   (if group
-     (resolve-parent state (get-in state [:shapes group]))
-     shape)))
 
 (defn contained-in?
   "Check if a shape is contained in the

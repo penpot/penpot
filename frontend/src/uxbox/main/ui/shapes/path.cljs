@@ -14,7 +14,8 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.data :refer [classnames normalize-props]]))
+   [uxbox.util.data :refer [classnames normalize-props]]
+   [uxbox.util.geom.matrix :as gmt]))
 
 ;; --- Path Component
 
@@ -22,8 +23,7 @@
 
 (mf/defc path-component
   [{:keys [shape] :as props}]
-  (let [modifiers (mf/deref (refs/selected-modifiers (:id shape)))
-        selected (mf/deref refs/selected-shapes)
+  (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))]
     (letfn [(on-mouse-down [event]
               (common/on-mouse-down event shape selected))
@@ -35,7 +35,6 @@
                  :on-double-click on-double-click
                  :on-mouse-down on-mouse-down}
        [:& path-shape {:shape shape
-                       :modifiers modifiers
                        :background? true}]])))
 
 ;; --- Path Shape
@@ -62,12 +61,13 @@
           (recur buffer (inc index)))))))
 
 (mf/defc path-shape
-  [{:keys [shape modifiers background?] :as props}]
-  (let [{:keys [resize displacement]} modifiers
-        shape (cond-> shape
-                displacement (geom/transform displacement)
-                resize (geom/transform resize))
-        moving? (boolean displacement)
+  [{:keys [shape background?] :as props}]
+  (let [modifier-mtx (:modifier-mtx shape)
+        shape (cond
+                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
+                :else shape)
+
+        moving? (boolean modifier-mtx)
 
         pdata (render-path shape)
         props {:id (str (:id shape))

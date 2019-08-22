@@ -190,9 +190,8 @@
                    :style {:cursor "pointer"}}])])))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes modifiers zoom] :as props}]
+  [{:keys [shapes zoom] :as props}]
   (let [shape (->> shapes
-                   (map #(assoc % :modifiers (get modifiers (:id %))))
                    (map #(geom/selection-rect %))
                    (geom/shapes->rect-shape)
                    (geom/selection-rect))
@@ -202,18 +201,9 @@
                   :zoom zoom
                   :on-click on-click}]))
 
-(mf/defc single-selection-handlers
-  [{:keys [shape zoom modifiers] :as props}]
-  (let [on-click #(do (dom/stop-propagation %2)
-                      (start-resize %1 #{(:id shape)} shape))
-        shape (-> (assoc shape :modifiers modifiers)
-                  (geom/selection-rect))]
-    [:& controls {:shape shape :zoom zoom :on-click on-click}]))
-
 (mf/defc text-edition-selection-handlers
-  [{:keys [shape modifiers zoom] :as props}]
-  (let [{:keys [x1 y1 width height] :as shape} (-> (assoc shape :modifiers modifiers)
-                                                   (geom/selection-rect))]
+  [{:keys [shape zoom] :as props}]
+  (let [{:keys [x1 y1 width height] :as shape} (geom/selection-rect shape)]
     [:g.controls
      [:rect.main {:x x1 :y y1
                   :width width
@@ -224,6 +214,13 @@
                           :stroke-opacity "0.5"
                           :fill "transparent"}}]]))
 
+(mf/defc single-selection-handlers
+  [{:keys [shape zoom] :as props}]
+  (let [on-click #(do (dom/stop-propagation %2)
+                      (start-resize %1 #{(:id shape)} shape))
+        shape (geom/selection-rect shape)]
+    [:& controls {:shape shape :zoom zoom :on-click on-click}]))
+
 (def ^:private shapes-map-iref
   (-> (l/key :shapes)
       (l/derive st/state)))
@@ -233,11 +230,9 @@
   (let [shapes-map (mf/deref shapes-map-iref)
         shapes (map #(get shapes-map %) (:selected wst))
         edition? (:edition wst)
-        modifiers (:modifiers wst)
         zoom (:zoom wst 1)
         num (count shapes)
         {:keys [id type] :as shape} (first shapes)]
-
 
     (cond
       (zero? num)
@@ -245,22 +240,17 @@
 
       (> num 1)
       [:& multiple-selection-handlers {:shapes shapes
-                                       :modifiers modifiers
                                        :zoom zoom}]
 
       (and (= type :text)
            (= edition? (:id shape)))
       [:& text-edition-selection-handlers {:shape shape
-                                           :modifiers (get modifiers id)
                                            :zoom zoom}]
       (and (= type :path)
            (= edition? (:id shape)))
       [:& path-edition-selection-handlers {:shape shape
-                                           :zoom zoom
-                                           :modifiers (get modifiers id)}]
-
+                                           :zoom zoom}]
 
       :else
       [:& single-selection-handlers {:shape shape
-                                     :modifiers (get modifiers id)
                                      :zoom zoom}])))
