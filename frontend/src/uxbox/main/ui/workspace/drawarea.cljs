@@ -118,24 +118,13 @@
                                            :y2 (+ (:y point) 2)})]
               (assoc-in state [:workspace pid :drawing] (assoc shape ::initialized? true))))
 
-          ;; NOTE: this is a new approach for resizing, when all the
-          ;; subsystem are migrated to the new resize approach, this
-          ;; function should be moved into uxbox.main.geom ns.
           (resize-shape [shape point lock?]
-            (if (= (:type shape) :circle)
-              (let [rx (mth/abs (- (:x point) (:cx shape)))
-                    ry (mth/abs (- (:y point) (:cy shape)))]
-                (if lock?
-                  (assoc shape :rx rx :ry ry)
-                  (assoc shape :rx rx :ry rx)))
-              (let [width (- (:x point) (:x1 shape))
-                    height (- (:y point) (:y1 shape))
-                    proportion (:proportion shape 1)]
-                (assoc shape
-                       :x2 (+ (:x1 shape) width)
-                       :y2 (if lock?
-                             (+ (:y1 shape) (/ width proportion))
-                             (+ (:y1 shape) height))))))
+            (let [shape (-> (geom/shape->rect-shape shape)
+                            (geom/size))
+                  result (geom/resize-shape :bottom-right shape point lock?)
+                  scale (geom/calculate-scale-ratio shape result)
+                  mtx (geom/generate-resize-matrix :bottom-right shape scale)]
+              (assoc shape :modifier-mtx mtx)))
 
           (update-drawing [state point lock?]
             (let [pid (get-in state [:workspace :current])]
