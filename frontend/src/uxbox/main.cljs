@@ -72,7 +72,7 @@
     (mf/mount (mf/element ui/app) (dom/get-element "app"))
     (mf/mount (lightbox) (dom/get-element "lightbox"))
     (mf/mount (mf/element modal) (dom/get-element "modal"))
-    (mf/mount (loader) (dom/get-element "loader"))
+    (mf/mount (mf/element loader) (dom/get-element "loader"))
 
     (on-navigate router cpath)))
 
