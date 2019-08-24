@@ -39,30 +39,25 @@
 (declare text-shape-wrapper)
 (declare text-shape-edit)
 
-(mf/def text-component
-  :mixins [mf/memo mf/reactive]
-  :render
-  (fn [own {:keys [shape] :as props}]
-    (let [{:keys [id x1 y1 content group]} shape
-          modifiers (mf/react (refs/selected-modifiers id))
-          selected (mf/react refs/selected-shapes)
-          edition? (= (mf/react refs/selected-edition) id)
-          selected? (and (contains? selected id)
-                         (= (count selected) 1))
-          shape (assoc shape :modifiers modifiers)]
-      (letfn [(on-mouse-down [event]
-                (handle-mouse-down event shape selected))
-              (on-double-click [event]
-                ;; TODO: handle grouping event propagation
-                ;; TODO: handle actions locking properly
-                (dom/stop-propagation event)
-                (st/emit! (udw/start-edition-mode id)))]
-        [:g.shape {:class (when selected? "selected")
-                   :on-double-click on-double-click
-                   :on-mouse-down on-mouse-down}
-         (if edition?
-           [:& text-shape-edit {:shape shape}]
-           [:& text-shape-wrapper {:shape shape}])]))))
+(mf/defc text-component
+  [{:keys [shape] :as props}]
+  (let [{:keys [id x1 y1 content group]} shape
+        selected (mf/deref refs/selected-shapes)
+        edition (mf/deref refs/selected-edition)
+        edition? (= edition id)
+        selected? (and (contains? selected id)
+                       (= (count selected) 1))]
+    (letfn [(on-mouse-down [event]
+              (handle-mouse-down event shape selected))
+            (on-double-click [event]
+              (dom/stop-propagation event)
+              (st/emit! (udw/start-edition-mode id)))]
+      [:g.shape {:class (when selected? "selected")
+                 :on-double-click on-double-click
+                 :on-mouse-down on-mouse-down}
+       (if edition?
+         [:& text-shape-edit {:shape shape}]
+         [:& text-shape-wrapper {:shape shape}])])))
 
 ;; --- Text Styles Helpers
 
