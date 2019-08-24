@@ -177,6 +177,7 @@
 (defn setup-proportions
   [shape]
   (case (:type shape)
+    :canvas (setup-proportions-rect shape)
     :rect (setup-proportions-rect shape)
     :circle (setup-proportions-rect shape)
     :icon (setup-proportions-image shape)
