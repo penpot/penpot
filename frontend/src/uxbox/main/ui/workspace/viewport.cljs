@@ -17,7 +17,6 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.workspace.canvas :refer [canvas]]
    [uxbox.main.ui.workspace.grid :refer [grid]]
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.streams :as uws]
@@ -229,8 +228,6 @@
                   (events/unlistenByKey key2))))]
 
       (mf/use-effect on-mount)
-      ;; (prn "viewport.render" (:id page))
-
       [:*
        [:& coordinates {:zoom zoom}]
        #_[:div.tooltip-container
@@ -249,9 +246,6 @@
         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
          (when page
            [:*
-            (for [id (:canvas page)]
-              [:& canvas {:key id :id id}])
-
             (for [id (reverse (:shapes page))]
               [:& uus/shape-component {:id id :key id}])
 

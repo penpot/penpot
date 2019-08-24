@@ -512,6 +512,7 @@
   "Apply the matrix transformation to shape."
   [{:keys [type] :as shape} xfmt]
   (case type
+    :canvas (transform-rect shape xfmt)
     :rect (transform-rect shape xfmt)
     :icon (transform-rect shape xfmt)
     :text (transform-rect shape xfmt)

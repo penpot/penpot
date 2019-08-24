@@ -14,12 +14,14 @@
    [uxbox.main.ui.shapes.image :as image]
    [uxbox.main.ui.shapes.path :as path]
    [uxbox.main.ui.shapes.rect :as rect]
+   [uxbox.main.ui.shapes.canvas :as canvas]
    [uxbox.main.ui.shapes.text :as text]))
 
 (defn render-shape
   [shape]
   (mf/html
    (case (:type shape)
+     :canvas [:& canvas/canvas-component {:shape shape}]
      :curve [:& path/path-component {:shape shape}]
      :text [:& text/text-component {:shape shape}]
      :icon [:& icon/icon-component {:shape shape}]

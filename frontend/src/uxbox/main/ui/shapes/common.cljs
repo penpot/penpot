@@ -35,30 +35,36 @@
               (rx/take-until stoper))
          (rx/of (dw/materialize-current-modifier id)))))))
 
-(defn start-move-selected
-  []
+(def start-move-selected
   (reify
     ptk/WatchEvent
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])
             selected (get-in state [:workspace pid :selected])]
+        (prn "start-move-selected" selected)
         (rx/from-coll (map start-move selected))))))
 
 (defn on-mouse-down
-  [event {:keys [id] :as shape} selected]
+  [event {:keys [id type] :as shape} selected]
   (let [selected? (contains? selected id)
         drawing? @refs/selected-drawing-tool]
+    (prn "on-mouse-down" id type selected? (= type :canvas))
     (when-not (:blocked shape)
       (cond
         drawing?
         nil
+
+        (= type :canvas)
+        (when selected?
+          (dom/stop-propagation event)
+          (st/emit! start-move-selected))
 
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
           (st/emit! (dw/deselect-all)
                     (dw/select-shape id)
-                    (start-move-selected)))
+                    start-move-selected))
 
         (and (not selected?) (not (empty? selected)))
         (do
@@ -67,8 +73,8 @@
             (st/emit! (dw/select-shape id))
             (st/emit! (dw/deselect-all)
                       (dw/select-shape id)
-                      (start-move-selected))))
+                      start-move-selected)))
         :else
         (do
           (dom/stop-propagation event)
-          (st/emit! (start-move-selected)))))))
+          (st/emit! start-move-selected))))))

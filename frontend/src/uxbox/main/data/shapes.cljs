@@ -372,6 +372,7 @@
   (let [xf (comp (map #(get-in state [:shapes %]))
                  (remove :hidden)
                  (remove :blocked)
+                 (remove #(= :canvas (:type %)))
                  (map geom/selection-rect))
         match (partial try-match-shape xf selrect)
         shapes (get-in state [:pages page-id :shapes])]
