@@ -582,20 +582,19 @@
 
 ;; --- Shape Transformations
 
-(defrecord InitialShapeAlign [id]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [{:keys [x1 y1] :as shape} (->> (get-in state [:shapes id])
-                                         (geom/shape->rect-shape state))
-          point (gpt/point x1 y1)]
-      (->> (uwrk/align-point point)
-           (rx/map (fn [{:keys [x y] :as pt}]
-                     (apply-temporal-displacement id (gpt/subtract pt point))))))))
-
 (defn initial-shape-align
   [id]
   {:pre [(uuid? id)]}
-  (InitialShapeAlign. id))
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [{:keys [x1 y1] :as shape} (->> (get-in state [:shapes id])
+                                           (geom/shape->rect-shape state))
+            point (gpt/point x1 y1)]
+        (->> (uwrk/align-point point)
+             (rx/map (fn [{:keys [x y] :as pt}]
+                       (apply-temporal-displacement id (gpt/subtract pt point)))))))))
+
 
 ;; --- Apply Temporal Displacement
 
