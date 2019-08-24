@@ -51,7 +51,7 @@ We have very precise rules over how our git commit messages can be formatted.
 The commit message format is:
 
 ```
-<type>(<scope>): <subject>
+<type> <subject>
 
 [body]
 
