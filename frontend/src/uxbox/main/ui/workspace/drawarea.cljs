@@ -270,10 +270,7 @@
               zoom (get-in state [:workspace pid :zoom])
               flags (get-in state [:workspace pid :flags])
               align? (refs/alignment-activated? flags)
-
-              stoper (->> (rx/filter stoper-event? stream)
-                          (rx/take 1))
-
+              stoper (rx/filter stoper-event? stream)
               mouse (->> (rx/sample 10 uws/mouse-position)
                          (rx/mapcat #(conditional-align % align?)))]
           (rx/concat

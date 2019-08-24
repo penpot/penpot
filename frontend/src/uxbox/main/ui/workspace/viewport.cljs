@@ -217,29 +217,16 @@
               (let [pt (gpt/point (.-clientX event)
                                   (.-clientY event))
                     pt (translate-point-to-viewport pt)]
-                ;; (prn "viewport:on-mouse-move" pt)
-                (st/emit! (uws/->PointerEvent :viewport pt (kbd/ctrl? event) (kbd/shift? event)))))
-
-
-                ;;     ;; ctrl? (kbd/ctrl? event)
-                ;;     ;; shift? (kbd/shift? event)
-                ;;     ;; event {:ctrl ctrl?
-                ;;     ;;        :shift shift?
-                ;;     ;;        :window-coords wpt
-                ;;     ;;        :viewport-coords vpt}
-                ;;     ]
-                ;; #_(st/emit! (uws/pointer-event wpt vpt ctrl? shift?))))
+                (st/emit! (uws/->PointerEvent :viewport pt
+                                              (kbd/ctrl? event)
+                                              (kbd/shift? event)))))
 
             (on-mount []
-              (prn "viewport.on-mount" (:id page))
-              (let [
-                    ;; key1 (events/listen js/document EventType.MOUSEMOVE on-mousemove)
-                    key2 (events/listen js/document EventType.KEYDOWN on-key-down)
-                    key3 (events/listen js/document EventType.KEYUP on-key-up)]
+              (let [key1 (events/listen js/document EventType.KEYDOWN on-key-down)
+                    key2 (events/listen js/document EventType.KEYUP on-key-up)]
                 (fn []
-                  ;; (events/unlistenByKey key1)
-                  (events/unlistenByKey key2)
-                  (events/unlistenByKey key3))))]
+                  (events/unlistenByKey key1)
+                  (events/unlistenByKey key2))))]
 
       (mf/use-effect on-mount)
       ;; (prn "viewport.render" (:id page))
