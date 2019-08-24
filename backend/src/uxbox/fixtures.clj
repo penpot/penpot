@@ -58,20 +58,20 @@
                     {:id (mk-uuid "page" i)
                      :user (mk-uuid "user" ui)
                      :project (mk-uuid "project" pi)
-                     :data {:canvas [{:id (mk-uuid "canvas" i 1)
+                     :data {:shapes [{:id (mk-uuid "canvas" i 1)
                                       :name "Canvas 1"
+                                      :type :canvas
                                       :x1 200
                                       :y1 200
                                       :x2 1224
                                       :y2 968}
                                      {:id (mk-uuid "canvas" i 2)
                                       :name "Canvas 2"
+                                      :type :canvas
                                       :x1 1324
                                       :y1 200
                                       :x2 2348
-                                      :y2 968}]
-                            :shapes []
-                            :shapes-map {}}
+                                      :y2 968}]}
                      :metadata {:width 1024
                                 :height 768
                                 :layout "tablet"}

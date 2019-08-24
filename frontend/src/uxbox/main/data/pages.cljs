@@ -80,39 +80,27 @@
   "Return a packed version of page object ready
   for send to remore storage service."
   [state id]
-  (letfn [(get-shape [id]
-            (get-in state [:shapes id]))
-          (pack-shapes [ids]
-            (reduce #(assoc %1 %2 (get-shape %2)) {} ids))
-          (pack-canvas [ids]
-            (mapv #(get-in state [:canvas %]) ids))]
+  (letfn [(pack-shapes [ids]
+            (mapv #(get-in state [:shapes %]) ids))]
     (let [page (get-in state [:pages id])
-          data {:canvas (pack-canvas (:canvas page))
-                :shapes (vec (:shapes page))
-                :shapes-map (pack-shapes (:shapes page))}]
+          data {:shapes (pack-shapes (:shapes page))}]
       (-> page
           (assoc :data data)
-          (dissoc :shapes :canvas)))))
+          (dissoc :shapes)))))
 
 (defn unpack-page
   "Unpacks packed page object and assocs it to the
   provided state."
   [state {:keys [id data] :as page}]
-  (let [shapes (:shapes data)
-        shapes-map (:shapes-map data)
-
-        canvas-data (:canvas data [])
-
-        canvas (mapv :id canvas-data)
-        canvas-map (index-by-id canvas-data)
+  (let [shapes-data (:shapes data [])
+        shapes (mapv :id shapes-data)
+        shapes-map (index-by-id shapes-data)
 
         page (-> page
                  (dissoc :data)
-                 (assoc :canvas canvas)
                  (assoc :shapes shapes))]
     (-> state
         (update :shapes merge shapes-map)
-        (update :canvas merge canvas-map)
         (update :pages assoc id page))))
 
 (defn purge-page
