@@ -17,6 +17,7 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.dashboard.projects-forms :refer [create-project-dialog]]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as t :refer [tr]]
@@ -179,6 +180,7 @@
                       (sort-projects-by order))
         on-click #(do
                     (dom/prevent-default %)
+                    (modal/show! create-project-dialog {})
                     #_(udl/open! :create-project))]
     [:section.dashboard-grid
      [:h2 (tr "ds.project-title")]

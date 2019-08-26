@@ -5,14 +5,96 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.forms
+  (:refer-clojure :exclude [uuid])
   (:require
    [beicon.core :as rx]
    [cljs.spec.alpha :as s :include-macros true]
    [cuerdas.core :as str]
    [lentes.core :as l]
    [potok.core :as ptk]
-   [rumext.core :as mx :include-macros true]
+   [rumext.alpha :as mf]
+   [rumext.core :as mx]
+   [struct.core :as stt]
+   [uxbox.util.dom :as dom]
    [uxbox.util.i18n :refer [tr]]))
+
+;; --- Main Api
+
+(defn validate
+  [data spec]
+  (stt/validate data spec))
+
+(defn valid?
+  [data spec]
+  (stt/valid? data spec))
+
+;; --- Handlers Helpers
+
+(defn- impl-mutator
+  [v update-fn]
+  (specify v
+    IReset
+    (-reset! [_ new-value]
+      (update-fn new-value))
+
+    ISwap
+    (-swap!
+      ([self f] (update-fn f))
+      ([self f x] (update-fn #(f % x)))
+      ([self f x y] (update-fn #(f % x y)))
+      ([self f x y more] (update-fn #(apply f % x y more))))))
+
+(defn use-form
+  [{:keys [initial spec] :as opts}]
+  (let [[data update-data] (mf/useState initial)
+        [errors update-errors] (mf/useState nil)
+        [touched update-touched] (mf/useState {})
+        [errors' clean-data] (validate data spec)
+
+        data (impl-mutator data update-data)
+        errors (-> (merge {} errors' errors)
+                   (impl-mutator update-errors))
+        touched (impl-mutator touched update-touched)]
+    {:clean-data clean-data
+     :touched touched
+     :data data
+     :errors errors
+     :valid (not (seq errors))}))
+
+(defn on-input-change
+  [{:keys [data] :as form}]
+  (fn [event]
+    (let [target (dom/get-target event)
+          field (keyword (.-name target))
+          value (dom/get-value target)]
+      (swap! data assoc field value))))
+
+(defn on-input-blur
+  [{:keys [touched] :as form}]
+  (fn [event]
+    (let [target (dom/get-target event)
+          field (keyword (.-name target))]
+      (when-not (get touched field)
+        (swap! touched assoc field true)))))
+
+;; --- Additional Validators
+
+(def non-empty-string
+  {:message "errors.empty-string"
+   :optional true
+   :validate #(not (str/empty? %))})
+
+(def string (assoc stt/string :message "errors.should-be-string"))
+(def number (assoc stt/number :message "errors.should-be-number"))
+(def number-str (assoc stt/number-str :message "errors.should-be-number"))
+(def integer (assoc stt/integer :message "errors.should-be-integer"))
+(def integer-str (assoc stt/integer-str :message "errors.should-be-integer"))
+(def required (assoc stt/required :message "errors.required"))
+(def email (assoc stt/email :message "errors.should-be-valid-email"))
+(def uuid (assoc stt/uuid :message "errors.should-be-uuid"))
+(def uuid-str (assoc stt/uuid-str :message "errors.should-be-valid-uuid"))
+
+;; DEPRECATED
 
 ;; --- Form Validation Api
 
@@ -30,15 +112,16 @@
 
     :else acc))
 
-(defn validate
-  [spec data]
-  (when-not (s/valid? spec data)
-    (let [report (s/explain-data spec data)]
-      (reduce interpret-problem {} (::s/problems report)))))
+;; (defn validate
+;;   [spec data]
+;;   (when-not (s/valid? spec data)
+;;     (let [report (s/explain-data spec data)]
+;;       (reduce interpret-problem {} (::s/problems report)))))
 
-(defn valid?
-  [spec data]
-  (s/valid? spec data))
+;; (defn valid?
+;;   [spec data]
+;;   (s/valid? spec data))
+
 
 ;; --- Form Specs and Conformers
 

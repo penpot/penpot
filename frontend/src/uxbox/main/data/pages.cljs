@@ -9,13 +9,13 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [lentes.core :as l]
    [potok.core :as ptk]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
+   [uxbox.util.data :refer [index-by-id]]
    [uxbox.util.spec :as us]
    [uxbox.util.timers :as ts]
-   [uxbox.util.data :refer [index-by-id]]))
+   [uxbox.util.uuid :as uuid]))
 
 ;; --- Specs
 

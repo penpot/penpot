@@ -7,45 +7,27 @@
 
 (ns uxbox.main.ui.auth.login
   (:require
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [lentes.core :as l]
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.config :as cfg]
    [uxbox.main.data.auth :as da]
    [uxbox.main.store :as st]
    [uxbox.main.ui.messages :refer [messages-widget]]
-   [uxbox.main.ui.navigation :as nav]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
-   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
 
-(def form-data (fm/focus-data :login st/state))
-(def form-errors (fm/focus-errors :login st/state))
-
-(def assoc-value (partial fm/assoc-value :login))
-(def assoc-errors (partial fm/assoc-errors :login))
-(def clear-form (partial fm/clear-form :login))
-
-(s/def ::username ::fm/non-empty-string)
-(s/def ::password ::fm/non-empty-string)
-
-(s/def ::login-form
-  (s/keys :req-un [::username ::password]))
-
-(defn- on-change
-  [event field]
-  (let [value (dom/event->value event)]
-    (st/emit! (assoc-value field value))))
+(def login-form-spec
+  {:username [fm/required fm/string fm/non-empty-string]
+   :password [fm/required fm/string fm/non-empty-string]})
 
 (defn- on-submit
-  [event data]
+  [event form]
   (dom/prevent-default event)
-  (st/emit! (da/login {:username (:username data)
-                       :password (:password data)})))
+  (let [{:keys [username password]} (:clean-data form)]
+    (st/emit! (da/login {:username username
+                         :password password}))))
 
 (mf/defc demo-warning
   [_]
@@ -56,33 +38,37 @@
     [:strong "DO NOT USE"] " for real work, " [:br]
     " the projects will be periodicaly wiped."]])
 
+
 (mf/defc login-form
   []
-  (let [data (mf/deref form-data)
-        valid? (fm/valid? ::login-form data)]
-    [:form {:on-submit #(on-submit % data)}
+  (let [{:keys [data] :as form} (fm/use-form {:initial {}
+                                              :spec login-form-spec})]
+    [:form {:on-submit #(on-submit % form)}
      [:div.login-content
       (when cfg/isdemo
         [:& demo-warning])
+
       [:input.input-text
-       {:name "email"
+       {:name "username"
         :tab-index "2"
         :value (:username data "")
-        :on-change #(on-change % :username)
+        :on-blur (fm/on-input-blur form)
+        :on-change (fm/on-input-change form)
         :placeholder (tr "auth.email-or-username")
         :type "text"}]
       [:input.input-text
        {:name "password"
         :tab-index "3"
         :value (:password data "")
-        :on-change #(on-change % :password)
+        :on-blur (fm/on-input-blur form)
+        :on-change (fm/on-input-change form)
         :placeholder (tr "auth.password")
         :type "password"}]
       [:input.btn-primary
        {:name "login"
         :tab-index "4"
-        :class (when-not valid? "btn-disabled")
-        :disabled (not valid?)
+        :class (when (:errors form) "btn-disabled")
+        :disabled (boolean (:errors form))
         :value (tr "auth.signin")
         :type "submit"}]
       [:div.login-links
@@ -93,12 +79,8 @@
             :tab-index "6"}
         (tr "auth.no-account")]]]]))
 
-
-;; {:mixins [mx/static (fm/clear-mixin st/store :login)]}
-
 (mf/defc login-page
   []
-  (mf/use-effect (constantly #(st/emit! (fm/clear-form :login))))
   [:div.login
    [:div.login-body
     (messages-widget)

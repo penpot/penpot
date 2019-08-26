@@ -7,8 +7,8 @@
 
 (ns uxbox.main.ui.workspace.sidebar.sitemap
   (:require
-   ;; [uxbox.main.data.lightbox :as udl]
-   ;; [uxbox.main.ui.workspace.sidebar.sitemap-pageform]
+   [potok.core :as ptk]
+   [beicon.core :as rx]
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
@@ -19,6 +19,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.modal :as modal]
+   [uxbox.main.ui.workspace.sidebar.sitemap-forms :refer [page-form-dialog]]
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
@@ -30,17 +31,15 @@
 (mf/defc page-item
   [{:keys [page index deletable? selected?] :as props}]
   (letfn [(on-edit [event]
-            #_(udl/open! :page-form {:page page}))
+            (modal/show! page-form-dialog {:page page}))
           (delete []
-            (let [next #(st/emit! (dp/go-to (:project page)))]
-              (st/emit! (udp/delete-page (:id page) next))))
-
+            (st/emit! (dw/delete-page (:id page))))
           (on-delete [event]
             (dom/prevent-default event)
             (dom/stop-propagation event)
             (modal/show! confirm-dialog {:on-accept delete}))
           (on-drop [item monitor]
-            (st/emit! (udp/reorder-pages (:project page))))
+            (st/emit! (udp/rehash-pages (:project page))))
           (on-hover [item monitor]
             (st/emit! (udp/move-page {:project-id (:project-id item)
                                       :page-id (:page-id item)
@@ -99,7 +98,7 @@
                                    :fn #(-> (l/in [:projects project-id])
                                             (l/derive st/state))})
         project (mf/deref project-iref)
-        ;; create #(udl/open! :page-form {:page {:project project-id}})
+        create #(modal/show! page-form-dialog {:page {:project project-id}})
         close #(st/emit! (dw/toggle-flag :sitemap))]
     [:div.sitemap.tool-window
      [:div.tool-window-bar
@@ -109,6 +108,6 @@
      [:div.tool-window-content
       [:div.project-title
        [:span (:name project)]
-       [:div.add-page #_{:on-click create} i/close]]
+       [:div.add-page {:on-click create} i/close]]
       [:& pages-list {:project project
                       :current-page-id current-page-id}]]]))
