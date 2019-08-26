@@ -7,8 +7,6 @@
 
 (ns uxbox.main.ui.workspace.sidebar.sitemap
   (:require
-   [potok.core :as ptk]
-   [beicon.core :as rx]
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
