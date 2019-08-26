@@ -64,7 +64,7 @@
                                       :x1 200
                                       :y1 200
                                       :x2 1224
-                                      :y2 968}]
+                                      :y2 968}]}
                      :metadata {:width 1024
                                 :height 768
                                 :layout "tablet"}
