@@ -900,6 +900,25 @@
   (UnlockShape. id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Pages
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn delete-page
+  [id]
+  {:pre [(uuid? id)]}
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [pid (get-in state [:pages id :project])]
+        (rx/merge
+         (rx/of (udp/delete-page id))
+         (->> stream
+              (rx/filter #(= % ::udp/delete-completed))
+              (rx/map #(dp/go-to pid))
+              (rx/take 1)))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Selection Rect IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

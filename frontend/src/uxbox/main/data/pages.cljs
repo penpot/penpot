@@ -106,16 +106,16 @@
 (defn purge-page
   "Remove page and all related stuff from the state."
   [state id]
-  (let [shapes (get state :shapes)]
+  (let [pid (get-in state [:pages id :project])]
     (-> state
+        (update-in [:projects pid :pages] #(filterv (partial not= id) %))
         (update :pages dissoc id)
         (update :packed-pages dissoc id)
-        (assoc :shapes (reduce-kv (fn [acc k v]
-                                    (if (= (:page v) id)
-                                      (dissoc acc k)
-                                      acc))
-                                  shapes
-                                  shapes)))))
+        (update :shapes (fn [shapes] (->> shapes
+                                          (map second)
+                                          (filter #(= (:page %) id))
+                                          (map :id)
+                                          (apply dissoc shapes)))))))
 
 (defn assoc-packed-page
   [state {:keys [id] :as page}]
@@ -124,6 +124,8 @@
 (defn dissoc-packed-page
   [state id]
   (update state :packed-pages dissoc id))
+
+
 
 ;; --- Pages Fetched
 
@@ -138,8 +140,6 @@
           page-ids (into [] (map :id) pages)]
     (as-> state $
       (assoc-in $ [:projects id :pages] page-ids)
-      ;; TODO: this is a workaround
-      (assoc-in $ [:projects id :page-id] (first page-ids))
       (reduce unpack-page $ pages)
       (reduce assoc-packed-page $ pages)))))
 
@@ -168,18 +168,19 @@
 
 ;; --- Page Created
 
-(declare reorder-pages)
+(declare rehash-pages)
 
 (deftype PageCreated [data]
   ptk/UpdateEvent
   (update [_ state]
-    (-> state
-        (unpack-page data)
-        (assoc-packed-page data)))
+    (let [project-id (:project data)]
+      (-> (update-in state [:projects project-id :pages] conj (:id data))
+          (unpack-page data)
+          (assoc-packed-page data))))
 
   ptk/WatchEvent
   (watch [_ state stream]
-    (rx/of (reorder-pages (:project data)))))
+    (rx/of (rehash-pages (:project data)))))
 
 (s/def ::page-created
   (s/keys :req-un [::id
@@ -192,57 +193,66 @@
   {:pre [(us/valid? ::page-created data)]}
   (PageCreated. data))
 
+(defn page-created?
+  [o]
+  (instance? PageCreated o))
+
 ;; --- Create Page
 
-(deftype CreatePage [name project width height layout]
-  ptk/WatchEvent
-  (watch [this state s]
-    (let [params {:name name
-                  :project project
-                  :data {}
-                  :metadata {:width width
-                             :height height
-                             :layout layout
-                             :order -100}}]
-      (->> (rp/req :create/page params)
-           (rx/map :payload)
-           (rx/map page-created)))))
-
-(s/def ::create-page
+(s/def ::create-page-params
   (s/keys :req-un [::name
                    ::project
                    ::width
-                   ::height
-                   ::layout]))
+                   ::height]))
 
 (defn create-page
   [{:keys [name project width height layout] :as data}]
-  {:pre [(us/valid? ::create-page data)]}
-  (CreatePage. name project width height layout))
+  {:pre [(us/valid? ::create-page-params data)]}
+  (reify
+    ptk/WatchEvent
+    (watch [this state s]
+      (let [canvas {:id (uuid/random)
+                    :name "Canvas 1"
+                    :type :canvas
+                    :x1 200
+                    :y1 200
+                    :x2 (+ 200 width)
+                    :y2 (+ 200 height)}
+            metadata {:width width
+                      :height height
+                      :order -100}
+            params {:name name
+                    :project project
+                    :data {:shapes [canvas]}
+                    :metadata metadata}]
+        (->> (rp/req :create/page params)
+             (rx/map :payload)
+             (rx/map page-created))))))
 
 ;; --- Page Persisted
-
-(deftype PagePersisted [data]
-  IDeref
-  (-deref [_] data)
-
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [{:keys [id version]} data]
-      (-> state
-          (assoc-in [:pages id :version] version)
-          (assoc-packed-page data)))))
-
-(defn- page-persisted?
-  [event]
-  (instance? PagePersisted event))
 
 ;; TODO: add page spec
 
 (defn page-persisted
   [data]
   {:pre [(map? data)]}
-  (PagePersisted. data))
+  (reify
+    cljs.core/IDeref
+    (-deref [_] data)
+
+    ptk/EventType
+    (type [_] ::page-persisted)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [{:keys [id version]} data]
+        (-> state
+            (assoc-in [:pages id :version] version)
+            (assoc-packed-page data))))))
+
+(defn- page-persisted?
+  [event]
+  (= (ptk/type event) ::page-persisted))
 
 ;; --- Persist Page
 
@@ -333,28 +343,27 @@
   {:pre [(uuid? id) (us/valid? ::metadata metadata)]}
   (UpdateMetadata. id metadata))
 
-;; --- Reorder Pages
+;; --- Rehash Pages
 ;;
 ;; A post processing event that normalizes the
 ;; page order numbers after a user sorting
 ;; operation for a concrete project.
 
-(defn reorder-pages
-  [project-id]
-  {:pre [(uuid? project-id)]}
+(defn rehash-pages
+  [id]
+  {:pre [(uuid? id)]}
   (reify
     ptk/UpdateEvent
     (update [this state]
-      (let [page-ids (get-in state [:projects project-id :pages])]
+      (let [page-ids (get-in state [:projects id :pages])]
         (reduce (fn [state [index id]]
                   (assoc-in state [:pages id :metadata :order] index))
-                ;; TODO: this is workaround
-                (assoc-in state [:projects project-id :page-id] (first page-ids))
+                state
                 (map-indexed vector page-ids))))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-ids (get-in state [:projects project-id :pages])]
+      (let [page-ids (get-in state [:projects id :pages])]
         (->> (rx/from-coll page-ids)
              (rx/map persist-metadata))))))
 
@@ -376,39 +385,36 @@
 ;; A specialized event for persist data
 ;; from the update page form.
 
-(deftype PersistPageUpdateForm [id name width height layout]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [page (-> (get-in state [:pages id])
-                   (assoc-in [:name] name)
-                   (assoc-in [:metadata :width] width)
-                   (assoc-in [:metadata :height] height)
-                   (assoc-in [:metadata :layout] layout))]
-      (rx/of (update-page id page)))))
-
-(s/def ::persist-page-update-form
-  (s/keys :req-un [::name ::width ::height ::layout]))
+(s/def ::persist-page-update-form-params
+  (s/keys :req-un [::id ::name ::width ::height]))
 
 (defn persist-page-update-form
-  [id {:keys [name width height layout] :as data}]
-  {:pre [(uuid? id) (us/valid? ::persist-page-update-form data)]}
-  (PersistPageUpdateForm. id name width height layout))
+  [{:keys [id name width height] :as data}]
+  {:pre [(us/valid? ::persist-page-update-form-params data)]}
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page (-> (get-in state [:pages id])
+                     (assoc-in [:name] name)
+                     (assoc-in [:metadata :width] width)
+                     (assoc-in [:metadata :height] height))]
+        (rx/of (update-page id page))))))
+
 
 ;; --- Delete Page (by id)
 
-(deftype DeletePage [id callback]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (letfn [(on-success [_]
-              #(purge-page % id))]
-      (->> (rp/req :delete/page id)
-           (rx/map on-success)
-           (rx/tap callback)
-           (rx/filter identity)))))
-
 (defn delete-page
-  ([id] (DeletePage. id (constantly nil)))
-  ([id callback] (DeletePage. id callback)))
+  [id]
+  {:pre [(uuid? id)]}
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (purge-page state id))
+
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/req :delete/page id)
+           (rx/map (constantly ::delete-completed))))))
 
 ;; --- Watch Page Changes
 
