@@ -8,6 +8,7 @@
   (:require
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
+   [struct.core :as stt]
    [potok.core :as ptk]
    [uxbox.main.repo :as rp]
    [uxbox.util.i18n :as i18n :refer (tr)]
@@ -58,20 +59,15 @@
 
 ;; --- Update Profile
 
-(s/def ::fullname string?)
-(s/def ::email us/email?)
-(s/def ::username string?)
-(s/def ::language string?)
-
-(s/def ::update-profile
-  (s/keys :req-un [::fullname
-                   ::email
-                   ::language
-                   ::username]))
+(stt/defs update-profile-spec
+  {:fullname [stt/required stt/string]
+   :email [stt/required stt/email]
+   :username [stt/required stt/string]
+   :language [stt/required stt/string]})
 
 (defn update-profile
   [data {:keys [on-success on-error]}]
-  {:pre [(us/valid? ::update-profile data)
+  {:pre [(stt/valid? update-profile-spec data)
          (fn? on-error)
          (fn? on-success)]}
   (reify
@@ -85,7 +81,6 @@
                        (assoc :email (:email data))
                        (assoc :username (:username data))
                        (assoc-in [:metadata :language] (:language data)))]
-          (prn "update-profile" data)
           (->> (rp/req :update/profile data)
                (rx/map :payload)
                (rx/do on-success)

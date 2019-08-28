@@ -41,10 +41,12 @@
   (prn "on-error" error form)
   (case (:code error)
     :uxbox.services.users/email-already-exists
-    (swap! form assoc-in [:errors :email] "errors.api.form.email-already-exists")
+    (swap! form assoc-in [:errors :email]
+           {:message "errors.api.form.email-already-exists"})
 
     :uxbox.services.users/username-already-exists
-    (swap! form assoc-in [:errors :username] "errors.api.form.username-already-exists")))
+    (swap! form assoc-in [:errors :username]
+           {:message "errors.api.form.username-already-exists"})))
 
 (defn- initial-data
   []

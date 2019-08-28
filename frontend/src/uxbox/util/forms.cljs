@@ -44,9 +44,29 @@
       ([self f x y] (update-fn #(f % x y)))
       ([self f x y more] (update-fn #(apply f % x y more))))))
 
-(defn- simplify-errors
+(defn- translate-error-type
+  [type]
+  (case type
+    ::stt/string "errors.should-be-string"
+    ::stt/number "errors.should-be-number"
+    ::stt/number-str "errors.should-be-number"
+    ::stt/integer "errors.should-be-integer"
+    ::stt/integer-str "errors.should-be-integer"
+    ::stt/required "errors.required"
+    ::stt/email "errors.should-be-valid-email"
+    ::stt/uuid "errors.should-be-uuid"
+    ::stt/uuid-str "errors.should-be-valid-uuid"
+    "errors.undefined-error"))
+
+(defn- translate-errors
   [errors]
-  (reduce-kv #(assoc %1 %2 (:message %3)) {} errors))
+  (reduce-kv (fn [acc key val]
+               (if (string? (:message val))
+                 (assoc acc key val)
+                 (->> (translate-error-type (:type val))
+                      (assoc val :message)
+                      (assoc acc key))))
+             {} errors))
 
 (defn use-form
   [{:keys [initial spec] :as opts}]
@@ -54,7 +74,7 @@
                                            :errors {}
                                            :touched {}})
         [errors' clean-data] (validate spec (:data state))
-        errors (merge (reduce-kv #(assoc %1 %2 (:message %3)) {} errors')
+        errors (merge (translate-errors errors')
                       (:errors state))]
     (-> (assoc state
                :errors errors
@@ -86,11 +106,16 @@
 (mf/defc error-input
   [{:keys [form field] :as props}]
   (let [touched? (get-in form [:touched field])
-        error? (get-in form [:errors field])]
-    (when (and touched? error?)
+        error (get-in form [:errors field])]
+    (when (and touched? error)
       [:ul.form-errors
-       [:li {:key error?} (tr error?)]])))
+       [:li {:key (:type error)} (tr (:message error))]])))
 
+(defn error-class
+  [form field]
+  (when (and (get-in form [:errors field])
+             (get-in form [:touched field]))
+    "invalid"))
 
 ;; --- Additional Validators
 
@@ -297,11 +322,6 @@
   (when-let [error (get errors field)]
     [:ul.form-errors
      [:li {:key error} (tr error)]]))
-
-(defn error-class
-  [errors field]
-  (when (get errors field)
-    "invalid"))
 
 (defn clear-mixin
   [store type]
