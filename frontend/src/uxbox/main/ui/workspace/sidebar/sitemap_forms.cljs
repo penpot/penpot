@@ -20,7 +20,7 @@
 (def page-form-spec
   {:id [fm/uuid]
    :project [fm/uuid]
-   :name [fm/required fm/string fm/non-empty-string]
+   :name [fm/required fm/string]
    :width [fm/required fm/number-str]
    :height [fm/required fm/number-str]})
 
@@ -59,8 +59,8 @@
       {:placeholder "Page name"
        :type "text"
        :name "name"
-       :on-blur (fm/on-input-blur form)
-       :on-change (fm/on-input-change form)
+       :on-blur (fm/on-input-blur form :name)
+       :on-change (fm/on-input-change form :name)
        :value (:name data)
        :auto-focus true}]
      [:div.project-size
@@ -72,8 +72,8 @@
          :type "number"
          :min 0
          :max 5000
-         :on-blur (fm/on-input-blur form)
-         :on-change (fm/on-input-change form)
+         :on-blur (fm/on-input-blur form :width)
+         :on-change (fm/on-input-change form :width)
          :value (:width data)}]]
       [:a.toggle-layout {:on-click #(swap-size % form)} i/toggle]
       [:div.input-element.pixels
@@ -84,8 +84,8 @@
          :type "number"
          :min 0
          :max 5000
-         :on-blur (fm/on-input-blur form)
-         :on-change (fm/on-input-change form)
+         :on-blur (fm/on-input-blur form :height)
+         :on-change (fm/on-input-change form :height)
          :value (:height data)}]]]
      [:input.btn-primary
       {:value "Go go go!"

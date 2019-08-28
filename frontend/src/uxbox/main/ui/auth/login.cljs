@@ -8,6 +8,7 @@
 (ns uxbox.main.ui.auth.login
   (:require
    [rumext.alpha :as mf]
+   [struct.core :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.config :as cfg]
    [uxbox.main.data.auth :as da]
@@ -18,9 +19,9 @@
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
 
-(def login-form-spec
-  {:username [fm/required fm/string fm/non-empty-string]
-   :password [fm/required fm/string fm/non-empty-string]})
+(s/defs login-form-spec
+  {:username [fm/required fm/string]
+   :password [fm/required fm/string]})
 
 (defn- on-submit
   [event form]
@@ -41,8 +42,7 @@
 
 (mf/defc login-form
   []
-  (let [{:keys [data] :as form} (fm/use-form {:initial {}
-                                              :spec login-form-spec})]
+  (let [{:keys [data] :as form} (fm/use-form {:initial {} :spec login-form-spec})]
     [:form {:on-submit #(on-submit % form)}
      [:div.login-content
       (when cfg/isdemo
@@ -52,25 +52,26 @@
        {:name "username"
         :tab-index "2"
         :value (:username data "")
-        :on-blur (fm/on-input-blur form)
-        :on-change (fm/on-input-change form)
+        :on-blur (fm/on-input-blur form :username)
+        :on-change (fm/on-input-change form :username)
         :placeholder (tr "auth.email-or-username")
         :type "text"}]
       [:input.input-text
        {:name "password"
         :tab-index "3"
         :value (:password data "")
-        :on-blur (fm/on-input-blur form)
-        :on-change (fm/on-input-change form)
+        :on-blur (fm/on-input-blur form :password)
+        :on-change (fm/on-input-change form :password)
         :placeholder (tr "auth.password")
         :type "password"}]
       [:input.btn-primary
        {:name "login"
         :tab-index "4"
-        :class (when (:errors form) "btn-disabled")
-        :disabled (boolean (:errors form))
+        :class (when-not (:valid form) "btn-disabled")
+        :disabled (not (:valid form))
         :value (tr "auth.signin")
         :type "submit"}]
+
       [:div.login-links
        [:a {:on-click #(st/emit! (rt/nav :auth/recovery-request))
             :tab-index "5"}

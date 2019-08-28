@@ -18,7 +18,7 @@
    [uxbox.util.i18n :as t :refer [tr]]))
 
 (def project-form-spec
-  {:name [fm/required fm/string fm/non-empty-string]
+  {:name [fm/required fm/string]
    :width [fm/required fm/number-str]
    :height [fm/required fm/number-str]})
 
@@ -51,8 +51,8 @@
        :type "text"
        :name "name"
        :value (:name data)
-       :on-blur (fm/on-input-blur form)
-       :on-change (fm/on-input-change form)
+       :on-blur (fm/on-input-blur form :name)
+       :on-change (fm/on-input-change form :name)
        :auto-focus true}]
      [:div.project-size
       [:div.input-element.pixels
@@ -63,8 +63,8 @@
          :type "number"
          :min 0
          :max 5000
-         :on-blur (fm/on-input-blur form)
-         :on-change (fm/on-input-change form)
+         :on-blur (fm/on-input-blur form :width)
+         :on-change (fm/on-input-change form :width)
          :value (:width data)}]]
       [:a.toggle-layout {:on-click #(swap-size % form)} i/toggle]
       [:div.input-element.pixels
@@ -75,8 +75,8 @@
          :name "height"
          :min 0
          :max 5000
-         :on-blur (fm/on-input-blur form)
-         :on-change (fm/on-input-change form)
+         :on-blur (fm/on-input-blur form :height)
+         :on-change (fm/on-input-change form :height)
          :value (:height data)}]]]
 
      ;; Submit

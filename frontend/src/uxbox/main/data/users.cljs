@@ -7,11 +7,10 @@
 (ns uxbox.main.data.users
   (:require
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [struct.core :as stt]
+   [struct.core :as s]
    [potok.core :as ptk]
    [uxbox.main.repo :as rp]
-   [uxbox.util.i18n :as i18n :refer (tr)]
+   [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.messages :as uum]
    [uxbox.util.spec :as us]
    [uxbox.util.storage :refer [storage]]))
@@ -59,15 +58,15 @@
 
 ;; --- Update Profile
 
-(stt/defs update-profile-spec
-  {:fullname [stt/required stt/string]
-   :email [stt/required stt/email]
-   :username [stt/required stt/string]
-   :language [stt/required stt/string]})
+(s/defs update-profile-spec
+  {:fullname [s/required s/string]
+   :email [s/required s/email]
+   :username [s/required s/string]
+   :language [s/required s/string]})
 
 (defn update-profile
   [data {:keys [on-success on-error]}]
-  {:pre [(stt/valid? update-profile-spec data)
+  {:pre [(s/valid? update-profile-spec data)
          (fn? on-error)
          (fn? on-success)]}
   (reify
@@ -90,33 +89,28 @@
 
 ;; --- Update Password (Form)
 
-(deftype UpdatePassword [data on-success on-error]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [params {:old-password (:password-old data)
-                  :password (:password-1 data)}]
-      (->> (rp/req :update/profile-password params)
-           (rx/catch rp/client-error? (fn [e]
-                                        (on-error (:payload e))
-                                        (rx/empty)))
-           (rx/do on-success)
-           (rx/ignore)))))
-
-(s/def ::password-1 string?)
-(s/def ::password-2 string?)
-(s/def ::password-old string?)
-
-(s/def ::update-password
-  (s/keys :req-un [::password-1
-                   ::password-2
-                   ::password-old]))
+(s/defs update-password-spec
+  {:password-1 [s/required s/string]
+   :password-2 [s/required s/string [s/identical-to :password-1]]
+   :password-old [s/required s/string]})
 
 (defn update-password
-  [data & {:keys [on-success on-error]}]
-  {:pre [(us/valid? ::update-password data)
+  [data {:keys [on-success on-error]}]
+  {:pre [(s/valid? update-password-spec data)
          (fn? on-success)
          (fn? on-error)]}
-  (UpdatePassword. data on-success on-error))
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [params {:old-password (:password-old data)
+                    :password (:password-1 data)}]
+        (->> (rp/req :update/profile-password params)
+             (rx/catch rp/client-error? (fn [e]
+                                          (on-error (:payload e))
+                                          (rx/empty)))
+             (rx/do on-success)
+             (rx/ignore))))))
+
 
 ;; --- Update Photo
 

@@ -14,7 +14,7 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [rumext.core :as mx]
-   [struct.core :as stt]
+   [struct.core :as st]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :refer [tr]]))
 
@@ -22,11 +22,11 @@
 
 (defn validate
   [data spec]
-  (stt/validate data spec))
+  (st/validate data spec))
 
 (defn valid?
   [data spec]
-  (stt/valid? data spec))
+  (st/valid? data spec))
 
 ;; --- Handlers Helpers
 
@@ -45,17 +45,16 @@
       ([self f x y more] (update-fn #(apply f % x y more))))))
 
 (defn- translate-error-type
-  [type]
-  (case type
-    ::stt/string "errors.should-be-string"
-    ::stt/number "errors.should-be-number"
-    ::stt/number-str "errors.should-be-number"
-    ::stt/integer "errors.should-be-integer"
-    ::stt/integer-str "errors.should-be-integer"
-    ::stt/required "errors.required"
-    ::stt/email "errors.should-be-valid-email"
-    ::stt/uuid "errors.should-be-uuid"
-    ::stt/uuid-str "errors.should-be-valid-uuid"
+  [code]
+  (case code
+    ::st/string "errors.form.string"
+    ::st/number "errors.form.number"
+    ::st/number-str "errors.form.number"
+    ::st/integer "errors.form.integer"
+    ::st/integer-str "errors.form.integer"
+    ::st/required "errors.form.required"
+    ::st/email "errors.form.email"
+    ::st/identical-to "errors.form.does-not-match"
     "errors.undefined-error"))
 
 (defn- translate-errors
@@ -63,7 +62,7 @@
   (reduce-kv (fn [acc key val]
                (if (string? (:message val))
                  (assoc acc key val)
-                 (->> (translate-error-type (:type val))
+                 (->> (translate-error-type (:code val))
                       (assoc val :message)
                       (assoc acc key))))
              {} errors))
@@ -73,8 +72,8 @@
   (let [[state update-state] (mf/useState {:data (if (fn? initial) (initial) initial)
                                            :errors {}
                                            :touched {}})
-        [errors' clean-data] (validate spec (:data state))
-        errors (merge (translate-errors errors')
+        [errors clean-data] (validate spec (:data state))
+        errors (merge (translate-errors errors)
                       (:errors state))]
     (-> (assoc state
                :errors errors
@@ -83,10 +82,9 @@
         (impl-mutator update-state))))
 
 (defn on-input-change
-  [{:keys [data] :as form}]
+  [{:keys [data] :as form} field]
   (fn [event]
     (let [target (dom/get-target event)
-          field (keyword (.-name target))
           value (dom/get-value target)]
       (swap! form (fn [state]
                     (-> state
@@ -94,22 +92,28 @@
                         (update :errors dissoc field)))))))
 
 (defn on-input-blur
-  [{:keys [touched] :as form}]
+  [{:keys [touched] :as form} field]
   (fn [event]
-    (let [target (dom/get-target event)
-          field (keyword (.-name target))]
+    (let [target (dom/get-target event)]
       (when-not (get touched field)
         (swap! form assoc-in [:touched field] true)))))
 
 ;; --- Helper Components
 
-(mf/defc error-input
-  [{:keys [form field] :as props}]
+(mf/defc field-error
+  [{:keys [form field type]
+    :or {only (constantly true)}
+    :as props}]
   (let [touched? (get-in form [:touched field])
-        error (get-in form [:errors field])]
-    (when (and touched? error)
+        {:keys [message code] :as error} (get-in form [:errors field])]
+    (when (and touched? error
+               (cond
+                 (nil? type) true
+                 (ifn? type) (type (:type error))
+                 (keyword? type) (= (:type error) type)
+                 :else false))
       [:ul.form-errors
-       [:li {:key (:type error)} (tr (:message error))]])))
+       [:li {:key code} (tr message)]])))
 
 (defn error-class
   [form field]
@@ -119,49 +123,19 @@
 
 ;; --- Additional Validators
 
-(def non-empty-string
-  {:message "errors.empty-string"
-   :optional true
-   :validate #(not (str/empty? %))})
-
-(def string (assoc stt/string :message "errors.should-be-string"))
-(def number (assoc stt/number :message "errors.should-be-number"))
-(def number-str (assoc stt/number-str :message "errors.should-be-number"))
-(def integer (assoc stt/integer :message "errors.should-be-integer"))
-(def integer-str (assoc stt/integer-str :message "errors.should-be-integer"))
-(def required (assoc stt/required :message "errors.required"))
-(def email (assoc stt/email :message "errors.should-be-valid-email"))
-(def uuid (assoc stt/uuid :message "errors.should-be-uuid"))
-(def uuid-str (assoc stt/uuid-str :message "errors.should-be-valid-uuid"))
+(def string (assoc st/string :message "errors.should-be-string"))
+(def number (assoc st/number :message "errors.should-be-number"))
+(def number-str (assoc st/number-str :message "errors.should-be-number"))
+(def integer (assoc st/integer :message "errors.should-be-integer"))
+(def integer-str (assoc st/integer-str :message "errors.should-be-integer"))
+(def required (assoc st/required :message "errors.required"))
+(def email (assoc st/email :message "errors.should-be-valid-email"))
+(def uuid (assoc st/uuid :message "errors.should-be-uuid"))
+(def uuid-str (assoc st/uuid-str :message "errors.should-be-valid-uuid"))
 
 ;; DEPRECATED
 
 ;; --- Form Validation Api
-
-(defn- interpret-problem
-  [acc {:keys [path pred val via in] :as problem}]
-  (cond
-    (and (empty? path)
-         (= (first pred) 'contains?))
-    (let [path (conj path (last pred))]
-      (update-in acc path assoc :missing))
-
-    (and (seq path)
-         (= 1 (count path)))
-    (update-in acc path assoc :invalid)
-
-    :else acc))
-
-;; (defn validate
-;;   [spec data]
-;;   (when-not (s/valid? spec data)
-;;     (let [report (s/explain-data spec data)]
-;;       (reduce interpret-problem {} (::s/problems report)))))
-
-;; (defn valid?
-;;   [spec data]
-;;   (s/valid? spec data))
-
 
 ;; --- Form Specs and Conformers
 

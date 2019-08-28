@@ -7,15 +7,15 @@
 
 (ns uxbox.main.ui.settings.profile
   (:require
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [struct.core :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
-   [uxbox.util.dom :as dom]
    [uxbox.util.data :refer [read-string]]
+   [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.interop :refer [iterable->seq]]))
@@ -30,23 +30,25 @@
   (-> (l/key :profile)
       (l/derive st/state)))
 
-(def profile-form-spec
-  {:fullname [fm/required fm/string fm/non-empty-string]
-   :username [fm/required fm/string fm/non-empty-string]
+(s/defs profile-form-spec
+  {:fullname [fm/required fm/string]
+   :username [fm/required fm/string]
    :email    [fm/required fm/email]
    :language [fm/required fm/string]})
 
 (defn- on-error
-  [error {:keys [errors] :as form}]
+  [error form]
   (prn "on-error" error form)
   (case (:code error)
     :uxbox.services.users/email-already-exists
     (swap! form assoc-in [:errors :email]
-           {:message "errors.api.form.email-already-exists"})
+           {:type ::api
+            :message "errors.api.form.email-already-exists"})
 
     :uxbox.services.users/username-already-exists
     (swap! form assoc-in [:errors :username]
-           {:message "errors.api.form.username-already-exists"})))
+           {:type ::api
+            :message "errors.api.form.username-already-exists"})))
 
 (defn- initial-data
   []
@@ -66,39 +68,53 @@
   [props]
   (let [{:keys [data] :as form} (fm/use-form {:initial initial-data
                                               :spec profile-form-spec})]
+    (prn "profile-form" form)
     [:form.profile-form {:on-submit #(on-submit % form)}
      [:span.user-settings-label (tr "settings.profile.section-basic-data")]
      [:input.input-text
       {:type "text"
        :name "fullname"
-       :on-blur (fm/on-input-blur form)
-       :on-change (fm/on-input-change form)
+       :class (fm/error-class form :fullname)
+       :on-blur (fm/on-input-blur form :fullname)
+       :on-change (fm/on-input-change form :fullname)
        :value (:fullname data "")
        :placeholder (tr "settings.profile.your-name")}]
-     [:& fm/error-input {:form form :field :fullname}]
+
+     [:& fm/field-error {:form form
+                         :type #{::api}
+                         :field :fullname}]
      [:input.input-text
       {:type "text"
        :name "username"
-       :on-blur (fm/on-input-blur form)
-       :on-change (fm/on-input-change form)
+       :class (fm/error-class form :username)
+       :on-blur (fm/on-input-blur form :username)
+       :on-change (fm/on-input-change form :username)
        :value (:username data "")
        :placeholder (tr "settings.profile.your-username")}]
-     [:& fm/error-input {:form form :field :username}]
+
+     [:& fm/field-error {:form form
+                         :type #{::api}
+                         :field :username}]
 
      [:input.input-text
       {:type "email"
        :name "email"
-       :on-blur (fm/on-input-blur form)
-       :on-change (fm/on-input-change form)
+       :class (fm/error-class form :email)
+       :on-blur (fm/on-input-blur form :email)
+       :on-change (fm/on-input-change form :email)
        :value (:email data "")
        :placeholder (tr "settings.profile.your-email")}]
-     [:& fm/error-input {:form form :field :email}]
+
+     [:& fm/field-error {:form form
+                         :type #{::api}
+                         :field :email}]
 
      [:span.user-settings-label (tr "settings.profile.section-i18n-data")]
      [:select.input-select {:value (:language data)
                             :name "language"
-                            :on-blur (fm/on-input-blur form)
-                            :on-change (fm/on-input-change form)}
+                            :class (fm/error-class form :language)
+                            :on-blur (fm/on-input-blur form :language)
+                            :on-change (fm/on-input-change form :language)}
       [:option {:value "en"} "English"]
       [:option {:value "fr"} "Français"]]
 
