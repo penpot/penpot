@@ -17,21 +17,19 @@
 
 ;; --- Profile Fetched
 
-(deftype ProfileFetched [data]
-  ptk/UpdateEvent
-  (update [this state]
-    (assoc state :profile data))
-
-  ptk/EffectEvent
-  (effect [this state stream]
-    (swap! storage assoc :profile data)
-    ;; (prn "profile-fetched" data)
-    (when-let [lang (get-in data [:metadata :language])]
-      (i18n/set-current-locale! lang))))
-
 (defn profile-fetched
   [data]
-  (ProfileFetched. data))
+  (reify
+    ptk/UpdateEvent
+    (update [this state]
+      (assoc state :profile data))
+
+    ptk/EffectEvent
+    (effect [this state stream]
+      (swap! storage assoc :profile data)
+      ;; (prn "profile-fetched" data)
+      (when-let [lang (get-in data [:metadata :language])]
+        (i18n/set-current-locale! lang)))))
 
 ;; --- Fetch Profile
 
@@ -60,24 +58,6 @@
 
 ;; --- Update Profile
 
-(deftype UpdateProfile [data on-success on-error]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (letfn [(handle-error [{payload :payload}]
-              (on-error payload)
-              (rx/empty))]
-      (let [data (-> (:profile state)
-                     (assoc :fullname (:fullname data))
-                     (assoc :email (:email data))
-                     (assoc :username (:username data))
-                     (assoc-in [:metadata :language] (:language data)))]
-        (prn "update-profile" data)
-        (->> (rp/req :update/profile data)
-             (rx/map :payload)
-             (rx/do on-success)
-             (rx/map profile-updated)
-             (rx/catch rp/client-error? handle-error))))))
-
 (s/def ::fullname string?)
 (s/def ::email us/email?)
 (s/def ::username string?)
@@ -90,11 +70,28 @@
                    ::username]))
 
 (defn update-profile
-  [data on-success on-error]
+  [data {:keys [on-success on-error]}]
   {:pre [(us/valid? ::update-profile data)
          (fn? on-error)
          (fn? on-success)]}
-  (UpdateProfile. data on-success on-error))
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (letfn [(handle-error [{payload :payload}]
+                (on-error payload)
+                (rx/empty))]
+        (let [data (-> (:profile state)
+                       (assoc :fullname (:fullname data))
+                       (assoc :email (:email data))
+                       (assoc :username (:username data))
+                       (assoc-in [:metadata :language] (:language data)))]
+          (prn "update-profile" data)
+          (->> (rp/req :update/profile data)
+               (rx/map :payload)
+               (rx/do on-success)
+               (rx/map profile-updated)
+               ;; (rx/map profile-fetched)
+               (rx/catch rp/client-error? handle-error)))))))
 
 ;; --- Update Password (Form)
 

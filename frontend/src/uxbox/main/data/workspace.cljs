@@ -21,7 +21,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.workers :as uwrk]
-   [uxbox.util.data :refer [dissoc-in index-of seek]]
+   [uxbox.util.data :refer [dissoc-in index-of]]
    [uxbox.util.forms :as sc]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]

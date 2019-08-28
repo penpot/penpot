@@ -44,22 +44,23 @@
       ([self f x y] (update-fn #(f % x y)))
       ([self f x y more] (update-fn #(apply f % x y more))))))
 
+(defn- simplify-errors
+  [errors]
+  (reduce-kv #(assoc %1 %2 (:message %3)) {} errors))
+
 (defn use-form
   [{:keys [initial spec] :as opts}]
-  (let [[data update-data] (mf/useState initial)
-        [errors update-errors] (mf/useState nil)
-        [touched update-touched] (mf/useState {})
-        [errors' clean-data] (validate data spec)
-
-        data (impl-mutator data update-data)
-        errors (-> (merge {} errors' errors)
-                   (impl-mutator update-errors))
-        touched (impl-mutator touched update-touched)]
-    {:clean-data clean-data
-     :touched touched
-     :data data
-     :errors errors
-     :valid (not (seq errors))}))
+  (let [[state update-state] (mf/useState {:data (if (fn? initial) (initial) initial)
+                                           :errors {}
+                                           :touched {}})
+        [errors' clean-data] (validate spec (:data state))
+        errors (merge (reduce-kv #(assoc %1 %2 (:message %3)) {} errors')
+                      (:errors state))]
+    (-> (assoc state
+               :errors errors
+               :clean-data clean-data
+               :valid (not (seq errors)))
+        (impl-mutator update-state))))
 
 (defn on-input-change
   [{:keys [data] :as form}]
@@ -67,7 +68,10 @@
     (let [target (dom/get-target event)
           field (keyword (.-name target))
           value (dom/get-value target)]
-      (swap! data assoc field value))))
+      (swap! form (fn [state]
+                    (-> state
+                        (assoc-in [:data field] value)
+                        (update :errors dissoc field)))))))
 
 (defn on-input-blur
   [{:keys [touched] :as form}]
@@ -75,7 +79,18 @@
     (let [target (dom/get-target event)
           field (keyword (.-name target))]
       (when-not (get touched field)
-        (swap! touched assoc field true)))))
+        (swap! form assoc-in [:touched field] true)))))
+
+;; --- Helper Components
+
+(mf/defc error-input
+  [{:keys [form field] :as props}]
+  (let [touched? (get-in form [:touched field])
+        error? (get-in form [:errors field])]
+    (when (and touched? error?)
+      [:ul.form-errors
+       [:li {:key error?} (tr error?)]])))
+
 
 ;; --- Additional Validators
 

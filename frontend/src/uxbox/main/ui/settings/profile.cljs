@@ -20,14 +20,6 @@
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.interop :refer [iterable->seq]]))
 
-
-(def form-data (fm/focus-data :profile st/state))
-(def form-errors (fm/focus-errors :profile st/state))
-
-(def assoc-value (partial fm/assoc-value :profile))
-(def assoc-error (partial fm/assoc-error :profile))
-(def clear-form (partial fm/clear-form :profile))
-
 (defn profile->form
   [profile]
   (let [language (get-in profile [:metadata :language])]
@@ -35,80 +27,84 @@
         (cond-> language (assoc :language language)))))
 
 (def profile-ref
-  (-> (comp (l/key :profile)
-            (l/lens profile->form))
+  (-> (l/key :profile)
       (l/derive st/state)))
 
-(s/def ::fullname ::fm/non-empty-string)
-(s/def ::username ::fm/non-empty-string)
-(s/def ::email ::fm/email)
-(s/def ::language #{"en" "fr"})
-
-(s/def ::profile-form
-  (s/keys :req-un [::fullname
-                   ::username
-                   ::language
-                   ::email]))
+(def profile-form-spec
+  {:fullname [fm/required fm/string fm/non-empty-string]
+   :username [fm/required fm/string fm/non-empty-string]
+   :email    [fm/required fm/email]
+   :language [fm/required fm/string]})
 
 (defn- on-error
-  [{:keys [code] :as payload}]
-  (case code
-    :uxbox.services.users/registration-disabled
-    (st/emit! (tr "errors.api.form.registration-disabled"))
+  [error {:keys [errors] :as form}]
+  (prn "on-error" error form)
+  (case (:code error)
     :uxbox.services.users/email-already-exists
-    (st/emit! (assoc-error :email (tr "errors.api.form.email-already-exists")))
-    :uxbox.services.users/username-already-exists
-    (st/emit! (assoc-error :username (tr "errors.api.form.username-already-exists")))))
+    (swap! form assoc-in [:errors :email] "errors.api.form.email-already-exists")
 
-(defn- on-field-change
-  [event field]
-  (let [value (dom/event->value event)]
-    (st/emit! (assoc-value field value))))
+    :uxbox.services.users/username-already-exists
+    (swap! form assoc-in [:errors :username] "errors.api.form.username-already-exists")))
+
+(defn- initial-data
+  []
+  (merge {:language @i18n/locale}
+         (profile->form (deref profile-ref))))
+
+(defn- on-submit
+  [event form]
+  (dom/prevent-default event)
+  (let [data (:clean-data form)
+        opts {:on-success #(prn "On Success" %)
+              :on-error #(on-error % form)}]
+    (st/emit! (udu/update-profile data opts))))
 
 ;; --- Profile Form
-(mf/def profile-form
-  :mixins [mf/memo mf/reactive (fm/clear-mixin st/store :profile)]
-  :render
-  (fn [own props]
-    (let [data (merge {:language @i18n/locale}
-                      (mf/react profile-ref)
-                      (mf/react form-data))
-          errors (mf/react form-errors)
-          valid? (fm/valid? ::profile-form data)
-          on-success #(st/emit! (clear-form))
-          on-submit #(st/emit! (udu/update-profile data on-success on-error))]
-      [:form.profile-form
-       [:span.user-settings-label (tr "settings.profile.section-basic-data")]
-       [:input.input-text
-        {:type "text"
-         :on-change #(on-field-change % :fullname)
-         :value (:fullname data "")
-         :placeholder (tr "settings.profile.your-name")}]
-       [:input.input-text
-        {:type "text"
-         :on-change #(on-field-change % :username)
-         :value (:username data "")
-         :placeholder (tr "settings.profile.your-username")}]
-       (fm/input-error errors :username)
-       [:input.input-text
-        {:type "email"
-         :on-change #(on-field-change % :email)
-         :value (:email data "")
-         :placeholder (tr "settings.profile.your-email")}]
-       (fm/input-error errors :email)
+(mf/defc profile-form
+  [props]
+  (let [{:keys [data] :as form} (fm/use-form {:initial initial-data
+                                              :spec profile-form-spec})]
+    [:form.profile-form {:on-submit #(on-submit % form)}
+     [:span.user-settings-label (tr "settings.profile.section-basic-data")]
+     [:input.input-text
+      {:type "text"
+       :name "fullname"
+       :on-blur (fm/on-input-blur form)
+       :on-change (fm/on-input-change form)
+       :value (:fullname data "")
+       :placeholder (tr "settings.profile.your-name")}]
+     [:& fm/error-input {:form form :field :fullname}]
+     [:input.input-text
+      {:type "text"
+       :name "username"
+       :on-blur (fm/on-input-blur form)
+       :on-change (fm/on-input-change form)
+       :value (:username data "")
+       :placeholder (tr "settings.profile.your-username")}]
+     [:& fm/error-input {:form form :field :username}]
 
-       [:span.user-settings-label (tr "settings.profile.section-i18n-data")]
-       [:select.input-select {:value (:language data)
-                              :on-change #(on-field-change % :language)}
-        [:option {:value "en"} "English"]
-        [:option {:value "fr"} "Français"]]
+     [:input.input-text
+      {:type "email"
+       :name "email"
+       :on-blur (fm/on-input-blur form)
+       :on-change (fm/on-input-change form)
+       :value (:email data "")
+       :placeholder (tr "settings.profile.your-email")}]
+     [:& fm/error-input {:form form :field :email}]
 
-       [:input.btn-primary
-        {:type "button"
-         :class (when-not valid? "btn-disabled")
-         :disabled (not valid?)
-         :on-click on-submit
-         :value (tr "settings.update-settings")}]])))
+     [:span.user-settings-label (tr "settings.profile.section-i18n-data")]
+     [:select.input-select {:value (:language data)
+                            :name "language"
+                            :on-blur (fm/on-input-blur form)
+                            :on-change (fm/on-input-change form)}
+      [:option {:value "en"} "English"]
+      [:option {:value "fr"} "Français"]]
+
+     [:input.btn-primary
+      {:type "submit"
+       :class (when-not (:valid form) "btn-disabled")
+       :disabled (not (:valid form))
+       :value (tr "settings.update-settings")}]]))
 
 ;; --- Profile Photo Form
 
@@ -121,7 +117,7 @@
                            (first))]
               (st/emit! (udu/update-photo file))
               (dom/clean-value! target)))]
-    (let [{:keys [photo]} (mf/deref profile-ref)
+    (let [{:keys [photo] :as profile} (mf/deref profile-ref)
           photo (if (or (str/empty? photo) (nil? photo))
                   "images/avatar.jpg"
                   photo)]
@@ -139,4 +135,4 @@
    [:section.user-settings-content
     [:span.user-settings-label (tr "settings.profile.your-avatar")]
     [:& profile-photo-form]
-    (profile-form)]])
+    [:& profile-form]]])
