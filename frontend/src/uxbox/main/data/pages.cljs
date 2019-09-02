@@ -241,7 +241,6 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (prn "page-persisted" data)
       (let [{:keys [id version]} data]
         (-> state
             (assoc-in [:pages id :version] version)
@@ -263,7 +262,6 @@
 
      ptk/WatchEvent
      (watch [this state s]
-       (prn "persist-page" id)
        (let [page (get-in state [:pages id])]
          (if (:history page)
            (rx/empty)
