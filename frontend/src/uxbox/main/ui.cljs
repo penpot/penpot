@@ -92,12 +92,12 @@
   (let [route (mf/deref route-iref)]
     (case (get-in route [:data :name])
       :auth/login (mf/element auth/login-page)
-      :auth/register (auth/register-page)
-      :auth/recovery-request (auth/recovery-request-page)
+      :auth/register (mf/element auth/register-page)
+      ;; :auth/recovery-request (auth/recovery-request-page)
 
-      :auth/recovery
-      (let [token (get-in route [:params :path :token])]
-        (auth/recovery-page token))
+      ;; :auth/recovery
+      ;; (let [token (get-in route [:params :path :token])]
+      ;;   (auth/recovery-page token))
 
       (:settings/profile
        :settings/password

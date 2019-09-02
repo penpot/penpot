@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.dashboard.projects-forms
   (:require
-   [cljs.spec.alpha :as s]
+   [struct.alpha :as s]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.projects :as udp]
@@ -17,10 +17,10 @@
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :as t :refer [tr]]))
 
-(def project-form-spec
-  {:name [fm/required fm/string]
-   :width [fm/required fm/number-str]
-   :height [fm/required fm/number-str]})
+(s/defs ::project-form
+  (s/dict :name (s/&& ::s/string ::fm/not-empty-string)
+          :width ::s/number-str
+          :height ::s/number-str))
 
 (def defaults
   {:name ""
@@ -44,13 +44,14 @@
 
 (mf/defc create-project-form
   [props]
-  (let [{:keys [data errors] :as form} (fm/use-form {:initial defaults :spec project-form-spec})]
+  (let [{:keys [data] :as form} (fm/use-form ::project-form defaults)]
     [:form {:on-submit #(on-submit % form)}
      [:input.input-text
       {:placeholder "New project name"
        :type "text"
        :name "name"
        :value (:name data)
+       :class (fm/error-class form :name)
        :on-blur (fm/on-input-blur form :name)
        :on-change (fm/on-input-change form :name)
        :auto-focus true}]
@@ -63,6 +64,7 @@
          :type "number"
          :min 0
          :max 5000
+         :class (fm/error-class form :width)
          :on-blur (fm/on-input-blur form :width)
          :on-change (fm/on-input-change form :width)
          :value (:width data)}]]
@@ -75,6 +77,7 @@
          :name "height"
          :min 0
          :max 5000
+         :class (fm/error-class form :height)
          :on-blur (fm/on-input-blur form :height)
          :on-change (fm/on-input-change form :height)
          :value (:height data)}]]]

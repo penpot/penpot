@@ -5,17 +5,18 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.projects
-  (:require [cljs.spec.alpha :as s]
-            [cuerdas.core :as str]
-            [beicon.core :as rx]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.repo :as rp]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.util.uuid :as uuid]
-            [uxbox.util.spec :as us]
-            [uxbox.util.time :as dt]
-            [uxbox.util.router :as rt]))
+  (:require
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [beicon.core :as rx]
+   [potok.core :as ptk]
+   [struct.core :as st]
+   [uxbox.main.repo :as rp]
+   [uxbox.main.data.pages :as udp]
+   [uxbox.util.uuid :as uuid]
+   [uxbox.util.spec :as us]
+   [uxbox.util.time :as dt]
+   [uxbox.util.router :as rt]))
 
 ;; --- Specs
 
@@ -34,12 +35,21 @@
                     ::created-at
                     ::modified-at]))
 
+(st/defs project-spec
+  {:id [st/required st/uuid]
+   :name [st/required st/string]
+   :version [st/required st/integer]
+   :user [st/required st/uuid]
+   :created-at [st/required inst?]
+   :modified-at [st/required inst?]})
+
 ;; --- Helpers
 
 (defn assoc-project
   "A reduce function for assoc the project to the state map."
   [state {:keys [id] :as project}]
-  {:pre [(us/valid? ::project-entity project)]}
+  (assert (st/valid? project-spec project)
+          "invalid project instance")
   (update-in state [:projects id] merge project))
 
 (defn dissoc-project
@@ -160,24 +170,23 @@
 
 ;; --- Create Project
 
-(s/def ::create-project-params
-  (s/keys :req-un [::name ::udp/width ::udp/height]))
+(st/defs create-project-spec
+  {:name [st/required st/string]
+   :width [st/required st/number st/positive]
+   :height [st/required st/number st/positive]})
 
 (defn create-project
   [{:keys [name] :as params}]
-  {:pre [(us/valid? ::create-project-params params)]}
+  (assert (st/valid? create-project-spec params)
+          "invalid params for create project event")
   (reify
     ptk/WatchEvent
     (watch [this state stream]
-      (rx/merge
-       (->> (rp/req :create/project {:name name})
-            (rx/map :payload)
-            (rx/map (fn [{:keys [id] :as project}]
-                      (udp/create-page (assoc params :project id)))))
-       (->> stream
-            (rx/filter udp/page-created?)
-            (rx/take 1)
-            (rx/map #(fetch-projects)))))))
+      (->> (rp/req :create/project {:name name})
+           (rx/map :payload)
+           (rx/mapcat (fn [{:keys [id] :as project}]
+                        (rx/of #(assoc-project % project)
+                               (udp/create-page (assoc params :project id)))))))))
 
 ;; --- Go To Project
 

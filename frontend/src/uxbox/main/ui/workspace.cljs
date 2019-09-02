@@ -9,7 +9,6 @@
   (:require
    [beicon.core :as rx]
    [lentes.core :as l]
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.main.constants :as c]
    [uxbox.main.data.history :as udh]
@@ -86,7 +85,7 @@
     (mf/use-effect #(subscribe canvas page)
                    #js [(:id page)])
     [:*
-     (messages-widget)
+     [:& messages-widget]
      [:& header {:page page
                  :flags flags
                  :key (:id page)}]

@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2019 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.sitemap-forms
   (:require
    [rumext.alpha :as mf]
+   [struct.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.pages :as udp]
@@ -17,12 +18,12 @@
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :refer [tr]]))
 
-(def page-form-spec
-  {:id [fm/uuid]
-   :project [fm/uuid]
-   :name [fm/required fm/string]
-   :width [fm/required fm/number-str]
-   :height [fm/required fm/number-str]})
+(s/defs ::page-form
+  (s/dict :id (s/opt ::s/uuid)
+          :project ::s/uuid
+          :name (s/&& ::s/string ::fm/not-empty-string)
+          :width ::s/number-str
+          :height ::s/number-str))
 
 (def defaults
   {:name ""
@@ -52,13 +53,13 @@
 
 (mf/defc page-form
   [{:keys [page] :as props}]
-  (let [{:keys [data errors] :as form} (fm/use-form {:initial #(initial-data page)
-                                                     :spec page-form-spec})]
+  (let [{:keys [data] :as form} (fm/use-form ::page-form #(initial-data page))]
     [:form {:on-submit #(on-submit % form)}
      [:input.input-text
       {:placeholder "Page name"
        :type "text"
        :name "name"
+       :class (fm/error-class form :name)
        :on-blur (fm/on-input-blur form :name)
        :on-change (fm/on-input-change form :name)
        :value (:name data)
@@ -72,6 +73,7 @@
          :type "number"
          :min 0
          :max 5000
+         :class (fm/error-class form :width)
          :on-blur (fm/on-input-blur form :width)
          :on-change (fm/on-input-change form :width)
          :value (:width data)}]]
@@ -84,12 +86,14 @@
          :type "number"
          :min 0
          :max 5000
+         :class (fm/error-class form :height)
          :on-blur (fm/on-input-blur form :height)
          :on-change (fm/on-input-change form :height)
          :value (:height data)}]]]
      [:input.btn-primary
       {:value "Go go go!"
        :type "submit"
+       :class (when-not (:valid form) "btn-disabled")
        :disabled (not (:valid form))}]]))
 
 (mf/defc page-form-dialog

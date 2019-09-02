@@ -10,7 +10,7 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [struct.core :as s]
+   [struct.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
@@ -18,27 +18,28 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :as i18n :refer [tr]]
-   [uxbox.util.interop :refer [iterable->seq]]))
+   [uxbox.util.interop :refer [iterable->seq]]
+   [uxbox.util.messages :as um]))
 
-(defn profile->form
+
+(defn- profile->form
   [profile]
   (let [language (get-in profile [:metadata :language])]
     (-> (select-keys profile [:fullname :username :email])
         (cond-> language (assoc :language language)))))
 
-(def profile-ref
+(def ^:private profile-ref
   (-> (l/key :profile)
       (l/derive st/state)))
 
-(s/defs profile-form-spec
-  {:fullname [fm/required fm/string]
-   :username [fm/required fm/string]
-   :email    [fm/required fm/email]
-   :language [fm/required fm/string]})
+(s/defs ::profile-form
+  (s/dict :fullname (s/&& ::s/string ::fm/not-empty-string)
+          :username (s/&& ::s/string ::fm/not-empty-string)
+          :language (s/&& ::s/string ::fm/not-empty-string)
+          :email ::s/email))
 
 (defn- on-error
   [error form]
-  (prn "on-error" error form)
   (case (:code error)
     :uxbox.services.users/email-already-exists
     (swap! form assoc-in [:errors :email]
@@ -57,18 +58,20 @@
 
 (defn- on-submit
   [event form]
+  (prn "on-submit" form)
   (dom/prevent-default event)
   (let [data (:clean-data form)
-        opts {:on-success #(prn "On Success" %)
-              :on-error #(on-error % form)}]
+        on-success #(st/emit! (um/info (tr "settings.profile.profile-saved")))
+        on-error #(on-error % form)
+        opts {:on-success on-success
+              :on-error on-error}]
     (st/emit! (udu/update-profile data opts))))
 
 ;; --- Profile Form
+
 (mf/defc profile-form
   [props]
-  (let [{:keys [data] :as form} (fm/use-form {:initial initial-data
-                                              :spec profile-form-spec})]
-    (prn "profile-form" form)
+  (let [{:keys [data] :as form} (fm/use-form ::profile-form initial-data)]
     [:form.profile-form {:on-submit #(on-submit % form)}
      [:span.user-settings-label (tr "settings.profile.section-basic-data")]
      [:input.input-text

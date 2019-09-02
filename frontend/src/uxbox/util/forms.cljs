@@ -8,25 +8,15 @@
   (:refer-clojure :exclude [uuid])
   (:require
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s :include-macros true]
+   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [rumext.core :as mx]
-   [struct.core :as st]
+   [struct.alpha :as st]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :refer [tr]]))
-
-;; --- Main Api
-
-(defn validate
-  [data spec]
-  (st/validate data spec))
-
-(defn valid?
-  [data spec]
-  (st/valid? data spec))
 
 ;; --- Handlers Helpers
 
@@ -45,8 +35,8 @@
       ([self f x y more] (update-fn #(apply f % x y more))))))
 
 (defn- translate-error-type
-  [code]
-  (case code
+  [name]
+  (case name
     ::st/string "errors.form.string"
     ::st/number "errors.form.number"
     ::st/number-str "errors.form.number"
@@ -54,31 +44,35 @@
     ::st/integer-str "errors.form.integer"
     ::st/required "errors.form.required"
     ::st/email "errors.form.email"
-    ::st/identical-to "errors.form.does-not-match"
+    ;; ::st/identical-to "errors.form.does-not-match"
     "errors.undefined-error"))
 
-(defn- translate-errors
+(defn- process-errors
   [errors]
-  (reduce-kv (fn [acc key val]
-               (if (string? (:message val))
-                 (assoc acc key val)
-                 (->> (translate-error-type (:code val))
-                      (assoc val :message)
-                      (assoc acc key))))
-             {} errors))
+  (reduce (fn [acc {:keys [path name] :as error}]
+            (let [message (translate-error-type name)]
+              (assoc-in acc path
+                        (-> (assoc error :message message)
+                            (dissoc :path)))))
+          {} errors))
 
 (defn use-form
-  [{:keys [initial spec] :as opts}]
+  [spec initial]
   (let [[state update-state] (mf/useState {:data (if (fn? initial) (initial) initial)
                                            :errors {}
                                            :touched {}})
-        [errors clean-data] (validate spec (:data state))
-        errors (merge (translate-errors errors)
+        cdata (st/conform spec (:data state))
+        errors' (when (= ::st/invalid cdata)
+                  (st/explain spec (:data state)))
+
+        errors (merge (process-errors errors')
                       (:errors state))]
+
     (-> (assoc state
                :errors errors
-               :clean-data clean-data
-               :valid (not (seq errors)))
+               :clean-data (when (not= cdata ::st/invalid) cdata)
+               :valid (and (empty? errors)
+                           (not= cdata ::st/invalid)))
         (impl-mutator update-state))))
 
 (defn on-input-change
@@ -123,15 +117,17 @@
 
 ;; --- Additional Validators
 
-(def string (assoc st/string :message "errors.should-be-string"))
-(def number (assoc st/number :message "errors.should-be-number"))
-(def number-str (assoc st/number-str :message "errors.should-be-number"))
-(def integer (assoc st/integer :message "errors.should-be-integer"))
-(def integer-str (assoc st/integer-str :message "errors.should-be-integer"))
-(def required (assoc st/required :message "errors.required"))
-(def email (assoc st/email :message "errors.should-be-valid-email"))
-(def uuid (assoc st/uuid :message "errors.should-be-uuid"))
-(def uuid-str (assoc st/uuid-str :message "errors.should-be-valid-uuid"))
+(st/defs ::not-empty-string #(not (empty? %)))
+
+;; (def string (assoc st/string :message "errors.should-be-string"))
+;; (def number (assoc st/number :message "errors.should-be-number"))
+;; (def number-str (assoc st/number-str :message "errors.should-be-number"))
+;; (def integer (assoc st/integer :message "errors.should-be-integer"))
+;; (def integer-str (assoc st/integer-str :message "errors.should-be-integer"))
+;; (def required (assoc st/required :message "errors.required"))
+;; (def email (assoc st/email :message "errors.should-be-valid-email"))
+;; (def uuid (assoc st/uuid :message "errors.should-be-uuid"))
+;; (def uuid-str (assoc st/uuid-str :message "errors.should-be-valid-uuid"))
 
 ;; DEPRECATED
 
@@ -154,6 +150,9 @@
 (s/def ::non-empty-string
   (s/and string? #(not (str/empty? %))))
 
+(s/def ::not-empty #(not (str/empty? %)))
+
+
 (defn- parse-number
   [v]
   (cond
@@ -166,6 +165,8 @@
 
 (s/def ::color
   (s/and string? #(boolean (re-matches color-re %))))
+
+
 
 ;; --- Form State Events
 

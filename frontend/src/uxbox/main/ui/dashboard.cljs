@@ -25,7 +25,7 @@
   [{:keys [route] :as props}]
   (let [[section type id] (parse-route route)]
     [:main.dashboard-main
-     (messages-widget)
+     [:& messages-widget]
      [:& header {:section section}]
      (case section
        :dashboard/icons

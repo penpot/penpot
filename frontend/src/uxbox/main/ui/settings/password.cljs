@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.settings.password
   (:require
    [rumext.alpha :as mf]
-   [struct.core :as s]
+   [struct.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
@@ -36,14 +36,14 @@
                 :on-error on-error}]
       (st/emit! (udu/update-password data opts)))))
 
-(s/defs password-form-spec
-  {:password-1 [s/required s/string]
-   :password-2 [s/required s/string [s/identical-to :password-1]]
-   :password-old [s/required s/string]})
+(s/defs ::password-form
+  (s/dict :password-1 (s/&& ::s/string ::fm/not-empty-string)
+          :password-2 (s/&& ::s/string ::fm/not-empty-string)
+          :password-old (s/&& ::s/string ::fm/not-empty-string)))
 
 (mf/defc password-form
   [props]
-  (let [{:keys [data] :as form} (fm/use-form {:initial {} :spec password-form-spec})]
+  (let [{:keys [data] :as form} (fm/use-form ::password-form {})]
     [:form.password-form {:on-submit #(on-submit % form)}
      [:span.user-settings-label (tr "settings.password.change-password")]
      [:input.input-text

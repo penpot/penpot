@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.auth.login
   (:require
    [rumext.alpha :as mf]
-   [struct.core :as s]
+   [struct.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.config :as cfg]
    [uxbox.main.data.auth :as da]
@@ -19,9 +19,9 @@
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
 
-(s/defs login-form-spec
-  {:username [fm/required fm/string]
-   :password [fm/required fm/string]})
+(s/defs ::login-form
+  (s/dict :username (s/&& ::s/string ::fm/not-empty-string)
+          :password (s/&& ::s/string ::fm/not-empty-string)))
 
 (defn- on-submit
   [event form]
@@ -42,7 +42,7 @@
 
 (mf/defc login-form
   []
-  (let [{:keys [data] :as form} (fm/use-form {:initial {} :spec login-form-spec})]
+  (let [{:keys [data] :as form} (fm/use-form ::login-form {})]
     [:form {:on-submit #(on-submit % form)}
      [:div.login-content
       (when cfg/isdemo
@@ -84,6 +84,6 @@
   []
   [:div.login
    [:div.login-body
-    (messages-widget)
+    [:& messages-widget]
     [:a i/logo]
     [:& login-form]]])

@@ -40,7 +40,6 @@
   (-> (l/key :projects)
       (l/derive st/state)))
 
-
 ;; --- Helpers
 
 (defn sort-projects-by

@@ -38,7 +38,7 @@
      [:li {:on-click #(on-click % :settings/notifications)}
       i/mail
       [:span (tr "ds.user.notifications")]]
-     [:li {:on-click #(on-click % (da/logout))}
+     [:li {:on-click #(on-click % da/logout)}
       i/exit
       [:span (tr "ds.user.exit")]]]))
 

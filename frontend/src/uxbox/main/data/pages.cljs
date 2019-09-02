@@ -7,62 +7,65 @@
 (ns uxbox.main.data.pages
   (:require
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [potok.core :as ptk]
+   [struct.alpha :as st]
    [uxbox.main.repo :as rp]
-   [uxbox.main.store :as st]
    [uxbox.util.data :refer [index-by-id]]
    [uxbox.util.spec :as us]
    [uxbox.util.timers :as ts]
    [uxbox.util.uuid :as uuid]))
 
-;; --- Specs
+;; --- Struct
 
-(s/def ::grid-x-axis number?)
-(s/def ::grid-y-axis number?)
-(s/def ::grid-color string?)
-(s/def ::background string?)
-(s/def ::background-opacity number?)
-(s/def ::grid-alignment boolean?)
-(s/def ::width number?)
-(s/def ::height number?)
-(s/def ::layout string?)
+(st/defs ::inst inst?)
+(st/defs ::width (st/&& ::st/number ::st/positive))
+(st/defs ::height (st/&& ::st/number ::st/positive))
 
-(s/def ::metadata
-  (s/keys :req-un [::width ::height]
-          :opt-un [::grid-y-axis
-                   ::grid-x-axis
-                   ::grid-color
-                   ::grid-alignment
-                   ::order
-                   ::background
-                   ::background-opacity
-                   ::layout]))
+(st/defs ::metadata
+  (st/dict :width ::width
+           :height ::height
+           :grid-y-axis (st/opt ::st/number)
+           :grid-x-axis (st/opt ::st/number)
+           :grid-color (st/opt ::st/string)
+           :order (st/opt ::st/number)
+           :background (st/opt ::st/string)
+           :background-opacity (st/opt ::st/number)))
 
-(s/def ::id uuid?)
-(s/def ::name string?)
-(s/def ::version integer?)
-(s/def ::project uuid?)
-(s/def ::user uuid?)
-(s/def ::created-at inst?)
-(s/def ::modified-at inst?)
-(s/def ::shapes
-  (-> (s/coll-of uuid? :kind vector?)
-      (s/nilable)))
+(st/defs ::shapes-list
+  (st/coll-of ::st/uuid))
 
-(s/def ::page-entity
-  (s/keys :req-un [::id
-                   ::name
-                   ::project
-                   ::version
-                   ::created-at
-                   ::modified-at
-                   ::user
-                   ::metadata
-                   ::shapes]))
+(st/defs ::page-entity
+  (st/dict :id ::st/uuid
+           :name ::st/string
+           :project ::st/uuid
+           :created-at ::inst
+           :modified-at ::inst
+           :user ::st/uuid
+           :metadata ::metadata
+           :shapes ::shapes-list))
 
-;; TODO: add interactions to spec
+(st/defs ::minimal-shape
+  (st/dict :id ::st/uuid
+           :type ::st/keyword
+           :name ::st/string))
+
+(st/defs ::server-page-data-sapes
+  (st/coll-of ::minimal-shape))
+
+(st/defs ::server-page-data
+  (st/dict :shapes ::server-page-data-sapes))
+
+(st/defs ::server-page
+  (st/dict :id ::st/uuid
+           :name ::st/string
+           :project ::st/uuid
+           :version ::st/integer
+           :created-at ::inst
+           :modified-at ::inst
+           :user ::st/uuid
+           :metadata ::metadata
+           :data ::server-page-data))
 
 ;; --- Protocols
 
@@ -170,44 +173,39 @@
 
 (declare rehash-pages)
 
-(deftype PageCreated [data]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [project-id (:project data)]
-      (-> (update-in state [:projects project-id :pages] conj (:id data))
-          (unpack-page data)
-          (assoc-packed-page data))))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (rehash-pages (:project data)))))
-
-(s/def ::page-created
-  (s/keys :req-un [::id
-                   ::name
-                   ::project
-                   ::metadata]))
+(st/defs ::page-created
+  (st/dict :id ::st/uuid
+           :name ::st/string
+           :project ::st/uuid
+           :metadata ::metadata))
 
 (defn page-created
   [data]
-  {:pre [(us/valid? ::page-created data)]}
-  (PageCreated. data))
+  (assert (st/valid? ::page-created data) "invalid parameters")
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (:project data)]
+        (-> state
+            (update-in [:projects pid :pages] (fnil conj []) (:id data))
+            (unpack-page data)
+            (assoc-packed-page data))))
 
-(defn page-created?
-  [o]
-  (instance? PageCreated o))
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (rehash-pages (:project data))))))
 
 ;; --- Create Page
 
-(s/def ::create-page-params
-  (s/keys :req-un [::name
-                   ::project
-                   ::width
-                   ::height]))
+(st/defs ::create-page
+  (st/dict :name ::st/string
+           :project ::st/uuid
+           :width ::width
+           :height ::height))
 
 (defn create-page
   [{:keys [name project width height layout] :as data}]
-  {:pre [(us/valid? ::create-page-params data)]}
+  (assert (st/valid? ::create-page data))
   (reify
     ptk/WatchEvent
     (watch [this state s]
@@ -231,11 +229,9 @@
 
 ;; --- Page Persisted
 
-;; TODO: add page spec
-
 (defn page-persisted
   [data]
-  {:pre [(map? data)]}
+  (assert (st/valid? ::server-page data))
   (reify
     cljs.core/IDeref
     (-deref [_] data)
@@ -245,6 +241,7 @@
 
     ptk/UpdateEvent
     (update [_ state]
+      (prn "page-persisted" data)
       (let [{:keys [id version]} data]
         (-> state
             (assoc-in [:pages id :version] version)
@@ -256,30 +253,30 @@
 
 ;; --- Persist Page
 
-(deftype PersistPage [id on-success]
-  ptk/WatchEvent
-  (watch [this state s]
-    (let [page (get-in state [:pages id])]
-      (if (:history page)
-        (rx/empty)
-        (let [page (pack-page state id)]
-          (->> (rp/req :update/page page)
-               (rx/map :payload)
-               (rx/do #(when (fn? on-success)
-                         (ts/schedule-on-idle on-success)))
-               (rx/map page-persisted)))))))
+(defn persist-page
+  ([id] (persist-page id identity))
+  ([id on-success]
+   (assert (uuid? id))
+   (reify
+     ptk/EventType
+     (type [_] ::persist-page)
+
+     ptk/WatchEvent
+     (watch [this state s]
+       (prn "persist-page" id)
+       (let [page (get-in state [:pages id])]
+         (if (:history page)
+           (rx/empty)
+           (let [page (pack-page state id)]
+             (->> (rp/req :update/page page)
+                  (rx/map :payload)
+                  (rx/do #(when (fn? on-success)
+                            (ts/schedule-on-idle on-success)))
+                  (rx/map page-persisted)))))))))
 
 (defn persist-page?
   [v]
-  (instance? PersistPage v))
-
-(defn persist-page
-  ([id]
-   {:pre [(uuid? id)]}
-   (PersistPage. id (constantly nil)))
-  ([id on-success]
-   {:pre [(uuid? id)]}
-   (PersistPage. id on-success)))
+  (= ::persist-page (ptk/type v)))
 
 ;; --- Page Metadata Persisted
 
@@ -288,8 +285,10 @@
   (update [_ state]
     (assoc-in state [:pages id :version] (:version data))))
 
-(s/def ::metadata-persisted-event
-  (s/keys :req-un [::id ::version]))
+(st/defs ::version integer?)
+(st/defs ::metadata-persisted-event
+  (st/dict :id ::st/uuid
+           :version ::version))
 
 (defn metadata-persisted?
   [v]
@@ -297,7 +296,7 @@
 
 (defn metadata-persisted
   [{:keys [id] :as data}]
-  {:pre [(us/valid? ::metadata-persisted-event data)]}
+  {:pre [(st/valid? ::metadata-persisted-event data)]}
   (MetadataPersisted. id data))
 
 ;; --- Persist Page Metadata
@@ -327,7 +326,7 @@
 
 (defn update-page
   [id data]
-  {:pre [(uuid? id) (us/valid? ::page-entity data)]}
+  {:pre [(uuid? id) (st/valid? ::page-entity data)]}
   (UpdatePage. id data))
 
 ;; --- Update Page Metadata
@@ -340,7 +339,7 @@
 
 (defn update-metadata
   [id metadata]
-  {:pre [(uuid? id) (us/valid? ::metadata metadata)]}
+  {:pre [(uuid? id) (st/valid? ::metadata metadata)]}
   (UpdateMetadata. id metadata))
 
 ;; --- Rehash Pages
@@ -385,12 +384,15 @@
 ;; A specialized event for persist data
 ;; from the update page form.
 
-(s/def ::persist-page-update-form-params
-  (s/keys :req-un [::id ::name ::width ::height]))
+(st/defs ::persist-page-update-form
+  (st/dict :id ::st/uuid
+           :name ::st/string
+           :width ::width
+           :height ::height))
 
 (defn persist-page-update-form
   [{:keys [id name width height] :as data}]
-  {:pre [(us/valid? ::persist-page-update-form-params data)]}
+  (assert (st/valid? ::persist-page-update-form data))
   (reify
     ptk/WatchEvent
     (watch [_ state stream]
