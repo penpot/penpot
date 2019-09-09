@@ -16,7 +16,7 @@
    [uxbox.main.store :as st]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.forms2 :as fm]
+   [uxbox.util.forms :as fm]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.interop :refer [iterable->seq]]
    [uxbox.util.messages :as um]))

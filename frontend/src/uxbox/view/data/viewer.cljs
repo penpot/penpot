@@ -8,7 +8,6 @@
   (:require [beicon.core :as rx]
             [potok.core :as ptk]
             [uxbox.util.router :as rt]
-            [uxbox.util.forms :as sc]
             [uxbox.util.data :refer (parse-int)]
             [uxbox.main.repo :as rp]
             [uxbox.main.data.pages :as udpg]

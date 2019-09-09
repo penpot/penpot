@@ -8,22 +8,29 @@
 (ns uxbox.main.ui.workspace.sidebar.sitemap-forms
   (:require
    [rumext.alpha :as mf]
-   [struct.alpha :as s]
+   [cljs.spec.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.pages :as udp]
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
    [uxbox.util.dom :as dom]
+   [uxbox.util.spec :as us]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :refer [tr]]))
 
-(s/defs ::page-form
-  (s/dict :id (s/opt ::s/uuid)
-          :project ::s/uuid
-          :name (s/&& ::s/string ::fm/not-empty-string)
-          :width ::s/number-str
-          :height ::s/number-str))
+(s/def ::id ::us/uuid)
+(s/def ::project ::us/uuid)
+(s/def ::name ::us/not-empty-string)
+(s/def ::width ::us/number-str)
+(s/def ::height ::us/number-str)
+
+(s/def ::page-form
+  (s/keys :req-un [::id
+                   ::project
+                   ::name
+                   ::width
+                   ::height]))
 
 (def defaults
   {:name ""

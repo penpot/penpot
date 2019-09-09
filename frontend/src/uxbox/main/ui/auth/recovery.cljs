@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.auth.recovery
   (:require
-   [cljs.spec.alpha :as s :include-macros true]
+   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.core :as mx :include-macros true]

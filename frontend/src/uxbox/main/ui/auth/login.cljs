@@ -15,7 +15,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.forms2 :as fm2]
+   [uxbox.util.forms :as fm2]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
 

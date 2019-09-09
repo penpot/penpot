@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.dashboard.projects-forms
   (:require
-   [struct.alpha :as s]
+   [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.projects :as udp]
@@ -17,10 +17,12 @@
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :as t :refer [tr]]))
 
-(s/defs ::project-form
-  (s/dict :name (s/&& ::s/string ::fm/not-empty-string)
-          :width ::s/number-str
-          :height ::s/number-str))
+(s/def ::name ::fm/not-empty-string)
+(s/def ::width ::fm/number-str)
+(s/def ::height ::fm/number-str)
+
+(s/def ::project-form
+  (s/keys :req-un [::name ::width ::height]))
 
 (def defaults
   {:name ""

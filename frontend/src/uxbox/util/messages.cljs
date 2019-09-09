@@ -140,7 +140,6 @@
 
 (mf/defc messages-widget
   [{:keys [message] :as props}]
-  (prn "messages-widget" props)
   (case (:type message)
     :error (mf/element notification-box props)
     :info (mf/element notification-box props)

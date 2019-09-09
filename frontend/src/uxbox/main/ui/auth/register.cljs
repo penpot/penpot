@@ -7,10 +7,10 @@
 
 (ns uxbox.main.ui.auth.register
   (:require
+   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [struct.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :as uda]
    [uxbox.main.store :as st]
@@ -21,11 +21,16 @@
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
 
-(s/defs ::register-form
-  (s/dict :username (s/&& ::s/string ::fm/not-empty-string)
-          :fullname (s/&& ::s/string ::fm/not-empty-string)
-          :password (s/&& ::s/string ::fm/not-empty-string)
-          :email ::s/email))
+(s/def ::username ::fm/not-empty-string)
+(s/def ::fullname ::fm/not-empty-string)
+(s/def ::password ::fm/not-empty-string)
+(s/def ::email ::fm/email)
+
+(s/def ::register-form
+  (s/keys :req-un [::username
+                   ::password
+                   ::fullname
+                   ::email]))
 
 (defn- on-error
   [error form]
@@ -111,7 +116,6 @@
       [:& fm/field-error {:form form
                           :type #{::api}
                           :field :email}]
-
 
       [:input.btn-primary
        {:type "submit"

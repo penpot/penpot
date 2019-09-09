@@ -13,9 +13,8 @@
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
-   [rumext.core :as mx]
-   [struct.alpha :as st]
    [uxbox.util.dom :as dom]
+   [uxbox.util.spec :as us]
    [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Handlers Helpers
@@ -36,43 +35,41 @@
 
 (defn- translate-error-type
   [name]
-  (case name
-    ::st/string "errors.form.string"
-    ::st/number "errors.form.number"
-    ::st/number-str "errors.form.number"
-    ::st/integer "errors.form.integer"
-    ::st/integer-str "errors.form.integer"
-    ::st/required "errors.form.required"
-    ::st/email "errors.form.email"
-    ;; ::st/identical-to "errors.form.does-not-match"
-    "errors.undefined-error"))
+  "errors.undefined-error")
 
-(defn- process-errors
-  [errors]
-  (reduce (fn [acc {:keys [path name] :as error}]
-            (let [message (translate-error-type name)]
-              (assoc-in acc path
-                        (-> (assoc error :message message)
-                            (dissoc :path)))))
-          {} errors))
+(defn- interpret-problem
+  [acc {:keys [path pred val via in] :as problem}]
+  ;; (prn "interpret-problem" problem)
+  (cond
+    (and (empty? path)
+         (list? pred)
+         (= (first (last pred)) 'cljs.core/contains?))
+    (let [path (conj path (last (last pred)))]
+      (assoc-in acc path {:name ::missing :type :builtin}))
+
+    (and (not (empty? path))
+         (not (empty? via)))
+    (assoc-in acc path {:name (last via) :type :builtin})
+
+    :else acc))
 
 (defn use-form
   [spec initial]
   (let [[state update-state] (mf/useState {:data (if (fn? initial) (initial) initial)
                                            :errors {}
                                            :touched {}})
-        cdata (st/conform spec (:data state))
-        errors' (when (= ::st/invalid cdata)
-                  (st/explain spec (:data state)))
+        clean-data (s/conform spec (:data state))
+        problems (when (= ::s/invalid clean-data)
+                   (::s/problems (s/explain-data spec (:data state))))
 
-        errors (merge (process-errors errors')
+
+        errors (merge (reduce interpret-problem {} problems)
                       (:errors state))]
-
     (-> (assoc state
                :errors errors
-               :clean-data (when (not= cdata ::st/invalid) cdata)
+               :clean-data (when (not= clean-data ::s/invalid) clean-data)
                :valid (and (empty? errors)
-                           (not= cdata ::st/invalid)))
+                           (not= clean-data ::s/invalid)))
         (impl-mutator update-state))))
 
 (defn on-input-change
@@ -103,9 +100,10 @@
     (when (and touched? error
                (cond
                  (nil? type) true
-                 (ifn? type) (type (:type error))
                  (keyword? type) (= (:type error) type)
+                 (ifn? type) (type (:type error))
                  :else false))
+      (prn "field-error" error)
       [:ul.form-errors
        [:li {:key code} (tr message)]])))
 
@@ -115,191 +113,10 @@
              (get-in form [:touched field]))
     "invalid"))
 
-;; --- Additional Validators
-
-(st/defs ::not-empty-string #(not (empty? %)))
-
-;; (def string (assoc st/string :message "errors.should-be-string"))
-;; (def number (assoc st/number :message "errors.should-be-number"))
-;; (def number-str (assoc st/number-str :message "errors.should-be-number"))
-;; (def integer (assoc st/integer :message "errors.should-be-integer"))
-;; (def integer-str (assoc st/integer-str :message "errors.should-be-integer"))
-;; (def required (assoc st/required :message "errors.required"))
-;; (def email (assoc st/email :message "errors.should-be-valid-email"))
-;; (def uuid (assoc st/uuid :message "errors.should-be-uuid"))
-;; (def uuid-str (assoc st/uuid-str :message "errors.should-be-valid-uuid"))
-
-;; DEPRECATED
-
-;; --- Form Validation Api
-
 ;; --- Form Specs and Conformers
 
-(def ^:private email-re
-  #"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
-
-(def ^:private number-re
-  #"^[-+]?[0-9]*\.?[0-9]+$")
-
-(def ^:private color-re
-  #"^#[0-9A-Fa-f]{6}$")
-
-(s/def ::email
-  (s/and string? #(boolean (re-matches email-re %))))
-
-(s/def ::non-empty-string
-  (s/and string? #(not (str/empty? %))))
-
-(s/def ::not-empty #(not (str/empty? %)))
-
-
-(defn- parse-number
-  [v]
-  (cond
-    (re-matches number-re v) (js/parseFloat v)
-    (number? v) v
-    :else ::s/invalid))
-
-(s/def ::string-number
-  (s/conformer parse-number str))
-
-(s/def ::color
-  (s/and string? #(boolean (re-matches color-re %))))
-
-
-
-;; --- Form State Events
-
-;; --- Assoc Error
-
-(defrecord AssocError [type field error]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:errors type field] error)))
-
-(defn assoc-error
-  ([type field]
-   (assoc-error type field nil))
-  ([type field error]
-   {:pre [(keyword? type)
-          (keyword? field)
-          (any? error)]}
-   (AssocError. type field error)))
-
-;; --- Assoc Errors
-
-(defrecord AssocErrors [type errors]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:errors type] errors)))
-
-(defn assoc-errors
-  ([type]
-   (assoc-errors type nil))
-  ([type errors]
-   {:pre [(keyword? type)
-          (or (map? errors)
-              (nil? errors))]}
-   (AssocErrors. type errors)))
-
-;; --- Assoc Value
-
-(declare clear-error)
-
-(defrecord AssocValue [type field value]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [form-path (into [:forms type] (if (coll? field) field [field]))]
-      (assoc-in state form-path value)))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (clear-error type field))))
-
-(defn assoc-value
-  [type field value]
-  {:pre [(keyword? type)
-         (keyword? field)
-         (any? value)]}
-  (AssocValue. type field value))
-
-;; --- Clear Values
-
-(defrecord ClearValues [type]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:forms type] nil)))
-
-(defn clear-values
-  [type]
-  {:pre [(keyword? type)]}
-  (ClearValues. type))
-
-;; --- Clear Error
-
-(deftype ClearError [type field]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [errors (get-in state [:errors type])]
-      (if (map? errors)
-        (assoc-in state [:errors type] (dissoc errors field))
-        (update state :errors dissoc type)))))
-
-(defn clear-error
-  [type field]
-  {:pre [(keyword? type)
-         (keyword? field)]}
-  (ClearError. type field))
-
-;; --- Clear Errors
-
-(defrecord ClearErrors [type]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:errors type] nil)))
-
-(defn clear-errors
-  [type]
-  {:pre [(keyword? type)]}
-  (ClearErrors. type))
-
-;; --- Clear Form
-
-(deftype ClearForm [type]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (clear-values type)
-           (clear-errors type))))
-
-(defn clear-form
-  [type]
-  {:pre [(keyword? type)]}
-  (ClearForm. type))
-
-;; --- Helpers
-
-(defn focus-data
-  [type state]
-  (-> (l/in [:forms type])
-      (l/derive state)))
-
-(defn focus-errors
-  [type state]
-  (-> (l/in [:errors type])
-      (l/derive state)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Form UI
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(mx/defc input-error
-  [errors field]
-  (when-let [error (get errors field)]
-    [:ul.form-errors
-     [:li {:key error} (tr error)]]))
-
-(defn clear-mixin
-  [store type]
-  {:will-unmount (fn [own]
-                   (ptk/emit! store (clear-form type))
-                   own)})
+;; TODO: migrate to uxbox.util.spec
+(s/def ::email ::us/email)
+(s/def ::not-empty-string ::us/not-empty-string)
+(s/def ::color ::us/color)
+(s/def ::number-str ::us/number-str)

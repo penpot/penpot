@@ -13,7 +13,7 @@
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
    [uxbox.util.dom :as dom]
-   [uxbox.util.forms2 :as fm]
+   [uxbox.util.forms :as fm]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.messages :as um]))
 
