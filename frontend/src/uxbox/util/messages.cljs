@@ -25,10 +25,33 @@
 
 (def +animation-timeout+ 600)
 
-;; --- Message Event
+;; --- Main API
 
 (declare hide)
+(declare show)
 (declare show?)
+
+(defn error
+  [message & {:keys [timeout] :or {timeout 3000}}]
+  (show {:content message
+         :type :error
+         :timeout timeout}))
+
+(defn info
+  [message & {:keys [timeout] :or {timeout 3000}}]
+  (show {:content message
+         :type :info
+         :timeout timeout}))
+
+(defn dialog
+  [message & {:keys [on-accept on-cancel]}]
+  (show {:content message
+         :on-accept on-accept
+         :on-cancel on-cancel
+         :timeout js/Number.MAX_SAFE_INTEGER
+         :type :dialog}))
+
+;; --- Show Event
 
 (defn show
   [data]
@@ -53,47 +76,19 @@
   [v]
   (= ::show (ptk/type v)))
 
-(defn error
-  [message & {:keys [timeout] :or {timeout 3000}}]
-  (show {:content message
-         :type :error
-         :timeout timeout}))
-
-(defn info
-  [message & {:keys [timeout] :or {timeout 3000}}]
-  (show {:content message
-         :type :info
-         :timeout timeout}))
-
-(defn dialog
-  [message & {:keys [on-accept on-cancel]}]
-  (show {:content message
-         :on-accept on-accept
-         :on-cancel on-cancel
-         :timeout js/Number.MAX_SAFE_INTEGER
-         :type :dialog}))
-
-;; --- Hide Message
+;; --- Hide Event
 
 (defn hide
   []
-  (let [canceled? (volatile! {})]
-    (reify
-      ptk/UpdateEvent
-      (update [_ state]
-        (update state :message
-                (fn [v]
-                  (if (nil? v)
-                    (do (vreset! canceled? true) nil)
-                    (assoc v :state :hide)))))
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :message assoc :state :hide))
 
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (if @canceled?
-          (rx/empty)
-          (->> (rx/of #(dissoc % :message))
-               (rx/delay +animation-timeout+)))))))
-
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rx/of #(dissoc % :message))
+           (rx/delay +animation-timeout+)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -145,6 +140,7 @@
 
 (mf/defc messages-widget
   [{:keys [message] :as props}]
+  (prn "messages-widget" props)
   (case (:type message)
     :error (mf/element notification-box props)
     :info (mf/element notification-box props)

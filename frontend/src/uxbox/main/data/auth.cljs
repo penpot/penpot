@@ -6,7 +6,7 @@
 
 (ns uxbox.main.data.auth
   (:require
-   [struct.alpha :as st]
+   [cljs.spec.alpha :as s]
    [beicon.core :as rx]
    [potok.core :as ptk]
    [uxbox.main.repo :as rp]
@@ -14,8 +14,14 @@
    [uxbox.main.data.users :as du]
    [uxbox.util.messages :as um]
    [uxbox.util.router :as rt]
+   [uxbox.util.spec :as us]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.storage :refer [storage]]))
+
+(s/def ::username string?)
+(s/def ::password string?)
+(s/def ::fullname string?)
+(s/def ::email ::us/email)
 
 ;; --- Logged In
 
@@ -43,13 +49,12 @@
 
 ;; --- Login
 
-(st/defs ::login
-  (st/dict :username ::st/string
-          :password ::st/string))
+(s/def ::login-params
+  (s/keys :req-un [::username ::password]))
 
 (defn login
   [{:keys [username password] :as data}]
-  (assert (st/valid? ::login data))
+  (s/assert ::login-params data)
   (reify
     ptk/UpdateEvent
     (update [_ state]
@@ -93,17 +98,17 @@
 
 ;; --- Register
 
-(st/defs ::register
-  (st/dict :fullname ::st/string
-          :username ::st/string
-          :password ::st/string
-          :email ::st/email))
+(s/def ::register-params
+  (s/keys :req-un [::fullname
+                   ::username
+                   ::password
+                   ::email]))
 
 (defn register
   "Create a register event instance."
   [data on-error]
-  (assert (st/valid? ::register data))
-  (assert (fn? on-error))
+  (s/assert ::register-params data)
+  (s/assert ::us/fn on-error)
   (reify
     ptk/WatchEvent
     (watch [_ state stream]
@@ -122,12 +127,12 @@
 
 ;; --- Recovery Request
 
-(st/defs ::recovery-request
-  (st/dict :username ::st/string))
+(s/def ::recovery-request-params
+  (s/keys :req-un [::username]))
 
 (defn recovery-request
   [data]
-  (assert (st/valid? ::recovery-request data))
+  (s/assert ::recovery-request-params data)
   (reify
     ptk/WatchEvent
     (watch [_ state stream]
@@ -164,13 +169,13 @@
 
 ;; --- Recovery (Password)
 
-(st/defs ::recovery
-  (st/dict :username ::st/string
-          :token ::st/string))
+(s/def ::token string?)
+(s/def ::recovery-params
+  (s/keys :req-un [::username ::token]))
 
 (defn recovery
   [{:keys [token password] :as data}]
-  (assert (st/valid? ::recovery data))
+  (s/assert ::recovery-params data)
   (reify
     ptk/WatchEvent
     (watch [_ state stream]

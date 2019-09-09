@@ -8,38 +8,40 @@
 (ns uxbox.main.ui.settings.password
   (:require
    [rumext.alpha :as mf]
-   [struct.alpha :as s]
+   [cljs.spec.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
    [uxbox.util.dom :as dom]
-   [uxbox.util.forms :as fm]
+   [uxbox.util.forms2 :as fm]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.messages :as um]))
 
+(defn- on-error
+  [form error]
+  (case (:code error)
+    :uxbox.services.users/old-password-not-match
+    (swap! form assoc-in [:errors :password-old]
+           {:type ::api :message "settings.password.wrong-old-password"})
+
+    :else (throw (ex-info "unexpected" {:error error}))))
+
 (defn- on-submit
   [event form]
-  (letfn [(on-error [error]
-            (case (:code error)
-              :uxbox.services.users/old-password-not-match
-              (swap! form assoc-in [:errors :password-old]
-                     {:type ::api :message "settings.password.wrong-old-password"})
+  (dom/prevent-default event)
+  (let [data (:clean-data form)
+        opts {:on-success #(st/emit! (um/info (tr "settings.password.password-saved")))
+              :on-error #(on-error form %)}]
+    (st/emit! (udu/update-password data opts))))
 
-              :else (throw (ex-info "unexpected" {:error error}))))
+(s/def ::password-1 ::fm/not-empty-string)
+(s/def ::password-2 ::fm/not-empty-string)
+(s/def ::password-old ::fm/not-empty-string)
 
-          (on-success [_]
-            (st/emit! (um/info (tr "settings.password.password-saved"))))]
-
-    (dom/prevent-default event)
-    (let [data (:clean-data form)
-          opts {:on-success on-success
-                :on-error on-error}]
-      (st/emit! (udu/update-password data opts)))))
-
-(s/defs ::password-form
-  (s/dict :password-1 (s/&& ::s/string ::fm/not-empty-string)
-          :password-2 (s/&& ::s/string ::fm/not-empty-string)
-          :password-old (s/&& ::s/string ::fm/not-empty-string)))
+(s/def ::password-form
+  (s/keys :req-un [::password-1
+                   ::password-2
+                   ::password-old]))
 
 (mf/defc password-form
   [props]
@@ -54,7 +56,8 @@
        :on-blur (fm/on-input-blur form :password-old)
        :on-change (fm/on-input-change form :password-old)
        :placeholder (tr "settings.password.old-password")}]
-     [:& fm/field-error {:form  form :field :password-old}]
+
+     [:& fm/field-error {:form  form :field :password-old :type ::api}]
 
      [:input.input-text
       {:type "password"
@@ -64,7 +67,7 @@
        :on-blur (fm/on-input-blur form :password-1)
        :on-change (fm/on-input-change form :password-1)
        :placeholder (tr "settings.password.new-password")}]
-     [:& fm/field-error {:form form :field :password-1}]
+     ;; [:& fm/field-error {:form form :field :password-1}]
 
      [:input.input-text
       {:type "password"
@@ -74,7 +77,7 @@
        :on-blur (fm/on-input-blur form :password-2)
        :on-change (fm/on-input-change form :password-2)
        :placeholder (tr "settings.password.confirm-password")}]
-     [:& fm/field-error {:form form :field :password-2}]
+     ;; [:& fm/field-error {:form form :field :password-2}]
 
      [:input.btn-primary
       {:type "submit"

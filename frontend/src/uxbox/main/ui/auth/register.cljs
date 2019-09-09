@@ -53,7 +53,6 @@
 (mf/defc register-form
   [props]
   (let [{:keys [data] :as form} (fm/use-form ::register-form {})]
-    (prn "register-form" form)
     [:form {:on-submit #(on-submit % form)}
      [:div.login-content
       [:input.input-text

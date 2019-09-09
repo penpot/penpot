@@ -10,7 +10,6 @@
    [cuerdas.core :as str]
    [beicon.core :as rx]
    [potok.core :as ptk]
-   [struct.core :as st]
    [uxbox.main.repo :as rp]
    [uxbox.main.data.pages :as udp]
    [uxbox.util.uuid :as uuid]
@@ -35,21 +34,12 @@
                     ::created-at
                     ::modified-at]))
 
-(st/defs project-spec
-  {:id [st/required st/uuid]
-   :name [st/required st/string]
-   :version [st/required st/integer]
-   :user [st/required st/uuid]
-   :created-at [st/required inst?]
-   :modified-at [st/required inst?]})
-
 ;; --- Helpers
 
 (defn assoc-project
   "A reduce function for assoc the project to the state map."
   [state {:keys [id] :as project}]
-  (assert (st/valid? project-spec project)
-          "invalid project instance")
+  (s/assert ::project-entity project)
   (update-in state [:projects id] merge project))
 
 (defn dissoc-project
@@ -170,15 +160,12 @@
 
 ;; --- Create Project
 
-(st/defs create-project-spec
-  {:name [st/required st/string]
-   :width [st/required st/number st/positive]
-   :height [st/required st/number st/positive]})
+(s/def ::create-project-params
+  (s/keys :req-un [::name ::width ::height]))
 
 (defn create-project
   [{:keys [name] :as params}]
-  (assert (st/valid? create-project-spec params)
-          "invalid params for create project event")
+  (s/assert ::create-project-params params)
   (reify
     ptk/WatchEvent
     (watch [this state stream]

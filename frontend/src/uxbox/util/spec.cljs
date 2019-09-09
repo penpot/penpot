@@ -42,6 +42,12 @@
 (s/def ::uuid uuid?)
 (s/def ::email email?)
 (s/def ::color color?)
+(s/def ::string string?)
+(s/def ::number number?)
+(s/def ::positive pos?)
+(s/def ::inst inst?)
+(s/def ::keyword keyword?)
+(s/def ::fn fn?)
 
 ;; --- Public Api
 

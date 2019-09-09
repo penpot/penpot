@@ -6,10 +6,10 @@
 
 (ns uxbox.main.data.pages
   (:require
+   [cljs.spec.alpha :as s]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [struct.alpha :as st]
    [uxbox.main.repo :as rp]
    [uxbox.util.data :refer [index-by-id]]
    [uxbox.util.spec :as us]
@@ -18,54 +18,65 @@
 
 ;; --- Struct
 
-(st/defs ::inst inst?)
-(st/defs ::width (st/&& ::st/number ::st/positive))
-(st/defs ::height (st/&& ::st/number ::st/positive))
+(s/def ::id ::us/uuid)
+(s/def ::name ::us/string)
+(s/def ::inst ::us/inst)
+(s/def ::type ::us/keyword)
+(s/def ::project ::us/uuid)
+(s/def ::created-at ::us/inst)
+(s/def ::modified-at ::us/inst)
+(s/def ::version ::us/number)
+(s/def ::width (s/and ::us/number ::us/positive))
+(s/def ::height (s/and ::us/number ::us/positive))
+(s/def ::grid-x-axis ::us/number)
+(s/def ::grid-y-axis ::us/number)
+(s/def ::grid-color ::us/string)
+(s/def ::order ::us/number)
+(s/def ::background ::us/string)
+(s/def ::background-opacity ::us/number)
+(s/def ::user ::us/uuid)
 
-(st/defs ::metadata
-  (st/dict :width ::width
-           :height ::height
-           :grid-y-axis (st/opt ::st/number)
-           :grid-x-axis (st/opt ::st/number)
-           :grid-color (st/opt ::st/string)
-           :order (st/opt ::st/number)
-           :background (st/opt ::st/string)
-           :background-opacity (st/opt ::st/number)))
+(s/def ::metadata
+  (s/keys :req-un [::width ::height]
+          :opt-un [::grid-y-axis
+                   ::grid-x-axis
+                   ::grid-color
+                   ::order
+                   ::background
+                   ::background-opacity]))
 
-(st/defs ::shapes-list
-  (st/coll-of ::st/uuid))
+(s/def ::shapes
+  (s/coll-of ::us/uuid :kind vector? :into []))
 
-(st/defs ::page-entity
-  (st/dict :id ::st/uuid
-           :name ::st/string
-           :project ::st/uuid
-           :created-at ::inst
-           :modified-at ::inst
-           :user ::st/uuid
-           :metadata ::metadata
-           :shapes ::shapes-list))
+(s/def ::page-entity
+  (s/keys :req-un [::id
+                   ::name
+                   ::project
+                   ::created-at
+                   ::modified-at
+                   ::user
+                   ::metadata
+                   ::shapes]))
 
-(st/defs ::minimal-shape
-  (st/dict :id ::st/uuid
-           :type ::st/keyword
-           :name ::st/string))
+(s/def ::minimal-shape
+  (s/keys :req-un [::type ::name]
+          :opt-un [::id]))
 
-(st/defs ::server-page-data-sapes
-  (st/coll-of ::minimal-shape))
+(s/def :uxbox.backend/shapes
+  (s/coll-of ::minimal-shape :kind vector?))
 
-(st/defs ::server-page-data
-  (st/dict :shapes ::server-page-data-sapes))
+(s/def :uxbox.backend/data
+  (s/keys :req-un [:uxbox.backend/shapes]))
 
-(st/defs ::server-page
-  (st/dict :id ::st/uuid
-           :name ::st/string
-           :project ::st/uuid
-           :version ::st/integer
-           :created-at ::inst
-           :modified-at ::inst
-           :user ::st/uuid
-           :metadata ::metadata
-           :data ::server-page-data))
+(s/def ::server-page
+  (s/keys :req-un [::id ::name
+                   ::project
+                   ::version
+                   ::created-at
+                   ::modified-at
+                   ::user
+                   ::metadata
+                   :uxbox.backend/data]))
 
 ;; --- Protocols
 
@@ -173,15 +184,12 @@
 
 (declare rehash-pages)
 
-(st/defs ::page-created
-  (st/dict :id ::st/uuid
-           :name ::st/string
-           :project ::st/uuid
-           :metadata ::metadata))
+(s/def ::page-created-params
+  (s/keys :req-un [::id ::name ::project ::metadata]))
 
 (defn page-created
   [data]
-  (assert (st/valid? ::page-created data) "invalid parameters")
+  (s/assert ::page-created-event data)
   (reify
     ptk/UpdateEvent
     (update [_ state]
@@ -197,15 +205,12 @@
 
 ;; --- Create Page
 
-(st/defs ::create-page
-  (st/dict :name ::st/string
-           :project ::st/uuid
-           :width ::width
-           :height ::height))
+(s/def ::created-page-params
+  (s/keys :req-un [::name ::project ::width ::height]))
 
 (defn create-page
   [{:keys [name project width height layout] :as data}]
-  (assert (st/valid? ::create-page data))
+  (s/assert ::created-page-params data)
   (reify
     ptk/WatchEvent
     (watch [this state s]
@@ -231,7 +236,7 @@
 
 (defn page-persisted
   [data]
-  (assert (st/valid? ::server-page data))
+  (s/assert ::server-page data)
   (reify
     cljs.core/IDeref
     (-deref [_] data)
@@ -278,24 +283,24 @@
 
 ;; --- Page Metadata Persisted
 
-(deftype MetadataPersisted [id data]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:pages id :version] (:version data))))
-
-(st/defs ::version integer?)
-(st/defs ::metadata-persisted-event
-  (st/dict :id ::st/uuid
-           :version ::version))
-
-(defn metadata-persisted?
-  [v]
-  (instance? MetadataPersisted v))
+(s/def ::metadata-persisted-params
+  (s/keys :req-un [::id ::version]))
 
 (defn metadata-persisted
   [{:keys [id] :as data}]
-  {:pre [(st/valid? ::metadata-persisted-event data)]}
-  (MetadataPersisted. id data))
+  (s/assert ::metadata-persisted-params data)
+  (reify
+    ptk/EventType
+    (type [_] ::metadata-persisted)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:pages id :version] (:version data)))))
+
+(defn metadata-persisted?
+  [v]
+  (= ::metadata-persisted (ptk/type v)))
+
 
 ;; --- Persist Page Metadata
 
@@ -316,29 +321,28 @@
 
 ;; --- Update Page
 
-(deftype UpdatePage [id data]
-  IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:pages id] merge (dissoc data :id :version))))
-
 (defn update-page
   [id data]
-  {:pre [(uuid? id) (st/valid? ::page-entity data)]}
-  (UpdatePage. id data))
+  (s/assert ::page-entity data)
+  (s/assert ::id id)
+  (reify
+    IPageUpdate
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:pages id] merge (dissoc data :id :version)))))
 
 ;; --- Update Page Metadata
 
-(deftype UpdateMetadata [id metadata]
-  IMetadataUpdate
-  ptk/UpdateEvent
-  (update [this state]
-    (assoc-in state [:pages id :metadata] metadata)))
-
 (defn update-metadata
   [id metadata]
-  {:pre [(uuid? id) (st/valid? ::metadata metadata)]}
-  (UpdateMetadata. id metadata))
+  (s/assert ::id id)
+  (s/assert ::metadata metadata)
+  (reify
+    IMetadataUpdate
+    ptk/UpdateEvent
+    (update [this state]
+      (assoc-in state [:pages id :metadata] metadata))))
+
 
 ;; --- Rehash Pages
 ;;
@@ -382,24 +386,21 @@
 ;; A specialized event for persist data
 ;; from the update page form.
 
-(st/defs ::persist-page-update-form
-  (st/dict :id ::st/uuid
-           :name ::st/string
-           :width ::width
-           :height ::height))
+(s/def ::persist-page-update-form-params
+  (s/keys :req-un [::id ::name ::width ::height]))
 
 (defn persist-page-update-form
   [{:keys [id name width height] :as data}]
-  (assert (st/valid? ::persist-page-update-form data))
+  (s/assert ::persist-page-update-form-params data)
   (reify
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page (-> (get-in state [:pages id])
-                     (assoc-in [:name] name)
-                     (assoc-in [:metadata :width] width)
-                     (assoc-in [:metadata :height] height))]
-        (rx/of (update-page id page))))))
-
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:pages id]
+                 (fn [page]
+                   (-> (assoc page :name name)
+                       (assoc-in [:name] name)
+                       (assoc-in [:metadata :width] width)
+                       (assoc-in [:metadata :height] height)))))))
 
 ;; --- Delete Page (by id)
 

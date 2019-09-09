@@ -7,16 +7,16 @@
 
 (ns uxbox.main.ui.settings.profile
   (:require
+   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [struct.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.forms :as fm]
+   [uxbox.util.forms2 :as fm]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.interop :refer [iterable->seq]]
    [uxbox.util.messages :as um]))
@@ -32,11 +32,16 @@
   (-> (l/key :profile)
       (l/derive st/state)))
 
-(s/defs ::profile-form
-  (s/dict :fullname (s/&& ::s/string ::fm/not-empty-string)
-          :username (s/&& ::s/string ::fm/not-empty-string)
-          :language (s/&& ::s/string ::fm/not-empty-string)
-          :email ::s/email))
+(s/def ::fullname ::fm/not-empty-string)
+(s/def ::username ::fm/not-empty-string)
+(s/def ::language ::fm/not-empty-string)
+(s/def ::email ::fm/email)
+
+(s/def ::profile-form
+  (s/keys :req-un [::fullname
+                   ::username
+                   ::language
+                   ::email]))
 
 (defn- on-error
   [error form]
@@ -58,7 +63,6 @@
 
 (defn- on-submit
   [event form]
-  (prn "on-submit" form)
   (dom/prevent-default event)
   (let [data (:clean-data form)
         on-success #(st/emit! (um/info (tr "settings.profile.profile-saved")))

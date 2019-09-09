@@ -29,7 +29,6 @@
               (common/on-mouse-down event shape selected))
             (on-double-click [event]
               (when selected?
-                (prn "path-component$on-double-click")
                 (st/emit! (dw/start-edition-mode (:id shape)))))]
       [:g.shape {:class (when selected? "selected")
                  :on-double-click on-double-click

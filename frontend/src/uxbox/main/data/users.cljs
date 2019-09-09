@@ -6,8 +6,8 @@
 
 (ns uxbox.main.data.users
   (:require
+   [cljs.spec.alpha :as s]
    [beicon.core :as rx]
-   [struct.core :as s]
    [potok.core :as ptk]
    [uxbox.main.repo :as rp]
    [uxbox.util.i18n :as i18n :refer [tr]]
@@ -58,17 +58,22 @@
 
 ;; --- Update Profile
 
-(s/defs update-profile-spec
-  {:fullname [s/required s/string]
-   :email [s/required s/email]
-   :username [s/required s/string]
-   :language [s/required s/string]})
+(s/def ::fullname string?)
+(s/def ::email ::us/email)
+(s/def ::password string?)
+(s/def ::language string?)
+
+(s/def ::update-profile-params
+  (s/keys :req-un [::fullname
+                   ::email
+                   ::username
+                   ::language]))
 
 (defn update-profile
   [data {:keys [on-success on-error]}]
-  {:pre [(s/valid? update-profile-spec data)
-         (fn? on-error)
-         (fn? on-success)]}
+  (s/assert ::update-profile-params data)
+  (s/assert ::us/fn on-error)
+  (s/assert ::us/fn on-success)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -89,16 +94,20 @@
 
 ;; --- Update Password (Form)
 
-(s/defs update-password-spec
-  {:password-1 [s/required s/string]
-   :password-2 [s/required s/string [s/identical-to :password-1]]
-   :password-old [s/required s/string]})
+(s/def ::password-1 string?)
+(s/def ::password-2 string?)
+(s/def ::password-old string?)
+
+(s/def ::update-password-params
+  (s/keys :req-un [::password-1
+                   ::password-2
+                   ::password-old]))
 
 (defn update-password
   [data {:keys [on-success on-error]}]
-  {:pre [(s/valid? update-password-spec data)
-         (fn? on-success)
-         (fn? on-error)]}
+  (s/assert ::update-password-params data)
+  (s/assert ::us/fn on-success)
+  (s/assert ::us/fn on-error)
   (reify
     ptk/WatchEvent
     (watch [_ state s]

@@ -5,14 +5,17 @@
 ;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.shapes
-  (:require [cljs.spec.alpha :as s]
-            [uxbox.main.geom :as geom]
-            [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.uuid :as uuid]
-            [uxbox.util.data :refer [index-of]]))
+  (:require
+   [cljs.spec.alpha :as s]
+   [uxbox.main.geom :as geom]
+   [uxbox.util.data :refer [index-of]]
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.spec :as us]
+   [uxbox.util.uuid :as uuid]))
 
 ;; --- Specs
 
+(s/def ::id ::us/uuid)
 (s/def ::blocked boolean?)
 (s/def ::collapsed boolean?)
 (s/def ::content string?)
@@ -49,7 +52,7 @@
 (s/def ::attributes
   (s/keys :opt-un [::blocked
                    ::collapsed
-                   ::conent
+                   ::content
                    ::fill-color
                    ::fill-opacity
                    ::font-family
@@ -72,10 +75,10 @@
                    ::y1 ::y2]))
 
 (s/def ::minimal-shape
-  (s/keys ::req-un [::id ::page ::type ::name]))
+  (s/keys :req-un [::id ::page ::type ::name]))
 
 (s/def ::shape
-  (s/merge ::minimal-shape ::attributes))
+  (s/and ::minimal-shape ::attributes))
 
 (s/def ::rect-like-shape
   (s/keys :req-un [::x1 ::y1 ::x2 ::y2 ::type]))

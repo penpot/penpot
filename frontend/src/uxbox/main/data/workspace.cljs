@@ -7,7 +7,6 @@
 (ns uxbox.main.data.workspace
   (:require
    [beicon.core :as rx]
-   ;; [uxbox.main.data.workspace.ruler :as wruler]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
    [uxbox.config :as cfg]
@@ -342,7 +341,6 @@
 
 (defn add-shape
   [data]
-  {:pre [(us/valid? ::ds/shape data)]}
   (reify
     udp/IPageUpdate
     ptk/UpdateEvent
@@ -426,32 +424,27 @@
 
 ;; --- Update Shape Attrs
 
-(deftype UpdateShapeAttrs [id attrs]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes id] merge attrs)))
-
 (defn update-shape-attrs
   [id attrs]
-  {:pre [(uuid? id) (us/valid? ::ds/attributes attrs)]}
-  (let [atts (us/extract attrs ::ds/attributes)]
-    (UpdateShapeAttrs. id attrs)))
+  (s/assert ::us/uuid id)
+  (s/assert ::ds/attributes attrs)
+  (let [atts (s/conform ::ds/attributes attrs)]
+    (reify
+      ptk/UpdateEvent
+      (update [_ state]
+        (update-in state [:shapes id] merge attrs)))))
 
 ;; --- Update Selected Shapes attrs
 
-
-(deftype UpdateSelectedShapesAttrs [attrs]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [pid (get-in state [:workspace :current])
-          selected (get-in state [:workspace pid :selected])]
-      (rx/from-coll (map #(update-shape-attrs % attrs) selected)))))
-
 (defn update-selected-shapes-attrs
   [attrs]
-  {:pre [(us/valid? ::ds/attributes attrs)]}
-  (UpdateSelectedShapesAttrs. attrs))
-
+  (s/assert ::ds/attributes attrs)
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [pid (get-in state [:workspace :current])
+            selected (get-in state [:workspace pid :selected])]
+        (rx/from-coll (map #(update-shape-attrs % attrs) selected))))))
 
 ;; --- Move Selected
 
@@ -485,48 +478,44 @@
 (declare materialize-current-modifier)
 (declare apply-temporal-displacement)
 
-(defrecord MoveSelected [direction speed]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [page-id (get-in state [:workspace :current])
-          workspace (get-in state [:workspace page-id])
-          selected (:selected workspace)
-          flags (:flags workspace)
-          align? (refs/alignment-activated? flags)
-          metadata (merge c/page-metadata (get-in state [:pages page-id :metadata]))
-          distance (get-displacement-distance metadata align?)
-          displacement (get-displacement direction speed distance)]
-      (rx/concat
-       (when align?
-         (rx/concat
-          (rx/from-coll (map initial-shape-align selected))
-          (rx/from-coll (map apply-displacement selected))))
-       (rx/from-coll (map #(apply-temporal-displacement % displacement) selected))
-       (rx/from-coll (map materialize-current-modifier selected))))))
-
 (s/def ::direction #{:up :down :right :left})
 (s/def ::speed #{:std :fast})
 
 (defn move-selected
   [direction speed]
-  {:pre [(us/valid? ::direction direction)
-         (us/valid? ::speed speed)]}
-  (MoveSelected. direction speed))
+  (s/assert ::direction direction)
+  (s/assert ::speed speed)
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (get-in state [:workspace :current])
+            workspace (get-in state [:workspace page-id])
+            selected (:selected workspace)
+            flags (:flags workspace)
+            align? (refs/alignment-activated? flags)
+            metadata (merge c/page-metadata (get-in state [:pages page-id :metadata]))
+            distance (get-displacement-distance metadata align?)
+            displacement (get-displacement direction speed distance)]
+        (rx/concat
+         (when align?
+           (rx/concat
+            (rx/from-coll (map initial-shape-align selected))
+            (rx/from-coll (map apply-displacement selected))))
+         (rx/from-coll (map #(apply-temporal-displacement % displacement) selected))
+         (rx/from-coll (map materialize-current-modifier selected)))))))
 
 ;; --- Move Selected Layer
 
-(defrecord MoveSelectedLayer [loc]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [id (get-in state [:workspace :current])
-          selected (get-in state [:workspace id :selected])]
-      (ds/move-layer state selected loc))))
-
 (defn move-selected-layer
   [loc]
-  {:pre [(us/valid? ::direction loc)]}
-  (MoveSelectedLayer. loc))
+  (assert (s/valid? ::direction loc))
+  (reify
+    udp/IPageUpdate
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (get-in state [:workspace :current])
+            selected (get-in state [:workspace id :selected])]
+        (ds/move-layer state selected loc)))))
 
 ;; --- Update Shape Position
 
@@ -708,22 +697,24 @@
 
 ;; --- Update Dimensions
 
-(deftype UpdateDimensions [id dimensions]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes id] geom/resize-dim dimensions)))
+(s/def ::width (s/and ::us/number ::us/positive))
+(s/def ::height (s/and ::us/number ::us/positive))
 
-(s/def ::update-dimensions-opts
+(s/def ::update-dimensions
   (s/keys :opt-un [::width ::height]))
 
 (defn update-dimensions
   "A helper event just for update the position
   of the shape using the width and height attrs
   instread final point of coordinates."
-  [id opts]
-  {:pre [(uuid? id) (us/valid? ::update-dimensions-opts opts)]}
-  (UpdateDimensions. id opts))
+  [id dimensions]
+  (s/assert ::us/uuid id)
+  (s/assert ::update-dimensions dimensions)
+  (reify
+    udp/IPageUpdate
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:shapes id] geom/resize-dim dimensions))))
 
 ;; --- Update Interaction
 
@@ -983,16 +974,15 @@
 
 ;; Is a workspace aware wrapper over uxbox.data.pages/UpdateMetadata event.
 
-(defrecord UpdateMetadata [id metadata]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (rx/of (udp/update-metadata id metadata)
-           (initialize-alignment id))))
-
 (defn update-metadata
   [id metadata]
-  {:pre [(uuid? id) (us/valid? ::udp/metadata metadata)]}
-  (UpdateMetadata. id metadata))
+  (s/assert ::us/uuid id)
+  (s/assert ::udp/metadata metadata)
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (rx/of (udp/update-metadata id metadata)
+             (initialize-alignment id)))))
 
 (defrecord OpenView [page-id]
   ptk/WatchEvent

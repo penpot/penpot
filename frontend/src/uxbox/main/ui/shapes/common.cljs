@@ -41,14 +41,12 @@
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])
             selected (get-in state [:workspace pid :selected])]
-        (prn "start-move-selected" selected)
         (rx/from-coll (map start-move selected))))))
 
 (defn on-mouse-down
   [event {:keys [id type] :as shape} selected]
   (let [selected? (contains? selected id)
         drawing? @refs/selected-drawing-tool]
-    (prn "on-mouse-down" id type selected? (= type :canvas))
     (when-not (:blocked shape)
       (cond
         drawing?
