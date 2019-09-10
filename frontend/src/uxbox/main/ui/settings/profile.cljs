@@ -66,10 +66,8 @@
   (dom/prevent-default event)
   (let [data (:clean-data form)
         on-success #(st/emit! (um/info (tr "settings.profile.profile-saved")))
-        on-error #(on-error % form)
-        opts {:on-success on-success
-              :on-error on-error}]
-    (st/emit! (udu/update-profile data opts))))
+        on-error #(on-error % form)]
+    (st/emit! (udu/form->update-profile data on-success on-error))))
 
 ;; --- Profile Form
 

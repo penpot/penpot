@@ -43,8 +43,8 @@
             (on-name-change [event]
               (let [value (-> (dom/event->value event)
                               (str/trim))]
-                (st/emit! (->> (assoc page :name value)
-                               (udp/update-page (:id page))))))
+                (st/emit! (-> (assoc page :name value)
+                              (udp/update-page-attrs)))))
 
             (show-color-picker [event]
               (let [x (.-clientX event)

@@ -139,46 +139,44 @@
   [state id]
   (update state :packed-pages dissoc id))
 
-
-
 ;; --- Pages Fetched
-
-(deftype PagesFetched [id pages]
-  IDeref
-  (-deref [_] (list id pages))
-
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [get-order #(get-in % [:metadata :order])
-          pages (sort-by get-order pages)
-          page-ids (into [] (map :id) pages)]
-    (as-> state $
-      (assoc-in $ [:projects id :pages] page-ids)
-      (reduce unpack-page $ pages)
-      (reduce assoc-packed-page $ pages)))))
 
 (defn pages-fetched
   [id pages]
-  {:pre [(uuid? id) (coll? pages)]}
-  (PagesFetched. id pages))
+  (s/assert ::us/uuid id)
+  (s/assert ::us/coll pages)
+  (reify
+    IDeref
+    (-deref [_] (list id pages))
+
+    ptk/EventType
+    (type [_] ::page-fetched)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [get-order #(get-in % [:metadata :order])
+            pages (sort-by get-order pages)
+            page-ids (into [] (map :id) pages)]
+        (as-> state $
+          (assoc-in $ [:projects id :pages] page-ids)
+          (reduce unpack-page $ pages)
+          (reduce assoc-packed-page $ pages))))))
 
 (defn pages-fetched?
   [v]
-  (instance? PagesFetched v))
+  (= ::page-fetched (ptk/type v)))
 
 ;; --- Fetch Pages (by project id)
 
-(deftype FetchPages [id]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (->> (rp/req :fetch/pages-by-project {:project id})
-         (rx/map :payload)
-         (rx/map #(pages-fetched id %)))))
-
 (defn fetch-pages
   [id]
-  {:pre [(uuid? id)]}
-  (FetchPages. id))
+  (s/assert ::us/uuid id)
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/req :fetch/pages-by-project {:project id})
+           (rx/map :payload)
+           (rx/map #(pages-fetched id %))))))
 
 ;; --- Page Created
 
@@ -189,7 +187,7 @@
 
 (defn page-created
   [data]
-  (s/assert ::page-created-event data)
+  (s/assert ::page-created-params data)
   (reify
     ptk/UpdateEvent
     (update [_ state]
@@ -203,14 +201,14 @@
     (watch [_ state stream]
       (rx/of (rehash-pages (:project data))))))
 
-;; --- Create Page
+;; --- Create Page Form
 
-(s/def ::created-page-params
+(s/def ::form-created-page-params
   (s/keys :req-un [::name ::project ::width ::height]))
 
-(defn create-page
+(defn form->create-page
   [{:keys [name project width height layout] :as data}]
-  (s/assert ::created-page-params data)
+  (s/assert ::form-created-page-params data)
   (reify
     ptk/WatchEvent
     (watch [this state s]
@@ -231,6 +229,25 @@
         (->> (rp/req :create/page params)
              (rx/map :payload)
              (rx/map page-created))))))
+
+;; --- Update Page Form
+
+(s/def ::form-update-page-params
+  (s/keys :req-un [::id ::name ::width ::height]))
+
+(defn form->update-page
+  [{:keys [id name width height] :as data}]
+  (s/assert ::form-update-page-params data)
+  (reify
+    IPageUpdate
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:pages id]
+                 (fn [page]
+                   (-> (assoc page :name name)
+                       (assoc-in [:name] name)
+                       (assoc-in [:metadata :width] width)
+                       (assoc-in [:metadata :height] height)))))))
 
 ;; --- Page Persisted
 
@@ -321,10 +338,9 @@
 
 ;; --- Update Page
 
-(defn update-page
-  [id data]
+(defn update-page-attrs
+  [{:keys [id] :as data}]
   (s/assert ::page-entity data)
-  (s/assert ::id id)
   (reify
     IPageUpdate
     ptk/UpdateEvent
@@ -381,27 +397,6 @@
             pages (vec (concat before [page-id] after))]
         (assoc-in state [:projects project-id :pages] pages)))))
 
-;; --- Persist Page Form
-;;
-;; A specialized event for persist data
-;; from the update page form.
-
-(s/def ::persist-page-update-form-params
-  (s/keys :req-un [::id ::name ::width ::height]))
-
-(defn persist-page-update-form
-  [{:keys [id name width height] :as data}]
-  (s/assert ::persist-page-update-form-params data)
-  (reify
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:pages id]
-                 (fn [page]
-                   (-> (assoc page :name name)
-                       (assoc-in [:name] name)
-                       (assoc-in [:metadata :width] width)
-                       (assoc-in [:metadata :height] height)))))))
-
 ;; --- Delete Page (by id)
 
 (defn delete-page
@@ -419,31 +414,28 @@
 
 ;; --- Watch Page Changes
 
-(deftype WatchPageChanges [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [stopper (->> stream
-                       (rx/filter #(= % ::stop-page-watcher))
-                       (rx/take 1))]
-      (rx/merge
-       (->> stream
-            (rx/filter #(or (satisfies? IPageUpdate %)
-                            (= ::page-update %)))
-            (rx/take-until stopper)
-            (rx/debounce 1000)
-            (rx/mapcat #(rx/merge (rx/of (persist-page id))
-                                  (->> (rx/filter page-persisted? stream)
-                                       (rx/take 1)
-                                       (rx/ignore)))))
-       (->> stream
-            (rx/filter #(satisfies? IMetadataUpdate %))
-            (rx/take-until stopper)
-            (rx/debounce 1000)
-            (rx/mapcat #(rx/merge (rx/of (persist-metadata id))
-                                  (->> (rx/filter metadata-persisted? stream)
-                                       (rx/take 1)
-                                       (rx/ignore)))))))))
-
 (defn watch-page-changes
   [id]
-  (WatchPageChanges. id))
+  (s/assert ::us/uuid id)
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
+        (->> (rx/merge
+              (->> stream
+                   (rx/filter #(or (satisfies? IPageUpdate %)
+                                   (= ::page-update %)))
+                   (rx/debounce 1000)
+                   (rx/mapcat #(rx/merge (rx/of (persist-page id))
+                                         (->> (rx/filter page-persisted? stream)
+                                              (rx/take 1)
+                                              (rx/ignore)))))
+              (->> stream
+                   (rx/filter #(satisfies? IMetadataUpdate %))
+                   (rx/debounce 1000)
+                   (rx/mapcat #(rx/merge (rx/of (persist-metadata id))
+                                         (->> (rx/filter metadata-persisted? stream)
+                                              (rx/take 1)
+                                              (rx/ignore))))))
+             (rx/take-until stopper))))))
+

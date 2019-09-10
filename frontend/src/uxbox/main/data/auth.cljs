@@ -25,8 +25,6 @@
 
 ;; --- Logged In
 
-;; TODO: add spec
-
 (defn logged-in
   [data]
   (reify
@@ -40,7 +38,7 @@
     ptk/WatchEvent
     (watch [this state s]
       (swap! storage assoc :auth data)
-      (rx/of (du/fetch-profile)
+      (rx/of du/fetch-profile
              (rt/navigate :dashboard/projects)))))
 
 (defn logged-in?

@@ -173,7 +173,7 @@
            (rx/map :payload)
            (rx/mapcat (fn [{:keys [id] :as project}]
                         (rx/of #(assoc-project % project)
-                               (udp/create-page (assoc params :project id)))))))))
+                               (udp/form->create-page (assoc params :project id)))))))))
 
 ;; --- Go To Project
 

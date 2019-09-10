@@ -49,7 +49,7 @@
       (l/derive st/state)))
 
 (mf/defc user
-  [_]
+  [props]
   (let [open (mf/use-state false)
         profile (mf/deref profile-ref)
         photo (if (str/empty? (:photo profile ""))

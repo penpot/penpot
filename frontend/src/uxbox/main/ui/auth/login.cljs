@@ -7,20 +7,21 @@
 
 (ns uxbox.main.ui.auth.login
   (:require
-   [rumext.alpha :as mf]
    [cljs.spec.alpha :as s]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.config :as cfg]
    [uxbox.main.data.auth :as da]
    [uxbox.main.store :as st]
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.forms :as fm2]
+   [uxbox.util.forms :as fm]
    [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.router :as rt]))
+   [uxbox.util.router :as rt]
+   [uxbox.util.spec :as us]))
 
-(s/def ::username ::fm2/not-empty-string)
-(s/def ::password ::fm2/not-empty-string)
+(s/def ::username ::us/not-empty-string)
+(s/def ::password ::us/not-empty-string)
 
 (s/def ::login-form
   (s/keys :req-un [::username ::password]))
@@ -44,8 +45,7 @@
 
 (mf/defc login-form
   []
-  (let [{:keys [data] :as form} (fm2/use-form ::login-form {})]
-    (prn "login-form" form)
+  (let [{:keys [data] :as form} (fm/use-form ::login-form {})]
     [:form {:on-submit #(on-submit % form)}
      [:div.login-content
       (when cfg/isdemo
@@ -55,18 +55,18 @@
        {:name "username"
         :tab-index "2"
         :value (:username data "")
-        :class (fm2/error-class form :username)
-        :on-blur (fm2/on-input-blur form :username)
-        :on-change (fm2/on-input-change form :username)
+        :class (fm/error-class form :username)
+        :on-blur (fm/on-input-blur form :username)
+        :on-change (fm/on-input-change form :username)
         :placeholder (tr "auth.email-or-username")
         :type "text"}]
       [:input.input-text
        {:name "password"
         :tab-index "3"
         :value (:password data "")
-        :class (fm2/error-class form :password)
-        :on-blur (fm2/on-input-blur form :password)
-        :on-change (fm2/on-input-change form :password)
+        :class (fm/error-class form :password)
+        :on-blur (fm/on-input-blur form :password)
+        :on-change (fm/on-input-change form :password)
         :placeholder (tr "auth.password")
         :type "password"}]
       [:input.btn-primary

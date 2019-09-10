@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.users
   (:require
@@ -15,53 +15,55 @@
    [uxbox.util.spec :as us]
    [uxbox.util.storage :refer [storage]]))
 
+;; --- Common Specs
+
+(s/def ::id uuid?)
+(s/def ::username string?)
+(s/def ::fullname string?)
+(s/def ::email ::us/email)
+(s/def ::password string?)
+(s/def ::language string?)
+(s/def ::photo string?)
+(s/def ::created-at inst?)
+(s/def ::password-1 string?)
+(s/def ::password-2 string?)
+(s/def ::password-old string?)
+
 ;; --- Profile Fetched
+
+(s/def ::profile-fetched-params
+  (s/keys :req-un [::id
+                   ::username
+                   ::fullname
+                   ::email
+                   ::created-at
+                   ::photo]))
 
 (defn profile-fetched
   [data]
+  (s/assert ::profile-fetched-params data)
   (reify
     ptk/UpdateEvent
-    (update [this state]
+    (update [_ state]
       (assoc state :profile data))
 
     ptk/EffectEvent
-    (effect [this state stream]
+    (effect [_ state stream]
       (swap! storage assoc :profile data)
-      ;; (prn "profile-fetched" data)
       (when-let [lang (get-in data [:metadata :language])]
         (i18n/set-current-locale! lang)))))
 
 ;; --- Fetch Profile
 
-(deftype FetchProfile []
-  ptk/WatchEvent
-  (watch [_ state s]
-    (->> (rp/req :fetch/profile)
-         (rx/map :payload)
-         (rx/map profile-fetched))))
-
-(defn fetch-profile
-  []
-  (FetchProfile.))
-
-;; --- Profile Updated
-
-(deftype ProfileUpdated [data]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (rx/of (profile-fetched data)
-           (uum/info (tr "settings.profile.profile-saved")))))
-
-(defn profile-updated
-  [data]
-  (ProfileUpdated. data))
+(def fetch-profile
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/req :fetch/profile)
+           (rx/map :payload)
+           (rx/map profile-fetched)))))
 
 ;; --- Update Profile
-
-(s/def ::fullname string?)
-(s/def ::email ::us/email)
-(s/def ::password string?)
-(s/def ::language string?)
 
 (s/def ::update-profile-params
   (s/keys :req-un [::fullname
@@ -69,8 +71,8 @@
                    ::username
                    ::language]))
 
-(defn update-profile
-  [data {:keys [on-success on-error]}]
+(defn form->update-profile
+  [data on-success on-error]
   (s/assert ::update-profile-params data)
   (s/assert ::us/fn on-error)
   (s/assert ::us/fn on-success)
@@ -88,15 +90,10 @@
           (->> (rp/req :update/profile data)
                (rx/map :payload)
                (rx/do on-success)
-               (rx/map profile-updated)
-               ;; (rx/map profile-fetched)
+               (rx/map profile-fetched)
                (rx/catch rp/client-error? handle-error)))))))
 
 ;; --- Update Password (Form)
-
-(s/def ::password-1 string?)
-(s/def ::password-2 string?)
-(s/def ::password-old string?)
 
 (s/def ::update-password-params
   (s/keys :req-un [::password-1
@@ -128,7 +125,7 @@
   (watch [_ state stream]
     (->> (rp/req :update/profile-photo {:file file})
          (rx/do done)
-         (rx/map fetch-profile))))
+         (rx/map (constantly fetch-profile)))))
 
 (defn update-photo
   ([file] (update-photo file (constantly nil)))

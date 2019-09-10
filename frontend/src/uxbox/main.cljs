@@ -67,7 +67,7 @@
     (add-watch html-history/path ::main #(on-navigate router %4))
 
     (when (:auth storage)
-      (st/emit! (udu/fetch-profile)))
+      (st/emit! udu/fetch-profile))
 
     (mf/mount (mf/element ui/app) (dom/get-element "app"))
     (mf/mount (lightbox) (dom/get-element "lightbox"))

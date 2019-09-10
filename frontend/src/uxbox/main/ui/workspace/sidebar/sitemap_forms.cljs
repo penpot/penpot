@@ -43,8 +43,8 @@
   (modal/hide!)
   (let [data (:clean-data form)]
     (if (nil? (:id data))
-      (st/emit! (udp/create-page data))
-      (st/emit! (udp/persist-page-update-form data)))))
+      (st/emit! (udp/form->create-page data))
+      (st/emit! (udp/form->update-page data)))))
 
 (defn- swap-size
   [event {:keys [data] :as form}]
