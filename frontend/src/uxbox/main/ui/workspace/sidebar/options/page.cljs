@@ -20,6 +20,7 @@
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.util.data :refer [parse-int]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.i18n :refer [tr]]
    [uxbox.util.spec :refer [color?]]))
 
 (mf/defc measures-menu

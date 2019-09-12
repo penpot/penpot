@@ -14,6 +14,7 @@
                       "%s projects"]
    "ds.project-title" "Your projects"
    "ds.project-new" "+ New project"
+   "ds.project-thumbnail.alt" "Project title"
 
    "ds.ordering" "Sort by"
    "ds.ordering.by-name" "name"
@@ -21,6 +22,7 @@
    "ds.ordering.by-creation-date" "creation date"
    "ds.search.placeholder" "Search..."
    "ds.uploaded-at" "Uploaded at %s"
+   "ds.updated-at" "Updated %s"
 
    "ds.confirm-title" "Are you sure?"
    "ds.confirm-ok" "Ok"
@@ -71,10 +73,29 @@
    "ds.your-libraries-title" "YOUR LIBRARIES"
    "ds.default-library-title" "Unnamed Collection (%s)"
 
-   "ds.element-options" "Element options"
-   "ds.draw-tools" "Draw tools"
-   "ds.sitemap" "Sitemap"
-   "ds.document-history" "Document history"
+   "ds.project.placeholder" "New project name"
+   "ds.project.new" "New project"
+
+   "ds.width" "Width"
+   "ds.height" "Height"
+   "ds.go" "Go go go!"
+
+   "ds.accept" "Accept"
+   "ds.cancel" "Cancel"
+
+   "ds.settings.icons" "Icons"
+   "ds.settings.element-options" "Element options"
+   "ds.settings.draw-tools" "Draw tools"
+   "ds.settings.sitemap" "Sitemap"
+   "ds.settings.layers" "Layers"
+   "ds.settings.document-history" "Document history"
+
+   "ds.page.placeholder" "Page name"
+   "ds.page.new" "New page"
+   "ds.page.edit" "Edit page"
+
+   "ds.history.versions" "History"
+   "ds.history.pinned" "Pinned"
 
    "ds.help.rect" "Box (Ctrl + B)"
    "ds.help.circle" "Circle (Ctrl + E)"
@@ -88,6 +109,31 @@
    "ds.user.password" "Password"
    "ds.user.notifications" "Notifications"
    "ds.user.exit" "Exit"
+
+   "header.sitemap" "Sitemap (Ctrl + Shift + M)"
+   "header.draw-tools" "Draw tools (Ctrl + Shift + S)"
+   "header.color-palette" "Color Palette (---)"
+   "header.icons" "Icons (Ctrl + Shift + I)"
+   "header.layers" "Layers (Ctrl + Shift + L)"
+   "header.element-options" "Element options (Ctrl + Shift + O)"
+   "header.document-history" "History (Ctrl + Shift + H)"
+   "header.undo" "Undo (Ctrl + Z)"
+   "header.redo" "Redo (Ctrl + Shift + Z)"
+   "header.download" "Download (Ctrl + E)"
+   "header.image" "Image (Ctrl + I)"
+   "header.rules" "Rules"
+   "header.grid" "Grid (Ctrl + G)"
+   "header.grid-snap" "Snap to grid"
+   "header.align" "Align (Ctrl + A)"
+   "header.view-mode" "View mode (Ctrl + P)"
+
+   "element.measures" "Size, position & rotation"
+   "element.fill" "Fill"
+   "element.stroke" "Stroke"
+   "element.text" "Text"
+   "element.interactions" "Interactions"
+   "element.page-measures" "Page settings"
+   "element.page-grid-options" "Grid settings"
 
    "auth.email-or-username" "Email or Username"
    "auth.password" "Password"
@@ -147,6 +193,7 @@
    "settings.update-settings" "Update settings"
 
    "history.alert-message" "You are seeing version %s"
+
    "errors.api.form.old-password-not-match" "Incorrect old password"
    "errors.api.form.registration-disabled" "The registration is currently disabled."
    "errors.api.form.email-already-exists" "The email is already in use by another user."

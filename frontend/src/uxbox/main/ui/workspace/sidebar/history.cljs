@@ -14,7 +14,7 @@
             [uxbox.main.data.workspace :as dw]
             [uxbox.util.data :refer [read-string]]
             [uxbox.util.dom :as dom]
-            [uxbox.util.i18n :refer [tr]]
+            [uxbox.util.i18n :refer (tr)]
             [rumext.alpha :as mf]
             [uxbox.util.router :as r]
             [uxbox.util.time :as dt]))
@@ -102,16 +102,16 @@
       [:div.document-history.tool-window {}
        [:div.tool-window-bar {}
         [:div.tool-window-icon {} i/undo-history]
-        [:span {} (tr "ds.document-history")]
+        [:span {} (tr "ds.settings.document-history")]
         [:div.tool-window-close {:on-click close} i/close]]
        [:div.tool-window-content {}
         [:ul.history-tabs {}
          [:li {:on-click show-main
                :class (when main? "selected")}
-          "History"]
+          (tr "ds.history.versions")]
          [:li {:on-click show-pinned
                :class (when pinned? "selected")}
-          "Pinned"]]
+          (tr "ds.history.pinned")]]
         (if (= section :pinned)
           (history-pinned-list history)
           (history-list history))]])))
@@ -131,5 +131,5 @@
          {:class (when (:deselecting history) "hide-message")}
          [:span {} (tr "history.alert-message" (or version "00"))
           [:div.message-action {}
-           [:a.btn-transparent {:on-click on-accept} "Accept"]
-           [:a.btn-transparent {:on-click on-cancel} "Cancel"]]]]))))
+           [:a.btn-transparent {:on-click on-accept} (tr "ds.accept")]
+           [:a.btn-transparent {:on-click on-cancel} (tr "ds.cancel")]]]]))))

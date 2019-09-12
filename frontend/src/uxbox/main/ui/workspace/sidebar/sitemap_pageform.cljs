@@ -17,7 +17,7 @@
             [uxbox.util.data :refer [parse-int]]
             [uxbox.util.dom :as dom]
             [uxbox.util.forms :as fm]
-            [uxbox.util.i18n :refer [tr]]
+            [uxbox.util.i18n :refer (tr)]
             [uxbox.util.router :as r]
             [rumext.core :as mx :include-macros true]))
 
@@ -88,16 +88,16 @@
                 (st/emit! (udp/persist-page-update-form id data))))]
       [:form
        [:input#project-name.input-text
-        {:placeholder "Page name"
+        {:placeholder (tr "ds.page.placeholder")
          :type "text"
          :value (:name data "")
          :auto-focus true
          :on-change update-name}]
        [:div.project-size
         [:div.input-element.pixels
-         [:span "Width"]
+         [:span (tr "ds.width")]
          [:input#project-witdh.input-text
-          {:placeholder "Width"
+          {:placeholder (tr "ds.width")
            :type "number"
            :min 0
            :max 4000
@@ -105,9 +105,9 @@
            :on-change #(update-size :width %)}]]
         [:a.toggle-layout {:on-click toggle-sizes} i/toggle]
         [:div.input-element.pixels
-         [:span "Height"]
+         [:span (tr "ds.height")]
          [:input#project-height.input-text
-           {:placeholder "Height"
+           {:placeholder (tr "ds.height")
             :type "number"
             :min 0
             :max 4000
@@ -121,7 +121,7 @@
         (layout-input data "desktop")]
 
        [:input#project-btn.btn-primary
-        {:value "Go go go!"
+        {:value (tr "ds.go")
          :disabled (not valid?)
          :on-click on-save
          :type "button"}]])))
@@ -135,8 +135,8 @@
     (let [creation? (nil? id)]
       [:div.lightbox-body
        (if creation?
-         [:h3 "New page"]
-         [:h3 "Edit page"])
+         [:h3 (tr "ds.page.new")]
+         [:h3 (tr "ds.page.edit")])
        (page-form page)
        [:a.close {:on-click on-cancel} i/close]])))
 
