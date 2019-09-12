@@ -21,7 +21,8 @@
 (deftype WatchPageChanges [id]
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [stopper (->> stream
+    nil
+    #_(let [stopper (->> stream
                        (rx/filter #(= % ::udp/stop-page-watcher))
                        (rx/take 1))]
       (->> stream
@@ -41,7 +42,8 @@
 (defrecord SaveUndoEntry [id]
   ptk/UpdateEvent
   (update [_ state]
-    (let [page (udp/pack-page state id)
+    state
+    #_(let [page (udp/pack-page state id)
           undo {:data (:data page)
                 :metadata (:metadata page)}]
       (-> state
@@ -88,7 +90,7 @@
   udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
-    (let [page-id (get-in state [:workspace :page])
+    #_(let [page-id (get-in state [:workspace :page])
           undo-state (get-in state [:undo page-id])
           stack (:stack undo-state)
           selected (:selected undo-state 0)]
@@ -123,7 +125,7 @@
   udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
-    (let [page-id (get-in state [:workspace :page])
+    #_(let [page-id (get-in state [:workspace :page])
           undo-state (get-in state [:undo page-id])
           stack (:stack undo-state)
           selected (:selected undo-state)]

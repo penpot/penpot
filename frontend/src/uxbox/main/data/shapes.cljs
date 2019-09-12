@@ -2,527 +2,541 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.shapes
-  (:require [cljs.spec.alpha :as s]
-            [lentes.core :as l]
-            [beicon.core :as rx]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.constants :as c]
-            [uxbox.main.refs :as refs]
-            [uxbox.main.lenses :as ul]
-            [uxbox.main.geom :as geom]
-            [uxbox.main.workers :as uwrk]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.main.data.shapes-impl :as impl]
-            [uxbox.main.user-events :as uev]
-            [uxbox.util.data :refer [dissoc-in]]
-            [uxbox.util.forms :as sc]
-            [uxbox.util.spec :as us]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.router :as r]
-            [uxbox.util.uuid :as uuid]))
+  (:require
+   [cljs.spec.alpha :as s]
+   [uxbox.main.geom :as geom]
+   [uxbox.util.data :refer [index-of]]
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.spec :as us]
+   [uxbox.util.uuid :as uuid]))
 
 ;; --- Specs
 
+(s/def ::id ::us/uuid)
+(s/def ::blocked boolean?)
+(s/def ::collapsed boolean?)
+(s/def ::content string?)
 (s/def ::fill-color string?)
 (s/def ::fill-opacity number?)
-(s/def ::line-height number?)
-(s/def ::letter-spacing number?)
-(s/def ::text-align #{"left" "right" "center" "justify"})
 (s/def ::font-family string?)
+(s/def ::font-size number?)
 (s/def ::font-style string?)
 (s/def ::font-weight string?)
-(s/def ::font-size number?)
-(s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
-(s/def ::stroke-width number?)
-(s/def ::stroke-color string?)
-(s/def ::stroke-opacity number?)
-(s/def ::rx number?)
-(s/def ::ry number?)
+(s/def ::height number?)
+(s/def ::hidden boolean?)
+(s/def ::id uuid?)
+(s/def ::letter-spacing number?)
+(s/def ::line-height number?)
+(s/def ::locked boolean?)
+(s/def ::name string?)
+(s/def ::page uuid?)
 (s/def ::proportion number?)
 (s/def ::proportion-lock boolean?)
-(s/def ::collapsed boolean?)
-(s/def ::hidden boolean?)
-(s/def ::blocked boolean?)
-(s/def ::locked boolean?)
+(s/def ::rx number?)
+(s/def ::ry number?)
+(s/def ::stroke-color string?)
+(s/def ::stroke-opacity number?)
+(s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
+(s/def ::stroke-width number?)
+(s/def ::text-align #{"left" "right" "center" "justify"})
+(s/def ::type #{:rect :path :circle :image :text})
 (s/def ::width number?)
-(s/def ::height number?)
 (s/def ::x1 number?)
-(s/def ::y1 number?)
 (s/def ::x2 number?)
+(s/def ::y1 number?)
 (s/def ::y2 number?)
-(s/def ::id uuid?)
-(s/def ::page uuid?)
-(s/def ::type #{:rect
-                :group
-                :path
-                :circle
-                :image
-                :text})
 
 (s/def ::attributes
-  (s/keys :opt-un [::fill-color
+  (s/keys :opt-un [::blocked
+                   ::collapsed
+                   ::content
+                   ::fill-color
                    ::fill-opacity
-                   ::line-height
-                   ::letter-spacing
-                   ::text-align
                    ::font-family
+                   ::font-size
                    ::font-style
                    ::font-weight
-                   ::font-size
-                   ::stroke-style
-                   ::stroke-width
+                   ::hidden
+                   ::letter-spacing
+                   ::line-height
+                   ::locked
+                   ::proportion
+                   ::proportion-lock
+                   ::rx ::ry
                    ::stroke-color
                    ::stroke-opacity
-                   ::rx ::ry
+                   ::stroke-style
+                   ::stroke-width
+                   ::text-align
                    ::x1 ::x2
-                   ::y1 ::y2
-                   ::proportion-lock
-                   ::proportion
-                   ::collapsed
-                   ::hidden
-                   ::blocked
-                   ::locked]))
+                   ::y1 ::y2]))
+
+(s/def ::minimal-shape
+  (s/keys :req-un [::id ::page ::type ::name]))
 
 (s/def ::shape
-  (s/merge (s/keys ::req-un [::id ::page ::type]) ::attributes))
+  (s/and ::minimal-shape ::attributes))
 
 (s/def ::rect-like-shape
   (s/keys :req-un [::x1 ::y1 ::x2 ::y2 ::type]))
 
-;; --- Shapes CRUD
+;; --- Shape Creation
 
-(deftype AddShape [data]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [shape (geom/setup-proportions data)
-          page-id (get-in state [:workspace :current])]
-      (impl/assoc-shape-to-page state shape page-id))))
+(defn retrieve-used-names
+  "Returns a set of already used names by shapes
+  in the current page."
+  [{:keys [shapes] :as state}]
+  (let [pid (get-in state [:workspace :current])
+        xf  (comp (filter #(= pid (:page %)))
+                  (map :name))]
+    (into #{} xf (vals shapes))))
 
-(defn add-shape
-  [data]
-  {:pre [(us/valid? ::shape data)]}
-  (AddShape. data))
+(defn generate-unique-name
+  "A unique name generator based on the previous
+  state of the used names."
+  [state basename]
+  (let [used (retrieve-used-names state)]
+    (loop [counter 1]
+      (let [candidate (str basename "-" counter)]
+        (if (contains? used candidate)
+          (recur (inc counter))
+          candidate)))))
 
-;; --- Delete Shape
+(defn assoc-shape-to-page
+  [state shape page]
+  (let [shape-id (uuid/random)
+        shape-name (generate-unique-name state (:name shape))
+        shape (assoc shape
+                     :page page
+                     :id shape-id
+                     :name shape-name)]
+    (-> state
+        (update-in [:pages page :shapes] #(into [] (cons shape-id %)))
+        (assoc-in [:shapes shape-id] shape))))
 
-(deftype DeleteShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [shape (get-in state [:shapes id])]
-      (impl/dissoc-shape state shape))))
+(defn duplicate-shapes'
+  ([state shapes page]
+   (duplicate-shapes' state shapes page nil))
+  ([state shapes page group]
+   (letfn [(duplicate-shape [state shape page group]
+             (if (= (:type shape) :group)
+               (let [id (uuid/random)
+                     items (:items shape)
+                     name (generate-unique-name state (str (:name shape) "-copy"))
+                     shape (assoc shape
+                                  :id id
+                                  :page page
+                                  :items []
+                                  :name name)
+                     state (if (nil? group)
+                             (-> state
+                                 (update-in [:pages page :shapes]
+                                            #(into [] (cons id %)))
+                                 (assoc-in [:shapes id] shape))
+                             (-> state
+                                 (update-in [:shapes group :items]
+                                            #(into [] (cons id %)))
+                                 (assoc-in [:shapes id] shape)))]
+                 (->> (map #(get-in state [:shapes %]) items)
+                      (reverse)
+                      (reduce #(duplicate-shape %1 %2 page id) state)))
+               (let [id (uuid/random)
+                     name (generate-unique-name state (str (:name shape) "-copy"))
+                     shape (-> (dissoc shape :group)
+                               (assoc :id id :page page :name name)
+                               (merge (when group {:group group})))]
+                 (if (nil? group)
+                   (-> state
+                       (update-in [:pages page :shapes] #(into [] (cons id %)))
+                       (assoc-in [:shapes id] shape))
+                   (-> state
+                       (update-in [:shapes group :items] #(into [] (cons id %)))
+                       (assoc-in [:shapes id] shape))))))]
+     (reduce #(duplicate-shape %1 %2 page group) state shapes))))
 
-(defn delete-shape
-  "Remove the shape using its id."
-  [id]
-  {:pre [(uuid? id)]}
-  (DeleteShape. id))
+(defn duplicate-shapes
+  ([state shapes]
+   (duplicate-shapes state shapes nil))
+  ([state shapes page]
+   (letfn [(all-toplevel? [coll]
+             (every? #(nil? (:group %)) coll))
+           (all-same-group? [coll]
+             (let [group (:group (first coll))]
+               (every? #(= group (:group %)) coll)))]
+     (let [shapes (reverse (mapv #(get-in state [:shapes %]) shapes))]
+       (cond
+         (all-toplevel? shapes)
+         (let [page (or page (:page (first shapes)))]
+           (duplicate-shapes' state shapes page))
 
-;; --- Rename Shape
+         (all-same-group? shapes)
+         (let [page (or page (:page (first shapes)))
+               group (:group (first shapes))]
+           (duplicate-shapes' state shapes page group))
 
-(deftype RenameShape [id name]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:shapes id :name] name)))
+         :else
+         (let [page (or page (:page (first shapes)))]
+           (duplicate-shapes' state shapes page)))))))
 
-(defn rename-shape
-  [id name]
-  {:pre [(uuid? id) (string? name)]}
-  (RenameShape. id name))
+;; --- Delete Shapes
 
-;; --- Update Rotation
+(defn dissoc-from-index
+  "A function that dissoc shape from the indexed
+  data structure of shapes from the state."
+  [state {:keys [id type] :as shape}]
+  (if (= :group type)
+    (let [items (map #(get-in state [:shapes %]) (:items shape))]
+      (as-> state $
+        (update-in $ [:shapes] dissoc id)
+        (reduce dissoc-from-index $ items)))
+    (update-in state [:shapes] dissoc id)))
 
-(deftype UpdateShapeRotation [id rotation]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:shapes id :rotation] rotation)))
+(defn dissoc-from-page
+  "Given a shape, try to remove its reference from the
+  corresponding page."
+  [state {:keys [id page] :as shape}]
+  (as-> (get-in state [:pages page :shapes]) $
+    (into [] (remove #(= % id) $))
+    (assoc-in state [:pages page :shapes] $)))
 
-(defn update-rotation
-  [id rotation]
-  {:pre [(uuid? id)
-         (number? rotation)
-         (>= rotation 0)
-         (>= 360 rotation)]}
-  (UpdateShapeRotation. id rotation))
+(defn dissoc-from-group
+  "Given a shape, try to remove its reference from the
+  corresponding group (only if it belongs to one group)."
+  [state {:keys [id group] :as shape}]
+  (if-let [group' (get-in state [:shapes group])]
+    (as-> (:items group') $
+      (into [] (remove #(= % id) $))
+      (assoc-in state [:shapes group :items] $))
+    state))
 
-;; --- Update Dimensions
+(declare dissoc-shape)
 
-(deftype UpdateDimensions [id dimensions]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes id] geom/resize-dim dimensions)))
+(defn clear-empty-groups
+  "Given the shape, try to clean all empty groups
+  that this shape belongs to.
 
-(s/def ::update-dimensions-opts
-  (s/keys :opt-un [::width ::height]))
+  The main purpose of this function is remove the
+  all empty parent groups of recently removed
+  shape."
+  [state {:keys [group] :as shape}]
+  (if-let [group' (get-in state [:shapes group])]
+    (if (empty? (:items group'))
+      (-> (dissoc-shape state group')
+          (update-in [:workspace :selected] disj (:id group')))
+      state)
+    state))
 
-(defn update-dimensions
-  "A helper event just for update the position
-  of the shape using the width and height attrs
-  instread final point of coordinates."
-  [id opts]
-  {:pre [(uuid? id) (us/valid? ::update-dimensions-opts opts)]}
-  (UpdateDimensions. id opts))
+(defn dissoc-shape
+  "Given a shape, removes it from the state."
+  [state shape]
+  (as-> state $
+    (dissoc-from-page $ shape)
+    (dissoc-from-group $ shape)
+    (dissoc-from-index $ shape)
+    (clear-empty-groups $ shape)))
 
-;; --- Update Shape Position
+;; --- Shape Movements
 
-(deftype UpdateShapePosition [id point]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes id] geom/absolute-move point)))
+(defn- drop-at-index
+  [index coll v]
+  (let [[fst snd] (split-at index coll)]
+    (into [] (concat fst [v] snd))))
 
-(defn update-position
-  "Update the start position coordenate of the shape."
-  [id point]
-  {:pre [(uuid? id) (gpt/point? point)]}
-  (UpdateShapePosition. id point))
+(defn drop-relative
+  [state loc sid]
+  {:pre [(not (nil? sid))]}
+  (let [shape (get-in state [:shapes (first sid)])
+        {:keys [page group]} shape
+        sid (:id shape)
 
-;; --- Update Shape Text
+        shapes (if group
+                 (get-in state [:shapes group :items])
+                 (get-in state [:pages page :shapes]))
 
-(deftype UpdateShapeTextContent [id text]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:shapes id :content] text)))
+        index (case loc
+                :first 0
+                :after (min (- (count shapes) 1) (inc (index-of shapes sid)))
+                :before (max 0 (- (index-of shapes sid) 1))
+                :last (- (count shapes) 1))
 
-(defn update-text
-  [id text]
-  {:pre [(uuid? id) (string? text)]}
-  (UpdateShapeTextContent. id text))
+        state (-> state
+                  (dissoc-from-page shape)
+                  (dissoc-from-group shape))
 
-;; --- Update Shape Attrs
+        shapes (if group
+                 (get-in state [:shapes group :items])
+                 (get-in state [:pages page :shapes]))
 
-(declare UpdateAttrs)
-;; TODO: moved
-(deftype UpdateAttrs [id attrs]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [{:keys [type] :as shape} (get-in state [:shapes id])]
-      (if (= type :group)
-        (rx/from-coll (map #(UpdateAttrs. % attrs) (:items shape)))
-        (rx/of #(update-in % [:shapes id] merge attrs))))))
+        shapes (drop-at-index index shapes sid)]
 
-(defn update-attrs
-  [id attrs]
-  {:pre [(uuid? id) (us/valid? ::attributes attrs)]}
-  (let [atts (us/extract attrs ::attributes)]
-    (UpdateAttrs. id attrs)))
+    (if group
+      (as-> state $
+        (assoc-in $ [:shapes group :items] shapes)
+        (update-in $ [:shapes sid] assoc :group group)
+        (clear-empty-groups $ shape))
+      (as-> state $
+        (assoc-in $ [:pages page :shapes] shapes)
+        (update-in $ [:shapes sid] dissoc :group)
+        (clear-empty-groups $ shape)))))
 
-;; --- Shape Proportions
+(defn drop-aside
+  [state loc tid sid]
+  {:pre [(not= tid sid)
+         (not (nil? tid))
+         (not (nil? sid))]}
+  (let [{:keys [page group]} (get-in state [:shapes tid])
+        source (get-in state [:shapes sid])
 
-(deftype LockShapeProportions [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [[width height] (-> (get-in state [:shapes id])
-                             (geom/size)
-                             (keep [:width :height]))
-          proportion (/ width height)]
-      (update-in state [:shapes id] assoc
-                 :proportion proportion
-                 :proportion-lock true))))
+        state (-> state
+                  (dissoc-from-page source)
+                  (dissoc-from-group source))
 
-(defn lock-proportions
-  "Mark proportions of the shape locked and save the current
-  proportion as additional precalculated property."
-  [id]
-  {:pre [(uuid? id)]}
-  (LockShapeProportions. id))
+        shapes (if group
+                 (get-in state [:shapes group :items])
+                 (get-in state [:pages page :shapes]))
 
-(deftype UnlockShapeProportions [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:shapes id :proportion-lock] false)))
+        index (case loc
+                :after (inc (index-of shapes tid))
+                :before (index-of shapes tid))
 
-(defn unlock-proportions
-  [id]
-  {:pre [(uuid? id)]}
-  (UnlockShapeProportions. id))
+        shapes (drop-at-index index shapes sid)]
+    (if group
+      (as-> state $
+        (assoc-in $ [:shapes group :items] shapes)
+        (update-in $ [:shapes sid] assoc :group group)
+        (clear-empty-groups $ source))
+      (as-> state $
+        (assoc-in $ [:pages page :shapes] shapes)
+        (update-in $ [:shapes sid] dissoc :group)
+        (clear-empty-groups $ source)))))
 
-;; --- Group Collapsing
+(def drop-after #(drop-aside %1 :after %2 %3))
+(def drop-before #(drop-aside %1 :before %2 %3))
 
-(deftype CollapseGroupShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes id] assoc :collapsed true)))
-
-(defn collapse-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (CollapseGroupShape. id))
-
-(deftype UncollapseGroupShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes id] assoc :collapsed false)))
-
-(defn uncollapse-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (UncollapseGroupShape. id))
-
-;; --- Shape Visibility
-
-(deftype HideShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-hidden [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :hidden] true)
-                    (reduce mark-hidden $ (:items shape)))
-                  (assoc-in state [:shapes id :hidden] true))))]
-      (mark-hidden state id))))
-
-(defn hide-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (HideShape. id))
-
-(deftype ShowShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-visible [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :hidden] false)
-                    (reduce mark-visible $ (:items shape)))
-                  (assoc-in state [:shapes id :hidden] false))))]
-      (mark-visible state id))))
-
-(defn show-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (ShowShape. id))
-
-;; --- Shape Blocking
-
-(deftype BlockShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-blocked [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :blocked] true)
-                    (reduce mark-blocked $ (:items shape)))
-                  (assoc-in state [:shapes id :blocked] true))))]
-      (mark-blocked state id))))
-
-(defn block-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (BlockShape. id))
-
-(deftype UnblockShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-unblocked [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :blocked] false)
-                    (reduce mark-unblocked $ (:items shape)))
-                  (assoc-in state [:shapes id :blocked] false))))]
-      (mark-unblocked state id))))
-
-(defn unblock-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (UnblockShape. id))
-
-;; --- Shape Locking
-
-(deftype LockShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-locked [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :locked] true)
-                    (reduce mark-locked $ (:items shape)))
-                  (assoc-in state [:shapes id :locked] true))))]
-      (mark-locked state id))))
-
-(defn lock-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (LockShape. id))
-
-(deftype UnlockShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-unlocked [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :locked] false)
-                    (reduce mark-unlocked $ (:items shape)))
-                  (assoc-in state [:shapes id :locked] false))))]
-      (mark-unlocked state id))))
-
-(defn unlock-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (UnlockShape. id))
-
-;; --- Drop Shape
-
-(deftype DropShape [sid tid loc]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (impl/drop-shape state sid tid loc)))
+(defn drop-inside
+  [state tid sid]
+  {:pre [(not= tid sid)]}
+  (let [source (get-in state [:shapes sid])
+        state (-> state
+                  (dissoc-from-page source)
+                  (dissoc-from-group source))
+        shapes (get-in state [:shapes tid :items])]
+    (if (seq shapes)
+      (as-> state $
+        (assoc-in $ [:shapes tid :items] (conj shapes sid))
+        (update-in $ [:shapes sid] assoc :group tid))
+      state)))
 
 (defn drop-shape
-  "Event used in drag and drop for transfer shape
-  from one position to an other."
-  [sid tid loc]
-  {:pre [(uuid? sid)
-         (uuid? tid)
-         (keyword? loc)]}
-  (DropShape. sid tid loc))
+  [state sid tid loc]
+  (if (= tid sid)
+    state
+    (case loc
+      :inside (drop-inside state tid sid)
+      :before (drop-before state tid sid)
+      :after (drop-after state tid sid)
+      (throw (ex-info "Invalid data" {})))))
 
-;; --- Update Interaction
+(defn move-layer
+  [state shape loc]
+  (case loc
+    :up (drop-relative state :before shape)
+    :down (drop-relative state :after shape)
+    :top (drop-relative state :first shape)
+    :bottom (drop-relative state :last shape)
+    (throw (ex-info "Invalid data" {}))))
 
-(deftype UpdateInteraction [shape interaction]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [id (or (:id interaction)
-                 (uuid/random))
-          data (assoc interaction :id id)]
-      (assoc-in state [:shapes shape :interactions id] data))))
+;; --- Shape Selection
 
-(defn update-interaction
-  [shape interaction]
-  (UpdateInteraction. shape interaction))
+(defn- try-match-shape
+  [xf selrect acc {:keys [type id items] :as shape}]
+  (cond
+    (geom/contained-in? shape selrect)
+    (conj acc id)
 
-;; --- Delete Interaction
+    (geom/overlaps? shape selrect)
+    (conj acc id)
 
-(deftype DeleteInteracton [shape id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes shape :interactions] dissoc id)))
+    (:locked shape)
+    acc
 
-(defn delete-interaction
-  [shape id]
-  {:pre [(uuid? id) (uuid? shape)]}
-  (DeleteInteracton. shape id))
+    (= type :group)
+    (reduce (partial try-match-shape xf selrect)
+            acc (sequence xf items))
 
-;; --- Path Modifications
+    :else
+    acc))
 
-(deftype UpdatePath [id index delta]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes id :segments index] gpt/add delta)))
+(defn match-by-selrect
+  [state page-id selrect]
+  (let [xf (comp (map #(get-in state [:shapes %]))
+                 (remove :hidden)
+                 (remove :blocked)
+                 (remove #(= :canvas (:type %)))
+                 (map geom/selection-rect))
+        match (partial try-match-shape xf selrect)
+        shapes (get-in state [:pages page-id :shapes])]
+    (reduce match #{} (sequence xf shapes))))
 
-(defn update-path
-  "Update a concrete point in the path shape."
-  [id index delta]
-  {:pre [(uuid? id) (number? index) (gpt/point? delta)]}
-  (UpdatePath. id index delta))
+(defn group-shapes
+  [state shapes page]
+  (letfn [(replace-first-item [pred coll replacement]
+            (into []
+              (concat
+                (take-while #(not (pred %)) coll)
+                [replacement]
+                (drop 1 (drop-while #(not (pred %)) coll)))))
 
-(deftype InitialPathPointAlign [id index]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [shape (get-in state [:shapes id])
-          point (get-in shape [:segments index])]
-      (->> (uwrk/align-point point)
-           (rx/map #(update-path id index %))))))
+          (move-shapes-to-new-group [state page shapes new-group]
+            (reduce (fn [state {:keys [id group] :as shape}]
+                      (-> state
+                        (update-in [:shapes group :items] #(remove (set [id]) %))
+                        (update-in [:pages page :shapes] #(remove (set [id]) %))
+                        (clear-empty-groups shape)
+                        (assoc-in [:shapes id :group] new-group)
+                        ))
+                    state
+                    shapes))
 
-(defn initial-path-point-align
-  "Event responsible of align a specified point of the
-  shape by `index` with the grid."
-  [id index]
-  {:pre [(uuid? id)
-         (number? index)
-         (not (neg? index))]}
-  (InitialPathPointAlign. id index))
+          (update-shapes-on-page [state page shapes group]
+            (as-> (get-in state [:pages page :shapes]) $
+              (replace-first-item (set shapes) $ group)
+              (remove (set shapes) $)
+              (into [] $)
+              (assoc-in state [:pages page :shapes] $)))
 
-;; --- Events (implicit) (for selected)
+          (update-shapes-on-group [state parent-group shapes group]
+            (as-> (get-in state [:shapes parent-group :items]) $
+              (replace-first-item (set shapes) $ group)
+              (remove (set shapes) $)
+              (into [] $)
+              (assoc-in state [:shapes parent-group :items] $)))
 
-;; NOTE: moved to workspace
-(deftype DeselectAll []
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:workspace :selected] #{}))
+          (update-shapes-on-index [state shapes group]
+            (reduce (fn [state {:keys [id] :as shape}]
+                      (as-> shape $
+                        (assoc $ :group group)
+                        (assoc-in state [:shapes id] $)))
+                    state
+                    shapes))]
+    (let [sid (uuid/random)
+          shapes' (map #(get-in state [:shapes %]) shapes)
+          distinct-groups (distinct (map :group shapes'))
+          parent-group (cond
+                         (not= 1 (count distinct-groups)) :multi
+                         (nil? (first distinct-groups)) :page
+                         :else (first distinct-groups))
+          name (generate-unique-name state "Group")
+          group {:type :group
+                 :name name
+                 :items (into [] shapes)
+                 :id sid
+                 :page page}]
+      (as-> state $
+        (update-shapes-on-index $ shapes' sid)
+        (cond
+          (= :multi parent-group)
+            (-> $
+              (move-shapes-to-new-group page shapes' sid)
+              (update-in [:pages page :shapes] #(into [] (cons sid %))))
+          (= :page parent-group)
+            (update-shapes-on-page $ page shapes sid)
+          :else
+            (update-shapes-on-group $ parent-group shapes sid))
+        (update $ :shapes assoc sid group)
+        (cond
+          (= :multi parent-group) $
+          (= :page parent-group) $
+          :else (assoc-in $ [:shapes sid :group] parent-group))
+        (update $ :workspace assoc :selected #{sid})))))
 
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/just ::uev/interrupt)))
+(defn degroup-shapes
+  [state shapes page-id]
+  (letfn [(get-relocation-position [state {id :id parent-id :group}]
+            (if (nil? parent-id)
+              (index-of (get-in state [:pages page-id :shapes]) id)
+              (index-of (get-in state [:shapes parent-id :items]) id)))
 
-(defn deselect-all
-  "Clear all possible state of drawing, edition
-  or any similar action taken by the user."
-  []
-  (DeselectAll.))
+          (relocate-shape [state shape-id parent-id position]
+            (if (nil? parent-id)
+              (-> state
+                  (update-in [:pages page-id :shapes] #(drop-at-index position % shape-id))
+                  (update-in [:shapes shape-id] dissoc :group))
+              (-> state
+                  (update-in [:shapes parent-id :items] #(drop-at-index position % shape-id))
+                  (assoc-in [:shapes shape-id :group] parent-id))))
 
-;; --- Group Selected Shapes
+          (remove-group [state {id :id parent-id :group}]
+            (let [xform (remove #{id})]
+              (as-> state $
+                (update $ :shapes dissoc id)
+                (if (nil? parent-id)
+                  (update-in $ [:pages page-id :shapes] #(into [] xform %))
+                  (update-in $ [:shapes parent-id :items] #(into [] xform %))))))
 
-(deftype GroupSelectedShapes []
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [id (get-in state [:workspace :page])
-          selected (get-in state [:workspace :selected])]
-      (assert (not (empty? selected)) "selected set is empty")
-      (assert (uuid? id) "selected page is not an uuid")
-      (impl/group-shapes state selected id))))
+          (relocate-group-items [state {id :id parent-id :group items :items :as group}]
+            (let [position (get-relocation-position state group)]
+              (as-> state $
+                (reduce #(relocate-shape %1 %2 parent-id position) $ (reverse items))
+                (remove-group $ group))))
 
-(defn group-selected
-  []
-  (GroupSelectedShapes.))
+          (select-degrouped [state groups]
+            (let [items (into #{} (mapcat :items groups))]
+              (assoc-in state [:workspace :selected] items)))
 
-;; --- Ungroup Selected Shapes
+          (remove-from-parent [state id parent-id]
+            (assert (not (nil? parent-id)) "parent-id should never be nil here")
+            (update-in state [:shapes parent-id :items] #(into [] (remove #{id}) %)))
 
-(deftype UngroupSelectedShapes []
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [id (get-in state [:workspace :page])
-          selected (get-in state [:workspace :selected])]
-      (assert (not (empty? selected)) "selected set is empty")
-      (assert (uuid? id) "selected page is not an uuid")
-      (impl/degroup-shapes state selected id))))
+          (strip-empty-groups [state parent-id]
+            (if (nil? parent-id)
+              state
+              (let [group (get-in state [:shapes parent-id])]
+                (if (empty? (:items group))
+                  (-> state
+                      (remove-group group)
+                      (strip-empty-groups (:group group)))
+                  state))))
 
-(defn ungroup-selected
-  []
-  (UngroupSelectedShapes.))
+          (selective-degroup [state [shape & rest :as shapes]]
+            (let [group (get-in state [:shapes (:group shape)])
+                  position (get-relocation-position state group)
+                  parent-id (:group group)]
+              (as-> state $
+                (assoc-in $ [:workspace :selected] (into #{} (map :id shapes)))
+                (reduce (fn [state {shape-id :id}]
+                          (-> state
+                              (relocate-shape shape-id parent-id position)
+                              (remove-from-parent shape-id (:id group))))
+                        $ (reverse shapes))
+                (strip-empty-groups $ (:id group)))))]
 
-;; --- Duplicate Selected
+    (let [shapes (into #{} (map #(get-in state [:shapes %])) shapes)
+          groups (into #{} (filter #(= (:type %) :group)) shapes)
+          parents (into #{} (map :group) shapes)]
+      (cond
+        (and (= (count shapes) (count groups))
+             (= 1 (count parents))
+             (not (empty? groups)))
+        (as-> state $
+          (reduce relocate-group-items $ groups)
+          (reduce remove-group $ groups)
+          (select-degrouped $ groups))
 
-(deftype DuplicateSelected []
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [selected (get-in state [:workspace :selected])]
-      (impl/duplicate-shapes state selected))))
+        (and (empty? groups)
+             (= 1 (count parents))
+             (not (nil? (first parents))))
+        (selective-degroup state shapes)
 
-(defn duplicate-selected
-  []
-  (DuplicateSelected.))
+        :else
+        (throw (ex-info "invalid condition for degrouping" {}))))))
 
-
+(defn materialize-xfmt
+  [state id xfmt]
+  (let [{:keys [type items] :as shape} (get-in state [:shapes id])]
+   (if (= type :group)
+      (reduce #(materialize-xfmt %1 %2 xfmt) state items)
+      (update-in state [:shapes id] geom/transform xfmt))))

@@ -48,13 +48,11 @@
 
             (on-uploaded [[image]]
               (let [{:keys [id name width height]} image
-                    shape {:type :image
-                           :name name
-                           :id (uuid/random)
+                    shape {:name name
                            :metadata {:width width
                                       :height height}
                            :image id}]
-                (st/emit! (dw/select-for-drawing shape))
+                (st/emit! (dw/select-for-drawing :image shape))
                 (modal/hide!)))
 
             (on-files-selected [event]
@@ -93,13 +91,11 @@
 (mf/defc image-item
   [{:keys [image] :as props}]
   (letfn [(on-click [event]
-            (let [shape {:type :image
-                         :name (:name image)
-                         :id (uuid/random)
+            (let [shape {:name (:name image)
                          :metadata {:width (:width image)
                                     :height (:height image)}
                          :image (:id image)}]
-              (st/emit! (dw/select-for-drawing shape))
+              (st/emit! (dw/select-for-drawing :image shape))
               (modal/hide!)))]
     [:div.library-item {:on-click on-click}
      [:div.library-item-th

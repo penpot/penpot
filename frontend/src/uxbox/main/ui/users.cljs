@@ -38,7 +38,7 @@
      [:li {:on-click #(on-click % :settings/notifications)}
       i/mail
       [:span (tr "ds.user.notifications")]]
-     [:li {:on-click #(on-click % (da/logout))}
+     [:li {:on-click #(on-click % da/logout)}
       i/exit
       [:span (tr "ds.user.exit")]]]))
 
@@ -49,10 +49,9 @@
       (l/derive st/state)))
 
 (mf/defc user
-  {:wrap [mf/wrap-reactive]}
-  [_]
+  [props]
   (let [open (mf/use-state false)
-        profile (mf/react profile-ref)
+        profile (mf/deref profile-ref)
         photo (if (str/empty? (:photo profile ""))
                 "/images/avatar.jpg"
                 (:photo profile))]

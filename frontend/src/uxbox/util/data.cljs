@@ -17,11 +17,11 @@
   "Return a indexed map of the collection
   keyed by the result of executing the getter
   over each element of the collection."
-  [coll getter]
+  [getter coll]
   (persistent!
    (reduce #(assoc! %1 (getter %2) %2) (transient {}) coll)))
 
-(def index-by-id #(index-by % :id))
+(def index-by-id #(index-by :id %))
 
 (defn remove-nil-vals
   "Given a map, return a map removing key-value

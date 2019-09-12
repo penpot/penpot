@@ -7,7 +7,7 @@
                            :sha "80ef2dfdb3248f94f987b476a6bc1a6cfbe5f306"}
 
         funcool/datoteka {:mvn/version "1.1.0"}
-        funcool/struct {:mvn/version "1.4.0"}
+        funcool/struct {:mvn/version "2.0.0-SNAPSHOT"}
 
         ring/ring {:mvn/version "1.7.1"}
         metosin/reitit-core {:mvn/version "0.3.9"}

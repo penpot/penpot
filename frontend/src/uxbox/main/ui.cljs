@@ -11,7 +11,6 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [potok.core :as ptk]
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :refer [logout]]
@@ -55,14 +54,17 @@
 (defn- on-error
   "A default error handler."
   [{:keys [status] :as error}]
-  (js/console.error "on-error:" (pr-str error))
-  (js/console.error (.-stack error))
+  (js/console.error "Unhandled Error:"
+                    "\n - message:" (ex-message error)
+                    "\n - data:" (pr-str (ex-data error))
+                    "\n - stack:" (.-stack error))
   (reset! st/loader false)
   (cond
     ;; Unauthorized or Auth timeout
     (and (:status error)
          (or (= (:status error) 403)
              (= (:status error) 419)))
+
     (ts/schedule 0 #(st/emit! (rt/nav :auth/login)))
 
     ;; Conflict
@@ -81,43 +83,39 @@
 
 ;; --- Main App (Component)
 
-(mf/def app
-  :mixins [mx/reactive]
+(def route-iref
+  (-> (l/key :route)
+      (l/derive st/state)))
 
-  :init
-  (fn [own props]
-    (assoc own ::route-ref (l/derive (l/key :route) st/state)))
+(mf/defc app
+  [props]
+  (let [route (mf/deref route-iref)]
+    (case (get-in route [:data :name])
+      :auth/login (mf/element auth/login-page)
+      :auth/register (mf/element auth/register-page)
+      ;; :auth/recovery-request (auth/recovery-request-page)
 
-  :render
-  (fn [own props]
-    (let [route (mx/react (::route-ref own))
-          route-id (get-in route [:data :name])]
-      (case route-id
-        :auth/login (mf/element auth/login-page)
-        :auth/register (auth/register-page)
-        :auth/recovery-request (auth/recovery-request-page)
+      ;; :auth/recovery
+      ;; (let [token (get-in route [:params :path :token])]
+      ;;   (auth/recovery-page token))
 
-        :auth/recovery
-        (let [token (get-in route [:params :path :token])]
-          (auth/recovery-page token))
+      (:settings/profile
+       :settings/password
+       :settings/notifications)
+      (mf/element settings/settings #js {:route route})
 
-        (:settings/profile
-         :settings/password
-         :settings/notifications)
-        (mf/element settings/settings #js {:route route})
+      (:dashboard/projects
+       :dashboard/icons
+       :dashboard/images
+       :dashboard/colors)
+      (mf/element dashboard/dashboard #js {:route route})
 
-        (:dashboard/projects
-         :dashboard/icons
-         :dashboard/images
-         :dashboard/colors)
-        (mf/element dashboard/dashboard #js {:route route})
+      :workspace/page
+      (let [project-id (uuid (get-in route [:params :path :project]))
+            page-id (uuid (get-in route [:params :path :page]))]
+        [:& workspace-page {:project-id project-id
+                            :page-id page-id
+                            :key page-id}])
 
-        :workspace/page
-        (let [project-id (uuid (get-in route [:params :path :project]))
-              page-id (uuid (get-in route [:params :path :page]))]
-          [:& workspace-page {:project-id project-id
-                              :page-id page-id
-                              :key page-id}])
+      nil)))
 
-        nil
-        ))))

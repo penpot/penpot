@@ -9,20 +9,18 @@
   (:require
    [cuerdas.core :as str]
    [lentes.core :as l]
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.lightbox :as udl]
    [uxbox.main.data.projects :as udp]
-   [uxbox.main.exports :as exports]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.dashboard.projects-createform]
+   [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.util.blob :as blob]
+   [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.dashboard.projects-forms :refer [create-project-dialog]]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :as t :refer (tr)]
+   [uxbox.util.i18n :as t :refer [tr]]
    [uxbox.util.router :as r]
    [uxbox.util.time :as dt]))
 
@@ -34,14 +32,13 @@
 
 ;; --- Refs
 
-(def opts-ref
+(def opts-iref
   (-> (l/in [:dashboard :projects])
       (l/derive st/state)))
 
-(def projects-ref
+(def projects-iref
   (-> (l/key :projects)
       (l/derive st/state)))
-
 
 ;; --- Helpers
 
@@ -117,26 +114,9 @@
 
 (mf/defc grid-item-thumbnail
   [{:keys [project] :as props}]
-  (let [url (mf/use-state nil)]
-    #_(mf/use-effect
-     {:deps #js [(:page-id project)]
-      :init (fn []
-              (when-let [page-id (:page-id project)]
-                (let [svg (exports/render-page page-id)
-                      uri (some-> svg
-                                  (blob/create "image/svg+xml")
-                                  (blob/create-uri))]
-                  (reset! url uri)
-                  uri)))
-      :end #(when % (blob/revoke-uri %))})
-    (if @url
-      [:div.grid-item-th
-       {:style {:background-image (str "url('" @url "')")}}]
-      [:div.grid-item-th
-       [:img.img-th {:src "/images/project-placeholder.svg"
-                     :alt "Project title"}]])))
-
-
+  [:div.grid-item-th
+   [:img.img-th {:src "/images/project-placeholder.svg"
+                 :alt "Project title"}]])
 
 ;; --- Grid Item
 
@@ -148,7 +128,7 @@
         delete #(st/emit! (udp/delete-project project))
         on-delete #(do
                      (dom/stop-propagation %)
-                     (udl/open! :confirm {:on-accept delete}))
+                     (modal/show! confirm-dialog {:on-accept delete}))
         on-blur #(let [target (dom/event->target %)
                        name (dom/get-value target)
                        id (:id project)]
@@ -193,13 +173,14 @@
   [{:keys [opts] :as props}]
   (let [order (:order opts :created)
         filter (:filter opts "")
-        projects (mf/deref projects-ref)
+        projects (mf/deref projects-iref)
         projects (->> (vals projects)
                       (filter-projects-by filter)
                       (sort-projects-by order))
         on-click #(do
                     (dom/prevent-default %)
-                    (udl/open! :create-project))]
+                    (modal/show! create-project-dialog {})
+                    #_(udl/open! :create-project))]
     [:section.dashboard-grid
      [:h2 (tr "ds.project-title")]
      [:div.dashboard-grid-content
@@ -214,7 +195,7 @@
 (mf/defc projects-page
   [_]
   (mf/use-effect #(st/emit! (udp/initialize)))
-  (let [opts (mf/deref opts-ref)]
+  (let [opts (mf/deref opts-iref)]
     [:section.dashboard-content
      [:& menu {:opts opts}]
      [:& grid {:opts opts}]]))

@@ -2,7 +2,7 @@
   (:require [cljs.test :as t :include-macros true]
             [cljs.pprint :refer [pprint]]
             [uxbox.util.uuid :as uuid]
-            [uxbox.main.data.shapes-impl :as impl]))
+            [uxbox.main.data.shapes :as impl]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Duplicate (one shape)

@@ -17,7 +17,6 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.workspace.canvas :refer [canvas]]
    [uxbox.main.ui.workspace.grid :refer [grid]]
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.streams :as uws]
@@ -37,7 +36,7 @@
 
 (mf/defc coordinates
   [{:keys [zoom] :as props}]
-  (let [coords (some-> (use-rxsub uws/viewport-mouse-position)
+  (let [coords (some-> (use-rxsub uws/mouse-position)
                        (gpt/divide zoom)
                        (gpt/round 0))]
     [:ul.coordinates
@@ -60,16 +59,16 @@
     :circle "Drag to draw a Circle"
     nil))
 
-(mf/defc cursor-tooltip
-  {:wrap [mf/wrap-memo]}
-  [{:keys [tooltip]}]
-  (let [coords (mf/deref refs/window-mouse-position)]
-    [:span.cursor-tooltip
-     {:style
-      {:position "fixed"
-       :left (str (+ (:x coords) 5) "px")
-       :top (str (- (:y coords) 25) "px")}}
-     tooltip]))
+;; (mf/defc cursor-tooltip
+;;   {:wrap [mf/wrap-memo]}
+;;   [{:keys [tooltip]}]
+;;   (let [coords (mf/deref refs/window-mouse-position)]
+;;     [:span.cursor-tooltip
+;;      {:style
+;;       {:position "fixed"
+;;        :left (str (+ (:x coords) 5) "px")
+;;        :top (str (- (:y coords) 25) "px")}}
+;;      tooltip]))
 
 ;; --- Selection Rect
 
@@ -89,15 +88,13 @@
     (reify
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [stoper (->> (rx/merge (rx/filter #(= % :interrupt) stream)
-                                    (rx/filter uws/mouse-up? stream))
-                          (rx/take 1))]
+        (let [stoper (rx/filter #(or (dw/interrupt? %) (uws/mouse-up? %)) stream)]
           (rx/concat
-           (->> uws/viewport-mouse-position
+           (rx/of (dw/deselect-all))
+           (->> uws/mouse-position
                 (rx/map (fn [pos] #(update-state % pos)))
                 (rx/take-until stoper))
-           (rx/of (dw/deselect-all)
-                  dw/select-shapes-by-current-selrect
+           (rx/of dw/select-shapes-by-current-selrect
                   clear-state)))))))
 
 (mf/defc selrect
@@ -115,34 +112,76 @@
 ;; --- Viewport Positioning
 
 (def handle-viewport-positioning
-  (reify
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stoper (->> (rx/filter #(= ::finish-positioning %) stream)
-                        (rx/take 1))
-            reference @uws/viewport-mouse-position
-            dom (dom/get-element "workspace-viewport")]
-        (->> uws/viewport-mouse-position
-             (rx/map (fn [point]
-                       (let [{:keys [x y]} (gpt/subtract point reference)
-                             cx (.-scrollLeft dom)
-                             cy (.-scrollTop dom)]
-                         (set! (.-scrollLeft dom) (- cx x))
-                         (set! (.-scrollTop dom) (- cy y)))))
-             (rx/take-until stoper)
-             (rx/ignore))))))
+  (letfn [(on-point [dom reference point]
+            (let [{:keys [x y]} (gpt/subtract point reference)
+                  cx (.-scrollLeft dom)
+                  cy (.-scrollTop dom)]
+              (set! (.-scrollLeft dom) (- cx x))
+              (set! (.-scrollTop dom) (- cy y))))]
+    (reify
+      ptk/EffectEvent
+      (effect [_ state stream]
+        (let [stoper (rx/filter #(= ::finish-positioning %) stream)
+              reference @uws/mouse-position
+              dom (dom/get-element "workspace-viewport")]
+          (-> (rx/take-until stoper uws/mouse-position)
+              (rx/subscribe #(on-point dom reference %))))))))
 
 ;; --- Viewport
 
-(mf/def viewport
-  :init
-  (fn [own props]
-    (assoc own ::viewport (mf/create-ref)))
+(mf/defc viewport
+  [{:keys [page] :as props}]
+  (let [{:keys [drawing-tool tooltip zoom flags edition] :as wst} (mf/deref refs/workspace)
+        viewport-ref (mf/use-ref nil)
+        tooltip (or tooltip (get-shape-tooltip drawing-tool))
+        zoom (or zoom 1)]
+    (letfn [(on-mouse-down [event]
+              (dom/stop-propagation event)
+              (let [ctrl? (kbd/ctrl? event)
+                    shift? (kbd/shift? event)
+                    opts {:shift? shift?
+                          :ctrl? ctrl?}]
+                (st/emit! (uws/mouse-event :down ctrl? shift?)))
+              (when (not edition)
+                (if drawing-tool
+                  (st/emit! (start-drawing drawing-tool))
+                  (st/emit! :interrupt handle-selrect))))
 
-  :did-mount
-  (fn [own]
-    (letfn [(translate-point-to-viewport [pt]
-              (let [viewport (mf/ref-node (::viewport own))
+            (on-context-menu [event]
+              (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (let [ctrl? (kbd/ctrl? event)
+                    shift? (kbd/shift? event)
+                    opts {:shift? shift?
+                          :ctrl? ctrl?}]
+                (st/emit! (uws/mouse-event :context-menu ctrl? shift?))))
+
+            (on-mouse-up [event]
+              (dom/stop-propagation event)
+              (let [ctrl? (kbd/ctrl? event)
+                    shift? (kbd/shift? event)
+                    opts {:shift? shift?
+                          :ctrl? ctrl?}]
+                (st/emit! (uws/mouse-event :up ctrl? shift?))))
+
+            (on-click [event]
+              (dom/stop-propagation event)
+              (let [ctrl? (kbd/ctrl? event)
+                    shift? (kbd/shift? event)
+                    opts {:shift? shift?
+                          :ctrl? ctrl?}]
+                (st/emit! (uws/mouse-event :click ctrl? shift?))))
+
+            (on-double-click [event]
+              (dom/stop-propagation event)
+              (let [ctrl? (kbd/ctrl? event)
+                    shift? (kbd/shift? event)
+                    opts {:shift? shift?
+                          :ctrl? ctrl?}]
+                (st/emit! (uws/mouse-event :double-click ctrl? shift?))))
+
+            (translate-point-to-viewport [pt]
+              (let [viewport (mf/ref-node viewport-ref)
                     brect (.getBoundingClientRect viewport)
                     brect (gpt/point (parse-int (.-left brect))
                                      (parse-int (.-top brect)))]
@@ -173,115 +212,56 @@
                   (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
                 (st/emit! (uws/keyboard-event :up key ctrl? shift?))))
 
-            (on-mousemove [event]
-              (let [wpt (gpt/point (.-clientX event)
-                                   (.-clientY event))
-                    vpt (translate-point-to-viewport wpt)
-                    ctrl? (kbd/ctrl? event)
-                    shift? (kbd/shift? event)
-                    event {:ctrl ctrl?
-                           :shift shift?
-                           :window-coords wpt
-                           :viewport-coords vpt}]
-                (st/emit! (uws/pointer-event wpt vpt ctrl? shift?))))]
+            (on-mouse-move [event]
+              (let [pt (gpt/point (.-clientX event)
+                                  (.-clientY event))
+                    pt (translate-point-to-viewport pt)]
+                (st/emit! (uws/->PointerEvent :viewport pt
+                                              (kbd/ctrl? event)
+                                              (kbd/shift? event)))))
 
-      (let [key1 (events/listen js/document EventType.MOUSEMOVE on-mousemove)
-            key2 (events/listen js/document EventType.KEYDOWN on-key-down)
-            key3 (events/listen js/document EventType.KEYUP on-key-up)]
-        (assoc own
-               ::key1 key1
-               ::key2 key2
-               ::key3 key3))))
+            (on-mount []
+              (let [key1 (events/listen js/document EventType.KEYDOWN on-key-down)
+                    key2 (events/listen js/document EventType.KEYUP on-key-up)]
+                (fn []
+                  (events/unlistenByKey key1)
+                  (events/unlistenByKey key2))))]
 
-  :will-unmount
-  (fn [own]
-    (events/unlistenByKey (::key1 own))
-    (events/unlistenByKey (::key2 own))
-    (events/unlistenByKey (::key3 own))
-    (dissoc own ::key1 ::key2 ::key3))
+      (mf/use-effect on-mount)
+      [:*
+       [:& coordinates {:zoom zoom}]
+       #_[:div.tooltip-container
+        (when tooltip
+          [:& cursor-tooltip {:tooltip tooltip}])]
+       [:svg.viewport {:width (* c/viewport-width zoom)
+                       :height (* c/viewport-height zoom)
+                       :ref viewport-ref
+                       :class (when drawing-tool "drawing")
+                       :on-context-menu on-context-menu
+                       :on-click on-click
+                       :on-double-click on-double-click
+                       :on-mouse-move on-mouse-move
+                       :on-mouse-down on-mouse-down
+                       :on-mouse-up on-mouse-up}
+        [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
+         (when page
+           [:*
+            (for [id (reverse (:shapes page))]
+              [:& uus/shape-component {:id id :key id}])
 
-  :mixins [mf/reactive]
+            (when (seq (:selected wst))
+              [:& selection-handlers {:wst wst}])
 
-  :render
-  (fn [own {:keys [page] :as props}]
-    (let [{:keys [drawing-tool tooltip zoom flags edition] :as wst} (mf/react refs/workspace)
-          tooltip (or tooltip (get-shape-tooltip drawing-tool))
-          zoom (or zoom 1)]
-      (letfn [(on-mouse-down [event]
-                (dom/stop-propagation event)
-                (let [ctrl? (kbd/ctrl? event)
-                      shift? (kbd/shift? event)
-                      opts {:shift? shift?
-                            :ctrl? ctrl?}]
-                  (st/emit! (uws/mouse-event :down ctrl? shift?)))
-                (when (not edition)
-                  (if drawing-tool
-                    (st/emit! (start-drawing drawing-tool))
-                    (st/emit! :interrupt handle-selrect))))
-              (on-context-menu [event]
-                (dom/prevent-default event)
-                (dom/stop-propagation event)
-                (let [ctrl? (kbd/ctrl? event)
-                      shift? (kbd/shift? event)
-                      opts {:shift? shift?
-                            :ctrl? ctrl?}]
-                  (st/emit! (uws/mouse-event :context-menu ctrl? shift?))))
-              (on-mouse-up [event]
-                (dom/stop-propagation event)
-                (let [ctrl? (kbd/ctrl? event)
-                      shift? (kbd/shift? event)
-                      opts {:shift? shift?
-                            :ctrl? ctrl?}]
-                  (st/emit! (uws/mouse-event :up ctrl? shift?))))
-              (on-click [event]
-                (dom/stop-propagation event)
-                (let [ctrl? (kbd/ctrl? event)
-                      shift? (kbd/shift? event)
-                      opts {:shift? shift?
-                            :ctrl? ctrl?}]
-                  (st/emit! (uws/mouse-event :click ctrl? shift?))))
-              (on-double-click [event]
-                (dom/stop-propagation event)
-                (let [ctrl? (kbd/ctrl? event)
-                      shift? (kbd/shift? event)
-                      opts {:shift? shift?
-                            :ctrl? ctrl?}]
-                  (st/emit! (uws/mouse-event :double-click ctrl? shift?))))]
-        [:*
-         [:& coordinates {:zoom zoom}]
-         [:div.tooltip-container
-          (when tooltip
-            [:& cursor-tooltip {:tooltip tooltip}])]
-         [:svg.viewport {:width (* c/viewport-width zoom)
-                         :height (* c/viewport-height zoom)
-                         :ref (::viewport own)
-                         :class (when drawing-tool "drawing")
-                         :on-context-menu on-context-menu
-                         :on-click on-click
-                         :on-double-click on-double-click
-                         :on-mouse-down on-mouse-down
-                         :on-mouse-up on-mouse-up}
-          [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
-           (when page
-             [:& canvas {:page page :wst wst}])
-
-           (when page
-             [:*
-              (for [id (reverse (:shapes page))]
-                [:& uus/shape-component {:id id :key id}])
-
-              (when (seq (:selected wst))
-                [:& selection-handlers {:wst wst}])
-
-              (when-let [dshape (:drawing wst)]
-                [:& draw-area {:shape dshape
-                               :zoom (:zoom wst)
-                               :modifiers (:modifiers wst)}])])
+            (when-let [dshape (:drawing wst)]
+              [:& draw-area {:shape dshape
+                             :zoom (:zoom wst)
+                             :modifiers (:modifiers wst)}])])
 
 
 
-           (if (contains? flags :grid)
-             [:& grid {:page page}])]
-          (when (contains? flags :ruler)
-            [:& ruler {:zoom zoom :ruler (:ruler wst)}])
-          [:& selrect {:data (:selrect wst)}]]]))))
+         (if (contains? flags :grid)
+           [:& grid {:page page}])]
+        (when (contains? flags :ruler)
+          [:& ruler {:zoom zoom :ruler (:ruler wst)}])
+        [:& selrect {:data (:selrect wst)}]]])))
+

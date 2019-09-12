@@ -22,8 +22,8 @@
    [uxbox.util.transit :as t]))
 
 (defn- mk-uuid
-  [prefix i]
-  (uuid/v5 uuid/+namespace-oid+ (str prefix i)))
+  [prefix & args]
+  (uuid/v5 uuid/+namespace-oid+ (apply str prefix args)))
 
 (defn- data-encode
   [data]
@@ -58,7 +58,13 @@
                     {:id (mk-uuid "page" i)
                      :user (mk-uuid "user" ui)
                      :project (mk-uuid "project" pi)
-                     :data nil
+                     :data {:shapes [{:id (mk-uuid "canvas" i 1)
+                                      :name "Canvas 1"
+                                      :type :canvas
+                                      :x1 200
+                                      :y1 200
+                                      :x2 1224
+                                      :y2 968}]}
                      :metadata {:width 1024
                                 :height 768
                                 :layout "tablet"}

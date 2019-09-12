@@ -12,7 +12,6 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.icons :as udi]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.lenses :as ul]
    [uxbox.main.store :as st]
    [uxbox.main.ui.dashboard.icons :as icons]
    [uxbox.main.ui.shapes.icon :as icon]
@@ -22,12 +21,12 @@
 
 ;; --- Refs
 
-(def ^:private drawing-shape-ref
-  "A focused vision of the drawing property
-  of the workspace status. This avoids
-  rerender the whole toolbox on each workspace
-  change."
-  (l/derive ul/selected-drawing st/state))
+;; (def ^:private drawing-shape-ref
+;;   "A focused vision of the drawing property
+;;   of the workspace status. This avoids
+;;   rerender the whole toolbox on each workspace
+;;   change."
+;;   (l/derive ul/selected-drawing st/state))
 
 (def ^:private icons-toolbox-ref
   (-> (l/in [:workspace :icons-toolbox])

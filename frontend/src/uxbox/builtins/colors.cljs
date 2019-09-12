@@ -6,7 +6,7 @@
 
 (ns uxbox.builtins.colors
   (:require [uxbox.util.uuid :as uuid]
-            [uxbox.util.data :refer (index-by)]))
+            [uxbox.util.data :refer [index-by-id]]))
 
 (def collections-list
   [{:name "UXBOX"
@@ -672,4 +672,4 @@
               "#3D464D"}}])
 
 (def collections
-  (index-by collections-list :id))
+  (index-by-id collections-list))

@@ -26,6 +26,7 @@
     :image (move-rect shape dpoint)
     :rect (move-rect shape dpoint)
     :text (move-rect shape dpoint)
+    :curve (move-path shape dpoint)
     :path (move-path shape dpoint)
     :circle (move-circle shape dpoint)
     :group (move-group shape dpoint)))
@@ -125,13 +126,10 @@
   "Calculate the size of the shape."
   [shape]
   (case (:type shape)
-    :group (assoc shape :width 100 :height 100)
     :circle (size-circle shape)
-    :text (size-rect shape)
-    :rect (size-rect shape)
-    :icon (size-rect shape)
-    :image (size-rect shape)
-    :path (size-path shape)))
+    :curve (size-path shape)
+    :path (size-path shape)
+    (size-rect shape)))
 
 (defn- size-path
   [{:keys [segments x1 y1 x2 y2] :as shape}]
@@ -179,11 +177,13 @@
 (defn setup-proportions
   [shape]
   (case (:type shape)
+    :canvas (setup-proportions-rect shape)
     :rect (setup-proportions-rect shape)
     :circle (setup-proportions-rect shape)
     :icon (setup-proportions-image shape)
     :image (setup-proportions-image shape)
     :text shape
+    :curve (setup-proportions-rect shape)
     :path (setup-proportions-rect shape)))
 
 (defn setup-proportions-image
@@ -461,6 +461,7 @@
    (case type
      :circle (circle->rect-shape state shape)
      :path (path->rect-shape state shape)
+     :curve (path->rect-shape state shape)
      shape)))
 
 (defn shapes->rect-shape
@@ -512,11 +513,13 @@
   "Apply the matrix transformation to shape."
   [{:keys [type] :as shape} xfmt]
   (case type
+    :canvas (transform-rect shape xfmt)
     :rect (transform-rect shape xfmt)
     :icon (transform-rect shape xfmt)
     :text (transform-rect shape xfmt)
     :image (transform-rect shape xfmt)
     :path (transform-path shape xfmt)
+    :curve (transform-path shape xfmt)
     :circle (transform-circle shape xfmt)))
 
 (defn- transform-rect
@@ -564,7 +567,6 @@
 ;; --- Outer Rect
 
 (declare selection-rect-generic)
-(declare selection-rect-group)
 
 (defn rotation-matrix
   "Generate a rotation matrix from shape."
@@ -589,24 +591,14 @@
   ([shape]
    (selection-rect @st/state shape))
   ([state shape]
-   (let [{:keys [displacement resize]} (:modifiers shape)]
+   (let [modifier (:modifier-mtx shape)]
      (-> (shape->rect-shape shape)
          (assoc :type :rect :id (:id shape))
-         (transform (or resize (gmt/matrix)))
-         (transform (or displacement (gmt/matrix)))
+         (transform (or modifier (gmt/matrix)))
          (rotate-shape)
          (size)))))
 
 ;; --- Helpers
-
-(defn resolve-parent
-  "Recursively resolve the real shape parent."
-  ([shape]
-   (resolve-parent @st/state shape))
-  ([state {:keys [group] :as shape}]
-   (if group
-     (resolve-parent state (get-in state [:shapes group]))
-     shape)))
 
 (defn contained-in?
   "Check if a shape is contained in the

@@ -30,8 +30,7 @@
 
 (mf/defc image-component
   [{:keys [shape] :as props}]
-  (let [modifiers (mf/deref (refs/selected-modifiers (:id shape)))
-        selected (mf/deref refs/selected-shapes)
+  (let [selected (mf/deref refs/selected-shapes)
         image (mf/deref (image-ref (:image shape)))
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape selected)]
@@ -42,27 +41,23 @@
       [:g.shape {:class (when selected? "selected")
                  :on-mouse-down on-mouse-down}
        [:& image-shape {:shape shape
-                        :image image
-                        :modifiers modifiers}]])))
+                        :image image}]])))
 
 ;; --- Image Shape
 
 (mf/defc image-shape
-  [{:keys [shape image modifiers] :as props}]
-  (let [{:keys [id x1 y1 width height]} (geom/size shape)
-        {:keys [resize displacement]} modifiers
+  [{:keys [shape image] :as props}]
+  (let [{:keys [id x1 y1 width height modifier-mtx]} (geom/size shape)
+        moving? (boolean modifier-mtx)
+        transform (when (gmt/matrix? modifier-mtx)
+                    (str modifier-mtx))
 
-        xfmt (cond-> (gmt/matrix)
-               resize (gmt/multiply resize)
-               displacement (gmt/multiply displacement))
-
-        moving? (boolean displacement)
         props {:x x1 :y y1
                :id (str "shape-" id)
                :preserve-aspect-ratio "none"
                :class (classnames :move-cursor moving?)
                :xlink-href (:url image)
-               :transform (str xfmt)
+               :transform transform
                :width width
                :height height}
         attrs (merge props (attrs/extract-style-attrs shape))]

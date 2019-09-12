@@ -1,16 +1,17 @@
 (ns uxbox.main.ui.messages
-  (:require [lentes.core :as l]
-            [uxbox.main.store :as st]
-            [uxbox.util.messages :as uum]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [lentes.core :as l]
+   [rumext.alpha :as mf]
+   [uxbox.main.store :as st]
+   [uxbox.util.messages :as um]))
 
-(def ^:private message-ref
+(def ^:private message-iref
   (-> (l/key :message)
       (l/derive st/state)))
 
-(mx/defc messages-widget
-  {:mixins [mx/static mx/reactive]}
+(mf/defc messages-widget
   []
-  (let [message (mx/react message-ref)
-        on-close #(st/emit! (uum/hide))]
-    (uum/messages-widget (assoc message :on-close on-close))))
+  (let [message (mf/deref message-iref)
+        on-close #(st/emit! (um/hide))]
+    [:& um/messages-widget {:message message
+                            :on-close on-close}]))

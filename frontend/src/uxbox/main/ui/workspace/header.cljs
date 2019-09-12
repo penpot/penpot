@@ -29,9 +29,8 @@
 ;; --- Zoom Widget
 
 (mf/defc zoom-widget
-  {:wrap [mf/wrap-reactive]}
   [props]
-  (let [zoom (mf/react refs/selected-zoom)
+  (let [zoom (mf/deref refs/selected-zoom)
         increase #(st/emit! (dw/increase-zoom))
         decrease #(st/emit! (dw/decrease-zoom))]
     [:ul.options-view
