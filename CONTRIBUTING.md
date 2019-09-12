@@ -41,7 +41,7 @@ free video series:
 https://egghead.io/series/how-to-contribute-to-an-open-source-project-on-github
 
 We will use the `easy fix` mark for tag for indicate issues that are
-easy for begginers.
+easy for beginners.
 
 
 ## Commit Message Guidelines ##
@@ -60,22 +60,22 @@ The commit message format is:
 
 Where type is:
 
-- `:bug:` a commit that fixes a bug
-- `:sparkles:` a commit that an improvement
-- `:tada:` a commit with new feature
-- `:recycle:` a commit that introduces a refactor
-- `:lipstick:` a commit with cosmetic changes
-- `:ambulance:` a commit that fixes critical bug
-- `:books:` a commit that improves or adds documentation
-- `:construction:`: a wip commit
-- `:construction_worker:` a commit with CI related stuff
-- `:boom:` a commit with breaking changes
-- `:wrench:` a commit for config updates
-- `:zap:` a commit with performance improvements
-- `:whale:` a commit for docker related stuff
-- `:rewind:` a commit that reverts changes
-- `:paperclip:` a commit with other not relevant changes
-- `:arrow_up:` a commit with dependencies updates
+- :bug: `:bug:` a commit that fixes a bug
+- :sparkles: `:sparkles:` a commit that an improvement
+- :tada: `:tada:` a commit with new feature
+- :recycle: `:recycle:` a commit that introduces a refactor
+- :lipstick: `:lipstick:` a commit with cosmetic changes
+- :ambulance: `:ambulance:` a commit that fixes critical bug
+- :books: `:books:` a commit that improves or adds documentation
+- :construction: `:construction:`: a wip commit
+- :construction_worker: `:construction_worker:` a commit with CI related stuff
+- :boom: `:boom:` a commit with breaking changes
+- :wrench: `:wrench:` a commit for config updates
+- :zap: `:zap:` a commit with performance improvements
+- :whale: `:whale:` a commit for docker related stuff
+- :rewind: `:rewind:` a commit that reverts changes
+- :paperclip: `:paperclip:` a commit with other not relevant changes
+- :arrow_up: `:arrow_up:` a commit with dependencies updates
 
 More info: https://gist.github.com/parmentf/035de27d6ed1dce0b36a
 
