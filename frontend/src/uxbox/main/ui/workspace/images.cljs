@@ -70,16 +70,16 @@
               (dom/prevent-default event)
               (modal/hide!))]
       [:div.lightbox-body
-       [:h3 "New image"]
+       [:h3 (tr "image.new")]
        [:div.row-flex
         [:div.lightbox-big-btn {:on-click on-select-from-library}
          [:span.big-svg i/image]
-         [:span.text "Select from library"]]
+         [:span.text (tr "image.select")]]
         [:div.lightbox-big-btn {:on-click on-upload-click}
          (if uploading?
            [:span.big-svg.upload i/loader-pencil]
            [:span.big-svg.upload i/exit])
-         [:span.text "Upload file"]
+         [:span.text (tr "image.upload")]
          [:input.upload-image-input
           {:style {:display "none"}
            :accept "image/jpeg,image/png"
@@ -142,16 +142,16 @@
       :fn #(st/emit! (udi/fetch-images id))})
 
     [:div.lightbox-body.big-lightbox
-     [:h3 "Import image from library"]
+     [:h3 (tr "image.import-library")]
      [:div.import-img-library
       [:div.library-actions
        [:ul.toggle-library
         [:li.your-images {:class (when own? "current")
                           :on-click #(select-type :own)}
-         "YOUR IMAGES"]
+         (tr "ds.your-images-title")]
         [:li.standard {:class (when builtin? "current")
                        :on-click #(select-type :builtin)}
-         "IMAGES STORE"]]
+         (tr "ds.store-images-title")]]
        [:select.input-select {:on-change on-change}
         (when own?
           [:option {:value (pr-str nil)} "Storage"])

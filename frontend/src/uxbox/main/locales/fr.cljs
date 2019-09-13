@@ -135,6 +135,11 @@
    "element.page-measures" "Paramètres de la page"
    "element.page-grid-options" "Paramètres de la grille"
 
+   "image.new" "Nouvelle image"
+   "image.select" "Choisir depuis une librairie"
+   "image.upload" "Envoyer un fichier"
+   "image.import-library" "Importer une image depuis une librairie"
+
    "auth.email-or-username" "adresse email ou nom d'utilisateur"
    "auth.password" "Mot de passe"
    "auth.signin" "Se connecter"
