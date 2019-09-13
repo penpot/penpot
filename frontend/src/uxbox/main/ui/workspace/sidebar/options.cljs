@@ -62,7 +62,7 @@
     :id ::fill
     :icon i/fill
     :comp options-fill/fill-menu}
-   {:name (tr "element.fill")
+   {:name (tr "element.stroke")
     :id ::stroke
     :icon i/stroke
     :comp options-stroke/stroke-menu}
