@@ -104,6 +104,7 @@
    "ds.help.path" "Path"
    "ds.help.curve" "Curve"
    "ds.help.ruler" "Ruler"
+   "ds.help.canvas" "Canvas"
 
    "ds.user.profile" "Profile"
    "ds.user.password" "Password"
