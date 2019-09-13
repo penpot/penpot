@@ -123,7 +123,7 @@
    "header.image" "Image (Ctrl + I)"
    "header.rules" "Règles"
    "header.grid" "Grille (Ctrl + G)"
-   "header.grid-snap" "Snap to grid"
+   "header.grid-snap" "Coller à la grille"
    "header.align" "Aligner (Ctrl + A)"
    "header.view-mode" "Mode visualisation (Ctrl + P)"
 
