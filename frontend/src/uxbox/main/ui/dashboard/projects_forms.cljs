@@ -49,7 +49,7 @@
   (let [{:keys [data] :as form} (fm/use-form ::project-form defaults)]
     [:form {:on-submit #(on-submit % form)}
      [:input.input-text
-      {:placeholder "New project name"
+      {:placeholder (tr "ds.project.placeholder")
        :type "text"
        :name "name"
        :value (:name data)
@@ -59,9 +59,9 @@
        :auto-focus true}]
      [:div.project-size
       [:div.input-element.pixels
-       [:span "Width"]
+       [:span (tr "ds.width")]
        [:input#project-witdh.input-text
-        {:placeholder "Width"
+        {:placeholder (tr "ds.width")
          :name "width"
          :type "number"
          :min 0
@@ -72,9 +72,9 @@
          :value (:width data)}]]
       [:a.toggle-layout {:on-click #(swap-size % form)} i/toggle]
       [:div.input-element.pixels
-       [:span "Height"]
+       [:span (tr "ds.height")]
        [:input#project-height.input-text
-        {:placeholder "Height"
+        {:placeholder (tr "ds.height")
          :type "number"
          :name "height"
          :min 0
@@ -86,7 +86,7 @@
 
      ;; Submit
      [:input#project-btn.btn-primary
-      {:value "Go go go!"
+      {:value (tr "ds.go")
        :class (when-not (:valid form) "btn-disabled")
        :disabled (not (:valid form))
        :type "submit"}]]))
@@ -96,7 +96,7 @@
 (mf/defc create-project-dialog
   [props]
   [:div.lightbox-body
-   [:h3 "New project"]
+   [:h3 (tr "ds.project.new")]
    [:& create-project-form]
    [:a.close {:on-click modal/hide!} i/close]])
 

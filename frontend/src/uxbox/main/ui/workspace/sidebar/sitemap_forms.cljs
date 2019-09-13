@@ -63,7 +63,7 @@
   (let [{:keys [data] :as form} (fm/use-form ::page-form #(initial-data page))]
     [:form {:on-submit #(on-submit % form)}
      [:input.input-text
-      {:placeholder "Page name"
+      {:placeholder (tr "ds.page.placeholder")
        :type "text"
        :name "name"
        :class (fm/error-class form :name)
@@ -73,9 +73,9 @@
        :auto-focus true}]
      [:div.project-size
       [:div.input-element.pixels
-       [:span "Width"]
+       [:span (tr "ds.width")]
        [:input#project-witdh.input-text
-        {:placeholder "Width"
+        {:placeholder (tr "ds.width")
          :name "width"
          :type "number"
          :min 0
@@ -86,9 +86,9 @@
          :value (:width data)}]]
       [:a.toggle-layout {:on-click #(swap-size % form)} i/toggle]
       [:div.input-element.pixels
-       [:span "Height"]
+       [:span (tr "ds.height")]
        [:input#project-height.input-text
-        {:placeholder "Height"
+        {:placeholder (tr "ds.height")
          :name "height"
          :type "number"
          :min 0
@@ -98,7 +98,7 @@
          :on-change (fm/on-input-change form :height)
          :value (:height data)}]]]
      [:input.btn-primary
-      {:value "Go go go!"
+      {:value (tr "ds.go")
        :type "submit"
        :class (when-not (:valid form) "btn-disabled")
        :disabled (not (:valid form))}]]))
@@ -107,8 +107,8 @@
   [{:keys [page] :as props}]
   [:div.lightbox-body
    (if (nil? (:id page))
-     [:h3 "New page"]
-     [:h3 "Edit page"])
+     [:h3 (tr "ds.page.new")]
+     [:h3 (tr "ds.page.edit")])
    [:& page-form {:page page}]
    [:a.close {:on-click modal/hide!} i/close]])
 
