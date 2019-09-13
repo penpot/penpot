@@ -11,8 +11,7 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.pages :as udp]
-   [uxbox.main.data.shapes :as uds]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
@@ -45,9 +44,10 @@
         on-blur (fn [event]
                   (let [target (dom/event->target event)
                         parent (.-parentNode target)
+                        parent (.-parentNode parent)
                         name (dom/get-value target)]
                     (set! (.-draggable parent) true)
-                    (st/emit! (uds/rename-shape (:id shape) name))
+                    (st/emit! (dw/rename-shape (:id shape) name))
                     (swap! local assoc :edition false)))
         on-key-down (fn [event]
                       (js/console.log event)
@@ -55,7 +55,8 @@
                         (on-blur event)))
         on-click (fn [event]
                    (dom/prevent-default event)
-                   (let [parent (.-parentNode (.-target event))]
+                   (let [parent (.-parentNode (.-target event))
+                         parent (.-parentNode parent)]
                      (set! (.-draggable parent) false))
                    (swap! local assoc :edition true))]
     (if (:edition @local)
@@ -78,18 +79,18 @@
             (let [id (:id shape)
                   blocked? (:blocked shape)]
               (if blocked?
-                (st/emit! (uds/unblock-shape id))
-                (st/emit! (uds/block-shape id)))))
+                (st/emit! (dw/unblock-shape id))
+                (st/emit! (dw/block-shape id)))))
 
           (toggle-visibility [event]
             (dom/stop-propagation event)
             (let [id (:id shape)
                   hidden? (:hidden shape)]
               (if hidden?
-                (st/emit! (uds/show-shape id))
-                (st/emit! (uds/hide-shape id)))
+                (st/emit! (dw/show-shape id))
+                (st/emit! (dw/hide-shape id)))
               (when (contains? selected id)
-                (st/emit! (udw/select-shape id)))))
+                (st/emit! (dw/select-shape id)))))
 
           (select-shape [event]
             (dom/prevent-default event)
@@ -100,24 +101,20 @@
                 nil
 
                 (.-ctrlKey event)
-                (st/emit! (udw/select-shape id))
+                (st/emit! (dw/select-shape id))
 
                 (> (count selected) 1)
-                (st/emit! (udw/deselect-all)
-                          (udw/select-shape id))
-
-                (contains? selected id)
-                (st/emit! (udw/select-shape id))
-
+                (st/emit! (dw/deselect-all)
+                          (dw/select-shape id))
                 :else
-                (st/emit! (udw/deselect-all)
-                          (udw/select-shape id)))))
+                (st/emit! (dw/deselect-all)
+                          (dw/select-shape id)))))
 
           (on-drop [item monitor]
             (st/emit! (udp/persist-page (:page shape))))
 
           (on-hover [item monitor]
-            (st/emit! (udw/change-shape-order {:id (:shape-id item)
+            (st/emit! (dw/change-shape-order {:id (:shape-id item)
                                                :index index})))]
     (let [selected? (contains? selected (:id shape))
           [dprops dnd-ref] (use-sortable
@@ -133,8 +130,7 @@
                     :dragging-TODO (:dragging? dprops))}
        [:div.element-list-body {:class (classnames :selected selected?)
                                 :on-click select-shape
-                                :on-double-click #(dom/stop-propagation %)
-                                :draggable true}
+                                :on-double-click #(dom/stop-propagation %)}
         [:div.element-actions
          [:div.toggle-element {:class (when-not (:hidden shape) "selected")
                                :on-click toggle-visibility}
@@ -145,20 +141,52 @@
         [:div.element-icon (element-icon shape)]
         [:& layer-name {:shape shape}]]])))
 
+
+;; --- Layer Canvas
+
+;; (mf/defc layer-canvas
+;;   [{:keys [canvas selected index] :as props}]
+;;   (letfn [(select-shape [event]
+;;             (dom/prevent-default event)
+;;             (st/emit! (dw/select-canvas (:id canvas))))
+;;     (let [selected? (contains? selected (:id shape))]
+;;       [:li {:class (classnames
+;;                     :selected selected?)}
+;;        [:div.element-list-body {:class (classnames :selected selected?)
+;;                                 :on-click select-shape
+;;                                 :on-double-click #(dom/stop-propagation %)
+;;                                 :draggable true}
+;;         [:div.element-actions
+;;          [:div.toggle-element {:class (when-not (:hidden shape) "selected")
+;;                                :on-click toggle-visibility}
+;;           i/eye]
+;;          [:div.block-element {:class (when (:blocked shape) "selected")
+;;                               :on-click toggle-blocking}
+;;           i/lock]]
+;;         [:div.element-icon (element-icon shape)]
+;;         [:& layer-name {:shape shape}]]])))
+
 ;; --- Layers List
 
 (def ^:private shapes-iref
   (-> (l/key :shapes)
       (l/derive st/state)))
 
+(def ^:private canvas-iref
+  (-> (l/key :canvas)
+      (l/derive st/state)))
+
 (mf/defc layers-list
   [{:keys [shapes selected] :as props}]
-  (let [shapes-map (mf/deref shapes-iref)]
+  (let [shapes-map (mf/deref shapes-iref)
+        canvas-map (mf/deref canvas-iref)
+        selected-shapes (mf/deref refs/selected-shapes)
+        selected-canvas (mf/deref refs/selected-canvas)]
     [:div.tool-window-content
      [:ul.element-list
       (for [[index id] (map-indexed vector shapes)]
         [:& layer-item {:shape (get shapes-map id)
-                        :selected selected
+                        :selected selected-shapes
                         :index index
                         :key id}])]]))
 
@@ -166,7 +194,7 @@
 
 (mf/defc layers-toolbox
   [{:keys [page selected] :as props}]
-  (let [on-click #(st/emit! (udw/toggle-flag :layers))
+  (let [on-click #(st/emit! (dw/toggle-flag :layers))
         selected (mf/deref refs/selected-shapes)]
     [:div#layers.tool-window
      [:div.tool-window-bar

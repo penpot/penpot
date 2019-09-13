@@ -21,37 +21,37 @@
 
 (mf/defc circle-component
   [{:keys [shape] :as props}]
-  (let [modifiers (mf/deref (refs/selected-modifiers (:id shape)))
-        selected (mf/deref refs/selected-shapes)
+  (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     [:& circle-shape {:shape shape :modifiers modifiers}]]))
+     [:& circle-shape {:shape shape}]]))
 
 ;; --- Circle Shape
 
 (mf/defc circle-shape
-  [{:keys [shape modifiers] :as props}]
-  (let [{:keys [id rotation cx cy]} shape
-        {:keys [resize displacement]} modifiers
+  [{:keys [shape] :as props}]
+  (let [{:keys [id rotation cx cy modifier-mtx]} shape
 
-        shape (cond-> shape
-                displacement (geom/transform displacement)
-                resize (geom/transform resize))
+        shape (cond
+                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
+                :else shape)
 
         center (gpt/point (:cx shape)
                           (:cy shape))
+
         rotation (or rotation 0)
 
-        moving? (boolean displacement)
+        moving? (boolean modifier-mtx)
 
-        xfmt (-> (gmt/matrix)
-                 (gmt/rotate* rotation center))
+        transform (when (pos? rotation)
+                    (str (-> (gmt/matrix)
+                             (gmt/rotate* rotation center))))
 
         props {:id (str "shape-" id)
                :class (classnames :move-cursor moving?)
-               :transform (str xfmt)}
+               :transform transform}
 
         attrs (merge props
                      (attrs/extract-style-attrs shape)

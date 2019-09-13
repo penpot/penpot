@@ -6,16 +6,17 @@
 
 (ns uxbox.util.messages
   "Messages notifications."
-  (:require [lentes.core :as l]
-            [cuerdas.core :as str]
-            [beicon.core :as rx]
-            [potok.core :as ptk]
-            [uxbox.builtins.icons :as i]
-            [uxbox.util.timers :as ts]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.data :refer [classnames]]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.i18n :refer [tr]]))
+  (:require
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [lentes.core :as l]
+   [potok.core :as ptk]
+   [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
+   [uxbox.util.data :refer [classnames]]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.timers :as ts]
+   [uxbox.util.i18n :refer [tr]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Events
@@ -25,32 +26,11 @@
 
 (def +animation-timeout+ 600)
 
-;; --- Message Event
+;; --- Main API
 
 (declare hide)
+(declare show)
 (declare show?)
-
-(deftype Show [data]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [message (assoc data :state :visible)]
-      (assoc state :message message)))
-
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [stoper (->> (rx/filter show? s)
-                      (rx/take 1))]
-      (->> (rx/of (hide))
-           (rx/delay (:timeout data))
-           (rx/take-until stoper)))))
-
-(defn show
-  [message]
-  (Show. message))
-
-(defn show?
-  [v]
-  (instance? Show v))
 
 (defn error
   [message & {:keys [timeout] :or {timeout 3000}}]
@@ -72,27 +52,44 @@
          :timeout js/Number.MAX_SAFE_INTEGER
          :type :dialog}))
 
-;; --- Hide Message
+;; --- Show Event
 
-(deftype Hide [^:mutable canceled?]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update state :message
-            (fn [v]
-              (if (nil? v)
-                (do (set! canceled? true) nil)
-                (assoc v :state :hide)))))
+(defn show
+  [data]
+  (reify
+    ptk/EventType
+    (type [_] ::show)
 
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (if canceled?
-      (rx/empty)
-      (->> (rx/of #(dissoc state :message))
-           (rx/delay +animation-timeout+)))))
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [message (assoc data :state :visible)]
+        (assoc state :message message)))
+
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [stoper (->> (rx/filter show? s)
+                        (rx/take 1))]
+        (->> (rx/of (hide))
+             (rx/delay (:timeout data))
+             (rx/take-until stoper))))))
+
+(defn show?
+  [v]
+  (= ::show (ptk/type v)))
+
+;; --- Hide Event
 
 (defn hide
   []
-  (Hide. false))
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :message assoc :state :hide))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rx/of #(dissoc % :message))
+           (rx/delay +animation-timeout+)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -100,10 +97,10 @@
 
 ;; --- Notification Component
 
-(mx/defc notification-box
-  {:mixins [mx/static]}
-  [{:keys [type on-close] :as message}]
-  (let [classes (classnames :error (= type :error)
+(mf/defc notification-box
+  [{:keys [message on-close] :as message}]
+  (let [type (:type message)
+        classes (classnames :error (= type :error)
                             :info (= type :info)
                             :hide-message (= (:state message) :hide)
                             :quick true)]
@@ -114,9 +111,8 @@
 
 ;; --- Dialog Component
 
-(mx/defc dialog-box
-  {:mixins [mx/static mx/reactive]}
-  [{:keys [on-accept on-cancel on-close] :as message}]
+(mf/defc dialog-box
+  [{:keys [on-accept on-cancel on-close message] :as props}]
   (let [classes (classnames :info true
                             :hide-message (= (:state message) :hide))]
     (letfn [(accept [event]
@@ -143,11 +139,10 @@
 
 ;; --- Main Component (entry point)
 
-(mx/defc messages-widget
-  {:mixins [mx/static mx/reactive]}
-  [message]
+(mf/defc messages-widget
+  [{:keys [message] :as props}]
   (case (:type message)
-    :error (notification-box message)
-    :info (notification-box message)
-    :dialog (dialog-box message)
+    :error (mf/element notification-box props)
+    :info (mf/element notification-box props)
+    :dialog (mf/element dialog-box props)
     nil))

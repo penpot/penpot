@@ -10,10 +10,9 @@
   (:require
    [beicon.core :as rx]
    [lentes.core :as l]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]
-   [uxbox.main.constants :as c]
-   [uxbox.main.data.shapes :as uds]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -34,19 +33,13 @@
 
 ;; --- Resize Implementation
 
-;; TODO: this function need to be refactored
-
 (defn- start-resize
   [vid ids shape]
-  (letfn [(on-resize [shape [point lock?]]
+  (letfn [(resize [shape [point lock?]]
             (let [result (geom/resize-shape vid shape point lock?)
                   scale (geom/calculate-scale-ratio shape result)
-                  mtx (geom/generate-resize-matrix vid shape scale)
-                  xfm (map #(udw/apply-temporal-resize % mtx))]
-              (apply st/emit! (sequence xfm ids))))
-
-          (on-end []
-            (apply st/emit! (map udw/apply-resize ids)))
+                  mtx (geom/generate-resize-matrix vid shape scale)]
+              (apply rx/of (map #(dw/assoc-temporal-modifier % mtx) ids))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Ctrl key and the shapes own proportion
@@ -65,19 +58,23 @@
           ;; Apply the current zoom factor to the point.
           (apply-zoom [point]
             (gpt/divide point @refs/selected-zoom))]
+    (reify
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [shape  (->> (geom/shape->rect-shape shape)
+                          (geom/size))
+              stoper (rx/filter ws/mouse-up? stream)]
+          (rx/concat
+           (->> ws/mouse-position
+                (rx/map apply-zoom)
+                (rx/mapcat apply-grid-alignment)
+                (rx/with-latest vector ws/mouse-position-ctrl)
+                (rx/map normalize-proportion-lock)
+                (rx/mapcat (partial resize shape))
+                (rx/take-until stoper))
+           (rx/from-coll (map dw/materialize-current-modifier ids))))))))
 
-    (let [shape  (->> (geom/shape->rect-shape shape)
-                      (geom/size))
-          stoper (->> ws/interaction-events
-                      (rx/filter ws/mouse-up?)
-                      (rx/take 1))
-          stream (->> ws/viewport-mouse-position
-                      (rx/take-until stoper)
-                      (rx/map apply-zoom)
-                      (rx/mapcat apply-grid-alignment)
-                      (rx/with-latest vector ws/mouse-position-ctrl)
-                      (rx/map normalize-proportion-lock))]
-      (rx/subscribe stream (partial on-resize shape) nil on-end))))
+      ;; (rx/subscribe stream (partial on-resize shape) nil on-end))))
 
 ;; --- Controls (Component)
 
@@ -160,22 +157,23 @@
   (letfn [(on-mouse-down [event index]
             (dom/stop-propagation event)
 
-            (let [stoper (get-edition-stream-stoper ws/interaction-events)
+            ;; TODO: this need code ux refactor
+            (let [stoper (get-edition-stream-stoper)
                   stream (rx/take-until stoper ws/mouse-position-deltas)]
               (when @refs/selected-alignment
-                (st/emit! (uds/initial-path-point-align (:id shape) index)))
+                (st/emit! (dw/initial-path-point-align (:id shape) index)))
               (rx/subscribe stream #(on-handler-move % index))))
 
-          (get-edition-stream-stoper [stream]
+          (get-edition-stream-stoper []
             (let [stoper? #(and (ws/mouse-event? %) (= (:type %) :up))]
               (rx/merge
-               (rx/filter stoper? stream)
-               (->> stream
+               (rx/filter stoper? st/stream)
+               (->> st/stream
                     (rx/filter #(= % :interrupt))
                     (rx/take 1)))))
 
           (on-handler-move [delta index]
-            (st/emit! (uds/update-path (:id shape) index delta)))]
+            (st/emit! (dw/update-path (:id shape) index delta)))]
 
     (let [displacement (:displacement modifiers)
           segments (cond->> (:segments shape)
@@ -191,30 +189,20 @@
                    :style {:cursor "pointer"}}])])))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes modifiers zoom] :as props}]
+  [{:keys [shapes zoom] :as props}]
   (let [shape (->> shapes
-                   (map #(assoc % :modifiers (get modifiers (:id %))))
                    (map #(geom/selection-rect %))
                    (geom/shapes->rect-shape)
                    (geom/selection-rect))
         on-click #(do (dom/stop-propagation %2)
-                      (start-resize %1 (map :id shapes) shape))]
+                      (st/emit! (start-resize %1 (mapv :id shapes) shape)))]
     [:& controls {:shape shape
                   :zoom zoom
                   :on-click on-click}]))
 
-(mf/defc single-selection-handlers
-  [{:keys [shape zoom modifiers] :as props}]
-  (let [on-click #(do (dom/stop-propagation %2)
-                      (start-resize %1 #{(:id shape)} shape))
-        shape (-> (assoc shape :modifiers modifiers)
-                  (geom/selection-rect))]
-    [:& controls {:shape shape :zoom zoom :on-click on-click}]))
-
 (mf/defc text-edition-selection-handlers
-  [{:keys [shape modifiers zoom] :as props}]
-  (let [{:keys [x1 y1 width height] :as shape} (-> (assoc shape :modifiers modifiers)
-                                                   (geom/selection-rect))]
+  [{:keys [shape zoom] :as props}]
+  (let [{:keys [x1 y1 width height] :as shape} (geom/selection-rect shape)]
     [:g.controls
      [:rect.main {:x x1 :y y1
                   :width width
@@ -225,6 +213,13 @@
                           :stroke-opacity "0.5"
                           :fill "transparent"}}]]))
 
+(mf/defc single-selection-handlers
+  [{:keys [shape zoom] :as props}]
+  (let [on-click #(do (dom/stop-propagation %2)
+                      (st/emit! (start-resize %1 #{(:id shape)} shape)))
+        shape (geom/selection-rect shape)]
+    [:& controls {:shape shape :zoom zoom :on-click on-click}]))
+
 (def ^:private shapes-map-iref
   (-> (l/key :shapes)
       (l/derive st/state)))
@@ -233,12 +228,10 @@
   [{:keys [wst] :as props}]
   (let [shapes-map (mf/deref shapes-map-iref)
         shapes (map #(get shapes-map %) (:selected wst))
-        edition? (:edition wst)
-        modifiers (:modifiers wst)
+        edition (:edition wst)
         zoom (:zoom wst 1)
         num (count shapes)
         {:keys [id type] :as shape} (first shapes)]
-
 
     (cond
       (zero? num)
@@ -246,22 +239,18 @@
 
       (> num 1)
       [:& multiple-selection-handlers {:shapes shapes
-                                       :modifiers modifiers
                                        :zoom zoom}]
 
       (and (= type :text)
-           (= edition? (:id shape)))
+           (= edition (:id shape)))
       [:& text-edition-selection-handlers {:shape shape
-                                           :modifiers (get modifiers id)
                                            :zoom zoom}]
-      (and (= type :path)
-           (= edition? (:id shape)))
+      (and (or (= type :path)
+               (= type :curve))
+           (= edition (:id shape)))
       [:& path-edition-selection-handlers {:shape shape
-                                           :zoom zoom
-                                           :modifiers (get modifiers id)}]
-
+                                           :zoom zoom}]
 
       :else
       [:& single-selection-handlers {:shape shape
-                                     :modifiers (get modifiers id)
                                      :zoom zoom}])))

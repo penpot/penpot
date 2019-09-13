@@ -5,16 +5,17 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.projects
-  (:require [cljs.spec.alpha :as s]
-            [cuerdas.core :as str]
-            [beicon.core :as rx]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.repo :as rp]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.util.spec :as us]
-            [uxbox.util.time :as dt]
-            [uxbox.util.router :as rt]))
+  (:require
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [beicon.core :as rx]
+   [potok.core :as ptk]
+   [uxbox.main.repo :as rp]
+   [uxbox.main.data.pages :as udp]
+   [uxbox.util.uuid :as uuid]
+   [uxbox.util.spec :as us]
+   [uxbox.util.time :as dt]
+   [uxbox.util.router :as rt]))
 
 ;; --- Specs
 
@@ -38,7 +39,7 @@
 (defn assoc-project
   "A reduce function for assoc the project to the state map."
   [state {:keys [id] :as project}]
-  {:pre [(us/valid? ::project-entity project)]}
+  (s/assert ::project-entity project)
   (update-in state [:projects id] merge project))
 
 (defn dissoc-project
@@ -159,74 +160,34 @@
 
 ;; --- Create Project
 
-(defrecord CreateProject [name width height layout]
-  ptk/WatchEvent
-  (watch [this state s]
-    (let [project-data {:name name}
-          page-data {:name "Page 0"
-                     :data {}
-                     :metadata {:width width
-                                :height height
-                                :layout layout
-                                :order 0}}]
+(s/def ::create-project-params
+  (s/keys :req-un [::name ::width ::height]))
+
+(defn create-project
+  [{:keys [name] :as params}]
+  (s/assert ::create-project-params params)
+  (reify
+    ptk/WatchEvent
+    (watch [this state stream]
       (->> (rp/req :create/project {:name name})
            (rx/map :payload)
            (rx/mapcat (fn [{:keys [id] :as project}]
-                        (rp/req :create/page (assoc page-data :project id))))
-           (rx/map #(fetch-projects))))))
+                        (rx/of #(assoc-project % project)
+                               (udp/form->create-page (assoc params :project id)))))))))
 
-(s/def ::create-project-event
-  (s/keys :req-un [::name
-                   ::udp/width
-                   ::udp/height
-                   ::udp/layout]))
-
-(defn create-project
-  [data]
-  {:pre [(us/valid? ::create-project-event data)]}
-  (map->CreateProject data))
-
-;; --- Go To & Go To Page
-
-(deftype GoToFirstPage [pages]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [[page & rest] (sort-by #(get-in % [:metadata :order]) pages)
-          params {:project (:project page)
-                  :page (:id page)}]
-      (rx/of (rt/navigate :workspace/page params)))))
-
-(defn go-to-first-page
-  [pages]
-  (GoToFirstPage. pages))
-
-(defrecord GoTo [project-id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [page-id (get-in state [:projects project-id :page-id])]
-      (if-not page-id
-        (rx/empty)
-        (let [params {:project project-id
-                      :page page-id}]
-          (rx/of (rt/navigate :workspace/page params)))))))
-
-(defrecord GoToPage [project-id page-id]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [params {:project project-id
-                  :page page-id}]
-      (rx/of (rt/navigate :workspace/page params)))))
+;; --- Go To Project
 
 (defn go-to
-  "A shortcut event that redirects the user to the
-  first page of the project."
-  ([project-id]
-   {:pre [(uuid? project-id)]}
-   (GoTo. project-id))
-  ([project-id page-id]
-   {:pre [(uuid? project-id)
-          (uuid? page-id)]}
-   (GoToPage. project-id page-id)))
+  [id]
+  {:pre [(uuid? id)]}
+  (reify
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [[page & rest-pages] (get-in state [:projects id :pages])]
+        (when page
+          (let [params {:project id :page page}]
+            (rx/of (rt/nav :workspace/page params))))))))
+
 
 ;; --- Update Opts (Filtering & Ordering)
 

@@ -158,7 +158,7 @@
 (def figwheel-options
   {:open-url false
    :pprint-config false
-   :load-warninged-code true
+   :load-warninged-code false
    :auto-testing false
    :css-dirs ["resources/public/css"]
    :ring-server-options {:port 3449 :host "0.0.0.0"}

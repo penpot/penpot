@@ -21,19 +21,24 @@
    [uxbox.main.workers :as uwrk]
    [uxbox.util.math :as mth]
    [uxbox.util.dom :as dom]
+   [uxbox.util.data :refer [seek]]
+   [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.path :as path]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.uuid :as uuid]))
 
 ;; --- Events
 
 (declare handle-drawing)
 (declare handle-drawing-generic)
 (declare handle-drawing-path)
-(declare handle-drawing-free-path)
+(declare handle-drawing-curve)
 (declare handle-finish-drawing)
+(declare conditional-align)
 
 (defn start-drawing
-  [object]
+  [type]
+  {:pre [(keyword? type)]}
   (let [id (gensym "drawing")]
     (reify
       ptk/UpdateEvent
@@ -42,35 +47,69 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [lock (get-in state [:workspace :drawing-lock])]
+        (let [pid (get-in state [:workspace :current])
+              lock (get-in state [:workspace :drawing-lock])]
           (if (= lock id)
-            (rx/merge (->> stream
-                           (rx/filter #(= % handle-finish-drawing))
-                           (rx/take 1)
-                           (rx/map (fn [_] #(update % :workspace dissoc :drawing-lock))))
-                      (rx/of (handle-drawing object)))
+            (rx/merge
+             (->> (rx/filter #(= % handle-finish-drawing) stream)
+                  (rx/take 1)
+                  (rx/map (fn [_] #(update % :workspace dissoc :drawing-lock))))
+             (rx/of (handle-drawing type)))
             (rx/empty)))))))
 
-(defn- conditional-align [point align?]
-  (if align?
-    (uwrk/align-point point)
-    (rx/of point)))
+(def ^:private minimal-shapes
+  [{:type :rect
+    :name "Rect"
+    :stroke-color "#000000"}
+   {:type :image}
+   {:type :circle
+    :name "Circle"}
+   {:type :path
+    :name "Path"
+    :stroke-style :solid
+    :stroke-color "#000000"
+    :stroke-width 2
+    :fill-color "#000000"
+    :fill-opacity 0
+    :segments []}
+   {:type :canvas
+    :name "Canvas"
+    :stroke-color "#000000"}
+   {:type :curve
+    :name "Path"
+    :stroke-style :solid
+    :stroke-color "#000000"
+    :stroke-width 2
+    :fill-color "#000000"
+    :fill-opacity 0
+    :segments []}
+   {:type :text
+    :name "Text"
+    :content "Type your text here"}])
 
-;; TODO: maybe this should be a simple function
+(defn- make-minimal-shape
+  [type]
+  (let [tool (seek #(= type (:type %)) minimal-shapes)]
+    (assert tool "unexpected drawing tool")
+    (assoc tool :id (uuid/random))))
+
 (defn handle-drawing
-  [shape]
+  [type]
   (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspace :current])
+            data (make-minimal-shape type)]
+        (update-in state [:workspace pid :drawing] merge data)))
+
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of
-       (if (= :path (:type shape))
-         (if (:free shape)
-           (handle-drawing-free-path shape)
-           (handle-drawing-path shape))
-         (handle-drawing-generic shape))))))
+      (case type
+        :path (rx/of handle-drawing-path)
+        :curve (rx/of handle-drawing-curve)
+        (rx/of handle-drawing-generic)))))
 
-(defn- handle-drawing-generic
-  [shape]
+(def handle-drawing-generic
   (letfn [(initialize-drawing [state point]
             (let [pid (get-in state [:workspace :current])
                   shape (get-in state [:workspace pid :drawing])
@@ -80,24 +119,13 @@
                                            :y2 (+ (:y point) 2)})]
               (assoc-in state [:workspace pid :drawing] (assoc shape ::initialized? true))))
 
-          ;; TODO: this is a new approach for resizing, when all the
-          ;; subsystem are migrated to the new resize approach, this
-          ;; function should be moved into uxbox.main.geom ns.
           (resize-shape [shape point lock?]
-            (if (= (:type shape) :circle)
-              (let [rx (mth/abs (- (:x point) (:cx shape)))
-                    ry (mth/abs (- (:y point) (:cy shape)))]
-                (if lock?
-                  (assoc shape :rx rx :ry ry)
-                  (assoc shape :rx rx :ry rx)))
-              (let [width (- (:x point) (:x1 shape))
-                    height (- (:y point) (:y1 shape))
-                    proportion (:proportion shape 1)]
-                (assoc shape
-                       :x2 (+ (:x1 shape) width)
-                       :y2 (if lock?
-                             (+ (:y1 shape) (/ width proportion))
-                             (+ (:y1 shape) height))))))
+            (let [shape (-> (geom/shape->rect-shape shape)
+                            (geom/size))
+                  result (geom/resize-shape :bottom-right shape point lock?)
+                  scale (geom/calculate-scale-ratio shape result)
+                  mtx (geom/generate-resize-matrix :bottom-right shape scale)]
+              (assoc shape :modifier-mtx mtx)))
 
           (update-drawing [state point lock?]
             (let [pid (get-in state [:workspace :current])]
@@ -107,28 +135,26 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [pid (get-in state [:workspace :current])
-              zoom (get-in state [:workspace pid :zoom])
-              flags (get-in state [:workspace pid :flags])
+              {:keys [zoom flags]} (get-in state [:workspace pid])
               align? (refs/alignment-activated? flags)
 
-              stoper (->> (rx/filter #(or (uws/mouse-up? %) (= % :interrupt)) stream)
-                          (rx/take 1))
+              stoper? #(or (uws/mouse-up? %) (= % :interrupt))
+              stoper (rx/filter stoper? stream)
 
-              mouse (->> uws/viewport-mouse-position
+              mouse (->> uws/mouse-position
                          (rx/mapcat #(conditional-align % align?))
-                         (rx/with-latest vector uws/mouse-position-ctrl))]
+                         (rx/map #(gpt/divide % zoom)))]
           (rx/concat
-           (->> uws/viewport-mouse-position
+           (->> mouse
                 (rx/take 1)
-                (rx/mapcat #(conditional-align % align?))
                 (rx/map (fn [pt] #(initialize-drawing % pt))))
            (->> mouse
+                (rx/with-latest vector uws/mouse-position-ctrl)
                 (rx/map (fn [[pt ctrl?]] #(update-drawing % pt ctrl?)))
                 (rx/take-until stoper))
            (rx/of handle-finish-drawing)))))))
 
-(defn handle-drawing-path
-  [shape]
+(def handle-drawing-path
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
              (or (= event :interrupt)
                  (and (uws/mouse-event? event)
@@ -162,17 +188,17 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [pid (get-in state [:workspace :current])
-              zoom (get-in state [:workspace pid :zoom])
-              flags (get-in state [:workspace pid :flags])
-              align? (refs/alignment-activated? flags)
+              {:keys [zoom flags]} (get-in state [:workspace pid])
 
-              last-point (volatile! @uws/viewport-mouse-position)
+              align? (refs/alignment-activated? flags)
+              last-point (volatile! (gpt/divide @uws/mouse-position zoom))
 
               stoper (->> (rx/filter stoper-event? stream)
-                          (rx/take 1))
+                          (rx/share))
 
-              mouse (->> (rx/sample 10 uws/viewport-mouse-position)
-                         (rx/mapcat #(conditional-align % align?)))
+              mouse (->> (rx/sample 10 uws/mouse-position)
+                         (rx/mapcat #(conditional-align % align?))
+                         (rx/map #(gpt/divide % zoom)))
 
               points (->> stream
                           (rx/filter uws/mouse-click?)
@@ -185,7 +211,6 @@
                           (rx/with-latest vector uws/mouse-position-ctrl)
                           (rx/with-latest vector counter)
                           (rx/map flatten))
-
 
               imm-transform #(vector (- % 7) (+ % 7) %)
               immanted-zones (vec (concat
@@ -205,8 +230,8 @@
 
            (->> points
                 (rx/take-until stoper)
-                (rx/map (fn [pt]
-                          #(insert-point-segment % pt))))
+                (rx/map (fn [pt]#(insert-point-segment % pt))))
+
            (rx/concat
             (->> stream'
                  (rx/map (fn [[point ctrl? index :as xxx]]
@@ -221,8 +246,7 @@
             (rx/of remove-dangling-segmnet
                    handle-finish-drawing))))))))
 
-(defn- handle-drawing-free-path
-  [shape]
+(def handle-drawing-curve
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
              (or (= event :interrupt)
                  (and (uws/mouse-event? event) (= type :up))))
@@ -242,15 +266,14 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [pid (get-in state [:workspace :current])
-              zoom (get-in state [:workspace pid :zoom])
-              flags (get-in state [:workspace pid :flags])
+              {:keys [zoom flags]} (get-in state [:workspace pid])
+
               align? (refs/alignment-activated? flags)
+              stoper (rx/filter stoper-event? stream)
+              mouse  (->> (rx/sample 10 uws/mouse-position)
+                          (rx/mapcat #(conditional-align % align?))
+                          (rx/map #(gpt/divide % zoom)))]
 
-              stoper (->> (rx/filter stoper-event? stream)
-                          (rx/take 1))
-
-              mouse (->> (rx/sample 10 uws/viewport-mouse-position)
-                         (rx/mapcat #(conditional-align % align?)))]
           (rx/concat
            (rx/of initialize-drawing)
            (->> mouse
@@ -265,22 +288,17 @@
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])
             shape (get-in state [:workspace pid :drawing])]
-        (if (::initialized? shape)
-          (let [resize-mtx (get-in state [:workspace pid :modifiers (:id shape) :resize])
-                shape (cond-> shape
-                        resize-mtx (geom/transform resize-mtx))]
-            (rx/of
-             ;; Remove the stalled modifiers
-             ;; TODO: maybe a specific event for "clear modifiers"
-             #(update-in % [:workspace pid :modifiers] dissoc (:id shape))
-
-             ;; Unselect the drawing tool
-             #(update-in % [:workspace pid] dissoc :drawing :drawing-tool)
-
+        (rx/concat
+         (rx/of dw/clear-drawing)
+         (when (::initialized? shape)
+           (let [modifier-mtx (:modifier-mtx shape)
+                 shape (if (gmt/matrix? modifier-mtx)
+                         (geom/transform shape modifier-mtx)
+                         shape)
+                 shape (dissoc shape ::initialized? :modifier-mtx)]
              ;; Add & select the cred shape to the workspace
-             (ds/add-shape shape)
-             (dw/select-first-shape)))
-          (rx/of #(update-in % [:workspace pid] dissoc :drawing :drawing-tool)))))))
+             (rx/of (dw/add-shape shape)
+                    (dw/select-first-shape)))))))))
 
 (def close-drawing-path
   (reify
@@ -295,11 +313,12 @@
 (declare path-draw-area)
 
 (mf/defc draw-area
-  [{:keys [zoom shape modifiers] :as props}]
-  (if (= (:type shape) :path)
-    [:& path-draw-area {:shape shape}]
-    [:& generic-draw-area {:shape (assoc shape :modifiers modifiers)
-                           :zoom zoom}]))
+  [{:keys [zoom shape] :as props}]
+  (when (:id shape)
+    (case (:type shape)
+      (:path :curve) [:& path-draw-area {:shape shape}]
+      [:& generic-draw-area {:shape shape
+                             :zoom zoom}])))
 
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]
@@ -328,7 +347,7 @@
     (when-let [{:keys [x y] :as segment} (first (:segments shape))]
       [:g
        (shapes/render-shape shape)
-       (when-not (:free shape)
+       (when (not= :curve (:type shape))
          [:circle.close-bezier
           {:cx x
            :cy y
@@ -336,3 +355,8 @@
            :on-click on-click
            :on-mouse-enter on-mouse-enter
            :on-mouse-leave on-mouse-leave}])])))
+
+(defn- conditional-align [point align?]
+  (if align?
+    (uwrk/align-point point)
+    (rx/of point)))

@@ -10,21 +10,18 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [rumext.util :as mfu]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.lightbox :as udl]
    [uxbox.main.data.pages :as udp]
    [uxbox.main.data.projects :as dp]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.lightbox :as lbx]
-   [uxbox.main.ui.workspace.sidebar.sitemap-pageform]
+   [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.modal :as modal]
+   [uxbox.main.ui.workspace.sidebar.sitemap-forms :refer [page-form-dialog]]
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.dom.dnd :as dnd]
-   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
 
 ;; --- Page Item
@@ -32,17 +29,15 @@
 (mf/defc page-item
   [{:keys [page index deletable? selected?] :as props}]
   (letfn [(on-edit [event]
-            (udl/open! :page-form {:page page}))
+            (modal/show! page-form-dialog {:page page}))
           (delete []
-            (let [next #(st/emit! (dp/go-to (:project page)))]
-              (st/emit! (udp/delete-page (:id page) next))))
-
+            (st/emit! (dw/delete-page (:id page))))
           (on-delete [event]
             (dom/prevent-default event)
             (dom/stop-propagation event)
-            (udl/open! :confirm {:on-accept delete}))
+            (modal/show! confirm-dialog {:on-accept delete}))
           (on-drop [item monitor]
-            (st/emit! (udp/reorder-pages (:project page))))
+            (st/emit! (udp/rehash-pages (:project page))))
           (on-hover [item monitor]
             (st/emit! (udp/move-page {:project-id (:project-id item)
                                       :page-id (:page-id item)
@@ -101,7 +96,7 @@
                                    :fn #(-> (l/in [:projects project-id])
                                             (l/derive st/state))})
         project (mf/deref project-iref)
-        create #(udl/open! :page-form {:page {:project project-id}})
+        create #(modal/show! page-form-dialog {:page {:project project-id}})
         close #(st/emit! (dw/toggle-flag :sitemap))]
     [:div.sitemap.tool-window
      [:div.tool-window-bar

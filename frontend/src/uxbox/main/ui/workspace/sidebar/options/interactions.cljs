@@ -10,7 +10,7 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.lightbox :as udl]
-   [uxbox.main.data.shapes :as uds]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.colorpicker :as cp]
@@ -59,7 +59,7 @@
           (delete [item]
             (let [sid (:id shape)
                   id (:id item)]
-              (st/emit! (uds/delete-interaction sid id))))
+              (st/emit! (dw/delete-interaction sid id))))
           (on-delete [item event]
             (dom/prevent-default event)
             (let [delete (partial delete item)]
@@ -455,7 +455,7 @@
             (dom/prevent-default event)
             (let [sid (:id shape)
                   data (deref form)]
-              (st/emit! (uds/update-interaction sid data))
+              (st/emit! (dw/update-interaction sid data))
               (reset! form nil)))
           (on-cancel [event]
             (dom/prevent-default event)

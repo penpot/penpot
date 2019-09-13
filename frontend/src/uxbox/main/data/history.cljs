@@ -12,6 +12,8 @@
             [uxbox.util.data :refer [replace-by-id
                                      index-by]]))
 
+;; TODO: this need refactor (completely broken)
+
 ;; --- Initialize History State
 
 (declare fetch-history)
@@ -52,7 +54,7 @@
 (deftype PinnedPageHistoryFetched [items]
   ptk/UpdateEvent
   (update [_ state]
-    (let [items-map (index-by items :version)
+    (let [items-map (index-by :version items)
           items-set (into #{} items)]
       (update-in state [:workspace :history]
                  (fn [history]
@@ -164,7 +166,7 @@
                    (assoc :history true
                           :data (:data item)))]
       (-> state
-          (udp/assoc-page page)
+          (udp/unpack-page page)
           (assoc-in [:workspace :history :selected] version)))))
 
 (defn select-page-history
@@ -203,7 +205,7 @@
           (set! noop true)
           state)
         (let [packed (get-in state [:packed-pages page-id])]
-          (-> (udp/assoc-page state packed)
+          (-> (udp/unpack-page state packed)
               (assoc-in [:workspace :history :deselecting] true)
               (assoc-in [:workspace :history :selected] nil))))))
 

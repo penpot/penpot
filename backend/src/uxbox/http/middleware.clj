@@ -72,7 +72,7 @@
                               :multipart :multipart-params
                               (throw (ex-info "Not supported key on :parameters" {})))]
                  (assoc acc newkey {:key key
-                                    :fn #(st/validate % spec)})))
+                                    :fn #(st/validate spec %)})))
              {} parameters))
 
           (validate [request parameters debug]

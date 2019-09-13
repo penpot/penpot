@@ -9,8 +9,7 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.shapes :as uds]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
    [uxbox.main.store :as st]
    [uxbox.util.data :refer (parse-int parse-float read-string)]
@@ -106,30 +105,30 @@
   (let [value (dom/event->value event)
         value (parse-int value 0)
         props {attr value}]
-    (st/emit! (uds/update-dimensions (:id shape) props))))
+    (st/emit! (dw/update-dimensions (:id shape) props))))
 
 (defn- on-rotation-change
   [event shape]
   (let [value (dom/event->value event)
         value (parse-int value 0)]
-    (st/emit! (uds/update-rotation (:id shape) value))))
+    (st/emit! (dw/update-shape-attrs (:id shape) {:rotation value}))))
 
 (defn- on-opacity-change
   [event shape]
   (let [value (dom/event->value event)
         value (parse-float value 1)
         value (/ value 10000)]
-    (st/emit! (uds/update-attrs (:id shape) {:opacity value}))))
+    (st/emit! (dw/update-shape-attrs (:id shape) {:opacity value}))))
 
 (defn- on-position-change
   [event shape attr]
   (let [value (dom/event->value event)
         value (parse-int value nil)
         point (gpt/point {attr value})]
-    (st/emit! (uds/update-position (:id shape) point))))
+    (st/emit! (dw/update-position (:id shape) point))))
 
 (defn- on-proportion-lock-change
   [event shape]
   (if (:proportion-lock shape)
-    (st/emit! (uds/unlock-proportions (:id shape)))
-    (st/emit! (uds/lock-proportions (:id shape)))))
+    (st/emit! (dw/unlock-proportions (:id shape)))
+    (st/emit! (dw/lock-proportions (:id shape)))))

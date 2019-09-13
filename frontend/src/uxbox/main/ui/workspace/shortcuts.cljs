@@ -12,10 +12,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as dl]
             [uxbox.main.data.workspace :as dw]
-            [uxbox.main.data.shapes :as uds]
-            [uxbox.main.data.undo :as udu]
-            [uxbox.main.data.history :as udh]
-            [uxbox.main.ui.workspace.sidebar.drawtools :as wsd])
+            [uxbox.main.data.undo :as du])
   (:import goog.events.EventType
            goog.events.KeyCodes
            goog.ui.KeyboardShortcutHandler
@@ -27,26 +24,24 @@
 
 (defonce +shortcuts+
   {:shift+g #(st/emit! (dw/toggle-flag :grid))
-   :ctrl+g #(st/emit! (uds/group-selected))
-   :ctrl+shift+g #(st/emit! (uds/ungroup-selected))
    :ctrl+shift+m #(st/emit! (dw/toggle-flag :sitemap))
    :ctrl+shift+f #(st/emit! (dw/toggle-flag :drawtools))
    :ctrl+shift+i #(st/emit! (dw/toggle-flag :icons))
    :ctrl+shift+l #(st/emit! (dw/toggle-flag :layers))
    :ctrl+0 #(st/emit! (dw/reset-zoom))
    :ctrl+r #(st/emit! (dw/toggle-flag :ruler))
-   :ctrl+d #(st/emit! (uds/duplicate-selected))
+   :ctrl+d #(st/emit! dw/duplicate-selected)
    :ctrl+c #(st/emit! (dw/copy-to-clipboard))
    :ctrl+v #(st/emit! (dw/paste-from-clipboard))
    :ctrl+shift+v #(dl/open! :clipboard)
-   :ctrl+z #(st/emit! (udu/undo))
-   :ctrl+shift+z #(st/emit! (udu/redo))
-   :ctrl+y #(st/emit! (udu/redo))
-   :ctrl+b #(st/emit! (dw/select-for-drawing wsd/+draw-tool-rect+))
-   :ctrl+e #(st/emit! (dw/select-for-drawing wsd/+draw-tool-circle+))
-   :ctrl+t #(st/emit! (dw/select-for-drawing wsd/+draw-tool-text+))
+   :ctrl+z #(st/emit! (du/undo))
+   :ctrl+shift+z #(st/emit! (du/redo))
+   :ctrl+y #(st/emit! (du/redo))
+   :ctrl+b #(st/emit! (dw/select-for-drawing :rect))
+   :ctrl+e #(st/emit! (dw/select-for-drawing :circle))
+   :ctrl+t #(st/emit! (dw/select-for-drawing :text))
    :esc #(st/emit! (dw/deselect-all))
-   :delete #(st/emit! (dw/delete-selected))
+   :delete #(st/emit! dw/delete-selected)
    :ctrl+up #(st/emit! (dw/move-selected-layer :up))
    :ctrl+down #(st/emit! (dw/move-selected-layer :down))
    :ctrl+shift+up #(st/emit! (dw/move-selected-layer :top))

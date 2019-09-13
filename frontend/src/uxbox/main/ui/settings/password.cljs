@@ -2,99 +2,93 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.settings.password
-  (:require [cljs.spec.alpha :as s :include-macros true]
-            [lentes.core :as l]
-            [cuerdas.core :as str]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.data.users :as udu]
-            [uxbox.builtins.icons :as i]
-            [uxbox.main.ui.messages :refer [messages-widget]]
-            [uxbox.main.ui.settings.header :refer [header]]
-            [uxbox.util.i18n :refer [tr]]
-            [uxbox.util.forms :as fm]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.messages :as um]
-            [rumext.core :as mx :include-macros true]))
+  (:require
+   [rumext.alpha :as mf]
+   [cljs.spec.alpha :as s]
+   [uxbox.builtins.icons :as i]
+   [uxbox.main.data.users :as udu]
+   [uxbox.main.store :as st]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.forms :as fm]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.messages :as um]))
 
-(def form-data (fm/focus-data :profile-password st/state))
-(def form-errors (fm/focus-errors :profile-password st/state))
+(defn- on-error
+  [form error]
+  (case (:code error)
+    :uxbox.services.users/old-password-not-match
+    (swap! form assoc-in [:errors :password-old]
+           {:type ::api :message "settings.password.wrong-old-password"})
 
-(def assoc-value (partial fm/assoc-value :profile-password))
-(def assoc-error (partial fm/assoc-error :profile-password))
-(def clear-form (partial fm/clear-form :profile-password))
+    :else (throw (ex-info "unexpected" {:error error}))))
 
-;; TODO: add better password validation
+(defn- on-submit
+  [event form]
+  (dom/prevent-default event)
+  (let [data (:clean-data form)
+        opts {:on-success #(st/emit! (um/info (tr "settings.password.password-saved")))
+              :on-error #(on-error form %)}]
+    (st/emit! (udu/update-password data opts))))
 
-(s/def ::password-1 ::fm/non-empty-string)
-(s/def ::password-2 ::fm/non-empty-string)
-(s/def ::password-old ::fm/non-empty-string)
+(s/def ::password-1 ::fm/not-empty-string)
+(s/def ::password-2 ::fm/not-empty-string)
+(s/def ::password-old ::fm/not-empty-string)
 
 (s/def ::password-form
   (s/keys :req-un [::password-1
                    ::password-2
                    ::password-old]))
 
-(mx/defc password-form
-  {:mixins [mx/reactive mx/static]}
-  []
-  (let [data (mx/react form-data)
-        errors (mx/react form-errors)
-        valid? (fm/valid? ::password-form data)]
-    (letfn [(on-change [field event]
-              (let [value (dom/event->value event)]
-                (st/emit! (assoc-value field value))))
-            (on-success []
-              (st/emit! (um/info (tr "settings.password.password-saved"))))
-            (on-error [{:keys [code] :as payload}]
-              (case code
-                :uxbox.services.users/old-password-not-match
-                (st/emit! (assoc-error :password-old (tr "settings.password.wrong-old-password")))
+(mf/defc password-form
+  [props]
+  (let [{:keys [data] :as form} (fm/use-form ::password-form {})]
+    [:form.password-form {:on-submit #(on-submit % form)}
+     [:span.user-settings-label (tr "settings.password.change-password")]
+     [:input.input-text
+      {:type "password"
+       :name "password-old"
+       :value (:password-old data "")
+       :class (fm/error-class form :password-old)
+       :on-blur (fm/on-input-blur form :password-old)
+       :on-change (fm/on-input-change form :password-old)
+       :placeholder (tr "settings.password.old-password")}]
 
-                :else
-                (throw (ex-info "unexpected" {:error payload}))))
-            (on-submit [event]
-              (st/emit! (udu/update-password data
-                                             :on-success on-success
-                                             :on-error on-error)))]
-      [:form.password-form
-       [:span.user-settings-label (tr "settings.password.change-password")]
-       [:input.input-text
-        {:type "password"
-         :class (fm/error-class errors :password-old)
-         :value (:password-old data "")
-         :on-change (partial on-change :password-old)
-         :placeholder (tr "settings.password.old-password")}]
-       (fm/input-error errors :password-old)
-       [:input.input-text
-        {:type "password"
-         :class (fm/error-class errors :password-1)
-         :value (:password-1 data "")
-         :on-change (partial on-change :password-1)
-         :placeholder (tr "settings.password.new-password")}]
-       (fm/input-error errors :password-1)
-       [:input.input-text
-        {:type "password"
-         :class (fm/error-class errors :password-2)
-         :value (:password-2 data "")
-         :on-change (partial on-change :password-2)
-         :placeholder (tr "settings.password.confirm-password")}]
-       (fm/input-error errors :password-2)
-       [:input.btn-primary
-        {:type "button"
-         :class (when-not valid? "btn-disabled")
-         :disabled (not valid?)
-         :on-click on-submit
-         :value (tr "settings.update-settings")}]])))
+     [:& fm/field-error {:form  form :field :password-old :type ::api}]
+
+     [:input.input-text
+      {:type "password"
+       :name "password-1"
+       :value (:password-1 data "")
+       :class (fm/error-class form :password-1)
+       :on-blur (fm/on-input-blur form :password-1)
+       :on-change (fm/on-input-change form :password-1)
+       :placeholder (tr "settings.password.new-password")}]
+     ;; [:& fm/field-error {:form form :field :password-1}]
+
+     [:input.input-text
+      {:type "password"
+       :name "password-2"
+       :value (:password-2 data "")
+       :class (fm/error-class form :password-2)
+       :on-blur (fm/on-input-blur form :password-2)
+       :on-change (fm/on-input-change form :password-2)
+       :placeholder (tr "settings.password.confirm-password")}]
+     ;; [:& fm/field-error {:form form :field :password-2}]
+
+     [:input.btn-primary
+      {:type "submit"
+       :class (when-not (:valid form) "btn-disabled")
+       :disabled (not (:valid form))
+       :value (tr "settings.update-settings")}]]))
 
 ;; --- Password Page
 
-(mx/defc password-page
-  []
+(mf/defc password-page
+  [props]
   [:section.dashboard-content.user-settings
    [:section.user-settings-content
-    (password-form)]])
+    [:& password-form]]])

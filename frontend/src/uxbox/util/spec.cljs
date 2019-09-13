@@ -5,7 +5,9 @@
 ;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.spec
-  (:require [cljs.spec.alpha :as s]))
+  (:require [cljs.spec.alpha :as s]
+            [cuerdas.core :as str]))
+
 
 ;; --- Constants
 
@@ -15,11 +17,17 @@
 (def uuid-rx
   #"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
 
+(def number-rx
+  #"^[+-]?([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)([eE][+-]?[0-9]+)?$")
+
+(def ^:private color-re
+  #"^#[0-9A-Fa-f]{6}$")
+
 ;; --- Predicates
 
 (defn email?
   [v]
-  (and string?
+  (and (string? v)
        (re-matches email-rx v)))
 
 (defn color?
@@ -31,8 +39,6 @@
   [v]
   (instance? js/File v))
 
-;; TODO: properly implement
-
 (defn url-str?
   [v]
   (string? v))
@@ -41,6 +47,29 @@
 
 (s/def ::uuid uuid?)
 (s/def ::email email?)
+(s/def ::color color?)
+(s/def ::string string?)
+(s/def ::number number?)
+(s/def ::positive pos?)
+(s/def ::inst inst?)
+(s/def ::keyword keyword?)
+(s/def ::fn fn?)
+(s/def ::coll coll?)
+
+(s/def ::not-empty-string
+  (s/and string? #(not (str/empty? %))))
+
+
+(defn- conform-number-str
+  [v]
+  (cond
+    (re-matches number-rx v) (js/parseFloat v)
+    (number? v) v
+    :else ::s/invalid))
+
+(s/def ::number-str
+  (s/conformer conform-number-str str))
+
 (s/def ::color color?)
 
 ;; --- Public Api

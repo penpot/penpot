@@ -87,23 +87,23 @@
   [event shape attr]
   (let [value (-> (dom/event->value event)
                   (parse-int 0))]
-    (st/emit! (uds/update-dimensions (:id shape) {attr value}))))
+    (st/emit! (udw/update-dimensions (:id shape) {attr value}))))
 
 (defn- on-rotation-change
   [event shape]
-  (let [value (-> (dom/event->value event)
-                  (parse-int 0))]
-    (st/emit! (uds/update-rotation (:id shape) value))))
+  (let [value (dom/event->value event)
+        value (parse-int value 0)]
+    (st/emit! (udw/update-shape-attrs (:id shape) {:rotation value}))))
 
 (defn- on-position-change
   [event shape attr]
   (let [value (-> (dom/event->value event)
                   (parse-int nil))
         point (gpt/point {attr value})]
-    (st/emit! (uds/update-position (:id shape) point))))
+    (st/emit! (udw/update-position (:id shape) point))))
 
 (defn- on-proportion-lock-change
   [event shape]
   (if (:proportion-lock shape)
-    (st/emit! (uds/unlock-proportions (:id shape)))
-    (st/emit! (uds/lock-proportions (:id shape)))))
+    (st/emit! (udw/unlock-proportions (:id shape)))
+    (st/emit! (udw/lock-proportions (:id shape)))))

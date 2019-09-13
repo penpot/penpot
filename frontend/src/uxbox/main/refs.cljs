@@ -52,6 +52,10 @@
   (-> (l/key :selected)
       (l/derive workspace)))
 
+(def selected-canvas
+  (-> (l/key :selected-canvas)
+      (l/derive workspace)))
+
 (def toolboxes
   (-> (l/key :toolboxes)
       (l/derive workspace)))
@@ -99,28 +103,6 @@
   (-> (comp (l/key :flags)
             (l/lens alignment-activated?))
       (l/derive workspace)))
-
-;; ...
-
-(def mouse-position
-  (-> (l/in [:workspace :pointer])
-      (l/derive st/state)))
-
-(def canvas-mouse-position
-  (-> (l/key :canvas)
-      (l/derive mouse-position)))
-
-(def viewport-mouse-position
-  (-> (l/key :viewport)
-      (l/derive mouse-position)))
-
-(def window-mouse-position
-  (-> (l/key :window)
-      (l/derive mouse-position)))
-
-(def workspace-scroll
-  (-> (l/in [:workspace :scroll])
-      (l/derive st/state)))
 
 (def shapes-by-id
   (-> (l/key :shapes)

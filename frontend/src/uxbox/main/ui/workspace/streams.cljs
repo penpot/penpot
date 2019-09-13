@@ -52,21 +52,7 @@
   (and (mouse-event? v)
        (= :click (:type v))))
 
-(defrecord PointerEvent [window
-                         viewport
-                         ctrl
-                         shift])
-
-(defn pointer-event
-  [window viewport ctrl shift]
-  {:pre [(gpt/point? window)
-         (gpt/point? viewport)
-         (boolean? ctrl)
-         (boolean? shift)]}
-  (PointerEvent. window
-                 viewport
-                 ctrl
-                 shift))
+(defrecord PointerEvent [source pt ctrl shift])
 
 (defn pointer-event?
   [v]
@@ -90,33 +76,26 @@
 
 ;; --- Derived streams
 
-;; TODO: this shoul be DEPRECATED
-(defonce interaction-events
-  (rx/filter interaction-event? st/stream))
-
 (defonce mouse-position
-  (rx/filter pointer-event? st/stream))
-
-(defonce viewport-mouse-position
-  (let [sub (rx/behavior-subject nil)]
-    (-> (rx/map :viewport mouse-position)
-        (rx/subscribe-with sub))
-    sub))
-
-(defonce window-mouse-position
-  (let [sub (rx/behavior-subject nil)]
-    (-> (rx/map :window mouse-position)
-        (rx/subscribe-with sub))
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter pointer-event?)
+                 (rx/filter #(= :viewport (:source %)))
+                 (rx/map :pt))]
+    (rx/subscribe-with ob sub)
     sub))
 
 (defonce mouse-position-ctrl
-  (let [sub (rx/behavior-subject nil)]
-    (-> (rx/map :ctrl mouse-position)
-        (rx/subscribe-with sub))
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter pointer-event?)
+                 (rx/map :ctrl)
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
     sub))
 
 (defonce mouse-position-deltas
-  (->> viewport-mouse-position
+  (->> mouse-position
        (rx/sample 10)
        (rx/map #(gpt/divide % @refs/selected-zoom))
        (rx/mapcat (fn [point]

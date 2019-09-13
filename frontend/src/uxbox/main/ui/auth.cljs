@@ -7,10 +7,10 @@
 (ns uxbox.main.ui.auth
   (:require [uxbox.main.ui.auth.login :as login]
             [uxbox.main.ui.auth.register :as register]
-            [uxbox.main.ui.auth.recovery-request :as recovery-request]
-            [uxbox.main.ui.auth.recovery :as recovery]))
+            #_[uxbox.main.ui.auth.recovery-request :as recovery-request]
+            #_[uxbox.main.ui.auth.recovery :as recovery]))
 
 (def login-page login/login-page)
 (def register-page register/register-page)
-(def recovery-page recovery/recovery-page)
-(def recovery-request-page recovery-request/recovery-request-page)
+;; (def recovery-page recovery/recovery-page)
+;; (def recovery-request-page recovery-request/recovery-request-page)
