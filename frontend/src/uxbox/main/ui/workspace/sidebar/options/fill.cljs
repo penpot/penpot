@@ -15,7 +15,7 @@
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.util.data :refer [parse-float]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :refer (tr)]))
+   [uxbox.util.i18n :refer [tr]]))
 
 (mf/defc fill-menu
   [{:keys [menu shape]}]
@@ -42,7 +42,7 @@
      [:div.element-set-title (:name menu)]
      [:div.element-set-content
 
-      [:span "Color"]
+      [:span (tr "ds.color")]
       [:div.row-flex.color-data
        [:span.color-th
         {:style {:background-color (:fill-color shape)}
@@ -53,7 +53,7 @@
           :value (:fill-color shape "")}]]]
 
       ;; SLIDEBAR FOR ROTATION AND OPACITY
-      [:span "Opacity"]
+      [:span (tr "ds.opacity")]
       [:div.row-flex
        [:input.slidebar
         {:type "range"

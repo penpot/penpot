@@ -60,7 +60,7 @@
       [:div.element-set
        [:div.element-set-title (:name menu)]
        [:div.element-set-content
-        [:span "Name"]
+        [:span (tr "ds.name")]
         [:div.row-flex
          [:div.input-element
           [:input.input-text
@@ -69,22 +69,22 @@
             :value (str (:name page))
             :placeholder "page name"}]]]
 
-        [:span "Size"]
+        [:span (tr "ds.size")]
         [:div.row-flex
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
             :on-change #(on-size-change % :width)
             :value (str (:width metadata))
-            :placeholder "width"}]]
+            :placeholder (tr "ds.width")}]]
          [:div.input-element.pixels
           [:input.input-text
            {:type "number"
             :on-change #(on-size-change % :height)
             :value (str (:height metadata))
-            :placeholder "height"}]]]
+            :placeholder (tr "ds.height")}]]]
 
-        [:span "Background color"]
+        [:span (tr "ds.background-color")]
         [:div.row-flex.color-data
          [:span.color-th
           {:style {:background-color (:background metadata)}
@@ -128,7 +128,7 @@
       [:div.element-set
        [:div.element-set-title (:name menu)]
        [:div.element-set-content
-        [:span "Size"]
+        [:span (tr "ds.size")]
         [:div.row-flex
          [:div.input-element.pixels
           [:input.input-text
@@ -142,7 +142,7 @@
             :value (:grid-y-axis metadata)
             :on-change on-y-change
             :placeholder "y"}]]]
-        [:span "Color"]
+        [:span (tr "ds.color")]
         [:div.row-flex.color-data
          [:span.color-th
           {:style {:background-color (:grid-color metadata)}
