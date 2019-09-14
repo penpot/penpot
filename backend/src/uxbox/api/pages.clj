@@ -13,20 +13,41 @@
             [uxbox.util.spec :as us]
             [uxbox.util.uuid :as uuid]))
 
+;; --- Common Specs
+
+(s/def ::id ::us/uuid)
+(s/def ::name string?)
+(s/def ::project ::us/uuid)
+(s/def ::version (s/and integer? pos?))
+(s/def ::data any?)
+(s/def ::metadata any?)
+
+;; --- List Pages
+
+(s/def ::list-pages|query
+  (s/keys :req-un [::project]))
+
 (defn list-pages
-  {:parameters {:query {:project [st/required st/uuid-str]}}}
+  {:parameters {:query ::list-pages|query}
+   :validation :spec}
   [{:keys [user parameters]}]
   (let [project (get-in parameters [:query :project])
         message {:user user :project project :type :list-pages-by-project}]
     (-> (sv/query message)
         (p/then rsp/ok))))
 
+;; --- Create Page
+
+(s/def ::create-page|body
+  (s/keys :req-un [::data
+                   ::metadata
+                   ::project
+                   ::name]
+          :opt-un [::id]))
+
 (defn create-page
-  {:parameters {:body {:data [st/required]
-                       :metadata [st/required]
-                       :project [st/required st/uuid]
-                       :name [st/required st/string]
-                       :id [st/uuid]}}}
+  {:parameters {:body ::create-page|body}
+   :validation :spec}
   [{:keys [user parameters]}]
   (let [data (get parameters :body)
         message (assoc data :user user :type :create-page)]
@@ -35,14 +56,23 @@
                   (let [loc (str "/api/pages/" (:id result))]
                     (rsp/created loc result)))))))
 
+;; --- Update Page
+
+(s/def ::update-page|path
+  (s/keys :req-un [::id]))
+
+(s/def ::update-page|body
+  (s/keys :req-un [::data
+                   ::metadata
+                   ::project
+                   ::name
+                   ::version]
+          :opt-un [::id]))
+
 (defn update-page
-  {:parameters {:path {:id [st/required st/uuid-str]}
-                :body {:data [st/required]
-                       :metadata [st/required]
-                       :project [st/required st/uuid]
-                       :name [st/required st/string]
-                       :version [st/required st/integer]
-                       :id [st/uuid]}}}
+  {:parameters {:path ::update-page|path
+                :body ::update-page|body}
+   :validation :spec}
   [{:keys [user parameters]}]
   (let [id (get-in parameters [:path :id])
         data (get parameters :body)
@@ -50,12 +80,21 @@
     (->> (sv/novelty message)
          (p/map #(rsp/ok %)))))
 
+;; --- Update Page Metadata
+
+(s/def ::update-page-metadata|path
+  (s/keys :req-un [::id]))
+
+(s/def ::update-page-metadata|body
+  (s/keys :req-un [::id
+                   ::metadata
+                   ::project
+                   ::name]))
+
 (defn update-page-metadata
-  {:parameters {:path {:id [st/required st/uuid-str]}
-                :body {:id [st/required st/uuid]
-                       :metadata [st/required]
-                       :project [st/required st/uuid]
-                       :name [st/required st/string]}}}
+  {:parameters {:path ::update-page-metadata|path
+                :body ::update-page-metadata|body}
+   :validation :spec}
   [{:keys [user parameters]}]
   (let [id (get-in parameters [:path :id])
         data (get parameters :body)
@@ -63,20 +102,39 @@
     (->> (sv/novelty message)
          (p/map rsp/ok))))
 
+;; --- Delete Page
+
+(s/def ::delete-page|path
+  (s/keys :req-un [::id]))
+
 (defn delete-page
-  {:parameters {:path {:id [st/required st/uuid-str]}}}
+  {:parameters {:path ::delete-page|path}
+   :validation :spec}
   [{:keys [user parameters]}]
   (let [id (get-in parameters [:path :id])
         message {:id id :type :delete-page :user user}]
     (-> (sv/novelty message)
         (p/then (constantly (rsp/no-content))))))
 
+;; --- Retrieve Page History
+
+(s/def ::max ::us/integer)
+(s/def ::since ::us/integer)
+(s/def ::pinned ::us/boolean)
+
+(s/def ::retrieve-page-history|path
+  (s/keys :req-un [::id]))
+
+(s/def ::retrieve-page-history|query
+  (s/keys :req-un [::max
+                   ::since
+                   ::pinned]))
+
 (defn retrieve-page-history
   "Retrieve the page history"
-  {:parameters {:path {:id [st/required st/uuid-str]}
-                :query {:max [st/integer-str]
-                        :since [st/integer-str]
-                        :pinned [st/boolean-str]}}}
+  {:parameters {:path ::retrieve-page-history|path
+                :query ::retrieve-page-history|query}
+   :validation :spec}
   [{:keys [user parameters]}]
   (let [id (get-in parameters [:path :id])
         data (get parameters :query)
@@ -84,11 +142,21 @@
     (->> (sv/query message)
          (p/map rsp/ok))))
 
+;; --- Update page history
+
+(s/def ::hid ::us/uuid)
+(s/def ::label string?)
+
+(s/def ::update-page-history|path
+  (s/keys :req-un [::id ::hid]))
+
+(s/def ::update-page-history|body
+  (s/keys :req-un [::label ::pinned]))
+
 (defn update-page-history
-  {:parameters {:path {:id [st/required st/uuid-str]
-                       :hid [st/required st/uuid-str]}
-                :body {:label [st/required st/string]
-                       :pinned [st/required st/boolean]}}}
+  {:parameters {:path ::update-page-history|path
+                :body ::update-page-history|body}
+   :validation :spec}
   [{:keys [user parameters]}]
   (let [{:keys [id hid]} (get parameters :path)
         message (assoc (get parameters :body)

@@ -6,6 +6,7 @@
 
 (ns uxbox.util.transit
   (:require [cognitect.transit :as t]
+            [clojure.java.io :as io]
             [uxbox.util.time :as dt])
   (:import java.io.ByteArrayInputStream
            java.io.ByteArrayOutputStream
@@ -52,7 +53,7 @@
   ([data]
    (decode data nil))
   ([data opts]
-   (with-open [input (ByteArrayInputStream. data)]
+   (with-open [input (io/input-stream data)]
      (read! (reader input opts)))))
 
 (defn encode

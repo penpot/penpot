@@ -25,11 +25,8 @@
   [spec data]
   (let [result (s/conform spec data)]
     (if (= result ::s/invalid)
-      (ex/raise :type :validation
-                :code ::invalid
-                :message (s/explain-str spec data)
-                :context (s/explain-data spec data))
-      result)))
+      [nil (s/explain-data spec data)]
+      [result nil])))
 
 (defn valid?
   [spec data]
@@ -41,7 +38,7 @@
 
 (defn email?
   [v]
-  (and string?
+  (and (string? v)
        (re-matches email-rx v)))
 
 (defn instant?
@@ -100,20 +97,21 @@
 
 ;; --- Default Specs
 
-(s/def ::integer-string (s/conformer integer-conformer str))
-(s/def ::uuid-string (s/conformer uuid-conformer str))
-(s/def ::boolean-string (s/conformer boolean-conformer boolean-unformer))
-(s/def ::positive-integer #(< 0 % Long/MAX_VALUE))
+(s/def ::integer (s/conformer integer-conformer str))
+(s/def ::uuid (s/conformer uuid-conformer str))
+(s/def ::boolean (s/conformer boolean-conformer boolean-unformer))
+(s/def ::positive pos?)
+(s/def ::negative neg?)
 (s/def ::uploaded-file any?)
-(s/def ::uuid uuid?)
 (s/def ::bytes bytes?)
 (s/def ::path path?)
+(s/def ::email email?)
 
-(s/def ::id ::uuid-string)
+;; TODO: deprecated
+(s/def ::id ::uuid)
 (s/def ::name string?)
 (s/def ::username string?)
 (s/def ::password string?)
 (s/def ::version integer?)
-(s/def ::email email?)
 (s/def ::token string?)
 
