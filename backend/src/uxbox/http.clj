@@ -6,10 +6,8 @@
 
 (ns uxbox.http
   (:require [mount.core :refer [defstate]]
-            [muuntaja.core :as m]
             [ring.adapter.jetty :as jetty]
             [reitit.ring :as rr]
-            [reitit.dev.pretty :as pretty]
             [uxbox.config :as cfg]
             [uxbox.http.middleware :refer [handler
                                            middleware
@@ -25,17 +23,9 @@
             [uxbox.api.svg :as api-svg]
             [uxbox.util.transit :as t]))
 
-(def ^:private muuntaja-instance
-  (m/create (update-in m/default-options [:formats "application/transit+json"]
-                       merge {:encoder-opts {:handlers t/+write-handlers+}
-                              :decoder-opts {:handlers t/+read-handlers+}})))
-
 (def ^:private router-options
-  {;;:reitit.middleware/transform dev/print-request-diffs
-   ::rr/default-options-handler options-handler
-   :exception pretty/exception
-   :data {:muuntaja muuntaja-instance
-          :middleware middleware}})
+  {::rr/default-options-handler options-handler
+   :data {:middleware middleware}})
 
 (def routes
   [["/media/*" (rr/create-resource-handler {:root "public/media"})]
@@ -114,8 +104,8 @@
 ;; --- State Initialization
 (def app
   (delay
-    (-> (rr/router routes router-options)
-        (rr/ring-handler (rr/create-default-handler)))))
+    (let [router (rr/router routes router-options)]
+      (rr/ring-handler router (rr/create-default-handler)))))
 
 (defn- start-server
   [config]

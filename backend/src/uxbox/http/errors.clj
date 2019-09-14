@@ -2,10 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 20162019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.http.errors
-  "A errors handling for the http server.")
+  "A errors handling for the http server."
+  (:require [io.aviso.exception :as e]))
 
 (defmulti handle-exception #(:type (ex-data %)))
 
@@ -15,13 +16,18 @@
     {:status 400
      :body response}))
 
+(defmethod handle-exception :parse
+  [err]
+  {:status 400
+   :body {:type :parse
+          :message (ex-message err)}})
+
 (defmethod handle-exception :default
   [err]
-  (let [response (ex-data err)]
-    {:status 500
-     :body response}))
-
-;; --- Entry Point
+  (e/write-exception err)
+  {:status 500
+   :body {:type :exception
+          :message (ex-message err)}})
 
 (defn- handle-data-access-exception
   [err]
@@ -29,47 +35,19 @@
         state (.getSQLState err)
         message (.getMessage err)]
     (case state
-      "P0002"
-      {:status 412 ;; precondition-failed
-       :body {:message message
-              :payload nil
-              :type :occ}}
-
-      (do
-        {:status 500
-         :message {:message message
-                   :type :unexpected
-                   :payload nil}}))))
-
-(defn- handle-unexpected-exception
-  [err]
-  (let [message (.getMessage err)]
-    {:status 500
-     :body {:message message
-            :type :unexpected
-            :payload nil}}))
+      "P0002" {:status 412 ;; precondition-failed
+               :body {:message message
+                      :type :occ}}
+      (handle-exception err))))
 
 (defn errors-handler
   [error context]
   (cond
-    (instance? clojure.lang.ExceptionInfo error)
-    (handle-exception error)
-
-    (instance? java.util.concurrent.CompletionException error)
-    (errors-handler context (.getCause error))
-
-    java.util.concurrent.ExecutionException
+    (or (instance? java.util.concurrent.CompletionException error)
+        (instance? java.util.concurrent.ExecutionException error))
     (errors-handler context (.getCause error))
 
     (instance? org.jooq.exception.DataAccessException error)
     (handle-data-access-exception error)
 
-    :else
-    (handle-unexpected-exception error)))
-
-(defn wrap-print-errors
-  [handler error request]
-  (println "\n*********** stack trace ***********")
-  (.printStackTrace error)
-  (println "\n********* end stack trace *********")
-  (handler error request))
+    :else (handle-exception error)))
