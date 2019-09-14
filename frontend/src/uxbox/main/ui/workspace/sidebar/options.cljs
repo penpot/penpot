@@ -42,43 +42,43 @@
    ::page  [::page-measures ::page-grid-options]})
 
 (def ^:private +menus+
-  [{:name (tr "element.measures")
+  [{:name "element.measures"
     :id ::icon-measures
     :icon i/infocard
     :comp options-iconm/icon-measures-menu}
-   {:name (tr "element.measures")
+   {:name "element.measures"
     :id ::image-measures
     :icon i/infocard
     :comp options-imagem/image-measures-menu}
-   {:name (tr "element.measures")
+   {:name "element.measures"
     :id ::rect-measures
     :icon i/infocard
     :comp options-rectm/rect-measures-menu}
-   {:name (tr "element.measures")
+   {:name "element.measures"
     :id ::circle-measures
     :icon i/infocard
     :comp options-circlem/circle-measures-menu}
-   {:name (tr "element.fill")
+   {:name "element.fill"
     :id ::fill
     :icon i/fill
     :comp options-fill/fill-menu}
-   {:name (tr "element.stroke")
+   {:name "element.stroke"
     :id ::stroke
     :icon i/stroke
     :comp options-stroke/stroke-menu}
-   {:name (tr "element.text")
+   {:name "element.text"
     :id ::text
     :icon i/text
     :comp options-text/text-menu}
-   {:name (tr "element.interactions")
+   {:name "element.interactions"
     :id ::interactions
     :icon i/action
     :comp options-interactions/interactions-menu}
-   {:name (tr "element.page-measures")
+   {:name "element.page-measures"
     :id ::page-measures
     :icon i/page
     :comp options-page/measures-menu}
-   {:name (tr "element.page-grid-options")
+   {:name "element.page-grid-options"
     :id ::page-grid-options
     :icon i/grid
     :comp options-page/grid-options-menu}])

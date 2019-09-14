@@ -58,7 +58,7 @@
                 (modal/show! colorpicker-modal props)))]
 
       [:div.element-set
-       [:div.element-set-title (:name menu)]
+       [:div.element-set-title (tr (:name menu))]
        [:div.element-set-content
         [:span (tr "ds.name")]
         [:div.row-flex
@@ -126,7 +126,7 @@
                            :on-change change-color}]
                 (modal/show! colorpicker-modal props)))]
       [:div.element-set
-       [:div.element-set-title (:name menu)]
+       [:div.element-set-title (tr (:name menu))]
        [:div.element-set-content
         [:span (tr "ds.size")]
         [:div.row-flex
