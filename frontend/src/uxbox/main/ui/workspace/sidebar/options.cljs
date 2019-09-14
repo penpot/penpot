@@ -28,7 +28,7 @@
    [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
    [uxbox.util.data :as data]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :refer (tr)]))
+   [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Constants
 

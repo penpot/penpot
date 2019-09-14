@@ -31,10 +31,10 @@
      [:div.element-set-title (:name menu)]
      [:div.element-set-content
       ;; SLIDEBAR FOR ROTATION AND OPACITY
-      [:span "Size"]
+      [:span (tr "ds.size")]
       [:div.row-flex
        [:div.input-element.pixels
-        [:input.input-text {:placeholder "Width"
+        [:input.input-text {:placeholder (tr "ds.width")
                             :type "number"
                             :min "0"
                             :value (precision-or-0 (:width size) 2)
@@ -44,13 +44,13 @@
         (if (:proportion-lock shape) i/lock i/unlock)]
 
        [:div.input-element.pixels
-        [:input.input-text {:placeholder "Height"
+        [:input.input-text {:placeholder (tr "ds.height")
                             :type "number"
                             :min "0"
                             :value (precision-or-0 (:height size) 2)
                             :on-change #(on-size-change % shape :height)}]]]
 
-      [:span "Position"]
+      [:span (tr "ds.position")]
       [:div.row-flex
        [:div.input-element.pixels
         [:input.input-text
@@ -65,7 +65,7 @@
           :value (precision-or-0 (:y1 shape 0) 2)
           :on-change #(on-position-change % shape :y)}]]]
 
-      [:span "Rotation"]
+      [:span (tr "ds.rotation")]
       [:div.row-flex
        [:input.slidebar
         {:type "range"
