@@ -18,7 +18,7 @@
 (s/def ::id ::us/uuid)
 (s/def ::name string?)
 (s/def ::project ::us/uuid)
-(s/def ::version (s/and integer? pos?))
+(s/def ::version int?)
 (s/def ::data any?)
 (s/def ::metadata any?)
 
