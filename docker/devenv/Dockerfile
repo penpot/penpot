@@ -1,10 +1,10 @@
-FROM ubuntu:xenial
+FROM ubuntu:bionic
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG EXTERNAL_UID=1000
 
-ENV NODE_VERSION=v10.16.0 \
-    CLOJURE_VERSION=1.10.0.442 \
+ENV NODE_VERSION=v10.16.3 \
+    CLOJURE_VERSION=1.10.1.469 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -12,6 +12,7 @@ RUN set -ex; \
     apt-get update && \
     apt-get install -yq \
         locales \
+        gnupg2 \
         ca-certificates \
         wget \
         sudo \
@@ -21,7 +22,6 @@ RUN set -ex; \
         zsh \
         bash \
         git \
-        openjdk-8-jdk \
         rlwrap \
         build-essential \
         imagemagick \
@@ -30,18 +30,23 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" >> /etc/apt/sources.list; \
-    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -; \
-    apt-get update -yq &&  \
-    apt-get install -yq  \
+    mkdir -p /etc/resolvconf/resolv.conf.d; \
+    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9; \
+    curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -; \
+    echo "deb http://repos.azulsystems.com/ubuntu stable main" >> /etc/apt/sources.list.d/zulu.list; \
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" >> /etc/apt/sources.list.d/postgresql.list;
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN set -ex; \
+    apt-get -qq update; \
+    apt-get install -qqy zulu-12; \
+    apt-get install -qqy \
         postgresql-11 \
         postgresql-contrib-11 \
     ;\
     rm -rf /var/lib/apt/lists/*;
-
-RUN set -ex; \
-    mkdir -p /etc/resolvconf/resolv.conf.d; \
-    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail;
 
 COPY files/pg_hba.conf /etc/postgresql/11/main/pg_hba.conf
 COPY files/bashrc /root/.bashrc

@@ -1,8 +1,7 @@
-FROM openjdk:8-jre
+FROM azul/zulu-openjdk:12
+LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
-LABEL maintainer="Monogramm Maintainers <opensource at monogramm dot io>"
-
-ENV CLOJURE_VERSION=1.10.0.442 \
+ENV CLOJURE_VERSION=1.10.1.469 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -10,6 +9,7 @@ RUN set -ex; \
     apt-get update -yq &&  \
     apt-get install -yq \
         curl \
+        wget \
         rsync \
         git \
         imagemagick \

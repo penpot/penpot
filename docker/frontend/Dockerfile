@@ -1,6 +1,5 @@
-FROM nginx:1.17.2
-
-LABEL maintainer="Monogramm Maintainers <opensource at monogramm dot io>"
+FROM nginx:1.17.3
+LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
