@@ -290,9 +290,9 @@
            (let [page (pack-page state id)]
              (->> (rp/req :update/page page)
                   (rx/map :payload)
-                  (rx/do #(when (fn? on-success)
-                            (ts/schedule-on-idle on-success)))
-                  (rx/map page-persisted)))))))))
+                  (rx/map page-persisted)
+                  (rx/catch (fn [err] (rx/of ::page-persist-error)))))))))))
+
 
 (defn persist-page?
   [v]
@@ -428,6 +428,7 @@
                    (rx/debounce 1000)
                    (rx/mapcat #(rx/merge (rx/of (persist-page id))
                                          (->> (rx/filter page-persisted? stream)
+                                              (rx/timeout 1000 (rx/empty))
                                               (rx/take 1)
                                               (rx/ignore)))))
               (->> stream
@@ -437,5 +438,6 @@
                                          (->> (rx/filter metadata-persisted? stream)
                                               (rx/take 1)
                                               (rx/ignore))))))
-             (rx/take-until stopper))))))
+             (rx/take-until stopper)
+             (rx/retry 10000))))))
 
