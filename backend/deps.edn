@@ -3,8 +3,7 @@
         funcool/promesa {:mvn/version "2.0.1"}
         funcool/cuerdas {:mvn/version "2.2.0"}
 
-        funcool/suricatta {:git/url "https://github.com/funcool/suricatta.git"
-                           :sha "80ef2dfdb3248f94f987b476a6bc1a6cfbe5f306"}
+        funcool/suricatta {:mvn/version "2.0.0-SNAPSHOT"}
 
         funcool/datoteka {:mvn/version "1.1.0"}
         funcool/struct {:mvn/version "2.0.0-SNAPSHOT"}
@@ -46,7 +45,7 @@
  :aliases
  {:dev
   {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-                org.clojure/tools.namespace {:mvn/version "0.3.0"}
+                org.clojure/tools.namespace {:mvn/version "0.3.1"}
                 fipp/fipp {:mvn/version "0.6.19"}
                 clj-http/clj-http {:mvn/version "2.1.0"}
                 ring/ring-mock {:mvn/version "0.4.0"}
