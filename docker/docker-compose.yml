@@ -41,10 +41,10 @@ services:
       - backend_m2:/root/.m2
       # - /etc/localtime:/etc/localtime:ro
       # - /etc/timezone:/etc/timezone:ro
-
     environment:
       # HTTP setup
       - UXBOX_HTTP_SERVER_DEBUG=false
+      - UXBOX_HTTP_SERVER_CORS=*
       - UXBOX_MEDIA_URI="/media/"
       - UXBOX_ASSETS_URI="/static/"
       - UXBOX_MEDIA_DIRECTORY="data/media"

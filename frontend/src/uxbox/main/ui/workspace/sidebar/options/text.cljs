@@ -75,7 +75,7 @@
        [:div.element-set-title (:name menu)]
        [:div.element-set-content
 
-        [:span "Font family"]
+        [:span (tr "ds.font-family")]
         [:div.row-flex
          [:select.input-select {:value (pr-str font-family)
                                 :on-change on-font-family-change}
@@ -83,7 +83,7 @@
             [:option {:value (pr-str (:id font))
                       :key (:id font)} (:name font)])]]
 
-        [:span "Size and Weight"]
+        [:span (tr "ds.size-weight")]
         [:div.row-flex
          [:div.editable-select
           [:select.input-select
@@ -102,7 +102,7 @@
            [:option {:value "48"} "48"]
            [:option {:value "72"} "72"]]
           [:input.input-text
-           {:placeholder "Font Size"
+           {:placeholder (tr "ds.font-size")
             :type "number"
             :min "0"
             :max "200"
@@ -115,10 +115,10 @@
             [:option {:value (pr-str data)
                       :key (:name style)} (:name style)])]]
 
-        [:span "Line height and Letter spacing"]
+        [:span (tr "ds.line-height-letter-spacing")]
         [:div.row-flex
          [:input.input-text
-          {:placeholder "Line height"
+          {:placeholder (tr "ds.line-height")
            :type "number"
            :step "0.1"
            :min "0"
@@ -126,7 +126,7 @@
            :value (precision-or-0 line-height 2)
            :on-change on-font-line-height-change}]
          [:input.input-text
-          {:placeholder "Letter spacing"
+          {:placeholder (tr "ds.letter-spacing")
            :type "number"
            :step "0.1"
            :min "0"
@@ -134,7 +134,7 @@
            :value (precision-or-0 letter-spacing 2)
            :on-change on-font-letter-spacing-change}]]
 
-        [:span "Text align"]
+        [:span (tr "ds.text-align")]
         [:div.row-flex.align-icons
          [:span {:class (when (= text-align "left") "current")
                  :on-click #(on-font-align-change % "left")}

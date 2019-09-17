@@ -17,7 +17,8 @@
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.util.data :refer (read-string)]
    [uxbox.util.dom :as dom]
-   [uxbox.util.router :as r]))
+   [uxbox.util.router :as r]
+   [uxbox.util.i18n :refer (tr)]))
 
 ;; --- Refs
 
@@ -68,7 +69,7 @@
       [:div#form-figures.tool-window
        [:div.tool-window-bar
         [:div.tool-window-icon i/icon-set]
-        [:span "Icons"]
+        [:span (tr "ds.settings.icons")]
         [:div.tool-window-close {:on-click on-close} i/close]]
        [:div.tool-window-content
         [:div.figures-catalog

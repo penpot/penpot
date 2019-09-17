@@ -116,7 +116,7 @@
   [{:keys [project] :as props}]
   [:div.grid-item-th
    [:img.img-th {:src "/images/project-placeholder.svg"
-                 :alt "Project title"}]])
+                 :alt (tr "ds.project-thumbnail.alt")}]])
 
 ;; --- Grid Item
 
@@ -152,7 +152,7 @@
                               :default-value (:name project)}]
         [:h3 (:name project)])
       [:span.date
-       (str "Updated " (dt/timeago (:modified-at project)))]]
+       (str (tr "ds.updated-at" (dt/timeago (:modified-at project))))]]
      [:div.project-th-actions
       [:div.project-th-icon.pages
        i/page

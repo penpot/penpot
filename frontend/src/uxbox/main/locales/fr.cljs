@@ -14,6 +14,7 @@
                       "%s projets"]
    "ds.project-title" "Vos projets"
    "ds.project-new" "+ Nouveau projet"
+   "ds.project-thumbnail.alt" "Titre du projet"
 
    "ds.ordering" "Trier par"
    "ds.ordering.by-name" "nom"
@@ -21,6 +22,7 @@
    "ds.ordering.by-creation-date" "date de création"
    "ds.search.placeholder" "Rechercher..."
    "ds.uploaded-at" "Mise en ligne : %s"
+   "ds.updated-at" "Mis à jour %s"
 
    "ds.confirm-title" "Êtes-vous sûr ?"
    "ds.confirm-ok" "Ok"
@@ -71,10 +73,50 @@
    "ds.your-libraries-title" "VOS LIBRAIRIES"
    "ds.default-library-title" "Collection sans nom (%s)"
 
-   "ds.element-options" "Options d'élément"
-   "ds.draw-tools" "Outils de dessin"
-   "ds.sitemap" "Plan du site"
-   "ds.document-history" "Historique du document"
+   "ds.project.placeholder" "Nom du nouveau projet"
+   "ds.project.new" "Nouveau projet"
+
+   "ds.radius" "Rayon"
+   "ds.size" "Taille"
+   "ds.width" "Largeur"
+   "ds.height" "Hauteur"
+   "ds.style" "Style"
+   "ds.none" "Aucun"
+   "ds.solid" "Solide"
+   "ds.dotted" "Pointillé"
+   "ds.dashed" "Tiré"
+   "ds.mixed" "Mixte"
+   "ds.position" "Position"
+   "ds.rotation" "Rotation"
+   "ds.opacity" "Opacité"
+   "ds.color" "Couleur"
+   "ds.background-color" "Couleur d'arrière-plan"
+   "ds.font-family" "Police de caractères"
+   "ds.size-weight" "Taille et graisse"
+   "ds.font-size" "Taille de police"
+   "ds.line-height-letter-spacing" "Hauteur de ligne et Espacement de caractères"
+   "ds.line-height" "Hauteur de ligne"
+   "ds.letter-spacing" "Espacement de caractères"
+   "ds.text-align" "Alignement de texte"
+   "ds.name" "Nom"
+   "ds.go" "C'est parti !"
+
+   "ds.accept" "Accepter"
+   "ds.cancel" "Annuler"
+
+   "ds.settings.icons" "Icônes"
+   "ds.settings.element-options" "Options d'élément"
+   "ds.settings.draw-tools" "Outils de dessin"
+   "ds.settings.sitemap" "Plan du site"
+   "ds.settings.layers" "Couches"
+   "ds.settings.document-history" "Historique du document"
+
+   "ds.page.placeholder" "Nom de la page"
+   "ds.page.new" "Nouvelle page"
+   "ds.page.edit" "Éditer la page"
+
+   "ds.history.versions" "Historique"
+   "ds.history.pinned" "Épinglés"
 
    "ds.help.rect" "Boîte (Ctrl + B)"
    "ds.help.circle" "Cercle (Ctrl + E)"
@@ -83,11 +125,42 @@
    "ds.help.path" "Chemin"
    "ds.help.curve" "Courbe"
    "ds.help.ruler" "Règle"
+   "ds.help.canvas" "Calque"
 
    "ds.user.profile" "Profil"
    "ds.user.password" "Mot de passe"
    "ds.user.notifications" "Notifications"
    "ds.user.exit" "Quitter"
+
+   "header.sitemap" "Plan du site (Ctrl + Maj + M)"
+   "header.draw-tools" "Outils de dessin (Ctrl + Maj + S)"
+   "header.color-palette" "Palette de couleurs (---)"
+   "header.icons" "Icônes (Ctrl + Maj + I)"
+   "header.layers" "Couches (Ctrl + Maj + L)"
+   "header.element-options" "Options d'élément (Ctrl + Maj + O)"
+   "header.document-history" "Historique du document (Ctrl + Maj + H)"
+   "header.undo" "Annuler (Ctrl + Z)"
+   "header.redo" "Rétablir (Ctrl + Maj + Z)"
+   "header.download" "Télécharger (Ctrl + E)"
+   "header.image" "Image (Ctrl + I)"
+   "header.rules" "Règles"
+   "header.grid" "Grille (Ctrl + G)"
+   "header.grid-snap" "Coller à la grille"
+   "header.align" "Aligner (Ctrl + A)"
+   "header.view-mode" "Mode visualisation (Ctrl + P)"
+
+   "element.measures" "Taille, position et rotation"
+   "element.fill" "Fond"
+   "element.stroke" "Contour"
+   "element.text" "Texte"
+   "element.interactions" "Interactions"
+   "element.page-measures" "Paramètres de la page"
+   "element.page-grid-options" "Paramètres de la grille"
+
+   "image.new" "Nouvelle image"
+   "image.select" "Choisir depuis une librairie"
+   "image.upload" "Envoyer un fichier"
+   "image.import-library" "Importer une image depuis une librairie"
 
    "auth.email-or-username" "adresse email ou nom d'utilisateur"
    "auth.password" "Mot de passe"
@@ -147,6 +220,7 @@
    "settings.update-settings" "Mettre à jour les paramètres"
 
    "history.alert-message" "Vous voyez la version %s"
+
    "errors.api.form.old-password-not-match" "Ancien mot de passe incorrect"
    "errors.api.form.registration-disabled" "L'enregistrement est actuellement désactivé."
    "errors.api.form.email-already-exists" "L'email est déjà utilisé par un autre utilisateur."
@@ -169,4 +243,4 @@
    "errors.generic" "Quelque chose c'est mal passé."
    "errors.conflict" "Conflit sur la sauvegarde des données, actualisez et réessayez."
 
-})
+   })

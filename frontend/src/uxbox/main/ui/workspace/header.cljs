@@ -22,6 +22,7 @@
    [uxbox.main.ui.users :refer [user]]
    [uxbox.main.ui.workspace.clipboard]
    [uxbox.util.data :refer [index-of]]
+   [uxbox.util.i18n :refer (tr)]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]
    [uxbox.util.router :as rt]))
@@ -53,7 +54,7 @@
      [:div.main-icon
       [:a {:on-click #(st/emit! (rt/nav :dashboard/projects))} i/logo-icon]]
      [:div.project-tree-btn
-      {:alt "Sitemap (Ctrl + Shift + M)"
+      {:alt (tr "header.sitemap")
        :class (when (contains? flags :sitemap) "selected")
        :on-click (partial toggle :sitemap)}
       i/project-tree
@@ -61,76 +62,76 @@
      [:div.workspace-options
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
-        {:alt "Draw tools (Ctrl + Shift + S)"
+        {:alt (tr "header.draw-tools")
          :class (when (contains? flags :drawtools) "selected")
          :on-click (partial toggle :drawtools)}
         i/shapes]
        [:li.tooltip.tooltip-bottom
-        {:alt "Color Palette (---)"
+        {:alt (tr "header.color-palette")
          :class (when (contains? flags :colorpalette) "selected")
          :on-click (partial toggle :colorpalette)}
         i/palette]
        [:li.tooltip.tooltip-bottom
-        {:alt "Icons (Ctrl + Shift + I)"
+        {:alt (tr "header.icons")
          :class (when (contains? flags :icons) "selected")
          :on-click (partial toggle :icons)}
         i/icon-set]
        [:li.tooltip.tooltip-bottom
-        {:alt "Layers (Ctrl + Shift + L)"
+        {:alt (tr "header.layers")
          :class (when (contains? flags :layers) "selected")
          :on-click (partial toggle :layers)}
         i/layers]
        [:li.tooltip.tooltip-bottom
-        {:alt "Element options (Ctrl + Shift + O)"
+        {:alt (tr "header.element-options")
          :class (when (contains? flags :element-options) "selected")
          :on-click (partial toggle :element-options)}
         i/options]
        [:li.tooltip.tooltip-bottom
-        {:alt "History (Ctrl + Shift + H)"
+        {:alt (tr "header.document-history")
          :class (when (contains? flags :document-history) "selected")
          :on-click (partial toggle :document-history)}
         i/undo-history]]
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
-        {:alt "Undo (Ctrl + Z)"
+        {:alt (tr "header.undo")
          :on-click on-undo}
         i/undo]
        [:li.tooltip.tooltip-bottom
-        {:alt "Redo (Ctrl + Shift + Z)"
+        {:alt (tr "header.redo")
          :on-click on-redo}
         i/redo]]
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
-        {:alt "Download (Ctrl + E)"
+        {:alt (tr "header.download")
          ;; :on-click on-download
          }
         i/download]
        [:li.tooltip.tooltip-bottom
-        {:alt "Image (Ctrl + I)"
+        {:alt (tr "header.image")
          :on-click on-image}
         i/image]]
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
-        {:alt "Rules"
+        {:alt (tr "header.rules")
          :class (when (contains? flags :rules) "selected")
          :on-click (partial toggle :rules)}
         i/ruler]
        [:li.tooltip.tooltip-bottom
-        {:alt "Grid (Ctrl + G)"
+        {:alt (tr "header.grid")
          :class (when (contains? flags :grid) "selected")
          :on-click (partial toggle :grid)}
         i/grid]
        [:li.tooltip.tooltip-bottom
-        {:alt "Snap to grid"
+        {:alt (tr "header.grid-snap")
          :class (when (contains? flags :grid-snap) "selected")
          :on-click (partial toggle :grid-snap)}
         i/grid-snap]]
       ;; [:li.tooltip.tooltip-bottom
-      ;; {:alt "Align (Ctrl + A)"}
+      ;; {:alt (tr "header.align")}
       ;; i/alignment]]
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom.view-mode
-        {:alt "View mode (Ctrl + P)"
+        {:alt (tr "header.view-mode")
          :on-click #(st/emit! (dw/->OpenView (:id page)))
          }
         i/play]]

@@ -42,43 +42,43 @@
    ::page  [::page-measures ::page-grid-options]})
 
 (def ^:private +menus+
-  [{:name "Size, position & rotation"
+  [{:name "element.measures"
     :id ::icon-measures
     :icon i/infocard
     :comp options-iconm/icon-measures-menu}
-   {:name "Size, position & rotation"
+   {:name "element.measures"
     :id ::image-measures
     :icon i/infocard
     :comp options-imagem/image-measures-menu}
-   {:name "Size, position & rotation"
+   {:name "element.measures"
     :id ::rect-measures
     :icon i/infocard
     :comp options-rectm/rect-measures-menu}
-   {:name "Size, position & rotation"
+   {:name "element.measures"
     :id ::circle-measures
     :icon i/infocard
     :comp options-circlem/circle-measures-menu}
-   {:name "Fill"
+   {:name "element.fill"
     :id ::fill
     :icon i/fill
     :comp options-fill/fill-menu}
-   {:name "Stroke"
+   {:name "element.stroke"
     :id ::stroke
     :icon i/stroke
     :comp options-stroke/stroke-menu}
-   {:name "Text"
+   {:name "element.text"
     :id ::text
     :icon i/text
     :comp options-text/text-menu}
-   {:name "Interactions"
+   {:name "element.interactions"
     :id ::interactions
     :icon i/action
     :comp options-interactions/interactions-menu}
-   {:name "Page settings"
+   {:name "element.page-measures"
     :id ::page-measures
     :icon i/page
     :comp options-page/measures-menu}
-   {:name "Grid settings"
+   {:name "element.page-grid-options"
     :id ::page-grid-options
     :icon i/grid
     :comp options-page/grid-options-menu}])
@@ -116,7 +116,7 @@
     [:div.elementa-options.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/options]
-      [:span (tr "ds.element-options")]
+      [:span (tr "ds.settings.element-options")]
       [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content
       [:div.element-options

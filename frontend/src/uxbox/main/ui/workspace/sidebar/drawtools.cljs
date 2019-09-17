@@ -65,7 +65,7 @@
       [:div.tool-window.drawing-tools
        [:div.tool-window-bar
         [:div.tool-window-icon i/window]
-        [:span (tr "ds.draw-tools")]
+        [:span (tr "ds.settings.draw-tools")]
         [:div.tool-window-close {:on-click close} i/close]]
        [:div.tool-window-content
         (for [item tools]

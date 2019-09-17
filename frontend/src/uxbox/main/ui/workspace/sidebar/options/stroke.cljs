@@ -39,25 +39,25 @@
     [:div.element-set
      [:div.element-set-title (:name menu)]
      [:div.element-set-content
-      [:span "Style"]
+      [:span (tr "ds.style")]
       [:div.row-flex
-       [:select#style.input-select {:placeholder "Style"
+       [:select#style.input-select {:placeholder (tr "ds.style")
                                     :value (pr-str (:stroke-style shape))
                                     :on-change on-stroke-style-change}
-        [:option {:value ":none"} "None"]
-        [:option {:value ":solid"} "Solid"]
-        [:option {:value ":dotted"} "Dotted"]
-        [:option {:value ":dashed"} "Dashed"]
-        [:option {:value ":mixed"} "Mixed"]]
+        [:option {:value ":none"} (tr "ds.none")]
+        [:option {:value ":solid"} (tr "ds.solid")]
+        [:option {:value ":dotted"} (tr "ds.dotted")]
+        [:option {:value ":dashed"} (tr "ds.dashed")]
+        [:option {:value ":mixed"} (tr "ds.mixed")]]
        [:div.input-element.pixels
         [:input.input-text
-         {:placeholder "Width"
+         {:placeholder (tr "ds.width")
           :type "number"
           :min "0"
           :value (precision-or-0 (:stroke-width shape 1) 2)
           :on-change on-width-change}]]]
 
-      [:span "Color"]
+      [:span (tr "ds.color")]
       [:div.row-flex.color-data
        [:span.color-th
         {:style {:background-color (:stroke-color shape)}
@@ -67,7 +67,7 @@
          {:on-change on-stroke-color-change
           :value (:stroke-color shape "")}]]]
 
-      [:span "Radius"]
+      [:span (tr "ds.radius")]
       [:div.row-flex
        [:div.input-element.pixels
         [:input.input-text
@@ -86,7 +86,7 @@
           :value (precision-or-0 (:ry shape 0) 2)
           :on-change on-border-change-ry}]]]
 
-      [:span "Opacity"]
+      [:span (tr "ds.opacity")]
       [:div.row-flex
        [:input.slidebar
         {:type "range"

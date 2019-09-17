@@ -15,7 +15,8 @@
    [uxbox.builtins.icons :as i]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.timers :as ts]))
+   [uxbox.util.timers :as ts]
+   [uxbox.util.i18n :refer [tr]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Events
@@ -131,10 +132,10 @@
         [:div.message-action
          [:a.btn-transparent.btn-small
           {:on-click accept}
-          "Accept"]
+          (tr "ds.accept")]
          [:a.btn-transparent.btn-small
           {:on-click cancel}
-          "Cancel"]]]])))
+          (tr "ds.cancel")]]]])))
 
 ;; --- Main Component (entry point)
 

@@ -101,7 +101,7 @@
     [:div.sitemap.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/project-tree]
-      [:span (tr "ds.sitemap")]
+      [:span (tr "ds.settings.sitemap")]
       [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content
       [:div.project-title
