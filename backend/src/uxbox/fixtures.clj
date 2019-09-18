@@ -59,8 +59,9 @@
                      :user (mk-uuid "user" ui)
                      :project (mk-uuid "project" pi)
                      :data {:shapes [{:id (mk-uuid "canvas" i 1)
-                                      :name "Canvas 1"
+                                      :name "Canvas-1"
                                       :type :canvas
+                                      :page (mk-uuid "page" i)
                                       :x1 200
                                       :y1 200
                                       :x2 1224
