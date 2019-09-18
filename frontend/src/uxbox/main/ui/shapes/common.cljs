@@ -33,7 +33,8 @@
          (->> uws/mouse-position-deltas
               (rx/map #(dw/apply-temporal-displacement id %))
               (rx/take-until stoper))
-         (rx/of (dw/materialize-current-modifier id)))))))
+         (rx/of (dw/materialize-current-modifier id)
+                (dw/rehash-shape-relationship id)))))))
 
 (def start-move-selected
   (reify

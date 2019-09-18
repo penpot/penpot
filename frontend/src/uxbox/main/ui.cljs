@@ -56,8 +56,8 @@
   [{:keys [status] :as error}]
   (js/console.error "Unhandled Error:"
                     "\n - message:" (ex-message error)
-                    "\n - data:" (pr-str (ex-data error))
-                    "\n - stack:" (.-stack error))
+                    "\n - data:" (pr-str (ex-data error)))
+  (js/console.error error)
   (reset! st/loader false)
   (cond
     ;; Unauthorized or Auth timeout

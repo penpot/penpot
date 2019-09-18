@@ -246,6 +246,9 @@
         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
          (when page
            [:*
+            (for [id (reverse (:canvas page))]
+              [:& uus/shape-component {:id id :key id}])
+
             (for [id (reverse (:shapes page))]
               [:& uus/shape-component {:id id :key id}])
 

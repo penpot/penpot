@@ -553,7 +553,7 @@
     (update [_ state]
       (assoc-in state [:shapes id :name] name))))
 
-;; --- Change Shape Order (Ordering)
+;; --- Change Shape Order (D&D Ordering)
 
 (defn change-shape-order
   [{:keys [id index] :as params}]
@@ -567,6 +567,22 @@
             [before after] (split-at index shapes)
             shapes (vec (concat before [id] after))]
         (assoc-in state [:pages page-id :shapes] shapes)))))
+
+;; --- Change Canvas Order (D&D Ordering)
+
+(defn change-canvas-order
+  [{:keys [id index] :as params}]
+  (s/assert ::us/uuid id)
+  (s/assert ::us/number index)
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (get-in state [:shapes id :page])
+            canvas (get-in state [:pages page-id :canvas])
+            canvas (into [] (remove #(= % id)) canvas)
+            [before after] (split-at index canvas)
+            canvas (vec (concat before [id] after))]
+        (assoc-in state [:pages page-id :canvas] canvas)))))
 
 ;; --- Shape Transformations
 
@@ -618,6 +634,32 @@
           (rx/of #(update-in % [:shapes id] geom/transform xfmt)
                  #(update-in % [:shapes id] dissoc :modifier-mtx)
                  ::udp/page-update))))))
+
+(defn rehash-shape-relationship
+  "Checks shape overlaping with existing canvas, if one or more
+  overlaps, assigns the shape to the first one."
+  [id]
+  (s/assert ::us/uuid id)
+  (letfn [(overlaps? [canvas shape]
+            (let [shape1 (geom/shape->rect-shape canvas)
+                  shape2 (geom/shape->rect-shape shape)]
+              (geom/overlaps? shape1 shape2)))]
+    (reify
+      ptk/EventType
+      (type [_] ::rehash-shape-relationship)
+
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [shape (get-in state [:shapes id])
+              xform (comp (map #(get-in state [:shapes %]))
+                          (filter #(overlaps? % shape))
+                          (take 1))
+              canvas (->> (get-in state [:pages (:page shape) :canvas])
+                          (sequence xform)
+                          (first))]
+          (if canvas
+            (update-in state [:shapes id] assoc :canvas (:id canvas))
+            (update-in state [:shapes id] assoc :canvas nil)))))))
 
 ;; --- Start shape "edition mode"
 
@@ -777,79 +819,49 @@
 
 ;; --- Shape Visibility
 
-(deftype HideShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-hidden [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :hidden] true)
-                    (reduce mark-hidden $ (:items shape)))
-                  (assoc-in state [:shapes id :hidden] true))))]
-      (mark-hidden state id))))
-
-(defn hide-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (HideShape. id))
-
-(deftype ShowShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-visible [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :hidden] false)
-                    (reduce mark-visible $ (:items shape)))
-                  (assoc-in state [:shapes id :hidden] false))))]
-      (mark-visible state id))))
-
-(defn show-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (ShowShape. id))
+(defn set-hidden-attr
+  [id value]
+  (s/assert ::us/uuid id)
+  (s/assert ::us/boolean value)
+  (letfn [(impl-set-hidden [state id]
+            (let [{:keys [type] :as shape} (get-in state [:shapes id])]
+              (as-> state $
+                (assoc-in $ [:shapes id :hidden] value)
+                (if (= :canvas type)
+                  (let [shapes (get-in state [:pages (:page shape) :shapes])
+                        xform (comp (map #(get-in state [:shapes %]))
+                                    (filter #(= id (:canvas %)))
+                                    (map :id))]
+                    (reduce impl-set-hidden $ (sequence xform shapes)))
+                  $))))]
+    (reify
+      udp/IPageUpdate
+      ptk/UpdateEvent
+      (update [_ state]
+        (impl-set-hidden state id)))))
 
 ;; --- Shape Blocking
 
-(deftype BlockShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-blocked [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :blocked] true)
-                    (reduce mark-blocked $ (:items shape)))
-                  (assoc-in state [:shapes id :blocked] true))))]
-      (mark-blocked state id))))
-
-(defn block-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (BlockShape. id))
-
-(deftype UnblockShape [id]
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-unblocked [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :blocked] false)
-                    (reduce mark-unblocked $ (:items shape)))
-                  (assoc-in state [:shapes id :blocked] false))))]
-      (mark-unblocked state id))))
-
-(defn unblock-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (UnblockShape. id))
+(defn set-blocked-attr
+  [id value]
+  (s/assert ::us/uuid id)
+  (s/assert ::us/boolean value)
+  (letfn [(impl-set-blocked [state id]
+            (let [{:keys [type] :as shape} (get-in state [:shapes id])]
+              (as-> state $
+                (assoc-in $ [:shapes id :blocked] value)
+                (if (= :canvas type)
+                  (let [shapes (get-in state [:pages (:page shape) :shapes])
+                        xform (comp (map #(get-in state [:shapes %]))
+                                    (filter #(= id (:canvas %)))
+                                    (map :id))]
+                    (reduce impl-set-blocked $ (sequence xform shapes)))
+                  $))))]
+    (reify
+      udp/IPageUpdate
+      ptk/UpdateEvent
+      (update [_ state]
+        (impl-set-blocked state id)))))
 
 ;; --- Shape Locking
 

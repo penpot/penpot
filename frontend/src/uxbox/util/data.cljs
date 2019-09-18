@@ -79,6 +79,26 @@
     (disj s v)
     (conj s v)))
 
+(defn enumerate
+  ([items] (enumerate items 0))
+  ([items start]
+   (loop [idx start
+          items items
+          res []]
+     (if (empty? items)
+       res
+       (recur (inc idx)
+              (rest items)
+              (conj res [idx (first items)]))))))
+
+(defn concatv
+  [& colls]
+  (loop [colls colls
+         result []]
+    (if (seq colls)
+      (recur (rest colls) (reduce conj result (first colls)))
+      result)))
+
 (defn seek
   ([pred coll]
    (seek pred coll nil))

@@ -113,9 +113,11 @@
                      :page page
                      :id shape-id
                      :name shape-name)]
-    (-> state
-        (update-in [:pages page :shapes] #(into [] (cons shape-id %)))
-        (assoc-in [:shapes shape-id] shape))))
+    (as-> state $
+      (if (= :canvas (:type shape))
+        (update-in $ [:pages page :canvas] conj shape-id)
+        (update-in $ [:pages page :shapes] conj shape-id))
+      (assoc-in $ [:shapes shape-id] shape))))
 
 (defn duplicate-shapes'
   ([state shapes page]

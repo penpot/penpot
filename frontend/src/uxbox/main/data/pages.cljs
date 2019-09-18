@@ -11,7 +11,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [uxbox.main.repo :as rp]
-   [uxbox.util.data :refer [index-by-id]]
+   [uxbox.util.data :refer [index-by-id concatv]]
    [uxbox.util.spec :as us]
    [uxbox.util.timers :as ts]
    [uxbox.util.uuid :as uuid]))
@@ -97,7 +97,8 @@
   (letfn [(pack-shapes [ids]
             (mapv #(get-in state [:shapes %]) ids))]
     (let [page (get-in state [:pages id])
-          data {:shapes (pack-shapes (:shapes page))}]
+          data {:shapes (pack-shapes (concatv (:canvas page)
+                                              (:shapes page)))}]
       (-> page
           (assoc :data data)
           (dissoc :shapes)))))
@@ -106,13 +107,20 @@
   "Unpacks packed page object and assocs it to the
   provided state."
   [state {:keys [id data] :as page}]
-  (let [shapes-data (:shapes data [])
-        shapes (mapv :id shapes-data)
-        shapes-map (index-by-id shapes-data)
+  (let [shapes-list (:shapes data [])
+
+        shapes (->> shapes-list
+                    (filter #(not= :canvas (:type %)))
+                    (mapv :id))
+        canvas (->> shapes-list
+                    (filter #(= :canvas (:type %)))
+                    (mapv :id))
+
+        shapes-map (index-by-id shapes-list)
 
         page (-> page
                  (dissoc :data)
-                 (assoc :shapes shapes))]
+                 (assoc :shapes shapes :canvas canvas))]
     (-> state
         (update :shapes merge shapes-map)
         (update :pages assoc id page))))
