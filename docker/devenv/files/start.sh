@@ -10,7 +10,7 @@ tmux send-keys -t uxbox 'clojure -Adev tools.clj figwheel' enter
 tmux new-window -t uxbox:2 -n 'backend'
 tmux select-window -t uxbox:2
 tmux send-keys -t uxbox 'cd uxbox/backend' enter C-l
-tmux send-keys -t uxbox 'clojure -Adev -m uxbox.fixtures' enter C-l
+# tmux send-keys -t uxbox 'clojure -Adev -m uxbox.fixtures' enter C-l
 tmux send-keys -t uxbox 'clojure -Adev:repl' enter
 
 tmux rename-window -t uxbox:0 'gulp'

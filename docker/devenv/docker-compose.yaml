@@ -1,0 +1,55 @@
+version: '3'
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.177.09.0/24
+
+volumes:
+  postgres_data:
+  user_data:
+
+services:
+  uxbox:
+    privileged: true
+    build:
+      context: ./
+    hostname: 'uxbox-devenv'
+    container_name: 'uxbox-devenv'
+    command: "/home/uxbox/init.sh"
+    stop_signal: SIGINT
+    depends_on:
+      - postgres
+    volumes:
+      - "user_data:/home/uxbox/local"
+      - "${PWD}:/home/uxbox/uxbox"
+      - "${HOME}/.m2:/home/uxbox/.m2"
+      - "${HOME}/.gitconfig:/home/uxbox/.gitconfig"
+
+    ports:
+      - 3449:3449
+      - 6060:6060
+
+    environment:
+      - UXBOX_HTTP_SERVER_DEBUG=false
+      - UXBOX_DATABASE_URI="jdbc:postgresql://postgres/uxbox"
+      - UXBOX_DATABASE_USERNAME="uxbox"
+      - UXBOX_DATABASE_PASSWORD="uxbox_postgres_password"
+
+  postgres:
+    image: postgres:11
+    hostname: 'uxbox-devenv-postgres'
+    container_name: 'uxbox-devenv-postgres'
+    restart: always
+    stop_signal: SIGINT
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_INITDB_ARGS="--data-checksums"
+      - POSTGRES_DB=uxbox
+      - POSTGRES_USER=uxbox
+      - POSTGRES_PASSWORD=uxbox_postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data

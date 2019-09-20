@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-set -x
-
-clj -Adev -m uxbox.tests.main
+set -xe
+sudo pg_ctlcluster 11 main start;
+clojure -Adev -m uxbox.tests.main;

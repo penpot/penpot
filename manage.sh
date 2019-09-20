@@ -2,55 +2,42 @@
 set -e
 
 REV=`git log -n 1 --pretty=format:%h -- docker/`
-IMGNAME="uxbox-devenv"
-
-function kill-devenv-container {
-    echo "Cleaning development container $IMGNAME:$REV..."
-    docker ps -a -f name=$IMGNAME -q | xargs --no-run-if-empty docker kill
-}
+IMGNAME="devenv_uxbox"
 
 function remove-devenv-images {
     echo "Clean old development image $IMGNAME..."
     docker images $IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
 }
 
-function build-devenv-image {
+function build-devenv {
+    echo "Building development image $IMGNAME:latest with UID $EXTERNAL_UID..."
+
     local EXTERNAL_UID=${1:-$(id -u)}
-    echo "Building development image $IMGNAME:$REV with UID $EXTERNAL_UID..."
-    docker build --rm=true \
-           -t $IMGNAME:$REV \
-           -t $IMGNAME:latest \
-           --build-arg EXTERNAL_UID=$EXTERNAL_UID \
-           --label="io.uxbox.devenv" \
-           docker/devenv
+    docker-compose -f docker/devenv/docker-compose.yaml \
+        build --build-arg EXTERNAL_UID=$EXTERNAL_UID --force-rm;
 }
 
-function build-devenv-image-if-not-exists {
-    if [[ ! $(docker images $IMGNAME:$REV -q) ]]; then
-        build-devenv-image $@
+function build-devenv-if-not-exists {
+    if [[ ! $(docker images $IMGNAME:latest -q) ]]; then
+        build-devenv $@
     fi
 }
 
+function start-devenv {
+    build-devenv-if-not-exists $@;
+    docker-compose -f docker/devenv/docker-compose.yaml up -d;
+}
+
+function stop-devenv {
+    docker-compose -f docker/devenv/docker-compose.yaml stop -t 2;
+}
+
 function run-devenv {
-    kill-devenv-container;
-    build-devenv-image-if-not-exists $@;
+    if [[ ! $(docker ps -f "name=uxbox-devenv" -q) ]]; then
+        start-devenv
+    fi
 
-    mkdir -p $HOME/.m2
-    rm -rf ./frontend/node_modules
-    mkdir -p \
-        ./frontend/resources/public/css \
-        ./frontend/resources/public/view/css
-
-    CONTAINER=$IMGNAME:latest
-
-    echo "Running development image $CONTAINER..."
-    docker run --rm -ti \
-         -v `pwd`:/home/uxbox/uxbox  \
-         -v $HOME/.m2:/home/uxbox/.m2 \
-         -v $HOME/.gitconfig:/home/uxbox/.gitconfig \
-         -p 3449:3449 -p 6060:6060 -p 9090:9090 \
-         --name "uxbox-devenv" \
-         $CONTAINER
+    docker exec -ti uxbox-devenv /home/uxbox/start.sh;
 }
 
 function run-all-tests {
@@ -61,7 +48,7 @@ function run-all-tests {
 }
 
 function run-frontend-tests {
-    build-devenv-image-if-not-exists $@;
+    build-devenv-if-not-exists $@;
 
     CONTAINER=$IMGNAME:latest
 
@@ -74,7 +61,7 @@ function run-frontend-tests {
 }
 
 function run-backend-tests {
-    build-devenv-image-if-not-exists $@;
+    build-devenv-if-not-exists $@;
 
     CONTAINER=$IMGNAME:latest
 
@@ -86,7 +73,7 @@ function run-backend-tests {
 }
 
 function build-frontend-local {
-    build-devenv-image-if-not-exists $@;
+    build-devenv-if-not-exists $@;
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
@@ -158,6 +145,8 @@ function build-backend-image {
 }
 
 function build-images {
+    build-devenv-if-not-exists $@;
+
     echo "Building frontend image ..."
     build-frontend-image || exit 1;
     echo "Building frontend dbg image ..."
@@ -197,11 +186,17 @@ function usage {
     echo "USAGE: $0 OPTION"
     echo "Options:"
     echo "- clean                            Stop and clean up docker containers"
-    echo "- build-devenv-image               Build docker container for development with tmux. Can specify external user id in parameter"
-    echo "- run-devenv                       Run (and build if necessary) development container (frontend at localhost:3449, backend at localhost:6060). Can specify external user id in parameter"
-    echo "- run-all-tests                    Execute unit tests for both backend and frontend. Can specify external user id in parameter"
-    echo "- run-frontend-tests               Execute unit tests for frontend only. Can specify external user id in parameter"
-    echo "- run-backend-tests                Execute unit tests for backend only. Can specify external user id in parameter"
+    echo ""
+    echo "- build-devenv                     Build docker development oriented image; (can specify external user id in parameter)"
+    echo "- start-devenv                     Start the development oriented docker-compose service."
+    echo "- stop-devenv                      Stops the development oriented docker-compose service."
+    echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
+    echo "                                   based on tmux (frontend at localhost:3449, backend at localhost:6060)."
+    echo ""
+    echo "- run-all-tests                    Execute unit tests for both backend and frontend."
+    echo "- run-frontend-tests               Execute unit tests for frontend only."
+    echo "- run-backend-tests                Execute unit tests for backend only."
+    echo ""
     echo "- build-images                     Build a 'release ready' docker images for both backend and frontend"
     echo "- build-frontend-image             Build a 'release ready' docker image for frontend (debug version)"
     echo "- build-frontend-dbg-image         Build a debug docker image for frontend"
@@ -213,15 +208,26 @@ function usage {
 
 case $1 in
     clean)
-        kill-devenv-container
         remove-devenv-images
         ;;
-    build-devenv-image)
-        build-devenv-image ${@:2}
+
+    ## devenv related commands
+
+    build-devenv)
+        build-devenv ${@:2}
+        ;;
+    start-devenv)
+        start-devenv ${@:2}
         ;;
     run-devenv)
         run-devenv ${@:2}
         ;;
+    stop-devenv)
+        stop-devenv ${@:2}
+        ;;
+
+    ## testin related commands
+
     run-all-tests)
         run-all-tests ${@:2}
         ;;
@@ -231,6 +237,8 @@ case $1 in
     run-backend-tests)
         run-backend-tests ${@:2}
         ;;
+
+    # production related comands
 
     build-images)
         build-images

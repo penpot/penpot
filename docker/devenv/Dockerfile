@@ -2,6 +2,7 @@ FROM ubuntu:bionic
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG EXTERNAL_UID=1000
+ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v10.16.3 \
     CLOJURE_VERSION=1.10.1.469 \
@@ -37,7 +38,6 @@ RUN set -ex; \
     echo "deb http://repos.azulsystems.com/ubuntu stable main" >> /etc/apt/sources.list.d/zulu.list; \
     echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" >> /etc/apt/sources.list.d/postgresql.list;
 
-ARG DEBIAN_FRONTEND=noninteractive
 
 RUN set -ex; \
     apt-get -qq update; \
@@ -86,9 +86,10 @@ RUN set -ex; \
 COPY files/bashrc /home/uxbox/.bashrc
 COPY files/zshrc /home/uxbox/.zshrc
 COPY files/vimrc /home/uxbox/.vimrc
-COPY files/start.sh /home/uxbox/start-tmux.sh
+COPY files/start.sh /home/uxbox/start.sh
 COPY files/tmux.conf /home/uxbox/.tmux.conf
 COPY files/entrypoint.sh /home/uxbox/
+COPY files/init.sh /home/uxbox/
 
 ENTRYPOINT ["zsh", "/home/uxbox/entrypoint.sh"]
-CMD ["/home/uxbox/start-tmux.sh"]
+CMD ["/home/uxbox/start.sh"]
