@@ -25,8 +25,12 @@
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]
    [uxbox.util.spec :as us]
+   [uxbox.util.perf :as perf]
    [uxbox.util.time :as dt]
    [uxbox.util.uuid :as uuid]))
+
+(s/def ::set-of-uuid
+  (s/every ::us/uuid :kind set?))
 
 ;; --- Expose inner functions
 
@@ -338,6 +342,8 @@
 ;; Shapes events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; TODO: add spec
+
 (defn add-shape
   [data]
   (reify
@@ -352,13 +358,23 @@
 
 (defn delete-shape
   [id]
-  {:pre [(uuid? id)]}
-  (reify
+  (s/assert ::us/uuid id)
+  (ptk/reify ::delete-shape
     udp/IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
       (let [shape (get-in state [:shapes id])]
         (ds/dissoc-shape state shape)))))
+
+(defn delete-many-shapes
+  [ids]
+  (s/assert ::us/set ids)
+  (ptk/reify ::delete-many-shapes
+    udp/IPageUpdate
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce ds/dissoc-shape state
+              (map #(get-in state [:shapes %]) ids)))))
 
 (defrecord SelectShape [id]
   ptk/UpdateEvent
@@ -385,10 +401,7 @@
     (let [pid (get-in state [:workspace :current])]
       (update-in state [:workspace pid] #(-> %
                                              (assoc :selected #{})
-                                             (dissoc :selected-canvas)))))
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/just :interrupt)))
+                                             (dissoc :selected-canvas))))))
 
 (defn deselect-all
   "Clear all possible state of drawing, edition
@@ -398,22 +411,18 @@
 
 ;; --- Select First Shape
 
-(deftype SelectFirstShape []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])
-          sid (first (get-in state [:pages pid :shapes]))]
-      (assoc-in state [:workspace pid :selected] #{sid}))))
-
-(defn select-first-shape
-  "Mark a shape selected for drawing."
-  []
-  (SelectFirstShape.))
+(def select-first-shape
+  (ptk/reify ::select-first-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspace :current])
+            sid (first (get-in state [:pages pid :shapes]))]
+        (assoc-in state [:workspace pid :selected] #{sid})))))
 
 ;; --- Select Shapes (By selrect)
 
 (def select-shapes-by-current-selrect
-  (reify
+  (ptk/reify ::select-shapes-by-current-selrect
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :current])
@@ -471,11 +480,9 @@
      :fast (gpt/point (if align? (* 3 gx) 10)
                       (if align? (* 3 gy) 10))}))
 
-(declare initial-shape-align)
-(declare apply-displacement)
-(declare assoc-temporal-modifier)
-(declare materialize-current-modifier)
-(declare apply-temporal-displacement)
+(declare initial-selection-align)
+(declare materialize-current-modifier-in-bulk)
+(declare apply-temporal-displacement-in-bulk)
 
 (s/def ::direction #{:up :down :right :left})
 (s/def ::speed #{:std :fast})
@@ -497,11 +504,9 @@
             displacement (get-displacement direction speed distance)]
         (rx/concat
          (when align?
-           (rx/concat
-            (rx/from-coll (map initial-shape-align selected))
-            (rx/from-coll (map apply-displacement selected))))
-         (rx/from-coll (map #(apply-temporal-displacement % displacement) selected))
-         (rx/from-coll (map materialize-current-modifier selected)))))))
+           (rx/of (initial-selection-align selected)))
+         (rx/of (apply-temporal-displacement-in-bulk selected displacement))
+         (rx/of (materialize-current-modifier-in-bulk selected)))))))
 
 ;; --- Move Selected Layer
 
@@ -539,8 +544,7 @@
     (watch [_ state stream]
       (let [id (get-in state [:workspace :current])
             selected (get-in state [:workspace id :selected])]
-        (rx/from-coll
-         (into [(deselect-all)] (map #(delete-shape %) selected)))))))
+        (rx/of (delete-many-shapes selected))))))
 
 ;; --- Rename Shape
 
@@ -584,56 +588,71 @@
             canvas (vec (concat before [id] after))]
         (assoc-in state [:pages page-id :canvas] canvas)))))
 
-;; --- Shape Transformations
+;; --- Shape / Selection Alignment
 
-(defn initial-shape-align
-  [id]
-  {:pre [(uuid? id)]}
-  (reify
-    ptk/WatchEvent
-    (watch [_ state s]
-      (let [{:keys [x1 y1] :as shape} (->> (get-in state [:shapes id])
-                                           (geom/shape->rect-shape state))
-            point (gpt/point x1 y1)]
-        (->> (uwrk/align-point point)
-             (rx/map (fn [{:keys [x y] :as pt}]
-                       (apply-temporal-displacement id (gpt/subtract pt point)))))))))
-
-
-;; --- Apply Temporal Displacement
-
-(defn apply-temporal-displacement
-  [id delta]
-  {:pre [(uuid? id) (gpt/point? delta)]}
-  (reify
+(defn initial-selection-align
+  "Align the selection of shapes."
+  [ids]
+  (s/assert ::set-of-uuid ids)
+  (ptk/reify ::initialize-shapes-align-in-bulk
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [prev (get-in state [:shapes id :modifier-mtx] (gmt/matrix))
-            curr (gmt/translate prev delta)]
-        (rx/of (assoc-temporal-modifier id curr))))))
+      (let [shapes-by-id (:shapes state)
+            shapes (mapv #(get shapes-by-id %) ids)
+            sshape (geom/shapes->rect-shape shapes)
+            point (gpt/point (:x1 sshape)
+                             (:y1 sshape))]
+        (->> (uwrk/align-point point)
+             (rx/map (fn [{:keys [x y] :as pt}]
+                       (apply-temporal-displacement-in-bulk ids (gpt/subtract pt point)))))))))
+
+;; --- Temportal displacement for Shape / Selection
+
+;; TODO: this can be done in more performant way using transients
+
+(defn apply-temporal-displacement-in-bulk
+  "Apply the same displacement delta to all shapes identified by the
+  set if ids."
+  [ids delta]
+  (s/assert ::set-of-uuid ids)
+  (s/assert gpt/point? delta)
+  (letfn [(process-shape [state id]
+            (let [prev (get-in state [:shapes id :modifier-mtx] (gmt/matrix))
+                  xfmt (gmt/translate prev delta)]
+              (assoc-in state [:shapes id :modifier-mtx] xfmt)))]
+    (ptk/reify ::apply-temporal-displacement-in-bulk
+      ptk/UpdateEvent
+      (update [_ state]
+        (perf/with-measure ::apply-temporal-displacement-in-bulk
+          (reduce process-shape state ids))))))
 
 ;; --- Modifiers
 
-(defn assoc-temporal-modifier
-  [id xfmt]
-  {:pre [(uuid? id)
-         (gmt/matrix? xfmt)]}
-  (reify
+(defn assoc-temporal-modifier-in-bulk
+  [ids xfmt]
+  (s/assert ::set-of-uuid ids)
+  (s/assert gmt/matrix? xfmt)
+  (ptk/reify ::assoc-temporal-modifier-in-bulk
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:shapes id :modifier-mtx] xfmt))))
+      (reduce #(assoc-in %1 [:shapes %2 :modifier-mtx] xfmt) state ids))))
 
-(defn materialize-current-modifier
-  [id]
-  {:pre [(uuid? id)]}
-  (reify
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [xfmt (get-in state [:shapes id :modifier-mtx])]
-        (when (gmt/matrix? xfmt)
-          (rx/of #(update-in % [:shapes id] geom/transform xfmt)
-                 #(update-in % [:shapes id] dissoc :modifier-mtx)
-                 ::udp/page-update))))))
+(defn materialize-current-modifier-in-bulk
+  [ids]
+  (s/assert ::us/set ids)
+  (letfn [(process-shape [state id]
+            (let [xfmt (get-in state [:shapes id :modifier-mtx])]
+              (if (gmt/matrix? xfmt)
+                (-> state
+                    (update-in [:shapes id] geom/transform xfmt)
+                    (update-in [:shapes id] dissoc :modifier-mtx))
+                state)))]
+    (ptk/reify ::materialize-current-modifier-in-bulk
+      udp/IPageUpdate
+      ptk/UpdateEvent
+      (update [_ state]
+        (perf/with-measure ::materialize-current-modifier-in-bulk
+          (reduce process-shape state ids))))))
 
 (defn rehash-shape-relationship
   "Checks shape overlaping with existing canvas, if one or more
@@ -644,10 +663,7 @@
             (let [shape1 (geom/shape->rect-shape canvas)
                   shape2 (geom/shape->rect-shape shape)]
               (geom/overlaps? shape1 shape2)))]
-    (reify
-      ptk/EventType
-      (type [_] ::rehash-shape-relationship)
-
+    (ptk/reify ::rehash-shape-relationship
       ptk/UpdateEvent
       (update [_ state]
         (let [shape (get-in state [:shapes id])
@@ -945,37 +961,35 @@
 ;; Canvas Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; ;; --- Group Collapsing
-
-;; (deftype CollapseGroupShape [id]
-;;   udp/IPageUpdate
-;;   ptk/UpdateEvent
-;;   (update [_ state]
-;;     (update-in state [:shapes id] assoc :collapsed true)))
-
-;; (defn collapse-shape
-;;   [id]
-;;   {:pre [(uuid? id)]}
-;;   (CollapseGroupShape. id))
-
-;; (deftype UncollapseGroupShape [id]
-;;   udp/IPageUpdate
-;;   ptk/UpdateEvent
-;;   (update [_ state]
-;;     (update-in state [:shapes id] assoc :collapsed false)))
-
-;; (defn uncollapse-shape
-;;   [id]
-;;   {:pre [(uuid? id)]}
-;;   (UncollapseGroupShape. id))
-
 (defn select-canvas
   [id]
-  (reify
+  (s/assert ::us/uuid id)
+  (ptk/reify ::select-canvas
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :current])]
         (update-in state [:workspace pid] assoc :selected-canvas id)))))
+
+;; (defn watch-page-changes
+;;   [id]
+;;   (s/assert ::us/uuid id)
+;;   (ptk/reify ::watch-page-changes
+;;     ptk/WatchEvent
+;;     (watch [_ state stream]
+;;       (let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
+;;         (->> (rx/merge
+;;               (->> stream
+;;                    (rx/filter #(or (satisfies? IPageUpdate %)
+;;                                    (= ::page-update %)))
+;;                    (rx/map #(rehash-shape-relationship
+;;               (->> stream
+;;                    (rx/filter #(satisfies? IMetadataUpdate %))
+;;                    (rx/debounce 1000)
+;;                    (rx/mapcat #(rx/merge (rx/of (persist-metadata id))
+;;                                          (->> (rx/filter metadata-persisted? stream)
+;;                                               (rx/take 1)
+;;                                               (rx/ignore))))))
+;;              (rx/take-until stopper))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Server Interactions

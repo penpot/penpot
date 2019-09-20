@@ -27,10 +27,7 @@
 
 (defn logged-in
   [data]
-  (reify
-    ptk/EventType
-    (type [_] ::logged-in)
-
+  (ptk/reify ::logged-in
     ptk/UpdateEvent
     (update [this state]
       (assoc state :auth data))

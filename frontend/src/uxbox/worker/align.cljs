@@ -23,6 +23,6 @@
   [{:keys [sender point] :as message}]
   (let [point [(:x point) (:y point)]
         results (kd/nearest tree point 1)
-        [[x y] d] (first results)
+        [x y] (ffirst results)
         result (gpt/point x y)]
     (impl/reply! sender {:point (gpt/point x y)})))

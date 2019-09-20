@@ -18,31 +18,21 @@
 
 ;; --- Shape Movement (by mouse)
 
-(defn start-move
-  [id]
-  {:pre [(uuid? id)]}
-  (reify
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [pid (get-in state [:workspace :current])
-            flags (get-in state [:workspace pid :flags])
-            stoper (rx/filter uws/mouse-up? stream)]
-        (rx/concat
-         (when (refs/alignment-activated? flags)
-           (rx/of (dw/initial-shape-align id)))
-         (->> uws/mouse-position-deltas
-              (rx/map #(dw/apply-temporal-displacement id %))
-              (rx/take-until stoper))
-         (rx/of (dw/materialize-current-modifier id)
-                (dw/rehash-shape-relationship id)))))))
-
 (def start-move-selected
   (reify
     ptk/WatchEvent
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])
-            selected (get-in state [:workspace pid :selected])]
-        (rx/from-coll (map start-move selected))))))
+            flags (get-in state [:workspace pid :flags])
+            selected (get-in state [:workspace pid :selected])
+            stoper (rx/filter uws/mouse-up? stream)]
+        (rx/concat
+         (when (refs/alignment-activated? flags)
+           (rx/of (dw/initial-selection-align selected)))
+         (->> uws/mouse-position-deltas
+              (rx/map #(dw/apply-temporal-displacement-in-bulk selected %))
+              (rx/take-until stoper))
+          (rx/of (dw/materialize-current-modifier-in-bulk selected)))))))
 
 (defn on-mouse-down
   [event {:keys [id type] :as shape} selected]

@@ -54,6 +54,7 @@
 (s/def ::inst inst?)
 (s/def ::keyword keyword?)
 (s/def ::fn fn?)
+(s/def ::set set?)
 (s/def ::coll coll?)
 
 (s/def ::not-empty-string

@@ -153,12 +153,9 @@
   [id pages]
   (s/assert ::us/uuid id)
   (s/assert ::us/coll pages)
-  (reify
+  (ptk/reify ::page-fetched
     IDeref
     (-deref [_] (list id pages))
-
-    ptk/EventType
-    (type [_] ::page-fetched)
 
     ptk/UpdateEvent
     (update [_ state]
@@ -262,12 +259,9 @@
 (defn page-persisted
   [data]
   (s/assert ::server-page data)
-  (reify
+  (ptk/reify ::page-persisted
     cljs.core/IDeref
     (-deref [_] data)
-
-    ptk/EventType
-    (type [_] ::page-persisted)
 
     ptk/UpdateEvent
     (update [_ state]
@@ -283,24 +277,19 @@
 ;; --- Persist Page
 
 (defn persist-page
-  ([id] (persist-page id identity))
-  ([id on-success]
-   (assert (uuid? id))
-   (reify
-     ptk/EventType
-     (type [_] ::persist-page)
-
-     ptk/WatchEvent
-     (watch [this state s]
-       (let [page (get-in state [:pages id])]
-         (if (:history page)
-           (rx/empty)
-           (let [page (pack-page state id)]
-             (->> (rp/req :update/page page)
-                  (rx/map :payload)
-                  (rx/map page-persisted)
-                  (rx/catch (fn [err] (rx/of ::page-persist-error)))))))))))
-
+  [id]
+  (s/assert ::us/uuid id)
+  (ptk/reify ::persist-page
+    ptk/WatchEvent
+    (watch [this state s]
+      (let [page (get-in state [:pages id])]
+        (if (:history page)
+          (rx/empty)
+          (let [page (pack-page state id)]
+            (->> (rp/req :update/page page)
+                 (rx/map :payload)
+                 (rx/map page-persisted)
+                 (rx/catch (fn [err] (rx/of ::page-persist-error))))))))))
 
 (defn persist-page?
   [v]
@@ -314,10 +303,7 @@
 (defn metadata-persisted
   [{:keys [id] :as data}]
   (s/assert ::metadata-persisted-params data)
-  (reify
-    ptk/EventType
-    (type [_] ::metadata-persisted)
-
+  (ptk/reify ::metadata-persisted
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:pages id :version] (:version data)))))
@@ -335,8 +321,8 @@
 
 (defn persist-metadata
   [id]
-  {:pre [(uuid? id)]}
-  (reify
+  (s/assert ::us/uuid id)
+  (ptk/reify ::persist-metadata
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page (get-in state [:pages id])]
@@ -349,7 +335,7 @@
 (defn update-page-attrs
   [{:keys [id] :as data}]
   (s/assert ::page-entity data)
-  (reify
+  (ptk/reify
     IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
@@ -446,6 +432,5 @@
                                          (->> (rx/filter metadata-persisted? stream)
                                               (rx/take 1)
                                               (rx/ignore))))))
-             (rx/take-until stopper)
-             (rx/retry 10000))))))
+             (rx/take-until stopper))))))
 

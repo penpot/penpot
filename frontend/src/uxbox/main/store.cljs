@@ -20,6 +20,24 @@
 (defonce store (ptk/store {:on-error #(*on-error* %)}))
 (defonce stream (ptk/input-stream store))
 
+;; (defn repr-event
+;;   [event]
+;;   (cond
+;;     (satisfies? ptk/Event event)
+;;     (str "typ: " (pr-str (ptk/type event)))
+
+;;     (and (fn? event)
+;;          (pos? (count (.-name event))))
+;;     (str "fn: " (demunge (.-name event)))
+
+;;     :else
+;;     (str "unk: " (pr-str event))))
+
+;; (defonce debug (as-> stream $
+;;                  (rx/filter ptk/event? $)
+;;                  (rx/subscribe $ (fn [event]
+;;                                    (println "[stream]: " (repr-event event))))))
+
 (def auth-ref
   (-> (l/key :auth)
       (l/derive state)))

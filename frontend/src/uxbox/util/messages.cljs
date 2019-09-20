@@ -56,10 +56,7 @@
 
 (defn show
   [data]
-  (reify
-    ptk/EventType
-    (type [_] ::show)
-
+  (ptk/reify ::show
     ptk/UpdateEvent
     (update [_ state]
       (let [message (assoc data :state :visible)]

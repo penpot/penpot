@@ -188,31 +188,16 @@
 (defn dissoc-from-index
   "A function that dissoc shape from the indexed
   data structure of shapes from the state."
-  [state {:keys [id type] :as shape}]
-  (if (= :group type)
-    (let [items (map #(get-in state [:shapes %]) (:items shape))]
-      (as-> state $
-        (update-in $ [:shapes] dissoc id)
-        (reduce dissoc-from-index $ items)))
-    (update-in state [:shapes] dissoc id)))
+  [state shape]
+  (update state :shapes dissoc (:id shape)))
 
 (defn dissoc-from-page
   "Given a shape, try to remove its reference from the
   corresponding page."
   [state {:keys [id page] :as shape}]
-  (as-> (get-in state [:pages page :shapes]) $
-    (into [] (remove #(= % id) $))
-    (assoc-in state [:pages page :shapes] $)))
-
-(defn dissoc-from-group
-  "Given a shape, try to remove its reference from the
-  corresponding group (only if it belongs to one group)."
-  [state {:keys [id group] :as shape}]
-  (if-let [group' (get-in state [:shapes group])]
-    (as-> (:items group') $
-      (into [] (remove #(= % id) $))
-      (assoc-in state [:shapes group :items] $))
-    state))
+  ;; TODO: handle canvas special case
+  (update-in state [:pages page :shapes]
+             (fn [items] (vec (remove #(= % id) items)))))
 
 (declare dissoc-shape)
 
@@ -234,11 +219,9 @@
 (defn dissoc-shape
   "Given a shape, removes it from the state."
   [state shape]
-  (as-> state $
-    (dissoc-from-page $ shape)
-    (dissoc-from-group $ shape)
-    (dissoc-from-index $ shape)
-    (clear-empty-groups $ shape)))
+  (-> state
+      (dissoc-from-page shape)
+      (dissoc-from-index shape)))
 
 ;; --- Shape Movements
 
@@ -265,8 +248,7 @@
                 :last (- (count shapes) 1))
 
         state (-> state
-                  (dissoc-from-page shape)
-                  (dissoc-from-group shape))
+                  (dissoc-from-page shape))
 
         shapes (if group
                  (get-in state [:shapes group :items])
@@ -293,8 +275,7 @@
         source (get-in state [:shapes sid])
 
         state (-> state
-                  (dissoc-from-page source)
-                  (dissoc-from-group source))
+                  (dissoc-from-page source))
 
         shapes (if group
                  (get-in state [:shapes group :items])
@@ -323,8 +304,7 @@
   {:pre [(not= tid sid)]}
   (let [source (get-in state [:shapes sid])
         state (-> state
-                  (dissoc-from-page source)
-                  (dissoc-from-group source))
+                  (dissoc-from-page source))
         shapes (get-in state [:shapes tid :items])]
     (if (seq shapes)
       (as-> state $

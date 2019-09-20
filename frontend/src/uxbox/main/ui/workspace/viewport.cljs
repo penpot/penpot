@@ -85,10 +85,11 @@
           (clear-state [state]
             (let [id (get-in state [:workspace :current])]
               (update-in state [:workspace id] dissoc :selrect)))]
-    (reify
+    (ptk/reify ::handle-selrect
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [stoper (rx/filter #(or (dw/interrupt? %) (uws/mouse-up? %)) stream)]
+        (let [stoper (->> (rx/filter #(or (dw/interrupt? %) (uws/mouse-up? %)) stream)
+                          (rx/pr-log "handle-selrect|stoper:"))]
           (rx/concat
            (rx/of (dw/deselect-all))
            (->> uws/mouse-position
@@ -118,7 +119,7 @@
                   cy (.-scrollTop dom)]
               (set! (.-scrollLeft dom) (- cx x))
               (set! (.-scrollTop dom) (- cy y))))]
-    (reify
+    (ptk/reify ::handle-viewport-positioning
       ptk/EffectEvent
       (effect [_ state stream]
         (let [stoper (rx/filter #(= ::finish-positioning %) stream)
@@ -145,7 +146,7 @@
               (when (not edition)
                 (if drawing-tool
                   (st/emit! (start-drawing drawing-tool))
-                  (st/emit! :interrupt handle-selrect))))
+                  (st/emit! handle-selrect))))
 
             (on-context-menu [event]
               (dom/prevent-default event)
@@ -249,8 +250,9 @@
             (for [id (reverse (:canvas page))]
               [:& uus/shape-component {:id id :key id}])
 
-            (for [id (reverse (:shapes page))]
-              [:& uus/shape-component {:id id :key id}])
+            #_(for [id (reverse (:shapes page))]
+                [:& uus/shape-component {:id id :key id}])
+            [:& uus/all-shapes {:page page}]
 
             (when (seq (:selected wst))
               [:& selection-handlers {:wst wst}])

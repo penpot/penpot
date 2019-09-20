@@ -55,9 +55,9 @@
 
         props {:x x1 :y y1
                :id (str "shape-" id)
-               :class-name (classnames :move-cursor moving?)
+               :className (classnames :move-cursor moving?)
                :width width
                :height height
                :transform transform}
         attrs (merge (attrs/extract-style-attrs shape) props)]
-    [:> :rect (normalize-props attrs)]))
+    [:& "rect" attrs]))

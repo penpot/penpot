@@ -39,7 +39,7 @@
             (let [result (geom/resize-shape vid shape point lock?)
                   scale (geom/calculate-scale-ratio shape result)
                   mtx (geom/generate-resize-matrix vid shape scale)]
-              (apply rx/of (map #(dw/assoc-temporal-modifier % mtx) ids))))
+              (rx/of (dw/assoc-temporal-modifier-in-bulk ids mtx))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Ctrl key and the shapes own proportion
@@ -72,9 +72,7 @@
                 (rx/map normalize-proportion-lock)
                 (rx/mapcat (partial resize shape))
                 (rx/take-until stoper))
-           (rx/from-coll (map dw/materialize-current-modifier ids))))))))
-
-      ;; (rx/subscribe stream (partial on-resize shape) nil on-end))))
+           (rx/of (dw/materialize-current-modifier-in-bulk ids))))))))
 
 ;; --- Controls (Component)
 
@@ -188,14 +186,16 @@
                    :stroke "#28c4d4"
                    :style {:cursor "pointer"}}])])))
 
+;; TODO: add specs for clarity
+
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes zoom] :as props}]
+  [{:keys [shapes selected zoom] :as props}]
   (let [shape (->> shapes
                    (map #(geom/selection-rect %))
                    (geom/shapes->rect-shape)
                    (geom/selection-rect))
         on-click #(do (dom/stop-propagation %2)
-                      (st/emit! (start-resize %1 (mapv :id shapes) shape)))]
+                      (st/emit! (start-resize %1 selected shape)))]
     [:& controls {:shape shape
                   :zoom zoom
                   :on-click on-click}]))
@@ -239,6 +239,7 @@
 
       (> num 1)
       [:& multiple-selection-handlers {:shapes shapes
+                                       :selected (:selected wst)
                                        :zoom zoom}]
 
       (and (= type :text)

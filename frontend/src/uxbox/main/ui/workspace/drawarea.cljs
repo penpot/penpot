@@ -36,27 +36,6 @@
 (declare handle-finish-drawing)
 (declare conditional-align)
 
-(defn start-drawing
-  [type]
-  {:pre [(keyword? type)]}
-  (let [id (gensym "drawing")]
-    (reify
-      ptk/UpdateEvent
-      (update [_ state]
-        (update-in state [:workspace :drawing-lock] #(if (nil? %) id %)))
-
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [pid (get-in state [:workspace :current])
-              lock (get-in state [:workspace :drawing-lock])]
-          (if (= lock id)
-            (rx/merge
-             (->> (rx/filter #(= % handle-finish-drawing) stream)
-                  (rx/take 1)
-                  (rx/map (fn [_] #(update % :workspace dissoc :drawing-lock))))
-             (rx/of (handle-drawing type)))
-            (rx/empty)))))))
-
 (def ^:private minimal-shapes
   [{:type :rect
     :name "Rect"
@@ -87,6 +66,27 @@
     :name "Text"
     :content "Type your text here"}])
 
+(defn start-drawing
+  [type]
+  {:pre [(keyword? type)]}
+  (let [id (gensym "drawing")]
+    (ptk/reify ::start-drawing
+      ptk/UpdateEvent
+      (update [_ state]
+        (update-in state [:workspace :drawing-lock] #(if (nil? %) id %)))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [pid (get-in state [:workspace :current])
+              lock (get-in state [:workspace :drawing-lock])]
+          (if (= lock id)
+            (rx/merge
+             (->> (rx/filter #(= % handle-finish-drawing) stream)
+                  (rx/take 1)
+                  (rx/map (fn [_] #(update % :workspace dissoc :drawing-lock))))
+             (rx/of (handle-drawing type)))
+            (rx/empty)))))))
+
 (defn- make-minimal-shape
   [type]
   (let [tool (seek #(= type (:type %)) minimal-shapes)]
@@ -95,7 +95,7 @@
 
 (defn handle-drawing
   [type]
-  (reify
+  (ptk/reify ::handle-drawing
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :current])
@@ -131,7 +131,7 @@
             (let [pid (get-in state [:workspace :current])]
               (update-in state [:workspace pid :drawing] resize-shape point lock?)))]
 
-    (reify
+    (ptk/reify ::handle-drawing-generic
       ptk/WatchEvent
       (watch [_ state stream]
         (let [pid (get-in state [:workspace :current])
@@ -184,7 +184,7 @@
           (remove-dangling-segmnet [state]
             (let [pid (get-in state [:workspace :current])]
               (update-in state [:workspace pid :drawing :segments] #(vec (butlast %)))))]
-    (reify
+    (ptk/reify ::handle-drawing-path
       ptk/WatchEvent
       (watch [_ state stream]
         (let [pid (get-in state [:workspace :current])
@@ -262,7 +262,8 @@
           (simplify-drawing-path [state tolerance]
             (let [pid (get-in state [:workspace :current])]
               (update-in state [:workspace pid :drawing :segments] path/simplify tolerance)))]
-    (reify
+
+    (ptk/reify ::handle-drawing-curve
       ptk/WatchEvent
       (watch [_ state stream]
         (let [pid (get-in state [:workspace :current])
@@ -283,7 +284,7 @@
                   handle-finish-drawing)))))))
 
 (def handle-finish-drawing
-  (reify
+  (ptk/reify ::handle-finish-drawing
     ptk/WatchEvent
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])
@@ -298,10 +299,10 @@
                  shape (dissoc shape ::initialized? :modifier-mtx)]
              ;; Add & select the cred shape to the workspace
              (rx/of (dw/add-shape shape)
-                    (dw/select-first-shape)))))))))
+                    dw/select-first-shape))))))))
 
 (def close-drawing-path
-  (reify
+  (ptk/reify ::close-drawing-path
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :current])]

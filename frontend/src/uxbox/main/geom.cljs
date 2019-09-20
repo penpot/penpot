@@ -456,31 +456,50 @@
 
 (defn shape->rect-shape
   "Coerce shape to rect like shape."
-  ([shape] (shape->rect-shape @st/state shape))
-  ([state {:keys [type] :as shape}]
-   (case type
-     :circle (circle->rect-shape state shape)
-     :path (path->rect-shape state shape)
-     :curve (path->rect-shape state shape)
-     shape)))
+  [{:keys [type] :as shape}]
+  (case type
+    :circle (circle->rect-shape shape)
+    :path (path->rect-shape shape)
+    :curve (path->rect-shape shape)
+    shape))
 
 (defn shapes->rect-shape
-  ([shapes] (shapes->rect-shape @st/state shapes))
-  ([state [shape :as shapes]]
-   {:pre [(seq shapes)]}
-   (let [shapes (map shape->rect-shape shapes)
-         minx (apply min (map :x1 shapes))
-         miny (apply min (map :y1 shapes))
-         maxx (apply max (map :x2 shapes))
-         maxy (apply max (map :y2 shapes))]
-     {:x1 minx
-      :y1 miny
-      :x2 maxx
-      :y2 maxy
-      :type :rect})))
+  [shapes]
+  (let [shapes (mapv shape->rect-shape shapes)
+        minx (apply js/Math.min (mapv :x1 shapes))
+        miny (apply js/Math.min (mapv :y1 shapes))
+        maxx (apply js/Math.max (mapv :x2 shapes))
+        maxy (apply js/Math.max (mapv :y2 shapes))]
+    {:x1 minx
+     :y1 miny
+     :x2 maxx
+     :y2 maxy
+     :type :rect}))
+
+(defn shapes->rect-shape'
+  [shapes]
+  (let [shapes (mapv shape->rect-shape shapes)
+        total (count shapes)]
+    (loop [idx (int 0)
+           minx js/Number.POSITIVE_INFINITY
+           miny js/Number.POSITIVE_INFINITY
+           maxx js/Number.NEGATIVE_INFINITY
+           maxy js/Number.NEGATIVE_INFINITY]
+      (if (> total idx)
+        (let [{:keys [x1 y1 x2 y2]} (nth shapes idx)]
+          (recur (inc idx)
+                 (min minx x1)
+                 (min miny y1)
+                 (max maxx x2)
+                 (max maxy y2)))
+        {:x1 minx
+         :y1 miny
+         :x2 maxx
+         :y2 maxy
+         :type :rect}))))
 
 (defn- path->rect-shape
-  [state {:keys [segments] :as shape}]
+  [{:keys [segments] :as shape}]
   (let [minx (apply min (map :x segments))
         miny (apply min (map :y segments))
         maxx (apply max (map :x segments))
@@ -492,7 +511,7 @@
            :y2 maxy)))
 
 (defn- circle->rect-shape
-  [state {:keys [cx cy rx ry] :as shape}]
+  [{:keys [cx cy rx ry] :as shape}]
   (let [width (* rx 2)
         height (* ry 2)
         x1 (- cx rx)
