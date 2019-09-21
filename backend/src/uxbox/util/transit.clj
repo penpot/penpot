@@ -49,17 +49,28 @@
 
 ;; --- High-Level Api
 
+;; TODO: check performance of different options
+
 (defn decode
   ([data]
    (decode data nil))
   ([data opts]
-   (with-open [input (io/input-stream data)]
-     (read! (reader input opts)))))
+   (cond
+     (string? data)
+     (decode (.getBytes data "UTF-8") opts)
+
+     (bytes? data)
+     (with-open [input (ByteArrayInputStream. data)]
+       (read! (reader input opts)))
+
+     :else
+     (with-open [input (io/input-stream data)]
+       (read! (reader input opts))))))
 
 (defn encode
-  ([data]
+  (^bytes [data]
    (encode data nil))
-  ([data opts]
+  (^bytes [data opts]
    (with-open [out (ByteArrayOutputStream.)]
      (let [w (writer out opts)]
        (write! w data)

@@ -20,7 +20,7 @@
 
 (s/def ::id ::us/uuid)
 (s/def ::name string?)
-(s/def ::version (s/and int? pos?))
+(s/def ::version int?)
 
 ;; --- List Projects
 
