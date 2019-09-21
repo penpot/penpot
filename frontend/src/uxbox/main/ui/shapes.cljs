@@ -38,32 +38,20 @@
 
 (mf/defc shape-component
   {:wrap [mf/wrap-memo]}
-  [{:keys [id] :as props}]
-  (uxbox.util.perf/with-measure ::foobar
-    (let [shape-iref (mf/use-memo {:deps #js [id]
-                                   :fn #(-> (l/in [:shapes id])
-                                            (l/derive st/state))})]
-      (when-let [shape (mf/deref shape-iref)]
-        (when-not (:hidden shape)
-          (mf/html
-           [:& render-shape' {:shape shape}]))))))
-
-(mf/defc shape-component'
-  {:wrap [mf/wrap-memo]}
   [{:keys [shape] :as props}]
   (when (and shape (not (:hidden shape)))
     [:& render-shape' {:shape shape}]))
 
-(def ^:private shapes-iref
-  (-> (l/key :shapes)
-      (l/derive st/state)))
-
-(mf/defc all-shapes
+(mf/defc canvas-and-shapes
   {:wrap [mf/wrap-memo]}
   [{:keys [page] :as props}]
-  (let [shapes-by-id (mf/deref shapes-iref)
-        shapes (map #(get shapes-by-id %) (:shapes page))]
+  (let [shapes-by-id (mf/deref refs/shapes-by-id)
+        shapes (map #(get shapes-by-id %) (:shapes page []))
+        canvas (map #(get shapes-by-id %) (:canvas page []))]
     [:*
+     (for [item canvas]
+       [:& shape-component {:shape item :key (:id item)}])
      (for [item shapes]
-       [:& shape-component' {:shape item :key (:id item)}])]))
+       [:& shape-component {:shape item :key (:id item)}])]))
+
 

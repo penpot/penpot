@@ -9,7 +9,7 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.ui.workspace.sidebar.drawtools :refer [draw-toolbox]]
-   [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
+   ;; [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [uxbox.main.ui.workspace.sidebar.icons :refer [icons-toolbox]]
    [uxbox.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [uxbox.main.ui.workspace.sidebar.options :refer [options-toolbox]]

@@ -29,7 +29,7 @@
    [uxbox.main.ui.workspace.scroll :as scroll]
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
-   [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
+   ;; [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
    [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
@@ -99,7 +99,7 @@
         :on-scroll on-scroll
         :on-wheel #(on-wheel % canvas)}
 
-       (history-dialog)
+       ;; (history-dialog)
 
        ;; Rules
        (when (contains? flags :rules)
@@ -127,8 +127,6 @@
     (mf/use-effect
      {:deps #js [project-id page-id]
       :fn #(st/emit! (dw/initialize project-id page-id))})
-
-    ;; (prn "workspace-page.render" (:id page) props)
 
     [:> rdnd/provider {:backend rdnd/html5}
      (when page
