@@ -30,25 +30,27 @@ editable in many other vector tools and easy to use on the web.
 
 ### Introduction ###
 
-The development environment consists in a docker container that mounts
-your local copy of the uxbox souce code directory tree and executes a
-tmux inside the container in order to facilitate execute multiple
-processes inside.
+The main development environment consists in a docker compose
+configuration that starts the external services and the development
+container (called **devenv**).
+
+We use tmux script in order to multiplex the signle terminal and run
+both the backend and frontend in the same container.
 
 
 ### System requirements ###
 
-You should have `docker` installed in your system in order to set up
-properly the uxbox development enviroment.
+You should have `docker` and `docker-compose` installed in your system
+in order to set up properly the uxbox development enviroment.
 
 In debian like linux distributions you can install it executing:
 
 ```bash
-sudo apt-get install docker
+sudo apt-get install docker docker-compose
 ```
 
 
-### Start the docker container ###
+### Start the devenv ###
 
 **Requires a minimum knowledge of tmux usage in order to use that
 development environment.**
@@ -61,10 +63,9 @@ For start it, staying in this repository, execute:
 
 This will do the following:
 
-- Build the image if it is not done before.
-- Download all repositories if them are not downloaded previously.
-- Start a container with predefined tmux layout.
-- Start all needed processes such as gulp and figwheel.
+- Build the images if it is not done before.
+- Starts all the containers in the background.
+- Attaches to the **devenv** container and executes the tmux session.
 
 
 ### First steps with tmux ###
@@ -82,36 +83,37 @@ current window.
 
 #### UI ####
 
-The UI related tasks starts automatically so you do not need do anything. The
-**window 0** and **window 1** are used for the UI related environment.
+The UI related tasks starts automatically so you do not need do
+anything. The **window 0** and **window 1** are used for the UI
+related environment.
 
 
 #### Backend ####
 
-The backend related environment is located in the **window 2**, and you can go
-directly to it using `ctrl+b 2` shortcut.
+The backend related environment is located in the **window 2**, and
+you can go directly to it using `ctrl+b 2` shortcut.
 
-By default this tasks are performed:
-
-- Start postgresql.
-- Load initial fixtures into the database.
-
-The repl should be started automatically, if not, you can execute:
-
-```bash
-clojure -Adev:repl
-```
+By default the clojure repl will be executed, waiting you to run
+commands or start the http server.
 
 Then use `(start)` to start all the environment, `(stop)` for stoping
 it and `(reset)` for restart with code reloading. If some exception is
-raised when code is reloaded, just use `(refresh)` in order to finish
+raised when code is reloaded, just use `(repl/refresh)` in order to finish
 correctly the code swaping and later use `(reset)` again.
+
+If this is your first run, you maybe want to load fixtures first. Then
+you can done this in two ways:
+
+- In the same repl, require the `uxbox.fixtures` namespace and execute
+  `(uxbox.fixtures/-main [])`.
+- Stop the repl with `Ctrl+c` and then execute `clojure -Adev -m
+  uxbox.fixtures`; then start the repl again with `clojure -Adev:repl`.
 
 
 ## Production (Docker)
 
 Docker is also used to build release images for backend and
-frontend. Use the helper script `manage.sh` to build the images.  You
+frontend. Use the helper script `manage.sh` to build the images. You
 can run locally UXBOX through a docker-compose or by manually running
 the containers.
 
@@ -129,34 +131,15 @@ uploads, etc). The docker daemon will store that data within the
 docker directory `/var/lib/docker/volumes/...`. That means your data
 is saved even if the container crashes, is stopped or deleted.
 
-To make your data persistent to upgrading and get access for backups
-is using named docker volume or mount a host folder. To achieve this
-you need one volume for your database container.
+The default production docker-compose already handles it for you,
+but if you. So check the `docker/docker-compose.yml` file.
 
-Database:
-- `/var/lib/postgresql/data` PostgreSQL Data
-```console
-$ docker run -d \
-    -v db:/var/lib/postgresql/data \
-    postgresql
-```
-
-You also need to persist the UXBOX backend public resources (media and
-assets) to not lose images uploaded and allow the frontend to expose
-assets.
-
-- `/srv/uxbox/resources/public` UXBOX backend public resources
-
-```console
-$ docker run -d \
-    -v db:/srv/uxbox/resources/public \
-    monogramm/docker-uxbox-backend
-```
 
 ### Auto configuration via environment variables
 
 The following environment variables are also honored for configuring
 your UXBOX instance:
+
 
 #### Frontend
 
@@ -205,6 +188,7 @@ Available at runtime:
 variables or the backend might try to interpret the values as symbols
 and have weird issues.
 
+
 ## Collections import
 
 You can easily import icons and images as global stores with the
@@ -243,6 +227,7 @@ clojure -Adev -m uxbox.cli.collimp ../media/config.edn
 
 Take a look at the `sample_media` directory for a sample configuration.
 
+
 ## Contributing ##
 
 **Open to you!**
@@ -252,6 +237,7 @@ passion and because of this, we'll be glad if you want to participate
 and improve UXBOX. All your awesome ideas and code are welcome!
 
 Please refer to the [Contributing Guide](./CONTRIBUTING.md)
+
 
 ## License ##
 
