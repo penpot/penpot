@@ -623,8 +623,7 @@
     (ptk/reify ::apply-temporal-displacement-in-bulk
       ptk/UpdateEvent
       (update [_ state]
-        (perf/with-measure ::apply-temporal-displacement-in-bulk
-          (reduce process-shape state ids))))))
+        (reduce process-shape state ids)))))
 
 ;; --- Modifiers
 
@@ -651,8 +650,7 @@
       udp/IPageUpdate
       ptk/UpdateEvent
       (update [_ state]
-        (perf/with-measure ::materialize-current-modifier-in-bulk
-          (reduce process-shape state ids))))))
+        (reduce process-shape state ids)))))
 
 (defn rehash-shape-relationship
   "Checks shape overlaping with existing canvas, if one or more
@@ -969,27 +967,6 @@
     (update [_ state]
       (let [pid (get-in state [:workspace :current])]
         (update-in state [:workspace pid] assoc :selected-canvas id)))))
-
-;; (defn watch-page-changes
-;;   [id]
-;;   (s/assert ::us/uuid id)
-;;   (ptk/reify ::watch-page-changes
-;;     ptk/WatchEvent
-;;     (watch [_ state stream]
-;;       (let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
-;;         (->> (rx/merge
-;;               (->> stream
-;;                    (rx/filter #(or (satisfies? IPageUpdate %)
-;;                                    (= ::page-update %)))
-;;                    (rx/map #(rehash-shape-relationship
-;;               (->> stream
-;;                    (rx/filter #(satisfies? IMetadataUpdate %))
-;;                    (rx/debounce 1000)
-;;                    (rx/mapcat #(rx/merge (rx/of (persist-metadata id))
-;;                                          (->> (rx/filter metadata-persisted? stream)
-;;                                               (rx/take 1)
-;;                                               (rx/ignore))))))
-;;              (rx/take-until stopper))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Server Interactions

@@ -88,8 +88,7 @@
     (ptk/reify ::handle-selrect
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [stoper (->> (rx/filter #(or (dw/interrupt? %) (uws/mouse-up? %)) stream)
-                          (rx/pr-log "handle-selrect|stoper:"))]
+        (let [stoper (rx/filter #(or (dw/interrupt? %) (uws/mouse-up? %)) stream)]
           (rx/concat
            (rx/of (dw/deselect-all))
            (->> uws/mouse-position
@@ -227,8 +226,8 @@
                 (fn []
                   (events/unlistenByKey key1)
                   (events/unlistenByKey key2))))]
-
       (mf/use-effect on-mount)
+      ;; (prn "viewport$render")
       [:*
        [:& coordinates {:zoom zoom}]
        #_[:div.tooltip-container

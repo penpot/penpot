@@ -220,13 +220,9 @@
         shape (geom/selection-rect shape)]
     [:& controls {:shape shape :zoom zoom :on-click on-click}]))
 
-(def ^:private shapes-map-iref
-  (-> (l/key :shapes)
-      (l/derive st/state)))
-
 (mf/defc selection-handlers
   [{:keys [wst] :as props}]
-  (let [shapes-map (mf/deref shapes-map-iref)
+  (let [shapes-map (mf/deref refs/shapes-by-id)
         shapes (map #(get shapes-map %) (:selected wst))
         edition (:edition wst)
         zoom (:zoom wst 1)
