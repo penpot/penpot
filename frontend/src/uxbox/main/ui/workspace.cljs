@@ -63,9 +63,11 @@
   [canvas page]
   ;; (scroll/scroll-to-page-center (mf/ref-node canvas) page)
   (st/emit! (udp/watch-page-changes (:id page))
-            (udu/watch-page-changes (:id page)))
+            (udu/watch-page-changes (:id page))
+            (dw/start-shapes-watcher (:id page)))
   (let [sub (shortcuts/init)]
-    #(do (st/emit! ::udp/stop-page-watcher)
+    #(do (st/emit! ::udp/stop-page-watcher
+                   ::dw/stop-shapes-watcher)
          (rx/cancel! sub))))
 
 (mf/defc workspace

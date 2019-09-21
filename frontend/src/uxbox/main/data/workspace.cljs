@@ -999,3 +999,42 @@
           project (get-in state [:projects (:project page)])
           url (str cfg/viewurl "?v=" rval "#/preview/" (:share-token project) "/" page-id)]
       (js/open url "new tab" ""))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Page Changes Reactions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn start-shapes-watcher
+  [id]
+  (s/assert ::us/uuid id)
+  (letfn [(on-change [[old new]]
+            (reduce-kv (fn [acc k v]
+                         (if (identical? v (get old k))
+                           acc
+                           (conj acc k)))
+                       #{}
+                       new))
+          (select-shapes [state]
+            (let [ids (get-in state [:pages id :shapes])]
+              (select-keys (:shapes state) ids)))
+          ]
+    (ptk/reify ::watch-page-changes
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [stoper (rx/filter #(= % ::stop-shapes-watcher) stream)
+              ids (get-in state [:pages id :shapes])
+              local (volatile! nil)
+              into* (fn [dst srcs] (reduce #(into %1 %2) dst srcs))]
+          (->> (rx/merge st/store (rx/of state))
+               (rx/map select-shapes)
+               (rx/buffer 2 1)
+               (rx/map on-change)
+               (rx/buffer-time 300)
+               (rx/map #(into* #{} %))
+               (rx/filter (complement empty?))
+               (rx/tap #(prn "changed" %))
+               (rx/mapcat (fn [items] (rx/from-coll
+                                       (map rehash-shape-relationship items))))
+               (rx/take-until stoper)))))))
+
