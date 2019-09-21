@@ -36,10 +36,10 @@ services:
       - UXBOX_HTTP_SERVER_DEBUG=false
       - UXBOX_DATABASE_URI="jdbc:postgresql://postgres/uxbox"
       - UXBOX_DATABASE_USERNAME="uxbox"
-      - UXBOX_DATABASE_PASSWORD="uxbox_postgres_password"
+      - UXBOX_DATABASE_PASSWORD="uxbox"
 
   postgres:
-    image: postgres:11
+    image: postgres:12-beta4
     hostname: 'uxbox-devenv-postgres'
     container_name: 'uxbox-devenv-postgres'
     restart: always
@@ -50,6 +50,6 @@ services:
       - POSTGRES_INITDB_ARGS="--data-checksums"
       - POSTGRES_DB=uxbox
       - POSTGRES_USER=uxbox
-      - POSTGRES_PASSWORD=uxbox_postgres_password
+      - POSTGRES_PASSWORD=uxbox
     volumes:
       - postgres_data:/var/lib/postgresql/data
