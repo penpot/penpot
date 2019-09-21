@@ -130,12 +130,9 @@
   (task ["dbg-dist:main"])
   (task ["dbg-dist:worker"]))
 
-
-
-
 ;; --- Tests Tasks
 
-(defmethod task "build-tests"
+(defmethod task "build:tests"
   [& args]
   (api/build (api/inputs "src" "test")
              (assoc default-build-options
@@ -146,6 +143,30 @@
                     :output-to "target/tests/main.js"
                     :output-dir "target/tests/main"
                     :optimizations :none)))
+
+(defmethod task "watch:tests"
+  [args]
+  (println "Start watch loop...")
+  (letfn [(run-tests []
+            (let [{:keys [out err]} (shell/sh "node" "target/tests/main.js")]
+              (println out err)))
+          (start-watch []
+            (try
+              (api/watch (api/inputs "src" "test")
+                         (assoc default-build-options
+                                :main 'uxbox.tests.main
+                                :watch-fn run-tests
+                                :target :nodejs
+                                :source-map true
+                                :output-to "target/tests/main.js"
+                                :output-dir "target/tests/main"
+                                :optimizations :none))
+              (catch Exception e
+                (println "ERROR:" e)
+                (Thread/sleep 2000)
+                start-watch)))]
+    (trampoline start-watch)))
+
 
 ;; --- Figwheel Config & Tasks
 

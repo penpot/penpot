@@ -7,6 +7,7 @@
 (ns uxbox.http.middleware
   (:require
    [clojure.spec.alpha :as s]
+   [clojure.java.io :as io]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [reitit.ring :as rr]
@@ -208,7 +209,7 @@
 
 (def format-response-middleware
   (letfn [(process-response [{:keys [body] :as rsp}]
-            (if body
+            (if (coll? body)
               (let [body (t/encode body {:type :json-verbose})]
                 (-> rsp
                     (assoc :body body)
@@ -226,11 +227,24 @@
   (letfn [(get-content-type [request]
             (or (:content-type request)
                 (get (:headers request) "content-type")))
+
+          (slurp-bytes [body]
+            (with-open [input (io/input-stream body)
+                        output (java.io.ByteArrayOutputStream. (.available input))]
+              (io/copy input output)
+              (.toByteArray output)))
+
+          (parse-body [body]
+            (let [^bytes body (slurp-bytes body)]
+              (when (pos? (alength body))
+                (t/decode body))))
+
           (process-request [request]
             (let [ctype (get-content-type request)]
               (if (= "application/transit+json" ctype)
                 (try
-                  (assoc request :body-params (t/decode (:body request)))
+                  (let [body (parse-body (:body request))]
+                    (assoc request :body-params body))
                   (catch Exception e
                     (ex/raise :type :parse
                               :message "Unable to parse transit from request body."
@@ -243,11 +257,11 @@
                ([request]
                 (handler (process-request request)))
                ([request respond raise]
-                (try
-                  (let [request (process-request request)]
-                    (handler request respond raise))
-                  (catch Exception e
-                    (raise e))))))}))
+                (let [^HttpInput body (:body request)]
+                  (try
+                    (handler (process-request request) respond raise)
+                    (catch Exception e
+                      (raise e)))))))}))
 
 (def middleware
   [cors-middleware

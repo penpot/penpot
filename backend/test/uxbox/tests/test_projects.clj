@@ -43,7 +43,7 @@
         (let [uri (str th/+base-url+ "/api/projects/" (:id proj))
               params {:body (assoc proj :name "proj2")}
               [status data] (th/http-put user uri params)]
-          (prn "RESPONSE:" status data)
+          ;; (prn "RESPONSE:" status data)
           (t/is (= 200 status))
           (t/is (= (:user data) (:id user)))
           (t/is (= (:name data) "proj2")))))))
@@ -55,6 +55,7 @@
       (th/with-server {:handler @http/app}
         (let [uri (str th/+base-url+ "/api/projects/" (:id proj))
               [status data] (th/http-delete user uri)]
+          ;; (prn "RESPONSE:" status data)
           (t/is (= 204 status))
           (let [sqlv ["SELECT * FROM projects WHERE \"user\"=? AND deleted_at is null"
                       (:id user)]

@@ -47,7 +47,7 @@ setopt NOBEEP
 setopt INC_APPEND_HISTORY
 export HISTSIZE=100000
 export SAVEHIST=100000
-export HISTFILE=~/.zhistory
+export HISTFILE=~/local/.zhistory
 setopt hist_ignore_all_dups
 setopt hist_ignore_space
 

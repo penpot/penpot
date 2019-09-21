@@ -126,7 +126,7 @@
   (s/keys :req-un [::id]))
 
 (s/def ::retrieve-page-history|query
-  (s/keys :req-un [::max
+  (s/keys :opt-un [::max
                    ::since
                    ::pinned]))
 
