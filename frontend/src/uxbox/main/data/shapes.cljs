@@ -206,6 +206,4 @@
 (defn materialize-xfmt
   [state id xfmt]
   (let [{:keys [type items] :as shape} (get-in state [:shapes id])]
-   (if (= type :group)
-      (reduce #(materialize-xfmt %1 %2 xfmt) state items)
-      (update-in state [:shapes id] geom/transform xfmt))))
+    (update-in state [:shapes id] geom/transform xfmt)))

@@ -47,51 +47,48 @@
 
 (declare initialize-alignment)
 
-(defrecord Initialize [project-id page-id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}
-          initial-workspace {:project-id project-id
-                             :page-id page-id
-                             :zoom 1
-                             :flags default-flags
-                             :selected #{}
-                             :drawing nil
-                             :drawing-tool nil
-                             :tooltip nil}]
-      (-> state
-          (update-in [:workspace page-id] #(if (nil? %) initial-workspace %))
-          (assoc-in [:workspace :current] page-id))))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [page (get-in state [:pages page-id])]
-
-      ;; Activate loaded if page is not fetched.
-      (when-not page (reset! st/loader true))
-
-      (if page
-        (rx/of (initialize-alignment page-id))
-        (rx/merge
-         (rx/of (udp/fetch-pages project-id))
-         (->> stream
-              (rx/filter udp/pages-fetched?)
-              (rx/take 1)
-              (rx/do #(reset! st/loader false))
-              (rx/map #(initialize-alignment page-id)))))))
-
-  ptk/EffectEvent
-  (effect [_ state stream]
-    ;; Optimistic prefetch of projects if them are not already fetched
-    (when-not (seq (:projects state))
-      (st/emit! (dp/fetch-projects)))))
-
 (defn initialize
   "Initialize the workspace state."
-  [project page]
-  {:pre [(uuid? project)
-         (uuid? page)]}
-  (Initialize. project page))
+  [project-id page-id]
+  (s/assert ::us/uuid project-id)
+  (s/assert ::us/uuid page-id)
+  (ptk/reify ::initialize
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}
+            initial-workspace {:project-id project-id
+                               :page-id page-id
+                               :zoom 1
+                               :flags default-flags
+                               :selected #{}
+                               :drawing nil
+                               :drawing-tool nil
+                               :tooltip nil}]
+        (-> state
+            (update-in [:workspace page-id] #(if (nil? %) initial-workspace %))
+            (assoc-in [:workspace :current] page-id))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page (get-in state [:pages page-id])]
+        ;; Activate loaded if page is not fetched.
+        (when-not page (reset! st/loader true))
+
+        (if page
+          (rx/of (initialize-alignment page-id))
+          (rx/merge
+           (rx/of (udp/fetch-pages project-id))
+           (->> stream
+                (rx/filter udp/pages-fetched?)
+                (rx/take 1)
+                (rx/do #(reset! st/loader false))
+                (rx/map #(initialize-alignment page-id)))))))
+
+    ptk/EffectEvent
+    (effect [_ state stream]
+      ;; Optimistic prefetch of projects if them are not already fetched
+      (when-not (seq (:projects state))
+        (st/emit! (dp/fetch-projects))))))
 
 ;; --- Workspace Tooltips
 
@@ -347,7 +344,7 @@
 
 (defn add-shape
   [data]
-  (reify
+  (ptk/reify ::add-shape
     udp/IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
@@ -438,17 +435,19 @@
   (s/assert ::us/uuid id)
   (s/assert ::ds/attributes attrs)
   (let [atts (s/conform ::ds/attributes attrs)]
-    (reify
+    (ptk/reify ::update-shape-attrs
       ptk/UpdateEvent
       (update [_ state]
         (update-in state [:shapes id] merge attrs)))))
 
 ;; --- Update Selected Shapes attrs
 
+;; TODO: improve performance of this event
+
 (defn update-selected-shapes-attrs
   [attrs]
   (s/assert ::ds/attributes attrs)
-  (reify
+  (ptk/reify ::update-selected-shapes-attrs
     ptk/WatchEvent
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])
@@ -492,7 +491,7 @@
   [direction speed]
   (s/assert ::direction direction)
   (s/assert ::speed speed)
-  (reify
+  (ptk/reify ::move-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (get-in state [:workspace :current])
@@ -520,7 +519,6 @@
     (update [_ state]
       (let [id (get-in state [:workspace :current])
             selected (get-in state [:workspace id :selected])]
-        (prn "order-selected-shapes" selected)
         ;; NOTE: multiple selection ordering not supported
         (if (pos? (count selected))
           (ds/order-shape state (first selected) loc)
@@ -544,7 +542,7 @@
 
 (def delete-selected
   "Deselect all and remove all selected shapes."
-  (reify
+  (ptk/reify ::delete-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [id (get-in state [:workspace :current])
@@ -556,7 +554,7 @@
 (defn rename-shape
   [id name]
   {:pre [(uuid? id) (string? name)]}
-  (reify
+  (ptk/reify ::rename-shape
     udp/IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
@@ -567,7 +565,7 @@
 (defn change-shape-order
   [{:keys [id index] :as params}]
   {:pre [(uuid? id) (number? index)]}
-  (reify
+  (ptk/reify ::change-shape-order
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (get-in state [:shapes id :page])
@@ -583,7 +581,7 @@
   [{:keys [id index] :as params}]
   (s/assert ::us/uuid id)
   (s/assert ::us/number index)
-  (reify
+  (ptk/reify ::change-canvas-order
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (get-in state [:shapes id :page])
@@ -612,8 +610,6 @@
                        (apply-temporal-displacement-in-bulk ids (gpt/subtract pt point)))))))))
 
 ;; --- Temportal displacement for Shape / Selection
-
-;; TODO: this can be done in more performant way using transients
 
 (defn apply-temporal-displacement-in-bulk
   "Apply the same displacement delta to all shapes identified by the
@@ -685,7 +681,7 @@
 (defn start-edition-mode
   [id]
   {:pre [(uuid? id)]}
-  (reify
+  (ptk/reify ::start-edition-mode
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :current])]
@@ -702,23 +698,16 @@
 ;; --- Select for Drawing
 
 (def clear-drawing
-  (reify
+  (ptk/reify ::clear-drawing
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace :current])]
         (update-in state [:workspace pid] dissoc :drawing-tool :drawing)))))
 
-(defn select-for-drawing?
-  [e]
-  (= (::type (meta e)) ::select-for-drawing))
-
 (defn select-for-drawing
   ([tool] (select-for-drawing tool nil))
   ([tool data]
-   (reify
-     IMeta
-     (-meta [_] {::type ::select-for-drawing})
-
+   (ptk/reify ::select-for-drawing
      ptk/UpdateEvent
      (update [_ state]
        (let [pid (get-in state [:workspace :current])]
@@ -770,7 +759,7 @@
   [id dimensions]
   (s/assert ::us/uuid id)
   (s/assert ::update-dimensions dimensions)
-  (reify
+  (ptk/reify ::update-dimensions
     udp/IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
@@ -853,7 +842,7 @@
                                     (map :id))]
                     (reduce impl-set-hidden $ (sequence xform shapes)))
                   $))))]
-    (reify
+    (ptk/reify ::set-hidden-attr
       udp/IPageUpdate
       ptk/UpdateEvent
       (update [_ state]
@@ -876,7 +865,7 @@
                                     (map :id))]
                     (reduce impl-set-blocked $ (sequence xform shapes)))
                   $))))]
-    (reify
+    (ptk/reify ::set-blocked-attr
       udp/IPageUpdate
       ptk/UpdateEvent
       (update [_ state]
@@ -927,7 +916,7 @@
 (defn delete-page
   [id]
   {:pre [(uuid? id)]}
-  (reify
+  (ptk/reify ::delete-page
     ptk/WatchEvent
     (watch [_ state stream]
       (let [pid (get-in state [:pages id :project])]
@@ -985,7 +974,7 @@
   [id metadata]
   (s/assert ::us/uuid id)
   (s/assert ::udp/metadata metadata)
-  (reify
+  (ptk/reify ::update-metadata
     ptk/WatchEvent
     (watch [_ state s]
       (rx/of (udp/update-metadata id metadata)
