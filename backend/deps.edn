@@ -1,6 +1,6 @@
 {:deps {org.clojure/clojure {:mvn/version "1.10.1"}
         org.clojure/tools.logging {:mvn/version "0.3.1"}
-        funcool/promesa {:mvn/version "2.0.1"}
+        funcool/promesa {:mvn/version "4.0.2"}
         funcool/cuerdas {:mvn/version "2.2.0"}
 
         funcool/suricatta {:mvn/version "2.0.0-SNAPSHOT"}
