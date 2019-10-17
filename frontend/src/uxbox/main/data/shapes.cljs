@@ -119,69 +119,22 @@
         (update-in $ [:pages page :shapes] conj shape-id))
       (assoc-in $ [:shapes shape-id] shape))))
 
-(defn duplicate-shapes'
-  ([state shapes page]
-   (duplicate-shapes' state shapes page nil))
-  ([state shapes page group]
-   (letfn [(duplicate-shape [state shape page group]
-             (if (= (:type shape) :group)
-               (let [id (uuid/random)
-                     items (:items shape)
-                     name (generate-unique-name state (str (:name shape) "-copy"))
-                     shape (assoc shape
-                                  :id id
-                                  :page page
-                                  :items []
-                                  :name name)
-                     state (if (nil? group)
-                             (-> state
-                                 (update-in [:pages page :shapes]
-                                            #(into [] (cons id %)))
-                                 (assoc-in [:shapes id] shape))
-                             (-> state
-                                 (update-in [:shapes group :items]
-                                            #(into [] (cons id %)))
-                                 (assoc-in [:shapes id] shape)))]
-                 (->> (map #(get-in state [:shapes %]) items)
-                      (reverse)
-                      (reduce #(duplicate-shape %1 %2 page id) state)))
-               (let [id (uuid/random)
-                     name (generate-unique-name state (str (:name shape) "-copy"))
-                     shape (-> (dissoc shape :group)
-                               (assoc :id id :page page :name name)
-                               (merge (when group {:group group})))]
-                 (if (nil? group)
-                   (-> state
-                       (update-in [:pages page :shapes] #(into [] (cons id %)))
-                       (assoc-in [:shapes id] shape))
-                   (-> state
-                       (update-in [:shapes group :items] #(into [] (cons id %)))
-                       (assoc-in [:shapes id] shape))))))]
-     (reduce #(duplicate-shape %1 %2 page group) state shapes))))
+(defn- duplicate-shape
+  [state shape page]
+  (let [id (uuid/random)
+        name (generate-unique-name state (str (:name shape) "-copy"))
+        shape (assoc shape :id id :page page :name name)]
+    (-> state
+        (update-in [:pages page :shapes] #(into [] (cons id %)))
+        (assoc-in [:shapes id] shape))))
 
 (defn duplicate-shapes
   ([state shapes]
    (duplicate-shapes state shapes nil))
   ([state shapes page]
-   (letfn [(all-toplevel? [coll]
-             (every? #(nil? (:group %)) coll))
-           (all-same-group? [coll]
-             (let [group (:group (first coll))]
-               (every? #(= group (:group %)) coll)))]
-     (let [shapes (reverse (mapv #(get-in state [:shapes %]) shapes))]
-       (cond
-         (all-toplevel? shapes)
-         (let [page (or page (:page (first shapes)))]
-           (duplicate-shapes' state shapes page))
-
-         (all-same-group? shapes)
-         (let [page (or page (:page (first shapes)))
-               group (:group (first shapes))]
-           (duplicate-shapes' state shapes page group))
-
-         :else
-         (let [page (or page (:page (first shapes)))]
-           (duplicate-shapes' state shapes page)))))))
+   (let [shapes (reverse (map #(get-in state [:shapes %]) shapes))
+         page (or page (:page (first shapes)))]
+     (reduce #(duplicate-shape %1 %2 page) state shapes))))
 
 ;; --- Delete Shapes
 
@@ -194,12 +147,12 @@
 (defn dissoc-from-page
   "Given a shape, try to remove its reference from the
   corresponding page."
-  [state {:keys [id page] :as shape}]
-  ;; TODO: handle canvas special case
-  (update-in state [:pages page :shapes]
-             (fn [items] (vec (remove #(= % id) items)))))
-
-(declare dissoc-shape)
+  [state {:keys [id page type] :as shape}]
+  (if (= :canvas type)
+    (update-in state [:pages page :canvas]
+               (fn [items] (vec (remove #(= % id) items))))
+    (update-in state [:pages page :shapes]
+               (fn [items] (vec (remove #(= % id) items))))))
 
 (defn dissoc-shape
   "Given a shape, removes it from the state."
@@ -208,109 +161,22 @@
       (dissoc-from-page shape)
       (dissoc-from-index shape)))
 
-;; --- Shape Movements
+;; --- Shape Vertical Ordering
 
-(defn- drop-at-index
-  [index coll v]
-  (let [[fst snd] (split-at index coll)]
-    (into [] (concat fst [v] snd))))
-
-(defn drop-relative
-  [state loc sid]
-  {:pre [(not (nil? sid))]}
-  (let [shape (get-in state [:shapes (first sid)])
-        {:keys [page group]} shape
-        sid (:id shape)
-
-        shapes (if group
-                 (get-in state [:shapes group :items])
-                 (get-in state [:pages page :shapes]))
-
-        index (case loc
-                :first 0
-                :after (min (- (count shapes) 1) (inc (index-of shapes sid)))
-                :before (max 0 (- (index-of shapes sid) 1))
-                :last (- (count shapes) 1))
-
-        state (-> state
-                  (dissoc-from-page shape))
-
-        shapes (if group
-                 (get-in state [:shapes group :items])
-                 (get-in state [:pages page :shapes]))
-
-        shapes (drop-at-index index shapes sid)]
-
-    (if group
-      (as-> state $
-        (assoc-in $ [:shapes group :items] shapes)
-        (update-in $ [:shapes sid] assoc :group group))
-      (as-> state $
-        (assoc-in $ [:pages page :shapes] shapes)
-        (update-in $ [:shapes sid] dissoc :group)))))
-
-(defn drop-aside
-  [state loc tid sid]
-  {:pre [(not= tid sid)
-         (not (nil? tid))
-         (not (nil? sid))]}
-  (let [{:keys [page group]} (get-in state [:shapes tid])
-        source (get-in state [:shapes sid])
-
-        state (-> state
-                  (dissoc-from-page source))
-
-        shapes (if group
-                 (get-in state [:shapes group :items])
-                 (get-in state [:pages page :shapes]))
-
-        index (case loc
-                :after (inc (index-of shapes tid))
-                :before (index-of shapes tid))
-
-        shapes (drop-at-index index shapes sid)]
-    (if group
-      (as-> state $
-        (assoc-in $ [:shapes group :items] shapes)
-        (update-in $ [:shapes sid] assoc :group group))
-      (as-> state $
-        (assoc-in $ [:pages page :shapes] shapes)
-        (update-in $ [:shapes sid] dissoc :group)))))
-
-(def drop-after #(drop-aside %1 :after %2 %3))
-(def drop-before #(drop-aside %1 :before %2 %3))
-
-(defn drop-inside
-  [state tid sid]
-  {:pre [(not= tid sid)]}
-  (let [source (get-in state [:shapes sid])
-        state (-> state
-                  (dissoc-from-page source))
-        shapes (get-in state [:shapes tid :items])]
-    (if (seq shapes)
-      (as-> state $
-        (assoc-in $ [:shapes tid :items] (conj shapes sid))
-        (update-in $ [:shapes sid] assoc :group tid))
-      state)))
-
-(defn drop-shape
-  [state sid tid loc]
-  (if (= tid sid)
-    state
-    (case loc
-      :inside (drop-inside state tid sid)
-      :before (drop-before state tid sid)
-      :after (drop-after state tid sid)
-      (throw (ex-info "Invalid data" {})))))
-
-(defn move-layer
-  [state shape loc]
-  (case loc
-    :up (drop-relative state :before shape)
-    :down (drop-relative state :after shape)
-    :top (drop-relative state :first shape)
-    :bottom (drop-relative state :last shape)
-    (throw (ex-info "Invalid data" {}))))
+(defn order-shape
+  [state sid opt]
+  (let [{:keys [page] :as shape} (get-in state [:shapes sid])
+        shapes (get-in state [:pages page :shapes])
+        index (case opt
+                :top 0
+                :down (min (- (count shapes) 1) (inc (index-of shapes sid)))
+                :up (max 0 (- (index-of shapes sid) 1))
+                :bottom (- (count shapes) 1))]
+    (update-in state [:pages page :shapes]
+               (fn [items]
+                 (let [[fst snd] (->> (remove #(= % sid) items)
+                                      (split-at index))]
+                   (into [] (concat fst [sid] snd)))))))
 
 ;; --- Shape Selection
 
@@ -322,13 +188,6 @@
 
     (geom/overlaps? shape selrect)
     (conj acc id)
-
-    (:locked shape)
-    acc
-
-    (= type :group)
-    (reduce (partial try-match-shape xf selrect)
-            acc (sequence xf items))
 
     :else
     acc))

@@ -331,11 +331,12 @@
 ;; --- Duplicate Selected
 
 (def duplicate-selected
-  (reify
+  (ptk/reify ::duplicate-selected
     udp/IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (get-in state [:workspace :selected])]
+      (let [pid (get-in state [:workspace :current])
+            selected (get-in state [:workspace pid :selected])]
         (ds/duplicate-shapes state selected)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -510,16 +511,20 @@
 
 ;; --- Move Selected Layer
 
-(defn move-selected-layer
+(defn order-selected-shapes
   [loc]
-  (assert (s/valid? ::direction loc))
-  (reify
+  (s/assert ::direction loc)
+  (ptk/reify ::move-selected-layer
     udp/IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
       (let [id (get-in state [:workspace :current])
             selected (get-in state [:workspace id :selected])]
-        (ds/move-layer state selected loc)))))
+        (prn "order-selected-shapes" selected)
+        ;; NOTE: multiple selection ordering not supported
+        (if (pos? (count selected))
+          (ds/order-shape state (first selected) loc)
+          state)))))
 
 ;; --- Update Shape Position
 
