@@ -88,6 +88,12 @@
   "A marker protocol for mark events that alters the
   page and is subject to perform a backend synchronization.")
 
+(defn page-update?
+  [o]
+  (or (satisfies? IPageUpdate o)
+      (satisfies? IMetadataUpdate o)
+      (= ::page-update o)))
+
 ;; --- Helpers
 
 (defn pack-page

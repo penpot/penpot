@@ -15,7 +15,6 @@
             [uxbox.main.data.undo :as du])
   (:import goog.events.EventType
            goog.events.KeyCodes
-           goog.ui.KeyboardShortcutHandler
            goog.ui.KeyboardShortcutHandler))
 
 (declare move-selected)
@@ -34,9 +33,9 @@
    :ctrl+c #(st/emit! (dw/copy-to-clipboard))
    :ctrl+v #(st/emit! (dw/paste-from-clipboard))
    :ctrl+shift+v #(dl/open! :clipboard)
-   :ctrl+z #(st/emit! (du/undo))
-   :ctrl+shift+z #(st/emit! (du/redo))
-   :ctrl+y #(st/emit! (du/redo))
+   :ctrl+z #(st/emit! du/undo)
+   :ctrl+shift+z #(st/emit! du/redo)
+   :ctrl+y #(st/emit! du/redo)
    :ctrl+b #(st/emit! (dw/select-for-drawing :rect))
    :ctrl+e #(st/emit! (dw/select-for-drawing :circle))
    :ctrl+t #(st/emit! (dw/select-for-drawing :text))

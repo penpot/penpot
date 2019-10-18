@@ -2,13 +2,18 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.undo
-  (:require [beicon.core :as rx]
-            [potok.core :as ptk]
-            [uxbox.main.data.pages :as udp]
-            [uxbox.main.store :as st]))
+  (:require
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [potok.core :as ptk]
+   [uxbox.main.data.pages :as udp]
+   [uxbox.main.store :as st]
+   [uxbox.util.spec :as us]))
+
+(def MAX-STACK-SIZE 50)
 
 ;; --- Watch Page Changes
 
@@ -16,117 +21,82 @@
 (declare save-undo-entry?)
 (declare undo?)
 (declare redo?)
-(declare initialize-undo-for-page)
-
-(deftype WatchPageChanges [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    nil
-    #_(let [stopper (->> stream
-                       (rx/filter #(= % ::udp/stop-page-watcher))
-                       (rx/take 1))]
-      (->> stream
-           (rx/take-until stopper)
-           (rx/filter #(or (satisfies? udp/IPageUpdate %)
-                           (satisfies? udp/IMetadataUpdate %)))
-           (rx/filter #(not (undo? %)))
-           (rx/filter #(not (redo? %)))
-           (rx/map #(save-undo-entry id))))))
 
 (defn watch-page-changes
   [id]
-  (WatchPageChanges. id))
+  (s/assert ::us/uuid id)
+  (ptk/reify ::watch-page-changes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stopper (rx/filter #(= % ::udp/stop-page-watcher) stream)]
+        (->> stream
+             (rx/filter udp/page-update?)
+             (rx/filter #(not (undo? %)))
+             (rx/filter #(not (redo? %)))
+             (rx/map #(save-undo-entry id))
+             (rx/take-until stopper))))))
 
 ;; -- Save Undo Entry
 
-(defrecord SaveUndoEntry [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    state
-    #_(let [page (udp/pack-page state id)
-          undo {:data (:data page)
-                :metadata (:metadata page)}]
-      (-> state
-          (update-in [:undo id :stack] #(cons undo %))
-          (assoc-in [:undo id :selected] 0)))))
-
-
 (defn save-undo-entry
   [id]
-  {:pre [(uuid? id)]}
-  (SaveUndoEntry. id))
+  (s/assert ::us/uuid id)
+  (letfn [(cons-entry [stack entry]
+            (let [stack (cons entry stack)]
+              (if (> (count stack) MAX-STACK-SIZE)
+                (take MAX-STACK-SIZE stack)
+                stack)))]
+    (ptk/reify ::save-undo-entry
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [page (udp/pack-page state id)
+              undo {:data (:data page)
+                    :metadata (:metadata page)}]
+          (-> state
+              (update-in [:undo id :stack] cons-entry undo)
+              (assoc-in [:undo id :selected] 0)))))))
 
 (defn save-undo-entry?
   [v]
-  (instance? SaveUndoEntry v))
-
-;; --- Initialize Undo (For page)
-
-(defrecord InitializeUndoForPage [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [initialized? (get-in state [:undo id])
-          page-loaded? (get-in state [:pages id])]
-      (cond
-        (and page-loaded? initialized?)
-        (rx/empty)
-
-        page-loaded?
-        (rx/of (save-undo-entry id))
-
-        :else
-        (->> stream
-             (rx/filter udp/pages-fetched?)
-             (rx/take 1)
-             (rx/map #(initialize-undo-for-page id)))))))
-
-(defn- initialize-undo-for-page
-  [id]
-  (InitializeUndoForPage. id))
+  (= (ptk/type v) ::save-undo-entry))
 
 ;; --- Select Previous Entry
 
-(defrecord Undo []
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    #_(let [page-id (get-in state [:workspace :page])
-          undo-state (get-in state [:undo page-id])
-          stack (:stack undo-state)
-          selected (:selected undo-state 0)]
-      (if (>= selected (dec (count stack)))
-        state
-        (let [pointer (inc selected)
-              page (get-in state [:pages page-id])
-              undo (nth stack pointer)
-              data (:data undo)
-              metadata (:metadata undo)
-              packed (assoc page :data data :metadata metadata)]
+(def undo
+  (ptk/reify ::undo
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspace :current])
+            {:keys [stack selected] :as ustate} (get-in state [:undo pid])]
+        (if (>= selected (dec (count stack)))
+          state
+          (let [pointer (inc selected)
+                page (get-in state [:pages pid])
+                undo (nth stack pointer)
+                data (:data undo)
+                metadata (:metadata undo)
+                packed (assoc page :data data :metadata metadata)]
 
-          ;; (println "Undo: pointer=" pointer)
-          ;; (println "Undo: packed=")
-          ;; (pp/pprint packed)
+            ;; (println "Undo: pointer=" pointer)
+            ;; (println "Undo: packed=")
+            ;; (pp/pprint packed)
 
-          (-> state
-              (udp/assoc-page packed)
-              (assoc-in [:undo page-id :selected] pointer)))))))
-
-(defn undo
-  []
-  (Undo.))
+            (-> state
+                (udp/unpack-page packed)
+                (assoc-in [:undo pid :selected] pointer))))))))
 
 (defn undo?
   [v]
-  (instance? Undo v))
+  (= (ptk/type v) ::undo))
 
 ;; --- Select Next Entry
 
-(defrecord Redo []
-  udp/IPageUpdate
-  ptk/UpdateEvent
-  (update [_ state]
-    #_(let [page-id (get-in state [:workspace :page])
-          undo-state (get-in state [:undo page-id])
+(def redo
+  (ptk/reify ::redo
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspace :current])
+            undo-state (get-in state [:undo pid])
           stack (:stack undo-state)
           selected (:selected undo-state)]
       (if (or (nil? selected) (zero? selected))
@@ -135,7 +105,7 @@
               undo (nth stack pointer)
               data (:data undo)
               metadata (:metadata undo)
-              page (get-in state [:pages page-id])
+              page (get-in state [:pages pid])
               packed (assoc page :data data :metadata metadata)]
 
           ;; (println "Redo: pointer=" pointer)
@@ -143,13 +113,9 @@
           ;; (pp/pprint packed)
 
           (-> state
-              (udp/assoc-page packed)
-              (assoc-in [:undo page-id :selected] pointer)))))))
-
-(defn redo
-  []
-  (Redo.))
+              (udp/unpack-page packed)
+              (assoc-in [:undo pid :selected] pointer))))))))
 
 (defn redo?
   [v]
-  (instance? Redo v))
+  (= (ptk/type v) ::redo))

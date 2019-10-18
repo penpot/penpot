@@ -72,7 +72,7 @@
 
 (mf/defc workspace
   [{:keys [page] :as props}]
-  (let [flags  (or (mf/deref refs/flags) #{})
+  (let [flags (or (mf/deref refs/flags) #{})
         canvas (mf/use-ref nil)
 
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
