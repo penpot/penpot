@@ -17,8 +17,8 @@ const plugins = [
 
   resolve({
     mainFields: ['module', 'main'],
-    // preferBuiltins: false,
-    browser: true
+    preferBuiltins: true,
+    browser: true,
   }),
 
   commonjs({
