@@ -69,7 +69,7 @@
 ;; --- Logout
 
 (def clear-user-data
-  (reify
+  (ptk/reify ::clear-user-data
     ptk/UpdateEvent
     (update [_ state]
       (merge state (dissoc initial-state :route :router)))
@@ -85,7 +85,7 @@
       (i18n/set-default-locale!))))
 
 (def logout
-  (reify
+  (ptk/reify ::logout
     ptk/WatchEvent
     (watch [_ state s]
       (rx/of (rt/nav :auth/login)
@@ -104,7 +104,7 @@
   [data on-error]
   (s/assert ::register-params data)
   (s/assert ::us/fn on-error)
-  (reify
+  (ptk/reify ::register
     ptk/WatchEvent
     (watch [_ state stream]
       (letfn [(handle-error [{payload :payload}]
@@ -128,7 +128,7 @@
 (defn recovery-request
   [data]
   (s/assert ::recovery-request-params data)
-  (reify
+  (ptk/reify ::recover-request
     ptk/WatchEvent
     (watch [_ state stream]
       (letfn [(on-error [{payload :payload}]
@@ -171,7 +171,7 @@
 (defn recovery
   [{:keys [token password] :as data}]
   (s/assert ::recovery-params data)
-  (reify
+  (ptk/reify ::recovery
     ptk/WatchEvent
     (watch [_ state stream]
       (letfn [(on-error [{payload :payload}]
