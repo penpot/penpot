@@ -45,6 +45,7 @@
 
 ;; --- Default Specs
 
+(s/def ::bool boolean?)
 (s/def ::uuid uuid?)
 (s/def ::email email?)
 (s/def ::color color?)

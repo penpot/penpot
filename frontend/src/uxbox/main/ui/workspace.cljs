@@ -29,7 +29,7 @@
    [uxbox.main.ui.workspace.scroll :as scroll]
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
-   ;; [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
+   [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
    [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
@@ -61,12 +61,14 @@
 
 (defn- subscribe
   [canvas page]
-  ;; (scroll/scroll-to-page-center (mf/ref-node canvas) page)
   (st/emit! (udp/watch-page-changes (:id page))
             (udu/watch-page-changes (:id page))
+            (udh/initialize (:id page))
+            (udh/watch-page-changes (:id page))
             (dw/start-shapes-watcher (:id page)))
   (let [sub (shortcuts/init)]
     #(do (st/emit! ::udp/stop-page-watcher
+                   ::udh/stop-page-watcher
                    ::dw/stop-shapes-watcher)
          (rx/cancel! sub))))
 
@@ -74,7 +76,6 @@
   [{:keys [page] :as props}]
   (let [flags (or (mf/deref refs/flags) #{})
         canvas (mf/use-ref nil)
-
         left-sidebar? (not (empty? (keep flags [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep flags [:icons :drawtools
@@ -101,7 +102,7 @@
         :on-scroll on-scroll
         :on-wheel #(on-wheel % canvas)}
 
-       ;; (history-dialog)
+       [:& history-dialog]
 
        ;; Rules
        (when (contains? flags :rules)

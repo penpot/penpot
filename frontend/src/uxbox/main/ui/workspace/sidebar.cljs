@@ -9,7 +9,7 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.ui.workspace.sidebar.drawtools :refer [draw-toolbox]]
-   ;; [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
+   [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [uxbox.main.ui.workspace.sidebar.icons :refer [icons-toolbox]]
    [uxbox.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [uxbox.main.ui.workspace.sidebar.options :refer [options-toolbox]]
@@ -27,8 +27,8 @@
       [:& sitemap-toolbox {:project-id (:project page)
                            :current-page-id (:id page)
                            :page page}])
-    #_(when (contains? flags :document-history)
-        (history-toolbox page-id))
+    (when (contains? flags :document-history)
+      [:& history-toolbox])
     (when (contains? flags :layers)
       [:& layers-toolbox {:page page}])]])
 

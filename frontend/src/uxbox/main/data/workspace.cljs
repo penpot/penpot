@@ -57,6 +57,7 @@
     (update [_ state]
       (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}
             initial-workspace {:project-id project-id
+                               :initialized true
                                :page-id page-id
                                :zoom 1
                                :flags default-flags
@@ -65,7 +66,11 @@
                                :drawing-tool nil
                                :tooltip nil}]
         (-> state
-            (update-in [:workspace page-id] #(if (nil? %) initial-workspace %))
+            (update-in [:workspace page-id]
+                       (fn [wsp]
+                         (if (:initialized wsp)
+                           wsp
+                           (merge wsp initial-workspace))))
             (assoc-in [:workspace :current] page-id))))
 
     ptk/WatchEvent
