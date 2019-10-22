@@ -73,7 +73,7 @@ function run-backend-tests {
 }
 
 function build-frontend-local {
-    build-devenv-if-not-exists $@;
+    build-devenv-if-not-exists;
 
     mkdir -p $HOME/.m2
     rm -rf ./frontend/node_modules
