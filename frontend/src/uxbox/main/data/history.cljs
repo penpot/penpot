@@ -145,7 +145,7 @@
      ptk/WatchEvent
      (watch [_ state s]
        (let [params (merge {:page id
-                            :max (or max 5)}
+                            :max (or max 20)}
                            (when since
                              {:since since}))]
          (->> (rp/req :fetch/page-history params)
