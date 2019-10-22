@@ -2,7 +2,7 @@
 set -e
 
 REV=`git log -n 1 --pretty=format:%h -- docker/`
-IMGNAME="devenv_uxbox"
+IMGNAME="uxbox_devenv"
 
 function remove-devenv-images {
     echo "Clean old development image $IMGNAME..."
@@ -13,7 +13,7 @@ function build-devenv {
     echo "Building development image $IMGNAME:latest with UID $EXTERNAL_UID..."
 
     local EXTERNAL_UID=${1:-$(id -u)}
-    docker-compose -f docker/devenv/docker-compose.yaml \
+    docker-compose -p uxbox -f docker/devenv/docker-compose.yaml \
         build --build-arg EXTERNAL_UID=$EXTERNAL_UID --force-rm;
 }
 
@@ -25,11 +25,11 @@ function build-devenv-if-not-exists {
 
 function start-devenv {
     build-devenv-if-not-exists $@;
-    docker-compose -f docker/devenv/docker-compose.yaml up -d;
+    docker-compose -p uxbox -f docker/devenv/docker-compose.yaml up -d;
 }
 
 function stop-devenv {
-    docker-compose -f docker/devenv/docker-compose.yaml stop -t 2;
+    docker-compose -p uxbox -f docker/devenv/docker-compose.yaml stop -t 2;
 }
 
 function run-devenv {

@@ -12,7 +12,7 @@ volumes:
   user_data:
 
 services:
-  uxbox:
+  devenv:
     privileged: true
     build:
       context: ./
@@ -39,7 +39,7 @@ services:
       - UXBOX_DATABASE_PASSWORD="uxbox"
 
   postgres:
-    image: postgres:12-beta4
+    image: postgres:12
     hostname: 'uxbox-devenv-postgres'
     container_name: 'uxbox-devenv-postgres'
     restart: always

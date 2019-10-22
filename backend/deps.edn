@@ -21,7 +21,7 @@
         org.slf4j/slf4j-simple {:mvn/version "1.7.26"}
         com.layerware/hugsql-core {:mvn/version "0.4.9"
                                    :exclusions [org.clojure/tools.reader]}
-        ;; niwinz/migrante {:mvn/version "0.1.0"}
+        niwinz/migrante {:mvn/version "0.1.0"}
         buddy/buddy-sign {:mvn/version "3.1.0"}
         buddy/buddy-hashers {:mvn/version "1.4.0"}
 
