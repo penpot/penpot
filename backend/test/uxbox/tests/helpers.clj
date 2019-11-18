@@ -1,30 +1,27 @@
 (ns uxbox.tests.helpers
-  (:refer-clojure :exclude [await])
-  (:require [clj-http.client :as http]
-            [buddy.hashers :as hashers]
-            [buddy.core.codecs :as codecs]
-            [cuerdas.core :as str]
-            [ring.adapter.jetty :as jetty]
-            [mount.core :as mount]
-            [datoteka.storages :as st]
-            [suricatta.core :as sc]
-            [uxbox.services.auth :as usa]
-            [uxbox.services.users :as usu]
-            [uxbox.util.transit :as t]
-            [uxbox.migrations :as umg]
-            [uxbox.media :as media]
-            [uxbox.db :as db]
-            [uxbox.config :as cfg]))
-
-;; TODO: parametrize this
-(def +base-url+ "http://localhost:5050")
+  (:require
+   [clojure.spec.alpha :as s]
+   [buddy.hashers :as hashers]
+   [promesa.core :as p]
+   [cuerdas.core :as str]
+   [mount.core :as mount]
+   [datoteka.storages :as st]
+   [uxbox.fixtures :as fixtures]
+   [uxbox.migrations]
+   [uxbox.media]
+   [uxbox.db :as db]
+   [uxbox.util.blob :as blob]
+   [uxbox.util.uuid :as uuid]
+   [uxbox.config :as cfg]))
 
 (defn state-init
   [next]
   (let [config (cfg/read-test-config)]
     (-> (mount/only #{#'uxbox.config/config
                       #'uxbox.config/secret
-                      #'uxbox.db/datasource
+                      ;; #'uxbox.db/datasource
+                      #'uxbox.core/system
+                      #'uxbox.db/pool
                       #'uxbox.migrations/migrations
                       #'uxbox.media/assets-storage
                       #'uxbox.media/media-storage
@@ -39,158 +36,124 @@
 
 (defn database-reset
   [next]
-  (with-open [conn (db/connection)]
-    (let [sql (str "SELECT table_name "
-                   "  FROM information_schema.tables "
-                   " WHERE table_schema = 'public' "
-                   "   AND table_name != 'migrations';")
-          result (->> (sc/fetch conn sql)
-                      (map :table_name))]
-      (sc/execute conn (str "TRUNCATE "
-                            (apply str (interpose ", " result))
-                            " CASCADE;"))))
+  (let [sql (str "SELECT table_name "
+                 "  FROM information_schema.tables "
+                 " WHERE table_schema = 'public' "
+                 "   AND table_name != 'migrations';")]
+
+    @(db/with-atomic [conn db/pool]
+       (-> (db/query conn sql)
+           (p/then #(map :table-name %))
+           (p/then (fn [result]
+                     (db/query-one conn (str "TRUNCATE "
+                                             (apply str (interpose ", " result))
+                                             " CASCADE;")))))))
   (try
     (next)
     (finally
       (st/clear! uxbox.media/media-storage)
       (st/clear! uxbox.media/assets-storage))))
 
-(defmacro await
-  [expr]
-  `(try
-     (deref ~expr)
-     (catch Exception e#
-       (.getCause e#))))
+(defn mk-uuid
+  [prefix & args]
+  (uuid/namespaced uuid/oid (apply str prefix args)))
 
-(defn- strip-response
-  [{:keys [status headers body]}]
-  (if (str/starts-with? (get headers "Content-Type") "application/transit+json")
-    [status (-> (codecs/str->bytes body)
-                (t/decode))]
-    [status body]))
+;; --- Users creation
 
-(defn get-auth-headers
-  [user]
-  (let [store (ring.middleware.session.cookie/cookie-store {:key "a 16-byte secret"})
-        result (ring.middleware.session/session-response
-                {:session {:user-id (:id user)}} {}
-                {:store store :cookie-name "session"})]
-    {"cookie" (first (get-in result [:headers "Set-Cookie"]))}))
-
-(defn http-get
-  ([user uri] (http-get user uri nil))
-  ([user uri {:keys [query] :as opts}]
-   (let [headers (assoc (get-auth-headers user)
-                        "accept" "application/transit+json")
-         params (cond-> {:headers headers}
-                  query (assoc :query-params query))]
-     (try
-       (strip-response (http/get uri params))
-       (catch clojure.lang.ExceptionInfo e
-         (strip-response (ex-data e)))))))
-
-(defn http-post
-  ([uri params]
-   (http-post nil uri params))
-  ([user uri {:keys [body] :as params}]
-   (let [body (-> (t/encode body)
-                  (codecs/bytes->str))
-         headers (assoc (get-auth-headers user)
-                        "accept" "application/transit+json"
-                        "content-type" "application/transit+json")
-         params {:headers headers :body body}]
-     (try
-       (strip-response (http/post uri params))
-       (catch clojure.lang.ExceptionInfo e
-         (strip-response (ex-data e)))))))
-
-(defn http-multipart
-  [user uri params]
-  (let [headers (assoc (get-auth-headers user)
-                       "accept" "application/transit+json")
-        params {:headers headers
-                :multipart params}]
-    (try
-      (strip-response (http/post uri params))
-      (catch clojure.lang.ExceptionInfo e
-        (strip-response (ex-data e))))))
-
-(defn http-put
-  ([uri params]
-   (http-put nil uri params))
-  ([user uri {:keys [body] :as params}]
-   (let [body (-> (t/encode body)
-                  (codecs/bytes->str))
-         headers (assoc (get-auth-headers user)
-                        "accept" "application/transit+json"
-                        "content-type" "application/transit+json")
-         params {:headers headers :body body}]
-     (try
-       (strip-response (http/put uri params))
-       (catch clojure.lang.ExceptionInfo e
-         (strip-response (ex-data e)))))))
-
-(defn http-delete
-  ([uri]
-   (http-delete nil uri))
-  ([user uri]
-   (let [headers (assoc (get-auth-headers user)
-                        "accept" "application/transit+json"
-                        "content-type" "application/transit+json")
-         params {:headers headers}]
-     (try
-       (strip-response (http/delete uri params))
-       (catch clojure.lang.ExceptionInfo e
-         (strip-response (ex-data e)))))))
-
-(defn- decode-response
-  [{:keys [status headers body] :as response}]
-  (if (= (get headers "content-type") "application/transit+json")
-    (assoc response :body (-> (codecs/str->bytes body)
-                              (t/decode)))
-    response))
-
-(defn request
-  [{:keys [path method body user headers raw?]
-    :or {raw? false}
-    :as request}]
-  {:pre [(string? path) (keyword? method)]}
-  (let [body (if (and body (not raw?))
-               (-> (t/encode body)
-                   (codecs/bytes->str))
-               body)
-        headers (cond-> headers
-                  body (assoc "content-type" "application/transit+json")
-                  raw? (assoc "content-type" "application/octet-stream"))
-        params {:headers headers :body body}
-        uri (str +base-url+ path)]
-    (try
-      (let [response (case method
-                       :get (http/get uri (dissoc params :body))
-                       :post (http/post uri params)
-                       :put (http/put uri params)
-                       :delete (http/delete uri params))]
-        (decode-response response))
-      (catch clojure.lang.ExceptionInfo e
-        (decode-response (ex-data e))))))
+(declare decode-user-row)
+(declare decode-page-row)
 
 (defn create-user
-  "Helper for create users"
   [conn i]
-  (let [data {:username (str "user" i)
-              :password (str "user" i)
-              :metadata (str i)
-              :fullname (str "User " i)
-              :email (str "user" i "@uxbox.io")}]
-    (usu/create-user conn data)))
+  (let [sql "insert into users (id, fullname, username, email, password, metadata, photo)
+             values ($1, $2, $3, $4, $5, $6, '') returning *"]
+    (-> (db/query-one conn [sql
+                            (mk-uuid "user" i)
+                            (str "User " i)
+                            (str "user" i)
+                            (str "user" i ".test@uxbox.io")
+                            (hashers/encrypt "123123")
+                            (blob/encode {})])
+        (p/then' decode-user-row))))
+
+(defn create-project
+  [conn uid i]
+  (let [sql "insert into projects (id, user_id, name)
+             values ($1, $2, $3) returning *"
+        name (str "sample project " i)]
+    (db/query-one conn [sql (mk-uuid "project" i) uid name])))
+
+(defn create-page
+  [conn uid pid i]
+  (let [sql "insert into pages (id, user_id, project_id, name, data, metadata)
+             values ($1, $2, $3, $4, $5, $6) returning *"
+        data (blob/encode {:shapes []})
+        mdata (blob/encode {})
+        name (str "page" i)
+        id (mk-uuid "page" i)]
+    (-> (db/query-one conn [sql id uid pid name data mdata])
+        (p/then' decode-page-row))))
+
+(defn- decode-page-row
+  [{:keys [data metadata] :as row}]
+  (when row
+    (cond-> row
+      data (assoc :data (blob/decode data))
+      metadata (assoc :metadata (blob/decode metadata)))))
+
+(defn- decode-user-row
+  [{:keys [metadata] :as row}]
+  (when row
+    (cond-> row
+      metadata (assoc :metadata (blob/decode metadata)))))
+
+(defn handle-error
+  [err]
+  (cond
+    (instance? clojure.lang.ExceptionInfo err)
+    (ex-data err)
+
+    (instance? java.util.concurrent.ExecutionException err)
+    (handle-error (.getCause err))
+
+    :else
+    [err nil]))
 
 (defmacro try-on
-  [& body]
+  [expr]
   `(try
-     (let [result# (do ~@body)]
+     (let [result# (deref ~expr)]
        [nil result#])
-     (catch Throwable e#
-       [e# nil])))
+     (catch Exception e#
+       [(handle-error e#) nil])))
+
+
+(defmacro try-on!
+  [expr]
+  `(try
+     (let [result# (deref ~expr)]
+       {:error nil
+        :result result#})
+     (catch Exception e#
+       {:error (handle-error e#)
+        :result nil})))
+
+(defn print-result!
+  [{:keys [error result]}]
+
+  (if error
+    (do
+      (println "====> START ERROR")
+      (if (= :spec-validation (:code error))
+        (do
+          (s/explain-out (:data error))
+          (println "====> END ERROR"))
+        (prn error)))
+    (do
+      (println "====> START RESPONSE")
+      (prn result)
+      (println "====> END RESPONSE"))))
+
 
 (defn exception?
   [v]
@@ -209,22 +172,3 @@
   [e code]
   (let [data (ex-data e)]
     (= code (:code data))))
-
-(defn run-server
-  [handler]
-  (jetty/run-jetty handler {:join? false
-                            :async? true
-                            :daemon? true
-                            :port 5050}))
-
-(defmacro with-server
-  "Evaluate code in context of running catacumba server."
-  [{:keys [handler sleep] :or {sleep 50} :as options} & body]
-  `(let [server# (run-server ~handler)]
-     (try
-       ~@body
-       (finally
-         (.stop server#)
-         (Thread/sleep ~sleep)))))
-
-

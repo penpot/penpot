@@ -37,14 +37,14 @@
             (dom/stop-propagation event)
             (modal/show! confirm-dialog {:on-accept delete}))
           (on-drop [item monitor]
-            (st/emit! (udp/rehash-pages (:project page))))
+            (st/emit! (udp/rehash-pages (:project-id page))))
           (on-hover [item monitor]
             (st/emit! (udp/move-page {:project-id (:project-id item)
                                       :page-id (:page-id item)
                                       :index index})))]
     (let [[dprops ref] (use-sortable {:type "page-item"
                                       :data {:page-id (:id page)
-                                             :project-id (:project page)
+                                             :project-id (:project-id page)
                                              :index index}
                                       :on-hover on-hover
                                       :on-drop on-drop})]
@@ -52,7 +52,7 @@
        [:div.element-list-body
         {:class (classnames :selected selected?
                             :dragging (:dragging? dprops))
-         :on-click #(st/emit! (rt/nav :workspace/page {:project (:project page)
+         :on-click #(st/emit! (rt/nav :workspace/page {:project (:project-id page)
                                                        :page (:id page)}))
          :on-double-click #(dom/stop-propagation %)
          :draggable true}
@@ -92,6 +92,7 @@
 
 (mf/defc sitemap-toolbox
   [{:keys [project-id current-page-id] :as props}]
+  (prn "sitemap-toolbox" props)
   (let [project-iref (mf/use-memo {:deps #js [project-id]
                                    :fn #(-> (l/in [:projects project-id])
                                             (l/derive st/state))})

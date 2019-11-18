@@ -7,15 +7,15 @@
 (ns uxbox.locks
   "Advirsory locks for specific handling concurrent modifications
   on particular objects in the database."
-  (:require [suricatta.core :as sc])
+  #_(:require [suricatta.core :as sc])
   (:import clojure.lang.Murmur3))
 
 (defn- uuid->long
   [v]
   (Murmur3/hashUnencodedChars (str v)))
 
-(defn acquire!
-  [conn v]
-  (let [id (uuid->long v)]
-    (sc/execute conn ["select pg_advisory_xact_lock(?);" id])
-    nil))
+;; (defn acquire!
+;;   [conn v]
+;;   (let [id (uuid->long v)]
+;;     (sc/execute conn ["select pg_advisory_xact_lock(?);" id])
+;;     nil))

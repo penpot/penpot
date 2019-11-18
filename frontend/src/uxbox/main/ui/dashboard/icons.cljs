@@ -83,7 +83,7 @@
   [id]
   (letfn [(selector [icons]
             (->> (vals icons)
-                 (filter #(= id (:collection %)))
+                 (filter #(= id (:collection-id %)))
                  (count)))]
     (-> (comp (l/key :icons)
               (l/lens selector))
@@ -325,7 +325,7 @@
   (-> (comp (l/key :icons)
             (l/lens (fn [icons]
                       (->> (vals icons)
-                           (filter #(= id (:collection %)))))))
+                           (filter #(= id (:collection-id %)))))))
       (l/derive st/state)))
 
 (mf/defc grid

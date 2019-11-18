@@ -9,7 +9,7 @@
    [cljs.spec.alpha :as s]
    [beicon.core :as rx]
    [potok.core :as ptk]
-   [uxbox.main.repo :as rp]
+   [uxbox.main.repo.core :as rp]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.messages :as uum]
    [uxbox.util.spec :as us]
@@ -59,8 +59,7 @@
   (reify
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/req :fetch/profile)
-           (rx/map :payload)
+      (->> (rp/query! :profile)
            (rx/map profile-fetched)))))
 
 ;; --- Update Profile

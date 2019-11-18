@@ -11,7 +11,6 @@
    [potok.core :as ptk]
    [uxbox.config :as cfg]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.history :as udh]
    [uxbox.main.data.icons :as udi]
    [uxbox.main.data.pages :as udp]
    [uxbox.main.data.projects :as dp]

@@ -203,3 +203,15 @@
 ;;   (let [keys# (map #(keyword (name %)) fields)
 ;;         vals# fields]
 ;;     (apply hash-map (interleave keys# vals#))))
+
+;; (defmacro some->'
+;;   [x & forms]
+;;   `(let [x# (p/then' ~x (fn [v#]
+;;                           (when (nil? v#)
+;;                             (throw (ex-info "internal" {::some-interrupt true})))
+;;                           v#))]
+;;      (-> (-> x# ~@forms)
+;;          (p/catch' (fn [e#]
+;;                      (if (::some-interrupt (ex-data e#))
+;;                        nil
+;;                        (throw e#)))))))

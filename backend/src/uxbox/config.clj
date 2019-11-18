@@ -38,7 +38,7 @@
    :http-server-cors (lookup-env env :uxbox-http-server-cors "http://localhost:3449")
    :database-username (lookup-env env :uxbox-database-username nil)
    :database-password (lookup-env env :uxbox-database-password nil)
-   :database-uri (lookup-env env :uxbox-database-uri "jdbc:postgresql://127.0.0.1/uxbox")
+   :database-uri (lookup-env env :uxbox-database-uri "postgresql://127.0.0.1/uxbox")
    :media-directory (lookup-env env :uxbox-media-directory "resources/public/media")
    :media-uri (lookup-env env :uxbox-media-uri "http://localhost:6060/media/")
    :assets-directory (lookup-env env :uxbox-assets-directory "resources/public/static")
@@ -54,15 +54,13 @@
    :smtp-tls (lookup-env env :uxbox-smtp-tls false)
    :smtp-ssl (lookup-env env :uxbox-smtp-ssl false)
    :smtp-enabled (lookup-env env :uxbox-smtp-enabled false)
-
    :registration-enabled (lookup-env env :uxbox-registration-enabled true)
-
    :secret (lookup-env env :uxbox-secret "5qjiAndGY3")})
 
 (defn read-test-config
   []
   (assoc (read-config)
-         :database-name "test"
+         :database-uri "postgresql://postgres/test"
          :media-directory "/tmp/uxbox/media"
          :assets-directory "/tmp/uxbox/static"
          :migrations-verbose false))

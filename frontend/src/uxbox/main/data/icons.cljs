@@ -5,17 +5,18 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.icons
-  (:require [cuerdas.core :as str]
-            [beicon.core :as rx]
-            [uxbox.util.data :refer (jscoll->vec)]
-            [uxbox.util.uuid :as uuid]
-            [potok.core :as ptk]
-            [uxbox.util.i18n :refer [tr]]
-            [uxbox.util.router :as r]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.files :as files]
-            [uxbox.main.store :as st]
-            [uxbox.main.repo :as rp]))
+  (:require
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [potok.core :as ptk]
+   [uxbox.main.repo.core :as rp]
+   [uxbox.main.store :as st]
+   [uxbox.util.data :refer (jscoll->vec)]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.files :as files]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.router :as r]
+   [uxbox.util.uuid :as uuid]))
 
 ;; --- Initialize
 
@@ -67,8 +68,7 @@
 (defrecord FetchCollections []
   ptk/WatchEvent
   (watch [_ state s]
-    (->> (rp/req :fetch/icon-collections)
-         (rx/map :payload)
+    (->> (rp/query! :icons-collections)
          (rx/map collections-fetched))))
 
 (defn fetch-collections
@@ -97,9 +97,8 @@
   ptk/WatchEvent
   (watch [_ state s]
     (let [name (tr "ds.default-library-title" (gensym "c"))
-          coll {:name name}]
-      (->> (rp/req :create/icon-collection coll)
-           (rx/map :payload)
+          data {:name name}]
+      (->> (rp/mutation! :create-icons-collection data)
            (rx/map collection-created)))))
 
 (defn create-collection
@@ -126,9 +125,8 @@
 (defrecord UpdateCollection [id]
   ptk/WatchEvent
   (watch [_ state s]
-    (let [item (get-in state [:icons-collections id])]
-      (->> (rp/req :update/icon-collection item)
-           (rx/map :payload)
+    (let [data (get-in state [:icons-collections id])]
+      (->> (rp/mutation! :update-icons-collection data)
            (rx/map collection-updated)))))
 
 (defn update-collection
@@ -160,7 +158,7 @@
   ptk/WatchEvent
   (watch [_ state s]
     (let [type (get-in state [:dashboard :icons :type])]
-      (->> (rp/req :delete/icon-collection id)
+      (->> (rp/mutation! :delete-icons-collection {:id id})
            (rx/map #(select-collection type))))))
 
 (defn delete-collection
@@ -219,7 +217,7 @@
             (allowed? [file]
               (= (.-type file) "image/svg+xml"))
             (prepare [[content metadata]]
-              {:collection id
+              {:collection-id id
                :content content
                :id (uuid/random)
                ;; TODO Keep the name of the original icon
@@ -229,7 +227,7 @@
            (rx/filter allowed?)
            (rx/flat-map parse)
            (rx/map prepare)
-           (rx/flat-map #(rp/req :create/icon %))
+           (rx/flat-map #(rp/mutation! :create-icon %))
            (rx/map :payload)
            (rx/map icon-created)))))
 
@@ -255,9 +253,8 @@
 (defrecord PersistIcon [id]
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [icon (get-in state [:icons id])]
-      (->> (rp/req :update/icon icon)
-           (rx/map :payload)
+    (let [data (get-in state [:icons id])]
+      (->> (rp/mutation! :update-icon data)
            (rx/map icon-persisted)))))
 
 (defn persist-icon
@@ -285,9 +282,8 @@
 (defrecord FetchIcons [id]
   ptk/WatchEvent
   (watch [_ state s]
-    (let [params {:coll id}]
-      (->> (rp/req :fetch/icons params)
-           (rx/map :payload)
+    (let [params (cond-> {} id (assoc :collection-id id))]
+      (->> (rp/query! :icons-by-collection params)
            (rx/map icons-fetched)))))
 
 (defn fetch-icons
@@ -306,7 +302,7 @@
 
   ptk/WatchEvent
   (watch [_ state s]
-    (->> (rp/req :delete/icon id)
+    (->> (rp/mutation! :delete-icon {:id id})
          (rx/ignore))))
 
 (defn delete-icon
@@ -370,8 +366,8 @@
        (->> (rx/from-coll selected)
             (rx/map #(get-in state [:icons %]))
             (rx/map #(dissoc % :id))
-            (rx/map #(assoc % :collection id))
-            (rx/flat-map #(rp/req :create/icon %))
+            (rx/map #(assoc % :collection-id id))
+            (rx/flat-map #(rp/mutation :create-icon %))
             (rx/map :payload)
             (rx/map icon-created))
        (->> (rx/from-coll selected)

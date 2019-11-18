@@ -5,10 +5,12 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.time
-  (:require [suricatta.proto :as sp]
-            [suricatta.impl :as si]
-            [cognitect.transit :as t])
+  (:require
+   #_[suricatta.proto :as sp]
+   #_[suricatta.impl :as si]
+   [cognitect.transit :as t])
   (:import java.time.Instant
+           java.time.OffsetDateTime
            java.sql.Timestamp))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -17,10 +19,15 @@
 
 (declare from-string)
 
-(def ^:private write-handler
+(def ^:private instant-write-handler
   (t/write-handler
    (constantly "m")
    (fn [v] (str (.toEpochMilli v)))))
+
+(def ^:private offset-datetime-write-handler
+  (t/write-handler
+   (constantly "m")
+   (fn [v] (str (.toEpochMilli (.toInstant v))))))
 
 (def ^:private read-handler
   (t/read-handler
@@ -31,25 +38,26 @@
   {"m" read-handler})
 
 (def +write-handlers+
-  {Instant write-handler})
+  {Instant instant-write-handler
+   OffsetDateTime offset-datetime-write-handler})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Persistence Layer Conversions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; Persistence Layer Conversions
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(extend-protocol sp/IParam
-  Instant
-  (-param [self ctx]
-    (si/sql->param "{0}::timestamptz" (.toString self))))
+;; (extend-protocol sp/IParam
+;;   Instant
+;;   (-param [self ctx]
+;;     (si/sql->param "{0}::timestamptz" (.toString self))))
 
-(extend-protocol sp/ISQLType
-  Timestamp
-  (-convert [self]
-    (.toInstant self))
+;; (extend-protocol sp/ISQLType
+;;   Timestamp
+;;   (-convert [self]
+;;     (.toInstant self))
 
-  java.time.OffsetDateTime
-  (-convert [self]
-    (.toInstant self)))
+;;   java.time.OffsetDateTime
+;;   (-convert [self]
+;;     (.toInstant self)))
 
 (defmethod print-method Instant
   [mv ^java.io.Writer writer]

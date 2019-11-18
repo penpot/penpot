@@ -16,6 +16,12 @@
     {:status 400
      :body response}))
 
+(defmethod handle-exception :not-found
+  [err]
+  (let [response (ex-data err)]
+    {:status 404
+     :body response}))
+
 (defmethod handle-exception :parse
   [err]
   {:status 400
@@ -24,7 +30,9 @@
 
 (defmethod handle-exception :default
   [err]
+  (println "--- START REQ EXCEPTION ---")
   (e/write-exception err)
+  (println "--- END REQ EXCEPTION ---")
   {:status 500
    :body {:type :exception
           :message (ex-message err)}})
@@ -40,14 +48,14 @@
                       :type :occ}}
       (handle-exception err))))
 
-(defn errors-handler
-  [error context]
+(defn handle
+  [error]
   (cond
     (or (instance? java.util.concurrent.CompletionException error)
         (instance? java.util.concurrent.ExecutionException error))
-    (errors-handler context (.getCause error))
+    (handle (.getCause error))
 
-    (instance? org.jooq.exception.DataAccessException error)
-    (handle-data-access-exception error)
+    ;; (instance? org.jooq.exception.DataAccessException error)
+    ;; (handle-data-access-exception error)
 
     :else (handle-exception error)))

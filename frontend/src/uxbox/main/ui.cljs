@@ -12,6 +12,7 @@
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
+   [expound.alpha :as expound]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.projects :as dp]
@@ -53,31 +54,37 @@
 
 (defn- on-error
   "A default error handler."
-  [{:keys [status] :as error}]
-  (js/console.error "Unhandled Error:"
-                    "\n - message:" (ex-message error)
-                    "\n - data:" (pr-str (ex-data error)))
-  (js/console.error error)
+  [{:keys [type code] :as error}]
   (reset! st/loader false)
   (cond
-    ;; Unauthorized or Auth timeout
-    (and (:status error)
-         (or (= (:status error) 403)
-             (= (:status error) 419)))
+    (and (map? error)
+         (= :validation type)
+         (= :spec-validation code))
+    (do
+      (println "============ SERVER RESPONSE ERROR ================")
+      (println (:explain error))
+      (println "============ END SERVER RESPONSE ERROR ================"))
 
+    ;; Unauthorized or Auth timeout
+    (and (map? error)
+         (= :authentication type)
+         (= :unauthorized code))
     (ts/schedule 0 #(st/emit! (rt/nav :auth/login)))
 
-    ;; Conflict
-    (= status 412)
-    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.conflict"))))
-
     ;; Network error
-    (= (:status error) 0)
+    (and (map? error)
+         (= :unexpected type)
+         (= :abort code))
     (ts/schedule 100 #(st/emit! (uum/error (tr "errors.network"))))
 
     ;; Something else
     :else
-    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.generic"))))))
+    (do
+      (js/console.error "Unhandled Error:"
+                        "\n - message:" (ex-message error)
+                        "\n - data:" (pr-str (ex-data error)))
+      (js/console.error error)
+      (ts/schedule 100 #(st/emit! (uum/error (tr "errors.generic")))))))
 
 (set! st/*on-error* on-error)
 

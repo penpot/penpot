@@ -5,20 +5,21 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.images
-  (:require [cljs.spec.alpha :as s]
-            [cuerdas.core :as str]
-            [beicon.core :as rx]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.repo :as rp]
-            [uxbox.util.i18n :refer [tr]]
-            [uxbox.util.router :as rt]
-            [uxbox.util.data :refer (jscoll->vec)]
-            [uxbox.util.uuid :as uuid]
-            [uxbox.util.time :as ts]
-            [uxbox.util.spec :as us]
-            [uxbox.util.router :as r]
-            [uxbox.util.files :as files]))
+  (:require
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [beicon.core :as rx]
+   [potok.core :as ptk]
+   [uxbox.main.store :as st]
+   [uxbox.main.repo.core :as rp]
+   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.router :as rt]
+   [uxbox.util.data :refer (jscoll->vec)]
+   [uxbox.util.uuid :as uuid]
+   [uxbox.util.time :as ts]
+   [uxbox.util.spec :as us]
+   [uxbox.util.router :as r]
+   [uxbox.util.files :as files]))
 
 ;; --- Specs
 
@@ -30,21 +31,20 @@
 (s/def ::mimetype string?)
 (s/def ::thumbnail us/url-str?)
 (s/def ::id uuid?)
-(s/def ::version integer?)
 (s/def ::url us/url-str?)
-(s/def ::collection (s/nilable uuid?))
-(s/def ::user uuid?)
+(s/def ::collection-id (s/nilable ::us/uuid))
+(s/def ::user-id ::us/uuid)
 
 (s/def ::collection-entity
   (s/keys :req-un [::id
                    ::name
                    ::created-at
                    ::modified-at
-                   ::user
-                   ::version]))
+                   ::user-id]))
 
 (s/def ::image-entity
-  (s/keys :req-un [::id
+  (s/keys :opt-un [::collection-id]
+          :req-un [::id
                    ::name
                    ::width
                    ::height
@@ -53,9 +53,7 @@
                    ::mimetype
                    ::thumbnail
                    ::url
-                   ::version
-                   ::collection
-                   ::user]))
+                   ::user-id]))
 
 ;; --- Initialize
 
@@ -90,8 +88,7 @@
 (defrecord FetchCollections []
   ptk/WatchEvent
   (watch [_ state s]
-    (->> (rp/req :fetch/image-collections)
-         (rx/map :payload)
+    (->> (rp/query! :images-collections)
          (rx/map collections-fetched))))
 
 (defn fetch-collections
@@ -120,9 +117,8 @@
 (defrecord CreateCollection []
   ptk/WatchEvent
   (watch [_ state s]
-    (let [coll {:name (tr "ds.default-library-title" (gensym "c"))
-                :id (uuid/random)}]
-      (->> (rp/req :create/image-collection coll)
+    (let [data {:name (tr "ds.default-library-title" (gensym "c"))}]
+      (->> (rp/mutation! :create-image-collection data)
            (rx/map :payload)
            (rx/map collection-created)))))
 
@@ -152,8 +148,7 @@
   ptk/WatchEvent
   (watch [_ state s]
     (let [item (get-in state [:images-collections id])]
-      (->> (rp/req :update/image-collection item)
-           (rx/map :payload)
+      (->> (rp/mutation! :update-images-collection item)
            (rx/map collection-updated)))))
 
 (defn update-collection
@@ -185,7 +180,7 @@
   ptk/WatchEvent
   (watch [_ state s]
     (let [type (get-in state [:dashboard :images :type])]
-      (->> (rp/req :delete/image-collection id)
+      (->> (rp/mutation! :delete-images-collection {:id id})
            (rx/map #(rt/nav :dashboard/images nil {:type type}))))))
 
 (defn delete-collection
@@ -223,17 +218,18 @@
             (finalize-upload [state]
               (assoc-in state [:dashboard :images :uploading] false))
             (prepare [[file [width height]]]
-              {:collection id
-               :mimetype (.-type file)
-               :id (uuid/random)
-               :file file
-               :width width
-               :height height})]
+              (cond-> {:name (.-name file)
+                       :mimetype (.-type file)
+                       :id (uuid/random)
+                       :file file
+                       :width width
+                       :height height}
+                id (assoc :collection-id id)))]
       (->> (rx/from-coll files)
            (rx/filter allowed-file?)
            (rx/mapcat image-size)
            (rx/map prepare)
-           (rx/mapcat #(rp/req :create/image %))
+           (rx/mapcat #(rp/mutation! :create-image %))
            (rx/map :payload)
            (rx/reduce conj [])
            (rx/do #(st/emit! finalize-upload))
@@ -266,9 +262,8 @@
 (defrecord PersistImage [id]
   ptk/WatchEvent
   (watch [_ state stream]
-    (let [image (get-in state [:images id])]
-      (->> (rp/req :update/image image)
-           (rx/map :payload)
+    (let [data (get-in state [:images id])]
+      (->> (rp/mutation! :update-image data)
            (rx/map image-persisted)))))
 
 (defn persist-image
@@ -295,9 +290,8 @@
 (defrecord FetchImages [id]
   ptk/WatchEvent
   (watch [_ state s]
-    (let [params {:coll id}]
-      (->> (rp/req :fetch/images params)
-           (rx/map :payload)
+    (let [params (cond-> {} id (assoc :collection-id id))]
+      (->> (rp/query! :images-by-collection params)
            (rx/map images-fetched)))))
 
 (defn fetch-images
@@ -316,10 +310,9 @@
     (let [existing (get-in state [:images id])]
       (if existing
         (rx/empty)
-        (->> (rp/req :fetch/image {:id id})
-             (rx/catch rp/client-error? #(rx/empty))
-             (rx/map :payload)
-             (rx/map image-fetched))))))
+        (->> (rp/query! :image-by-id {:id id})
+             (rx/map image-fetched)
+             (rx/catch rp/client-error? #(rx/empty)))))))
 
 (defn fetch-image
   "Conditionally fetch image by its id. If image
@@ -352,7 +345,7 @@
 
   ptk/WatchEvent
   (watch [_ state s]
-    (->> (rp/req :delete/image id)
+    (->> (rp/mutation! :delete-image {:id id})
          (rx/ignore))))
 
 (defn delete-image
@@ -414,8 +407,7 @@
     (let [selected (get-in state [:dashboard :images :selected])]
       (rx/merge
        (->> (rx/from-coll selected)
-            (rx/flat-map #(rp/req :copy/image {:id % :collection id}))
-            (rx/map :payload)
+            (rx/flat-map #(rp/mutation! :copy-image {:id % :collection-id id}))
             (rx/map image-created))
        (->> (rx/from-coll selected)
             (rx/map deselect-image))))))

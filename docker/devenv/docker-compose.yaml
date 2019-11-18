@@ -34,7 +34,7 @@ services:
 
     environment:
       - UXBOX_HTTP_SERVER_DEBUG=false
-      - UXBOX_DATABASE_URI="jdbc:postgresql://postgres/uxbox"
+      - UXBOX_DATABASE_URI="postgresql://postgres/uxbox"
       - UXBOX_DATABASE_USERNAME="uxbox"
       - UXBOX_DATABASE_PASSWORD="uxbox"
 

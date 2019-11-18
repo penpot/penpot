@@ -2,55 +2,63 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.template
   "A lightweight abstraction over mustache.java template engine.
   The documentation can be found: http://mustache.github.io/mustache.5.html"
-  (:require [clojure.walk :as walk]
-            [clojure.java.io :as io])
-  (:import java.io.StringReader
-           java.io.StringWriter
-           java.util.HashMap
-           com.github.mustachejava.DefaultMustacheFactory
-           com.github.mustachejava.Mustache))
+  (:require
+   [clojure.walk :as walk]
+   [clojure.java.io :as io]
+   [uxbox.util.exceptions :as ex])
+  (:import
+   java.io.StringReader
+   java.util.HashMap
+   java.util.function.Function;
+   com.github.mustachejava.DefaultMustacheFactory
+   com.github.mustachejava.Mustache))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Impl
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def ^DefaultMustacheFactory +mustache-factory+ (DefaultMustacheFactory.))
 
-(def ^:private
-  ^DefaultMustacheFactory
-  +mustache-factory+ (DefaultMustacheFactory.))
+(defn- adapt-context
+  [data]
+  (walk/postwalk (fn [x]
+                   (cond
+                     (instance? clojure.lang.Named x)
+                     (name x)
 
-(defprotocol ITemplate
-  "A basic template rendering abstraction."
-  (-render [template context]))
+                     (instance? clojure.lang.MapEntry x)
+                     x
 
-(extend-type Mustache
-  ITemplate
-  (-render [template context]
-    (with-out-str
-      (let [scope (HashMap. (walk/stringify-keys context))]
-        (.execute template *out* scope)))))
+                     (fn? x)
+                     (reify Function
+                       (apply [this content]
+                         (x content)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Public Api
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                     (or (vector? x) (list? x))
+                     (java.util.ArrayList. x)
 
-(defn render-string
-  "Render string as mustache template."
-  ([^String template]
-   (render-string template {}))
-  ([^String template context]
-   (let [reader (StringReader. template)
-         template (.compile +mustache-factory+ reader "example")]
-     (-render template context))))
+                     (map? x)
+                     (java.util.HashMap. x)
+
+                     (set? x)
+                     (java.util.HashSet. x)
+
+                     :else
+                     x))
+                 data))
+
 
 (defn render
-  "Load a file from the class path and render
-  it using mustache template."
-  ([^String path]
-   (render path {}))
-  ([^String path context]
-   (render-string (slurp (io/resource path)) context)))
+  [path context]
+  (try
+    (let [context (adapt-context context)
+          template (.compile +mustache-factory+ path)]
+      (with-out-str
+        (let [scope (HashMap. (walk/stringify-keys context))]
+          (.execute ^Mustache template *out* scope))))
+    (catch Exception cause
+      (ex/raise :type :internal
+                :code :template-render-error
+                :cause cause))))
+

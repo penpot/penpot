@@ -16,7 +16,7 @@
   [type data]
   ;; Obtain the list of projects and decode the embedded
   ;; page data in order to have it usable.
-  (send! {:url (str url "/projects")
+  (send! {:url (str url "/w/query/projects")
           :method :get}))
 
 (defmethod request :fetch/project-by-token

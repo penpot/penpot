@@ -2,30 +2,28 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.snappy
   "A lightweight abstraction layer for snappy compression library."
-  (:require [buddy.core.codecs :as codecs])
-  (:import org.xerial.snappy.Snappy
-           org.xerial.snappy.SnappyFramedInputStream
-           org.xerial.snappy.SnappyFramedOutputStream
-
-           java.io.OutputStream
-           java.io.InputStream))
-
+  (:import
+   java.io.ByteArrayInputStream
+   java.io.ByteArrayOutputStream
+   java.io.InputStream
+   java.io.OutputStream
+   org.xerial.snappy.Snappy
+   org.xerial.snappy.SnappyFramedInputStream
+   org.xerial.snappy.SnappyFramedOutputStream))
 
 (defn compress
   "Compress data unsing snappy compression algorithm."
-  [data]
-  (-> (codecs/to-bytes data)
-      (Snappy/compress)))
+  [^bytes data]
+  (Snappy/compress data))
 
 (defn uncompress
   "Uncompress data using snappy compression algorithm."
-  [data]
-  (-> (codecs/to-bytes data)
-      (Snappy/uncompress)))
+  [^bytes data]
+  (Snappy/uncompress data))
 
 (defn input-stream
   "Create a Snappy framed input stream."

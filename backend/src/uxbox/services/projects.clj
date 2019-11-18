@@ -2,142 +2,126 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.projects
-  (:require [clojure.spec.alpha :as s]
-            [suricatta.core :as sc]
-            [buddy.core.codecs :as codecs]
-            [uxbox.config :as ucfg]
-            [uxbox.sql :as sql]
-            [uxbox.db :as db]
-            [uxbox.util.spec :as us]
-            [uxbox.services.core :as core]
-            [uxbox.services.pages :as pages]
-            [uxbox.util.data :as data]
-            [uxbox.util.transit :as t]
-            [uxbox.util.blob :as blob]
-            [uxbox.util.uuid :as uuid]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [promesa.core :as p]
+   [uxbox.db :as db]
+   [uxbox.util.spec :as us]
+   [uxbox.services.core :as sv]
+   [uxbox.util.blob :as blob]
+   [uxbox.util.uuid :as uuid]))
 
-(s/def ::token string?)
-(s/def ::data string?)
-(s/def ::user uuid?)
-(s/def ::project uuid?)
+;; --- Helpers & Specs
 
-;; --- Create Project
+(s/def ::id ::us/uuid)
+(s/def ::name ::us/string)
+(s/def ::token ::us/string)
+(s/def ::user ::us/uuid)
 
-(defn create-project
-  [conn {:keys [id user name] :as data}]
-  (let [id (or id (uuid/random))
-        sqlv (sql/create-project {:id id :user user :name name})]
-    (some-> (sc/fetch-one conn sqlv)
-            (data/normalize))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Queries
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Query: Projects
+
+(s/def ::projects-query
+  (s/keys :req-un [::user]))
+
+(sv/defquery :projects
+  {:doc "Query all projects"
+   :spec ::projects-query}
+  [{:keys [user] :as params}]
+  (let [sql "select pr.*,
+                    ps.token as share_token
+               from projects as pr
+              inner join project_shares as ps
+                      on (ps.project = pr.id)
+              where pr.deleted_at is null
+                and pr.user_id = $1
+              order by pr.created_at asc"]
+    (db/query db/pool [sql user])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Mutations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Mutation: Create Project
 
 (s/def ::create-project
-  (s/keys :req-un [::user ::us/name]
-          :opt-un [::us/id]))
+  (s/keys :req-un [::user ::name]
+          :opt-un [::id]))
 
-(defmethod core/novelty :create-project
-  [params]
-  (s/assert ::create-project params)
-  (with-open [conn (db/connection)]
-    (create-project conn params)))
+(sv/defmutation :create-project
+  {:doc "Create a project."
+   :spec ::create-project}
+  [{:keys [id user name] :as params}]
+  (let [id (or id (uuid/next))
+        sql "insert into projects (id, user_id, name)
+             values ($1, $2, $3) returning *"]
+    (db/query-one db/pool [sql id user name])))
 
-;; --- Update Project
-
-(defn- update-project
-  [conn {:keys [name version id user] :as data}]
-  (let [sqlv (sql/update-project {:name name
-                                  :version version
-                                  :id id
-                                  :user user})]
-    (some-> (sc/fetch-one conn sqlv)
-            (data/normalize))))
+;; --- Mutation: Update Project
 
 (s/def ::update-project
-  (s/merge ::create-project (s/keys :req-un [::us/version])))
+  (s/keys :req-un [::user ::name ::id]))
 
-(defmethod core/novelty :update-project
-  [params]
-  (s/assert ::update-project params)
-  (with-open [conn (db/connection)]
-    (update-project conn params)))
+(sv/defmutation :update-project
+  {:doc "Update project."
+   :spec ::update-project}
+  [{:keys [id name user] :as params}]
+  (let [sql "update projects
+                set name = $3
+              where id = $1
+                and user_id = $2
+                and deleted_at is null
+             returning *"]
+    (db/query-one db/pool [sql id user name])))
 
-;; --- Delete Project
-
-(defn- delete-project
-  [conn {:keys [id user] :as data}]
-  (let [sqlv (sql/delete-project {:id id :user user})]
-    (pos? (sc/execute conn sqlv))))
+;; --- Mutation: Delete Project
 
 (s/def ::delete-project
-  (s/keys :req-un [::us/id ::user]))
+  (s/keys :req-un [::id ::user]))
 
-(defmethod core/novelty :delete-project
-  [params]
-  (s/assert ::delete-project params)
-  (with-open [conn (db/connection)]
-    (delete-project conn params)))
+(sv/defmutation :delete-project
+  {:doc "Delete project"
+   :spec ::delete-project}
+  [{:keys [id user] :as params}]
+  (let [sql "update projects
+                set deleted_at = clock_timestamp()
+              where id = $1
+                and user_id = $2
+                and deleted_at is null
+             returning id"]
+    (-> (db/query-one db/pool [sql id user])
+        (p/then' sv/raise-not-found-if-nil)
+        (p/then' sv/constantly-nil))))
 
-;; --- List Projects
-
-(declare decode-page-metadata)
-(declare decode-page-data)
-
-(defn get-projects
-  [conn user]
-  (let [sqlv (sql/get-projects {:user user})]
-    (->> (sc/fetch conn sqlv)
-         (map data/normalize)
-
-         ;; This is because the project comes with
-         ;; the first page preloaded and it need
-         ;; to be decoded.
-         (map decode-page-metadata)
-         (map decode-page-data))))
-
-(defmethod core/query :list-projects
-  [{:keys [user] :as params}]
-  (s/assert ::user user)
-  (with-open [conn (db/connection)]
-    (get-projects conn user)))
 
 ;; --- Retrieve Project by share token
 
-(defn- get-project-by-share-token
-  [conn token]
-  (let [sqlv (sql/get-project-by-share-token {:token token})
-        project (some-> (sc/fetch-one conn sqlv)
-                        (data/normalize))]
-    (when-let [id (:id project)]
-      (let [pages (vec (pages/get-pages-for-project conn id))]
-        (assoc project :pages pages)))))
+;; (defn- get-project-by-share-token
+;;   [conn token]
+;;   (let [sqlv (sql/get-project-by-share-token {:token token})
+;;         project (some-> (db/fetch-one conn sqlv)
+;;                         (data/normalize))]
+;;     (when-let [id (:id project)]
+;;       (let [pages (vec (pages/get-pages-for-project conn id))]
+;;         (assoc project :pages pages)))))
 
-(defmethod core/query :retrieve-project-by-share-token
-  [{:keys [token]}]
-  (s/assert ::token token)
-  (with-open [conn (db/connection)]
-    (get-project-by-share-token conn token)))
+;; (defmethod core/query :retrieve-project-by-share-token
+;;   [{:keys [token]}]
+;;   (s/assert ::token token)
+;;   (with-open [conn (db/connection)]
+;;     (get-project-by-share-token conn token)))
 
 ;; --- Retrieve share tokens
 
-(defn get-share-tokens-for-project
-  [conn project]
-  (s/assert ::project project)
-  (let [sqlv (sql/get-share-tokens-for-project {:project project})]
-    (->> (sc/fetch conn sqlv)
-         (map data/normalize))))
-
-;; Helpers
-
-(defn- decode-page-metadata
-  [{:keys [page-metadata] :as result}]
-  (merge result (when page-metadata
-                  {:page-metadata (-> page-metadata blob/decode t/decode)})))
-
-(defn- decode-page-data
-  [{:keys [page-data] :as result}]
-  (merge result (when page-data
-                  {:page-data (-> page-data blob/decode t/decode)})))
-
+;; (defn get-share-tokens-for-project
+;;   [conn project]
+;;   (s/assert ::project project)
+;;   (let [sqlv (sql/get-share-tokens-for-project {:project project})]
+;;     (db/fetch conn sqlv)))
 

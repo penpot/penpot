@@ -10,12 +10,11 @@
             [uxbox.migrations]
             [uxbox.db]
             [uxbox.http]
-            [uxbox.scheduled-jobs])
+            #_[uxbox.scheduled-jobs])
   (:gen-class))
 
 ;; --- Entry point (only for uberjar)
 
 (defn -main
   [& args]
-  (mount/start)
-  (.join uxbox.http/server))
+  (mount/start))

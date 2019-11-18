@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS email_queue (
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   deleted_at timestamptz DEFAULT NULL,
 
-  data bytea NOT NULL,
+  data jsonb NOT NULL,
 
   priority smallint NOT NULL DEFAULT 10
                     CHECK (priority BETWEEN 0 and 10),
@@ -19,9 +19,8 @@ CREATE TABLE IF NOT EXISTS email_queue (
 -- Triggers
 
 CREATE TRIGGER email_queue_modified_at_tgr BEFORE UPDATE ON email_queue
-   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
+  FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
 
 -- Indexes
 
-CREATE INDEX email_status_idx
-    ON email_queue (status);
+CREATE INDEX email_status_idx ON email_queue (status);

@@ -9,13 +9,13 @@
 
 (defn -main
   [& args]
-  (require 'uxbox.tests.test-projects)
-  (require 'uxbox.tests.test-pages)
-  (require 'uxbox.tests.test-images)
-  (require 'uxbox.tests.test-icons)
+  ;; (require 'uxbox.tests.test-projects)
+  ;; (require 'uxbox.tests.test-pages)
+  ;; (require 'uxbox.tests.test-images)
+  ;; (require 'uxbox.tests.test-icons)
   (require 'uxbox.tests.test-users)
   (require 'uxbox.tests.test-auth)
-  (require 'uxbox.tests.test-kvstore)
+  ;; (require 'uxbox.tests.test-kvstore)
   (let [{:keys [fail]} (test/run-all-tests #"^uxbox.tests.*")]
     (if (pos? fail)
       (System/exit fail)

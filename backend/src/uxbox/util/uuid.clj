@@ -5,18 +5,29 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.uuid
+  (:refer-clojure :exclude [next])
   (:require [clj-uuid :as uuid])
   (:import java.util.UUID))
 
 (def ^:const zero uuid/+null+)
+(def ^:const oid uuid/+namespace-oid+)
 
-(def random
+(defmacro next
+  []
+  `(uuid/v1))
+
+(defmacro random
   "Alias for clj-uuid/v4."
-  uuid/v4)
+  []
+  `(uuid/v4))
 
-(defn namespaced
+(defmacro namespaced
   [ns data]
-  (uuid/v5 ns data))
+  `(uuid/v5 ~ns ~data))
+
+(defmacro str->uuid
+  [s]
+  `(UUID/fromString ~s))
 
 (defn from-string
   "Parse string uuid representation into proper UUID instance."

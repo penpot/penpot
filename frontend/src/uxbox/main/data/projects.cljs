@@ -22,7 +22,7 @@
 (s/def ::id uuid?)
 (s/def ::name string?)
 (s/def ::version integer?)
-(s/def ::user uuid?)
+(s/def ::user-id uuid?)
 (s/def ::created-at inst?)
 (s/def ::modified-at inst?)
 
@@ -30,7 +30,7 @@
   (s/keys ::req-un [::id
                     ::name
                     ::version
-                    ::user
+                    ::user-id
                     ::created-at
                     ::modified-at]))
 

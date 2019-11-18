@@ -63,8 +63,9 @@
   [canvas page]
   (st/emit! (udp/watch-page-changes (:id page))
             (udu/watch-page-changes (:id page))
-            (udh/initialize (:id page))
-            (udh/watch-page-changes (:id page))
+            ;; TODO: temporary commented
+            ;; (udh/initialize (:id page))
+            ;; (udh/watch-page-changes (:id page))
             (dw/start-shapes-watcher (:id page)))
   (let [sub (shortcuts/init)]
     #(do (st/emit! ::udp/stop-page-watcher

@@ -12,21 +12,20 @@
 
 (defmethod request :fetch/profile
   [type _]
-  (let [url (str url "/profile/me")]
+  (let [url (str url "/w/query/profile")]
     (send! {:method :get :url url})))
 
 (defmethod request :auth/login
   [type data]
-  (let [url (str url "/auth/login")]
+  (let [url (str url "/login")]
     (send! {:url url
-                :method :post
-                :auth false
-                :body data})))
-
+            :method :post
+            :auth false
+            :body data})))
 
 (defmethod request :auth/logout
   [type data]
-  (let [url (str url "/auth/logout")]
+  (let [url (str url "/logout")]
     (send! {:url url :method :post :auth false})))
 
 (defmethod request :update/profile

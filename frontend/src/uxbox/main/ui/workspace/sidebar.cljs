@@ -24,7 +24,7 @@
   [:aside.settings-bar.settings-bar-left
    [:div.settings-bar-inside
     (when (contains? flags :sitemap)
-      [:& sitemap-toolbox {:project-id (:project page)
+      [:& sitemap-toolbox {:project-id (:project-id page)
                            :current-page-id (:id page)
                            :page page}])
     (when (contains? flags :document-history)

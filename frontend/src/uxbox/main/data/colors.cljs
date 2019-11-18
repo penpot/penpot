@@ -9,7 +9,7 @@
    [beicon.core :as rx]
    [clojure.set :as set]
    [potok.core :as ptk]
-   [uxbox.main.repo :as rp]
+   [uxbox.main.repo.core :as rp]
    [uxbox.main.store :as st]
    [uxbox.util.color :as color]
    [uxbox.util.i18n :refer [tr]]
@@ -56,9 +56,12 @@
 (defrecord FetchCollections []
   ptk/WatchEvent
   (watch [_ state s]
-    (->> (rp/req :fetch/kvstore "color-collections")
-         (rx/map :payload)
-         (rx/map collections-fetched))))
+    (->> (rp/query! :kvstore-entry {:key "color-collections"})
+         (rx/map collections-fetched)
+         (rx/catch (fn [{:keys [type] :as error}]
+                     (if (= type :not-found)
+                       (rx/empty)
+                       (rx/throw error)))))))
 
 (defn fetch-collections
   []
@@ -99,8 +102,7 @@
           data {:id "color-collections"
                 :version version
                 :value value}]
-      (->> (rp/req :update/kvstore data)
-           (rx/map :payload)
+      (->> (rp/mutation! :upsert-kvstore data)
            (rx/map collections-fetched)))))
 
 (defn persist-collections

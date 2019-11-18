@@ -2,86 +2,75 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.kvstore
-  (:require [clojure.spec.alpha :as s]
-            [suricatta.core :as sc]
-            [buddy.core.codecs :as codecs]
-            [uxbox.config :as ucfg]
-            [uxbox.sql :as sql]
-            [uxbox.db :as db]
-            [uxbox.util.spec :as us]
-            [uxbox.services.core :as core]
-            [uxbox.util.time :as dt]
-            [uxbox.util.data :as data]
-            [uxbox.util.transit :as t]
-            [uxbox.util.blob :as blob]
-            [uxbox.util.uuid :as uuid]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [promesa.core :as p]
+   [uxbox.db :as db]
+   [uxbox.services.core :as sv]
+   [uxbox.util.blob :as blob]
+   [uxbox.util.data :as data]
+   [uxbox.util.spec :as us]
+   [uxbox.util.time :as dt]
+   [uxbox.util.uuid :as uuid]))
 
-(s/def ::version integer?)
-(s/def ::key string?)
-(s/def ::value any?)
-(s/def ::user uuid?)
-
-(defn decode-value
-  [{:keys [value] :as data}]
-  (if value
-    (assoc data :value (-> value blob/decode t/decode))
-    data))
+(defn- decode-row
+  [{:keys [value] :as row}]
+  (when row
+    (cond-> row
+      value (assoc :value (blob/decode value)))))
 
 ;; --- Update KVStore
 
-(s/def ::update-kvstore
-  (s/keys :req-un [::key ::value ::user ::version]))
+(s/def ::user ::us/uuid)
+(s/def ::key ::us/string)
+(s/def ::value any?)
 
-(defn update-kvstore
-  [conn {:keys [user key value version] :as data}]
-  (let [opts {:user user
-              :key key
-              :version version
-              :value (-> value t/encode blob/encode)}
-        sqlv (sql/update-kvstore opts)]
-    (some->> (sc/fetch-one conn sqlv)
-             (data/normalize-attrs)
-             (decode-value))))
+(s/def ::upsert-kvstore
+  (s/keys :req-un [::key ::value ::user]))
 
-(defmethod core/novelty :update-kvstore
-  [params]
-  (s/assert ::update-kvstore params)
-  (with-open [conn (db/connection)]
-    (sc/apply-atomic conn update-kvstore params)))
+(sv/defmutation :upsert-kvstore
+  {:doc "Update or insert kvstore entry."
+   :spec ::upsert-kvstore}
+  [{:keys [key value user] :as params}]
+  (let [sql "insert into kvstore (key, value, user_id)
+             values ($1, $2, $3)
+                 on conflict (user_id, key)
+                 do update set value = $2"
+        val (blob/encode value)]
+    (-> (db/query-one db/pool [sql key val user])
+        (p/then' sv/constantly-nil))))
 
 ;; --- Retrieve KVStore
 
-(s/def ::retrieve-kvstore
+(s/def ::kvstore-entry
   (s/keys :req-un [::key ::user]))
 
-(defn retrieve-kvstore
-  [conn {:keys [user key] :as params}]
-  (let [sqlv (sql/retrieve-kvstore params)]
-    (some->> (sc/fetch-one conn sqlv)
-             (data/normalize-attrs)
-             (decode-value))))
-
-(defmethod core/query :retrieve-kvstore
-  [params]
-  (s/assert ::retrieve-kvstore params)
-  (with-open [conn (db/connection)]
-    (retrieve-kvstore conn params)))
+(sv/defquery :kvstore-entry
+  {:doc "Retrieve kvstore entry."
+   :spec ::kvstore-entry}
+  [{:keys [key user]}]
+  (let [sql "select kv.*
+               from kvstore as kv
+              where kv.user_id = $2
+                and kv.key = $1"]
+    (-> (db/query-one db/pool [sql key user])
+        (p/then' sv/raise-not-found-if-nil)
+        (p/then' decode-row))))
 
 ;; --- Delete KVStore
 
 (s/def ::delete-kvstore
   (s/keys :req-un [::key ::user]))
 
-(defn delete-kvstore
-  [conn {:keys [user key] :as params}]
-  (let [sqlv (sql/delete-kvstore params)]
-    (pos? (sc/execute conn sqlv))))
-
-(defmethod core/novelty :delete-kvstore
-  [params]
-  (s/assert ::delete-kvstore params)
-  (with-open [conn (db/connection)]
-    (sc/apply-atomic conn delete-kvstore params)))
+(sv/defmutation :delete-kvstore
+  {:doc "Delete kvstore entry."
+   :spec ::delete-kvstore}
+  [{:keys [user key] :as params}]
+  (let [sql "delete from kvstore
+              where user_id = $2
+                and key = $1"]
+    (-> (db/query-one db/pool [sql key user])
+        (p/then' sv/constantly-nil))))

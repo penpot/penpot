@@ -2,15 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.transit
-  (:require [cognitect.transit :as t]
-            [clojure.java.io :as io]
-            [uxbox.util.time :as dt])
-  (:import java.io.ByteArrayInputStream
-           java.io.ByteArrayOutputStream
-           java.io.File))
+  (:require
+   [cognitect.transit :as t]
+   [clojure.java.io :as io]
+   [uxbox.util.time :as dt]
+   [uxbox.util.data :as data])
+  (:import
+   io.vertx.core.buffer.Buffer
+   java.io.ByteArrayInputStream
+   java.io.ByteArrayOutputStream
+   java.io.File))
 
 ;; --- Handlers
 
@@ -49,28 +53,33 @@
 
 ;; --- High-Level Api
 
-;; TODO: check performance of different options
-
 (defn decode
   ([data]
    (decode data nil))
   ([data opts]
    (cond
-     (string? data)
-     (decode (.getBytes data "UTF-8") opts)
+     (instance? Buffer data)
+     (decode (.getBytes ^Buffer data) opts)
 
      (bytes? data)
      (with-open [input (ByteArrayInputStream. data)]
        (read! (reader input opts)))
+
+     ;; ;; TODO: temporal
+     ;; (instance? org.jooq.JSONB data)
+     ;; (decode (.toString data) opts)
+
+     (string? data)
+     (decode (.getBytes data "UTF-8") opts)
 
      :else
      (with-open [input (io/input-stream data)]
        (read! (reader input opts))))))
 
 (defn encode
-  (^bytes [data]
+  ([data]
    (encode data nil))
-  (^bytes [data opts]
+  ([data opts]
    (with-open [out (ByteArrayOutputStream.)]
      (let [w (writer out opts)]
        (write! w data)

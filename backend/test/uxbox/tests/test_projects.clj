@@ -1,87 +1,63 @@
 (ns uxbox.tests.test-projects
-  (:require [clojure.test :as t]
-            [promesa.core :as p]
-            [suricatta.core :as sc]
-            [clj-uuid :as uuid]
-            [uxbox.db :as db]
-            [uxbox.http :as http]
-            [uxbox.services.projects :as uspr]
-            [uxbox.services.pages :as uspg]
-            [uxbox.services :as usv]
-            [uxbox.tests.helpers :as th]))
+  (:require
+   [clojure.test :as t]
+   [promesa.core :as p]
+   [uxbox.db :as db]
+   [uxbox.http :as http]
+   [uxbox.services.core :as sv]
+   [uxbox.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest test-http-project-list
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ "/api/projects")
-              [status data] (th/http-get user uri)]
-          (t/is (= 200 status))
-          (t/is (= 1 (count data))))))))
+(t/deftest test-query-project-list
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        data {::sv/type :projects
+              :user (:id user)}
+        [err rsp] (th/try-on (sv/query data))]
+    (t/is (nil? err))
+    (t/is (= 1 (count rsp)))
+    (t/is (= (:id proj) (get-in rsp [0 :id])))
+    (t/is (= (:name proj (get-in rsp [0 :name]))))))
 
-(t/deftest test-http-project-create
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)]
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ "/api/projects")
-              params {:body {:name "proj1"}}
-              [status data] (th/http-post user uri params)]
-          ;; (println "RESPONSE:" status data)
-          (t/is (= 201 status))
-          (t/is (= (:user data) (:id user)))
-          (t/is (= (:name data) "proj1")))))))
+(t/deftest test-mutation-create-project
+  (let [user @(th/create-user db/pool 1)
+        data {::sv/type :create-project
+              :user (:id user)
+              :name "test project"}
+        [err rsp] (th/try-on (sv/mutation data))]
+    ;; (prn "RESPONSE:" err rsp)
+    (t/is (nil? err))
+    (t/is (= (:user data) (:user-id rsp)))
+    (t/is (= (:name data) (:name rsp)))))
 
-(t/deftest test-http-project-update
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ "/api/projects/" (:id proj))
-              params {:body (assoc proj :name "proj2")}
-              [status data] (th/http-put user uri params)]
-          ;; (prn "RESPONSE:" status data)
-          (t/is (= 200 status))
-          (t/is (= (:user data) (:id user)))
-          (t/is (= (:name data) "proj2")))))))
+(t/deftest test-mutation-update-project
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        data {::sv/type :update-project
+              :id (:id proj)
+              :name "test project mod"
+              :user (:id user)}
+        [err rsp] (th/try-on (sv/mutation data))]
+    ;; (prn "RESPONSE:" err rsp)
+    (t/is (nil? err))
+    (t/is (= (:id data) (:id rsp)))
+    (t/is (= (:user data) (:user-id rsp)))
+    (t/is (= (:name data) (:name rsp)))))
 
-(t/deftest test-http-project-delete
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ "/api/projects/" (:id proj))
-              [status data] (th/http-delete user uri)]
-          ;; (prn "RESPONSE:" status data)
-          (t/is (= 204 status))
-          (let [sqlv ["SELECT * FROM projects WHERE \"user\"=? AND deleted_at is null"
-                      (:id user)]
-                result (sc/fetch conn sqlv)]
-            (t/is (empty? result))))))))
+(t/deftest test-mutation-delete-project
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        data {::sv/type :delete-project
+              :id (:id proj)
+              :user (:id user)}
+        [err rsp] (th/try-on (sv/mutation data))]
+    ;; (prn "RESPONSE:" err rsp)
+    (t/is (nil? err))
+    (t/is (nil? rsp))
 
-(t/deftest test-http-project-retrieve-by-share-token
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})
-          page (uspg/create-page conn {:id (uuid/v4)
-                                       :user (:id user)
-                                       :project (:id proj)
-                                       :version 0
-                                       :data "1"
-                                       :options "2"
-                                       :name "page1"
-                                       :width 200
-                                       :height 200
-                                       :layout "mobil"})
-          shares (uspr/get-share-tokens-for-project conn (:id proj))]
-      (th/with-server {:handler @http/app}
-        (let [token (:token (first shares))
-              uri (str th/+base-url+ "/api/projects/by-token/" token)
-              [status data] (th/http-get user uri)]
-          ;; (println "RESPONSE:" status data)
-          (t/is (= status 200))
-          (t/is (vector? (:pages data)))
-          (t/is (= 1 (count (:pages data)))))))))
+    (let [sql "SELECT * FROM projects
+                WHERE user_id=$1 AND deleted_at is null"
+          res @(db/query db/pool [sql (:id user)])]
+      (t/is (empty? res)))))

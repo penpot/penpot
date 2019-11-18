@@ -40,7 +40,9 @@
     ErrorCode.TIMEOUT    :timeout
     ErrorCode.EXCEPTION  :exception
     ErrorCode.HTTP_ERROR :http
-    ErrorCode.ABORT      :abort))
+    ErrorCode.ABORT      :abort
+    ErrorCode.OFFLINE    :offline
+    nil))
 
 (defn- translate-response-type
   [type]
@@ -72,18 +74,18 @@
     (rx/create
      (fn [sink]
        (letfn [(on-complete [event]
-                 (if (or (= (.getLastErrorCode xhr) ErrorCode.HTTP_ERROR)
-                         (.isSuccess xhr))
-                   (sink (rx/end
-                          {:status (.getStatus xhr)
-                           :body (.getResponse xhr)
-                           :headers (normalize-headers
-                                     (.getResponseHeaders xhr))}))
-                   (sink (let [type (-> (.getLastErrorCode xhr)
-                                        (translate-error-code))
-                               message (.getLastError xhr)]
-                           (ex-info message {:type type})))))]
-
+                 (let [type (translate-error-code (.getLastErrorCode xhr))
+                       status (.getStatus xhr)]
+                   ;; (prn "on-complete" type method url)
+                   (if (pos? status)
+                     (sink (rx/end
+                            {:status status
+                             :body (.getResponse xhr)
+                             :headers (normalize-headers (.getResponseHeaders xhr))}))
+                     (sink (rx/end
+                            {:status 0
+                             :error (if (= type :http) :abort type)
+                             ::xhr xhr})))))]
          (events/listen xhr EventType.COMPLETE on-complete)
          (.send xhr uri method body headers)
          #(.abort xhr))))))

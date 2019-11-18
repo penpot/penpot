@@ -6,9 +6,11 @@
 
 (ns uxbox.util.spec
   (:refer-clojure :exclude [keyword uuid vector boolean map set])
-  (:require [clojure.spec.alpha :as s]
-            [cuerdas.core :as str]
-            [uxbox.util.exceptions :as ex])
+  (:require
+   [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [datoteka.core :as fs]
+   [uxbox.util.exceptions :as ex])
   (:import java.time.Instant))
 
 ;; --- Constants
@@ -95,8 +97,16 @@
   [v]
   (if v "true" "false"))
 
+(defn path-conformer
+  [v]
+  (cond
+   (string? v) (fs/path v)
+   (fs/path? v) v
+   :else ::s/invalid))
+
 ;; --- Default Specs
 
+(s/def ::string string?)
 (s/def ::integer (s/conformer integer-conformer str))
 (s/def ::uuid (s/conformer uuid-conformer str))
 (s/def ::boolean (s/conformer boolean-conformer boolean-unformer))
@@ -104,14 +114,19 @@
 (s/def ::negative neg?)
 (s/def ::uploaded-file any?)
 (s/def ::bytes bytes?)
-(s/def ::path path?)
 (s/def ::email email?)
+(s/def ::file any?)
+
+(s/def ::name ::string)
+(s/def ::path (s/conformer path-conformer str))
+(s/def ::size ::integer)
+(s/def ::mtype ::string)
+(s/def ::upload
+  (s/keys :req-un [::name ::path ::size ::mtype]))
 
 ;; TODO: deprecated
 (s/def ::id ::uuid)
-(s/def ::name string?)
-(s/def ::username string?)
-(s/def ::password string?)
-(s/def ::version integer?)
-(s/def ::token string?)
+(s/def ::username ::string)
+(s/def ::password ::string)
+(s/def ::token ::string)
 

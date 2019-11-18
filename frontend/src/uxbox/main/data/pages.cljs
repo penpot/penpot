@@ -22,7 +22,7 @@
 (s/def ::name ::us/string)
 (s/def ::inst ::us/inst)
 (s/def ::type ::us/keyword)
-(s/def ::project ::us/uuid)
+(s/def ::project-id ::us/uuid)
 (s/def ::created-at ::us/inst)
 (s/def ::modified-at ::us/inst)
 (s/def ::version ::us/number)
@@ -51,10 +51,10 @@
 (s/def ::page-entity
   (s/keys :req-un [::id
                    ::name
-                   ::project
+                   ::project-id
                    ::created-at
                    ::modified-at
-                   ::user
+                   ::user-id
                    ::metadata
                    ::shapes]))
 
@@ -70,7 +70,7 @@
 
 (s/def ::server-page
   (s/keys :req-un [::id ::name
-                   ::project
+                   ::project-id
                    ::version
                    ::created-at
                    ::modified-at
@@ -194,7 +194,7 @@
 (declare rehash-pages)
 
 (s/def ::page-created-params
-  (s/keys :req-un [::id ::name ::project ::metadata]))
+  (s/keys :req-un [::id ::name ::project-id ::metadata]))
 
 (defn page-created
   [data]
@@ -215,7 +215,7 @@
 ;; --- Create Page Form
 
 (s/def ::form-created-page-params
-  (s/keys :req-un [::name ::project ::width ::height]))
+  (s/keys :req-un [::name ::project-id ::width ::height]))
 
 (defn form->create-page
   [{:keys [name project width height layout] :as data}]

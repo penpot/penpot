@@ -1,219 +1,142 @@
 (ns uxbox.tests.test-pages
-  (:require [clojure.test :as t]
-            [promesa.core :as p]
-            [suricatta.core :as sc]
-            [uxbox.util.uuid :as uuid]
-            [uxbox.db :as db]
-            [uxbox.http :as http]
-            [uxbox.services.projects :as uspr]
-            [uxbox.services.pages :as uspg]
-            [uxbox.services :as usv]
-            [uxbox.tests.helpers :as th]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [clojure.test :as t]
+   [promesa.core :as p]
+   [uxbox.db :as db]
+   [uxbox.http :as http]
+   [uxbox.services.core :as sv]
+   [uxbox.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest test-http-page-create
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})]
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ "/api/pages")
-              params {:body {:project (:id proj)
-                             :name "page1"
-                             :data "1"
-                             :metadata "1"
-                             :width 200
-                             :height 200
-                             :layout "mobile"}}
-              [status data] (th/http-post user uri params)]
-          ;; (println "RESPONSE:" status data)
-          (t/is (= 201 status))
-          (t/is (= (:data (:body params)) (:data data)))
-          (t/is (= (:user data) (:id user)))
-          (t/is (= (:name data) "page1")))))))
+(t/deftest test-mutation-create-page
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        data {::sv/type :create-page
+              :data {:shapes []}
+              :metadata {}
+              :project-id (:id proj)
+              :name "test page"
+              :user (:id user)}
+        [err rsp] (th/try-on (sv/mutation data))]
+    (t/is (nil? err))
+    (t/is (uuid? (:id rsp)))
+    (t/is (= (:user data) (:user-id rsp)))
+    (t/is (= (:name data) (:name rsp)))
+    (t/is (= (:data data) (:data rsp)))
+    (t/is (= (:metadata data) (:metadata rsp)))))
 
-(t/deftest test-http-page-update
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})
-          data {:id (uuid/random)
-                :user (:id user)
-                :project (:id proj)
-                :version 0
-                :data "1"
-                :metadata "2"
-                :name "page1"
-                :width 200
-                :height 200
-                :layout "mobil"}
-          page (uspg/create-page conn data)]
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ (str "/api/pages/" (:id page)))
-              params {:body (assoc page :data "3")}
-              [status page'] (th/http-put user uri params)]
-          ;; (println "RESPONSE:" status page')
-          (t/is (= 200 status))
-          (t/is (= "3" (:data page')))
-          (t/is (= 1 (:version page')))
-          (t/is (= (:user page') (:id user)))
-          (t/is (= (:name data) "page1")))))))
+(t/deftest test-mutation-update-page
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        page @(th/create-page db/pool (:id user) (:id proj) 1)
+        data {::sv/type :update-page
+              :id (:id page)
+              :data {:shapes [1 2 3]}
+              :metadata {:foo 2}
+              :project-id (:id proj)
+              :name "test page"
+              :user (:id user)}
+        res (th/try-on! (sv/mutation data))]
 
-(t/deftest test-http-page-update-metadata
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})
-          data {:id (uuid/random)
-                :user (:id user)
-                :project (:id proj)
-                :version 0
-                :data "1"
-                :metadata "2"
-                :name "page1"
-                :width 200
-                :height 200
-                :layout "mobil"}
-          page (uspg/create-page conn data)]
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ (str "/api/pages/" (:id page) "/metadata"))
-              params {:body (assoc page :data "3")}
-              [status page'] (th/http-put user uri params)]
-          ;; (println "RESPONSE:" status page')
-          (t/is (= 200 status))
-          (t/is (= "1" (:data page')))
-          (t/is (= 1 (:version page')))
-          (t/is (= (:user page') (:id user)))
-          (t/is (= (:name data) "page1")))))))
+    ;; (th/print-result! res)
 
-(t/deftest test-http-page-delete
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})
-          data {:id (uuid/random)
-                :user (:id user)
-                :project (:id proj)
-                :version 0
-                :data "1"
-                :metadata "2"
-                :name "page1"
-                :width 200
-                :height 200
-                :layout "mobil"}
-          page (uspg/create-page conn data)]
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ (str "/api/pages/" (:id page)))
-              [status response] (th/http-delete user uri)]
-          ;; (println "RESPONSE:" status response)
-          (t/is (= 204 status))
-          (let [sqlv ["SELECT * FROM pages WHERE \"user\"=? AND deleted_at is null"
-                      (:id user)]
-                result (sc/fetch conn sqlv)]
-            (t/is (empty? result))))))))
+    (t/is (nil? (:error res)))
+    (t/is (= (:id data) (get-in res [:result :id])))
+    (t/is (= (:user data) (get-in res [:result :user-id])))
+    (t/is (= (:name data) (get-in res [:result :name])))
+    (t/is (= (:data data) (get-in res [:result :data])))
+    (t/is (= (:metadata data) (get-in res [:result :metadata])))))
 
-(t/deftest test-http-page-list-by-project
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj1 (uspr/create-project conn {:user (:id user) :name "proj1"})
-          proj2 (uspr/create-project conn {:user (:id user) :name "proj2"})
-          data {:user (:id user)
-                :version 0
-                :data "1"
-                :metadata "2"
-                :name "page1"
-                :width 200
-                :height 200
-                :layout "mobil"}
-          page1 (uspg/create-page conn (assoc data :project (:id proj1)))
-          page2 (uspg/create-page conn (assoc data :project (:id proj2)))]
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ (str "/api/pages?project=" (:id proj1)))
-              [status response] (th/http-get user uri)]
-          ;; (println "RESPONSE:" status response)
-          (t/is (= 200 status))
-          (t/is (= 1 (count response)))
-          (t/is (= (:id (first response)) (:id page1))))))))
+(t/deftest test-mutation-update-page-metadata
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        page @(th/create-page db/pool (:id user) (:id proj) 1)
+        data {::sv/type :update-page
+              :id (:id page)
+              :metadata {:foo 2}
+              :project-id (:id proj)
+              :name "test page"
+              :user (:id user)}
+        res (th/try-on! (sv/mutation data))]
 
-(t/deftest test-http-page-history-retrieve
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})
-          data {:id (uuid/random)
-                :user (:id user)
-                :project (:id proj)
-                :version 0
-                :data "1"
-                :metadata "2"
-                :name "page1"
-                :width 200
-                :height 200
-                :layout "mobil"}
-          page (uspg/create-page conn data)]
-      (dotimes [i 100]
-        (let [page (uspg/get-page-by-id conn (:id data))]
-          (uspg/update-page conn (assoc page :data (str i)))))
+    ;; (th/print-result! res)
+    (t/is (nil? (:error res)))
+    (t/is (= (:id data) (get-in res [:result :id])))
+    (t/is (= (:user data) (get-in res [:result :user-id])))
+    (t/is (= (:name data) (get-in res [:result :name])))
+    (t/is (= (:metadata data) (get-in res [:result :metadata])))))
 
-      ;; Check inserted history
-      (let [sqlv ["SELECT * FROM pages_history WHERE page=?" (:id data)]
-            result (sc/fetch conn sqlv)]
-        (t/is (= (count result) 101)))
+(t/deftest test-mutation-delete-page
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        page @(th/create-page db/pool (:id user) (:id proj) 1)
+        data {::sv/type :delete-page
+              :id (:id page)
+              :user (:id user)}
+        res (th/try-on! (sv/mutation data))]
 
-      ;; Check retrieve all items
-      (th/with-server {:handler @http/app}
-        (let [uri (str th/+base-url+ "/api/pages/" (:id page) "/history")
-              [status result] (th/http-get user uri nil)]
-          ;; (println "RESPONSE:" status result)
-          (t/is (= (count result) 10))
-          (t/is (= 200 status))
-          (t/is (= 100 (:version (first result))))
+    ;; (th/print-result! res)
+    (t/is (nil? (:error res)))
+    (t/is (nil? (:result res)))))
 
-          (let [params {:query {:since (:version (last result))
-                                :max 20}}
-                [status result] (th/http-get user uri params)]
-            ;; (println "RESPONSE:" status result)
-            (t/is (= (count result) 20))
-            (t/is (= 200 status))
-            (t/is (= 90 (:version (first result))))))
-        ))))
+(t/deftest test-query-pages-by-project
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        page @(th/create-page db/pool (:id user) (:id proj) 1)
+        data {::sv/type :pages-by-project
+              :project-id (:id proj)
+              :user (:id user)}
+        res (th/try-on! (sv/query data))]
 
-(t/deftest test-http-page-history-update
-  (with-open [conn (db/connection)]
-    (let [user (th/create-user conn 1)
-          proj (uspr/create-project conn {:user (:id user) :name "proj1"})
-          data {:id (uuid/random)
-                :user (:id user)
-                :project (:id proj)
-                :version 0
-                :data "1"
-                :metadata "2"
-                :name "page1"
-                :width 200
-                :height 200
-                :layout "mobil"}
-          page (uspg/create-page conn data)]
+    (th/print-result! res)
+    (t/is (nil? (:error res)))
+    (t/is (vector? (:result res)))
+    (t/is (= 1 (count (:result res))))
+    (t/is (= "page1" (get-in res [:result 0 :name])))
+    (t/is (:id proj) (get-in res [:result 0 :project-id]))))
 
-      (dotimes [i 10]
-        (let [page (uspg/get-page-by-id conn (:id data))]
-          (uspg/update-page conn (assoc page :data (str i)))))
+;; (t/deftest test-http-page-history-update
+;;   (with-open [conn (db/connection)]
+;;     (let [user (th/create-user conn 1)
+;;           proj (uspr/create-project conn {:user (:id user) :name "proj1"})
+;;           data {:id (uuid/random)
+;;                 :user (:id user)
+;;                 :project (:id proj)
+;;                 :version 0
+;;                 :data "1"
+;;                 :metadata "2"
+;;                 :name "page1"
+;;                 :width 200
+;;                 :height 200
+;;                 :layout "mobil"}
+;;           page (uspg/create-page conn data)]
 
-      ;; Check inserted history
-      (let [sql (str "SELECT * FROM pages_history "
-                     " WHERE page=? ORDER BY created_at DESC")
-            result (sc/fetch conn [sql (:id data)])
-            item (first result)]
+;;       (dotimes [i 10]
+;;         (let [page (uspg/get-page-by-id conn (:id data))]
+;;           (uspg/update-page conn (assoc page :data (str i)))))
 
-        (th/with-server {:handler @http/app}
-          (let [uri (str th/+base-url+
-                         "/api/pages/" (:id page)
-                         "/history/" (:id item))
-                params {:body {:label "test" :pinned true}}
-                [status data] (th/http-put user uri params)]
-            ;; (println "RESPONSE:" status data)
-            (t/is (= 200 status))
-            (t/is (= (:id data) (:id item))))))
+;;       ;; Check inserted history
+;;       (let [sql (str "SELECT * FROM pages_history "
+;;                      " WHERE page=? ORDER BY created_at DESC")
+;;             result (sc/fetch conn [sql (:id data)])
+;;             item (first result)]
 
-      (let [sql (str "SELECT * FROM pages_history "
-                     " WHERE page=? AND pinned = true "
-                     " ORDER BY created_at DESC")
-            result (sc/fetch-one conn [sql (:id data)])]
-        (t/is (= "test" (:label result)))
-        (t/is (= true (:pinned result)))))))
+;;         (th/with-server {:handler @http/app}
+;;           (let [uri (str th/+base-url+
+;;                          "/api/pages/" (:id page)
+;;                          "/history/" (:id item))
+;;                 params {:body {:label "test" :pinned true}}
+;;                 [status data] (th/http-put user uri params)]
+;;             ;; (println "RESPONSE:" status data)
+;;             (t/is (= 200 status))
+;;             (t/is (= (:id data) (:id item))))))
+
+;;       (let [sql (str "SELECT * FROM pages_history "
+;;                      " WHERE page=? AND pinned = true "
+;;                      " ORDER BY created_at DESC")
+;;             result (sc/fetch-one conn [sql (:id data)])]
+;;         (t/is (= "test" (:label result)))
+;;         (t/is (= true (:pinned result)))))))

@@ -21,6 +21,8 @@
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation))
 
+;; TODO: make this module non-blocking
+
 ;; --- Thumbnails Generation
 
 (s/def ::width integer?)

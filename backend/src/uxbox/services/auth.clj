@@ -2,30 +2,49 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.auth
-  (:require [clojure.spec.alpha :as s]
-            [suricatta.core :as sc]
-            [buddy.hashers :as hashers]
-            [uxbox.config :as cfg]
-            [uxbox.db :as db]
-            [uxbox.services.core :as core]
-            [uxbox.services.users :as users]
-            [uxbox.util.exceptions :as ex]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [buddy.hashers :as hashers]
+   [promesa.core :as p]
+   [uxbox.config :as cfg]
+   [uxbox.db :as db]
+   [uxbox.services.core :as sc]
+   [uxbox.services.users :as users]
+   [uxbox.util.spec :as us]
+   [uxbox.util.exceptions :as ex]))
 
-(defn- check-user-password
-  [user password]
-  (hashers/check password (:password user)))
+(s/def ::username ::us/string)
+(s/def ::password ::us/string)
+(s/def ::scope ::us/string)
 
-(defmethod core/novelty :login
+(s/def ::login-params
+  (s/keys :req-un [::username ::password]
+          :opt-un [::scope]))
+
+(def ^:private user-by-username-sql
+  "select id, password
+     from users
+    where username=$1 or email=$1
+      and deleted_at is null")
+
+(sc/defmutation :login
+  {:doc "User login"
+   :spec ::login-params}
   [{:keys [username password scope] :as params}]
-  (with-open [conn (db/connection)]
-    (let [user (users/find-user-by-username-or-email conn username)]
-      (when-not user
-        (ex/raise :type :validation
-                  :code ::wrong-credentials))
-      (when-not (check-user-password user password)
-        (ex/raise :type :validation
-                  :code ::wrong-credentials))
-      user)))
+  (letfn [(check-password [user password]
+            (hashers/check password (:password user)))
+
+          (check-user [user]
+            (when-not user
+              (ex/raise :type :validation
+                        :code ::wrong-credentials))
+            (when-not (check-password user password)
+              (ex/raise :type :validation
+                        :code ::wrong-credentials))
+            (:id user))]
+
+    (-> (db/query-one db/pool [user-by-username-sql username])
+        (p/then' check-user))))
