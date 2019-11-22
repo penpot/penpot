@@ -43,12 +43,12 @@ RUN set -ex; \
     apt-get -qq update; \
     apt-get install -qqy zulu-12; \
     apt-get install -qqy \
-        postgresql-11 \
-        postgresql-contrib-11 \
+        postgresql-12 \
+        postgresql-contrib-12 \
     ;\
     rm -rf /var/lib/apt/lists/*;
 
-COPY files/pg_hba.conf /etc/postgresql/11/main/pg_hba.conf
+COPY files/pg_hba.conf /etc/postgresql/12/main/pg_hba.conf
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
 

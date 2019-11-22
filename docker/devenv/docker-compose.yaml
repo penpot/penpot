@@ -17,11 +17,12 @@ services:
     build:
       context: ./
     hostname: 'uxbox-devenv'
-    container_name: 'uxbox-devenv'
+    container_name: 'uxbox-devenv-main'
     command: "/home/uxbox/init.sh"
     stop_signal: SIGINT
     depends_on:
       - postgres
+      - smtp
     volumes:
       - "user_data:/home/uxbox/local"
       - "${PWD}:/home/uxbox/uxbox"
@@ -31,12 +32,20 @@ services:
     ports:
       - 3449:3449
       - 6060:6060
+      - 9090:9090
 
     environment:
-      - UXBOX_HTTP_SERVER_DEBUG=false
       - UXBOX_DATABASE_URI="postgresql://postgres/uxbox"
       - UXBOX_DATABASE_USERNAME="uxbox"
       - UXBOX_DATABASE_PASSWORD="uxbox"
+
+  smtp:
+    container_name: 'uxbox-devenv-smtp'
+    image: mwader/postfix-relay
+    restart: always
+    environment:
+      - POSTFIX_myhostname=smtp.uxbox.io
+      - OPENDKIM_DOMAINS=smtp.uxbox.io
 
   postgres:
     image: postgres:12
