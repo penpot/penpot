@@ -11,7 +11,7 @@
   "scripts": {},
   "devDependencies": {
     "gulp": "4.0.2",
-    "gulp-autoprefixer": "^7.0.0",
+    "gulp-autoprefixer": "^7.0.1",
     "gulp-clean-css": "^4.2.0",
     "gulp-gzip": "^1.4.2",
     "gulp-if": "^3.0.0",
@@ -22,6 +22,6 @@
     "rimraf": "^3.0.0"
   },
   "dependencies": {
-    "source-map-support": "^0.5.12"
+    "source-map-support": "^0.5.16"
   }
 }
