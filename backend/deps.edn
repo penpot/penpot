@@ -11,11 +11,12 @@
         funcool/datoteka {:mvn/version "1.1.0"}
         expound/expound {:mvn/version "0.7.2"}
         instaparse/instaparse {:mvn/version "1.4.10"}
+        com.cognitect/transit-clj {:mvn/version "0.8.319"}
 
         ;; vertx deps
+        ;; vertx-clojure/vertx {:mvn/version "0.0.0-SNAPSHOT"}
         metosin/reitit-core {:mvn/version "0.3.10"}
         metosin/sieppari {:mvn/version "0.0.0-alpha8"}
-        com.cognitect/transit-clj {:mvn/version "0.8.319"}
         io.vertx/vertx-core {:mvn/version "3.8.1"}
         io.vertx/vertx-web {:mvn/version "3.8.1"}
         io.vertx/vertx-pg-client {:mvn/version "3.8.1"}

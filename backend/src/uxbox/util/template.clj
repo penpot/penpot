@@ -8,6 +8,7 @@
   "A lightweight abstraction over mustache.java template engine.
   The documentation can be found: http://mustache.github.io/mustache.5.html"
   (:require
+   [clojure.tools.logging :as log]
    [clojure.walk :as walk]
    [clojure.java.io :as io]
    [uxbox.util.exceptions :as ex])
@@ -33,7 +34,11 @@
                      (fn? x)
                      (reify Function
                        (apply [this content]
-                         (x content)))
+                         (try
+                           (x content)
+                           (catch Exception e
+                             (log/error e "Error on executing" x)
+                             ""))))
 
                      (or (vector? x) (list? x))
                      (java.util.ArrayList. x)

@@ -38,7 +38,6 @@
                    :allow-headers #{:x-requested-with :content-type :cookie}}
 
         interceptors [(vxi/cookies)
-                      (vxi/headers)
                       (vxi/params)
                       (vxi/cors cors-opts)
                       interceptors/parse-request-body
@@ -66,6 +65,6 @@
     (vh/server ctx {:handler handler
                     :port (:http-server-port cfg/config)})))
 
-(defstate http-verticle
+(defstate server
   :start (let [factory (vc/verticle {:on-start on-start})]
            @(vc/deploy! system factory {:instances 4})))

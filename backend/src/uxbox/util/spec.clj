@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.spec
   (:refer-clojure :exclude [keyword uuid vector boolean map set])
@@ -20,6 +20,9 @@
 
 (def uuid-rx
   #"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+
+(def number-rx
+  #"^[+-]?([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)([eE][+-]?[0-9]+)?$")
 
 ;; --- Public Api
 
@@ -104,12 +107,23 @@
    (fs/path? v) v
    :else ::s/invalid))
 
+(defn- number-conformer
+  [v]
+  (cond
+    (number? v) v
+    (re-matches number-rx v) (Double/parseDouble v)
+    :else ::s/invalid))
+
+
 ;; --- Default Specs
 
 (s/def ::string string?)
 (s/def ::integer (s/conformer integer-conformer str))
 (s/def ::uuid (s/conformer uuid-conformer str))
 (s/def ::boolean (s/conformer boolean-conformer boolean-unformer))
+(s/def ::number (s/conformer number-conformer str))
+(s/def ::path (s/conformer path-conformer str))
+
 (s/def ::positive pos?)
 (s/def ::negative neg?)
 (s/def ::uploaded-file any?)
@@ -118,7 +132,6 @@
 (s/def ::file any?)
 
 (s/def ::name ::string)
-(s/def ::path (s/conformer path-conformer str))
 (s/def ::size ::integer)
 (s/def ::mtype ::string)
 (s/def ::upload

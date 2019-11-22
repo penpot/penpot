@@ -6,11 +6,10 @@
 
 (ns uxbox.core
   (:require
-   [vertx.core :as vx]
+   [vertx.core :as vc]
+   [vertx.timers :as vt]
    [mount.core :as mount :refer [defstate]]))
 
 (defstate system
-  :start (vx/system)
+  :start (vc/system)
   :stop (.close system))
-
-
