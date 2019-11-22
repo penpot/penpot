@@ -10,7 +10,7 @@
    [cuerdas.core :as str]
    [beicon.core :as rx]
    [potok.core :as ptk]
-   [uxbox.main.repo :as rp]
+   [uxbox.main.repo.core :as rp]
    [uxbox.main.data.pages :as udp]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.spec :as us]
@@ -91,8 +91,7 @@
 (defrecord FetchProjects []
   ptk/WatchEvent
   (watch [_ state stream]
-    (->> (rp/req :fetch/projects)
-         (rx/map :payload)
+    (->> (rp/query :projects)
          (rx/map projects-fetched))))
 
 (defn fetch-projects
@@ -117,8 +116,7 @@
   ptk/WatchEvent
   (watch [_ state stream]
     (let [project (get-in state [:projects id])]
-      (->> (rp/req :update/project project)
-           (rx/map :payload)
+      (->> (rp/mutation :update-project project)
            (rx/map project-persisted)))))
 
 (defn persist-project
@@ -149,7 +147,7 @@
   (watch [_ state s]
     (letfn [(on-success [_]
               #(dissoc-project % id))]
-      (->> (rp/req :delete/project id)
+      (->> (rp/mutation :delete-project {:id id})
            (rx/map on-success)))))
 
 (defn delete-project

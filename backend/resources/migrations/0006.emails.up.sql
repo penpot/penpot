@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS email_queue (
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   deleted_at timestamptz DEFAULT NULL,
 
-  data jsonb NOT NULL,
+  data bytea NOT NULL,
 
   priority smallint NOT NULL DEFAULT 10
                     CHECK (priority BETWEEN 0 and 10),

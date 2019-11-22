@@ -25,12 +25,12 @@
   "A new profile registration welcome email."
   (emails/build :register default-context))
 
-;; (defn render
-;;   [email context]
-;;   (let [defaults {:from (:email-from cfg/config)
-;;                   :reply-to (:email-reply-to cfg/config)}]
-;;     (->> (email context)
-;;          (merge defaults))))
+(defn render
+  [email context]
+  (let [defaults {:from (:email-from cfg/config)
+                  :reply-to (:email-reply-to cfg/config)}]
+    (->> (email context)
+         (merge defaults))))
 
 (defn send!
   "Schedule the email for sending."
@@ -42,7 +42,7 @@
         data (->> (email context)
                   (merge defaults)
                   (blob/encode))
-        priority (case (::priority context) :low 1 :high 10)
+        priority (case (:priority context :high) :low 1 :high 10)
         sql "insert into email_queue (data, priority)
              values ($1, $2) returning *"]
     (-> (db/query-one db/pool [sql data priority])

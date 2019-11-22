@@ -13,6 +13,8 @@
    [uxbox.util.exceptions :as ex])
   (:import java.time.Instant))
 
+(s/check-asserts true)
+
 ;; --- Constants
 
 (def email-rx
