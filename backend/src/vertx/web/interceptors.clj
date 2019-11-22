@@ -11,22 +11,25 @@
    [clojure.string :as str]
    [promesa.core :as p]
    [reitit.core :as r]
+   [vertx.http :as vh]
    [vertx.web :as vw]
+   [vertx.util :as vu]
    [sieppari.context :as spx]
    [sieppari.core :as sp])
   (:import
    clojure.lang.Keyword
    clojure.lang.MapEntry
-   java.util.Map
-   java.util.Map$Entry
-   io.vertx.core.Vertx
-   io.vertx.core.Handler
    io.vertx.core.Future
+   io.vertx.core.Handler
+   io.vertx.core.MultiMap
+   io.vertx.core.Vertx
    io.vertx.core.http.Cookie
    io.vertx.core.http.HttpServerRequest
    io.vertx.core.http.HttpServerResponse
    io.vertx.ext.web.FileUpload
-   io.vertx.ext.web.RoutingContext))
+   io.vertx.ext.web.RoutingContext
+   java.util.Map
+   java.util.Map$Entry))
 
 ;; --- Cookies
 
@@ -40,71 +43,50 @@
 
 (defn cookies
   []
-  {:enter (fn [data]
-            (let [^HttpServerRequest req (get-in data [:request ::vw/request])
-                  parse-cookie (fn [^Cookie item] [(.getName item) (.getValue item)])
-                  cookies (into {} (map parse-cookie) (vals (.cookieMap req)))]
-              (update data :request assoc :cookies cookies)))
-   :leave (fn [data]
-            (let [cookies (get-in data [:response :cookies])
-                  ^HttpServerResponse res (get-in data [:request ::vw/response])]
-              (when (map? cookies)
-                (reduce-kv #(.addCookie res (build-cookie %1 %2)) nil cookies))
-              data))})
-;; --- Headers
-
-(def ^:private lowercase-keys-t
-  (map (fn [^Map$Entry entry]
-         (MapEntry. (.toLowerCase (.getKey entry)) (.getValue entry)))))
-
-(defn- parse-headers
-  [req]
-  (let [^HttpServerRequest request (::vw/request req)]
-    (into {} lowercase-keys-t (.headers request))))
-
-(defn headers
-  []
-  {:enter (fn [data]
-            (update data :request assoc :headers (parse-headers (:request data))))
-   :leave (fn [data]
-            (let [^HttpServerResponse res (get-in data [:request ::vw/response])
-                  headers (get-in data [:response :headers])]
-              (run! (fn [[key value]]
-                      (.putHeader ^HttpServerResponse res
-                                  ^String (name key)
-                                  ^String (str value)))
-                    headers)
-              data))})
+  {:enter
+   (fn [data]
+     (let [^HttpServerRequest req (get-in data [:request ::vh/request])
+           parse-cookie (fn [^Cookie item] [(.getName item) (.getValue item)])
+           cookies (into {} (map parse-cookie) (vals (.cookieMap req)))]
+       (update data :request assoc :cookies cookies)))
+   :leave
+   (fn [data]
+     (let [cookies (get-in data [:response :cookies])
+           ^HttpServerResponse res (get-in data [:request ::vh/response])]
+       (when (map? cookies)
+         (vu/doseq [[key val] cookies]
+           (.addCookie res (build-cookie key val))))
+       data))})
 
 ;; --- Params
 
-(defn- parse-param-entry
-  [acc ^Map$Entry item]
-  (let [key (keyword (.toLowerCase (.getKey item)))
-        prv (get acc key ::default)]
-    (cond
-      (= prv ::default)
-      (assoc! acc key (.getValue item))
-
-      (vector? prv)
-      (assoc! acc key (conj prv (.getValue item)))
-
-      :else
-      (assoc! acc key [prv (.getValue item)]))))
-
 (defn- parse-params
-  [req]
-  (let [request (::vw/request req)]
-    (persistent!
-     (reduce parse-param-entry
-             (transient {})
-             (.params ^HttpServerResponse request)))))
+  [^HttpServerRequest request]
+  (let [params (.params request)
+        it (.iterator ^MultiMap params)]
+    (loop [m (transient {})]
+      (if (.hasNext it)
+        (let [^Map$Entry o (.next it)
+              key (keyword (.toLowerCase (.getKey o)))
+              prv (get m key ::default)
+              val (.getValue o)]
+          (cond
+            (= prv ::default)
+            (recur (assoc! m key val))
+
+            (vector? prv)
+            (recur (assoc! m key (conj prv val)))
+
+            :else
+            (recur (assoc! m key [prv val]))))
+        (persistent! m)))))
 
 (defn params
   ([] (params nil))
   ([{:keys [attr] :or {attr :params}}]
    {:enter (fn [data]
-             (let [params (parse-params (:request data))]
+             (let [request (get-in data [:request ::vh/request])
+                   params (parse-params request)]
                (update data :request assoc attr params)))}))
 
 ;; --- Uploads

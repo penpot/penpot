@@ -208,8 +208,6 @@
   (let [opts (DeploymentOptions.)]
     (when instances (.setInstances opts (int instances)))
     (when worker (.setWorker opts worker))
-    ;; (.setInstances opts 4)
-    ;; (.setWorkerPoolSize opts 4)
     opts))
 
 (defn- opts->vertx-options

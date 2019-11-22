@@ -33,23 +33,3 @@
       java.lang.AutoCloseable
       (close [_]
         (.cancelTimer system timer-id)))))
-
-(defn schedule-task!
-  [vsm ms f]
-  (let [^Vertx system (vu/resolve-system vsm)
-        tid* (atom nil)
-        task (fn wrapped-task []
-               (-> (p/do! (f))
-                   (p/then (fn [_]
-                             (let [tid (schedule-task! vsm ms wrapped-task)]
-                               (reset! tid* tid)
-                               nil)))))
-        tid  (schedule-task! vsm ms task)]
-    (reset! tid* tid)
-    (reify
-      java.lang.AutoCloseable
-      (close [this]
-        (locking this
-          (when-let [timer-id (deref tid*)]
-            (.cancelTimer system timer-id)
-            (reset! tid* nil)))))))

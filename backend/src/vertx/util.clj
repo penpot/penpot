@@ -5,6 +5,7 @@
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns vertx.util
+  (:refer-clojure :exclude [doseq])
   (:require [promesa.core :as p])
   (:import io.vertx.core.Vertx
            io.vertx.core.Handler
@@ -37,4 +38,14 @@
       (if (.failed ar)
         (p/reject! d (.cause ar))
         (p/resolve! d (.result ar))))))
+
+(defmacro doseq
+  "A faster version of doseq."
+  [[bsym csym] & body]
+  `(let [it# (.iterator ~csym)]
+     (loop []
+       (when (.hasNext it#)
+         (let [~bsym (.next it#)]
+           ~@body
+           (recur))))))
 
