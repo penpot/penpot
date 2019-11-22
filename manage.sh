@@ -13,7 +13,7 @@ function build-devenv {
     echo "Building development image $IMGNAME:latest with UID $EXTERNAL_UID..."
 
     local EXTERNAL_UID=${1:-$(id -u)}
-    docker-compose -p uxbox -f docker/devenv/docker-compose.yaml \
+    docker-compose -p uxbox-devenv -f docker/devenv/docker-compose.yaml \
         build --build-arg EXTERNAL_UID=$EXTERNAL_UID --force-rm;
 }
 
@@ -25,19 +25,19 @@ function build-devenv-if-not-exists {
 
 function start-devenv {
     build-devenv-if-not-exists $@;
-    docker-compose -p uxbox -f docker/devenv/docker-compose.yaml up -d;
+    docker-compose -p uxbox-devenv -f docker/devenv/docker-compose.yaml up -d;
 }
 
 function stop-devenv {
-    docker-compose -p uxbox -f docker/devenv/docker-compose.yaml stop -t 2;
+    docker-compose -p uxbox-devenv -f docker/devenv/docker-compose.yaml stop -t 2;
 }
 
 function run-devenv {
-    if [[ ! $(docker ps -f "name=uxbox-devenv" -q) ]]; then
+    if [[ ! $(docker ps -f "name=uxbox-devenv-main" -q) ]]; then
         start-devenv
     fi
 
-    docker exec -ti uxbox-devenv /home/uxbox/start.sh;
+    docker exec -ti uxbox-devenv-main /home/uxbox/start.sh;
 }
 
 function run-all-tests {

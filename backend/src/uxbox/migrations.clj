@@ -14,7 +14,7 @@
 
 ;; --- Migrations
 
-(def migrations
+(def +migrations+
   {:name "uxbox-main"
    :steps
    [{:desc "Initial triggers and utils."
@@ -50,7 +50,7 @@
 (defn migrate
   []
   (with-open [ctx (mg/context db/pool)]
-    @(mg/migrate ctx migrations)))
+    @(mg/migrate ctx +migrations+)))
 
 (defstate migrations
   :start (migrate))
