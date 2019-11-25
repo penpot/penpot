@@ -142,7 +142,7 @@
 ;; --- Mutation: Update Page Metadata
 
 (s/def ::update-page-metadata
-  (s/keys :req-un [::data ::user ::project-id ::name ::metadata ::id]))
+  (s/keys :req-un [::user ::project-id ::name ::metadata ::id]))
 
 (sv/defmutation :update-page-metadata
   {:doc "Update an existing page."

@@ -1,4 +1,4 @@
-(ns uxbox.tests.test-projects
+(ns uxbox.tests.test-services-projects
   (:require
    [clojure.test :as t]
    [promesa.core :as p]

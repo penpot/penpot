@@ -1,4 +1,4 @@
-(ns uxbox.tests.test-pages
+(ns uxbox.tests.test-services-pages
   (:require
    [clojure.spec.alpha :as s]
    [clojure.test :as t]
@@ -20,13 +20,14 @@
               :project-id (:id proj)
               :name "test page"
               :user (:id user)}
-        [err rsp] (th/try-on (sv/mutation data))]
-    (t/is (nil? err))
-    (t/is (uuid? (:id rsp)))
-    (t/is (= (:user data) (:user-id rsp)))
-    (t/is (= (:name data) (:name rsp)))
-    (t/is (= (:data data) (:data rsp)))
-    (t/is (= (:metadata data) (:metadata rsp)))))
+        res (th/try-on! (sv/mutation data))]
+    (t/is (nil? (:error res)))
+    (t/is (uuid? (get-in res [:result :id])))
+    (let [rsp (:result res)]
+      (t/is (= (:user data) (:user-id rsp)))
+      (t/is (= (:name data) (:name rsp)))
+      (t/is (= (:data data) (:data rsp)))
+      (t/is (= (:metadata data) (:metadata rsp))))))
 
 (t/deftest test-mutation-update-page
   (let [user @(th/create-user db/pool 1)
@@ -54,7 +55,7 @@
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         page @(th/create-page db/pool (:id user) (:id proj) 1)
-        data {::sv/type :update-page
+        data {::sv/type :update-page-metadata
               :id (:id page)
               :metadata {:foo 2}
               :project-id (:id proj)
@@ -91,7 +92,7 @@
               :user (:id user)}
         res (th/try-on! (sv/query data))]
 
-    (th/print-result! res)
+    ;; (th/print-result! res)
     (t/is (nil? (:error res)))
     (t/is (vector? (:result res)))
     (t/is (= 1 (count (:result res))))

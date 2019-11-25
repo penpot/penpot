@@ -137,9 +137,17 @@
        {:error (handle-error e#)
         :result nil})))
 
+(defmacro try!
+  [expr]
+  `(try
+     {:error nil
+      :result ~expr}
+     (catch Exception e#
+       {:error (handle-error e#)
+        :result nil})))
+
 (defn print-result!
   [{:keys [error result]}]
-
   (if error
     (do
       (println "====> START ERROR")

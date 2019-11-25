@@ -1,4 +1,4 @@
-(ns uxbox.tests.test-kvstore
+(ns uxbox.tests.test-services-kvstore
   (:require
    [clojure.spec.alpha :as s]
    [clojure.test :as t]

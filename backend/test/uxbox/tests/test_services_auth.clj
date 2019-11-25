@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.tests.test-auth
+(ns uxbox.tests.test-services-auth
   (:require
    [clojure.test :as t]
    [promesa.core :as p]
