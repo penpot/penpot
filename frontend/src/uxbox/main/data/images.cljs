@@ -72,7 +72,7 @@
   ptk/UpdateEvent
   (update [_ state]
     (reduce (fn [state {:keys [id user] :as item}]
-              (let [type (if (uuid/zero? (:user item)) :builtin :own)
+              (let [type (if (uuid/zero? (:user-id item)) :builtin :own)
                     item (assoc item :type type)]
                 (assoc-in state [:images-collections id] item)))
             state
