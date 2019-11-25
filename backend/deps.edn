@@ -51,6 +51,7 @@
                 org.clojure/tools.namespace {:mvn/version "0.3.1"}
                 fipp/fipp {:mvn/version "0.6.21"}
                 criterium/criterium {:mvn/version "0.4.5"}
+                mockery/mockery {:mvn/version "0.1.4"}
                 }
    :extra-paths ["test"]}
   :repl {:main-opts  ["-m" "rebel-readline.main"]}

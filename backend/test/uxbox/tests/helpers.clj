@@ -19,7 +19,6 @@
   (let [config (cfg/read-test-config)]
     (-> (mount/only #{#'uxbox.config/config
                       #'uxbox.config/secret
-                      ;; #'uxbox.db/datasource
                       #'uxbox.core/system
                       #'uxbox.db/pool
                       #'uxbox.migrations/migrations

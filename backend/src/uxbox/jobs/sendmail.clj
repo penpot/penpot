@@ -53,8 +53,7 @@
   [conn id]
   (let [sql "update email_queue
                 set status = 'ok'
-              where id = $1
-                and deleted_at is null;"]
+              where id = $1"]
     (-> (db/query-one conn [sql id])
         (p/then (constantly nil)))))
 
@@ -111,11 +110,13 @@
 (defn send-email
   [conn {:keys [id data] :as entry}]
   (-> (impl-sendmail data)
-      (p/then (fn [_]
-                (mark-email-as-sent conn id)))
-      (p/catch (fn [e]
-                 (log/error e "Error on sending email" id)
-                 (mark-email-as-failed conn id)))))
+      (p/handle (fn [v e]
+                  (if e
+                    (do
+                      (log/error e "Error on sending email" id)
+                      (mark-email-as-failed conn id))
+                    (mark-email-as-sent conn id))))))
+
 
 ;; --- Main Task Functions
 
@@ -123,7 +124,8 @@
   [opts]
   (db/with-atomic [conn db/pool]
     (p/let [items (fetch-emails conn)]
-      (p/run! (partial send-email conn) items))))
+      (-> (p/run! (partial send-email conn) items)
+          (p/then' (constantly (count items)))))))
 
 (defn send-failed-emails
   [opts]
