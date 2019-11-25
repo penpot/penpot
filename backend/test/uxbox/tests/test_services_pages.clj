@@ -11,7 +11,7 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest test-mutation-create-page
+(t/deftest mutation-create-page
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         data {::sv/type :create-page
@@ -29,7 +29,7 @@
       (t/is (= (:data data) (:data rsp)))
       (t/is (= (:metadata data) (:metadata rsp))))))
 
-(t/deftest test-mutation-update-page
+(t/deftest mutation-update-page
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         page @(th/create-page db/pool (:id user) (:id proj) 1)
@@ -51,7 +51,7 @@
     (t/is (= (:data data) (get-in res [:result :data])))
     (t/is (= (:metadata data) (get-in res [:result :metadata])))))
 
-(t/deftest test-mutation-update-page-metadata
+(t/deftest mutation-update-page-metadata
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         page @(th/create-page db/pool (:id user) (:id proj) 1)
@@ -70,7 +70,7 @@
     (t/is (= (:name data) (get-in res [:result :name])))
     (t/is (= (:metadata data) (get-in res [:result :metadata])))))
 
-(t/deftest test-mutation-delete-page
+(t/deftest mutation-delete-page
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         page @(th/create-page db/pool (:id user) (:id proj) 1)
@@ -83,7 +83,7 @@
     (t/is (nil? (:error res)))
     (t/is (nil? (:result res)))))
 
-(t/deftest test-query-pages-by-project
+(t/deftest query-pages-by-project
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         page @(th/create-page db/pool (:id user) (:id proj) 1)
@@ -99,7 +99,7 @@
     (t/is (= "page1" (get-in res [:result 0 :name])))
     (t/is (:id proj) (get-in res [:result 0 :project-id]))))
 
-;; (t/deftest test-http-page-history-update
+;; (t/deftest http-page-history-update
 ;;   (with-open [conn (db/connection)]
 ;;     (let [user (th/create-user conn 1)
 ;;           proj (uspr/create-project conn {:user (:id user) :name "proj1"})

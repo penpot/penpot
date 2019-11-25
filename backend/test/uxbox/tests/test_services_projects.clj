@@ -10,7 +10,7 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest test-query-project-list
+(t/deftest query-project-list
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         data {::sv/type :projects
@@ -21,7 +21,7 @@
     (t/is (= (:id proj) (get-in rsp [0 :id])))
     (t/is (= (:name proj (get-in rsp [0 :name]))))))
 
-(t/deftest test-mutation-create-project
+(t/deftest mutation-create-project
   (let [user @(th/create-user db/pool 1)
         data {::sv/type :create-project
               :user (:id user)
@@ -32,7 +32,7 @@
     (t/is (= (:user data) (:user-id rsp)))
     (t/is (= (:name data) (:name rsp)))))
 
-(t/deftest test-mutation-update-project
+(t/deftest mutation-update-project
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         data {::sv/type :update-project
@@ -46,7 +46,7 @@
     (t/is (= (:user data) (:user-id rsp)))
     (t/is (= (:name data) (:name rsp)))))
 
-(t/deftest test-mutation-delete-project
+(t/deftest mutation-delete-project
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         data {::sv/type :delete-project
