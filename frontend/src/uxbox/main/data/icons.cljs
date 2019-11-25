@@ -46,34 +46,29 @@
 
 ;; --- Collections Fetched
 
-(deftype CollectionsFetched [items]
-  cljs.core/IDeref
-  (-deref [_] items)
-
-  ptk/UpdateEvent
-  (update [_ state]
-    (reduce (fn [state {:keys [id user] :as item}]
-              (let [type (if (uuid/zero? (:user item)) :builtin :own)
-                    item (assoc item :type type)]
-                (assoc-in state [:icons-collections id] item)))
-            state
-            items)))
-
 (defn collections-fetched
   [items]
-  (CollectionsFetched. items))
+  (ptk/reify ::collections-fetched
+    cljs.core/IDeref
+    (-deref [_] items)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce (fn [state {:keys [id user] :as item}]
+                (let [type (if (uuid/zero? (:user-id item)) :builtin :own)
+                      item (assoc item :type type)]
+                  (assoc-in state [:icons-collections id] item)))
+              state
+              items))))
 
 ;; --- Fetch Collections
 
-(defrecord FetchCollections []
-  ptk/WatchEvent
-  (watch [_ state s]
-    (->> (rp/query! :icons-collections)
-         (rx/map collections-fetched))))
-
-(defn fetch-collections
-  []
-  (FetchCollections.))
+(def fetch-collections
+  (ptk/reify ::fetch-collections
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query! :icons-collections)
+           (rx/map collections-fetched)))))
 
 ;; --- Collection Created
 
@@ -107,7 +102,7 @@
 
 (defn collections-fetched?
   [v]
-  (instance? CollectionsFetched v))
+  (= ::collections-fetched (ptk/type v)))
 
 ;; --- Collection Updated
 

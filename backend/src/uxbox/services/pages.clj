@@ -159,7 +159,6 @@
     (-> (db/query-one db/pool [sql id user name mdata])
         (p/then' decode-row))))
 
-
 ;; --- Mutation: Delete Page
 
 (s/def ::delete-page

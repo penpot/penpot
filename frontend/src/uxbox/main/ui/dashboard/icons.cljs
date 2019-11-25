@@ -424,8 +424,7 @@
                         (uuid? id) (seek #(= id (:id %)) colls)
                         :else (first colls))
         id (:id selected-coll)]
-
-    (mf/use-effect #(st/emit! (di/fetch-collections)))
+    (mf/use-effect #(st/emit! di/fetch-collections))
     (mf/use-effect {:fn #(st/emit! (di/initialize)
                                    (di/fetch-icons id))
                     :deps #js [id type]})
