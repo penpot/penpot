@@ -325,7 +325,7 @@
   [{:keys [shape zoom]}]
   (let [{:keys [x1 y1 width height]} (geom/selection-rect shape)]
     [:g
-     (shapes/render-shape shape)
+     [:& shapes/shape-wrapper {:shape shape}]
      [:rect.main {:x x1 :y y1
                   :width width
                   :height height
@@ -347,7 +347,7 @@
             (st/emit! (dw/set-tooltip nil)))]
     (when-let [{:keys [x y] :as segment} (first (:segments shape))]
       [:g
-       (shapes/render-shape shape)
+       [:& shapes/shape-wrapper {:shape shape}]
        (when (not= :curve (:type shape))
          [:circle.close-bezier
           {:cx x

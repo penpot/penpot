@@ -23,6 +23,8 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.matrix :as gmt]))
 
+;; TODO: this code need a good refactor
+
 ;; --- Events
 
 (defn handle-mouse-down
@@ -33,13 +35,13 @@
     (dom/stop-propagation event)
     (common/on-mouse-down event shape selected)))
 
-;; --- Text Component
+;; --- Text Wrapper
 
 (declare text-shape-html)
 (declare text-shape-wrapper)
 (declare text-shape-edit)
 
-(mf/defc text-component
+(mf/defc text-wrapper
   [{:keys [shape] :as props}]
   (let [{:keys [id x1 y1 content group]} shape
         selected (mf/deref refs/selected-shapes)

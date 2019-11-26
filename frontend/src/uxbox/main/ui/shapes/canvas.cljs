@@ -24,7 +24,7 @@
 (def canvas-default-props
   {:fill-color "#ffffff"})
 
-(mf/defc canvas-component
+(mf/defc canvas-wrapper
   [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))

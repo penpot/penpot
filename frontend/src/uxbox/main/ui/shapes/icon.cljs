@@ -17,11 +17,11 @@
    [uxbox.util.geom.point :as gpt]))
 
 
-;; --- Icon Component
+;; --- Icon Wrapper
 
 (declare icon-shape)
 
-(mf/defc icon-component
+(mf/defc icon-wrapper
   [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))

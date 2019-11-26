@@ -16,11 +16,11 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
 
-;; --- Rect Component
+;; --- Rect Wrapper
 
 (declare rect-shape)
 
-(mf/defc rect-component
+(mf/defc rect-wrapper
   [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))

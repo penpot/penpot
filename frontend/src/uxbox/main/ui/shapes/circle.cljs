@@ -15,11 +15,11 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
 
-;; --- Circle Component
+;; --- Circle Wrapper
 
 (declare circle-shape)
 
-(mf/defc circle-component
+(mf/defc circle-wrapper
   [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))

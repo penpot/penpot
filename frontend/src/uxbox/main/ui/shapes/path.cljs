@@ -17,11 +17,11 @@
    [uxbox.util.data :refer [classnames normalize-props]]
    [uxbox.util.geom.matrix :as gmt]))
 
-;; --- Path Component
+;; --- Path Wrapper
 
 (declare path-shape)
 
-(mf/defc path-component
+(mf/defc path-wrapper
   [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))]

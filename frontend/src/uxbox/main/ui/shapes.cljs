@@ -18,29 +18,19 @@
    [uxbox.main.ui.shapes.canvas :as canvas]
    [uxbox.main.ui.shapes.text :as text]))
 
-(defn render-shape
-  [shape]
-  (mf/html
-   (case (:type shape)
-     :canvas [:& canvas/canvas-component {:shape shape}]
-     :curve [:& path/path-component {:shape shape}]
-     :text [:& text/text-component {:shape shape}]
-     :icon [:& icon/icon-component {:shape shape}]
-     :rect [:& rect/rect-component {:shape shape}]
-     :path [:& path/path-component {:shape shape}]
-     :image [:& image/image-component {:shape shape}]
-     :circle [:& circle/circle-component {:shape shape}])))
-
-(mf/defc render-shape'
-  {:wrap [mf/wrap-memo]}
-  [{:keys [shape] :as props}]
-  (render-shape shape))
-
-(mf/defc shape-component
+(mf/defc shape-wrapper
   {:wrap [mf/wrap-memo]}
   [{:keys [shape] :as props}]
   (when (and shape (not (:hidden shape)))
-    [:& render-shape' {:shape shape}]))
+    (case (:type shape)
+      :canvas [:& canvas/canvas-wrapper {:shape shape}]
+      :curve [:& path/path-wrapper {:shape shape}]
+      :text [:& text/text-wrapper {:shape shape}]
+      :icon [:& icon/icon-wrapper {:shape shape}]
+      :rect [:& rect/rect-wrapper {:shape shape}]
+      :path [:& path/path-wrapper {:shape shape}]
+      :image [:& image/image-wrapper {:shape shape}]
+      :circle [:& circle/circle-wrapper {:shape shape}])))
 
 (mf/defc canvas-and-shapes
   {:wrap [mf/wrap-memo]}
@@ -50,8 +40,8 @@
         canvas (map #(get shapes-by-id %) (:canvas page []))]
     [:*
      (for [item canvas]
-       [:& shape-component {:shape item :key (:id item)}])
+       [:& shape-wrapper {:shape item :key (:id item)}])
      (for [item shapes]
-       [:& shape-component {:shape item :key (:id item)}])]))
+       [:& shape-wrapper {:shape item :key (:id item)}])]))
 
 

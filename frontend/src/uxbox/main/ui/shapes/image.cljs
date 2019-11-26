@@ -24,11 +24,11 @@
   (-> (l/in [:images id])
       (l/derive st/state)))
 
-;; --- Image Component
+;; --- Image Wrapper
 
 (declare image-shape)
 
-(mf/defc image-component
+(mf/defc image-wrapper
   [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         image (mf/deref (image-ref (:image shape)))
