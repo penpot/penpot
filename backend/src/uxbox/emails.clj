@@ -17,9 +17,13 @@
    [uxbox.util.blob :as blob]
    [uxbox.util.spec :as us]))
 
+;; --- Defaults
+
 (def default-context
   {:static media/resolve-asset
    :comment (constantly nil)})
+
+;; --- Register Email
 
 (s/def ::name ::us/string)
 (s/def ::register
@@ -28,6 +32,8 @@
 (def register
   "A new profile registration welcome email."
   (emails/build ::register default-context))
+
+;; --- Public API
 
 (defn render
   [email context]

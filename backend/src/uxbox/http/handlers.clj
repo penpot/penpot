@@ -6,10 +6,8 @@
 
 (ns uxbox.http.handlers
   (:require
-   [clojure.tools.logging :as log]
    [promesa.core :as p]
    [uxbox.emails :as emails]
-   [uxbox.http.errors :as errors]
    [uxbox.http.session :as session]
    [uxbox.services.core :as sv]
    [uxbox.util.uuid :as uuid]))
