@@ -108,6 +108,20 @@
                                    (.fileUploads ^RoutingContext context))]
                (update data :request assoc attr (persistent! uploads))))}))
 
+;; --- Errors
+
+(defn errors
+  "A error handling interceptor."
+  [handler-fn]
+  {:error
+   (fn [data]
+     (let [request (:request data)
+           error (:error data)
+           response (handler-fn error request)]
+       (-> data
+           (assoc :response response)
+           (dissoc :error))))})
+
 ;; --- CORS
 
 (s/def ::origin string?)

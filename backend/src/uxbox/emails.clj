@@ -21,9 +21,13 @@
   {:static media/resolve-asset
    :comment (constantly nil)})
 
+(s/def ::name ::us/string)
+(s/def ::register
+  (s/keys :req-un [::name]))
+
 (def register
   "A new profile registration welcome email."
-  (emails/build :register default-context))
+  (emails/build ::register default-context))
 
 (defn render
   [email context]

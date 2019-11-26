@@ -91,6 +91,9 @@
    (s/assert keyword? id)
    (fn [context]
      (s/assert ::context context)
+     (when-let [spec (s/get-spec id)]
+       (s/assert spec context))
+
      (let [context (merge extra-context context)
            email (impl-build-email id context)]
        (when-not email

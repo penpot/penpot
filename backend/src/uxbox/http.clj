@@ -41,11 +41,11 @@
                       (vxi/params)
                       (vxi/cors cors-opts)
                       interceptors/parse-request-body
-                      interceptors/format-response-body]
+                      interceptors/format-response-body
+                      (vxi/errors errors/handle)]
 
         routes [["/api" {:interceptors interceptors}
-                 ["/echo" {:interceptors [(session/auth)]
-                           :all handlers/echo-handler}]
+                 ["/echo" {:all handlers/echo-handler}]
                  ["/login" {:post handlers/login-handler}]
                  ["/logout" {:post handlers/logout-handler}]
                  ["/register" {:post handlers/register-handler}]

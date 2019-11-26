@@ -8,6 +8,7 @@
   (:require
    [clojure.tools.logging :as log]
    [promesa.core :as p]
+   [uxbox.emails :as emails]
    [uxbox.http.errors :as errors]
    [uxbox.http.session :as session]
    [uxbox.services.core :as sv]
@@ -20,11 +21,9 @@
                     {::sv/type (keyword type)
                      :user (:user req)})]
     (-> (sv/query (with-meta data {:req req}))
-        (p/handle (fn [result error]
-                    (if error
-                      (errors/handle error)
-                      {:status 200
-                       :body result}))))))
+        (p/then' (fn [result]
+                  {:status 200
+                   :body result})))))
 
 (defn mutation-handler
   [req]
@@ -35,10 +34,8 @@
                     {::sv/type (keyword type)
                      :user (:user req)})]
     (-> (sv/mutation (with-meta data {:req req}))
-        (p/handle (fn [result error]
-                    (if error
-                      (errors/handle error)
-                      {:status 200 :body result}))))))
+        (p/then' (fn [result]
+                   {:status 200 :body result})))))
 
 (defn login-handler
   [req]
@@ -46,22 +43,20 @@
         user-agent (get-in req [:headers "user-agent"])]
     (-> (sv/mutation (assoc data ::sv/type :login))
         (p/then #(session/create % user-agent))
-        (p/then (fn [token]
-                  {:status 204
-                   :cookies {"auth-token" {:value token}}
-                   :body ""}))
-        (p/catch errors/handle))))
+        (p/then' (fn [token]
+                   {:status 204
+                    :cookies {"auth-token" {:value token}}
+                    :body ""})))))
 
 (defn logout-handler
   [req]
   (let [token (get-in req [:cookies "auth-token"])
         token (uuid/from-string token)]
     (-> (session/delete token)
-        (p/then (fn [token]
-                  {:status 204
-                   :cookies {"auth-token" {:value nil}}
-                   :body ""}))
-        (p/catch errors/handle))))
+        (p/then' (fn [token]
+                   {:status 204
+                    :cookies {"auth-token" {:value nil}}
+                    :body ""})))))
 
 (defn register-handler
   [req]
@@ -74,8 +69,7 @@
         (p/then' (fn [token]
                   {:status 204
                    :cookies {"auth-token" {:value token}}
-                   :body ""}))
-        (p/catch' errors/handle))))
+                   :body ""})))))
 
 (defn echo-handler
   [req]

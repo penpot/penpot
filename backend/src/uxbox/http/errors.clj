@@ -6,7 +6,9 @@
 
 (ns uxbox.http.errors
   "A errors handling for the http server."
-  (:require [io.aviso.exception :as e]))
+  (:require
+   [clojure.tools.logging :as log]
+   [io.aviso.exception :as e]))
 
 (defmulti handle-exception #(:type (ex-data %)))
 
@@ -30,32 +32,14 @@
 
 (defmethod handle-exception :default
   [err]
-  (println "--- START REQ EXCEPTION ---")
-  (e/write-exception err)
-  (println "--- END REQ EXCEPTION ---")
+  (log/error err "Unhandled exception on request:")
   {:status 500
    :body {:type :exception
           :message (ex-message err)}})
 
-(defn- handle-data-access-exception
-  [err]
-  (let [err (.getCause err)
-        state (.getSQLState err)
-        message (.getMessage err)]
-    (case state
-      "P0002" {:status 412 ;; precondition-failed
-               :body {:message message
-                      :type :occ}}
-      (handle-exception err))))
-
 (defn handle
-  [error]
-  (cond
-    (or (instance? java.util.concurrent.CompletionException error)
-        (instance? java.util.concurrent.ExecutionException error))
-    (handle (.getCause error))
-
-    ;; (instance? org.jooq.exception.DataAccessException error)
-    ;; (handle-data-access-exception error)
-
-    :else (handle-exception error)))
+  [error req]
+  (if (or (instance? java.util.concurrent.CompletionException error)
+          (instance? java.util.concurrent.ExecutionException error))
+    (handle-exception (.getCause error))
+    (handle-exception error)))
