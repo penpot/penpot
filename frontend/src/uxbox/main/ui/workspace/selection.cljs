@@ -154,10 +154,10 @@
   [{:keys [shape modifiers zoom] :as props}]
   (letfn [(on-mouse-down [event index]
             (dom/stop-propagation event)
-
             ;; TODO: this need code ux refactor
             (let [stoper (get-edition-stream-stoper)
-                  stream (rx/take-until stoper ws/mouse-position-deltas)]
+                  stream (->> (ws/mouse-position-deltas @ws/mouse-position)
+                              (rx/take-until stoper))]
               (when @refs/selected-alignment
                 (st/emit! (dw/initial-path-point-align (:id shape) index)))
               (rx/subscribe stream #(on-handler-move % index))))

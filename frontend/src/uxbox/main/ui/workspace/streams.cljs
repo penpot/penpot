@@ -94,9 +94,11 @@
     (rx/subscribe-with ob sub)
     sub))
 
-(defonce mouse-position-deltas
-  (->> mouse-position
-       (rx/sample 10)
+
+(defn mouse-position-deltas
+  [current]
+  (->> (rx/concat (rx/of current)
+                  (rx/sample 10 mouse-position))
        (rx/map #(gpt/divide % @refs/selected-zoom))
        (rx/mapcat (fn [point]
                     (if @refs/selected-alignment
@@ -104,8 +106,7 @@
                       (rx/of point))))
        (rx/buffer 2 1)
        (rx/map (fn [[old new]]
-                 (gpt/subtract new old)))
-       (rx/share)))
+                 (gpt/subtract new old)))))
 
 (defonce viewport-scroll
   (let [sub (rx/behavior-subject nil)

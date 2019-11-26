@@ -100,10 +100,10 @@
                 (st/emit! (dw/select-shape id))
 
                 (> (count selected) 1)
-                (st/emit! (dw/deselect-all)
+                (st/emit! dw/deselect-all
                           (dw/select-shape id))
                 :else
-                (st/emit! (dw/deselect-all)
+                (st/emit! dw/deselect-all
                           (dw/select-shape id)))))
 
           (on-drop [item monitor]
@@ -161,10 +161,10 @@
                 (st/emit! (dw/select-shape id))
 
                 (> (count selected) 1)
-                (st/emit! (dw/deselect-all)
+                (st/emit! dw/deselect-all
                           (dw/select-shape id))
                 :else
-                (st/emit! (dw/deselect-all)
+                (st/emit! dw/deselect-all
                           (dw/select-shape id)))))
 
           (on-drop [item monitor]

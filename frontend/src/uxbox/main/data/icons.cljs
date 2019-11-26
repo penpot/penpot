@@ -20,29 +20,23 @@
 
 ;; --- Initialize
 
-(defrecord Initialize []
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:dashboard :icons] {:selected #{}})))
-
-(defn initialize
-  []
-  (Initialize.))
+(def initialize
+  (ptk/reify ::initialize
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:dashboard :icons] {:selected #{}}))))
 
 ;; --- Select a Collection
-
-(defrecord SelectCollection [type id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (r/navigate :dashboard/icons
-                       {:type type :id id}))))
 
 (defn select-collection
   ([type]
    (select-collection type nil))
   ([type id]
    {:pre [(keyword? type)]}
-   (SelectCollection. type id)))
+   (ptk/reify ::select-collection
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (rx/of (r/navigate :dashboard/icons {:type type :id id}))))))
 
 ;; --- Collections Fetched
 
@@ -61,6 +55,10 @@
               state
               items))))
 
+(defn collections-fetched?
+  [v]
+  (= ::collections-fetched (ptk/type v)))
+
 ;; --- Fetch Collections
 
 (def fetch-collections
@@ -72,48 +70,37 @@
 
 ;; --- Collection Created
 
-(defrecord CollectionCreated [item]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [{:keys [id] :as item} (assoc item :type :own)]
-      (update state :icons-collections assoc id item)))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (select-collection :own (:id item)))))
-
 (defn collection-created
   [item]
-  (CollectionCreated. item))
+  (ptk/reify ::collection-created
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [{:keys [id] :as item} (assoc item :type :own)]
+        (update state :icons-collections assoc id item)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (select-collection :own (:id item))))))
 
 ;; --- Create Collection
 
-(defrecord CreateCollection []
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [name (tr "ds.default-library-title" (gensym "c"))
-          data {:name name}]
-      (->> (rp/mutation! :create-icons-collection data)
-           (rx/map collection-created)))))
-
-(defn create-collection
-  []
-  (CreateCollection.))
-
-(defn collections-fetched?
-  [v]
-  (= ::collections-fetched (ptk/type v)))
+(def create-collection
+  (ptk/reify ::create-collection
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [name (tr "ds.default-library-title" (gensym "c"))
+            data {:name name}]
+        (->> (rp/mutation! :create-icons-collection data)
+             (rx/map collection-created))))))
 
 ;; --- Collection Updated
 
-(defrecord CollectionUpdated [item]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:icons-collections (:id item)]  merge item)))
-
 (defn collection-updated
   [item]
-  (CollectionUpdated. item))
+  (ptk/reify ::collection-updated
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:icons-collections (:id item)]  merge item))))
 
 ;; --- Update Collection
 

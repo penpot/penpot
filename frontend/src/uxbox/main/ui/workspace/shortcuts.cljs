@@ -39,7 +39,7 @@
    :ctrl+b #(st/emit! (dw/select-for-drawing :rect))
    :ctrl+e #(st/emit! (dw/select-for-drawing :circle))
    :ctrl+t #(st/emit! (dw/select-for-drawing :text))
-   :esc #(st/emit! (dw/deselect-all))
+   :esc #(st/emit! dw/deselect-all)
    :delete #(st/emit! dw/delete-selected)
    :ctrl+up #(st/emit! (dw/order-selected-shapes :up))
    :ctrl+down #(st/emit! (dw/order-selected-shapes :down))

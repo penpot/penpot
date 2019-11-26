@@ -378,38 +378,38 @@
       (reduce ds/dissoc-shape state
               (map #(get-in state [:shapes %]) ids)))))
 
-(defrecord SelectShape [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])
-          selected (get-in state [:workspace pid :selected])]
-      (if (contains? selected id)
-        (update-in state [:workspace pid :selected] disj id)
-        (update-in state [:workspace pid :selected] conj id))))
-
-  ptk/WatchEvent
-  (watch [_ state s]
-    (rx/of (activate-flag :element-options))))
-
 (defn select-shape
   "Mark a shape selected for drawing."
   [id]
-  {:pre [(uuid? id)]}
-  (SelectShape. id))
+  (s/assert ::us/uuid id)
+  (ptk/reify ::select-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (prn "select-shape$update" id)
+      (let [pid (get-in state [:workspace :current])
+            selected (get-in state [:workspace pid :selected])]
+        (update-in state [:workspace pid :selected]
+                   (fn [selected]
+                     (if (contains? selected id)
+                       (disj selected id)
+                       (conj selected id))))))
 
-(defrecord DeselectAll []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [pid (get-in state [:workspace :current])]
-      (update-in state [:workspace pid] #(-> %
-                                             (assoc :selected #{})
-                                             (dissoc :selected-canvas))))))
+    ptk/WatchEvent
+    (watch [_ state s]
+      (prn "select-shape$watch" id)
+      (rx/of (activate-flag :element-options)))))
 
-(defn deselect-all
+(def deselect-all
   "Clear all possible state of drawing, edition
   or any similar action taken by the user."
-  []
-  (DeselectAll.))
+  (ptk/reify ::deselect-all
+    ptk/UpdateEvent
+    (update [_ state]
+      (prn "deselect-all")
+      (let [pid (get-in state [:workspace :current])]
+        (update-in state [:workspace pid] #(-> %
+                                               (assoc :selected #{})
+                                               (dissoc :selected-canvas)))))))
 
 ;; --- Select First Shape
 
@@ -1030,7 +1030,7 @@
                (rx/buffer-time 300)
                (rx/map #(into* #{} %))
                (rx/filter (complement empty?))
-               (rx/tap #(prn "changed" %))
+               ;; (rx/tap #(prn "changed" %))
                (rx/mapcat (fn [items] (rx/from-coll
                                        (map rehash-shape-relationship items))))
                (rx/take-until stoper)))))))

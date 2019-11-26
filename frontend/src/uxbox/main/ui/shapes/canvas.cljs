@@ -32,7 +32,7 @@
         shape (merge canvas-default-props shape)]
     (letfn [(on-double-click [event]
               (dom/prevent-default event)
-              (st/emit! (dw/deselect-all)
+              (st/emit! dw/deselect-all
                         (dw/select-shape (:id shape))))]
       [:g.shape {:class (when selected? "selected")
                  :on-double-click on-double-click

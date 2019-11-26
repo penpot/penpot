@@ -245,31 +245,17 @@
    {:pre [(or (uuid? id) (nil? id)) (fn? on-uploaded)]}
    (CreateImages. id files on-uploaded)))
 
-;; --- Image Updated
-
-(defrecord ImagePersisted [id data]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:images id] data)))
-
-(defn image-persisted
-  [{:keys [id] :as data}]
-  {:pre [(map? data) (uuid? id)]}
-  (ImagePersisted. id data))
-
 ;; --- Update Image
-
-(defrecord PersistImage [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [data (get-in state [:images id])]
-      (->> (rp/mutation! :update-image data)
-           (rx/map image-persisted)))))
 
 (defn persist-image
   [id]
   {:pre [(uuid? id)]}
-  (PersistImage. id))
+  (ptk/reify ::persist-image
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [data (get-in state [:images id])]
+        (->> (rp/mutation! :update-image data)
+             (rx/ignore))))))
 
 ;; --- Images Fetched
 

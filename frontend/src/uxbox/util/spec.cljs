@@ -50,7 +50,6 @@
 (s/def ::email email?)
 (s/def ::color color?)
 (s/def ::string string?)
-(s/def ::number number?)
 (s/def ::positive pos?)
 (s/def ::inst inst?)
 (s/def ::keyword keyword?)
@@ -62,15 +61,18 @@
   (s/and string? #(not (str/empty? %))))
 
 
-(defn- conform-number-str
+(defn- conform-number
   [v]
   (cond
-    (re-matches number-rx v) (js/parseFloat v)
     (number? v) v
+    (re-matches number-rx v) (js/parseFloat v)
     :else ::s/invalid))
 
-(s/def ::number-str
-  (s/conformer conform-number-str str))
+(s/def ::number
+  (s/conformer conform-number str))
+
+;; NOTE: backward compatibility (revisit the code and remove)
+(s/def ::number-str ::number)
 
 (s/def ::color color?)
 

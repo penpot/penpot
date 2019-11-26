@@ -92,7 +92,6 @@
 
 (mf/defc sitemap-toolbox
   [{:keys [project-id current-page-id] :as props}]
-  (prn "sitemap-toolbox" props)
   (let [project-iref (mf/use-memo {:deps #js [project-id]
                                    :fn #(-> (l/in [:projects project-id])
                                             (l/derive st/state))})

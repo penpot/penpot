@@ -6,6 +6,7 @@
 
 (ns ^:figwheel-hooks uxbox.main
   (:require
+   [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.users :as udu]
@@ -27,6 +28,7 @@
 ;; --- i18n
 
 (declare reinit)
+(s/check-asserts true)
 
 (i18n/update-locales! (fn [locales]
                         (-> locales

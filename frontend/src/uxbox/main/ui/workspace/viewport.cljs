@@ -90,7 +90,7 @@
       (watch [_ state stream]
         (let [stoper (rx/filter #(or (dw/interrupt? %) (uws/mouse-up? %)) stream)]
           (rx/concat
-           (rx/of (dw/deselect-all))
+           (rx/of dw/deselect-all)
            (->> uws/mouse-position
                 (rx/map (fn [pos] #(update-state % pos)))
                 (rx/take-until stoper))

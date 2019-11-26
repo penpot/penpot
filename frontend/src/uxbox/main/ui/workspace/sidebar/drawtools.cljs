@@ -57,7 +57,7 @@
                       (dw/select-for-drawing tool)))
           (toggle-ruler [event]
             (st/emit! (dw/select-for-drawing nil)
-                      (dw/deselect-all)
+                      dw/deselect-all
                       (dw/toggle-ruler)))]
 
     (let [selected (mf/deref refs/selected-drawing-tool)

@@ -4,6 +4,11 @@
 ;;
 ;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
+;; TODO: we need to consider moving this under uxbox.ui.workspace
+;; namespace because this is logic only related to workspace
+;; manipulation. Staying here causes a lot of confusion and finding
+;; this code is also very difficult.
+
 (ns uxbox.main.ui.shapes.common
   (:require
    [potok.core :as ptk]
@@ -13,26 +18,29 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.workspace.streams :as uws]
+   [uxbox.main.workers :as uwrk]
    [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.geom.point :as gpt]
    [uxbox.util.dom :as dom]))
 
 ;; --- Shape Movement (by mouse)
 
 (def start-move-selected
-  (reify
+  (ptk/reify ::start-move-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [pid (get-in state [:workspace :current])
             flags (get-in state [:workspace pid :flags])
             selected (get-in state [:workspace pid :selected])
-            stoper (rx/filter uws/mouse-up? stream)]
+            stoper (rx/filter uws/mouse-up? stream)
+            position @uws/mouse-position]
         (rx/concat
          (when (refs/alignment-activated? flags)
            (rx/of (dw/initial-selection-align selected)))
-         (->> uws/mouse-position-deltas
+         (->> (uws/mouse-position-deltas position)
               (rx/map #(dw/apply-temporal-displacement-in-bulk selected %))
               (rx/take-until stoper))
-          (rx/of (dw/materialize-current-modifier-in-bulk selected)))))))
+         (rx/of (dw/materialize-current-modifier-in-bulk selected)))))))
 
 (defn on-mouse-down
   [event {:keys [id type] :as shape} selected]
@@ -51,7 +59,7 @@
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
-          (st/emit! (dw/deselect-all)
+          (st/emit! dw/deselect-all
                     (dw/select-shape id)
                     start-move-selected))
 
@@ -60,7 +68,7 @@
           (dom/stop-propagation event)
           (if (kbd/shift? event)
             (st/emit! (dw/select-shape id))
-            (st/emit! (dw/deselect-all)
+            (st/emit! dw/deselect-all
                       (dw/select-shape id)
                       start-move-selected)))
         :else
