@@ -34,14 +34,16 @@
   {:doc "Query all projects"
    :spec ::projects-query}
   [{:keys [user] :as params}]
-  (let [sql "select pr.*,
-                    ps.token as share_token
-               from projects as pr
-              inner join project_shares as ps
-                      on (ps.project = pr.id)
-              where pr.deleted_at is null
-                and pr.user_id = $1
-              order by pr.created_at asc"]
+  (let [sql "select distinct on (p.id, p.created_at)
+                    p.*,
+                    first_value(pg.id)
+                      over (partition by p.id order by pg.created_at)
+                      as ref_page_id
+              from projects as p
+             right join pages as pg
+                     on (pg.project_id = p.id)
+             where p.user_id = $1
+             order by p.created_at asc"]
     (db/query db/pool [sql user])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
