@@ -116,8 +116,8 @@
   [conn sql params {:keys [xfm] :as opts}]
   (let [conn (if (instance? IDeref conn) @conn conn)]
     (-> (impl-execute conn sql params)
-        (p/catch' (fn [err]
-                    (p/rejected err)))
+        (p/catch (fn [err]
+                   (p/rejected err)))
         (p/then' (fn [rows]
                    (if xfm
                      (into [] xfm rows)
