@@ -15,7 +15,7 @@
 (mf/defc background
   {:wrap [mf/wrap-memo]}
   [{:keys [background] :as metadata}]
-  [:rect
+  #_[:rect
    {:x 0 :y 0
     :width "100%"
     :height "100%"
@@ -28,7 +28,7 @@
 (mf/defc canvas
   {:wrap [mf/wrap-memo]}
   [{:keys [page] :as props}]
-  (let [{:keys [metadata id]} page
+  #_(let [{:keys [metadata id]} page
         {:keys [width height]} metadata]
     [:div.view-canvas
      [:svg.page-layout {:width width

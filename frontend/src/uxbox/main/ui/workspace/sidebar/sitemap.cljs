@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.sitemap
@@ -78,7 +78,8 @@
 (mf/defc pages-list
   [{:keys [project current-page-id] :as props}]
   (let [pages-map (mf/deref pages-map-iref)
-        pages (map #(get pages-map %) (:pages project))
+        pages (->> (vals pages-map)
+                   (filter #(= (:project-id %) (:id project))))
         deletable? (> (count pages) 1)]
     [:ul.element-list
      (for [[index item] (map-indexed vector pages)]

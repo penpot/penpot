@@ -10,7 +10,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [uxbox.main.repo :as rp]
+   [uxbox.main.repo.core :as rp]
    [uxbox.util.data :refer [index-by-id concatv]]
    [uxbox.util.spec :as us]
    [uxbox.util.timers :as ts]
@@ -159,7 +159,7 @@
   [id pages]
   (s/assert ::us/uuid id)
   (s/assert ::us/coll pages)
-  (ptk/reify ::page-fetched
+  (ptk/reify ::pages-fetched
     IDeref
     (-deref [_] (list id pages))
 
@@ -175,7 +175,7 @@
 
 (defn pages-fetched?
   [v]
-  (= ::page-fetched (ptk/type v)))
+  (= ::pages-fetched (ptk/type v)))
 
 ;; --- Fetch Pages (by project id)
 
@@ -185,9 +185,40 @@
   (reify
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/req :fetch/pages-by-project {:project id})
-           (rx/map :payload)
+      (->> (rp/query :pages-by-project {:project-id id})
            (rx/map #(pages-fetched id %))))))
+
+;; --- Page Fetched
+
+(defn page-fetched
+  [data]
+  (s/assert any? data) ;; TODO: minimal validate
+  (ptk/reify ::page-fetched
+    IDeref
+    (-deref [_] data)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (unpack-page data)
+          (assoc-packed-page data)))))
+
+(defn page-fetched?
+  [v]
+  (= ::page-fetched (ptk/type v)))
+
+
+;; --- Fetch Pages (by project id)
+
+(defn fetch-page
+  "Fetch page by id."
+  [id]
+  (s/assert ::us/uuid id)
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query :page {:id id})
+           (rx/map page-fetched)))))
 
 ;; --- Page Created
 

@@ -9,16 +9,16 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.shapes.circle :refer [circle-shape]]
-   [uxbox.main.ui.shapes.group :refer [group-shape]]
-   [uxbox.main.ui.shapes.icon :refer [icon-shape]]
-   [uxbox.main.ui.shapes.image :refer [image-shape]]
-   [uxbox.main.ui.shapes.path :refer [path-shape]]
-   [uxbox.main.ui.shapes.rect :refer [rect-shape]]
-   [uxbox.main.ui.shapes.text :refer [text-shape]]
+   ;; [uxbox.main.ui.shapes.circle :refer [circle-shape]]
+   ;; [uxbox.main.ui.shapes.group :refer [group-shape]]
+   ;; [uxbox.main.ui.shapes.icon :refer [icon-shape]]
+   ;; [uxbox.main.ui.shapes.image :refer [image-shape]]
+   ;; [uxbox.main.ui.shapes.path :refer [path-shape]]
+   ;; [uxbox.main.ui.shapes.rect :refer [rect-shape]]
+   ;; [uxbox.main.ui.shapes.text :refer [text-shape]]
    [uxbox.util.dom :as dom]))
 
-(def ^:dynamic *state* st/state)
+;; (def ^:dynamic *state* st/state)
 
 (mf/defc background
   []
@@ -33,7 +33,7 @@
 
 (defn- make-shape-element
   [state shape]
-  (mf/html
+  #_(mf/html
    (case (:type shape)
      ;; :text [:& text-shape {:shape shape}]
      :icon [:& icon-shape {:shape shape}]
@@ -46,7 +46,7 @@
 
 (mf/defc page-svg
   [{:keys [page state] :as props}]
-  (let [{:keys [width height]} (:metadata page)]
+  #_(let [{:keys [width height]} (:metadata page)]
     [:svg {:width width
            :height height
            :view-box (str "0 0 " width " " height)
@@ -61,7 +61,7 @@
 
 (defn render-page
   [id]
-  (try
+  #_(try
     (let [state (deref st/state)
           page (get-in state [:pages id])]
       (when (:shapes page)

@@ -67,36 +67,32 @@
 
 ;; --- Projects Fetched
 
-(defrecord ProjectsFetched [projects]
-  ptk/UpdateEvent
-  (update [_ state]
-    (reduce assoc-project state projects))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (->> (rx/from-coll (map :id projects))
-         (rx/map udp/fetch-pages))))
-
 (defn projects-fetched
   [projects]
-  {:pre [(us/valid? (s/every ::project-entity) projects)]}
-  (ProjectsFetched. projects))
+  (s/assert (s/every ::project-entity) projects)
+  (ptk/reify ::projects-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce assoc-project state projects))))
+
+    ;; ptk/WatchEvent
+    ;; (watch [_ state stream]
+    ;;   (->> (rx/from-coll (map :id projects))
+    ;;        (rx/map udp/fetch-pages))))
 
 (defn projects-fetched?
   [v]
-  (instance? ProjectsFetched v))
+  (= ::projects-fetched  (ptk/type v)))
 
 ;; --- Fetch Projects
 
-(defrecord FetchProjects []
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (->> (rp/query :projects)
-         (rx/map projects-fetched))))
-
 (defn fetch-projects
   []
-  (FetchProjects.))
+  (ptk/reify ::fetch-projects
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :projects)
+           (rx/map projects-fetched)))))
 
 ;; --- Project Persisted
 
@@ -177,14 +173,13 @@
 
 (defn go-to
   [id]
-  {:pre [(uuid? id)]}
-  (reify
+  (s/assert ::us/uuid id)
+  (ptk/reify ::go-to
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [[page & rest-pages] (get-in state [:projects id :pages])]
-        (when page
-          (let [params {:project id :page page}]
-            (rx/of (rt/nav :workspace/page params))))))))
+      (let [page-id (get-in state [:projects id :ref-page-id])]
+        (let [params {:project id :page page-id}]
+          (rx/of (rt/nav :workspace/page params)))))))
 
 
 ;; --- Update Opts (Filtering & Ordering)

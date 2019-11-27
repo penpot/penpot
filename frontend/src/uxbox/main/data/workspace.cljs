@@ -46,6 +46,15 @@
 
 (declare initialize-alignment)
 
+(def workspace-default-data
+  {:initialized true
+   :zoom 1
+   :flags #{:sitemap :drawtools :layers :element-options :rules}
+   :selected #{}
+   :drawing nil
+   :drawing-tool nil
+   :tooltip nil})
+
 (defn initialize
   "Initialize the workspace state."
   [project-id page-id]
@@ -54,22 +63,15 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (let [default-flags #{:sitemap :drawtools :layers :element-options :rules}
-            initial-workspace {:project-id project-id
-                               :initialized true
-                               :page-id page-id
-                               :zoom 1
-                               :flags default-flags
-                               :selected #{}
-                               :drawing nil
-                               :drawing-tool nil
-                               :tooltip nil}]
+      (let [data (assoc workspace-default-data
+                        :project-id project-id
+                        :page-id page-id)]
         (-> state
             (update-in [:workspace page-id]
                        (fn [wsp]
                          (if (:initialized wsp)
                            wsp
-                           (merge wsp initial-workspace))))
+                           (merge wsp data))))
             (assoc-in [:workspace :current] page-id))))
 
     ptk/WatchEvent
@@ -77,17 +79,16 @@
       (let [page (get-in state [:pages page-id])]
         ;; Activate loaded if page is not fetched.
         (when-not page (reset! st/loader true))
-
-        (if page
-          (rx/of (initialize-alignment page-id))
-          (rx/merge
-           (rx/of (udp/fetch-pages project-id))
-           (->> stream
-                (rx/filter udp/pages-fetched?)
-                (rx/take 1)
-                (rx/do #(reset! st/loader false))
-                (rx/map #(initialize-alignment page-id)))))))
-
+        (rx/merge
+         ;; TODO: the `fetch-pages` should fetch a limited set of attrs
+         (rx/of (udp/fetch-page page-id))
+         (rx/of (udp/fetch-pages project-id))
+         (->> stream
+              (rx/filter udp/page-fetched?)
+              (rx/take 1)
+              (rx/mapcat (fn [event]
+                           (reset! st/loader false)
+                           (rx/of (initialize-alignment page-id))))))))
     ptk/EffectEvent
     (effect [_ state stream]
       ;; Optimistic prefetch of projects if them are not already fetched
@@ -307,27 +308,21 @@
 
 ;; --- Grid Alignment
 
-(defrecord InitializeAlignment [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [{:keys [metadata] :as page} (get-in state [:pages id])
-          params {:width c/viewport-width
-                  :height c/viewport-height
-                  :x-axis (:grid-x-axis metadata c/grid-x-axis)
-                  :y-axis (:grid-y-axis metadata c/grid-y-axis)}]
-      (rx/concat
-       (rx/of (deactivate-flag :grid-indexed))
-       (->> (uwrk/initialize-alignment params)
-            (rx/map #(activate-flag :grid-indexed)))))))
-
-(defn initialize-alignment?
-  [v]
-  (instance? InitializeAlignment v))
-
 (defn initialize-alignment
   [id]
-  {:pre [(uuid? id)]}
-  (InitializeAlignment. id))
+  (s/assert ::us/uuid id)
+  (ptk/reify ::initialize-alignment
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [metadata (get-in state [:pages id :metadata])
+            params {:width c/viewport-width
+                    :height c/viewport-height
+                    :x-axis (:grid-x-axis metadata c/grid-x-axis)
+                    :y-axis (:grid-y-axis metadata c/grid-y-axis)}]
+        (rx/concat
+         (rx/of (deactivate-flag :grid-indexed))
+         (->> (uwrk/initialize-alignment params)
+              (rx/map #(activate-flag :grid-indexed))))))))
 
 ;; --- Duplicate Selected
 
