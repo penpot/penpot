@@ -36,15 +36,19 @@
   [{:keys [user] :as params}]
   (let [sql "select distinct on (p.id, p.created_at)
                     p.*,
-                    first_value(pg.id)
-                      over (partition by p.id order by pg.created_at)
-                      as ref_page_id
+                    array_agg(pg.id) over (
+                      partition by p.id
+                      order by pg.created_at
+                      range between unbounded preceding and unbounded following
+                    ) as pages
               from projects as p
              right join pages as pg
                      on (pg.project_id = p.id)
              where p.user_id = $1
              order by p.created_at asc"]
-    (db/query db/pool [sql user])))
+    (-> (db/query db/pool [sql user])
+        (p/then (fn [rows]
+                  (mapv #(update % :pages vec) rows))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mutations

@@ -80,7 +80,7 @@
         ;; Activate loaded if page is not fetched.
         (when-not page (reset! st/loader true))
         (rx/merge
-         ;; TODO: the `fetch-pages` should fetch a limited set of attrs
+         ;; TODO: the `fetch-pages` should fetch a limited set of attrs?
          (rx/of (udp/fetch-page page-id))
          (rx/of (udp/fetch-pages project-id))
          (->> stream

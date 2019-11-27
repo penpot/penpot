@@ -59,8 +59,8 @@
 ;; --- Pages creation
 
 (def create-page-sql
-  "insert into pages (id, user_id, project_id, name, data, metadata)
-   values ($1, $2, $3, $4, $5, $6)
+  "insert into pages (id, user_id, project_id, name, ordering, data, metadata)
+   values ($1, $2, $3, $4, $5, $6, $7)
    returning *;")
 
 (defn create-page
@@ -79,6 +79,7 @@
                         (mk-uuid "user" uid)
                         (mk-uuid "project" pjid uid)
                         (str "page " paid)
+                        paid
                         (blob/encode data)
                         (blob/encode {})])))
 

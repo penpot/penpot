@@ -75,11 +75,6 @@
     (update [_ state]
       (reduce assoc-project state projects))))
 
-    ;; ptk/WatchEvent
-    ;; (watch [_ state stream]
-    ;;   (->> (rx/from-coll (map :id projects))
-    ;;        (rx/map udp/fetch-pages))))
-
 (defn projects-fetched?
   [v]
   (= ::projects-fetched  (ptk/type v)))
@@ -177,8 +172,8 @@
   (ptk/reify ::go-to
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (get-in state [:projects id :ref-page-id])]
-        (let [params {:project id :page page-id}]
+      (let [page-ids (get-in state [:projects id :pages])]
+        (let [params {:project id :page (first page-ids)}]
           (rx/of (rt/nav :workspace/page params)))))))
 
 
