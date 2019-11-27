@@ -10,29 +10,31 @@
    [clojure.tools.logging :as log]
    [io.aviso.exception :as e]))
 
-(defmulti handle-exception #(:type (ex-data %)))
+(defmulti handle-exception
+  (fn [err & rest]
+    (:type (ex-data err))))
 
 (defmethod handle-exception :validation
-  [err]
+  [err req]
   (let [response (ex-data err)]
     {:status 400
      :body response}))
 
 (defmethod handle-exception :not-found
-  [err]
+  [err req]
   (let [response (ex-data err)]
     {:status 404
      :body response}))
 
 (defmethod handle-exception :parse
-  [err]
+  [err req]
   {:status 400
    :body {:type :parse
           :message (ex-message err)}})
 
 (defmethod handle-exception :default
-  [err]
-  (log/error err "Unhandled exception on request:")
+  [err req]
+  (log/error err "Unhandled exception on request:" (:path req))
   {:status 500
    :body {:type :exception
           :message (ex-message err)}})
@@ -41,5 +43,5 @@
   [error req]
   (if (or (instance? java.util.concurrent.CompletionException error)
           (instance? java.util.concurrent.ExecutionException error))
-    (handle-exception (.getCause error))
-    (handle-exception error)))
+    (handle-exception (.getCause error) req)
+    (handle-exception error req)))

@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS pages (
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   deleted_at timestamptz DEFAULT NULL,
 
+  ordering smallint,
+
   name text NOT NULL,
   data bytea NOT NULL,
   metadata bytea NOT NULL
@@ -27,7 +29,8 @@ CREATE TABLE IF NOT EXISTS pages_history (
 
   pinned bool NOT NULL DEFAULT false,
   label text NOT NULL DEFAULT '',
-  data bytea NOT NULL
+  data bytea NOT NULL,
+  metadata bytea NOT NULL
 );
 
 -- Indexes
