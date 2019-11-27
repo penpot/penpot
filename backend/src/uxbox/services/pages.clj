@@ -53,6 +53,24 @@
     (-> (db/query db/pool [sql project-id user])
         (p/then #(mapv decode-row %)))))
 
+;; --- Query: Page by Id
+
+(s/def ::page
+  (s/keys :req-un [::user ::id]))
+
+(sv/defquery :page
+  {:doc "Retrieve page by id."
+   :spec ::page}
+  [{:keys [user id] :as params}]
+  (let [sql "select pg.*,
+                    pg.data,
+                    pg.metadata
+               from pages as pg
+              where pg.user_id = $2
+                and pg.id = $1
+                and pg.deleted_at is null"]
+    (-> (db/query-one db/pool [sql id user])
+        (p/then' decode-row))))
 
 ;; --- Query: Page History
 
