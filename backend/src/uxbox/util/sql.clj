@@ -25,227 +25,172 @@
 (ns uxbox.util.sql
   "A composable sql helpers."
   (:refer-clojure :exclude [test update set format])
-  (:require [clojure.core :as c]))
+  (:require [clojure.core :as c]
+            [cuerdas.core :as str]))
 
-(defn- query?
+;; --- Low Level Helpers
+
+(defn raw-expr
   [m]
-  (::query m))
+  (cond
+    (string? m)
+    {::type :raw-expr
+     :sql m
+     :params []}
 
-(defn select
-  []
-  {::query true
-   ::type ::select})
+    (vector? m)
+    {::type :raw-expr
+     :sql (first m)
+     :params (vec (rest m))}
 
-(defn update
-  ([table]
-   (update table nil))
-  ([table alias]
-   {::query true
-    ::type ::update
-    ::table [table alias]}))
+    (and (map? m)
+         (= :raw-expr (::type m)))
+    m
 
-(defn delete
-  []
-  {::query true
-   ::type ::delete})
+    :else
+    (throw (ex-info "unexpected input" {:m m}))))
 
-(defn insert
-  [table fields]
-  {::query true
-   ::table table
-   ::fields fields
-   ::type ::insert})
+(defn alias-expr
+  [m]
+  (cond
+    (string? m)
+    {::type :alias-expr
+     :sql m
+     :alias nil
+     :params []}
+
+    (vector? m)
+    {::type :alias-expr
+     :sql (first m)
+     :alias (second m)
+     :params (vec (drop 2 m))}
+
+    :else
+    (throw (ex-info "unexpected input" {:m m}))))
+
+;; --- SQL API (Select only)
 
 (defn from
-  ([m name]
-   (from m name nil))
-  ([m name alias]
-   {:pre [(query? m)]}
-   (c/update m ::from (fnil conj []) [name alias])))
+  [name]
+  {::type :query
+   ::from [(alias-expr name)]
+   ::order []
+   ::select []
+   ::join []
+   ::where []})
 
-(defn field
-  ([m name]
-   (field m name nil))
-  ([m name alias]
-   (c/update m ::fields (fnil conj []) [name alias])))
-
-(defn fields
+(defn select
   [m & fields]
-  (reduce (fn [acc item]
-            (if (vector? item)
-              (apply field acc item)
-              (field acc item)))
-          m
-          fields))
+  (c/update m ::select into (map alias-expr fields)))
 
 (defn limit
   [m n]
-  {:pre [(= (::type m) ::select)
-         (query? m)]}
-  (assoc m ::limit n))
+  (assoc m ::limit [(raw-expr ["LIMIT ?" n])]))
 
 (defn offset
   [m n]
-  {:pre [(= (::type m) ::select)
-         (query? m)]}
-  (assoc m ::offset n))
+  (assoc m ::offset [(raw-expr ["OFFSET ?" n])]))
+
+(defn order
+  [m e]
+  (c/update m ::order conj (raw-expr e)))
 
 (defn- join*
-  [m type table alias condition]
-  {:pre [(= (::type m) ::select)
-         (query? m)]}
-  (c/update m ::joins (fnil conj [])
-               {:type type
-                :name table
-                :alias alias
-                :condition condition}))
+  [m type table condition]
+  (c/update m ::join conj
+            {::type :join-expr
+             :type type
+             :table (alias-expr table)
+             :condition (raw-expr condition)}))
 
 (defn join
-  ([m table condition]
-   (join m table nil condition))
-  ([m table alias condition]
-   {:pre [(= (::type m) ::select)
-          (query? m)]}
-   (join* m :inner table alias condition)))
+  [m table condition]
+  (join* m :inner table condition))
 
-(defn left-join
-  ([m table condition]
-   (left-join m table nil condition))
-  ([m table alias condition]
-   {:pre [(= (::type m) ::select)
-          (query? m)]}
-   (join* m :left table alias condition)))
+(defn ljoin
+  [m table condition]
+  (join* m :left table condition))
+
+(defn rjoin
+  [m table condition]
+  (join* m :right table condition))
 
 (defn where
-  [m condition & params]
-  {:pre [(query? m)]}
-  (-> m
-      (c/update ::where (fnil conj []) condition)
-      (cond-> (seq params)
-        (c/update ::params (fnil into []) params))))
-
-(defn set
-  [m field value]
-  {:pre [(query? m)]}
-  (-> m
-      (c/update ::assignations (fnil conj []) field)
-      (c/update ::params (fnil conj []) value)))
-
-(defn values
-  [m values]
-  {:pre [(query? m)]}
-  (assoc ::values values))
-
-(defn raw
-  [m sql & params]
-  (-> m
-      (c/update ::raw (fnil conj []) sql)
-      (c/update ::params (fnil into []) params)))
-
-(defmulti format ::type)
-
-(defn fmt
-  [m]
-  (into [(format m)] (::params m)))
+  [m & conditions]
+  (->> (filter identity conditions)
+       (reduce #(c/update %1 ::where conj (raw-expr %2)) m)))
 
 ;; --- Formating
 
-(defn- format-fields
-  [fields]
-  (letfn [(transform [[name alias]]
-            (if (string? alias)
-              (str name " " alias)
-              name))]
-    (apply str (->> (map transform fields)
-                    (interpose ", ")))))
+(defmulti format-expr ::type)
 
-(defn- format-join
-  [{:keys [type name alias condition]}]
-  (str (case type
-         :inner "INNER JOIN "
-         :left "LEFT JOIN ")
-       (if alias
-         (str name " " alias)
-         name)
-       " ON (" condition ")"))
+(defmethod format-expr :raw-expr
+  [{:keys [sql params]}]
+  [sql params])
 
-(defn- format-joins
-  [clauses]
-  (apply str (->> (map format-join clauses)
-                  (interpose " "))))
+(defmethod format-expr :alias-expr
+  [{:keys [sql alias params]}]
+  (if alias
+    [(str sql " AS " alias) params]
+    [sql params]))
 
-(defn- format-where
-  [conditions]
-  (when (seq conditions)
-    (str "WHERE (" (apply str (interpose ") AND (" conditions)) ")")))
+(defmethod format-expr :join-expr
+  [{:keys [table type condition]}]
+  (let [[csql cparams] (format-expr condition)
+        [tsql tparams] (format-expr table)
+        prefix (str/upper (name type))]
+    [(str prefix " JOIN " tsql " ON (" csql ")") (into cparams tparams)]))
 
+(defn- format-exprs
+  ([items] (format-exprs items {}))
+  ([items {:keys [prefix suffix join-with]
+           :or {prefix ""
+                suffix ""
+                join-with ","}}]
+   (loop [rs []
+          rp []
+          v (first items)
+          n (rest items)]
+     (if v
+       (let [[s p] (format-expr v)]
+         (recur (conj rs s)
+                (into rp p)
+                (first n)
+                (rest n)))
+       [(str prefix (str/join join-with rs) suffix) rp]))))
 
+(defn- process-param-tokens
+  [sql]
+  (let [cnt (java.util.concurrent.atomic.AtomicInteger. 1)]
+    (str/replace sql #"\?" (fn [& args]
+                             (str "$" (.getAndIncrement cnt))))))
 
-(defn- format-assignations
-  [assignations]
-  (apply str (->> (map #(str % " = ?") assignations)
-                  (interpose ", "))))
+(def ^:private select-formatters
+  [#(format-exprs (::select %) {:prefix "SELECT "})
+   #(format-exprs (::from %) {:prefix "FROM "})
+   #(format-exprs (::join %))
+   #(format-exprs (::where %) {:prefix "WHERE ("
+                               :join-with ") AND ("
+                               :suffix ")"})
+   #(format-exprs (::order %) {:prefix "ORDER BY "} )
+   #(format-exprs (::limit %))
+   #(format-exprs (::offset %))])
 
-(defn- format-raw
-  [items]
-  (when (seq items)
-    (apply str (interpose " " items))))
+(defn- collect
+  [formatters qdata]
+  (loop [sqls []
+         params []
+         f (first formatters)
+         r (rest formatters)]
+    (if (fn? f)
+      (let [[s p] (f qdata)]
+        (recur (conj sqls s)
+               (into params p)
+               (first r)
+               (rest r)))
+      [(str/join " " sqls) params])))
 
-(defmethod format ::select
-  [{:keys [::fields ::from ::joins ::where]}]
-  (str "SELECT "
-       (format-fields fields)
-       " FROM "
-       (format-fields from)
-       " "
-       (format-joins joins)
-       " "
-       (format-where where)))
-
-(defmethod format ::update
-  [{:keys [::table ::assignations ::where]}]
-  (str "UPDATE "
-       (format-fields [table])
-       " SET "
-       (format-assignations assignations)
-       " "
-       (format-where where)))
-
-(defmethod format ::delete
-  [{:keys [::from ::where]}]
-  (str "DELETE FROM "
-       (format-fields from)
-       " "
-       (format-where where)))
-
-(defmethod format ::insert
-  [{:keys [::table ::fields ::values ::raw]}]
-  (let [fsize (count fields)
-        pholder (str "(" (apply str (->> (map (constantly "?") fields)
-                                         (interpose ", "))) ")")]
-
-    (str "INSERT INTO " table "(" (apply str (interpose ", " fields)) ")"
-         " VALUES " (apply str (->> (map (constantly pholder) values)
-                                    (interpose ", ")))
-         " "
-         (format-raw raw))))
-
-;; (defn test-update
-;;   []
-;;   (-> (update "users" "u")
-;;       (set "u.username" "foobar")
-;;       (set "u.email" "niwi@niwi.nz")
-;;       (where "u.id = ? AND u.deleted_at IS null" 555)))
-
-;; (defn test-delete
-;;   []
-;;   (-> (delete)
-;;       (from "users" "u")
-;;       (where "u.id = ? AND u.deleted_at IS null" 555)))
-
-;; (defn test-insert
-;;   []
-;;   (-> (insert "users" ["id", "username"])
-;;       (values [[1 "niwinz"] [2 "niwibe"]])
-;;       (raw "RETURNING *")))
-
+(defn fmt
+  [qdata]
+  (let [[sql params] (collect select-formatters qdata)]
+    (into [(process-param-tokens sql)] params)))
