@@ -19,9 +19,9 @@
    java.util.Map$Entry
    java.util.HashMap))
 
-(def context-interceptor
-  {:enter (fn [data]
-            (update data :request assoc ::ctx (vc/get-or-create-context system)))})
+;; (def context-interceptor
+;;   {:enter (fn [data]
+;;             (update data :request assoc ::ctx (vc/get-or-create-context system)))})
 
 (def logging-interceptor
   {:enter (fn [data]

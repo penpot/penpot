@@ -28,7 +28,6 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::metadata any?)
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Queries
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -38,9 +37,7 @@
 (s/def ::pages-by-project
   (s/keys :req-un [::user ::project-id]))
 
-(sv/defquery :pages-by-project
-  {:doc "List pages by project id."
-   :spec ::pages-by-project}
+(sv/defquery ::pages-by-project
   [{:keys [user project-id] :as params}]
   (let [sql "select pg.*,
                     pg.data,
@@ -58,9 +55,7 @@
 (s/def ::page
   (s/keys :req-un [::user ::id]))
 
-(sv/defquery :page
-  {:doc "Retrieve page by id."
-   :spec ::page}
+(sv/defquery ::page
   [{:keys [user id] :as params}]
   (let [sql "select pg.*,
                     pg.data,
@@ -121,9 +116,7 @@
   (s/keys :req-un [::data ::user ::project-id ::name ::metadata]
           :opt-un [::id]))
 
-(sv/defmutation :create-page
-  {:doc "Create a new page."
-   :spec ::create-page}
+(sv/defmutation ::create-page
   [{:keys [id user project-id name data metadata]}]
   (let [sql "insert into pages (id, user_id, project_id, name, data, metadata)
              values ($1, $2, $3, $4, $5, $6) returning *"
@@ -139,32 +132,55 @@
 (s/def ::update-page
   (s/keys :req-un [::data ::user ::project-id ::name ::data ::metadata ::id]))
 
-(sv/defmutation :update-page
-  {:doc "Update an existing page."
-   :spec ::update-page}
-  [{:keys [id user project-id name data metadata]}]
-  (let [sql "update pages
-                set name = $1,
-                    data = $2,
-                    metadata = $3
-              where id = $4
-                and user_id = $5
-                and deleted_at is null
-             returning *"
-        data (blob/encode data)
-        mdata (blob/encode metadata)]
-    (-> (db/query-one db/pool [sql name data mdata id user])
-        (p/then' decode-row))))
+(letfn [(select-for-update [conn id]
+          (let [sql "select p.id, p.version
+                       from pages as p
+                      where p.id = $1
+                        and deleted_at is null
+                        for update;"]
+            (-> (db/query-one conn [sql id])
+                (p/then' sv/raise-not-found-if-nil))))
 
+        (update-page [conn {:keys [id name version data metadata user]}]
+          (let [sql "update pages
+                        set name = $1,
+                            version = $2,
+                            data = $3,
+                            metadata = $4
+                      where id = $5
+                        and user_id = $6"]
+            (-> (db/query-one conn [sql name version data metadata id user])
+                (p/then' sv/constantly-nil))))
+
+        (update-history [conn {:keys [user id version data metadata]}]
+          (let [sql "insert into pages_history (user_id, page_id, version, data, metadata)
+                     values ($1, $2, $3, $4, $5)"]
+            (-> (db/query-one conn [sql user id version data metadata])
+                (p/then' sv/constantly-nil))))]
+
+  (sv/defmutation ::update-page
+    [{:keys [id data metadata] :as params}]
+    (db/with-atomic [conn db/pool]
+      (-> (select-for-update conn id)
+          (p/then (fn [{:keys [id version]}]
+                    (let [data (blob/encode data)
+                          mdata (blob/encode metadata)
+                          version (inc version)
+                          params (assoc params
+                                        :id id
+                                        :version version
+                                        :data data
+                                        :metadata mdata)]
+                      (p/do! (update-page conn params)
+                             (update-history conn params)
+                             (select-keys params [:id :version])))))))))
 
 ;; --- Mutation: Update Page Metadata
 
 (s/def ::update-page-metadata
   (s/keys :req-un [::user ::project-id ::name ::metadata ::id]))
 
-(sv/defmutation :update-page-metadata
-  {:doc "Update an existing page."
-   :spec ::update-page-metadata}
+(sv/defmutation ::update-page-metadata
   [{:keys [id user project-id name metadata]}]
   (let [sql "update pages
                 set name = $3,
@@ -182,9 +198,7 @@
 (s/def ::delete-page
   (s/keys :req-un [::user ::id]))
 
-(sv/defmutation :delete-page
-  {:doc "Delete existing page."
-   :spec ::delete-page}
+(sv/defmutation ::delete-page
   [{:keys [id user]}]
   (let [sql "update pages
                 set deleted_at = clock_timestamp()

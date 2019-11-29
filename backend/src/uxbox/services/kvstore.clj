@@ -31,9 +31,7 @@
 (s/def ::upsert-kvstore
   (s/keys :req-un [::key ::value ::user]))
 
-(sv/defmutation :upsert-kvstore
-  {:doc "Update or insert kvstore entry."
-   :spec ::upsert-kvstore}
+(sv/defmutation ::upsert-kvstore
   [{:keys [key value user] :as params}]
   (let [sql "insert into kvstore (key, value, user_id)
              values ($1, $2, $3)
@@ -48,9 +46,7 @@
 (s/def ::kvstore-entry
   (s/keys :req-un [::key ::user]))
 
-(sv/defquery :kvstore-entry
-  {:doc "Retrieve kvstore entry."
-   :spec ::kvstore-entry}
+(sv/defquery ::kvstore-entry
   [{:keys [key user]}]
   (let [sql "select kv.*
                from kvstore as kv
@@ -65,9 +61,7 @@
 (s/def ::delete-kvstore
   (s/keys :req-un [::key ::user]))
 
-(sv/defmutation :delete-kvstore
-  {:doc "Delete kvstore entry."
-   :spec ::delete-kvstore}
+(sv/defmutation ::delete-kvstore
   [{:keys [user key] :as params}]
   (let [sql "delete from kvstore
               where user_id = $2

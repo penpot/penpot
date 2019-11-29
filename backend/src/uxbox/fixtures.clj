@@ -59,9 +59,15 @@
 ;; --- Pages creation
 
 (def create-page-sql
-  "insert into pages (id, user_id, project_id, name, ordering, data, metadata)
-   values ($1, $2, $3, $4, $5, $6, $7)
-   returning *;")
+  "insert into pages (id, user_id, project_id, name,
+                      version, ordering, data, metadata)
+   values ($1, $2, $3, $4, $5, $6, $7, $8)
+   returning id;")
+
+(def create-page-history-sql
+  "insert into pages_history (page_id, user_id, version, data, metadata)
+   values ($1, $2, $3, $4, $5)
+   returning id;")
 
 (defn create-page
   [conn [pjid paid uid]]
@@ -73,15 +79,25 @@
                         :x1 200
                         :y1 200
                         :x2 1224
-                        :y2 968}]}]
-    (db/query-one conn [create-page-sql
-                        (mk-uuid "page" pjid paid uid)
-                        (mk-uuid "user" uid)
-                        (mk-uuid "project" pjid uid)
-                        (str "page " paid)
-                        paid
-                        (blob/encode data)
-                        (blob/encode {})])))
+                        :y2 968}]}
+        data (blob/encode data)
+        mdata (blob/encode {})]
+    (p/do!
+     (db/query-one conn [create-page-sql
+                         (mk-uuid "page" pjid paid uid)
+                         (mk-uuid "user" uid)
+                         (mk-uuid "project" pjid uid)
+                         (str "page " paid)
+                         0
+                         paid
+                         data
+                         mdata])
+     (db/query-one conn [create-page-history-sql
+                         (mk-uuid "page" pjid paid uid)
+                         (mk-uuid "user" uid)
+                         0
+                         data
+                         mdata]))))
 
 
 (def num-users 5)
