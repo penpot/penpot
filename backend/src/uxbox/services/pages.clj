@@ -11,6 +11,7 @@
    [uxbox.db :as db]
    [uxbox.util.spec :as us]
    [uxbox.services.core :as sv]
+   [uxbox.util.sql :as sql]
    [uxbox.util.time :as dt]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]))
@@ -69,42 +70,28 @@
 
 ;; --- Query: Page History
 
-;; (def ^:private page-history-sql
-;;   "select ph.*
-;;      from pages_history as ph
-;;     where ph.user_id = $1
-;;       and ph.page_id = $2
-;;       and ph.version < $3
-;;     order by ph.version desc
-;;     limit $4")
+(s/def ::page-id ::us/uuid)
+(s/def ::max ::us/integer)
+(s/def ::pinned ::us/boolean)
+(s/def ::since ::us/integer)
 
-;; (defn get-page-history
-;;   [{:keys [id page-id user since max pinned]
-;;     :or {since Long/MAX_VALUE max 10}}]
-;;   (let [sqlv [page-history-sql user page-id since
-;;   (let [sqlv (sql/get-page-history {:user user
-;;                                     :page id
-;;                                     :since since
-;;                                     :max max
-;;                                     :pinned pinned})]
-;;     (->> (db/fetch conn sqlv)
-;;          ;; TODO
-;;          (map decode-row))))
+(s/def ::page-history
+  (s/keys :req-un [::page-id ::user]
+          :opt-un [::max ::pinned ::since]))
 
-;; (s/def ::max ::us/integer)
-;; (s/def ::pinned ::us/boolean)
-;; (s/def ::since ::us/integer)
-
-;; (s/def ::page-history
-;;   (s/keys :req-un [::us/id ::user]
-;;           :opt-un [::max ::pinned ::since]))
-
-;; (sv/defquery :page-history
-;;   {:doc "Retrieve page history."
-;;    :spec ::page-history}
-;;   [params]
-;;   (with-open [conn (db/connection)]
-;;     (get-page-history conn params)))
+(sv/defquery ::page-history
+  [{:keys [page-id user since max pinned] :or {since Long/MAX_VALUE max 10}}]
+  (let [sql (-> (sql/from ["pages_history" "ph"])
+                (sql/select "ph.*")
+                (sql/where ["ph.user_id = ?" user]
+                           ["ph.page_id = ?" page-id]
+                           ["ph.version < ?" since]
+                           (when pinned
+                             ["ph.pinned = ?" true]))
+                (sql/order "ph.version desc")
+                (sql/limit max))]
+    (-> (db/query db/pool (sql/fmt sql))
+        (p/then (partial mapv decode-row)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mutations
