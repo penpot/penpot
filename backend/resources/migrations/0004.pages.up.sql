@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS pages (
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   deleted_at timestamptz DEFAULT NULL,
 
+  version bigint NOT NULL,
   ordering smallint,
 
   name text NOT NULL,
@@ -23,8 +24,8 @@ CREATE TABLE IF NOT EXISTS pages_history (
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   page_id uuid NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
 
-  created_at timestamptz NOT NULL,
-  modified_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   version bigint NOT NULL DEFAULT 0,
 
   pinned bool NOT NULL DEFAULT false,
