@@ -20,7 +20,7 @@
     (cond-> row
       val (assoc :val (blob/decode val)))))
 
-(s/def ::user-storage-item
+(s/def ::user-storage-entry
   (s/keys :req-un [::key ::user]))
 
 (sq/defquery ::user-storage-entry

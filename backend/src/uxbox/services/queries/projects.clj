@@ -36,12 +36,10 @@
    where p.user_id = $1
    order by p.created_at asc")
 
-(s/def ::projects-query
+(s/def ::projects
   (s/keys :req-un [::user]))
 
-(sq/defquery :projects
-  {:doc "Query all projects"
-   :spec ::projects-query}
+(sq/defquery ::projects
   [{:keys [user] :as params}]
   (-> (db/query db/pool [projects-sql user])
       (p/then (fn [rows]
