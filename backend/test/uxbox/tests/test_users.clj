@@ -5,10 +5,10 @@
    [promesa.core :as p]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
-   ;; [buddy.hashers :as hashers]
    [vertx.core :as vc]
    [uxbox.db :as db]
-   [uxbox.services.core :as sv]
+   [uxbox.services.mutations :as sm]
+   [uxbox.services.queries :as sq]
    [uxbox.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
@@ -16,9 +16,9 @@
 
 (t/deftest test-query-profile
   (let [user @(th/create-user db/pool 1)
-        event {::sv/type :profile
+        event {::sq/type :profile
                :user (:id user)}
-        [err rsp] (th/try-on (sv/query event))]
+        [err rsp] (th/try-on (sq/handle event))]
     ;; (println "RESPONSE:" resp)))
     (t/is (nil? err))
     (t/is (= (:fullname rsp) "User 1"))
@@ -30,12 +30,12 @@
 (t/deftest test-mutation-update-profile
   (let [user  @(th/create-user db/pool 1)
         event (assoc user
-                     ::sv/type :update-profile
+                     ::sm/type :update-profile
                      :fullname "Full Name"
                      :username "user222"
                      :metadata {:foo "bar"}
                      :email "user222@uxbox.io")
-        [err data] (th/try-on (sv/mutation event))]
+        [err data] (th/try-on (sm/handle event))]
     ;; (println "RESPONSE:" err data)
     (t/is (nil? err))
     (t/is (= (:fullname data) "Full Name"))
@@ -46,13 +46,13 @@
 
 (t/deftest test-mutation-update-profile-photo
   (let [user  @(th/create-user db/pool 1)
-        event {::sv/type :update-profile-photo
+        event {::sm/type :update-profile-photo
                :user (:id user)
                :file {:name "sample.jpg"
                       :path (fs/path "test/uxbox/tests/_files/sample.jpg")
                       :size 123123
                       :mtype "image/jpeg"}}
-        [err rsp] (th/try-on (sv/mutation event))]
+        [err rsp] (th/try-on (sm/handle event))]
     ;; (prn "RESPONSE:" [err rsp])
     (t/is (nil? err))
     (t/is (= (:id user) (:id rsp)))
@@ -64,7 +64,7 @@
 ;;              :email "user222@uxbox.io"
 ;;              :password "user222"
 ;;              ::sv/type :register-profile}
-;;        [err rsp] (th/try-on (sv/mutation data))]
+;;        [err rsp] (th/try-on (sm/handle data))]
 ;;     (println "RESPONSE:" err rsp)))
 
 ;; ;; (t/deftest test-http-validate-recovery-token

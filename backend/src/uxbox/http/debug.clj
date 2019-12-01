@@ -11,7 +11,6 @@
    [promesa.core :as p]
    [uxbox.http.errors :as errors]
    [uxbox.http.session :as session]
-   [uxbox.services.core :as sv]
    [uxbox.util.uuid :as uuid]))
 
 (defn emails-list

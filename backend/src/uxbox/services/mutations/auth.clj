@@ -4,25 +4,16 @@
 ;;
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.auth
+(ns uxbox.services.mutations.auth
   (:require
    [clojure.spec.alpha :as s]
    [buddy.hashers :as hashers]
    [promesa.core :as p]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
-   [uxbox.services.core :as sc]
-   [uxbox.services.users :as users]
+   [uxbox.services.mutations :as sm]
    [uxbox.util.spec :as us]
    [uxbox.util.exceptions :as ex]))
-
-(s/def ::username ::us/string)
-(s/def ::password ::us/string)
-(s/def ::scope ::us/string)
-
-(s/def ::login-params
-  (s/keys :req-un [::username ::password]
-          :opt-un [::scope]))
 
 (def ^:private user-by-username-sql
   "select id, password
@@ -30,7 +21,15 @@
     where username=$1 or email=$1
       and deleted_at is null")
 
-(sc/defmutation :login
+(s/def ::username ::us/string)
+(s/def ::password ::us/string)
+(s/def ::scope ::us/string)
+
+(s/def ::login
+  (s/keys :req-un [::username ::password]
+          :opt-un [::scope]))
+
+(sm/defmutation ::login
   {:doc "User login"
    :spec ::login-params}
   [{:keys [username password scope] :as params}]
@@ -44,7 +43,7 @@
             (when-not (check-password user password)
               (ex/raise :type :validation
                         :code ::wrong-credentials))
-            (:id user))]
 
+            {:id (:id user)})]
     (-> (db/query-one db/pool [user-by-username-sql username])
         (p/then' check-user))))

@@ -19,28 +19,25 @@
    :steps
    [{:desc "Initial triggers and utils."
      :name "0001-main"
-     :fn (mg/resource "migrations/0001.main.up.sql")}
+     :fn (mg/resource "migrations/0001.main.sql")}
     {:desc "Initial auth related tables"
-     :name "0002-auth"
-     :fn (mg/resource "migrations/0002.auth.up.sql")}
+     :name "0002-users"
+     :fn (mg/resource "migrations/0002.users.sql")}
     {:desc "Initial projects tables"
      :name "0003-projects"
-     :fn (mg/resource "migrations/0003.projects.up.sql")}
+     :fn (mg/resource "migrations/0003.projects.sql")}
     {:desc "Initial pages tables"
      :name "0004-pages"
-     :fn (mg/resource "migrations/0004.pages.up.sql")}
-    {:desc "Initial kvstore tables"
-     :name "0005-kvstore"
-     :fn (mg/resource "migrations/0005.kvstore.up.sql")}
+     :fn (mg/resource "migrations/0004.pages.sql")}
     {:desc "Initial emails related tables"
-     :name "0006-emails"
-     :fn (mg/resource "migrations/0006.emails.up.sql")}
+     :name "0005-emails"
+     :fn (mg/resource "migrations/0005.emails.sql")}
     {:desc "Initial images tables"
-     :name "0007-images"
-     :fn (mg/resource "migrations/0007.images.up.sql")}
+     :name "0006-images"
+     :fn (mg/resource "migrations/0006.images.sql")}
     {:desc "Initial icons tables"
-     :name "0008-icons"
-     :fn (mg/resource "migrations/0008.icons.up.sql")}
+     :name "0007-icons"
+     :fn (mg/resource "migrations/0007.icons.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

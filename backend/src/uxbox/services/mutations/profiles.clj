@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.users
+(ns uxbox.services.mutations.profiles
   (:require
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
@@ -17,7 +17,12 @@
    [uxbox.emails :as emails]
    [uxbox.images :as images]
    [uxbox.media :as media]
-   [uxbox.services.core :as sv]
+   [uxbox.services.mutations :as sm]
+   [uxbox.services.util :as su]
+   [uxbox.services.queries.profiles :refer [get-profile
+                                            decode-profile-row
+                                            strip-private-attrs
+                                            resolve-thumbnail]]
    [uxbox.util.blob :as blob]
    [uxbox.util.exceptions :as ex]
    [uxbox.util.spec :as us]
@@ -27,9 +32,6 @@
 
 ;; --- Helpers & Specs
 
-(declare decode-profile-row)
-(declare strip-private-attrs)
-
 (s/def ::email ::us/email)
 (s/def ::fullname ::us/string)
 (s/def ::metadata any?)
@@ -38,42 +40,6 @@
 (s/def ::path ::us/string)
 (s/def ::user ::us/uuid)
 (s/def ::username ::us/string)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Queries
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- Query: Profile (own)
-
-(defn- resolve-thumbnail
-  [user]
-  (let [opts {:src :photo
-              :dst :photo
-              :size [100 100]
-              :quality 90
-              :format "jpg"}]
-    (-> (px/submit! #(images/populate-thumbnails user opts))
-        (sv/handle-on-context))))
-
-(defn- get-profile
-  [conn id]
-  (let [sql "select * from users where id=$1 and deleted_at is null"]
-    (-> (db/query-one db/pool [sql id])
-        (p/then' decode-profile-row))))
-
-(s/def ::profile
-  (s/keys :req-un [::user]))
-
-(sv/defquery :profile
-  {:doc "Retrieve the user profile."
-   :spec ::profile}
-  [{:keys [user] :as params}]
-  (-> (get-profile db/pool user)
-      (p/then' strip-private-attrs)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mutations
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- Mutation: Update Profile (own)
 
@@ -110,14 +76,14 @@
                 and deleted_at is null
              returning *"]
     (-> (db/query-one conn [sql id username email fullname (blob/encode metadata)])
-        (p/then' sv/raise-not-found-if-nil)
+        (p/then' su/raise-not-found-if-nil)
         (p/then' decode-profile-row)
         (p/then' strip-private-attrs))))
 
 (s/def ::update-profile
   (s/keys :req-un [::id ::username ::email ::fullname ::metadata]))
 
-(sv/defmutation :update-profile
+(sm/defmutation :update-profile
   {:doc "Update self profile."
    :spec ::update-profile}
   [params]
@@ -144,13 +110,13 @@
                 and deleted_at is null
             returning id"]
     (-> (db/query-one conn [sql user password])
-        (p/then' sv/raise-not-found-if-nil)
-        (p/then' sv/constantly-nil))))
+        (p/then' su/raise-not-found-if-nil)
+        (p/then' su/constantly-nil))))
 
 (s/def ::update-password
   (s/keys :req-un [::user ::us/password ::old-password]))
 
-(sv/defmutation :update-password
+(sm/defmutation :update-password
   {:doc "Update self password."
    :spec ::update-password}
   [params]
@@ -168,7 +134,7 @@
 (def valid-image-types?
   #{"image/jpeg", "image/png", "image/webp"})
 
-(sv/defmutation :update-profile-photo
+(sm/defmutation :update-profile-photo
   {:doc "Update profile photo."
    :spec ::update-profile-photo}
   [{:keys [user file] :as params}]
@@ -176,7 +142,7 @@
             (let [filename (fs/name name)
                   storage media/images-storage]
               (-> (ds/save storage filename path)
-                  #_(sv/handle-on-context))))
+                  #_(su/handle-on-context))))
 
           (update-user-photo [path]
             (let [sql "update users
@@ -185,7 +151,7 @@
                           and deleted_at is null
                        returning *"]
               (-> (db/query-one db/pool [sql (str path) user])
-                  (p/then' sv/raise-not-found-if-nil)
+                  (p/then' su/raise-not-found-if-nil)
                   (p/then' strip-private-attrs)
                   (p/then resolve-thumbnail))))]
 
@@ -216,33 +182,38 @@
                               :code ::username-or-email-already-exists))
                   params)))))
 
-(defn- register-profile
+(defn create-profile
   "Create the user entry on the database with limited input
   filling all the other fields with defaults."
-  [conn {:keys [username fullname email password] :as params}]
-  (let [metadata (blob/encode {})
+  [conn {:keys [id username fullname email password metadata] :as params}]
+  (let [id (or id (uuid/next))
+        metadata (blob/encode metadata)
         password (hashers/encrypt password)
         sqlv [create-user-sql
-              (uuid/next)
+              id
               fullname
               username
               email
               password
               metadata]]
     (-> (db/query-one conn sqlv)
-        (p/then' decode-profile-row)
-        (p/then' strip-private-attrs)
-        #_(p/then (fn [profile]
+        (p/then' decode-profile-row))))
+
+(defn register-profile
+  [conn params]
+  (-> (create-profile conn params)
+      (p/then' strip-private-attrs)
+      #_(p/then (fn [profile]
                   (-> (emails/send! {::emails/id :users/register
                                      ::emails/to (:email params)
                                      ::emails/priority :high
                                      :name (:fullname params)})
-                      (p/then' (constantly profile))))))))
+                      (p/then' (constantly profile)))))))
 
 (s/def ::register-profile
   (s/keys :req-un [::username ::email ::password ::fullname]))
 
-(sv/defmutation :register-profile
+(sm/defmutation :register-profile
   {:doc "Register new user."
    :spec ::register-profile}
   [params]
@@ -366,16 +337,3 @@
 ;;     (some-> (db/fetch-one conn sqlv)
 ;;             (trim-user-attrs))))
 
-;; --- Attrs Helpers
-
-(defn- decode-profile-row
-  [{:keys [metadata] :as row}]
-  (when row
-    (cond-> row
-      metadata (assoc :metadata (blob/decode metadata)))))
-
-(defn strip-private-attrs
-  "Only selects a publicy visible user attrs."
-  [profile]
-  (select-keys profile [:id :username :fullname :metadata
-                        :email :created-at :photo]))

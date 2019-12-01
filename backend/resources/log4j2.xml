@@ -5,6 +5,7 @@
     </Console>
   </Appenders>
   <Loggers>
+    <Logger name="io.vertx.sqlclient.impl.SocketConnectionBase" level="INFO"/>
     <Root level="info">
       <AppenderRef ref="console"/>
     </Root>

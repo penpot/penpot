@@ -4,15 +4,15 @@
 ;;
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.icons
-  "Icons library related services."
+(ns uxbox.services.mutations.icons
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.db :as db]
-   [uxbox.services.core :as sv]
+   [uxbox.services.mutations :as sm]
+   [uxbox.services.util :as su]
+   [uxbox.services.queries.icons :refer [decode-icon-row]]
    [uxbox.util.blob :as blob]
-   [uxbox.util.exceptions :as ex]
    [uxbox.util.spec :as us]
    [uxbox.util.uuid :as uuid]))
 
@@ -36,75 +36,13 @@
 (s/def ::metadata
   (s/keys :opt-un [::width ::height ::view-box ::mimetype]))
 
-(defn- decode-icon-row
-  [{:keys [metadata] :as row}]
-  (when row
-    (cond-> row
-      metadata (assoc :metadata (blob/decode metadata)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Queries
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- Query: Collections
-
-(def ^:private icons-collections-sql
-  "select *,
-          (select count(*) from icons where collection_id = ic.id) as num_icons
-     from icons_collections as ic
-    where (ic.user_id = $1 or
-           ic.user_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and ic.deleted_at is null
-    order by ic.created_at desc")
-
-(s/def ::icons-collections
-  (s/keys :req-un [::user]))
-
-(sv/defquery :icons-collections
-  {:doc "Retrieve all icons collections for current user."
-   :spec ::icons-collections}
-  [{:keys [user] :as params}]
-  (let [sqlv [icons-collections-sql user]]
-    (db/query db/pool sqlv)))
-
-;; --- List Icons
-
-(def ^:private icons-by-collection-sql
-  "select *
-     from icons as i
-    where (i.user_id = $1 or
-           i.user_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and i.deleted_at is null
-      and case when $2::uuid is null then i.collection_id is null
-               else i.collection_id = $2::uuid
-          end
-    order by i.created_at desc")
-
-(s/def ::icons-by-collection
-  (s/keys :req-un [::user]
-          :opt-un [::collection-id]))
-
-(sv/defquery :icons-by-collection
-  {:doc "Retrieve icons for specified collection."
-   :spec ::icons-by-collection}
-  [{:keys [user collection-id] :as params}]
-  (let [sqlv [icons-by-collection-sql user collection-id]]
-    (-> (db/query db/pool sqlv)
-        (p/then' #(mapv decode-icon-row %)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Mutations
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;; --- Mutation: Create Collection
 
 (s/def ::create-icons-collection
   (s/keys :req-un [::user ::name]
           :opt-un [::id]))
 
-(sv/defmutation :create-icons-collection
-  {:doc "Create a new collection of icons."
-   :spec ::create-icons-collection}
+(sm/defmutation ::create-icons-collection
   [{:keys [id user name] :as params}]
   (let [id  (or id (uuid/next))
         sql "insert into icons_collections (id, user_id, name)
@@ -116,9 +54,7 @@
 (s/def ::update-icons-collection
   (s/keys :req-un [::user ::name ::id]))
 
-(sv/defmutation :update-icons-collection
-  {:doc "Update a collection of icons."
-   :spec ::update-icons-collection}
+(sm/defmutation ::update-icons-collection
   [{:keys [id user name] :as params}]
   (let [sql "update icons_collections
                 set name = $3
@@ -126,7 +62,7 @@
                 and user_id = $2
              returning *"]
     (-> (db/query-one db/pool [sql id user name])
-        (p/then' sv/raise-not-found-if-nil))))
+        (p/then' su/raise-not-found-if-nil))))
 
 ;; --- Copy Icon
 
@@ -140,14 +76,12 @@
                 and (user_id = $2 or
                      user_id = '00000000-0000-0000-0000-000000000000'::uuid)"]
   (-> (db/query-one conn [sql id user])
-      (p/then' sv/raise-not-found-if-nil))))
+      (p/then' su/raise-not-found-if-nil))))
 
 (s/def ::copy-icon
   (s/keys :req-un [:us/id ::collection-id ::user]))
 
-(sv/defmutation :copy-icon
-  {:doc "Copy an icon from one collection to other."
-   :spec ::copy-icon}
+(sm/defmutation ::copy-icon
   [{:keys [user id collection-id] :as params}]
   (db/with-atomic [conn db/pool]
     (-> (retrieve-icon conn {:user user :id id})
@@ -161,9 +95,7 @@
 (s/def ::delete-icons-collection
   (s/keys :req-un [::user ::id]))
 
-(sv/defmutation :delete-icons-collection
-  {:doc "Delete a collection of icons."
-   :spec ::delete-icons-collection}
+(sm/defmutation ::delete-icons-collection
   [{:keys [user id] :as params}]
   (let [sql "update icons_collections
                 set deleted_at = clock_timestamp()
@@ -171,8 +103,8 @@
                 and user_id = $2
              returning id"]
     (-> (db/query-one db/pool [sql id user])
-        (p/then' sv/raise-not-found-if-nil)
-        (p/then' sv/constantly-nil))))
+        (p/then' su/raise-not-found-if-nil)
+        (p/then' su/constantly-nil))))
 
 ;; --- Mutation: Create Icon (Upload)
 
@@ -194,9 +126,7 @@
   (s/keys :req-un [::user ::name ::metadata ::content]
           :opt-un [::id ::collection-id]))
 
-(sv/defmutation :create-icon
-  {:doc "Create (upload) a new icon."
-   :spec ::create-icon}
+(sm/defmutation ::create-icon
   [params]
   (create-icon db/pool params))
 
@@ -205,9 +135,7 @@
 (s/def ::update-icon
   (s/keys :req-un [::id ::user ::name ::collection-id]))
 
-(sv/defmutation :update-icon
-  {:doc "Update an icon entry."
-   :spec ::update-icon}
+(sm/defmutation ::update-icon
   [{:keys [id name user collection-id] :as params}]
   (let [sql "update icons
                 set name = $1,
@@ -216,16 +144,14 @@
                 and user_id = $4
              returning *"]
     (-> (db/query-one db/pool [sql name collection-id id user])
-        (p/then' sv/raise-not-found-if-nil))))
+        (p/then' su/raise-not-found-if-nil))))
 
 ;; --- Mutation: Delete Icon
 
 (s/def ::delete-icon
   (s/keys :req-un [::user ::id]))
 
-(sv/defmutation :delete-icon
-  {:doc "Delete an icon entry."
-   :spec ::delete-icon}
+(sm/defmutation ::delete-icon
   [{:keys [id user] :as params}]
   (let [sql "update icons
                 set deleted_at = clock_timestamp()
@@ -233,5 +159,5 @@
                 and user_id = $2
              returning id"]
     (-> (db/query-one db/pool [sql id user])
-        (p/then' sv/raise-not-found-if-nil)
-        (p/then' sv/constantly-nil))))
+        (p/then' su/raise-not-found-if-nil)
+        (p/then' su/constantly-nil))))

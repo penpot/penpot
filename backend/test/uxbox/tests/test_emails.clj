@@ -11,14 +11,13 @@
    [mockery.core :refer [with-mock]]
    [uxbox.db :as db]
    [uxbox.emails :as emails]
-   [uxbox.services.core :as sv]
    [uxbox.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest register-email-rendering
-  (let [result (emails/render emails/register {:to "example@uxbox.io"})]
+  (let [result (emails/render emails/register {:to "example@uxbox.io" :name "foo"})]
     (t/is (map? result))
     (t/is (contains? result :subject))
     (t/is (contains? result :body))
@@ -27,7 +26,7 @@
     (t/is (vector? (:body result)))))
 
 (t/deftest email-sending-and-sendmail-job
-  (let [res @(emails/send! emails/register {:to "example@uxbox.io"})]
+  (let [res @(emails/send! emails/register {:to "example@uxbox.io" :name "foo"})]
     (t/is (nil? res)))
   (with-mock mock
     {:target 'uxbox.jobs.sendmail/impl-sendmail

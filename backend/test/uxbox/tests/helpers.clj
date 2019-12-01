@@ -6,6 +6,9 @@
    [cuerdas.core :as str]
    [mount.core :as mount]
    [datoteka.storages :as st]
+   [uxbox.services.mutations.profiles :as profiles]
+   [uxbox.services.mutations.projects :as projects]
+   [uxbox.services.mutations.pages :as pages]
    [uxbox.fixtures :as fixtures]
    [uxbox.migrations]
    [uxbox.media]
@@ -59,52 +62,29 @@
 
 ;; --- Users creation
 
-(declare decode-user-row)
-(declare decode-page-row)
-
 (defn create-user
   [conn i]
-  (let [sql "insert into users (id, fullname, username, email, password, metadata, photo)
-             values ($1, $2, $3, $4, $5, $6, '') returning *"]
-    (-> (db/query-one conn [sql
-                            (mk-uuid "user" i)
-                            (str "User " i)
-                            (str "user" i)
-                            (str "user" i ".test@uxbox.io")
-                            (hashers/encrypt "123123")
-                            (blob/encode {})])
-        (p/then' decode-user-row))))
+  (profiles/create-profile conn {:id (mk-uuid "user" i)
+                                 :fullname (str "User " i)
+                                 :username (str "user" i)
+                                 :email (str "user" i ".test@uxbox.io")
+                                 :password "123123"
+                                 :metadata {}}))
 
 (defn create-project
-  [conn uid i]
-  (let [sql "insert into projects (id, user_id, name)
-             values ($1, $2, $3) returning *"
-        name (str "sample project " i)]
-    (db/query-one conn [sql (mk-uuid "project" i) uid name])))
+  [conn user-id i]
+  (projects/create-project conn {:id (mk-uuid "project" i)
+                                 :user user-id
+                                 :name (str "sample project " i)}))
 
 (defn create-page
   [conn uid pid i]
-  (let [sql "insert into pages (id, user_id, project_id, name, data, metadata)
-             values ($1, $2, $3, $4, $5, $6) returning *"
-        data (blob/encode {:shapes []})
-        mdata (blob/encode {})
-        name (str "page" i)
-        id (mk-uuid "page" i)]
-    (-> (db/query-one conn [sql id uid pid name data mdata])
-        (p/then' decode-page-row))))
-
-(defn- decode-page-row
-  [{:keys [data metadata] :as row}]
-  (when row
-    (cond-> row
-      data (assoc :data (blob/decode data))
-      metadata (assoc :metadata (blob/decode metadata)))))
-
-(defn- decode-user-row
-  [{:keys [metadata] :as row}]
-  (when row
-    (cond-> row
-      metadata (assoc :metadata (blob/decode metadata)))))
+  (pages/create-page conn {:id (mk-uuid "page" i)
+                           :user uid
+                           :project-id pid
+                           :name (str "page" i)
+                           :data {:shapes []}
+                           :metadata {}}))
 
 (defn handle-error
   [err]
@@ -152,10 +132,9 @@
     (do
       (println "====> START ERROR")
       (if (= :spec-validation (:code error))
-        (do
-          (s/explain-out (:data error))
-          (println "====> END ERROR"))
-        (prn error)))
+        (s/explain-out (:data error))
+        (prn error))
+      (println "====> END ERROR"))
     (do
       (println "====> START RESPONSE")
       (prn result)

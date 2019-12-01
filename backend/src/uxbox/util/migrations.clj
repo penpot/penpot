@@ -6,6 +6,7 @@
 
 (ns uxbox.util.migrations
   (:require
+   [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -56,7 +57,7 @@
     (-> (registered? pool modname (:name migration))
         (p/then (fn [registered?]
                   (when-not registered?
-                    (println (str/format "applying migration - %s: %s" modname name))
+                    (log/info (str/format "applying migration %s/%s" modname name))
                     (execute)))))))
 
 (defn- impl-migrate

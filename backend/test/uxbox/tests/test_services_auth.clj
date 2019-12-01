@@ -8,35 +8,34 @@
   (:require
    [clojure.test :as t]
    [promesa.core :as p]
-   [buddy.hashers :as hashers]
    [uxbox.db :as db]
-   [uxbox.services.core :as sv]
+   [uxbox.services.mutations :as sm]
    [uxbox.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest test-failed-auth
+(t/deftest failed-auth
   (let [user @(th/create-user db/pool 1)
         event {:username "user1"
-               :type :login
+               ::sm/type :login
                :password "foobar"
                :metadata "1"
                :scope "foobar"}
-        [err res] (th/try-on
-                   (sv/mutation event))]
-    (t/is (nil? res))
-    (t/is (= (:type err) :validation))
-    (t/is (= (:code err) :uxbox.services.auth/wrong-credentials))))
+        out (th/try-on! (sm/handle event))]
+    ;; (th/print-result! out)
+    (t/is (map? (:error out)))
+    (t/is (= (get-in out [:error :type]) :validation))
+    (t/is (= (get-in out [:error :code]) :uxbox.services.mutations.auth/wrong-credentials))))
 
-(t/deftest test-success-auth
+(t/deftest success-auth
   (let [user @(th/create-user db/pool 1)
         event {:username "user1"
-               :type :login
+               ::sm/type :login
                :password "123123"
                :metadata "1"
                :scope "foobar"}
-        [err res] (th/try-on
-                   (sv/mutation event))]
-    (t/is (= res (:id user)))
-    (t/is (nil? err))))
+        out (th/try-on! (sm/handle event))]
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (t/is (= (get-in out [:result :id]) (:id user)))))

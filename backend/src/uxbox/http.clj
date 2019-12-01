@@ -16,7 +16,6 @@
    [uxbox.http.session :as session]
    [uxbox.http.handlers :as handlers]
    [uxbox.http.debug :as debug]
-   [uxbox.services.core :as sv]
    [vertx.core :as vc]
    [vertx.http :as vh]
    [vertx.web :as vw]
@@ -62,6 +61,7 @@
                             (vw/assets "/static/*" {:root "resources/public/static"})
                             (vw/router routes))]
 
+    (log/info "Starting http server on" (:http-server-port cfg/config) "port.")
     (vh/server ctx {:handler handler
                     :port (:http-server-port cfg/config)})))
 

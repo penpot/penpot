@@ -9,16 +9,18 @@
    [promesa.core :as p]
    [uxbox.emails :as emails]
    [uxbox.http.session :as session]
-   [uxbox.services.core :as sv]
+   [uxbox.services.init]
+   [uxbox.services.mutations :as sm]
+   [uxbox.services.queries :as sq]
    [uxbox.util.uuid :as uuid]))
 
 (defn query-handler
   [req]
   (let [type (get-in req [:path-params :type])
         data (merge (:params req)
-                    {::sv/type (keyword type)
+                    {::sq/type (keyword type)
                      :user (:user req)})]
-    (-> (sv/query (with-meta data {:req req}))
+    (-> (sq/handle (with-meta data {:req req}))
         (p/then' (fn [result]
                   {:status 200
                    :body result})))))
@@ -29,9 +31,9 @@
         data (merge (:params req)
                     (:body-params req)
                     (:uploads req)
-                    {::sv/type (keyword type)
+                    {::sm/type (keyword type)
                      :user (:user req)})]
-    (-> (sv/mutation (with-meta data {:req req}))
+    (-> (sm/handle (with-meta data {:req req}))
         (p/then' (fn [result]
                    {:status 200 :body result})))))
 
@@ -39,7 +41,7 @@
   [req]
   (let [data (:body-params req)
         user-agent (get-in req [:headers "user-agent"])]
-    (-> (sv/mutation (assoc data ::sv/type :login))
+    (-> (sm/handle (assoc data ::sm/type :login))
         (p/then #(session/create % user-agent))
         (p/then' (fn [token]
                    {:status 204
@@ -59,9 +61,9 @@
 (defn register-handler
   [req]
   (let [data (merge (:body-params req)
-                    {::sv/type :register-profile})
+                    {::sm/type :register-profile})
         user-agent (get-in req [:headers "user-agent"])]
-    (-> (sv/mutation (with-meta data {:req req}))
+    (-> (sm/handle (with-meta data {:req req}))
         (p/then (fn [{:keys [id] :as user}]
                   (session/create id user-agent)))
         (p/then' (fn [token]
