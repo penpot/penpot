@@ -34,9 +34,8 @@
 (declare -handle-body)
 
 (defn ->headers
-  [^HttpServerRequest request]
-  (let [headers (.headers request)
-        it (.iterator ^MultiMap headers)]
+  [^MultiMap headers]
+  (let [it (.iterator ^MultiMap headers)]
     (loop [m (transient {})]
       (if (.hasNext it)
         (let [^Map$Entry me (.next it)
@@ -49,7 +48,7 @@
   [^HttpServerRequest request]
   {:method (-> request .rawMethod .toLowerCase keyword)
    :path (.path request)
-   :headers (->headers request)
+   :headers (->headers (.headers request))
    ::request request
    ::response (.response request)})
 

@@ -47,7 +47,7 @@
         ^Vertx system (.vertx routing-context)]
     {:body (.getBody routing-context)
      :path (.path request)
-     :headers (vh/->headers request)
+     :headers (vh/->headers (.headers request))
      :method (-> request .rawMethod .toLowerCase keyword)
      ::vh/request request
      ::vh/response response

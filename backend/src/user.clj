@@ -22,6 +22,7 @@
    [buddy.core.nonce :as nonce]
    [mount.core :as mount]
    [uxbox.main]
+   [uxbox.util.sql :as sql]
    [uxbox.util.blob :as blob])
   (:gen-class))
 

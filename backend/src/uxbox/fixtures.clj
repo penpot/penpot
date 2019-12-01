@@ -48,13 +48,21 @@
    values ($1, $2, $3)
    returning *;")
 
+(def create-project-role-sql
+  "insert into projects_roles (project_id, user_id, role)
+   values ($1, $2, 'owner');")
+
 (defn create-project
   [conn [pjid uid]]
   (println "create project" pjid "(for user=" uid ")")
-  (db/query-one conn [create-project-sql
-                      (mk-uuid "project" pjid uid)
-                      (mk-uuid "user" uid)
-                      (str "sample project " pjid)]))
+  (p/do!
+   (db/query-one conn [create-project-sql
+                       (mk-uuid "project" pjid uid)
+                       (mk-uuid "user" uid)
+                       (str "sample project " pjid)])
+   (db/query-one conn [create-project-role-sql
+                       (mk-uuid "project" pjid uid)
+                       (mk-uuid "user" uid)])))
 
 ;; --- Pages creation
 

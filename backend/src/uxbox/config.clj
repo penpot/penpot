@@ -36,6 +36,7 @@
   {:http-server-port (lookup-env env :uxbox-http-server-port 6060)
    :http-server-debug (lookup-env env :uxbox-http-server-debug true)
    :http-server-cors (lookup-env env :uxbox-http-server-cors "http://localhost:3449")
+
    :database-username (lookup-env env :uxbox-database-username nil)
    :database-password (lookup-env env :uxbox-database-password nil)
    :database-uri (lookup-env env :uxbox-database-uri "postgresql://127.0.0.1/uxbox")
@@ -43,6 +44,8 @@
    :media-uri (lookup-env env :uxbox-media-uri "http://localhost:6060/media/")
    :assets-directory (lookup-env env :uxbox-assets-directory "resources/public/static")
    :assets-uri (lookup-env env :uxbox-assets-uri "http://localhost:6060/static/")
+
+   :google-api-key (lookup-env env :uxbox-google-api-key nil)
 
    :email-reply-to (lookup-env env :uxbox-email-reply-to "no-reply@uxbox.io")
    :email-from (lookup-env env :uxbox-email-from "no-reply@uxbox.io")

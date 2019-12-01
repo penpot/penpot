@@ -113,7 +113,6 @@
     (-> (db/query-one db/pool [sql id user project-id name data mdata])
         (p/then' decode-row))))
 
-
 ;; --- Mutation: Update Page
 
 (s/def ::update-page

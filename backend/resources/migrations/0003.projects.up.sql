@@ -11,42 +11,36 @@ CREATE TABLE IF NOT EXISTS projects (
   name text NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS project_shares (
-  project uuid PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS projects_roles (
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  token text
+
+  role text NOT NULL,
+
+  PRIMARY KEY (user_id, project_id)
+);
+
+CREATE TABLE IF NOT EXISTS project_shares (
+  project_id uuid PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+
+  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+
+  token text NOT NULL
 );
 
 -- Indexes
 
-CREATE INDEX projects_user_idx
-    ON projects(user_id);
+CREATE INDEX projects_user_idx ON projects(user_id);
+CREATE INDEX projects_roles_user_id_idx ON projects_roles(project_id);
+CREATE INDEX projects_roles_project_id_idx ON projects_roles(user_id);
 
-CREATE UNIQUE INDEX projects_shares_token_idx
-    ON project_shares(token);
+CREATE UNIQUE INDEX projects_shares_token_idx ON project_shares(token);
 
 -- Triggers
-
-CREATE OR REPLACE FUNCTION handle_project_create()
-  RETURNS TRIGGER AS $$
-  DECLARE
-    token text;
-  BEGIN
-    SELECT encode(digest(gen_random_bytes(128), 'sha256'), 'hex')
-      INTO token;
-
-    INSERT INTO project_shares (project, token)
-    VALUES (NEW.id, token);
-
-    RETURN NEW;
-  END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER project_on_create_tgr
- AFTER INSERT ON projects
-   FOR EACH ROW EXECUTE PROCEDURE handle_project_create();
 
 CREATE TRIGGER projects_modified_at_tgr
 BEFORE UPDATE ON projects
