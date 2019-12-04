@@ -78,6 +78,7 @@
 
 (mf/defc layer-item
   [{:keys [shape selected index] :as props}]
+  ;; (prn "layer-item" index (:name shape))
   (letfn [(toggle-blocking [event]
             (dom/stop-propagation event)
             (let [{:keys [id blocked]} shape]
@@ -107,7 +108,7 @@
                           (dw/select-shape id)))))
 
           (on-drop [item monitor]
-            (st/emit! (udp/persist-page (:page shape))))
+            (st/emit! ::dw/page-data-update))
 
           (on-hover [item monitor]
             (st/emit! (dw/change-shape-order {:id (:shape-id item)
@@ -168,10 +169,9 @@
                           (dw/select-shape id)))))
 
           (on-drop [item monitor]
-            (st/emit! (udp/persist-page (:page canvas))))
+            (st/emit! ::dw/page-data-update))
 
           (on-hover [item monitor]
-            (prn "canvas-item$hover" (:id canvas))
             (st/emit! (dw/change-canvas-order {:id (:canvas-id item)
                                                :index index})))]
     (let [selected? (contains? selected (:id canvas))
@@ -236,21 +236,25 @@
 ;; --- Layers Toolbox
 
 (mf/defc layers-toolbox
-  [{:keys [page selected] :as props}]
+  [{:keys [page] :as props}]
   (let [on-click #(st/emit! (dw/toggle-flag :layers))
+
         selected (mf/deref refs/selected-shapes)
-        shapes-by-id (mf/deref shapes-iref)
-        canvas (->> (:canvas page)
+        data (mf/deref refs/workspace-data)
+
+        shapes-by-id (:shapes-by-id data)
+
+        canvas (->> (:canvas data)
                     (map #(get shapes-by-id %))
                     (enumerate))
-        all-shapes (->> (:shapes page)
-                        (map #(get shapes-by-id %)))
 
-        shapes (->> all-shapes
-                    (filter #(not (:canvas %)))
-                    (enumerate))
+        shapes (->> (:shapes data)
+                    (map #(get shapes-by-id %)))
 
-        all-shapes (enumerate all-shapes)]
+        all-shapes (enumerate shapes)
+        unc-shapes (->> shapes
+                        (filter #(nil? (:canvas %)))
+                        (enumerate))]
 
     [:div#layers.tool-window
      [:div.tool-window-bar
@@ -261,5 +265,5 @@
       [:& canvas-list {:canvas canvas
                        :shapes all-shapes
                        :selected selected}]
-      [:& layers-list {:shapes shapes
+      [:& layers-list {:shapes unc-shapes
                        :selected selected}]]]))

@@ -20,23 +20,25 @@
 (defonce store (ptk/store {:on-error #(*on-error* %)}))
 (defonce stream (ptk/input-stream store))
 
-;; (defn repr-event
-;;   [event]
-;;   (cond
-;;     (satisfies? ptk/Event event)
-;;     (str "typ: " (pr-str (ptk/type event)))
+(defn repr-event
+  [event]
+  (cond
+    (satisfies? ptk/Event event)
+    (str "typ: " (pr-str (ptk/type event)))
 
-;;     (and (fn? event)
-;;          (pos? (count (.-name event))))
-;;     (str "fn: " (demunge (.-name event)))
+    (and (fn? event)
+         (pos? (count (.-name event))))
+    (str "fn: " (demunge (.-name event)))
 
-;;     :else
-;;     (str "unk: " (pr-str event))))
+    :else
+    (str "unk: " (pr-str event))))
 
-;; (defonce debug (as-> stream $
-;;                  (rx/filter ptk/event? $)
-;;                  (rx/subscribe $ (fn [event]
-;;                                    (println "[stream]: " (repr-event event))))))
+(defonce debug (as-> stream $
+                 (rx/filter ptk/event? $)
+                 ;; Comment this line if you want full debug.
+                 (rx/ignore $)
+                 (rx/subscribe $ (fn [event]
+                                   (println "[stream]: " (repr-event event))))))
 
 (def auth-ref
   (-> (l/key :auth)
@@ -61,15 +63,17 @@
    :profile (:profile storage)
    :clipboard #queue []
    :undo {}
-   :workspace nil
+   :workspace-layout nil
+   :workspace-local nil
+   :workspace-pdata nil
    :images-collections nil
    :images nil
    :icons-collections nil
    :icons nil
    :colors-collections colors/collections
-   :shapes nil
    :projects nil
-   :pages nil})
+   :pages nil
+   :pages-data nil})
 
 (defn init
   "Initialize the state materialization."

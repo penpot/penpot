@@ -27,6 +27,7 @@
 (s/def ::user ::us/uuid)
 (s/def ::project-id ::us/uuid)
 (s/def ::metadata any?)
+(s/def ::ordering ::us/number)
 
 ;; --- Mutation: Create Page
 
@@ -41,14 +42,15 @@
   (create-page db/pool params))
 
 (defn create-page
-  [conn {:keys [id user project-id name data metadata] :as params}]
-  (let [sql "insert into pages (id, user_id, project_id, name, data, metadata, version)
-             values ($1, $2, $3, $4, $5, $6, 0)
+  [conn {:keys [id user project-id name ordering data metadata] :as params}]
+  (let [sql "insert into pages (id, user_id, project_id, name,
+                                ordering, data, metadata, version)
+             values ($1, $2, $3, $4, $5, $6, $7, 0)
              returning *"
         id   (or id (uuid/next))
         data (blob/encode data)
         mdata (blob/encode metadata)]
-    (-> (db/query-one db/pool [sql id user project-id name data mdata])
+    (-> (db/query-one db/pool [sql id user project-id name ordering data mdata])
         (p/then' decode-row))))
 
 ;; --- Mutation: Update Page
@@ -98,6 +100,21 @@
                       (p/do! (update-page conn params)
                              (update-history conn params)
                              (select-keys params [:id :version])))))))))
+
+;; --- Mutation: Rename Page
+
+(s/def ::rename-page
+  (s/keys :req-un [::id ::name ::user]))
+
+(sm/defmutation ::rename-page
+  [{:keys [id name user]}]
+  (let [sql "update pages
+                set name = $3
+              where id = $1
+                and user_id = $2
+                and deleted_at is null"]
+    (-> (db/query-one db/pool [sql id user name])
+        (p/then su/constantly-nil))))
 
 ;; --- Mutation: Update Page Metadata
 

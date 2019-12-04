@@ -132,7 +132,7 @@
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom.view-mode
         {:alt (tr "header.view-mode")
-         :on-click #(st/emit! (dw/->OpenView (:id page)))
+         ;; :on-click #(st/emit! (dw/->OpenView (:id page)))
          }
         i/play]]
       [:& zoom-widget]]

@@ -28,7 +28,7 @@
   (ptk/reify ::watch-page-changes
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper (rx/filter #(= % ::udp/stop-page-watcher) stream)]
+      #_(let [stopper (rx/filter #(= % ::udp/stop-page-watcher) stream)]
         (->> stream
              (rx/filter udp/page-update?)
              (rx/filter #(not (undo? %)))
@@ -49,7 +49,7 @@
     (ptk/reify ::save-undo-entry
       ptk/UpdateEvent
       (update [_ state]
-        (let [page (udp/pack-page state id)
+        #_(let [page (udp/pack-page state id)
               undo {:data (:data page)
                     :metadata (:metadata page)}]
           (-> state
@@ -66,7 +66,7 @@
   (ptk/reify ::undo
     ptk/UpdateEvent
     (update [_ state]
-      (let [pid (get-in state [:workspace :current])
+      #_(let [pid (get-in state [:workspace :current])
             {:keys [stack selected] :as ustate} (get-in state [:undo pid])]
         (if (>= selected (dec (count stack)))
           state
@@ -95,7 +95,7 @@
   (ptk/reify ::redo
     ptk/UpdateEvent
     (update [_ state]
-      (let [pid (get-in state [:workspace :current])
+      #_(let [pid (get-in state [:workspace :current])
             undo-state (get-in state [:undo pid])
           stack (:stack undo-state)
           selected (:selected undo-state)]

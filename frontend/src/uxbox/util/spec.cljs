@@ -65,7 +65,7 @@
   [v]
   (cond
     (number? v) v
-    (re-matches number-rx v) (js/parseFloat v)
+    (and (string? v) (re-matches number-rx v))  (js/parseFloat v)
     :else ::s/invalid))
 
 (s/def ::number

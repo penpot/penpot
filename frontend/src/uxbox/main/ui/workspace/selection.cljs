@@ -72,7 +72,8 @@
                 (rx/map normalize-proportion-lock)
                 (rx/mapcat (partial resize shape))
                 (rx/take-until stoper))
-           (rx/of (dw/materialize-current-modifier-in-bulk ids))))))))
+           (rx/of (dw/materialize-current-modifier-in-bulk ids)
+                  ::dw/page-data-update)))))))
 
 ;; --- Controls (Component)
 
@@ -221,21 +222,18 @@
     [:& controls {:shape shape :zoom zoom :on-click on-click}]))
 
 (mf/defc selection-handlers
-  [{:keys [wst] :as props}]
-  (let [shapes-map (mf/deref refs/shapes-by-id)
-        shapes (map #(get shapes-map %) (:selected wst))
-        edition (:edition wst)
-        zoom (:zoom wst 1)
+  [{:keys [selected edition zoom] :as props}]
+  (let [data   (mf/deref refs/workspace-data)
+        shapes (map #(get-in data [:shapes-by-id %]) selected)
         num (count shapes)
         {:keys [id type] :as shape} (first shapes)]
-
     (cond
       (zero? num)
       nil
 
       (> num 1)
       [:& multiple-selection-handlers {:shapes shapes
-                                       :selected (:selected wst)
+                                       :selected selected
                                        :zoom zoom}]
 
       (and (= type :text)

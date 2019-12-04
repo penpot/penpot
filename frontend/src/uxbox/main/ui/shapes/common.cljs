@@ -29,9 +29,8 @@
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [pid (get-in state [:workspace :current])
-            flags (get-in state [:workspace pid :flags])
-            selected (get-in state [:workspace pid :selected])
+      (let [flags (get-in state [:workspace-local :flags])
+            selected (get-in state [:workspace-local :selected])
             stoper (rx/filter uws/mouse-up? stream)
             position @uws/mouse-position]
         (rx/concat
@@ -40,7 +39,8 @@
          (->> (uws/mouse-position-deltas position)
               (rx/map #(dw/apply-temporal-displacement-in-bulk selected %))
               (rx/take-until stoper))
-         (rx/of (dw/materialize-current-modifier-in-bulk selected)))))))
+         (rx/of (dw/materialize-current-modifier-in-bulk selected)
+                ::dw/page-data-update))))))
 
 (defn on-mouse-down
   [event {:keys [id type] :as shape} selected]

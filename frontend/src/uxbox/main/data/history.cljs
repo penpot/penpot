@@ -75,7 +75,7 @@
   (reify
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
+      #_(let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
         (->> stream
              (rx/filter udp/page-persisted?)
              (rx/debounce 1000)
@@ -186,7 +186,7 @@
   (ptk/reify ::select
     ptk/UpdateEvent
     (update [_ state]
-      (let [pid (get-in state [:workspace :current])
+      #_(let [pid (get-in state [:workspace :current])
             item (get-in state [:workspace pid :history :byver version])
             page (-> (get-in state [:pages pid])
                      (assoc :history true
@@ -208,7 +208,7 @@
 
     ptk/WatchEvent
     (watch [_ state s]
-      (let [pid (get-in state [:workspace :current])]
+      #_(let [pid (get-in state [:workspace :current])]
         (rx/of (udp/persist-page pid))))))
 
 ;; --- Deselect Page History
@@ -217,7 +217,7 @@
   (ptk/reify ::deselect
     ptk/UpdateEvent
     (update [_ state]
-      (let [pid (get-in state [:workspace :current])
+      #_(let [pid (get-in state [:workspace :current])
             packed (get-in state [:packed-pages pid])]
         (-> (udp/unpack-page state packed)
             (assoc-in [:workspace pid :history :selected] nil))))))

@@ -20,27 +20,27 @@
 
 (mf/defc left-sidebar
   {:wrap [mf/wrap-memo]}
-  [{:keys [flags page] :as props}]
+  [{:keys [layout page] :as props}]
   [:aside.settings-bar.settings-bar-left
    [:div.settings-bar-inside
-    (when (contains? flags :sitemap)
+    (when (contains? layout :sitemap)
       [:& sitemap-toolbox {:project-id (:project-id page)
                            :current-page-id (:id page)
                            :page page}])
-    (when (contains? flags :document-history)
+    (when (contains? layout :document-history)
       [:& history-toolbox])
-    (when (contains? flags :layers)
+    (when (contains? layout :layers)
       [:& layers-toolbox {:page page}])]])
 
 ;; --- Right Sidebar (Component)
 
 (mf/defc right-sidebar
-  [{:keys [flags page] :as props}]
+  [{:keys [layout page] :as props}]
   [:aside#settings-bar.settings-bar
    [:div.settings-bar-inside
-    (when (contains? flags :drawtools)
-      [:& draw-toolbox {:flags flags}])
-    (when (contains? flags :element-options)
+    (when (contains? layout :drawtools)
+      [:& draw-toolbox {:layout layout}])
+    (when (contains? layout :element-options)
       [:& options-toolbox {:page page}])
-    #_(when (contains? flags :icons)
+    #_(when (contains? layout :icons)
       (icons-toolbox))]])

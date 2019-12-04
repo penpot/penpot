@@ -158,7 +158,7 @@
   (reify
     ptk/WatchEvent
     (watch [this state stream]
-      (->> (rp/req :create/project {:name name})
+      #_(->> (rp/req :create/project {:name name})
            (rx/map :payload)
            (rx/mapcat (fn [{:keys [id] :as project}]
                         (rx/of #(assoc-project % project)

@@ -86,9 +86,9 @@
 (defn send-mutation!
   [id params]
   (let [url (str url "/w/mutation/" (name id))]
-    (send! {:method :post
-            :url url
-            :body params})))
+    (->> (impl-send {:method :post :url url :body params})
+         (rx/map conditional-decode)
+         (rx/mapcat handle-response))))
 
 (defn- dispatch
   [& args]

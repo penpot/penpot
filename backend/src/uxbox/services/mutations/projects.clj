@@ -30,8 +30,6 @@
   (s/keys :req-un [::user ::name]
           :opt-un [::id]))
 
-;; TODO: create role on project creation (maybe in DB?)
-
 (sm/defmutation ::create-project
   [{:keys [id user name] :as params}]
   (let [id (or id (uuid/next))
@@ -51,9 +49,7 @@
 (s/def ::update-project
   (s/keys :req-un [::user ::name ::id]))
 
-(sm/defmutation :update-project
-  {:doc "Update project."
-   :spec ::update-project}
+(sm/defmutation ::update-project
   [{:keys [id name user] :as params}]
   (let [sql "update projects
                 set name = $3
@@ -68,9 +64,7 @@
 (s/def ::delete-project
   (s/keys :req-un [::id ::user]))
 
-(sm/defmutation :delete-project
-  {:doc "Delete project"
-   :spec ::delete-project}
+(sm/defmutation ::delete-project
   [{:keys [id user] :as params}]
   (let [sql "update projects
                 set deleted_at = clock_timestamp()

@@ -14,7 +14,7 @@
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.pages :as udp]
    [uxbox.main.data.undo :as udu]
-   [uxbox.main.data.workspace :as dw]
+   [uxbox.main.data.workspace :as udw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.confirm]
@@ -22,9 +22,9 @@
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.main.ui.workspace.viewport :refer [viewport]]
    [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
-   [uxbox.main.ui.workspace.download]
+   ;; [uxbox.main.ui.workspace.download]
    [uxbox.main.ui.workspace.header :refer [header]]
-   [uxbox.main.ui.workspace.images]
+   ;; [uxbox.main.ui.workspace.images]
    [uxbox.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [uxbox.main.ui.workspace.scroll :as scroll]
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
@@ -55,47 +55,20 @@
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
-        (st/emit! (dw/decrease-zoom))
-        (st/emit! (dw/increase-zoom)))
+        (st/emit! (udw/decrease-zoom))
+        (st/emit! (udw/increase-zoom)))
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
-(defn- subscribe
-  [canvas page]
-  (st/emit! (udp/watch-page-changes (:id page))
-            (udu/watch-page-changes (:id page))
-            ;; TODO: temporary commented
-            ;; (udh/initialize (:id page))
-            ;; (udh/watch-page-changes (:id page))
-            (dw/start-shapes-watcher (:id page)))
-  (let [sub (shortcuts/init)]
-    #(do (st/emit! ::udp/stop-page-watcher
-                   ::udh/stop-page-watcher
-                   ::dw/stop-shapes-watcher)
-         (rx/cancel! sub))))
-
-(mf/defc workspace
-  [{:keys [page] :as props}]
-  (let [flags (or (mf/deref refs/flags) #{})
-        canvas (mf/use-ref nil)
-        left-sidebar? (not (empty? (keep flags [:layers :sitemap
+(mf/defc workspace-content
+  [{:keys [layout page] :as params}]
+  (let [canvas (mf/use-ref nil)
+        left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                 :document-history])))
-        right-sidebar? (not (empty? (keep flags [:icons :drawtools
+        right-sidebar? (not (empty? (keep layout [:icons :drawtools
                                                  :element-options])))
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
-                 :no-tool-bar-left (not left-sidebar?)
-                 :scrolling (:viewport-positionig workspace))]
-
-    (mf/use-effect #(subscribe canvas page)
-                   #js [(:id page)])
-    [:*
-     [:& messages-widget]
-     [:& header {:page page
-                 :flags flags
-                 :key (:id page)}]
-
-     (when (:colorpalette flags)
-       [:& colorpalette])
+                 :no-tool-bar-left (not left-sidebar?))]
 
      [:main.main-content
       [:section.workspace-content
@@ -106,32 +79,45 @@
        [:& history-dialog]
 
        ;; Rules
-       (when (contains? flags :rules)
-         [:& horizontal-rule])
-
-       (when (contains? flags :rules)
-         [:& vertical-rule])
+       (when (contains? layout :rules)
+         [:*
+          [:& horizontal-rule]
+          [:& vertical-rule]])
 
        [:section.workspace-viewport {:id "workspace-viewport" :ref canvas}
-        [:& viewport {:page page :key (:id page)}]]]
+        [:& viewport {:page page}]]]
 
       ;; Aside
       (when left-sidebar?
-        [:& left-sidebar {:page page :flags flags}])
+        [:& left-sidebar {:page page :layout layout}])
       (when right-sidebar?
-        [:& right-sidebar {:page page :flags flags}])]]))
+        [:& right-sidebar {:page page :layout layout}])]))
+
+(mf/defc workspace
+  [{:keys [page-id] :as props}]
+  (let [layout (mf/deref refs/workspace-layout)
+        flags  (mf/deref refs/selected-flags)
+        page   (mf/deref refs/workspace-page)]
+
+    [:*
+     [:& messages-widget]
+     [:& header {:page page :flags flags}]
+
+     (when (:colorpalette flags)
+       [:& colorpalette])
+
+     (when (and layout page)
+       [:& workspace-content {:layout layout :page page}])]))
 
 (mf/defc workspace-page
   [{:keys [project-id page-id] :as props}]
-  (let [page-iref (mf/use-memo {:deps #js [project-id page-id]
-                                :fn #(-> (l/in [:pages page-id])
-                                         (l/derive st/state))})
-        page (mf/deref page-iref)]
 
-    (mf/use-effect
-     {:deps #js [project-id page-id]
-      :fn #(st/emit! (dw/initialize project-id page-id))})
+  (mf/use-effect
+   {:deps #js [page-id]
+    :fn (fn []
+          (let [sub (shortcuts/init)]
+            (st/emit! (udw/initialize project-id page-id))
+            #(rx/cancel! sub)))})
 
-    [:> rdnd/provider {:backend rdnd/html5}
-     (when page
-       [:& workspace {:page page}])]))
+  [:> rdnd/provider {:backend rdnd/html5}
+   [:& workspace {:page-id page-id :key page-id}]])

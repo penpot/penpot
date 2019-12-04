@@ -22,7 +22,7 @@
    [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
 
-   [uxbox.main.ui.shapes :as uus]
+   [uxbox.main.ui.shapes :refer [shape-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
 
@@ -74,17 +74,15 @@
 
 (def ^:private handle-selrect
   (letfn [(update-state [state position]
-            (let [id (get-in state [:workspace :current])
-                  selrect (get-in state [:workspace id :selrect])]
+            (let [selrect (get-in state [:workspace-local :selrect])]
               (if selrect
-                (assoc-in state [:workspace id :selrect]
+                (assoc-in state [:workspace-local :selrect]
                           (dw/selection->rect (assoc selrect :stop position)))
-                (assoc-in state [:workspace id :selrect]
+                (assoc-in state [:workspace-local :selrect]
                           (dw/selection->rect {:start position :stop position})))))
 
           (clear-state [state]
-            (let [id (get-in state [:workspace :current])]
-              (update-in state [:workspace id] dissoc :selrect)))]
+            (update state :workspace-local dissoc :selrect))]
     (ptk/reify ::handle-selrect
       ptk/WatchEvent
       (watch [_ state stream]
@@ -129,11 +127,28 @@
 
 ;; --- Viewport
 
+(mf/defc canvas-and-shapes
+  {:wrap [mf/wrap-memo]}
+  [props]
+  (let [data (mf/deref refs/workspace-data)
+        shapes-by-id (:shapes-by-id data)
+        shapes (map #(get shapes-by-id %) (:shapes data []))
+        canvas (map #(get shapes-by-id %) (:canvas data []))]
+    [:*
+     (for [item canvas]
+       [:& shape-wrapper {:shape item :key (:id item)}])
+     (for [item (reverse shapes)]
+       [:& shape-wrapper {:shape item :key (:id item)}])]))
+
 (mf/defc viewport
   [{:keys [page] :as props}]
-  (let [{:keys [drawing-tool tooltip zoom flags edition] :as wst} (mf/deref refs/workspace)
+  (let [{:keys [drawing-tool
+                zoom
+                flags
+                edition
+                selected]
+         :as local} (mf/deref refs/workspace-local)
         viewport-ref (mf/use-ref nil)
-        tooltip (or tooltip (get-shape-tooltip drawing-tool))
         zoom (or zoom 1)]
     (letfn [(on-mouse-down [event]
               (dom/stop-propagation event)
@@ -230,9 +245,6 @@
       ;; (prn "viewport$render")
       [:*
        [:& coordinates {:zoom zoom}]
-       #_[:div.tooltip-container
-        (when tooltip
-          [:& cursor-tooltip {:tooltip tooltip}])]
        [:svg.viewport {:width (* c/viewport-width zoom)
                        :height (* c/viewport-height zoom)
                        :ref viewport-ref
@@ -244,23 +256,23 @@
                        :on-mouse-down on-mouse-down
                        :on-mouse-up on-mouse-up}
         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
-         (when page
-           [:*
-            [:& uus/canvas-and-shapes {:page page}]
+         [:*
+          [:& canvas-and-shapes]
 
-            (when (seq (:selected wst))
-              [:& selection-handlers {:wst wst}])
+          (when (seq selected)
+            [:& selection-handlers {:selected selected
+                                    :zoom zoom
+                                    :edition edition}])
 
-            (when-let [dshape (:drawing wst)]
-              [:& draw-area {:shape dshape
-                             :zoom (:zoom wst)
-                             :modifiers (:modifiers wst)}])])
-
-
+          (when-let [drawing-shape (:drawing local)]
+            [:& draw-area {:shape drawing-shape
+                           :zoom zoom
+                           :modifiers (:modifiers local)}])]
 
          (if (contains? flags :grid)
            [:& grid {:page page}])]
-        (when (contains? flags :ruler)
-          [:& ruler {:zoom zoom :ruler (:ruler wst)}])
-        [:& selrect {:data (:selrect wst)}]]])))
 
+        (when (contains? flags :ruler)
+          [:& ruler {:zoom zoom :ruler (:ruler local)}])
+
+        [:& selrect {:data (:selrect local)}]]])))

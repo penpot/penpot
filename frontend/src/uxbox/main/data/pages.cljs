@@ -31,22 +31,30 @@
 (s/def ::grid-x-axis ::us/number)
 (s/def ::grid-y-axis ::us/number)
 (s/def ::grid-color ::us/string)
-(s/def ::order ::us/number)
+(s/def ::ordering ::us/number)
 (s/def ::background ::us/string)
 (s/def ::background-opacity ::us/number)
 (s/def ::user ::us/uuid)
 
 (s/def ::metadata
-  (s/keys :req-un [::width ::height]
-          :opt-un [::grid-y-axis
+  (s/keys :opt-un [::grid-y-axis
                    ::grid-x-axis
                    ::grid-color
-                   ::order
                    ::background
                    ::background-opacity]))
 
-(s/def ::shapes
-  (s/coll-of ::us/uuid :kind vector? :into []))
+(s/def ::minimal-shape
+  (s/keys :req-un [::type ::name]
+          :opt-un [::id]))
+
+(s/def ::shapes (s/every ::us/uuid :kind vector? :into []))
+(s/def ::canvas (s/every ::us/uuid :kind vector? :into []))
+
+(s/def ::shapes-by-id
+  (s/map-of ::us/uuid ::minimal-shape))
+
+(s/def ::data
+  (s/keys :req-un [::shapes ::canvas ::shapes-by-id]))
 
 (s/def ::page-entity
   (s/keys :req-un [::id
@@ -55,28 +63,9 @@
                    ::created-at
                    ::modified-at
                    ::user-id
+                   ::ordering
                    ::metadata
-                   ::shapes]))
-
-(s/def ::minimal-shape
-  (s/keys :req-un [::type ::name]
-          :opt-un [::id]))
-
-(s/def :uxbox.backend/shapes
-  (s/coll-of ::minimal-shape :kind vector?))
-
-(s/def :uxbox.backend/data
-  (s/keys :req-un [:uxbox.backend/shapes]))
-
-(s/def ::server-page
-  (s/keys :req-un [::id ::name
-                   ::project-id
-                   ::version
-                   ::created-at
-                   ::modified-at
-                   ::user
-                   ::metadata
-                   :uxbox.backend/data]))
+                   ::data]))
 
 ;; --- Protocols
 
@@ -96,62 +85,34 @@
 
 ;; --- Helpers
 
-(defn pack-page
-  "Return a packed version of page object ready
-  for send to remore storage service."
-  [state id]
-  (letfn [(pack-shapes [ids]
-            (mapv #(get-in state [:shapes %]) ids))]
-    (let [page (get-in state [:pages id])
-          data {:shapes (pack-shapes (concatv (:canvas page)
-                                              (:shapes page)))}]
-      (-> page
-          (assoc :data data)
-          (dissoc :shapes)))))
+;; (defn pack-page
+;;   "Return a packed version of page object ready
+;;   for send to remore storage service."
+;;   [state id]
+;;   (letfn [(pack-shapes [ids]
+;;             (mapv #(get-in state [:shapes %]) ids))]
+;;     (let [page (get-in state [:pages id])
+;;           data {:shapes (pack-shapes (concatv (:canvas page)
+;;                                               (:shapes page)))}]
+;;       (-> page
+;;           (assoc :data data)
+;;           (dissoc :shapes)))))
 
 (defn unpack-page
-  "Unpacks packed page object and assocs it to the
-  provided state."
-  [state {:keys [id data] :as page}]
-  (let [shapes-list (:shapes data [])
-
-        shapes (->> shapes-list
-                    (filter #(not= :canvas (:type %)))
-                    (mapv :id))
-        canvas (->> shapes-list
-                    (filter #(= :canvas (:type %)))
-                    (mapv :id))
-
-        shapes-map (index-by-id shapes-list)
-
-        page (-> page
-                 (dissoc :data)
-                 (assoc :shapes shapes :canvas canvas))]
-    (-> state
-        (update :shapes merge shapes-map)
-        (update :pages assoc id page))))
+  [state {:keys [id data metadata] :as page}]
+  (-> state
+      (update :pages assoc id (dissoc page :data))
+      (update :pages-data assoc id data)))
 
 (defn purge-page
   "Remove page and all related stuff from the state."
   [state id]
-  (let [pid (get-in state [:pages id :project])]
+  (if-let [project-id (get-in state [:pages id :project-id])]
     (-> state
-        (update-in [:projects pid :pages] #(filterv (partial not= id) %))
+        (update-in [:projects project-id :pages] #(filterv (partial not= id) %))
         (update :pages dissoc id)
-        (update :packed-pages dissoc id)
-        (update :shapes (fn [shapes] (->> shapes
-                                          (map second)
-                                          (filter #(= (:page %) id))
-                                          (map :id)
-                                          (apply dissoc shapes)))))))
-
-(defn assoc-packed-page
-  [state {:keys [id] :as page}]
-  (assoc-in state [:packed-pages id] page))
-
-(defn dissoc-packed-page
-  [state id]
-  (update state :packed-pages dissoc id))
+        (update :pages-data dissoc id))
+    state))
 
 ;; --- Pages Fetched
 
@@ -165,13 +126,7 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [get-order #(get-in % [:metadata :order])
-            pages (sort-by get-order pages)
-            page-ids (into [] (map :id) pages)]
-        (as-> state $
-          (assoc-in $ [:projects id :pages] page-ids)
-          (reduce unpack-page $ pages)
-          (reduce assoc-packed-page $ pages))))))
+      (reduce unpack-page state pages))))
 
 (defn pages-fetched?
   [v]
@@ -192,21 +147,18 @@
 
 (defn page-fetched
   [data]
-  (s/assert any? data) ;; TODO: minimal validate
+  (s/assert ::page-entity data)
   (ptk/reify ::page-fetched
     IDeref
     (-deref [_] data)
 
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (unpack-page data)
-          (assoc-packed-page data)))))
+      (unpack-page state data))))
 
 (defn page-fetched?
   [v]
   (= ::page-fetched (ptk/type v)))
-
 
 ;; --- Fetch Pages (by project id)
 
@@ -222,115 +174,68 @@
 
 ;; --- Page Created
 
-(declare rehash-pages)
-
-(s/def ::page-created-params
-  (s/keys :req-un [::id ::name ::project-id ::metadata]))
-
 (defn page-created
-  [data]
-  (s/assert ::page-created-params data)
-  (reify
+  [{:keys [id project-id] :as page}]
+  (s/assert ::page-entity page)
+  (ptk/reify ::page-created
+    cljs.core/IDeref
+    (-deref [_] page)
+
     ptk/UpdateEvent
     (update [_ state]
-      (let [pid (:project data)]
+      (let [data (:data page)
+            page (dissoc page :data)]
         (-> state
-            (update-in [:projects pid :pages] (fnil conj []) (:id data))
-            (unpack-page data)
-            (assoc-packed-page data))))
+            (update-in [:projects project-id :pages] (fnil conj []) (:id page))
+            (update :pages assoc id page)
+            (update :pages-data assoc id data))))))
 
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (rx/of (rehash-pages (:project data))))))
+(defn page-created?
+  [v]
+  (= ::page-created (ptk/type v)))
 
 ;; --- Create Page Form
 
-(s/def ::form-created-page-params
-  (s/keys :req-un [::name ::project-id ::width ::height]))
+(s/def ::create-page
+  (s/keys :req-un [::name ::project-id]))
 
-(defn form->create-page
-  [{:keys [name project width height layout] :as data}]
-  (s/assert ::form-created-page-params data)
-  (reify
+(defn create-page
+  [{:keys [project-id name] :as data}]
+  (s/assert ::create-page data)
+  (ptk/reify ::create-page
     ptk/WatchEvent
     (watch [this state s]
-      (let [canvas {:id (uuid/random)
-                    :name "Canvas 1"
-                    :type :canvas
-                    :x1 200
-                    :y1 200
-                    :x2 (+ 200 width)
-                    :y2 (+ 200 height)}
-            metadata {:width width
-                      :height height
-                      :order -100}
+      (let [ordering (count (get-in state [:projects project-id :pages]))
             params {:name name
-                    :project project
-                    :data {:shapes [canvas]}
-                    :metadata metadata}]
-        (->> (rp/req :create/page params)
-             (rx/map :payload)
+                    :project-id project-id
+                    :ordering ordering
+                    :data {:shapes []
+                           :canvas []
+                           :shapes-by-id {}}
+                    :metadata {}}]
+        (->> (rp/mutation :create-page params)
              (rx/map page-created))))))
 
 ;; --- Update Page Form
 
-(s/def ::form-update-page-params
-  (s/keys :req-un [::id ::name ::width ::height]))
+(declare page-renamed)
 
-(defn form->update-page
-  [{:keys [id name width height] :as data}]
-  (s/assert ::form-update-page-params data)
-  (reify
-    IPageUpdate
+(s/def ::rename-page
+  (s/keys :req-un [::id ::name]))
+
+(defn rename-page
+  [{:keys [id name] :as data}]
+  (s/assert ::rename-page data)
+  (ptk/reify ::rename-page
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:pages id]
-                 (fn [page]
-                   (-> (assoc page :name name)
-                       (assoc-in [:name] name)
-                       (assoc-in [:metadata :width] width)
-                       (assoc-in [:metadata :height] height)))))))
+      (update-in state [:pages id] assoc :name name))
 
-;; --- Page Persisted
-
-(defn page-persisted
-  [data]
-  (s/assert ::server-page data)
-  (ptk/reify ::page-persisted
-    cljs.core/IDeref
-    (-deref [_] data)
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [{:keys [id version]} data]
-        (-> state
-            (assoc-in [:pages id :version] version)
-            (assoc-packed-page data))))))
-
-(defn- page-persisted?
-  [event]
-  (= (ptk/type event) ::page-persisted))
-
-;; --- Persist Page
-
-(defn persist-page
-  [id]
-  (s/assert ::us/uuid id)
-  (ptk/reify ::persist-page
     ptk/WatchEvent
-    (watch [this state s]
-      (let [page (get-in state [:pages id])]
-        (if (:history page)
-          (rx/empty)
-          (let [page (pack-page state id)]
-            (->> (rp/req :update/page page)
-                 (rx/map :payload)
-                 (rx/map page-persisted)
-                 (rx/catch (fn [err] (rx/of ::page-persist-error))))))))))
-
-(defn persist-page?
-  [v]
-  (= ::persist-page (ptk/type v)))
+    (watch [_ state stream]
+      (let [params {:id id :name name}]
+        (->> (rp/mutation :rename-page params)
+             (rx/map #(ptk/data-event ::page-renamed data)))))))
 
 ;; --- Page Metadata Persisted
 
@@ -349,7 +254,6 @@
   [v]
   (= ::metadata-persisted (ptk/type v)))
 
-
 ;; --- Persist Page Metadata
 
 ;; This is a simplified version of `PersistPage` event
@@ -362,7 +266,7 @@
   (ptk/reify ::persist-metadata
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page (get-in state [:pages id])]
+      #_(let [page (get-in state [:pages id])]
         (->> (rp/req :update/page-metadata page)
              (rx/map :payload)
              (rx/map metadata-persisted))))))
@@ -390,44 +294,6 @@
     (update [this state]
       (assoc-in state [:pages id :metadata] metadata))))
 
-
-;; --- Rehash Pages
-;;
-;; A post processing event that normalizes the
-;; page order numbers after a user sorting
-;; operation for a concrete project.
-
-(defn rehash-pages
-  [id]
-  {:pre [(uuid? id)]}
-  (reify
-    ptk/UpdateEvent
-    (update [this state]
-      (let [page-ids (get-in state [:projects id :pages])]
-        (reduce (fn [state [index id]]
-                  (assoc-in state [:pages id :metadata :order] index))
-                state
-                (map-indexed vector page-ids))))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-ids (get-in state [:projects id :pages])]
-        (->> (rx/from-coll page-ids)
-             (rx/map persist-metadata))))))
-
-;; --- Move Page (Ordering)
-
-(defn move-page
-  [{:keys [page-id project-id index] :as params}]
-  (reify
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pages (get-in state [:projects project-id :pages])
-            pages (into [] (remove #(= % page-id)) pages)
-            [before after] (split-at index pages)
-            pages (vec (concat before [page-id] after))]
-        (assoc-in state [:projects project-id :pages] pages)))))
-
 ;; --- Delete Page (by id)
 
 (defn delete-page
@@ -440,34 +306,5 @@
 
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/req :delete/page id)
+      (->> (rp/mutation :delete-page  {:id id})
            (rx/map (constantly ::delete-completed))))))
-
-;; --- Watch Page Changes
-
-(defn watch-page-changes
-  [id]
-  (s/assert ::us/uuid id)
-  (reify
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
-        (->> (rx/merge
-              (->> stream
-                   (rx/filter #(or (satisfies? IPageUpdate %)
-                                   (= ::page-update %)))
-                   (rx/debounce 1000)
-                   (rx/mapcat #(rx/merge (rx/of (persist-page id))
-                                         (->> (rx/filter page-persisted? stream)
-                                              (rx/timeout 1000 (rx/empty))
-                                              (rx/take 1)
-                                              (rx/ignore)))))
-              (->> stream
-                   (rx/filter #(satisfies? IMetadataUpdate %))
-                   (rx/debounce 1000)
-                   (rx/mapcat #(rx/merge (rx/of (persist-metadata id))
-                                         (->> (rx/filter metadata-persisted? stream)
-                                              (rx/take 1)
-                                              (rx/ignore))))))
-             (rx/take-until stopper))))))
-

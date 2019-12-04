@@ -72,14 +72,16 @@
 (defn create-page
   [conn [pjid paid uid]]
   (println "create page" paid "(for project=" pjid ", user=" uid ")")
-  (let [data {:shapes [{:id (mk-uuid "canvas" 1)
-                        :name "Canvas-1"
-                        :type :canvas
-                        :page (mk-uuid "page" pjid paid uid)
-                        :x1 200
-                        :y1 200
-                        :x2 1224
-                        :y2 968}]}
+  (let [canvas {:id (mk-uuid "canvas" 1)
+                :name "Canvas-1"
+                :type :canvas
+                :x1 200
+                :y1 200
+                :x2 1224
+                :y2 968}
+        data {:shapes []
+              :canvas [(:id canvas)]
+              :shapes-by-id {(:id canvas) canvas}}
         data (blob/encode data)
         mdata (blob/encode {})]
     (p/do!

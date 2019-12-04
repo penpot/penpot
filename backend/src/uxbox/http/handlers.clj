@@ -42,7 +42,7 @@
   (let [data (:body-params req)
         user-agent (get-in req [:headers "user-agent"])]
     (-> (sm/handle (assoc data ::sm/type :login))
-        (p/then #(session/create % user-agent))
+        (p/then #(session/create (:id %) user-agent))
         (p/then' (fn [token]
                    {:status 204
                     :cookies {"auth-token" {:value token}}

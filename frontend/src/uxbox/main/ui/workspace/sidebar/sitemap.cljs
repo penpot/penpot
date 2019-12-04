@@ -15,11 +15,12 @@
    [uxbox.main.data.projects :as dp]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
+   [uxbox.main.refs :as refs]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.sidebar.sitemap-forms :refer [page-form-dialog]]
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
-   [uxbox.util.data :refer [classnames]]
+   [uxbox.util.data :refer [classnames enumerate]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
@@ -37,14 +38,12 @@
             (dom/stop-propagation event)
             (modal/show! confirm-dialog {:on-accept delete}))
           (on-drop [item monitor]
-            (st/emit! (udp/rehash-pages (:project-id page))))
+            (prn "TODO"))
           (on-hover [item monitor]
-            (st/emit! (udp/move-page {:project-id (:project-id item)
-                                      :page-id (:page-id item)
-                                      :index index})))]
+            (st/emit! (dw/change-page-order {:id (:id item)
+                                             :index index})))]
     (let [[dprops ref] (use-sortable {:type "page-item"
-                                      :data {:page-id (:id page)
-                                             :project-id (:project-id page)
+                                      :data {:id (:id page)
                                              :index index}
                                       :on-hover on-hover
                                       :on-drop on-drop})]
@@ -64,40 +63,52 @@
          (when deletable?
            [:a {:on-click on-delete} i/trash])]]])))
 
-;; --- Pages List
 
-(defn- make-pages-iref
-  [{:keys [id pages] :as project}]
-  (-> (l/lens (fn [s] (into [] (map #(get-in s [:pages %])) pages)))
-      (l/derive st/state {:equals? =})))
+;; --- Page Item Wrapper
 
-(def ^:private pages-map-iref
-  (-> (l/key :pages)
+(defn- make-page-ref
+  [page-id]
+  (-> (l/in [:pages page-id])
       (l/derive st/state)))
+
+(mf/defc page-item-wrapper
+  [{:keys [page-id index deletable? selected?] :as props}]
+  (let [page-ref (mf/use-memo {:deps #js [page-id]
+                               :fn #(make-page-ref page-id)})
+        page (mf/deref page-ref)]
+    [:& page-item {:page page
+                   :index index
+                   :deletable? deletable?
+                   :selected? selected?}]))
+
+;; --- Pages List
 
 (mf/defc pages-list
   [{:keys [project current-page-id] :as props}]
-  (let [pages-map (mf/deref pages-map-iref)
-        pages (->> (vals pages-map)
-                   (filter #(= (:project-id %) (:id project))))
+  (let [pages (enumerate (:pages project))
         deletable? (> (count pages) 1)]
     [:ul.element-list
-     (for [[index item] (map-indexed vector pages)]
-       [:& page-item {:page item
-                      :index index
-                      :deletable? deletable?
-                      :selected? (= (:id item) current-page-id)
-                      :key (:id item)}])]))
+     (for [[index page-id] pages]
+       [:& page-item-wrapper
+        {:page-id page-id
+         :index index
+         :deletable? deletable?
+         :selected? (= page-id current-page-id)
+         :key page-id}])]))
 
 ;; --- Sitemap Toolbox
 
+(def ^:private workspace-project
+  (letfn [(selector [state]
+            (let [project-id (get-in state [:workspace-page :project-id])]
+              (get-in state [:projects project-id])))]
+    (-> (l/lens selector)
+        (l/derive st/state))))
+
 (mf/defc sitemap-toolbox
   [{:keys [project-id current-page-id] :as props}]
-  (let [project-iref (mf/use-memo {:deps #js [project-id]
-                                   :fn #(-> (l/in [:projects project-id])
-                                            (l/derive st/state))})
-        project (mf/deref project-iref)
-        create #(modal/show! page-form-dialog {:page {:project project-id}})
+  (let [project (mf/deref workspace-project)
+        create #(modal/show! page-form-dialog {:page {:project-id project-id}})
         close #(st/emit! (dw/toggle-flag :sitemap))]
     [:div.sitemap.tool-window
      [:div.tool-window-bar

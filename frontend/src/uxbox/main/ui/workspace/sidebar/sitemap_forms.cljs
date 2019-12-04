@@ -12,6 +12,7 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.pages :as udp]
+   [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
    [uxbox.util.dom :as dom]
@@ -20,22 +21,12 @@
    [uxbox.util.i18n :refer [tr]]))
 
 (s/def ::id ::us/uuid)
-(s/def ::project ::us/uuid)
+(s/def ::project-id ::us/uuid)
 (s/def ::name ::us/not-empty-string)
-(s/def ::width ::us/number-str)
-(s/def ::height ::us/number-str)
 
 (s/def ::page-form
-  (s/keys :req-un [::id
-                   ::project
-                   ::name
-                   ::width
-                   ::height]))
-
-(def defaults
-  {:name ""
-   :width "1366"
-   :height "768"})
+  (s/keys :req-un [::project-id ::name]
+          :opt-un [::id]))
 
 (defn- on-submit
   [event form]
@@ -43,20 +34,13 @@
   (modal/hide!)
   (let [data (:clean-data form)]
     (if (nil? (:id data))
-      (st/emit! (udp/form->create-page data))
-      (st/emit! (udp/form->update-page data)))))
-
-(defn- swap-size
-  [event {:keys [data] :as form}]
-  (swap! data assoc
-         :width (:height data)
-         :height (:width data)))
+      (st/emit! (udp/create-page data))
+      (st/emit! (udp/rename-page data)))))
 
 (defn- initial-data
   [page]
-  (merge {:name "" :width "1366" :height "768"}
-         (select-keys page [:name :id :project])
-         (select-keys (:metadata page) [:width :height])))
+  (merge {:name ""}
+         (select-keys page [:name :id :project-id])))
 
 (mf/defc page-form
   [{:keys [page] :as props}]
@@ -71,32 +55,6 @@
        :on-change (fm/on-input-change form :name)
        :value (:name data)
        :auto-focus true}]
-     [:div.project-size
-      [:div.input-element.pixels
-       [:span (tr "ds.width")]
-       [:input#project-witdh.input-text
-        {:placeholder (tr "ds.width")
-         :name "width"
-         :type "number"
-         :min 0
-         :max 5000
-         :class (fm/error-class form :width)
-         :on-blur (fm/on-input-blur form :width)
-         :on-change (fm/on-input-change form :width)
-         :value (:width data)}]]
-      [:a.toggle-layout {:on-click #(swap-size % form)} i/toggle]
-      [:div.input-element.pixels
-       [:span (tr "ds.height")]
-       [:input#project-height.input-text
-        {:placeholder (tr "ds.height")
-         :name "height"
-         :type "number"
-         :min 0
-         :max 5000
-         :class (fm/error-class form :height)
-         :on-blur (fm/on-input-blur form :height)
-         :on-change (fm/on-input-change form :height)
-         :value (:height data)}]]]
      [:input.btn-primary
       {:value (tr "ds.go")
        :type "submit"

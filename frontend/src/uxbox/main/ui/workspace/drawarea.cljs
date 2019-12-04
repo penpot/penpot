@@ -12,7 +12,6 @@
    [rumext.alpha :as mf]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.data.shapes :as ds]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -73,17 +72,16 @@
     (ptk/reify ::start-drawing
       ptk/UpdateEvent
       (update [_ state]
-        (update-in state [:workspace :drawing-lock] #(if (nil? %) id %)))
+        (update-in state [:workspace-local :drawing-lock] #(if (nil? %) id %)))
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [pid (get-in state [:workspace :current])
-              lock (get-in state [:workspace :drawing-lock])]
+        (let [lock (get-in state [:workspace-local :drawing-lock])]
           (if (= lock id)
             (rx/merge
              (->> (rx/filter #(= % handle-finish-drawing) stream)
                   (rx/take 1)
-                  (rx/map (fn [_] #(update % :workspace dissoc :drawing-lock))))
+                  (rx/map (fn [_] #(update % :workspace-local dissoc :drawing-lock))))
              (rx/of (handle-drawing type)))
             (rx/empty)))))))
 
@@ -98,9 +96,8 @@
   (ptk/reify ::handle-drawing
     ptk/UpdateEvent
     (update [_ state]
-      (let [pid (get-in state [:workspace :current])
-            data (make-minimal-shape type)]
-        (update-in state [:workspace pid :drawing] merge data)))
+      (let [data (make-minimal-shape type)]
+        (update-in state [:workspace-local :drawing] merge data)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -111,13 +108,12 @@
 
 (def handle-drawing-generic
   (letfn [(initialize-drawing [state point]
-            (let [pid (get-in state [:workspace :current])
-                  shape (get-in state [:workspace pid :drawing])
+            (let [shape (get-in state [:workspace-local :drawing])
                   shape (geom/setup shape {:x1 (:x point)
                                            :y1 (:y point)
                                            :x2 (+ (:x point) 2)
                                            :y2 (+ (:y point) 2)})]
-              (assoc-in state [:workspace pid :drawing] (assoc shape ::initialized? true))))
+              (assoc-in state [:workspace-local :drawing] (assoc shape ::initialized? true))))
 
           (resize-shape [shape point lock?]
             (let [shape (-> (geom/shape->rect-shape shape)
@@ -128,14 +124,12 @@
               (assoc shape :modifier-mtx mtx)))
 
           (update-drawing [state point lock?]
-            (let [pid (get-in state [:workspace :current])]
-              (update-in state [:workspace pid :drawing] resize-shape point lock?)))]
+            (update-in state [:workspace-local :drawing] resize-shape point lock?))]
 
     (ptk/reify ::handle-drawing-generic
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [pid (get-in state [:workspace :current])
-              {:keys [zoom flags]} (get-in state [:workspace pid])
+        (let [{:keys [zoom flags]} (:workspace-local state)
               align? (refs/alignment-activated? flags)
 
               stoper? #(or (uws/mouse-up? %) (= % :interrupt))
@@ -165,30 +159,26 @@
                       (= 13 (:key event)))))
 
           (initialize-drawing [state point]
-            (let [pid (get-in state [:workspace :current])]
-              (-> state
-                  (assoc-in [:workspace pid :drawing :segments] [point point])
-                  (assoc-in [:workspace pid :drawing ::initialized?] true))))
+            (-> state
+                (assoc-in [:workspace-local :drawing :segments] [point point])
+                (assoc-in [:workspace-local :drawing ::initialized?] true)))
 
           (insert-point-segment [state point]
-            (let [pid (get-in state [:workspace :current])]
-              (update-in state [:workspace pid :drawing :segments] (fnil conj []) point)))
+            (update-in state [:workspace-local :drawing :segments] (fnil conj []) point))
 
           (update-point-segment [state index point]
-            (let [pid (get-in state [:workspace :current])
-                  segments (count (get-in state [:workspace pid :drawing :segments]))
+            (let [segments (count (get-in state [:workspace-local :drawing :segments]))
                   exists? (< -1 index segments)]
               (cond-> state
-                exists? (assoc-in [:workspace pid :drawing :segments index] point))))
+                exists? (assoc-in [:workspace-local :drawing :segments index] point))))
 
           (remove-dangling-segmnet [state]
-            (let [pid (get-in state [:workspace :current])]
-              (update-in state [:workspace pid :drawing :segments] #(vec (butlast %)))))]
+            (update-in state [:workspace-local :drawing :segments] #(vec (butlast %))))]
+
     (ptk/reify ::handle-drawing-path
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [pid (get-in state [:workspace :current])
-              {:keys [zoom flags]} (get-in state [:workspace pid])
+        (let [{:keys [zoom flags]} (:workspace-local state)
 
               align? (refs/alignment-activated? flags)
               last-point (volatile! (gpt/divide @uws/mouse-position zoom))
@@ -252,29 +242,23 @@
                  (and (uws/mouse-event? event) (= type :up))))
 
           (initialize-drawing [state]
-            (let [pid (get-in state [:workspace :current])]
-              (assoc-in state [:workspace pid :drawing ::initialized?] true)))
+            (assoc-in state [:workspace-local :drawing ::initialized?] true))
 
           (insert-point-segment [state point]
-            (let [pid (get-in state [:workspace :current])]
-              (update-in state [:workspace pid :drawing :segments] (fnil conj []) point)))
+            (update-in state [:workspace-local :drawing :segments] (fnil conj []) point))
 
           (simplify-drawing-path [state tolerance]
-            (let [pid (get-in state [:workspace :current])]
-              (update-in state [:workspace pid :drawing :segments] path/simplify tolerance)))]
+              (update-in state [:workspace-local :drawing :segments] path/simplify tolerance))]
 
     (ptk/reify ::handle-drawing-curve
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [pid (get-in state [:workspace :current])
-              {:keys [zoom flags]} (get-in state [:workspace pid])
-
+        (let [{:keys [zoom flags]} (:workspace-local state)
               align? (refs/alignment-activated? flags)
               stoper (rx/filter stoper-event? stream)
               mouse  (->> (rx/sample 10 uws/mouse-position)
                           (rx/mapcat #(conditional-align % align?))
                           (rx/map #(gpt/divide % zoom)))]
-
           (rx/concat
            (rx/of initialize-drawing)
            (->> mouse
@@ -287,8 +271,7 @@
   (ptk/reify ::handle-finish-drawing
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [pid (get-in state [:workspace :current])
-            shape (get-in state [:workspace pid :drawing])]
+      (let [shape (get-in state [:workspace-local :drawing])]
         (rx/concat
          (rx/of dw/clear-drawing)
          (when (::initialized? shape)
@@ -305,8 +288,7 @@
   (ptk/reify ::close-drawing-path
     ptk/UpdateEvent
     (update [_ state]
-      (let [pid (get-in state [:workspace :current])]
-        (assoc-in state [:workspace pid :drawing :close?] true)))))
+      (assoc-in state [:workspace-local :drawing :close?] true))))
 
 ;; --- Components
 

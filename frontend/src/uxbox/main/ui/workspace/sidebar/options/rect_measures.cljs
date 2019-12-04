@@ -9,7 +9,6 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.shapes :as uds]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.geom :as geom]
    [uxbox.main.store :as st]

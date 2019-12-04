@@ -30,8 +30,6 @@
           :opt-un [::scope]))
 
 (sm/defmutation ::login
-  {:doc "User login"
-   :spec ::login-params}
   [{:keys [username password scope] :as params}]
   (letfn [(check-password [user password]
             (hashers/check password (:password user)))

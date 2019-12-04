@@ -12,39 +12,57 @@
             [uxbox.main.store :as st]))
 
 (def workspace
-  (letfn [(selector [state]
-            (let [id (get-in state [:workspace :current])]
-              (get-in state [:workspace id])))]
-    (-> (l/lens selector)
-        (l/derive st/state))))
+  (-> (l/key :workspace-local)
+      (l/derive st/state)))
+
+(def workspace-local
+  (-> (l/key :workspace-local)
+      (l/derive st/state)))
+
+(def workspace-layout
+  (-> (l/key :workspace-layout)
+      (l/derive st/state)))
+
+(def workspace-page
+  (-> (l/key :workspace-page)
+      (l/derive st/state)))
+
+(def workspace-data
+  (-> (l/key :workspace-data)
+      (l/derive st/state)))
 
 (def selected-shapes
   (-> (l/key :selected)
-      (l/derive workspace)))
+      (l/derive workspace-local)))
 
 (def selected-canvas
   (-> (l/key :selected-canvas)
-      (l/derive workspace)))
+      (l/derive workspace-local)))
 
 (def toolboxes
   (-> (l/key :toolboxes)
-      (l/derive workspace)))
+      (l/derive workspace-local)))
 
+;; DEPRECATED
 (def flags
   (-> (l/key :flags)
-      (l/derive workspace)))
+      (l/derive workspace-local)))
+
+(def selected-flags
+  (-> (l/key :flags)
+      (l/derive workspace-local)))
 
 (def selected-zoom
   (-> (l/key :zoom)
-      (l/derive workspace)))
+      (l/derive workspace-local)))
 
 (def selected-tooltip
   (-> (l/key :tooltip)
-      (l/derive workspace)))
+      (l/derive workspace-local)))
 
 (def selected-drawing-shape
   (-> (l/key :drawing)
-      (l/derive workspace)))
+      (l/derive workspace-local)))
 
 (def selected-drawing-tool
   (-> (l/key :drawing-tool)

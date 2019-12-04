@@ -11,7 +11,6 @@
    [lentes.core :as l]
    [rumext.core :as mx]
    [rumext.alpha :as mf]
-   [uxbox.main.data.shapes :as uds]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
