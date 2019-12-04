@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS pages (
   deleted_at timestamptz DEFAULT NULL,
 
   version bigint NOT NULL,
-  ordering smallint,
+  ordering smallint NOT NULL,
 
   name text NOT NULL,
   data bytea NOT NULL,
