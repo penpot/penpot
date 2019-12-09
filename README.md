@@ -20,11 +20,13 @@ progress in Twitter or Github and stay tuned!
 
 [See SVG specification](https://www.w3.org/Graphics/SVG/)
 
+
 ## SVG based ##
 
 UXBOX works with SVG, a standard format, for all your designs and
 prototypes . This means that all your stuff in UXBOX is portable and
 editable in many other vector tools and easy to use on the web.
+
 
 ## Development ##
 
@@ -48,7 +50,6 @@ In debian like linux distributions you can install it executing:
 ```bash
 sudo apt-get install docker docker-compose
 ```
-
 
 ### Start the devenv ###
 

@@ -1,7 +1,9 @@
 # Contributing Guide #
 
-Thank you for your interest in contributing to UXBox. This guide details how
-to contribute to UXBox in a way that is efficient for everyone.
+Thank you for your interest in contributing to UXBox. This is a
+generic guide that details how to contribute to UXBox in a way that is
+efficient for everyone. If you want a specific documentation for
+different parts of the platform, please refer to `docs/` directory.
 
 
 ## Reporting Bugs ##
@@ -22,7 +24,7 @@ If you found a bug, please report it, as far as possible with:
 
 If you want propose a change or bug fix with the Pull-Request system
 firstly you should carefully read the **Contributor License Aggreement**
-section and format your commints accordingly.
+section and format your commits accordingly.
 
 If you intend to fix a bug it's fine to submit a pull request right
 away but we still recommend to file an issue detailing what you're
