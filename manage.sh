@@ -92,19 +92,29 @@ function build-frontend-local {
 }
 
 function build-frontend-image {
+    echo "#############################################"
+    echo "## START build 'uxbox-frontend' image.     ##"
+    echo "#############################################"
     build-frontend-local "dist" || exit 1;
-    rm -rf docker/frontend/dist || exit 1;
-    cp -vr frontend/dist docker/frontend/ || exit 1;
+    # rm -rf docker/frontend/dist || exit 1;
+    # cp -vr frontend/dist docker/frontend/ || exit 1;
 
-    docker build --rm=true \
-           -t uxbox-frontend:$REV \
-           -t uxbox-frontend:latest \
-           docker/frontend/;
+    # docker build --rm=true \
+    #        -t uxbox-frontend:$REV \
+    #        -t uxbox-frontend:latest \
+    #        docker/frontend/;
 
-    rm -rf docker/frontend/dist || exit 1;
+    # rm -rf docker/frontend/dist || exit 1;
+    echo "#############################################"
+    echo "## END build 'uxbox-frontend' image.       ##"
+    echo "#############################################"
 }
 
 function build-frontend-dbg-image {
+    echo "#############################################"
+    echo "## START build 'uxbox-frontend-dbg' image. ##"
+    echo "#############################################"
+
     build-frontend-local "dbg-dist" || exit 1;
     rm -rf docker/frontend/dist || exit 1;
     cp -vr frontend/dist docker/frontend/ || exit 1;
@@ -115,6 +125,11 @@ function build-frontend-dbg-image {
            docker/frontend/;
 
     rm -rf docker/frontend/dist || exit 1;
+
+    echo "#############################################"
+    echo "## END build 'uxbox-frontend-dbg' image.   ##"
+    echo "#############################################"
+
 }
 
 function build-backend-local {
@@ -132,6 +147,10 @@ function build-backend-local {
 }
 
 function build-backend-image {
+    echo "#############################################"
+    echo "## START build 'uxbox-backend' image.      ##"
+    echo "#############################################"
+
     build-backend-local || exit 1;
     rm -rf docker/backend/dist || exit 1;
     cp -vr backend/dist docker/backend/ || exit 1;
@@ -142,6 +161,11 @@ function build-backend-image {
            docker/backend/;
 
     rm -rf docker/backend/dist || exit 1;
+
+    echo "#############################################"
+    echo "## END build 'uxbox-backend' image.        ##"
+    echo "#############################################"
+
 }
 
 function build-images {
@@ -174,6 +198,10 @@ function run {
 
 function log {
     docker-compose -p uxbox -f docker/docker-compose.yml logs -f --tail=50
+}
+
+function log-devenv {
+    docker-compose -p uxbox-devenv -f docker/devenv/docker-compose.yaml logs -f --tail=50
 }
 
 function stop {
@@ -224,6 +252,9 @@ case $1 in
         ;;
     stop-devenv)
         stop-devenv ${@:2}
+        ;;
+    log-devenv)
+        log-devenv ${@:2}
         ;;
 
     ## testin related commands

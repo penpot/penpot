@@ -14,7 +14,7 @@ networks:
 
 services:
   postgres:
-    image: postgres:11
+    image: postgres:12
     restart: always
     stop_signal: SIGINT
     ports:
@@ -26,46 +26,51 @@ services:
       - POSTGRES_PASSWORD=uxbox_postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # - /etc/localtime:/etc/localtime:ro
-      # - /etc/timezone:/etc/timezone:ro
 
   backend:
     image: uxbox-backend:latest
     restart: always
     depends_on:
       - postgres
+      - smtp
     ports:
       - 6060
     volumes:
       - backend_data:/srv/uxbox/data
       - backend_m2:/root/.m2
-      # - /etc/localtime:/etc/localtime:ro
-      # - /etc/timezone:/etc/timezone:ro
+
     environment:
       # HTTP setup
-      - UXBOX_HTTP_SERVER_DEBUG=false
       - UXBOX_HTTP_SERVER_CORS=*
+
+      # Media & Assets
       - UXBOX_MEDIA_URI="/media/"
       - UXBOX_ASSETS_URI="/static/"
       - UXBOX_MEDIA_DIRECTORY="data/media"
       - UXBOX_ASSETS_DIRECTORY="data/static"
-      # Database setup
-      - UXBOX_DATABASE_URI="jdbc:postgresql://postgres/uxbox"
+
+      # Database setup (using the `postgres` container)
+      - UXBOX_DATABASE_URI="postgresql://postgres/uxbox"
       - UXBOX_DATABASE_USERNAME="uxbox"
       - UXBOX_DATABASE_PASSWORD="uxbox_postgres_password"
+
       # Mail setup
       - UXBOX_EMAIL_REPLY_TO="no-reply@uxbox.io"
       - UXBOX_EMAIL_FROM="no-reply@uxbox.io"
-      # STMP setup
-      - UXBOX_SMTP_HOST="localhost"
+
+      # STMP setup (using the `smtp` container)
+      - UXBOX_SMTP_HOST="smtp"
       - UXBOX_SMTP_PORT=25
       - UXBOX_SMTP_USER="uxbox"
-      - UXBOX_SMTP_PASSWORD="youshouldoverwritethiswithsomethingelse"
+      # - UXBOX_SMTP_PASSWORD=""
       - UXBOX_SMTP_SSL=false
       - UXBOX_SMTP_TLS=false
       - UXBOX_SMTP_ENABLED=false
-      # Security setup
-      - UXBOX_SECRET="foobar"
+
+      ## Security setup
+      # Overwrite with a randomy generated string. Mainly used as
+      # shared key for sign cookies, tokens, etc.
+      - UXBOX_SECRET="the very secret string"
 
   frontend:
     image: uxbox-frontend:latest
@@ -76,8 +81,6 @@ services:
       - 8080:8080
     volumes:
       - backend_data:/srv/uxbox/
-      # - /etc/localtime:/etc/localtime:ro
-      # - /etc/timezone:/etc/timezone:ro
 
   frontend-dev:
     image: uxbox-frontend-dbg:latest
@@ -88,6 +91,12 @@ services:
       - 8081:8080
     volumes:
       - backend_data:/srv/uxbox/
-      # - /etc/localtime:/etc/localtime:ro
-      # - /etc/timezone:/etc/timezone:ro
+
+  smtp:
+    image: mwader/postfix-relay
+    restart: always
+    environment:
+      - POSTFIX_myhostname=smtp.uxbox.io
+      - OPENDKIM_DOMAINS=smtp.uxbox.io
+
 

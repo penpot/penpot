@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+if [ ! -e ~/local/.fixtures-loaded ]; then
+    echo "Loading fixtures..."
+    clojure -Adev -m uxbox.fixtures
+    touch ~/local/.fixtures-loaded
+fi
+
+clojure -J-XX:-OmitStackTraceInFastThrow -m uxbox.main
+
+
+

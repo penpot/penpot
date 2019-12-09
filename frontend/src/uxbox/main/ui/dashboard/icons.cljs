@@ -149,7 +149,7 @@
       [:ul.library-elements
        (when own?
          [:li
-          [:a.btn-primary {:on-click #(st/emit! (di/create-collection))}
+          [:a.btn-primary {:on-click #(st/emit! di/create-collection)}
            (tr "ds.icons-collection.new")]])
        (when own?
          [:& nav-item {:selected? (nil? id)}])

@@ -49,14 +49,11 @@
 (def main-build-options
   {:output-dir "resources/public/js"
    :asset-path "/js"
-   :modules {:common {:entries #{}
-                      :output-to "resources/public/js/common.js"}
-             :main {:entries #{"uxbox.main"}
-                    :output-to "resources/public/js/main.js"
-                    :depends-on #{:common}}
+   :modules {:main {:entries #{"uxbox.main"}
+                    :output-to "resources/public/js/main.js"}
              :view {:entries #{"uxbox.view"}
                     :output-to "resources/public/js/view.js"
-                    :depends-on #{:common}}}})
+                    }}})
 
 (def worker-build-options
   {:main 'uxbox.worker
@@ -70,7 +67,6 @@
              main-build-options
              dist-build-options)
       (assoc :output-dir "dist/js")
-      (assoc-in [:modules :common :output-to] "dist/js/common.js")
       (assoc-in [:modules :main :output-to] "dist/js/main.js")
       (assoc-in [:modules :view :output-to] "dist/js/view.js")))
 
@@ -99,7 +95,7 @@
 (defmethod task "dist:main"
   [args]
   (let [cfg main-dist-build-options]
-    ;; (pprint cfg)
+    (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
 (defmethod task "dist:worker"

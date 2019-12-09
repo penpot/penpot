@@ -49,6 +49,7 @@ services:
 
   postgres:
     image: postgres:12
+    # command: postgres -c config_file=/etc/postgresql.conf
     hostname: 'uxbox-devenv-postgres'
     container_name: 'uxbox-devenv-postgres'
     restart: always
@@ -61,4 +62,5 @@ services:
       - POSTGRES_USER=uxbox
       - POSTGRES_PASSWORD=uxbox
     volumes:
+      # - ./files/postgresql.conf:/etc/postgresql.conf
       - postgres_data:/var/lib/postgresql/data
