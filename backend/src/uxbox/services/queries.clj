@@ -11,6 +11,7 @@
 (uds/defservice handle
   {:dispatch-by ::type
    :interceptors [uds/spec-interceptor
+                  uds/wrap-errors
                   #_logging-interceptor
                   #_context-interceptor]})
 

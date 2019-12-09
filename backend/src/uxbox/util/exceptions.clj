@@ -12,7 +12,7 @@
 (s/def ::code keyword?)
 (s/def ::mesage string?)
 (s/def ::hint string?)
-(s/def ::cause #(instance? Exception %))
+(s/def ::cause #(instance? Throwable %))
 (s/def ::error-params
   (s/keys :req-un [::type]
           :opt-un [::code

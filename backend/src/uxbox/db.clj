@@ -13,6 +13,7 @@
    [uxbox.config :as cfg]
    [uxbox.core :refer [system]]
    [uxbox.util.data :as data]
+   [uxbox.util.exceptions :as ex]
    [uxbox.util.pgsql :as pg]
    [vertx.core :as vx])
   (:import io.vertx.core.buffer.Buffer))
@@ -33,17 +34,22 @@
   :start (create-pool cfg/config system))
 
 (defmacro with-atomic
-  [& args]
-  `(pg/with-atomic ~@args))
+  [bindings & args]
+  `(pg/with-atomic ~bindings (p/do! ~@args)))
 
 (def row-xfm
   (comp (map pg/row->map)
         (map data/normalize-attrs)))
 
 (defmacro query
-  [& args]
-  `(pg/query ~@args {:xfm row-xfm}))
-
+  [conn sql]
+  `(-> (pg/query ~conn ~sql {:xfm row-xfm})
+       (p/catch' (fn [err#]
+                   (ex/raise :type :database-error
+                             :cause err#)))))
 (defmacro query-one
-  [& args]
-  `(pg/query-one ~@args {:xfm row-xfm}))
+  [conn sql]
+  `(-> (pg/query-one ~conn ~sql {:xfm row-xfm})
+       (p/catch' (fn [err#]
+                   (ex/raise :type :database-error
+                             :cause err#)))))

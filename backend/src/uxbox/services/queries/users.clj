@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.queries.profiles
+(ns uxbox.services.queries.users
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
@@ -51,9 +51,7 @@
 (s/def ::profile
   (s/keys :req-un [::user]))
 
-(sq/defquery :profile
-  {:doc "Retrieve the user profile."
-   :spec ::profile}
+(sq/defquery ::profile
   [{:keys [user] :as params}]
   (-> (get-profile db/pool user)
       (p/then' strip-private-attrs)))

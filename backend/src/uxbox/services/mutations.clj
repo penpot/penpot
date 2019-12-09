@@ -6,11 +6,13 @@
 
 (ns uxbox.services.mutations
   (:require
-   [uxbox.util.dispatcher :as uds]))
+   [uxbox.util.dispatcher :as uds]
+   [uxbox.util.exceptions :as ex]))
 
 (uds/defservice handle
   {:dispatch-by ::type
    :interceptors [uds/spec-interceptor
+                  uds/wrap-errors
                   #_logging-interceptor
                   #_context-interceptor]})
 

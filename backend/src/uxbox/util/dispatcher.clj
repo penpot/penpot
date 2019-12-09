@@ -28,7 +28,7 @@
   IDispatcher
   (add [this key f metadata]
     (.put ^Map reg key (MapEntry/create f metadata))
-    nil)
+    this)
 
   clojure.lang.IDeref
   (deref [_]
@@ -56,7 +56,7 @@
 
 (defn dispatcher?
   [v]
-  (instance? Dispatcher v))
+  (instance? IDispatcher v))
 
 (defmacro defservice
   [sname {:keys [dispatch-by interceptors]}]
@@ -118,5 +118,16 @@
                                 :code :spec-validation
                                 :explain (with-out-str
                                            (expound/printer data))
-                                :data data))))
+                                :data (::s/problems data)))))
                 data)))})
+
+(def wrap-errors
+  {:error
+   (fn [data]
+     (let [error (:error data)
+           mdata (meta (:request data))]
+       (assoc data :error (ex/error :type :service-error
+                                    :name (:spec mdata)
+                                    :cause error))))})
+
+

@@ -24,9 +24,14 @@
                :scope "foobar"}
         out (th/try-on! (sm/handle event))]
     ;; (th/print-result! out)
-    (t/is (map? (:error out)))
-    (t/is (= (get-in out [:error :type]) :validation))
-    (t/is (= (get-in out [:error :code]) :uxbox.services.mutations.auth/wrong-credentials))))
+    (let [error (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :service-error)))
+
+    (let [error (ex-cause (:error out))]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :uxbox.services.mutations.auth/wrong-credentials)))))
 
 (t/deftest success-auth
   (let [user @(th/create-user db/pool 1)

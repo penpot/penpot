@@ -157,7 +157,9 @@
                 (into rp p)
                 (first n)
                 (rest n)))
-       [(str prefix (str/join join-with rs) suffix) rp]))))
+       (if (empty? rs)
+         ["" []]
+         [(str prefix (str/join join-with rs) suffix) rp])))))
 
 (defn- process-param-tokens
   [sql]
@@ -168,7 +170,7 @@
 (def ^:private select-formatters
   [#(format-exprs (::select %) {:prefix "SELECT "})
    #(format-exprs (::from %) {:prefix "FROM "})
-   #(format-exprs (::join %))
+   #(format-exprs (::join %) {:join-with " "})
    #(format-exprs (::where %) {:prefix "WHERE ("
                                :join-with ") AND ("
                                :suffix ")"})

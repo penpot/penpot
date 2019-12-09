@@ -25,20 +25,20 @@
     (t/is (contains? result :reply-to))
     (t/is (vector? (:body result)))))
 
-(t/deftest email-sending-and-sendmail-job
-  (let [res @(emails/send! emails/register {:to "example@uxbox.io" :name "foo"})]
-    (t/is (nil? res)))
-  (with-mock mock
-    {:target 'uxbox.jobs.sendmail/impl-sendmail
-     :return (p/resolved nil)}
+;; (t/deftest email-sending-and-sendmail-job
+;;   (let [res @(emails/send! emails/register {:to "example@uxbox.io" :name "foo"})]
+;;     (t/is (nil? res)))
+;;   (with-mock mock
+;;     {:target 'uxbox.jobs.sendmail/impl-sendmail
+;;      :return (p/resolved nil)}
 
-    (let [res @(uxbox.jobs.sendmail/send-emails {})]
-      (t/is (= 1 res))
-      (t/is (:called? @mock))
-      (t/is (= 1 (:call-count @mock))))
+;;     (let [res @(uxbox.jobs.sendmail/send-emails {})]
+;;       (t/is (= 1 res))
+;;       (t/is (:called? @mock))
+;;       (t/is (= 1 (:call-count @mock))))
 
-    (let [res @(uxbox.jobs.sendmail/send-emails {})]
-      (t/is (= 0 res))
-      (t/is (:called? @mock))
-      (t/is (= 1 (:call-count @mock))))))
+;;     (let [res @(uxbox.jobs.sendmail/send-emails {})]
+;;       (t/is (= 0 res))
+;;       (t/is (:called? @mock))
+;;       (t/is (= 1 (:call-count @mock))))))
 

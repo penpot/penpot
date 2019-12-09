@@ -10,10 +10,11 @@ CREATE TABLE users (
   email text NOT NULL,
   photo text NOT NULL,
   password text NOT NULL,
-  metadata bytea NOT NULL
+
+  metadata bytea NULL DEFAULT NULL
 );
 
-CREATE TABLE IF NOT EXISTS user_storage (
+CREATE TABLE IF NOT EXISTS user_attrs (
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -25,7 +26,7 @@ CREATE TABLE IF NOT EXISTS user_storage (
   PRIMARY KEY (key, user_id)
 );
 
-CREATE TABLE user_tokens (
+CREATE TABLE IF NOT EXISTS tokens (
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token text NOT NULL,
 
@@ -35,7 +36,7 @@ CREATE TABLE user_tokens (
   PRIMARY KEY (token, user_id)
 );
 
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -56,17 +57,19 @@ VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
         '!',
         '{}');
 
-CREATE UNIQUE INDEX users_username_idx
-    ON users USING btree (username)
+CREATE UNIQUE INDEX users__username__idx
+    ON users (username)
  WHERE deleted_at is null;
 
-CREATE UNIQUE INDEX users_email_idx
-    ON users USING btree (email)
+CREATE UNIQUE INDEX users__email__idx
+    ON users (email)
  WHERE deleted_at is null;
 
-CREATE TRIGGER users_modified_at_tgr BEFORE UPDATE ON users
+CREATE TRIGGER users__modified_at__tgr
+BEFORE UPDATE ON users
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
 
-CREATE TRIGGER user_storage_modified_at_tgr BEFORE UPDATE ON user_storage
+CREATE TRIGGER user_attrs__modified_at__tgr
+BEFORE UPDATE ON user_attrs
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
 

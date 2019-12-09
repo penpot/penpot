@@ -1,11 +1,10 @@
-(ns uxbox.tests.test-users
+(ns uxbox.tests.test-services-users
   (:require
    [clojure.test :as t]
    [clojure.java.io :as io]
    [promesa.core :as p]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
-   [vertx.core :as vc]
    [uxbox.db :as db]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
@@ -16,47 +15,48 @@
 
 (t/deftest test-query-profile
   (let [user @(th/create-user db/pool 1)
-        event {::sq/type :profile
-               :user (:id user)}
-        [err rsp] (th/try-on (sq/handle event))]
-    ;; (println "RESPONSE:" resp)))
-    (t/is (nil? err))
-    (t/is (= (:fullname rsp) "User 1"))
-    (t/is (= (:username rsp) "user1"))
-    (t/is (= (:metadata rsp) {}))
-    (t/is (= (:email rsp) "user1.test@uxbox.io"))
-    (t/is (not (contains? rsp :password)))))
+        data {::sq/type :profile
+              :user (:id user)}
+
+        out (th/try-on! (sq/handle data))]
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (t/is (= "User 1" (get-in out [:result :fullname])))
+    (t/is (= "user1" (get-in out [:result :username])))
+    (t/is (= "user1.test@uxbox.io" (get-in out [:result :email])))
+    (t/is (not (contains? (:result out) :password)))))
 
 (t/deftest test-mutation-update-profile
-  (let [user  @(th/create-user db/pool 1)
-        event (assoc user
-                     ::sm/type :update-profile
-                     :fullname "Full Name"
-                     :username "user222"
-                     :metadata {:foo "bar"}
-                     :email "user222@uxbox.io")
-        [err data] (th/try-on (sm/handle event))]
-    ;; (println "RESPONSE:" err data)
-    (t/is (nil? err))
-    (t/is (= (:fullname data) "Full Name"))
-    (t/is (= (:username data) "user222"))
-    (t/is (= (:metadata data) {:foo "bar"}))
-    (t/is (= (:email data) "user222@uxbox.io"))
-    (t/is (not (contains? data :password)))))
+  (let [user @(th/create-user db/pool 1)
+        data (assoc user
+                    ::sm/type :update-profile
+                    :fullname "Full Name"
+                    :username "user222"
+                    :metadata {:foo "bar"}
+                    :email "user222@uxbox.io")
+        out (th/try-on! (sm/handle data))]
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (t/is (= (:fullname data) (get-in out [:result :fullname])))
+    (t/is (= (:username data) (get-in out [:result :username])))
+    (t/is (= (:email data) (get-in out [:result :email])))
+    (t/is (= (:metadata data) (get-in out [:result :metadata])))
+    (t/is (not (contains? (:result out) :password)))))
 
 (t/deftest test-mutation-update-profile-photo
   (let [user  @(th/create-user db/pool 1)
-        event {::sm/type :update-profile-photo
-               :user (:id user)
-               :file {:name "sample.jpg"
-                      :path (fs/path "test/uxbox/tests/_files/sample.jpg")
-                      :size 123123
-                      :mtype "image/jpeg"}}
-        [err rsp] (th/try-on (sm/handle event))]
-    ;; (prn "RESPONSE:" [err rsp])
-    (t/is (nil? err))
-    (t/is (= (:id user) (:id rsp)))
-    (t/is (str/starts-with? (:photo rsp) "http"))))
+        data {::sm/type :update-profile-photo
+              :user (:id user)
+              :file {:name "sample.jpg"
+                     :path (fs/path "test/uxbox/tests/_files/sample.jpg")
+                     :size 123123
+                     :mtype "image/jpeg"}}
+
+        out (th/try-on! (sm/handle data))]
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (t/is (= (:id user) (get-in out [:result :id])))
+    (t/is (str/starts-with? (get-in out [:result :photo]) "http"))))
 
 ;; (t/deftest test-mutation-register-profile
 ;;   (let[data {:fullname "Full Name"

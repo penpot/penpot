@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.mutations.profiles
+(ns uxbox.services.mutations.users
   (:require
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
@@ -19,10 +19,10 @@
    [uxbox.media :as media]
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
-   [uxbox.services.queries.profiles :refer [get-profile
-                                            decode-profile-row
-                                            strip-private-attrs
-                                            resolve-thumbnail]]
+   [uxbox.services.queries.users :refer [get-profile
+                                         decode-profile-row
+                                         strip-private-attrs
+                                         resolve-thumbnail]]
    [uxbox.util.blob :as blob]
    [uxbox.util.exceptions :as ex]
    [uxbox.util.spec :as us]
@@ -56,7 +56,7 @@
                     and id != $1
                   ) as val"]
     (p/let [res1 (db/query-one conn [sql1 id username])
-            res2 (db/query-one conn [sql2 id email])]
+             res2 (db/query-one conn [sql2 id email])]
       (when (:val res1)
         (ex/raise :type :validation
                   :code ::username-already-exists))
@@ -83,9 +83,7 @@
 (s/def ::update-profile
   (s/keys :req-un [::id ::username ::email ::fullname ::metadata]))
 
-(sm/defmutation :update-profile
-  {:doc "Update self profile."
-   :spec ::update-profile}
+(sm/defmutation ::update-profile
   [params]
   (db/with-atomic [conn db/pool]
     (-> (p/resolved params)
@@ -134,9 +132,7 @@
 (def valid-image-types?
   #{"image/jpeg", "image/png", "image/webp"})
 
-(sm/defmutation :update-profile-photo
-  {:doc "Update profile photo."
-   :spec ::update-profile-photo}
+(sm/defmutation ::update-profile-photo
   [{:keys [user file] :as params}]
   (letfn [(store-photo [{:keys [name path] :as upload}]
             (let [filename (fs/name name)
@@ -149,16 +145,17 @@
                           set photo = $1
                         where id = $2
                           and deleted_at is null
-                       returning *"]
+                       returning id, photo"]
               (-> (db/query-one db/pool [sql (str path) user])
                   (p/then' su/raise-not-found-if-nil)
-                  (p/then' strip-private-attrs)
+                  ;; (p/then' strip-private-attrs)
                   (p/then resolve-thumbnail))))]
 
     (when-not (valid-image-types? (:mtype file))
       (ex/raise :type :validation
                 :code :image-type-not-allowed
                 :hint "Seems like you are uploading an invalid image."))
+
     (-> (store-photo file)
         (p/then update-user-photo))))
 

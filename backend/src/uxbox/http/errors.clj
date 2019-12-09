@@ -8,6 +8,7 @@
   "A errors handling for the http server."
   (:require
    [clojure.tools.logging :as log]
+   [cuerdas.core :as str]
    [io.aviso.exception :as e]))
 
 (defmulti handle-exception
@@ -16,15 +17,28 @@
 
 (defmethod handle-exception :validation
   [err req]
-  (let [response (ex-data err)]
-    {:status 400
-     :body response}))
+  (let [header (get-in req [:headers "accept"])
+        response (ex-data err)]
+    (cond
+      (and (str/starts-with? header "text/html")
+           (= :spec-validation (:code response)))
+      {:status 400
+       :headers {"content-type" "text/html"}
+       :body (str "<pre style='font-size:16px'>" (:explain response) "</pre>\n")}
+
+      :else
+      {:status 400
+       :body response})))
 
 (defmethod handle-exception :not-found
   [err req]
   (let [response (ex-data err)]
     {:status 404
      :body response}))
+
+(defmethod handle-exception :service-error
+  [err req]
+  (handle-exception (.getCause err) req))
 
 (defmethod handle-exception :parse
   [err req]

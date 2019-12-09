@@ -6,9 +6,10 @@
    [cuerdas.core :as str]
    [mount.core :as mount]
    [datoteka.storages :as st]
-   [uxbox.services.mutations.profiles :as profiles]
+   [uxbox.services.mutations.users :as users]
    [uxbox.services.mutations.projects :as projects]
-   [uxbox.services.mutations.pages :as pages]
+   [uxbox.services.mutations.project-files :as files]
+   [uxbox.services.mutations.project-pages :as pages]
    [uxbox.fixtures :as fixtures]
    [uxbox.migrations]
    [uxbox.media]
@@ -24,6 +25,8 @@
                       #'uxbox.config/secret
                       #'uxbox.core/system
                       #'uxbox.db/pool
+                      #'uxbox.services.init/query-services
+                      #'uxbox.services.init/mutation-services
                       #'uxbox.migrations/migrations
                       #'uxbox.media/assets-storage
                       #'uxbox.media/media-storage
@@ -64,39 +67,44 @@
 
 (defn create-user
   [conn i]
-  (profiles/create-profile conn {:id (mk-uuid "user" i)
-                                 :fullname (str "User " i)
-                                 :username (str "user" i)
-                                 :email (str "user" i ".test@uxbox.io")
-                                 :password "123123"
-                                 :metadata {}}))
+  (users/create-profile conn {:id (mk-uuid "user" i)
+                              :fullname (str "User " i)
+                              :username (str "user" i)
+                              :email (str "user" i ".test@uxbox.io")
+                              :password "123123"
+                              :metadata {}}))
 
 (defn create-project
   [conn user-id i]
   (projects/create-project conn {:id (mk-uuid "project" i)
                                  :user user-id
+                                 :version 1
                                  :name (str "sample project " i)}))
 
-(defn create-page
-  [conn uid pid i]
+
+(defn create-project-file
+  [conn user-id project-id i]
+  (files/create-file conn {:id (mk-uuid "project-file" i)
+                           :user user-id
+                           :project-id project-id
+                           :name (str "sample project file" i)}))
+
+
+(defn create-project-page
+  [conn user-id file-id i]
   (pages/create-page conn {:id (mk-uuid "page" i)
-                           :user uid
-                           :project-id pid
+                           :user user-id
+                           :file-id file-id
                            :name (str "page" i)
-                           :data {:shapes []}
+                           :ordering i
+                           :data {}
                            :metadata {}}))
 
 (defn handle-error
   [err]
-  (cond
-    (instance? clojure.lang.ExceptionInfo err)
-    (ex-data err)
-
-    (instance? java.util.concurrent.ExecutionException err)
+  (if (instance? java.util.concurrent.ExecutionException err)
     (handle-error (.getCause err))
-
-    :else
-    [err nil]))
+    err))
 
 (defmacro try-on
   [expr]
@@ -126,20 +134,27 @@
        {:error (handle-error e#)
         :result nil})))
 
+(defn print-error!
+  [error]
+  (let [data (ex-data error)]
+    (cond
+      (= :spec-validation (:code data))
+      (println (:explain data))
+
+      :else
+      (.printStackTrace error))))
+
 (defn print-result!
   [{:keys [error result]}]
   (if error
     (do
       (println "====> START ERROR")
-      (if (= :spec-validation (:code error))
-        (s/explain-out (:data error))
-        (prn error))
+      (print-error! error)
       (println "====> END ERROR"))
     (do
       (println "====> START RESPONSE")
       (prn result)
       (println "====> END RESPONSE"))))
-
 
 (defn exception?
   [v]
@@ -153,6 +168,11 @@
   [e type]
   (let [data (ex-data e)]
     (= type (:type data))))
+
+(defn ex-of-code?
+  [e code]
+  (let [data (ex-data e)]
+    (= code (:code data))))
 
 (defn ex-with-code?
   [e code]

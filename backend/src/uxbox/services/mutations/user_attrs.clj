@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.mutations.user-storage
+(ns uxbox.services.mutations.user-attrs
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.db :as db]
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
-   [uxbox.services.queries.user-storage :refer [decode-row]]
+   [uxbox.services.queries.user-attrs :refer [decode-row]]
    [uxbox.util.blob :as blob]
    [uxbox.util.spec :as us]))
 
@@ -21,12 +21,12 @@
 (s/def ::key ::us/string)
 (s/def ::val any?)
 
-(s/def ::upsert-user-storage-entry
+(s/def ::upsert-user-attr
   (s/keys :req-un [::key ::val ::user]))
 
-(sm/defmutation ::upsert-user-storage-entry
+(sm/defmutation ::upsert-user-attr
   [{:keys [key val user] :as params}]
-  (let [sql "insert into user_storage (key, val, user_id)
+  (let [sql "insert into user_attrs (key, val, user_id)
              values ($1, $2, $3)
                  on conflict (user_id, key)
                  do update set val = $2"
@@ -36,12 +36,12 @@
 
 ;; --- Delete KVStore
 
-(s/def ::delete-user-storage-entry
+(s/def ::delete-user-attr
   (s/keys :req-un [::key ::user]))
 
-(sm/defmutation ::delete-user-storage-entry
+(sm/defmutation ::delete-user-attr
   [{:keys [user key] :as params}]
-  (let [sql "delete from user_storage
+  (let [sql "delete from user_attrs
               where user_id = $2
                 and key = $1"]
     (-> (db/query-one db/pool [sql key user])

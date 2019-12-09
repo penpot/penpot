@@ -34,19 +34,20 @@
 
 (t/deftest parse-invalid-svg-1
   (let [image (io/resource "uxbox/tests/_files/sample.jpg")
-        result (th/try! (svg/parse image))]
-    (t/is (map? (:error result)))
-    (t/is (= (get-in result [:error :code])
-             ::svg/invalid-input))))
+        out (th/try! (svg/parse image))]
+
+    (let [error (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-code? error ::svg/invalid-input)))))
 
 (t/deftest parse-invalid-svg-2
-  (let [result (th/try! (svg/parse-string ""))]
-    (t/is (map? (:error result)))
-    (t/is (= (get-in result [:error :code])
-             ::svg/invalid-input))))
+  (let [out (th/try! (svg/parse-string ""))]
+    (let [error (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-code? error ::svg/invalid-input)))))
 
 (t/deftest parse-invalid-svg-3
-  (let [result (th/try! (svg/parse-string "<svg></svg>"))]
-    (t/is (map? (:error result)))
-    (t/is (= (get-in result [:error :code])
-             ::svg/invalid-result))))
+  (let [out (th/try! (svg/parse-string "<svg></svg>"))]
+    (let [error (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-code? error ::svg/invalid-result)))))

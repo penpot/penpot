@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.queries.user-storage
+(ns uxbox.services.queries.user-attrs
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
@@ -20,13 +20,13 @@
     (cond-> row
       val (assoc :val (blob/decode val)))))
 
-(s/def ::user-storage-entry
+(s/def ::user-attr
   (s/keys :req-un [::key ::user]))
 
-(sq/defquery ::user-storage-entry
+(sq/defquery ::user-attr
   [{:keys [key user]}]
   (let [sql "select kv.*
-               from user_storage as kv
+               from user_attrs as kv
               where kv.user_id = $2
                 and kv.key = $1"]
     (-> (db/query-one db/pool [sql key user])

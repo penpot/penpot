@@ -13,20 +13,22 @@
   []
   (require 'uxbox.services.queries.icons)
   (require 'uxbox.services.queries.images)
-  (require 'uxbox.services.queries.pages)
-  (require 'uxbox.services.queries.profiles)
   (require 'uxbox.services.queries.projects)
-  (require 'uxbox.services.queries.user-storage))
+  (require 'uxbox.services.queries.project-files)
+  (require 'uxbox.services.queries.project-pages)
+  (require 'uxbox.services.queries.users)
+  (require 'uxbox.services.queries.user-attrs))
 
 (defn- load-mutation-services
   []
-  (require 'uxbox.services.mutations.auth)
   (require 'uxbox.services.mutations.icons)
   (require 'uxbox.services.mutations.images)
   (require 'uxbox.services.mutations.projects)
-  (require 'uxbox.services.mutations.pages)
-  (require 'uxbox.services.mutations.profiles)
-  (require 'uxbox.services.mutations.user-storage))
+  (require 'uxbox.services.mutations.project-files)
+  (require 'uxbox.services.mutations.project-pages)
+  (require 'uxbox.services.mutations.auth)
+  (require 'uxbox.services.mutations.users)
+  (require 'uxbox.services.mutations.user-attrs))
 
 (defstate query-services
   :start (load-query-services))
