@@ -22,12 +22,9 @@
 (s/def ::height ::fm/number-str)
 
 (s/def ::project-form
-  (s/keys :req-un [::name ::width ::height]))
+  (s/keys :req-un [::name]))
 
-(def defaults
-  {:name ""
-   :width "1366"
-   :height "768"})
+(def defaults {:name ""})
 
 ;; --- Create Project Form
 
@@ -57,33 +54,6 @@
        :on-blur (fm/on-input-blur form :name)
        :on-change (fm/on-input-change form :name)
        :auto-focus true}]
-     [:div.project-size
-      [:div.input-element.pixels
-       [:span (tr "ds.width")]
-       [:input#project-witdh.input-text
-        {:placeholder (tr "ds.width")
-         :name "width"
-         :type "number"
-         :min 0
-         :max 5000
-         :class (fm/error-class form :width)
-         :on-blur (fm/on-input-blur form :width)
-         :on-change (fm/on-input-change form :width)
-         :value (:width data)}]]
-      [:a.toggle-layout {:on-click #(swap-size % form)} i/toggle]
-      [:div.input-element.pixels
-       [:span (tr "ds.height")]
-       [:input#project-height.input-text
-        {:placeholder (tr "ds.height")
-         :type "number"
-         :name "height"
-         :min 0
-         :max 5000
-         :class (fm/error-class form :height)
-         :on-blur (fm/on-input-blur form :height)
-         :on-change (fm/on-input-change form :height)
-         :value (:height data)}]]]
-
      ;; Submit
      [:input#project-btn.btn-primary
       {:value (tr "ds.go")

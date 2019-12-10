@@ -20,13 +20,11 @@
 
 (mf/defc left-sidebar
   {:wrap [mf/wrap-memo]}
-  [{:keys [layout page] :as props}]
+  [{:keys [layout page file] :as props}]
   [:aside.settings-bar.settings-bar-left
    [:div.settings-bar-inside
     (when (contains? layout :sitemap)
-      [:& sitemap-toolbox {:project-id (:project-id page)
-                           :current-page-id (:id page)
-                           :page page}])
+      [:& sitemap-toolbox {:file file :page page}])
     (when (contains? layout :document-history)
       [:& history-toolbox])
     (when (contains? layout :layers)

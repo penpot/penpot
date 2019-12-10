@@ -12,6 +12,9 @@
    "ds.num-projects" ["No projects"
                       "%s project"
                       "%s projects"]
+   "ds.num-files" ["No files"
+                   "%s file"
+                   "%s files"]
    "ds.project-title" "Your projects"
    "ds.project-new" "+ New project"
    "ds.project-thumbnail.alt" "Project title"

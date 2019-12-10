@@ -34,6 +34,9 @@
                     ::created-at
                     ::modified-at]))
 
+(declare fetch-projects)
+(declare projects-fetched?)
+
 ;; --- Helpers
 
 (defn assoc-project
@@ -49,21 +52,43 @@
 
 ;; --- Initialize
 
-(declare fetch-projects)
-(declare projects-fetched?)
-
-(defrecord Initialize []
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:dashboard :section] :dashboard/projects))
-
-  ptk/WatchEvent
-  (watch [_ state s]
-    (rx/of (fetch-projects))))
+(declare fetch-files)
+(declare initialized)
 
 (defn initialize
-  []
-  (Initialize.))
+  [id]
+  (ptk/reify ::initialize
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-projects assoc :id id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/merge
+       (rx/of (fetch-files id))
+       (->> stream
+            (rx/filter (ptk/type? ::files-fetched))
+            (rx/take 1)
+            (rx/map #(initialized id (deref %))))))))
+
+(defn initialized
+  [id files]
+  (ptk/reify ::initialized
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [files (into #{} (map :id) files)]
+        (update-in state [:dashboard-projects :files] assoc id files)))))
+
+;; --- Update Opts (Filtering & Ordering)
+
+(defn update-opts
+  [& {:keys [order filter] :as opts}]
+  (ptk/reify ::update-opts
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-projects merge
+              (when order {:order order})
+              (when filter {:filter filter})))))
 
 ;; --- Projects Fetched
 
@@ -81,13 +106,51 @@
 
 ;; --- Fetch Projects
 
-(defn fetch-projects
-  []
+(def fetch-projects
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rp/query :projects)
            (rx/map projects-fetched)))))
+
+;; --- Fetch Files
+
+(declare files-fetched)
+
+(defn fetch-files
+  [project-id]
+  (ptk/reify ::fetch-files
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :project-files {:project-id project-id})
+           (rx/map files-fetched)))))
+
+;; --- Fetch File (by ID)
+
+(defn fetch-file
+  [id]
+  (s/assert ::us/uuid id)
+  (ptk/reify ::fetch-file
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :project-file {:id id})
+           (rx/map #(files-fetched [%]))))))
+
+;; --- Files Fetched
+
+(s/def ::files any?)
+
+(defn files-fetched
+  [files]
+  (s/assert ::files files)
+  (ptk/reify ::files-fetched
+    cljs.core/IDeref
+    (-deref [_] files)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [assoc-file #(assoc-in %1 [:files (:id %2)] %2)]
+        (reduce assoc-file state files)))))
 
 ;; --- Project Persisted
 
@@ -149,43 +212,38 @@
 
 ;; --- Create Project
 
-(s/def ::create-project-params
-  (s/keys :req-un [::name ::width ::height]))
+(declare project-created)
+
+(s/def ::create-project
+  (s/keys :req-un [::name]))
 
 (defn create-project
   [{:keys [name] :as params}]
-  (s/assert ::create-project-params params)
-  (reify
+  (s/assert ::create-project params)
+  (ptk/reify ::create-project
     ptk/WatchEvent
     (watch [this state stream]
-      #_(->> (rp/req :create/project {:name name})
-           (rx/map :payload)
-           (rx/mapcat (fn [{:keys [id] :as project}]
-                        (rx/of #(assoc-project % project)
-                               (udp/form->create-page (assoc params :project id)))))))))
+      (->> (rp/mutation :create-project {:name name})
+           (rx/map project-created)))))
+
+;; --- Project Created
+
+(defn project-created
+  [data]
+  (ptk/reify ::project-created
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-project state data))))
 
 ;; --- Go To Project
 
 (defn go-to
-  [id]
-  (s/assert ::us/uuid id)
+  [file-id]
+  (s/assert ::us/uuid file-id)
   (ptk/reify ::go-to
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-ids (get-in state [:projects id :pages])]
-        (let [params {:project id :page (first page-ids)}]
-          (rx/of (rt/nav :workspace/page params)))))))
-
-
-;; --- Update Opts (Filtering & Ordering)
-
-(defrecord UpdateOpts [order filter]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:dashboard :projects] merge
-               (when order {:order order})
-               (when filter {:filter filter}))))
-
-(defn update-opts
-  [& {:keys [order filter] :as opts}]
-  (UpdateOpts. order filter))
+      (let [page-ids (get-in state [:files file-id :pages])]
+        (let [path-params {:file-id file-id}
+              query-params {:page-id (first page-ids)}]
+          (rx/of (rt/nav :workspace path-params query-params)))))))

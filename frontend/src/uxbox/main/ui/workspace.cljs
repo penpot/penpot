@@ -60,7 +60,7 @@
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
-  [{:keys [layout page] :as params}]
+  [{:keys [layout page file] :as params}]
   (let [canvas (mf/use-ref nil)
         left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                 :document-history])))
@@ -89,17 +89,26 @@
 
       ;; Aside
       (when left-sidebar?
-        [:& left-sidebar {:page page :layout layout}])
+        [:& left-sidebar {:file file :page page :layout layout}])
       (when right-sidebar?
         [:& right-sidebar {:page page :layout layout}])]))
 
 (mf/defc workspace
-  [{:keys [page-id] :as props}]
-  (let [layout (mf/deref refs/workspace-layout)
-        flags  (mf/deref refs/selected-flags)
-        page   (mf/deref refs/workspace-page)]
+  [{:keys [file-id page-id] :as props}]
 
-    [:*
+  (mf/use-effect
+   {:deps #js [file-id page-id]
+    :fn (fn []
+          (let [sub (shortcuts/init)]
+            (st/emit! (udw/initialize file-id page-id))
+            #(rx/cancel! sub)))})
+
+  (let [layout (mf/deref refs/workspace-layout)
+        file   (mf/deref refs/workspace-file)
+        page   (mf/deref refs/workspace-page)
+        flags  (mf/deref refs/selected-flags)]
+
+    [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
      [:& header {:page page :flags flags}]
 
@@ -107,17 +116,6 @@
        [:& colorpalette])
 
      (when (and layout page)
-       [:& workspace-content {:layout layout :page page}])]))
-
-(mf/defc workspace-page
-  [{:keys [project-id page-id] :as props}]
-
-  (mf/use-effect
-   {:deps #js [page-id]
-    :fn (fn []
-          (let [sub (shortcuts/init)]
-            (st/emit! (udw/initialize project-id page-id))
-            #(rx/cancel! sub)))})
-
-  [:> rdnd/provider {:backend rdnd/html5}
-   [:& workspace {:page-id page-id :key page-id}]])
+       [:& workspace-content {:layout layout
+                              :file file
+                              :page page}])]))

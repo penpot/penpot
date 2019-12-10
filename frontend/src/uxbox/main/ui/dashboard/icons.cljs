@@ -61,7 +61,7 @@
   (-> (l/in [:dashboard :icons])
       (l/derive st/state)))
 
-;; --- Page Title
+;; --- Component: Grid Header
 
 (mf/defc grid-header
   [{:keys [coll] :as props}]

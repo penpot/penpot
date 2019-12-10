@@ -29,39 +29,36 @@
 
 (mf/defc page-item
   [{:keys [page index deletable? selected?] :as props}]
-  (letfn [(on-edit [event]
-            (modal/show! page-form-dialog {:page page}))
-          (delete []
-            (st/emit! (dw/delete-page (:id page))))
-          (on-delete [event]
-            (dom/prevent-default event)
-            (dom/stop-propagation event)
-            (modal/show! confirm-dialog {:on-accept delete}))
-          (on-drop [item monitor]
-            (prn "TODO"))
-          (on-hover [item monitor]
-            (st/emit! (dw/change-page-order {:id (:id item)
-                                             :index index})))]
-    (let [[dprops ref] (use-sortable {:type "page-item"
-                                      :data {:id (:id page)
-                                             :index index}
-                                      :on-hover on-hover
-                                      :on-drop on-drop})]
-      [:li {:ref ref :class (classnames :selected selected?)}
-       [:div.element-list-body
-        {:class (classnames :selected selected?
-                            :dragging (:dragging? dprops))
-         :on-click #(st/emit! (rt/nav :workspace/page {:project (:project-id page)
-                                                       :page (:id page)}))
-         :on-double-click #(dom/stop-propagation %)
-         :draggable true}
+  (let [on-edit #(modal/show! page-form-dialog {:page page})
+        delete-fn #(st/emit! (dw/delete-page (:id page)))
+        on-delete #(do
+                     (dom/prevent-default %)
+                     (dom/stop-propagation %)
+                     (modal/show! confirm-dialog {:on-accept delete-fn}))
+        on-drop #(do (prn "TODO"))
+        on-hover #(st/emit! (dw/change-page-order {:id (:id page)
+                                                   :index index}))
 
-        [:div.page-icon i/page]
-        [:span (:name page)]
-        [:div.page-actions {}
-         [:a {:on-click on-edit} i/pencil]
-         (when deletable?
-           [:a {:on-click on-delete} i/trash])]]])))
+        navigate-fn #(st/emit! (dw/go-to-page (:id page)))
+        [dprops ref] (use-sortable {:type "page-item"
+                                    :data {:id (:id page)
+                                           :index index}
+                                    :on-hover on-hover
+                                    :on-drop on-drop})]
+    [:li {:ref ref :class (classnames :selected selected?)}
+     [:div.element-list-body
+      {:class (classnames :selected selected?
+                          :dragging (:dragging? dprops))
+       :on-click navigate-fn
+       :on-double-click #(dom/stop-propagation %)
+       :draggable true}
+
+      [:div.page-icon i/page]
+      [:span (:name page)]
+      [:div.page-actions {}
+       [:a {:on-click on-edit} i/pencil]
+       (when deletable?
+         [:a {:on-click on-delete} i/trash])]]]))
 
 
 ;; --- Page Item Wrapper
@@ -84,8 +81,8 @@
 ;; --- Pages List
 
 (mf/defc pages-list
-  [{:keys [project current-page-id] :as props}]
-  (let [pages (enumerate (:pages project))
+  [{:keys [file current-page] :as props}]
+  (let [pages (enumerate (:pages file))
         deletable? (> (count pages) 1)]
     [:ul.element-list
      (for [[index page-id] pages]
@@ -93,31 +90,22 @@
         {:page-id page-id
          :index index
          :deletable? deletable?
-         :selected? (= page-id current-page-id)
+         :selected? (= page-id (:id current-page))
          :key page-id}])]))
 
 ;; --- Sitemap Toolbox
 
-(def ^:private workspace-project
-  (letfn [(selector [state]
-            (let [project-id (get-in state [:workspace-page :project-id])]
-              (get-in state [:projects project-id])))]
-    (-> (l/lens selector)
-        (l/derive st/state))))
-
 (mf/defc sitemap-toolbox
-  [{:keys [project-id current-page-id] :as props}]
-  (let [project (mf/deref workspace-project)
-        create #(modal/show! page-form-dialog {:page {:project-id project-id}})
-        close #(st/emit! (dw/toggle-flag :sitemap))]
+  [{:keys [file page] :as props}]
+  (let [create-fn #(modal/show! page-form-dialog {:page {:file-id (:file-id page)}})
+        close-fn  #(st/emit! (dw/toggle-flag :sitemap))]
     [:div.sitemap.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/project-tree]
       [:span (tr "ds.settings.sitemap")]
-      [:div.tool-window-close {:on-click close} i/close]]
+      [:div.tool-window-close {:on-click close-fn} i/close]]
      [:div.tool-window-content
       [:div.project-title
-       [:span (:name project)]
-       [:div.add-page {:on-click create} i/close]]
-      [:& pages-list {:project project
-                      :current-page-id current-page-id}]]]))
+       #_[:span (:name project)]
+       [:div.add-page {:on-click create-fn} i/close]]
+      [:& pages-list {:file file :current-page page}]]]))

@@ -52,7 +52,7 @@
         ]
     [:header#workspace-bar.workspace-bar
      [:div.main-icon
-      [:a {:on-click #(st/emit! (rt/nav :dashboard/projects))} i/logo-icon]]
+      [:a {:on-click #(st/emit! (rt/nav :dashboard-projects))} i/logo-icon]]
      [:div.project-tree-btn
       {:alt (tr "header.sitemap")
        :class (when (contains? flags :sitemap) "selected")

@@ -49,7 +49,7 @@
 
     (cond
       (and (= path "") (:auth storage))
-      (st/emit! (rt/nav :dashboard/projects))
+      (st/emit! (rt/nav :dashboard-projects))
 
       (and (= path "") (not (:auth storage)))
       (st/emit! (rt/nav :auth/login))

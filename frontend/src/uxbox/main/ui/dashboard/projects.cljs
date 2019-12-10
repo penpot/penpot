@@ -6,6 +6,7 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.projects
+  (:refer-clojure :exclude [sort-by])
   (:require
    [cuerdas.core :as str]
    [lentes.core :as l]
@@ -18,10 +19,11 @@
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.dashboard.projects-forms :refer [create-project-dialog]]
+   [uxbox.main.ui.dashboard.common :as common]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as t :refer [tr]]
-   [uxbox.util.router :as r]
+   [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]))
 
 ;; --- Helpers & Constants
@@ -33,7 +35,7 @@
 ;; --- Refs
 
 (def opts-iref
-  (-> (l/in [:dashboard :projects])
+  (-> (l/key :dashboard-projects)
       (l/derive st/state)))
 
 (def projects-iref
@@ -42,160 +44,246 @@
 
 ;; --- Helpers
 
-(defn sort-projects-by
-  [ordering projs]
+(defn sort-by
+  [ordering files]
   (case ordering
-    :name (sort-by :name projs)
-    :created (reverse (sort-by :created-at projs))
-    projs))
+    :name (cljs.core/sort-by :name files)
+    :created (reverse (cljs.core/sort-by :created-at files))
+    files))
 
 (defn contains-term?
   [phrase term]
   (let [term (name term)]
     (str/includes? (str/lower phrase) (str/trim (str/lower term)))))
 
-(defn filter-projects-by
-  [term projs]
+(defn filter-by
+  [term files]
   (if (str/blank? term)
-    projs
-    (filter #(contains-term? (:name %) term) projs)))
+    files
+    (filter #(contains-term? (:name %) term) files)))
 
 ;; --- Menu (Filter & Sort)
 
-(mf/def menu
-  :mixins #{mf/memo mf/reactive}
-  :init
-  (fn [own props]
-    (assoc own ::num-projects (-> (comp (l/key :projects)
-                                        (l/lens #(-> % vals count)))
-                                  (l/derive st/state))))
-  :render
-  (fn [own {:keys [opts] :as props}]
-    (let [ordering (:order opts :created)
-          filtering (:filter opts "")
-          num-projects (mf/react (::num-projects own))]
-      (letfn [(on-term-change [event]
-                (let [term (-> (dom/get-target event)
-                               (dom/get-value))]
-                  (st/emit! (udp/update-opts :filter term))))
-              (on-ordering-change [event]
-                (let [value (dom/event->value event)
-                      value (read-string value)]
-                  (st/emit! (udp/update-opts :order value))))
-              (on-clear [event]
-                (st/emit! (udp/update-opts :filter "")))]
-        [:section.dashboard-bar
-         [:div.dashboard-info
+(mf/defc menu
+  [{:keys [opts files] :as props}]
+  (let [ordering (:order opts :created)
+        filtering (:filter opts "")
 
-          ;; Counter
-          [:span.dashboard-images (tr "ds.num-projects" (t/c num-projects))]
+        on-term-change
+        (fn [event]
+          (let [term (-> (dom/get-target event)
+                         (dom/get-value))]
+            (st/emit! (udp/update-opts :filter term))))
 
-          ;; Sorting
-          [:div
-           [:span (tr "ds.ordering")]
-           [:select.input-select
-            {:on-change on-ordering-change
-             :value (pr-str ordering)}
-            (for [[key value] (seq +ordering-options+)]
-              (let [key (pr-str key)]
-                [:option {:key key :value key} (tr value)]))]]
-          ;; Search
-          [:form.dashboard-search
-           [:input.input-text
-            {:key :images-search-box
-             :type "text"
-             :on-change on-term-change
-             :auto-focus true
-             :placeholder (tr "ds.search.placeholder")
-             :value (or filtering "")}]
-           [:div.clear-search {:on-click on-clear} i/close]]]]))))
+        on-order-change
+        (fn [event]
+          (let [value (dom/event->value event)
+                value (read-string value)]
+            (st/emit! (udp/update-opts :order value))))
+
+        on-clear
+        (fn [event]
+          (st/emit! (udp/update-opts :filter "")))]
+
+    [:section.dashboard-bar.library-gap
+     [:div.dashboard-info
+
+      ;; Counter
+      [:span.dashboard-images (tr "ds.num-files" (t/c (count files)))]
+
+      [:div
+       ;; Sorting
+       ;; TODO: convert to separate component?
+       [:span (tr "ds.ordering")]
+       [:select.input-select {:on-change on-order-change
+                              :value (pr-str ordering)}
+        (for [[key value] (seq +ordering-options+)]
+          (let [key (pr-str key)]
+            [:option {:key key :value key} (tr value)]))]]
+
+      ;; Search
+      ;; TODO: convert to separate component?
+      [:form.dashboard-search
+       [:input.input-text
+        {:key :images-search-box
+         :type "text"
+         :on-change on-term-change
+         :auto-focus true
+         :placeholder (tr "ds.search.placeholder")
+         :value (or filtering "")}]
+       [:div.clear-search {:on-click on-clear} i/close]]]]))
 
 ;; --- Grid Item Thumbnail
 
 (mf/defc grid-item-thumbnail
   [{:keys [project] :as props}]
   [:div.grid-item-th
-   [:img.img-th {:src "/images/project-placeholder.svg"
-                 :alt (tr "ds.project-thumbnail.alt")}]])
+   [:img.img-th {:src "/images/project-placeholder.svg"}]])
 
 ;; --- Grid Item
 
 (mf/defc grid-item
   {:wrap [mf/wrap-memo]}
-  [{:keys [project] :as props}]
+  [{:keys [file] :as props}]
   (let [local (mf/use-state {})
-        on-navigate #(st/emit! (udp/go-to (:id project)))
-        delete #(st/emit! (udp/delete-project project))
-        on-delete #(do
-                     (dom/stop-propagation %)
-                     (modal/show! confirm-dialog {:on-accept delete}))
-        on-blur #(let [target (dom/event->target %)
-                       name (dom/get-value target)
-                       id (:id project)]
-                   (swap! local assoc :edition false)
-                   (st/emit! (udp/rename-project id name)))
-        on-key-down #(when (kbd/enter? %) (on-blur %))
-        on-edit #(do
-                   (dom/stop-propagation %)
-                   (dom/prevent-default %)
-                   (swap! local assoc :edition true))]
+        on-navigate #(st/emit! (udp/go-to (:id file)))
+        ;; delete #(st/emit! (udp/delete-project project))
+        ;; on-delete #(do
+        ;;              (dom/stop-propagation %)
+        ;;              (modal/show! confirm-dialog {:on-accept delete}))
+        ;; on-blur #(let [target (dom/event->target %)
+        ;;                name (dom/get-value target)
+        ;;                id (:id project)]
+        ;;            (swap! local assoc :edition false)
+        ;;            (st/emit! (udp/rename-project id name)))
+        ;; on-key-down #(when (kbd/enter? %) (on-blur %))
+        ;; on-edit #(do
+        ;;            (dom/stop-propagation %)
+        ;;            (dom/prevent-default %)
+        ;;            (swap! local assoc :edition true))
+        ]
     [:div.grid-item.project-th {:on-click on-navigate}
-     [:& grid-item-thumbnail {:project project
-                              :key (select-keys project [:id :page-id])}]
+     [:& grid-item-thumbnail {:file file}]
      [:div.item-info
       (if (:edition @local)
         [:input.element-name {:type "text"
                               :auto-focus true
-                              :on-key-down on-key-down
-                              :on-blur on-blur
-                              :on-click on-edit
-                              :default-value (:name project)}]
-        [:h3 (:name project)])
+                              ;; :on-key-down on-key-down
+                              ;; :on-blur on-blur
+                              ;; :on-click on-edit
+                              :default-value (:name file)}]
+        [:h3 (:name file)])
       [:span.date
-       (str (tr "ds.updated-at" (dt/timeago (:modified-at project))))]]
+       (str (tr "ds.updated-at" (dt/timeago (:modified-at file))))]]
+
      [:div.project-th-actions
       [:div.project-th-icon.pages
        i/page
-       [:span (:total-pages project)]]
+       #_[:span (:total-pages project)]]
       #_[:div.project-th-icon.comments
          i/chat
          [:span "0"]]
       [:div.project-th-icon.edit
-       {:on-click on-edit}
+       #_{:on-click on-edit}
        i/pencil]
       [:div.project-th-icon.delete
-       {:on-click on-delete}
+       #_{:on-click on-delete}
        i/trash]]]))
 
 ;; --- Grid
 
 (mf/defc grid
-  [{:keys [opts] :as props}]
+  [{:keys [opts files] :as props}]
   (let [order (:order opts :created)
         filter (:filter opts "")
-        projects (mf/deref projects-iref)
-        projects (->> (vals projects)
-                      (filter-projects-by filter)
-                      (sort-projects-by order))
+        files (->> files
+                   (filter-by filter)
+                   (sort-by order))
         on-click #(do
                     (dom/prevent-default %)
-                    (modal/show! create-project-dialog {})
-                    #_(udl/open! :create-project))]
+                    #_(modal/show! create-project-dialog {})
+                    #_(udl/open! :create-project))
+        ]
     [:section.dashboard-grid
-     [:h2 (tr "ds.project-title")]
+     [:h2 (tr "ds.projects.file-name")]
      [:div.dashboard-grid-content
       [:div.dashboard-grid-row
-       [:div.grid-item.add-project {:on-click on-click}
-        [:span (tr "ds.project-new")]]
+       [:div.grid-item.add-project #_{:on-click on-click}
+        [:span (tr "ds.project-file")]]
+       (for [item files]
+         [:& grid-item {:file item :key (:id item)}])]]]))
+
+;; --- Component: Nav
+
+;; (letfn [(on-click [event]
+;;           #_(let [type (or type :own)]
+;;             (st/emit! (rt/nav :dashboard/icons {} {:type type :id id}))))
+;;         (on-input-change [event]
+;;           #_(-> (dom/get-target event)
+;;               (dom/get-value)
+;;               (swap! local assoc :name)))
+;;       (on-cancel [event]
+;;         #_(swap! local dissoc :name :edit))
+;;       (on-double-click [event]
+;;         #_(when editable?
+;;           (swap! local assoc :edit true)))
+;;       (on-input-keyup [event]
+;;         #_(when (kbd/enter? event)
+;;           (let [value (-> (dom/get-target event) (dom/get-value))]
+;;             (st/emit! (di/rename-collection id (str/trim (:name @local))))
+;;             (swap! local assoc :edit false))))]
+
+(mf/defc nav-item
+  [{:keys [id name selected?] :as props}]
+  (let [local (mf/use-state {})
+        editable? (not (nil? id))
+        on-click (fn [event]
+                   (st/emit! (rt/nav :dashboard-projects {} {:project-id (str id)})))]
+    [:li {:on-click on-click
+          ;; :on-double-click on-double-click
+          :class-name (when selected? "current")}
+     (if (:edit @local)
+       [:div
+        [:input.element-title #_{:value (if (:name @local)
+                                        (:name @local)
+                                        (if id name "Storage"))
+                               :on-change on-input-change
+                               :on-key-down on-input-keyup}]
+        [:span.close #_{:on-click on-cancel} i/close]]
+       [:span.element-title (if id name "Recent")])
+     #_[:span.element-subtitle (tr "ds.num-elements" (t/c num-icons))]
+     ]))
+
+
+(mf/defc nav
+  [{:keys [id] :as props}]
+  (let [projects (->> (mf/deref projects-iref)
+                      (vals)
+                      (sort-by :created-at))]
+    [:div.library-bar
+     [:div.library-bar-inside
+      [:ul.library-elements
+       [:li
+        [:a.btn-primary #_{:on-click #(st/emit! di/create-collection)}
+         "new project +"]]
+
+       [:li {:style {:marginBottom "20px"}
+             :on-click #(st/emit! (rt/nav :dashboard/projects {} {}))
+             :class-name (when (nil? id) "current")}
+        [:span.element-title "Recent"]]
+
        (for [item projects]
-         [:& grid-item {:project item :key (:id item)}])]]]))
+         [:& nav-item {:id (:id item)
+                       :key (:id item)
+                       :name (:name item)
+                       :selected? (= (:id item) id)}])]]]))
+
+;; --- Component: Content
+
+(def files-ref
+  (letfn [(selector [state]
+            (let [id  (get-in state [:dashboard-projects :id])
+                  ids (get-in state [:dashboard-projects :files id])]
+              (mapv #(get-in state [:files %]) ids)))]
+    (-> (l/lens selector)
+        (l/derive st/state))))
+
+(mf/defc content
+  [{:keys [id] :as props}]
+  (let [opts (mf/deref opts-iref)
+        files (mf/deref files-ref)]
+    [:*
+     [:& menu {:opts opts :files files}]
+     [:section.dashboard-grid.library
+      [:& grid {:id id :opts opts :files files}]]]))
 
 ;; --- Projects Page
 
 (mf/defc projects-page
-  [_]
-  (mf/use-effect #(st/emit! (udp/initialize)))
-  (let [opts (mf/deref opts-iref)]
-    [:section.dashboard-content
-     [:& menu {:opts opts}]
-     [:& grid {:opts opts}]]))
+  [{:keys [id] :as props}]
+  (mf/use-effect #(st/emit! udp/fetch-projects))
+  (mf/use-effect {:fn #(st/emit! (udp/initialize id))
+                  :deps #js [id]})
+  [:section.dashboard-content
+   [:& nav {:id id}]
+   [:& content {:id id}]])

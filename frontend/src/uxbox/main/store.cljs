@@ -53,11 +53,7 @@
    nil))
 
 (def initial-state
-  {:dashboard {:project-order :name
-               :project-filter ""
-               :images-order :name
-               :images-filter ""}
-   :route nil
+  {:route nil
    :router nil
    :auth (:auth storage)
    :profile (:profile storage)

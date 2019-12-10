@@ -5,6 +5,7 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.pages
+  "Page related events (for workspace mainly)."
   (:require
    [cljs.spec.alpha :as s]
    [beicon.core :as rx]
@@ -22,7 +23,7 @@
 (s/def ::name ::us/string)
 (s/def ::inst ::us/inst)
 (s/def ::type ::us/keyword)
-(s/def ::project-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
 (s/def ::created-at ::us/inst)
 (s/def ::modified-at ::us/inst)
 (s/def ::version ::us/number)
@@ -56,10 +57,10 @@
 (s/def ::data
   (s/keys :req-un [::shapes ::canvas ::shapes-by-id]))
 
-(s/def ::page-entity
+(s/def ::page
   (s/keys :req-un [::id
                    ::name
-                   ::project-id
+                   ::file-id
                    ::created-at
                    ::modified-at
                    ::user-id
@@ -67,21 +68,19 @@
                    ::metadata
                    ::data]))
 
+(s/def ::pages
+  (s/every ::page :kind vector?))
+
 ;; --- Protocols
 
-(defprotocol IPageUpdate
-  "A marker protocol for mark events that alters the
-  page and is subject to perform a backend synchronization.")
-
-(defprotocol IMetadataUpdate
+(defprotocol IPageDataUpdate
   "A marker protocol for mark events that alters the
   page and is subject to perform a backend synchronization.")
 
 (defn page-update?
   [o]
-  (or (satisfies? IPageUpdate o)
-      (satisfies? IMetadataUpdate o)
-      (= ::page-update o)))
+  (or (satisfies? IPageDataUpdate o)
+      (= ::page-data-update o)))
 
 ;; --- Helpers
 
@@ -114,53 +113,39 @@
         (update :pages-data dissoc id))
     state))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Generic Page Events (mostly Fetch & CRUD)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Fetch Pages (by File ID)
+
+(declare pages-fetched)
+
+(defn fetch-pages
+  [file-id]
+  (s/assert ::us/uuid file-id)
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query :project-pages {:file-id file-id})
+           (rx/map pages-fetched)))))
+
 ;; --- Pages Fetched
 
 (defn pages-fetched
-  [id pages]
-  (s/assert ::us/uuid id)
-  (s/assert ::us/coll pages)
+  [pages]
+  (s/assert ::pages pages)
   (ptk/reify ::pages-fetched
     IDeref
-    (-deref [_] (list id pages))
+    (-deref [_] pages)
 
     ptk/UpdateEvent
     (update [_ state]
       (reduce unpack-page state pages))))
 
-(defn pages-fetched?
-  [v]
-  (= ::pages-fetched (ptk/type v)))
+;; --- Fetch Page (By ID)
 
-;; --- Fetch Pages (by project id)
-
-(defn fetch-pages
-  [id]
-  (s/assert ::us/uuid id)
-  (reify
-    ptk/WatchEvent
-    (watch [_ state s]
-      (->> (rp/query :pages-by-project {:project-id id})
-           (rx/map #(pages-fetched id %))))))
-
-;; --- Page Fetched
-
-(defn page-fetched
-  [data]
-  (s/assert ::page-entity data)
-  (ptk/reify ::page-fetched
-    IDeref
-    (-deref [_] data)
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (unpack-page state data))))
-
-(defn page-fetched?
-  [v]
-  (= ::page-fetched (ptk/type v)))
-
-;; --- Fetch Pages (by project id)
+(declare page-fetched)
 
 (defn fetch-page
   "Fetch page by id."
@@ -169,35 +154,26 @@
   (reify
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/query :page {:id id})
+      (->> (rp/query :project-page {:id id})
            (rx/map page-fetched)))))
 
-;; --- Page Created
+;; --- Page Fetched
 
-(defn page-created
-  [{:keys [id project-id] :as page}]
-  (s/assert ::page-entity page)
-  (ptk/reify ::page-created
-    cljs.core/IDeref
-    (-deref [_] page)
+(defn page-fetched
+  [data]
+  (s/assert ::page data)
+  (ptk/reify ::page-fetched
+    IDeref
+    (-deref [_] data)
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [data (:data page)
-            page (dissoc page :data)]
-        (-> state
-            (update-in [:projects project-id :pages] (fnil conj []) (:id page))
-            (update :pages assoc id page)
-            (update :pages-data assoc id data))))))
+      (unpack-page state data))))
 
-(defn page-created?
-  [v]
-  (= ::page-created (ptk/type v)))
-
-;; --- Create Page Form
+;; --- Create Page
 
 (s/def ::create-page
-  (s/keys :req-un [::name ::project-id]))
+  (s/keys :req-un [::name ::file-id]))
 
 (defn create-page
   [{:keys [project-id name] :as data}]
@@ -205,7 +181,7 @@
   (ptk/reify ::create-page
     ptk/WatchEvent
     (watch [this state s]
-      (let [ordering (count (get-in state [:projects project-id :pages]))
+      #_(let [ordering (count (get-in state [:projects project-id :pages]))
             params {:name name
                     :project-id project-id
                     :ordering ordering
@@ -216,9 +192,28 @@
         (->> (rp/mutation :create-page params)
              (rx/map page-created))))))
 
-;; --- Update Page Form
+;; --- Page Created
 
-(declare page-renamed)
+(defn page-created
+  [{:keys [id project-id] :as page}]
+  (s/assert ::page page)
+  (ptk/reify ::page-created
+    cljs.core/IDeref
+    (-deref [_] page)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [data (:data page)
+            page (dissoc page :data)]
+        (-> state
+            (update :pages assoc id page)
+            (update :pages-data assoc id data))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Workspace-Aware Page Events
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Rename Page
 
 (s/def ::rename-page
   (s/keys :req-un [::id ::name]))
@@ -229,7 +224,10 @@
   (ptk/reify ::rename-page
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:pages id] assoc :name name))
+      (let [pid (get-in state [:workspace-page :id])
+            state (assoc-in state [:pages id :name] name)]
+        (cond-> state
+          (= pid id) (assoc-in [:workspace-page :name] name))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -237,59 +235,63 @@
         (->> (rp/mutation :rename-page params)
              (rx/map #(ptk/data-event ::page-renamed data)))))))
 
-;; --- Page Metadata Persisted
+;; --- Persist Page
 
-(s/def ::metadata-persisted-params
-  (s/keys :req-un [::id ::version]))
+(declare page-persisted)
 
-(defn metadata-persisted
-  [{:keys [id] :as data}]
-  (s/assert ::metadata-persisted-params data)
-  (ptk/reify ::metadata-persisted
+(def persist-current-page
+  (ptk/reify ::persist-page
+    ptk/WatchEvent
+    (watch [this state s]
+      (let [local (:workspace-local state)
+            page (:workspace-page state)
+            data (:workspace-data state)]
+        (if (:history local)
+          (rx/empty)
+          (let [page (assoc page :data data)]
+            (->> (rp/mutation :update-page page)
+                 (rx/map (fn [res] (merge page res)))
+                 (rx/map page-persisted)
+                 (rx/catch (fn [err] (rx/of ::page-persist-error))))))))))
+
+;; --- Page Persisted
+
+(defn page-persisted
+  [{:keys [id] :as page}]
+  (s/assert ::page page)
+  (ptk/reify ::page-persisted
+    cljs.core/IDeref
+    (-deref [_] page)
+
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:pages id :version] (:version data)))))
-
-(defn metadata-persisted?
-  [v]
-  (= ::metadata-persisted (ptk/type v)))
-
-;; --- Persist Page Metadata
-
-;; This is a simplified version of `PersistPage` event
-;; that does not sends the heavyweiht `:data` attribute
-;; and only serves for update other page data.
-
-(defn persist-metadata
-  [id]
-  (s/assert ::us/uuid id)
-  (ptk/reify ::persist-metadata
-    ptk/WatchEvent
-    (watch [_ state stream]
-      #_(let [page (get-in state [:pages id])]
-        (->> (rp/req :update/page-metadata page)
-             (rx/map :payload)
-             (rx/map metadata-persisted))))))
+      (let [data (:data page)
+            page (dissoc page :data)]
+        (-> state
+            (assoc :workspace-data data)
+            (assoc :workspace-page page)
+            (update :pages assoc id page)
+            (update :pages-data assoc id data))))))
 
 ;; --- Update Page
 
+;; TODO: deprecated, need refactor (this is used on page options)
 (defn update-page-attrs
   [{:keys [id] :as data}]
-  (s/assert ::page-entity data)
-  (ptk/reify
-    IPageUpdate
+  (s/assert ::page data)
+  (ptk/reify ::update-page-attrs
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:pages id] merge (dissoc data :id :version)))))
+      (update state :workspace-page merge (dissoc data :id :version)))))
 
 ;; --- Update Page Metadata
 
+;; TODO: deprecated, need refactor (this is used on page options)
 (defn update-metadata
   [id metadata]
   (s/assert ::id id)
   (s/assert ::metadata metadata)
   (reify
-    IMetadataUpdate
     ptk/UpdateEvent
     (update [this state]
       (assoc-in state [:pages id :metadata] metadata))))
@@ -307,4 +309,4 @@
     ptk/WatchEvent
     (watch [_ state s]
       (->> (rp/mutation :delete-page  {:id id})
-           (rx/map (constantly ::delete-completed))))))
+           (rx/map (ptk/data-event ::page-deleted {:id id}))))))

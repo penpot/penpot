@@ -27,6 +27,10 @@
   (-> (l/key :workspace-page)
       (l/derive st/state)))
 
+(def workspace-file
+  (-> (l/key :workspace-file)
+      (l/derive st/state)))
+
 (def workspace-data
   (-> (l/key :workspace-data)
       (l/derive st/state)))

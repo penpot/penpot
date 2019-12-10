@@ -9,10 +9,10 @@
   (:require
    [beicon.core :as rx]
    [cuerdas.core :as str]
+   [expound.alpha :as expound]
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
-   [expound.alpha :as expound]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.projects :as dp]
@@ -21,7 +21,7 @@
    [uxbox.main.ui.dashboard :as dashboard]
    [uxbox.main.ui.settings :as settings]
    [uxbox.main.ui.shapes]
-   [uxbox.main.ui.workspace :refer [workspace-page]]
+   [uxbox.main.ui.workspace :as workspace]
    [uxbox.util.data :refer [parse-int uuid-str?]]
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
@@ -38,17 +38,19 @@
     ["/register" :auth/register]
     ["/recovery/request" :auth/recovery-request]
     ["/recovery/token/:token" :auth/recovery]]
+
    ["/settings"
     ["/profile" :settings/profile]
     ["/password" :settings/password]
     ["/notifications" :settings/notifications]]
+
    ["/dashboard"
-    ["/projects" :dashboard/projects]
-    ["/elements" :dashboard/elements]
-    ["/icons" :dashboard/icons]
-    ["/images" :dashboard/images]
-    ["/colors" :dashboard/colors]]
-   ["/workspace/:project/:page" :workspace/page]])
+    ["/projects" :dashboard-projects]
+    ["/icons" :dashboard-icons]
+    ["/images" :dashboard-images]
+    ["/colors" :dashboard-colors]]
+
+   ["/workspace/:file-id" :workspace]])
 
 ;; --- Error Handling
 
@@ -100,8 +102,8 @@
     (case (get-in route [:data :name])
       :auth/login (mf/element auth/login-page)
       :auth/register (mf/element auth/register-page)
-      ;; :auth/recovery-request (auth/recovery-request-page)
 
+      ;; :auth/recovery-request (auth/recovery-request-page)
       ;; :auth/recovery
       ;; (let [token (get-in route [:params :path :token])]
       ;;   (auth/recovery-page token))
@@ -111,18 +113,19 @@
        :settings/notifications)
       (mf/element settings/settings #js {:route route})
 
-      (:dashboard/projects
-       :dashboard/icons
-       :dashboard/images
-       :dashboard/colors)
-      (mf/element dashboard/dashboard #js {:route route})
+      :dashboard-projects
+      (mf/element dashboard/dashboard-projects #js {:route route})
 
-      :workspace/page
-      (let [project-id (uuid (get-in route [:params :path :project]))
-            page-id (uuid (get-in route [:params :path :page]))]
-        [:& workspace-page {:project-id project-id
-                            :page-id page-id
-                            :key page-id}])
+      (:dashboard-icons
+       :dashboard-images
+       :dashboard-colors)
+      (mf/element dashboard/dashboard-assets #js {:route route})
 
+      :workspace
+      (let [file-id (uuid (get-in route [:params :path :file-id]))
+            page-id (uuid (get-in route [:params :query :page-id]))]
+        [:& workspace/workspace {:file-id file-id
+                                 :page-id page-id
+                                 :key file-id}])
       nil)))
 

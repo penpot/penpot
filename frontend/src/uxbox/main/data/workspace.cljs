@@ -106,12 +106,6 @@
 (s/def ::set-of-uuid
   (s/every ::us/uuid :kind set?))
 
-;; --- Protocols
-
-(defprotocol IPageDataUpdate
-  "A marker protocol for mark events that alters the
-  page and is subject to perform a backend synchronization.")
-
 ;; --- Expose inner functions
 
 (defn interrupt? [e] (= e :interrupt))
@@ -136,70 +130,79 @@
 
 (declare initialized)
 (declare watch-page-changes)
-(declare watch-events)
+;; (declare watch-events)
 
 (defn initialize
   "Initialize the workspace state."
-  [project-id page-id]
-  (s/assert ::us/uuid project-id)
+  [file-id page-id]
+  (s/assert ::us/uuid file-id)
   (s/assert ::us/uuid page-id)
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc :workspace-layout default-layout)
-          ;; (update :workspace-layout
-          ;;         (fn [data]
-          ;;           (if (nil? data) default-layout data)))
-          (assoc :workspace-local
-                 (assoc workspace-default :id page-id))))
+      (let [local (assoc workspace-default
+                         :file-id file-id
+                         :page-id page-id)]
+        (-> state
+            (assoc :workspace-layout default-layout)
+            ;; (update :workspace-layout
+            ;;         (fn [data]
+            ;;           (if (nil? data) default-layout data)))
+            (assoc :workspace-local local))))
 
     ptk/WatchEvent
     (watch [_ state stream]
+      (prn "initialize" file-id page-id)
       #_(when-not (get-in state [:pages page-id])
-        (reset! st/loader true))
+          (reset! st/loader true))
 
       (rx/merge
        ;; Stop possible previous watchers and re-fetch the main page
        ;; and all project related pages.
        (rx/of ::stop-watcher
               (udp/fetch-page page-id)
-              (udp/fetch-pages project-id))
+              (dp/fetch-file file-id)
+              (udp/fetch-pages file-id))
 
        ;; When main page is fetched, schedule the main initialization.
-       (->> (rx/filter udp/page-fetched? stream)
+       (->> (rx/zip (rx/filter (ptk/type? ::udp/page-fetched) stream)
+                    (rx/filter (ptk/type? ::dp/files-fetched) stream))
             (rx/take 1)
             (rx/do #(reset! st/loader false))
-            (rx/mapcat #(rx/of (initialized page-id)
+            (rx/mapcat #(rx/of (initialized file-id page-id)
                                #_(initialize-alignment page-id))))
+
 
        ;; When workspace is initialized, run the event watchers.
        (->> (rx/filter (ptk/type? ::initialized) stream)
             (rx/take 1)
-            (rx/mapcat #(rx/of watch-page-changes
-                               watch-events)))))
+            (rx/mapcat #(rx/of watch-page-changes)))))
     ptk/EffectEvent
     (effect [_ state stream]
       ;; Optimistic prefetch of projects if them are not already fetched
-      (when-not (seq (:projects state))
+      #_(when-not (seq (:projects state))
         (st/emit! (dp/fetch-projects))))))
 
 (defn- initialized
-  [page-id]
+  [file-id page-id]
+  (s/assert ::us/uuid file-id)
   (s/assert ::us/uuid page-id)
   (ptk/reify ::initialized
     ptk/UpdateEvent
     (update [_ state]
-      (let [page (get-in state [:pages page-id])
+      (let [file (get-in state [:files file-id])
+            page (get-in state [:pages page-id])
             data (get-in state [:pages-data page-id])]
+        (prn "initialized" file)
         (assoc state
+               :workspace-file file
                :workspace-data data
                :workspace-page page)))))
 
 ;; --- Workspace Flags
 
 (defn activate-flag
-  [flag]
+   [flag]
   (s/assert keyword? flag)
   (ptk/reify ::activate-flag
     ptk/UpdateEvent
@@ -335,7 +338,6 @@
   (CopyToClipboard.))
 
 (defrecord PasteFromClipboard [id]
-  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     state
@@ -442,7 +444,7 @@
 (defn add-shape
   [data]
   (ptk/reify ::add-shape
-    IPageDataUpdate
+    udp/IPageDataUpdate
     ptk/UpdateEvent
     (update [_ state]
       ;; TODO: revisit the `setup-proportions` seems unnecesary
@@ -460,7 +462,7 @@
 
 (def duplicate-selected
   (ptk/reify ::duplicate-selected
-    IPageDataUpdate
+    udp/IPageDataUpdate
     ptk/UpdateEvent
     (update [_ state]
       (let [selected  (get-in state [:workspace-local :selected])
@@ -485,7 +487,7 @@
   [id]
   (s/assert ::us/uuid id)
   (ptk/reify ::delete-shape
-    IPageDataUpdate
+    udp/IPageDataUpdate
     ptk/UpdateEvent
     (update [_ state]
       (let [shape (get-in state [:workspace-data :shapes-by-id id])]
@@ -495,7 +497,7 @@
   [ids]
   (s/assert ::us/set ids)
   (ptk/reify ::delete-many-shapes
-    IPageDataUpdate
+    udp/IPageDataUpdate
     ptk/UpdateEvent
     (update [_ state]
       (reduce impl-dissoc-shape state
@@ -656,7 +658,6 @@
 ;; --- Update Shape Position
 
 (deftype UpdateShapePosition [id point]
-  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (update-in state [:shapes id] geom/absolute-move point)))
@@ -683,7 +684,6 @@
   [id name]
   {:pre [(uuid? id) (string? name)]}
   (ptk/reify ::rename-shape
-    udp/IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:shapes id :name] name))))
@@ -722,7 +722,7 @@
   [loc]
   (s/assert ::direction loc)
   (ptk/reify ::move-selected-layer
-    IPageDataUpdate
+    udp/IPageDataUpdate
     ptk/UpdateEvent
     (update [_ state]
       (let [id (first (get-in state [:workspace-local :selected]))
@@ -804,7 +804,6 @@
                     (update-in [:workspace-data :shapes-by-id id] dissoc :modifier-mtx))
                 state)))]
     (ptk/reify ::materialize-current-modifier-in-bulk
-      udp/IPageUpdate
       ptk/UpdateEvent
       (update [_ state]
         (reduce process-shape state ids)))))
@@ -890,7 +889,6 @@
 ;; TODO: revisit
 
 (deftype UnlockShapeProportions [id]
-  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (assoc-in state [:shapes id :proportion-lock] false)))
@@ -918,7 +916,6 @@
   (s/assert ::us/uuid id)
   (s/assert ::update-dimensions dimensions)
   (ptk/reify ::update-dimensions
-    udp/IPageUpdate
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:shapes id] geom/resize-dim dimensions))))
@@ -927,7 +924,6 @@
 
 ;; TODO: revisit
 (deftype UpdateInteraction [shape interaction]
-  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (let [id (or (:id interaction)
@@ -943,7 +939,6 @@
 
 ;; TODO: revisit
 (deftype DeleteInteracton [shape id]
-  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (update-in state [:shapes shape :interactions] dissoc id)))
@@ -1006,7 +1001,6 @@
                     (reduce impl-set-hidden $ (sequence xform shapes)))
                   $))))]
     (ptk/reify ::set-hidden-attr
-      udp/IPageUpdate
       ptk/UpdateEvent
       (update [_ state]
         (impl-set-hidden state id)))))
@@ -1030,7 +1024,6 @@
                     (reduce impl-set-blocked $ (sequence xform shapes)))
                   $))))]
     (ptk/reify ::set-blocked-attr
-      udp/IPageUpdate
       ptk/UpdateEvent
       (update [_ state]
         (impl-set-blocked state id)))))
@@ -1039,7 +1032,6 @@
 
 ;; TODO: revisit
 (deftype LockShape [id]
-  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (letfn [(mark-locked [state id]
@@ -1058,7 +1050,6 @@
   (LockShape. id))
 
 (deftype UnlockShape [id]
-  udp/IPageUpdate
   ptk/UpdateEvent
   (update [_ state]
     (letfn [(mark-unlocked [state id]
@@ -1146,20 +1137,6 @@
       #_(rx/of (udp/update-metadata id metadata)
              (initialize-alignment id)))))
 
-;; (defrecord OpenView [page-id]
-;;   ptk/WatchEvent
-;;   (watch [_ state s]
-;;     (let [page-id (get-in state [:workspace :page])]
-;;       (rx/of (udp/persist-page page-id))))
-
-;;   ptk/EffectEvent
-;;   (effect [_ state s]
-;;     (let [rval (rand-int 1000000)
-;;           page (get-in state [:pages page-id])
-;;           project (get-in state [:projects (:project page)])
-;;           url (str cfg/viewurl "?v=" rval "#/preview/" (:share-token project) "/" page-id)]
-;;       (js/open url "new tab" ""))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1173,52 +1150,20 @@
             params {:project project-id :page (first page-ids)}]
         (rx/of (rt/nav :workspace/page params))))))
 
+(defn go-to-page
+  [page-id]
+  (s/assert ::us/uuid page-id)
+  (ptk/reify ::go-to
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [file-id (get-in state [:workspace-local :file-id])
+            path-params {:file-id file-id}
+            query-params {:page-id page-id}]
+        (rx/of (rt/nav :workspace path-params query-params))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn page-update?
-  [o]
-  (or (satisfies? IPageDataUpdate o)
-      (= ::page-data-update o)))
-
-(defn page-persisted
-  [{:keys [id] :as page}]
-  (s/assert ::page-entity page)
-  (ptk/reify ::page-persisted
-    cljs.core/IDeref
-    (-deref [_] page)
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [data (:data page)
-            page (dissoc page :data)]
-        (-> state
-            (assoc :workspace-data data)
-            (assoc :workspace-page page)
-            (update :pages assoc id page)
-            (update :pages-data assoc id data))))))
-
-(defn page-persisted?
-  [v]
-  (= ::page-persisted (ptk/type v)))
-
-;; --- Persist Page
-
-(def persist-page
-  (ptk/reify ::persist-page
-    ptk/WatchEvent
-    (watch [this state s]
-      (let [local (:workspace-local state)
-            page (:workspace-page state)
-            data (:workspace-data state)]
-        (if (:history local)
-          (rx/empty)
-          (let [page (assoc page :data data)]
-            (->> (rp/mutation :update-page page)
-                 (rx/map (fn [res] (merge page res)))
-                 (rx/map page-persisted)
-                 (rx/catch (fn [err] (rx/of ::page-persist-error))))))))))
 
 ;; --- Change Page Order (D&D Ordering)
 
@@ -1236,7 +1181,7 @@
         (assoc-in state [:projects (:project-id page) :pages] pages)))))
 
 ;; --- Delete Page
-
+;; TODO: join with udp/delete-page
 (defn delete-page
   [id]
   (s/assert ::us/uuid id)
@@ -1259,29 +1204,14 @@
     (watch [_ state stream]
       (let [stopper (rx/filter #(= % ::stop-watcher) stream)]
         (->> stream
-             (rx/filter page-update?)
+             (rx/filter udp/page-update?)
              (rx/debounce 500)
-             (rx/mapcat #(rx/merge (rx/of rehash-shapes-relationships persist-page)
-                                   (->> (rx/filter page-persisted? stream)
+             (rx/mapcat #(rx/merge (rx/of rehash-shapes-relationships udp/persist-current-page)
+                                   (->> (rx/filter (ptk/type? ::udp/page-persisted) stream)
                                         (rx/timeout 1000 (rx/empty))
                                         (rx/take 1)
                                         (rx/ignore))))
              (rx/take-until stopper))))))
-
-(def watch-events
-  (letfn [(on-page-renamed [event]
-            (rx/of #(update % :workspace-page assoc :name (:name @event))))]
-    (ptk/reify ::watch-events
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [stopper (rx/filter #(= % ::stop-watcher) stream)
-              page-id (get-in state [:workspace-page :id])]
-          (->> stream
-               (rx/filter (ptk/type? ::udp/page-renamed))
-               (rx/filter #(= (:id (deref %)) page-id))
-               (rx/map on-page-renamed)
-               (rx/filter ptk/event?)
-               (rx/take-until stopper)))))))
 
 ;; (def watch-shapes-changes
 ;;   (letfn [(look-for-changes [[old new]]
@@ -1299,7 +1229,7 @@
 ;;       (watch [_ state stream]
 ;;         (let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
 ;;           (->> stream
-;;                (rx/filter page-update?)
+;;                (rx/filter udp/page-update?)
 ;;                (rx/debounce 1000)
 ;;                (rx/mapcat #(rx/merge (rx/of persist-page
 ;;                                    (->> (rx/filter page-persisted? stream)

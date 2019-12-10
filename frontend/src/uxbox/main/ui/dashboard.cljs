@@ -11,19 +11,25 @@
    [uxbox.main.ui.dashboard.colors :as colors]
    [uxbox.main.ui.messages :refer [messages-widget]]))
 
-(defn- parse-route
-  [{:keys [params data] :as route}]
-  (let [{:keys [id type]} (:query params)
-        id (cond
-             (str/digits? id) (parse-int id)
-             (uuid-str? id) (uuid id)
-             :else nil)
-        type (when (str/alpha? type) (keyword type))]
-    [(:name data) type id]))
-
-(mf/defc dashboard
+(mf/defc dashboard-projects
   [{:keys [route] :as props}]
-  (let [[section type id] (parse-route route)]
+  (let [id (get-in route [:params :query :project-id])
+        id (when (uuid-str? id) (uuid id))]
+    [:main.dashboard-main
+     [:& messages-widget]
+     [:& header {:section :dashboard/projects}]
+     [:& projects/projects-page {:id id}]]))
+
+(mf/defc dashboard-assets
+  [{:keys [route] :as props}]
+  (let [section (:name route)
+        {:keys [id type]} (get-in route [:params :query])
+        id (cond
+             ;; (str/digits? id) (parse-int id)
+             (uuid-str? id) (uuid id)
+             (str/empty-or-nil? id) nil
+             :else id)
+        type (when (str/alpha? type) (keyword type))]
     [:main.dashboard-main
      [:& messages-widget]
      [:& header {:section section}]
@@ -33,9 +39,6 @@
 
        :dashboard/images
        [:& images/images-page {:type type :id id}]
-
-       :dashboard/projects
-       [:& projects/projects-page]
 
        :dashboard/colors
        [:& colors/colors-page {:type type :id id}])]))
