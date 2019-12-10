@@ -172,30 +172,32 @@
 
 ;; --- Create Page
 
+(declare page-created)
+
 (s/def ::create-page
   (s/keys :req-un [::name ::file-id]))
 
 (defn create-page
-  [{:keys [project-id name] :as data}]
+  [{:keys [file-id name] :as data}]
   (s/assert ::create-page data)
   (ptk/reify ::create-page
     ptk/WatchEvent
     (watch [this state s]
-      #_(let [ordering (count (get-in state [:projects project-id :pages]))
+      (let [ordering (count (get-in state [:files file-id :pages]))
             params {:name name
-                    :project-id project-id
+                    :file-id file-id
                     :ordering ordering
                     :data {:shapes []
                            :canvas []
                            :shapes-by-id {}}
                     :metadata {}}]
-        (->> (rp/mutation :create-page params)
+        (->> (rp/mutation :create-project-page params)
              (rx/map page-created))))))
 
 ;; --- Page Created
 
 (defn page-created
-  [{:keys [id project-id] :as page}]
+  [{:keys [id file-id] :as page}]
   (s/assert ::page page)
   (ptk/reify ::page-created
     cljs.core/IDeref
@@ -206,8 +208,13 @@
       (let [data (:data page)
             page (dissoc page :data)]
         (-> state
+            (update-in [:workspace-file :pages] (fnil conj []) id)
             (update :pages assoc id page)
-            (update :pages-data assoc id data))))))
+            (update :pages-data assoc id data))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (uxbox.main.data.projects/fetch-file file-id)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace-Aware Page Events
@@ -249,7 +256,7 @@
         (if (:history local)
           (rx/empty)
           (let [page (assoc page :data data)]
-            (->> (rp/mutation :update-page page)
+            (->> (rp/mutation :update-project-page-data page)
                  (rx/map (fn [res] (merge page res)))
                  (rx/map page-persisted)
                  (rx/catch (fn [err] (rx/of ::page-persist-error))))))))))

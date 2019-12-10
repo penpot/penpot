@@ -21,11 +21,11 @@
    [uxbox.util.i18n :refer [tr]]))
 
 (s/def ::id ::us/uuid)
-(s/def ::project-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
 (s/def ::name ::us/not-empty-string)
 
 (s/def ::page-form
-  (s/keys :req-un [::project-id ::name]
+  (s/keys :req-un [::file-id ::name]
           :opt-un [::id]))
 
 (defn- on-submit
@@ -40,7 +40,7 @@
 (defn- initial-data
   [page]
   (merge {:name ""}
-         (select-keys page [:name :id :project-id])))
+         (select-keys page [:name :id :file-id])))
 
 (mf/defc page-form
   [{:keys [page] :as props}]

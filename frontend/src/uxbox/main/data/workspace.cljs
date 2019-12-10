@@ -152,7 +152,6 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (prn "initialize" file-id page-id)
       #_(when-not (get-in state [:pages page-id])
           (reset! st/loader true))
 
@@ -171,7 +170,6 @@
             (rx/do #(reset! st/loader false))
             (rx/mapcat #(rx/of (initialized file-id page-id)
                                #_(initialize-alignment page-id))))
-
 
        ;; When workspace is initialized, run the event watchers.
        (->> (rx/filter (ptk/type? ::initialized) stream)
@@ -193,7 +191,6 @@
       (let [file (get-in state [:files file-id])
             page (get-in state [:pages page-id])
             data (get-in state [:pages-data page-id])]
-        (prn "initialized" file)
         (assoc state
                :workspace-file file
                :workspace-data data
@@ -1206,11 +1203,8 @@
         (->> stream
              (rx/filter udp/page-update?)
              (rx/debounce 500)
-             (rx/mapcat #(rx/merge (rx/of rehash-shapes-relationships udp/persist-current-page)
-                                   (->> (rx/filter (ptk/type? ::udp/page-persisted) stream)
-                                        (rx/timeout 1000 (rx/empty))
-                                        (rx/take 1)
-                                        (rx/ignore))))
+             (rx/mapcat #(rx/of rehash-shapes-relationships
+                                udp/persist-current-page))
              (rx/take-until stopper))))))
 
 ;; (def watch-shapes-changes
