@@ -26,15 +26,17 @@
 
 (su/defstr sql:generic-project-files
   "select pf.*,
-          array_agg(pp.id) as pages
+          array_agg(pp.id) over pages_w as pages
      from project_files as pf
     inner join projects as p on (pf.project_id = p.id)
     inner join project_users as pu on (p.id = pu.project_id)
      left join project_pages as pp on (pf.id = pp.file_id)
     where pu.user_id = $1
       and pu.can_edit = true
-    group by pf.id")
-
+      and pf.deleted_at is null
+   window pages_w as (partition by pf.id order by pp.created_at
+                      range BETWEEN UNBOUNDED PRECEDING
+                                AND UNBOUNDED FOLLOWING)")
 
 ;; --- Query: Project Files
 
