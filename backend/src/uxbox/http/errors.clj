@@ -48,10 +48,13 @@
 
 (defmethod handle-exception :default
   [err req]
-  (log/error err "Unhandled exception on request:" (:path req))
+  (log/error "Unhandled exception on request:" (:path req) "\n"
+             (with-out-str
+                (.printStackTrace err (java.io.PrintWriter. *out*))))
   {:status 500
    :body {:type :exception
-          :message (ex-message err)}})
+          :message (ex-message err)
+          :data (ex-data err)}})
 
 (defn handle
   [error req]
