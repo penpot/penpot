@@ -30,6 +30,7 @@
 
 (def +ordering-options+
   {:name "ds.ordering.by-name"
+   :modified "ds.ordering.by-last-update"
    :created "ds.ordering.by-creation-date"})
 
 ;; --- Refs
@@ -49,6 +50,7 @@
   (case ordering
     :name (cljs.core/sort-by :name files)
     :created (reverse (cljs.core/sort-by :created-at files))
+    :modified (reverse (cljs.core/sort-by :modified-at files))
     files))
 
 (defn contains-term?
@@ -65,8 +67,8 @@
 ;; --- Menu (Filter & Sort)
 
 (mf/defc menu
-  [{:keys [opts files] :as props}]
-  (let [ordering (:order opts :created)
+  [{:keys [id opts files] :as props}]
+  (let [ordering (:order opts :modified)
         filtering (:filter opts "")
 
         on-term-change
@@ -94,12 +96,14 @@
       [:div
        ;; Sorting
        ;; TODO: convert to separate component?
-       [:span (tr "ds.ordering")]
-       [:select.input-select {:on-change on-order-change
-                              :value (pr-str ordering)}
-        (for [[key value] (seq +ordering-options+)]
-          (let [key (pr-str key)]
-            [:option {:key key :value key} (tr value)]))]]
+       (when id
+         [:*
+          [:span (tr "ds.ordering")]
+          [:select.input-select {:on-change on-order-change
+                                 :value (pr-str ordering)}
+           (for [[key value] (seq +ordering-options+)]
+             (let [key (pr-str key)]
+               [:option {:key key :value key} (tr value)]))]])]
 
       ;; Search
       ;; TODO: convert to separate component?
@@ -174,7 +178,7 @@
 
 (mf/defc grid
   [{:keys [opts files] :as props}]
-  (let [order (:order opts :created)
+  (let [order (:order opts :modified)
         filter (:filter opts "")
         files (->> files
                    (filter-by filter)
@@ -217,8 +221,7 @@
   [{:keys [id name selected?] :as props}]
   (let [local (mf/use-state {})
         editable? (not (nil? id))
-        on-click (fn [event]
-                   (st/emit! (rt/nav :dashboard-projects {} {:project-id (str id)})))]
+        on-click #(st/emit! (udp/go-to-project id))]
     [:li {:on-click on-click
           ;; :on-double-click on-double-click
           :class-name (when selected? "current")}
@@ -248,7 +251,7 @@
          "new project +"]]
 
        [:li {:style {:marginBottom "20px"}
-             :on-click #(st/emit! (rt/nav :dashboard/projects {} {}))
+             :on-click #(st/emit! (udp/go-to-project nil))
              :class-name (when (nil? id) "current")}
         [:span.element-title "Recent"]]
 
@@ -273,7 +276,7 @@
   (let [opts (mf/deref opts-iref)
         files (mf/deref files-ref)]
     [:*
-     [:& menu {:opts opts :files files}]
+     [:& menu {:id id :opts opts :files files}]
      [:section.dashboard-grid.library
       [:& grid {:id id :opts opts :files files}]]]))
 

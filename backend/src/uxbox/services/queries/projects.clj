@@ -10,6 +10,7 @@
    [promesa.core :as p]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
+   [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
    [uxbox.util.spec :as us]))
 
@@ -24,33 +25,20 @@
 
 ;; --- Query: Projects
 
-;; (def ^:private projects-sql
-;;   "select distinct on (p.id, p.created_at)
-;;           p.*,
-;;           array_agg(pg.id) over (
-;;             partition by p.id
-;;             order by pg.created_at
-;;             range between unbounded preceding and unbounded following
-;;           ) as pages
-;;     from projects as p
-;;     left join pages as pg
-;;            on (pg.project_id = p.id)
-;;    where p.user_id = $1
-;;    order by p.created_at asc")
-
-(def ^:private projects-sql
+(su/defsql sql:projects
   "select p.*
      from project_users as pu
     inner join projects as p on (p.id = pu.project_id)
     where pu.can_edit = true
-      and pu.user_id = $1;")
+      and pu.user_id = $1
+    order by p.created_at asc")
 
 (s/def ::projects
   (s/keys :req-un [::user]))
 
 (sq/defquery ::projects
   [{:keys [user] :as params}]
-  (-> (db/query db/pool [projects-sql user])
+  (-> (db/query db/pool [sql:projects user])
       (p/then' (partial mapv decode-row))))
 
 ;; --- Helpers

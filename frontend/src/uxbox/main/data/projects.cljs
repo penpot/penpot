@@ -122,8 +122,9 @@
   (ptk/reify ::fetch-files
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :project-files {:project-id project-id})
-           (rx/map files-fetched)))))
+      (let [params (if (nil? project-id) {} {:project-id project-id})]
+        (->> (rp/query :project-files params)
+             (rx/map files-fetched))))))
 
 ;; --- Fetch File (by ID)
 
@@ -247,3 +248,13 @@
         (let [path-params {:file-id file-id}
               query-params {:page-id (first page-ids)}]
           (rx/of (rt/nav :workspace path-params query-params)))))))
+
+(defn go-to-project
+  [id]
+  (s/assert (s/nilable ::us/uuid) id)
+  (ptk/reify ::go-to-project
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (if (nil? id)
+        (rx/of (rt/nav :dashboard-projects {} {}))
+        (rx/of (rt/nav :dashboard-projects {} {:project-id (str id)}))))))

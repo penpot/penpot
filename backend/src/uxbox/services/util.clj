@@ -7,6 +7,7 @@
 (ns uxbox.services.util
   (:require
    [clojure.tools.logging :as log]
+   [cuerdas.core :as str]
    [vertx.core :as vc]
    [uxbox.core :refer [system]]
    [uxbox.util.uuid :as uuid]
@@ -23,6 +24,10 @@
 ;;                   type (get-in data [:request ::type])]
 ;;               (log/info "service" type "processed in" elapsed)
 ;;               data))})
+
+(defmacro defsql
+  [sym str]
+  `(def ~sym (str/istr ~str)))
 
 (defn raise-not-found-if-nil
   [v]
