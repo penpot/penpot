@@ -30,7 +30,7 @@
 (mf/defc page-item
   [{:keys [page index deletable? selected?] :as props}]
   (let [on-edit #(modal/show! page-form-dialog {:page page})
-        delete-fn #(st/emit! (dw/delete-page (:id page)))
+        delete-fn #(st/emit! (udp/delete-page (:id page)))
         on-delete #(do
                      (dom/prevent-default %)
                      (dom/stop-propagation %)

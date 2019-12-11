@@ -131,7 +131,7 @@
   [{:keys [file] :as props}]
   (let [local (mf/use-state {})
         on-navigate #(st/emit! (udp/go-to (:id file)))
-        delete-fn #(st/emit! nil #_(udp/delete-file (:id file)))
+        delete-fn #(st/emit! nil (udp/delete-file (:id file)))
         on-delete #(do
                      (dom/stop-propagation %)
                      (modal/show! confirm-dialog {:on-accept delete-fn}))
@@ -257,8 +257,10 @@
 (def files-ref
   (letfn [(selector [state]
             (let [id  (get-in state [:dashboard-projects :id])
-                  ids (get-in state [:dashboard-projects :files id])]
-              (mapv #(get-in state [:files %]) ids)))]
+                  ids (get-in state [:dashboard-projects :files id])
+                  xf  (comp (map #(get-in state [:files %]))
+                            (remove nil?))]
+              (into [] xf ids)))]
     (-> (l/lens selector)
         (l/derive st/state))))
 

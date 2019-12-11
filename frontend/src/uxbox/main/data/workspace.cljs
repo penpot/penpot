@@ -1177,22 +1177,6 @@
             pages (vec (concat before [id] after))]
         (assoc-in state [:projects (:project-id page) :pages] pages)))))
 
-;; --- Delete Page
-;; TODO: join with udp/delete-page
-(defn delete-page
-  [id]
-  (s/assert ::us/uuid id)
-  (ptk/reify ::delete-page
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [project-id (get-in state [:pages id :project-id])]
-        (rx/merge
-         (rx/of (udp/delete-page id))
-         (->> stream
-              (rx/filter #(= % ::udp/delete-completed))
-              (rx/map #(navigate-to-project project-id))
-              (rx/take 1)))))))
-
 ;; -- Page Changes Watcher
 
 (def watch-page-changes

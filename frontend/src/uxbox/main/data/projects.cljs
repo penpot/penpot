@@ -11,7 +11,6 @@
    [beicon.core :as rx]
    [potok.core :as ptk]
    [uxbox.main.repo.core :as rp]
-   [uxbox.main.data.pages :as udp]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.spec :as us]
    [uxbox.util.time :as dt]
@@ -171,19 +170,33 @@
 
 ;; --- Delete Project (by id)
 
-(defrecord DeleteProject [id]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (letfn [(on-success [_]
-              #(dissoc-project % id))]
-      (->> (rp/mutation :delete-project {:id id})
-           (rx/map on-success)))))
-
 (defn delete-project
   [id]
-  (if (map? id)
-    (DeleteProject. (:id id))
-    (DeleteProject. id)))
+  (s/assert ::us/uuid id)
+  (ptk/reify ::delete-project
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc-project state id))
+
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/mutation :delete-project {:id id})
+           (rx/ignore)))))
+
+;; --- Delete File (by id)
+
+(defn delete-file
+  [id]
+  (s/assert ::us/uuid id)
+  (ptk/reify ::delete-file
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :files dissoc id))
+
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/mutation :delete-project-file {:id id})
+           (rx/ignore)))))
 
 ;; --- Create Project
 

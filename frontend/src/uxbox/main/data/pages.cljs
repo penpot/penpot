@@ -12,6 +12,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [uxbox.main.repo.core :as rp]
+   [uxbox.main.data.projects :as dp]
    [uxbox.util.data :refer [index-by-id concatv]]
    [uxbox.util.spec :as us]
    [uxbox.util.timers :as ts]
@@ -106,16 +107,13 @@
 (defn purge-page
   "Remove page and all related stuff from the state."
   [state id]
-  (if-let [project-id (get-in state [:pages id :project-id])]
+  (if-let [file-id (get-in state [:pages id :file-id])]
     (-> state
-        (update-in [:projects project-id :pages] #(filterv (partial not= id) %))
+        (update-in [:files file-id :pages] #(filterv (partial not= id) %))
+        (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
         (update :pages dissoc id)
         (update :pages-data dissoc id))
     state))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Generic Page Events (mostly Fetch & CRUD)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- Fetch Pages (by File ID)
 
@@ -216,10 +214,6 @@
     (watch [_ state stream]
       (rx/of (uxbox.main.data.projects/fetch-file file-id)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Workspace-Aware Page Events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;; --- Rename Page
 
 (s/def ::rename-page
@@ -241,6 +235,26 @@
       (let [params {:id id :name name}]
         (->> (rp/mutation :rename-page params)
              (rx/map #(ptk/data-event ::page-renamed data)))))))
+
+;; --- Delete Page (by ID)
+
+(defn delete-page
+  [id]
+  {:pre [(uuid? id)]}
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (purge-page state id))
+
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [page (:workspace-page state)]
+        (rx/merge
+         (->> (rp/mutation :delete-project-page  {:id id})
+              (rx/flat-map (fn [_]
+                             (if (= id (:id page))
+                               (rx/of (dp/go-to (:file-id page)))
+                               (rx/empty))))))))))
 
 ;; --- Persist Page
 
@@ -302,18 +316,3 @@
     ptk/UpdateEvent
     (update [this state]
       (assoc-in state [:pages id :metadata] metadata))))
-
-;; --- Delete Page (by id)
-
-(defn delete-page
-  [id]
-  {:pre [(uuid? id)]}
-  (reify
-    ptk/UpdateEvent
-    (update [_ state]
-      (purge-page state id))
-
-    ptk/WatchEvent
-    (watch [_ state s]
-      (->> (rp/mutation :delete-page  {:id id})
-           (rx/map (ptk/data-event ::page-deleted {:id id}))))))
