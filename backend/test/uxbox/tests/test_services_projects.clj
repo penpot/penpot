@@ -33,10 +33,10 @@
     (t/is (nil? (:error out)))
     (t/is (= (:name data) (get-in out [:result :name])))))
 
-(t/deftest mutation-update-project
+(t/deftest mutation-rename-project
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
-        data {::sm/type :update-project
+        data {::sm/type :rename-project
               :id (:id proj)
               :name "test project mod"
               :user (:id user)}

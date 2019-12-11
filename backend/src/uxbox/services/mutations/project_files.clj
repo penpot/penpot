@@ -94,25 +94,28 @@
              values ($1, $2, $3, $4, 0, 1, $5) returning id"]
     (db/query-one conn [sql id user file-id name data])))
 
-;; --- Mutation: Update Project
+;; --- Mutation: Rename File
 
-(declare update-file)
+(declare rename-file)
 
-(s/def ::update-project-file
+(s/def ::rename-project-file
   (s/keys :req-un [::user ::name ::id]))
 
-(sm/defmutation ::update-project-file
+(sm/defmutation ::rename-project-file
   [{:keys [id user] :as params}]
   (db/with-atomic [conn db/pool]
     (check-edition-permissions! conn user id)
-    (update-file conn params)))
+    (rename-file conn params)))
 
-(defn- update-file
-  [conn {:keys [id name user] :as params}]
-  (let [sql "update project_files
-                set name = $2
-              where id = $1
-                and deleted_at is null"]
+(su/defstr sql:rename-file
+  "update project_files
+      set name = $2
+    where id = $1
+      and deleted_at is null")
+
+(defn- rename-file
+  [conn {:keys [id name] :as params}]
+  (let [sql sql:rename-file]
     (-> (db/query-one conn [sql id name])
         (p/then' su/constantly-nil))))
 

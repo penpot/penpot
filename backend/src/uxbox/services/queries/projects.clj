@@ -25,7 +25,7 @@
 
 ;; --- Query: Projects
 
-(su/defsql sql:projects
+(su/defstr sql:projects
   "select p.*
      from project_users as pu
     inner join projects as p on (p.id = pu.project_id)

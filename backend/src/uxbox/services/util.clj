@@ -25,7 +25,7 @@
 ;;               (log/info "service" type "processed in" elapsed)
 ;;               data))})
 
-(defmacro defsql
+(defmacro defstr
   [sym str]
   `(def ~sym (str/istr ~str)))
 

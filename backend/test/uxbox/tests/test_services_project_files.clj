@@ -42,11 +42,11 @@
     (t/is (= (:name data) (get-in out [:result :name])))
     #_(t/is (= (:project-id data) (get-in out [:result :project-id])))))
 
-(t/deftest mutation-update-project-file
+(t/deftest mutation-rename-project-file
   (let [user @(th/create-user db/pool 1)
         proj @(th/create-project db/pool (:id user) 1)
         pf   @(th/create-project-file db/pool (:id user) (:id proj) 1)
-        data {::sm/type :update-project-file
+        data {::sm/type :rename-project-file
               :id (:id pf)
               :name "new file name"
               :user (:id user)}

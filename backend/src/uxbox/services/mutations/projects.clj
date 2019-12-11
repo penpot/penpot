@@ -66,26 +66,28 @@
 
 ;; --- Mutation: Update Project
 
-(declare update-project)
+(declare rename-project)
 
-(s/def ::update-project
+(s/def ::rename-project
   (s/keys :req-un [::user ::name ::id]))
 
-(sm/defmutation ::update-project
+(sm/defmutation ::rename-project
   [{:keys [id user] :as params}]
   (db/with-atomic [conn db/pool]
     (check-edition-permissions! conn user id)
-    (update-project conn params)))
+    (rename-project conn params)))
 
-(defn update-project
-  [conn {:keys [id name user] :as params}]
-  (let [sql "update projects
-                set name = $3
-              where id = $1
-                and user_id = $2
-                and deleted_at is null
-             returning *"]
-    (db/query-one conn [sql id user name])))
+(su/defstr sql:rename-project
+  "update projects
+      set name = $2
+    where id = $1
+      and deleted_at is null
+     returning *")
+
+(defn rename-project
+  [conn {:keys [id name] :as params}]
+  (let [sql sql:rename-project]
+    (db/query-one conn [sql id name])))
 
 ;; --- Mutation: Delete Project
 

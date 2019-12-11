@@ -24,7 +24,7 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::user ::us/uuid)
 
-(su/defsql sql:generic-project-files
+(su/defstr sql:generic-project-files
   "select pf.*,
           array_agg(pp.id) as pages
      from project_files as pf
@@ -34,6 +34,7 @@
     where pu.user_id = $1
       and pu.can_edit = true
     group by pf.id")
+
 
 ;; --- Query: Project Files
 
@@ -50,32 +51,33 @@
     (retrieve-recent-files db/pool params)
     (retrieve-project-files db/pool params)))
 
-(def ^:private sql:project-files
-  (str "with files as (" sql:generic-project-files ")"
-       " select * from files where project_id = $2"
-       " order by created_at asc"))
+(su/defstr sql:project-files
+  "with files as (~{sql:generic-project-files})
+   select * from files where project_id = $2
+    order by created_at asc")
+
+(su/defstr sql:recent-files
+  "with files as (~{sql:generic-project-files})
+   select * from files
+    order by modified_at desc
+    limit $2")
 
 (defn retrieve-project-files
   [conn {:keys [user project-id]}]
   (-> (db/query conn [sql:project-files user project-id])
       (p/then' (partial mapv decode-row))))
 
-(su/defsql sql:recent-files
-  "with files as (~{sql:generic-project-files})
-   select * from files
-    order by modified_at desc
-    limit $2")
-
 (defn retrieve-recent-files
   [conn {:keys [user]}]
   (-> (db/query conn [sql:recent-files user 20])
       (p/then' (partial mapv decode-row))))
 
+
 ;; --- Query: Project File (By ID)
 
-(def ^:private sql:project-file
-  (str "with files as (" sql:generic-project-files ")"
-       " select * from files where id = $2"))
+(su/defstr sql:project-file
+  "with files as (~{sql:generic-project-files})
+   select * from files where id = $2")
 
 (s/def ::project-file
   (s/keys :req-un [::user ::id]))
@@ -84,6 +86,7 @@
   [{:keys [user id] :as params}]
   (-> (db/query-one db/pool [sql:project-file user id])
       (p/then' decode-row)))
+
 
 ;; --- Helpers
 
