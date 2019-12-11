@@ -55,7 +55,7 @@
     (-> (session/delete token)
         (p/then' (fn [token]
                    {:status 204
-                    :cookies {"auth-token" {:value nil}}
+                    :cookies {"auth-token" nil}
                     :body ""})))))
 
 (defn register-handler
