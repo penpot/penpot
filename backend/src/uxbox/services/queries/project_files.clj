@@ -34,6 +34,7 @@
     where pu.user_id = $1
       and pu.can_edit = true
       and pf.deleted_at is null
+      and pp.deleted_at is null
    window pages_w as (partition by pf.id order by pp.created_at
                       range BETWEEN UNBOUNDED PRECEDING
                                 AND UNBOUNDED FOLLOWING)")

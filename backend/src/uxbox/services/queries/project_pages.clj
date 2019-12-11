@@ -33,6 +33,7 @@
      left join project_file_users as pfu on (pfu.file_id = pf.id)
     where ((pfu.user_id = $1 and pfu.can_edit = true) or
            (pu.user_id = $1 and pu.can_edit = true))
+      and pp.deleted_at is null
     order by pp.created_at")
 
 ;; --- Query: Project Pages (By File ID)
