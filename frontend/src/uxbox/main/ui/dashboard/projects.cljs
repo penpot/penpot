@@ -131,29 +131,28 @@
   [{:keys [file] :as props}]
   (let [local (mf/use-state {})
         on-navigate #(st/emit! (udp/go-to (:id file)))
-        ;; delete #(st/emit! (udp/delete-project project))
-        ;; on-delete #(do
-        ;;              (dom/stop-propagation %)
-        ;;              (modal/show! confirm-dialog {:on-accept delete}))
-        ;; on-blur #(let [target (dom/event->target %)
-        ;;                name (dom/get-value target)
-        ;;                id (:id project)]
-        ;;            (swap! local assoc :edition false)
-        ;;            (st/emit! (udp/rename-project id name)))
-        ;; on-key-down #(when (kbd/enter? %) (on-blur %))
-        ;; on-edit #(do
-        ;;            (dom/stop-propagation %)
-        ;;            (dom/prevent-default %)
-        ;;            (swap! local assoc :edition true))
-        ]
+        delete-fn #(st/emit! nil #_(udp/delete-file (:id file)))
+        on-delete #(do
+                     (dom/stop-propagation %)
+                     (modal/show! confirm-dialog {:on-accept delete-fn}))
+
+        on-blur #(let [name (-> % dom/get-target dom/get-value)]
+                   (st/emit! (udp/rename-file (:id file) name))
+                   (swap! local assoc :edition false))
+
+        on-key-down #(when (kbd/enter? %) (on-blur %))
+        on-edit #(do
+                   (dom/stop-propagation %)
+                   (dom/prevent-default %)
+                   (swap! local assoc :edition true))]
     [:div.grid-item.project-th {:on-click on-navigate}
      [:& grid-item-thumbnail {:file file}]
      [:div.item-info
       (if (:edition @local)
         [:input.element-name {:type "text"
                               :auto-focus true
-                              ;; :on-key-down on-key-down
-                              ;; :on-blur on-blur
+                              :on-key-down on-key-down
+                              :on-blur on-blur
                               ;; :on-click on-edit
                               :default-value (:name file)}]
         [:h3 (:name file)])
@@ -168,10 +167,10 @@
          i/chat
          [:span "0"]]
       [:div.project-th-icon.edit
-       #_{:on-click on-edit}
+       {:on-click on-edit}
        i/pencil]
       [:div.project-th-icon.delete
-       #_{:on-click on-delete}
+       {:on-click on-delete}
        i/trash]]]))
 
 ;; --- Grid
@@ -199,44 +198,36 @@
 
 ;; --- Component: Nav
 
-;; (letfn [(on-click [event]
-;;           #_(let [type (or type :own)]
-;;             (st/emit! (rt/nav :dashboard/icons {} {:type type :id id}))))
-;;         (on-input-change [event]
-;;           #_(-> (dom/get-target event)
-;;               (dom/get-value)
-;;               (swap! local assoc :name)))
-;;       (on-cancel [event]
-;;         #_(swap! local dissoc :name :edit))
-;;       (on-double-click [event]
-;;         #_(when editable?
-;;           (swap! local assoc :edit true)))
-;;       (on-input-keyup [event]
-;;         #_(when (kbd/enter? event)
-;;           (let [value (-> (dom/get-target event) (dom/get-value))]
-;;             (st/emit! (di/rename-collection id (str/trim (:name @local))))
-;;             (swap! local assoc :edit false))))]
-
 (mf/defc nav-item
   [{:keys [id name selected?] :as props}]
-  (let [local (mf/use-state {})
+  (let [local (mf/use-state {:name name})
         editable? (not (nil? id))
-        on-click #(st/emit! (udp/go-to-project id))]
+        on-click #(st/emit! (udp/go-to-project id))
+        on-dbl-click #(when editable? (swap! local assoc :edit true))
+        on-input #(as-> % $
+                    (dom/get-target $)
+                    (dom/get-value $)
+                    (swap! local assoc :name $))
+        on-cancel #(swap! local assoc :edit false :name name)
+        on-keyup #(cond
+                    (kbd/esc? %)
+                    (on-cancel)
+
+                    (kbd/enter? %)
+                    (let [name (-> % dom/get-target dom/get-value)]
+                      (st/emit! (udp/rename-project id name))
+                      (swap! local assoc :edit false)))]
+
     [:li {:on-click on-click
-          ;; :on-double-click on-double-click
+          :on-double-click on-dbl-click
           :class-name (when selected? "current")}
      (if (:edit @local)
        [:div
-        [:input.element-title #_{:value (if (:name @local)
-                                        (:name @local)
-                                        (if id name "Storage"))
-                               :on-change on-input-change
-                               :on-key-down on-input-keyup}]
-        [:span.close #_{:on-click on-cancel} i/close]]
-       [:span.element-title (if id name "Recent")])
-     #_[:span.element-subtitle (tr "ds.num-elements" (t/c num-icons))]
-     ]))
-
+        [:input.element-title {:value (:name @local)
+                               :on-change on-input
+                               :on-key-down on-keyup}]
+        [:span.close {:on-click on-cancel} i/close]]
+       [:span.element-title name])]))
 
 (mf/defc nav
   [{:keys [id] :as props}]

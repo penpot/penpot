@@ -153,47 +153,21 @@
       (let [assoc-file #(assoc-in %1 [:files (:id %2)] %2)]
         (reduce assoc-file state files)))))
 
-;; --- Project Persisted
-
-(defrecord ProjectPersisted [data]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-project state data)))
-
-(defn project-persisted
-  [data]
-  {:pre [(map? data)]}
-  (ProjectPersisted. data))
-
-;; --- Persist Project
-
-(defrecord PersistProject [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [project (get-in state [:projects id])]
-      (->> (rp/mutation :update-project project)
-           (rx/map project-persisted)))))
-
-(defn persist-project
-  [id]
-  {:pre [(uuid? id)]}
-  (PersistProject. id))
-
 ;; --- Rename Project
-
-(defrecord RenameProject [id name]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:projects id :name] name))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (persist-project id))))
 
 (defn rename-project
   [id name]
   {:pre [(uuid? id) (string? name)]}
-  (RenameProject. id name))
+  (ptk/reify ::rename-project
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:projects id :name] name))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:id id :name name}]
+        (->> (rp/mutation :rename-project params)
+             (rx/ignore))))))
 
 ;; --- Delete Project (by id)
 
@@ -235,6 +209,23 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-project state data))))
+
+
+;; --- Rename Project
+
+(defn rename-file
+  [id name]
+  {:pre [(uuid? id) (string? name)]}
+  (ptk/reify ::rename-file
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:files id :name] name))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:id id :name name}]
+        (->> (rp/mutation :rename-project-file params)
+             (rx/ignore))))))
 
 ;; --- Go To Project
 
