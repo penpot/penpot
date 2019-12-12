@@ -1,8 +1,16 @@
 (require '[clojure.pprint :refer [pprint]])
 (require '[clojure.java.shell :as shell])
 (require '[figwheel.main.api :as figwheel])
-(require '[cljs.build.api :as api])
 (require '[environ.core :refer [env]])
+(require '[cljs.build.api :as api]
+         '[cljs.repl :as repl]
+         '[cljs.repl.node :as node])
+(require '[rebel-readline.core]
+         '[rebel-readline.clojure.main]
+         '[rebel-readline.clojure.line-reader]
+         '[rebel-readline.clojure.service.local]
+         '[rebel-readline.cljs.service.local]
+         '[rebel-readline.cljs.repl])
 
 (defmulti task first)
 
@@ -125,6 +133,18 @@
   [args]
   (task ["dbg-dist:main"])
   (task ["dbg-dist:worker"]))
+
+(defmethod task "repl:node"
+  [args]
+  (rebel-readline.core/with-line-reader
+    (rebel-readline.clojure.line-reader/create
+     (rebel-readline.cljs.service.local/create))
+    (cljs.repl/repl
+     (node/repl-env)
+     :prompt (fn []) ;; prompt is handled by line-reader
+     :read (rebel-readline.cljs.repl/create-repl-read)
+     :output-dir "out"
+     :cache-analysis false)))
 
 ;; --- Tests Tasks
 
