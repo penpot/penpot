@@ -2,7 +2,7 @@
 set -e
 
 REV=`git log -n 1 --pretty=format:%h -- docker/`
-IMGNAME="uxbox_devenv"
+IMGNAME="uxboxdev_main"
 
 function remove-devenv-images {
     echo "Clean old development image $IMGNAME..."
@@ -13,7 +13,7 @@ function build-devenv {
     echo "Building development image $IMGNAME:latest with UID $EXTERNAL_UID..."
 
     local EXTERNAL_UID=${1:-$(id -u)}
-    docker-compose -p uxbox-devenv -f docker/devenv/docker-compose.yaml \
+    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml \
         build --build-arg EXTERNAL_UID=$EXTERNAL_UID --force-rm;
 }
 
@@ -25,19 +25,19 @@ function build-devenv-if-not-exists {
 
 function start-devenv {
     build-devenv-if-not-exists $@;
-    docker-compose -p uxbox-devenv -f docker/devenv/docker-compose.yaml up -d;
+    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml up -d;
 }
 
 function stop-devenv {
-    docker-compose -p uxbox-devenv -f docker/devenv/docker-compose.yaml stop -t 2;
+    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml stop -t 2;
 }
 
 function run-devenv {
-    if [[ ! $(docker ps -f "name=uxbox-devenv-main" -q) ]]; then
+    if [[ ! $(docker ps -f "name=uxboxdev-main" -q) ]]; then
         start-devenv
     fi
 
-    docker exec -ti uxbox-devenv-main /home/uxbox/start.sh;
+    docker exec -ti uxboxdev-main /home/uxbox/start.sh;
 }
 
 function run-all-tests {
@@ -96,15 +96,15 @@ function build-frontend-image {
     echo "## START build 'uxbox-frontend' image.     ##"
     echo "#############################################"
     build-frontend-local "dist" || exit 1;
-    # rm -rf docker/frontend/dist || exit 1;
-    # cp -vr frontend/dist docker/frontend/ || exit 1;
+    rm -rf docker/frontend/dist || exit 1;
+    cp -vr frontend/dist docker/frontend/ || exit 1;
 
-    # docker build --rm=true \
-    #        -t uxbox-frontend:$REV \
-    #        -t uxbox-frontend:latest \
-    #        docker/frontend/;
+    docker build --rm=true \
+           -t uxbox-frontend:$REV \
+           -t uxbox-frontend:latest \
+           docker/frontend/;
 
-    # rm -rf docker/frontend/dist || exit 1;
+    rm -rf docker/frontend/dist || exit 1;
     echo "#############################################"
     echo "## END build 'uxbox-frontend' image.       ##"
     echo "#############################################"
@@ -129,7 +129,6 @@ function build-frontend-dbg-image {
     echo "#############################################"
     echo "## END build 'uxbox-frontend-dbg' image.   ##"
     echo "#############################################"
-
 }
 
 function build-backend-local {
@@ -161,11 +160,9 @@ function build-backend-image {
            docker/backend/;
 
     rm -rf docker/backend/dist || exit 1;
-
     echo "#############################################"
     echo "## END build 'uxbox-backend' image.        ##"
     echo "#############################################"
-
 }
 
 function build-images {
@@ -201,7 +198,7 @@ function log {
 }
 
 function log-devenv {
-    docker-compose -p uxbox-devenv -f docker/devenv/docker-compose.yaml logs -f --tail=50
+    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml logs -f --tail=50
 }
 
 function stop {
