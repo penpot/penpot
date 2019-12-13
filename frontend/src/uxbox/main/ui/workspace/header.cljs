@@ -43,7 +43,7 @@
 ;; --- Header Component
 
 (mf/defc header
-  [{:keys [page flags] :as props}]
+  [{:keys [page layout flags] :as props}]
   (let [toggle #(st/emit! (dw/toggle-flag %))
         on-undo #(st/emit! (udu/undo))
         on-redo #(st/emit! (udu/redo))
@@ -55,41 +55,41 @@
       [:a {:on-click #(st/emit! (rt/nav :dashboard-projects))} i/logo-icon]]
      [:div.project-tree-btn
       {:alt (tr "header.sitemap")
-       :class (when (contains? flags :sitemap) "selected")
-       :on-click (partial toggle :sitemap)}
+       :class (when (contains? layout :sitemap) "selected")
+       :on-click #(st/emit! (dw/toggle-layout-flag :sitemap))}
       i/project-tree
       [:span {} (:name page)]]
      [:div.workspace-options
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.draw-tools")
-         :class (when (contains? flags :drawtools) "selected")
-         :on-click (partial toggle :drawtools)}
+         :class (when (contains? layout :drawtools) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :drawtools))}
         i/shapes]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.color-palette")
-         :class (when (contains? flags :colorpalette) "selected")
-         :on-click (partial toggle :colorpalette)}
+         :class (when (contains? layout :colorpalette) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
         i/palette]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.icons")
-         :class (when (contains? flags :icons) "selected")
-         :on-click (partial toggle :icons)}
+         :class (when (contains? layout :icons) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :icons))}
         i/icon-set]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.layers")
-         :class (when (contains? flags :layers) "selected")
-         :on-click (partial toggle :layers)}
+         :class (when (contains? layout :layers) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :layers))}
         i/layers]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.element-options")
-         :class (when (contains? flags :element-options) "selected")
-         :on-click (partial toggle :element-options)}
+         :class (when (contains? layout :element-options) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :element-options))}
         i/options]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.document-history")
-         :class (when (contains? flags :document-history) "selected")
-         :on-click (partial toggle :document-history)}
+         :class (when (contains? layout :document-history) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :document-history))}
         i/undo-history]]
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom

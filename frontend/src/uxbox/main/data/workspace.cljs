@@ -234,6 +234,18 @@
   [txt]
   ::todo)
 
+(defn toggle-layout-flag
+  [flag]
+  (s/assert keyword? flag)
+  (ptk/reify ::toggle-layout-flag
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-layout
+              (fn [flags]
+                (if (contains? flags flag)
+                  (disj flags flag)
+                  (conj flags flag)))))))
+
 ;; --- Workspace Ruler
 
 (defrecord ActivateRuler []
@@ -775,6 +787,10 @@
                   xfmt (gmt/translate prev delta)]
               (assoc-in state [:workspace-data :shapes-by-id id :modifier-mtx] xfmt)))]
     (ptk/reify ::apply-temporal-displacement-in-bulk
+      ;; udp/IPageOps
+      ;; (-ops [_]
+      ;;   (mapv #(vec :udp/shape id :move delta) ids))
+
       ptk/UpdateEvent
       (update [_ state]
         (reduce process-shape state ids)))))
@@ -804,29 +820,6 @@
       ptk/UpdateEvent
       (update [_ state]
         (reduce process-shape state ids)))))
-
-(defn rehash-shape-relationship
-  "Checks shape overlaping with existing canvas, if one or more
-  overlaps, assigns the shape to the first one."
-  [id]
-  (s/assert ::us/uuid id)
-  (letfn [(overlaps? [canvas shape]
-            (let [shape1 (geom/shape->rect-shape canvas)
-                  shape2 (geom/shape->rect-shape shape)]
-              (geom/overlaps? shape1 shape2)))]
-    (ptk/reify ::rehash-shape-relationship
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [shape (get-in state [:workspace-data :shapes-by-id id])
-              xform (comp (map #(get-in state [:workspace-data :shapes-by-id %]))
-                          (filter #(overlaps? % shape))
-                          (take 1))
-              canvas (->> (get-in state [:workspace-data :canvas])
-                          (sequence xform)
-                          (first))]
-          (if canvas
-            (update-in state [:workspace-data :shapes-by-id id] assoc :canvas (:id canvas))
-            (update-in state [:workspace-data :shapes-by-id id] assoc :canvas nil)))))))
 
 ;; --- Start shape "edition mode"
 

@@ -98,7 +98,7 @@
 (mf/defc sitemap-toolbox
   [{:keys [file page] :as props}]
   (let [create-fn #(modal/show! page-form-dialog {:page {:file-id (:file-id page)}})
-        close-fn  #(st/emit! (dw/toggle-flag :sitemap))]
+        close-fn  #(st/emit! (dw/toggle-layout-flag :sitemap))]
     [:div.sitemap.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/project-tree]

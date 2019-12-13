@@ -50,7 +50,7 @@
   {:wrap [mf/wrap-memo]}
   [{:keys [flags] :as props}]
   (letfn [(close [event]
-            (st/emit! (dw/deactivate-flag :drawtools)))
+            (st/emit! (dw/toggle-layout-flag :drawtools)))
           (select [event tool]
             (st/emit! :interrupt
                       (dw/deactivate-ruler)

@@ -88,9 +88,9 @@
 ;; --- Options
 
 (mf/defc shape-options
-  [{:keys [sid] :as props}]
-  (let [shape-iref (mf/use-memo {:deps #js [sid]
-                                 :fn #(-> (l/in [:shapes sid])
+  [{:keys [shape-id] :as props}]
+  (let [shape-iref (mf/use-memo {:deps #js [shape-id]
+                                 :fn #(-> (l/in [:workspace-data :shapes-by-id shape-id])
                                           (l/derive st/state))})
         shape (mf/deref shape-iref)
         menus (get +menus-map+ (:type shape))]
@@ -110,7 +110,7 @@
 (mf/defc options-toolbox
   {:wrap [mf/wrap-memo]}
   [{:keys [page selected] :as props}]
-  (let [close #(st/emit! (udw/toggle-flag :element-options))
+  (let [close #(st/emit! (udw/toggle-layout-flag :element-options))
         selected (mf/deref refs/selected-shapes)]
     [:div.elementa-options.tool-window
      [:div.tool-window-bar
@@ -120,5 +120,5 @@
      [:div.tool-window-content
       [:div.element-options
        (if (= (count selected) 1)
-         [:& shape-options {:sid (first selected)}]
+         [:& shape-options {:shape-id (first selected)}]
          [:& page-options {:page page}])]]]))

@@ -237,7 +237,7 @@
 
 (mf/defc layers-toolbox
   [{:keys [page] :as props}]
-  (let [on-click #(st/emit! (dw/toggle-flag :layers))
+  (let [on-click #(st/emit! (dw/toggle-layout-flag :layers))
 
         selected (mf/deref refs/selected-shapes)
         data (mf/deref refs/workspace-data)

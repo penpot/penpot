@@ -110,7 +110,7 @@
 
     [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
-     [:& header {:page page :flags flags}]
+     [:& header {:page page :layout layout :flags flags}]
 
      (when (:colorpalette flags)
        [:& colorpalette])
