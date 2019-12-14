@@ -7,6 +7,7 @@
    [uxbox.http :as http]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
+   [uxbox.util.uuid :as uuid]
    [uxbox.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
@@ -34,7 +35,9 @@
         pf   @(th/create-project-file db/pool (:id user) (:id proj) 1)
 
         data {::sm/type :create-project-page
-              :data {}
+              :data {:canvas []
+                     :shapes []
+                     :shapes-by-id {}}
               :metadata {}
               :file-id (:id pf)
               :ordering 1
@@ -57,7 +60,9 @@
         page @(th/create-project-page db/pool (:id user) (:id file) 1)
         data {::sm/type :update-project-page-data
               :id (:id page)
-              :data {:shapes [1 2 3]}
+              :data {:shapes [(uuid/next)]
+                     :canvas []
+                     :shapes-by-id {}}
               :file-id (:id file)
               :user (:id user)}
         out (th/try-on! (sm/handle data))]

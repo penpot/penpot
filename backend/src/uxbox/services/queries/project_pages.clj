@@ -139,8 +139,9 @@
 ;; --- Helpers
 
 (defn decode-row
-  [{:keys [data metadata] :as row}]
+  [{:keys [data metadata operations] :as row}]
   (when row
     (cond-> row
       data (assoc :data (blob/decode data))
-      metadata (assoc :metadata (blob/decode metadata)))))
+      metadata (assoc :metadata (blob/decode metadata))
+      operations (assoc :operations (blob/decode operations)))))

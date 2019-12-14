@@ -56,11 +56,11 @@
     (-> (db/query-one conn [sql id user file-id name ordering data mdata])
         (p/then' decode-row))))
 
-;; --- Mutation: Update Page
+;; --- Mutation: Update Page Data
 
 (declare select-page-for-update)
-(declare update-page)
-(declare update-history)
+(declare update-page-data)
+(declare insert-page-snapshot)
 
 (s/def ::update-project-page-data
   (s/keys :req-un [::id ::user ::data]))
@@ -73,13 +73,13 @@
       (let [data (blob/encode data)
             version (inc version)
             params (assoc params :id id :data data :version version)]
-        (p/do! (update-page conn params)
-               (update-history conn params)
+        (p/do! (update-page-data conn params)
+               (insert-page-snapshot conn params)
                (select-keys params [:id :version]))))))
 
 (defn- select-page-for-update
   [conn id]
-  (let [sql "select p.id, p.version, p.file_id
+  (let [sql "select p.id, p.version, p.file_id, p.data
                from project_pages as p
               where p.id = $1
                 and deleted_at is null
@@ -87,8 +87,8 @@
     (-> (db/query-one conn [sql id])
         (p/then' su/raise-not-found-if-nil))))
 
-(defn- update-page
-  [conn {:keys [id name version data metadata]}]
+(defn- update-page-data
+  [conn {:keys [id name version data]}]
   (let [sql "update project_pages
                 set version = $1,
                     data = $2
@@ -96,12 +96,12 @@
     (-> (db/query-one conn [sql version data id])
         (p/then' su/constantly-nil))))
 
-(defn- update-history
-  [conn {:keys [user id version data]}]
-  (let [sql "insert into project_page_history (user_id, page_id, version, data)
-             values ($1, $2, $3, $4)"]
-    (-> (db/query-one conn [sql user id version data])
-        (p/then' su/constantly-nil))))
+(defn- insert-page-snapshot
+  [conn {:keys [user id version data operations]}]
+  (let [sql "insert into project_page_snapshots (user_id, page_id, version, data, operations)
+             values ($1, $2, $3, $4, $5)
+             returning id, version, operations"]
+    (db/query-one conn [sql user id version data operations])))
 
 ;; --- Mutation: Rename Page
 
@@ -126,23 +126,60 @@
     (-> (db/query-one db/pool [sql id name])
         (p/then su/constantly-nil))))
 
-;; --- Mutation: Update Page Metadata
+;; --- Mutation: Update Page
 
-;; (s/def ::update-page-metadata
-;;   (s/keys :req-un [::user ::project-id ::name ::metadata ::id]))
+;; A generic, Ops based (granular) page update method.
 
-;; (sm/defmutation ::update-page-metadata
-;;   [{:keys [id user project-id name metadata]}]
-;;   (let [sql "update pages
-;;                 set name = $3,
-;;                     metadata = $4
-;;               where id = $1
-;;                 and user_id = $2
-;;                 and deleted_at is null
-;;              returning *"
-;;         mdata (blob/encode metadata)]
-;;     (-> (db/query-one db/pool [sql id user name mdata])
-;;         (p/then' decode-row))))
+(s/def ::operations
+  (s/coll-of ::cp/opeation :kind vector?))
+
+(s/def ::update-project-page
+  (s/keys :opt-un [::id ::user ::version ::operations]))
+
+(declare update-project-page)
+(declare retrieve-lagged-operations)
+
+(sm/defmutation ::update-project-page
+  [{:keys [id user] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [{:keys [file-id] :as page} (select-page-for-update conn id)]
+      (files/check-edition-permissions! conn user file-id)
+      (update-project-page conn page params))))
+
+(defn- update-project-page
+  [conn page params]
+  (when (> (:version page)
+           (:version params))
+    (ex/raise :type :validation
+              :code :version-conflict
+              :hint "The incoming version is greater that stored version."
+              :context {:incoming-version (:version params)
+                        :stored-version (:version page)}))
+  (let [ops  (:operations params)
+        data (-> (:data page)
+                 (blob/decode)
+                 (cp/process-ops ops)
+                 (blob/encode))
+        page (assoc page
+                    :data data
+                    :version (inc (:version page))
+                    :operations (blob/encode ops))]
+    (-> (update-page-data conn page)
+        (p/then (fn [_] (insert-page-snapshot conn page)))
+        (p/then (fn [s] (retrieve-lagged-operations conn s params))))))
+
+(su/defstr sql:lagged-snapshots
+  "select s.id, s.version, s.operations,
+          s.created_at, s.modified_at, s.user_id
+     from project_page_snapshots as s
+    where s.page_id = $1
+      and s.version > $2")
+
+(defn- retrieve-lagged-operations
+  [conn snapshot params]
+  (let [sql sql:lagged-snapshots]
+    (-> (db/query conn [sql (:id params) (:version params)])
+        (p/then (partial mapv decode-row)))))
 
 ;; --- Mutation: Delete Page
 
@@ -158,12 +195,15 @@
       (files/check-edition-permissions! conn user (:file-id page))
       (delete-page conn id))))
 
+(su/defstr sql:delete-page
+  "update project_pages
+      set deleted_at = clock_timestamp()
+    where id = $1
+      and deleted_at is null")
+
 (defn- delete-page
   [conn id]
-  (let [sql "update project_pages
-                set deleted_at = clock_timestamp()
-              where id = $1
-                and deleted_at is null"]
+  (let [sql sql:delete-page]
     (-> (db/query-one conn [sql id])
         (p/then su/constantly-nil))))
 
@@ -178,7 +218,7 @@
 ;;     (some-> (db/fetch-one conn sqlv)
 ;;             (decode-row))))
 
-;; (s/def ::label ::us/string)
+;; (s/def ::label ::cs/string)
 ;; (s/def ::update-page-history
 ;;   (s/keys :req-un [::user ::id ::pinned ::label]))
 

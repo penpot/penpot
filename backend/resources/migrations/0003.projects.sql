@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS project_pages (
   metadata bytea NULL DEFAULT NULL
 );
 
-CREATE TABLE IF NOT EXISTS project_page_history (
+CREATE TABLE IF NOT EXISTS project_page_snapshots (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   user_id uuid NULL REFERENCES users(id) ON DELETE SET NULL,
@@ -81,7 +81,8 @@ CREATE TABLE IF NOT EXISTS project_page_history (
   pinned bool NOT NULL DEFAULT false,
   label text NOT NULL DEFAULT '',
 
-  data bytea NOT NULL
+  data bytea NOT NULL,
+  operations bytea NULL DEFAULT NULL
 );
 
 -- Indexes
@@ -94,8 +95,8 @@ CREATE INDEX project_files__project_id__idx ON project_files(project_id);
 CREATE INDEX project_pages__user_id__idx ON project_pages(user_id);
 CREATE INDEX project_pages__file_id__idx ON project_pages(file_id);
 
-CREATE INDEX project_page_history__page_id__idx ON project_page_history(page_id);
-CREATE INDEX project_page_history__user_id__idx ON project_page_history(user_id);
+CREATE INDEX project_page_snapshots__page_id__idx ON project_page_snapshots(page_id);
+CREATE INDEX project_page_snapshots__user_id__idx ON project_page_snapshots(user_id);
 
 -- Triggers
 
@@ -152,6 +153,6 @@ CREATE TRIGGER project_pages__modified_at__tgr
 BEFORE UPDATE ON project_pages
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
 
-CREATE TRIGGER project_page_history__modified_at__tgr
-BEFORE UPDATE ON project_page_history
+CREATE TRIGGER project_page_snapshots__modified_at__tgr
+BEFORE UPDATE ON project_page_snapshots
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
