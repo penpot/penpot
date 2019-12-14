@@ -58,7 +58,12 @@
                           :id uuid?
                           :data any?)
         :del-shape (s/cat :name #(= % :del-shape)
-                          :id uuid?)))
+                          :id uuid?)
+        :add-canvas (s/cat :name #(= % :add-canvas)
+                           :id uuid?
+                           :data any?)
+        :del-canvas (s/cat :name #(= % :del-canvas)
+                           :id uuid?)))
 
 (s/def ::operations
   (s/coll-of ::operation :kind vector?))
@@ -67,9 +72,11 @@
 ;; --- Operations Processing Impl
 
 (declare process-operation)
-(declare process-add-shape)
 (declare process-mod-shape)
+(declare process-add-shape)
 (declare process-del-shape)
+(declare process-add-canvas)
+(declare process-del-canvas)
 
 (defn process-ops
   [data operations]
@@ -79,9 +86,15 @@
 (defn- process-operation
   [data operation]
   (case (first operation)
-    :add-shape (process-add-shape data operation)
     :mod-shape (process-mod-shape data operation)
-    :del-shape (process-del-shape data operation)))
+    :add-shape (process-add-shape data operation)
+    :del-shape (process-del-shape data operation)
+    :add-canvas (process-add-canvas data operation)
+    :del-canvas (process-del-canvas data operation)))
+
+(defn- process-mod-shape
+  [data {:keys [id attr value]}]
+  (update-in data [:shapes-by-id id] assoc attr value))
 
 (defn- process-add-shape
   [data {:keys [id data]}]
@@ -89,13 +102,21 @@
       (update :shapes conj id)
       (update :shapes-by-id assoc id data)))
 
-(defn- process-mod-shape
-  [data {:keys [id attr value]}]
-  (update-in data [:shapes-by-id id] assoc attr value))
-
 (defn- process-del-shape
   [data {:keys [id attr value]}]
   (-> data
       (update :shapes (fn [s] (filterv #(not= % id) s)))
+      (update :shapes-by-id dissoc id)))
+
+(defn- process-add-canvas
+  [data {:keys [id data]}]
+  (-> data
+      (update :canvas conj id)
+      (update :shapes-by-id assoc id data)))
+
+(defn- process-del-canvas
+  [data {:keys [id attr value]}]
+  (-> data
+      (update :canvas (fn [s] (filterv #(not= % id) s)))
       (update :shapes-by-id dissoc id)))
 
