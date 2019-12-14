@@ -12,19 +12,17 @@
    [clojure.pprint :refer [pprint]]
    [clojure.test :as test]
    [clojure.java.io :as io]
+   [clojure.repl :refer :all]
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
    [expound.alpha :as expound]
    [promesa.core :as p]
-   [sieppari.core :as sp]
-   [sieppari.context :as spx]
-   [buddy.core.codecs :as codecs]
-   [buddy.core.codecs.base64 :as b64]
-   [buddy.core.nonce :as nonce]
+   ;; [sieppari.core :as sp]
+   ;; [sieppari.context :as spx]
+   ;; [buddy.core.codecs :as codecs]
+   ;; [buddy.core.codecs.base64 :as b64]
+   ;; [buddy.core.nonce :as nonce]
    [mount.core :as mount]
-   [uxbox.main]
-   [uxbox.util.sql :as sql]
-   [uxbox.util.blob :as blob])
-  (:gen-class))
+   [uxbox.main]))
 
 (defmacro run-quick-bench
   [& exprs]
@@ -51,11 +49,11 @@
 
 ;; --- Development Stuff
 
-(defn- make-secret
-  []
-  (-> (nonce/random-bytes 64)
-      (b64/encode true)
-      (codecs/bytes->str)))
+;; (defn- make-secret
+;;   []
+;;   (-> (nonce/random-bytes 64)
+;;       (b64/encode true)
+;;       (codecs/bytes->str)))
 
 (defn- start
   []

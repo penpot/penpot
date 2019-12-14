@@ -65,10 +65,6 @@
      (with-open [input (ByteArrayInputStream. data)]
        (read! (reader input opts)))
 
-     ;; ;; TODO: temporal
-     ;; (instance? org.jooq.JSONB data)
-     ;; (decode (.toString data) opts)
-
      (string? data)
      (decode (.getBytes data "UTF-8") opts)
 

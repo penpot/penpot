@@ -26,9 +26,6 @@
   Buffer
   (->bytes [data] (.getBytes ^Buffer data))
 
-  ;; org.jooq.JSONB
-  ;; (->bytes [data] (->bytes (.toString data)))
-
   String
   (->bytes [data] (.getBytes ^String data "UTF-8")))
 

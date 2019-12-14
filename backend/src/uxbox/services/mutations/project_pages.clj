@@ -13,22 +13,22 @@
    [uxbox.services.mutations.project-files :as files]
    [uxbox.services.queries.project-pages :refer [decode-row]]
    [uxbox.services.util :as su]
+   [uxbox.common.pages :as cp]
+   [uxbox.common.spec :as cs]
+   [uxbox.util.exceptions :as ex]
    [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]
    [uxbox.util.sql :as sql]
    [uxbox.util.uuid :as uuid]))
 
 ;; --- Helpers & Specs
 
-;; TODO: validate `:data` and `:metadata`
-
-(s/def ::id ::us/uuid)
-(s/def ::name ::us/string)
-(s/def ::data any?)
-(s/def ::user ::us/uuid)
-(s/def ::project-id ::us/uuid)
-(s/def ::metadata any?)
-(s/def ::ordering ::us/number)
+(s/def ::id ::cs/uuid)
+(s/def ::name ::cs/string)
+(s/def ::data ::cp/data)
+(s/def ::user ::cs/uuid)
+(s/def ::project-id ::cs/uuid)
+(s/def ::metadata ::cp/metadata)
+(s/def ::ordering ::cs/number)
 
 ;; --- Mutation: Create Page
 

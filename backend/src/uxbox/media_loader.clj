@@ -40,7 +40,7 @@
 
 (s/def ::name ::us/string)
 (s/def ::path ::us/string)
-(s/def ::regex us/regex?)
+(s/def ::regex #(instance? java.util.regex.Pattern %))
 (s/def ::import-item
   (s/keys :req-un [::name ::path ::regex]))
 

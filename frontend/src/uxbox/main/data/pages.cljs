@@ -30,12 +30,14 @@
 (s/def ::version ::us/number)
 (s/def ::width (s/and ::us/number ::us/positive))
 (s/def ::height (s/and ::us/number ::us/positive))
+
 (s/def ::grid-x-axis ::us/number)
 (s/def ::grid-y-axis ::us/number)
 (s/def ::grid-color ::us/string)
-(s/def ::ordering ::us/number)
 (s/def ::background ::us/string)
 (s/def ::background-opacity ::us/number)
+
+(s/def ::ordering ::us/number)
 (s/def ::user ::us/uuid)
 
 (s/def ::metadata
@@ -45,12 +47,14 @@
                    ::background
                    ::background-opacity]))
 
+;; TODO: start using uxbox.common.pagedata/data spec ...
+
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]
           :opt-un [::id]))
 
-(s/def ::shapes (s/every ::us/uuid :kind vector? :into []))
-(s/def ::canvas (s/every ::us/uuid :kind vector? :into []))
+(s/def ::shapes (s/coll-of ::us/uuid :kind vector?))
+(s/def ::canvas (s/coll-of ::us/uuid :kind vector?))
 
 (s/def ::shapes-by-id
   (s/map-of ::us/uuid ::minimal-shape))
