@@ -64,7 +64,7 @@
 (defn read-test-config
   []
   (assoc (read-config)
-         :database-uri "postgresql://postgres/test"
+         :database-uri "postgresql://postgres/uxbox_test"
          :media-directory "/tmp/uxbox/media"
          :assets-directory "/tmp/uxbox/static"
          :migrations-verbose false))
