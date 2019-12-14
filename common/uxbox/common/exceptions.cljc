@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.util.exceptions
+(ns uxbox.common.exceptions
   "A helpers for work with exceptions."
   (:require [clojure.spec.alpha :as s]))
 

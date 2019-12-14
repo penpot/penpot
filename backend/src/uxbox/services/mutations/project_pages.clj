@@ -97,11 +97,11 @@
         (p/then' su/constantly-nil))))
 
 (defn- insert-page-snapshot
-  [conn {:keys [user id version data operations]}]
+  [conn {:keys [user-id id version data operations]}]
   (let [sql "insert into project_page_snapshots (user_id, page_id, version, data, operations)
              values ($1, $2, $3, $4, $5)
              returning id, version, operations"]
-    (db/query-one conn [sql user id version data operations])))
+    (db/query-one conn [sql user-id id version data operations])))
 
 ;; --- Mutation: Rename Page
 
@@ -131,7 +131,7 @@
 ;; A generic, Ops based (granular) page update method.
 
 (s/def ::operations
-  (s/coll-of ::cp/opeation :kind vector?))
+  (s/coll-of vector? :kind vector?))
 
 (s/def ::update-project-page
   (s/keys :opt-un [::id ::user ::version ::operations]))
@@ -148,8 +148,8 @@
 
 (defn- update-project-page
   [conn page params]
-  (when (> (:version page)
-           (:version params))
+  (when (> (:version params)
+           (:version page))
     (ex/raise :type :validation
               :code :version-conflict
               :hint "The incoming version is greater that stored version."
@@ -161,6 +161,7 @@
                  (cp/process-ops ops)
                  (blob/encode))
         page (assoc page
+                    :user-id (:user params)
                     :data data
                     :version (inc (:version page))
                     :operations (blob/encode ops))]
@@ -169,7 +170,7 @@
         (p/then (fn [s] (retrieve-lagged-operations conn s params))))))
 
 (su/defstr sql:lagged-snapshots
-  "select s.id, s.version, s.operations,
+  "select s.id, s.page_id, s.version, s.operations,
           s.created_at, s.modified_at, s.user_id
      from project_page_snapshots as s
     where s.page_id = $1

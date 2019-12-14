@@ -97,7 +97,9 @@
                            :file-id file-id
                            :name (str "page" i)
                            :ordering i
-                           :data {}
+                           :data {:shapes []
+                                  :canvas []
+                                  :shapes-by-id {}}
                            :metadata {}}))
 
 (defn handle-error

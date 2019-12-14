@@ -49,7 +49,7 @@
                    ::background
                    ::background-opacity]))
 
-(s/def ::opeation
+(s/def ::operation
   (s/or :mod-shape (s/cat :name #(= % :mod-shape)
                           :id uuid?
                           :attr keyword?
@@ -60,6 +60,10 @@
         :del-shape (s/cat :name #(= % :del-shape)
                           :id uuid?)))
 
+(s/def ::operations
+  (s/coll-of ::operation :kind vector?))
+
+
 ;; --- Operations Processing Impl
 
 (declare process-operation)
@@ -69,7 +73,8 @@
 
 (defn process-ops
   [data operations]
-  (reduce process-operation data operations))
+  (->> (cs/conform ::operations operations)
+       (reduce process-operation data)))
 
 (defn- process-operation
   [data operation]

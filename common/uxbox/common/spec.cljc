@@ -6,9 +6,11 @@
 
 (ns uxbox.common.spec
   (:require
+   #?(:clj [datoteka.core :as fs])
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   #?(:clj [datoteka.core :as fs])))
+   [expound.alpha :as expound]
+   [uxbox.common.exceptions :as ex]))
 
 (s/check-asserts true)
 
@@ -20,8 +22,18 @@
 (def uuid-rx
   #"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
 
-(def number-rx
-  #"^[+-]?([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)([eE][+-]?[0-9]+)?$")
+;; --- Public API
+
+(defn conform
+  [spec data]
+  (let [result (s/conform spec data)]
+    (when (= result ::s/invalid)
+      (ex/raise :type :validation
+                :code :spec-validation
+                :explain (with-out-str
+                           (expound/printer data))
+                :data (::s/problems data)))
+    result))
 
 ;; --- Predicates
 
