@@ -174,12 +174,13 @@
           s.created_at, s.modified_at, s.user_id
      from project_page_snapshots as s
     where s.page_id = $1
-      and s.version > $2")
+      and s.version > $2
+      and s.id != $3")
 
 (defn- retrieve-lagged-operations
   [conn snapshot params]
   (let [sql sql:lagged-snapshots]
-    (-> (db/query conn [sql (:id params) (:version params)])
+    (-> (db/query conn [sql (:id params) (:version params) (:id snapshot)])
         (p/then (partial mapv decode-row)))))
 
 ;; --- Mutation: Delete Page

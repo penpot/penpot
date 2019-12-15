@@ -70,6 +70,3 @@
    :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}
 
   }}
-
-
-
