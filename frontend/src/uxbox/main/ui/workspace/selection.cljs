@@ -72,7 +72,7 @@
                 (rx/map normalize-proportion-lock)
                 (rx/mapcat (partial resize shape))
                 (rx/take-until stoper))
-           (rx/of (dw/materialize-current-modifier-in-bulk ids)
+           (rx/of (dw/materialize-temporal-modifier-in-bulk ids)
                   ::dw/page-data-update)))))))
 
 ;; --- Controls (Component)

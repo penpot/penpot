@@ -450,16 +450,21 @@
         (update-in $ [:workspace-data :shapes] conj id))
       (assoc-in $ [:workspace-data :shapes-by-id id] shape))))
 
+(declare shape-added)
+
 (defn add-shape
   [data]
-  (ptk/reify ::add-shape
-    udp/IPageDataUpdate
-    ptk/UpdateEvent
-    (update [_ state]
-      ;; TODO: revisit the `setup-proportions` seems unnecesary
-      (let [page-id (get-in state [:workspace-local :id])
-            shape (assoc (geom/setup-proportions data)
-                         :id (uuid/random))]
+  (let [shape (assoc (geom/setup-proportions data)
+                     :id (uuid/random))]
+    (ptk/reify ::add-shape
+      udp/IPageDataUpdate
+
+      udp/IPagePersistentOps
+      (-persistent-ops [_]
+        [[:add-shape (:id shape) shape]])
+
+      ptk/UpdateEvent
+      (update [_ state]
         (impl-assoc-shape state shape)))))
 
 ;; --- Duplicate Selected
@@ -593,12 +598,30 @@
 (defn update-shape-attrs
   [id attrs]
   (s/assert ::us/uuid id)
-  (s/assert ::attributes attrs)
   (let [atts (s/conform ::attributes attrs)]
     (ptk/reify ::update-shape-attrs
       ptk/UpdateEvent
       (update [_ state]
-        (update-in state [:workspace-data :shapes-by-id id] merge attrs)))))
+        (if (map? attrs)
+          (update-in state [:workspace-data :shapes-by-id id] merge attrs)
+          state)))))
+
+(defn update-shape
+  [id & attrs]
+  (let [attrs' (->> (apply hash-map attrs)
+                    (s/conform ::attributes))]
+    (ptk/reify ::update-shape
+      udp/IPagePersistentOps
+      (-persistent-ops [_]
+        (->> (partition-all 2 attrs)
+             (mapv (fn [[key val]] [:mod-shape id key val]))))
+
+      ptk/UpdateEvent
+      (update [_ state]
+        (cond-> state
+          (not= attrs' ::s/invalid)
+          (update-in [:workspace-data :shapes-by-id id] merge attrs'))))))
+
 
 ;; --- Update Selected Shapes attrs
 
@@ -640,8 +663,8 @@
                       (if align? (* 3 gy) 10))}))
 
 (declare initial-selection-align)
-(declare materialize-current-modifier-in-bulk)
 (declare apply-temporal-displacement-in-bulk)
+(declare materialize-temporal-modifier-in-bulk)
 
 (s/def ::direction #{:up :down :right :left})
 (s/def ::speed #{:std :fast})
@@ -653,6 +676,7 @@
   (ptk/reify ::move-selected
     ptk/WatchEvent
     (watch [_ state stream]
+      (prn "move-selected" direction speed)
       (let [{:keys [selected flags id]} (:workspace-local state)
             align? (refs/alignment-activated? flags)
             metadata (merge c/page-metadata
@@ -662,7 +686,7 @@
         (rx/concat
          (when align? (rx/of (initial-selection-align selected)))
          (rx/of (apply-temporal-displacement-in-bulk selected displacement))
-         (rx/of (materialize-current-modifier-in-bulk selected)))))))
+         (rx/of (materialize-temporal-modifier-in-bulk selected)))))))
 
 ;; --- Update Shape Position
 
@@ -776,6 +800,7 @@
 
 ;; --- Temportal displacement for Shape / Selection
 
+;; DEPRECATED
 (defn apply-temporal-displacement-in-bulk
   "Apply the same displacement delta to all shapes identified by the
   set if ids."
@@ -787,16 +812,39 @@
                   xfmt (gmt/translate prev delta)]
               (assoc-in state [:workspace-data :shapes-by-id id :modifier-mtx] xfmt)))]
     (ptk/reify ::apply-temporal-displacement-in-bulk
-      ;; udp/IPageOps
-      ;; (-ops [_]
-      ;;   (mapv #(vec :udp/shape id :move delta) ids))
-
       ptk/UpdateEvent
       (update [_ state]
         (reduce process-shape state ids)))))
 
+
+;; ;; NOTE: replaces the `apply-temporal-displacement-in-bulk`
+;; (defn apply-displacement-in-bulk
+;;   [ids delta]
+;;   (ptk/reify ::apply-displacement-in-bulk
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (let [xfmt (gmt/translate (gmt/matrix) delta)]
+;;         (reduce (fn [state id]
+;;                   (update-in state [:workspace-data :shapes-by-id id] geom/transform xfmt))
+;;                 state
+;;                 ids)))))
+
+
+;; (defn materialize-transformation-in-bulk
+;;   [ids xfmt]
+;;   (s/assert ::set-of-uuid ids)
+;;   (s/assert gmt/matrix? xfmt)
+;;   (ptk/reify ::materialize-transformation-in-bulk
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (reduce (fn [state id]
+;;                 (update-in state [:workspace-data :shapes-by-id id] geom/transform xfmt))
+;;               state
+;;               ids))))
+
 ;; --- Modifiers
 
+;; DEPRECATED
 (defn assoc-temporal-modifier-in-bulk
   [ids xfmt]
   (s/assert ::set-of-uuid ids)
@@ -806,7 +854,7 @@
     (update [_ state]
       (reduce #(assoc-in %1 [:workspace-data :shapes-by-id %2 :modifier-mtx] xfmt) state ids))))
 
-(defn materialize-current-modifier-in-bulk
+(defn materialize-temporal-modifier-in-bulk
   [ids]
   (s/assert ::us/set ids)
   (letfn [(process-shape [state id]
@@ -816,7 +864,7 @@
                     (update-in [:workspace-data :shapes-by-id id] geom/transform xfmt)
                     (update-in [:workspace-data :shapes-by-id id] dissoc :modifier-mtx))
                 state)))]
-    (ptk/reify ::materialize-current-modifier-in-bulk
+    (ptk/reify ::materialize-temporal-modifier-in-bulk
       ptk/UpdateEvent
       (update [_ state]
         (reduce process-shape state ids)))))

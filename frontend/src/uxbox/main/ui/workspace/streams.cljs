@@ -94,7 +94,6 @@
     (rx/subscribe-with ob sub)
     sub))
 
-
 (defn mouse-position-deltas
   [current]
   (->> (rx/concat (rx/of current)

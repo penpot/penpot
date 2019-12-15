@@ -82,8 +82,8 @@
   "A marker protocol for mark events that alters the
   page and is subject to perform a backend synchronization.")
 
-(defprotocol IPageOps
-  (-ops [_] "Get a list of ops for the event."))
+(defprotocol IPagePersistentOps
+  (-persistent-ops [o] "Get a list of ops for the event."))
 
 (defn page-update?
   [o]
