@@ -36,9 +36,10 @@
 
       .tool-window-bar {
         align-items: center;
+        border-bottom: 1px solid $medium-ui-border;
         display: flex;
         flex-shrink: 0;
-        padding: $small;
+        padding: 2px $x-small;
 
         svg {
           fill: $intense-ui-icons;
@@ -47,13 +48,12 @@
         }
 
         span {
-          color: $soft-ui-text;
-          font-size: $fs14;
+          color: $intense-ui-text;
+          font-weight: bold;
         }
 
         .tool-window-icon {
           margin-right: $small;
-          display: none;
         }
 
         .tool-window-close {

@@ -124,10 +124,9 @@
 
     .element-list-body {
       align-items: center;
-      border-bottom: 1px solid transparent;
-      border-top: 1px solid transparent;
+      border-bottom: 1px solid $soft-ui-border;
       display: flex;
-      padding: $x-small $small;
+      padding: $small;
       transition: none;
       width: 100%;
 
@@ -207,38 +206,17 @@
       }
 
       &.selected {
-        background-color: $main-ui-color;
-        
-        .selected {
-          
-          svg {
-            fill: $soft-ui-icons;
-          }
-          
-        }
-        
-        .element-icon {
-          
-          svg {
-            fill: $soft-ui-icons;
-          }
-          
-        }
-        
-        span {
-          color: $intense-ui-text;
-        }
-        
-        &:hover {
 
-          .element-icon {
-            svg {
-              fill: $soft-ui-icons;
-            }
+        .element-icon {
+
+          svg {
+            fill: $main-ui-color;
           }
-          .element-name {
-            color: $intense-ui-text;
-          }
+
+        }
+
+        span {
+          color: $main-ui-color;
         }
 
       }
@@ -257,13 +235,13 @@
         .element-icon {
 
           svg {
-            fill: $main-ui-color;
+            fill: $intense-ui-icons;
           }
 
         }
 
         span {
-          color: $main-ui-color;
+          color: $intense-ui-text;
         }
 
       }
