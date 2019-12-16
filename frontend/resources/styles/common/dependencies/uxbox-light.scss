@@ -19,18 +19,18 @@ $ui-flavour: $color-gray;
 
 // Change next colors for more customization
 // Background colors
-$primary-ui-bg: $color-white;
-$secondary-ui-bg: mix($ui-flavour, $color-white, $mix-percentage-lighter);
+$primary-ui-bg: $color-gray-50;
+$secondary-ui-bg: $color-gray-60;
 $dark-ui-bg: mix($ui-flavour, $color-white, $mix-percentage-light);
 
 // Border color
 $intense-ui-border: $ui-flavour;
 $medium-ui-border: mix($ui-flavour, $color-white, $mix-percentage-light);
-$soft-ui-border: lighten($medium-ui-border, 18%);
+$soft-ui-border: $color-gray-60;
 
 // Icon colors
-$intense-ui-icons: mix($ui-flavour, $color-black, $mix-percentage-dark);
-$medium-ui-icons: mix($ui-flavour, $color-white, $mix-percentage-light);
+$intense-ui-icons: $color-gray-30;
+$medium-ui-icons: $color-gray-40;
 $soft-ui-icons: mix($ui-flavour, $color-white, $mix-percentage-lighter);
 
 // Text colors

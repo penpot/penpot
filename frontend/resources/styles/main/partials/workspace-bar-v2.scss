@@ -10,7 +10,7 @@
   background-color: $primary-ui-bg;
   border-bottom: 1px solid  $soft-ui-border;
   display: flex;
-  height: 40px;
+  height: 50px;
   padding: $x-small $medium $x-small 65px;
   position: relative;
   z-index: 11;
@@ -28,12 +28,12 @@
     width: 50px;
 
     a {
-      height: 30px;
+      height: 35px;
 
       svg {
         fill: $medium-ui-icons;
-        height: 30px;
-        width: 30px;
+        height: 35px;
+        width: 35px;
 
         }
 
@@ -107,7 +107,7 @@
 
       li {
         align-items: center;
-        background-color: transparent;
+        background-color: $secondary-ui-bg;
         border: 1px solid transparent;
         border-radius: $br-small;
         cursor: pointer;
@@ -130,18 +130,15 @@
         }
 
         &:hover {
-          background-color: $color-primary;
-
-          svg {
-            fill: $color-gray-50;
-          }
-
+          background-color: $dark-ui-bg;
+          border-color: $soft-ui-border;
         }
 
         &.selected {
+          background-color: $main-ui-color;
 
           svg {
-            fill: $color-primary;
+            fill: $color-white;
           }
 
         }
