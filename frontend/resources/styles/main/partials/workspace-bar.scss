@@ -125,6 +125,13 @@
             fill: $color-primary;
           }
 
+          &:hover {
+
+            svg {
+              fill: $soft-ui-icons;
+            }
+          }
+
         }
 
         &.view-mode {

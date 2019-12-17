@@ -274,5 +274,5 @@
 
         (when (contains? flags :ruler)
           [:& ruler {:zoom zoom :ruler (:ruler local)}])
-
+        ;; -- METER CURSOR MULTIUSUARIO
         [:& selrect {:data (:selrect local)}]]])))
