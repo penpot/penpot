@@ -1,8 +1,7 @@
 (ns uxbox.common.pages
   "A common (clj/cljs) functions and specs for pages."
   (:require
-   [clojure.spec.alpha :as s]
-   [uxbox.common.spec :as cs]))
+   [clojure.spec.alpha :as s]))
 
 ;; --- Specs
 
