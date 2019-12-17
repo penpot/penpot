@@ -111,13 +111,13 @@
 (s/def ::pinned ::us/boolean)
 (s/def ::since ::us/integer)
 
-(s/def ::page-history
+(s/def ::project-page-snapshots
   (s/keys :req-un [::page-id ::user]
           :opt-un [::max ::pinned ::since]))
 
-(defn retrieve-page-history
-  [{:keys [page-id user since max pinned] :or {since Long/MAX_VALUE max 10}}]
-  (let [sql (-> (sql/from ["pages_history" "ph"])
+(defn retrieve-page-snapshots
+  [conn {:keys [page-id user since max pinned] :or {since Long/MAX_VALUE max 10}}]
+  (let [sql (-> (sql/from ["project_page_snapshots" "ph"])
                 (sql/select "ph.*")
                 (sql/where ["ph.user_id = ?" user]
                            ["ph.page_id = ?" page-id]
@@ -126,15 +126,14 @@
                              ["ph.pinned = ?" true]))
                 (sql/order "ph.version desc")
                 (sql/limit max))]
-    (-> (db/query db/pool (sql/fmt sql))
+    (-> (db/query conn (sql/fmt sql))
         (p/then (partial mapv decode-row)))))
 
-(sq/defquery ::page-history
+(sq/defquery ::project-page-snapshots
   [{:keys [page-id user] :as params}]
   (db/with-atomic [conn db/pool]
     (p/do! (retrieve-page conn {:id page-id :user user})
-           (retrieve-page-history conn params))))
-
+           (retrieve-page-snapshots conn params))))
 
 ;; --- Helpers
 

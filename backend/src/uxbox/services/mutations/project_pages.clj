@@ -14,21 +14,21 @@
    [uxbox.services.queries.project-pages :refer [decode-row]]
    [uxbox.services.util :as su]
    [uxbox.common.pages :as cp]
-   [uxbox.common.spec :as cs]
    [uxbox.util.exceptions :as ex]
    [uxbox.util.blob :as blob]
    [uxbox.util.sql :as sql]
+   [uxbox.util.spec :as us]
    [uxbox.util.uuid :as uuid]))
 
 ;; --- Helpers & Specs
 
-(s/def ::id ::cs/uuid)
-(s/def ::name ::cs/string)
+(s/def ::id ::us/uuid)
+(s/def ::name ::us/string)
 (s/def ::data ::cp/data)
-(s/def ::user ::cs/uuid)
-(s/def ::project-id ::cs/uuid)
+(s/def ::user ::us/uuid)
+(s/def ::project-id ::us/uuid)
 (s/def ::metadata ::cp/metadata)
-(s/def ::ordering ::cs/number)
+(s/def ::ordering ::us/number)
 
 ;; --- Mutation: Create Page
 
@@ -157,31 +157,37 @@
                         :stored-version (:version page)}))
   (let [ops  (:operations params)
         data (-> (:data page)
-                 (blob/decode)
-                 (cp/process-ops ops)
-                 (blob/encode))
+                  (blob/decode)
+                  (cp/process-ops ops)
+                  (blob/encode))
+
         page (assoc page
                     :user-id (:user params)
                     :data data
                     :version (inc (:version page))
                     :operations (blob/encode ops))]
+
     (-> (update-page-data conn page)
         (p/then (fn [_] (insert-page-snapshot conn page)))
         (p/then (fn [s] (retrieve-lagged-operations conn s params))))))
 
 (su/defstr sql:lagged-snapshots
-  "select s.id, s.page_id, s.version, s.operations,
-          s.created_at, s.modified_at, s.user_id
+  "select s.id, s.operations
      from project_page_snapshots as s
     where s.page_id = $1
-      and s.version > $2
-      and s.id != $3")
+      and s.version > $2")
 
 (defn- retrieve-lagged-operations
   [conn snapshot params]
   (let [sql sql:lagged-snapshots]
-    (-> (db/query conn [sql (:id params) (:version params) (:id snapshot)])
-        (p/then (partial mapv decode-row)))))
+    (-> (db/query conn [sql (:id params) (:version params) #_(:id snapshot)])
+        (p/then (fn [rows]
+                  {:id (:id params)
+                   :version (:version snapshot)
+                   :operations (into [] (comp (map decode-row)
+                                              (map :operations)
+                                              (mapcat identity))
+                                     rows)})))))
 
 ;; --- Mutation: Delete Page
 
@@ -220,7 +226,7 @@
 ;;     (some-> (db/fetch-one conn sqlv)
 ;;             (decode-row))))
 
-;; (s/def ::label ::cs/string)
+;; (s/def ::label ::us/string)
 ;; (s/def ::update-page-history
 ;;   (s/keys :req-un [::user ::id ::pinned ::label]))
 

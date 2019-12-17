@@ -8,8 +8,6 @@
   "A helpers for work with exceptions."
   (:require [clojure.spec.alpha :as s]))
 
-;; TODO: moved to uxbox.common.exceptions
-
 (s/def ::type keyword?)
 (s/def ::code keyword?)
 (s/def ::mesage string?)
