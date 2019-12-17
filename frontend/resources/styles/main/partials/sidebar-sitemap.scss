@@ -6,22 +6,9 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .sitemap {
-
-  .project-title {
-    align-items: center;
-    display: flex;
-    padding: $x-small;
-    width: 100%;
-
-    span {
-      color: $intense-ui-text;
-      font-size: $fs13;
-      font-weight: bold;
-      max-width: 80%;
-      overflow-x: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+  max-height: 180px;
+ 
+  .tool-window-bar {
 
     .add-page {
       align-items: center;
@@ -41,12 +28,13 @@
       }
 
       &:hover {
-        background-color: $dark-ui-bg;
-        border-color: $soft-ui-border;
+        background-color: $main-ui-color;
+
+        svg {
+          fill: $soft-ui-icons;
+        }
       }
-
     }
-
   }
 
   .element-list {

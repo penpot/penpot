@@ -58,7 +58,7 @@
        :class (when (contains? layout :sitemap) "selected")
        :on-click #(st/emit! (dw/toggle-layout-flag :sitemap))}
       i/project-tree
-      [:span {} (:name page)]]
+      [:span {} "Project name / File name / "(:name page)]]
      [:div.workspace-options
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom

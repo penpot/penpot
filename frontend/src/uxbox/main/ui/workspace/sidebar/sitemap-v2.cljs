@@ -101,7 +101,11 @@
         close-fn  #(st/emit! (dw/toggle-layout-flag :sitemap))]
     [:div.sitemap.tool-window
      [:div.tool-window-bar
+      [:div.tool-window-icon i/project-tree]
       [:span (tr "ds.settings.sitemap")]
-      [:div.add-page {:on-click create-fn} i/close]]
+      [:div.tool-window-close {:on-click close-fn} i/close]]
      [:div.tool-window-content
+      [:div.project-title
+       #_[:span (:name project)]
+       [:div.add-page {:on-click create-fn} i/close]]
       [:& pages-list {:file file :current-page page}]]]))

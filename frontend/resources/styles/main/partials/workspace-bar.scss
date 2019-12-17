@@ -51,13 +51,9 @@
 
   .project-tree-btn {
     align-items: center;
-    background-color: $secondary-ui-bg;
-    border-radius: $br-small;
-    border: 1px solid transparent;
     cursor: pointer;
     display: flex;
-    padding: $x-small $x-small $x-small $medium;
-    width: 164px;
+    padding: $x-small;
 
     svg {
       fill: $intense-ui-icons;
@@ -67,33 +63,18 @@
     }
 
     span {
-      color: $intense-ui-text;
+      color: $soft-ui-text;
+      font-size: $fs14;
       overflow-x: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    &:hover {
-      background-color: $dark-ui-bg;
-      border-color: $soft-ui-border;
-    }
-
-    &.selected {
-      background-color: $main-ui-color;
-
-      svg {
-        fill: $color-white;
-      }
-
-      span {
-        color: $color-white;
-      }
-
-    }
   }
 
   .workspace-options {
     display: flex;
+    margin: auto;
 
     .options-btn {
       align-items: center;
