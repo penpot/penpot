@@ -26,6 +26,7 @@
    io.vertx.core.http.HttpServerOptions
    io.vertx.core.http.HttpServerRequest
    io.vertx.core.http.HttpServerResponse
+   io.vertx.core.http.ServerWebSocket
    io.vertx.ext.web.Route
    io.vertx.ext.web.Router
    io.vertx.ext.web.RoutingContext
@@ -139,7 +140,6 @@
             (doto (BodyHandler/create true)
               (.setDeleteUploadedFilesOnEnd delete-uploads?)
               (.setUploadsDirectory upload-dir)))
-
 
            (.handler
             (reify Handler

@@ -23,7 +23,8 @@
    io.vertx.core.http.HttpServer
    io.vertx.core.http.HttpServerRequest
    io.vertx.core.http.HttpServerResponse
-   io.vertx.core.http.HttpServerOptions))
+   io.vertx.core.http.HttpServerOptions
+   io.vertx.core.http.ServerWebSocket))
 
 (declare opts->http-server-options)
 (declare resolve-handler)
@@ -126,7 +127,14 @@
     (let [body (:body data)
           res (::response ctx)]
       (assign-status-and-headers! res data)
-      (-handle-body body res))))
+      (-handle-body body res)))
+
+  ;; ServerWebSocket
+  ;; (-handle-response [sws ctx]
+  ;;   (.accept ^ServerWebSocket sws))
+
+  nil
+  (-handle-response [sws ctx]))
 
 (extend-protocol IAsyncBody
   (Class/forName "[B")
