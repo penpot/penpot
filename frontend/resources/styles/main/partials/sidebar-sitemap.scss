@@ -85,13 +85,14 @@
         a {
 
           svg {
-            fill: $medium-ui-icons;
+            fill: $soft-ui-icons;
             height: 15px;
             margin-left: $x-small;
+            opacity: .6;
             width: 15px;
 
             &:hover {
-              fill: $intense-ui-icons;
+              opacity: 1;
             }
 
           }
@@ -101,6 +102,28 @@
       }
 
       &:hover {
+        background-color: $main-ui-color;
+
+        .page-icon {
+
+          svg {
+            fill: $soft-ui-icons;
+          }
+
+          span {
+            color: $intense-ui-text;
+          }
+
+        }
+
+        .page-actions {
+          display: flex;
+          @include animation(0s,.3s,fadeIn);
+        }
+
+      }
+
+      &.selected {
 
         .page-icon {
 
@@ -116,46 +139,22 @@
 
       }
 
-      &.selected {
+      &:hover {
 
         .page-icon {
 
           svg {
             fill: $soft-ui-icons;
           }
-
         }
 
         span {
-          color: $soft-ui-text;
-        }
-
-      }
-
-      .selected {
-        a {
-          svg {
-            fill: $soft-ui-icons;
-            opacity: .6;
-
-            &:hover {
-              fill: $soft-ui-icons;
-              opacity: 1;
-            }
-          }
+          color: $intense-ui-text;
         }
       }
 
     }
 
-    &:hover {
-
-      .page-actions {
-        display: flex;
-        @include animation(0s,.3s,fadeIn);
-      }
-
-    }
 
     .element-list-body {
       align-items: center;
@@ -178,107 +177,9 @@
         width: 62px;
       }
 
-      .element-icon {
-
-        svg {
-          fill: $medium-ui-icons;
-        }
-
-      }
-
-      .toggle-content {
-        margin-left: auto;
-        width: 12px;
-
-        svg {
-          fill: $intense-ui-icons;
-          transform: rotate(90deg);
-          width: 10px;
-        }
-
-        &.inverse {
-          svg { transform: rotate(270deg); }
-        }
-
-        &:hover {
-
-          svg {
-            fill: $medium-ui-icons;
-          }
-
-        }
-
-      }
-
-      &.group {
-
-        &.open {
-
-          .toggle-content {
-            flex-shrink: 0;
-
-            svg {
-              transform: rotate(270deg);
-            }
-
-          }
-
-        }
-
-      }
-
-      span.element-name {
-        min-width: 40px;
-        min-height: 16px;
-        display: block;
-
-        color: $medium-ui-text;
-        font-size: $fs13;
-        overflow-x: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      &.selected {
-
-        .element-icon {
-
-          svg {
-            fill: $intense-ui-icons;
-          }
-
-        }
-
-        span {
-          color: $intense-ui-text;
-        }
-
-      }
-
-      .selected {
-
-        svg {
-          fill: $intense-ui-icons;
-        }
-
-      }
-
-      &:hover {
-        border-color: $main-ui-color;
-
-        .element-icon {
-
-          svg {
-            fill: $intense-ui-icons;
-          }
-
-        }
-
-      }
-
       &.dragging {
         // TODO: revisit this
-        background-color: #eee;
+        background-color: $dark-ui-bg;
       }
     }
   }

@@ -21,7 +21,7 @@ $ui-flavour: $color-gray;
 // Background colors
 $primary-ui-bg: $color-gray-50;
 $secondary-ui-bg: $color-gray-60;
-$dark-ui-bg: mix($ui-flavour, $color-white, $mix-percentage-light);
+$dark-ui-bg: $color-gray-40;
 
 // Border color
 $intense-ui-border: $color-gray-40;

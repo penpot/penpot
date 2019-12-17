@@ -124,8 +124,6 @@
 
     .element-list-body {
       align-items: center;
-      border-bottom: 1px solid transparent;
-      border-top: 1px solid transparent;
       display: flex;
       padding: $x-small $small;
       transition: none;
@@ -207,29 +205,21 @@
       }
 
       &.selected {
-        background-color: $main-ui-color;
-        
-        .selected {
-          
-          svg {
-            fill: $soft-ui-icons;
-          }
-          
-        }
         
         .element-icon {
           
           svg {
-            fill: $soft-ui-icons;
+            fill: $main-ui-color;
           }
           
         }
         
         span {
-          color: $intense-ui-text;
+          color: $main-ui-color;
         }
         
         &:hover {
+          background-color: $main-ui-color;
 
           .element-icon {
             svg {
@@ -252,18 +242,18 @@
       }
 
       &:hover {
-        border-color: $main-ui-color;
+        background-color: $main-ui-color;
 
         .element-icon {
 
           svg {
-            fill: $main-ui-color;
+            fill: $soft-ui-icons;
           }
 
         }
 
         span {
-          color: $main-ui-color;
+          color: $intense-ui-text;
         }
 
       }
