@@ -9,13 +9,14 @@
 
   .project-title {
     align-items: center;
+    border-bottom: 1px solid $soft-ui-border;
     display: flex;
     padding: $x-small;
     width: 100%;
 
     span {
       color: $intense-ui-text;
-      font-size: $fs13;
+      font-size: $fs14;
       font-weight: bold;
       max-width: 80%;
       overflow-x: hidden;
@@ -61,16 +62,16 @@
 
         svg {
           fill: $medium-ui-icons;
-          height: 13px;
-          margin-right: $small;
-          width: 13px;
+          height: 15px;
+          margin-right: $x-small;
+          width: 15px;
         }
 
       }
 
       span {
         color: $medium-ui-text;
-        font-size: $fs13;
+        font-size: $fs14;
         max-width: 75%;
         overflow-x: hidden;
         text-overflow: ellipsis;
@@ -85,7 +86,7 @@
         a {
 
           svg {
-            fill: $medium-ui-icons;
+            fill: $soft-ui-icons;
             height: 15px;
             margin-left: $x-small;
             width: 15px;
@@ -121,29 +122,16 @@
         .page-icon {
 
           svg {
-            fill: $soft-ui-icons;
+            fill: $main-ui-color;
           }
 
         }
 
         span {
-          color: $soft-ui-text;
+          color: $main-ui-color;
+          font-weight: bold;
         }
 
-      }
-
-      .selected {
-        a {
-          svg {
-            fill: $soft-ui-icons;
-            opacity: .6;
-
-            &:hover {
-              fill: $soft-ui-icons;
-              opacity: 1;
-            }
-          }
-        }
       }
 
     }
@@ -159,8 +147,9 @@
 
     .element-list-body {
       align-items: center;
+      border-bottom: 1px solid $soft-ui-border;
       display: flex;
-      padding: $x-small $small;
+      padding: $small;
       transition: none;
       width: 100%;
 
@@ -244,13 +233,13 @@
         .element-icon {
 
           svg {
-            fill: $intense-ui-icons;
+            fill: $main-ui-color;
           }
 
         }
 
         span {
-          color: $intense-ui-text;
+          color: $main-ui-color;
         }
 
       }
@@ -272,6 +261,10 @@
             fill: $intense-ui-icons;
           }
 
+        }
+
+        span {
+          color: $intense-ui-text;
         }
 
       }
