@@ -73,14 +73,29 @@
 
 ;; --- Selection Rect
 
+(defn- selection->rect
+  [data]
+  (let [start (:start data)
+        stop (:stop data)
+        start-x (min (:x start) (:x stop))
+        start-y (min (:y start) (:y stop))
+        end-x (max (:x start) (:x stop))
+        end-y (max (:y start) (:y stop))]
+    (assoc data
+           :x1 start-x
+           :y1 start-y
+           :x2 end-x
+           :y2 end-y
+           :type :rect)))
+
 (def ^:private handle-selrect
   (letfn [(update-state [state position]
             (let [selrect (get-in state [:workspace-local :selrect])]
               (if selrect
                 (assoc-in state [:workspace-local :selrect]
-                          (dw/selection->rect (assoc selrect :stop position)))
+                          (selection->rect (assoc selrect :stop position)))
                 (assoc-in state [:workspace-local :selrect]
-                          (dw/selection->rect {:start position :stop position})))))
+                          (selection->rect {:start position :stop position})))))
 
           (clear-state [state]
             (update state :workspace-local dissoc :selrect))]

@@ -8,6 +8,7 @@
 (ns uxbox.main.ui.workspace.header
   (:require
    [rumext.alpha :as mf]
+   [lentes.core :as l]
    [uxbox.builtins.icons :as i]
    [uxbox.config :as cfg]
    [uxbox.main.data.history :as udh]
@@ -40,6 +41,50 @@
 
 ;; --- Header Component
 
+;; (mf/defc user
+;;   [props]
+;;   (let [open (mf/use-state false)
+;;         profile (mf/deref profile-ref)
+;;         photo (if (str/empty? (:photo profile ""))
+;;                 "/images/avatar.jpg"
+;;                 (:photo profile))]
+;;     [:div.user-zone {:on-click #(st/emit! (rt/navigate :settings/profile))
+;;                      :on-mouse-enter #(reset! open true)
+;;                      :on-mouse-leave #(reset! open false)}
+;;      [:span (:fullname profile)]
+;;      [:img {:src photo}]
+;;      (when @open
+;;        [:& user-menu])]))
+
+
+(def profile-ref
+  (-> (l/key :profile)
+      (l/derive st/state)))
+
+(def users-ref
+  (-> (l/key :workspace-users)
+      (l/derive st/state)))
+
+(mf/defc user-item
+  [{:keys [user self?] :as props}]
+  [:li.tooltip.tooltip-bottom
+   {:alt (:fullname user)
+    :on-click (when self?
+                #(st/emit! (rt/navigate :settings/profile)))}
+   [:img {:src "/images/avatar.jpg"}]])
+
+(mf/defc users
+  [props]
+  (let [profile (mf/deref profile-ref)
+        users (mf/deref users-ref)]
+    [:ul.user-multi
+     [:& user-item {:user profile :self? true}]
+     (for [id (->> (:active users)
+                   (remove #(= % (:id profile))))]
+       [:& user-item {:user (get-in users [:by-id id])
+                      :key id}])]))
+
+
 (mf/defc header
   [{:keys [page layout flags] :as props}]
   (let [toggle #(st/emit! (dw/toggle-flag %))
@@ -60,10 +105,7 @@
       [:span {} "Project name / File name";(:name page)
       ]]
 
-     [:ul.user-multi
-      [:li.tooltip.tooltip-bottom
-       {:alt "USER_NAME"}
-       [:img {:src "images/avatar.jpg"}]]] 
+     [:& users]
 
      [:div.workspace-options
       [:ul.options-btn

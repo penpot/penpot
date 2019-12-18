@@ -56,8 +56,10 @@
 
 (defmethod handle-message :disconnect
   [{:keys [user-id] :as ws} {:keys [file-id] :as message}]
-  (swap! state update file-id dissoc user-id)
-  nil)
+  (let [local (swap! state update file-id dissoc user-id)
+        sessions (get local file-id)
+        message {:type :who :users (set (keys sessions))}]
+    (run! #(send! % message) (vals sessions))))
 
 (defmethod handle-message :who
   [{:keys [file-id] :as ws} message]

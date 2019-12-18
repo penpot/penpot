@@ -13,7 +13,8 @@
    [uxbox.main.constants :as c]
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.undo :as udu]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace :as dw]
+   [uxbox.main.data.workspace-websocket :as dws]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.confirm]
@@ -54,8 +55,8 @@
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
-        (st/emit! (udw/decrease-zoom))
-        (st/emit! (udw/increase-zoom)))
+        (st/emit! (dw/decrease-zoom))
+        (st/emit! (dw/increase-zoom)))
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
@@ -96,17 +97,18 @@
   [{:keys [file-id page-id] :as props}]
 
   (mf/use-effect
-   {:deps #js [file-id page-id]
+   {:deps #js [(str file-id)
+               (str page-id)]
     :fn (fn []
           (let [sub (shortcuts/init)]
-            (st/emit! (udw/initialize file-id page-id))
+            (st/emit! (dw/initialize file-id page-id))
             #(rx/cancel! sub)))})
 
   (mf/use-effect
    {:deps #js [(str file-id)]
     :fn (fn []
-          (st/emit! (udw/initialize-websocket file-id))
-          #(st/emit! (udw/finalize-websocket file-id)))})
+          (st/emit! (dws/initialize file-id))
+          #(st/emit! (dws/finalize file-id)))})
 
   (let [layout (mf/deref refs/workspace-layout)
         file   (mf/deref refs/workspace-file)
