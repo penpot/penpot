@@ -12,6 +12,7 @@
    [uxbox.config :as cfg]
    [uxbox.common.data :as d]
    [uxbox.common.pages :as cp]
+   [uxbox.main.websockets :as ws]
    [uxbox.main.constants :as c]
    [uxbox.main.data.icons :as udi]
    [uxbox.main.data.pages :as udp]
@@ -28,6 +29,7 @@
    [uxbox.util.perf :as perf]
    [uxbox.util.router :as rt]
    [uxbox.util.spec :as us]
+   [uxbox.util.transit :as t]
    [uxbox.util.time :as dt]
    [uxbox.util.uuid :as uuid]))
 
@@ -179,6 +181,7 @@
        (->> (rx/filter (ptk/type? ::initialized) stream)
             (rx/take 1)
             (rx/mapcat #(rx/of watch-page-changes)))))
+
     ptk/EffectEvent
     (effect [_ state stream]
       ;; Optimistic prefetch of projects if them are not already fetched
@@ -199,6 +202,35 @@
                :workspace-file file
                :workspace-data data
                :workspace-page page)))))
+
+;; --- Initialize WebSocket
+
+(defn initialize-websocket
+  [file-id]
+  (ptk/reify ::initialize-websocket
+    ptk/UpdateEvent
+    (update [_ state]
+      (prn "initialize-websocket$update" file-id)
+      (let [uri (str "ws://localhost:6060/sub/" file-id)]
+        (assoc-in state [::ws file-id] (ws/open uri))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (prn "initialize-websocket$watch" file-id)
+      (->> (ws/-stream (get-in state [::ws file-id]))
+           (rx/filter #(= :message (:type %)))
+           (rx/map :payload)
+           (rx/map t/decode)
+           (rx/tap #(js/console.log "ws-message" file-id %))
+           (rx/ignore)))))
+
+(defn finalize-websocket
+  [file-id]
+  (ptk/reify ::finalize-websocket
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (prn "finalize-websocket" file-id)
+      (ws/-close (get-in state [::ws file-id])))))
 
 ;; --- Toggle layout flag
 

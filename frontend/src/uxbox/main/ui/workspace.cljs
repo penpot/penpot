@@ -103,6 +103,12 @@
             (st/emit! (udw/initialize file-id page-id))
             #(rx/cancel! sub)))})
 
+  (mf/use-effect
+   {:deps #js [(str file-id)]
+    :fn (fn []
+          (st/emit! (udw/initialize-websocket file-id))
+          #(st/emit! (udw/finalize-websocket file-id)))})
+
   (let [layout (mf/deref refs/workspace-layout)
         file   (mf/deref refs/workspace-file)
         page   (mf/deref refs/workspace-page)
