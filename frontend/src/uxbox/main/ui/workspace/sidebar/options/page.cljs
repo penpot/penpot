@@ -12,7 +12,6 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.pages :as udp]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -28,13 +27,13 @@
   (let [metadata (:metadata page)
         metadata (merge c/page-metadata metadata)]
     (letfn [(on-size-change [event attr]
-              (let [value (-> (dom/event->value event)
+              #_(let [value (-> (dom/event->value event)
                               (parse-int nil))]
                 (st/emit! (->> (assoc metadata attr value)
                                (udp/update-metadata (:id page))))))
 
             (change-color [color]
-              (st/emit! (->> (assoc metadata :background color)
+              #_(st/emit! (->> (assoc metadata :background color)
                              (udp/update-metadata (:id page)))))
 
             (on-color-change [event]
@@ -42,7 +41,7 @@
                 (change-color value)))
 
             (on-name-change [event]
-              (let [value (-> (dom/event->value event)
+              #_(let [value (-> (dom/event->value event)
                               (str/trim))]
                 (st/emit! (-> (assoc page :name value)
                               (udp/update-page-attrs)))))
@@ -99,18 +98,18 @@
   (let [metadata (:metadata page)
         metadata (merge c/page-metadata metadata)]
     (letfn [(on-x-change [event]
-              (let [value (-> (dom/event->value event)
+              #_(let [value (-> (dom/event->value event)
                               (parse-int nil))]
                 (st/emit! (->> (assoc metadata :grid-x-axis value)
                                (udp/update-metadata (:id page))))))
             (on-y-change [event]
-              (let [value (-> (dom/event->value event)
+              #_(let [value (-> (dom/event->value event)
                               (parse-int nil))]
                 (st/emit! (->> (assoc metadata :grid-y-axis value)
                                (udp/update-metadata (:id page))))))
 
             (change-color [color]
-              (st/emit! (->> (assoc metadata :grid-color color)
+              #_(st/emit! (->> (assoc metadata :grid-color color)
                              (udp/update-metadata (:id page)))))
             (on-color-change [event]
               (let [value (dom/event->value event)]

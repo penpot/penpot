@@ -7,12 +7,10 @@
 
 (ns uxbox.main.ui.workspace.header
   (:require
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.config :as cfg]
    [uxbox.main.data.history :as udh]
-   [uxbox.main.data.pages :as udp]
    [uxbox.main.data.undo :as udu]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.ui.workspace.images :refer [import-image-modal]]

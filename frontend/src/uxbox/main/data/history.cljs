@@ -9,7 +9,7 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
-   [uxbox.main.data.pages :as udp]
+   [uxbox.main.data.projects :as dp]
    [uxbox.main.repo :as rp]
    [uxbox.util.data :refer [replace-by-id index-by]]
    [uxbox.util.spec :as us]))
@@ -26,7 +26,7 @@
 (s/def ::user ::us/uuid)
 
 (s/def ::shapes
-  (s/every ::udp/minimal-shape :kind vector?))
+  (s/every ::dp/minimal-shape :kind vector?))
 
 (s/def ::data
   (s/keys :req-un [::shapes]))
@@ -77,7 +77,7 @@
     (watch [_ state stream]
       #_(let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
         (->> stream
-             (rx/filter udp/page-persisted?)
+             (rx/filter dp/page-persisted?)
              (rx/debounce 1000)
              (rx/flat-map #(rx/of (fetch-history id)
                                   (fetch-pinned-history id)))
@@ -192,7 +192,7 @@
                      (assoc :history true
                             :data (:data item)))]
         (-> state
-            (udp/unpack-page page)
+            (dp/unpack-page page)
             (assoc-in [:workspace pid :history :selected] version))))))
 
 ;; --- Apply Selected History
@@ -209,7 +209,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       #_(let [pid (get-in state [:workspace :current])]
-        (rx/of (udp/persist-page pid))))))
+        (rx/of (dp/persist-page pid))))))
 
 ;; --- Deselect Page History
 
@@ -219,7 +219,7 @@
     (update [_ state]
       #_(let [pid (get-in state [:workspace :current])
             packed (get-in state [:packed-pages pid])]
-        (-> (udp/unpack-page state packed)
+        (-> (dp/unpack-page state packed)
             (assoc-in [:workspace pid :history :selected] nil))))))
 
   ;; --- Refresh Page History

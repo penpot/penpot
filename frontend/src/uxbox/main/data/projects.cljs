@@ -6,24 +6,29 @@
 
 (ns uxbox.main.data.projects
   (:require
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [beicon.core :as rx]
    [potok.core :as ptk]
    [uxbox.main.repo.core :as rp]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.util.data :refer [index-by-id concatv]]
+   [uxbox.util.router :as rt]
    [uxbox.util.spec :as us]
    [uxbox.util.time :as dt]
-   [uxbox.util.router :as rt]))
+   [uxbox.util.timers :as ts]
+   [uxbox.util.uuid :as uuid]))
 
 ;; --- Specs
 
-(s/def ::id uuid?)
-(s/def ::name string?)
-(s/def ::version integer?)
-(s/def ::user-id uuid?)
-(s/def ::created-at inst?)
-(s/def ::modified-at inst?)
+(s/def ::id ::us/uuid)
+(s/def ::name ::us/string)
+(s/def ::user ::us/uuid)
+(s/def ::type ::us/keyword)
+(s/def ::file-id ::us/uuid)
+(s/def ::created-at ::us/inst)
+(s/def ::modified-at ::us/inst)
+(s/def ::version ::us/number)
+(s/def ::ordering ::us/number)
 
 (s/def ::project-entity
   (s/keys ::req-un [::id
@@ -33,8 +38,48 @@
                     ::created-at
                     ::modified-at]))
 
-(declare fetch-projects)
-(declare projects-fetched?)
+(s/def ::grid-x-axis ::us/number)
+(s/def ::grid-y-axis ::us/number)
+(s/def ::grid-color ::us/string)
+(s/def ::background ::us/string)
+(s/def ::background-opacity ::us/number)
+
+(s/def ::metadata
+  (s/keys :opt-un [::grid-y-axis
+                   ::grid-x-axis
+                   ::grid-color
+                   ::background
+                   ::background-opacity]))
+
+;; TODO: start using uxbox.common.pagedata/data spec ...
+
+(s/def ::minimal-shape
+  (s/keys :req-un [::type ::name]
+          :opt-un [::id]))
+
+(s/def ::shapes (s/coll-of ::us/uuid :kind vector?))
+(s/def ::canvas (s/coll-of ::us/uuid :kind vector?))
+
+(s/def ::shapes-by-id
+  (s/map-of ::us/uuid ::minimal-shape))
+
+(s/def ::data
+  (s/keys :req-un [::shapes ::canvas ::shapes-by-id]))
+
+(s/def ::page
+  (s/keys :req-un [::id
+                   ::name
+                   ::file-id
+                   ::created-at
+                   ::modified-at
+                   ::user-id
+                   ::ordering
+                   ::metadata
+                   ::data]))
+
+(s/def ::pages
+  (s/every ::page :kind vector?))
+
 
 ;; --- Helpers
 
@@ -49,10 +94,32 @@
   [state id]
   (update state :projects dissoc id))
 
-;; --- Initialize
+(defn unpack-page
+  [state {:keys [id data metadata] :as page}]
+  (-> state
+      (update :pages assoc id (dissoc page :data))
+      (update :pages-data assoc id data)))
+
+(defn purge-page
+  "Remove page and all related stuff from the state."
+  [state id]
+  (if-let [file-id (get-in state [:pages id :file-id])]
+    (-> state
+        (update-in [:files file-id :pages] #(filterv (partial not= id) %))
+        (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
+        (update :pages dissoc id)
+        (update :pages-data dissoc id))
+    state))
+
+;; --- Initialize Dashboard
+
+(declare fetch-projects)
+(declare projects-fetched?)
 
 (declare fetch-files)
 (declare initialized)
+
+;; TODO: rename to initialize dashboard
 
 (defn initialize
   [id]
@@ -262,3 +329,206 @@
       (if (nil? id)
         (rx/of (rt/nav :dashboard-projects {} {}))
         (rx/of (rt/nav :dashboard-projects {} {:project-id (str id)}))))))
+
+
+;; --- Fetch Pages (by File ID)
+
+(declare pages-fetched)
+
+(defn fetch-pages
+  [file-id]
+  (s/assert ::us/uuid file-id)
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query :project-pages {:file-id file-id})
+           (rx/map pages-fetched)))))
+
+;; --- Pages Fetched
+
+(defn pages-fetched
+  [pages]
+  (s/assert ::pages pages)
+  (ptk/reify ::pages-fetched
+    IDeref
+    (-deref [_] pages)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce unpack-page state pages))))
+
+;; --- Fetch Page (By ID)
+
+(declare page-fetched)
+
+(defn fetch-page
+  "Fetch page by id."
+  [id]
+  (s/assert ::us/uuid id)
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query :project-page {:id id})
+           (rx/map page-fetched)))))
+
+;; --- Page Fetched
+
+(defn page-fetched
+  [data]
+  (s/assert ::page data)
+  (ptk/reify ::page-fetched
+    IDeref
+    (-deref [_] data)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (unpack-page state data))))
+
+;; --- Create Page
+
+(declare page-created)
+
+(s/def ::create-page
+  (s/keys :req-un [::name ::file-id]))
+
+(defn create-page
+  [{:keys [file-id name] :as data}]
+  (s/assert ::create-page data)
+  (ptk/reify ::create-page
+    ptk/WatchEvent
+    (watch [this state s]
+      (let [ordering (count (get-in state [:files file-id :pages]))
+            params {:name name
+                    :file-id file-id
+                    :ordering ordering
+                    :data {:shapes []
+                           :canvas []
+                           :shapes-by-id {}}
+                    :metadata {}}]
+        (->> (rp/mutation :create-project-page params)
+             (rx/map page-created))))))
+
+;; --- Page Created
+
+(defn page-created
+  [{:keys [id file-id] :as page}]
+  (s/assert ::page page)
+  (ptk/reify ::page-created
+    cljs.core/IDeref
+    (-deref [_] page)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [data (:data page)
+            page (dissoc page :data)]
+        (-> state
+            (update-in [:workspace-file :pages] (fnil conj []) id)
+            (update :pages assoc id page)
+            (update :pages-data assoc id data))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (uxbox.main.data.projects/fetch-file file-id)))))
+
+;; --- Rename Page
+
+(s/def ::rename-page
+  (s/keys :req-un [::id ::name]))
+
+(defn rename-page
+  [{:keys [id name] :as data}]
+  (s/assert ::rename-page data)
+  (ptk/reify ::rename-page
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspace-page :id])
+            state (assoc-in state [:pages id :name] name)]
+        (cond-> state
+          (= pid id) (assoc-in [:workspace-page :name] name))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:id id :name name}]
+        (->> (rp/mutation :rename-page params)
+             (rx/map #(ptk/data-event ::page-renamed data)))))))
+
+;; --- Delete Page (by ID)
+
+(defn delete-page
+  [id]
+  {:pre [(uuid? id)]}
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (purge-page state id))
+
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [page (:workspace-page state)]
+        (rx/merge
+         (->> (rp/mutation :delete-project-page  {:id id})
+              (rx/flat-map (fn [_]
+                             (if (= id (:id page))
+                               (rx/of (go-to (:file-id page)))
+                               (rx/empty))))))))))
+
+;; --- Persist Page
+
+(declare page-persisted)
+
+(def persist-current-page
+  (ptk/reify ::persist-page
+    ptk/WatchEvent
+    (watch [this state s]
+      (let [local (:workspace-local state)
+            page (:workspace-page state)
+            data (:workspace-data state)]
+        (if (:history local)
+          (rx/empty)
+          (let [page (assoc page :data data)]
+            (->> (rp/mutation :update-project-page-data page)
+                 (rx/map (fn [res] (merge page res)))
+                 (rx/map page-persisted)
+                 (rx/catch (fn [err] (rx/of ::page-persist-error))))))))))
+
+;; --- Page Persisted
+
+(defn page-persisted
+  [{:keys [id] :as page}]
+  (s/assert ::page page)
+  (ptk/reify ::page-persisted
+    cljs.core/IDeref
+    (-deref [_] page)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [data (:data page)
+            page (dissoc page :data)]
+        (-> state
+            (assoc :workspace-data data)
+            (assoc :workspace-page page)
+            (update :pages assoc id page)
+            (update :pages-data assoc id data))))))
+
+;; --- Update Page
+
+;; TODO: deprecated, need refactor (this is used on page options)
+(defn update-page-attrs
+  [{:keys [id] :as data}]
+  (s/assert ::page data)
+  (ptk/reify ::update-page-attrs
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-page merge (dissoc data :id :version)))))
+
+;; --- Update Page Metadata
+
+;; TODO: deprecated, need refactor (this is used on page options)
+(defn update-metadata
+  [id metadata]
+  (s/assert ::id id)
+  (s/assert ::metadata metadata)
+  (reify
+    ptk/UpdateEvent
+    (update [this state]
+      (assoc-in state [:pages id :metadata] metadata))))
