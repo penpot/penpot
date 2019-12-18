@@ -38,10 +38,6 @@
       (rx/of du/fetch-profile
              (rt/navigate :dashboard-projects)))))
 
-(defn logged-in?
-  [v]
-  (= (ptk/type v) ::logged-in))
-
 ;; --- Login
 
 (s/def ::login-params
@@ -50,7 +46,7 @@
 (defn login
   [{:keys [username password] :as data}]
   (s/assert ::login-params data)
-  (reify
+  (ptk/reify ::login
     ptk/UpdateEvent
     (update [_ state]
       (merge state (dissoc initial-state :route :router)))
