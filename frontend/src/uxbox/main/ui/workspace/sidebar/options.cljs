@@ -113,10 +113,10 @@
   (let [close #(st/emit! (udw/toggle-layout-flag :element-options))
         selected (mf/deref refs/selected-shapes)]
     [:div.elementa-options.tool-window
-     [:div.tool-window-bar
-      [:div.tool-window-icon i/options]
-      [:span (tr "ds.settings.element-options")]
-      [:div.tool-window-close {:on-click close} i/close]]
+     ;; [:div.tool-window-bar
+      ;; [:div.tool-window-icon i/options]
+      ;; [:span (tr "ds.settings.element-options")]
+      ;; [:div.tool-window-close {:on-click close} i/close]]
      [:div.tool-window-content
       [:div.element-options
        (if (= (count selected) 1)

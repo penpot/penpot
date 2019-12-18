@@ -260,7 +260,8 @@
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]
       [:span (tr "ds.settings.layers")]
-      [:div.tool-window-close {:on-click on-click} i/close]]
+      ;; [:div.tool-window-close {:on-click on-click} i/close]
+     ]
      [:div.tool-window-content
       [:& canvas-list {:canvas canvas
                        :shapes all-shapes
