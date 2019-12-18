@@ -200,6 +200,21 @@
                :workspace-data data
                :workspace-page page)))))
 
+;; --- Toggle layout flag
+
+(defn toggle-layout-flag
+  [flag]
+  (s/assert keyword? flag)
+  (ptk/reify ::toggle-layout-flag
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-layout
+              (fn [flags]
+                (if (contains? flags flag)
+                  (disj flags flag)
+                  (conj flags flag)))))))
+
+
 ;; --- Workspace Flags
 
 (defn activate-flag
@@ -237,18 +252,6 @@
 (defn set-tooltip
   [txt]
   ::todo)
-
-(defn toggle-layout-flag
-  [flag]
-  (s/assert keyword? flag)
-  (ptk/reify ::toggle-layout-flag
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-layout
-              (fn [flags]
-                (if (contains? flags flag)
-                  (disj flags flag)
-                  (conj flags flag)))))))
 
 ;; --- Workspace Ruler
 
