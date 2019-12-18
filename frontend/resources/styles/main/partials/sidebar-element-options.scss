@@ -62,14 +62,15 @@
   }
 
   .element-set {
+    border-bottom: 1px solid $soft-ui-border;
     color: $medium-ui-text;
     margin: 0 $x-small;
 
     .element-set-title {
-      border-bottom: 1px dashed $soft-ui-border;
-      color: $medium-ui-text;
-      font-weight: bold;
-      padding: 2px $x-small;
+      color: $soft-ui-text;
+      font-size: $fs14;
+      margin-top: $x-small;
+      padding: $x-small;
       width: 100%;
     }
 
@@ -214,7 +215,7 @@
   }
 
   span {
-    color: $medium-ui-text;
+    color: $soft-ui-text;
     font-size: $fs12;
   }
 
