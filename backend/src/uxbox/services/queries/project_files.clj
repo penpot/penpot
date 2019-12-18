@@ -27,6 +27,7 @@
 
 (su/defstr sql:generic-project-files
   "select pf.*,
+          p.name as project_name,
           array_agg(pp.id) over pages_w as pages
      from project_files as pf
     inner join projects as p on (pf.project_id = p.id)
@@ -76,6 +77,7 @@
   (-> (db/query conn [sql:recent-files user 20])
       (p/then' (partial mapv decode-row))))
 
+
 ;; --- Query: Project File (By ID)
 
 (su/defstr sql:project-file
@@ -89,6 +91,7 @@
   [{:keys [user id] :as params}]
   (-> (db/query-one db/pool [sql:project-file user id])
       (p/then' decode-row)))
+
 
 ;; --- Query: Users of the File
 
@@ -117,7 +120,6 @@
   (db/with-atomic [conn db/pool]
     (-> (retrieve-minimal-file conn user file-id)
         (p/then (fn [{:keys [id project-id]}]
-                  (prn ::project-file-users id project-id)
                   (db/query conn [sql:file-users id project-id]))))))
 
 (defn- retrieve-minimal-file

@@ -23,6 +23,7 @@
 (s/def ::token ::us/string)
 (s/def ::user ::us/uuid)
 
+
 ;; --- Query: Projects
 
 (su/defstr sql:projects
@@ -40,6 +41,7 @@
   [{:keys [user] :as params}]
   (-> (db/query db/pool [sql:projects user])
       (p/then' (partial mapv decode-row))))
+
 
 ;; --- Helpers
 
