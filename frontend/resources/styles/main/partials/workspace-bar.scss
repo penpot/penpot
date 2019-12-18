@@ -157,67 +157,67 @@
 
     }
 
-    .options-view {
+  }
+
+  .options-view {
+    align-items: center;
+    display: flex;
+    justify-content: content;
+    margin: 0;
+
+    li {
       align-items: center;
       display: flex;
-      justify-content: content;
-      margin: 0;
+      flex-shrink: 0;
+      height: 30px;
+      margin: 0 $small;
+      position: relative;
+      width: 60px;
 
-      li {
-        align-items: center;
-        display: flex;
-        flex-shrink: 0;
-        height: 30px;
-        margin: 0 $small;
+      &.zoom-input {
+        width: 85px;
+        padding: 0 25px;
         position: relative;
-        width: 60px;
 
-        &.zoom-input {
-          width: 85px;
-          padding: 0 25px;
-          position: relative;
+        .add-zoom,
+        .remove-zoom {
+          align-items: center;
+          border-radius: 50%;
+          border: 1px solid $intense-ui-border;
+          cursor: pointer;
+          color: $intense-ui-border;
+          display: none;
+          flex-shrink: 0;
+          font-size: $fs20;
+          font-weight: bold;
+          height: 20px;
+          justify-content: center;
+          position: absolute;
+          top: 5px;
+          width: 20px;
+
+          &:hover {
+            border-color: $color-primary;
+            color: $color-primary;
+          }
+
+        }
+
+        .add-zoom {
+          left: -5px;
+        }
+
+        .remove-zoom {
+          padding-top: 4px;
+          right: -5px;
+        }
+
+        &:hover {
 
           .add-zoom,
           .remove-zoom {
-            align-items: center;
-            border-radius: 50%;
-            border: 1px solid $intense-ui-border;
-            cursor: pointer;
-            color: $intense-ui-border;
-            display: none;
-            flex-shrink: 0;
-            font-size: $fs20;
-            font-weight: bold;
-            height: 20px;
-            justify-content: center;
-            position: absolute;
-            top: 5px;
-            width: 20px;
-
-            &:hover {
-              border-color: $color-primary;
-              color: $color-primary;
-            }
-
-          }
-
-          .add-zoom {
-            left: -5px;
-          }
-
-          .remove-zoom {
-            padding-top: 4px;
-            right: -5px;
-          }
-
-          &:hover {
-
-            .add-zoom,
-            .remove-zoom {
-              display: flex;
-              @include animation(0s,.3s,fadeIn);
-            }
-
+            display: flex;
+            @include animation(0s,.3s,fadeIn);
           }
 
         }
@@ -280,4 +280,24 @@
 
   }
 
+}
+
+.user-multi {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  margin: 0;
+  
+  li {
+    margin-left: $small;
+    position: relative;
+
+    img {
+      border: 3px solid #f3dd14;
+      border-radius: 50%;
+      flex-shrink: 0;
+      height: 25px;
+      width: 25px;
+    }
+  }
 }

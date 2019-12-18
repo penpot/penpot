@@ -53,12 +53,20 @@
     [:header#workspace-bar.workspace-bar
      [:div.main-icon
       [:a {:on-click #(st/emit! (rt/nav :dashboard-projects))} i/logo-icon]]
+
      [:div.project-tree-btn
       {:alt (tr "header.sitemap")
        :class (when (contains? layout :sitemap) "selected")
        :on-click #(st/emit! (dw/toggle-layout-flag :sitemap))}
       i/project-tree
-      [:span {} "Project name / File name / "(:name page)]]
+      [:span {} "Project name / File name";(:name page)
+      ]]
+
+     [:ul.user-multi
+      [:li.tooltip.tooltip-bottom
+       {:alt "USER_NAME"}
+       [:img {:src "images/avatar.jpg"}]]] 
+
      [:div.workspace-options
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
@@ -134,6 +142,7 @@
         {:alt (tr "header.view-mode")
          ;; :on-click #(st/emit! (dw/->OpenView (:id page)))
          }
-        i/play]]
-      [:& zoom-widget]]
-     [:& user]]))
+        i/play]]]
+     ;;[:& user]
+     [:& zoom-widget]
+     ]))
