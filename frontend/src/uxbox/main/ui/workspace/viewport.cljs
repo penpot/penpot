@@ -11,6 +11,7 @@
    [goog.events :as events]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
@@ -274,5 +275,10 @@
 
         (when (contains? flags :ruler)
           [:& ruler {:zoom zoom :ruler (:ruler local)}])
+
         ;; -- METER CURSOR MULTIUSUARIO
+        [:div.multiuser-cursor
+         [i/infocard]
+         [:span "USER_NAME"]]
+
         [:& selrect {:data (:selrect local)}]]])))
