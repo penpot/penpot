@@ -8,31 +8,33 @@
     "minify:react-color": "terser react-color/react-color.bundle.js -c -m -o react-color/react-color.bundle.min.js",
     "minify:datefns": "terser datefns/datefns.bundle.js -c -m -o datefns/datefns.bundle.min.js",
     "minify:react-dnd": "terser react-dnd/react-dnd.bundle.js -c -m -o react-dnd/react-dnd.bundle.min.js",
-    "dist": "npm run build && npm run minify:react-color && npm run minify:datefns && npm run minify:react-dnd"
+    "minify:randomcolor": "terser randomcolor/randomcolor.bundle.js -c -m -o randomcolor/randomcolor.bundle.min.js",
+    "dist": "npm run build && npm run minify:react-color && npm run minify:datefns && npm run minify:react-dnd && npm run minify:randomcolor"
   },
   "author": "",
   "license": "MPL2",
   "devDependencies": {
-    "@babel/cli": "^7.4.4",
-    "@babel/core": "^7.4.4",
-    "@babel/plugin-proposal-class-properties": "^7.5.5",
-    "@babel/plugin-proposal-export-default-from": "^7.5.2",
-    "@babel/preset-env": "^7.4.4",
-    "@babel/preset-react": "^7.0.0",
-    "rollup": "^1.12.3",
+    "@babel/cli": "^7.7.5",
+    "@babel/core": "^7.7.5",
+    "@babel/plugin-proposal-class-properties": "^7.7.4",
+    "@babel/plugin-proposal-export-default-from": "^7.7.4",
+    "@babel/preset-env": "^7.7.6",
+    "@babel/preset-react": "^7.7.4",
+    "rollup": "^1.27.13",
     "rollup-plugin-babel": "^4.3.2",
-    "rollup-plugin-commonjs": "^10.0.0",
+    "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-node-builtins": "^2.1.2",
     "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-node-resolve": "^5.0.0",
     "rollup-plugin-replace": "^2.2.0",
-    "terser": "^4.1.2"
+    "terser": "^4.4.3"
   },
   "dependencies": {
     "date-fns": "^1.30.1",
+    "randomcolor": "^0.5.4",
     "react-color": "^2.17.3",
-    "react-dnd": "^9.3.4",
-    "react-dnd-html5-backend": "^9.3.4",
+    "react-dnd": "^9.5.1",
+    "react-dnd-html5-backend": "^9.5.1",
     "snapsvg": "^0.5.1"
   }
 }

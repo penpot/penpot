@@ -65,4 +65,12 @@ export default [{
     format: 'iife',
   },
   plugins: plugins
+}, {
+  input: "./randomcolor/randomcolor.js",
+  output: {
+    compact: true,
+    file: './randomcolor/randomcolor.bundle.js',
+    format: 'iife',
+  },
+  plugins: plugins
 }];
