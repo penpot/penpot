@@ -61,15 +61,17 @@
   :test
   {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-554"}}}
 
-  :nrepl
-  {:extra-deps {nrepl/nrepl {:mvn/version "0.6.0"}}
-   :main-opts ["-m" "nrepl.cmdline"]}
-
   :ancient
   {:main-opts ["-m" "deps-ancient.deps-ancient"]
    :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}
 
+  :jmx-remote
+  {:jvm-opts ["-Dcom.sun.management.jmxremote"
+              "-Dcom.sun.management.jmxremote.port=9090"
+              "-Dcom.sun.management.jmxremote.rmi.port=9090"
+              "-Dcom.sun.management.jmxremote.local.only=false"
+              "-Dcom.sun.management.jmxremote.authenticate=false"
+              "-Dcom.sun.management.jmxremote.ssl=false"
+              "-Djava.rmi.server.hostname=localhost"]}
+
   }}
-
-
-

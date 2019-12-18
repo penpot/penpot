@@ -39,7 +39,7 @@
          (->> (uws/mouse-position-deltas position)
               (rx/map #(dw/apply-temporal-displacement-in-bulk selected %))
               (rx/take-until stoper))
-         (rx/of (dw/materialize-current-modifier-in-bulk selected)
+         (rx/of (dw/materialize-temporal-modifier-in-bulk selected)
                 ::dw/page-data-update))))))
 
 (defn on-mouse-down

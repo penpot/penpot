@@ -12,7 +12,9 @@
    [uxbox.services.init]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.util.uuid :as uuid]
+   [vertx.web :as vw]
+   [vertx.eventbus :as ve]))
 
 (defn query-handler
   [req]
@@ -45,7 +47,7 @@
         (p/then #(session/create (:id %) user-agent))
         (p/then' (fn [token]
                    {:status 204
-                    :cookies {"auth-token" {:value token}}
+                    :cookies {"auth-token" {:value token :path "/"}}
                     :body ""})))))
 
 (defn logout-handler

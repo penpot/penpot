@@ -10,6 +10,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
+   [expound.alpha :as expound]
    [uxbox.util.exceptions :as ex])
   (:import java.time.Instant))
 
@@ -23,23 +24,18 @@
 (def uuid-rx
   #"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
 
-(def number-rx
-  #"^[+-]?([0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)([eE][+-]?[0-9]+)?$")
-
 ;; --- Public Api
 
 (defn conform
   [spec data]
   (let [result (s/conform spec data)]
-    (if (= result ::s/invalid)
-      [nil (s/explain-data spec data)]
-      [result nil])))
-
-(defn valid?
-  [spec data]
-  (if (s/valid? spec data)
-    true
-    (s/explain spec data)))
+    (when (= result ::s/invalid)
+      (throw (ex/error :type :validation
+                       :code :spec-validation
+                       :explain (with-out-str
+                                  (expound/printer data))
+                       :data (::s/problems data))))
+    result))
 
 ;; --- Predicates
 
@@ -113,7 +109,7 @@
   [v]
   (cond
     (number? v) v
-    (re-matches number-rx v) (Double/parseDouble v)
+    (str/numeric? v) (Double/parseDouble v)
     :else ::s/invalid))
 
 

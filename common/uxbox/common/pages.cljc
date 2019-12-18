@@ -1,37 +1,36 @@
 (ns uxbox.common.pages
   "A common (clj/cljs) functions and specs for pages."
   (:require
-   [clojure.spec.alpha :as s]
-   [uxbox.common.spec :as cs]))
+   [clojure.spec.alpha :as s]))
 
 ;; --- Specs
 
-(s/def ::id ::cs/uuid)
+(s/def ::id uuid?)
 (s/def ::name string?)
 (s/def ::type keyword?)
 
 ;; Metadata related
-(s/def ::grid-x-axis ::cs/number)
-(s/def ::grid-y-axis ::cs/number)
+(s/def ::grid-x-axis number?)
+(s/def ::grid-y-axis number?)
 (s/def ::grid-color string?)
 (s/def ::background string?)
-(s/def ::background-opacity ::cs/number)
+(s/def ::background-opacity number?)
 
 ;; Page related
-(s/def ::file-id ::cs/uuid)
-(s/def ::user ::cs/uuid)
-(s/def ::created-at ::cs/inst)
-(s/def ::modified-at ::cs/inst)
-(s/def ::version ::cs/number)
-(s/def ::ordering ::cs/number)
+(s/def ::file-id uuid?)
+(s/def ::user uuid?)
+(s/def ::created-at inst?)
+(s/def ::modified-at inst?)
+(s/def ::version number?)
+(s/def ::ordering number?)
 
 ;; Page Data related
 (s/def ::shape
   (s/keys :req-un [::type ::name]
           :opt-un [::id]))
 
-(s/def ::shapes (s/coll-of ::cs/uuid :kind vector?))
-(s/def ::canvas (s/coll-of ::cs/uuid :kind vector?))
+(s/def ::shapes (s/coll-of uuid? :kind vector?))
+(s/def ::canvas (s/coll-of uuid? :kind vector?))
 
 (s/def ::shapes-by-id
   (s/map-of uuid? ::shape))
@@ -49,11 +48,13 @@
                    ::background
                    ::background-opacity]))
 
+(s/def ::shape-change
+  (s/tuple #{:add :mod :del} keyword? any?))
+
 (s/def ::operation
   (s/or :mod-shape (s/cat :name #(= % :mod-shape)
                           :id uuid?
-                          :attr keyword?
-                          :value any?)
+                          :changes (s/* ::shape-change))
         :add-shape (s/cat :name #(= % :add-shape)
                           :id uuid?
                           :data any?)
@@ -68,7 +69,6 @@
 (s/def ::operations
   (s/coll-of ::operation :kind vector?))
 
-
 ;; --- Operations Processing Impl
 
 (declare process-operation)
@@ -80,42 +80,55 @@
 
 (defn process-ops
   [data operations]
-  (->> (cs/conform ::operations operations)
+  (->> (s/assert ::operations operations)
        (reduce process-operation data)))
 
 (defn- process-operation
-  [data operation]
-  (case (first operation)
-    :mod-shape (process-mod-shape data operation)
-    :add-shape (process-add-shape data operation)
-    :del-shape (process-del-shape data operation)
-    :add-canvas (process-add-canvas data operation)
-    :del-canvas (process-del-canvas data operation)))
+  [data [op & rest]]
+  (case op
+    :mod-shape (process-mod-shape data rest)
+    :add-shape (process-add-shape data rest)
+    :del-shape (process-del-shape data rest)
+    :add-canvas (process-add-canvas data rest)
+    :del-canvas (process-del-canvas data rest)))
 
 (defn- process-mod-shape
-  [data {:keys [id attr value]}]
-  (update-in data [:shapes-by-id id] assoc attr value))
+  [data [id & changes]]
+  (if (get-in data [:shapes-by-id id])
+    (update-in data [:shapes-by-id id]
+               #(reduce (fn [shape [op att val]]
+                          (if (= op :del)
+                            (dissoc shape att)
+                            (assoc shape att val)))
+                        % changes))
+    data))
 
 (defn- process-add-shape
-  [data {:keys [id data]}]
+  [data [id sdata]]
   (-> data
-      (update :shapes conj id)
-      (update :shapes-by-id assoc id data)))
+      (update :shapes (fn [shapes]
+                        (if (some #{id} shapes)
+                          shapes
+                          (conj shapes id))))
+      (update :shapes-by-id assoc id sdata)))
 
 (defn- process-del-shape
-  [data {:keys [id attr value]}]
+  [data [id]]
   (-> data
       (update :shapes (fn [s] (filterv #(not= % id) s)))
       (update :shapes-by-id dissoc id)))
 
 (defn- process-add-canvas
-  [data {:keys [id data]}]
+  [data [id sdata]]
   (-> data
-      (update :canvas conj id)
-      (update :shapes-by-id assoc id data)))
+      (update :canvas (fn [shapes]
+                        (if (some #{id} shapes)
+                          shapes
+                          (conj shapes id))))
+      (update :shapes-by-id assoc id sdata)))
 
 (defn- process-del-canvas
-  [data {:keys [id attr value]}]
+  [data [id]]
   (-> data
       (update :canvas (fn [s] (filterv #(not= % id) s)))
       (update :shapes-by-id dissoc id)))
