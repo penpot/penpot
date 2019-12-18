@@ -34,20 +34,17 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      ;; (prn "initialize-websocket$update" file-id)
       (let [uri (str "ws://localhost:6060/sub/" file-id)]
         (assoc-in state [::ws file-id] (ws/open uri))))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; (prn "initialize-websocket$watch" file-id)
       (rx/merge
        (rx/of (fetch-users file-id))
        (->> (ws/-stream (get-in state [::ws file-id]))
             (rx/filter #(= :message (:type %)))
             (rx/map (comp t/decode :payload))
             (rx/filter #(s/valid? ::message %))
-            ;; (rx/tap #(js/console.log "ws-message" file-id %))
             (rx/map (fn [{:keys [type] :as msg}]
                       (case type
                         :who (handle-who msg)

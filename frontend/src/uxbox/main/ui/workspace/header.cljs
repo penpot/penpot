@@ -39,31 +39,7 @@
       [:span {} (str (mth/round (* 100 zoom)) "%")]
       [:span.remove-zoom {:on-click increase} "+"]]]))
 
-;; --- Header Component
-
-;; (mf/defc user
-;;   [props]
-;;   (let [open (mf/use-state false)
-;;         profile (mf/deref profile-ref)
-;;         photo (if (str/empty? (:photo profile ""))
-;;                 "/images/avatar.jpg"
-;;                 (:photo profile))]
-;;     [:div.user-zone {:on-click #(st/emit! (rt/navigate :settings/profile))
-;;                      :on-mouse-enter #(reset! open true)
-;;                      :on-mouse-leave #(reset! open false)}
-;;      [:span (:fullname profile)]
-;;      [:img {:src photo}]
-;;      (when @open
-;;        [:& user-menu])]))
-
-
-(def profile-ref
-  (-> (l/key :profile)
-      (l/derive st/state)))
-
-(def users-ref
-  (-> (l/key :workspace-users)
-      (l/derive st/state)))
+;; --- Header Users
 
 (mf/defc user-item
   [{:keys [user self?] :as props}]
@@ -73,10 +49,10 @@
                 #(st/emit! (rt/navigate :settings/profile)))}
    [:img {:src "/images/avatar.jpg"}]])
 
-(mf/defc users
+(mf/defc users-list
   [props]
-  (let [profile (mf/deref profile-ref)
-        users (mf/deref users-ref)]
+  (let [profile (mf/deref refs/profile)
+        users (mf/deref refs/workspace-users)]
     [:ul.user-multi
      [:& user-item {:user profile :self? true}]
      (for [id (->> (:active users)
@@ -84,6 +60,7 @@
        [:& user-item {:user (get-in users [:by-id id])
                       :key id}])]))
 
+;; --- Header Component
 
 (mf/defc header
   [{:keys [page layout flags] :as props}]
@@ -92,7 +69,7 @@
         on-redo #(st/emit! (udu/redo))
         on-image #(modal/show! import-image-modal {})
         ;;on-download #(udl/open! :download)
-        ]
+        file (mf/deref refs/workspace-file)]
     [:header#workspace-bar.workspace-bar
      [:div.main-icon
       [:a {:on-click #(st/emit! (rt/nav :dashboard-projects))} i/logo-icon]]
@@ -101,11 +78,9 @@
       {:alt (tr "header.sitemap")
        :class (when (contains? layout :sitemap) "selected")
        :on-click #(st/emit! (dw/toggle-layout-flag :sitemap))}
-      ;; i/project-tree
-      [:span {} "Project name / File name";(:name page)
-      ]]
+      [:span (:project-name file) " / " (:name file)]]
 
-     [:& users]
+     [:& users-list]
 
      [:div.workspace-options
       [:ul.options-btn

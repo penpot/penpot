@@ -161,12 +161,11 @@
        ;; Stop possible previous watchers and re-fetch the main page
        ;; and all project related pages.
        (rx/of ::stop-watcher
-              (dp/fetch-page page-id)
               (dp/fetch-file file-id)
               (dp/fetch-pages file-id))
 
        ;; When main page is fetched, schedule the main initialization.
-       (->> (rx/zip (rx/filter (ptk/type? ::dp/page-fetched) stream)
+       (->> (rx/zip (rx/filter (ptk/type? ::dp/pages-fetched) stream)
                     (rx/filter (ptk/type? ::dp/files-fetched) stream))
             (rx/take 1)
             (rx/do #(reset! st/loader false))
