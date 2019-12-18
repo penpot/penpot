@@ -1,7 +1,7 @@
 FROM azul/zulu-openjdk:12
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
-ENV CLOJURE_VERSION=1.10.1.469 \
+ENV CLOJURE_VERSION=1.10.1.492 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -33,4 +33,4 @@ WORKDIR /srv/uxbox/
 EXPOSE 6060
 
 ENTRYPOINT ["bash", "/entrypoint.sh"]
-CMD ["clojure", "-m", "uxbox.main"]
+CMD ["/srv/uxbox/bin/start-prod"]

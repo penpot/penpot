@@ -5,7 +5,7 @@ ARG EXTERNAL_UID=1000
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v10.16.3 \
-    CLOJURE_VERSION=1.10.1.469 \
+    CLOJURE_VERSION=1.10.1.492 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -86,10 +86,10 @@ RUN set -ex; \
 COPY files/bashrc /home/uxbox/.bashrc
 COPY files/zshrc /home/uxbox/.zshrc
 COPY files/vimrc /home/uxbox/.vimrc
-COPY files/start.sh /home/uxbox/start.sh
+COPY files/start-tmux.sh /home/uxbox/start-tmux.sh
 COPY files/tmux.conf /home/uxbox/.tmux.conf
 COPY files/entrypoint.sh /home/uxbox/
 COPY files/init.sh /home/uxbox/
 
 ENTRYPOINT ["zsh", "/home/uxbox/entrypoint.sh"]
-CMD ["/home/uxbox/start.sh"]
+CMD ["/home/uxbox/init.sh"]

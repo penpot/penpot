@@ -37,7 +37,7 @@ function run-devenv {
         start-devenv
     fi
 
-    docker exec -ti uxboxdev-main /home/uxbox/start.sh;
+    docker exec -ti uxboxdev-main /home/uxbox/start-tmux.sh
 }
 
 function run-all-tests {

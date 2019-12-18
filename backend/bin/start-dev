@@ -8,7 +8,6 @@ if [ ! -e ~/local/.fixtures-loaded ]; then
     touch ~/local/.fixtures-loaded
 fi
 
-clojure -J-XX:-OmitStackTraceInFastThrow -m uxbox.main
-
+clojure ${CLOJURE_OPTS} -m uxbox.main
 
 
