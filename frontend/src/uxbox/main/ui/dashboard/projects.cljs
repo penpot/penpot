@@ -160,9 +160,9 @@
        (str (tr "ds.updated-at" (dt/timeago (:modified-at file))))]]
 
      [:div.project-th-actions
-      [:div.project-th-icon.pages
-       i/page
-       #_[:span (:total-pages project)]]
+      ;; [:div.project-th-icon.pages
+      ;;  i/page
+      ;;  #_[:span (:total-pages project)]]
       #_[:div.project-th-icon.comments
          i/chat
          [:span "0"]]
@@ -188,11 +188,11 @@
                     #_(udl/open! :create-project))
         ]
     [:section.dashboard-grid
-     [:h2 (tr "ds.projects.file-name")]
+     ;; [:h2 (tr "ds.projects.file-name")]
      [:div.dashboard-grid-content
       [:div.dashboard-grid-row
        [:div.grid-item.add-project #_{:on-click on-click}
-        [:span (tr "ds.project-file")]]
+        [:span (tr "ds.new-file")]]
        (for [item files]
          [:& grid-item {:file item :key (:id item)}])]]]))
 

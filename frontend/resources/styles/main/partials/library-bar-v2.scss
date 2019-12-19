@@ -6,12 +6,12 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .library-bar {
-  background-color: $color-white;
+  background-color: $primary-ui-bg;
   bottom: 0;
   height: 100%;
   left: 0;
   position: fixed;
-  width: 230px;
+  width: 250px;
 
   .library-bar-inside {
     display: flex;

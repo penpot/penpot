@@ -83,13 +83,14 @@
     .dashboard-grid-row {
       display: flex;
       flex-wrap: wrap;
-      margin-bottom: auto;
+      justify-content: center;
+      margin: auto;
       width: 100%;
     }
 
     .grid-item {
       align-items: center;
-      border-radius: $br-small;
+      border-radius: $br-medium;
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -137,7 +138,7 @@
         }
 
         span.date {
-          color: $medium-ui-text;
+          color: $soft-ui-text;
           font-size: $fs12;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -147,28 +148,42 @@
       }
 
       &.add-project {
-        border: 1px dashed $color-gray-light;
+        border: 2px dashed $color-gray-light;
+        box-shadow: inset 0 0 0 transparent;
         justify-content: center;
 
         span {
-          color: $intense-ui-text;
-          font-size: $fs15;
+          background-color: $color-primary-light;
+          border-radius: 5px;
+          color: $color-white;
+          font-size: $fs24;
+          padding: $small $medium;
         }
 
         &:hover {
-          background-color: $color-white;
-          border: 2px solid $main-ui-color;
+          background-color: $color-primary-light;
+          border: 2px solid $color-white;
+
+          span {
+            color: $color-white;
+          }
+
         }
 
       }
 
       // PROJECTS, ELEMENTS & ICONS GRID
       &.project-th {
-        background-color: $color-white;
-        border: 2px solid $dark-ui-bg;
+        background-color: $primary-ui-bg;
+        border-bottom: 2px solid lighten($soft-ui-border, 12%);
 
         &:hover {
           border-color: $main-ui-color;
+
+          h3 {
+            color: $main-ui-color;
+          }
+
         }
 
         .project-th-actions {
@@ -189,7 +204,7 @@
           }
 
           span {
-            color: $color-black;
+            color: $color-gray-light;
           }
 
           .project-th-icon {
@@ -227,7 +242,7 @@
                 transform: scale(1.4);
 
                 svg {
-                  fill: $soft-ui-icons;
+                  fill: $color-primary;
                 }
 
               }
@@ -296,7 +311,7 @@
 
   // STYLES FOR LIBRARIES
   &.library {
-    padding: $medium $medium $medium 230px;
+    padding: $medium $medium $medium 250px;
   }
 
 }
@@ -305,8 +320,8 @@
   background-position: center;
   background-size: auto 80%;
   background-repeat: no-repeat;
-  border-top-left-radius: $br-small;
-  border-top-right-radius: $br-small;
+  border-top-left-radius: $br-medium;
+  border-top-right-radius: $br-medium;
   height: 70%;
   overflow: hidden;
   position: relative;
