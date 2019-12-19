@@ -17,7 +17,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding-top: 60px;
+    padding-top: 40px;
 
     .library-tabs {
       align-items: center;
@@ -61,20 +61,23 @@
       padding-bottom: 20px;
 
       li {
-        border-bottom: 1px solid $secondary-ui-bg;
         cursor: pointer;
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
-        padding: 10px;
+        padding: $medium;
 
         span.element-title {
-          color: $color-gray-dark;
-          font-weight: bold;
-          margin-bottom: 5px;
+          color: $intense-ui-text;
+          font-size: $fs14;
           overflow-x: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+  
+        &.recent-projects {
+          border-top: 1px solid $dark-ui-bg;
+          border-bottom: 1px solid $dark-ui-bg;
         }
 
         input.element-title {
@@ -101,13 +104,17 @@
           font-style: italic;
         }
 
-        &:hover,
-        &.current {
+        &:hover {
           background-color: $main-ui-color;
+          color: $intense-ui-text;
+        }
+
+        &.current {
 
           span.element-title,
           .element-subtitle {
-            color: $color-white;
+            color: $intense-ui-text;
+            font-weight: bold;
           }
           input.element-title {
             color: $color-gray-dark;

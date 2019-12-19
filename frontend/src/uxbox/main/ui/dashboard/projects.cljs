@@ -241,8 +241,7 @@
         [:a.btn-primary #_{:on-click #(st/emit! di/create-collection)}
          "new project +"]]
 
-       [:li {:style {:marginBottom "20px"}
-             :on-click #(st/emit! (udp/go-to-project nil))
+       [:li.recent-projects {:on-click #(st/emit! (udp/go-to-project nil))
              :class-name (when (nil? id) "current")}
         [:span.element-title "Recent"]]
 
