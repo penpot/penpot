@@ -134,25 +134,6 @@
 
         }
 
-        &.view-mode {
-          background-color: $intense-ui-icons;
-
-          svg {
-            fill: $secondary-ui-bg;
-          }
-
-          &:hover {
-            background-color: $color-white;
-            border-color: $soft-ui-border;
-
-            svg {
-              fill: $intense-ui-icons;
-            }
-
-          }
-
-        }
-
       }
 
     }
@@ -274,6 +255,46 @@
 
       svg {
         fill: $color-white;
+      }
+
+    }
+
+  }
+
+}
+
+.secondary-options {
+  align-items: center;
+  display: flex;
+
+  .view-mode {
+    background-color: $intense-ui-icons;
+    align-items: center;
+    border-radius: $br-small;
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    height: 30px;
+    justify-content: center;
+    margin: 0 $small;
+    position: relative;
+    width: 30px;
+
+    a {
+      padding-top: 6px;
+    }
+
+    svg {
+      fill: $secondary-ui-bg;
+      height: 18px;
+      width: 18px;
+    }
+
+    &:hover {
+      background-color: $main-ui-color;
+
+      svg {
+        fill: $soft-ui-icons;
       }
 
     }

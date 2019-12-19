@@ -176,16 +176,16 @@
         {:alt (tr "header.grid-snap")
          :class (when (contains? flags :grid-snap) "selected")
          :on-click (partial toggle :grid-snap)}
-        i/grid-snap]]
+        i/grid-snap]]]
       ;; [:li.tooltip.tooltip-bottom
       ;; {:alt (tr "header.align")}
       ;; i/alignment]]
-      [:ul.options-btn
-       [:li.tooltip.tooltip-bottom.view-mode
-        {:alt (tr "header.view-mode")
+     ;;[:& user]
+     [:div.secondary-options
+       [:& zoom-widget]
+       [:a.tooltip.tooltip-bottom.view-mode
+       {:alt (tr "header.view-mode")
          ;; :on-click #(st/emit! (dw/->OpenView (:id page)))
          }
-        i/play]]]
-     ;;[:& user]
-     [:& zoom-widget]
+       i/play]]
      ]))
