@@ -41,24 +41,25 @@
 
 ;; --- Header Users
 
-(mf/defc user-item
+(mf/defc user-widget
   [{:keys [user self?] :as props}]
   [:li.tooltip.tooltip-bottom
    {:alt (:fullname user)
     :on-click (when self?
                 #(st/emit! (rt/navigate :settings/profile)))}
-   [:img {:src "/images/avatar.jpg"}]])
+   [:img {:style {:border-color (:color user)}
+          :src "/images/avatar.jpg"}]])
 
-(mf/defc users-list
+(mf/defc active-users
   [props]
   (let [profile (mf/deref refs/profile)
         users (mf/deref refs/workspace-users)]
     [:ul.user-multi
-     [:& user-item {:user profile :self? true}]
+     [:& user-widget {:user profile :self? true}]
      (for [id (->> (:active users)
                    (remove #(= % (:id profile))))]
-       [:& user-item {:user (get-in users [:by-id id])
-                      :key id}])]))
+       [:& user-widget {:user (get-in users [:by-id id])
+                        :key id}])]))
 
 ;; --- Header Component
 
@@ -80,7 +81,7 @@
        :on-click #(st/emit! (dw/toggle-layout-flag :sitemap))}
       [:span (:project-name file) " / " (:name file)]]
 
-     [:& users-list]
+     [:& active-users]
 
      [:div.workspace-options
       [:ul.options-btn

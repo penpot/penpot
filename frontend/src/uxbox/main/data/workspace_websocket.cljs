@@ -24,6 +24,8 @@
 
 (declare fetch-users)
 (declare handle-who)
+(declare handle-pointer-update)
+(declare handle-page-snapshot)
 
 (s/def ::type keyword?)
 (s/def ::message
@@ -35,29 +37,37 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [uri (str "ws://localhost:6060/sub/" file-id)]
-        (assoc-in state [::ws file-id] (ws/open uri))))
+        (assoc-in state [:ws file-id] (ws/open uri))))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/merge
-       (rx/of (fetch-users file-id))
-       (->> (ws/-stream (get-in state [::ws file-id]))
-            (rx/filter #(= :message (:type %)))
-            (rx/map (comp t/decode :payload))
-            (rx/filter #(s/valid? ::message %))
-            (rx/map (fn [{:keys [type] :as msg}]
-                      (case type
-                        :who (handle-who msg)
-                        ::unknown))))))))
+      (let [wsession (get-in state [:ws file-id])]
+        (->> (rx/merge
+              (rx/of (fetch-users file-id))
+              (->> (ws/-stream wsession)
+                   (rx/filter #(= :message (:type %)))
+                   (rx/map (comp t/decode :payload))
+                   (rx/filter #(s/valid? ::message %))
+                   (rx/map (fn [{:keys [type] :as msg}]
+                             (case type
+                               :who (handle-who msg)
+                               :pointer-update (handle-pointer-update msg)
+                               :page-snapshot (handle-page-snapshot msg)
+                               ::unknown)))))
+
+
+             (rx/take-until
+              (rx/filter #(= ::finalize %) stream)))))))
 
 ;; --- Finalize Websocket
 
 (defn finalize
   [file-id]
   (ptk/reify ::finalize
-    ptk/EffectEvent
-    (effect [_ state stream]
-      (ws/-close (get-in state [::ws file-id])))))
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (ws/-close (get-in state [:ws file-id]))
+      (rx/of ::finalize))))
 
 ;; --- Fetch Workspace Users
 
@@ -93,3 +103,25 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-users :active] users))))
+
+(defn handle-pointer-update
+  [{:keys [user-id page-id x y] :as msg}]
+  (ptk/reify ::handle-pointer-update
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-users :pointer user-id]
+                {:page-id page-id
+                 :user-id user-id
+                 :x x
+                 :y y}))))
+
+(defn handle-page-snapshot
+  [{:keys [user-id page-id version operations :as msg]}]
+  (ptk/reify ::handle-page-snapshot
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-page :version] version)
+          (assoc-in [:pages page-id :version] version)
+          (update-in [:pages-data page-id] cp/process-ops operations)
+          (update :workspace-data cp/process-ops operations)))))

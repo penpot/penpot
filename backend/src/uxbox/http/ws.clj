@@ -48,7 +48,7 @@
   (fn [ws message] (:type message)))
 
 (defmethod handle-message :connect
-  [ws {:keys [file-id user-id] :as message}]
+  [{:keys [file-id user-id] :as ws} message]
   (let [local (swap! state assoc-in [file-id user-id] ws)
         sessions (get local file-id)
         message {:type :who :users (set (keys sessions))}]
@@ -66,22 +66,35 @@
   (let [users (keys (get @state file-id))]
     (send! ws {:type :who :users (set users)})))
 
-;; --- Handler
+(defmethod handle-message :pointer-update
+  [{:keys [user-id file-id] :as ws} message]
+  (let [sessions (->> (vals (get @state file-id))
+                      (remove #(= user-id (:user-id %))))
+        message (assoc message :user-id user-id)]
+    (run! #(send! % message) sessions)))
 
-(declare start-eventbus-consumer!)
+(defn- on-eventbus-message
+  [{:keys [file-id user-id] :as ws} {:keys [body] :as message}]
+  (send! ws body))
+
+(defn- start-eventbus-consumer!
+  [vsm ws fid]
+  (let [topic (str "internal.uxbox.file." fid)]
+    (ve/consumer vsm topic #(on-eventbus-message ws %2))))
+
+;; --- Handler
 
 (defn handler
   [{:keys [user] :as req}]
   (letfn [(on-init [ws]
             (let [vsm (::vw/execution-context req)
                   fid (get-in req [:path-params :file-id])
+                  ws  (assoc ws
+                             :user-id user
+                             :file-id fid)
                   sem (start-eventbus-consumer! vsm ws fid)]
-
-              (handle-message ws {:type :connect :file-id fid :user-id user})
-              (assoc ws
-                     ::sem sem
-                     :user-id user
-                     :file-id fid)))
+              (handle-message ws {:type :connect})
+              (assoc ws ::sem sem)))
 
           (on-message [ws message]
             (try
@@ -102,16 +115,6 @@
         (assoc :on-init on-init
                :on-message on-message
                :on-close on-close))))
-
-(defn- on-eventbus-message
-  [ws {:keys [body] :as message}]
-  ;; TODO
-  (ws-send! ws body))
-
-(defn- start-eventbus-consumer!
-  [vsm ws fid]
-  (let [topic (str "internal.uxbox.file." fid)]
-    (ve/consumer vsm topic #(on-eventbus-message ws %2))))
 
 ;; --- Internal (vertx api) (experimental)
 

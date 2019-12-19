@@ -97,18 +97,18 @@
   [{:keys [file-id page-id] :as props}]
 
   (mf/use-effect
+   {:deps #js [(str file-id)]
+    :fn (fn []
+          (st/emit! (dw/initialize-ws file-id))
+          #(st/emit! (dw/finalize-ws file-id)))})
+
+  (mf/use-effect
    {:deps #js [(str file-id)
                (str page-id)]
     :fn (fn []
           (let [sub (shortcuts/init)]
             (st/emit! (dw/initialize file-id page-id))
             #(rx/cancel! sub)))})
-
-  (mf/use-effect
-   {:deps #js [(str file-id)]
-    :fn (fn []
-          (st/emit! (dws/initialize file-id))
-          #(st/emit! (dws/finalize file-id)))})
 
   (let [layout (mf/deref refs/workspace-layout)
         file   (mf/deref refs/workspace-file)

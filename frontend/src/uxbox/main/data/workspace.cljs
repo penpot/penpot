@@ -30,7 +30,9 @@
    [uxbox.util.spec :as us]
    [uxbox.util.transit :as t]
    [uxbox.util.time :as dt]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.util.uuid :as uuid]
+   [vendor.randomcolor]))
+
 
 ;; TODO: temporal workaround
 (def clear-ruler nil)
@@ -114,6 +116,128 @@
 (defn interrupt? [e] (= e :interrupt))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Websockets Events
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Initialize WebSocket
+
+(declare fetch-users)
+(declare handle-who)
+(declare handle-pointer-update)
+(declare handle-page-snapshot)
+(declare shapes-changes-commited)
+
+(s/def ::type keyword?)
+(s/def ::message
+  (s/keys :req-un [::type]))
+
+(defn initialize-ws
+  [file-id]
+  (ptk/reify ::initialize
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [uri (str "ws://localhost:6060/sub/" file-id)]
+        (assoc-in state [:ws file-id] (ws/open uri))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [wsession (get-in state [:ws file-id])]
+        (->> (rx/merge
+              (rx/of (fetch-users file-id))
+              (->> (ws/-stream wsession)
+                   (rx/filter #(= :message (:type %)))
+                   (rx/map (comp t/decode :payload))
+                   (rx/filter #(s/valid? ::message %))
+                   (rx/map (fn [{:keys [type] :as msg}]
+                             (case type
+                               :who (handle-who msg)
+                               :pointer-update (handle-pointer-update msg)
+                               :page-snapshot (handle-page-snapshot msg)
+                               ::unknown)))))
+
+
+             (rx/take-until
+              (rx/filter #(= ::finalize %) stream)))))))
+
+;; --- Finalize Websocket
+
+(defn finalize-ws
+  [file-id]
+  (ptk/reify ::finalize
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (ws/-close (get-in state [:ws file-id]))
+      (rx/of ::finalize))))
+
+;; --- Fetch Workspace Users
+
+(declare users-fetched)
+
+(defn fetch-users
+  [file-id]
+  (ptk/reify ::fetch-users
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :project-file-users {:file-id file-id})
+           (rx/map users-fetched)))))
+
+(defn users-fetched
+  [users]
+  (ptk/reify ::users-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce (fn [state user]
+                (update-in state [:workspace-users :by-id (:id user)] merge user))
+              state
+              users))))
+
+;; --- Handle: Who
+
+;; TODO: assign color
+
+(defn- assign-user-color
+  [state user-id]
+  (let [user (get-in state [:workspace-users :by-id user-id])
+        color (js/randomcolor)
+        user (if (string? (:color user))
+               user
+               (assoc user :color color))]
+    (prn "assign-user-color" user-id)
+    (assoc-in state [:workspace-users :by-id user-id] user)))
+
+(defn handle-who
+  [{:keys [users] :as msg}]
+  (s/assert set? users)
+  (ptk/reify ::handle-who
+    ptk/UpdateEvent
+    (update [_ state]
+      (prn "handle-who" users)
+      (as-> state $$
+        (assoc-in $$ [:workspace-users :active] users)
+        (reduce assign-user-color $$ users)))))
+
+(defn handle-pointer-update
+  [{:keys [user-id page-id x y] :as msg}]
+  (ptk/reify ::handle-pointer-update
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-users :pointer user-id]
+                {:page-id page-id
+                 :user-id user-id
+                 :x x
+                 :y y}))))
+
+(defn handle-page-snapshot
+  [{:keys [user-id page-id version operations] :as msg}]
+  (ptk/reify ::handle-page-snapshot
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [local (:workspace-local state)]
+        (when (= (:page-id local) page-id)
+          (prn "handle-page-snapshot" msg)
+          (rx/of (shapes-changes-commited msg)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General workspace events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -132,7 +256,6 @@
    :tooltip nil})
 
 (declare initialized)
-;; (declare watch-events)
 
 (defn initialize
   "Initialize the workspace state."
@@ -147,9 +270,6 @@
                          :page-id page-id)]
         (-> state
             (assoc :workspace-layout default-layout)
-            ;; (update :workspace-layout
-            ;;         (fn [data]
-            ;;           (if (nil? data) default-layout data)))
             (assoc :workspace-local local))))
 
     ptk/WatchEvent
@@ -172,16 +292,18 @@
             (rx/mapcat #(rx/of (initialized file-id page-id)
                                #_(initialize-alignment page-id))))
 
-       ;; When workspace is initialized, run the event watchers.
-       (->> (rx/filter (ptk/type? ::initialized) stream)
-            (rx/take 1)
-            (rx/ignore))))
+       (->> stream
+            (rx/filter uxbox.main.ui.workspace.streams/pointer-event?)
+            (rx/sample 150)
+            (rx/tap (fn [{:keys [pt] :as event}]
+                      (let [msg {:type :pointer-update
+                                 :page-id page-id
+                                 :x (:x pt)
+                                 :y (:y pt)}]
+                        (ws/-send (get-in state [:ws file-id]) (t/encode msg)))))
+            (rx/ignore)
+            (rx/take-until (rx/filter #(= ::stop-watcher %) stream)))))))
 
-    ptk/EffectEvent
-    (effect [_ state stream]
-      ;; Optimistic prefetch of projects if them are not already fetched
-      #_(when-not (seq (:projects state))
-        (st/emit! (dp/fetch-projects))))))
 
 (defn- initialized
   [file-id page-id]
@@ -212,7 +334,6 @@
                   (disj flags flag)
                   (conj flags flag)))))))
 
-
 ;; --- Workspace Flags
 
 (defn activate-flag
@@ -234,7 +355,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-local :flags] disj flag))))
-
 
 (defn toggle-flag
   [flag]
@@ -851,8 +971,6 @@
           (rx/of (commit-shapes-changes changes)
                  #(dissoc state ::tmp-changes)))))))
 
-(declare shapes-changes-commited)
-
 (defn commit-shapes-changes
   [operations]
   (s/assert ::cp/operations operations)
@@ -871,21 +989,23 @@
                     :version (:version page)
                     :operations operations}]
         (->> (rp/mutation :update-project-page params)
+             (rx/tap #(prn "KAKAKAKA" %))
              (rx/map shapes-changes-commited))))))
 
 (s/def ::shapes-changes-commited
-  (s/keys :req-un [::id ::version ::cp/operations]))
+  (s/keys :req-un [::page-id ::version ::cp/operations]))
 
 (defn shapes-changes-commited
-  [{:keys [id version operations] :as params}]
+  [{:keys [page-id version operations] :as params}]
+  (prn "shapes-changes-commited" params)
   (s/assert ::shapes-changes-commited params)
   (ptk/reify ::shapes-changes-commited
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc-in [:workspace-page :version] version)
-          (assoc-in [:pages id :version] version)
-          (update-in [:pages-data id] cp/process-ops operations)
+          (assoc-in [:pages page-id :version] version)
+          (update-in [:pages-data page-id] cp/process-ops operations)
           (update :workspace-data cp/process-ops operations)))))
 
 ;; --- Start shape "edition mode"
