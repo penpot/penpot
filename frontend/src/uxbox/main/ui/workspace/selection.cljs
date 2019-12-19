@@ -26,10 +26,10 @@
 (def ^:private +circle-props+
   {:r 6
    :style {:fillOpacity "1"
-           :strokeWidth "1px"
+           :strokeWidth "2px"
            :vectorEffect "non-scaling-stroke"}
-   :fill "#31e6e0"
-   :stroke "#28c4d4"})
+   :fill "rgba(49,239,184,.7)"
+   :stroke "#31EFB8"})
 
 ;; --- Resize Implementation
 
@@ -90,10 +90,10 @@
     :on-mouse-down on-click
     :r r
     :style {:fillOpacity "1"
-            :strokeWidth "1px"
+            :strokeWidth "2px"
             :vectorEffect "non-scaling-stroke"}
-    :fill "#31e6e0"
-    :stroke "#28c4d4"
+   :fill "rgba(49,239,184,.7)"
+   :stroke "#31EFB8"
     :cx cx
     :cy cy}])
 
@@ -105,8 +105,8 @@
      [:rect.main {:x x1 :y y1
                   :width width
                   :height height
-                  :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-                  :style {:stroke "#333" :fill "transparent"
+                  :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
+                  :style {:stroke "#31EFB8" :fill "transparent"
                           :stroke-opacity "1"}}]
      [:& control-item {:class "top"
                        :on-click #(on-click :top %)
@@ -183,8 +183,8 @@
                    :r (/ 6.0 zoom)
                    :key index
                    :on-mouse-down #(on-mouse-down % index)
-                   :fill "#31e6e0"
-                   :stroke "#28c4d4"
+                   :fill "rgba(49,239,184,.7)"
+                   :stroke "#31EFB8"
                    :style {:cursor "pointer"}}])])))
 
 ;; TODO: add specs for clarity
@@ -209,9 +209,9 @@
                   :width width
                   :height height
                   ;; :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-                  :style {:stroke "#333"
+                  :style {:stroke "#31EFB8"
                           :stroke-width "0.5"
-                          :stroke-opacity "0.5"
+                          :stroke-opacity "1"
                           :fill "transparent"}}]]))
 
 (mf/defc single-selection-handlers

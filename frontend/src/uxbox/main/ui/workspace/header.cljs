@@ -85,11 +85,41 @@
 
      [:div.workspace-options
       [:ul.options-btn
+      ;  [:li.tooltip.tooltip-bottom
+      ;   {:alt (tr "header.draw-tools")
+      ;    :class (when (contains? layout :drawtools) "selected")
+      ;    :on-click #(st/emit! (dw/toggle-layout-flag :drawtools))}
+      ;   i/shapes]
        [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.draw-tools")
-         :class (when (contains? layout :drawtools) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :drawtools))}
-        i/shapes]
+        {:alt (tr "header.color-palette")
+         :class (when (contains? layout :colorpalette) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        i/artboard]
+       [:li.tooltip.tooltip-bottom
+        {:alt (tr "header.color-palette")
+         :class (when (contains? layout :colorpalette) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        i/box]
+       [:li.tooltip.tooltip-bottom
+        {:alt (tr "header.color-palette")
+         :class (when (contains? layout :colorpalette) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        i/circle]
+       [:li.tooltip.tooltip-bottom
+        {:alt (tr "header.color-palette")
+         :class (when (contains? layout :colorpalette) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        i/text]
+       [:li.tooltip.tooltip-bottom
+        {:alt (tr "header.color-palette")
+         :class (when (contains? layout :colorpalette) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        i/curve]
+       [:li.tooltip.tooltip-bottom
+        {:alt (tr "header.color-palette")
+         :class (when (contains? layout :colorpalette) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        i/pencil]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.color-palette")
          :class (when (contains? layout :colorpalette) "selected")
@@ -100,31 +130,29 @@
          :class (when (contains? layout :icons) "selected")
          :on-click #(st/emit! (dw/toggle-layout-flag :icons))}
         i/icon-set]
-       [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.layers")
-         :class (when (contains? layout :layers) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :layers))}
-        i/layers]
-       [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.element-options")
-         :class (when (contains? layout :element-options) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :element-options))}
-        i/options]
+      ;  [:li.tooltip.tooltip-bottom
+      ;   {:alt (tr "header.layers")
+      ;    :class (when (contains? layout :layers) "selected")
+      ;    :on-click #(st/emit! (dw/toggle-layout-flag :layers))}
+      ;   i/layers]
+      ;  [:li.tooltip.tooltip-bottom
+      ;   {:alt (tr "header.element-options")
+      ;    :class (when (contains? layout :element-options) "selected")
+      ;    :on-click #(st/emit! (dw/toggle-layout-flag :element-options))}
+      ;   i/options]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.document-history")
          :class (when (contains? layout :document-history) "selected")
          :on-click #(st/emit! (dw/toggle-layout-flag :document-history))}
-        i/undo-history]]
-      [:ul.options-btn
-       [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.undo")
-         :on-click on-undo}
-        i/undo]
-       [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.redo")
-         :on-click on-redo}
-        i/redo]]
-      [:ul.options-btn
+        i/undo-history]
+      ;  [:li.tooltip.tooltip-bottom
+      ;   {:alt (tr "header.undo")
+      ;    :on-click on-undo}
+      ;   i/undo]
+      ;  [:li.tooltip.tooltip-bottom
+      ;   {:alt (tr "header.redo")
+      ;    :on-click on-redo}
+      ;   i/redo]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.download")
          ;; :on-click on-download
@@ -133,8 +161,7 @@
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.image")
          :on-click on-image}
-        i/image]]
-      [:ul.options-btn
+        i/image]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.rules")
          :class (when (contains? flags :rules) "selected")
