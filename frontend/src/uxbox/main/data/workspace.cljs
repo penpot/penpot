@@ -202,7 +202,6 @@
         user (if (string? (:color user))
                user
                (assoc user :color color))]
-    (prn "assign-user-color" user-id)
     (assoc-in state [:workspace-users :by-id user-id] user)))
 
 (defn handle-who
@@ -211,7 +210,6 @@
   (ptk/reify ::handle-who
     ptk/UpdateEvent
     (update [_ state]
-      (prn "handle-who" users)
       (as-> state $$
         (assoc-in $$ [:workspace-users :active] users)
         (reduce assign-user-color $$ users)))))
@@ -234,7 +232,6 @@
     (watch [_ state stream]
       (let [local (:workspace-local state)]
         (when (= (:page-id local) page-id)
-          (prn "handle-page-snapshot" msg)
           (rx/of (shapes-changes-commited msg)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -989,7 +986,6 @@
                     :version (:version page)
                     :operations operations}]
         (->> (rp/mutation :update-project-page params)
-             (rx/tap #(prn "KAKAKAKA" %))
              (rx/map shapes-changes-commited))))))
 
 (s/def ::shapes-changes-commited
@@ -997,7 +993,6 @@
 
 (defn shapes-changes-commited
   [{:keys [page-id version operations] :as params}]
-  (prn "shapes-changes-commited" params)
   (s/assert ::shapes-changes-commited params)
   (ptk/reify ::shapes-changes-commited
     ptk/UpdateEvent
