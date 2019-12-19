@@ -242,7 +242,7 @@
 
 (declare initialize-alignment)
 
-(def default-layout #{:sitemap :drawtools :layers :element-options :rules})
+(def default-layout #{:sitemap :layers :element-options :rules})
 
 (def workspace-default
   {:zoom 1

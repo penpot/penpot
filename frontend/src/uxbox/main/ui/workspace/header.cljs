@@ -70,7 +70,12 @@
         on-redo #(st/emit! (udu/redo))
         on-image #(modal/show! import-image-modal {})
         ;;on-download #(udl/open! :download)
-        file (mf/deref refs/workspace-file)]
+        file (mf/deref refs/workspace-file)
+        selected-drawtool (mf/deref refs/selected-drawing-tool)
+        select-drawtool #(st/emit! :interrupt
+                                   (dw/deactivate-ruler)
+                                   (dw/select-for-drawing %))]
+
     [:header#workspace-bar.workspace-bar
      [:div.main-icon
       [:a {:on-click #(st/emit! (rt/nav :dashboard-projects))} i/logo-icon]]
@@ -85,40 +90,35 @@
 
      [:div.workspace-options
       [:ul.options-btn
-      ;  [:li.tooltip.tooltip-bottom
-      ;   {:alt (tr "header.draw-tools")
-      ;    :class (when (contains? layout :drawtools) "selected")
-      ;    :on-click #(st/emit! (dw/toggle-layout-flag :drawtools))}
-      ;   i/shapes]
        [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.color-palette")
-         :class (when (contains? layout :colorpalette) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        {:alt (tr "ds.help.canvas")
+         :class (when (= selected-drawtool :canvas) "selected")
+         :on-click (partial select-drawtool :canvas)}
         i/artboard]
        [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.color-palette")
-         :class (when (contains? layout :colorpalette) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        {:alt (tr "ds.help.rect")
+         :class (when (= selected-drawtool :rect) "selected")
+         :on-click (partial select-drawtool :rect)}
         i/box]
        [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.color-palette")
-         :class (when (contains? layout :colorpalette) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        {:alt (tr "ds.help.circle")
+         :class (when (= selected-drawtool :circle) "selected")
+         :on-click (partial select-drawtool :circle)}
         i/circle]
        [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.color-palette")
-         :class (when (contains? layout :colorpalette) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        {:alt (tr "ds.help.text")
+         :class (when (= selected-drawtool :text) "selected")
+         :on-click (partial select-drawtool :text)}
         i/text]
        [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.color-palette")
-         :class (when (contains? layout :colorpalette) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        {:alt (tr "ds.help.path")
+         :class (when (= selected-drawtool :path) "selected")
+         :on-click (partial select-drawtool :path)}
         i/curve]
        [:li.tooltip.tooltip-bottom
-        {:alt (tr "header.color-palette")
-         :class (when (contains? layout :colorpalette) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        {:alt (tr "ds.help.curve")
+         :class (when (= selected-drawtool :curve) "selected")
+         :on-click (partial select-drawtool :curve)}
         i/pencil]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "header.color-palette")

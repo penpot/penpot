@@ -8,7 +8,6 @@
 (ns uxbox.main.ui.workspace.sidebar
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.ui.workspace.sidebar.drawtools :refer [draw-toolbox]]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [uxbox.main.ui.workspace.sidebar.icons :refer [icons-toolbox]]
    [uxbox.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
@@ -36,8 +35,6 @@
   [{:keys [layout page] :as props}]
   [:aside#settings-bar.settings-bar
    [:div.settings-bar-inside
-    (when (contains? layout :drawtools)
-      [:& draw-toolbox {:layout layout}])
     (when (contains? layout :element-options)
       [:& options-toolbox {:page page}])
     #_(when (contains? layout :icons)
