@@ -201,15 +201,15 @@
   }
 
   .input-select {
-    color: $intense-ui-text;
+    color: $soft-ui-text;
 
     &:focus {
-      color: darken($intense-ui-text, 8%);
+      color: lighten($soft-ui-text, 8%);
     }
 
     option {
       color: $intense-ui-text;
-      background: $secondary-ui-bg;
+      background: $color-white;
       font-size: $fs12;
     }
   }

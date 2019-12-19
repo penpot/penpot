@@ -79,9 +79,9 @@
   }
 
   .dropdown {
-    background-color: $secondary-ui-bg;
+    background-color: $color-white;
     border-radius: $br-small;
-    border: 1px solid $soft-ui-border;
+    border: 1px solid $color-gray-10;
     min-width: 150px;
     padding: 0 $small;
     position: absolute;
@@ -96,13 +96,13 @@
       padding: $small 0;
 
       svg {
-        fill: $medium-ui-text;
+        fill: $color-gray-40;
         height: 12px;
         width: 12px;
       }
 
       span {
-        color: $medium-ui-text;
+        color: $color-gray-40;
       }
 
       &:hover {
