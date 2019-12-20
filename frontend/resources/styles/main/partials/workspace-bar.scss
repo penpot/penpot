@@ -160,6 +160,11 @@
         padding: 0 25px;
         position: relative;
 
+        span {
+          color: $medium-ui-text;
+          font-size: $fs15;
+        }
+
         .add-zoom,
         .remove-zoom {
           align-items: center;

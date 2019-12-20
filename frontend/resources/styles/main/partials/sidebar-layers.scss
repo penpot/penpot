@@ -140,7 +140,14 @@
         align-items: center;
         display: flex;
         flex-shrink: 0;
-        width: 62px;
+        width: 55px;
+
+        .block-element {
+
+          svg {
+            fill: $medium-ui-icons;
+          }
+        }
       }
 
       .element-icon {
@@ -156,7 +163,7 @@
         width: 12px;
 
         svg {
-          fill: $intense-ui-icons;
+          fill: $medium-ui-icons;
           transform: rotate(90deg);
           width: 10px;
         }
@@ -168,7 +175,7 @@
         &:hover {
 
           svg {
-            fill: $medium-ui-icons;
+            fill: $intense-ui-icons;
           }
 
         }
@@ -221,7 +228,8 @@
         &:hover {
           background-color: $main-ui-color;
 
-          .element-icon {
+          .element-icon,
+          .element-actions {
             svg {
               fill: $soft-ui-icons;
             }
@@ -244,7 +252,8 @@
       &:hover {
         background-color: $main-ui-color;
 
-        .element-icon {
+        .element-icon,
+        .element-actions {
 
           svg {
             fill: $soft-ui-icons;
