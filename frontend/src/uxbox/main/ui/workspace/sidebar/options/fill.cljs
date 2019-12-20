@@ -18,7 +18,7 @@
    [uxbox.util.i18n :refer [tr]]))
 
 (mf/defc fill-menu
-  [{:keys [menu shape]}]
+  [{:keys [shape] :as props}]
   (letfn [(change-attrs [attrs]
             (st/emit! (udw/update-shape-attrs (:id shape) attrs)))
           (on-color-change [event]
@@ -39,7 +39,7 @@
                          :transparent? true}]
               (modal/show! colorpicker-modal props)))]
     [:div.element-set
-     [:div.element-set-title (:name menu)]
+     [:div.element-set-title (tr "element.fill")]
      [:div.element-set-content
 
       [:span (tr "ds.color")]

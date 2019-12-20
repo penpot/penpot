@@ -26,7 +26,7 @@
 (declare show-color-picker)
 
 (mf/defc stroke-menu
-  [{:keys [menu shape] :as props}]
+  [{:keys [shape] :as props}]
   (let [local (mf/use-state {})
         on-border-lock #(swap! local update :border-lock not)
         on-stroke-style-change #(on-stroke-style-change % shape)
@@ -37,7 +37,7 @@
         on-opacity-change #(on-opacity-change % shape)
         show-color-picker #(show-color-picker % shape)]
     [:div.element-set
-     [:div.element-set-title (:name menu)]
+     [:div.element-set-title (tr "element.stroke")]
      [:div.element-set-content
       [:span (tr "ds.style")]
       [:div.row-flex

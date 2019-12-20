@@ -22,79 +22,44 @@
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.spec :refer [color?]]))
 
-(mf/defc measures-menu
-  [{:keys [menu page] :as props}]
+(mf/defc metadata-options
+  [{:keys [page] :as props}]
   (let [metadata (:metadata page)
-        metadata (merge c/page-metadata metadata)]
-    (letfn [(on-size-change [event attr]
-              #_(let [value (-> (dom/event->value event)
-                              (parse-int nil))]
-                (st/emit! (->> (assoc metadata attr value)
-                               (udp/update-metadata (:id page))))))
+        change-color
+        (fn [color]
+          #_(st/emit! (->> (assoc metadata :background color)
+                           (udp/update-metadata (:id page)))))
+        on-color-change
+        (fn [event]
+          (let [value (dom/event->value event)]
+            (change-color value)))
 
-            (change-color [color]
-              #_(st/emit! (->> (assoc metadata :background color)
-                             (udp/update-metadata (:id page)))))
+        show-color-picker
+        (fn [event]
+          (let [x (.-clientX event)
+                y (.-clientY event)
+                props {:x x :y y
+                       :default "#ffffff"
+                       :value (:background metadata)
+                       :transparent? true
+                       :on-change change-color}]
+            (modal/show! colorpicker-modal props)))]
 
-            (on-color-change [event]
-              (let [value (dom/event->value event)]
-                (change-color value)))
+    [:div.element-set
+     [:div.element-set-title (tr "element.page-measures")]
+     [:div.element-set-content
+      [:span (tr "ds.background-color")]
+      [:div.row-flex.color-data
+       [:span.color-th
+        {:style {:background-color (:background metadata "#ffffff")}
+         :on-click show-color-picker}]
+       [:div.color-info
+        [:input
+         {:on-change on-color-change
+          :value (:background metadata "#ffffff")}]]]]]))
 
-            (on-name-change [event]
-              #_(let [value (-> (dom/event->value event)
-                              (str/trim))]
-                (st/emit! (-> (assoc page :name value)
-                              (udp/update-page-attrs)))))
-
-            (show-color-picker [event]
-              (let [x (.-clientX event)
-                    y (.-clientY event)
-                    props {:x x :y y
-                           :default "#ffffff"
-                           :value (:background metadata)
-                           :transparent? true
-                           :on-change change-color}]
-                (modal/show! colorpicker-modal props)))]
-
-      [:div.element-set
-       [:div.element-set-title (tr (:name menu))]
-       [:div.element-set-content
-        [:span (tr "ds.name")]
-        [:div.row-flex
-         [:div.input-element
-          [:input.input-text
-           {:type "text"
-            :on-change on-name-change
-            :value (str (:name page))
-            :placeholder "page name"}]]]
-
-        [:span (tr "ds.size")]
-        [:div.row-flex
-         [:div.input-element.pixels
-          [:input.input-text
-           {:type "number"
-            :on-change #(on-size-change % :width)
-            :value (str (:width metadata))
-            :placeholder (tr "ds.width")}]]
-         [:div.input-element.pixels
-          [:input.input-text
-           {:type "number"
-            :on-change #(on-size-change % :height)
-            :value (str (:height metadata))
-            :placeholder (tr "ds.height")}]]]
-
-        [:span (tr "ds.background-color")]
-        [:div.row-flex.color-data
-         [:span.color-th
-          {:style {:background-color (:background metadata)}
-           :on-click show-color-picker}]
-         [:div.color-info
-          [:input
-           {:on-change on-color-change
-            :value (:background metadata)}]]]]])))
-
-(mf/defc grid-options-menu
-  [{:keys [menu page] :as props}]
+(mf/defc grid-options
+  [{:keys [page] :as props}]
   (let [metadata (:metadata page)
         metadata (merge c/page-metadata metadata)]
     (letfn [(on-x-change [event]
@@ -125,7 +90,7 @@
                            :on-change change-color}]
                 (modal/show! colorpicker-modal props)))]
       [:div.element-set
-       [:div.element-set-title (tr (:name menu))]
+       [:div.element-set-title (tr "element.page-grid-options")]
        [:div.element-set-content
         [:span (tr "ds.size")]
         [:div.row-flex
@@ -150,3 +115,10 @@
           [:input
            {:on-change on-color-change
             :value (:grid-color metadata "#cccccc")}]]]]])))
+
+(mf/defc options
+  [{:keys [page] :as props}]
+  [:div
+   [:& metadata-options {:page page}]
+   [:& grid-options {:page page}]])
+

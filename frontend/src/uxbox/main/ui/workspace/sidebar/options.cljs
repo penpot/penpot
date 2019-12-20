@@ -16,96 +16,84 @@
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :refer [shape-default-attrs]]
-   [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
-   [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
-   [uxbox.main.ui.workspace.sidebar.options.icon-measures :as options-iconm]
-   [uxbox.main.ui.workspace.sidebar.options.image-measures :as options-imagem]
-   [uxbox.main.ui.workspace.sidebar.options.interactions :as options-interactions]
-   [uxbox.main.ui.workspace.sidebar.options.page :as options-page]
-   [uxbox.main.ui.workspace.sidebar.options.rect-measures :as options-rectm]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
-   [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
+
+   [uxbox.main.ui.workspace.sidebar.options.rect :as rect]
+   [uxbox.main.ui.workspace.sidebar.options.circle :as circle]
+   [uxbox.main.ui.workspace.sidebar.options.page :as page]
+
+   ;; [uxbox.main.ui.workspace.sidebar.options.circle-measures :as options-circlem]
+   ;; [uxbox.main.ui.workspace.sidebar.options.fill :as options-fill]
+   ;; [uxbox.main.ui.workspace.sidebar.options.icon-measures :as options-iconm]
+   ;; [uxbox.main.ui.workspace.sidebar.options.image-measures :as options-imagem]
+   ;; [uxbox.main.ui.workspace.sidebar.options.interactions :as options-interactions]
+   ;; [uxbox.main.ui.workspace.sidebar.options.rect-measures :as options-rectm]
+   ;; [uxbox.main.ui.workspace.sidebar.options.stroke :as options-stroke]
+   ;; [uxbox.main.ui.workspace.sidebar.options.text :as options-text]
    [uxbox.util.data :as data]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Constants
 
-(def ^:private +menus-map+
-  {:icon   [::icon-measures ::fill ::stroke]
-   :rect   [::rect-measures ::fill ::stroke]
-   :path   [::fill ::stroke ::interactions]
-   :circle [::circle-measures ::fill ::stroke]
-   :text   [::fill ::text]
-   :image  [::image-measures]
-   ::page  [::page-measures ::page-grid-options]})
+;; (def ^:private +menus-map+
+;;   {:icon   [::icon-measures ::fill ::stroke]
+;;    :rect   [::rect-measures ::fill ::stroke]
+;;    :path   [::fill ::stroke ::interactions]
+;;    :circle [::circle-measures ::fill ::stroke]
+;;    :text   [::fill ::text]
+;;    :image  [::image-measures]
+;;    ::page  [::page-measures ::page-grid-options]})
 
-(def ^:private +menus+
-  [{:name "element.measures"
-    :id ::icon-measures
-    :icon i/infocard
-    :comp options-iconm/icon-measures-menu}
-   {:name "element.measures"
-    :id ::image-measures
-    :icon i/infocard
-    :comp options-imagem/image-measures-menu}
-   {:name "element.measures"
-    :id ::rect-measures
-    :icon i/infocard
-    :comp options-rectm/rect-measures-menu}
-   {:name "element.measures"
-    :id ::circle-measures
-    :icon i/infocard
-    :comp options-circlem/circle-measures-menu}
-   {:name "element.fill"
-    :id ::fill
-    :icon i/fill
-    :comp options-fill/fill-menu}
-   {:name "element.stroke"
-    :id ::stroke
-    :icon i/stroke
-    :comp options-stroke/stroke-menu}
-   {:name "element.text"
-    :id ::text
-    :icon i/text
-    :comp options-text/text-menu}
-   {:name "element.interactions"
-    :id ::interactions
-    :icon i/action
-    :comp options-interactions/interactions-menu}
-   {:name "element.page-measures"
-    :id ::page-measures
-    :icon i/page
-    :comp options-page/measures-menu}
-   {:name "element.page-grid-options"
-    :id ::page-grid-options
-    :icon i/grid
-    :comp options-page/grid-options-menu}])
+;; (def ^:private +menus+
+;;   [{:name "element.measures"
+;;     :id ::icon-measures
+;;     :icon i/infocard
+;;     :comp options-iconm/icon-measures-menu}
+;;    {:name "element.measures"
+;;     :id ::image-measures
+;;     :icon i/infocard
+;;     :comp options-imagem/image-measures-menu}
+;;    {:name "element.measures"
+;;     :id ::rect-measures
+;;     :icon i/infocard
+;;     :comp options-rectm/rect-measures-menu}
+;;    {:name "element.measures"
+;;     :id ::circle-measures
+;;     :icon i/infocard
+;;     :comp options-circlem/circle-measures-menu}
+;;    {:name "element.fill"
+;;     :id ::fill
+;;     :icon i/fill
+;;     :comp options-fill/fill-menu}
+;;    {:name "element.stroke"
+;;     :id ::stroke
+;;     :icon i/stroke
+;;     :comp options-stroke/stroke-menu}
+;;    {:name "element.text"
+;;     :id ::text
+;;     :icon i/text
+;;     :comp options-text/text-menu}
+;;    {:name "element.interactions"
+;;     :id ::interactions
+;;     :icon i/action
+;;     :comp options-interactions/interactions-menu}])
 
-(def ^:private +menus-by-id+
-  (data/index-by-id +menus+))
+;; (def ^:private +menus-by-id+
+;;   (data/index-by-id +menus+))
 
 ;; --- Options
 
 (mf/defc shape-options
   [{:keys [shape-id] :as props}]
-  (let [shape-iref (mf/use-memo {:deps #js [shape-id]
+  (let [shape-iref (mf/use-memo {:deps #js [(str shape-id)]
                                  :fn #(-> (l/in [:workspace-data :shapes-by-id shape-id])
                                           (l/derive st/state))})
-        shape (mf/deref shape-iref)
-        menus (get +menus-map+ (:type shape))]
+        shape (mf/deref shape-iref)]
     [:div
-     (for [mid menus]
-       (let [{:keys [comp] :as menu} (get +menus-by-id+ mid)]
-         [:& comp {:menu menu :shape shape :key mid}]))]))
-
-(mf/defc page-options
-  [{:keys [page] :as props}]
-  (let [menus (get +menus-map+ ::page)]
-    [:div
-     (for [mid menus]
-       (let [{:keys [comp] :as menu} (get +menus-by-id+ mid)]
-         [:& comp {:menu menu :page page :key mid}]))]))
+     (case (:type shape)
+       :rect [:& rect/options {:shape shape}]
+       :circle [:& circle/options {:shape shape}]
+       nil)]))
 
 (mf/defc options-toolbox
   {:wrap [mf/wrap-memo]}
@@ -121,4 +109,4 @@
       [:div.element-options
        (if (= (count selected) 1)
          [:& shape-options {:shape-id (first selected)}]
-         [:& page-options {:page page}])]]]))
+         [:& page/options {:page page}])]]]))
