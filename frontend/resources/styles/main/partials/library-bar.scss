@@ -65,7 +65,7 @@
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
-        padding: $medium;
+        padding: $small $medium;
 
         span.element-title {
           color: $intense-ui-text;
@@ -121,6 +121,83 @@
           }
         }
 
+      }
+
+    }
+
+  }
+
+}
+
+.projects-row {
+  align-items: center;
+  display: flex;
+  padding: $medium;
+
+  span {
+    color: $color-gray-30;
+    font-size: $fs14;
+  }
+
+  .add-project {
+    align-items: center;
+    background-color: $dark-ui-bg;
+    border-radius: $br-small;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    margin-left: auto;
+    padding: $x-small;
+
+    svg {
+      fill: $soft-ui-icons;
+      height: 16px;
+      width: 16px;
+    }
+
+    &:hover {
+      background-color: $main-ui-color;
+
+      svg {
+        fill: $soft-ui-icons;
+      }
+    }
+  }
+}
+
+.dashboard-search {
+  align-items: center;
+  border: 1px solid $color-gray-10;
+  display: flex;
+  margin: $medium;
+  
+  .input-text {
+    background: $color-white;
+    border: 0;
+    color: $intense-ui-text;
+    font-size: $fs14;
+    padding: 4px 8px;
+    margin: 0;
+    max-width: 170px;
+    width: 100%;
+  }
+
+  .clear-search {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    height: 28px;
+    padding: 0 5px;
+
+    svg {
+      fill: $medium-ui-icons;
+      height: 15px;
+      transform: rotate(45deg);
+      width: 15px;
+
+      &:hover {
+        fill: $color-danger;
       }
 
     }

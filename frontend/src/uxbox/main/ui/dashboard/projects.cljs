@@ -107,15 +107,16 @@
 
       ;; Search
       ;; TODO: convert to separate component?
-      [:form.dashboard-search
-       [:input.input-text
-        {:key :images-search-box
-         :type "text"
-         :on-change on-term-change
-         :auto-focus true
-         :placeholder (tr "ds.search.placeholder")
-         :value (or filtering "")}]
-       [:div.clear-search {:on-click on-clear} i/close]]]]))
+      ; [:form.dashboard-search
+      ;  [:input.input-text
+      ;   {:key :images-search-box
+      ;    :type "text"
+      ;    :on-change on-term-change
+      ;    :auto-focus true
+      ;    :placeholder (tr "ds.search.placeholder")
+      ;    :value (or filtering "")}]
+      ;  [:div.clear-search {:on-click on-clear} i/close]]
+       ]]))
 
 ;; --- Grid Item Thumbnail
 
@@ -236,14 +237,26 @@
                       (sort-by :created-at))]
     [:div.library-bar
      [:div.library-bar-inside
+      [:form.dashboard-search
+       [:input.input-text
+        {:key :images-search-box
+         :type "text"
+         :auto-focus true
+         :placeholder (tr "ds.search.placeholder")}]
+       [:div.clear-search i/close]]
       [:ul.library-elements
-       [:li
-        [:a.btn-primary #_{:on-click #(st/emit! di/create-collection)}
-         "new project +"]]
+      ;  [:li
+      ;   [:a.btn-primary #_{:on-click #(st/emit! di/create-collection)}
+      ;    "new project +"]]
 
        [:li.recent-projects {:on-click #(st/emit! (udp/go-to-project nil))
              :class-name (when (nil? id) "current")}
         [:span.element-title "Recent"]]
+
+       [:div.projects-row
+        [:span "PROJECTS"]
+        [:a.add-project #_{:on-click #(st/emit! di/create-collection)}
+         i/close]]
 
        (for [item projects]
          [:& nav-item {:id (:id item)
@@ -268,7 +281,7 @@
   (let [opts (mf/deref opts-iref)
         files (mf/deref files-ref)]
     [:*
-     [:& menu {:id id :opts opts :files files}]
+     #_[:& menu {:id id :opts opts :files files}]
      [:section.dashboard-grid.library
       [:& grid {:id id :opts opts :files files}]]]))
 
