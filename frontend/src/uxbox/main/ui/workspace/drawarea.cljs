@@ -281,7 +281,8 @@
                          shape)
                  shape (dissoc shape ::initialized? :modifier-mtx)]
              ;; Add & select the created shape to the workspace
-             (rx/of (dw/add-shape shape)))))))))
+             (rx/of dw/deselect-all
+                    (dw/add-shape shape)))))))))
 
 (def close-drawing-path
   (ptk/reify ::close-drawing-path
