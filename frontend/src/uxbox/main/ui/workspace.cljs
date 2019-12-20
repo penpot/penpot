@@ -119,7 +119,7 @@
      [:& messages-widget]
      [:& header {:page page :layout layout :flags flags}]
 
-     (when (:colorpalette flags)
+     (when (:colorpalette layout)
        [:& colorpalette])
 
      (when (and layout page)

@@ -573,6 +573,7 @@
       (assoc-in $ [:workspace-data :shapes-by-id id] shape))))
 
 (declare commit-shapes-changes)
+(declare select-shape)
 (declare recalculate-shape-canvas-relation)
 
 (defn add-shape
@@ -589,7 +590,8 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [shape (get-in state [:workspace-data :shapes-by-id id])]
-          (rx/of (commit-shapes-changes [[:add-shape id shape]])))))))
+          (rx/of (commit-shapes-changes [[:add-shape id shape]])
+                 (select-shape id)))))))
 
 ;; --- Duplicate Selected
 
@@ -612,7 +614,6 @@
 ;; --- Toggle shape's selection status (selected or deselected)
 
 (defn select-shape
-  "Mark a shape selected for drawing."
   [id]
   (s/assert ::us/uuid id)
   (ptk/reify ::select-shape
@@ -637,18 +638,6 @@
       (update state :workspace-local #(-> %
                                           (assoc :selected #{})
                                           (dissoc :selected-canvas))))))
-
-;; --- Select First Shape
-
-;; TODO: first???
-
-(def select-first-shape
-  (ptk/reify ::select-first-shape
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (get-in state [:workspace-local :id])
-            sid (first (get-in state [:workspace-data :shapes]))]
-        (assoc-in state [:workspace-local :selected] #{sid})))))
 
 ;; --- Select Shapes (By selrect)
 
@@ -1034,9 +1023,28 @@
    (ptk/reify ::select-for-drawing
      ptk/UpdateEvent
      (update [_ state]
-       (update state :workspace-local assoc :drawing-tool tool :drawing data)))))
+       (update state :workspace-local assoc :drawing-tool tool :drawing data))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [cancel-event? (fn [event]
+                             (interrupt? event))
+             stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
+         (->> (rx/filter cancel-event? stream)
+              (rx/take 1)
+              (rx/map (constantly clear-drawing))
+              (rx/take-until stoper)))))))
 
 ;; --- Shape Proportions
+
+;; (defn toggle-shape-proportion-lock
+;;   [id]
+;;   (ptk/reify ::toggle-shape-proportion-lock
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (let [shape (-> (get-in state [:workspace-data :shapes-by-id id])
+;;                       (geom/size)
+
 
 ;; TODO: revisit
 

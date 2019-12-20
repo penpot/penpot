@@ -280,9 +280,8 @@
                          (geom/transform shape modifier-mtx)
                          shape)
                  shape (dissoc shape ::initialized? :modifier-mtx)]
-             ;; Add & select the cred shape to the workspace
-             (rx/of (dw/add-shape shape)
-                    dw/select-first-shape))))))))
+             ;; Add & select the created shape to the workspace
+             (rx/of (dw/add-shape shape)))))))))
 
 (def close-drawing-path
   (ptk/reify ::close-drawing-path
