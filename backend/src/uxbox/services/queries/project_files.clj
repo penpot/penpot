@@ -26,7 +26,8 @@
 (s/def ::user ::us/uuid)
 
 (su/defstr sql:generic-project-files
-  "select pf.*,
+  "select distinct on (pf.id, pf.created_at)
+          pf.*,
           p.name as project_name,
           array_agg(pp.id) over pages_w as pages
      from project_files as pf
