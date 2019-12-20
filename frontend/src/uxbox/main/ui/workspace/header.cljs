@@ -48,7 +48,7 @@
     :on-click (when self?
                 #(st/emit! (rt/navigate :settings/profile)))}
    [:img {:style {:border-color (:color user)}
-          :src "/images/avatar.jpg"}]])
+          :src (if self? "/images/avatar.jpg" "/images/avatar-red.jpg")}]])
 
 (mf/defc active-users
   [props]
