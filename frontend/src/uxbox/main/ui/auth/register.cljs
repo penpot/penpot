@@ -46,7 +46,9 @@
     :uxbox.services.users/username-already-exists
     (swap! form assoc-in [:errors :username]
            {:type ::api
-            :message "errors.api.form.username-already-exists"})))
+            :message "errors.api.form.username-already-exists"})
+
+    (st/emit! (tr "errors.api.form.unexpected-error"))))
 
 (defn- on-submit
   [event form]
