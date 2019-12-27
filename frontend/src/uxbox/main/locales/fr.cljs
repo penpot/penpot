@@ -221,6 +221,7 @@
 
    "history.alert-message" "Vous voyez la version %s"
 
+   "errors.api.form.unexpected-error" "Une erreur inattendue c'est produite"
    "errors.api.form.old-password-not-match" "Ancien mot de passe incorrect"
    "errors.api.form.registration-disabled" "L'enregistrement est actuellement désactivé."
    "errors.api.form.email-already-exists" "L'email est déjà utilisé par un autre utilisateur."

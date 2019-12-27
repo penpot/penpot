@@ -224,6 +224,7 @@
 
    "history.alert-message" "You are seeing version %s"
 
+   "errors.api.form.unexpected-error" "An unexpected error occurred."
    "errors.api.form.old-password-not-match" "Incorrect old password"
    "errors.api.form.registration-disabled" "The registration is currently disabled."
    "errors.api.form.email-already-exists" "The email is already in use by another user."
