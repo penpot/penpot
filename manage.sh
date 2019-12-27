@@ -32,6 +32,11 @@ function stop-devenv {
     docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml stop -t 2;
 }
 
+function drop-devenv {
+    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml down -t 2 -v;
+    remove-devenv-images;
+}
+
 function run-devenv {
     if [[ ! $(docker ps -f "name=uxboxdev-main" -q) ]]; then
         start-devenv
@@ -206,6 +211,10 @@ function stop {
     docker-compose -p uxbox -f ./docker/docker-compose.yml stop
 }
 
+function drop {
+    docker-compose -p uxbox -f docker/docker-compose.yml down -t 2 -v;
+}
+
 function usage {
     echo "UXBOX build & release manager v$REV"
     echo "USAGE: $0 OPTION"
@@ -215,6 +224,7 @@ function usage {
     echo "- build-devenv                     Build docker development oriented image; (can specify external user id in parameter)"
     echo "- start-devenv                     Start the development oriented docker-compose service."
     echo "- stop-devenv                      Stops the development oriented docker-compose service."
+    echo "- drop-devenv                      Remove the development oriented docker-compose containers, volumes and clean images."
     echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
     echo "                                   based on tmux (frontend at localhost:3449, backend at localhost:6060)."
     echo ""
@@ -229,6 +239,7 @@ function usage {
     echo "- log                              Attach to docker logs."
     echo "- run                              Run 'production ready' docker compose"
     echo "- stop                             Stop 'production ready' docker compose"
+    echo "- drop                             Remove the production oriented docker-compose containers and volumes."
 }
 
 case $1 in
@@ -249,6 +260,9 @@ case $1 in
         ;;
     stop-devenv)
         stop-devenv ${@:2}
+        ;;
+    drop-devenv)
+        drop-devenv ${@:2}
         ;;
     log-devenv)
         log-devenv ${@:2}
@@ -291,6 +305,10 @@ case $1 in
 
     stop)
         stop
+        ;;
+
+    drop)
+        drop
         ;;
 
     *)
