@@ -68,6 +68,13 @@ This will do the following:
 - Starts all the containers in the background.
 - Attaches to the **devenv** container and executes the tmux session.
 
+You can then access your devenv at `http://127.0.0.1:8080`.
+
+If you wish to access your UXBOX devenv remotely (ie. from a public address IP `W.X.Y.Z`):
+
+```bash
+HOST_IP=W.X.Y.Z ./manage.sh run-devenv
+```
 
 ### First steps with tmux ###
 

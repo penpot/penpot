@@ -25,7 +25,10 @@ function build-devenv-if-not-exists {
 
 function start-devenv {
     build-devenv-if-not-exists $@;
-    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml up -d;
+    if [ -n "${HOST_IP}" ]; then
+        HOST_IP=127.0.0.1
+    fi
+    HOST_IP=${HOST_IP} docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml up -d;
 }
 
 function stop-devenv {
@@ -34,7 +37,7 @@ function stop-devenv {
 
 function run-devenv {
     if [[ ! $(docker ps -f "name=uxboxdev-main" -q) ]]; then
-        start-devenv
+        start-devenv $@
     fi
 
     docker exec -ti uxboxdev-main /home/uxbox/start-tmux.sh

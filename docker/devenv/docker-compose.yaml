@@ -8,8 +8,8 @@ networks:
         - subnet: 172.177.09.0/24
 
 volumes:
-  postgres_data:
-  user_data:
+  main_postgres_data:
+  main_user_data:
 
 services:
   main:
@@ -24,7 +24,7 @@ services:
       - postgres
       - smtp
     volumes:
-      - "user_data:/home/uxbox/local"
+      - "main_user_data:/home/uxbox/local"
       - "${PWD}:/home/uxbox/uxbox"
       - "${HOME}/.m2:/home/uxbox/.m2"
       - "${HOME}/.gitconfig:/home/uxbox/.gitconfig"
@@ -35,10 +35,19 @@ services:
       - 9090:9090
 
     environment:
-      - CLOJURE_OPTS="-J-XX:-OmitStackTraceInFastThrow"
+      - CLOJURE_OPTS=-J-XX:-OmitStackTraceInFastThrow
+      # HTTP setup
+      - UXBOX_HTTP_SERVER_DEBUG=true
+      - UXBOX_HTTP_SERVER_CORS="http://${HOST_IP}:8080"
+      # Database setup
       - UXBOX_DATABASE_URI="postgresql://postgres/uxbox"
       - UXBOX_DATABASE_USERNAME="uxbox"
       - UXBOX_DATABASE_PASSWORD="uxbox"
+      # Backend setup (for usage with Nginx proxy)
+      - UXBOX_MEDIA_URI="http://${HOST_IP}:8080/media/"
+      - UXBOX_ASSETS_URI="http://${HOST_IP}:8080/static/"
+      # Frontend setup (for usage with Nginx proxy)
+      - UXBOX_API_URL=/api
 
   smtp:
     container_name: 'uxboxdev-smtp'
@@ -65,4 +74,18 @@ services:
     volumes:
       - ./files/postgresql.conf:/etc/postgresql.conf
       - ./files/postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql
-      - postgres_data:/var/lib/postgresql/data
+      - main_postgres_data:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: 'uxboxdev-nginx'
+    restart: always
+    depends_on:
+      - 'main'
+    ports:
+      - 8080:8080
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - "${PWD}:/home/uxbox/uxbox"
+      # - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
