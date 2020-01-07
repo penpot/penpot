@@ -17,7 +17,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.workspace.streams :as uws]
+   [uxbox.main.streams :as uws]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]

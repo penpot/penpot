@@ -101,11 +101,11 @@
           (st/emit! (dw/initialize file-id page-id))
           #(st/emit! (dw/finalize file-id page-id)))})
 
-  ;; (mf/use-effect
-  ;;  {:deps (mf/deps file-id)
-  ;;   :fn (fn []
-  ;;         (st/emit! (dw/initialize-ws file-id))
-  ;;         #(st/emit! (dw/finalize-ws file-id)))})
+  (mf/use-effect
+   {:deps (mf/deps file-id)
+    :fn (fn []
+          (st/emit! (dw/initialize-ws file-id))
+          #(st/emit! (dw/finalize-ws file-id)))})
 
   ;; (mf/use-effect
   ;;  {:deps (mf/deps file-id page-id)

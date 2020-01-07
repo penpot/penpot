@@ -9,10 +9,9 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
-   [uxbox.config :as cfg]
    [uxbox.common.data :as d]
    [uxbox.common.pages :as cp]
-   [uxbox.main.websockets :as ws]
+   [uxbox.config :as cfg]
    [uxbox.main.constants :as c]
    [uxbox.main.data.icons :as udi]
    [uxbox.main.data.projects :as dp]
@@ -20,6 +19,8 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.repo.core :as rp]
    [uxbox.main.store :as st]
+   [uxbox.main.streams :as ms]
+   [uxbox.main.websockets :as ws]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.data :refer [dissoc-in index-of]]
    [uxbox.util.geom.matrix :as gmt]
@@ -28,8 +29,8 @@
    [uxbox.util.perf :as perf]
    [uxbox.util.router :as rt]
    [uxbox.util.spec :as us]
-   [uxbox.util.transit :as t]
    [uxbox.util.time :as dt]
+   [uxbox.util.transit :as t]
    [uxbox.util.uuid :as uuid]
    [vendor.randomcolor]))
 
@@ -125,6 +126,7 @@
 (declare fetch-users)
 (declare handle-who)
 (declare handle-pointer-update)
+(declare handle-pointer-send)
 (declare handle-page-snapshot)
 (declare shapes-changes-commited)
 
@@ -144,32 +146,24 @@
     (watch [_ state stream]
       (let [wsession (get-in state [:ws file-id])
             stoper (rx/filter #(= ::finalize-ws %) stream)]
-        (->> (ws/-stream wsession)
-             (rx/filter #(= :message (:type %)))
-             (rx/map (comp t/decode :payload))
-             (rx/filter #(s/valid? ::message %))
-             (rx/map (fn [{:keys [type] :as msg}]
-                       (case type
-                         :who (handle-who msg)
-                         :pointer-update (handle-pointer-update msg)
-                         :page-snapshot (handle-page-snapshot msg)
-                         ::unknown)))
+        (->> (rx/merge
+              (->> (ws/-stream wsession)
+                   (rx/filter #(= :message (:type %)))
+                   (rx/map (comp t/decode :payload))
+                   (rx/filter #(s/valid? ::message %))
+                   (rx/map (fn [{:keys [type] :as msg}]
+                             (case type
+                               :who (handle-who msg)
+                               :pointer-update (handle-pointer-update msg)
+                               :page-snapshot (handle-page-snapshot msg)
+                               ::unknown))))
+
+              (->> stream
+                   (rx/filter ms/pointer-event?)
+                   (rx/sample 150)
+                   (rx/map #(handle-pointer-send file-id (:pt %)))))
+
              (rx/take-until stoper))))))
-
-
-;;    #_(->> stream
-;;         ;; TODO: this need to be rethinked
-;;         (rx/filter uxbox.main.ui.workspace.streams/pointer-event?)
-;;         (rx/sample 150)
-;;         (rx/tap (fn [{:keys [pt] :as event}]
-;;                   (let [msg {:type :pointer-update
-;;                              :page-id page-id
-;;                              :x (:x pt)
-;;                              :y (:y pt)}]
-;;                     (ws/-send (get-in state [:ws file-id]) (t/encode msg)))))
-;;         (rx/ignore)
-;;         (rx/take-until (rx/filter #(= ::finalize %) stream))))))))
-
 
 ;; --- Finalize Websocket
 
@@ -214,6 +208,19 @@
                  :user-id user-id
                  :x x
                  :y y}))))
+
+(defn handle-pointer-send
+  [file-id point]
+  (ptk/reify ::handle-pointer-update
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (let [ws (get-in state [:ws file-id])
+            pid (get-in state [:workspace-page :id])
+            msg {:type :pointer-update
+                 :page-id pid
+                 :x (:x point)
+                 :y (:y point)}]
+        (ws/-send ws (t/encode msg))))))
 
 (defn handle-page-snapshot
   [{:keys [user-id page-id version operations] :as msg}]

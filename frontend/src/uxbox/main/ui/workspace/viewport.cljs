@@ -17,10 +17,10 @@
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.streams :as ms]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.workspace.grid :refer [grid]]
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
-   [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
 
    [uxbox.main.ui.shapes :refer [shape-wrapper]]
@@ -37,7 +37,7 @@
 
 (mf/defc coordinates
   [{:keys [zoom] :as props}]
-  (let [coords (some-> (use-rxsub uws/mouse-position)
+  (let [coords (some-> (use-rxsub ms/mouse-position)
                        (gpt/divide zoom)
                        (gpt/round 0))]
     [:ul.coordinates
@@ -102,10 +102,10 @@
     (ptk/reify ::handle-selrect
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [stoper (rx/filter #(or (dw/interrupt? %) (uws/mouse-up? %)) stream)]
+        (let [stoper (rx/filter #(or (dw/interrupt? %) (ms/mouse-up? %)) stream)]
           (rx/concat
            (rx/of dw/deselect-all)
-           (->> uws/mouse-position
+           (->> ms/mouse-position
                 (rx/map (fn [pos] #(update-state % pos)))
                 (rx/take-until stoper))
            (rx/of dw/select-shapes-by-current-selrect
@@ -134,9 +134,9 @@
       ptk/EffectEvent
       (effect [_ state stream]
         (let [stoper (rx/filter #(= ::finish-positioning %) stream)
-              reference @uws/mouse-position
+              reference @ms/mouse-position
               dom (dom/get-element "workspace-viewport")]
-          (-> (rx/take-until stoper uws/mouse-position)
+          (-> (rx/take-until stoper ms/mouse-position)
               (rx/subscribe #(on-point dom reference %))))))))
 
 ;; --- Viewport
@@ -172,7 +172,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :down ctrl? shift?)))
+                (st/emit! (ms/->MouseEvent :down ctrl? shift?)))
               (when (not edition)
                 (if drawing-tool
                   (st/emit! (start-drawing drawing-tool))
@@ -185,7 +185,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :context-menu ctrl? shift?))))
+                (st/emit! (ms/->MouseEvent :context-menu ctrl? shift?))))
 
             (on-mouse-up [event]
               (dom/stop-propagation event)
@@ -193,7 +193,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :up ctrl? shift?))))
+                (st/emit! (ms/->MouseEvent :up ctrl? shift?))))
 
             (on-click [event]
               (dom/stop-propagation event)
@@ -201,7 +201,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :click ctrl? shift?))))
+                (st/emit! (ms/->MouseEvent :click ctrl? shift?))))
 
             (on-double-click [event]
               (dom/stop-propagation event)
@@ -209,7 +209,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :double-click ctrl? shift?))))
+                (st/emit! (ms/->MouseEvent :double-click ctrl? shift?))))
 
             (translate-point-to-viewport [pt]
               (let [viewport (mf/ref-node viewport-ref)
@@ -227,7 +227,7 @@
                           :shift? shift?
                           :ctrl? ctrl?}]
                 (when-not (.-repeat bevent)
-                  (st/emit! (uws/keyboard-event :down key ctrl? shift?))
+                  (st/emit! (ms/->KeyboardEvent :down key ctrl? shift?))
                   (when (kbd/space? event)
                     (st/emit! handle-viewport-positioning)
                     #_(st/emit! (dw/start-viewport-positioning))))))
@@ -241,13 +241,13 @@
                           :ctrl? ctrl?}]
                 (when (kbd/space? event)
                   (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
-                (st/emit! (uws/keyboard-event :up key ctrl? shift?))))
+                (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?))))
 
             (on-mouse-move [event]
               (let [pt (gpt/point (.-clientX event)
                                   (.-clientY event))
                     pt (translate-point-to-viewport pt)]
-                (st/emit! (uws/->PointerEvent :viewport pt
+                (st/emit! (ms/->PointerEvent :viewport pt
                                               (kbd/ctrl? event)
                                               (kbd/shift? event)))))
 
