@@ -117,11 +117,7 @@
 
 (defn interrupt? [e] (= e :interrupt))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Websockets Events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- Initialize WebSocket
+;; --- Declarations
 
 (declare fetch-users)
 (declare handle-who)
@@ -129,6 +125,15 @@
 (declare handle-pointer-send)
 (declare handle-page-snapshot)
 (declare shapes-changes-commited)
+(declare commit-shapes-changes)
+(declare async-commit-shapes-changes)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Websockets Events
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Initialize WebSocket
+
 
 (s/def ::type keyword?)
 (s/def ::message
@@ -293,7 +298,7 @@
   [file-id page-id]
   (s/assert ::us/uuid file-id)
   (s/assert ::us/uuid page-id)
-  (ptk/reify ::initialized
+  (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
       (dissoc state
@@ -309,7 +314,25 @@
             data (get-in state [:pages-data page-id])]
         (assoc state
                :workspace-data data
-               :workspace-page page)))))
+               :workspace-page page)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stoper (rx/filter #(or (ptk/type? ::finalize %)
+                                   (ptk/type? ::initialize-page %))
+                              stream)
+            notifier (->> stream
+                          (rx/filter (ptk/type? ::async-commit-shapes-changes))
+                          (rx/debounce 500))]
+        (->> stream
+             (rx/filter (ptk/type? ::async-commit-shapes-changes))
+             (rx/map deref)
+             (rx/mapcat identity)
+             (rx/buffer-until notifier)
+             (rx/map vec)
+             (rx/map commit-shapes-changes)
+             (rx/take-until stoper)
+             (rx/finalize #(prn "FINALIZE" %)))))))
 
 ;; --- Fetch Workspace Users
 
@@ -588,7 +611,6 @@
         (update-in $ [:workspace-data :shapes] conj id))
       (assoc-in $ [:workspace-data :shapes-by-id id] shape))))
 
-(declare commit-shapes-changes)
 (declare select-shape)
 (declare recalculate-shape-canvas-relation)
 
@@ -741,7 +763,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [change (::tmp-change state)]
-        (rx/of (commit-shapes-changes [change])
+        (rx/of (async-commit-shapes-changes [change])
                #(dissoc state ::tmp-change))))))
 
 ;; --- Update Selected Shapes attrs
@@ -1006,7 +1028,6 @@
   [operations]
   (s/assert ::cp/operations operations)
   (ptk/reify ::commit-shapes-changes
-    ;; Commits the just performed changes to root pages-data
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspace-local :page-id])
@@ -1021,6 +1042,13 @@
                     :operations operations}]
         (->> (rp/mutation :update-project-page params)
              (rx/map shapes-changes-commited))))))
+
+(defn async-commit-shapes-changes
+  [operations]
+  (s/assert ::cp/operations operations)
+  (ptk/reify ::async-commit-shapes-changes
+    cljs.core/IDeref
+    (-deref [_] operations)))
 
 (s/def ::shapes-changes-commited
   (s/keys :req-un [::page-id ::version ::cp/operations]))
