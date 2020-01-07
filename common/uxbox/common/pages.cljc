@@ -1,7 +1,8 @@
 (ns uxbox.common.pages
   "A common (clj/cljs) functions and specs for pages."
   (:require
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [uxbox.common.data :as d]))
 
 ;; --- Specs
 
@@ -49,6 +50,10 @@
                           :data any?)
         :del-shape (s/cat :name #(= % :del-shape)
                           :id uuid?)
+        :mov-shape (s/cat :name #(= % :mov-shape)
+                          :id1 uuid?
+                          :pos #(= :after %)
+                          :id2 (s/nilable uuid?))
         :add-canvas (s/cat :name #(= % :add-canvas)
                            :id uuid?
                            :data any?)
@@ -62,9 +67,10 @@
 
 (declare process-operation)
 (declare process-mod-shape)
+(declare process-mov-shape)
 (declare process-add-shape)
-(declare process-del-shape)
 (declare process-add-canvas)
+(declare process-del-shape)
 (declare process-del-canvas)
 
 (defn process-ops
@@ -76,9 +82,10 @@
   [data [op & rest]]
   (case op
     :mod-shape (process-mod-shape data rest)
+    :mov-shape (process-mov-shape data rest)
     :add-shape (process-add-shape data rest)
-    :del-shape (process-del-shape data rest)
     :add-canvas (process-add-canvas data rest)
+    :del-shape (process-del-shape data rest)
     :del-canvas (process-del-canvas data rest)))
 
 (defn- process-mod-shape
@@ -100,6 +107,22 @@
                           shapes
                           (conj shapes id))))
       (update :shapes-by-id assoc id sdata)))
+
+(defn- process-mov-shape
+  [data [id _ id2]]
+  (let [shapes (:shapes data)
+        shapes' (into [] (remove #(= % id) shapes))
+        index (d/index-of shapes' id2)]
+    (cond
+      (= id id2)
+      (assoc data :shapes shapes)
+
+      (nil? index)
+      (assoc data :shapes (d/concat [id] shapes'))
+
+      :else
+      (let [[before after] (split-at (inc index) shapes')]
+        (assoc data :shapes (d/concat [] before [id] after))))))
 
 (defn- process-del-shape
   [data [id]]

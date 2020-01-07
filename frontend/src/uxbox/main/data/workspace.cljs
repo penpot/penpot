@@ -880,8 +880,10 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
-(defn change-shape-order
-  [{:keys [id index] :as params}]
+(defn temporal-shape-order-change
+  [id index]
+  (s/assert ::us/uuid id)
+  (s/assert number? index)
   {:pre [(uuid? id) (number? index)]}
   (ptk/reify ::change-shape-order
     ptk/UpdateEvent
@@ -889,8 +891,20 @@
       (let [shapes (get-in state [:workspace-data :shapes])
             shapes (into [] (remove #(= % id)) shapes)
             [before after] (split-at index shapes)
-            shapes (vec (concat before [id] after))]
-        (assoc-in state [:workspace-data :shapes] shapes)))))
+            shapes (d/concat [] before [id] after)
+            operation [:mov-shape id :after (last before)]]
+        (-> state
+            (assoc-in [:workspace-data :shapes] shapes)
+            (assoc ::tmp-changes [operation]))))))
+
+(def commit-shape-order-change
+  (ptk/reify ::commit-shape-order-change
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [changes (::tmp-changes state)]
+        (rx/of (commit-shapes-changes changes)
+               #(dissoc state ::tmp-changes))))))
+
 
 ;; --- Change Canvas Order (D&D Ordering)
 

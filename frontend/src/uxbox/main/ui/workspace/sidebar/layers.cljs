@@ -107,11 +107,10 @@
                           (dw/select-shape id)))))
 
           (on-drop [item monitor]
-            (st/emit! ::dw/page-data-update))
+            (st/emit! dw/commit-shape-order-change))
 
           (on-hover [item monitor]
-            (st/emit! (dw/change-shape-order {:id (:shape-id item)
-                                              :index index})))]
+            (st/emit! (dw/temporal-shape-order-change (:shape-id item) index)))]
     (let [selected? (contains? selected (:id shape))
           [dprops dnd-ref] (use-sortable
                             {:type "layer-item"

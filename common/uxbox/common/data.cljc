@@ -6,7 +6,7 @@
 
 (ns uxbox.common.data
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [concat])
+  (:refer-clojure :exclude [concat read-string])
   (:require [clojure.set :as set]
             #?(:cljs [cljs.reader :as r]
                :clj [clojure.edn :as r])))
@@ -73,6 +73,19 @@
   [getter coll]
   (persistent!
    (reduce #(assoc! %1 (getter %2) %2) (transient {}) coll)))
+
+(defn index-of
+  [coll v]
+  (loop [c (first coll)
+         coll (rest coll)
+         index 0]
+    (if (nil? c)
+      nil
+      (if (= c v)
+        index
+        (recur (first coll)
+               (rest coll)
+               (inc index))))))
 
 (defn remove-nil-vals
   "Given a map, return a map removing key-value
