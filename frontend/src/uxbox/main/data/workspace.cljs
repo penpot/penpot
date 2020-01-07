@@ -12,9 +12,9 @@
    [uxbox.config :as cfg]
    [uxbox.common.data :as d]
    [uxbox.common.pages :as cp]
+   [uxbox.main.websockets :as ws]
    [uxbox.main.constants :as c]
    [uxbox.main.data.icons :as udi]
-   [uxbox.main.data.pages :as udp]
    [uxbox.main.data.projects :as dp]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
@@ -28,14 +28,15 @@
    [uxbox.util.perf :as perf]
    [uxbox.util.router :as rt]
    [uxbox.util.spec :as us]
+   [uxbox.util.transit :as t]
    [uxbox.util.time :as dt]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.util.uuid :as uuid]
+   [vendor.randomcolor]))
+
 
 ;; TODO: temporal workaround
 (def clear-ruler nil)
 (def start-ruler nil)
-
-(declare shapes-overlaps?)
 
 ;; --- Specs
 
@@ -49,7 +50,6 @@
 (s/def ::font-size number?)
 (s/def ::font-style string?)
 (s/def ::font-weight string?)
-(s/def ::height number?)
 (s/def ::hidden boolean?)
 (s/def ::id uuid?)
 (s/def ::letter-spacing number?)
@@ -66,12 +66,13 @@
 (s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
 (s/def ::stroke-width number?)
 (s/def ::text-align #{"left" "right" "center" "justify"})
-(s/def ::type #{:rect :path :circle :image :text})
+(s/def ::type #{:rect :path :circle :image :text :canvas})
+(s/def ::x number?)
+(s/def ::y number?)
+(s/def ::cx number?)
+(s/def ::cy number?)
 (s/def ::width number?)
-(s/def ::x1 number?)
-(s/def ::x2 number?)
-(s/def ::y1 number?)
-(s/def ::y2 number?)
+(s/def ::height number?)
 
 (s/def ::attributes
   (s/keys :opt-un [::blocked
@@ -90,13 +91,14 @@
                    ::proportion
                    ::proportion-lock
                    ::rx ::ry
+                   ::cx ::cy
+                   ::x ::y
                    ::stroke-color
                    ::stroke-opacity
                    ::stroke-style
                    ::stroke-width
                    ::text-align
-                   ::x1 ::x2
-                   ::y1 ::y2]))
+                   ::width ::height]))
 
 (s/def ::minimal-shape
   (s/keys :req-un [::id ::page ::type ::name]))
@@ -115,6 +117,103 @@
 (defn interrupt? [e] (= e :interrupt))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Websockets Events
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Initialize WebSocket
+
+(declare fetch-users)
+(declare handle-who)
+(declare handle-pointer-update)
+(declare handle-page-snapshot)
+(declare shapes-changes-commited)
+
+(s/def ::type keyword?)
+(s/def ::message
+  (s/keys :req-un [::type]))
+
+(defn initialize-ws
+  [file-id]
+  (ptk/reify ::initialize
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [uri (str "ws://localhost:6060/sub/" file-id)]
+        (assoc-in state [:ws file-id] (ws/open uri))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [wsession (get-in state [:ws file-id])]
+        (->> (rx/merge
+              (rx/of (fetch-users file-id))
+              (->> (ws/-stream wsession)
+                   (rx/filter #(= :message (:type %)))
+                   (rx/map (comp t/decode :payload))
+                   (rx/filter #(s/valid? ::message %))
+                   (rx/map (fn [{:keys [type] :as msg}]
+                             (case type
+                               :who (handle-who msg)
+                               :pointer-update (handle-pointer-update msg)
+                               :page-snapshot (handle-page-snapshot msg)
+                               ::unknown)))))
+
+
+             (rx/take-until
+              (rx/filter #(= ::finalize %) stream)))))))
+
+;; --- Finalize Websocket
+
+(defn finalize-ws
+  [file-id]
+  (ptk/reify ::finalize
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (ws/-close (get-in state [:ws file-id]))
+      (rx/of ::finalize))))
+
+;; --- Handle: Who
+
+;; TODO: assign color
+
+(defn- assign-user-color
+  [state user-id]
+  (let [user (get-in state [:workspace-users :by-id user-id])
+        color (js/randomcolor)
+        user (if (string? (:color user))
+               user
+               (assoc user :color color))]
+    (assoc-in state [:workspace-users :by-id user-id] user)))
+
+(defn handle-who
+  [{:keys [users] :as msg}]
+  (s/assert set? users)
+  (ptk/reify ::handle-who
+    ptk/UpdateEvent
+    (update [_ state]
+      (as-> state $$
+        (assoc-in $$ [:workspace-users :active] users)
+        (reduce assign-user-color $$ users)))))
+
+(defn handle-pointer-update
+  [{:keys [user-id page-id x y] :as msg}]
+  (ptk/reify ::handle-pointer-update
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-users :pointer user-id]
+                {:page-id page-id
+                 :user-id user-id
+                 :x x
+                 :y y}))))
+
+(defn handle-page-snapshot
+  [{:keys [user-id page-id version operations] :as msg}]
+  (ptk/reify ::handle-page-snapshot
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [local (:workspace-local state)]
+        (when (= (:page-id local) page-id)
+          (rx/of (shapes-changes-commited msg)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General workspace events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -122,7 +221,7 @@
 
 (declare initialize-alignment)
 
-(def default-layout #{:sitemap :drawtools :layers :element-options :rules})
+(def default-layout #{:sitemap :layers :element-options :rules})
 
 (def workspace-default
   {:zoom 1
@@ -133,72 +232,122 @@
    :tooltip nil})
 
 (declare initialized)
-(declare watch-page-changes)
-;; (declare watch-events)
 
 (defn initialize
   "Initialize the workspace state."
-  [file-id page-id]
+  [file-id]
   (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid page-id)
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
       (let [local (assoc workspace-default
-                         :file-id file-id
-                         :page-id page-id)]
+                         :file-id file-id)
+                         ;; :page-id page-id)
+            ;; TODO: this need to be parametrized
+            uri   (str "ws://localhost:6060/sub/" file-id)]
         (-> state
             (assoc :workspace-layout default-layout)
-            ;; (update :workspace-layout
-            ;;         (fn [data]
-            ;;           (if (nil? data) default-layout data)))
-            (assoc :workspace-local local))))
+            (assoc :workspace-local local)
+            (assoc-in [:ws file-id] (ws/open uri)))))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      #_(when-not (get-in state [:pages page-id])
-          (reset! st/loader true))
+      (let [wsession (get-in state [:ws file-id])]
+        (rx/merge
+         ;; Stop possible previous watchers and re-fetch the main page
+         ;; and all project related pages.
+         (rx/of ::stop-watcher
+                (dp/fetch-file file-id)
+                (dp/fetch-pages file-id)
+                (fetch-users file-id))
 
-      (rx/merge
-       ;; Stop possible previous watchers and re-fetch the main page
-       ;; and all project related pages.
-       (rx/of ::stop-watcher
-              (udp/fetch-page page-id)
-              (dp/fetch-file file-id)
-              (udp/fetch-pages file-id))
+         ;; When main page is fetched, schedule the main initialization.
+         (->> (rx/zip (rx/filter (ptk/type? ::dp/pages-fetched) stream)
+                      (rx/filter (ptk/type? ::dp/files-fetched) stream))
+              (rx/take 1)
+              (rx/do #(reset! st/loader false))
+              (rx/mapcat #(rx/of (initialized file-id)
+                                 #_(initialize-alignment page-id))))
 
-       ;; When main page is fetched, schedule the main initialization.
-       (->> (rx/zip (rx/filter (ptk/type? ::udp/page-fetched) stream)
-                    (rx/filter (ptk/type? ::dp/files-fetched) stream))
-            (rx/take 1)
-            (rx/do #(reset! st/loader false))
-            (rx/mapcat #(rx/of (initialized file-id page-id)
-                               #_(initialize-alignment page-id))))
+         ;; WebSocket Incoming Messages Handling
+         (->> (ws/-stream wsession)
+              (rx/filter #(= :message (:type %)))
+              (rx/map (comp t/decode :payload))
+              (rx/filter #(s/valid? ::message %))
+              (rx/map (fn [{:keys [type] :as msg}]
+                        (case type
+                          :who (handle-who msg)
+                          :pointer-update (handle-pointer-update msg)
+                          :page-snapshot (handle-page-snapshot msg)
+                          ::unknown))))
 
-       ;; When workspace is initialized, run the event watchers.
-       (->> (rx/filter (ptk/type? ::initialized) stream)
-            (rx/take 1)
-            (rx/mapcat #(rx/of watch-page-changes)))))
-    ptk/EffectEvent
-    (effect [_ state stream]
-      ;; Optimistic prefetch of projects if them are not already fetched
-      #_(when-not (seq (:projects state))
-        (st/emit! (dp/fetch-projects))))))
+         #_(->> stream
+              ;; TODO: this need to be rethinked
+              (rx/filter uxbox.main.ui.workspace.streams/pointer-event?)
+              (rx/sample 150)
+              (rx/tap (fn [{:keys [pt] :as event}]
+                        (let [msg {:type :pointer-update
+                                   :page-id page-id
+                                   :x (:x pt)
+                                   :y (:y pt)}]
+                          (ws/-send (get-in state [:ws file-id]) (t/encode msg)))))
+              (rx/ignore)
+              (rx/take-until (rx/filter #(= ::finalize %) stream))))))))
 
 (defn- initialized
-  [file-id page-id]
+  [file-id]
   (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid page-id)
   (ptk/reify ::initialized
     ptk/UpdateEvent
     (update [_ state]
-      (let [file (get-in state [:files file-id])
-            page (get-in state [:pages page-id])
+      (let [file (get-in state [:files file-id])]
+        (assoc state :workspace-file file)))))
+
+(defn finalize
+  [file-id]
+  (ptk/reify ::finalize
+    cljs.core/IDeref
+    (-deref [_] file-id)
+
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (ws/-close (get-in state [:ws file-id])))))
+
+(defn initialize-page
+  [page-id]
+  (ptk/reify ::initialize-page
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page (get-in state [:pages page-id])
             data (get-in state [:pages-data page-id])]
         (assoc state
-               :workspace-file file
                :workspace-data data
-               :workspace-page page)))))
+               :workspace-page page)))
+
+    ptk/EffectEvent
+    (effect [_ state stream])))
+
+;; --- Fetch Workspace Users
+
+(declare users-fetched)
+
+(defn fetch-users
+  [file-id]
+  (ptk/reify ::fetch-users
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :project-file-users {:file-id file-id})
+           (rx/map users-fetched)))))
+
+(defn users-fetched
+  [users]
+  (ptk/reify ::users-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce (fn [state user]
+                (update-in state [:workspace-users :by-id (:id user)] merge user))
+              state
+              users))))
 
 ;; --- Toggle layout flag
 
@@ -213,7 +362,6 @@
                 (if (contains? flags flag)
                   (disj flags flag)
                   (conj flags flag)))))))
-
 
 ;; --- Workspace Flags
 
@@ -236,7 +384,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-local :flags] disj flag))))
-
 
 (defn toggle-flag
   [flag]
@@ -458,23 +605,59 @@
       (assoc-in $ [:workspace-data :shapes-by-id id] shape))))
 
 (declare commit-shapes-changes)
+(declare select-shape)
 (declare recalculate-shape-canvas-relation)
+
+(def shape-default-attrs
+  {:stroke-color "#000000"
+   :stroke-opacity 1
+   :fill-color "#000000"
+   :fill-opacity 1})
 
 (defn add-shape
   [data]
+  (s/assert ::attributes data)
   (let [id (uuid/random)]
     (ptk/reify ::add-shape
       ptk/UpdateEvent
       (update [_ state]
         (let [shape (-> (geom/setup-proportions data)
                         (assoc :id id))
+              shape (merge shape-default-attrs shape)
               shape (recalculate-shape-canvas-relation state shape)]
           (impl-assoc-shape state shape)))
 
       ptk/WatchEvent
       (watch [_ state stream]
         (let [shape (get-in state [:workspace-data :shapes-by-id id])]
-          (rx/of (commit-shapes-changes [[:add-shape id shape]])))))))
+          (rx/of (commit-shapes-changes [[:add-shape id shape]])
+                 (select-shape id)))))))
+
+(def canvas-default-attrs
+  {:stroke-color "#000000"
+   :stroke-opacity 1
+   :fill-color "#ffffff"
+   :fill-opacity 1})
+
+(defn add-canvas
+  [data]
+  (s/assert ::attributes data)
+  (let [id (uuid/random)]
+    (ptk/reify ::add-canvas
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [shape (-> (geom/setup-proportions data)
+                        (assoc :id id))
+              shape (merge canvas-default-attrs shape)
+              shape (recalculate-shape-canvas-relation state shape)]
+          (impl-assoc-shape state shape)))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [shape (get-in state [:workspace-data :shapes-by-id id])]
+          (rx/of (commit-shapes-changes [[:add-canvas id shape]])
+                 (select-shape id)))))))
+
 
 ;; --- Duplicate Selected
 
@@ -491,13 +674,12 @@
             duplicate (partial impl-duplicate-shape state)
             shapes    (map duplicate selected)]
         (rx/merge
-         (rx/from-coll (map (fn [s] #(impl-assoc-shape % s)) shapes))
+         (rx/from (map (fn [s] #(impl-assoc-shape % s)) shapes))
          (rx/of (commit-shapes-changes (mapv #(vector :add-shape (:id %) %) shapes))))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
 (defn select-shape
-  "Mark a shape selected for drawing."
   [id]
   (s/assert ::us/uuid id)
   (ptk/reify ::select-shape
@@ -522,18 +704,6 @@
       (update state :workspace-local #(-> %
                                           (assoc :selected #{})
                                           (dissoc :selected-canvas))))))
-
-;; --- Select First Shape
-
-;; TODO: first???
-
-(def select-first-shape
-  (ptk/reify ::select-first-shape
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (get-in state [:workspace-local :id])
-            sid (first (get-in state [:workspace-data :shapes]))]
-        (assoc-in state [:workspace-local :selected] #{sid})))))
 
 ;; --- Select Shapes (By selrect)
 
@@ -571,46 +741,35 @@
 
 ;; --- Update Shape Attrs
 
-(defn update-shape-attrs
-  [id attrs]
-  (s/assert ::us/uuid id)
-  (let [atts (s/conform ::attributes attrs)]
-    (ptk/reify ::update-shape-attrs
-      ptk/UpdateEvent
-      (update [_ state]
-        (if (map? attrs)
-          (update-in state [:workspace-data :shapes-by-id id] merge attrs)
-          state)))))
-
 (defn update-shape
-  [id & attrs]
-  (let [attrs' (->> (apply hash-map attrs)
-                    (s/conform ::attributes))]
-    (ptk/reify ::update-shape
-      udp/IPagePersistentOps
-      (-persistent-ops [_]
-        (->> (partition-all 2 attrs)
-             (mapv (fn [[key val]] [:mod-shape id key val]))))
+  [id attrs]
+  (s/assert ::attributes attrs)
+  (ptk/reify ::update-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [shape-old (get-in state [:workspace-data :shapes-by-id id])
+            shape-new (merge shape-old attrs)
+            diff (d/diff-maps shape-old shape-new)]
+        (-> state
+            (assoc-in [:workspace-data :shapes-by-id id] shape-new)
+            (assoc ::tmp-change (into [:mod-shape id] diff)))))
 
-      ptk/UpdateEvent
-      (update [_ state]
-        (cond-> state
-          (not= attrs' ::s/invalid)
-          (update-in [:workspace-data :shapes-by-id id] merge attrs'))))))
-
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [change (::tmp-change state)]
+        (prn "update-shape" change)
+        (rx/of (commit-shapes-changes [change])
+               #(dissoc state ::tmp-change))))))
 
 ;; --- Update Selected Shapes attrs
 
-;; TODO: improve performance of this event
-
-(defn update-selected-shapes-attrs
-  [attrs]
-  (s/assert ::attributes attrs)
+(defn update-selected-shapes
+  [& attrs]
   (ptk/reify ::update-selected-shapes-attrs
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])]
-        (rx/from-coll (map #(update-shape-attrs % attrs) selected))))))
+        (rx/from (map #(apply update-shape % attrs) selected))))))
 
 ;; --- Move Selected
 
@@ -664,19 +823,6 @@
          (rx/of (apply-temporal-displacement-in-bulk selected displacement))
          (rx/of (materialize-temporal-modifier-in-bulk selected)))))))
 
-;; --- Update Shape Position
-
-(deftype UpdateShapePosition [id point]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes id] geom/absolute-move point)))
-
-(defn update-position
-  "Update the start position coordenate of the shape."
-  [id point]
-  {:pre [(uuid? id) (gpt/point? point)]}
-  (UpdateShapePosition. id point))
-
 ;; --- Delete Selected
 
 (defn impl-dissoc-shape
@@ -726,7 +872,6 @@
   [loc]
   (s/assert ::direction loc)
   (ptk/reify ::move-selected-layer
-    udp/IPageDataUpdate
     ptk/UpdateEvent
     (update [_ state]
       (let [id (first (get-in state [:workspace-local :selected]))
@@ -825,9 +970,10 @@
 
 (defn- recalculate-shape-canvas-relation
   [state shape]
-  (let [xfmt (comp (map #(get-in state [:workspace-data :shapes-by-id %]))
+  (let [shape' (geom/shape->rect-shape shape)
+        xfmt (comp (map #(get-in state [:workspace-data :shapes-by-id %]))
                    (map geom/shape->rect-shape)
-                   (filter #(geom/overlaps? % shape))
+                   (filter #(geom/overlaps? % shape'))
                    (map :id))
 
         id (->> (get-in state [:workspace-data :canvas])
@@ -859,8 +1005,6 @@
           (rx/of (commit-shapes-changes changes)
                  #(dissoc state ::tmp-changes)))))))
 
-(declare shapes-changes-commited)
-
 (defn commit-shapes-changes
   [operations]
   (s/assert ::cp/operations operations)
@@ -878,31 +1022,22 @@
             params {:id (:id page)
                     :version (:version page)
                     :operations operations}]
-        (prn "commit-shapes-changes" params)
         (->> (rp/mutation :update-project-page params)
-             ;; (rx/tap #(prn "foobar" %))
-             (rx/map shapes-changes-commited))))
-
-    ;; ptk/EffectEvent
-    ;; (effect [_ state stream]
-    ;;   (let [data {:shapes []
-    ;;               :shapes-by-id {}}]
-    ;;     (prn "commit-shapes-changes$effect" (cp/process-ops data operations))))
-    ))
+             (rx/map shapes-changes-commited))))))
 
 (s/def ::shapes-changes-commited
-  (s/keys :req-un [::id ::version ::cp/operations]))
+  (s/keys :req-un [::page-id ::version ::cp/operations]))
 
 (defn shapes-changes-commited
-  [{:keys [id version operations] :as params}]
+  [{:keys [page-id version operations] :as params}]
   (s/assert ::shapes-changes-commited params)
   (ptk/reify ::shapes-changes-commited
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc-in [:workspace-page :version] version)
-          (assoc-in [:pages id :version] version)
-          (update-in [:pages-data id] cp/process-ops operations)
+          (assoc-in [:pages page-id :version] version)
+          (update-in [:pages-data page-id] cp/process-ops operations)
           (update :workspace-data cp/process-ops operations)))))
 
 ;; --- Start shape "edition mode"
@@ -936,51 +1071,27 @@
    (ptk/reify ::select-for-drawing
      ptk/UpdateEvent
      (update [_ state]
-       (update state :workspace-local assoc :drawing-tool tool :drawing data)))))
+       (update state :workspace-local assoc :drawing-tool tool :drawing data))
 
-;; --- Shape Proportions
-
-;; TODO: revisit
-
-(deftype LockShapeProportions [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [[width height] (-> (get-in state [:shapes id])
-                             (geom/size)
-                             (keep [:width :height]))
-          proportion (/ width height)]
-      (update-in state [:shapes id] assoc
-                 :proportion proportion
-                 :proportion-lock true))))
-
-(defn lock-proportions
-  "Mark proportions of the shape locked and save the current
-  proportion as additional precalculated property."
-  [id]
-  {:pre [(uuid? id)]}
-  (LockShapeProportions. id))
-
-;; TODO: revisit
-
-(deftype UnlockShapeProportions [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:shapes id :proportion-lock] false)))
-
-(defn unlock-proportions
-  [id]
-  {:pre [(uuid? id)]}
-  (UnlockShapeProportions. id))
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [cancel-event? (fn [event]
+                             (interrupt? event))
+             stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
+         (->> (rx/filter cancel-event? stream)
+              (rx/take 1)
+              (rx/map (constantly clear-drawing))
+              (rx/take-until stoper)))))))
 
 ;; --- Update Dimensions
 
-;; TODO: revisit
-
-(s/def ::width (s/and ::us/number ::us/positive))
-(s/def ::height (s/and ::us/number ::us/positive))
+(s/def ::width ::us/number)
+(s/def ::height ::us/number)
 
 (s/def ::update-dimensions
   (s/keys :opt-un [::width ::height]))
+
+;; TODO: emit commit-changes
 
 (defn update-dimensions
   "A helper event just for update the position
@@ -992,35 +1103,31 @@
   (ptk/reify ::update-dimensions
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:shapes id] geom/resize-dim dimensions))))
+      (update-in state [:workspace-data :shapes-by-id id] geom/resize-dim dimensions))))
 
-;; --- Update Interaction
+;; --- Shape Proportions
 
-;; TODO: revisit
-(deftype UpdateInteraction [shape interaction]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [id (or (:id interaction)
-                 (uuid/random))
-          data (assoc interaction :id id)]
-      (assoc-in state [:shapes shape :interactions id] data))))
+(defn toggle-shape-proportion-lock
+  [id]
+  (ptk/reify ::toggle-shape-proportion-lock
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [shape (get-in state [:workspace-data :shapes-by-id id])]
+        (if (:proportion-lock shape)
+          (assoc-in state [:workspace-data :shapes-by-id id :proportion-lock] false)
+          (->> (geom/assign-proportions (assoc shape :proportion-lock true))
+               (assoc-in state [:workspace-data :shapes-by-id id])))))))
 
-(defn update-interaction
-  [shape interaction]
-  (UpdateInteraction. shape interaction))
+;; --- Update Shape Position
 
-;; --- Delete Interaction
-
-;; TODO: revisit
-(deftype DeleteInteracton [shape id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes shape :interactions] dissoc id)))
-
-(defn delete-interaction
-  [shape id]
-  {:pre [(uuid? id) (uuid? shape)]}
-  (DeleteInteracton. shape id))
+(defn update-position
+  [id point]
+  (s/assert ::us/uuid id)
+  (s/assert gpt/point? point)
+  (ptk/reify ::update-position
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-data :shapes-by-id id] geom/absolute-move point))))
 
 ;; --- Path Modifications
 
@@ -1141,46 +1248,6 @@
   {:pre [(uuid? id)]}
   (UnlockShape. id))
 
-;; --- Recalculate Shapes relations (Shapes <-> Canvas)
-
-(def rehash-shapes-relationships
-  (letfn [(overlaps? [canvas shape]
-            (let [shape1 (geom/shape->rect-shape canvas)
-                  shape2 (geom/shape->rect-shape shape)]
-              (geom/overlaps? shape1 shape2)))]
-    (ptk/reify ::rehash-shapes-relationships
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [data (:workspace-data state)
-              canvas (map #(get-in data [:shapes-by-id %]) (:canvas data))
-              shapes (map #(get-in data [:shapes-by-id %]) (:shapes data))]
-          (reduce (fn [state {:keys [id] :as shape}]
-                    (let [canvas (first (filter #(overlaps? % shape) canvas))]
-                      (update-in state [:workspace-data :shapes-by-id id] assoc :canvas (:id canvas))))
-                  state
-                  shapes))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Selection Rect IMPL
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; TODO: move to shapes impl maybe...
-
-(defn selection->rect
-  [data]
-  (let [start (:start data)
-        stop (:stop data)
-        start-x (min (:x start) (:x stop))
-        start-y (min (:y start) (:y stop))
-        end-x (max (:x start) (:x stop))
-        end-y (max (:y start) (:y stop))]
-    (assoc data
-           :x1 start-x
-           :y1 start-y
-           :x2 end-x
-           :y2 end-y
-           :type :rect)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1192,24 +1259,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local assoc :selected-canvas id))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Server Interactions DEPRECATED
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- Update Metadata
-
-;; Is a workspace aware wrapper over uxbox.data.pages/UpdateMetadata event.
-
-(defn update-metadata
-  [id metadata]
-  (s/assert ::us/uuid id)
-  (s/assert ::udp/metadata metadata)
-  (ptk/reify ::update-metadata
-    ptk/WatchEvent
-    (watch [_ state s]
-      #_(rx/of (udp/update-metadata id metadata)
-             (initialize-alignment id)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
@@ -1253,67 +1302,4 @@
             [before after] (split-at index pages)
             pages (vec (concat before [id] after))]
         (assoc-in state [:projects (:project-id page) :pages] pages)))))
-
-;; -- Page Changes Watcher
-
-(def watch-page-changes
-  (ptk/reify ::watch-page-changes
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stopper (rx/filter #(= % ::stop-watcher) stream)]
-        (->> stream
-             (rx/filter udp/page-update?)
-             (rx/debounce 500)
-             (rx/mapcat #(rx/of rehash-shapes-relationships
-                                udp/persist-current-page))
-             (rx/take-until stopper))))))
-
-;; (def watch-shapes-changes
-;;   (letfn [(look-for-changes [[old new]]
-;;             (reduce-kv (fn [acc k v]
-;;                          (if (identical? v (get old k))
-;;                            acc
-;;                            (conj acc k)))
-;;                        #{}
-;;                        new))
-;;           (select-shapes [state]
-;;             (get-in state [:workspace-data :shapes-by-id]))
-;;           ]
-;;     (ptk/reify ::watch-page-changes
-;;       ptk/WatchEvent
-;;       (watch [_ state stream]
-;;         (let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
-;;           (->> stream
-;;                (rx/filter udp/page-update?)
-;;                (rx/debounce 1000)
-;;                (rx/mapcat #(rx/merge (rx/of persist-page
-;;                                    (->> (rx/filter page-persisted? stream)
-;;                                         (rx/timeout 1000 (rx/empty))
-;;                                         (rx/take 1)
-;;                                         (rx/ignore)))))
-;;              (rx/take-until stopper))))))
-
-
-
-;;         (let [stoper (rx/filter #(= % ::stop-shapes-watcher) stream)
-;;               into' (fn [dst srcs] (reduce #(into %1 %2) dst srcs))]
-;;           (->> (rx/merge st/store (rx/of state))
-;;                (rx/map #(get-in % [:workspace-data :shapes-by-id]))
-;;                (rx/buffer 2 1)
-;;                (rx/map look-for-changes)
-;;                (rx/buffer-time 300)
-;;                (rx/map #(into' #{} %))
-;;                (rx/filter (complement empty?))
-;;                ;; (rx/tap #(prn "changed" %))
-;;                ;; (rx/mapcat (fn [items] (rx/from-coll
-;;                ;;                         (map rehash-shape-relationship items))))
-;;                (rx/ignore)
-;;                (rx/take-until stoper)))))))
-
-(defn shapes-overlaps?
-  [canvas shape]
-  (let [shape1 (geom/shape->rect-shape canvas)
-        shape2 (geom/shape->rect-shape shape)]
-    (geom/overlaps? shape1 shape2)))
-
 

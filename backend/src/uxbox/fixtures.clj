@@ -43,6 +43,21 @@
         photo ""]
   (db/query-one conn [sql id fullname username email password photo])))
 
+;; --- Project User Relation Creation
+
+(def create-project-user-sql
+  "insert into project_users (project_id, user_id, can_edit)
+   values ($1, $2, true)
+  returning *")
+
+(defn create-additional-project-user
+  [conn [project-index user-index]]
+  (log/info "create project user" user-index project-index)
+  (let [sql create-project-user-sql
+        project-id (mk-uuid "project" project-index user-index)
+        user-id (mk-uuid "user" (dec user-index))]
+    (db/query-one conn [sql project-id user-id])))
+
 ;; --- Projects creation
 
 (def create-project-sql
@@ -56,8 +71,12 @@
   (let [sql create-project-sql
         id (mk-uuid "project" project-index user-index)
         user-id (mk-uuid "user" user-index)
-        name (str "sample project " project-index)]
-    (db/query-one conn [sql id user-id name])))
+        name (str "project " project-index "," user-index)]
+    (p/do! (db/query-one conn [sql id user-id name])
+           (when (and (= project-index 0)
+                      (> user-index 0))
+             (create-additional-project-user conn [project-index user-index])))))
+
 
 ;; --- Create Page Files
 
@@ -72,7 +91,7 @@
         id (mk-uuid "page-file" file-index project-index user-index)
         user-id (mk-uuid "user" user-index)
         project-id (mk-uuid "project" project-index user-index)
-        name (str "Sample file " file-index)]
+        name (str "file " file-index "," project-index "," user-index)]
     (db/query-one conn [sql id user-id project-id name])))
 
 ;; --- Create Pages
@@ -94,10 +113,10 @@
   (let [canvas {:id (mk-uuid "canvas" 1)
                 :name "Canvas-1"
                 :type :canvas
-                :x1 200
-                :y1 200
-                :x2 1224
-                :y2 968}
+                :x 200
+                :y 200
+                :width 1024
+                :height 768}
         data {:shapes []
               :canvas [(:id canvas)]
               :shapes-by-id {(:id canvas) canvas}}

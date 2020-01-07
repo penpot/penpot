@@ -19,28 +19,28 @@ $ui-flavour: $color-gray;
 
 // Change next colors for more customization
 // Background colors
-$primary-ui-bg: $color-white;
-$secondary-ui-bg: mix($ui-flavour, $color-white, $mix-percentage-lighter);
-$dark-ui-bg: mix($ui-flavour, $color-white, $mix-percentage-light);
+$primary-ui-bg: $color-gray-50;
+$secondary-ui-bg: $color-gray-60;
+$dark-ui-bg: $color-gray-10;
 
 // Border color
-$intense-ui-border: $ui-flavour;
-$medium-ui-border: mix($ui-flavour, $color-white, $mix-percentage-light);
-$soft-ui-border: lighten($medium-ui-border, 18%);
+$intense-ui-border: $color-gray-40;
+$medium-ui-border: $color-gray-20;
+$soft-ui-border: $color-gray-60;
 
 // Icon colors
-$intense-ui-icons: mix($ui-flavour, $color-black, $mix-percentage-dark);
-$medium-ui-icons: mix($ui-flavour, $color-white, $mix-percentage-light);
-$soft-ui-icons: mix($ui-flavour, $color-white, $mix-percentage-lighter);
+$intense-ui-icons: $color-gray-20;
+$medium-ui-icons: $color-gray-30;
+$soft-ui-icons: $color-gray-60;
 
 // Text colors
-$intense-ui-text: mix($ui-flavour, $color-black, $mix-percentage-darker);
-$medium-ui-text: $ui-flavour;
-$soft-ui-text: mix($ui-flavour, $color-white, $mix-percentage-light);
+$intense-ui-text: $color-gray-60;
+$medium-ui-text: $color-gray-20;
+$soft-ui-text: $color-gray-10;
 
 // Canvas colors
 $canvas-bg: mix($ui-flavour, $color-white, $mix-percentage-lighter);
 $scrollbar-bg: mix($ui-flavour, $color-white, $mix-percentage-light);
 
 // Input colors
-$input-bg: $color-light-bg;
+$input-bg: $primary-ui-bg;

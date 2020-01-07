@@ -7,6 +7,7 @@
 (ns uxbox.http.ws
   "Web Socket handlers"
   (:require
+   [clojure.tools.logging :as log]
    [promesa.core :as p]
    [uxbox.emails :as emails]
    [uxbox.http.session :as session]
@@ -14,6 +15,7 @@
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
    [uxbox.util.uuid :as uuid]
+   [uxbox.util.transit :as t]
    [uxbox.util.blob :as blob]
    [vertx.http :as vh]
    [vertx.web :as vw]
@@ -31,49 +33,88 @@
 
 (declare ws-websocket)
 (declare ws-send!)
-(declare ws-on-message!)
-(declare ws-on-close!)
 
-;; --- Public API
+;; --- State Management
 
-(declare on-message)
-(declare on-close)
-(declare on-eventbus-message)
+(defonce state
+  (atom {}))
 
-(def state (atom {}))
+(defn send!
+  [ws message]
+  (ws-send! ws (-> (t/encode message)
+                   (t/bytes->str))))
+
+(defmulti handle-message
+  (fn [ws message] (:type message)))
+
+(defmethod handle-message :connect
+  [{:keys [file-id user-id] :as ws} message]
+  (let [local (swap! state assoc-in [file-id user-id] ws)
+        sessions (get local file-id)
+        message {:type :who :users (set (keys sessions))}]
+    (run! #(send! % message) (vals sessions))))
+
+(defmethod handle-message :disconnect
+  [{:keys [user-id] :as ws} {:keys [file-id] :as message}]
+  (let [local (swap! state update file-id dissoc user-id)
+        sessions (get local file-id)
+        message {:type :who :users (set (keys sessions))}]
+    (run! #(send! % message) (vals sessions))))
+
+(defmethod handle-message :who
+  [{:keys [file-id] :as ws} message]
+  (let [users (keys (get @state file-id))]
+    (send! ws {:type :who :users (set users)})))
+
+(defmethod handle-message :pointer-update
+  [{:keys [user-id file-id] :as ws} message]
+  (let [sessions (->> (vals (get @state file-id))
+                      (remove #(= user-id (:user-id %))))
+        message (assoc message :user-id user-id)]
+    (run! #(send! % message) sessions)))
+
+(defn- on-eventbus-message
+  [{:keys [file-id user-id] :as ws} {:keys [body] :as message}]
+  (send! ws body))
+
+(defn- start-eventbus-consumer!
+  [vsm ws fid]
+  (let [topic (str "internal.uxbox.file." fid)]
+    (ve/consumer vsm topic #(on-eventbus-message ws %2))))
+
+;; --- Handler
 
 (defn handler
   [{:keys [user] :as req}]
   (letfn [(on-init [ws]
             (let [vsm (::vw/execution-context req)
-                  tpc "test.foobar"
-                  pid (get-in req [:path-params :page-id])
-                  sem (ve/consumer vsm tpc #(on-eventbus-message ws %2))]
-              (swap! state update pid (fnil conj #{}) user)
+                  fid (get-in req [:path-params :file-id])
+                  ws  (assoc ws
+                             :user-id user
+                             :file-id fid)
+                  sem (start-eventbus-consumer! vsm ws fid)]
+              (handle-message ws {:type :connect})
               (assoc ws ::sem sem)))
 
           (on-message [ws message]
-            (let [pid (get-in req [:path-params :page-id])]
-              (ws-send! ws (str (::counter ws 0)))
-              (update ws ::counter (fnil inc 0))))
+            (try
+              (->> (t/str->bytes message)
+                   (t/decode)
+                   (handle-message ws))
+              (catch Throwable err
+                (log/error "Unexpected exception:\n"
+                           (with-out-str
+                             (.printStackTrace err (java.io.PrintWriter. *out*)))))))
 
           (on-close [ws]
-            (let [pid (get-in req [:path-params :page-id])]
-              (swap! state update pid disj user)
+            (let [fid (get-in req [:path-params :file-id])]
+              (handle-message ws {:type :disconnect :file-id fid})
               (.unregister (::sem ws))))]
-
-    ;; (ws-websocket :on-init on-init
-    ;;               :on-message on-message
-    ;;               :on-close on-close)))
 
     (-> (ws-websocket)
         (assoc :on-init on-init
                :on-message on-message
                :on-close on-close))))
-
-(defn- on-eventbus-message
-  [ws {:keys [body] :as message}]
-  (ws-send! ws body))
 
 ;; --- Internal (vertx api) (experimental)
 

@@ -8,17 +8,18 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [uxbox.common.pages :as cp]
    [uxbox.db :as db]
    [uxbox.services.mutations :as sm]
    [uxbox.services.mutations.project-files :as files]
    [uxbox.services.queries.project-pages :refer [decode-row]]
    [uxbox.services.util :as su]
-   [uxbox.common.pages :as cp]
-   [uxbox.util.exceptions :as ex]
    [uxbox.util.blob :as blob]
-   [uxbox.util.sql :as sql]
+   [uxbox.util.exceptions :as ex]
    [uxbox.util.spec :as us]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.util.sql :as sql]
+   [uxbox.util.uuid :as uuid]
+   [vertx.eventbus :as ve]))
 
 ;; --- Helpers & Specs
 
@@ -100,7 +101,7 @@
   [conn {:keys [user-id id version data operations]}]
   (let [sql "insert into project_page_snapshots (user_id, page_id, version, data, operations)
              values ($1, $2, $3, $4, $5)
-             returning id, version, operations"]
+             returning id, page_id, user_id, version, operations"]
     (db/query-one conn [sql user-id id version data operations])))
 
 ;; --- Mutation: Rename Page
@@ -169,7 +170,14 @@
 
     (-> (update-page-data conn page)
         (p/then (fn [_] (insert-page-snapshot conn page)))
-        (p/then (fn [s] (retrieve-lagged-operations conn s params))))))
+        (p/then (fn [s]
+                  (let [topic (str "internal.uxbox.file." (:file-id page))]
+                    (p/do! (ve/publish! uxbox.core/system topic {:type :page-snapshot
+                                                                 :user-id (:user-id s)
+                                                                 :page-id (:page-id s)
+                                                                 :version (:version s)
+                                                                 :operations ops})
+                           (retrieve-lagged-operations conn s params))))))))
 
 (su/defstr sql:lagged-snapshots
   "select s.id, s.operations
@@ -182,7 +190,7 @@
   (let [sql sql:lagged-snapshots]
     (-> (db/query conn [sql (:id params) (:version params) #_(:id snapshot)])
         (p/then (fn [rows]
-                  {:id (:id params)
+                  {:page-id (:id params)
                    :version (:version snapshot)
                    :operations (into [] (comp (map decode-row)
                                               (map :operations)

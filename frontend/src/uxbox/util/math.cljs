@@ -81,7 +81,8 @@
 
 (defn precision
   [^number v ^number n]
-  (js/parseFloat (.toFixed v n)))
+  (when (and (number? v) (number? n))
+    (js/parseFloat (.toFixed v n))))
 
 (defn precision-or-0
   [^number v ^number n]

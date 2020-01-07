@@ -31,7 +31,7 @@
 (def ^:private icons-collections-sql
   "select *,
           (select count(*) from icons where collection_id = ic.id) as num_icons
-     from icons_collections as ic
+     from icon_collections as ic
     where (ic.user_id = $1 or
            ic.user_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and ic.deleted_at is null

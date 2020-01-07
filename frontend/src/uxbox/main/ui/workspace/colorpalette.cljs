@@ -30,10 +30,9 @@
 (mf/defc palette-item
   [{:keys [color] :as props}]
   (letfn [(select-color [event]
-            (let [attrs (if (kbd/shift? event)
-                          {:stroke-color color}
-                          {:fill-color color})]
-              (st/emit! (udw/update-selected-shapes-attrs attrs))))]
+            (if (kbd/shift? event)
+              (st/emit! (udw/update-selected-shapes :stroke-color color))
+              (st/emit! (udw/update-selected-shapes :fill-color color))))]
     (let [rgb-vec (hex->rgb color)
           rgb-color (apply str "" (interpose ", " rgb-vec))]
       [:div.color-cell {:key (str color)

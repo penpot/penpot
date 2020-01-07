@@ -1,0 +1,419 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+.dashboard-grid {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-size: $fs14;
+  height: 100%;
+  padding: $medium;
+  // ACTIVITY BAR PADDING
+  //padding: $medium 250px $medium $medium;
+
+  .dashboard-title {
+    margin: $medium 0;
+    position: relative;
+    width: 100%;
+
+    h2 {
+      text-align: center;
+      width: 100%;
+      .edit {
+          padding: 5px 10px;
+          background: $primary-ui-bg;
+          border: none;
+          height: 100%;
+      }
+      .close {
+          padding: 5px 10px;
+          background: $primary-ui-bg;
+          cursor: pointer;
+          svg {
+            transform: rotate(45deg);
+            fill: $color-gray;
+            height: 20px;
+            width: 20px;
+          }
+      }
+    }
+
+    .edition {
+      align-items: center;
+      display: flex;
+      position: absolute;
+      right: 40px;
+      top: 0;
+
+      span {
+        cursor: pointer;
+
+        svg {
+          fill: $color-gray;
+          height: 20px;
+          margin: 0 10px;
+          width: 20px;
+        }
+
+        &:hover {
+
+          svg {
+            fill: $color-gray-darker;
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+  .dashboard-grid-content {
+    display: flex;
+    height: 100%;
+    min-height: 60vh;
+    overflow: scroll;
+    width: 100%;
+
+    .dashboard-grid-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: auto;
+      width: 100%;
+    }
+
+    .grid-item {
+      align-items: center;
+      border-radius: $br-medium;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 200px;
+      margin: $medium $medium 0 $medium;
+      max-width: 300px;
+      min-width: 260px;
+      position: relative;
+      text-align: center;
+      width: 18%;
+
+      &.small-item {
+        max-width: 12%;
+        min-width: 190px;
+        padding: $medium;
+        justify-content: center;
+      }
+
+      .grid-item-icon {
+        width:90px;
+        height:90px;
+      }
+
+      .item-info {
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        left: 0;
+        padding: $small;
+        position: absolute;
+        text-align: left;
+        width: 100%;
+
+        h3 {
+          color: $intense-ui-text;
+          font-size: $fs16;
+          font-weight: 400;
+          overflow: hidden;
+          padding: 0;
+          padding-right: $small;
+          text-overflow: ellipsis;
+          width: 100%;
+          white-space: nowrap;
+        }
+
+        span.date {
+          color: $soft-ui-text;
+          font-size: $fs12;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          width: 100%;
+        }
+
+      }
+
+      &.add-project {
+        border: 2px dashed $color-gray-light;
+        box-shadow: inset 0 0 0 transparent;
+        justify-content: center;
+
+        span {
+          background-color: $color-primary-light;
+          border-radius: 5px;
+          color: $color-white;
+          font-size: $fs24;
+          padding: $small $medium;
+        }
+
+        &:hover {
+          background-color: $color-primary-light;
+          border: 2px solid $color-white;
+
+          span {
+            color: $color-white;
+          }
+
+        }
+
+      }
+
+      // PROJECTS, ELEMENTS & ICONS GRID
+      &.project-th {
+        background-color: $primary-ui-bg;
+        border-bottom: 2px solid lighten($soft-ui-border, 12%);
+
+        &:hover {
+          border-color: $main-ui-color;
+
+          h3 {
+            color: $main-ui-color;
+          }
+
+        }
+
+        .project-th-actions {
+          align-items: center;
+          bottom: 0;
+          display: flex;
+          left: 0;
+          justify-content: flex-end;
+          padding: $small;
+          position: absolute;
+          width: 100%;
+
+          svg {
+            fill: $color-gray-light;
+            height: 14px;
+            margin-right: $x-small;
+            width: 14px;
+          }
+
+          span {
+            color: $color-gray-light;
+          }
+
+          .project-th-icon {
+            align-items: center;
+            display: flex;
+            margin-right: $small;
+
+            &.delete {
+              margin-right: 0;
+
+              svg {
+                fill: $medium-ui-icons;
+                margin-right: 0;
+              }
+
+              &:hover {
+                transform: scale(1.4);
+
+                svg {
+                  fill: $color-danger;
+                }
+
+              }
+
+            }
+
+            &.edit {
+              margin-right: 0;
+
+              svg {
+                fill: $medium-ui-icons;
+              }
+
+              &:hover {
+                transform: scale(1.4);
+
+                svg {
+                  fill: $color-primary;
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+
+      // IMAGES SECTION
+      &.images-th {
+        background-color: $primary-ui-bg;
+        border-bottom: 2px solid lighten($color-gray-light, 12%);
+
+        &:hover {
+          border-color: $main-ui-color;
+        }
+
+      }
+
+      .grid-item-image {
+
+        svg {
+          max-height: 100px;
+          max-width: 100px;
+          min-height: 40px;
+          min-width: 40px;
+          width: 8vw;
+        }
+
+      }
+
+      .color-swatch {
+        border-top-left-radius: $br-medium;
+        border-top-right-radius: $br-medium;
+        height: 25%;
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 100%;
+      }
+
+      .color-data {
+        color: $color-gray;
+        margin-top: 15px;
+      }
+
+      .input-checkbox {
+        margin: 0;
+        position: absolute;
+        top: 10px;
+        right: 5px;
+
+        label {
+          margin: 0;
+        }
+
+      }
+
+    }
+
+  }
+
+  // STYLES FOR LIBRARIES
+  &.library {
+    padding: $medium $medium $medium 250px;
+  }
+
+}
+
+.grid-item-th {
+  background-position: center;
+  background-size: auto 80%;
+  background-repeat: no-repeat;
+  border-top-left-radius: $br-medium;
+  border-top-right-radius: $br-medium;
+  height: 70%;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+
+  .img-th {
+    height: auto;
+    width: 100%;
+  }
+
+}
+
+// MULTISELECT OPTIONS BAR
+.multiselect-bar {
+  @include animation(0,.5s,fadeInUp);
+  align-items: center;
+  background-color: $primary-ui-bg;
+  display: flex;
+  left: 0;
+  justify-content: center;
+  padding: $medium;
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+
+  .multiselect-nav {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    margin-left: 10%;
+    width: 110px;
+
+    span {
+      margin-right: 1.5rem;
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+    svg {
+      cursor: pointer;
+      fill: $medium-ui-icons;
+      height: 20px;
+      width: 20px;
+
+      &:hover {
+        fill: $intense-ui-icons;
+      }
+
+    }
+
+    span.delete {
+
+      &:hover {
+
+        svg{
+          fill: $color-danger-light;
+        }
+
+      }
+
+    }
+
+  }
+
+}
+
+.move-item {
+  position: relative;
+
+  .move-list {
+    background-color: $dark-ui-bg;
+    border-radius: $br-small;
+    bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    left: -30px;
+    max-height: 260px;
+    overflow-y: scroll;
+    padding: $medium;
+    position: absolute;
+    width: 260px;
+
+    li {
+      padding-bottom: $medium;
+
+      &.title {
+        color: $color-gray-darker;
+      }
+
+    }
+
+  }
+
+}

@@ -7,7 +7,7 @@
 (ns uxbox.http.interceptors
   (:require
    [vertx.web :as vw]
-   [uxbox.util.blob :as blob]
+   [uxbox.util.transit :as t]
    [uxbox.util.exceptions :as ex])
   (:import
    io.vertx.ext.web.RoutingContext
@@ -20,7 +20,7 @@
                   mtype (get-in request [:headers "content-type"])]
               (if (= "application/transit+json" mtype)
                 (try
-                  (let [params (blob/decode-from-json body)]
+                  (let [params (t/decode (t/buffer->bytes body))]
                     (update data :request assoc :body-params params))
                   (catch Exception e
                     (ex/raise :type :parse
@@ -35,7 +35,7 @@
                 (coll? body)
                 (-> data
                     (assoc-in [:response :body]
-                              (blob/encode-with-json body true))
+                              (t/bytes->buffer (t/encode body)))
                     (update-in [:response :headers]
                                assoc "content-type" "application/transit+json"))
 

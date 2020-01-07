@@ -7,7 +7,13 @@
 (ns uxbox.common.data
   "Data manipulation and query helper functions."
   (:refer-clojure :exclude [concat])
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set]
+            #?(:cljs [cljs.reader :as r]
+               :clj [clojure.edn :as r])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Structures Manipulation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn concat
   [& colls]
@@ -17,6 +23,18 @@
       (recur (reduce conj result (first colls))
              (rest colls))
       result)))
+
+(defn enumerate
+  ([items] (enumerate items 0))
+  ([items start]
+   (loop [idx start
+          items items
+          res []]
+     (if (empty? items)
+       res
+       (recur (inc idx)
+              (rest items)
+              (conj res [idx (first items)]))))))
 
 (defn seek
   ([pred coll]
@@ -48,3 +66,75 @@
              (recur (first r) (rest r) rs)
              (recur (first r) (rest r) (conj rs [:mod k vmb]))))
          rs)))))
+
+(defn index-by
+  "Return a indexed map of the collection keyed by the result of
+  executing the getter over each element of the collection."
+  [getter coll]
+  (persistent!
+   (reduce #(assoc! %1 (getter %2) %2) (transient {}) coll)))
+
+(defn remove-nil-vals
+  "Given a map, return a map removing key-value
+  pairs when value is `nil`."
+  [data]
+  (into {} (remove (comp nil? second) data)))
+
+(defn without-keys
+  "Return a map without the keys provided
+  in the `keys` parameter."
+  [data keys]
+  (persistent!
+   (reduce #(dissoc! %1 %2) (transient data) keys)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Parsing / Conversion
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- nan?
+  [v]
+  (not= v v))
+
+(defn- impl-parse-integer
+  [v]
+  #?(:cljs (js/parseInt v 10)
+     :clj (try
+            (Integer/parseInt v)
+            (catch Throwable e
+              nil))))
+
+(defn- impl-parse-double
+  [v]
+  #?(:cljs (js/parseFloat v)
+     :clj (try
+            (Double/parseDouble v)
+            (catch Throwable e
+              nil))))
+
+(defn parse-integer
+  ([v]
+   (parse-integer v nil))
+  ([v default]
+   (let [v (impl-parse-integer v)]
+     (if (or (nil? v) (nan? v))
+       default
+       v))))
+
+(defn parse-double
+  ([v]
+   (parse-double v nil))
+  ([v default]
+   (let [v (impl-parse-double v)]
+     (if (or (nil? v) (nan? v))
+       default
+       v))))
+
+(defn read-string
+  [v]
+  (r/read-string v))
+
+(defn coalesce-str
+  [val default]
+  (if (or (nil? val) (nan? val))
+    default
+    (str val)))

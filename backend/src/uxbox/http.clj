@@ -44,7 +44,7 @@
                       interceptors/format-response-body
                       (vxi/errors errors/handle)]
 
-        routes [["/sub/:page-id" {:interceptors [(vxi/cookies)
+        routes [["/sub/:file-id" {:interceptors [(vxi/cookies)
                                                  (vxi/cors cors-opts)
                                                  (session/auth)]
                                   :get ws/handler}]

@@ -9,7 +9,7 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
-   [uxbox.main.data.pages :as udp]
+   [uxbox.main.data.projects :as dp]
    [uxbox.main.store :as st]
    [uxbox.util.spec :as us]))
 
@@ -28,9 +28,9 @@
   (ptk/reify ::watch-page-changes
     ptk/WatchEvent
     (watch [_ state stream]
-      #_(let [stopper (rx/filter #(= % ::udp/stop-page-watcher) stream)]
+      #_(let [stopper (rx/filter #(= % ::dp/stop-page-watcher) stream)]
         (->> stream
-             (rx/filter udp/page-update?)
+             (rx/filter dp/page-update?)
              (rx/filter #(not (undo? %)))
              (rx/filter #(not (redo? %)))
              (rx/map #(save-undo-entry id))
@@ -49,7 +49,7 @@
     (ptk/reify ::save-undo-entry
       ptk/UpdateEvent
       (update [_ state]
-        #_(let [page (udp/pack-page state id)
+        #_(let [page (dp/pack-page state id)
               undo {:data (:data page)
                     :metadata (:metadata page)}]
           (-> state
@@ -82,7 +82,7 @@
             ;; (pp/pprint packed)
 
             (-> state
-                (udp/unpack-page packed)
+                (dp/unpack-page packed)
                 (assoc-in [:undo pid :selected] pointer))))))))
 
 (defn undo?
@@ -113,7 +113,7 @@
           ;; (pp/pprint packed)
 
           (-> state
-              (udp/unpack-page packed)
+              (dp/unpack-page packed)
               (assoc-in [:undo pid :selected] pointer))))))))
 
 (defn redo?

@@ -12,9 +12,9 @@
    [rumext.alpha :as mf]
    [uxbox.main.constants :as c]
    [uxbox.main.data.history :as udh]
-   [uxbox.main.data.pages :as udp]
    [uxbox.main.data.undo :as udu]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace :as dw]
+   [uxbox.main.data.workspace-websocket :as dws]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.confirm]
@@ -55,12 +55,12 @@
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
-        (st/emit! (udw/decrease-zoom))
-        (st/emit! (udw/increase-zoom)))
+        (st/emit! (dw/decrease-zoom))
+        (st/emit! (dw/increase-zoom)))
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
-  [{:keys [layout page file] :as params}]
+  [{:keys [layout page file flags] :as params}]
   (let [canvas (mf/use-ref nil)
         left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                 :document-history])))
@@ -93,29 +93,50 @@
       (when right-sidebar?
         [:& right-sidebar {:page page :layout layout}])]))
 
-(mf/defc workspace
-  [{:keys [file-id page-id] :as props}]
-
+(mf/defc workspace-page
+  [{:keys [file-id page-id layout file flags] :as props}]
   (mf/use-effect
-   {:deps #js [file-id page-id]
-    :fn (fn []
-          (let [sub (shortcuts/init)]
-            (st/emit! (udw/initialize file-id page-id))
-            #(rx/cancel! sub)))})
+   {:deps (mf/deps file-id page-id)
+    :fn #(st/emit! (dw/initialize-page page-id))})
 
-  (let [layout (mf/deref refs/workspace-layout)
-        file   (mf/deref refs/workspace-file)
-        page   (mf/deref refs/workspace-page)
-        flags  (mf/deref refs/selected-flags)]
-
+  (let [page (mf/deref refs/workspace-page)]
     [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
      [:& header {:page page :layout layout :flags flags}]
 
-     (when (:colorpalette flags)
+     (when (:colorpalette layout)
        [:& colorpalette])
 
      (when (and layout page)
        [:& workspace-content {:layout layout
+                              :flags flags
                               :file file
                               :page page}])]))
+
+
+
+(mf/defc workspace
+  [{:keys [file-id page-id] :as props}]
+  (mf/use-effect
+   {:deps (mf/deps file-id)
+    :fn (fn []
+          (st/emit! (dw/initialize file-id))
+          #(st/emit! (dw/finalize file-id)))})
+
+  (mf/use-effect
+   {:deps (mf/deps file-id page-id)
+    :fn (fn []
+          (let [sub (shortcuts/init)]
+            #(rx/cancel! sub)))})
+
+  (let [layout (mf/deref refs/workspace-layout)
+        file   (mf/deref refs/workspace-file)
+        flags  (mf/deref refs/selected-flags)]
+
+    ;; TODO: maybe loading state?
+    (when file
+      [:& workspace-page {:layout layout
+                          :file file
+                          :flags flags
+                          :page-id page-id
+                          :file-id file-id}])))

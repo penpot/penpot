@@ -8,6 +8,7 @@
   (:require
    [cljs.spec.alpha :as s]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [potok.core :as ptk]
    [uxbox.main.repo.core :as rp]
    [uxbox.util.i18n :as i18n :refer [tr]]
@@ -31,7 +32,7 @@
 
 ;; --- Profile Fetched
 
-(s/def ::profile-fetched-params
+(s/def ::profile-fetched
   (s/keys :req-un [::id
                    ::username
                    ::fullname
@@ -41,8 +42,8 @@
 
 (defn profile-fetched
   [data]
-  (s/assert ::profile-fetched-params data)
-  (reify
+  (s/assert ::profile-fetched data)
+  (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :profile data))

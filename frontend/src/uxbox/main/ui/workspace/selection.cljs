@@ -26,10 +26,10 @@
 (def ^:private +circle-props+
   {:r 6
    :style {:fillOpacity "1"
-           :strokeWidth "1px"
+           :strokeWidth "2px"
            :vectorEffect "non-scaling-stroke"}
-   :fill "#31e6e0"
-   :stroke "#28c4d4"})
+   :fill "rgba(49,239,184,.7)"
+   :stroke "#31EFB8"})
 
 ;; --- Resize Implementation
 
@@ -90,63 +90,63 @@
     :on-mouse-down on-click
     :r r
     :style {:fillOpacity "1"
-            :strokeWidth "1px"
+            :strokeWidth "2px"
             :vectorEffect "non-scaling-stroke"}
-    :fill "#31e6e0"
-    :stroke "#28c4d4"
+   :fill "rgba(49,239,184,.7)"
+   :stroke "#31EFB8"
     :cx cx
     :cy cy}])
 
 (mf/defc controls
   [{:keys [shape zoom on-click] :as props}]
-  (let [{:keys [x1 y1 width height]} shape
+  (let [{:keys [x y width height]} shape
         radius (if (> (max width height) handler-size-threshold) 6.0 4.0)]
     [:g.controls
-     [:rect.main {:x x1 :y y1
+     [:rect.main {:x x :y y
                   :width width
                   :height height
-                  :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-                  :style {:stroke "#333" :fill "transparent"
+                  :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
+                  :style {:stroke "#31EFB8" :fill "transparent"
                           :stroke-opacity "1"}}]
      [:& control-item {:class "top"
                        :on-click #(on-click :top %)
                        :r (/ radius zoom)
-                       :cx (+ x1 (/ width 2))
-                       :cy (- y1 2)}]
+                       :cx (+ x (/ width 2))
+                       :cy (- y 2)}]
      [:& control-item {:on-click #(on-click :right %)
                        :r (/ radius zoom)
-                       :cy (+ y1 (/ height 2))
-                       :cx (+ x1 width 1)
+                       :cy (+ y (/ height 2))
+                       :cx (+ x width 1)
                        :class "right"}]
      [:& control-item {:on-click #(on-click :bottom %)
                        :r (/ radius zoom)
-                       :cx (+ x1 (/ width 2))
-                       :cy (+ y1 height 2)
+                       :cx (+ x (/ width 2))
+                       :cy (+ y height 2)
                        :class "bottom"}]
      [:& control-item {:on-click #(on-click :left %)
                        :r (/ radius zoom)
-                       :cy (+ y1 (/ height 2))
-                       :cx (- x1 3)
+                       :cy (+ y (/ height 2))
+                       :cx (- x 3)
                        :class "left"}]
      [:& control-item {:on-click #(on-click :top-left %)
                        :r (/ radius zoom)
-                       :cx x1
-                       :cy y1
+                       :cx x
+                       :cy y
                        :class "top-left"}]
      [:& control-item {:on-click #(on-click :top-right %)
                       :r (/ radius zoom)
-                      :cx (+ x1 width)
-                      :cy y1
+                      :cx (+ x width)
+                      :cy y
                       :class "top-right"}]
      [:& control-item {:on-click #(on-click :bottom-left %)
                        :r (/ radius zoom)
-                       :cx x1
-                       :cy (+ y1 height)
+                       :cx x
+                       :cy (+ y height)
                        :class "bottom-left"}]
      [:& control-item {:on-click #(on-click :bottom-right %)
                        :r (/ radius zoom)
-                       :cx (+ x1 width)
-                       :cy (+ y1 height)
+                       :cx (+ x width)
+                       :cy (+ y height)
                        :class "bottom-right"}]]))
 
 ;; --- Selection Handlers (Component)
@@ -183,8 +183,8 @@
                    :r (/ 6.0 zoom)
                    :key index
                    :on-mouse-down #(on-mouse-down % index)
-                   :fill "#31e6e0"
-                   :stroke "#28c4d4"
+                   :fill "rgba(49,239,184,.7)"
+                   :stroke "#31EFB8"
                    :style {:cursor "pointer"}}])])))
 
 ;; TODO: add specs for clarity
@@ -203,15 +203,15 @@
 
 (mf/defc text-edition-selection-handlers
   [{:keys [shape zoom] :as props}]
-  (let [{:keys [x1 y1 width height] :as shape} (geom/selection-rect shape)]
+  (let [{:keys [x y width height] :as shape} (geom/selection-rect shape)]
     [:g.controls
-     [:rect.main {:x x1 :y y1
+     [:rect.main {:x x :y y
                   :width width
                   :height height
                   ;; :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-                  :style {:stroke "#333"
+                  :style {:stroke "#31EFB8"
                           :stroke-width "0.5"
-                          :stroke-opacity "0.5"
+                          :stroke-opacity "1"
                           :fill "transparent"}}]]))
 
 (mf/defc single-selection-handlers

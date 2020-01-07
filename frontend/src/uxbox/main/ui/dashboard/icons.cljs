@@ -79,29 +79,14 @@
 
 ;; --- Nav
 
-(defn- make-num-icons-iref
-  [id]
-  (letfn [(selector [icons]
-            (->> (vals icons)
-                 (filter #(= id (:collection-id %)))
-                 (count)))]
-    (-> (comp (l/key :icons)
-              (l/lens selector))
-        (l/derive st/state))))
-
 (mf/defc nav-item
   [{:keys [coll selected?] :as props}]
   (let [local (mf/use-state {})
-        {:keys [id type name num-icons]} coll
-        ;; TODO: recalculate the num-icons on crud operations for
-        ;; avod doing this on UI.
-        ;; num-icons-iref (mf/use-memo {:deps #js [id]
-        ;;                              :fn #(make-num-icons-iref (:id coll))})
-        ;; num-icons (mf/deref num-icons-iref)
+        {:keys [id type name]} coll
         editable? (= type :own)]
     (letfn [(on-click [event]
               (let [type (or type :own)]
-                (st/emit! (rt/nav :dashboard/icons {} {:type type :id id}))))
+                (st/emit! (rt/nav :dashboard-icons {} {:type type :id id}))))
             (on-input-change [event]
               (-> (dom/get-target event)
                   (dom/get-value)
@@ -127,15 +112,14 @@
                                  :on-change on-input-change
                                  :on-key-down on-input-keyup}]
           [:span.close {:on-click on-cancel} i/close]]
-         [:span.element-title (if id name "Storage")])
-       [:span.element-subtitle (tr "ds.num-elements" (t/c num-icons))]])))
+         [:span.element-title (if id name "Storage")])])))
 
 
 (mf/defc nav
   [{:keys [id type colls selected-coll] :as props}]
   (let [own? (= type :own)
         builtin? (= type :builtin)
-        select-tab #(st/emit! (rt/nav :dashboard/icons nil {:type %}))]
+        select-tab #(st/emit! (rt/nav :dashboard-icons nil {:type %}))]
     [:div.library-bar
      [:div.library-bar-inside
       [:ul.library-tabs
@@ -350,54 +334,12 @@
                         :selected (contains? (:selected opts) (:id icon))
                         :edition? (= (:edition opts) (:id icon))}])]]]))
 
-;; --- Menu
-
-(mf/defc menu
-  [{:keys [opts coll] :as props}]
-  (let [ordering (:order opts :name)
-        filtering (:filter opts "")
-        icount (count (:icons coll))]
-    (letfn [(on-term-change [event]
-              (let [term (-> (dom/get-target event)
-                             (dom/get-value))]
-                (st/emit! (di/update-opts :filter term))))
-            (on-ordering-change [event]
-              (let [value (dom/event->value event)
-                    value (read-string value)]
-                (st/emit! (di/update-opts :order value))))
-            (on-clear [event]
-              (st/emit! (di/update-opts :filter "")))]
-      [:section.dashboard-bar.library-gap
-       [:div.dashboard-info
-
-        ;; Counter
-        [:span.dashboard-icons (tr "ds.num-icons" (t/c icount))]
-
-        ;; Sorting
-        [:div
-         [:span (tr "ds.ordering")]
-         [:select.input-select {:on-change on-ordering-change
-                                :value (pr-str ordering)}
-          (for [[key value] (seq +ordering-options+)]
-            [:option {:key key :value (pr-str key)} (tr value)])]]
-
-        ;; Search
-        [:form.dashboard-search
-         [:input.input-text {:key :icons-search-box
-                             :type "text"
-                             :on-change on-term-change
-                             :auto-focus true
-                             :placeholder (tr "ds.search.placeholder")
-                             :value filtering}]
-         [:div.clear-search {:on-click on-clear} i/close]]]])))
-
 ;; --- Content
 
 (mf/defc content
   [{:keys [id type coll] :as props}]
   (let [opts (mf/deref opts-iref)]
     [:*
-     [:& menu {:opts opts :coll coll}]
      [:section.dashboard-grid.library
       (when coll
         [:& grid-header {:coll coll}])
@@ -425,15 +367,13 @@
                         :else (first colls))
         id (:id selected-coll)]
     (mf/use-effect #(st/emit! di/fetch-collections))
-    (mf/use-effect {:fn #(st/emit! di/initialize
-                                   (di/fetch-icons id))
-                    :deps #js [id type]})
+    (mf/use-effect {:fn #(st/emit! (di/fetch-icons id))
+                    :deps #js [(str id)]})
 
     [:section.dashboard-content
      [:& nav {:type type
               :id id
-              :colls colls
-              :selected-coll selected-coll}]
+              :colls colls}]
      [:& content {:type type
                   :id id
                   :coll selected-coll}]]))

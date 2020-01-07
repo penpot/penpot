@@ -16,13 +16,12 @@
 (s/def ::background string?)
 (s/def ::background-opacity number?)
 
-;; Page related
-(s/def ::file-id uuid?)
-(s/def ::user uuid?)
-(s/def ::created-at inst?)
-(s/def ::modified-at inst?)
-(s/def ::version number?)
-(s/def ::ordering number?)
+(s/def ::metadata
+  (s/keys :opt-un [::grid-y-axis
+                   ::grid-x-axis
+                   ::grid-color
+                   ::background
+                   ::background-opacity]))
 
 ;; Page Data related
 (s/def ::shape
@@ -35,18 +34,8 @@
 (s/def ::shapes-by-id
   (s/map-of uuid? ::shape))
 
-;; Main
-
 (s/def ::data
   (s/keys :req-un [::shapes ::canvas ::shapes-by-id]))
-
-
-(s/def ::metadata
-  (s/keys :opt-un [::grid-y-axis
-                   ::grid-x-axis
-                   ::grid-color
-                   ::background
-                   ::background-opacity]))
 
 (s/def ::shape-change
   (s/tuple #{:add :mod :del} keyword? any?))

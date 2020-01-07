@@ -82,9 +82,6 @@
     ;; Something else
     :else
     (do
-      (js/console.error "Unhandled Error:"
-                        "\n - message:" (ex-message error)
-                        "\n - data:" (pr-str (ex-data error)))
       (js/console.error error)
       (ts/schedule 100 #(st/emit! (uum/error (tr "errors.generic")))))))
 

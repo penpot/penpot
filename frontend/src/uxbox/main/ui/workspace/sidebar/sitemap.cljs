@@ -11,7 +11,6 @@
    [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.pages :as udp]
    [uxbox.main.data.projects :as dp]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
@@ -30,7 +29,7 @@
 (mf/defc page-item
   [{:keys [page index deletable? selected?] :as props}]
   (let [on-edit #(modal/show! page-form-dialog {:page page})
-        delete-fn #(st/emit! (udp/delete-page (:id page)))
+        delete-fn #(st/emit! (dp/delete-page (:id page)))
         on-delete #(do
                      (dom/prevent-default %)
                      (dom/stop-propagation %)
@@ -101,11 +100,7 @@
         close-fn  #(st/emit! (dw/toggle-layout-flag :sitemap))]
     [:div.sitemap.tool-window
      [:div.tool-window-bar
-      [:div.tool-window-icon i/project-tree]
       [:span (tr "ds.settings.sitemap")]
-      [:div.tool-window-close {:on-click close-fn} i/close]]
+      [:div.add-page {:on-click create-fn} i/close]]
      [:div.tool-window-content
-      [:div.project-title
-       #_[:span (:name project)]
-       [:div.add-page {:on-click create-fn} i/close]]
       [:& pages-list {:file file :current-page page}]]]))

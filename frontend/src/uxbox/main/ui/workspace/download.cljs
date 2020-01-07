@@ -75,7 +75,7 @@
   (let [event (js/MouseEvent. "click")
         link (.createElement js/document "a")
         now (dt/now)
-        stream (->> (rx/from-coll (generate-files pages))
+        stream (->> (rx/from (generate-files pages))
                     (rx/reduce conj [])
                     (rx/mapcat zip/build)
                     (rx/map blob/create-uri)

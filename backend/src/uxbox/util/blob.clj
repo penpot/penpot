@@ -29,38 +29,6 @@
   String
   (->bytes [data] (.getBytes ^String data "UTF-8")))
 
-(defn str->bytes
-  "Convert string to byte array."
-  ([^String s]
-   (str->bytes s "UTF-8"))
-  ([^String s, ^String encoding]
-   (.getBytes s encoding)))
-
-(defn bytes->str
-  "Convert byte array to String."
-  ([^bytes data]
-   (bytes->str data "UTF-8"))
-  ([^bytes data, ^String encoding]
-   (String. data encoding)))
-
-(defn buffer
-  [^bytes data]
-  (Buffer/buffer data))
-
-(defn encode-with-json
-  "A function used for encode data for transfer it to frontend."
-  ([data] (encode-with-json data false))
-  ([data verbose?]
-   (let [type (if verbose? :json-verbose :json)]
-     (-> (t/encode data {:type type})
-         (Buffer/buffer)))))
-
-(defn decode-from-json
-  "A function used for parse data coming from frontend."
-  [data]
-  (-> (->bytes data)
-      (t/decode {:type :json})))
-
 (defn encode
   "A function used for encode data for persist in the database."
   [data]
@@ -73,7 +41,7 @@
       (.writeInt dos (int data-len))
       (.write dos ^bytes cdata (int 0) (alength cdata))
       (-> (.toByteArray baos)
-          (buffer)))))
+          (t/bytes->buffer)))))
 
 (declare decode-v1)
 

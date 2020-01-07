@@ -319,7 +319,7 @@ ul.slider-dots {
   width: 100%;
 
   &::after {
-    color: $soft-ui-text;
+    color: $medium-ui-text;
     font-size: $fs12;
     height: 20px;
     position: absolute;
@@ -442,8 +442,10 @@ input[type="checkbox"]:focus {
 // Element-name
 
 input.element-name {
-  border: 1px solid $soft-ui-border;
+  background-color: $dark-ui-bg;
+  border: 1px solid $intense-ui-border;
   border-radius: $br-small;
+  color: $intense-ui-text;
   font-size: $fs13;
   margin: 0px;
   padding: 3px;
@@ -454,7 +456,7 @@ input.element-name {
 
 .input-select {
   @extend .input-text;
-  background-image: url("/images/svg/arrow-down.svg");
+  background-image: url("/images/svg/arrow-down-white.svg");
   background-repeat: no-repeat;
   background-position: 95% 48%;
   background-size: 10px;
@@ -855,9 +857,9 @@ input[type=range]:focus::-ms-fill-upper {
   &:hover {
 
     &::after {
-      background-color: $primary-ui-bg;
+      background-color: $color-white;
       border-radius: $br-small;
-      color: $medium-ui-text;
+      color: $intense-ui-text;
       content: attr(alt);
       font-size: $fs11;
       font-weight: bold;
@@ -905,7 +907,7 @@ input[type=range]:focus::-ms-fill-upper {
 
       &::after {
         align-items: center;
-        background-color: $input-bg;
+        background-color: $color-white;
         box-sizing: border-box;
         border-radius: 0;
         color: $intense-ui-text;

@@ -10,7 +10,6 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.history :as udh]
-   [uxbox.main.data.pages :as udp]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]

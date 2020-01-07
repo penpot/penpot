@@ -90,7 +90,7 @@ var shallowequal = function shallowEqual(objA, objB, compare, compareContext) {
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
 
-function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 /**
@@ -127,7 +127,7 @@ function useCollector(monitor, collect, onUpdate) {
 
 function _nonIterableRest$1() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
 
-function _iterableToArrayLimit$1(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+function _iterableToArrayLimit$1(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles$1(arr) { if (Array.isArray(arr)) return arr; }
 function useMonitorOutput(monitor, collect, onCollect) {
@@ -740,9 +740,9 @@ function hoverAllTargets(targetIds, monitor, registry) {
     var target = registry.getTarget(targetId);
     target.hover(monitor, targetId);
   });
-}function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { keys.push.apply(keys, Object.getOwnPropertySymbols(object)); } if (enumerableOnly) keys = keys.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); return keys; }
+}function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 function createDrop(manager) {
@@ -854,9 +854,9 @@ function areArraysEqual(a, b) {
   }
 
   return true;
-}function ownKeys$1(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { keys.push.apply(keys, Object.getOwnPropertySymbols(object)); } if (enumerableOnly) keys = keys.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); return keys; }
+}function ownKeys$1(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread$1(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$1(source, true).forEach(function (key) { _defineProperty$1(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$1(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread$1(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$1(Object(source), true).forEach(function (key) { _defineProperty$1(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$1(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty$1(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 var initialState = {
@@ -929,9 +929,9 @@ function removeTarget(targetId) {
       targetId: targetId
     }
   };
-}function ownKeys$2(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { keys.push.apply(keys, Object.getOwnPropertySymbols(object)); } if (enumerableOnly) keys = keys.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); return keys; }
+}function ownKeys$2(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread$2(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$2(source, true).forEach(function (key) { _defineProperty$2(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$2(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread$2(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$2(Object(source), true).forEach(function (key) { _defineProperty$2(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$2(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty$2(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 var initialState$1 = {
@@ -1089,9 +1089,9 @@ function areDirty(dirtyIds, handlerIds) {
 }function stateId() {
   var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
   return state + 1;
-}function ownKeys$3(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { keys.push.apply(keys, Object.getOwnPropertySymbols(object)); } if (enumerableOnly) keys = keys.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); return keys; }
+}function ownKeys$3(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread$3(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$3(source, true).forEach(function (key) { _defineProperty$3(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$3(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread$3(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$3(Object(source), true).forEach(function (key) { _defineProperty$3(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$3(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty$3(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 function reduce() {
@@ -1705,7 +1705,7 @@ function _slicedToArray$2(arr, i) { return _arrayWithHoles$2(arr) || _iterableTo
 
 function _nonIterableRest$2() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
 
-function _iterableToArrayLimit$2(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+function _iterableToArrayLimit$2(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles$2(arr) { if (Array.isArray(arr)) return arr; }
 
@@ -1751,7 +1751,7 @@ function mapContainsValue(map, searchValue) {
       return true;
     }
 
-    isDone = done;
+    isDone = !!done;
   } while (!isDone);
 
   return false;
@@ -1959,6 +1959,7 @@ function () {
   }, {
     key: "getActions",
     value: function getActions() {
+      /* eslint-disable-next-line @typescript-eslint/no-this-alias */
       var manager = this;
       var dispatch = this.store.dispatch;
 
@@ -2465,7 +2466,7 @@ function () {
 
 function _nonIterableRest$3() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
 
-function _iterableToArrayLimit$3(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+function _iterableToArrayLimit$3(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles$3(arr) { if (Array.isArray(arr)) return arr; }
 
@@ -2535,7 +2536,7 @@ function useDragHandler(spec, monitor, connector) {
 
 function _nonIterableRest$4() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
 
-function _iterableToArrayLimit$4(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+function _iterableToArrayLimit$4(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles$4(arr) { if (Array.isArray(arr)) return arr; }
 /**
@@ -2813,7 +2814,7 @@ function () {
 
 function _nonIterableRest$5() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
 
-function _iterableToArrayLimit$5(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+function _iterableToArrayLimit$5(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles$5(arr) { if (Array.isArray(arr)) return arr; }
 function useDropTargetMonitor() {
@@ -2864,7 +2865,7 @@ function useDropHandler(spec, monitor, connector) {
 
 function _nonIterableRest$6() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
 
-function _iterableToArrayLimit$6(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+function _iterableToArrayLimit$6(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles$6(arr) { if (Array.isArray(arr)) return arr; }
 /**
@@ -2896,9 +2897,18 @@ function useDrop(spec) {
     connector.reconnect();
   }, [spec.options]);
   return [result, connectDropTarget];
-}function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
+}function _slicedToArray$7(arr, i) { return _arrayWithHoles$7(arr) || _iterableToArrayLimit$7(arr, i) || _nonIterableRest$7(); }
+
+function _nonIterableRest$7() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit$7(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles$7(arr) { if (Array.isArray(arr)) return arr; }
+
+function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
 
 function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
+var refCount$1 = 0;
 /**
  * A React component that provides the React-DnD context
  */
@@ -2907,13 +2917,53 @@ var DndProvider = React.memo(function (_ref) {
   var children = _ref.children,
       props = _objectWithoutProperties(_ref, ["children"]);
 
-  var context = 'manager' in props ? {
-    dragDropManager: props.manager
-  } : createSingletonDndContext(props.backend, props.context, props.options, props.debugMode);
+  var _getDndContextValue = getDndContextValue(props),
+      _getDndContextValue2 = _slicedToArray$7(_getDndContextValue, 2),
+      manager = _getDndContextValue2[0],
+      isGlobalInstance = _getDndContextValue2[1]; // memoized from props
+
+  /**
+   * If the global context was used to store the DND context
+   * then where theres no more references to it we should
+   * clean it up to avoid memory leaks
+   */
+
+
+  React.useEffect(function () {
+    if (isGlobalInstance) {
+      refCount$1++;
+    }
+
+    return function () {
+      if (isGlobalInstance) {
+        refCount$1--;
+
+        if (refCount$1 === 0) {
+          var context = getGlobalContext();
+          context[instanceSymbol] = null;
+        }
+      }
+    };
+  }, []);
   return React.createElement(DndContext.Provider, {
-    value: context
+    value: manager
   }, children);
 });
+DndProvider.displayName = 'DndProvider';
+
+function getDndContextValue(props) {
+  if ('manager' in props) {
+    var _manager = {
+      dragDropManager: props.manager
+    };
+    return [_manager, false];
+  }
+
+  var manager = createSingletonDndContext(props.backend, props.context, props.options, props.debugMode);
+  var isGlobalInstance = !props.context;
+  return [manager, isGlobalInstance];
+}
+
 var instanceSymbol = Symbol.for('__REACT_DND_CONTEXT_INSTANCE__');
 
 function createSingletonDndContext(backend) {
@@ -2931,26 +2981,7 @@ function createSingletonDndContext(backend) {
 
 function getGlobalContext() {
   return typeof global$1 !== 'undefined' ? global$1 : window;
-}/*
- * A utility for rendering a drag preview image
- */
-
-var DragPreviewImage = React.memo(function (_ref) {
-  var connect = _ref.connect,
-      src = _ref.src;
-
-  if (typeof Image !== 'undefined') {
-    var img = new Image();
-    img.src = src;
-
-    img.onload = function () {
-      return connect(img);
-    };
-  }
-
-  return null;
-});
-DragPreviewImage.displayName = 'DragPreviewImage';// cheap lodash replacements
+}// cheap lodash replacements
 function memoize(fn) {
   var result = null;
 
@@ -3253,7 +3284,7 @@ function getDragPreviewOffset(sourceNode, dragPreview, clientOffset, anchorPoint
   };
 }var FILE = '__NATIVE_FILE__';
 var URL = '__NATIVE_URL__';
-var TEXT = '__NATIVE_TEXT__';var NativeTypes = /*#__PURE__*/Object.freeze({FILE: FILE,URL: URL,TEXT: TEXT});function getDataFromDataTransfer(dataTransfer, typesToTry, defaultValue) {
+var TEXT = '__NATIVE_TEXT__';var NativeTypes=/*#__PURE__*/Object.freeze({__proto__:null,FILE: FILE,URL: URL,TEXT: TEXT});function getDataFromDataTransfer(dataTransfer, typesToTry, defaultValue) {
   var result = typesToTry.reduce(function (resultSoFar, typeToTry) {
     return resultSoFar || dataTransfer.getData(typeToTry);
   }, '');
@@ -3295,41 +3326,46 @@ var NativeDragSource =
 /*#__PURE__*/
 function () {
   function NativeDragSource(config) {
-    var _this = this;
-
     _classCallCheck$9(this, NativeDragSource);
 
     this.config = config;
     this.item = {};
-    Object.keys(this.config.exposeProperties).forEach(function (property) {
-      Object.defineProperty(_this.item, property, {
-        configurable: true,
-        enumerable: true,
-        get: function get() {
-          // eslint-disable-next-line no-console
-          console.warn("Browser doesn't allow reading \"".concat(property, "\" until the drop event."));
-          return null;
-        }
-      });
-    });
+    this.initializeExposedProperties();
   }
 
   _createClass$9(NativeDragSource, [{
-    key: "mutateItemByReadingDataTransfer",
-    value: function mutateItemByReadingDataTransfer(dataTransfer) {
+    key: "initializeExposedProperties",
+    value: function initializeExposedProperties() {
+      var _this = this;
+
+      Object.keys(this.config.exposeProperties).forEach(function (property) {
+        Object.defineProperty(_this.item, property, {
+          configurable: true,
+          enumerable: true,
+          get: function get() {
+            // eslint-disable-next-line no-console
+            console.warn("Browser doesn't allow reading \"".concat(property, "\" until the drop event."));
+            return null;
+          }
+        });
+      });
+    }
+  }, {
+    key: "loadDataTransfer",
+    value: function loadDataTransfer(dataTransfer) {
       var _this2 = this;
 
-      var newProperties = {};
-
       if (dataTransfer) {
+        var newProperties = {};
         Object.keys(this.config.exposeProperties).forEach(function (property) {
           newProperties[property] = {
-            value: _this2.config.exposeProperties[property](dataTransfer, _this2.config.matchesTypes)
+            value: _this2.config.exposeProperties[property](dataTransfer, _this2.config.matchesTypes),
+            configurable: true,
+            enumerable: true
           };
         });
+        Object.defineProperties(this.item, newProperties);
       }
-
-      Object.defineProperties(this.item, newProperties);
     }
   }, {
     key: "canDrag",
@@ -3353,8 +3389,10 @@ function () {
   }]);
 
   return NativeDragSource;
-}();function createNativeDragSource(type) {
-  return new NativeDragSource(nativeTypesConfig[type]);
+}();function createNativeDragSource(type, dataTransfer) {
+  var result = new NativeDragSource(nativeTypesConfig[type]);
+  result.loadDataTransfer(dataTransfer);
+  return result;
 }
 function matchNativeItemType(dataTransfer) {
   if (!dataTransfer) {
@@ -3406,9 +3444,9 @@ function () {
   }]);
 
   return OptionsReader;
-}();function ownKeys$4(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { keys.push.apply(keys, Object.getOwnPropertySymbols(object)); } if (enumerableOnly) keys = keys.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); return keys; }
+}();function ownKeys$4(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread$4(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$4(source, true).forEach(function (key) { _defineProperty$5(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$4(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread$4(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$4(Object(source), true).forEach(function (key) { _defineProperty$5(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$4(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty$5(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -3608,7 +3646,7 @@ function () {
 
       if (nativeType) {
         // A native item (such as file or URL) dragged from outside the document
-        _this.beginDragNativeItem(nativeType);
+        _this.beginDragNativeItem(nativeType, dataTransfer);
       }
     };
 
@@ -3718,7 +3756,7 @@ function () {
       e.preventDefault();
 
       if (_this.isDraggingNativeItem()) {
-        _this.currentNativeSource.mutateItemByReadingDataTransfer(e.dataTransfer);
+        _this.currentNativeSource.loadDataTransfer(e.dataTransfer);
       }
 
       _this.enterLeaveCounter.reset();
@@ -3945,9 +3983,9 @@ function () {
     }
   }, {
     key: "beginDragNativeItem",
-    value: function beginDragNativeItem(type) {
+    value: function beginDragNativeItem(type, dataTransfer) {
       this.clearCurrentDragSourceNode();
-      this.currentNativeSource = createNativeDragSource(type);
+      this.currentNativeSource = createNativeDragSource(type, dataTransfer);
       this.currentNativeHandle = this.registry.addSource(type, this.currentNativeSource);
       this.actions.beginDrag([this.currentNativeHandle]);
     }

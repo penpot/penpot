@@ -11,7 +11,7 @@
    [cljs.spec.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.pages :as udp]
+   [uxbox.main.data.projects :as dp]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
@@ -34,8 +34,8 @@
   (modal/hide!)
   (let [data (:clean-data form)]
     (if (nil? (:id data))
-      (st/emit! (udp/create-page data))
-      (st/emit! (udp/rename-page data)))))
+      (st/emit! (dp/create-page data))
+      (st/emit! (dp/rename-page data)))))
 
 (defn- initial-data
   [page]

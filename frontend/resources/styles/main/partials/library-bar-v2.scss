@@ -1,0 +1,123 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+.library-bar {
+  background-color: $primary-ui-bg;
+  bottom: 0;
+  height: 100%;
+  left: 0;
+  position: fixed;
+  width: 250px;
+
+  .library-bar-inside {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding-top: 60px;
+
+    .library-tabs {
+      align-items: center;
+      background-color: $secondary-ui-bg;
+      display: flex;
+      justify-content: space-around;
+      margin: 0;
+      padding-top: 12px;
+
+      li {
+        background-color: darken($secondary-ui-bg, 10%);
+        border-top-left-radius: 3px;
+        border-top-right-radius: 3px;
+        color: $color-gray;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: $fs14;
+        padding: .6rem;
+        text-align: center;
+        width: 118px;
+
+        &:hover {
+          color: $color-white;
+        }
+
+        &.current {
+          background-color: $primary-ui-bg;
+          color: $main-ui-color;
+        }
+
+      }
+
+    }
+
+    .library-elements {
+      display: flex;
+      flex-direction: column;
+      height: calc(95% - 1rem);
+      margin-bottom: 1rem;
+      overflow-y: auto;
+      padding-bottom: 20px;
+
+      li {
+        border-bottom: 1px solid $secondary-ui-bg;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        padding: 10px;
+
+        span.element-title {
+          color: $color-gray-dark;
+          font-weight: bold;
+          margin-bottom: 5px;
+          overflow-x: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        input.element-title {
+          border: 0;
+          height: 30px;
+          padding: 5px;
+        }
+
+        .close {
+            background: $primary-ui-bg;
+            cursor: pointer;
+            padding: 5px 10px;
+
+            svg {
+              fill: $color-gray;
+              height: 20px;
+              transform: rotate(45deg) translateY(7px);
+              width: 20px;
+            }
+        }
+
+        .element-subtitle {
+          color: $color-gray-light;
+          font-style: italic;
+        }
+
+        &:hover,
+        &.current {
+          background-color: $main-ui-color;
+
+          span.element-title,
+          .element-subtitle {
+            color: $color-white;
+          }
+          input.element-title {
+            color: $color-gray-dark;
+          }
+        }
+
+      }
+
+    }
+
+  }
+
+}

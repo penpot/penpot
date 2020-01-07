@@ -99,13 +99,13 @@
    {:enter (fn [data]
              (let [context (get-in data [:request ::vw/routing-context])
                    uploads (reduce (fn [acc ^FileUpload upload]
-                                     (assoc acc
-                                            (keyword (.name upload))
-                                            {:type :uploaded-file
-                                             :mtype (.contentType upload)
-                                             :path (.uploadedFileName upload)
-                                             :name (.fileName upload)
-                                             :size (.size upload)}))
+                                     (assoc! acc
+                                             (keyword (.name upload))
+                                             {:type :uploaded-file
+                                              :mtype (.contentType upload)
+                                              :path (.uploadedFileName upload)
+                                              :name (.fileName upload)
+                                              :size (.size upload)}))
                                    (transient {})
                                    (.fileUploads ^RoutingContext context))]
                (update data :request assoc attr (persistent! uploads))))}))

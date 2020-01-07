@@ -5,12 +5,15 @@
 ;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.router
-  (:require [reitit.core :as r]
-            [cuerdas.core :as str]
-            [potok.core :as ptk]
-            [uxbox.util.html.history :as html-history])
-  (:import goog.Uri
-           goog.Uri.QueryData))
+  (:require
+   [reitit.core :as r]
+   [cuerdas.core :as str]
+   [potok.core :as ptk]
+   [uxbox.common.data :as d]
+   [uxbox.util.html.history :as html-history])
+  (:import
+   goog.Uri
+   goog.Uri.QueryData))
 
 (defonce +router+ nil)
 
@@ -42,7 +45,9 @@
      (if (empty? qparams)
        (r/match->path match)
        (let [uri (.parse goog.Uri (r/match->path match))
-             qdt (.createFromMap QueryData (clj->js qparams))]
+             qdt (.createFromMap QueryData (-> qparams
+                                               (d/remove-nil-vals)
+                                               (clj->js)))]
          (.setQueryData uri qdt)
          (.toString uri))))))
 

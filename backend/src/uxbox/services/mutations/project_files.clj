@@ -59,7 +59,7 @@
                    (ex/raise :type :validation
                              :code :not-authorized))))))
 
-;; --- Mutation: Create Project
+;; --- Mutation: Create Project File
 
 (declare create-file)
 (declare create-page)
@@ -72,9 +72,9 @@
   [{:keys [user project-id] :as params}]
   (db/with-atomic [conn db/pool]
     (proj/check-edition-permissions! conn user project-id)
-    (p/let [file (create-file conn params)]
-      (create-page conn (assoc params :file-id (:id file)))
-      file)))
+    (p/let [file (create-file conn params)
+            page (create-page conn (assoc params :file-id (:id file)))]
+      (assoc file :pages [(:id page)]))))
 
 (defn create-file
   [conn {:keys [id user name project-id] :as params}]
@@ -88,7 +88,10 @@
   [conn {:keys [user file-id] :as params}]
   (let [id  (uuid/next)
         name "Page 1"
-        data (blob/encode {})
+        data (blob/encode
+              {:shapes []
+               :canvas []
+               :shapes-by-id {}})
         sql "insert into project_pages (id, user_id, file_id, name, version,
                                         ordering, data)
              values ($1, $2, $3, $4, 0, 1, $5) returning id"]

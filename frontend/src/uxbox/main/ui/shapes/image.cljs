@@ -47,18 +47,19 @@
 
 (mf/defc image-shape
   [{:keys [shape image] :as props}]
-  (let [{:keys [id x1 y1 width height modifier-mtx]} (geom/size shape)
+  (let [{:keys [id x y width height modifier-mtx]} shape
         moving? (boolean modifier-mtx)
         transform (when (gmt/matrix? modifier-mtx)
                     (str modifier-mtx))
 
-        props {:x x1 :y y1
-               :id (str "shape-" id)
-               :preserve-aspect-ratio "none"
-               :class (classnames :move-cursor moving?)
-               :xlink-href (:url image)
-               :transform transform
-               :width width
-               :height height}
-        attrs (merge props (attrs/extract-style-attrs shape))]
-    [:> :image (normalize-props attrs)]))
+        props (-> (attrs/extract-style-attrs shape)
+                  (assoc :x x
+                         :y y
+                         :id (str "shape-" id)
+                         :preserveAspectRatio "none"
+                         :class (classnames :move-cursor moving?)
+                         :xlinkHref (:url image)
+                         :transform transform
+                         :width width
+                         :height height))]
+    [:& "image" props]))

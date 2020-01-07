@@ -10,7 +10,6 @@
             [uxbox.util.router :as rt]
             [uxbox.util.data :refer (parse-int)]
             [uxbox.main.repo :as rp]
-            [uxbox.main.data.pages :as udpg]
             [uxbox.main.data.projects :as udpj]))
 
 ;; --- Initialize

@@ -57,20 +57,8 @@
   ([data]
    (decode data nil))
   ([data opts]
-   (cond
-     (instance? Buffer data)
-     (decode (.getBytes ^Buffer data) opts)
-
-     (bytes? data)
-     (with-open [input (ByteArrayInputStream. data)]
-       (read! (reader input opts)))
-
-     (string? data)
-     (decode (.getBytes data "UTF-8") opts)
-
-     :else
-     (with-open [input (io/input-stream data)]
-       (read! (reader input opts))))))
+   (with-open [input (ByteArrayInputStream. ^bytes data)]
+     (read! (reader input opts)))))
 
 (defn encode
   ([data]
@@ -80,3 +68,29 @@
      (let [w (writer out opts)]
        (write! w data)
        (.toByteArray out)))))
+
+;; --- Helpers
+
+(defn str->bytes
+  "Convert string to byte array."
+  ([^String s]
+   (str->bytes s "UTF-8"))
+  ([^String s, ^String encoding]
+   (.getBytes s encoding)))
+
+(defn bytes->str
+  "Convert byte array to String."
+  ([^bytes data]
+   (bytes->str data "UTF-8"))
+  ([^bytes data, ^String encoding]
+   (String. data encoding)))
+
+(defn bytes->buffer
+  [^bytes data]
+  (Buffer/buffer data))
+
+(defn buffer->bytes
+  [^Buffer data]
+  (.getBytes data))
+
+

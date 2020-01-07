@@ -124,9 +124,8 @@
 
     .element-list-body {
       align-items: center;
-      border-bottom: 1px solid $soft-ui-border;
       display: flex;
-      padding: $small;
+      padding: $x-small $small;
       transition: none;
       width: 100%;
 
@@ -141,7 +140,14 @@
         align-items: center;
         display: flex;
         flex-shrink: 0;
-        width: 62px;
+        width: 55px;
+
+        .block-element {
+
+          svg {
+            fill: $medium-ui-icons;
+          }
+        }
       }
 
       .element-icon {
@@ -157,7 +163,7 @@
         width: 12px;
 
         svg {
-          fill: $intense-ui-icons;
+          fill: $medium-ui-icons;
           transform: rotate(90deg);
           width: 10px;
         }
@@ -169,7 +175,7 @@
         &:hover {
 
           svg {
-            fill: $medium-ui-icons;
+            fill: $intense-ui-icons;
           }
 
         }
@@ -206,17 +212,31 @@
       }
 
       &.selected {
-
+        
         .element-icon {
-
+          
           svg {
             fill: $main-ui-color;
           }
-
+          
         }
-
+        
         span {
           color: $main-ui-color;
+        }
+        
+        &:hover {
+          background-color: $main-ui-color;
+
+          .element-icon,
+          .element-actions {
+            svg {
+              fill: $soft-ui-icons;
+            }
+          }
+          .element-name {
+            color: $intense-ui-text;
+          }
         }
 
       }
@@ -230,12 +250,13 @@
       }
 
       &:hover {
-        border-color: $main-ui-color;
+        background-color: $main-ui-color;
 
-        .element-icon {
+        .element-icon,
+        .element-actions {
 
           svg {
-            fill: $intense-ui-icons;
+            fill: $soft-ui-icons;
           }
 
         }

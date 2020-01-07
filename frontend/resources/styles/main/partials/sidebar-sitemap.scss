@@ -6,23 +6,9 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .sitemap {
-
-  .project-title {
-    align-items: center;
-    border-bottom: 1px solid $soft-ui-border;
-    display: flex;
-    padding: $x-small;
-    width: 100%;
-
-    span {
-      color: $intense-ui-text;
-      font-size: $fs14;
-      font-weight: bold;
-      max-width: 80%;
-      overflow-x: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+  max-height: 180px;
+ 
+  .tool-window-bar {
 
     .add-page {
       align-items: center;
@@ -42,12 +28,13 @@
       }
 
       &:hover {
-        background-color: $dark-ui-bg;
-        border-color: $soft-ui-border;
+        background-color: $main-ui-color;
+
+        svg {
+          fill: $soft-ui-icons;
+        }
       }
-
     }
-
   }
 
   .element-list {
@@ -62,16 +49,16 @@
 
         svg {
           fill: $medium-ui-icons;
-          height: 15px;
-          margin-right: $x-small;
-          width: 15px;
+          height: 13px;
+          margin-right: $small;
+          width: 13px;
         }
 
       }
 
       span {
         color: $medium-ui-text;
-        font-size: $fs14;
+        font-size: $fs13;
         max-width: 75%;
         overflow-x: hidden;
         text-overflow: ellipsis;
@@ -89,10 +76,11 @@
             fill: $soft-ui-icons;
             height: 15px;
             margin-left: $x-small;
+            opacity: .6;
             width: 15px;
 
             &:hover {
-              fill: $intense-ui-icons;
+              opacity: 1;
             }
 
           }
@@ -102,17 +90,23 @@
       }
 
       &:hover {
+        background-color: $main-ui-color;
 
         .page-icon {
 
           svg {
-            fill: $main-ui-color;
+            fill: $soft-ui-icons;
+          }
+
+          span {
+            color: $intense-ui-text;
           }
 
         }
 
-        span {
-          color: $main-ui-color;
+        .page-actions {
+          display: flex;
+          @include animation(0s,.3s,fadeIn);
         }
 
       }
@@ -129,27 +123,31 @@
 
         span {
           color: $main-ui-color;
-          font-weight: bold;
         }
 
       }
 
-    }
+      &:hover {
 
-    &:hover {
+        .page-icon {
 
-      .page-actions {
-        display: flex;
-        @include animation(0s,.3s,fadeIn);
+          svg {
+            fill: $soft-ui-icons;
+          }
+        }
+
+        span {
+          color: $intense-ui-text;
+        }
       }
 
     }
 
+
     .element-list-body {
       align-items: center;
-      border-bottom: 1px solid $soft-ui-border;
       display: flex;
-      padding: $small;
+      padding: $x-small $small;
       transition: none;
       width: 100%;
 
@@ -167,111 +165,9 @@
         width: 62px;
       }
 
-      .element-icon {
-
-        svg {
-          fill: $medium-ui-icons;
-        }
-
-      }
-
-      .toggle-content {
-        margin-left: auto;
-        width: 12px;
-
-        svg {
-          fill: $intense-ui-icons;
-          transform: rotate(90deg);
-          width: 10px;
-        }
-
-        &.inverse {
-          svg { transform: rotate(270deg); }
-        }
-
-        &:hover {
-
-          svg {
-            fill: $medium-ui-icons;
-          }
-
-        }
-
-      }
-
-      &.group {
-
-        &.open {
-
-          .toggle-content {
-            flex-shrink: 0;
-
-            svg {
-              transform: rotate(270deg);
-            }
-
-          }
-
-        }
-
-      }
-
-      span.element-name {
-        min-width: 40px;
-        min-height: 16px;
-        display: block;
-
-        color: $medium-ui-text;
-        font-size: $fs13;
-        overflow-x: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      &.selected {
-
-        .element-icon {
-
-          svg {
-            fill: $main-ui-color;
-          }
-
-        }
-
-        span {
-          color: $main-ui-color;
-        }
-
-      }
-
-      .selected {
-
-        svg {
-          fill: $intense-ui-icons;
-        }
-
-      }
-
-      &:hover {
-        border-color: $main-ui-color;
-
-        .element-icon {
-
-          svg {
-            fill: $intense-ui-icons;
-          }
-
-        }
-
-        span {
-          color: $intense-ui-text;
-        }
-
-      }
-
       &.dragging {
         // TODO: revisit this
-        background-color: #eee;
+        background-color: $dark-ui-bg;
       }
     }
   }

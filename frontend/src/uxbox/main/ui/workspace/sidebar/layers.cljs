@@ -10,7 +10,6 @@
    [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.pages :as udp]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -206,7 +205,7 @@
           :class (when-not collapsed? "inverse")}
          i/arrow-slide]]
        [:ul
-        (for [[index shape] shapes]
+        (for [[index shape] (reverse shapes)]
           [:& layer-item {:shape shape
                           :selected selected
                           :index index
@@ -260,7 +259,8 @@
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]
       [:span (tr "ds.settings.layers")]
-      [:div.tool-window-close {:on-click on-click} i/close]]
+      ;; [:div.tool-window-close {:on-click on-click} i/close]
+     ]
      [:div.tool-window-content
       [:& canvas-list {:canvas canvas
                        :shapes all-shapes

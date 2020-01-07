@@ -56,7 +56,7 @@
                                (spx/terminate (assoc data ::unauthorized true)))))
                   (vc/handle-on-context))))
    :leave (fn [data]
-            (if (and (::unauthorized data) (:response data))
+            (if (::unauthorized data)
               (update data :response
                       assoc :status 403 :body {:type :authentication
                                                :code :unauthorized})

@@ -1,0 +1,50 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+
+(ns uxbox.main.websockets
+  "A interface to webworkers exposed functionality."
+  (:require
+   [cljs.spec.alpha :as s]
+   [goog.events :as ev]
+   [beicon.core :as rx]
+   [potok.core :as ptk]
+   [uxbox.util.spec :as us])
+  (:import
+   goog.net.WebSocket
+   goog.net.WebSocket.EventType))
+
+(defprotocol IWebSocket
+  (-stream [_] "Retrienve the message stream")
+  (-send [_ message] "send a message")
+  (-close [_] "close websocket"))
+
+
+(defn open
+  [uri]
+  (let [sb (rx/subject)
+        ws (WebSocket. #js {:autoReconnect true})
+        lk1 (ev/listen ws EventType.MESSAGE
+                       #(rx/push! sb {:type :message :payload (.-message %)}))
+        lk2 (ev/listen ws EventType.ERROR
+                       #(rx/push! sb {:type :error :payload %}))
+        lk3 (ev/listen ws EventType.OPENED
+                       #(rx/push! sb {:type :opened :payload %}))]
+    (.open ws uri)
+    (reify
+      cljs.core/IDeref
+      (-deref [_] ws)
+
+      IWebSocket
+      (-stream [_] sb)
+      (-send [_ msg]
+        (when (.isOpen ws)
+          (.send ws msg)))
+      (-close [_]
+        (.close ws)
+        (rx/end! sb)
+        (ev/unlistenByKey lk1)
+        (ev/unlistenByKey lk2)
+        (ev/unlistenByKey lk3)))))

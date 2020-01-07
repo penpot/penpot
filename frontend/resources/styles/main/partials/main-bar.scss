@@ -9,17 +9,18 @@
   align-items: center;
   background-color: $primary-ui-bg;
   display: flex;
-  height: 60px;
+  height: 40px;
   padding: $x-small $medium;
   position: relative;
   z-index: 10;
 
   .main-logo {
+    padding-top: $x-small;
 
     svg {
-      fill: $medium-ui-icons;
-      height: 40px;
-      width: 120px;
+      fill: $intense-ui-icons;
+      height: 30px;
+      width: 100px;
     }
 
   }
@@ -29,17 +30,19 @@
 .main-nav {
   align-items: center;
   display: flex;
-  height: 50px;
+  font-size: $fs15;
+  height: 35px;
   margin: 0 0 0 120px;
 
   li {
 
     a {
+      border-bottom: 2px solid transparent;
       color: $soft-ui-text;
-      padding: 1rem;
+      margin: $x-small $big;
 
       &:hover {
-        color: $intense-ui-text;
+        border-color: $main-ui-color;
       }
 
     }
@@ -47,7 +50,7 @@
     &.current {
 
       a {
-        color: $intense-ui-text;
+        border-color: $main-ui-color;
       }
 
     }
@@ -71,14 +74,14 @@
   img {
     border-radius: 50%;
     flex-shrink: 0;
-    height: 32px;
-    width: 32px;
+    height: 25px;
+    width: 25px;
   }
 
   .dropdown {
-    background-color: $secondary-ui-bg;
+    background-color: $color-white;
     border-radius: $br-small;
-    border: 1px solid $soft-ui-border;
+    border: 1px solid $color-gray-10;
     min-width: 150px;
     padding: 0 $small;
     position: absolute;
@@ -93,13 +96,13 @@
       padding: $small 0;
 
       svg {
-        fill: $medium-ui-text;
+        fill: $color-gray-40;
         height: 12px;
         width: 12px;
       }
 
       span {
-        color: $medium-ui-text;
+        color: $color-gray-40;
       }
 
       &:hover {
