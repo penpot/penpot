@@ -10,8 +10,8 @@
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [potok.core :as ptk]
+   [uxbox.common.pages :as cp]
    [uxbox.main.repo.core :as rp]
-   [uxbox.util.data :refer [index-by-id concatv]]
    [uxbox.util.router :as rt]
    [uxbox.util.spec :as us]
    [uxbox.util.time :as dt]
@@ -25,12 +25,15 @@
 (s/def ::user ::us/uuid)
 (s/def ::type ::us/keyword)
 (s/def ::file-id ::us/uuid)
+(s/def ::project-id ::us/uuid)
 (s/def ::created-at ::us/inst)
 (s/def ::modified-at ::us/inst)
 (s/def ::version ::us/number)
 (s/def ::ordering ::us/number)
+(s/def ::metadata (s/nilable ::cp/metadata))
+(s/def ::data ::cp/data)
 
-(s/def ::project-entity
+(s/def ::project
   (s/keys ::req-un [::id
                     ::name
                     ::version
@@ -38,38 +41,18 @@
                     ::created-at
                     ::modified-at]))
 
-(s/def ::grid-x-axis ::us/number)
-(s/def ::grid-y-axis ::us/number)
-(s/def ::grid-color ::us/string)
-(s/def ::background ::us/string)
-(s/def ::background-opacity ::us/number)
-
-(s/def ::metadata
-  (s/keys :opt-un [::grid-y-axis
-                   ::grid-x-axis
-                   ::grid-color
-                   ::background
-                   ::background-opacity]))
-
-;; TODO: start using uxbox.common.pagedata/data spec ...
-
-(s/def ::minimal-shape
-  (s/keys :req-un [::type ::name]
-          :opt-un [::id]))
-
-(s/def ::shapes (s/coll-of ::us/uuid :kind vector?))
-(s/def ::canvas (s/coll-of ::us/uuid :kind vector?))
-
-(s/def ::shapes-by-id
-  (s/map-of ::us/uuid ::minimal-shape))
-
-(s/def ::data
-  (s/keys :req-un [::shapes ::canvas ::shapes-by-id]))
+(s/def ::file
+  (s/keys :req-un [::id
+                   ::name
+                   ::created-at
+                   ::modified-at
+                   ::project-id]))
 
 (s/def ::page
   (s/keys :req-un [::id
                    ::name
                    ::file-id
+                   ::version
                    ::created-at
                    ::modified-at
                    ::user-id
@@ -77,22 +60,7 @@
                    ::metadata
                    ::data]))
 
-(s/def ::pages
-  (s/every ::page :kind vector?))
-
-
 ;; --- Helpers
-
-(defn assoc-project
-  "A reduce function for assoc the project to the state map."
-  [state {:keys [id] :as project}]
-  (s/assert ::project-entity project)
-  (update-in state [:projects id] merge project))
-
-(defn dissoc-project
-  "A reduce function for dissoc the project from the state map."
-  [state id]
-  (update state :projects dissoc id))
 
 (defn unpack-page
   [state {:keys [id data metadata] :as page}]
@@ -114,12 +82,9 @@
 ;; --- Initialize Dashboard
 
 (declare fetch-projects)
-(declare projects-fetched?)
 
 (declare fetch-files)
 (declare initialized)
-
-;; TODO: rename to initialize dashboard
 
 (defn initialize
   [id]
@@ -156,21 +121,8 @@
               (when order {:order order})
               (when filter {:filter filter})))))
 
-;; --- Projects Fetched
-
-(defn projects-fetched
-  [projects]
-  (s/assert (s/every ::project-entity) projects)
-  (ptk/reify ::projects-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (reduce assoc-project state projects))))
-
-(defn projects-fetched?
-  [v]
-  (= ::projects-fetched  (ptk/type v)))
-
 ;; --- Fetch Projects
+(declare projects-fetched)
 
 (def fetch-projects
   (ptk/reify ::fetch-projects
@@ -178,6 +130,17 @@
     (watch [_ state stream]
       (->> (rp/query :projects)
            (rx/map projects-fetched)))))
+
+;; --- Projects Fetched
+
+(defn projects-fetched
+  [projects]
+  (s/assert (s/every ::project) projects)
+  (ptk/reify ::projects-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [assoc-project #(update-in %1 [:projects (:id %2)] merge %2)]
+        (reduce assoc-project state projects)))))
 
 ;; --- Fetch Files
 
@@ -205,11 +168,9 @@
 
 ;; --- Files Fetched
 
-(s/def ::files any?)
-
 (defn files-fetched
   [files]
-  (s/assert ::files files)
+  (s/assert (s/every ::file) files)
   (ptk/reify ::files-fetched
     cljs.core/IDeref
     (-deref [_] files)
@@ -218,6 +179,34 @@
     (update [_ state]
       (let [assoc-file #(assoc-in %1 [:files (:id %2)] %2)]
         (reduce assoc-file state files)))))
+
+;; --- Create Project
+
+(declare project-created)
+
+(def create-project
+  (ptk/reify ::create-project
+    ptk/WatchEvent
+    (watch [this state stream]
+      (let [name (str "Project Name " (gensym "p"))]
+        (->> (rp/mutation! :create-project {:name name})
+             (rx/map (fn [data]
+                       (projects-fetched [data]))))))))
+
+;; --- Create File
+
+(defn create-file
+  [{:keys [project-id] :as params}]
+  (ptk/reify ::create-file
+    ptk/WatchEvent
+    (watch [this state stream]
+      (let [name (str "File Name " (gensym "p"))
+            params {:name name :project-id project-id}]
+        (->> (rp/mutation! :create-project-file params)
+             (rx/mapcat
+              (fn [data]
+                (rx/of (files-fetched [data])
+                       #(update-in % [:dashboard-projects :files project-id] conj (:id data))))))))))
 
 ;; --- Rename Project
 
@@ -243,7 +232,7 @@
   (ptk/reify ::delete-project
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc-project state id))
+      (update state :projects dissoc id))
 
     ptk/WatchEvent
     (watch [_ state s]
@@ -264,32 +253,6 @@
     (watch [_ state s]
       (->> (rp/mutation :delete-project-file {:id id})
            (rx/ignore)))))
-
-;; --- Create Project
-
-(declare project-created)
-
-(s/def ::create-project
-  (s/keys :req-un [::name]))
-
-(defn create-project
-  [{:keys [name] :as params}]
-  (s/assert ::create-project params)
-  (ptk/reify ::create-project
-    ptk/WatchEvent
-    (watch [this state stream]
-      (->> (rp/mutation :create-project {:name name})
-           (rx/map project-created)))))
-
-;; --- Project Created
-
-(defn project-created
-  [data]
-  (ptk/reify ::project-created
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-project state data))))
-
 
 ;; --- Rename Project
 
@@ -348,7 +311,7 @@
 
 (defn pages-fetched
   [pages]
-  (s/assert ::pages pages)
+  (s/assert (s/every ::page) pages)
   (ptk/reify ::pages-fetched
     IDeref
     (-deref [_] pages)

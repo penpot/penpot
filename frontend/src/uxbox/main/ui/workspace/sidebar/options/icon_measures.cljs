@@ -95,7 +95,7 @@
   [event shape]
   (let [value (dom/event->value event)
         value (parse-int value 0)]
-    (st/emit! (udw/update-shape-attrs (:id shape) {:rotation value}))))
+    #_(st/emit! (udw/update-shape-attrs (:id shape) {:rotation value}))))
 
 (defn- on-position-change
   [event shape attr]
@@ -107,7 +107,7 @@
 
 (defn- on-proportion-lock-change
   [event shape]
-  (if (:proportion-lock shape)
+  #_(if (:proportion-lock shape)
     (st/emit! (udw/unlock-proportions (:id shape)))
     (st/emit! (udw/lock-proportions (:id shape)))))
 

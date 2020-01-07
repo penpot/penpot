@@ -7,6 +7,7 @@
 (ns uxbox.main.ui.shapes.rect
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
@@ -46,18 +47,19 @@
                 (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
                 :else shape)
 
-        {:keys [x1 y1 width height] :as shape} (geom/size shape)
+        {:keys [x y width height]} shape
 
         transform (when (pos? rotation)
                     (str (rotate (gmt/matrix) shape)))
 
         moving? (boolean modifier-mtx)
 
-        props {:x x1 :y y1
-               :id (str "shape-" id)
-               :className (classnames :move-cursor moving?)
-               :width width
-               :height height
-               :transform transform}
-        attrs (merge (attrs/extract-style-attrs shape) props)]
-    [:& "rect" attrs]))
+        props (-> (attrs/extract-style-attrs shape)
+                  (assoc :x x
+                         :y y
+                         :id (str "shape-" id)
+                         :className (classnames :move-cursor moving?)
+                         :width width
+                         :height height
+                         :transform transform))]
+    [:& "rect" props]))

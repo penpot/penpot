@@ -29,7 +29,7 @@
   {:mixins [mx/static]}
   [menu {:keys [id] :as shape}]
   (letfn [(update-attrs [attrs]
-            (st/emit! (udw/update-shape-attrs id attrs)))
+            #_(st/emit! (udw/update-shape-attrs id attrs)))
           (on-font-family-change [event]
             (let [value (dom/event->value event)
                   attrs {:font-family (read-string value)

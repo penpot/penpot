@@ -17,28 +17,28 @@
         id (when (uuid-str? id) (uuid id))]
     [:main.dashboard-main
      [:& messages-widget]
-     [:& header {:section :dashboard/projects}]
+     [:& header {:section :dashboard-projects}]
      [:& projects/projects-page {:id id}]]))
 
 (mf/defc dashboard-assets
   [{:keys [route] :as props}]
-  (let [section (:name route)
+  (let [section (get-in route [:data :name])
         {:keys [id type]} (get-in route [:params :query])
         id (cond
              ;; (str/digits? id) (parse-int id)
              (uuid-str? id) (uuid id)
              (str/empty-or-nil? id) nil
              :else id)
-        type (when (str/alpha? type) (keyword type))]
+        type (if (str/alpha? type) (keyword type) :own)]
     [:main.dashboard-main
      [:& messages-widget]
      [:& header {:section section}]
      (case section
-       :dashboard/icons
+       :dashboard-icons
        [:& icons/icons-page {:type type :id id}]
 
-       :dashboard/images
+       :dashboard-images
        [:& images/images-page {:type type :id id}]
 
-       :dashboard/colors
+       :dashboard-colors
        [:& colors/colors-page {:type type :id id}])]))

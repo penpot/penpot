@@ -46,9 +46,9 @@
             (modal/show! colorpicker-modal props)))]
 
     [:div.element-set
-     [:div.element-set-title (tr "element.page-measures")]
+     [:div.element-set-title (tr "workspace.options.page-measures")]
      [:div.element-set-content
-      [:span (tr "ds.background-color")]
+      [:span (tr "workspace.options.background-color")]
       [:div.row-flex.color-data
        [:span.color-th
         {:style {:background-color (:background metadata "#ffffff")}
@@ -92,7 +92,7 @@
       [:div.element-set
        [:div.element-set-title (tr "element.page-grid-options")]
        [:div.element-set-content
-        [:span (tr "ds.size")]
+        [:span (tr "workspace.options.size")]
         [:div.row-flex
          [:div.input-element.pixels
           [:input.input-text
@@ -106,7 +106,7 @@
             :value (:grid-y-axis metadata)
             :on-change on-y-change
             :placeholder "y"}]]]
-        [:span (tr "ds.color")]
+        [:span (tr "workspace.options.color")]
         [:div.row-flex.color-data
          [:span.color-th
           {:style {:background-color (:grid-color metadata)}

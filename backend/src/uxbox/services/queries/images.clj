@@ -53,7 +53,7 @@
 (def ^:private images-collections-sql
   "select *,
           (select count(*) from images where collection_id = ic.id) as num_images
-     from images_collections as ic
+     from image_collections as ic
     where (ic.user_id = $1 or
            ic.user_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and ic.deleted_at is null
@@ -86,23 +86,32 @@
 
 ;; --- Query Images by Collection (id)
 
-(def images-by-collection-sql
+(su/defstr sql:images-by-collection
   "select * from images
     where (user_id = $1 or
            user_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and deleted_at is null
-      and case when $2::uuid is null then collection_id is null
-               else collection_id = $2::uuid
-          end
-   order by created_at desc;")
+   order by created_at desc")
 
-(s/def ::images-by-collection-query
+(su/defstr sql:images-by-collection1
+  "with images as (~{sql:images-by-collection})
+   select im.* from images as im
+    where im.collection_id is null")
+
+(su/defstr sql:images-by-collection2
+  "with images as (~{sql:images-by-collection})
+   select im.* from images as im
+    where im.collection_id = $2")
+
+(s/def ::images-by-collection
   (s/keys :req-un [::user]
           :opt-un [::collection-id]))
 
 (sq/defquery ::images-by-collection
   [{:keys [user collection-id] :as params}]
-  (let [sqlv [images-by-collection-sql user collection-id]]
+  (let [sqlv (if (nil? collection-id)
+               [sql:images-by-collection1 user]
+               [sql:images-by-collection2 user collection-id])]
     (-> (db/query db/pool sqlv)
         (p/then populate-thumbnails)
         (p/then #(mapv populate-urls %)))))

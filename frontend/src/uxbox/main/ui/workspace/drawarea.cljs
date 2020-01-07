@@ -51,8 +51,7 @@
     :fill-opacity 0
     :segments []}
    {:type :canvas
-    :name "Canvas"
-    :stroke-color "#000000"}
+    :name "Canvas"}
    {:type :curve
     :name "Path"
     :stroke-style :solid
@@ -109,18 +108,17 @@
 (def handle-drawing-generic
   (letfn [(initialize-drawing [state point]
             (let [shape (get-in state [:workspace-local :drawing])
-                  shape (geom/setup shape {:x1 (:x point)
-                                           :y1 (:y point)
-                                           :x2 (+ (:x point) 2)
-                                           :y2 (+ (:y point) 2)})]
+                  shape (geom/setup shape {:x (:x point)
+                                           :y (:y point)
+                                           :width 2
+                                           :height 2})]
               (assoc-in state [:workspace-local :drawing] (assoc shape ::initialized? true))))
 
           (resize-shape [shape point lock?]
-            (let [shape (-> (geom/shape->rect-shape shape)
-                            (geom/size))
-                  result (geom/resize-shape :bottom-right shape point lock?)
-                  scale (geom/calculate-scale-ratio shape result)
-                  mtx (geom/generate-resize-matrix :bottom-right shape scale)]
+            (let [shape' (geom/shape->rect-shape shape)
+                  result (geom/resize-shape :bottom-right shape' point lock?)
+                  scale (geom/calculate-scale-ratio shape' result)
+                  mtx (geom/generate-resize-matrix :bottom-right shape' scale)]
               (assoc shape :modifier-mtx mtx)))
 
           (update-drawing [state point lock?]
@@ -150,13 +148,13 @@
 
 (def handle-drawing-path
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
-             (or (= event :interrupt)
-                 (and (uws/mouse-event? event)
-                      (or (and (= type :double-click) shift)
-                          (= type :context-menu)))
-                 (and (uws/keyboard-event? event)
-                      (= type :down)
-                      (= 13 (:key event)))))
+            (or (= event ::end-path-drawing)
+                (and (uws/mouse-event? event)
+                     (or (and (= type :double-click) shift)
+                         (= type :context-menu)))
+                (and (uws/keyboard-event? event)
+                     (= type :down)
+                     (= 13 (:key event)))))
 
           (initialize-drawing [state point]
             (-> state
@@ -238,8 +236,7 @@
 
 (def handle-drawing-curve
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
-             (or (= event :interrupt)
-                 (and (uws/mouse-event? event) (= type :up))))
+            (uws/mouse-event? event) (= type :up))
 
           (initialize-drawing [state]
             (assoc-in state [:workspace-local :drawing ::initialized?] true))
@@ -282,7 +279,9 @@
                  shape (dissoc shape ::initialized? :modifier-mtx)]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all
-                    (dw/add-shape shape)))))))))
+                    (if (= :canvas (:type shape))
+                      (dw/add-canvas shape)
+                      (dw/add-shape shape))))))))))
 
 (def close-drawing-path
   (ptk/reify ::close-drawing-path
@@ -322,7 +321,8 @@
             (dom/stop-propagation event)
             (st/emit! (dw/set-tooltip nil)
                       close-drawing-path
-                      :interrupt))
+                      ::end-path-drawing))
+
           (on-mouse-enter [event]
             (st/emit! (dw/set-tooltip "Click to close the path")))
           (on-mouse-leave [event]

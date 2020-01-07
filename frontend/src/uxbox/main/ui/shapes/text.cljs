@@ -122,7 +122,7 @@
           style (make-style shape)
           on-input (fn [ev]
                      (let [content (dom/event->inner-text ev)]
-                       (st/emit! (udw/update-shape-attrs id {:content content}))))]
+                       #_(st/emit! (udw/update-shape-attrs id {:content content}))))]
       [:foreignObject {:x x1 :y y1 :width width :height height}
        [:div {:style (normalize-props style)
               :ref (::container own)

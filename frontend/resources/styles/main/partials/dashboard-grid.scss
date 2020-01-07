@@ -242,7 +242,7 @@
 
       // IMAGES SECTION
       &.images-th {
-        background-color: $primary-ui-bg;
+        border: 1px dashed $color-gray-light;
         border-bottom: 2px solid lighten($color-gray-light, 12%);
 
         &:hover {

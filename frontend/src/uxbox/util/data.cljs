@@ -201,6 +201,14 @@
                                  (str/camel (name key))))))
 
 
+;; (defn coalesce
+;;   [^number v ^number n]
+;;   (if (.-toFixed v)
+;;     (js/parseFloat (.toFixed v n))
+;;     0))
+
+
+
 ;; (defmacro mirror-map [& fields]
 ;;   (let [keys# (map #(keyword (name %)) fields)
 ;;         vals# fields]

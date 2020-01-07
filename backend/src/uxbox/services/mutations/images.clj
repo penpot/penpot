@@ -60,7 +60,7 @@
 
 (sm/defmutation ::create-image-collection
   [{:keys [id user name] :as params}]
-  (let [sql "insert into images_collections (id, user_id, name)
+  (let [sql "insert into image_collections (id, user_id, name)
              values ($1, $2, $3) returning *;"]
     (db/query-one db/pool [sql (or id (uuid/next)) user name])))
 
@@ -71,7 +71,7 @@
 
 (sm/defmutation ::update-images-collection
   [{:keys [id user name] :as params}]
-  (let [sql "update images_collections
+  (let [sql "update image_collections
                 set name = $3
               where id = $1
                 and user_id = $2
@@ -85,7 +85,7 @@
 
 (sm/defmutation ::delete-images-collection
   [{:keys [id user] :as params}]
-  (let [sql "update images_collections
+  (let [sql "update image_collections
                 set deleted_at = clock_timestamp()
               where id = $1
                 and user_id = $2
@@ -102,13 +102,13 @@
     (-> (ds/save storage filename path)
         (su/handle-on-context))))
 
-(def ^:private create-image-sql
+(su/defstr sql:create-image
   "insert into images (user_id, name, collection_id, path, width, height, mimetype)
    values ($1, $2, $3, $4, $5, $6, $7) returning *")
 
 (defn- store-image-in-db
   [conn {:keys [id user name path collection-id height width mimetype]}]
-  (let [sqlv [create-image-sql user name collection-id
+  (let [sqlv [sql:create-image user name collection-id
               path width height mimetype]]
     (-> (db/query-one conn sqlv)
         (p/then populate-thumbnail)

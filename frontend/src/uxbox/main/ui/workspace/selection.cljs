@@ -99,10 +99,10 @@
 
 (mf/defc controls
   [{:keys [shape zoom on-click] :as props}]
-  (let [{:keys [x1 y1 width height]} shape
+  (let [{:keys [x y width height]} shape
         radius (if (> (max width height) handler-size-threshold) 6.0 4.0)]
     [:g.controls
-     [:rect.main {:x x1 :y y1
+     [:rect.main {:x x :y y
                   :width width
                   :height height
                   :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
@@ -111,42 +111,42 @@
      [:& control-item {:class "top"
                        :on-click #(on-click :top %)
                        :r (/ radius zoom)
-                       :cx (+ x1 (/ width 2))
-                       :cy (- y1 2)}]
+                       :cx (+ x (/ width 2))
+                       :cy (- y 2)}]
      [:& control-item {:on-click #(on-click :right %)
                        :r (/ radius zoom)
-                       :cy (+ y1 (/ height 2))
-                       :cx (+ x1 width 1)
+                       :cy (+ y (/ height 2))
+                       :cx (+ x width 1)
                        :class "right"}]
      [:& control-item {:on-click #(on-click :bottom %)
                        :r (/ radius zoom)
-                       :cx (+ x1 (/ width 2))
-                       :cy (+ y1 height 2)
+                       :cx (+ x (/ width 2))
+                       :cy (+ y height 2)
                        :class "bottom"}]
      [:& control-item {:on-click #(on-click :left %)
                        :r (/ radius zoom)
-                       :cy (+ y1 (/ height 2))
-                       :cx (- x1 3)
+                       :cy (+ y (/ height 2))
+                       :cx (- x 3)
                        :class "left"}]
      [:& control-item {:on-click #(on-click :top-left %)
                        :r (/ radius zoom)
-                       :cx x1
-                       :cy y1
+                       :cx x
+                       :cy y
                        :class "top-left"}]
      [:& control-item {:on-click #(on-click :top-right %)
                       :r (/ radius zoom)
-                      :cx (+ x1 width)
-                      :cy y1
+                      :cx (+ x width)
+                      :cy y
                       :class "top-right"}]
      [:& control-item {:on-click #(on-click :bottom-left %)
                        :r (/ radius zoom)
-                       :cx x1
-                       :cy (+ y1 height)
+                       :cx x
+                       :cy (+ y height)
                        :class "bottom-left"}]
      [:& control-item {:on-click #(on-click :bottom-right %)
                        :r (/ radius zoom)
-                       :cx (+ x1 width)
-                       :cy (+ y1 height)
+                       :cx (+ x width)
+                       :cy (+ y height)
                        :class "bottom-right"}]]))
 
 ;; --- Selection Handlers (Component)
@@ -203,9 +203,9 @@
 
 (mf/defc text-edition-selection-handlers
   [{:keys [shape zoom] :as props}]
-  (let [{:keys [x1 y1 width height] :as shape} (geom/selection-rect shape)]
+  (let [{:keys [x y width height] :as shape} (geom/selection-rect shape)]
     [:g.controls
-     [:rect.main {:x x1 :y y1
+     [:rect.main {:x x :y y
                   :width width
                   :height height
                   ;; :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))

@@ -8,111 +8,130 @@
 (ns uxbox.main.ui.workspace.sidebar.options.rect
   (:require
    [rumext.alpha :as mf]
+   [uxbox.common.data :as d]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.geom :as geom]
    [uxbox.main.store :as st]
-   [uxbox.util.data :refer [parse-int parse-float read-string]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.math :refer [precision-or-0]]))
+   [uxbox.util.math :as math]))
 
-(declare on-size-change)
-(declare on-rotation-change)
-(declare on-position-change)
-(declare on-proportion-lock-change)
+(mf/defc measures-menu
+  [{:keys [shape] :as props}]
+  (let [on-size-change
+        (fn [event attr]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-integer 0))]
+            (st/emit! (udw/update-dimensions (:id shape) {attr value}))))
 
-(mf/defc measures
-  [{:keys [menu shape] :as props}]
-  (let [size (geom/size shape)]
+        on-proportion-lock-change
+        (fn [event]
+          (st/emit! (udw/toggle-shape-proportion-lock (:id shape))))
+
+        on-position-change
+        (fn [event attr]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-integer))
+                point (gpt/point {attr value})]
+            (st/emit! (udw/update-position (:id shape) point))))
+
+        on-rotation-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-integer 0))]
+            (st/emit! (udw/update-shape (:id shape) {:rotation value}))))
+
+        on-radius-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-double 0))]
+            (st/emit! (udw/update-shape (:id shape) {:rx value :ry value}))))
+
+        on-width-change #(on-size-change % :width)
+        on-height-change #(on-size-change % :height)
+        on-pos-x-change #(on-position-change % :x)
+        on-pos-y-change #(on-position-change % :y)]
+
     [:div.element-set
-     [:div.element-set-title (tr "element.measures")]
+     [:div.element-set-title (tr "workspace.options.measures")]
      [:div.element-set-content
-      [:span (tr "ds.size")]
+      [:span (tr "workspace.options.size")]
 
       ;; WIDTH & HEIGHT
       [:div.row-flex
        [:div.input-element.pixels
-        [:input.input-text {:placeholder (tr "ds.width")
-                            :type "number"
+        [:input.input-text {:type "number"
                             :min "0"
-                            :value (precision-or-0 (:width size) 2)}]]
+                            :on-change on-width-change
+                            :value (-> (:width shape)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]
 
        [:div.lock-size {:class (when (:proportion-lock shape) "selected")
-                        :on-click #(on-proportion-lock-change % shape)}
-        (if (:proportion-lock shape) i/lock i/unlock)]
+                        :on-click on-proportion-lock-change}
+        (if (:proportion-lock shape)
+          i/lock
+          i/unlock)]
 
        [:div.input-element.pixels
-        [:input.input-text {:placeholder (tr "ds.height")
-                            :type "number"
+        [:input.input-text {:type "number"
                             :min "0"
-                            :value (precision-or-0 (:height size) 2)}]]]
+                            :on-change on-height-change
+                            :value (-> (:height shape)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]]
 
       ;; POSITION
-      [:span (tr "ds.position")]
+      [:span (tr "workspace.options.position")]
       [:div.row-flex
        [:div.input-element.pixels
         [:input.input-text {:placeholder "x"
                             :type "number"
-                            :value (precision-or-0 (:x1 shape 0) 2)}]]
+                            :on-change on-pos-x-change
+                            :value (-> (:x shape)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]
        [:div.input-element.pixels
         [:input.input-text {:placeholder "y"
                             :type "number"
-                            :value (precision-or-0 (:y1 shape 0) 2)}]]]
+                            :on-change on-pos-y-change
+                            :value (-> (:y shape)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]]
 
-       ;; ROTATION
-      [:span (tr "ds.rotation")]
-      [:div.row-flex
-       [:input.slidebar {:type "range"
-                         :min 0
-                         :max 360
-                         ;; :on-change #(on-rotation-change % shape)
-                         :value (:rotation shape 0)}]]
-
+      [:span (tr "workspace.options.rotation-radius")]
       [:div.row-flex
        [:div.input-element.degrees
         [:input.input-text {:placeholder ""
                             :type "number"
                             :min 0
                             :max 360
-                            :on-change #(on-rotation-change % shape)
-                            :value (precision-or-0 (:rotation shape "0") 2)}]]
-       [:input.input-text {:style {:visibility "hidden"}}]]]]))
+                            :on-change on-rotation-change
+                            :value (-> (:rotation shape 0)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]
 
-;; (defn- on-size-change
-;;   [event shape attr]
-;;   (let [value (-> (dom/event->value event)
-;;                   (parse-int 0))]
-;;     (st/emit! (udw/update-dimensions (:id shape) {attr value}))))
+       [:div.input-element.pixels
+        [:input.input-text
+         {:placeholder "rx"
+          :type "number"
+          :on-change on-radius-change
+          :value (-> (:rx shape)
+                     (math/precision 2)
+                     (d/coalesce-str "0"))}]]]]]))
 
-;; (defn- on-rotation-change
-;;   [event shape]
-;;   (let [value (dom/event->value event)
-;;         value (parse-int value 0)]
-;;     (st/emit! (udw/update-shape-attrs (:id shape) {:rotation value}))))
-
-;; (defn- on-position-change
-;;   [event shape attr]
-;;   (let [value (-> (dom/event->value event)
-;;                   (parse-int nil))
-;;         point (gpt/point {attr value})]
-;;     (st/emit! (udw/update-position (:id shape) point))))
-
-;; (defn- on-proportion-lock-change
-;;   [event shape]
-;;   (if (:proportion-lock shape)
-;;     (st/emit! (udw/unlock-proportions (:id shape)))
-;;     (st/emit! (udw/lock-proportions (:id shape)))))
-
-
-  ;; :rect   [::rect-measures ::fill ::stroke]
 
 (mf/defc options
   [{:keys [shape] :as props}]
   [:div
-   [:& measures {:shape shape}]
+   [:& measures-menu {:shape shape}]
    [:& fill-menu {:shape shape}]
    [:& stroke-menu {:shape shape}]])

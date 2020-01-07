@@ -50,7 +50,6 @@
 (s/def ::font-size number?)
 (s/def ::font-style string?)
 (s/def ::font-weight string?)
-(s/def ::height number?)
 (s/def ::hidden boolean?)
 (s/def ::id uuid?)
 (s/def ::letter-spacing number?)
@@ -67,12 +66,13 @@
 (s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
 (s/def ::stroke-width number?)
 (s/def ::text-align #{"left" "right" "center" "justify"})
-(s/def ::type #{:rect :path :circle :image :text})
+(s/def ::type #{:rect :path :circle :image :text :canvas})
+(s/def ::x number?)
+(s/def ::y number?)
+(s/def ::cx number?)
+(s/def ::cy number?)
 (s/def ::width number?)
-(s/def ::x1 number?)
-(s/def ::x2 number?)
-(s/def ::y1 number?)
-(s/def ::y2 number?)
+(s/def ::height number?)
 
 (s/def ::attributes
   (s/keys :opt-un [::blocked
@@ -91,13 +91,14 @@
                    ::proportion
                    ::proportion-lock
                    ::rx ::ry
+                   ::cx ::cy
+                   ::x ::y
                    ::stroke-color
                    ::stroke-opacity
                    ::stroke-style
                    ::stroke-width
                    ::text-align
-                   ::x1 ::x2
-                   ::y1 ::y2]))
+                   ::width ::height]))
 
 (s/def ::minimal-shape
   (s/keys :req-un [::id ::page ::type ::name]))
@@ -169,28 +170,6 @@
       (ws/-close (get-in state [:ws file-id]))
       (rx/of ::finalize))))
 
-;; --- Fetch Workspace Users
-
-(declare users-fetched)
-
-(defn fetch-users
-  [file-id]
-  (ptk/reify ::fetch-users
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query :project-file-users {:file-id file-id})
-           (rx/map users-fetched)))))
-
-(defn users-fetched
-  [users]
-  (ptk/reify ::users-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (reduce (fn [state user]
-                (update-in state [:workspace-users :by-id (:id user)] merge user))
-              state
-              users))))
-
 ;; --- Handle: Who
 
 ;; TODO: assign color
@@ -256,66 +235,119 @@
 
 (defn initialize
   "Initialize the workspace state."
-  [file-id page-id]
+  [file-id]
   (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid page-id)
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
       (let [local (assoc workspace-default
-                         :file-id file-id
-                         :page-id page-id)]
+                         :file-id file-id)
+                         ;; :page-id page-id)
+            ;; TODO: this need to be parametrized
+            uri   (str "ws://localhost:6060/sub/" file-id)]
         (-> state
             (assoc :workspace-layout default-layout)
-            (assoc :workspace-local local))))
+            (assoc :workspace-local local)
+            (assoc-in [:ws file-id] (ws/open uri)))))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      #_(when-not (get-in state [:pages page-id])
-          (reset! st/loader true))
+      (let [wsession (get-in state [:ws file-id])]
+        (rx/merge
+         ;; Stop possible previous watchers and re-fetch the main page
+         ;; and all project related pages.
+         (rx/of ::stop-watcher
+                (dp/fetch-file file-id)
+                (dp/fetch-pages file-id)
+                (fetch-users file-id))
 
-      (rx/merge
-       ;; Stop possible previous watchers and re-fetch the main page
-       ;; and all project related pages.
-       (rx/of ::stop-watcher
-              (dp/fetch-file file-id)
-              (dp/fetch-pages file-id))
+         ;; When main page is fetched, schedule the main initialization.
+         (->> (rx/zip (rx/filter (ptk/type? ::dp/pages-fetched) stream)
+                      (rx/filter (ptk/type? ::dp/files-fetched) stream))
+              (rx/take 1)
+              (rx/do #(reset! st/loader false))
+              (rx/mapcat #(rx/of (initialized file-id)
+                                 #_(initialize-alignment page-id))))
 
-       ;; When main page is fetched, schedule the main initialization.
-       (->> (rx/zip (rx/filter (ptk/type? ::dp/pages-fetched) stream)
-                    (rx/filter (ptk/type? ::dp/files-fetched) stream))
-            (rx/take 1)
-            (rx/do #(reset! st/loader false))
-            (rx/mapcat #(rx/of (initialized file-id page-id)
-                               #_(initialize-alignment page-id))))
+         ;; WebSocket Incoming Messages Handling
+         (->> (ws/-stream wsession)
+              (rx/filter #(= :message (:type %)))
+              (rx/map (comp t/decode :payload))
+              (rx/filter #(s/valid? ::message %))
+              (rx/map (fn [{:keys [type] :as msg}]
+                        (case type
+                          :who (handle-who msg)
+                          :pointer-update (handle-pointer-update msg)
+                          :page-snapshot (handle-page-snapshot msg)
+                          ::unknown))))
 
-       (->> stream
-            (rx/filter uxbox.main.ui.workspace.streams/pointer-event?)
-            (rx/sample 150)
-            (rx/tap (fn [{:keys [pt] :as event}]
-                      (let [msg {:type :pointer-update
-                                 :page-id page-id
-                                 :x (:x pt)
-                                 :y (:y pt)}]
-                        (ws/-send (get-in state [:ws file-id]) (t/encode msg)))))
-            (rx/ignore)
-            (rx/take-until (rx/filter #(= ::stop-watcher %) stream)))))))
-
+         #_(->> stream
+              ;; TODO: this need to be rethinked
+              (rx/filter uxbox.main.ui.workspace.streams/pointer-event?)
+              (rx/sample 150)
+              (rx/tap (fn [{:keys [pt] :as event}]
+                        (let [msg {:type :pointer-update
+                                   :page-id page-id
+                                   :x (:x pt)
+                                   :y (:y pt)}]
+                          (ws/-send (get-in state [:ws file-id]) (t/encode msg)))))
+              (rx/ignore)
+              (rx/take-until (rx/filter #(= ::finalize %) stream))))))))
 
 (defn- initialized
-  [file-id page-id]
+  [file-id]
   (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid page-id)
   (ptk/reify ::initialized
     ptk/UpdateEvent
     (update [_ state]
-      (let [file (get-in state [:files file-id])
-            page (get-in state [:pages page-id])
+      (let [file (get-in state [:files file-id])]
+        (assoc state :workspace-file file)))))
+
+(defn finalize
+  [file-id]
+  (ptk/reify ::finalize
+    cljs.core/IDeref
+    (-deref [_] file-id)
+
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (ws/-close (get-in state [:ws file-id])))))
+
+(defn initialize-page
+  [page-id]
+  (ptk/reify ::initialize-page
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page (get-in state [:pages page-id])
             data (get-in state [:pages-data page-id])]
         (assoc state
-               :workspace-file file
                :workspace-data data
-               :workspace-page page)))))
+               :workspace-page page)))
+
+    ptk/EffectEvent
+    (effect [_ state stream])))
+
+;; --- Fetch Workspace Users
+
+(declare users-fetched)
+
+(defn fetch-users
+  [file-id]
+  (ptk/reify ::fetch-users
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :project-file-users {:file-id file-id})
+           (rx/map users-fetched)))))
+
+(defn users-fetched
+  [users]
+  (ptk/reify ::users-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce (fn [state user]
+                (update-in state [:workspace-users :by-id (:id user)] merge user))
+              state
+              users))))
 
 ;; --- Toggle layout flag
 
@@ -576,14 +608,22 @@
 (declare select-shape)
 (declare recalculate-shape-canvas-relation)
 
+(def shape-default-attrs
+  {:stroke-color "#000000"
+   :stroke-opacity 1
+   :fill-color "#000000"
+   :fill-opacity 1})
+
 (defn add-shape
   [data]
+  (s/assert ::attributes data)
   (let [id (uuid/random)]
     (ptk/reify ::add-shape
       ptk/UpdateEvent
       (update [_ state]
         (let [shape (-> (geom/setup-proportions data)
                         (assoc :id id))
+              shape (merge shape-default-attrs shape)
               shape (recalculate-shape-canvas-relation state shape)]
           (impl-assoc-shape state shape)))
 
@@ -592,6 +632,32 @@
         (let [shape (get-in state [:workspace-data :shapes-by-id id])]
           (rx/of (commit-shapes-changes [[:add-shape id shape]])
                  (select-shape id)))))))
+
+(def canvas-default-attrs
+  {:stroke-color "#000000"
+   :stroke-opacity 1
+   :fill-color "#ffffff"
+   :fill-opacity 1})
+
+(defn add-canvas
+  [data]
+  (s/assert ::attributes data)
+  (let [id (uuid/random)]
+    (ptk/reify ::add-canvas
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [shape (-> (geom/setup-proportions data)
+                        (assoc :id id))
+              shape (merge canvas-default-attrs shape)
+              shape (recalculate-shape-canvas-relation state shape)]
+          (impl-assoc-shape state shape)))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [shape (get-in state [:workspace-data :shapes-by-id id])]
+          (rx/of (commit-shapes-changes [[:add-canvas id shape]])
+                 (select-shape id)))))))
+
 
 ;; --- Duplicate Selected
 
@@ -608,7 +674,7 @@
             duplicate (partial impl-duplicate-shape state)
             shapes    (map duplicate selected)]
         (rx/merge
-         (rx/from-coll (map (fn [s] #(impl-assoc-shape % s)) shapes))
+         (rx/from (map (fn [s] #(impl-assoc-shape % s)) shapes))
          (rx/of (commit-shapes-changes (mapv #(vector :add-shape (:id %) %) shapes))))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
@@ -675,41 +741,35 @@
 
 ;; --- Update Shape Attrs
 
-(defn update-shape-attrs
-  [id attrs]
-  (s/assert ::us/uuid id)
-  (let [atts (s/conform ::attributes attrs)]
-    (ptk/reify ::update-shape-attrs
-      ptk/UpdateEvent
-      (update [_ state]
-        (if (map? attrs)
-          (update-in state [:workspace-data :shapes-by-id id] merge attrs)
-          state)))))
-
 (defn update-shape
-  [id & attrs]
-  (let [attrs' (->> (apply hash-map attrs)
-                    (s/conform ::attributes))]
-    (ptk/reify ::update-shape
-      ptk/UpdateEvent
-      (update [_ state]
-        (cond-> state
-          (not= attrs' ::s/invalid)
-          (update-in [:workspace-data :shapes-by-id id] merge attrs'))))))
+  [id attrs]
+  (s/assert ::attributes attrs)
+  (ptk/reify ::update-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [shape-old (get-in state [:workspace-data :shapes-by-id id])
+            shape-new (merge shape-old attrs)
+            diff (d/diff-maps shape-old shape-new)]
+        (-> state
+            (assoc-in [:workspace-data :shapes-by-id id] shape-new)
+            (assoc ::tmp-change (into [:mod-shape id] diff)))))
 
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [change (::tmp-change state)]
+        (prn "update-shape" change)
+        (rx/of (commit-shapes-changes [change])
+               #(dissoc state ::tmp-change))))))
 
 ;; --- Update Selected Shapes attrs
 
-;; TODO: improve performance of this event
-
-(defn update-selected-shapes-attrs
-  [attrs]
-  (s/assert ::attributes attrs)
+(defn update-selected-shapes
+  [& attrs]
   (ptk/reify ::update-selected-shapes-attrs
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])]
-        (rx/from-coll (map #(update-shape-attrs % attrs) selected))))))
+        (rx/from (map #(apply update-shape % attrs) selected))))))
 
 ;; --- Move Selected
 
@@ -762,19 +822,6 @@
          (when align? (rx/of (initial-selection-align selected)))
          (rx/of (apply-temporal-displacement-in-bulk selected displacement))
          (rx/of (materialize-temporal-modifier-in-bulk selected)))))))
-
-;; --- Update Shape Position
-
-(deftype UpdateShapePosition [id point]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes id] geom/absolute-move point)))
-
-(defn update-position
-  "Update the start position coordenate of the shape."
-  [id point]
-  {:pre [(uuid? id) (gpt/point? point)]}
-  (UpdateShapePosition. id point))
 
 ;; --- Delete Selected
 
@@ -923,9 +970,10 @@
 
 (defn- recalculate-shape-canvas-relation
   [state shape]
-  (let [xfmt (comp (map #(get-in state [:workspace-data :shapes-by-id %]))
+  (let [shape' (geom/shape->rect-shape shape)
+        xfmt (comp (map #(get-in state [:workspace-data :shapes-by-id %]))
                    (map geom/shape->rect-shape)
-                   (filter #(geom/overlaps? % shape))
+                   (filter #(geom/overlaps? % shape'))
                    (map :id))
 
         id (->> (get-in state [:workspace-data :canvas])
@@ -1035,58 +1083,15 @@
               (rx/map (constantly clear-drawing))
               (rx/take-until stoper)))))))
 
-;; --- Shape Proportions
-
-;; (defn toggle-shape-proportion-lock
-;;   [id]
-;;   (ptk/reify ::toggle-shape-proportion-lock
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (let [shape (-> (get-in state [:workspace-data :shapes-by-id id])
-;;                       (geom/size)
-
-
-;; TODO: revisit
-
-(deftype LockShapeProportions [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [[width height] (-> (get-in state [:shapes id])
-                             (geom/size)
-                             (keep [:width :height]))
-          proportion (/ width height)]
-      (update-in state [:shapes id] assoc
-                 :proportion proportion
-                 :proportion-lock true))))
-
-(defn lock-proportions
-  "Mark proportions of the shape locked and save the current
-  proportion as additional precalculated property."
-  [id]
-  {:pre [(uuid? id)]}
-  (LockShapeProportions. id))
-
-;; TODO: revisit
-
-(deftype UnlockShapeProportions [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:shapes id :proportion-lock] false)))
-
-(defn unlock-proportions
-  [id]
-  {:pre [(uuid? id)]}
-  (UnlockShapeProportions. id))
-
 ;; --- Update Dimensions
 
-;; TODO: revisit
-
-(s/def ::width (s/and ::us/number ::us/positive))
-(s/def ::height (s/and ::us/number ::us/positive))
+(s/def ::width ::us/number)
+(s/def ::height ::us/number)
 
 (s/def ::update-dimensions
   (s/keys :opt-un [::width ::height]))
+
+;; TODO: emit commit-changes
 
 (defn update-dimensions
   "A helper event just for update the position
@@ -1098,35 +1103,31 @@
   (ptk/reify ::update-dimensions
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:shapes id] geom/resize-dim dimensions))))
+      (update-in state [:workspace-data :shapes-by-id id] geom/resize-dim dimensions))))
 
-;; --- Update Interaction
+;; --- Shape Proportions
 
-;; TODO: revisit
-(deftype UpdateInteraction [shape interaction]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [id (or (:id interaction)
-                 (uuid/random))
-          data (assoc interaction :id id)]
-      (assoc-in state [:shapes shape :interactions id] data))))
+(defn toggle-shape-proportion-lock
+  [id]
+  (ptk/reify ::toggle-shape-proportion-lock
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [shape (get-in state [:workspace-data :shapes-by-id id])]
+        (if (:proportion-lock shape)
+          (assoc-in state [:workspace-data :shapes-by-id id :proportion-lock] false)
+          (->> (geom/assign-proportions (assoc shape :proportion-lock true))
+               (assoc-in state [:workspace-data :shapes-by-id id])))))))
 
-(defn update-interaction
-  [shape interaction]
-  (UpdateInteraction. shape interaction))
+;; --- Update Shape Position
 
-;; --- Delete Interaction
-
-;; TODO: revisit
-(deftype DeleteInteracton [shape id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:shapes shape :interactions] dissoc id)))
-
-(defn delete-interaction
-  [shape id]
-  {:pre [(uuid? id) (uuid? shape)]}
-  (DeleteInteracton. shape id))
+(defn update-position
+  [id point]
+  (s/assert ::us/uuid id)
+  (s/assert gpt/point? point)
+  (ptk/reify ::update-position
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-data :shapes-by-id id] geom/absolute-move point))))
 
 ;; --- Path Modifications
 

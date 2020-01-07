@@ -82,11 +82,11 @@
         end-x (max (:x start) (:x stop))
         end-y (max (:y start) (:y stop))]
     (assoc data
-           :x1 start-x
-           :y1 start-y
-           :x2 end-x
-           :y2 end-y
-           :type :rect)))
+           :type :rect
+           :x start-x
+           :y start-y
+           :width (- end-x start-x)
+           :height (- end-y start-y))))
 
 (def ^:private handle-selrect
   (letfn [(update-state [state position]
@@ -115,13 +115,11 @@
   {:wrap [mf/wrap-memo]}
   [{:keys [data] :as props}]
   (when data
-    (let [{:keys [x1 y1 width height]} (geom/size data)]
-      [:rect.selection-rect
-       {:x x1
-        :y y1
-        :width width
-        :height height}])))
-
+    [:rect.selection-rect
+     {:x (:x data)
+      :y (:y data)
+      :width (:width data)
+      :height (:height data)}]))
 
 ;; --- Viewport Positioning
 
@@ -155,7 +153,7 @@
     [:*
      (for [item canvas]
        [:& shape-wrapper {:shape item :key (:id item)}])
-     (for [item (reverse shapes)]
+     (for [item shapes]
        [:& shape-wrapper {:shape item :key (:id item)}])]))
 
 (mf/defc viewport

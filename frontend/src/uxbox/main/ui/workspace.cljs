@@ -60,7 +60,7 @@
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
-  [{:keys [layout page file] :as params}]
+  [{:keys [layout page file flags] :as params}]
   (let [canvas (mf/use-ref nil)
         left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                 :document-history])))
@@ -93,28 +93,13 @@
       (when right-sidebar?
         [:& right-sidebar {:page page :layout layout}])]))
 
-(mf/defc workspace
-  [{:keys [file-id page-id] :as props}]
-
+(mf/defc workspace-page
+  [{:keys [file-id page-id layout file flags] :as props}]
   (mf/use-effect
-   {:deps #js [(str file-id)]
-    :fn (fn []
-          (st/emit! (dw/initialize-ws file-id))
-          #(st/emit! (dw/finalize-ws file-id)))})
+   {:deps (mf/deps file-id page-id)
+    :fn #(st/emit! (dw/initialize-page page-id))})
 
-  (mf/use-effect
-   {:deps #js [(str file-id)
-               (str page-id)]
-    :fn (fn []
-          (let [sub (shortcuts/init)]
-            (st/emit! (dw/initialize file-id page-id))
-            #(rx/cancel! sub)))})
-
-  (let [layout (mf/deref refs/workspace-layout)
-        file   (mf/deref refs/workspace-file)
-        page   (mf/deref refs/workspace-page)
-        flags  (mf/deref refs/selected-flags)]
-
+  (let [page (mf/deref refs/workspace-page)]
     [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
      [:& header {:page page :layout layout :flags flags}]
@@ -124,5 +109,34 @@
 
      (when (and layout page)
        [:& workspace-content {:layout layout
+                              :flags flags
                               :file file
                               :page page}])]))
+
+
+
+(mf/defc workspace
+  [{:keys [file-id page-id] :as props}]
+  (mf/use-effect
+   {:deps (mf/deps file-id)
+    :fn (fn []
+          (st/emit! (dw/initialize file-id))
+          #(st/emit! (dw/finalize file-id)))})
+
+  (mf/use-effect
+   {:deps (mf/deps file-id page-id)
+    :fn (fn []
+          (let [sub (shortcuts/init)]
+            #(rx/cancel! sub)))})
+
+  (let [layout (mf/deref refs/workspace-layout)
+        file   (mf/deref refs/workspace-file)
+        flags  (mf/deref refs/selected-flags)]
+
+    ;; TODO: maybe loading state?
+    (when file
+      [:& workspace-page {:layout layout
+                          :file file
+                          :flags flags
+                          :page-id page-id
+                          :file-id file-id}])))

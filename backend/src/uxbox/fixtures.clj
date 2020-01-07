@@ -56,7 +56,6 @@
   (let [sql create-project-user-sql
         project-id (mk-uuid "project" project-index user-index)
         user-id (mk-uuid "user" (dec user-index))]
-    (println sql project-id user-id)
     (db/query-one conn [sql project-id user-id])))
 
 ;; --- Projects creation
@@ -114,10 +113,10 @@
   (let [canvas {:id (mk-uuid "canvas" 1)
                 :name "Canvas-1"
                 :type :canvas
-                :x1 200
-                :y1 200
-                :x2 1224
-                :y2 968}
+                :x 200
+                :y 200
+                :width 1024
+                :height 768}
         data {:shapes []
               :canvas [(:id canvas)]
               :shapes-by-id {(:id canvas) canvas}}

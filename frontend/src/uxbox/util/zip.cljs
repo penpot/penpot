@@ -16,4 +16,4 @@
     (let [zobj (js/JSZip.)]
       (run! (partial attach-file zobj) files)
       (->> (.generateAsync zobj #js {:type "blob"})
-           (rx/from-promise)))))
+           (rx/from)))))

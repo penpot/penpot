@@ -25,26 +25,26 @@
 
 (mf/defc header
   [{:keys [section] :as props}]
-  (let [projects? (= section :dashboard/projects)
-        icons? (= section :dashboard/icons)
-        images? (= section :dashboard/images)
-        colors? (= section :dashboard/colors)]
+  (let [projects? (= section :dashboard-projects)
+        icons? (= section :dashboard-icons)
+        images? (= section :dashboard-images)
+        colors? (= section :dashboard-colors)]
     [:header#main-bar.main-bar
      [:div.main-logo
-      [:& header-link {:section :dashboard/projects
+      [:& header-link {:section :dashboard-projects
                        :content i/logo}]]
      [:ul.main-nav
       [:li {:class (when projects? "current")}
-       [:& header-link {:section :dashboard/projects
+       [:& header-link {:section :dashboard-projects
                         :content (tr "ds.projects")}]]
       [:li {:class (when icons? "current")}
-       [:& header-link {:section :dashboard/icons
+       [:& header-link {:section :dashboard-icons
                         :content (tr "ds.icons")}]]
       [:li {:class (when images? "current")}
-       [:& header-link {:section :dashboard/images
+       [:& header-link {:section :dashboard-images
                         :content (tr "ds.images")}]]
       [:li {:class (when colors? "current")}
-       [:& header-link {:section :dashboard/colors
+       [:& header-link {:section :dashboard-colors
                         :content (tr "ds.colors")}]]]
      [:& user]]))
 

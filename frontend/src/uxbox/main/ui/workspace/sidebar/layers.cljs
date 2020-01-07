@@ -205,7 +205,7 @@
           :class (when-not collapsed? "inverse")}
          i/arrow-slide]]
        [:ul
-        (for [[index shape] shapes]
+        (for [[index shape] (reverse shapes)]
           [:& layer-item {:shape shape
                           :selected selected
                           :index index
