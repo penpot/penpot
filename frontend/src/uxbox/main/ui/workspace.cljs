@@ -95,10 +95,6 @@
 
 (mf/defc workspace-page
   [{:keys [file-id page-id layout file flags] :as props}]
-  (mf/use-effect
-   {:deps (mf/deps file-id page-id)
-    :fn #(st/emit! (dw/initialize-page page-id))})
-
   (let [page (mf/deref refs/workspace-page)]
     [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
@@ -118,10 +114,18 @@
 (mf/defc workspace
   [{:keys [file-id page-id] :as props}]
   (mf/use-effect
+   {:deps (mf/deps file-id page-id)
+    :fn #(st/emit! (dw/initialize file-id page-id))})
+
+  (mf/use-effect
    {:deps (mf/deps file-id)
     :fn (fn []
-          (st/emit! (dw/initialize file-id))
-          #(st/emit! (dw/finalize file-id)))})
+          (st/emit! (dw/initialize-ws file-id))
+          #(st/emit! (dw/finalize-ws file-id)))})
+
+  ;; (mf/use-effect
+  ;;  {:deps (mf/deps file-id page-id)
+  ;;   :fn #(st/emit! (dw/initialize-page page-id))})
 
   (mf/use-effect
    {:deps (mf/deps file-id page-id)
@@ -130,13 +134,19 @@
             #(rx/cancel! sub)))})
 
   (let [layout (mf/deref refs/workspace-layout)
+        flags  (mf/deref refs/selected-flags)
         file   (mf/deref refs/workspace-file)
-        flags  (mf/deref refs/selected-flags)]
+        page   (mf/deref refs/workspace-page)]
 
-    ;; TODO: maybe loading state?
-    (when file
-      [:& workspace-page {:layout layout
-                          :file file
-                          :flags flags
-                          :page-id page-id
-                          :file-id file-id}])))
+    [:> rdnd/provider {:backend rdnd/html5}
+     [:& messages-widget]
+     [:& header {:page page :layout layout :flags flags}]
+
+     (when (:colorpalette layout)
+       [:& colorpalette])
+
+     (when (and layout page)
+       [:& workspace-content {:layout layout
+                              :flags flags
+                              :file file
+                              :page page}])]))

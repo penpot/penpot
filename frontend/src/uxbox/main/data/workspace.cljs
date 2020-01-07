@@ -142,33 +142,44 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [wsession (get-in state [:ws file-id])]
-        (->> (rx/merge
-              (rx/of (fetch-users file-id))
-              (->> (ws/-stream wsession)
-                   (rx/filter #(= :message (:type %)))
-                   (rx/map (comp t/decode :payload))
-                   (rx/filter #(s/valid? ::message %))
-                   (rx/map (fn [{:keys [type] :as msg}]
-                             (case type
-                               :who (handle-who msg)
-                               :pointer-update (handle-pointer-update msg)
-                               :page-snapshot (handle-page-snapshot msg)
-                               ::unknown)))))
+      (let [wsession (get-in state [:ws file-id])
+            stoper (rx/filter #(= ::finalize-ws %) stream)]
+        (->> (ws/-stream wsession)
+             (rx/filter #(= :message (:type %)))
+             (rx/map (comp t/decode :payload))
+             (rx/filter #(s/valid? ::message %))
+             (rx/map (fn [{:keys [type] :as msg}]
+                       (case type
+                         :who (handle-who msg)
+                         :pointer-update (handle-pointer-update msg)
+                         :page-snapshot (handle-page-snapshot msg)
+                         ::unknown)))
+             (rx/take-until stoper))))))
 
 
-             (rx/take-until
-              (rx/filter #(= ::finalize %) stream)))))))
+;;    #_(->> stream
+;;         ;; TODO: this need to be rethinked
+;;         (rx/filter uxbox.main.ui.workspace.streams/pointer-event?)
+;;         (rx/sample 150)
+;;         (rx/tap (fn [{:keys [pt] :as event}]
+;;                   (let [msg {:type :pointer-update
+;;                              :page-id page-id
+;;                              :x (:x pt)
+;;                              :y (:y pt)}]
+;;                     (ws/-send (get-in state [:ws file-id]) (t/encode msg)))))
+;;         (rx/ignore)
+;;         (rx/take-until (rx/filter #(= ::finalize %) stream))))))))
+
 
 ;; --- Finalize Websocket
 
 (defn finalize-ws
   [file-id]
-  (ptk/reify ::finalize
+  (ptk/reify ::finalize-ws
     ptk/WatchEvent
     (watch [_ state stream]
       (ws/-close (get-in state [:ws file-id]))
-      (rx/of ::finalize))))
+      (rx/of ::finalize-ws))))
 
 ;; --- Handle: Who
 
@@ -232,67 +243,31 @@
    :tooltip nil})
 
 (declare initialized)
+(declare initialize-page)
 
 (defn initialize
   "Initialize the workspace state."
-  [file-id]
+  [file-id page-id]
   (s/assert ::us/uuid file-id)
+  (s/assert ::us/uuid page-id)
   (ptk/reify ::initialize
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [local (assoc workspace-default
-                         :file-id file-id)
-                         ;; :page-id page-id)
-            ;; TODO: this need to be parametrized
-            uri   (str "ws://localhost:6060/sub/" file-id)]
-        (-> state
-            (assoc :workspace-layout default-layout)
-            (assoc :workspace-local local)
-            (assoc-in [:ws file-id] (ws/open uri)))))
-
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [wsession (get-in state [:ws file-id])]
-        (rx/merge
-         ;; Stop possible previous watchers and re-fetch the main page
-         ;; and all project related pages.
-         (rx/of ::stop-watcher
-                (dp/fetch-file file-id)
-                (dp/fetch-pages file-id)
-                (fetch-users file-id))
-
-         ;; When main page is fetched, schedule the main initialization.
-         (->> (rx/zip (rx/filter (ptk/type? ::dp/pages-fetched) stream)
-                      (rx/filter (ptk/type? ::dp/files-fetched) stream))
-              (rx/take 1)
-              (rx/do #(reset! st/loader false))
-              (rx/mapcat #(rx/of (initialized file-id)
-                                 #_(initialize-alignment page-id))))
-
-         ;; WebSocket Incoming Messages Handling
-         (->> (ws/-stream wsession)
-              (rx/filter #(= :message (:type %)))
-              (rx/map (comp t/decode :payload))
-              (rx/filter #(s/valid? ::message %))
-              (rx/map (fn [{:keys [type] :as msg}]
-                        (case type
-                          :who (handle-who msg)
-                          :pointer-update (handle-pointer-update msg)
-                          :page-snapshot (handle-page-snapshot msg)
-                          ::unknown))))
-
-         #_(->> stream
-              ;; TODO: this need to be rethinked
-              (rx/filter uxbox.main.ui.workspace.streams/pointer-event?)
-              (rx/sample 150)
-              (rx/tap (fn [{:keys [pt] :as event}]
-                        (let [msg {:type :pointer-update
-                                   :page-id page-id
-                                   :x (:x pt)
-                                   :y (:y pt)}]
-                          (ws/-send (get-in state [:ws file-id]) (t/encode msg)))))
-              (rx/ignore)
-              (rx/take-until (rx/filter #(= ::finalize %) stream))))))))
+      (let [local (:workspace-local state)]
+        (if (not= (:file-id local) file-id)
+          (rx/merge
+           (rx/of (dp/fetch-file file-id)
+                  (dp/fetch-pages file-id)
+                  (fetch-users file-id))
+           (->> (rx/zip (rx/filter (ptk/type? ::dp/pages-fetched) stream)
+                        (rx/filter (ptk/type? ::dp/files-fetched) stream))
+                (rx/take 1)
+                (rx/do #(reset! st/loader false))
+                (rx/mapcat #(rx/of (initialized file-id)
+                                   (initialize-page page-id)
+                                   #_(initialize-alignment page-id)))))
+          (rx/merge
+           (rx/of (initialize-page page-id))))))))
 
 (defn- initialized
   [file-id]
@@ -300,18 +275,12 @@
   (ptk/reify ::initialized
     ptk/UpdateEvent
     (update [_ state]
-      (let [file (get-in state [:files file-id])]
-        (assoc state :workspace-file file)))))
-
-(defn finalize
-  [file-id]
-  (ptk/reify ::finalize
-    cljs.core/IDeref
-    (-deref [_] file-id)
-
-    ptk/EffectEvent
-    (effect [_ state stream]
-      (ws/-close (get-in state [:ws file-id])))))
+      (let [file (get-in state [:files file-id])
+            local (assoc workspace-default :file-id file-id)]
+        (-> state
+            (assoc :workspace-file file)
+            (assoc :workspace-layout default-layout)
+            (assoc :workspace-local local))))))
 
 (defn initialize-page
   [page-id]
@@ -325,7 +294,9 @@
                :workspace-page page)))
 
     ptk/EffectEvent
-    (effect [_ state stream])))
+    (effect [_ state stream]
+      ;; TODO: emit join page event
+      )))
 
 ;; --- Fetch Workspace Users
 
