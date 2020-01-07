@@ -51,6 +51,14 @@ Will cause:
 - A posible `:page-changes`.
 - Broadcast `:joined` message to all users of the file.
 
+The `joined` message has this aspect:
+
+```clojure
+{:type :joined
+ :page-id <id>
+ :user-id <id>
+ }
+```
 
 ### `who` ###
 
