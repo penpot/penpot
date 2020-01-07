@@ -927,7 +927,6 @@
         (rx/of (commit-shapes-changes changes)
                #(dissoc state ::tmp-changes))))))
 
-
 ;; --- Change Canvas Order (D&D Ordering)
 
 (defn change-canvas-order

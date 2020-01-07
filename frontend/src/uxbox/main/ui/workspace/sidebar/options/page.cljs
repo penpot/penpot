@@ -119,6 +119,6 @@
 (mf/defc options
   [{:keys [page] :as props}]
   [:div
-   [:& metadata-options {:page page}]
+   #_[:& metadata-options {:page page}]
    [:& grid-options {:page page}]])
 
