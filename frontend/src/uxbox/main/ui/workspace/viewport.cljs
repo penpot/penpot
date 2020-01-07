@@ -258,7 +258,6 @@
                   (events/unlistenByKey key1)
                   (events/unlistenByKey key2))))]
       (mf/use-effect on-mount)
-      ;; (prn "viewport$render")
       [:*
        [:& coordinates {:zoom zoom}]
        [:svg.viewport {:width (* c/viewport-width zoom)

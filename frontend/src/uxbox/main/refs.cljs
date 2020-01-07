@@ -11,7 +11,6 @@
             [uxbox.main.constants :as c]
             [uxbox.main.store :as st]))
 
-
 (def profile
   (-> (l/key :profile)
       (l/derive st/state)))

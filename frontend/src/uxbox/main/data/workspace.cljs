@@ -282,6 +282,17 @@
             (assoc :workspace-layout default-layout)
             (assoc :workspace-local local))))))
 
+(defn finalize
+  [file-id page-id]
+  (s/assert ::us/uuid file-id)
+  (s/assert ::us/uuid page-id)
+  (ptk/reify ::initialized
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state
+              :workspace-page
+              :workspace-data))))
+
 (defn initialize-page
   [page-id]
   (ptk/reify ::initialize-page
@@ -291,12 +302,7 @@
             data (get-in state [:pages-data page-id])]
         (assoc state
                :workspace-data data
-               :workspace-page page)))
-
-    ptk/EffectEvent
-    (effect [_ state stream]
-      ;; TODO: emit join page event
-      )))
+               :workspace-page page)))))
 
 ;; --- Fetch Workspace Users
 
@@ -728,7 +734,6 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [change (::tmp-change state)]
-        (prn "update-shape" change)
         (rx/of (commit-shapes-changes [change])
                #(dissoc state ::tmp-change))))))
 
