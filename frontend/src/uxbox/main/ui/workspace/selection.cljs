@@ -16,7 +16,7 @@
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.workspace.streams :as ws]
+   [uxbox.main.streams :as ms]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]))
@@ -63,12 +63,12 @@
       (watch [_ state stream]
         (let [shape  (->> (geom/shape->rect-shape shape)
                           (geom/size))
-              stoper (rx/filter ws/mouse-up? stream)]
+              stoper (rx/filter ms/mouse-up? stream)]
           (rx/concat
-           (->> ws/mouse-position
+           (->> ms/mouse-position
                 (rx/map apply-zoom)
                 (rx/mapcat apply-grid-alignment)
-                (rx/with-latest vector ws/mouse-position-ctrl)
+                (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map normalize-proportion-lock)
                 (rx/mapcat (partial resize shape))
                 (rx/take-until stoper))
@@ -157,14 +157,14 @@
             (dom/stop-propagation event)
             ;; TODO: this need code ux refactor
             (let [stoper (get-edition-stream-stoper)
-                  stream (->> (ws/mouse-position-deltas @ws/mouse-position)
+                  stream (->> (ms/mouse-position-deltas @ms/mouse-position)
                               (rx/take-until stoper))]
               (when @refs/selected-alignment
                 (st/emit! (dw/initial-path-point-align (:id shape) index)))
               (rx/subscribe stream #(on-handler-move % index))))
 
           (get-edition-stream-stoper []
-            (let [stoper? #(and (ws/mouse-event? %) (= (:type %) :up))]
+            (let [stoper? #(and (ms/mouse-event? %) (= (:type %) :up))]
               (rx/merge
                (rx/filter stoper? st/stream)
                (->> st/stream

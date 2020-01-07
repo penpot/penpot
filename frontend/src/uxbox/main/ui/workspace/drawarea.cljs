@@ -15,8 +15,8 @@
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.streams :as ms]
    [uxbox.main.ui.shapes :as shapes]
-   [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.math :as mth]
    [uxbox.util.dom :as dom]
@@ -130,10 +130,10 @@
         (let [{:keys [zoom flags]} (:workspace-local state)
               align? (refs/alignment-activated? flags)
 
-              stoper? #(or (uws/mouse-up? %) (= % :interrupt))
+              stoper? #(or (ms/mouse-up? %) (= % :interrupt))
               stoper (rx/filter stoper? stream)
 
-              mouse (->> uws/mouse-position
+              mouse (->> ms/mouse-position
                          (rx/mapcat #(conditional-align % align?))
                          (rx/map #(gpt/divide % zoom)))]
           (rx/concat
@@ -141,7 +141,7 @@
                 (rx/take 1)
                 (rx/map (fn [pt] #(initialize-drawing % pt))))
            (->> mouse
-                (rx/with-latest vector uws/mouse-position-ctrl)
+                (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map (fn [[pt ctrl?]] #(update-drawing % pt ctrl?)))
                 (rx/take-until stoper))
            (rx/of handle-finish-drawing)))))))
@@ -149,10 +149,10 @@
 (def handle-drawing-path
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
             (or (= event ::end-path-drawing)
-                (and (uws/mouse-event? event)
+                (and (ms/mouse-event? event)
                      (or (and (= type :double-click) shift)
                          (= type :context-menu)))
-                (and (uws/keyboard-event? event)
+                (and (ms/keyboard-event? event)
                      (= type :down)
                      (= 13 (:key event)))))
 
@@ -179,24 +179,24 @@
         (let [{:keys [zoom flags]} (:workspace-local state)
 
               align? (refs/alignment-activated? flags)
-              last-point (volatile! (gpt/divide @uws/mouse-position zoom))
+              last-point (volatile! (gpt/divide @ms/mouse-position zoom))
 
               stoper (->> (rx/filter stoper-event? stream)
                           (rx/share))
 
-              mouse (->> (rx/sample 10 uws/mouse-position)
+              mouse (->> (rx/sample 10 ms/mouse-position)
                          (rx/mapcat #(conditional-align % align?))
                          (rx/map #(gpt/divide % zoom)))
 
               points (->> stream
-                          (rx/filter uws/mouse-click?)
+                          (rx/filter ms/mouse-click?)
                           (rx/filter #(false? (:shift %)))
                           (rx/with-latest vector mouse)
                           (rx/map second))
 
               counter (rx/merge (rx/scan #(inc %) 1 points) (rx/of 1))
               stream' (->> mouse
-                          (rx/with-latest vector uws/mouse-position-ctrl)
+                          (rx/with-latest vector ms/mouse-position-ctrl)
                           (rx/with-latest vector counter)
                           (rx/map flatten))
 
@@ -236,7 +236,7 @@
 
 (def handle-drawing-curve
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
-            (uws/mouse-event? event) (= type :up))
+            (ms/mouse-event? event) (= type :up))
 
           (initialize-drawing [state]
             (assoc-in state [:workspace-local :drawing ::initialized?] true))
@@ -253,7 +253,7 @@
         (let [{:keys [zoom flags]} (:workspace-local state)
               align? (refs/alignment-activated? flags)
               stoper (rx/filter stoper-event? stream)
-              mouse  (->> (rx/sample 10 uws/mouse-position)
+              mouse  (->> (rx/sample 10 ms/mouse-position)
                           (rx/mapcat #(conditional-align % align?))
                           (rx/map #(gpt/divide % zoom)))]
           (rx/concat

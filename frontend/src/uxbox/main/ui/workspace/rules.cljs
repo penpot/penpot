@@ -13,7 +13,7 @@
    [uxbox.main.constants :as c]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as s]
-   [uxbox.main.ui.workspace.streams :as uws]
+   [uxbox.main.streams :as ms]
    [uxbox.util.components :refer [use-rxsub]]
    [uxbox.util.dom :as dom]))
 
@@ -123,7 +123,7 @@
 (mf/defc horizontal-rule
   {:wrap [mf/wrap-memo]}
   [props]
-  (let [scroll (use-rxsub  uws/viewport-scroll)
+  (let [scroll (use-rxsub  ms/viewport-scroll)
         zoom (mf/deref refs/selected-zoom)
         translate-x (- (- scroll-padding) (:x scroll))]
     [:svg.horizontal-rule
@@ -139,7 +139,7 @@
 (mf/defc vertical-rule
   {:wrap [mf/wrap-memo]}
   [props]
-  (let [scroll (use-rxsub uws/viewport-scroll)
+  (let [scroll (use-rxsub ms/viewport-scroll)
         zoom (or (mf/deref refs/selected-zoom) 1)
         scroll-y (:y scroll)
         translate-y (+ (- scroll-padding)

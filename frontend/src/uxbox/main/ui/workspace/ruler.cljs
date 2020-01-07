@@ -11,7 +11,6 @@
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.workspace.streams :as ws]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]))

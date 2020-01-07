@@ -14,9 +14,9 @@
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.undo :as udu]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.data.workspace-websocket :as dws]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.streams :as ms]
    [uxbox.main.ui.confirm]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.messages :refer [messages-widget]]
@@ -30,7 +30,6 @@
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
-   [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
@@ -43,7 +42,7 @@
   (let [target (.-target event)
         top (.-scrollTop target)
         left (.-scrollLeft target)]
-    (st/emit! (uws/scroll-event (gpt/point left top)))))
+    (st/emit! (ms/->ScrollEvent (gpt/point left top)))))
 
 (defn- on-wheel
   [event canvas]
@@ -51,7 +50,7 @@
     (let [prev-zoom @refs/selected-zoom
           dom (mf/ref-node canvas)
           scroll-position (scroll/get-current-position-absolute dom)
-          mouse-point @uws/mouse-position]
+          mouse-point @ms/mouse-position]
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
