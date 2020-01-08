@@ -749,6 +749,7 @@
 
 (defn update-shape
   [id attrs]
+  (s/assert ::us/uuid id)
   (s/assert ::attributes attrs)
   (ptk/reify ::update-shape
     ptk/UpdateEvent

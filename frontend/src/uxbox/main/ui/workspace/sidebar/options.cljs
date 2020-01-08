@@ -17,6 +17,7 @@
    [uxbox.main.ui.workspace.sidebar.options.circle :as circle]
    [uxbox.main.ui.workspace.sidebar.options.path :as path]
    [uxbox.main.ui.workspace.sidebar.options.image :as image]
+   [uxbox.main.ui.workspace.sidebar.options.text :as text]
    [uxbox.main.ui.workspace.sidebar.options.page :as page]
    [uxbox.util.i18n :refer [tr]]))
 
@@ -41,6 +42,7 @@
         shape (mf/deref shape-iref)]
     [:div
      (case (:type shape)
+       :text [:& text/options {:shape shape}]
        :rect [:& rect/options {:shape shape}]
        :circle [:& circle/options {:shape shape}]
        :path [:& path/options {:shape shape}]
