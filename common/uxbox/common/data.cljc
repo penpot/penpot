@@ -54,8 +54,8 @@
         removed (set/difference ma-keys mb-keys)
         both (set/intersection ma-keys mb-keys)]
     (concat
-     (mapv #(vector :add % (get mb %)) added)
-     (mapv #(vector :del % nil) removed)
+     (mapv #(vector :set % (get mb %)) added)
+     (mapv #(vector :set % nil) removed)
      (loop [k (first both)
             r (rest both)
             rs []]
@@ -64,7 +64,7 @@
                vmb (get mb k)]
            (if (= vma vmb)
              (recur (first r) (rest r) rs)
-             (recur (first r) (rest r) (conj rs [:mod k vmb]))))
+             (recur (first r) (rest r) (conj rs [:set k vmb]))))
          rs)))))
 
 (defn index-by

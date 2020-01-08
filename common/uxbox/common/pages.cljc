@@ -38,16 +38,20 @@
 (s/def ::data
   (s/keys :req-un [::shapes ::canvas ::shapes-by-id]))
 
-(s/def ::shape-change
-  (s/tuple #{:add :mod :del} keyword? any?))
+(s/def ::attr-change
+  (s/tuple #{:set} keyword? any?))
 
 (s/def ::operation
   (s/or :mod-shape (s/cat :name #(= % :mod-shape)
                           :id uuid?
-                          :changes (s/* ::shape-change))
+                          :changes (s/* ::attr-change))
         :add-shape (s/cat :name #(= % :add-shape)
                           :id uuid?
                           :data any?)
+
+        :mod-opts  (s/cat :name #(= % :mod-opts)
+                          :changes (s/* ::attr-change))
+
         :del-shape (s/cat :name #(= % :del-shape)
                           :id uuid?)
         :mov-shape (s/cat :name #(= % :mov-shape)
@@ -67,6 +71,7 @@
 
 (declare process-operation)
 (declare process-mod-shape)
+(declare process-mod-opts)
 (declare process-mov-shape)
 (declare process-add-shape)
 (declare process-add-canvas)
@@ -86,18 +91,28 @@
     :add-shape (process-add-shape data rest)
     :add-canvas (process-add-canvas data rest)
     :del-shape (process-del-shape data rest)
-    :del-canvas (process-del-canvas data rest)))
+    :del-canvas (process-del-canvas data rest)
+    :mod-opts (process-mod-opts data rest)))
 
 (defn- process-mod-shape
   [data [id & changes]]
   (if (get-in data [:shapes-by-id id])
     (update-in data [:shapes-by-id id]
-               #(reduce (fn [shape [op att val]]
-                          (if (= op :del)
+               #(reduce (fn [shape [_ att val]]
+                          (if (nil? val)
                             (dissoc shape att)
                             (assoc shape att val)))
                         % changes))
     data))
+
+(defn- process-mod-opts
+  [data changes]
+  (update data :options
+          #(reduce (fn [options [_ att val]]
+                     (if (nil? val)
+                       (dissoc options att)
+                       (assoc options att val)))
+                   % changes)))
 
 (defn- process-add-shape
   [data [id sdata]]

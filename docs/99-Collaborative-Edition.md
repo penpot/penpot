@@ -1,13 +1,17 @@
-# Collaborative Edition
+# Collaborative Edition & Persistence protocol
 
-This is a collection of design notes for collaborative edition feature.
+This is a collection of design notes for collaborative edition feature
+and persistence protocol.
 
-## Persistence Ops
+
+## Persistence Operations
 
 This is a page data structure:
 
 ```
-{:shapes [<id>, ...]
+{:version 1
+ :options {}
+ :shapes [<id>, ...]
  :canvas [<id>, ...]
  :shapes-by-id {<id> <object>, ...}}
 ```
@@ -16,10 +20,10 @@ This is a potential list of persistent ops:
 
 ```
 ;; Generic (Shapes & Canvas)
-[:mod-shape <id> [:(mod|add|del) <attr> <val?>], ...] ;; Persistent
+[:mod-shape <id> [:set <attr> <val?>], ...]
 
 ;; Example:
-;; [:mod-shape 1 [:add :x 2] [:mod :y 3]]
+;; [:mod-shape 1 [:set :x 2] [:set :y 3]]
 
 ;; Specific
 [:add-shape <id> <object>]
@@ -30,6 +34,8 @@ This is a potential list of persistent ops:
 
 [:mov-canvas <id> :after <id|null>] ;; null implies at first position
 [:mov-shape <id> :after <id|null>]
+
+[:mod-opts [:set <attr> <val>], [:del <attr> nil], ...]
 ```
 
 ## Ephemeral communication (Websocket protocol)

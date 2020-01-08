@@ -98,8 +98,8 @@
 
 (def create-page-sql
   "insert into project_pages (id, user_id, file_id, name,
-                      version, ordering, data, metadata)
-   values ($1, $2, $3, $4, $5, $6, $7, $8)
+                      version, ordering, data)
+   values ($1, $2, $3, $4, $5, $6, $7)
    returning id;")
 
 (def create-page-history-sql
@@ -121,8 +121,10 @@
                 :stroke-opacity 1
                 :fill-color "#ffffff"
                 :fill-opacity 1}
-        data {:shapes []
+        data {:version 1
+              :shapes []
               :canvas [(:id canvas)]
+              :options {}
               :shapes-by-id {(:id canvas) canvas}}
 
         sql1 create-page-sql
@@ -134,10 +136,9 @@
         name (str "page " page-index)
         version 0
         ordering page-index
-        data (blob/encode data)
-        mdata (blob/encode {})]
+        data (blob/encode data)]
     (p/do!
-     (db/query-one conn [sql1 id user-id file-id name version ordering data mdata])
+     (db/query-one conn [sql1 id user-id file-id name version ordering data])
      #_(db/query-one conn [sql2 id user-id version data]))))
 
 (def preset-small

@@ -524,7 +524,6 @@
   ([] (PasteFromClipboard. nil))
   ([id] (PasteFromClipboard. id)))
 
-
 ;; --- Zoom Management
 
 (def increase-zoom

@@ -64,8 +64,7 @@ CREATE TABLE IF NOT EXISTS project_pages (
   ordering smallint NOT NULL,
 
   name text NOT NULL,
-  data bytea NOT NULL,
-  metadata bytea NULL DEFAULT NULL
+  data bytea NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS project_page_snapshots (

@@ -57,7 +57,6 @@
                    ::modified-at
                    ::user-id
                    ::ordering
-                   ::metadata
                    ::data]))
 
 ;; --- Helpers

@@ -158,9 +158,9 @@
                         :stored-version (:version page)}))
   (let [ops  (:operations params)
         data (-> (:data page)
-                  (blob/decode)
-                  (cp/process-ops ops)
-                  (blob/encode))
+                 (blob/decode)
+                 (cp/process-ops ops)
+                 (blob/encode))
 
         page (assoc page
                     :user-id (:user params)
