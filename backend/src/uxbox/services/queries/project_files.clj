@@ -29,7 +29,8 @@
   "select distinct on (pf.id, pf.created_at)
           pf.*,
           p.name as project_name,
-          array_agg(pp.id) over pages_w as pages
+          array_agg(pp.id) over pages_w as pages,
+          first_value(pp.data) over pages_w as data
      from project_files as pf
     inner join projects as p on (pf.project_id = p.id)
     inner join project_users as pu on (p.id = pu.project_id)
@@ -131,8 +132,9 @@
 ;; --- Helpers
 
 (defn decode-row
-  [{:keys [metadata pages] :as row}]
+  [{:keys [metadata pages data] :as row}]
   (when row
     (cond-> row
+      data (assoc :data (blob/decode data))
       pages (assoc :pages (vec (remove nil? pages)))
       metadata (assoc :metadata (blob/decode metadata)))))

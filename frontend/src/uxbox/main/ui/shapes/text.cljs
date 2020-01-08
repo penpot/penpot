@@ -20,7 +20,14 @@
    [uxbox.util.color :as color]
    [uxbox.util.data :refer [classnames normalize-props]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.matrix :as gmt]))
+   [uxbox.util.geom.matrix :as gmt]
+   [cljsjs.react.dom.server]))
+
+(defn- render-html
+  [component]
+  (.renderToStaticMarkup js/ReactDOMServer component))
+
+
 
 ;; TODO: this code need a good refactor
 
@@ -150,7 +157,7 @@
   (fn [own]
     (let [shape (get-in own [::mf/props :shape])
           dom (mf/ref-node (::fobject own))
-          html (dom/render-to-html (text-shape-html shape))]
+          html (render-html (text-shape-html shape))]
       (set! (.-innerHTML dom) html))
     own)
 
@@ -204,7 +211,7 @@
   (fn [own]
     (let [shape (::mf/props own)
           dom (mf/ref-node (::fobject own))
-          html (dom/render-to-html (text-shape-html shape))]
+          html (render-html (text-shape-html shape))]
       (set! (.-innerHTML dom) html))
     own)
 

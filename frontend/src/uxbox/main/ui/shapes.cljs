@@ -32,16 +32,3 @@
       :image [:& image/image-wrapper {:shape shape}]
       :circle [:& circle/circle-wrapper {:shape shape}])))
 
-(mf/defc canvas-and-shapes
-  {:wrap [mf/wrap-memo]}
-  [{:keys [page] :as props}]
-  (let [shapes-by-id (mf/deref refs/shapes-by-id)
-        shapes (map #(get shapes-by-id %) (:shapes page []))
-        canvas (map #(get shapes-by-id %) (:canvas page []))]
-    [:*
-     (for [item canvas]
-       [:& shape-wrapper {:shape item :key (:id item)}])
-     (for [item shapes]
-       [:& shape-wrapper {:shape item :key (:id item)}])]))
-
-

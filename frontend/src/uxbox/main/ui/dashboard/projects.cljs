@@ -15,6 +15,7 @@
    [uxbox.main.constants :as c]
    [uxbox.main.data.projects :as udp]
    [uxbox.main.store :as st]
+   [uxbox.main.exports :as exports]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
@@ -66,10 +67,27 @@
 
 ;; --- Grid Item Thumbnail
 
+;; (mf/defc grid-item-thumbnail
+;;   [{:keys [file] :as props}]
+;;   [:div.grid-item-th
+;;    [:img.img-th {:src "/images/project-placeholder.svg"}]])
+
+;; (defn use-thumbnail
+;;   [file]
+
 (mf/defc grid-item-thumbnail
-  [{:keys [project] :as props}]
-  [:div.grid-item-th
-   [:img.img-th {:src "/images/project-placeholder.svg"}]])
+  [{:keys [file] :as props}]
+  (let [url (mf/use-memo
+             {:fn #(let [content (exports/render file)
+                         blob (js/Blob. #js [content] #js {:type "image/svg+xml"})]
+                     (js/URL.createObjectURL blob))
+              :deps (mf/deps (:id file))})]
+    (mf/use-effect
+     {:fn (fn []
+            #(js/URL.revokeObjectURL url))
+      :deps (mf/deps (:id file))})
+    [:div.grid-item-th
+     [:img.img-th {:src url}]]))
 
 ;; --- Grid Item
 

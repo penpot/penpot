@@ -15,7 +15,7 @@
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.lightbox :as udl]
-            [uxbox.main.exports :as exports]
+            ;; [uxbox.main.exports :as exports]
             [uxbox.main.ui.lightbox :as lbx]
             [uxbox.util.blob :as blob]
             [uxbox.util.data :refer (read-string)]
@@ -44,7 +44,7 @@
 
 (defn- download-page-svg
   [{:keys [name id] :as page}]
-  (let [content (or (exports/render-page id) "")
+  (let [content (or #_(exports/render-page id) "")
         blob (blob/create content "image/svg+xml")
         uri  (blob/create-uri blob)
         link (.createElement js/document "a")
@@ -64,7 +64,7 @@
 (defn- generate-files
   [pages]
   (reduce (fn [acc {:keys [id name]}]
-            (let [content (or (exports/render-page id) "")]
+            (let [content (or #_(exports/render-page id) "")]
               (conj acc [(str (str/uslug name) ".svg")
                          (blob/create content "image/svg+xml")])))
           []
