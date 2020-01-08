@@ -18,10 +18,6 @@
    [uxbox.main.ui.shapes.rect :as rect]
    [uxbox.main.ui.shapes.text :as text]))
 
-(defn- render-html
-  [component]
-  (.renderToStaticMarkup js/ReactDOMServer component))
-
 (mf/defc background
   []
   [:rect
@@ -51,15 +47,12 @@
       :circle [:& circle/circle-shape {:shape shape}])))
 
 (mf/defc page-svg
-  [{:keys [data width height] :as props}]
+  [{:keys [data] :as props}]
   (let [shapes-by-id (:shapes-by-id data)
         shapes (map #(get shapes-by-id %) (:shapes data []))
         canvas (map #(get shapes-by-id %) (:canvas data []))
         dim (calculate-dimensions data)]
-    [:svg {
-           ;; :width width
-           ;; :height height
-           :view-box (str "0 0 " (:width dim) " " (:height dim))
+    [:svg {:view-box (str "0 0 " (:width dim) " " (:height dim))
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
@@ -69,6 +62,10 @@
         [:& shape-wrapper {:shape item :key (:id item)}])
       (for [item shapes]
         [:& shape-wrapper {:shape item :key (:id item)}])]]))
+
+;; (defn- render-html
+;;   [component]
+;;   (.renderToStaticMarkup js/ReactDOMServer component))
 
 ;; (defn render
 ;;   [{:keys [data] :as page}]

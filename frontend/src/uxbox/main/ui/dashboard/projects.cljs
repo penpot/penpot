@@ -67,27 +67,12 @@
 
 ;; --- Grid Item Thumbnail
 
-;; (mf/defc grid-item-thumbnail
-;;   [{:keys [file] :as props}]
-;;   (let [url (mf/use-memo
-;;              {:fn #(let [content (exports/render file)
-;;                          blob (js/Blob. #js [content] #js {:type "image/svg+xml"})]
-;;                      (js/URL.createObjectURL blob))
-;;               :deps (mf/deps (:id file))})]
-;;     (mf/use-effect
-;;      {:fn (fn []
-;;             #(js/URL.revokeObjectURL url))
-;;       :deps (mf/deps (:id file))})
-;;     [:div.grid-item-th
-;;      [:img.img-th {:src url}]]))
-
-
 (mf/defc grid-item-thumbnail
   [{:keys [file] :as props}]
   [:div.grid-item-th
    [:& exports/page-svg {:data (:data file)
-                          :width "290"
-                          :height "150"}]])
+                         :width "290"
+                         :height "150"}]])
 
 ;; --- Grid Item
 

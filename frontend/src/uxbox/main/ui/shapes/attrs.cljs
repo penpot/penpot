@@ -60,17 +60,6 @@
     :dotted "5,5"
     :dashed "10,10"))
 
-;; (defn- rename-attr
-;;   [[key value :as pair]]
-;;   (case key
-;;     :stroke-color [:stroke value]
-;;     :fill-color [:fill value]
-;;     pair))
-
-;; (defn- rename-attrs
-;;   [attrs]
-;;   (into {} (map rename-attr) attrs))
-
 (defn- transform-stroke-attrs
   [{:keys [stroke-style] :or {stroke-style :none} :as attrs}]
   (case stroke-style
