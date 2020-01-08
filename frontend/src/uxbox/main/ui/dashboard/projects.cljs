@@ -85,7 +85,7 @@
 (mf/defc grid-item-thumbnail
   [{:keys [file] :as props}]
   [:div.grid-item-th
-   [:& exports/page-svg2 {:data (:data file)
+   [:& exports/page-svg {:data (:data file)
                           :width "290"
                           :height "150"}]])
 
