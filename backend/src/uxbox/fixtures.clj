@@ -116,7 +116,11 @@
                 :x 200
                 :y 200
                 :width 1024
-                :height 768}
+                :height 768
+                :stroke-color "#000000"
+                :stroke-opacity 1
+                :fill-color "#ffffff"
+                :fill-opacity 1}
         data {:shapes []
               :canvas [(:id canvas)]
               :shapes-by-id {(:id canvas) canvas}}
