@@ -57,7 +57,7 @@
                          :y y
                          :id (str "shape-" id)
                          :preserveAspectRatio "none"
-                         :class (classnames :move-cursor moving?)
+                         :className (classnames :move-cursor moving?)
                          :xlinkHref (:url image)
                          :transform transform
                          :width width

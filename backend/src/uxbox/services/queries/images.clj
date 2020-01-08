@@ -75,14 +75,14 @@
                 and deleted_at is null;"]
     (db/query-one conn [sql id])))
 
-;; (s/def ::retrieve-image
-;;   (s/keys :req-un [::user ::us/id]))
+(s/def ::image-by-id
+  (s/keys :req-un [::user ::us/id]))
 
-;; (defmethod core/query :retrieve-image
-;;   [params]
-;;   (s/assert ::retrieve-image params)
-;;   (with-open [conn (db/connection)]
-;;     (retrieve-image conn params)))
+(sq/defquery ::image-by-id
+  [params]
+  (-> (retrieve-image db/pool (:id params))
+      (p/then populate-thumbnail)
+      (p/then populate-urls)))
 
 ;; --- Query Images by Collection (id)
 

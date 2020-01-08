@@ -30,7 +30,7 @@
     :height "100%"
     :fill "#b1b2b5"}])
 
-(defn- calculate-width
+(defn- calculate-dimensions
   [data]
   (let [shapes (vals (:shapes-by-id data))
         shape (geom/shapes->rect-shape shapes)]
@@ -51,14 +51,15 @@
       :circle [:& circle/circle-shape {:shape shape}])))
 
 (mf/defc page-svg
-  [{:keys [data] :as props}]
+  [{:keys [data width height] :as props}]
   (let [shapes-by-id (:shapes-by-id data)
         shapes (map #(get shapes-by-id %) (:shapes data []))
         canvas (map #(get shapes-by-id %) (:canvas data []))
-        {:keys [width height]} (calculate-width data)]
-    [:svg {:width width
-           :height height
-           :view-box (str "0 0 " width " " height)
+        dim (calculate-dimensions data)]
+    [:svg {
+           ;; :width width
+           ;; :height height
+           :view-box (str "0 0 " (:width dim) " " (:height dim))
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
@@ -69,11 +70,11 @@
       (for [item shapes]
         [:& shape-wrapper {:shape item :key (:id item)}])]]))
 
-(defn render
-  [{:keys [data] :as page}]
-  (try
-    (-> (mf/element page-svg #js {:data data})
-        (render-html))
-    (catch :default e
-      (js/console.log e)
-      nil)))
+;; (defn render
+;;   [{:keys [data] :as page}]
+;;   (try
+;;     (-> (mf/element page-svg #js {:data data})
+;;         (render-html))
+;;     (catch :default e
+;;       (js/console.log e)
+;;       nil)))
