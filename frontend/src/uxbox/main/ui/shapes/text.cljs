@@ -99,7 +99,8 @@
        :fontStyle font-style
        :margin "0px"
        :padding "0px"
-       :border "0px"}
+       :border "0px"
+       :resize "none"}
       (when user-select {:userSelect "auto"})
       (when line-height {:lineHeight line-height})
       (when letter-spacing {:letterSpacing letter-spacing})))))
