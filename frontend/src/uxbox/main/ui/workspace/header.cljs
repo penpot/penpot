@@ -26,10 +26,11 @@
 ;; --- Zoom Widget
 
 (mf/defc zoom-widget
+  {:wrap [mf/wrap-memo]}
   [props]
   (let [zoom (mf/deref refs/selected-zoom)
-        increase #(st/emit! (dw/increase-zoom))
-        decrease #(st/emit! (dw/decrease-zoom))]
+        increase #(st/emit! dw/increase-zoom)
+        decrease #(st/emit! dw/decrease-zoom)]
     [:ul.options-view
      [:li.zoom-input
       [:span.add-zoom {:on-click decrease} "-"]
@@ -180,10 +181,10 @@
      ;;  i/alignment]]
      ;; [:& user]
      [:div.secondary-options
-       [:& zoom-widget]
-       [:a.tooltip.tooltip-bottom.view-mode
+      [:& zoom-widget]
+      [:a.tooltip.tooltip-bottom.view-mode
        {:alt (tr "workspace.header.view-mode")
-         ;; :on-click #(st/emit! (dw/->OpenView (:id page)))
-         }
+        ;; :on-click #(st/emit! (dw/->OpenView (:id page)))
+        }
        i/play]]
      ]))

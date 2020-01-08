@@ -527,38 +527,29 @@
 
 ;; --- Zoom Management
 
-(defrecord IncreaseZoom []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [increase #(nth c/zoom-levels
-                         (+ (index-of c/zoom-levels %) 1)
-                         (last c/zoom-levels))]
-      (update-in state [:workspace :zoom] (fnil increase 1)))))
+(def increase-zoom
+  (ptk/reify ::increase-zoom
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [increase #(nth c/zoom-levels
+                           (+ (index-of c/zoom-levels %) 1)
+                           (last c/zoom-levels))]
+        (update-in state [:workspace-local :zoom] (fnil increase 1))))))
 
-(defn increase-zoom
-  []
-  (IncreaseZoom.))
+(def decrease-zoom
+  (ptk/reify ::decrease-zoom
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [decrease #(nth c/zoom-levels
+                           (- (index-of c/zoom-levels %) 1)
+                           (first c/zoom-levels))]
+        (update-in state [:workspace-local :zoom] (fnil decrease 1))))))
 
-(defrecord DecreaseZoom []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [decrease #(nth c/zoom-levels
-                         (- (index-of c/zoom-levels %) 1)
-                         (first c/zoom-levels))]
-      (update-in state [:workspace :zoom] (fnil decrease 1)))))
-
-(defn decrease-zoom
-  []
-  (DecreaseZoom.))
-
-(defrecord ResetZoom []
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:workspace :zoom] 1)))
-
-(defn reset-zoom
-  []
-  (ResetZoom.))
+(def reset-zoom
+  (ptk/reify ::reset-zoom
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :zoom] 1))))
 
 ;; --- Grid Alignment
 
