@@ -106,35 +106,19 @@
 
 ;; --- Text Shape Edit
 
-(mf/def text-shape-edit
-  :mixins [mf/memo]
-
-  :init
-  (fn [own props]
-    (assoc own ::container (mf/create-ref)))
-
-  :did-mount
-  (fn [own]
-    (let [shape (get-in own [::mf/props :shape])
-          dom (mf/ref-node (::container own))]
-      (set! (.-textContent dom) (:content shape ""))
-      (.focus dom)
-      own))
-
-  :will-unmount
-  (fn [own]
-    (let [dom (mf/ref-val (::container own))
-          shape (get-in own [::mf/props :shape])
-          content (dom/get-value dom)]
-      (st/emit! (udw/update-shape (:id shape) {:content content}))
-      own))
-
-  :render
-  (fn [own {:keys [shape] :as props}]
-    (let [{:keys [id x y content width height]} shape]
-      [:foreignObject {:x x :y y :width width :height height}
-       [:textarea {:style (make-style shape)
-                   :ref (::container own)}]])))
+(mf/defc text-shape-edit
+  [{:keys [shape] :as props}]
+  (let [ref (mf/use-ref)
+        {:keys [id x y width height content]} shape]
+    (mf/use-effect
+     #(fn []
+        (let [content (-> (mf/ref-val ref)
+                          (dom/get-value))]
+          (st/emit! (udw/update-shape id {:content content})))))
+    [:foreignObject {:x x :y y :width width :height height}
+     [:textarea {:style (make-style shape)
+                 :default-value content
+                 :ref ref}]]))
 
 ;; --- Text Shape Wrapper
 
