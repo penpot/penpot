@@ -110,7 +110,7 @@
                        :on-change change-color}]
             (modal/show! colorpicker-modal props)))]
     [:div.element-set
-     [:div.element-set-title (tr "element.page-grid-options")]
+     [:div.element-set-title (tr "workspace.options.grid-options")]
      [:div.element-set-content
       [:span (tr "workspace.options.size")]
       [:div.row-flex
