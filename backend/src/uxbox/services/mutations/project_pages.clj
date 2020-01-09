@@ -122,7 +122,7 @@
                 set name = $2
               where id = $1
                 and deleted_at is null"]
-    (-> (db/query-one db/pool [sql id name])
+    (-> (db/query-one conn [sql id name])
         (p/then su/constantly-nil))))
 
 ;; --- Mutation: Update Page
