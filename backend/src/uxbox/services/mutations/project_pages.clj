@@ -28,7 +28,6 @@
 (s/def ::data ::cp/data)
 (s/def ::user ::us/uuid)
 (s/def ::project-id ::us/uuid)
-(s/def ::metadata ::cp/metadata)
 (s/def ::ordering ::us/number)
 
 ;; --- Mutation: Create Page
@@ -36,7 +35,7 @@
 (declare create-page)
 
 (s/def ::create-project-page
-  (s/keys :req-un [::user ::file-id ::name ::ordering ::metadata ::data]
+  (s/keys :req-un [::user ::file-id ::name ::ordering ::data]
           :opt-un [::id]))
 
 (sm/defmutation ::create-project-page
@@ -46,15 +45,14 @@
     (create-page conn params)))
 
 (defn create-page
-  [conn {:keys [id user file-id name ordering data metadata] :as params}]
+  [conn {:keys [id user file-id name ordering data] :as params}]
   (let [sql "insert into project_pages (id, user_id, file_id, name,
-                                        ordering, data, metadata, version)
-             values ($1, $2, $3, $4, $5, $6, $7, 0)
+                                        ordering, data, version)
+             values ($1, $2, $3, $4, $5, $6, 0)
              returning *"
         id   (or id (uuid/next))
-        data (blob/encode data)
-        mdata (blob/encode metadata)]
-    (-> (db/query-one conn [sql id user file-id name ordering data mdata])
+        data (blob/encode data)]
+    (-> (db/query-one conn [sql id user file-id name ordering data])
         (p/then' decode-row))))
 
 ;; --- Mutation: Update Page Data
@@ -98,11 +96,11 @@
         (p/then' su/constantly-nil))))
 
 (defn- insert-page-snapshot
-  [conn {:keys [user-id id version data operations]}]
-  (let [sql "insert into project_page_snapshots (user_id, page_id, version, data, operations)
+  [conn {:keys [user-id id version data changes]}]
+  (let [sql "insert into project_page_snapshots (user_id, page_id, version, data, changes)
              values ($1, $2, $3, $4, $5)
-             returning id, page_id, user_id, version, operations"]
-    (db/query-one conn [sql user-id id version data operations])))
+             returning id, page_id, user_id, version, changes"]
+    (db/query-one conn [sql user-id id version data changes])))
 
 ;; --- Mutation: Rename Page
 
@@ -129,16 +127,16 @@
 
 ;; --- Mutation: Update Page
 
-;; A generic, Ops based (granular) page update method.
+;; A generic, Changes based (granular) page update method.
 
-(s/def ::operations
+(s/def ::changes
   (s/coll-of vector? :kind vector?))
 
 (s/def ::update-project-page
-  (s/keys :opt-un [::id ::user ::version ::operations]))
+  (s/keys :opt-un [::id ::user ::version ::changes]))
 
 (declare update-project-page)
-(declare retrieve-lagged-operations)
+(declare retrieve-lagged-changes)
 
 (sm/defmutation ::update-project-page
   [{:keys [id user] :as params}]
@@ -156,17 +154,17 @@
               :hint "The incoming version is greater that stored version."
               :context {:incoming-version (:version params)
                         :stored-version (:version page)}))
-  (let [ops  (:operations params)
+  (let [changes (:changes params)
         data (-> (:data page)
                  (blob/decode)
-                 (cp/process-ops ops)
+                 (cp/process-changes changes)
                  (blob/encode))
 
         page (assoc page
                     :user-id (:user params)
                     :data data
                     :version (inc (:version page))
-                    :operations (blob/encode ops))]
+                    :changes (blob/encode changes))]
 
     (-> (update-page-data conn page)
         (p/then (fn [_] (insert-page-snapshot conn page)))
@@ -176,26 +174,26 @@
                                                                  :user-id (:user-id s)
                                                                  :page-id (:page-id s)
                                                                  :version (:version s)
-                                                                 :operations ops})
-                           (retrieve-lagged-operations conn s params))))))))
+                                                                 :changes changes})
+                           (retrieve-lagged-changes conn s params))))))))
 
 (su/defstr sql:lagged-snapshots
-  "select s.id, s.operations
+  "select s.id, s.changes
      from project_page_snapshots as s
     where s.page_id = $1
       and s.version > $2")
 
-(defn- retrieve-lagged-operations
+(defn- retrieve-lagged-changes
   [conn snapshot params]
   (let [sql sql:lagged-snapshots]
     (-> (db/query conn [sql (:id params) (:version params) #_(:id snapshot)])
         (p/then (fn [rows]
                   {:page-id (:id params)
                    :version (:version snapshot)
-                   :operations (into [] (comp (map decode-row)
-                                              (map :operations)
-                                              (mapcat identity))
-                                     rows)})))))
+                   :changes (into [] (comp (map decode-row)
+                                           (map :changes)
+                                           (mapcat identity))
+                                  rows)})))))
 
 ;; --- Mutation: Delete Page
 

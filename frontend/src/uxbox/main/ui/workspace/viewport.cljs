@@ -150,7 +150,7 @@
         shapes-by-id (:shapes-by-id data)
         shapes (map #(get shapes-by-id %) (:shapes data []))
         canvas (map #(get shapes-by-id %) (:canvas data []))]
-    [:*
+    [:g.shapes
      (for [item canvas]
        [:& shape-wrapper {:shape item :key (:id item)}])
      (for [item shapes]
@@ -285,7 +285,7 @@
                            :modifiers (:modifiers local)}])]
 
          (if (contains? flags :grid)
-           [:& grid {:page page}])]
+           [:& grid])]
 
         (when (contains? flags :ruler)
           [:& ruler {:zoom zoom :ruler (:ruler local)}])

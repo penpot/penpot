@@ -471,26 +471,3 @@
             (assoc :workspace-page page)
             (update :pages assoc id page)
             (update :pages-data assoc id data))))))
-
-;; --- Update Page
-
-;; TODO: deprecated, need refactor (this is used on page options)
-(defn update-page-attrs
-  [{:keys [id] :as data}]
-  (s/assert ::page data)
-  (ptk/reify ::update-page-attrs
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-page merge (dissoc data :id :version)))))
-
-;; --- Update Page Metadata
-
-;; TODO: deprecated, need refactor (this is used on page options)
-(defn update-metadata
-  [id metadata]
-  (s/assert ::id id)
-  (s/assert ::metadata metadata)
-  (reify
-    ptk/UpdateEvent
-    (update [this state]
-      (assoc-in state [:pages id :metadata] metadata))))

@@ -10,24 +10,82 @@
 (s/def ::name string?)
 (s/def ::type keyword?)
 
-;; Metadata related
-(s/def ::grid-x-axis number?)
-(s/def ::grid-y-axis number?)
+;; Page Options
+(s/def ::grid-x number?)
+(s/def ::grid-y number?)
 (s/def ::grid-color string?)
-(s/def ::background string?)
-(s/def ::background-opacity number?)
 
-(s/def ::metadata
-  (s/keys :opt-un [::grid-y-axis
-                   ::grid-x-axis
-                   ::grid-color
-                   ::background
-                   ::background-opacity]))
+(s/def ::options
+  (s/keys :opt-un [::grid-y
+                   ::grid-x
+                   ::grid-color]))
 
 ;; Page Data related
-(s/def ::shape
+(s/def ::blocked boolean?)
+(s/def ::collapsed boolean?)
+(s/def ::content string?)
+(s/def ::fill-color string?)
+(s/def ::fill-opacity number?)
+(s/def ::font-family string?)
+(s/def ::font-size number?)
+(s/def ::font-style string?)
+(s/def ::font-weight string?)
+(s/def ::hidden boolean?)
+(s/def ::letter-spacing number?)
+(s/def ::line-height number?)
+(s/def ::locked boolean?)
+(s/def ::page-id uuid?)
+(s/def ::proportion number?)
+(s/def ::proportion-lock boolean?)
+(s/def ::rx number?)
+(s/def ::ry number?)
+(s/def ::stroke-color string?)
+(s/def ::stroke-opacity number?)
+(s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
+(s/def ::stroke-width number?)
+(s/def ::text-align #{"left" "right" "center" "justify"})
+(s/def ::type #{:rect :path :circle :image :text :canvas})
+(s/def ::x number?)
+(s/def ::y number?)
+(s/def ::cx number?)
+(s/def ::cy number?)
+(s/def ::width number?)
+(s/def ::height number?)
+
+(s/def ::shape-attrs
+  (s/keys :opt-un [::blocked
+                   ::collapsed
+                   ::content
+                   ::fill-color
+                   ::fill-opacity
+                   ::font-family
+                   ::font-size
+                   ::font-style
+                   ::font-weight
+                   ::hidden
+                   ;; ::page-id ??
+                   ::letter-spacing
+                   ::line-height
+                   ::locked
+                   ::proportion
+                   ::proportion-lock
+                   ::rx ::ry
+                   ::cx ::cy
+                   ::x ::y
+                   ::stroke-color
+                   ::stroke-opacity
+                   ::stroke-style
+                   ::stroke-width
+                   ::text-align
+                   ::width ::height]))
+
+(s/def ::minimal-shape
   (s/keys :req-un [::type ::name]
           :opt-un [::id]))
+
+(s/def ::shape
+  (s/and ::minimal-shape ::shape-attrs
+         (s/keys :opt-un [::id])))
 
 (s/def ::shapes (s/coll-of uuid? :kind vector?))
 (s/def ::canvas (s/coll-of uuid? :kind vector?))
@@ -36,12 +94,16 @@
   (s/map-of uuid? ::shape))
 
 (s/def ::data
-  (s/keys :req-un [::shapes ::canvas ::shapes-by-id]))
+  (s/keys :req-un [::shapes
+                   ::canvas
+                   ::options
+                   ::shapes-by-id]))
 
+;; Changes related
 (s/def ::attr-change
   (s/tuple #{:set} keyword? any?))
 
-(s/def ::operation
+(s/def ::change
   (s/or :mod-shape (s/cat :name #(= % :mod-shape)
                           :id uuid?
                           :changes (s/* ::attr-change))
@@ -64,12 +126,12 @@
         :del-canvas (s/cat :name #(= % :del-canvas)
                            :id uuid?)))
 
-(s/def ::operations
-  (s/coll-of ::operation :kind vector?))
+(s/def ::changes
+  (s/coll-of ::change :kind vector?))
 
-;; --- Operations Processing Impl
+;; --- Changes Processing Impl
 
-(declare process-operation)
+(declare process-change)
 (declare process-mod-shape)
 (declare process-mod-opts)
 (declare process-mov-shape)
@@ -78,12 +140,12 @@
 (declare process-del-shape)
 (declare process-del-canvas)
 
-(defn process-ops
-  [data operations]
-  (->> (s/assert ::operations operations)
-       (reduce process-operation data)))
+(defn process-changes
+  [data items]
+  (->> (s/assert ::changes items)
+       (reduce process-change data)))
 
-(defn- process-operation
+(defn- process-change
   [data [op & rest]]
   (case op
     :mod-shape (process-mod-shape data rest)

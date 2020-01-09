@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS project_page_snapshots (
   label text NOT NULL DEFAULT '',
 
   data bytea NOT NULL,
-  operations bytea NULL DEFAULT NULL
+  changes bytea NULL DEFAULT NULL
 );
 
 -- Indexes
