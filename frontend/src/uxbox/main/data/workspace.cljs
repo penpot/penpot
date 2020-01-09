@@ -708,57 +708,55 @@
       (let [selected (get-in state [:workspace-local :selected])]
         (rx/from (map #(apply update-shape % attrs) selected))))))
 
-;; --- Move Selected
+;; --- Shape Movement (using keyboard shorcuts)
 
 (declare initial-selection-align)
 (declare apply-temporal-displacement-in-bulk)
 (declare materialize-temporal-modifier-in-bulk)
 
+(defn- get-displacement-with-grid
+  "Retrieve the correct displacement delta point for the
+  provided direction speed and distances thresholds."
+  [shape direction options]
+  (let [grid-x (:grid-x options 10)
+        grid-y (:grid-y options 10)
+        x-mod (mod (:x shape) grid-x)
+        y-mod (mod (:y shape) grid-y)]
+    (case direction
+      :up (gpt/point 0 (- (if (zero? y-mod) grid-y y-mod)))
+      :down (gpt/point 0 (- grid-y y-mod))
+      :left (gpt/point (- (if (zero? x-mod) grid-x x-mod)) 0)
+      :right (gpt/point (- grid-x x-mod) 0))))
+
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
   provided direction speed and distances thresholds."
-  [direction speed distance]
+  [shape direction]
   (case direction
-    :up (gpt/point 0 (- (get-in distance [speed :y])))
-    :down (gpt/point 0 (get-in distance [speed :y]))
-    :left (gpt/point (- (get-in distance [speed :x])) 0)
-    :right (gpt/point (get-in distance [speed :x]) 0)))
-
-(defn- get-displacement-distance
-  "Retrieve displacement distances thresholds for
-  defined displacement speeds."
-  [metadata align?]
-  (let [gx (:grid-x-axis metadata)
-        gy (:grid-y-axis metadata)]
-    {:std (gpt/point (if align? gx 1)
-                     (if align? gy 1))
-     :fast (gpt/point (if align? (* 3 gx) 10)
-                      (if align? (* 3 gy) 10))}))
-
+    :up (gpt/point 0 (- 1))
+    :down (gpt/point 0 1)
+    :left (gpt/point (- 1) 0)
+    :right (gpt/point 1 0)))
 
 (s/def ::direction #{:up :down :right :left})
-(s/def ::speed #{:std :fast})
-
-;; Event used for apply displacement transformation
-;; to the selected shapes throught the keyboard shortcuts.
 
 (defn move-selected
-  [direction speed]
+  [direction align?]
   (s/assert ::direction direction)
-  (s/assert ::speed speed)
+  (s/assert boolean? align?)
+
   (ptk/reify ::move-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [{:keys [selected flags id]} (:workspace-local state)
-            align? (refs/alignment-activated? flags)
-            metadata (merge c/page-metadata
-                            (get-in state [:workspace-page :metadata]))
-            distance (get-displacement-distance metadata align?)
-            displacement (get-displacement direction speed distance)]
-        (rx/concat
-         (when align? (rx/of (initial-selection-align selected)))
-         (rx/of (apply-temporal-displacement-in-bulk selected displacement))
-         (rx/of (materialize-temporal-modifier-in-bulk selected)))))))
+      (let [selected (get-in state [:workspace-local :selected])
+            options (get-in state [:workspace-data :options])
+            shapes (map #(get-in state [:workspace-data :shapes-by-id %]) selected)
+            shape (geom/shapes->rect-shape shapes)
+            displacement (if align?
+                           (get-displacement-with-grid shape direction options)
+                           (get-displacement shape direction))]
+        (rx/of (apply-temporal-displacement-in-bulk selected displacement)
+               (materialize-temporal-modifier-in-bulk selected))))))
 
 ;; --- Delete Selected
 
