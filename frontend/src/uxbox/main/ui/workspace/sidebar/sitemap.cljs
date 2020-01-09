@@ -16,8 +16,8 @@
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.modal :as modal]
-   [uxbox.main.ui.workspace.sidebar.sitemap-forms :refer [page-form-dialog]]
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.data :refer [classnames enumerate]]
    [uxbox.util.dom :as dom]
@@ -28,12 +28,40 @@
 
 (mf/defc page-item
   [{:keys [page index deletable? selected?] :as props}]
-  (let [on-edit #(modal/show! page-form-dialog {:page page})
+  (let [local (mf/use-state {})
+        on-double-click
+        (fn [event]
+          (dom/prevent-default event)
+          (dom/stop-propagation event)
+          ;; (let [parent (.-parentNode (.-target event))
+          ;;       parent (.-parentNode parent)]
+          ;;   (set! (.-draggable parent) false))
+          (swap! local assoc :edition true))
+
+        on-blur
+        (fn [event]
+          (let [target (dom/event->target event)
+                ;; parent (.-parentNode target)
+                ;; parent (.-parentNode parent)
+                name (dom/get-value target)]
+            ;; (set! (.-draggable parent) true)
+            (st/emit! (dp/rename-page (:id page) name))
+            (swap! local assoc :edition false)))
+
+        on-key-down (fn [event]
+                      (cond
+                        (kbd/enter? event)
+                        (on-blur event)
+
+                        (kbd/esc? event)
+                        (swap! local assoc :edition false)))
+
         delete-fn #(st/emit! (dp/delete-page (:id page)))
         on-delete #(do
                      (dom/prevent-default %)
                      (dom/stop-propagation %)
                      (modal/show! confirm-dialog {:on-accept delete-fn}))
+
         on-drop #(do (prn "TODO"))
         on-hover #(st/emit! (dw/change-page-order {:id (:id page)
                                                    :index index}))
@@ -45,19 +73,24 @@
                                     :on-hover on-hover
                                     :on-drop on-drop})]
     [:li {:ref ref :class (classnames :selected selected?)}
-     [:div.element-list-body
-      {:class (classnames :selected selected?
-                          :dragging (:dragging? dprops))
-       :on-click navigate-fn
-       :on-double-click #(dom/stop-propagation %)
-       :draggable true}
-
+     [:div.element-list-body {:class (classnames
+                                      :selected selected?
+                                      :dragging (:dragging? dprops))
+                              :on-click navigate-fn
+                              :on-double-click on-double-click}
       [:div.page-icon i/page]
-      [:span (:name page)]
-      [:div.page-actions {}
-       [:a {:on-click on-edit} i/pencil]
-       (when deletable?
-         [:a {:on-click on-delete} i/trash])]]]))
+      (if (:edition @local)
+        [:*
+         [:input.element-name {:type "text"
+                               :on-blur on-blur
+                               :on-key-down on-key-down
+                               :auto-focus true
+                               :default-value (:name page "")}]]
+        [:*
+         [:span (:name page)]
+         [:div.page-actions
+          (when deletable?
+            [:a {:on-click on-delete} i/trash])]])]]))
 
 
 ;; --- Page Item Wrapper
@@ -69,7 +102,7 @@
 
 (mf/defc page-item-wrapper
   [{:keys [page-id index deletable? selected?] :as props}]
-  (let [page-ref (mf/use-memo {:deps #js [page-id]
+  (let [page-ref (mf/use-memo {:deps (mf/deps page-id)
                                :fn #(make-page-ref page-id)})
         page (mf/deref page-ref)]
     [:& page-item {:page page
@@ -85,22 +118,20 @@
         deletable? (> (count pages) 1)]
     [:ul.element-list
      (for [[index page-id] pages]
-       [:& page-item-wrapper
-        {:page-id page-id
-         :index index
-         :deletable? deletable?
-         :selected? (= page-id (:id current-page))
-         :key page-id}])]))
+       [:& page-item-wrapper {:page-id page-id
+                              :index index
+                              :deletable? deletable?
+                              :selected? (= page-id (:id current-page))
+                              :key page-id}])]))
 
 ;; --- Sitemap Toolbox
 
 (mf/defc sitemap-toolbox
   [{:keys [file page] :as props}]
-  (let [create-fn #(modal/show! page-form-dialog {:page {:file-id (:file-id page)}})
-        close-fn  #(st/emit! (dw/toggle-layout-flag :sitemap))]
+  (let [on-create-click #(st/emit! dp/create-empty-page)]
     [:div.sitemap.tool-window
      [:div.tool-window-bar
-      [:span (tr "ds.settings.sitemap")]
-      [:div.add-page {:on-click create-fn} i/close]]
+      [:span (tr "workspace.sidebar.sitemap")]
+      [:div.add-page {:on-click on-create-click} i/close]]
      [:div.tool-window-content
       [:& pages-list {:file file :current-page page}]]]))

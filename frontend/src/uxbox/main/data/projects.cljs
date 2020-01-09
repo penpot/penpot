@@ -350,23 +350,26 @@
 
 (declare page-created)
 
-(s/def ::create-page
-  (s/keys :req-un [::name ::file-id]))
+(def default-page-data
+  {:version 1
+   :shapes []
+   :canvas []
+   :options {:grid-x 10
+             :grid-y 10
+             :grid-color "#cccccc"}
+   :shapes-by-id {}})
 
-(defn create-page
-  [{:keys [file-id name] :as data}]
-  (s/assert ::create-page data)
-  (ptk/reify ::create-page
+(def create-empty-page
+  (ptk/reify ::create-empty-page
     ptk/WatchEvent
-    (watch [this state s]
-      (let [ordering (count (get-in state [:files file-id :pages]))
+    (watch [this state stream]
+      (let [file-id (get-in state [:workspace-local :file-id])
+            name (str "Page " (gensym "p"))
+            ordering (count (get-in state [:files file-id :pages]))
             params {:name name
                     :file-id file-id
                     :ordering ordering
-                    :data {:shapes []
-                           :canvas []
-                           :shapes-by-id {}}
-                    :metadata {}}]
+                    :data default-page-data}]
         (->> (rp/mutation :create-project-page params)
              (rx/map page-created))))))
 
@@ -398,8 +401,9 @@
   (s/keys :req-un [::id ::name]))
 
 (defn rename-page
-  [{:keys [id name] :as data}]
-  (s/assert ::rename-page data)
+  [id name]
+  (s/assert ::us/uuid id)
+  (s/assert string? name)
   (ptk/reify ::rename-page
     ptk/UpdateEvent
     (update [_ state]
@@ -411,8 +415,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [params {:id id :name name}]
-        (->> (rp/mutation :rename-page params)
-             (rx/map #(ptk/data-event ::page-renamed data)))))))
+        (->> (rp/mutation :rename-project-page params)
+             (rx/map #(ptk/data-event ::page-renamed params)))))))
 
 ;; --- Delete Page (by ID)
 

@@ -263,7 +263,6 @@
              (rx/finalize #(prn "FINALIZE" %))
              (rx/take-until stoper))))))
 
-
 ;; --- Fetch Workspace Users
 
 (declare users-fetched)
