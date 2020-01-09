@@ -50,7 +50,7 @@
 
 ;; --- Protocols
 
-(defprotocol IAsyncChange)
+(defprotocol IBatchedChange)
 
 ;; --- Declarations
 
@@ -61,7 +61,7 @@
 (declare handle-page-snapshot)
 (declare shapes-changes-commited)
 (declare commit-changes)
-(declare commit-async-changes)
+(declare commit-batched-changes)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Websockets Events
@@ -257,9 +257,9 @@
                                    (ptk/type? ::initialize-page %))
                               stream)]
         (->> stream
-             (rx/filter #(satisfies? IAsyncChange %))
+             (rx/filter #(satisfies? IBatchedChange %))
              (rx/debounce 500)
-             (rx/map (constantly commit-async-changes))
+             (rx/map (constantly commit-batched-changes))
              (rx/finalize #(prn "FINALIZE" %))
              (rx/take-until stoper))))))
 
@@ -672,7 +672,7 @@
   (s/assert ::us/uuid id)
   (s/assert ::shape-attrs attrs)
   (ptk/reify ::update-shape
-    IAsyncChange
+    IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (let [shape-old (get-in state [:workspace-data :shapes-by-id id])
@@ -680,7 +680,7 @@
             diff (d/diff-maps shape-old shape-new)]
         (-> state
             (assoc-in [:workspace-data :shapes-by-id id] shape-new)
-            (update ::async-changes (fnil conj []) (into [:mod-shape id] diff)))))))
+            (update ::batched-changes (fnil conj []) (into [:mod-shape id] diff)))))))
 
 ;; --- Update Page Options
 
@@ -688,7 +688,7 @@
   [opts]
   (s/assert ::cp/options opts)
   (ptk/reify ::update-options
-    IAsyncChange
+    IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (let [opts-old (get-in state [:workspace-data :options])
@@ -696,7 +696,7 @@
             diff (d/diff-maps opts-old opts-new)]
         (-> state
             (assoc-in [:workspace-data :options] opts-new)
-            (update ::async-changes (fnil conj []) (into [:mod-opts] diff)))))))
+            (update ::batched-changes (fnil conj []) (into [:mod-opts] diff)))))))
 
 ;; --- Update Selected Shapes attrs
 
@@ -941,10 +941,10 @@
                   diff (d/diff-maps shape-old shape-new)]
               (-> state
                   (assoc-in [:workspace-data :shapes-by-id id] shape-new)
-                  (update ::async-changes (fnil conj []) (into [:mod-shape id] diff)))))]
+                  (update ::batched-changes (fnil conj []) (into [:mod-shape id] diff)))))]
 
     (ptk/reify ::materialize-temporal-modifier-in-bulk
-      IAsyncChange
+      IBatchedChange
       ptk/UpdateEvent
       (update [_ state]
         (reduce process-shape state ids)))))
@@ -968,12 +968,12 @@
         (->> (rp/mutation :update-project-page params)
              (rx/map shapes-changes-commited))))))
 
-(def commit-async-changes
-  (ptk/reify ::commit-async-changes
+(def commit-batched-changes
+  (ptk/reify ::commit-batched-changes
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [changes (::async-changes state)]
-        (rx/of #(dissoc % ::async-changes)
+      (let [changes (::batched-changes state)]
+        (rx/of #(dissoc % ::batched-changes)
                (commit-changes changes))))))
 
 (s/def ::shapes-changes-commited
