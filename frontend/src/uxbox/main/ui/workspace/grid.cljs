@@ -8,35 +8,36 @@
 (ns uxbox.main.ui.workspace.grid
   (:require
    [cuerdas.core :as str]
+   [lentes.core :as l]
    [rumext.alpha :as mf]
+   [uxbox.main.refs :as refs]
    [uxbox.main.constants :as c]))
 
 ;; --- Grid (Component)
 
-(defn- horizontal-line
-  [width acc value]
-  (let [pos value]
-    (conj acc (str/format "M %s %s L %s %s" 0 pos width pos))))
-
-(defn- vertical-line
-  [height acc value]
-  (let [pos value]
-    (conj acc (str/format "M %s %s L %s %s" pos 0 pos height))))
-
-(defn- make-grid-path
-  [metadata]
-  (let [x-ticks (range 0 c/viewport-width (:grid-x-axis metadata 10))
-        y-ticks (range 0 c/viewport-height (:grid-y-axis metadata 10))]
-    (as-> [] $
-      (reduce (partial vertical-line c/viewport-height) $ x-ticks)
-      (reduce (partial horizontal-line c/viewport-width) $ y-ticks)
-      (str/join " " $))))
+(def options-iref
+  (-> (l/key :options)
+      (l/derive refs/workspace-data)))
 
 (mf/defc grid
-  [{:keys [page] :as props}]
-  (let [metadata (:metadata page)
-        color (:grid-color metadata "#cccccc")
-        path (mf/use-memo {:deps #js [metadata]
-                           :fn #(make-grid-path metadata)})]
-    [:g.grid {:style {:pointer-events "none"}}
-     [:path {:d path :stroke color :opacity "0.3"}]]))
+  {:wrap [mf/wrap-memo]}
+  [props]
+  (prn "grid$render")
+  (let [options (mf/deref options-iref)
+        width (:grid-x options 10)
+        height (:grid-y options 10)
+        color (:grid-color options "#cccccc")]
+    [:g.grid
+     [:defs
+      [:pattern {:id "grid-pattern"
+                 :x "0" :y "0"
+                 :width width :height height
+                 :patternUnits "userSpaceOnUse"}
+       [:path {:d (str/format "M 0 %s L %s %s L %s 0" height width height width)
+               :fill "transparent"
+               :stroke color}]]]
+     [:rect {:style {:pointer-events "none"}
+             :x 0 :y 0
+             :width "100%"
+             :height "100%"
+             :fill "url(#grid-pattern)"}]]))
