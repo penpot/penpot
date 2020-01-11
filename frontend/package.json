@@ -17,7 +17,7 @@
     "gulp-if": "^3.0.0",
     "gulp-mustache": "^4.1.2",
     "gulp-plumber": "^1.2.1",
-    "gulp-rename": "^1.4.0",
+    "gulp-rename": "^2.0.0",
     "gulp-sass": "^4.0.2",
     "rimraf": "^3.0.0"
   },
