@@ -1,6 +1,6 @@
 {:deps
  {org.clojure/clojure {:mvn/version "1.10.1"}
-  funcool/promesa {:mvn/version "5.0.0-SNAPSHOT"}
+  funcool/promesa {:mvn/version "5.0.0"}
   funcool/cuerdas {:mvn/version "2.2.1"}
 
   ;; Logging
@@ -8,7 +8,7 @@
   org.apache.logging.log4j/log4j-api {:mvn/version "2.12.1"}
   org.apache.logging.log4j/log4j-core {:mvn/version "2.12.1"}
   org.apache.logging.log4j/log4j-jul {:mvn/version "2.12.1"}
-  funcool/datoteka {:mvn/version "1.1.0"}
+  funcool/datoteka {:mvn/version "1.2.0"}
   expound/expound {:mvn/version "0.7.2"}
   instaparse/instaparse {:mvn/version "1.4.10"}
   com.cognitect/transit-clj {:mvn/version "0.8.319"}
