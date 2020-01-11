@@ -126,9 +126,10 @@
   [spec data]
   (let [result (s/conform spec data)]
     (when (= result ::s/invalid)
-      (throw (ex/error :type :validation
-                       :code :spec-validation
-                       :explain (with-out-str
-                                  (expound/printer data))
-                       :data (::s/problems data))))
+      (let [edata (s/explain-data spec data)]
+        (throw (ex/error :type :validation
+                         :code :spec-validation
+                         :explain (with-out-str
+                                    (expound/printer edata))
+                         :data (::s/problems edata)))))
     result))
