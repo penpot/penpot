@@ -130,7 +130,7 @@
 ;; A generic, Changes based (granular) page update method.
 
 (s/def ::changes
-  (s/coll-of vector? :kind vector?))
+  (s/coll-of map? :kind vector?))
 
 (s/def ::update-project-page
   (s/keys :opt-un [::id ::user ::version ::changes]))

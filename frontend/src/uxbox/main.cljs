@@ -7,6 +7,7 @@
 (ns ^:figwheel-hooks uxbox.main
   (:require
    [cljs.spec.alpha :as s]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.users :as udu]

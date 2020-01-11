@@ -8,6 +8,7 @@
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [potok.core :as ptk]
+            [uxbox.util.uuid :as uuid]
             [uxbox.builtins.colors :as colors]
             [uxbox.util.storage :refer [storage]]))
 
@@ -55,6 +56,7 @@
 (def initial-state
   {:route nil
    :router nil
+   :session-id (uuid/random)
    :auth (:auth storage)
    :profile (:profile storage)
    :clipboard #queue []

@@ -554,8 +554,12 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [shape (get-in state [:workspace-data :shapes-by-id id])]
-          (rx/of (commit-changes [[:add-shape id shape]])
+        (let [shape (get-in state [:workspace-data :shapes-by-id id])
+              sid   (:session-id state)]
+          (rx/of (commit-changes [{:type :add-shape
+                                   :session-id sid
+                                   :shape shape
+                                   :id id}])
                  (select-shape id)))))))
 
 (def canvas-default-attrs
@@ -579,8 +583,12 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [shape (get-in state [:workspace-data :shapes-by-id id])]
-          (rx/of (commit-changes [[:add-canvas id shape]])
+        (let [shape (get-in state [:workspace-data :shapes-by-id id])
+              sid (:session-id state)]
+          (rx/of (commit-changes [{:type :add-canvas
+                                   :session-id sid
+                                   :id id
+                                   :shape shape}])
                  (select-shape id)))))))
 
 
@@ -597,10 +605,17 @@
     (watch [_ state stream]
       (let [selected  (get-in state [:workspace-local :selected])
             duplicate (partial impl-duplicate-shape state)
-            shapes    (map duplicate selected)]
+            shapes    (map duplicate selected)
+            sid       (:session-id state)
+            changes   (mapv (fn [shape]
+                              {:type :add-shape
+                               :id (:id shape)
+                               :shape shape
+                               :session-id sid})
+                            shapes)]
         (rx/merge
          (rx/from (map (fn [s] #(impl-assoc-shape % s)) shapes))
-         (rx/of (commit-changes (mapv #(vector :add-shape (:id %) %) shapes))))))))
+         (rx/of (commit-changes changes)))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
@@ -676,10 +691,14 @@
     (update [_ state]
       (let [shape-old (get-in state [:workspace-data :shapes-by-id id])
             shape-new (merge shape-old attrs)
-            diff (d/diff-maps shape-old shape-new)]
+            operations (d/diff-maps shape-old shape-new)
+            change {:type :mod-shape
+                    :session-id (:session-id state)
+                    :operations operations
+                    :id id}]
         (-> state
             (assoc-in [:workspace-data :shapes-by-id id] shape-new)
-            (update ::batched-changes (fnil conj []) (into [:mod-shape id] diff)))))))
+            (update ::batched-changes (fnil conj []) change))))))
 
 ;; --- Update Page Options
 
@@ -692,10 +711,13 @@
     (update [_ state]
       (let [opts-old (get-in state [:workspace-data :options])
             opts-new (merge opts-old opts)
-            diff (d/diff-maps opts-old opts-new)]
+            operations (d/diff-maps opts-old opts-new)
+            change {:type :mod-opts
+                    :session-id (:session-id state)
+                    :operations operations}]
         (-> state
             (assoc-in [:workspace-data :options] opts-new)
-            (update ::batched-changes (fnil conj []) (into [:mod-opts] diff)))))))
+            (update ::batched-changes (fnil conj []) change))))))
 
 ;; --- Update Selected Shapes attrs
 
@@ -781,14 +803,21 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])]
-        (rx/of (commit-changes (mapv #(vector :del-shape %) selected)))))))
+      (let [selected (get-in state [:workspace-local :selected])
+            session-id (:session-id state)
+            changes (mapv (fn [id]
+                            {:type :del-shape
+                             :session-id session-id
+                             :id id})
+                          selected)]
+        (rx/of (commit-changes changes))))))
 
 ;; --- Rename Shape
 
 (defn rename-shape
   [id name]
-  {:pre [(uuid? id) (string? name)]}
+  (s/assert ::us/uuid id)
+  (s/assert string? name)
   (ptk/reify ::rename-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -796,7 +825,12 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (commit-changes [[:mod-shape id [:mod :name name]]])))))
+      (let [session-id (:session-id state)
+            change {:type :mod-shape
+                    :id id
+                    :session-id session-id
+                    :operations [[:set :name name]]}]
+        (rx/of (commit-changes [change]))))))
 
 ;; --- Shape Vertical Ordering
 
@@ -842,7 +876,10 @@
             shapes (into [] (remove #(= % id)) shapes)
             [before after] (split-at index shapes)
             shapes (d/concat [] before [id] after)
-            change [:mov-shape id :after (last before)]]
+            change {:type :mov-shape
+                    :session-id (:session-id state)
+                    :move-after-id (last before)
+                    :id id}]
         (-> state
             (assoc-in [:workspace-data :shapes] shapes)
             (assoc ::tmp-shape-order-change change))))))
@@ -852,7 +889,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [change (::tmp-shape-order-change state)]
-        (rx/of #(dissoc state ::tmp-changes)
+        (rx/of #(dissoc state ::tmp-shape-order-change)
                (commit-changes [change]))))))
 
 ;; --- Change Canvas Order (D&D Ordering)
@@ -935,10 +972,14 @@
                   shape-old (dissoc shape :modifier-mtx)
                   shape-new (geom/transform shape-old xfmt)
                   shape-new (recalculate-shape-canvas-relation state shape-new)
-                  diff (d/diff-maps shape-old shape-new)]
+                  operations (d/diff-maps shape-old shape-new)
+                  change {:type :mod-shape
+                          :session-id (:session-id state)
+                          :operations operations
+                          :id id}]
               (-> state
                   (assoc-in [:workspace-data :shapes-by-id id] shape-new)
-                  (update ::batched-changes (fnil conj []) (into [:mod-shape id] diff)))))]
+                  (update ::batched-changes (fnil conj []) change))))]
 
     (ptk/reify ::materialize-temporal-modifier-in-bulk
       IBatchedChange
@@ -982,11 +1023,13 @@
   (ptk/reify ::shapes-changes-commited
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc-in [:workspace-page :version] version)
-          (assoc-in [:pages page-id :version] version)
-          (update-in [:pages-data page-id] cp/process-changes changes)
-          (update :workspace-data cp/process-changes changes)))))
+      (let [sid (:session-id state)
+            changes (remove #(= sid (:session-id %)) changes)]
+        (-> state
+            (assoc-in [:workspace-page :version] version)
+            (assoc-in [:pages page-id :version] version)
+            (update-in [:pages-data page-id] cp/process-changes changes)
+            (update :workspace-data cp/process-changes changes))))))
 
 ;; --- Start shape "edition mode"
 

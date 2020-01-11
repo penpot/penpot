@@ -7,6 +7,8 @@
 ;; --- Specs
 
 (s/def ::id uuid?)
+(s/def ::shape-id uuid?)
+(s/def ::session-id uuid?)
 (s/def ::name string?)
 (s/def ::type keyword?)
 
@@ -100,36 +102,43 @@
                    ::shapes-by-id]))
 
 ;; Changes related
-(s/def ::attr-change
-  (s/tuple #{:set} keyword? any?))
+(s/def ::operation (s/tuple #{:set} keyword? any?))
+(s/def ::move-after-id (s/nilable uuid?))
 
-(s/def ::change
-  (s/or :mod-shape (s/cat :name #(= % :mod-shape)
-                          :id uuid?
-                          :changes (s/* ::attr-change))
-        :add-shape (s/cat :name #(= % :add-shape)
-                          :id uuid?
-                          :data any?)
+(s/def ::operations
+  (s/coll-of ::operation :kind vector?))
 
-        :mod-opts  (s/cat :name #(= % :mod-opts)
-                          :changes (s/* ::attr-change))
+(defmulti change-spec-impl :type)
 
-        :del-shape (s/cat :name #(= % :del-shape)
-                          :id uuid?)
-        :mov-shape (s/cat :name #(= % :mov-shape)
-                          :id1 uuid?
-                          :pos #(= :after %)
-                          :id2 (s/nilable uuid?))
-        :add-canvas (s/cat :name #(= % :add-canvas)
-                           :id uuid?
-                           :data any?)
-        :del-canvas (s/cat :name #(= % :del-canvas)
-                           :id uuid?)))
+(defmethod change-spec-impl :add-shape [_]
+  (s/keys :req-un [::shape ::id ::session-id]))
 
-(s/def ::changes
-  (s/coll-of ::change :kind vector?))
+(defmethod change-spec-impl :add-canvas [_]
+  (s/keys :req-un [::shape ::id ::session-id]))
+
+(defmethod change-spec-impl :mod-shape [_]
+  (s/keys :req-un [::id ::operations ::session-id]))
+
+(defmethod change-spec-impl :mov-shape [_]
+  (s/keys :req-un [::id ::move-after-id ::session-id]))
+
+(defmethod change-spec-impl :mod-opts [_]
+  (s/keys :req-un [::operations ::session-id]))
+
+(defmethod change-spec-impl :del-shape [_]
+  (s/keys :req-un [::id ::session-id]))
+
+(defmethod change-spec-impl :del-canvas [_]
+  (s/keys :req-un [::id ::session-id]))
+
+(s/def ::change (s/multi-spec change-spec-impl :type))
+(s/def ::changes (s/coll-of ::change))
 
 ;; --- Changes Processing Impl
+
+(defn change
+  [data]
+  (s/assert ::change data))
 
 (declare process-change)
 (declare process-mod-shape)
@@ -146,52 +155,61 @@
        (reduce process-change data)))
 
 (defn- process-change
-  [data [op & rest]]
-  (case op
-    :mod-shape (process-mod-shape data rest)
-    :mov-shape (process-mov-shape data rest)
-    :add-shape (process-add-shape data rest)
-    :add-canvas (process-add-canvas data rest)
-    :del-shape (process-del-shape data rest)
-    :del-canvas (process-del-canvas data rest)
-    :mod-opts (process-mod-opts data rest)))
+  [data {:keys [type] :as change}]
+  (case type
+    :add-shape (process-add-shape data change)
+    :add-canvas (process-add-canvas data change)
+    :mod-shape (process-mod-shape data change)
+    :mov-shape (process-mov-shape data change)
+    :del-shape (process-del-shape data change)
+    :del-canvas (process-del-canvas data change)
+    :mod-opts (process-mod-opts data change)))
+
+(defn- process-add-shape
+  [data {:keys [id shape] :as change}]
+  (-> data
+      (update :shapes (fn [shapes]
+                        (if (some #{id} shapes)
+                          shapes
+                          (conj shapes id))))
+      (update :shapes-by-id assoc id shape)))
+
+(defn- process-add-canvas
+  [data {:keys [id shape] :as change}]
+  (-> data
+      (update :canvas (fn [shapes]
+                        (if (some #{id} shapes)
+                          shapes
+                          (conj shapes id))))
+      (update :shapes-by-id assoc id shape)))
 
 (defn- process-mod-shape
-  [data [id & changes]]
+  [data {:keys [id operations] :as change}]
   (if (get-in data [:shapes-by-id id])
     (update-in data [:shapes-by-id id]
                #(reduce (fn [shape [_ att val]]
                           (if (nil? val)
                             (dissoc shape att)
                             (assoc shape att val)))
-                        % changes))
+                        % operations))
     data))
 
 (defn- process-mod-opts
-  [data changes]
+  [data {:keys [operations]}]
   (update data :options
           #(reduce (fn [options [_ att val]]
                      (if (nil? val)
                        (dissoc options att)
                        (assoc options att val)))
-                   % changes)))
-
-(defn- process-add-shape
-  [data [id sdata]]
-  (-> data
-      (update :shapes (fn [shapes]
-                        (if (some #{id} shapes)
-                          shapes
-                          (conj shapes id))))
-      (update :shapes-by-id assoc id sdata)))
+                   % operations)))
 
 (defn- process-mov-shape
-  [data [id _ id2]]
+  [data {:keys [id move-after-id]}]
   (let [shapes (:shapes data)
         shapes' (into [] (remove #(= % id) shapes))
-        index (d/index-of shapes' id2)]
+        index (d/index-of shapes' move-after-id)]
     (cond
-      (= id id2)
+      (= id move-after-id)
       (assoc data :shapes shapes)
 
       (nil? index)
@@ -202,22 +220,13 @@
         (assoc data :shapes (d/concat [] before [id] after))))))
 
 (defn- process-del-shape
-  [data [id]]
+  [data {:keys [id] :as change}]
   (-> data
       (update :shapes (fn [s] (filterv #(not= % id) s)))
       (update :shapes-by-id dissoc id)))
 
-(defn- process-add-canvas
-  [data [id sdata]]
-  (-> data
-      (update :canvas (fn [shapes]
-                        (if (some #{id} shapes)
-                          shapes
-                          (conj shapes id))))
-      (update :shapes-by-id assoc id sdata)))
-
 (defn- process-del-canvas
-  [data [id]]
+  [data {:keys [id] :as change}]
   (-> data
       (update :canvas (fn [s] (filterv #(not= % id) s)))
       (update :shapes-by-id dissoc id)))
