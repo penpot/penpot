@@ -9,7 +9,6 @@
   (:require
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [expound.alpha :as expound]
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
