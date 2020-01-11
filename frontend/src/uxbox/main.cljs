@@ -29,15 +29,7 @@
 (declare reinit)
 (s/check-asserts true)
 
-;; (i18n/update-locales! (fn [locales]
-;;                         (-> locales
-;;                             (assoc "en" en/locales)
-;;                             (assoc "fr" fr/locales))))
-
-;; (i18n/on-locale-change!
-;;  (fn [new old]
-;;    (println "Locale changed from" old " to " new)
-;;    (reinit)))
+(rx/sub! i18n/locale-sub #(reinit))
 
 ;; --- Error Handling
 
