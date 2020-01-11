@@ -5,11 +5,11 @@
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "0.5.0"}
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.12.1"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.12.1"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.12.1"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.13.0"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.13.0"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.13.0"}
   funcool/datoteka {:mvn/version "1.2.0"}
-  expound/expound {:mvn/version "0.7.2"}
+  expound/expound {:mvn/version "0.8.4"}
   instaparse/instaparse {:mvn/version "1.4.10"}
   com.cognitect/transit-clj {:mvn/version "0.8.319"}
 
@@ -59,7 +59,7 @@
   {:main-opts  ["-m" "rebel-readline.main"]}
 
   :test
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-554"}}}
+  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-565"}}}
 
   :ancient
   {:main-opts ["-m" "deps-ancient.deps-ancient"]
