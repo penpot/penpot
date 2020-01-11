@@ -18,7 +18,7 @@
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.data :refer [classnames enumerate]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :refer (tr)]))
+   [uxbox.util.i18n :as i18n]))
 
 (def ^:private shapes-iref
   (-> (l/key :shapes)
@@ -235,7 +235,8 @@
 
 (mf/defc layers-toolbox
   [{:keys [page] :as props}]
-  (let [on-click #(st/emit! (dw/toggle-layout-flag :layers))
+  (let [tr (i18n/use-translations)
+        on-click #(st/emit! (dw/toggle-layout-flag :layers))
 
         selected (mf/deref refs/selected-shapes)
         data (mf/deref refs/workspace-data)
@@ -257,7 +258,7 @@
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]
-      [:span (tr "ds.settings.layers")]
+      [:span (tr "workspace.sidebar.layers")]
       ;; [:div.tool-window-close {:on-click on-click} i/close]
      ]
      [:div.tool-window-content

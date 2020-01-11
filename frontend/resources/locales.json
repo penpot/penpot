@@ -272,11 +272,11 @@
       "fr" : null
     }
   },
-  "ds.settings.layers" : {
+  "workspace.sidebar.layers" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/layers.cljs:260" ],
     "translations" : {
-      "en" : null,
-      "fr" : null
+      "en" : "Layers",
+      "fr" : "Couches"
     }
   },
   "ds.size" : {
