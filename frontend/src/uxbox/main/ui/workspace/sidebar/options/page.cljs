@@ -21,8 +21,7 @@
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.util.data :refer [parse-int]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.spec :refer [color?]]))
+   [uxbox.util.i18n :refer [tr]]))
 
 ;; (mf/defc metadata-options
 ;;   [{:keys [page] :as props}]

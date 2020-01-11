@@ -4,6 +4,8 @@
 ;;
 ;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
 
+;; WARNING: DEPRECATED: please use uxbox.common.spec
+
 (ns uxbox.util.spec
   (:refer-clojure :exclude [keyword uuid vector boolean map set])
   (:require

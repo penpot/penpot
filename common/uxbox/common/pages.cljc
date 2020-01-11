@@ -1,6 +1,7 @@
 (ns uxbox.common.pages
   "A common (clj/cljs) functions and specs for pages."
   (:require
+   [uxbox.common.spec :as us]
    [clojure.spec.alpha :as s]
    [uxbox.common.data :as d]))
 
@@ -136,10 +137,6 @@
 
 ;; --- Changes Processing Impl
 
-(defn change
-  [data]
-  (s/assert ::change data))
-
 (declare process-change)
 (declare process-mod-shape)
 (declare process-mod-opts)
@@ -151,7 +148,7 @@
 
 (defn process-changes
   [data items]
-  (->> (s/assert ::changes items)
+  (->> (us/assert ::changes items)
        (reduce process-change data)))
 
 (defn- process-change

@@ -10,6 +10,7 @@
    [cuerdas.core :as str]
    [beicon.core :as rx]
    [potok.core :as ptk]
+   [uxbox.common.spec :as us]
    [uxbox.main.store :as st]
    [uxbox.main.repo.core :as rp]
    [uxbox.util.i18n :refer [tr]]
@@ -17,7 +18,6 @@
    [uxbox.util.data :refer (jscoll->vec)]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.time :as ts]
-   [uxbox.util.spec :as us]
    [uxbox.util.router :as r]
    [uxbox.util.files :as files]))
 
@@ -29,11 +29,11 @@
 (s/def ::modified-at inst?)
 (s/def ::created-at inst?)
 (s/def ::mimetype string?)
-(s/def ::thumbnail us/url-str?)
+(s/def ::thumbnail string?)
 (s/def ::id uuid?)
-(s/def ::url us/url-str?)
-(s/def ::collection-id (s/nilable ::us/uuid))
-(s/def ::user-id ::us/uuid)
+(s/def ::url string?)
+(s/def ::collection-id (s/nilable uuid?))
+(s/def ::user-id uuid?)
 
 (s/def ::collection-entity
   (s/keys :req-un [::id
@@ -59,7 +59,7 @@
 
 (defn collections-fetched
   [items]
-  (s/assert (s/every ::collection-entity) items)
+  (us/assert (s/every ::collection-entity) items)
   (ptk/reify ::collections-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -83,7 +83,7 @@
 
 (defn collection-created
   [item]
-  (s/assert ::collection-entity item)
+  (us/assert ::collection-entity item)
   (ptk/reify ::collection-created
     ptk/UpdateEvent
     (update [_ state]
@@ -109,7 +109,7 @@
 
 (defn collection-updated
   [item]
-  {:pre [(us/valid? ::collection-entity item)]}
+  (us/assert ::collection-entity item)
   (CollectionUpdated. item))
 
 ;; --- Update Collection
@@ -161,7 +161,7 @@
 
 (defn image-created
   [item]
-  (s/assert ::image-entity item)
+  (us/assert ::image-entity item)
   (ptk/reify ::image-created
     ptk/UpdateEvent
     (update [_ state]
@@ -174,8 +174,8 @@
 (defn create-images
   ([id files] (create-images id files identity))
   ([id files on-uploaded]
-   (s/assert (s/nilable ::us/uuid) id)
-   (s/assert fn? on-uploaded)
+   (us/assert (s/nilable ::us/uuid) id)
+   (us/assert fn? on-uploaded)
    (ptk/reify ::create-images
      ptk/UpdateEvent
      (update [_ state]
@@ -225,7 +225,7 @@
 
 (defn images-fetched
   [items]
-  (s/assert (s/every ::image-entity) items)
+  (us/assert (s/every ::image-entity) items)
   (ptk/reify ::images-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -239,7 +239,7 @@
 (defn fetch-images
   "Fetch a list of images of the selected collection"
   [id]
-  (s/assert (s/nilable ::us/uuid) id)
+  (us/assert (s/nilable ::us/uuid) id)
   (ptk/reify ::fetch-images
     ptk/WatchEvent
     (watch [_ state s]

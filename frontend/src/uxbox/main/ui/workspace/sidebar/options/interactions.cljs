@@ -17,8 +17,7 @@
    [uxbox.main.ui.lightbox :as lbx]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.spec :refer [color?]]))
+   [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Helpers
 

@@ -9,9 +9,9 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
+   [uxbox.common.spec :as us]
    [uxbox.main.data.projects :as dp]
-   [uxbox.main.store :as st]
-   [uxbox.util.spec :as us]))
+   [uxbox.main.store :as st]))
 
 (def MAX-STACK-SIZE 50)
 
@@ -24,7 +24,7 @@
 
 (defn watch-page-changes
   [id]
-  (s/assert ::us/uuid id)
+  (us/assert ::us/uuid id)
   (ptk/reify ::watch-page-changes
     ptk/WatchEvent
     (watch [_ state stream]
@@ -40,7 +40,7 @@
 
 (defn save-undo-entry
   [id]
-  (s/assert ::us/uuid id)
+  (us/assert ::us/uuid id)
   (letfn [(cons-entry [stack entry]
             (let [stack (cons entry stack)]
               (if (> (count stack) MAX-STACK-SIZE)

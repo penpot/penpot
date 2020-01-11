@@ -7,11 +7,9 @@
 (ns uxbox.main.websockets
   "A interface to webworkers exposed functionality."
   (:require
-   [cljs.spec.alpha :as s]
    [goog.events :as ev]
    [beicon.core :as rx]
-   [potok.core :as ptk]
-   [uxbox.util.spec :as us])
+   [potok.core :as ptk])
   (:import
    goog.net.WebSocket
    goog.net.WebSocket.EventType))

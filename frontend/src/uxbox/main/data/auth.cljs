@@ -9,12 +9,12 @@
    [cljs.spec.alpha :as s]
    [beicon.core :as rx]
    [potok.core :as ptk]
+   [uxbox.common.spec :as us]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :refer [initial-state]]
    [uxbox.main.data.users :as du]
    [uxbox.util.messages :as um]
    [uxbox.util.router :as rt]
-   [uxbox.util.spec :as us]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.storage :refer [storage]]))
 
@@ -45,7 +45,7 @@
 
 (defn login
   [{:keys [username password] :as data}]
-  (s/assert ::login-params data)
+  (us/assert ::login-params data)
   (ptk/reify ::login
     ptk/UpdateEvent
     (update [_ state]
@@ -98,8 +98,8 @@
 (defn register
   "Create a register event instance."
   [data on-error]
-  (s/assert ::register-params data)
-  (s/assert ::us/fn on-error)
+  (us/assert ::register-params data)
+  (us/assert fn? on-error)
   (ptk/reify ::register
     ptk/WatchEvent
     (watch [_ state stream]
@@ -123,7 +123,7 @@
 
 (defn recovery-request
   [data]
-  (s/assert ::recovery-request-params data)
+  (us/assert ::recovery-request-params data)
   (ptk/reify ::recover-request
     ptk/WatchEvent
     (watch [_ state stream]
@@ -166,7 +166,7 @@
 
 (defn recovery
   [{:keys [token password] :as data}]
-  (s/assert ::recovery-params data)
+  (us/assert ::recovery-params data)
   (ptk/reify ::recovery
     ptk/WatchEvent
     (watch [_ state stream]

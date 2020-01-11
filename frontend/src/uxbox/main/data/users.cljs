@@ -6,14 +6,14 @@
 
 (ns uxbox.main.data.users
   (:require
-   [cljs.spec.alpha :as s]
    [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [potok.core :as ptk]
+   [uxbox.common.spec :as us]
    [uxbox.main.repo.core :as rp]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.messages :as uum]
-   [uxbox.util.spec :as us]
    [uxbox.util.storage :refer [storage]]))
 
 ;; --- Common Specs
@@ -42,7 +42,7 @@
 
 (defn profile-fetched
   [data]
-  (s/assert ::profile-fetched data)
+  (us/assert ::profile-fetched data)
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -73,9 +73,9 @@
 
 (defn form->update-profile
   [data on-success on-error]
-  (s/assert ::update-profile-params data)
-  (s/assert ::us/fn on-error)
-  (s/assert ::us/fn on-success)
+  (us/assert ::update-profile-params data)
+  (us/assert fn? on-error)
+  (us/assert fn? on-success)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -102,9 +102,9 @@
 
 (defn update-password
   [data {:keys [on-success on-error]}]
-  (s/assert ::update-password-params data)
-  (s/assert ::us/fn on-success)
-  (s/assert ::us/fn on-error)
+  (us/assert ::update-password-params data)
+  (us/assert fn? on-success)
+  (us/assert fn? on-error)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -127,9 +127,11 @@
          (rx/do done)
          (rx/map (constantly fetch-profile)))))
 
+(s/def ::file #(instance? js/File %))
+
 (defn update-photo
   ([file] (update-photo file (constantly nil)))
   ([file done]
-   {:pre [(us/file? file)
-          (fn? done)]}
+   (us/assert ::file file)
+   (us/assert fn? done)
    (UpdatePhoto. file done)))

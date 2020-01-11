@@ -27,8 +27,6 @@
 ;; --- i18n
 
 (declare reinit)
-(s/check-asserts true)
-
 (rx/sub! i18n/locale-sub #(reinit))
 
 ;; --- Error Handling

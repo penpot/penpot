@@ -11,9 +11,9 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [uxbox.common.pages :as cp]
+   [uxbox.common.spec :as us]
    [uxbox.main.repo.core :as rp]
    [uxbox.util.router :as rt]
-   [uxbox.util.spec :as us]
    [uxbox.util.time :as dt]
    [uxbox.util.timers :as ts]
    [uxbox.util.uuid :as uuid]))
@@ -21,9 +21,9 @@
 ;; --- Specs
 
 (s/def ::id ::us/uuid)
-(s/def ::name ::us/string)
+(s/def ::name string?)
 (s/def ::user ::us/uuid)
-(s/def ::type ::us/keyword)
+(s/def ::type keyword?)
 (s/def ::file-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
 (s/def ::created-at ::us/inst)
@@ -134,7 +134,7 @@
 
 (defn projects-fetched
   [projects]
-  (s/assert (s/every ::project) projects)
+  (us/assert (s/every ::project) projects)
   (ptk/reify ::projects-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -158,7 +158,7 @@
 
 (defn fetch-file
   [id]
-  (s/assert ::us/uuid id)
+  (us/assert ::us/uuid id)
   (ptk/reify ::fetch-file
     ptk/WatchEvent
     (watch [_ state stream]
@@ -169,7 +169,7 @@
 
 (defn files-fetched
   [files]
-  (s/assert (s/every ::file) files)
+  (us/assert (s/every ::file) files)
   (ptk/reify ::files-fetched
     cljs.core/IDeref
     (-deref [_] files)
@@ -227,7 +227,7 @@
 
 (defn delete-project
   [id]
-  (s/assert ::us/uuid id)
+  (us/assert ::us/uuid id)
   (ptk/reify ::delete-project
     ptk/UpdateEvent
     (update [_ state]
@@ -242,7 +242,7 @@
 
 (defn delete-file
   [id]
-  (s/assert ::us/uuid id)
+  (us/assert ::us/uuid id)
   (ptk/reify ::delete-file
     ptk/UpdateEvent
     (update [_ state]
@@ -273,7 +273,7 @@
 
 (defn go-to
   [file-id]
-  (s/assert ::us/uuid file-id)
+  (us/assert ::us/uuid file-id)
   (ptk/reify ::go-to
     ptk/WatchEvent
     (watch [_ state stream]
@@ -284,7 +284,7 @@
 
 (defn go-to-project
   [id]
-  (s/assert (s/nilable ::us/uuid) id)
+  (us/assert (s/nilable ::us/uuid) id)
   (ptk/reify ::go-to-project
     ptk/WatchEvent
     (watch [_ state stream]
@@ -299,7 +299,7 @@
 
 (defn fetch-pages
   [file-id]
-  (s/assert ::us/uuid file-id)
+  (us/assert ::us/uuid file-id)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -310,7 +310,7 @@
 
 (defn pages-fetched
   [pages]
-  (s/assert (s/every ::page) pages)
+  (us/assert (s/every ::page) pages)
   (ptk/reify ::pages-fetched
     IDeref
     (-deref [_] pages)
@@ -326,7 +326,7 @@
 (defn fetch-page
   "Fetch page by id."
   [id]
-  (s/assert ::us/uuid id)
+  (us/assert ::us/uuid id)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -337,7 +337,7 @@
 
 (defn page-fetched
   [data]
-  (s/assert ::page data)
+  (us/assert ::page data)
   (ptk/reify ::page-fetched
     IDeref
     (-deref [_] data)
@@ -377,7 +377,7 @@
 
 (defn page-created
   [{:keys [id file-id] :as page}]
-  (s/assert ::page page)
+  (us/assert ::page page)
   (ptk/reify ::page-created
     cljs.core/IDeref
     (-deref [_] page)
@@ -393,7 +393,7 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (uxbox.main.data.projects/fetch-file file-id)))))
+      (rx/of (fetch-file file-id)))))
 
 ;; --- Rename Page
 
@@ -402,8 +402,8 @@
 
 (defn rename-page
   [id name]
-  (s/assert ::us/uuid id)
-  (s/assert string? name)
+  (us/assert ::us/uuid id)
+  (us/assert string? name)
   (ptk/reify ::rename-page
     ptk/UpdateEvent
     (update [_ state]
@@ -461,7 +461,7 @@
 
 (defn page-persisted
   [{:keys [id] :as page}]
-  (s/assert ::page page)
+  (us/assert ::page page)
   (ptk/reify ::page-persisted
     cljs.core/IDeref
     (-deref [_] page)

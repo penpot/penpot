@@ -4,9 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-;; WARNING: DEPRECATED: please use uxbox.common.exceptions
-
-(ns uxbox.util.exceptions
+(ns uxbox.common.exceptions
   "A helpers for work with exceptions."
   (:require [clojure.spec.alpha :as s]))
 
@@ -14,7 +12,8 @@
 (s/def ::code keyword?)
 (s/def ::mesage string?)
 (s/def ::hint string?)
-(s/def ::cause #(instance? Throwable %))
+(s/def ::cause #?(:clj #(instance? Throwable %)
+                  :cljs #(instance? js/Error %)))
 (s/def ::error-params
   (s/keys :req-un [::type]
           :opt-un [::code

@@ -9,6 +9,7 @@
   (:require
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]
+   [uxbox.common.spec :as us]
    [uxbox.builtins.icons :as i]
    [uxbox.config :as cfg]
    [uxbox.main.data.auth :as da]
@@ -17,8 +18,7 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.router :as rt]
-   [uxbox.util.spec :as us]))
+   [uxbox.util.router :as rt]))
 
 (s/def ::username ::us/not-empty-string)
 (s/def ::password ::us/not-empty-string)

@@ -13,8 +13,8 @@
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
+   [uxbox.common.spec :as us]
    [uxbox.util.dom :as dom]
-   [uxbox.util.spec :as us]
    [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Handlers Helpers
@@ -119,4 +119,3 @@
 (s/def ::email ::us/email)
 (s/def ::not-empty-string ::us/not-empty-string)
 (s/def ::color ::us/color)
-(s/def ::number-str ::us/number-str)
