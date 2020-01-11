@@ -10,8 +10,6 @@
    [rumext.alpha :as mf]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.users :as udu]
-   [uxbox.main.locales.en :as en]
-   [uxbox.main.locales.fr :as fr]
    [uxbox.main.store :as st]
    [uxbox.main.ui :as ui]
    [uxbox.main.ui.lightbox :refer [lightbox]]
@@ -19,7 +17,7 @@
    [uxbox.main.ui.loader :refer [loader]]
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
-   [uxbox.util.i18n :as i18n :refer [tr]]
+   [uxbox.util.i18n :as i18n]
    [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]
    [uxbox.util.storage :refer [storage]]
@@ -30,15 +28,15 @@
 (declare reinit)
 (s/check-asserts true)
 
-(i18n/update-locales! (fn [locales]
-                        (-> locales
-                            (assoc "en" en/locales)
-                            (assoc "fr" fr/locales))))
+;; (i18n/update-locales! (fn [locales]
+;;                         (-> locales
+;;                             (assoc "en" en/locales)
+;;                             (assoc "fr" fr/locales))))
 
-(i18n/on-locale-change!
- (fn [new old]
-   (println "Locale changed from" old " to " new)
-   (reinit)))
+;; (i18n/on-locale-change!
+;;  (fn [new old]
+;;    (println "Locale changed from" old " to " new)
+;;    (reinit)))
 
 ;; --- Error Handling
 
@@ -81,7 +79,8 @@
 (def app-sym (.for js/Symbol "uxbox.app"))
 
 (defn ^:export init
-  []
+  [translations]
+  (i18n/init! (js/JSON.parse translations))
   (unchecked-set js/window app-sym "main")
   (st/init)
   (init-ui))

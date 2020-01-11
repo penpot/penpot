@@ -40,7 +40,7 @@
   [{:keys [on-submit value] :as props}]
   (let [local (mf/use-var value)]
     [:div.lightbox-body
-     [:h3 (tr "ds.color-lightbox.title")]
+     [:h3 (tr "ds.color-lightbox.title" )]
      [:form
       [:div.row-flex.center
        [:& colorpicker {:value (or @local "#00ccff")

@@ -1,7 +1,10 @@
-(require '[clojure.pprint :refer [pprint]])
-(require '[clojure.java.shell :as shell])
-(require '[figwheel.main.api :as figwheel])
-(require '[environ.core :refer [env]])
+(require '[clojure.pprint :refer [pprint]]
+         '[clojure.java.shell :as shell]
+         '[clojure.java.io :as io]
+         '[figwheel.main.api :as figwheel]
+         '[environ.core :refer [env]]
+         '[jsonista.core :as json]
+         '[cognitect.transit :as t])
 (require '[cljs.build.api :as api]
          '[cljs.repl :as repl]
          '[cljs.repl.node :as node])
@@ -11,6 +14,8 @@
          '[rebel-readline.clojure.service.local]
          '[rebel-readline.cljs.service.local]
          '[rebel-readline.cljs.repl])
+
+(import 'java.io.ByteArrayOutputStream)
 
 (defmulti task first)
 
@@ -39,7 +44,7 @@
    :closure-defines closure-defines
    :optimizations :none
    :infer-externs true
-   :verbose true
+   :verbose false
    :source-map true
    :static-fns false
    :pretty-print true
@@ -153,7 +158,7 @@
   (api/build (api/inputs "src" "test")
              (assoc default-build-options
                     :main 'uxbox.tests.main
-                    :verbose true
+                    :verbose false
                     :target :nodejs
                     :source-map true
                     :output-to "target/tests/main.js"

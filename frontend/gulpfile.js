@@ -7,6 +7,8 @@ const rename = require("gulp-rename");
 const gulpif = require("gulp-if");
 const gzip = require("gulp-gzip");
 const cleancss = require("gulp-clean-css");
+const fs = require("fs");
+const l = require("lodash");
 
 const paths = {};
 paths.app = "./resources/";
@@ -79,6 +81,23 @@ gulp.task("scss:view", scssPipeline({
 
 gulp.task("scss", gulp.parallel("scss:main", "scss:view"));
 
+function readLocales() {
+  const path = __dirname + "/resources/locales.json";
+  const content = JSON.parse(fs.readFileSync(path, {encoding: "utf8"}));
+
+  let result = {};
+  for (let key of Object.keys(content)) {
+    const item = content[key];
+    if (l.isString(item)) {
+      result[key] = {"en": item};
+    } else if (l.isPlainObject(item) && l.isPlainObject(item.translations)) {
+      result[key] = item.translations;
+    }
+  }
+
+  return JSON.stringify(result);
+}
+
 // Templates
 
 function templatePipeline(options) {
@@ -86,8 +105,12 @@ function templatePipeline(options) {
     const input = options.input;
     const output = options.output;
     const ts = Math.floor(new Date());
+
+    const locales = readLocales();
+
     const tmpl = mustache({
-      ts: ts
+      ts: ts,
+      tr: JSON.stringify(locales),
     });
 
     return gulp.src(input)
@@ -98,27 +121,28 @@ function templatePipeline(options) {
 }
 
 gulp.task("template:main", templatePipeline({
-  input: paths.app + "index.mustache",
-  output: paths.output,
+  input: paths.app + "templates/index.mustache",
+  output: paths.output
 }));
 
 gulp.task("template:view", templatePipeline({
-  input: paths.app + "view.mustache",
-  output: paths.output + "view/",
-  jspath: "/js/view.js",
-  csspath: "/css/view.css"
+  input: paths.app + "templates/view.mustache",
+  output: paths.output + "view/"
 }));
 
-gulp.task("template", gulp.parallel("template:view", "template:main"));
+gulp.task("templates", gulp.parallel("template:view", "template:main"));
 
 // Entry Point
 
 gulp.task("watch:main", function() {
   gulp.watch(paths.scss, gulp.task("scss"));
+  gulp.watch([paths.app + "templates/*.mustache",
+              paths.app + "locales.json"],
+             gulp.task("templates"));
 });
 
 gulp.task("watch", gulp.series(
-  gulp.parallel("scss", "template"),
+  gulp.parallel("scss", "templates"),
   gulp.task("watch:main")
 ));
 
@@ -142,7 +166,7 @@ gulp.task("dist:template:view", templatePipeline({
   output: paths.dist + "view/",
 }));
 
-gulp.task("dist:template", gulp.parallel("dist:template:view", "dist:template:main"));
+gulp.task("dist:templates", gulp.parallel("dist:template:view", "dist:template:main"));
 
 // Styles
 
@@ -184,7 +208,7 @@ gulp.task("dist:gzip", function() {
 // Entry Point
 
 gulp.task("dist", gulp.parallel(
-  gulp.task("dist:template"),
+  gulp.task("dist:templates"),
   gulp.task("dist:scss"),
   gulp.task("dist:copy")
 ));

@@ -19,7 +19,6 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
-   [uxbox.main.ui.dashboard.projects-forms :refer [create-project-dialog]]
    [uxbox.main.ui.dashboard.common :as common]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]

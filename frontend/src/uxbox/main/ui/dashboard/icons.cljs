@@ -190,75 +190,75 @@
          [:li {:key (pr-str id)}
           [:a {:on-click #(on-select % id)} name]])])))
 
-(mf/def grid-options
-  :mixins [(mf/local) mf/memo]
+;; (mf/def grid-options
+;;   :mixins [(mf/local) mf/memo]
 
-  :render
-  (fn [{:keys [::mf/local] :as own}
-       {:keys [id type selected] :as props}]
-    (letfn [(delete []
-              (st/emit! (di/delete-selected)))
-            (on-delete [event]
-              (modal/show! confirm-dialog {:on-accept delete}))
-            (on-toggle-copy [event]
-              (swap! local update :show-copy-tooltip not))
-            (on-toggle-move [event]
-              (swap! local update :show-move-tooltip not))
-            (on-copy [selected]
-              (swap! local assoc
-                     :show-move-tooltip false
-                     :show-copy-tooltip false)
-              (st/emit! (di/copy-selected selected)))
-            (on-move [selected]
-              (swap! local assoc
-                     :show-move-tooltip false
-                     :show-copy-tooltip false)
-              (st/emit! (di/move-selected selected)))
-            (on-rename [event]
-              (let [selected (first selected)]
-                (st/emit! (di/update-opts :edition selected))))]
+;;   :render
+;;   (fn [{:keys [::mf/local] :as own}
+;;        {:keys [id type selected] :as props}]
+;;     (letfn [(delete []
+;;               (st/emit! (di/delete-selected)))
+;;             (on-delete [event]
+;;               (modal/show! confirm-dialog {:on-accept delete}))
+;;             (on-toggle-copy [event]
+;;               (swap! local update :show-copy-tooltip not))
+;;             (on-toggle-move [event]
+;;               (swap! local update :show-move-tooltip not))
+;;             (on-copy [selected]
+;;               (swap! local assoc
+;;                      :show-move-tooltip false
+;;                      :show-copy-tooltip false)
+;;               (st/emit! (di/copy-selected selected)))
+;;             (on-move [selected]
+;;               (swap! local assoc
+;;                      :show-move-tooltip false
+;;                      :show-copy-tooltip false)
+;;               (st/emit! (di/move-selected selected)))
+;;             (on-rename [event]
+;;               (let [selected (first selected)]
+;;                 (st/emit! (di/update-opts :edition selected))))]
 
-      ;; MULTISELECT OPTIONS BAR
-      [:div.multiselect-bar
-       (if (or (= type :own) (nil? id))
-         ;; if editable
-         [:div.multiselect-nav {}
-          [:span.move-item.tooltip.tooltip-top
-           {:alt (tr "ds.multiselect-bar.copy")
-            :on-click on-toggle-copy}
-           (when (:show-copy-tooltip @local)
-             (grid-options-tooltip {:selected id
-                                    :title (tr "ds.multiselect-bar.copy-to-library")
-                                    :on-select on-copy}))
-           i/copy]
-          [:span.move-item.tooltip.tooltip-top
-           {:alt (tr "ds.multiselect-bar.move")
-            :on-click on-toggle-move}
-           (when (:show-move-tooltip @local)
-             (grid-options-tooltip {:selected id
-                                    :title (tr "ds.multiselect-bar.move-to-library")
-                                    :on-select on-move}))
-           i/move]
-          (when (= 1 (count selected))
-            [:span.move-item.tooltip.tooltip-top
-             {:alt (tr "ds.multiselect-bar.rename")
-              :on-click on-rename}
-             i/pencil])
-          [:span.delete.tooltip.tooltip-top
-           {:alt (tr "ds.multiselect-bar.delete")
-            :on-click on-delete}
-           i/trash]]
+;;       ;; MULTISELECT OPTIONS BAR
+;;       [:div.multiselect-bar
+;;        (if (or (= type :own) (nil? id))
+;;          ;; if editable
+;;          [:div.multiselect-nav {}
+;;           [:span.move-item.tooltip.tooltip-top
+;;            {:alt (tr "ds.multiselect-bar.copy")
+;;             :on-click on-toggle-copy}
+;;            (when (:show-copy-tooltip @local)
+;;              (grid-options-tooltip {:selected id
+;;                                     :title (tr "ds.multiselect-bar.copy-to-library")
+;;                                     :on-select on-copy}))
+;;            i/copy]
+;;           [:span.move-item.tooltip.tooltip-top
+;;            {:alt (tr "ds.multiselect-bar.move")
+;;             :on-click on-toggle-move}
+;;            (when (:show-move-tooltip @local)
+;;              (grid-options-tooltip {:selected id
+;;                                     :title (tr "ds.multiselect-bar.move-to-library")
+;;                                     :on-select on-move}))
+;;            i/move]
+;;           (when (= 1 (count selected))
+;;             [:span.move-item.tooltip.tooltip-top
+;;              {:alt (tr "ds.multiselect-bar.rename")
+;;               :on-click on-rename}
+;;              i/pencil])
+;;           [:span.delete.tooltip.tooltip-top
+;;            {:alt (tr "ds.multiselect-bar.delete")
+;;             :on-click on-delete}
+;;            i/trash]]
 
-         ;; if not editable
-         [:div.multiselect-nav
-          [:span.move-item.tooltip.tooltip-top
-           {:alt (tr "ds.multiselect-bar.copy")
-            :on-click on-toggle-copy}
-           (when (:show-copy-tooltip @local)
-             (grid-options-tooltip {:selected id
-                                    :title (tr "ds.multiselect-bar.copy-to-library")
-                                    :on-select on-copy}))
-           i/organize]])])))
+;;          ;; if not editable
+;;          [:div.multiselect-nav
+;;           [:span.move-item.tooltip.tooltip-top
+;;            {:alt (tr "ds.multiselect-bar.copy")
+;;             :on-click on-toggle-copy}
+;;            (when (:show-copy-tooltip @local)
+;;              (grid-options-tooltip {:selected id
+;;                                     :title (tr "ds.multiselect-bar.copy-to-library")
+;;                                     :on-select on-copy}))
+;;            i/organize]])])))
 
 ;; --- Grid Item
 
@@ -349,7 +349,7 @@
                 :coll coll
                 :opts opts}]
       (when (seq (:selected opts))
-        [:& grid-options {:id id :type type :selected (:selected opts)}])]]))
+        #_[:& grid-options {:id id :type type :selected (:selected opts)}])]]))
 
 ;; --- Icons Page
 

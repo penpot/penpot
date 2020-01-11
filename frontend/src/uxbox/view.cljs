@@ -19,17 +19,17 @@
    [uxbox.view.ui.lightbox :refer [lightbox]]
    [uxbox.view.ui.loader :refer [loader]]))
 
-(i18n/update-locales! (fn [locales]
-                        (-> locales
-                            (assoc "en" en/locales)
-                            (assoc "fr" fr/locales))))
+;; (i18n/update-locales! (fn [locales]
+;;                         (-> locales
+;;                             (assoc "en" en/locales)
+;;                             (assoc "fr" fr/locales))))
 
 (declare reinit)
 
-(i18n/on-locale-change!
- (fn [new old]
-   (println "Locale changed from" old " to " new)
-   (reinit)))
+;; (i18n/on-locale-change!
+;;  (fn [new old]
+;;    (println "Locale changed from" old " to " new)
+;;    (reinit)))
 
 (defn- on-navigate
   [router path]
