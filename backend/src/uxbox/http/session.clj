@@ -10,7 +10,6 @@
    [sieppari.context :as spx]
    [vertx.core :as vc]
    [uxbox.db :as db]
-   [uxbox.util.exceptions :as ex]
    [uxbox.util.uuid :as uuid]))
 
 ;; --- Main API

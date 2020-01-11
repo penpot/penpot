@@ -9,12 +9,12 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [promesa.exec :as px]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.images :as images]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]))
+   [uxbox.util.blob :as blob]))
 
 ;; --- Helpers & Specs
 

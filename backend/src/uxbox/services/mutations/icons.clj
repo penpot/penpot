@@ -9,11 +9,11 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.db :as db]
+   [uxbox.common.spec :as us]
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
    [uxbox.services.queries.icons :refer [decode-icon-row]]
    [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]
    [uxbox.util.uuid :as uuid]))
 
 ;; --- Helpers & Specs

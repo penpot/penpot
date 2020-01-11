@@ -10,8 +10,8 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [instaparse.core :as insta]
-   [uxbox.util.exceptions :as ex]
-   [uxbox.util.spec :as us]
+   [uxbox.common.spec :as us]
+   [uxbox.common.exceptions :as ex]
    [uxbox.util.template :as tmpl]))
 
 ;; --- Impl.
@@ -44,9 +44,9 @@
                (rest parts)))
       state)))
 
-(s/def ::subject ::us/string)
-(s/def ::body-text ::us/string)
-(s/def ::body-html ::us/string)
+(s/def ::subject string?)
+(s/def ::body-text string?)
+(s/def ::body-html string?)
 
 (s/def ::parsed-email
   (s/keys :req-un [::subject ::body-html ::body-html]))
@@ -79,7 +79,7 @@
 (s/def ::to ::us/email)
 (s/def ::from ::us/email)
 (s/def ::reply-to ::us/email)
-(s/def ::lang ::us/string)
+(s/def ::lang string?)
 
 (s/def ::context
   (s/keys :req-un [::to]
@@ -90,7 +90,7 @@
   ([id extra-context]
    (s/assert keyword? id)
    (fn [context]
-     (s/assert ::context context)
+     (us/assert ::context context)
      (when-let [spec (s/get-spec id)]
        (s/assert spec context))
 

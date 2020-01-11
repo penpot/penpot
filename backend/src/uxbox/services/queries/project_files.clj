@@ -9,11 +9,11 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [promesa.core :as p]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]))
+   [uxbox.util.blob :as blob]))
 
 (declare decode-row)
 

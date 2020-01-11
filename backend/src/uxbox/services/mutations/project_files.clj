@@ -9,11 +9,11 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.db :as db]
-   [uxbox.util.spec :as us]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.services.mutations :as sm]
    [uxbox.services.mutations.projects :as proj]
    [uxbox.services.util :as su]
-   [uxbox.util.exceptions :as ex]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]))
 

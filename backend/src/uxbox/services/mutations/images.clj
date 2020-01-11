@@ -11,6 +11,8 @@
    [datoteka.storages :as ds]
    [promesa.core :as p]
    [promesa.exec :as px]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.media :as media]
    [uxbox.images :as images]
@@ -18,8 +20,6 @@
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
    [uxbox.util.data :as data]
-   [uxbox.util.exceptions :as ex]
-   [uxbox.util.spec :as us]
    [uxbox.util.uuid :as uuid]
    [vertx.core :as vc]))
 
@@ -117,7 +117,15 @@
 (def valid-image-types?
   #{"image/jpeg", "image/png", "image/webp"})
 
-(s/def ::file ::us/upload)
+(s/def :uxbox$upload/name ::us/string)
+(s/def :uxbox$upload/size ::us/integer)
+(s/def :uxbox$upload/mtype ::us/string)
+(s/def ::upload
+  (s/keys :req-un [:uxbox$upload/name
+                   :uxbox$upload/size
+                   :uxbox$upload/mtype]))
+
+(s/def ::file ::upload)
 (s/def ::width ::us/integer)
 (s/def ::height ::us/integer)
 (s/def ::mimetype valid-image-types?)

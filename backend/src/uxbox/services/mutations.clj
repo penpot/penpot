@@ -6,8 +6,7 @@
 
 (ns uxbox.services.mutations
   (:require
-   [uxbox.util.dispatcher :as uds]
-   [uxbox.util.exceptions :as ex]))
+   [uxbox.util.dispatcher :as uds]))
 
 (uds/defservice handle
   {:dispatch-by ::type

@@ -8,11 +8,11 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]
    [uxbox.util.sql :as sql]))
 
 ;; --- Helpers & Specs

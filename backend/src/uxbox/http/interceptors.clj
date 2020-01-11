@@ -7,8 +7,8 @@
 (ns uxbox.http.interceptors
   (:require
    [vertx.web :as vw]
-   [uxbox.util.transit :as t]
-   [uxbox.util.exceptions :as ex])
+   [uxbox.common.exceptions :as ex]
+   [uxbox.util.transit :as t])
   (:import
    io.vertx.ext.web.RoutingContext
    io.vertx.ext.web.FileUpload

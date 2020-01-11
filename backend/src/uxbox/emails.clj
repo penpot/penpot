@@ -10,12 +10,12 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.config :as cfg]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.media :as media]
-   [uxbox.util.exceptions :as ex]
    [uxbox.util.emails :as emails]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]))
+   [uxbox.util.blob :as blob]))
 
 ;; --- Defaults
 
@@ -44,8 +44,8 @@
 (defn send!
   "Schedule the email for sending."
   [email context]
-  (s/assert fn? email)
-  (s/assert map? context)
+  (us/assert fn? email)
+  (us/assert map? context)
   (let [defaults {:from (:email-from cfg/config)
                   :reply-to (:email-reply-to cfg/config)}
         data (->> (merge defaults context)

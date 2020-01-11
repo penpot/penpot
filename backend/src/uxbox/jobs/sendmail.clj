@@ -12,11 +12,11 @@
    [promesa.core :as p]
    [uxbox.core :refer [system]]
    [postal.core :as postal]
+   [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
    [uxbox.util.jobs :as uj]
    [uxbox.util.blob :as blob]
-   [uxbox.util.exceptions :as ex]
    [mount.core :as mount :refer [defstate]]))
 
 ;; TODO: implement low priority sending emails.

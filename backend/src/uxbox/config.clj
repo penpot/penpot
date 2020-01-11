@@ -6,15 +6,15 @@
 
 (ns uxbox.config
   "A configuration management."
-  (:require [clojure.java.io :as io]
-            [clojure.tools.logging :as log]
-            [clojure.edn :as edn]
-            [cuerdas.core :as str]
-            [buddy.core.hash :as hash]
-            [environ.core :refer [env]]
-            [mount.core :refer [defstate]]
-            [uxbox.util.exceptions :as ex]
-            [uxbox.util.data :refer [deep-merge]]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.tools.logging :as log]
+   [clojure.edn :as edn]
+   [cuerdas.core :as str]
+   [buddy.core.hash :as hash]
+   [environ.core :refer [env]]
+   [mount.core :refer [defstate]]
+   [uxbox.common.exceptions :as ex]))
 
 ;; --- Configuration Reading & Loading
 

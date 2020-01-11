@@ -10,10 +10,10 @@
    [buddy.hashers :as hashers]
    [promesa.core :as p]
    [uxbox.config :as cfg]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
-   [uxbox.services.mutations :as sm]
-   [uxbox.util.spec :as us]
-   [uxbox.util.exceptions :as ex]))
+   [uxbox.services.mutations :as sm]))
 
 (def ^:private user-by-username-sql
   "select id, password

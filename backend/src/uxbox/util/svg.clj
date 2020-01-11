@@ -9,8 +9,8 @@
   (:require
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [uxbox.util.spec :as us]
-   [uxbox.util.exceptions :as ex])
+   [uxbox.common.spec :as us]
+   [uxbox.common.exceptions :as ex])
   (:import
    org.jsoup.Jsoup
    org.jsoup.nodes.Attribute
@@ -18,10 +18,10 @@
    org.jsoup.nodes.Document
    java.io.InputStream))
 
-(s/def ::content ::us/string)
+(s/def ::content string?)
 (s/def ::width ::us/number)
 (s/def ::height ::us/number)
-(s/def ::name ::us/string)
+(s/def ::name string?)
 (s/def ::view-box (s/coll-of ::us/number :min-count 4 :max-count 4))
 
 (s/def ::svg-entity

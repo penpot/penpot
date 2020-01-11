@@ -98,6 +98,7 @@
 ;; --- Default Specs
 
 (s/def ::inst inst?)
+(s/def ::string string?)
 (s/def ::email (s/conformer email-conformer str))
 (s/def ::color (s/conformer color-conformer str))
 (s/def ::uuid (s/conformer uuid-conformer str))

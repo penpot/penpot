@@ -8,17 +8,20 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]))
+   [uxbox.util.blob :as blob]))
 
 (defn decode-row
   [{:keys [val] :as row}]
   (when row
     (cond-> row
       val (assoc :val (blob/decode val)))))
+
+(s/def ::key ::us/string)
+(s/def ::user ::us/uuid)
 
 (s/def ::user-attr
   (s/keys :req-un [::key ::user]))

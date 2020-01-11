@@ -13,6 +13,8 @@
    [promesa.core :as p]
    [promesa.exec :as px]
    [uxbox.config :as cfg]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.emails :as emails]
    [uxbox.images :as images]
@@ -24,8 +26,6 @@
                                          strip-private-attrs
                                          resolve-thumbnail]]
    [uxbox.util.blob :as blob]
-   [uxbox.util.exceptions :as ex]
-   [uxbox.util.spec :as us]
    [uxbox.util.token :as token]
    [uxbox.util.uuid :as uuid]
    [vertx.core :as vc]))
@@ -125,7 +125,16 @@
 
 ;; --- Mutation: Update Photo
 
-(s/def ::file ::us/upload)
+
+(s/def :uxbox$upload/name ::us/string)
+(s/def :uxbox$upload/size ::us/integer)
+(s/def :uxbox$upload/mtype ::us/string)
+(s/def ::upload
+  (s/keys :req-un [:uxbox$upload/name
+                   :uxbox$upload/size
+                   :uxbox$upload/mtype]))
+
+(s/def ::file ::upload)
 (s/def ::update-profile-photo
   (s/keys :req-un [::user ::file]))
 
@@ -286,13 +295,13 @@
 
 ;; (defmethod core/query :validate-profile-password-recovery-token
 ;;   [{:keys [token]}]
-;;   (s/assert ::us/token token)
+;;   (us/assert ::us/token token)
 ;;   (with-open [conn (db/connection)]
 ;;     (recovery-token-exists? conn token)))
 
 ;; (defmethod core/novelty :request-profile-password-recovery
 ;;   [{:keys [username]}]
-;;   (s/assert ::us/username username)
+;;   (us/assert ::us/username username)
 ;;   (with-open [conn (db/connection)]
 ;;     (db/atomic conn
 ;;       (request-password-recovery conn username))))
@@ -302,7 +311,7 @@
 
 ;; (defmethod core/novelty :recover-profile-password
 ;;   [params]
-;;   (s/assert ::recover-password params)
+;;   (us/assert ::recover-password params)
 ;;   (with-open [conn (db/connection)]
 ;;     (db/apply-atomic conn recover-password params)))
 

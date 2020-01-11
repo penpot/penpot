@@ -10,10 +10,10 @@
    [lambdaisland.uri :refer [uri]]
    [mount.core :as mount :refer [defstate]]
    [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
    [uxbox.core :refer [system]]
    [uxbox.util.data :as data]
-   [uxbox.util.exceptions :as ex]
    [uxbox.util.pgsql :as pg]
    [vertx.core :as vx])
   (:import io.vertx.core.buffer.Buffer))
