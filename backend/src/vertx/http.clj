@@ -129,10 +129,6 @@
       (assign-status-and-headers! res data)
       (-handle-body body res)))
 
-  ;; ServerWebSocket
-  ;; (-handle-response [sws ctx]
-  ;;   (.accept ^ServerWebSocket sws))
-
   nil
   (-handle-response [sws ctx]))
 
@@ -140,7 +136,6 @@
   (Class/forName "[B")
   (-handle-body [data res]
     (.end ^HttpServerResponse res (Buffer/buffer data)))
-
   Buffer
   (-handle-body [data res]
     (.end ^HttpServerResponse res ^Buffer data))

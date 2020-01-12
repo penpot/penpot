@@ -6,7 +6,7 @@
 
 (ns uxbox.services.mutations.users
   (:require
-   [buddy.hashers :as hashers]
+   [sodi.pwhash :as pwhash]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
    [datoteka.storages :as ds]
@@ -26,7 +26,6 @@
                                          strip-private-attrs
                                          resolve-thumbnail]]
    [uxbox.util.blob :as blob]
-   [uxbox.util.token :as token]
    [uxbox.util.uuid :as uuid]
    [vertx.core :as vc]))
 
@@ -94,11 +93,12 @@
 
 (defn- validate-password
   [conn {:keys [user old-password] :as params}]
-  (p/let [profile (get-profile conn user)]
-    (when-not (hashers/check old-password (:password profile))
+  (p/let [profile (get-profile conn user)
+          result (pwhash/verify old-password (:password profile))]
+    (when-not (:valid result)
       (ex/raise :type :validation
                 :code ::old-password-not-match))
-   params))
+    params))
 
 (defn update-password
   [conn {:keys [user password]}]
@@ -194,7 +194,7 @@
   [conn {:keys [id username fullname email password metadata] :as params}]
   (let [id (or id (uuid/next))
         metadata (blob/encode metadata)
-        password (hashers/encrypt password)
+        password (pwhash/derive password)
         sqlv [create-user-sql
               id
               fullname

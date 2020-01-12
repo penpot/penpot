@@ -46,6 +46,7 @@
 
         routes [["/sub/:file-id" {:interceptors [(vxi/cookies)
                                                  (vxi/cors cors-opts)
+                                                 interceptors/format-response-body
                                                  (session/auth)]
                                   :get ws/handler}]
 

@@ -2,16 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2017 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2017-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.config
   "A configuration management."
   (:require
-   [clojure.java.io :as io]
    [clojure.tools.logging :as log]
-   [clojure.edn :as edn]
    [cuerdas.core :as str]
-   [buddy.core.hash :as hash]
    [environ.core :refer [env]]
    [mount.core :refer [defstate]]
    [uxbox.common.exceptions :as ex]))
@@ -74,14 +74,14 @@
 
 ;; --- Secret Loading & Parsing
 
-(defn- initialize-secret
-  [config]
-  (let [secret (:secret config)]
-    (when-not secret
-      (ex/raise :code ::missing-secret-key
-                :message "Missing `:secret` key in config."))
-    (hash/blake2b-256 secret)))
-
-(defstate secret
-  :start (initialize-secret config))
+;; (defn- initialize-secret
+;;   [config]
+;;   (let [secret (:secret config)]
+;;     (when-not secret
+;;       (ex/raise :code ::missing-secret-key
+;;                 :message "Missing `:secret` key in config."))
+;;     (hash/blake2b-256 secret)))
+;;
+;; (defstate secret
+;;   :start (initialize-secret config))
 

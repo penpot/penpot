@@ -8,7 +8,7 @@
   "A initial fixtures."
   (:require
    [clojure.tools.logging :as log]
-   [buddy.hashers :as hashers]
+   [sodi.pwhash :as pwhash]
    [mount.core :as mount]
    [promesa.core :as p]
    [uxbox.config :as cfg]
@@ -30,7 +30,7 @@
    values ($1, $2, $3, $4, $5, $6)
    returning *;")
 
-(def password (hashers/encrypt "123123"))
+(def password (pwhash/derive "123123"))
 
 (defn create-user
   [conn user-index]
@@ -185,7 +185,6 @@
   [& args]
   (try
     (-> (mount/only #{#'uxbox.config/config
-                      #'uxbox.config/secret
                       #'uxbox.core/system
                       #'uxbox.db/pool
                       #'uxbox.migrations/migrations})

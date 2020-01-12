@@ -34,14 +34,14 @@
   hiccup/hiccup {:mvn/version "1.0.5"}
   org.im4java/im4java {:mvn/version "1.4.0"}
 
-  buddy/buddy-sign {:mvn/version "3.1.0"}
-  buddy/buddy-hashers {:mvn/version "1.4.0"}
-
   org.xerial.snappy/snappy-java {:mvn/version "1.1.7.3"}
   com.github.spullara.mustache.java/compiler {:mvn/version "0.9.6"}
   commons-io/commons-io {:mvn/version "2.6"}
   com.draines/postal {:mvn/version "2.0.3"
                       :exclusions [commons-codec/commons-codec]}
+
+  funcool/sodi {:local/root "vendor/sodi"
+                :deps/manifest :pom}
 
   ;; exception printing
   io.aviso/pretty {:mvn/version "0.1.37"}

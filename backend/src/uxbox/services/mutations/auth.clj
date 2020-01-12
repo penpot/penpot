@@ -7,7 +7,7 @@
 (ns uxbox.services.mutations.auth
   (:require
    [clojure.spec.alpha :as s]
-   [buddy.hashers :as hashers]
+   [sodi.pwhash :as pwhash]
    [promesa.core :as p]
    [uxbox.config :as cfg]
    [uxbox.common.exceptions :as ex]
@@ -32,7 +32,8 @@
 (sm/defmutation ::login
   [{:keys [username password scope] :as params}]
   (letfn [(check-password [user password]
-            (hashers/check password (:password user)))
+            (let [result (pwhash/verify password (:password user))]
+              (:valid result)))
 
           (check-user [user]
             (when-not user
