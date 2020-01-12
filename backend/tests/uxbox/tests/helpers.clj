@@ -1,7 +1,6 @@
 (ns uxbox.tests.helpers
   (:require
    [clojure.spec.alpha :as s]
-   [buddy.hashers :as hashers]
    [promesa.core :as p]
    [cuerdas.core :as str]
    [mount.core :as mount]
@@ -22,7 +21,6 @@
   [next]
   (let [config (cfg/read-test-config)]
     (-> (mount/only #{#'uxbox.config/config
-                      #'uxbox.config/secret
                       #'uxbox.core/system
                       #'uxbox.db/pool
                       #'uxbox.services.init/query-services

@@ -1,4 +1,8 @@
-{:deps
+{:mvn/repos
+ {"central" {:url "https://repo1.maven.org/maven2/"}
+  "clojars" {:url "https://clojars.org/repo"}
+  "jcenter" {:url "https://jcenter.bintray.com/"}}
+ :deps
  {org.clojure/clojure {:mvn/version "1.10.1"}
   funcool/promesa {:mvn/version "5.0.0"}
   funcool/cuerdas {:mvn/version "2.2.1"}
@@ -44,7 +48,7 @@
 
   mount/mount {:mvn/version "0.1.16"}
   environ/environ {:mvn/version "1.1.0"}}
- :paths ["src" "vendor" "resources" "../common"]
+ :paths ["src" "resources" "../common"]
  :aliases
  {:dev
   {:extra-deps
@@ -53,13 +57,14 @@
     fipp/fipp {:mvn/version "0.6.21"}
     criterium/criterium {:mvn/version "0.4.5"}
     mockery/mockery {:mvn/version "0.1.4"}}
-   :extra-paths ["test"]}
+   :extra-paths ["tests"]}
 
   :repl
   {:main-opts  ["-m" "rebel-readline.main"]}
 
-  :test
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-565"}}}
+  :tests
+  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-565"}}
+   :main-opts ["-m" "kaocha.runner"]}
 
   :ancient
   {:main-opts ["-m" "deps-ancient.deps-ancient"]
