@@ -1,5 +1,4 @@
 figwheel_server.log
-pom.xml
 *jar
 *-init.clj
 .lein-deps-sum
