@@ -52,9 +52,9 @@
                                      :name "login-handler"})
 
         echo-handler (rl/ratelimit handlers/echo-handler
-                                   {:limit 100
-                                    :period 1000
-                                    :timeout 1000
+                                   {:limit 1
+                                    :period 5000
+                                    :timeout 10
                                     :name "echo-handler"})
 
         routes [["/sub/:file-id" {:interceptors [(vxi/cookies)
@@ -87,4 +87,4 @@
 
 (defstate server
   :start (let [factory (vc/verticle {:on-start on-start})]
-           @(vc/deploy! system factory {:instances 4})))
+           @(vc/deploy! system factory {:instances 1})))

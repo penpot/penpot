@@ -30,6 +30,12 @@
       {:status 400
        :body response})))
 
+(defmethod handle-exception :ratelimit
+  [err req]
+  {:status 429
+   :headers {"retry-after" 1000}
+   :body ""})
+
 (defmethod handle-exception :not-found
   [err req]
   (let [response (ex-data err)]

@@ -75,7 +75,10 @@
 
 (defn echo-handler
   [req]
+  ;; (locking echo-handler
+  ;;   (prn "echo-handler" (Thread/currentThread)))
   {:status 200
    :body {:params (:params req)
           :cookies (:cookies req)
           :headers (:headers req)}})
+

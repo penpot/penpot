@@ -12,20 +12,21 @@
   org.apache.logging.log4j/log4j-api {:mvn/version "2.13.0"}
   org.apache.logging.log4j/log4j-core {:mvn/version "2.13.0"}
   org.apache.logging.log4j/log4j-jul {:mvn/version "2.13.0"}
+  org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.13.0"}
   funcool/datoteka {:mvn/version "1.2.0"}
   expound/expound {:mvn/version "0.8.4"}
   instaparse/instaparse {:mvn/version "1.4.10"}
   com.cognitect/transit-clj {:mvn/version "0.8.319"}
 
-  ;; vertx deps
-  ;; vertx-clojure/vertx {:mvn/version "0.0.0-SNAPSHOT"}
-  metosin/reitit-core {:mvn/version "0.3.10"}
-  metosin/sieppari {:mvn/version "0.0.0-alpha8"}
-  io.vertx/vertx-core {:mvn/version "3.8.4"}
-  io.vertx/vertx-web {:mvn/version "3.8.4"}
-  io.vertx/vertx-web-client {:mvn/version "3.8.4"}
   io.vertx/vertx-pg-client {:mvn/version "3.8.4"}
-  ;; end verx deps
+
+  vertx-clojure/vertx
+  {:local/root "vendor/vertx"
+   :deps/manifest :pom}
+
+  funcool/sodi
+  {:local/root "vendor/sodi"
+   :deps/manifest :pom}
 
   io.github.resilience4j/resilience4j-core {:mvn/version "1.2.0"}
   io.github.resilience4j/resilience4j-ratelimiter {:mvn/version "1.2.0"}
@@ -42,9 +43,6 @@
   commons-io/commons-io {:mvn/version "2.6"}
   com.draines/postal {:mvn/version "2.0.3"
                       :exclusions [commons-codec/commons-codec]}
-
-  funcool/sodi {:local/root "vendor/sodi"
-                :deps/manifest :pom}
 
   ;; exception printing
   io.aviso/pretty {:mvn/version "0.1.37"}

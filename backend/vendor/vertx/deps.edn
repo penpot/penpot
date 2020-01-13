@@ -1,0 +1,35 @@
+{:deps
+ {org.clojure/tools.logging {:mvn/version "0.5.0"}
+  funcool/promesa {:mvn/version "5.0.0"}
+  metosin/reitit-core {:mvn/version "0.3.10"}
+  metosin/sieppari {:mvn/version "0.0.0-alpha8"}
+  io.vertx/vertx-core {:mvn/version "3.8.4"}
+  io.vertx/vertx-web {:mvn/version "3.8.4"}
+  io.vertx/vertx-web-client {:mvn/version "3.8.4"}}
+ :paths ["src" "resources"]
+ :aliases
+ {:dev
+  {:extra-deps
+   {com.bhauman/rebel-readline {:mvn/version "0.1.4"}
+    metosin/jsonista {:mvn/version "0.2.5"}
+    mount/mount {:mvn/version "0.1.16"}
+    org.clojure/clojure {:mvn/version "1.10.1"}
+    io.netty/netty-transport-native-epoll {:mvn/version "4.1.39.Final"}
+    environ/environ {:mvn/version "1.1.0"}
+    metosin/pohjavirta {:mvn/version "0.0.1-alpha5"}
+    org.clojure/tools.namespace {:mvn/version "0.3.1"}}
+   :extra-paths ["test"]}
+  :repl
+  {:main-opts  ["-m" "rebel-readline.main"]}
+
+  :jar
+  {:extra-deps {seancorfield/depstar {:mvn/version "0.3.4"}}
+   :main-opts ["-m" "hf.depstar.jar", "target/vertx.jar"]}
+
+  :ancient
+  {:main-opts ["-m" "deps-ancient.deps-ancient"]
+   :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}
+  }}
+
+
+
