@@ -16,28 +16,49 @@
    [vertx.web :as vw]
    [vertx.eventbus :as ve]))
 
+(def mutation-types-hierarchy
+  (-> (make-hierarchy)
+      (derive :login ::unauthenticated)
+      (derive :logout ::unauthenticated)
+      (derive :register-profile ::unauthenticated)
+      (derive :request-profile-recovery ::unauthenticated)
+      (derive :recover-profile ::unauthenticated)))
+
+(def query-types-hierarchy
+  (make-hierarchy))
+
 (defn query-handler
   [req]
-  (let [type (get-in req [:path-params :type])
+  (let [type (keyword (get-in req [:path-params :type]))
         data (merge (:params req)
-                    {::sq/type (keyword type)
+                    {::sq/type type
                      :user (:user req)})]
-    (-> (sq/handle (with-meta data {:req req}))
-        (p/then' (fn [result]
-                  {:status 200
-                   :body result})))))
+    (if (or (:user req)
+            (isa? query-types-hierarchy type ::unauthenticated))
+      (-> (sq/handle (with-meta data {:req req}))
+          (p/then' (fn [result]
+                     {:status 200
+                      :body result})))
+      {:status 403
+       :body {:type :authentication
+              :code :unauthorized}})))
 
 (defn mutation-handler
   [req]
-  (let [type (get-in req [:path-params :type])
+  (let [type (keyword (get-in req [:path-params :type]))
         data (merge (:params req)
                     (:body-params req)
                     (:uploads req)
-                    {::sm/type (keyword type)
+                    {::sm/type type
                      :user (:user req)})]
-    (-> (sm/handle (with-meta data {:req req}))
-        (p/then' (fn [result]
-                   {:status 200 :body result})))))
+    (if (or (:user req)
+            (isa? mutation-types-hierarchy type ::unauthenticated))
+      (-> (sm/handle (with-meta data {:req req}))
+          (p/then' (fn [result]
+                     {:status 200 :body result})))
+      {:status 403
+       :body {:type :authentication
+              :code :unauthorized}})))
 
 (defn login-handler
   [req]
@@ -60,23 +81,20 @@
                     :cookies {"auth-token" nil}
                     :body ""})))))
 
-(defn register-handler
-  [req]
-  (let [data (merge (:body-params req)
-                    {::sm/type :register-profile})
-        user-agent (get-in req [:headers "user-agent"])]
-    (-> (sm/handle (with-meta data {:req req}))
-        (p/then (fn [{:keys [id] :as user}]
-                  (session/create id user-agent)))
-        (p/then' (fn [token]
-                  {:status 204
-                   :cookies {"auth-token" {:value token}}
-                   :body ""})))))
+;; (defn register-handler
+;;   [req]
+;;   (let [data (merge (:body-params req)
+;;                     {::sm/type :register-profile})
+;;         user-agent (get-in req [:headers "user-agent"])]
+;;     (-> (sm/handle (with-meta data {:req req}))
+;;         (p/then (fn [{:keys [id] :as user}]
+;;                   (session/create id user-agent)))
+;;         (p/then' (fn [token]
+;;                   {:status 204
+;;                    :body ""})))))
 
 (defn echo-handler
   [req]
-  ;; (locking echo-handler
-  ;;   (prn "echo-handler" (Thread/currentThread)))
   {:status 200
    :body {:params (:params req)
           :cookies (:cookies req)

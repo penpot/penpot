@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.init
   "A initialization of services."
@@ -26,8 +29,7 @@
   (require 'uxbox.services.mutations.projects)
   (require 'uxbox.services.mutations.project-files)
   (require 'uxbox.services.mutations.project-pages)
-  (require 'uxbox.services.mutations.auth)
-  (require 'uxbox.services.mutations.users)
+  (require 'uxbox.services.mutations.profile)
   (require 'uxbox.services.mutations.user-attrs))
 
 (defstate query-services

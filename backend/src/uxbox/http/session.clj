@@ -17,9 +17,10 @@
 (defn retrieve
   "Retrieves a user id associated with the provided auth token."
   [token]
-  (let [sql "select user_id from sessions where id = $1"]
-    (-> (db/query-one db/pool [sql token])
-        (p/then' (fn [row] (when row (:user-id row)))))))
+  (when token
+    (let [sql "select user_id from sessions where id = $1"]
+      (-> (db/query-one db/pool [sql token])
+          (p/then' (fn [row] (when row (:user-id row))))))))
 
 (defn create
   [user-id user-agent]
@@ -52,11 +53,5 @@
                   (p/then' (fn [user-id]
                              (if user-id
                                (update data :request assoc :user user-id)
-                               (spx/terminate (assoc data ::unauthorized true)))))
-                  (vc/handle-on-context))))
-   :leave (fn [data]
-            (if (::unauthorized data)
-              (update data :response
-                      assoc :status 403 :body {:type :authentication
-                                               :code :unauthorized})
-              data))})
+                               data)))
+                  (vc/handle-on-context))))})

@@ -5,7 +5,7 @@
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.ui.auth.register
+(ns uxbox.main.ui.profile.register
   (:require
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -69,7 +69,7 @@
         :class (fm/error-class form :fullname)
         :on-blur (fm/on-input-blur form :fullname)
         :on-change (fm/on-input-change form :fullname)
-        :placeholder (tr "register.fullname.placeholder")
+        :placeholder (tr "profile.register.fullname")
         :type "text"}]
 
       [:& fm/field-error {:form form
@@ -84,7 +84,7 @@
         :on-blur (fm/on-input-blur form :username)
         :on-change (fm/on-input-change form :username)
         :value (:username data "")
-        :placeholder (tr "settings.profile.your-username")}]
+        :placeholder (tr "profile.register.username")}]
 
       [:& fm/field-error {:form form
                           :type #{::api}
@@ -98,7 +98,7 @@
         :on-blur (fm/on-input-blur form :email)
         :on-change (fm/on-input-change form :email)
         :value (:email data "")
-        :placeholder (tr "settings.profile.your-email")}]
+        :placeholder (tr "profile.register.email")}]
 
       [:& fm/field-error {:form form
                           :type #{::api}
@@ -112,7 +112,7 @@
         :class (fm/error-class form :password)
         :on-blur (fm/on-input-blur form :password)
         :on-change (fm/on-input-change form :password)
-        :placeholder (tr "register.password.placeholder")
+        :placeholder (tr "profile.register.password")
         :type "password"}]
 
       [:& fm/field-error {:form form
@@ -124,15 +124,15 @@
         :tab-index "5"
         :class (when-not (:valid form) "btn-disabled")
         :disabled (not (:valid form))
-        :value (tr "register.get-started")}]
+        :value (tr "profile.register.get-started")}]
 
       [:div.login-links
-       [:a {:on-click #(st/emit! (rt/nav :auth/login))}
-        (tr "register.already-have-account")]]]]))
+       [:a {:on-click #(st/emit! (rt/nav :login))}
+        (tr "profile.register.already-have-account")]]]]))
 
 ;; --- Register Page
 
-(mf/defc register-page
+(mf/defc profile-register-page
   [props]
   [:div.login
    [:div.login-body

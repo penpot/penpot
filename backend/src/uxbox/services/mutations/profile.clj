@@ -2,19 +2,24 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.mutations.users
+(ns uxbox.services.mutations.profile
   (:require
-   [sodi.pwhash :as pwhash]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
    [datoteka.storages :as ds]
    [promesa.core :as p]
    [promesa.exec :as px]
-   [uxbox.config :as cfg]
+   [sodi.prng]
+   [sodi.pwhash]
+   [sodi.util]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
+   [uxbox.config :as cfg]
    [uxbox.db :as db]
    [uxbox.emails :as emails]
    [uxbox.images :as images]
@@ -40,6 +45,46 @@
 (s/def ::user ::us/uuid)
 (s/def ::username ::us/string)
 
+;; --- Utilities
+
+(su/defstr sql:user-by-username-or-email
+  "select u.*
+     from users as u
+    where u.username=$1 or u.email=$1
+      and u.deleted_at is null")
+
+(defn- retrieve-user
+  [conn username]
+  (db/query-one conn [sql:user-by-username-or-email username]))
+
+;; --- Mutation: Login
+
+(s/def ::username ::us/string)
+(s/def ::password ::us/string)
+(s/def ::scope ::us/string)
+
+(s/def ::login
+  (s/keys :req-un [::username ::password]
+          :opt-un [::scope]))
+
+(sm/defmutation ::login
+  [{:keys [username password scope] :as params}]
+  (letfn [(check-password [user password]
+            (let [result (sodi.pwhash/verify password (:password user))]
+              (:valid result)))
+
+          (check-user [user]
+            (when-not user
+              (ex/raise :type :validation
+                        :code ::wrong-credentials))
+            (when-not (check-password user password)
+              (ex/raise :type :validation
+                        :code ::wrong-credentials))
+
+            {:id (:id user)})]
+    (-> (retrieve-user db/pool username)
+        (p/then' check-user))))
+
 ;; --- Mutation: Update Profile (own)
 
 (defn- check-username-and-email!
@@ -55,7 +100,7 @@
                     and id != $1
                   ) as val"]
     (p/let [res1 (db/query-one conn [sql1 id username])
-             res2 (db/query-one conn [sql2 id email])]
+            res2 (db/query-one conn [sql2 id email])]
       (when (:val res1)
         (ex/raise :type :validation
                   :code ::username-already-exists))
@@ -64,17 +109,21 @@
                   :code ::email-already-exists))
       params)))
 
+(su/defstr sql:update-profile
+  "update users
+      set username = $2,
+          email = $3,
+          fullname = $4,
+          metadata = $5
+    where id = $1
+      and deleted_at is null
+   returning *")
+
 (defn- update-profile
   [conn {:keys [id username email fullname metadata] :as params}]
-  (let [sql "update users
-                set username = $2,
-                    email = $3,
-                    fullname = $4,
-                    metadata = $5
-              where id = $1
-                and deleted_at is null
-             returning *"]
-    (-> (db/query-one conn [sql id username email fullname (blob/encode metadata)])
+  (let [sqlv [sql:update-profile id username
+              email fullname (blob/encode metadata)]]
+    (-> (db/query-one conn sqlv)
         (p/then' su/raise-not-found-if-nil)
         (p/then' decode-profile-row)
         (p/then' strip-private-attrs))))
@@ -94,7 +143,7 @@
 (defn- validate-password
   [conn {:keys [user old-password] :as params}]
   (p/let [profile (get-profile conn user)
-          result (pwhash/verify old-password (:password profile))]
+          result (sodi.pwhash/verify old-password (:password profile))]
     (when-not (:valid result)
       (ex/raise :type :validation
                 :code ::old-password-not-match))
@@ -124,7 +173,6 @@
         (p/then (partial update-password conn)))))
 
 ;; --- Mutation: Update Photo
-
 
 (s/def :uxbox$upload/name ::us/string)
 (s/def :uxbox$upload/size ::us/integer)
@@ -194,7 +242,7 @@
   [conn {:keys [id username fullname email password metadata] :as params}]
   (let [id (or id (uuid/next))
         metadata (blob/encode metadata)
-        password (pwhash/derive password)
+        password (sodi.pwhash/derive password)
         sqlv [create-user-sql
               id
               fullname
@@ -209,19 +257,15 @@
   [conn params]
   (-> (create-profile conn params)
       (p/then' strip-private-attrs)
-      #_(p/then (fn [profile]
-                  (-> (emails/send! {::emails/id :users/register
-                                     ::emails/to (:email params)
-                                     ::emails/priority :high
-                                     :name (:fullname params)})
-                      (p/then' (constantly profile)))))))
+      (p/then (fn [profile]
+                (-> (emails/send! emails/register {:to (:email params)
+                                                   :name (:fullname params)})
+                    (p/then' (constantly profile)))))))
 
 (s/def ::register-profile
   (s/keys :req-un [::username ::email ::password ::fullname]))
 
-(sm/defmutation :register-profile
-  {:doc "Register new user."
-   :spec ::register-profile}
+(sm/defmutation ::register-profile
   [params]
   (when-not (:registration-enabled cfg/config)
     (ex/raise :type :restriction
@@ -231,115 +275,56 @@
         (p/then (partial check-profile-existence! conn))
         (p/then (partial register-profile conn)))))
 
-;; --- Password Recover
+;; --- Mutation: Request Profile Recovery
 
-;; (defn- recovery-token-exists?
-;;   "Checks if the token exists in the system. Just
-;;   return `true` or `false`."
-;;   [conn token]
-;;   (let [sqlv (sql/recovery-token-exists? {:token token})
-;;         result (db/fetch-one conn sqlv)]
-;;     (:token_exists result)))
+(s/def ::request-profile-recovery
+  (s/keys :req-un [::username]))
 
-;; (defn- retrieve-user-for-recovery-token
-;;   "Retrieve a user id (uuid) for the given token. If
-;;   no user is found, an exception is raised."
-;;   [conn token]
-;;   (let [sqlv (sql/get-recovery-token {:token token})
-;;         data (db/fetch-one conn sqlv)]
-;;     (or (:user data)
-;;         (ex/raise :type :validation
-;;                   :code ::invalid-token))))
+(su/defstr sql:insert-recovery-token
+  "insert into tokens (user_id, token) values ($1, $2)")
 
-;; (defn- mark-token-as-used
-;;   [conn token]
-;;   (let [sqlv (sql/mark-recovery-token-used {:token token})]
-;;     (pos? (db/execute conn sqlv))))
+(sm/defmutation ::request-profile-recovery
+  [{:keys [username] :as params}]
+  (letfn [(create-recovery-token [conn {:keys [id] :as user}]
+            (let [token (-> (sodi.prng/random-bytes 32)
+                            (sodi.util/bytes->b64s))
+                  sql sql:insert-recovery-token]
+              (-> (db/query-one conn [sql id token])
+                  (p/then (constantly (assoc user :token token))))))
+          (send-email-notification [conn user]
+            (emails/send! emails/password-recovery
+                          {:to (:email user)
+                           :token (:token user)
+                           :name (:fullname user)}))]
+    (db/with-atomic [conn db/pool]
+      (-> (retrieve-user conn username)
+          (p/then' su/raise-not-found-if-nil)
+          (p/then #(create-recovery-token conn %))
+          (p/then #(send-email-notification conn %))
+          (p/then (constantly nil))))))
 
-;; (defn- recover-password
-;;   "Given a token and password, resets the password
-;;   to corresponding user or raise an exception."
-;;   [conn {:keys [token password]}]
-;;   (let [user (retrieve-user-for-recovery-token conn token)]
-;;     (update-password conn {:user user :password password})
-;;     (mark-token-as-used conn token)
-;;     nil))
+;; --- Mutation: Recover Profile
 
-;; (defn- create-recovery-token
-;;   "Creates a new recovery token for specified user and return it."
-;;   [conn userid]
-;;   (let [token (token/random)
-;;         sqlv (sql/create-recovery-token {:user userid
-;;                                          :token token})]
-;;     (db/execute conn sqlv)
-;;     token))
+(s/def ::token ::us/not-empty-string)
+(s/def ::recover-profile
+  (s/keys :req-un [::token ::password]))
 
-;; (defn- retrieve-user-for-password-recovery
-;;   [conn username]
-;;   (let [user (find-user-by-username-or-email conn username)]
-;;     (when-not user
-;;       (ex/raise :type :validation :code ::user-does-not-exists))
-;;     user))
+(su/defstr sql:remove-recovery-token
+  "delete from tokenes where user_id=$1 and token=$2")
 
-;; (defn- request-password-recovery
-;;   "Creates a new recovery password token and sends it via email
-;;   to the correspondig to the given username or email address."
-;;   [conn username]
-;;   (let [user (retrieve-user-for-password-recovery conn username)
-;;         token (create-recovery-token conn (:id user))]
-;;     (emails/send! {:email/name :users/password-recovery
-;;                    :email/to (:email user)
-;;                    :name (:fullname user)
-;;                    :token token})
-;;     token))
-
-;; (defmethod core/query :validate-profile-password-recovery-token
-;;   [{:keys [token]}]
-;;   (us/assert ::us/token token)
-;;   (with-open [conn (db/connection)]
-;;     (recovery-token-exists? conn token)))
-
-;; (defmethod core/novelty :request-profile-password-recovery
-;;   [{:keys [username]}]
-;;   (us/assert ::us/username username)
-;;   (with-open [conn (db/connection)]
-;;     (db/atomic conn
-;;       (request-password-recovery conn username))))
-
-;; (s/def ::recover-password
-;;   (s/keys :req-un [::us/token ::us/password]))
-
-;; (defmethod core/novelty :recover-profile-password
-;;   [params]
-;;   (us/assert ::recover-password params)
-;;   (with-open [conn (db/connection)]
-;;     (db/apply-atomic conn recover-password params)))
-
-;; --- Query Helpers
-
-;; (defn find-full-user-by-id
-;;   "Find user by its id. This function is for internal
-;;   use only because it returns a lot of sensitive information.
-;;   If no user is found, `nil` is returned."
-;;   [conn id]
-;;   (let [sqlv (sql/get-profile {:id id})]
-;;     (some-> (db/fetch-one conn sqlv)
-;;             (data/normalize-attrs))))
-
-;; (defn find-user-by-id
-;;   "Find user by its id. If no user is found, `nil` is returned."
-;;   [conn id]
-;;   (let [sqlv (sql/get-profile {:id id})]
-;;     (some-> (db/fetch-one conn sqlv)
-;;             (data/normalize-attrs)
-;;             (trim-user-attrs)
-;;             (dissoc :password))))
-
-;; (defn find-user-by-username-or-email
-;;   "Finds a user in the database by username and email. If no
-;;   user is found, `nil` is returned."
-;;   [conn username]
-;;   (let [sqlv (sql/get-profile-by-username {:username username})]
-;;     (some-> (db/fetch-one conn sqlv)
-;;             (trim-user-attrs))))
-
+(sm/defmutation ::recover-profile
+  [{:keys [token password]}]
+  (letfn [(validate-token [conn token]
+            (let [sql "delete from tokens where token=$1 returning *"
+                  sql "select * from tokens where token=$1"]
+              (-> (db/query-one conn [sql token])
+                  (p/then' :user-id)
+                  (p/then' su/raise-not-found-if-nil))))
+          (update-password [conn user-id]
+            (let [sql "update users set password=$2 where id=$1"
+                  pwd (sodi.pwhash/derive password)]
+              (-> (db/query-one conn [sql user-id pwd])
+                  (p/then' (constantly nil)))))]
+    (db/with-atomic [conn db/pool]
+      (-> (validate-token conn token)
+          (p/then (fn [user-id] (update-password conn user-id)))))))

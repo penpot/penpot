@@ -133,3 +133,24 @@
             (.append form (name key) val))
           (seq params))
     (send-mutation! id form)))
+
+(defmethod mutation :login
+  [id params]
+  (let [url (str url "/login")]
+    (->> (impl-send {:method :post :url url :body params})
+         (rx/map conditional-decode)
+         (rx/mapcat handle-response))))
+
+(defmethod mutation :logout
+  [id params]
+  (let [url (str url "/logout")]
+    (->> (impl-send {:method :post :url url :body params :auth false})
+         (rx/map conditional-decode)
+         (rx/mapcat handle-response))))
+
+;; (defmethod mutation :register-profile
+;;   [id params]
+;;   (let [url (str url "/register")]
+;;     (->> (impl-send {:method :post :url url :body params :auth false})
+;;          (rx/map conditional-decode)
+;;          (rx/mapcat handle-response))))

@@ -5,7 +5,7 @@
    [cuerdas.core :as str]
    [mount.core :as mount]
    [datoteka.storages :as st]
-   [uxbox.services.mutations.users :as users]
+   [uxbox.services.mutations.profile :as profile]
    [uxbox.services.mutations.projects :as projects]
    [uxbox.services.mutations.project-files :as files]
    [uxbox.services.mutations.project-pages :as pages]
@@ -61,11 +61,11 @@
   [prefix & args]
   (uuid/namespaced uuid/oid (apply str prefix args)))
 
-;; --- Users creation
+;; --- Profile creation
 
 (defn create-user
   [conn i]
-  (users/create-profile conn {:id (mk-uuid "user" i)
+  (profile/create-profile conn {:id (mk-uuid "user" i)
                               :fullname (str "User " i)
                               :username (str "user" i)
                               :email (str "user" i ".test@uxbox.io")

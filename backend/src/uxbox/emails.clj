@@ -23,16 +23,6 @@
   {:static media/resolve-asset
    :comment (constantly nil)})
 
-;; --- Register Email
-
-(s/def ::name ::us/string)
-(s/def ::register
-  (s/keys :req-un [::name]))
-
-(def register
-  "A new profile registration welcome email."
-  (emails/build ::register default-context))
-
 ;; --- Public API
 
 (defn render
@@ -56,3 +46,22 @@
              values ($1, $2) returning *"]
     (-> (db/query-one db/pool [sql data priority])
         (p/then' (constantly nil)))))
+
+;; --- Emails
+
+(s/def ::name ::us/string)
+(s/def ::register
+  (s/keys :req-un [::name]))
+
+(def register
+  "A new profile registration welcome email."
+  (emails/build ::register default-context))
+
+(s/def ::token ::us/string)
+(s/def ::password-recovery
+  (s/keys :req-un [::name ::token]))
+
+(def password-recovery
+  "A password recovery notification email."
+  (emails/build ::password-recovery default-context))
+

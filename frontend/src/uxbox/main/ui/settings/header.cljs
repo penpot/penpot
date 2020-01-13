@@ -42,7 +42,7 @@
        [:& header-link {:section :settings/notifications
                         :content (tr "settings.notifications")}]]
       #_[:li {:on-click #(st/emit! (da/logout))}
-       [:& header-link {:section :auth/login
+       [:& header-link {:section :logout
                         :content (tr "settings.exit")}]]]
      [:& user]]))
 

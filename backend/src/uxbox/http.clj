@@ -51,12 +51,6 @@
                                      :timeout 200
                                      :name "login-handler"})
 
-        echo-handler (rl/ratelimit handlers/echo-handler
-                                   {:limit 1
-                                    :period 5000
-                                    :timeout 10
-                                    :name "echo-handler"})
-
         routes [["/sub/:file-id" {:interceptors [(vxi/cookies)
                                                  (vxi/cors cors-opts)
                                                  interceptors/format-response-body
@@ -64,10 +58,9 @@
                                   :get ws/handler}]
 
                 ["/api" {:interceptors interceptors}
-                 ["/echo" {:all echo-handler}]
+                 ["/echo" {:all handlers/echo-handler}]
                  ["/login" {:post login-handler}]
                  ["/logout" {:post handlers/logout-handler}]
-                 ["/register" {:post handlers/register-handler}]
                  ["/debug"
                   ["/emails" {:get debug/emails-list}]
                   ["/emails/:id" {:get debug/email}]]

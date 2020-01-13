@@ -2,10 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.ui.auth.login
+(ns uxbox.main.ui.login
   (:require
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]
@@ -78,10 +81,10 @@
         :type "submit"}]
 
       [:div.login-links
-       [:a {:on-click #(st/emit! (rt/nav :auth/recovery-request))
+       [:a {:on-click #(st/emit! (rt/nav :profile-recovery-request))
             :tab-index "5"}
         (tr "auth.forgot-password")]
-       [:a {:on-click #(st/emit! (rt/nav :auth/register))
+       [:a {:on-click #(st/emit! (rt/nav :profile-register))
             :tab-index "6"}
         (tr "auth.no-account")]]]]))
 

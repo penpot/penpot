@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.auth
   (:require
@@ -10,7 +13,7 @@
    [beicon.core :as rx]
    [potok.core :as ptk]
    [uxbox.common.spec :as us]
-   [uxbox.main.repo :as rp]
+   [uxbox.main.repo.core :as rp]
    [uxbox.main.store :refer [initial-state]]
    [uxbox.main.data.users :as du]
    [uxbox.util.messages :as um]
@@ -57,8 +60,7 @@
                     :password password
                     :scope "webapp"}
             on-error #(rx/of (um/error (tr "errors.auth.unauthorized")))]
-        (->> (rp/req :auth/login params)
-             (rx/map :payload)
+        (->> (rp/mutation :login params)
              (rx/map logged-in)
              (rx/catch rp/client-error? on-error))))))
 
@@ -72,7 +74,7 @@
 
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/req :auth/logout)
+      (->> (rp/mutation :logout)
            (rx/ignore)))
 
     ptk/EffectEvent
@@ -84,12 +86,12 @@
   (ptk/reify ::logout
     ptk/WatchEvent
     (watch [_ state s]
-      (rx/of (rt/nav :auth/login)
+      (rx/of (rt/nav :login)
              clear-user-data))))
 
 ;; --- Register
 
-(s/def ::register-params
+(s/def ::register
   (s/keys :req-un [::fullname
                    ::username
                    ::password
@@ -98,84 +100,53 @@
 (defn register
   "Create a register event instance."
   [data on-error]
-  (us/assert ::register-params data)
-  (us/assert fn? on-error)
+  (s/assert ::register data)
+  (s/assert fn? on-error)
   (ptk/reify ::register
     ptk/WatchEvent
     (watch [_ state stream]
       (letfn [(handle-error [{payload :payload}]
                 (on-error payload)
                 (rx/empty))]
-        (rx/merge
-         (->> (rp/req :auth/register data)
-              (rx/map :payload)
-              (rx/map (constantly ::registered))
-              (rx/catch rp/client-error? handle-error))
-         (->> stream
-              (rx/filter #(= % ::registered))
-              (rx/take 1)
-              (rx/map #(login data))))))))
+        (->> (rp/mutation :register-profile data)
+             (rx/map (fn [_] (login data)))
+             (rx/catch rp/client-error? handle-error))))))
 
 ;; --- Recovery Request
 
-(s/def ::recovery-request-params
+(s/def ::recovery-request
   (s/keys :req-un [::username]))
 
-(defn recovery-request
-  [data]
-  (us/assert ::recovery-request-params data)
-  (ptk/reify ::recover-request
+(defn request-profile-recovery
+  [data on-success]
+  (us/assert ::recovery-request data)
+  (us/assert fn? on-success)
+  (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
     (watch [_ state stream]
       (letfn [(on-error [{payload :payload}]
-                (println "on-error" payload)
                 (rx/empty))]
-        (rx/merge
-         (->> (rp/req :auth/recovery-request data)
-              (rx/map (constantly ::recovery-requested))
-              (rx/catch rp/client-error? on-error))
-         (->> stream
-              (rx/filter #(= % ::recovery-requested))
-              (rx/take 1)
-              ;; TODO: this should be moved to the UI part
-              (rx/map #(um/info (tr "auth.message.recovery-token-sent")))))))))
-
-;; --- Check Recovery Token
-
-(defrecord ValidateRecoveryToken [token]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (letfn [(on-error [{payload :payload}]
-              (rx/of
-               (rt/navigate :auth/login)
-               (um/error (tr "errors.auth.invalid-recovery-token"))))]
-      (->> (rp/req :auth/validate-recovery-token token)
-           (rx/ignore)
-           (rx/catch rp/client-error? on-error)))))
-
-(defn validate-recovery-token
-  [token]
-  {:pre [(string? token)]}
-  (ValidateRecoveryToken. token))
+        (->> (rp/mutation :request-profile-recovery data)
+             (rx/tap on-success)
+             (rx/catch rp/client-error? on-error))))))
 
 ;; --- Recovery (Password)
 
 (s/def ::token string?)
-(s/def ::recovery-params
-  (s/keys :req-un [::username ::token]))
+(s/def ::on-error fn?)
+(s/def ::on-success fn?)
 
-(defn recovery
-  [{:keys [token password] :as data}]
-  (us/assert ::recovery-params data)
-  (ptk/reify ::recovery
+(s/def ::recover-profile
+  (s/keys :req-un [::password ::token ::on-error ::on-success]))
+
+(defn recover-profile
+  [{:keys [token password on-error on-success] :as data}]
+  (us/assert ::recover-profile data)
+  (ptk/reify ::recover-profile
     ptk/WatchEvent
     (watch [_ state stream]
-      (letfn [(on-error [{payload :payload}]
-                (rx/of (um/error (tr "errors.auth.invalid-recovery-token"))))
-              (on-success [{payload :payload}]
-                (rx/of
-                 (rt/navigate :auth/login)
-                 (um/info (tr "auth.message.password-recovered"))))]
-        (->> (rp/req :auth/recovery {:token token :password password})
-             (rx/mapcat on-success)
-             (rx/catch rp/client-error? on-error))))))
+      (->> (rp/mutation :recover-profile {:token token :password password})
+           (rx/tap on-success)
+           (rx/catch (fn [err]
+                       (on-error)
+                       (rx/empty)))))))

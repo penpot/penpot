@@ -13,14 +13,58 @@
       "fr" : "Mot de passe oublié ?"
     }
   },
-  "auth.message.password-recovered" : {
+
+  "profile.recovery.password-changed" : {
     "used-in" : [ "src/uxbox/main/data/auth.cljs:178" ],
     "translations" : {
-      "en" : "Password successfully recovered.",
-      "fr" : "Mot de passe récupéré avec succès."
+      "en" : "Password successfully changed",
+      "fr" : "TODO"
     }
   },
-  "auth.message.recovery-token-sent" : {
+
+  "profile.recovery.username-or-email": {
+    "translations" : {
+      "en" : "Username or Email Address",
+      "fr" : "adresse email ou nom d'utilisateur"
+    }
+  },
+
+  "profile.recovery.token": {
+    "translations" : {
+      "en" : "Recovery token (sent by email)",
+      "fr" : null
+    }
+  },
+
+  "profile.recovery.password": {
+    "translations" : {
+      "en" : "Type a new password",
+      "fr" : null
+    }
+  },
+
+  "profile.recovery.submit-request": {
+    "translations" : {
+      "en" : "Recover Password",
+      "fr" : null
+    }
+  },
+
+  "profile.recovery.submit-recover": {
+    "translations" : {
+      "en" : "Change your password",
+      "fr" : null
+    }
+  },
+
+  "profile.recovery.go-to-login": {
+    "translations" : {
+      "en" : "Go back!",
+      "fr" : "Retour!"
+    }
+  },
+
+  "profile.recovery.recovery-token-sent" : {
     "used-in" : [ "src/uxbox/main/data/auth.cljs:141" ],
     "translations" : {
       "en" : "Password recovery link sent to your inbox.",
@@ -398,7 +442,7 @@
       "fr" : "Une erreur inattendue c'est produite"
     }
   },
-  "errors.auth.invalid-recovery-token" : {
+  "profile.recovery.invalid-token" : {
     "used-in" : [ "src/uxbox/main/data/auth.cljs:174", "src/uxbox/main/data/auth.cljs:151" ],
     "translations" : {
       "en" : "The recovery token is invalid.",
@@ -468,28 +512,28 @@
       "fr" : "Envoyer un fichier"
     }
   },
-  "register.already-have-account" : {
+  "profile.register.already-have-account" : {
     "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:131" ],
     "translations" : {
       "en" : "Already have an account?",
       "fr" : "Vous avez déjà un compte ?"
     }
   },
-  "register.fullname.placeholder" : {
+  "profile.register.fullname" : {
     "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:72" ],
     "translations" : {
       "en" : "Full Name",
       "fr" : "Nom complet"
     }
   },
-  "register.get-started" : {
+  "profile.register.get-started" : {
     "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:127" ],
     "translations" : {
       "en" : "Get started",
       "fr" : "Commencer"
     }
   },
-  "register.password.placeholder" : {
+  "profile.register.password" : {
     "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:115" ],
     "translations" : {
       "en" : "Password",
@@ -615,7 +659,7 @@
       "fr" : "Votre avatar"
     }
   },
-  "settings.profile.your-email" : {
+  "profile.register.email" : {
     "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:111", "src/uxbox/main/ui/auth/register.cljs:101" ],
     "translations" : {
       "en" : "Your email",
@@ -629,7 +673,7 @@
       "fr" : "Votre nom complet"
     }
   },
-  "settings.profile.your-username" : {
+  "profile.register.username" : {
     "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:98", "src/uxbox/main/ui/auth/register.cljs:87" ],
     "translations" : {
       "en" : "Your username",

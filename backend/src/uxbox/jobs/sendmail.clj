@@ -75,7 +75,7 @@
    :pass (:smtp-password config)
    :ssl (:smtp-ssl config)
    :tls (:smtp-tls config)
-   :noop (not (:smtp-enabled config))})
+   :enabled (:smtp-enabled config)})
 
 (defn- send-email-to-console
   [email]
@@ -98,9 +98,9 @@
   [email]
   (p/future
     (let [config (get-smtp-config cfg/config)
-          result (if (:noop config)
-                   (send-email-to-console email)
-                   (postal/send-message config email))]
+          result (if (:enabled config)
+                   (postal/send-message config email)
+                   (send-email-to-console email))]
       (when (not= (:error result) :SUCCESS)
         (ex/raise :type :sendmail-error
                   :code :email-not-sent
