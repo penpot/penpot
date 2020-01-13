@@ -16,6 +16,7 @@
    [uxbox.http.session :as session]
    [uxbox.http.handlers :as handlers]
    [uxbox.http.debug :as debug]
+   [uxbox.http.ratelimit :as rl]
    [uxbox.http.ws :as ws]
    [vertx.core :as vc]
    [vertx.http :as vh]
@@ -44,6 +45,18 @@
                       interceptors/format-response-body
                       (vxi/errors errors/handle)]
 
+        login-handler (rl/ratelimit handlers/login-handler
+                                    {:limit 10
+                                     :period 1000
+                                     :timeout 200
+                                     :name "login-handler"})
+
+        echo-handler (rl/ratelimit handlers/echo-handler
+                                   {:limit 100
+                                    :period 1000
+                                    :timeout 1000
+                                    :name "echo-handler"})
+
         routes [["/sub/:file-id" {:interceptors [(vxi/cookies)
                                                  (vxi/cors cors-opts)
                                                  interceptors/format-response-body
@@ -51,8 +64,8 @@
                                   :get ws/handler}]
 
                 ["/api" {:interceptors interceptors}
-                 ["/echo" {:all handlers/echo-handler}]
-                 ["/login" {:post handlers/login-handler}]
+                 ["/echo" {:all echo-handler}]
+                 ["/login" {:post login-handler}]
                  ["/logout" {:post handlers/logout-handler}]
                  ["/register" {:post handlers/register-handler}]
                  ["/debug"
