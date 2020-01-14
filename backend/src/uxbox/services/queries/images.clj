@@ -87,22 +87,22 @@
 
 ;; --- Query Images by Collection (id)
 
-(su/defstr sql:images-by-collection
+(def sql:images-by-collection
   "select * from images
     where (user_id = $1 or
            user_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and deleted_at is null
    order by created_at desc")
 
-(su/defstr sql:images-by-collection1
-  "with images as (~{sql:images-by-collection})
-   select im.* from images as im
-    where im.collection_id is null")
+(def sql:images-by-collection1
+  (str "with images as (" sql:images-by-collection ")
+        select im.* from images as im
+         where im.collection_id is null"))
 
-(su/defstr sql:images-by-collection2
-  "with images as (~{sql:images-by-collection})
-   select im.* from images as im
-    where im.collection_id = $2")
+(def sql:images-by-collection2
+  (str "with images as (" sql:images-by-collection ")
+        select im.* from images as im
+         where im.collection_id = $2"))
 
 (s/def ::images-by-collection
   (s/keys :req-un [::user]

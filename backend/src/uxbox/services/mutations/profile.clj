@@ -44,7 +44,7 @@
 
 ;; --- Utilities
 
-(su/defstr sql:user-by-username-or-email
+(def sql:user-by-username-or-email
   "select u.*
      from users as u
     where u.username=$1 or u.email=$1
@@ -106,7 +106,7 @@
                   :code ::email-already-exists))
       params)))
 
-(su/defstr sql:update-profile
+(def sql:update-profile
   "update users
       set username = $2,
           email = $3,
@@ -213,7 +213,7 @@
 
 ;; --- Mutation: Register Profile
 
-(su/defstr sql:create-user
+(def sql:create-user
   "insert into users (id, fullname, username, email, password, photo)
    values ($1, $2, $3, $4, $5, '') returning *")
 
@@ -272,7 +272,7 @@
 (s/def ::request-profile-recovery
   (s/keys :req-un [::username]))
 
-(su/defstr sql:insert-recovery-token
+(def sql:insert-recovery-token
   "insert into tokens (user_id, token) values ($1, $2)")
 
 (sm/defmutation ::request-profile-recovery
@@ -301,7 +301,7 @@
 (s/def ::recover-profile
   (s/keys :req-un [::token ::password]))
 
-(su/defstr sql:remove-recovery-token
+(def sql:remove-recovery-token
   "delete from tokenes where user_id=$1 and token=$2")
 
 (sm/defmutation ::recover-profile

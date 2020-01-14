@@ -2,12 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.queries.project-files
   (:require
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [promesa.core :as p]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
@@ -25,7 +27,7 @@
 (s/def ::file-id ::us/uuid)
 (s/def ::user ::us/uuid)
 
-(su/defstr sql:generic-project-files
+(def sql:generic-project-files
   "select distinct on (pf.id, pf.created_at)
           pf.*,
           p.name as project_name,
@@ -58,16 +60,16 @@
     (retrieve-recent-files db/pool params)
     (retrieve-project-files db/pool params)))
 
-(su/defstr sql:project-files
-  "with files as (~{sql:generic-project-files})
-   select * from files where project_id = $2
-    order by created_at asc")
+(def sql:project-files
+  (str "with files as (" sql:generic-project-files ")
+        select * from files where project_id = $2
+         order by created_at asc"))
 
-(su/defstr sql:recent-files
-  "with files as (~{sql:generic-project-files})
-   select * from files
-    order by modified_at desc
-    limit $2")
+(def sql:recent-files
+  (str "with files as (" sql:generic-project-files ")
+        select * from files
+         order by modified_at desc
+         limit $2"))
 
 (defn retrieve-project-files
   [conn {:keys [user project-id]}]
@@ -82,9 +84,9 @@
 
 ;; --- Query: Project File (By ID)
 
-(su/defstr sql:project-file
-  "with files as (~{sql:generic-project-files})
-   select * from files where id = $2")
+(def sql:project-file
+  (str "with files as (" sql:generic-project-files ")
+        select * from files where id = $2"))
 
 (s/def ::project-file
   (s/keys :req-un [::user ::id]))
@@ -97,7 +99,18 @@
 
 ;; --- Query: Users of the File
 
-(su/defstr sql:file-users
+(def sql:file-users
+  "select u.id, u.fullname, u.photo
+     from users as u
+     join project_file_users as pfu on (pfu.user_id = u.id)
+    where pfu.file_id = $1
+   union all
+   select u.id, u.fullname, u.photo
+     from users as u
+     join project_users as pu on (pu.user_id = u.id)
+    where pu.project_id = $2")
+
+(def sql:file-users
   "select u.id, u.fullname, u.photo
      from users as u
      join project_file_users as pfu on (pfu.user_id = u.id)
@@ -110,9 +123,9 @@
 
 (declare retrieve-minimal-file)
 
-(su/defstr sql:minimal-file
-  "with files as (~{sql:generic-project-files})
-   select id, project_id from files where id = $2")
+(def sql:minimal-file
+  (str "with files as (" sql:generic-project-files ")
+        select id, project_id from files where id = $2"))
 
 (s/def ::project-file-users
   (s/keys :req-un [::user ::file-id]))

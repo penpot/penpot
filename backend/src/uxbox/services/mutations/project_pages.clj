@@ -177,7 +177,7 @@
                                                                  :changes changes})
                            (retrieve-lagged-changes conn s params))))))))
 
-(su/defstr sql:lagged-snapshots
+(def sql:lagged-snapshots
   "select s.id, s.changes
      from project_page_snapshots as s
     where s.page_id = $1
@@ -209,7 +209,7 @@
       (files/check-edition-permissions! conn user (:file-id page))
       (delete-page conn id))))
 
-(su/defstr sql:delete-page
+(def sql:delete-page
   "update project_pages
       set deleted_at = clock_timestamp()
     where id = $1

@@ -24,7 +24,7 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 
-(def ^:private sql:generic-project-pages
+(def sql:generic-project-pages
   "select pp.*
      from project_pages as pp
     inner join project_files as pf on (pf.id = pp.file_id)
@@ -38,7 +38,7 @@
 
 ;; --- Query: Project Pages (By File ID)
 
-(def ^:private sql:project-pages
+(def sql:project-pages
   (str "with pages as (" sql:generic-project-pages ")"
        " select * from pages where file_id = $2"))
 

@@ -25,10 +25,6 @@
 ;;               (log/info "service" type "processed in" elapsed)
 ;;               data))})
 
-(defmacro defstr
-  [sym str]
-  `(def ~sym (str/istr ~str)))
-
 (defn raise-not-found-if-nil
   [v]
   (if (nil? v)

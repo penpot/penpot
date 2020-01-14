@@ -115,7 +115,7 @@
     (check-edition-permissions! conn user id)
     (rename-file conn params)))
 
-(su/defstr sql:rename-file
+(def sql:rename-file
   "update project_files
       set name = $2
     where id = $1

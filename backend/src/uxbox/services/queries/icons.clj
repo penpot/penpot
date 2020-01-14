@@ -28,7 +28,7 @@
 
 ;; --- Query: Collections
 
-(def ^:private icons-collections-sql
+(def sql:icons-collections
   "select *,
           (select count(*) from icons where collection_id = ic.id) as num_icons
      from icon_collections as ic
@@ -42,7 +42,7 @@
 
 (sq/defquery ::icons-collections
   [{:keys [user] :as params}]
-  (let [sqlv [icons-collections-sql user]]
+  (let [sqlv [sql:icons-collections user]]
     (db/query db/pool sqlv)))
 
 ;; --- Icons By Collection ID

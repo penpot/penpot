@@ -102,7 +102,7 @@
     (-> (ds/save storage filename path)
         (su/handle-on-context))))
 
-(su/defstr sql:create-image
+(def sql:create-image
   "insert into images (user_id, name, collection_id, path, width, height, mimetype)
    values ($1, $2, $3, $4, $5, $6, $7) returning *")
 

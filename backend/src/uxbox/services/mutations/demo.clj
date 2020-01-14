@@ -32,7 +32,7 @@
    [uxbox.util.uuid :as uuid]
    [vertx.core :as vc]))
 
-(su/defstr sql:create-demo-user
+(def sql:create-demo-user
   "insert into users (id, fullname, username, email, password, photo, is_demo)
    values ($1, $2, $3, $4, $5, '', true) returning *")
 
