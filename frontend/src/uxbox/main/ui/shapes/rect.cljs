@@ -49,17 +49,21 @@
 
         {:keys [x y width height]} shape
 
-        transform (when (pos? rotation)
-                    (str (rotate (gmt/matrix) shape)))
+        ;; transform (when (pos? rotation)
+        ;;             (str (rotate (gmt/matrix) shape)))
 
-        moving? (boolean modifier-mtx)
+        transform (str/format "rotate(%s %s %s)"
+                              rotation
+                              (+ x (/ width 2))
+                              (+ y (/ height 2)))
 
         props (-> (attrs/extract-style-attrs shape)
                   (assoc :x x
                          :y y
+                         ;; :transform transform
                          :id (str "shape-" id)
-                         :className (classnames :move-cursor moving?)
                          :width width
                          :height height
-                         :transform transform))]
+                         ;; :transform transform
+                         ))]
     [:& "rect" props]))

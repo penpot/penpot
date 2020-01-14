@@ -116,7 +116,7 @@
   If the second vector is not provided, the angle
   will be measured from x-axis."
   ([p]
-   {:pre [(point? p)]}
+
    (-> (mth/atan2 (:y p) (:x p))
        (mth/degrees)))
   ([p center]

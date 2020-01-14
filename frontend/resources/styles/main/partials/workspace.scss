@@ -89,6 +89,7 @@
 
       g.controls {
         rect.main { pointer-events: none; }
+        circle.rotate { cursor: ns-resize; } // TODO
         circle.top-left { cursor: nwse-resize; }
         circle.bottom-right { cursor: nwse-resize; }
         circle.top-right { cursor: nesw-resize; }

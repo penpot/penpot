@@ -10,6 +10,7 @@
   (:require
    [beicon.core :as rx]
    [lentes.core :as l]
+   [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.main.data.workspace :as dw]
@@ -20,16 +21,6 @@
    [uxbox.main.workers :as uwrk]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]))
-
-;; --- Refs & Constants
-
-(def ^:private +circle-props+
-  {:r 6
-   :style {:fillOpacity "1"
-           :strokeWidth "2px"
-           :vectorEffect "non-scaling-stroke"}
-   :fill "rgba(49,239,184,.7)"
-   :stroke "#31EFB8"})
 
 ;; --- Resize Implementation
 
@@ -75,6 +66,37 @@
            (rx/of (dw/materialize-temporal-modifier-in-bulk ids)
                   ::dw/page-data-update)))))))
 
+(defn start-rotate
+  [shape]
+  (ptk/reify ::start-rotate
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [shape  (geom/shape->rect-shape shape)
+            stoper (rx/filter ms/mouse-up? stream)
+            center (gpt/point (+ (:x shape) (/ (:width shape) 2))
+                              (+ (:y shape) (/ (:height shape) 2)))]
+
+        (rx/concat
+         (->> ms/mouse-position
+              ;; (rx/map apply-zoom)
+              ;; (rx/mapcat apply-grid-alignment)
+              (rx/with-latest vector ms/mouse-position-ctrl)
+              ;; (rx/map normalize-proportion-lock)
+              ;; (rx/mapcat (partial resize shape))
+              (rx/map (fn [[pos ctrl?]]
+                        (let [angle (+ (gpt/angle pos center) 90)
+                              angle (if (neg? angle)
+                                      (+ 360 angle)
+                                      angle)
+                              modval (mod angle 90)
+                              angle (if ctrl?
+                                      (if (< 50 modval)
+                                        (+ angle (- 90 modval))
+                                        (- angle modval))
+                                      angle)]
+                          (dw/update-shape (:id shape) {:rotation angle}))))
+              (rx/take-until stoper)))))))
+
 ;; --- Controls (Component)
 
 (def ^:private handler-size-threshold
@@ -98,52 +120,73 @@
     :cy cy}])
 
 (mf/defc controls
-  [{:keys [shape zoom on-click] :as props}]
+  [{:keys [shape zoom on-resize on-rotate] :as props}]
   (let [{:keys [x y width height]} shape
-        radius (if (> (max width height) handler-size-threshold) 6.0 4.0)]
-    [:g.controls
+        radius (if (> (max width height) handler-size-threshold) 6.0 4.0)
+
+        transform (str/format "rotate(%s %s %s)"
+                              (:rotation shape 0)
+                              (+ (:x shape) (/ (:width shape) 2))
+                              (+ (:y shape) (/ (:height shape) 2)))]
+
+    [:g.controls #_{:transform transform}
      [:rect.main {:x x :y y
                   :width width
                   :height height
                   :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
                   :style {:stroke "#31EFB8" :fill "transparent"
                           :stroke-opacity "1"}}]
+     [:path {:stroke "#31EFB8"
+             :stroke-opacity "1"
+             :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
+             :fill "transparent"
+             :d (str/format "M %s %s L %s %s"
+                            (+ x (/ width 2))
+                            y
+                            (+ x (/ width 2))
+                            (- y 30))}]
+
+     [:& control-item {:class "rotate"
+                       :r (/ radius zoom)
+                       :cx (+ x (/ width 2))
+                       :on-click on-rotate
+                       :cy (- y 30)}]
      [:& control-item {:class "top"
-                       :on-click #(on-click :top %)
+                       :on-click #(on-resize :top %)
                        :r (/ radius zoom)
                        :cx (+ x (/ width 2))
                        :cy (- y 2)}]
-     [:& control-item {:on-click #(on-click :right %)
+     [:& control-item {:on-click #(on-resize :right %)
                        :r (/ radius zoom)
                        :cy (+ y (/ height 2))
                        :cx (+ x width 1)
                        :class "right"}]
-     [:& control-item {:on-click #(on-click :bottom %)
+     [:& control-item {:on-click #(on-resize :bottom %)
                        :r (/ radius zoom)
                        :cx (+ x (/ width 2))
                        :cy (+ y height 2)
                        :class "bottom"}]
-     [:& control-item {:on-click #(on-click :left %)
+     [:& control-item {:on-click #(on-resize :left %)
                        :r (/ radius zoom)
                        :cy (+ y (/ height 2))
                        :cx (- x 3)
                        :class "left"}]
-     [:& control-item {:on-click #(on-click :top-left %)
+     [:& control-item {:on-click #(on-resize :top-left %)
                        :r (/ radius zoom)
                        :cx x
                        :cy y
                        :class "top-left"}]
-     [:& control-item {:on-click #(on-click :top-right %)
-                      :r (/ radius zoom)
-                      :cx (+ x width)
-                      :cy y
-                      :class "top-right"}]
-     [:& control-item {:on-click #(on-click :bottom-left %)
+     [:& control-item {:on-click #(on-resize :top-right %)
+                       :r (/ radius zoom)
+                       :cx (+ x width)
+                       :cy y
+                       :class "top-right"}]
+     [:& control-item {:on-click #(on-resize :bottom-left %)
                        :r (/ radius zoom)
                        :cx x
                        :cy (+ y height)
                        :class "bottom-left"}]
-     [:& control-item {:on-click #(on-click :bottom-right %)
+     [:& control-item {:on-click #(on-resize :bottom-right %)
                        :r (/ radius zoom)
                        :cx (+ x width)
                        :cy (+ y height)
@@ -195,11 +238,11 @@
                    (map #(geom/selection-rect %))
                    (geom/shapes->rect-shape)
                    (geom/selection-rect))
-        on-click #(do (dom/stop-propagation %2)
+        on-resize #(do (dom/stop-propagation %2)
                       (st/emit! (start-resize %1 selected shape)))]
     [:& controls {:shape shape
                   :zoom zoom
-                  :on-click on-click}]))
+                  :on-resize on-resize}]))
 
 (mf/defc text-edition-selection-handlers
   [{:keys [shape zoom] :as props}]
@@ -216,10 +259,15 @@
 
 (mf/defc single-selection-handlers
   [{:keys [shape zoom] :as props}]
-  (let [on-click #(do (dom/stop-propagation %2)
-                      (st/emit! (start-resize %1 #{(:id shape)} shape)))
+  (let [on-resize #(do (dom/stop-propagation %2)
+                       (st/emit! (start-resize %1 #{(:id shape)} shape)))
+        on-rotate #(do (dom/stop-propagation %)
+                       #_(st/emit! (start-rotate shape)))
         shape (geom/selection-rect shape)]
-    [:& controls {:shape shape :zoom zoom :on-click on-click}]))
+    [:& controls {:shape shape
+                  :zoom zoom
+                  :on-rotate on-rotate
+                  :on-resize on-resize}]))
 
 (mf/defc selection-handlers
   [{:keys [selected edition zoom] :as props}]
