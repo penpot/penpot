@@ -187,7 +187,7 @@
   (ptk/reify ::create-project
     ptk/WatchEvent
     (watch [this state stream]
-      (let [name (str "Project Name " (gensym "p"))]
+      (let [name (str "New Project " (gensym "p"))]
         (->> (rp/mutation! :create-project {:name name})
              (rx/map (fn [data]
                        (projects-fetched [data]))))))))
@@ -199,7 +199,7 @@
   (ptk/reify ::create-file
     ptk/WatchEvent
     (watch [this state stream]
-      (let [name (str "File Name " (gensym "p"))
+      (let [name (str "New File " (gensym "p"))
             params {:name name :project-id project-id}]
         (->> (rp/mutation! :create-project-file params)
              (rx/mapcat
