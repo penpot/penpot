@@ -197,7 +197,7 @@
 
        [:div.projects-row
         [:span "PROJECTS"]
-        [:a.add-project #_{:on-click #(st/emit! di/create-collection)}
+        [:a.add-project {:on-click #(st/emit! udp/create-project)}
          i/close]]
 
        (for [item projects]

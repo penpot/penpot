@@ -92,8 +92,10 @@
   (let [id  (uuid/next)
         name "Page 1"
         data (blob/encode
-              {:shapes []
+              {:version 1
+               :shapes []
                :canvas []
+               :options {}
                :shapes-by-id {}})
         sql "insert into project_pages (id, user_id, file_id, name, version,
                                         ordering, data)
