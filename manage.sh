@@ -93,6 +93,7 @@ function build-frontend-local {
            -v $HOME/.m2:/home/uxbox/.m2 \
            -e UXBOX_API_URL="/api" \
            -e UXBOX_VIEW_URL="/view" \
+           -e UXBOX_DEMO_WARNING=true \
            $CONTAINER ./scripts/build-$BUILD_TYPE.sh
 }
 

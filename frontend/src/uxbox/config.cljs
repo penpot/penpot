@@ -8,5 +8,5 @@
 
 (goog-define url "http://127.0.0.1:6060/api")
 (goog-define viewurl "/view/index.html")
-(goog-define isdemo false)
+(goog-define demo-warning false)
 (goog-define default-language "en")

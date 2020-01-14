@@ -34,6 +34,7 @@
   []
   (let [{:keys [data] :as form} (fm/use-form ::recovery-form {})
         tr (i18n/use-translations)
+
         on-success
         (fn []
           (st/emit! (um/info (tr "profile.recovery.password-changed"))

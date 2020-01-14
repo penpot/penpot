@@ -47,19 +47,18 @@
 
    :google-api-key (lookup-env env :uxbox-google-api-key nil)
 
-   :email-reply-to (lookup-env env :uxbox-email-reply-to "no-reply@uxbox.io")
-   :email-from (lookup-env env :uxbox-email-from "no-reply@uxbox.io")
+   :email-reply-to (lookup-env env :uxbox-email-reply-to "no-reply@nodomain.com")
+   :email-from (lookup-env env :uxbox-email-from "no-reply@nodomain.com")
 
-   :smtp-host (lookup-env env :uxbox-smtp-host "localhost")
+   :smtp-host (lookup-env env :uxbox-smtp-host "smtp")
    :smtp-port (lookup-env env :uxbox-smtp-port 25)
    :smtp-user (lookup-env env :uxbox-smtp-user nil)
    :smtp-password (lookup-env env :uxbox-smtp-password nil)
    :smtp-tls (lookup-env env :uxbox-smtp-tls false)
    :smtp-ssl (lookup-env env :uxbox-smtp-ssl false)
-   :smtp-enabled (lookup-env env :uxbox-smtp-enabled false)
+   :smtp-enabled (lookup-env env :uxbox-smtp-enabled true)
 
-   :registration-enabled (lookup-env env :uxbox-registration-enabled true)
-   :secret (lookup-env env :uxbox-secret "5qjiAndGY3")})
+   :registration-enabled (lookup-env env :uxbox-registration-enabled true)})
 
 (defn read-test-config
   []

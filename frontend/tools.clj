@@ -1,10 +1,9 @@
 (require '[clojure.pprint :refer [pprint]]
          '[clojure.java.shell :as shell]
          '[clojure.java.io :as io]
+         '[clojure.edn :as edn]
          '[figwheel.main.api :as figwheel]
-         '[environ.core :refer [env]]
-         '[jsonista.core :as json]
-         '[cognitect.transit :as t])
+         '[environ.core :refer [env]])
 (require '[cljs.build.api :as api]
          '[cljs.repl :as repl]
          '[cljs.repl.node :as node])
@@ -28,13 +27,12 @@
 
 ;; --- Generic Build Options
 
-(def debug? (boolean (:uxbox-debug env nil)))
-(def demo? (boolean (:uxbox-demo env nil)))
+(def demo? (edn/read-string (:uxbox-demo-warning env "true")))
 
 (def closure-defines
-  {"uxbox.config.url" (:uxbox-api-url env "http://localhost:6060/api")
-   "uxbox.config.viewurl" (:uxbox-view-url env "/view/index.html")
-   "uxbox.config.isdemo" demo?})
+  {'uxbox.config.url (:uxbox-api-url env "http://localhost:6060/api")
+   'uxbox.config.viewurl (:uxbox-view-url env "/view/index.html")
+   'uxbox.config.demo-warning demo?})
 
 (def default-build-options
   {:cache-analysis true
@@ -42,6 +40,7 @@
    :language-in  :ecmascript6
    :language-out :ecmascript5
    :closure-defines closure-defines
+   :anon-fn-naming-policy :mapped
    :optimizations :none
    :infer-externs true
    :verbose false

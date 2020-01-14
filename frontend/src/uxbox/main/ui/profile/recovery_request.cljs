@@ -35,7 +35,9 @@
         tr (i18n/use-translations)
         on-success
         (fn []
-          (st/emit! (um/info (tr "profile.recovery.recovery-token-sent"))))
+          (st/emit! (um/info (tr "profile.recovery.recovery-token-sent"))
+                    (rt/nav :profile-recovery)))
+
         on-submit
         (fn [event]
           (dom/prevent-default event)

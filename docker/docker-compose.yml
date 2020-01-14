@@ -67,11 +67,6 @@ services:
       - UXBOX_SMTP_TLS=false
       - UXBOX_SMTP_ENABLED=false
 
-      ## Security setup
-      # Overwrite with a randomy generated string. Mainly used as
-      # shared key for sign cookies, tokens, etc.
-      - UXBOX_SECRET="the very secret string"
-
   frontend:
     image: uxbox-frontend:latest
     restart: always

@@ -40,9 +40,9 @@
   [_]
   [:div.message-inline
    [:p
-    [:strong "WARNING: "] "this is a " [:strong "demo"] " service."
-    [:br]
-    [:strong "DO NOT USE"] " for real work, " [:br]
+    [:strong "WARNING: "]
+    "This is a " [:strong "demo"] " service, "
+    [:strong "DO NOT USE"] " for real work, "
     " the projects will be periodicaly wiped."]])
 
 
@@ -51,7 +51,7 @@
   (let [{:keys [data] :as form} (fm/use-form ::login-form {})]
     [:form {:on-submit #(on-submit % form)}
      [:div.login-content
-      (when cfg/isdemo
+      (when cfg/demo-warning
         [:& demo-warning])
 
       [:input.input-text
