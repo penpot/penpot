@@ -3,7 +3,7 @@ CREATE TABLE users (
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  deleted_at timestamptz DEFAULT NULL,
+  deleted_at timestamptz NULL,
 
   fullname text NOT NULL DEFAULT '',
   username text NOT NULL,
@@ -11,7 +11,8 @@ CREATE TABLE users (
   photo text NOT NULL,
   password text NOT NULL,
 
-  metadata bytea NULL DEFAULT NULL
+  lang text NULL,
+  is_demo boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE IF NOT EXISTS user_attrs (
@@ -31,7 +32,7 @@ CREATE TABLE IF NOT EXISTS tokens (
   token text NOT NULL,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  used_at timestamptz DEFAULT NULL,
+  used_at timestamptz NULL,
 
   PRIMARY KEY (token, user_id)
 );
@@ -43,27 +44,31 @@ CREATE TABLE IF NOT EXISTS sessions (
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
 
   user_id uuid REFERENCES users(id) ON DELETE CASCADE,
-  user_agent TEXT NULL
+  user_agent text NULL
 );
 
 -- Insert a placeholder system user.
 
-INSERT INTO users (id, fullname, username, email, photo, password, metadata)
+INSERT INTO users (id, fullname, username, email, photo, password)
 VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
         'System User',
         '00000000-0000-0000-0000-000000000000',
         'system@uxbox.io',
         '',
-        '!',
-        '{}');
+        '!');
 
 CREATE UNIQUE INDEX users__username__idx
     ON users (username)
- WHERE deleted_at is null;
+ WHERE deleted_at IS null;
 
 CREATE UNIQUE INDEX users__email__idx
     ON users (email)
- WHERE deleted_at is null;
+ WHERE deleted_at IS null;
+
+CREATE INDEX users__is_demo
+    ON users(is_demo)
+ WHERE deleted_at IS null
+   AND is_demo IS true;
 
 CREATE TRIGGER users__modified_at__tgr
 BEFORE UPDATE ON users

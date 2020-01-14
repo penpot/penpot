@@ -150,3 +150,12 @@
            (rx/catch (fn [err]
                        (on-error)
                        (rx/empty)))))))
+
+;; --- Create Demo Profile
+
+(def create-demo-profile
+  (ptk/reify ::create-demo-profile
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/mutation :create-demo-profile {})
+           (rx/map login)))))

@@ -45,7 +45,6 @@
     [:strong "DO NOT USE"] " for real work, "
     " the projects will be periodicaly wiped."]])
 
-
 (mf/defc login-form
   []
   (let [{:keys [data] :as form} (fm/use-form ::login-form {})]
@@ -61,7 +60,7 @@
         :class (fm/error-class form :username)
         :on-blur (fm/on-input-blur form :username)
         :on-change (fm/on-input-change form :username)
-        :placeholder (tr "auth.email-or-username")
+        :placeholder (tr "login.email-or-username")
         :type "text"}]
       [:input.input-text
        {:name "password"
@@ -70,23 +69,27 @@
         :class (fm/error-class form :password)
         :on-blur (fm/on-input-blur form :password)
         :on-change (fm/on-input-change form :password)
-        :placeholder (tr "auth.password")
+        :placeholder (tr "login.password")
         :type "password"}]
       [:input.btn-primary
        {:name "login"
         :tab-index "4"
         :class (when-not (:valid form) "btn-disabled")
         :disabled (not (:valid form))
-        :value (tr "auth.signin")
+        :value (tr "login.submit")
         :type "submit"}]
 
       [:div.login-links
        [:a {:on-click #(st/emit! (rt/nav :profile-recovery-request))
             :tab-index "5"}
-        (tr "auth.forgot-password")]
+        (tr "login.forgot-password")]
        [:a {:on-click #(st/emit! (rt/nav :profile-register))
             :tab-index "6"}
-        (tr "auth.no-account")]]]]))
+        (tr "login.register")]
+       [:a {:on-click #(st/emit! da/create-demo-profile)
+            :tab-index "7"
+            :title (tr "login.create-demo-profile-description")}
+        (tr "login.create-demo-profile")]]]]))
 
 (mf/defc login-page
   []

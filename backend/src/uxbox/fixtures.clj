@@ -77,7 +77,6 @@
                       (> user-index 0))
              (create-additional-project-user conn [project-index user-index])))))
 
-
 ;; --- Create Page Files
 
 (def create-file-sql

@@ -22,7 +22,8 @@
       (derive :logout ::unauthenticated)
       (derive :register-profile ::unauthenticated)
       (derive :request-profile-recovery ::unauthenticated)
-      (derive :recover-profile ::unauthenticated)))
+      (derive :recover-profile ::unauthenticated)
+      (derive :create-demo-profile ::unauthenticated)))
 
 (def query-types-hierarchy
   (make-hierarchy))

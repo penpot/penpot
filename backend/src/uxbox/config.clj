@@ -58,6 +58,7 @@
    :smtp-ssl (lookup-env env :uxbox-smtp-ssl false)
    :smtp-enabled (lookup-env env :uxbox-smtp-enabled false)
 
+   :allow-demo-users (lookup-env env :uxbox-allow-demo-users true)
    :registration-enabled (lookup-env env :uxbox-registration-enabled true)})
 
 (defn read-test-config

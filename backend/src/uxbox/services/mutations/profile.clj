@@ -26,10 +26,7 @@
    [uxbox.media :as media]
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
-   [uxbox.services.queries.users :refer [get-profile
-                                         decode-profile-row
-                                         strip-private-attrs
-                                         resolve-thumbnail]]
+   [uxbox.services.queries.profile :as profile]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
    [vertx.core :as vc]))
@@ -125,8 +122,7 @@
               email fullname (blob/encode metadata)]]
     (-> (db/query-one conn sqlv)
         (p/then' su/raise-not-found-if-nil)
-        (p/then' decode-profile-row)
-        (p/then' strip-private-attrs))))
+        (p/then' profile/strip-private-attrs))))
 
 (s/def ::update-profile
   (s/keys :req-un [::id ::username ::email ::fullname ::metadata]))
@@ -142,7 +138,7 @@
 
 (defn- validate-password
   [conn {:keys [user old-password] :as params}]
-  (p/let [profile (get-profile conn user)
+  (p/let [profile (profile/retrieve-profile conn user)
           result (sodi.pwhash/verify old-password (:password profile))]
     (when-not (:valid result)
       (ex/raise :type :validation
@@ -205,8 +201,7 @@
                        returning id, photo"]
               (-> (db/query-one db/pool [sql (str path) user])
                   (p/then' su/raise-not-found-if-nil)
-                  ;; (p/then' strip-private-attrs)
-                  (p/then resolve-thumbnail))))]
+                  (p/then profile/resolve-thumbnail))))]
 
     (when-not (valid-image-types? (:mtype file))
       (ex/raise :type :validation
@@ -218,9 +213,9 @@
 
 ;; --- Mutation: Register Profile
 
-(def ^:private create-user-sql
-  "insert into users (id, fullname, username, email, password, metadata, photo)
-   values ($1, $2, $3, $4, $5, $6, '') returning *")
+(su/defstr sql:create-user
+  "insert into users (id, fullname, username, email, password, photo)
+   values ($1, $2, $3, $4, $5, '') returning *")
 
 (defn- check-profile-existence!
   [conn {:keys [username email] :as params}]
@@ -239,24 +234,21 @@
 (defn create-profile
   "Create the user entry on the database with limited input
   filling all the other fields with defaults."
-  [conn {:keys [id username fullname email password metadata] :as params}]
+  [conn {:keys [id username fullname email password] :as params}]
   (let [id (or id (uuid/next))
-        metadata (blob/encode metadata)
         password (sodi.pwhash/derive password)
-        sqlv [create-user-sql
+        sqlv [sql:create-user
               id
               fullname
               username
               email
-              password
-              metadata]]
-    (-> (db/query-one conn sqlv)
-        (p/then' decode-profile-row))))
+              password]]
+    (db/query-one conn sqlv)))
 
 (defn register-profile
   [conn params]
   (-> (create-profile conn params)
-      (p/then' strip-private-attrs)
+      (p/then' profile/strip-private-attrs)
       (p/then (fn [profile]
                 (-> (emails/send! emails/register {:to (:email params)
                                                    :name (:fullname params)})
@@ -328,3 +320,5 @@
     (db/with-atomic [conn db/pool]
       (-> (validate-token conn token)
           (p/then (fn [user-id] (update-password conn user-id)))))))
+
+

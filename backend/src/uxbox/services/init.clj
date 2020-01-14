@@ -19,7 +19,7 @@
   (require 'uxbox.services.queries.projects)
   (require 'uxbox.services.queries.project-files)
   (require 'uxbox.services.queries.project-pages)
-  (require 'uxbox.services.queries.users)
+  (require 'uxbox.services.queries.profile)
   (require 'uxbox.services.queries.user-attrs))
 
 (defn- load-mutation-services

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.queries.users
+(ns uxbox.services.queries.profile
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
@@ -18,7 +18,6 @@
 
 ;; --- Helpers & Specs
 
-(declare decode-profile-row)
 (declare strip-private-attrs)
 
 (s/def ::email ::us/email)
@@ -42,27 +41,20 @@
     (-> (px/submit! #(images/populate-thumbnails user opts))
         (su/handle-on-context))))
 
-(defn get-profile
+(defn retrieve-profile
   [conn id]
   (let [sql "select * from users where id=$1 and deleted_at is null"]
-    (-> (db/query-one db/pool [sql id])
-        (p/then' decode-profile-row))))
+    (db/query-one db/pool [sql id])))
 
 (s/def ::profile
   (s/keys :req-un [::user]))
 
 (sq/defquery ::profile
   [{:keys [user] :as params}]
-  (-> (get-profile db/pool user)
+  (-> (retrieve-profile db/pool user)
       (p/then' strip-private-attrs)))
 
 ;; --- Attrs Helpers
-
-(defn decode-profile-row
-  [{:keys [metadata] :as row}]
-  (when row
-    (cond-> row
-      metadata (assoc :metadata (blob/decode metadata)))))
 
 (defn strip-private-attrs
   "Only selects a publicy visible user attrs."

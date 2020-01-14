@@ -1,97 +1,4 @@
 {
-  "auth.email-or-username" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:61" ],
-    "translations" : {
-      "en" : "Email or Username",
-      "fr" : "adresse email ou nom d'utilisateur"
-    }
-  },
-  "auth.forgot-password" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:83" ],
-    "translations" : {
-      "en" : "Forgot your password?",
-      "fr" : "Mot de passe oublié ?"
-    }
-  },
-
-  "profile.recovery.password-changed" : {
-    "used-in" : [ "src/uxbox/main/data/auth.cljs:178" ],
-    "translations" : {
-      "en" : "Password successfully changed",
-      "fr" : "TODO"
-    }
-  },
-
-  "profile.recovery.username-or-email": {
-    "translations" : {
-      "en" : "Username or Email Address",
-      "fr" : "adresse email ou nom d'utilisateur"
-    }
-  },
-
-  "profile.recovery.token": {
-    "translations" : {
-      "en" : "Recovery token (sent by email)",
-      "fr" : null
-    }
-  },
-
-  "profile.recovery.password": {
-    "translations" : {
-      "en" : "Type a new password",
-      "fr" : null
-    }
-  },
-
-  "profile.recovery.submit-request": {
-    "translations" : {
-      "en" : "Recover Password",
-      "fr" : null
-    }
-  },
-
-  "profile.recovery.submit-recover": {
-    "translations" : {
-      "en" : "Change your password",
-      "fr" : null
-    }
-  },
-
-  "profile.recovery.go-to-login": {
-    "translations" : {
-      "en" : "Go back!",
-      "fr" : "Retour!"
-    }
-  },
-
-  "profile.recovery.recovery-token-sent" : {
-    "used-in" : [ "src/uxbox/main/data/auth.cljs:141" ],
-    "translations" : {
-      "en" : "Password recovery link sent to your inbox.",
-      "fr" : "Lien de récupération de mot de passe envoyé."
-    }
-  },
-  "auth.no-account" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:86" ],
-    "translations" : {
-      "en" : "Don't have an account?",
-      "fr" : "Vous n'avez pas de compte ?"
-    }
-  },
-  "auth.password" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:70" ],
-    "translations" : {
-      "en" : "Password",
-      "fr" : "Mot de passe"
-    }
-  },
-  "auth.signin" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:77" ],
-    "translations" : {
-      "en" : "Sign in",
-      "fr" : "Se connecter"
-    }
-  },
   "ds.accept" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:113" ],
     "translations" : {
@@ -107,14 +14,21 @@
     }
   },
   "ds.color-lightbox.add" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:52" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:49", "src/uxbox/main/ui/dashboard/colors.cljs:52" ],
     "translations" : {
       "en" : "+ Add color",
       "fr" : "+ Ajouter couleur"
     }
   },
+  "ds.color-lightbox.title" : {
+    "translations" : {
+      "en" : null,
+      "fr" : null
+    },
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:43" ]
+  },
   "ds.color-new" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:149" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:146", "src/uxbox/main/ui/dashboard/colors.cljs:149" ],
     "translations" : {
       "en" : "+ New color",
       "fr" : "+ Nouvelle couleur"
@@ -128,7 +42,7 @@
     }
   },
   "ds.colors-collection.new" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:131", "src/uxbox/main/ui/dashboard/colors.cljs:134" ],
     "translations" : {
       "en" : "+ New library",
       "fr" : "+ Nouvelle librairie"
@@ -233,35 +147,35 @@
     }
   },
   "ds.multiselect-bar.copy" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/images.cljs:196", "src/uxbox/main/ui/dashboard/images.cljs:171", "src/uxbox/main/ui/dashboard/colors.cljs:224", "src/uxbox/main/ui/dashboard/colors.cljs:201" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:221", "src/uxbox/main/ui/dashboard/colors.cljs:198", "src/uxbox/main/ui/dashboard/images.cljs:196", "src/uxbox/main/ui/dashboard/images.cljs:171", "src/uxbox/main/ui/dashboard/colors.cljs:224", "src/uxbox/main/ui/dashboard/colors.cljs:201" ],
     "translations" : {
       "en" : "Copy",
       "fr" : "Copier"
     }
   },
   "ds.multiselect-bar.copy-to-library" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/images.cljs:200", "src/uxbox/main/ui/dashboard/images.cljs:175", "src/uxbox/main/ui/dashboard/colors.cljs:228", "src/uxbox/main/ui/dashboard/colors.cljs:205" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:225", "src/uxbox/main/ui/dashboard/colors.cljs:202", "src/uxbox/main/ui/dashboard/images.cljs:200", "src/uxbox/main/ui/dashboard/images.cljs:175", "src/uxbox/main/ui/dashboard/colors.cljs:228", "src/uxbox/main/ui/dashboard/colors.cljs:205" ],
     "translations" : {
       "en" : "Copy to library",
       "fr" : "Copier vers la librairie"
     }
   },
   "ds.multiselect-bar.delete" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/images.cljs:190", "src/uxbox/main/ui/dashboard/colors.cljs:217" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:214", "src/uxbox/main/ui/dashboard/images.cljs:190", "src/uxbox/main/ui/dashboard/colors.cljs:217" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "Supprimer"
     }
   },
   "ds.multiselect-bar.move" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/images.cljs:179", "src/uxbox/main/ui/dashboard/colors.cljs:209" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:206", "src/uxbox/main/ui/dashboard/images.cljs:179", "src/uxbox/main/ui/dashboard/colors.cljs:209" ],
     "translations" : {
       "en" : "Move",
       "fr" : "Déplacer"
     }
   },
   "ds.multiselect-bar.move-to-library" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/images.cljs:183", "src/uxbox/main/ui/dashboard/colors.cljs:213" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:210", "src/uxbox/main/ui/dashboard/images.cljs:183", "src/uxbox/main/ui/dashboard/colors.cljs:213" ],
     "translations" : {
       "en" : "Move to library",
       "fr" : "Déplacer vers la librairie"
@@ -275,7 +189,7 @@
     }
   },
   "ds.new-file" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/projects.cljs:143" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/projects.cljs:142", "src/uxbox/main/ui/dashboard/projects.cljs:143" ],
     "translations" : {
       "en" : "+ New File",
       "fr" : null
@@ -303,7 +217,7 @@
     }
   },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/projects.cljs:192" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/projects.cljs:191", "src/uxbox/main/ui/dashboard/projects.cljs:192" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher..."
@@ -316,13 +230,6 @@
       "fr" : null
     }
   },
-  "workspace.sidebar.layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/layers.cljs:260" ],
-    "translations" : {
-      "en" : "Layers",
-      "fr" : "Couches"
-    }
-  },
   "ds.size" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:33" ],
     "translations" : {
@@ -331,7 +238,7 @@
     }
   },
   "ds.store-colors-title" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:129" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:126", "src/uxbox/main/ui/dashboard/colors.cljs:129" ],
     "translations" : {
       "en" : "COLORS STORE",
       "fr" : "BOUTIQUE"
@@ -352,14 +259,14 @@
     }
   },
   "ds.updated-at" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/projects.cljs:110" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/projects.cljs:109", "src/uxbox/main/ui/dashboard/projects.cljs:110" ],
     "translations" : {
       "en" : "Updated %s",
       "fr" : "Mis à jour %s"
     }
   },
   "ds.uploaded-at" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/images.cljs:237", "src/uxbox/main/ui/dashboard/icons.cljs:303" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/icons.cljs:303", "src/uxbox/main/ui/dashboard/images.cljs:237" ],
     "translations" : {
       "en" : "Uploaded at %s",
       "fr" : "Mise en ligne : %s"
@@ -401,7 +308,7 @@
     }
   },
   "ds.your-colors-title" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:126" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:123", "src/uxbox/main/ui/dashboard/colors.cljs:126" ],
     "translations" : {
       "en" : "YOUR COLORS",
       "fr" : "VOS COULEURS"
@@ -429,42 +336,35 @@
     }
   },
   "errors.api.form.registration-disabled" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:39" ],
+    "used-in" : [ "src/uxbox/main/ui/profile/register.cljs:39", "src/uxbox/main/ui/auth/register.cljs:39" ],
     "translations" : {
       "en" : "The registration is currently disabled.",
       "fr" : "L'enregistrement est actuellement désactivé."
     }
   },
   "errors.api.form.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:51" ],
+    "used-in" : [ "src/uxbox/main/ui/profile/register.cljs:51", "src/uxbox/main/ui/auth/register.cljs:51" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite"
     }
   },
-  "profile.recovery.invalid-token" : {
-    "used-in" : [ "src/uxbox/main/data/auth.cljs:174", "src/uxbox/main/data/auth.cljs:151" ],
-    "translations" : {
-      "en" : "The recovery token is invalid.",
-      "fr" : "Le jeton de récupération n'est pas valide."
-    }
-  },
   "errors.auth.unauthorized" : {
-    "used-in" : [ "src/uxbox/main/data/auth.cljs:59" ],
+    "used-in" : [ "src/uxbox/main/data/auth.cljs:62", "src/uxbox/main/data/auth.cljs:59" ],
     "translations" : {
       "en" : "Username or password seems to be wrong.",
       "fr" : "Le nom d'utilisateur ou le mot de passe semble être faux."
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:86" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:127", "src/uxbox/main/ui.cljs:86" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:80" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:121", "src/uxbox/main/ui.cljs:80" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal."
@@ -512,32 +412,158 @@
       "fr" : "Envoyer un fichier"
     }
   },
+  "login.create-demo-profile" : {
+    "used-in" : [ "src/uxbox/main/ui/login.cljs:92" ],
+    "translations" : {
+      "en" : "Create demo account",
+      "fr" : null
+    }
+  },
+  "login.create-demo-profile-description" : {
+    "used-in" : [ "src/uxbox/main/ui/login.cljs:91" ],
+    "translations" : {
+      "en" : "Will be deleted in 24 hours since creation",
+      "fr" : null
+    }
+  },
+  "login.email-or-username" : {
+    "used-in" : [ "src/uxbox/main/ui/login.cljs:63", "src/uxbox/main/ui/auth/login.cljs:61" ],
+    "translations" : {
+      "en" : "Email or Username",
+      "fr" : "adresse email ou nom d'utilisateur"
+    }
+  },
+  "login.forgot-password" : {
+    "used-in" : [ "src/uxbox/main/ui/login.cljs:85", "src/uxbox/main/ui/auth/login.cljs:83" ],
+    "translations" : {
+      "en" : "Forgot your password?",
+      "fr" : "Mot de passe oublié ?"
+    }
+  },
+  "login.password" : {
+    "used-in" : [ "src/uxbox/main/ui/login.cljs:72", "src/uxbox/main/ui/auth/login.cljs:70" ],
+    "translations" : {
+      "en" : "Password",
+      "fr" : "Mot de passe"
+    }
+  },
+  "login.register" : {
+    "used-in" : [ "src/uxbox/main/ui/login.cljs:88", "src/uxbox/main/ui/auth/login.cljs:86" ],
+    "translations" : {
+      "en" : "Don't have an account?",
+      "fr" : "Vous n'avez pas de compte ?"
+    }
+  },
+  "login.submit" : {
+    "used-in" : [ "src/uxbox/main/ui/login.cljs:79", "src/uxbox/main/ui/auth/login.cljs:77" ],
+    "translations" : {
+      "en" : "Sign in",
+      "fr" : "Se connecter"
+    }
+  },
+  "profile.recovery.go-to-login" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery.cljs:81", "src/uxbox/main/ui/profile/recovery_request.cljs:64" ],
+    "translations" : {
+      "en" : "Go back!",
+      "fr" : "Retour!"
+    }
+  },
+  "profile.recovery.invalid-token" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery.cljs:45", "src/uxbox/main/data/auth.cljs:174", "src/uxbox/main/data/auth.cljs:151" ],
+    "translations" : {
+      "en" : "The recovery token is invalid.",
+      "fr" : "Le jeton de récupération n'est pas valide."
+    }
+  },
+  "profile.recovery.password" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery.cljs:70" ],
+    "translations" : {
+      "en" : "Type a new password",
+      "fr" : null
+    }
+  },
+  "profile.recovery.password-changed" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery.cljs:40", "src/uxbox/main/data/auth.cljs:178" ],
+    "translations" : {
+      "en" : "Password successfully changed",
+      "fr" : "TODO"
+    }
+  },
+  "profile.recovery.recovery-token-sent" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery_request.cljs:38", "src/uxbox/main/data/auth.cljs:141" ],
+    "translations" : {
+      "en" : "Password recovery link sent to your inbox.",
+      "fr" : "Lien de récupération de mot de passe envoyé."
+    }
+  },
+  "profile.recovery.submit-recover" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery.cljs:76" ],
+    "translations" : {
+      "en" : "Change your password",
+      "fr" : null
+    }
+  },
+  "profile.recovery.submit-request" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery_request.cljs:59" ],
+    "translations" : {
+      "en" : "Recover Password",
+      "fr" : null
+    }
+  },
+  "profile.recovery.token" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery.cljs:61" ],
+    "translations" : {
+      "en" : "Recovery token (sent by email)",
+      "fr" : null
+    }
+  },
+  "profile.recovery.username-or-email" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery_request.cljs:53" ],
+    "translations" : {
+      "en" : "Username or Email Address",
+      "fr" : "adresse email ou nom d'utilisateur"
+    }
+  },
   "profile.register.already-have-account" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:131" ],
+    "used-in" : [ "src/uxbox/main/ui/profile/register.cljs:131", "src/uxbox/main/ui/auth/register.cljs:131" ],
     "translations" : {
       "en" : "Already have an account?",
       "fr" : "Vous avez déjà un compte ?"
     }
   },
+  "profile.register.email" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/register.cljs:101", "src/uxbox/main/ui/settings/profile.cljs:111", "src/uxbox/main/ui/auth/register.cljs:101" ],
+    "translations" : {
+      "en" : "Your email",
+      "fr" : "Votre adresse email"
+    }
+  },
   "profile.register.fullname" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:72" ],
+    "used-in" : [ "src/uxbox/main/ui/profile/register.cljs:72", "src/uxbox/main/ui/auth/register.cljs:72" ],
     "translations" : {
       "en" : "Full Name",
       "fr" : "Nom complet"
     }
   },
   "profile.register.get-started" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:127" ],
+    "used-in" : [ "src/uxbox/main/ui/profile/register.cljs:127", "src/uxbox/main/ui/auth/register.cljs:127" ],
     "translations" : {
       "en" : "Get started",
       "fr" : "Commencer"
     }
   },
   "profile.register.password" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:115" ],
+    "used-in" : [ "src/uxbox/main/ui/profile/register.cljs:115", "src/uxbox/main/ui/auth/register.cljs:115" ],
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe"
+    }
+  },
+  "profile.register.username" : {
+    "used-in" : [ "src/uxbox/main/ui/profile/register.cljs:87", "src/uxbox/main/ui/settings/profile.cljs:98", "src/uxbox/main/ui/auth/register.cljs:87" ],
+    "translations" : {
+      "en" : "Your username",
+      "fr" : "Votre nom d'utilisateur"
     }
   },
   "settings.notifications" : {
@@ -659,12 +685,12 @@
       "fr" : "Votre avatar"
     }
   },
-  "profile.register.email" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:111", "src/uxbox/main/ui/auth/register.cljs:101" ],
+  "settings.profile.your-email" : {
     "translations" : {
-      "en" : "Your email",
-      "fr" : "Votre adresse email"
-    }
+      "en" : null,
+      "fr" : null
+    },
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:111" ]
   },
   "settings.profile.your-name" : {
     "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:86" ],
@@ -673,12 +699,12 @@
       "fr" : "Votre nom complet"
     }
   },
-  "profile.register.username" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:98", "src/uxbox/main/ui/auth/register.cljs:87" ],
+  "settings.profile.your-username" : {
     "translations" : {
-      "en" : "Your username",
-      "fr" : "Votre nom d'utilisateur"
-    }
+      "en" : null,
+      "fr" : null
+    },
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:98" ]
   },
   "settings.update-settings" : {
     "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:130", "src/uxbox/main/ui/settings/password.cljs:86", "src/uxbox/main/ui/settings/notifications.cljs:42" ],
@@ -793,7 +819,7 @@
     }
   },
   "workspace.options.color" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:81", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:125", "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:47" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:81", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:124", "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:47", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:125" ],
     "translations" : {
       "en" : "Color",
       "fr" : "Couleur"
@@ -821,7 +847,7 @@
     }
   },
   "workspace.options.grid-options" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:113" ],
     "translations" : {
       "en" : "Grid settings",
       "fr" : "Paramètres de la grille"
@@ -863,7 +889,7 @@
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:38" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:38", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:115" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
@@ -925,8 +951,15 @@
       "fr" : "Alignement de texte"
     }
   },
+  "workspace.sidebar.layers" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/layers.cljs:261", "src/uxbox/main/ui/workspace/sidebar/layers.cljs:260" ],
+    "translations" : {
+      "en" : "Layers",
+      "fr" : "Couches"
+    }
+  },
   "workspace.sidebar.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:135", "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:134" ],
     "translations" : {
       "en" : "Sitemap",
       "fr" : "Plan du site"

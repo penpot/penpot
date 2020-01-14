@@ -8,8 +8,7 @@ CREATE TABLE IF NOT EXISTS projects (
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   deleted_at timestamptz DEFAULT NULL,
 
-  name text NOT NULL,
-  metadata bytea NULL DEFAULT NULL
+  name text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS project_users (
@@ -33,9 +32,7 @@ CREATE TABLE IF NOT EXISTS project_files (
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  deleted_at timestamptz DEFAULT NULL,
-
-  metadata bytea NULL DEFAULT NULL
+  deleted_at timestamptz DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS project_file_users (
