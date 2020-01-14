@@ -135,6 +135,14 @@
 (s/def ::change (s/multi-spec change-spec-impl :type))
 (s/def ::changes (s/coll-of ::change))
 
+(def default-page-data
+  "A reference value of the empty page data."
+  {:version 1
+   :shapes []
+   :canvas []
+   :options {}
+   :shapes-by-id {}})
+
 ;; --- Changes Processing Impl
 
 (declare process-change)

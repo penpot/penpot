@@ -350,15 +350,6 @@
 
 (declare page-created)
 
-(def default-page-data
-  {:version 1
-   :shapes []
-   :canvas []
-   :options {:grid-x 10
-             :grid-y 10
-             :grid-color "#cccccc"}
-   :shapes-by-id {}})
-
 (def create-empty-page
   (ptk/reify ::create-empty-page
     ptk/WatchEvent
@@ -369,7 +360,7 @@
             params {:name name
                     :file-id file-id
                     :ordering ordering
-                    :data default-page-data}]
+                    :data cp/default-page-data}]
         (->> (rp/mutation :create-project-page params)
              (rx/map page-created))))))
 
