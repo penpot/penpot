@@ -13,6 +13,7 @@
    io.vertx.core.Context
    io.vertx.core.DeploymentOptions
    io.vertx.core.Future
+   io.vertx.core.Promise
    io.vertx.core.Handler
    io.vertx.core.Verticle
    io.vertx.core.Vertx
@@ -157,7 +158,7 @@
         (vreset! vsm instance)
         (vreset! ctx context))
       (getVertx [_] @vsm)
-      (^void start [_ ^Future o]
+      (^void start [_ ^Promise o]
        (-> (p/do! (on-start @ctx))
            (p/handle (fn [state error]
                        (if error
@@ -168,7 +169,7 @@
                            (when (map? state)
                              (vswap! lst merge state))
                            (.complete o)))))))
-      (^void stop [_ ^Future o]
+      (^void stop [_ ^Promise o]
        (p/handle (p/do! (on-stop @ctx @lst))
                  (fn [_ err]
                    (if err
