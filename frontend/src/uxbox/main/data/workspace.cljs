@@ -69,7 +69,6 @@
 
 ;; --- Initialize WebSocket
 
-
 (s/def ::type keyword?)
 (s/def ::message
   (s/keys :req-un [::type]))
@@ -189,8 +188,9 @@
    :drawing-tool nil
    :tooltip nil})
 
-(declare initialized)
+(declare initialize-state)
 (declare initialize-page)
+(declare initialize-file)
 
 (defn initialize
   "Initialize the workspace state."
@@ -210,35 +210,32 @@
                         (rx/filter (ptk/type? ::dp/files-fetched) stream))
                 (rx/take 1)
                 (rx/do #(reset! st/loader false))
-                (rx/mapcat #(rx/of (initialized file-id)
+                (rx/mapcat #(rx/of (initialize-state file-id)
+                                   (initialize-file file-id)
                                    (initialize-page page-id)
                                    #_(initialize-alignment page-id)))))
-          (rx/merge
-           (rx/of (initialize-page page-id))))))))
+          (rx/of (initialize-file file-id)
+                 (initialize-page page-id)))))))
 
-(defn- initialized
+(defn- initialize-state
   [file-id]
   (us/assert ::us/uuid file-id)
-  (ptk/reify ::initialized
+  (ptk/reify ::initialize-state
     ptk/UpdateEvent
     (update [_ state]
-      (let [file (get-in state [:files file-id])
-            local (assoc workspace-default :file-id file-id)]
+      (let [local (assoc workspace-default :file-id file-id)]
         (-> state
-            (assoc :workspace-file file)
             (assoc :workspace-layout default-layout)
             (assoc :workspace-local local))))))
 
-(defn finalize
-  [file-id page-id]
+(defn- initialize-file
+  [file-id]
   (us/assert ::us/uuid file-id)
-  (us/assert ::us/uuid page-id)
-  (ptk/reify ::finalize
+  (ptk/reify ::initialize-file
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state
-              :workspace-page
-              :workspace-data))))
+      (let [file (get-in state [:files file-id])]
+        (assoc state :workspace-file file)))))
 
 (defn initialize-page
   [page-id]
@@ -260,8 +257,18 @@
              (rx/filter #(satisfies? IBatchedChange %))
              (rx/debounce 500)
              (rx/map (constantly commit-batched-changes))
-             (rx/finalize #(prn "FINALIZE" %))
              (rx/take-until stoper))))))
+
+(defn finalize
+  [file-id page-id]
+  (us/assert ::us/uuid file-id)
+  (us/assert ::us/uuid page-id)
+  (ptk/reify ::finalize
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state
+              :workspace-page
+              :workspace-data))))
 
 ;; --- Fetch Workspace Users
 
