@@ -182,13 +182,13 @@
 
 (def workspace-default
   {:zoom 1
-   :flags #{:sitemap :drawtools :layers :element-options :rules}
+   :flags #{}
    :selected #{}
    :drawing nil
    :drawing-tool nil
    :tooltip nil})
 
-(declare initialize-state)
+(declare initialize-layout)
 (declare initialize-page)
 (declare initialize-file)
 
@@ -200,33 +200,30 @@
   (ptk/reify ::initialize
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [local (:workspace-local state)]
-        (if (not= (:file-id local) file-id)
+      (let [file (:workspace-file state)]
+        (if (not= (:id file) file-id)
           (rx/merge
            (rx/of (dp/fetch-file file-id)
                   (dp/fetch-pages file-id)
+                  (initialize-layout file-id)
                   (fetch-users file-id))
            (->> (rx/zip (rx/filter (ptk/type? ::dp/pages-fetched) stream)
                         (rx/filter (ptk/type? ::dp/files-fetched) stream))
                 (rx/take 1)
                 (rx/do #(reset! st/loader false))
-                (rx/mapcat #(rx/of (initialize-state file-id)
-                                   (initialize-file file-id)
+                (rx/mapcat #(rx/of (initialize-file file-id)
                                    (initialize-page page-id)
                                    #_(initialize-alignment page-id)))))
           (rx/of (initialize-file file-id)
                  (initialize-page page-id)))))))
 
-(defn- initialize-state
+(defn- initialize-layout
   [file-id]
   (us/assert ::us/uuid file-id)
-  (ptk/reify ::initialize-state
+  (ptk/reify ::initialize-layout
     ptk/UpdateEvent
     (update [_ state]
-      (let [local (assoc workspace-default :file-id file-id)]
-        (-> state
-            (assoc :workspace-layout default-layout)
-            (assoc :workspace-local local))))))
+      (assoc state :workspace-layout default-layout))))
 
 (defn- initialize-file
   [file-id]
@@ -245,6 +242,7 @@
       (let [page (get-in state [:pages page-id])
             data (get-in state [:pages-data page-id])]
         (assoc state
+               :workspace-local workspace-default
                :workspace-data data
                :workspace-page page)))
 
@@ -1015,6 +1013,13 @@
 
 (def commit-batched-changes
   (ptk/reify ::commit-batched-changes
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspace-page :id])
+            data (get-in state [:pages-data pid])
+            changes (::batched-changes state)]
+        (update-in state [:pages-data pid] cp/process-changes changes)))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [changes (::batched-changes state)]
@@ -1277,7 +1282,7 @@
   (ptk/reify ::go-to
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [file-id (get-in state [:workspace-local :file-id])
+      (let [file-id (get-in state [:workspace-page :file-id])
             path-params {:file-id file-id}
             query-params {:page-id page-id}]
         (rx/of (rt/nav :workspace path-params query-params))))))

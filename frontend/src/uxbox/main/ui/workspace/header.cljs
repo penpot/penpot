@@ -62,13 +62,15 @@
 ;; --- Header Component
 
 (mf/defc header
-  [{:keys [page layout flags] :as props}]
+  [{:keys [page] :as props}]
   (let [toggle #(st/emit! (dw/toggle-flag %))
         toggle-layout #(st/emit! (dw/toggle-layout-flag %))
         on-undo #(st/emit! (udu/undo))
         on-redo #(st/emit! (udu/redo))
         on-image #(modal/show! import-image-modal {})
         ;;on-download #(udl/open! :download)
+        layout (mf/deref refs/workspace-layout)
+        flags (mf/deref refs/selected-flags)
         file (mf/deref refs/workspace-file)
         selected-drawtool (mf/deref refs/selected-drawing-tool)
         select-drawtool #(st/emit! :interrupt

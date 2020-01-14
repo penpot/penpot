@@ -59,8 +59,9 @@
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
-  [{:keys [layout page file flags] :as params}]
+  [{:keys [page file flags] :as params}]
   (let [canvas (mf/use-ref nil)
+        layout (mf/deref refs/workspace-layout)
         left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep layout [:icons :drawtools
@@ -68,6 +69,9 @@
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?))]
+    [:*
+     (when (:colorpalette layout)
+       [:& colorpalette])
 
      [:main.main-content
       [:section.workspace-content
@@ -90,7 +94,7 @@
       (when left-sidebar?
         [:& left-sidebar {:file file :page page :layout layout}])
       (when right-sidebar?
-        [:& right-sidebar {:page page :layout layout}])]))
+        [:& right-sidebar {:page page :layout layout}])]]))
 
 (mf/defc workspace
   [{:keys [file-id page-id] :as props}]
@@ -106,30 +110,18 @@
           (st/emit! (dw/initialize-ws file-id))
           #(st/emit! (dw/finalize-ws file-id)))})
 
-  ;; (mf/use-effect
-  ;;  {:deps (mf/deps file-id page-id)
-  ;;   :fn #(st/emit! (dw/initialize-page page-id))})
-
   (mf/use-effect
    {:deps (mf/deps file-id page-id)
     :fn (fn []
           (let [sub (shortcuts/init)]
             #(rx/cancel! sub)))})
 
-  (let [layout (mf/deref refs/workspace-layout)
-        flags  (mf/deref refs/selected-flags)
-        file   (mf/deref refs/workspace-file)
-        page   (mf/deref refs/workspace-page)]
-
+  (let [file (mf/deref refs/workspace-file)
+        page (mf/deref refs/workspace-page)]
     [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
-     [:& header {:page page :layout layout :flags flags}]
+     [:& header {:page page}]
 
-     (when (:colorpalette layout)
-       [:& colorpalette])
-
-     (when (and layout page)
-       [:& workspace-content {:layout layout
-                              :flags flags
-                              :file file
+     (when page
+       [:& workspace-content {:file file
                               :page page}])]))

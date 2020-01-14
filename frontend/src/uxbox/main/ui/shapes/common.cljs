@@ -34,8 +34,8 @@
             stoper (rx/filter uws/mouse-up? stream)
             position @uws/mouse-position]
         (rx/concat
-         (when (refs/alignment-activated? flags)
-           (rx/of (dw/initial-selection-align selected)))
+         ;; (when (refs/alignment-activated? flags)
+         ;;   (rx/of (dw/initial-selection-align selected)))
          (->> (uws/mouse-position-deltas position)
               (rx/map #(dw/apply-temporal-displacement-in-bulk selected %))
               (rx/take-until stoper))
