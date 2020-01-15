@@ -582,8 +582,7 @@
       (update [_ state]
         (let [shape (-> (geom/setup-proportions data)
                         (assoc :id id))
-              shape (merge canvas-default-attrs shape)
-              shape (recalculate-shape-canvas-relation state shape)]
+              shape (merge canvas-default-attrs shape)]
           (impl-assoc-shape state shape)))
 
       ptk/WatchEvent
@@ -592,9 +591,8 @@
               sid (:session-id state)]
           (rx/of (commit-changes [{:type :add-canvas
                                    :session-id sid
-                                   :id id
-                                   :shape shape}])
-                 (select-shape id)))))))
+                                   :shape shape
+                                   :id id}])))))))
 
 
 ;; --- Duplicate Selected
@@ -653,7 +651,7 @@
 ;; --- Select Shapes (By selrect)
 
 (defn- impl-try-match-shape
-  [xf selrect acc {:keys [type id items] :as shape}]
+  [selrect acc {:keys [type id items] :as shape}]
   (cond
     (geom/contained-in? shape selrect)
     (conj acc id)
@@ -667,14 +665,16 @@
 (defn impl-match-by-selrect
   [state selrect]
   (let [data (:workspace-data state)
+        match (partial impl-try-match-shape selrect)
+        shapes (:shapes data)
         xf (comp (map #(get-in data [:shapes-by-id %]))
                  (remove :hidden)
                  (remove :blocked)
                  (remove #(= :canvas (:type %)))
-                 (map geom/selection-rect))
-        match (partial impl-try-match-shape xf selrect)
-        shapes (:shapes data)]
-    (reduce match #{} (sequence xf shapes))))
+                 (map geom/shape->rect-shape)
+                 (map geom/resolve-rotation)
+                 (map geom/shape->rect-shape))]
+    (transduce xf match #{} shapes)))
 
 (def select-shapes-by-current-selrect
   (ptk/reify ::select-shapes-by-current-selrect
@@ -788,34 +788,35 @@
 
 (defn impl-dissoc-shape
   "Given a shape, removes it from the state."
-  [state {:keys [id type] :as shape}]
-  (as-> state $$
-    (if (= :canvas type)
-      (update-in $$ [:workspace-data :canvas]
-                 (fn [items] (vec (remove #(= % id) items))))
-      (update-in $$ [:workspace-data :shapes]
-                 (fn [items] (vec (remove #(= % id) items)))))
-    (update-in $$ [:workspace-data :shapes-by-id] dissoc id)))
+  [state id]
+  (-> state
+      (update-in [:workspace-data :canvas] (fn [items] (filterv #(not= % id) items)))
+      (update-in [:workspace-data :shapes] (fn [items] (filterv #(not= % id) items)))
+      (update-in [:workspace-data :shapes-by-id] dissoc id)))
+
+(defn impl-lookup-shape
+  [state id]
+  (get-in state [:workspace-data :shapes-by-id id]))
 
 (def delete-selected
   "Deselect all and remove all selected shapes."
   (ptk/reify ::delete-selected
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [selected (get-in state [:workspace-local :selected])]
-        (reduce impl-dissoc-shape state
-                (map #(get-in state [:workspace-data :shapes-by-id %]) selected))))
-
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])
-            session-id (:session-id state)
-            changes (mapv (fn [id]
-                            {:type :del-shape
-                             :session-id session-id
-                             :id id})
-                          selected)]
-        (rx/of (commit-changes changes))))))
+      (let [session-id (:session-id state)
+            lookup-shape #(get-in state [:workspace-data :shapes-by-id %])
+            selected (get-in state [:workspace-local :selected])
+
+            changes (->> selected
+                         (map lookup-shape)
+                         (map (fn [{:keys [type id] :as shape}]
+                                {:type (if (= type :canvas) :del-canvas :del-shape)
+                                 :session-id session-id
+                                 :id id})))]
+        (rx/merge
+         (rx/of deselect-all)
+         (rx/from (map (fn [id] #(impl-dissoc-shape % id)) selected))
+         (rx/of (commit-changes changes)))))))
 
 ;; --- Rename Shape
 
@@ -998,7 +999,7 @@
   (ptk/reify ::commit-changes
     ptk/UpdateEvent
     (update [_ state]
-      (let [pid (get-in state [:workspace-local :page-id])
+      (let [pid (get-in state [:workspace-page :id])
             data (get-in state [:pages-data pid])]
         (update-in state [:pages-data pid] cp/process-changes changes)))
 
@@ -1007,7 +1008,7 @@
       (let [page (:workspace-page state)
             params {:id (:id page)
                     :version (:version page)
-                    :changes changes}]
+                    :changes (vec changes)}]
         (->> (rp/mutation :update-project-page params)
              (rx/map shapes-changes-commited))))))
 

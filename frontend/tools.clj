@@ -201,6 +201,7 @@
    :pprint-config false
    :load-warninged-code false
    :auto-testing false
+   :reload-dependents true
    :reload-clj-files true
    :css-dirs ["resources/public/css"]
    :ring-server-options {:port 3449 :host "0.0.0.0"}

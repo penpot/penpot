@@ -109,7 +109,7 @@
     :circle (size-circle shape)
     :curve (size-path shape)
     :path (size-path shape)
-    (size-rect shape)))
+    shape))
 
 (defn- size-path
   [{:keys [segments x1 y1 x2 y2] :as shape}]
@@ -124,13 +124,6 @@
       (assoc shape
              :width (- maxx minx)
              :height (- maxy miny)))))
-
-(defn- size-rect
-  "A specialized function for calculate size
-  for rect-like shapes."
-  [{:keys [x1 y1 x2 y2] :as shape}]
-  (merge shape {:width (- x2 x1)
-                :height (- y2 y1)}))
 
 (defn- size-circle
   "A specialized function for calculate size
@@ -158,7 +151,6 @@
 
 (defn- assign-proportions-circle
   [{:as shape}]
-  (prn "assign-proportions-circle" shape)
   (assoc shape :proportion 1))
 
 ;; TODO: implement the rest of shapes
@@ -265,67 +257,44 @@
   (case vid
     :top-left
     (-> (gmt/matrix)
-        (gmt/translate (+ (:x2 shape))
-                       (+ (:y2 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x2 shape))
-                       (- (:y2 shape))))
-
+        (gmt/scale (gpt/point scalex scaley)
+                   (gpt/point (+ (:x2 shape))
+                              (+ (:y2 shape)))))
     :top-right
     (-> (gmt/matrix)
-        (gmt/translate (+ (:x1 shape))
-                       (+ (:y2 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x1 shape))
-                       (- (:y2 shape))))
-
+        (gmt/scale (gpt/point scalex scaley)
+                   (gpt/point (+ (:x1 shape))
+                              (+ (:y2 shape)))))
     :top
     (-> (gmt/matrix)
-        (gmt/translate (+ (:x1 shape))
-                       (+ (:y2 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x1 shape))
-                       (- (:y2 shape))))
-
+        (gmt/scale (gpt/point scalex scaley)
+                   (gpt/point (+ (:x1 shape))
+                              (+ (:y2 shape)))))
     :bottom-left
     (-> (gmt/matrix)
-        (gmt/translate (+ (:x2 shape))
-                       (+ (:y1 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x2 shape))
-                       (- (:y1 shape))))
-
+        (gmt/scale (gpt/point scalex scaley)
+                   (gpt/point (+ (:x2 shape))
+                              (+ (:y1 shape)))))
     :bottom-right
     (-> (gmt/matrix)
-        (gmt/translate (+ (:x shape))
-                       (+ (:y shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x shape))
-                       (- (:y shape))))
-
+        (gmt/scale (gpt/point scalex scaley)
+                   (gpt/point (+ (:x shape))
+                              (+ (:y shape)))))
     :bottom
     (-> (gmt/matrix)
-        (gmt/translate (+ (:x1 shape))
-                       (+ (:y1 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x1 shape))
-                       (- (:y1 shape))))
-
+        (gmt/scale (gpt/point scalex scaley)
+                   (gpt/point (+ (:x1 shape))
+                              (+ (:y1 shape)))))
     :right
     (-> (gmt/matrix)
-        (gmt/translate (+ (:x1 shape))
-                       (+ (:y1 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x1 shape))
-                       (- (:y1 shape))))
-
+        (gmt/scale (gpt/point scalex scaley)
+                   (gpt/point (+ (:x1 shape))
+                              (+ (:y1 shape)))))
     :left
     (-> (gmt/matrix)
-        (gmt/translate (+ (:x2 shape))
-                       (+ (:y1 shape)))
-        (gmt/scale scalex scaley)
-        (gmt/translate (- (:x2 shape))
-                       (- (:y1 shape))))))
+        (gmt/scale (gpt/point scalex scaley)
+                   (gpt/point (+ (:x2 shape))
+                              (+ (:y1 shape)))))))
 
 
 (defn resize-shape
@@ -479,28 +448,6 @@
      :height (- maxy miny)
      :type :rect}))
 
-;; (defn shapes->rect-shape'
-;;   [shapes]
-;;   (let [shapes (mapv shape->rect-shape shapes)
-;;         total (count shapes)]
-;;     (loop [idx (int 0)
-;;            minx js/Number.POSITIVE_INFINITY
-;;            miny js/Number.POSITIVE_INFINITY
-;;            maxx js/Number.NEGATIVE_INFINITY
-;;            maxy js/Number.NEGATIVE_INFINITY]
-;;       (if (> total idx)
-;;         (let [{:keys [x1 y1 x2 y2]} (nth shapes idx)]
-;;           (recur (inc idx)
-;;                  (min minx x1)
-;;                  (min miny y1)
-;;                  (max maxx x2)
-;;                  (max maxy y2)))
-;;         {:x1 minx
-;;          :y1 miny
-;;          :x2 maxx
-;;          :y2 maxy
-;;          :type :rect}))))
-
 (defn- rect->rect-shape
   [{:keys [x y width height] :as shape}]
   (assoc shape
@@ -511,10 +458,10 @@
 
 (defn- path->rect-shape
   [{:keys [segments] :as shape}]
-  (let [minx (apply min (map :x segments))
-        miny (apply min (map :y segments))
-        maxx (apply max (map :x segments))
-        maxy (apply max (map :y segments))]
+  (let [minx (transduce (map :x) min segments)
+        miny (transduce (map :y) min segments)
+        maxx (transduce (map :x) max segments)
+        maxy (transduce (map :y) max segments)]
     (assoc shape
            :x1 minx
            :y1 miny
@@ -566,6 +513,7 @@
         tr (gpt/transform [(+ x width) y] mx)
         bl (gpt/transform [x (+ y height)] mx)
         br (gpt/transform [(+ x width) (+ y height)] mx)
+        ;; TODO: replace apply with transduce (performance)
         minx (apply min (map :x [tl tr bl br]))
         maxx (apply max (map :x [tl tr bl br]))
         miny (apply min (map :y [tl tr bl br]))
@@ -576,9 +524,6 @@
            :width (- maxx minx)
            :height (- maxy miny))))
 
-           ;; :x2 (+ minx (- maxx minx))
-           ;; :y2 (+ miny (- maxy miny)))))
-
 (defn- transform-circle
   [{:keys [cx cy rx ry] :as shape} xfmt]
   (let [{:keys [x1 y1 x2 y2]} (shape->rect-shape shape)
@@ -587,6 +532,7 @@
         bl (gpt/transform [x1 y2] xfmt)
         br (gpt/transform [x2 y2] xfmt)
 
+        ;; TODO: replace apply with transduce (performance)
         x (apply min (map :x [tl tr bl br]))
         y (apply min (map :y [tl tr bl br]))
         maxx (apply max (map :x [tl tr bl br]))
@@ -608,30 +554,48 @@
 
 (defn rotation-matrix
   "Generate a rotation matrix from shape."
-  [{:keys [x1 y1 rotation] :as shape}]
-  (let [{:keys [width height]} (size shape)
-        x-center (+ x1 (/ width 2))
-        y-center (+ y1 (/ height 2))]
-    (-> (gmt/matrix)
-        ;; (gmt/rotate* rotation (gpt/point x-center y-center)))))
-        (gmt/translate  x-center y-center)
-        (gmt/rotate rotation)
-        (gmt/translate (- x-center) (- y-center)))))
+  [{:keys [x y width height rotation] :as shape}]
+  (let [cx (+ x (/ width 2))
+        cy (+ y (/ height 2))]
+    (cond-> (gmt/matrix)
+      (and rotation (pos? rotation))
+      (gmt/rotate rotation (gpt/point cx cy)))))
 
-(defn rotate-shape
-  "Apply the transformation matrix to the shape."
+(defn resolve-rotation
   [shape]
-  (let [mtx (rotation-matrix (size shape))]
-    (transform shape mtx)))
+  (transform shape (rotation-matrix shape)))
+
+(defn resolve-modifier
+  [{:keys [modifier-mtx] :as shape}]
+  (cond-> shape
+    (gmt/matrix? modifier-mtx)
+    (transform modifier-mtx)))
+
+(def ^:private
+  xf-resolve-shapes
+  (comp (map shape->rect-shape)
+        (map resolve-modifier)
+        (map resolve-rotation)
+        (map shape->rect-shape)))
 
 (defn selection-rect
-  "Return the selection rect for the shape."
-  [shape]
-  (let [modifier (:modifier-mtx shape)]
-    (-> (shape->rect-shape shape)
-        (assoc :type :rect :id (:id shape))
-        (transform (or modifier (gmt/matrix)))
-        #_(rotate-shape))))
+  "Returns a rect that contains all the shapes and is aware of the
+  rotation of each shape. Mainly used for multiple selection."
+  [shapes]
+  (let [shapes (into [] xf-resolve-shapes shapes)
+        minx (transduce (map :x1) min shapes)
+        miny (transduce (map :y1) min shapes)
+        maxx (transduce (map :x2) max shapes)
+        maxy (transduce (map :y2) max shapes)]
+    {:x1 minx
+     :y1 miny
+     :x2 maxx
+     :y2 maxy
+     :x minx
+     :y miny
+     :width (- maxx minx)
+     :height (- maxy miny)
+     :type :rect}))
 
 ;; --- Helpers
 

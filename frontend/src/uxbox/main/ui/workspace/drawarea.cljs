@@ -304,10 +304,10 @@
 
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]
-  (let [{:keys [x1 y1 width height]} (geom/selection-rect shape)]
+  (let [{:keys [x y width height]} (geom/shape->rect-shape shape)]
     [:g
      [:& shapes/shape-wrapper {:shape shape}]
-     [:rect.main {:x x1 :y y1
+     [:rect.main {:x x :y y
                   :width width
                   :height height
                   :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))

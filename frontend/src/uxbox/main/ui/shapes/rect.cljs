@@ -32,13 +32,6 @@
 
 ;; --- Rect Shape
 
-(defn- rotate
-  [mt {:keys [x1 y1 x2 y2 width height rotation] :as shape}]
-  (let [x-center (+ x1 (/ width 2))
-        y-center (+ y1 (/ height 2))
-        center (gpt/point x-center y-center)]
-    (gmt/rotate* mt rotation center)))
-
 (mf/defc rect-shape
   [{:keys [shape] :as props}]
   (let [{:keys [id rotation modifier-mtx]} shape
@@ -49,18 +42,16 @@
 
         {:keys [x y width height]} shape
 
-        ;; transform (when (pos? rotation)
-        ;;             (str (rotate (gmt/matrix) shape)))
-
-        transform (str/format "rotate(%s %s %s)"
-                              rotation
-                              (+ x (/ width 2))
-                              (+ y (/ height 2)))
+        transform (when (and rotation (pos? rotation))
+                    (str/format "rotate(%s %s %s)"
+                                rotation
+                                (+ x (/ width 2))
+                                (+ y (/ height 2))))
 
         props (-> (attrs/extract-style-attrs shape)
                   (assoc :x x
                          :y y
-                         ;; :transform transform
+                         :transform transform
                          :id (str "shape-" id)
                          :width width
                          :height height

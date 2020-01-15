@@ -20,9 +20,14 @@
    [uxbox.main.streams :as ms]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.geom.matrix :as gmt]))
 
-;; --- Resize Implementation
+(defn- apply-zoom
+  [point]
+  (gpt/divide point @refs/selected-zoom))
+
+;; --- Resize & Rotate
 
 (defn- start-resize
   [vid ids shape]
@@ -44,11 +49,7 @@
           (apply-grid-alignment [point]
             (if @refs/selected-alignment
               (uwrk/align-point point)
-              (rx/of point)))
-
-          ;; Apply the current zoom factor to the point.
-          (apply-zoom [point]
-            (gpt/divide point @refs/selected-zoom))]
+              (rx/of point)))]
     (reify
       ptk/WatchEvent
       (watch [_ state stream]
@@ -78,11 +79,8 @@
 
         (rx/concat
          (->> ms/mouse-position
-              ;; (rx/map apply-zoom)
-              ;; (rx/mapcat apply-grid-alignment)
+              (rx/map apply-zoom)
               (rx/with-latest vector ms/mouse-position-ctrl)
-              ;; (rx/map normalize-proportion-lock)
-              ;; (rx/mapcat (partial resize shape))
               (rx/map (fn [[pos ctrl?]]
                         (let [angle (+ (gpt/angle pos center) 90)
                               angle (if (neg? angle)
@@ -93,6 +91,9 @@
                                       (if (< 50 modval)
                                         (+ angle (- 90 modval))
                                         (- angle modval))
+                                      angle)
+                              angle (if (= angle 360)
+                                      0
                                       angle)]
                           (dw/update-shape (:id shape) {:rotation angle}))))
               (rx/take-until stoper)))))))
@@ -121,36 +122,35 @@
 
 (mf/defc controls
   [{:keys [shape zoom on-resize on-rotate] :as props}]
-  (let [{:keys [x y width height]} shape
+  (let [{:keys [x y width height rotation]} shape
         radius (if (> (max width height) handler-size-threshold) 6.0 4.0)
-
-        transform (str/format "rotate(%s %s %s)"
-                              (:rotation shape 0)
-                              (+ (:x shape) (/ (:width shape) 2))
-                              (+ (:y shape) (/ (:height shape) 2)))]
-
-    [:g.controls #_{:transform transform}
+        transform (geom/rotation-matrix shape)]
+    [:g.controls {:transform transform}
      [:rect.main {:x x :y y
                   :width width
                   :height height
                   :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
                   :style {:stroke "#31EFB8" :fill "transparent"
                           :stroke-opacity "1"}}]
-     [:path {:stroke "#31EFB8"
-             :stroke-opacity "1"
-             :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
-             :fill "transparent"
-             :d (str/format "M %s %s L %s %s"
-                            (+ x (/ width 2))
-                            y
-                            (+ x (/ width 2))
-                            (- y 30))}]
 
-     [:& control-item {:class "rotate"
-                       :r (/ radius zoom)
-                       :cx (+ x (/ width 2))
-                       :on-click on-rotate
-                       :cy (- y 30)}]
+     (when (fn? on-rotate)
+       [:*
+        [:path {:stroke "#31EFB8"
+                :stroke-opacity "1"
+                :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
+                :fill "transparent"
+                :d (str/format "M %s %s L %s %s"
+                               (+ x (/ width 2))
+                               y
+                               (+ x (/ width 2))
+                               (- y 30))}]
+
+        [:& control-item {:class "rotate"
+                          :r (/ radius zoom)
+                          :cx (+ x (/ width 2))
+                          :on-click on-rotate
+                          :cy (- y 30)}]])
+
      [:& control-item {:class "top"
                        :on-click #(on-resize :top %)
                        :r (/ radius zoom)
@@ -232,21 +232,10 @@
 
 ;; TODO: add specs for clarity
 
-(mf/defc multiple-selection-handlers
-  [{:keys [shapes selected zoom] :as props}]
-  (let [shape (->> shapes
-                   (map #(geom/selection-rect %))
-                   (geom/shapes->rect-shape)
-                   (geom/selection-rect))
-        on-resize #(do (dom/stop-propagation %2)
-                      (st/emit! (start-resize %1 selected shape)))]
-    [:& controls {:shape shape
-                  :zoom zoom
-                  :on-resize on-resize}]))
 
 (mf/defc text-edition-selection-handlers
   [{:keys [shape zoom] :as props}]
-  (let [{:keys [x y width height] :as shape} (geom/selection-rect shape)]
+  (let [{:keys [x y width height] :as shape} shape]
     [:g.controls
      [:rect.main {:x x :y y
                   :width width
@@ -257,13 +246,25 @@
                           :stroke-opacity "1"
                           :fill "transparent"}}]]))
 
+(mf/defc multiple-selection-handlers
+  [{:keys [shapes selected zoom] :as props}]
+  (let [shape (geom/selection-rect shapes)
+        on-resize #(do (dom/stop-propagation %2)
+                       (st/emit! (start-resize %1 selected shape)))]
+    [:& controls {:shape shape
+                  :zoom zoom
+                  :on-resize on-resize}]))
+
 (mf/defc single-selection-handlers
   [{:keys [shape zoom] :as props}]
+  (prn "single-selection-handlers" shape)
   (let [on-resize #(do (dom/stop-propagation %2)
                        (st/emit! (start-resize %1 #{(:id shape)} shape)))
         on-rotate #(do (dom/stop-propagation %)
-                       #_(st/emit! (start-rotate shape)))
-        shape (geom/selection-rect shape)]
+                       (st/emit! (start-rotate shape)))
+        modifier (:modifier-mtx shape)
+        shape (-> (geom/shape->rect-shape shape)
+                  (geom/transform (or modifier (gmt/matrix))))]
     [:& controls {:shape shape
                   :zoom zoom
                   :on-rotate on-rotate
@@ -272,7 +273,11 @@
 (mf/defc selection-handlers
   [{:keys [selected edition zoom] :as props}]
   (let [data   (mf/deref refs/workspace-data)
-        shapes (map #(get-in data [:shapes-by-id %]) selected)
+        ;; We need remove posible nil values because on shape
+        ;; deletion many shape will reamin selected and deleted
+        ;; in the same time for small instant of time
+        shapes (->> (map #(get-in data [:shapes-by-id %]) selected)
+                    (remove nil?))
         num (count shapes)
         {:keys [id type] :as shape} (first shapes)]
     (cond

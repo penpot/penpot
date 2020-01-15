@@ -13,7 +13,7 @@
 
 ;; --- Matrix Impl
 
-(defrecord Matrix [a b c d tx ty])
+(defrecord Matrix [a b c d e f])
 
 (defprotocol ICoerce
   "Matrix coersion protocol."
@@ -22,7 +22,7 @@
 (extend-type Matrix
   cljs.core/IDeref
   (-deref [v]
-    (mapv #(get v %) [:a :c :b :d :tx :ty]))
+    (mapv #(get v %) [:a :b :c :d :e :f]))
 
   Object
   (toString [v]
@@ -39,37 +39,26 @@
 
   cljs.core/PersistentVector
   (-matrix [v]
-    (let [[a b c d tx ty] v]
-      (Matrix. a b c d tx ty)))
+    (let [[a b c d e f] v]
+      (Matrix. a b c d e f)))
 
   cljs.core/IndexedSeq
   (-matrix [v]
-    (let [[a b c d tx ty] v]
-      (Matrix. a b c d tx ty))))
+    (let [[a b c d e f] v]
+      (Matrix. a b c d e f))))
 
 (defn multiply
-  ([m om]
-   (let [a1 (:a m)
-         b1 (:b m)
-         c1 (:c m)
-         d1 (:d m)
-         a2 (:a om)
-         b2 (:b om)
-         c2 (:c om)
-         d2 (:d om)
-         tx1 (:tx m)
-         ty1 (:ty m)
-         tx2 (:tx om)
-         ty2 (:ty om)]
-     (Matrix.
-      (+ (* a2 a1) (* c2 c1))
-      (+ (* a2 b1) (* c2 d1))
-      (+ (* b2 a1) (* d2 c1))
-      (+ (* b2 b1) (* d2 d1))
-      (+ tx1 (* tx2 a1) (* ty2 c1))
-      (+ ty1 (* tx2 b1) (* ty2 d1)))))
-  ([m om & others]
-   (reduce multiply (multiply m om) others)))
+  ([m1 m2]
+   (Matrix.
+    (+ (* (:a m1) (:a m2)) (* (:c m1) (:b m2)))
+    (+ (* (:b m1) (:a m2)) (* (:d m1) (:b m2)))
+    (+ (* (:a m1) (:c m2)) (* (:c m1) (:d m2)))
+    (+ (* (:b m1) (:c m2)) (* (:d m1) (:d m2)))
+    (+ (* (:a m1) (:e m2)) (* (:c m1) (:f m2)) (:e m1))
+    (+ (* (:b m1) (:e m2)) (* (:d m1) (:f m2)) (:f m1))))
+
+  ([m1 m2 & others]
+   (reduce multiply (multiply m1 m2) others)))
 
 (defn ^boolean matrix?
   "Return true if `v` is Matrix instance."
@@ -82,30 +71,98 @@
    (Matrix. 1 0 0 1 0 0))
   ([v]
    (-matrix v))
-  ([a b c d tx ty]
-   (Matrix. a b c d tx ty)))
+  ([a b c d e f]
+   (Matrix. a b c d e f)))
 
 (defn translate-matrix
-  ([pt]
-   (let [pt (gpt/point pt)]
-     (Matrix. 1 0 0 1 (:x pt) (:y pt))))
-  ([x y]
-   (translate-matrix (gpt/point x y))))
+  [pt]
+  (let [pt (gpt/point pt)]
+    (Matrix. 1 0 0 1 (:x pt) (:y pt))))
 
 (defn scale-matrix
-  ([s]
-   (Matrix. s 0 0 s 0 0))
-  ([sx sy]
-   (Matrix. sx 0 0 sy 0 0)))
+  [s]
+  (let [pt (gpt/point s)]
+    (Matrix. (:x pt) 0 0 (:y pt) 0 0)))
 
 (defn rotate-matrix
   [a]
   (let [a (mth/radians a)]
-    (Matrix. (mth/cos a)
-             (mth/sin a)
-             (- (mth/sin a))
-             (mth/cos a)
-             0 0)))
+    (Matrix.
+     (mth/cos a)
+     (mth/sin a)
+     (- (mth/sin a))
+     (mth/cos a)
+     0
+     0)))
+
+;; OLD
+;; (defn rotate
+;;   "Apply rotation transformation to the matrix."
+;;   ([m angle]
+;;    (multiply m (rotate-matrix angle)))
+;;   ([m angle center]
+;;    (multiply m
+;;            (translate-matrix center)
+;;            (rotate-matrix angle)
+;;            (translate-matrix (gpt/negate center)))))
+
+;; -- ROTATE
+;; r = radians(r)
+;; const cos = Math.cos(r)
+;; const sin = Math.sin(r)
+;;
+;; const { a, b, c, d, e, f } = this
+;;
+;; this.a = a * cos - b * sin
+;; this.b = b * cos + a * sin
+;; this.c = c * cos - d * sin
+;; this.d = d * cos + c * sin
+;; this.e = e * cos - f * sin + cy * sin - cx * cos + cx
+;; this.f = f * cos + e * sin - cx * sin - cy * cos + cy
+
+;; (defn rotate
+;;   ([m angle] (rotate m angle (gpt/point 0 0)))
+;;   ([m angle center]
+;;    (let [{:keys [a b c d e f]} m
+;;          {cx :x cy :y} center
+;;          r (mth/radians angle)
+;;          cos (mth/cos r)
+;;          sin (mth/sin r)
+;;          a' (- (* a cos) (* b sin))
+;;          b' (+ (* b cos) (* a sin))
+;;          c' (- (* c cos) (* d sin))
+;;          d' (+ (* d cos) (* c sin))
+;;          e' (+ (- (* e cos) (* f sin))
+;;                 (- (* cy sin) (* cx cos))
+;;                 cx)
+;;          f' (+ (- (+ (* f cos) (* e sin))
+;;                    (* cx sin)
+;;                    (* cy cos))
+;;                 cy)]
+;;      (Matrix. a' b' c' d' e' f'))))
+
+
+;; export function rotate (angle, cx, cy) {
+;;   const cosAngle = cos(angle)
+;;   const sinAngle = sin(angle)
+;;   const rotationMatrix = {
+;;     a: cosAngle,
+;;     c: -sinAngle,
+;;     e: 0,
+;;     b: sinAngle,
+;;     d: cosAngle,
+;;     f: 0
+;;   }
+;;   if (isUndefined(cx) || isUndefined(cy)) {
+;;     return rotationMatrix
+;;   }
+
+;;   return transform([
+;;     translate(cx, cy),
+;;     rotationMatrix,
+;;     translate(-cx, -cy)
+;;   ])
+;; }
 
 (defn rotate
   "Apply rotation transformation to the matrix."
@@ -113,35 +170,12 @@
    (multiply m (rotate-matrix angle)))
   ([m angle center]
    (multiply m
-           (translate-matrix center)
-           (rotate-matrix angle)
-           (translate-matrix (gpt/negate center)))))
+             (translate-matrix center)
+             (rotate-matrix angle)
+             (translate-matrix (gpt/negate center)))))
 
-(defn rotate*
-  ([m angle]
-   (let [center (gpt/point 0 0)]
-     (rotate m angle center)))
-  ([m angle center]
-   (let [angle (mth/radians angle)
-         x (:x center)
-         y (:y center)
-         cos (mth/cos angle)
-         sin (mth/sin angle)
-         nsin (- sin)
-         tx (- x (+ (* x cos)) (* y sin))
-         ty (- y (- (* x sin)) (* y cos))
-         a (+ (* cos (:a m)) (* sin (:c m)))
-         b (+ (* cos (:b m)) (* sin (:d m)))
-         c (+ (* nsin (:a m)) (* cos (:c m)))
-         d (+ (* nsin (:b m)) (* cos (:d m)))
-         tx' (+ (:tx m) (* tx (:a m)) (* ty (:c m)))
-         ty' (+ (:ty m) (* tx (:b m)) (* ty (:d m)))]
-     (Matrix. a b c d tx' ty'))))
-
-(defn scale
-  "Apply scale transformation to the matrix."
-  ([m v] (scale m v v))
-  ([m vx vy] (multiply m (scale-matrix vx vy))))
+;; TODO: temporal backward compatibility
+(def rotate* rotate)
 
   ;; ([m v] (scale m v v))
   ;; ([m x y]
@@ -151,38 +185,77 @@
   ;;         :b (* (:b m) y)
   ;;         :d (* (:d m) y))))
 
+
+
+  ;; scaleO (x, y = x, cx = 0, cy = 0) {
+  ;;   // Support uniform scaling
+  ;;   if (arguments.length === 3) {
+  ;;     cy = cx
+  ;;     cx = y
+  ;;     y = x
+  ;;   }
+
+  ;;   const { a, b, c, d, e, f } = this
+
+  ;;   this.a = a * x
+  ;;   this.b = b * y
+  ;;   this.c = c * x
+  ;;   this.d = d * y
+  ;;   this.e = e * x - cx * x + cx
+  ;;   this.f = f * y - cy * y + cy
+
+  ;;   return this
+  ;; }
+
+;; (defn scale
+;;   "Apply scale transformation to the matrix."
+;;   ([m x] (scale m x x))
+;;   ([m x y]
+;;    (let [{:keys [a b c d e f]} m
+;;          cx 0
+;;          cy 0
+;;          a' (* a x)
+;;          b' (* b y)
+;;          c' (* c x)
+;;          d' (* d y)
+;;          e' (+ cx (- (* e x)
+;;                       (* cx x)))
+;;          f' (+ cy (- (* f y)
+;;                       (* cy y)))]
+;;      (Matrix. a' b' c' d' e f))))
+
+(defn scale
+  "Apply scale transformation to the matrix."
+  ([m s] (multiply m (scale-matrix s)))
+  ([m s c]
+   (multiply m
+             (translate-matrix c)
+             (scale-matrix s)
+             (translate-matrix (gpt/negate c)))))
+
 (defn translate
   "Apply translate transformation to the matrix."
-  ([m pt]
-   (multiply m (translate-matrix pt)))
-  ([m x y]
-   (translate m (gpt/point x y))))
-
-  ;; ([m pt]
-  ;;  (let [pt (gpt/point pt)]
-  ;;    (assoc m
-  ;;           :tx (+ (:tx m) (* (:x pt) (:a m)) (* (:y pt) (:b m)))
-  ;;           :ty (+ (:ty m) (* (:x pt) (:c m)) (* (:y pt) (:d m))))))
-  ;; ([m x y]
-  ;;  (translate m (gpt/point x y))))
+  [m pt]
+  (let [pt (gpt/point pt)]
+    (multiply m (translate-matrix pt))))
 
 (defn ^boolean invertible?
-  [{:keys [a b c d tx ty] :as m}]
+  [{:keys [a b c d e f] :as m}]
   (let [det (- (* a d) (* c b))]
     (and (not (mth/nan? det))
-         (mth/finite? tx)
-         (mth/finite? ty))))
+         (mth/finite? e)
+         (mth/finite? f))))
 
 (defn invert
-  [{:keys [a b c d tx ty] :as m}]
+  [{:keys [a b c d e f] :as m}]
   (when (invertible? m)
     (let [det (- (* a d) (* c b))]
       (Matrix. (/ d det)
                (/ (- b) det)
                (/ (- c) det)
                (/ a det)
-               (/ (- (* c ty) (* d tx)) det)
-               (/ (- (* b tx) (* a ty)) det)))))
+               (/ (- (* c f) (* d e)) det)
+               (/ (- (* b e) (* a f)) det)))))
 
 ;; --- Transit Adapter
 

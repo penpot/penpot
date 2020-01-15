@@ -116,7 +116,6 @@
   If the second vector is not provided, the angle
   will be measured from x-axis."
   ([p]
-
    (-> (mth/atan2 (:y p) (:x p))
        (mth/degrees)))
   ([p center]
@@ -162,10 +161,10 @@
 
 (defn transform
   "Transform a point applying a matrix transfomation."
-  [pt {:keys [a b c d tx ty] :as m}]
+  [pt {:keys [a b c d e f] :as m}]
   (let [{:keys [x y]} (point pt)]
-    (Point. (+ (* x a) (* y c) tx)
-            (+ (* x b) (* y d) ty))))
+    (Point. (+ (* x a) (* y c) e)
+            (+ (* x b) (* y d) f))))
 
 
 ;; --- Transit Adapter

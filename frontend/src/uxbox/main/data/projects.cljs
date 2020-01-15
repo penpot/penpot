@@ -354,7 +354,7 @@
   (ptk/reify ::create-empty-page
     ptk/WatchEvent
     (watch [this state stream]
-      (let [file-id (get-in state [:workspace-local :file-id])
+      (let [file-id (get-in state [:workspace-page :file-id])
             name (str "Page " (gensym "p"))
             ordering (count (get-in state [:files file-id :pages]))
             params {:name name
