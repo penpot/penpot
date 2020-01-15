@@ -22,6 +22,7 @@
     "rimraf": "^3.0.0"
   },
   "dependencies": {
-    "source-map-support": "^0.5.16"
+    "source-map-support": "^0.5.16",
+    "transformation-matrix": "^2.2.0"
   }
 }
