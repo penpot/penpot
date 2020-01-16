@@ -8,16 +8,14 @@
 ;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.ui.workspace.sidebar.options.rect
+(ns uxbox.main.ui.workspace.sidebar.options.canvas
   (:require
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.workspace :as udw]
-   [uxbox.main.geom :as geom]
    [uxbox.main.store :as st]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.i18n :refer [tr]]
@@ -43,20 +41,6 @@
                           (d/parse-integer))
                 point (gpt/point {attr value})]
             (st/emit! (udw/update-position (:id shape) point))))
-
-        on-rotation-change
-        (fn [event]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer 0))]
-            (st/emit! (udw/update-shape (:id shape) {:rotation value}))))
-
-        on-radius-change
-        (fn [event]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-double 0))]
-            (st/emit! (udw/update-shape (:id shape) {:rx value :ry value}))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
@@ -108,33 +92,10 @@
                             :on-change on-pos-y-change
                             :value (-> (:y shape)
                                        (math/precision 2)
-                                       (d/coalesce-str "0"))}]]]
-
-      [:span (tr "workspace.options.rotation-radius")]
-      [:div.row-flex
-       [:div.input-element.degrees
-        [:input.input-text {:placeholder ""
-                            :type "number"
-                            :min 0
-                            :max 360
-                            :on-change on-rotation-change
-                            :value (-> (:rotation shape 0)
-                                       (math/precision 2)
-                                       (d/coalesce-str "0"))}]]
-
-       [:div.input-element.pixels
-        [:input.input-text
-         {:placeholder "rx"
-          :type "number"
-          :on-change on-radius-change
-          :value (-> (:rx shape)
-                     (math/precision 2)
-                     (d/coalesce-str "0"))}]]]]]))
-
+                                       (d/coalesce-str "0"))}]]]]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
   [:div
    [:& measures-menu {:shape shape}]
-   [:& fill-menu {:shape shape}]
-   [:& stroke-menu {:shape shape}]])
+   [:& fill-menu {:shape shape}]])

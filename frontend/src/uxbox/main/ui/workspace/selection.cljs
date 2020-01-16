@@ -133,7 +133,8 @@
                   :style {:stroke "#31EFB8" :fill "transparent"
                           :stroke-opacity "1"}}]
 
-     (when (fn? on-rotate)
+     (when (and (fn? on-rotate)
+                (not= :canvas (:type shape)))
        [:*
         [:path {:stroke "#31EFB8"
                 :stroke-opacity "1"
