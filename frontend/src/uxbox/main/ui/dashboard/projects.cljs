@@ -22,7 +22,7 @@
    [uxbox.main.ui.dashboard.common :as common]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :as t :refer [tr]]
+   [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]))
 

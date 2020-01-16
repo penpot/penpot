@@ -48,7 +48,16 @@
   [r]
   (instance? C r))
 
-(defn- internal-tr
+;; A main public api for translate strings.
+
+;; A marker type that is used just for mark
+;; a parameter that reprsentes the counter.
+
+(defn c
+  [x]
+  (C. x))
+
+(defn t
   ([locale code]
    (let [code (name code)
          value (gobj/getValueByKeys translations code locale)
@@ -66,27 +75,16 @@
                  value)]
      (apply str/format value (map #(if (c? %) @% %) args)))))
 
-;; A main public api for translate strings.
-
-;; A marker type that is used just for mark
-;; a parameter that reprsentes the counter.
-
-(defn c
-  [x]
-  (C. x))
-
 (defn tr
-  ([code] (internal-tr locale code))
-  ([code & args] (apply internal-tr locale code args)))
+  ([code] (t locale code))
+  ([code & args] (apply t locale code args)))
 
-(defn use-translations
+(defn use-locale
   []
-  (let [[locale set-locale] (mf/useState locale)
-        tr-fn (mf/useMemo (fn [] (partial internal-tr locale))
-                          #js [locale])]
+  (let [[locale set-locale] (mf/useState locale)]
     (mf/useEffect (fn []
                     (let [sub (rx/sub! locale-sub #(set-locale %))]
                       #(rx/dispose! sub)))
                   #js [])
-    tr-fn))
+    locale))
 

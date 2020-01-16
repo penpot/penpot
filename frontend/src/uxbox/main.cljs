@@ -30,15 +30,13 @@
 ;; --- i18n
 
 (declare reinit)
-(rx/sub! i18n/locale-sub #(reinit))
+;; (rx/sub! i18n/locale-sub #(reinit))
 
 ;; --- Error Handling
 
 (defn- on-navigate
   [router path]
   (let [match (rt/match router path)]
-    (prn "main$on-navigate" path)
-
     (cond
       (and (= path "") (:auth storage))
       (st/emit! (rt/nav :dashboard-projects))

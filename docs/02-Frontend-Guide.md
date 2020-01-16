@@ -79,9 +79,9 @@ The `uxbox.util.i18n/tr` is the general purpose function. This is a
 simple use case example:
 
 ```clojure
-(require '[uxbox.util.i18n :as i18n])
+(require '[uxbox.util.i18n :refer [tr])
 
-(i18n/tr "auth.email-or-username")
+(tr "auth.email-or-username")
 ;; => "Email or Username"
 ```
 
@@ -90,23 +90,26 @@ need to pass an additional parameter marked as counter in order to
 allow the system know when to show the plural:
 
 ```clojure
-(require '[uxbox.util.i18n :as i18n])
+(require '[uxbox.util.i18n :as i18n :refer [tr]])
 
-(i18n/tr "ds.num-projects" (i18n/c 10))
+(tr "ds.num-projects" (i18n/c 10))
 ;; => "10 projects"
 
-(i18n/tr "ds.num-projects" (i18n/c 1))
+(tr "ds.num-projects" (i18n/c 1))
 ;; => "1 project"
 ```
 
-For React components, you have `uxbox.util.i18n/use-translations` hook:
+For React components, you have `uxbox.util.i18n/use-locale` hook
+and the `uxbox.util.i18n/t` function:
 
 ```clojure
+(require '[uxbox.util.i18n :as i18n :refer [t]])
+
 (mf/defc my-component
   [props]
-  (let [tr (i18n/use-translations)]
+  (let [locale (i18n/use-locale)]
     [:div
-     [:span (tr "auth.email-or-username")]]))
+     [:span (t locale "auth.email-or-username")]]))
 ```
 
 You can use the general purpose function in React component but when

@@ -21,7 +21,7 @@
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.data :refer [classnames enumerate]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :as i18n :refer [tr]]
+   [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.router :as rt]))
 
 ;; --- Page Item
@@ -129,10 +129,10 @@
 (mf/defc sitemap-toolbox
   [{:keys [file page] :as props}]
   (let [on-create-click #(st/emit! dp/create-empty-page)
-        tr (i18n/use-translations)]
+        locale (i18n/use-locale)]
     [:div.sitemap.tool-window
      [:div.tool-window-bar
-      [:span (tr "workspace.sidebar.sitemap")]
+      [:span (t locale "workspace.sidebar.sitemap")]
       [:div.add-page {:on-click on-create-click} i/close]]
      [:div.tool-window-content
       [:& pages-list {:file file :current-page page}]]]))

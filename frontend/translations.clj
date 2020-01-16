@@ -30,11 +30,21 @@
   (->> form
        (walk/postwalk
         (fn [fm]
-          (when (and (list? fm)
-                     (= (first fm) 'tr)
-                     (string? (second fm)))
+          (cond
+            (and (list? fm)
+                 (= (first fm) 'tr)
+                 (string? (second fm)))
             (let [m (meta (first fm))]
               (swap! env conj {:code (second fm)
+                               :file (:file m)
+                               :line (:line m)}))
+
+            (and (list? fm)
+                 (= (first fm) 't)
+                 (symbol? (second fm)))
+            (let [m (meta (first fm))
+                  code (first (drop 2 fm))]
+              (swap! env conj {:code code
                                :file (:file m)
                                :line (:line m)})))
           fm))))
@@ -99,9 +109,7 @@
                             state
                             (-> state
                                 (dissoc "unused")
-                                (assoc "used-in" (->> (get state "used-in" [])
-                                                      (remove #(= rpath %))
-                                                      (into [rpath])))))))
+                                (update "used-in" conj rpath)))))
       (assoc data code {"translations" {"en" nil "fr" nil}
                         "used-in" [rpath]}))))
 
@@ -118,18 +126,19 @@
             data
             toremove)))
 
-(defn- ensure-translations-format
+(defn- initial-cleanup
   [data]
   (reduce-kv (fn [data k v]
                (if (string? v)
-                 (assoc data k {:translations {:en v}})
-                 data))
+                 (assoc data k {"used-in" []
+                                "translations" {:en v}})
+                 (update data k assoc "used-in" [])))
              data
              data))
 
 (defn- synchronize-translations
   [data translations]
-  (loop [data (ensure-translations-format data)
+  (loop [data (initial-cleanup data)
          imported #{}
          c (first translations)
          r (rest translations)]

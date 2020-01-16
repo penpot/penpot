@@ -5,8 +5,8 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.profile.recovery
   (:require
@@ -23,7 +23,7 @@
    [uxbox.util.messages :as um]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
-   [uxbox.util.i18n :as i18n]
+   [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.router :as rt]))
 
 (s/def ::token ::us/not-empty-string)
@@ -33,16 +33,16 @@
 (mf/defc recovery-form
   []
   (let [{:keys [data] :as form} (fm/use-form ::recovery-form {})
-        tr (i18n/use-translations)
+        locale (i18n/use-locale)
 
         on-success
         (fn []
-          (st/emit! (um/info (tr "profile.recovery.password-changed"))
+          (st/emit! (um/info (t locale "profile.recovery.password-changed"))
                     (rt/nav :login)))
 
         on-error
         (fn []
-          (st/emit! (um/error (tr "profile.recovery.invalid-token"))))
+          (st/emit! (um/error (t locale "profile.recovery.invalid-token"))))
 
         on-submit
         (fn [event]
@@ -58,7 +58,7 @@
         :class (fm/error-class form :token)
         :on-blur (fm/on-input-blur form :token)
         :on-change (fm/on-input-change form :token)
-        :placeholder (tr "profile.recovery.token")
+        :placeholder (t locale "profile.recovery.token")
         :auto-complete "off"
         :type "text"}]
       [:input.input-text
@@ -67,18 +67,18 @@
         :class (fm/error-class form :password)
         :on-blur (fm/on-input-blur form :password)
         :on-change (fm/on-input-change form :password)
-        :placeholder (tr "profile.recovery.password")
+        :placeholder (t locale "profile.recovery.password")
         :type "password"}]
       [:input.btn-primary
        {:name "recover"
         :class (when-not (:valid form) "btn-disabled")
         :disabled (not (:valid form))
-        :value (tr "profile.recovery.submit-recover")
+        :value (t locale "profile.recovery.submit-recover")
         :type "submit"}]
 
       [:div.login-links
        [:a {:on-click #(st/emit! (rt/nav :login))}
-        (tr "profile.recovery.go-to-login")]]]]))
+        (t locale "profile.recovery.go-to-login")]]]]))
 
 ;; --- Recovery Request Page
 
