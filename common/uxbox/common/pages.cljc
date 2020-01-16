@@ -47,7 +47,7 @@
 (s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
 (s/def ::stroke-width number?)
 (s/def ::text-align #{"left" "right" "center" "justify"})
-(s/def ::type #{:rect :path :circle :image :text :canvas})
+(s/def ::type #{:rect :path :circle :image :text :canvas :curve})
 (s/def ::x number?)
 (s/def ::y number?)
 (s/def ::cx number?)
