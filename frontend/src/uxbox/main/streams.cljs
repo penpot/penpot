@@ -78,7 +78,7 @@
   [current]
   (->> (rx/concat (rx/of current)
                   (rx/sample 10 mouse-position))
-       (rx/map #(gpt/divide % @refs/selected-zoom))
+       (rx/map #(gpt/divide % (gpt/point @refs/selected-zoom)))
        (rx/mapcat (fn [point]
                     (if @refs/selected-alignment
                       (uwrk/align-point point)

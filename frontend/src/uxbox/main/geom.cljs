@@ -434,10 +434,10 @@
 (defn shapes->rect-shape
   [shapes]
   (let [shapes (mapv shape->rect-shape shapes)
-        minx (apply js/Math.min (mapv :x1 shapes))
-        miny (apply js/Math.min (mapv :y1 shapes))
-        maxx (apply js/Math.max (mapv :x2 shapes))
-        maxy (apply js/Math.max (mapv :y2 shapes))]
+        minx (transduce (map :x1) min shapes)
+        miny (transduce (map :y1) min shapes)
+        maxx (transduce (map :x2) max shapes)
+        maxy (transduce (map :y2) max shapes)]
     {:x1 minx
      :y1 miny
      :x2 maxx
@@ -509,10 +509,10 @@
 
 (defn- transform-rect
   [{:keys [x y width height] :as shape} mx]
-  (let [tl (gpt/transform [x y] mx)
-        tr (gpt/transform [(+ x width) y] mx)
-        bl (gpt/transform [x (+ y height)] mx)
-        br (gpt/transform [(+ x width) (+ y height)] mx)
+  (let [tl (gpt/transform (gpt/point x y) mx)
+        tr (gpt/transform (gpt/point (+ x width) y) mx)
+        bl (gpt/transform (gpt/point x (+ y height)) mx)
+        br (gpt/transform (gpt/point (+ x width) (+ y height)) mx)
         ;; TODO: replace apply with transduce (performance)
         minx (apply min (map :x [tl tr bl br]))
         maxx (apply max (map :x [tl tr bl br]))
@@ -527,10 +527,10 @@
 (defn- transform-circle
   [{:keys [cx cy rx ry] :as shape} xfmt]
   (let [{:keys [x1 y1 x2 y2]} (shape->rect-shape shape)
-        tl (gpt/transform [x1 y1] xfmt)
-        tr (gpt/transform [x2 y1] xfmt)
-        bl (gpt/transform [x1 y2] xfmt)
-        br (gpt/transform [x2 y2] xfmt)
+        tl (gpt/transform (gpt/point x1 y1) xfmt)
+        tr (gpt/transform (gpt/point x2 y1) xfmt)
+        bl (gpt/transform (gpt/point x1 y2) xfmt)
+        br (gpt/transform (gpt/point x2 y2) xfmt)
 
         ;; TODO: replace apply with transduce (performance)
         x (apply min (map :x [tl tr bl br]))

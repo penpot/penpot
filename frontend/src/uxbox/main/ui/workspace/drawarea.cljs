@@ -135,7 +135,7 @@
 
               mouse (->> ms/mouse-position
                          (rx/mapcat #(conditional-align % align?))
-                         (rx/map #(gpt/divide % zoom)))]
+                         (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (->> mouse
                 (rx/take 1)
@@ -179,14 +179,14 @@
         (let [{:keys [zoom flags]} (:workspace-local state)
 
               align? (refs/alignment-activated? flags)
-              last-point (volatile! (gpt/divide @ms/mouse-position zoom))
+              last-point (volatile! (gpt/divide @ms/mouse-position (gpt/point zoom)))
 
               stoper (->> (rx/filter stoper-event? stream)
                           (rx/share))
 
               mouse (->> (rx/sample 10 ms/mouse-position)
                          (rx/mapcat #(conditional-align % align?))
-                         (rx/map #(gpt/divide % zoom)))
+                         (rx/map #(gpt/divide % (gpt/point zoom))))
 
               points (->> stream
                           (rx/filter ms/mouse-click?)
@@ -255,7 +255,7 @@
               stoper (rx/filter stoper-event? stream)
               mouse  (->> (rx/sample 10 ms/mouse-position)
                           (rx/mapcat #(conditional-align % align?))
-                          (rx/map #(gpt/divide % zoom)))]
+                          (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (rx/of initialize-drawing)
            (->> mouse

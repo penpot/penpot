@@ -25,7 +25,7 @@
 
 (defn- apply-zoom
   [point]
-  (gpt/divide point @refs/selected-zoom))
+  (gpt/divide point (gpt/point @refs/selected-zoom)))
 
 ;; --- Resize & Rotate
 
@@ -115,8 +115,8 @@
     :style {:fillOpacity "1"
             :strokeWidth "2px"
             :vectorEffect "non-scaling-stroke"}
-   :fill "rgba(49,239,184,.7)"
-   :stroke "#31EFB8"
+    :fill "rgba(49,239,184,.7)"
+    :stroke "#31EFB8"
     :cx cx
     :cy cy}])
 
@@ -232,7 +232,6 @@
 
 ;; TODO: add specs for clarity
 
-
 (mf/defc text-edition-selection-handlers
   [{:keys [shape zoom] :as props}]
   (let [{:keys [x y width height] :as shape} shape]
@@ -257,7 +256,6 @@
 
 (mf/defc single-selection-handlers
   [{:keys [shape zoom] :as props}]
-  (prn "single-selection-handlers" shape)
   (let [on-resize #(do (dom/stop-propagation %2)
                        (st/emit! (start-resize %1 #{(:id shape)} shape)))
         on-rotate #(do (dom/stop-propagation %)

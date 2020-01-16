@@ -38,7 +38,7 @@
 (mf/defc coordinates
   [{:keys [zoom] :as props}]
   (let [coords (some-> (use-rxsub ms/mouse-position)
-                       (gpt/divide zoom)
+                       (gpt/divide (gpt/point zoom zoom))
                        (gpt/round 0))]
     [:ul.coordinates
      [:span {:alt "x"}
