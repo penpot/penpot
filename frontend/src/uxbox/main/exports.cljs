@@ -9,6 +9,7 @@
   (:require
    [cljsjs.react.dom.server]
    [rumext.alpha :as mf]
+   [uxbox.util.math :as mth]
    [uxbox.main.geom :as geom]
    [uxbox.main.ui.shapes.canvas :as canvas]
    [uxbox.main.ui.shapes.circle :as circle]
@@ -29,9 +30,11 @@
 (defn- calculate-dimensions
   [data]
   (let [shapes (vals (:shapes-by-id data))
-        shape (geom/shapes->rect-shape shapes)]
-    {:width (+ (:x shape) (:width shape) 100)
-     :height (+ (:y shape) (:height shape) 100)}))
+        shape (geom/shapes->rect-shape shapes)
+        width (+ (:x shape) (:width shape) 100)
+        height (+ (:y shape) (:height shape) 100)]
+    {:width (if (mth/nan? width) 100 width)
+     :height (if (mth/nan? height) 100 height)}))
 
 (mf/defc shape-wrapper
   [{:keys [shape] :as props}]
@@ -52,7 +55,7 @@
         shapes (map #(get shapes-by-id %) (:shapes data []))
         canvas (map #(get shapes-by-id %) (:canvas data []))
         dim (calculate-dimensions data)]
-    [:svg {:view-box (str "0 0 " (:width dim) " " (:height dim))
+    [:svg {:view-box (str "0 0 " (:width dim 0) " " (:height dim 0))
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
