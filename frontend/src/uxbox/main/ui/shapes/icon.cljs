@@ -38,7 +38,7 @@
   (let [x-center (+ x1 (/ width 2))
         y-center (+ y1 (/ height 2))
         center (gpt/point x-center y-center)]
-    (gmt/rotate* mt rotation center)))
+    (gmt/rotate mt rotation center)))
 
 (mf/defc icon-shape
   [{:keys [shape] :as props}]

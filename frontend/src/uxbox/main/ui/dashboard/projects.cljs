@@ -75,6 +75,12 @@
 
 ;; --- Grid Item
 
+(mf/defc grid-item-metadata
+  [{:keys [modified-at]}]
+  (let [locale (i18n/use-locale)
+        time (dt/timeago modified-at {:locale locale})]
+    (str (t locale "ds.updated-at" time))))
+
 (mf/defc grid-item
   {:wrap [mf/wrap-memo]}
   [{:keys [file] :as props}]
@@ -105,9 +111,7 @@
                               ;; :on-click on-edit
                               :default-value (:name file)}]
         [:h3 (:name file)])
-      [:span.date
-       (str (tr "ds.updated-at" (dt/timeago (:modified-at file))))]]
-
+      [:& grid-item-metadata {:modified-at (:modified-at file)}]]
      [:div.project-th-actions
       ;; [:div.project-th-icon.pages
       ;;  i/page

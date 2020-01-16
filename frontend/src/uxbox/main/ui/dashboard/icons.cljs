@@ -300,7 +300,7 @@
                               :default-value (:name icon)}]
         [:h3 {:on-double-click on-edit}
          (:name icon)])
-      (str (tr "ds.uploaded-at" (dt/format (:created-at icon) "DD/MM/YYYY")))]]))
+      (str (tr "ds.uploaded-at" (dt/format (:created-at icon) "dd/MM/yyyy")))]]))
 
 ;; --- Grid
 

@@ -47,7 +47,7 @@
 
         transform (when (pos? rotation)
                     (str (-> (gmt/matrix)
-                             (gmt/rotate* rotation center))))
+                             (gmt/rotate rotation center))))
 
         props {:id (str "shape-" id)
                :class (classnames :move-cursor moving?)

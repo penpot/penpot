@@ -75,9 +75,6 @@
              (rotate-matrix angle)
              (translate-matrix (gpt/negate center)))))
 
-;; TODO: temporal backward compatibility
-(def rotate* rotate)
-
 (defn scale
   "Apply scale transformation to the matrix."
   ([m scale] (multiply m (scale-matrix scale)))
