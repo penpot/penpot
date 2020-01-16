@@ -1095,8 +1095,6 @@
 (s/def ::update-dimensions
   (s/keys :opt-un [::width ::height]))
 
-;; TODO: emit commit-changes
-
 (defn update-dimensions
   "A helper event just for update the position
   of the shape using the width and height attrs
@@ -1105,9 +1103,19 @@
   (us/assert ::us/uuid id)
   (us/assert ::update-dimensions dimensions)
   (ptk/reify ::update-dimensions
+    IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-data :shapes-by-id id] geom/resize-dim dimensions))))
+      (let [shape-old (get-in state [:workspace-data :shapes-by-id id])
+            shape-new (geom/resize-dim shape-old dimensions)
+            operations (d/diff-maps shape-old shape-new)
+            change {:type :mod-shape
+                    :session-id (:session-id state)
+                    :operations operations
+                    :id id}]
+        (-> state
+            (assoc-in [:workspace-data :shapes-by-id id] shape-new)
+            (update ::batched-changes (fnil conj []) change))))))
 
 ;; --- Shape Proportions
 
