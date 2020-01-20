@@ -92,12 +92,7 @@
   [conn {:keys [user file-id] :as params}]
   (let [id  (uuid/next)
         name "Page 1"
-        data (blob/encode
-              {:version 1
-               :shapes []
-               :canvas []
-               :options {}
-               :shapes-by-id {}})
+        data (blob/encode cp/default-page-data)
         sql "insert into project_pages (id, user_id, file_id, name, version,
                                         ordering, data)
              values ($1, $2, $3, $4, 0, 1, $5) returning id"]
