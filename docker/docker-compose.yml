@@ -41,7 +41,8 @@ services:
 
     environment:
       # HTTP setup
-      - UXBOX_HTTP_SERVER_CORS=*
+      # - CLOJURE_OPTIONS=
+      - UXBOX_HTTP_SERVER_CORS="*"
 
       # Media & Assets
       - UXBOX_MEDIA_URI="/media/"

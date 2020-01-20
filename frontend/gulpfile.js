@@ -1,20 +1,19 @@
-const gulp = require("gulp");
-const scss = require("gulp-sass");
 const autoprefixer = require('gulp-autoprefixer');
-const rimraf = require("rimraf");
-const mustache = require("gulp-mustache");
-const rename = require("gulp-rename");
-const gulpif = require("gulp-if");
-const gzip = require("gulp-gzip");
 const cleancss = require("gulp-clean-css");
 const fs = require("fs");
+const gulp = require("gulp");
+const gulpif = require("gulp-if");
+const gzip = require("gulp-gzip");
 const l = require("lodash");
+const mustache = require("gulp-mustache");
+const rename = require("gulp-rename");
+const rimraf = require("rimraf");
+const scss = require("gulp-sass");
 
 const paths = {};
 paths.app = "./resources/";
 paths.output = "./resources/public/";
-paths.dist = "./dist/";
-paths.target = "./target/";
+paths.dist = "./target/dist/";
 paths.scss = paths.app + "styles/**/*.scss";
 
 /***********************************************
@@ -34,10 +33,7 @@ gulp.task("dist:clean", function(next) {
 });
 
 function makeAutoprefixer() {
-  return autoprefixer('last 2 version',
-                      'safari 5',
-                      'ios 6',
-                      'android 4');
+  return autoprefixer('last 2 version');
 }
 
 
@@ -74,12 +70,12 @@ gulp.task("scss:main", scssPipeline({
   output: paths.output + "css/"
 }));
 
-gulp.task("scss:view", scssPipeline({
-  input: paths.app + "styles/view.scss",
-  output: paths.output + "css/"
-}));
+// gulp.task("scss:view", scssPipeline({
+//   input: paths.app + "styles/view.scss",
+//   output: paths.output + "css/"
+// }));
 
-gulp.task("scss", gulp.parallel("scss:main", "scss:view"));
+gulp.task("scss", gulp.parallel("scss:main"));
 
 function readLocales() {
   const path = __dirname + "/resources/locales.json";
@@ -125,12 +121,12 @@ gulp.task("template:main", templatePipeline({
   output: paths.output
 }));
 
-gulp.task("template:view", templatePipeline({
-  input: paths.app + "templates/view.mustache",
-  output: paths.output + "view/"
-}));
+// gulp.task("template:view", templatePipeline({
+//   input: paths.app + "templates/view.mustache",
+//   output: paths.output + "view/"
+// }));
 
-gulp.task("templates", gulp.parallel("template:view", "template:main"));
+gulp.task("templates", gulp.parallel("template:main"));
 
 // Entry Point
 
@@ -157,16 +153,16 @@ gulp.task("dist:clean", function(next) {
 // Templates
 
 gulp.task("dist:template:main", templatePipeline({
-  input: paths.app + "index.mustache",
+  input: paths.app + "templates/index.mustache",
   output: paths.dist,
 }));
 
-gulp.task("dist:template:view", templatePipeline({
-  input: paths.app + "view.mustache",
-  output: paths.dist + "view/",
-}));
+// gulp.task("dist:template:view", templatePipeline({
+//   input: paths.app + "view.mustache",
+//   output: paths.dist + "view/",
+// }));
 
-gulp.task("dist:templates", gulp.parallel("dist:template:view", "dist:template:main"));
+gulp.task("dist:templates", gulp.parallel("dist:template:main"));
 
 // Styles
 
@@ -175,12 +171,12 @@ gulp.task("dist:scss:main", scssPipeline({
   output: paths.dist + "css/"
 }));
 
-gulp.task("dist:scss:view", scssPipeline({
-  input: paths.app + "styles/view.scss",
-  output: paths.dist + "css/"
-}));
+// gulp.task("dist:scss:view", scssPipeline({
+//   input: paths.app + "styles/view.scss",
+//   output: paths.dist + "css/"
+// }));
 
-gulp.task("dist:scss", gulp.parallel("dist:scss:main", "dist:scss:view"));
+gulp.task("dist:scss", gulp.parallel("dist:scss:main"));
 
 // Copy
 

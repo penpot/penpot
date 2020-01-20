@@ -11,6 +11,8 @@
   "A configuration management."
   (:require
    [clojure.tools.logging :as log]
+   [clojure.spec.alpha :as s]
+   [uxbox.common.spec :as us]
    [cuerdas.core :as str]
    [environ.core :refer [env]]
    [mount.core :refer [defstate]]
@@ -29,37 +31,82 @@
           (log/warn (str/istr "can't parse `~{key}` env value"))
           default)))))
 
+
+
 ;; --- Configuration Loading & Parsing
 
 (defn read-config
   []
-  {:http-server-port (lookup-env env :uxbox-http-server-port 6060)
-   :http-server-debug (lookup-env env :uxbox-http-server-debug true)
-   :http-server-cors (lookup-env env :uxbox-http-server-cors "http://localhost:3449")
+  {:http-server-port (:uxbox-http-server-port env 6060)
+   :http-server-debug (:uxbox-http-server-debug env true)
+   :http-server-cors (:uxbox-http-server-cors env "http://localhost:3449")
 
-   :database-username (lookup-env env :uxbox-database-username nil)
-   :database-password (lookup-env env :uxbox-database-password nil)
-   :database-uri (lookup-env env :uxbox-database-uri "postgresql://127.0.0.1/uxbox")
-   :media-directory (lookup-env env :uxbox-media-directory "resources/public/media")
-   :media-uri (lookup-env env :uxbox-media-uri "http://localhost:6060/media/")
-   :assets-directory (lookup-env env :uxbox-assets-directory "resources/public/static")
-   :assets-uri (lookup-env env :uxbox-assets-uri "http://localhost:6060/static/")
+   :database-username (:uxbox-database-username env nil)
+   :database-password (:uxbox-database-password env nil)
+   :database-uri (:uxbox-database-uri env "postgresql://127.0.0.1/uxbox")
+   :media-directory (:uxbox-media-directory env "resources/public/media")
+   :media-uri (:uxbox-media-uri env "http://localhost:6060/media/")
+   :assets-directory (:uxbox-assets-directory env "resources/public/static")
+   :assets-uri (:uxbox-assets-uri env "http://localhost:6060/static/")
 
-   :google-api-key (lookup-env env :uxbox-google-api-key nil)
+   :google-api-key (:uxbox-google-api-key env nil)
 
-   :email-reply-to (lookup-env env :uxbox-email-reply-to "no-reply@nodomain.com")
-   :email-from (lookup-env env :uxbox-email-from "no-reply@nodomain.com")
+   :email-reply-to (:uxbox-email-reply-to env "no-reply@nodomain.com")
+   :email-from (:uxbox-email-from env "no-reply@nodomain.com")
 
-   :smtp-host (lookup-env env :uxbox-smtp-host "smtp")
-   :smtp-port (lookup-env env :uxbox-smtp-port 25)
-   :smtp-user (lookup-env env :uxbox-smtp-user nil)
-   :smtp-password (lookup-env env :uxbox-smtp-password nil)
-   :smtp-tls (lookup-env env :uxbox-smtp-tls false)
-   :smtp-ssl (lookup-env env :uxbox-smtp-ssl false)
-   :smtp-enabled (lookup-env env :uxbox-smtp-enabled false)
+   :smtp-host (:uxbox-smtp-host env "smtp")
+   :smtp-port (:uxbox-smtp-port env 25)
+   :smtp-user (:uxbox-smtp-user env nil)
+   :smtp-password (:uxbox-smtp-password env nil)
+   :smtp-tls (:uxbox-smtp-tls env false)
+   :smtp-ssl (:uxbox-smtp-ssl env false)
+   :smtp-enabled (:uxbox-smtp-enabled env false)
 
-   :allow-demo-users (lookup-env env :uxbox-allow-demo-users true)
-   :registration-enabled (lookup-env env :uxbox-registration-enabled true)})
+   :allow-demo-users (:uxbox-allow-demo-users env true)
+   :registration-enabled (:uxbox-registration-enabled env true)})
+
+(s/def ::http-server-port ::us/integer)
+(s/def ::http-server-debug ::us/boolean)
+(s/def ::http-server-cors ::us/string)
+(s/def ::database-username (s/nilable ::us/string))
+(s/def ::database-password (s/nilable ::us/string))
+(s/def ::database-uri ::us/string)
+(s/def ::assets-uri ::us/string)
+(s/def ::assets-directory ::us/string)
+(s/def ::media-uri ::us/string)
+(s/def ::media-directory ::us/string)
+(s/def ::email-reply-to ::us/email)
+(s/def ::email-from ::us/email)
+(s/def ::smtp-host ::us/string)
+(s/def ::smtp-user (s/nilable ::us/string))
+(s/def ::smtp-password (s/nilable ::us/string))
+(s/def ::smtp-tls ::us/boolean)
+(s/def ::smtp-ssl ::us/boolean)
+(s/def ::smtp-enabled ::us/boolean)
+(s/def ::allow-demo-users ::us/boolean)
+(s/def ::registration-enabled ::us/boolean)
+
+(s/def ::config
+  (s/keys :req-un [::http-server-cors
+                   ::http-server-debug
+                   ::http-server-port
+                   ::database-username
+                   ::database-password
+                   ::database-uri
+                   ::assets-directory
+                   ::assets-uri
+                   ::media-directory
+                   ::media-uri
+                   ::email-reply-to
+                   ::email-from
+                   ::smtp-host
+                   ::smtp-user
+                   ::smtp-password
+                   ::smtp-tls
+                   ::smtp-ssl
+                   ::smtp-enabled
+                   ::allow-demo-users
+                   ::registration-enabled]))
 
 (defn read-test-config
   []
@@ -70,7 +117,7 @@
          :migrations-verbose false))
 
 (defstate config
-  :start (read-config))
+  :start (us/conform ::config (read-config)))
 
 ;; --- Secret Loading & Parsing
 

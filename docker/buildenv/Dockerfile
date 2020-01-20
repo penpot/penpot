@@ -1,7 +1,5 @@
 FROM debian:buster
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
-
-ARG EXTERNAL_UID=1000
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v12.14.1 \
@@ -21,46 +19,29 @@ RUN set -ex; \
         ca-certificates \
         wget \
         sudo \
-        tmux \
         vim \
         curl \
-        zsh \
         bash \
         git \
         rlwrap \
         python \
         build-essential \
-        imagemagick \
-        webp \
         openjdk-11-jdk \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
+COPY files/entrypoint.sh /entrypoint.sh
+COPY files/package.json /root/package.json
 
-RUN set -ex; \
-    useradd -m -g users -s /bin/zsh -u $EXTERNAL_UID uxbox; \
-    passwd uxbox -d; \
-    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+WORKDIR /root
 
 RUN set -ex; \
     wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
     chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
     "./linux-install-$CLOJURE_VERSION.sh"; \
     rm -rf "linux-install-$CLOJURE_VERSION.sh"
-
-USER uxbox
-WORKDIR /home/uxbox
-
-COPY files/package.json /home/uxbox/package.json
-COPY files/bashrc /home/uxbox/.bashrc
-COPY files/zshrc /home/uxbox/.zshrc
-COPY files/vimrc /home/uxbox/.vimrc
-COPY files/start-tmux.sh /home/uxbox/start-tmux.sh
-COPY files/tmux.conf /home/uxbox/.tmux.conf
-COPY files/entrypoint.sh /home/uxbox/
-COPY files/init.sh /home/uxbox/
 
 RUN set -ex; \
     git clone https://github.com/creationix/nvm.git .nvm; \
@@ -71,9 +52,4 @@ RUN set -ex; \
 RUN set -ex; \
     bash -c "source .nvm/nvm.sh && npm install";
 
-EXPOSE 3449
-EXPOSE 6060
-EXPOSE 9090
-
-ENTRYPOINT ["zsh", "/home/uxbox/entrypoint.sh"]
-CMD ["/home/uxbox/init.sh"]
+ENTRYPOINT ["bash", "/entrypoint.sh"]

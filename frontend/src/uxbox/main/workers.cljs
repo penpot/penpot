@@ -26,7 +26,7 @@
 ;; This excludes webworker instantiation on nodejs where
 ;; the tests are run.
 (when (not= *target* "nodejs")
-  (defonce worker (uw/init "/js/worker.js")))
+  (defonce worker (uw/init "js/worker.js")))
 
 (defn align-point
   [point]

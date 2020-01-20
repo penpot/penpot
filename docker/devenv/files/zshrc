@@ -10,7 +10,7 @@ bindkey -e
 
 autoload -U promptinit
 promptinit
-prompt zefram
+prompt suse
 
 #------------------------------
 ## Comp stuff
@@ -52,5 +52,5 @@ setopt hist_ignore_all_dups
 setopt hist_ignore_space
 
 export PATH=$HOME/.local/bin:$PATH
-export NVM_DIR="/home/uxbox/.nvm"
+export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm

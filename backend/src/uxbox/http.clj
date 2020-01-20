@@ -78,6 +78,9 @@
     (vh/server ctx {:handler handler
                     :port (:http-server-port cfg/config)})))
 
+(defstate instances
+  :start (.availableProcessors (Runtime/getRuntime)))
+
 (defstate server
   :start (let [factory (vc/verticle {:on-start on-start})]
-           @(vc/deploy! system factory {:instances 1})))
+           @(vc/deploy! system factory {:instances instances})))

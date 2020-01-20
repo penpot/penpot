@@ -43,7 +43,7 @@
    :anon-fn-naming-policy :mapped
    :optimizations :none
    :infer-externs true
-   :verbose false
+   :verbose true
    :source-map true
    :static-fns false
    :pretty-print true
@@ -63,9 +63,9 @@
    :asset-path "/js"
    :modules {:main {:entries #{"uxbox.main"}
                     :output-to "resources/public/js/main.js"}
-             :view {:entries #{"uxbox.view"}
-                    :output-to "resources/public/js/view.js"
-                    }}})
+             ;; :view {:entries #{"uxbox.view"}
+             ;;        :output-to "resources/public/js/view.js"}
+             }})
 
 (def worker-build-options
   {:main 'uxbox.worker
@@ -78,36 +78,42 @@
   (-> (merge default-build-options
              main-build-options
              dist-build-options)
-      (assoc :output-dir "dist/js")
-      (assoc-in [:modules :main :output-to] "dist/js/main.js")
-      (assoc-in [:modules :view :output-to] "dist/js/view.js")))
+      (assoc :output-dir "target/dist/js/")
+      (assoc-in [:modules :main :output-to] "target/dist/js/main.js")
+      #_(assoc-in [:modules :view :output-to] "target/dist/js/view.js")))
 
-(def main-dbg-dist-build-options
-  (merge main-dist-build-options
-         {:optimizations :advanced
-          :pseudo-names true
-          :pretty-print true}))
+(def main-dist-dbg-build-options
+  (-> (merge main-dist-build-options
+             {:optimizations :advanced
+              :pseudo-names true
+              :pretty-print true})
+      (assoc :output-dir "target/dist/dbg/js/")
+      (assoc-in [:modules :main :output-to] "target/dist/dbg/js/main.js")
+      #_(assoc-in [:modules :view :output-to] "target/dist/dbg/js/view.js")))
 
 (def worker-dist-build-options
   (merge default-build-options
          worker-build-options
          dist-build-options
-         {:output-to "dist/js/worker.js"
-          :output-dir "dist/js/worker"
-          :source-map "dist/js/worker.js.map"}))
+         {:output-to  "target/dist/js/worker.js"
+          :output-dir "target/dist/js/worker"
+          :source-map "target/dist/js/worker.js.map"}))
 
-(def worker-dbg-dist-build-options
+(def worker-dist-dbg-build-options
   (merge worker-dist-build-options
          {:optimizations :advanced
           :pseudo-names true
-          :pretty-print true}))
+          :pretty-print true
+          :output-to  "target/dist/dbg/js/worker.js"
+          :output-dir "target/dist/dbg/js/worker"
+          :source-map "target/dist/dbg/js/worker.js.map"}))
 
 ;; --- Tasks Definitions
 
 (defmethod task "dist:main"
   [args]
   (let [cfg main-dist-build-options]
-    (pprint cfg)
+    ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
 (defmethod task "dist:worker"
@@ -116,27 +122,24 @@
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
-(defmethod task "dbg-dist:main"
+(defmethod task "dist-dbg:main"
   [args]
-  (let [cfg main-dbg-dist-build-options]
+  (let [cfg main-dist-dbg-build-options]
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
-(defmethod task "dbg-dist:worker"
+(defmethod task "dist-dbg:worker"
   [args]
-  (let [cfg worker-dbg-dist-build-options]
+  (let [cfg worker-dist-dbg-build-options]
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
 (defmethod task "dist:all"
   [args]
   (task ["dist:main"])
-  (task ["dist:worker"]))
-
-(defmethod task "dbg-dist:all"
-  [args]
-  (task ["dbg-dist:main"])
-  (task ["dbg-dist:worker"]))
+  (task ["dist:worker"])
+  (task ["dist-dbg:main"])
+  (task ["dist-dbg:worker"]))
 
 (defmethod task "repl:node"
   [args]
@@ -157,7 +160,7 @@
   (api/build (api/inputs "src" "test")
              (assoc default-build-options
                     :main 'uxbox.tests.main
-                    :verbose false
+                    :verbose true
                     :target :nodejs
                     :source-map true
                     :output-to "target/tests/main.js"

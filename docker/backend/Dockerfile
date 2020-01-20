@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:12
+FROM debian:buster
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ENV CLOJURE_VERSION=1.10.1.492 \
@@ -12,6 +12,9 @@ RUN set -ex; \
         wget \
         rsync \
         git \
+        vim \
+        rlwrap \
+        openjdk-11-jdk \
         imagemagick \
         webp
 

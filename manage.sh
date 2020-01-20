@@ -2,24 +2,47 @@
 set -e
 
 REV=`git log -n 1 --pretty=format:%h -- docker/`
-IMGNAME="uxboxdev_main"
-
-function remove-devenv-images {
-    echo "Clean old development image $IMGNAME..."
-    docker images $IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
-}
+DEVENV_IMGNAME="uxbox-devenv"
+BUILDENV_IMGNAME="uxbox-buildenv"
 
 function build-devenv {
-    echo "Building development image $IMGNAME:latest with UID $EXTERNAL_UID..."
+    echo "Building development image $DEVENV_IMGNAME:latest with UID $EXTERNAL_UID..."
+
+    cp ./frontend/build/package.json docker/devenv/files/package.json;
 
     local EXTERNAL_UID=${1:-$(id -u)}
-    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml \
-        build --build-arg EXTERNAL_UID=$EXTERNAL_UID --force-rm;
+
+    docker build --rm=true --force-rm \
+           -t $DEVENV_IMGNAME:latest \
+           --build-arg EXTERNAL_UID=$EXTERNAL_UID \
+           docker/devenv/;
+
+    rm -rf docker/devenv/files/package.json;
+}
+
+function build-buildenv {
+    echo "Building buildenv image..."
+
+    docker volume create ${BUILDENV_IMGNAME}-m2
+
+    cp ./frontend/build/package.json docker/buildenv/files/package.json;
+
+    docker build --rm=true \
+           -t $BUILDENV_IMGNAME:latest \
+           docker/buildenv/;
+
+    rm -rf docker/buildenv/files/package.json;
 }
 
 function build-devenv-if-not-exists {
-    if [[ ! $(docker images $IMGNAME:latest -q) ]]; then
+    if [[ ! $(docker images $DEVENV_IMGNAME:latest -q) ]]; then
         build-devenv $@
+    fi
+}
+
+function build-buildenv-if-not-exists {
+    if [[ ! $(docker images $BUILDENV_IMGNAME:latest -q) ]]; then
+        build-buildenv $@
     fi
 }
 
@@ -34,194 +57,94 @@ function stop-devenv {
 
 function drop-devenv {
     docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml down -t 2 -v;
-    remove-devenv-images;
+
+    echo "Clean old development image $DEVENV_IMGNAME..."
+    docker images $DEVENV_IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
 }
 
 function run-devenv {
-    if [[ ! $(docker ps -f "name=uxboxdev-main" -q) ]]; then
+    if [[ ! $(docker ps -f "name=uxbox-devenv-main" -q) ]]; then
         start-devenv
     fi
 
-    docker exec -ti uxboxdev-main /home/uxbox/start-tmux.sh
+    docker exec -ti uxbox-devenv-main /home/uxbox/start-tmux.sh
 }
 
-function run-all-tests {
-    echo "Testing frontend..."
-    run-frontend-tests $@ || exit 1;
-    echo "Testing backend..."
-    run-backend-tests $@ || exit 1;
-}
+# function run-all-tests {
+#     echo "Testing frontend..."
+#     run-frontend-tests $@ || exit 1;
+#     echo "Testing backend..."
+#     run-backend-tests $@ || exit 1;
+# }
 
-function run-frontend-tests {
-    build-devenv-if-not-exists $@;
+# function run-frontend-tests {
+#     build-devenv-if-not-exists $@;
 
-    CONTAINER=$IMGNAME:latest
+#     IMAGE=$DEVENV_IMGNAME:latest
 
-    echo "Running development image $CONTAINER to test backend..."
-    docker run -ti --rm \
-           -w /home/uxbox/uxbox/frontend \
-           -v `pwd`:/home/uxbox/uxbox \
-           -v $HOME/.m2:/home/uxbox/.m2 \
-           $CONTAINER ./scripts/build-and-run-tests.sh
-}
+#     echo "Running development image $CONTAINER to test backend..."
+#     docker run -ti --rm \
+#            -w /home/uxbox/uxbox/frontend \
+#            -v `pwd`:/home/uxbox/uxbox \
+#            -v $HOME/.m2:/home/uxbox/.m2 \
+#            $IMAGE ./scripts/build-and-run-tests.sh
+# }
 
-function run-backend-tests {
-    build-devenv-if-not-exists $@;
+# function run-backend-tests {
+#     build-devenv-if-not-exists $@;
 
-    CONTAINER=$IMGNAME:latest
+#     IMAGE=$DEVENV_IMGNAME:latest
 
-    docker run -ti --rm \
-           -w /home/uxbox/uxbox/backend \
-           -v `pwd`:/home/uxbox/uxbox \
-           -v $HOME/.m2:/home/uxbox/.m2 \
-           $CONTAINER ./scripts/run-tests-in-docker.sh
-}
+#     docker run -ti --rm \
+#            -w /home/uxbox/uxbox/backend \
+#            -v `pwd`:/home/uxbox/uxbox \
+#            -v $HOME/.m2:/home/uxbox/.m2 \
+#            $IMAGE ./scripts/run-tests-in-docker.sh
+# }
 
-function build-frontend-local {
-    build-devenv-if-not-exists;
+function build-frontend {
+    build-buildenv-if-not-exists;
 
-    mkdir -p $HOME/.m2
-    rm -rf ./frontend/node_modules
+    local IMAGE=$BUILDENV_IMGNAME:latest;
 
-    CONTAINER=$IMGNAME:latest;
-    BUILD_TYPE=$1;
-
-    echo "Running development image $CONTAINER to build frontend $BUILD_TYPE ..."
-    docker run -ti --rm \
-           -w /home/uxbox/uxbox/frontend \
-           -v `pwd`:/home/uxbox/uxbox  \
-           -v $HOME/.m2:/home/uxbox/.m2 \
+    echo "Running development image $IMAGE to build frontend."
+    docker run -t --rm \
+           --mount source=`pwd`,type=bind,target=/root/uxbox  \
+           --mount source=${BUILDENV_IMGNAME}-m2,target=/root/.m2 \
+           -w /root/uxbox/frontend \
            -e UXBOX_API_URL="/api" \
            -e UXBOX_VIEW_URL="/view" \
            -e UXBOX_DEMO_WARNING=true \
-           $CONTAINER ./scripts/build-$BUILD_TYPE.sh
+           $IMAGE ./scripts/build-app.sh
 }
 
-function build-frontend-image {
-    echo "#############################################"
-    echo "## START build 'uxbox-frontend' image.     ##"
-    echo "#############################################"
-    build-frontend-local "dist" || exit 1;
-    rm -rf docker/frontend/dist || exit 1;
-    cp -vr frontend/dist docker/frontend/ || exit 1;
-
-    docker build --rm=true \
-           -t uxbox-frontend:$REV \
-           -t uxbox-frontend:latest \
-           docker/frontend/;
-
-    rm -rf docker/frontend/dist || exit 1;
-    echo "#############################################"
-    echo "## END build 'uxbox-frontend' image.       ##"
-    echo "#############################################"
-}
-
-function build-frontend-dbg-image {
-    echo "#############################################"
-    echo "## START build 'uxbox-frontend-dbg' image. ##"
-    echo "#############################################"
-
-    build-frontend-local "dbg-dist" || exit 1;
-    rm -rf docker/frontend/dist || exit 1;
-    cp -vr frontend/dist docker/frontend/ || exit 1;
-
-    docker build --rm=true \
-           -t uxbox-frontend-dbg:$REV \
-           -t uxbox-frontend-dbg:latest \
-           docker/frontend/;
-
-    rm -rf docker/frontend/dist || exit 1;
-
-    echo "#############################################"
-    echo "## END build 'uxbox-frontend-dbg' image.   ##"
-    echo "#############################################"
-}
-
-function build-backend-local {
-    echo "Prepare backend dist..."
-
-    rm -rf ./backend/dist
+function build-backend {
+    rm -rf ./backend/target/dist
+    mkdir -p ./backend/target/dist
 
     rsync -ar \
-      --exclude="/test" \
-      --exclude="/resources/public/media" \
-      --exclude="/target" \
-      --exclude="/scripts" \
-      --exclude="/.*" \
-      ./backend/ ./backend/dist/
-}
+          --exclude="/tests*" \
+          --exclude="/resources/public/media" \
+          --exclude="/file-uploads" \
+          --exclude="/target" \
+          --exclude="/scripts" \
+          --exclude="/.*" \
+          ./backend/ ./backend/target/dist/
 
-function build-backend-image {
-    echo "#############################################"
-    echo "## START build 'uxbox-backend' image.      ##"
-    echo "#############################################"
-
-    build-backend-local || exit 1;
-    rm -rf docker/backend/dist || exit 1;
-    cp -vr backend/dist docker/backend/ || exit 1;
-
-    docker build --rm=true \
-           -t uxbox-backend:$REV \
-           -t uxbox-backend:latest \
-           docker/backend/;
-
-    rm -rf docker/backend/dist || exit 1;
-    echo "#############################################"
-    echo "## END build 'uxbox-backend' image.        ##"
-    echo "#############################################"
-}
-
-function build-images {
-    build-devenv-if-not-exists $@;
-
-    echo "Building frontend image ..."
-    build-frontend-image || exit 1;
-    echo "Building frontend dbg image ..."
-    build-frontend-dbg-image || exit 1;
-    echo "Building backend image ..."
-    build-backend-image || exit 1;
-}
-
-function run {
-    if [[ ! $(docker images uxbox-backend:latest) ]]; then
-        build-backend-image
-    fi
-
-    if [[ ! $(docker images uxbox-frontend:latest) ]]; then
-        build-frontend-image
-    fi
-
-    if [[ ! $(docker images uxbox-frontend-dbg:latest) ]]; then
-        build-frontend-dbg-image
-    fi
-
-    echo "Running images..."
-    docker-compose -p uxbox -f ./docker/docker-compose.yml up -d
-}
-
-function log {
-    docker-compose -p uxbox -f docker/docker-compose.yml logs -f --tail=50
+    rsync -ar \
+          ./common/ ./backend/target/dist/common/
 }
 
 function log-devenv {
     docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml logs -f --tail=50
 }
 
-function stop {
-    echo "Stoping containers..."
-    docker-compose -p uxbox -f ./docker/docker-compose.yml stop
-}
-
-function drop {
-    docker-compose -p uxbox -f docker/docker-compose.yml down -t 2 -v;
-}
-
 function usage {
     echo "UXBOX build & release manager v$REV"
     echo "USAGE: $0 OPTION"
     echo "Options:"
-    echo "- clean                            Stop and clean up docker containers"
-    echo ""
+    # echo "- clean                            Stop and clean up docker containers"
+    # echo ""
     echo "- build-devenv                     Build docker development oriented image; (can specify external user id in parameter)"
     echo "- start-devenv                     Start the development oriented docker-compose service."
     echo "- stop-devenv                      Stops the development oriented docker-compose service."
@@ -244,12 +167,11 @@ function usage {
 }
 
 case $1 in
-    clean)
-        remove-devenv-images
+    build-buildenv)
+        build-buildenv ${@:2}
         ;;
 
     ## devenv related commands
-
     build-devenv)
         build-devenv ${@:2}
         ;;
@@ -271,45 +193,23 @@ case $1 in
 
     ## testin related commands
 
-    run-all-tests)
-        run-all-tests ${@:2}
-        ;;
-    run-frontend-tests)
-        run-frontend-tests ${@:2}
-        ;;
-    run-backend-tests)
-        run-backend-tests ${@:2}
+    # run-all-tests)
+    #     run-all-tests ${@:2}
+    #     ;;
+    # run-frontend-tests)
+    #     run-frontend-tests ${@:2}
+    #     ;;
+    # run-backend-tests)
+    #     run-backend-tests ${@:2}
+    #     ;;
+
+    # production builds
+    build-frontend)
+        build-frontend
         ;;
 
-    # production related comands
-
-    build-images)
-        build-images
-        ;;
-    build-frontend-dbg-image)
-        build-frontend-dbg-image
-        ;;
-    build-frontend-image)
-        build-frontend-image
-        ;;
-    build-backend-image)
-        build-backend-image
-        ;;
-
-    run)
-        run
-        ;;
-
-    log)
-        log
-        ;;
-
-    stop)
-        stop
-        ;;
-
-    drop)
-        drop
+    build-backend)
+        build-backend
         ;;
 
     *)

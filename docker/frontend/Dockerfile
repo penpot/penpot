@@ -1,4 +1,4 @@
-FROM nginx:1.17.3
+FROM nginx:1.17.7
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ENV LANG=en_US.UTF-8 \
