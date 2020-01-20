@@ -42,7 +42,7 @@
       (st/emit! (rt/nav :dashboard-projects))
 
       (and (= path "") (not (:auth storage)))
-      (st/emit! (rt/nav :auth/login))
+      (st/emit! (rt/nav :login))
 
       (nil? match)
       (prn "TODO 404 main")
