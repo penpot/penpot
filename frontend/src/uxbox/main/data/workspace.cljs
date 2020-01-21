@@ -425,7 +425,7 @@
   ptk/UpdateEvent
   (update [_ state]
     (let [selected (get-in state [:workspace :selected])
-          item {:id (uuid/random)
+          item {:id (uuid/next)
                 :created-at (dt/now)
                 :items selected}
           clipboard (-> (:clipboard state)
@@ -547,7 +547,7 @@
 (defn add-shape
   [data]
   (us/assert ::shape-attrs data)
-  (let [id (uuid/random)]
+  (let [id (uuid/next)]
     (ptk/reify ::add-shape
       ptk/UpdateEvent
       (update [_ state]
@@ -576,7 +576,7 @@
 (defn add-canvas
   [data]
   (us/assert ::shape-attrs data)
-  (let [id (uuid/random)]
+  (let [id (uuid/next)]
     (ptk/reify ::add-canvas
       ptk/UpdateEvent
       (update [_ state]
@@ -600,7 +600,7 @@
 (defn impl-duplicate-shape
   [state id]
   (let [shape (get-in state [:workspace-data :shapes-by-id id])]
-    (assoc shape :id (uuid/random))))
+    (assoc shape :id (uuid/next))))
 
 (def duplicate-selected
   (ptk/reify ::duplicate-selected

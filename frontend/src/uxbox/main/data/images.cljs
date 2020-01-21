@@ -193,7 +193,7 @@
                (prepare [[file [width height]]]
                  (cond-> {:name (.-name file)
                           :mimetype (.-type file)
-                          :id (uuid/random)
+                          :id (uuid/next)
                           :file file
                           :width width
                           :height height}

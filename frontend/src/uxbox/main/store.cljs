@@ -56,7 +56,7 @@
 (def initial-state
   {:route nil
    :router nil
-   :session-id (uuid/random)
+   :session-id (uuid/next)
    :auth (:auth storage)
    :profile (:profile storage)
    :clipboard #queue []

@@ -79,7 +79,7 @@
 
 (defn create-collection
   []
-  (let [id (uuid/random)]
+  (let [id (uuid/next)]
     (CreateCollection. id)))
 
 ;; --- Persist Collections

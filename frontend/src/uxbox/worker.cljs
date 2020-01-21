@@ -14,7 +14,7 @@
 
 (enable-console-print!)
 
-(defonce id (uuid/random))
+(defonce id (uuid/next))
 
 (defn- on-message
   [event]

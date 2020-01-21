@@ -88,7 +88,7 @@
   [type]
   (let [tool (seek #(= type (:type %)) minimal-shapes)]
     (assert tool "unexpected drawing tool")
-    (assoc tool :id (uuid/random))))
+    (assoc tool :id (uuid/next))))
 
 (defn handle-drawing
   [type]
