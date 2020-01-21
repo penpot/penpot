@@ -23,7 +23,6 @@
    [uxbox.main.streams :as ms]
    [uxbox.main.websockets :as ws]
    [uxbox.main.workers :as uwrk]
-   [uxbox.util.data :refer [dissoc-in index-of]]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]
@@ -234,6 +233,8 @@
       (let [file (get-in state [:files file-id])]
         (assoc state :workspace-file file)))))
 
+(declare diff-and-commit-changes)
+
 (defn initialize-page
   [page-id]
   (ptk/reify ::initialize-page
@@ -244,6 +245,7 @@
         (assoc state
                :workspace-local workspace-default
                :workspace-data data
+               :workspace-data-prev data
                :workspace-page page)))
 
     ptk/WatchEvent
@@ -254,7 +256,7 @@
         (->> stream
              (rx/filter #(satisfies? IBatchedChange %))
              (rx/debounce 500)
-             (rx/map (constantly commit-batched-changes))
+             (rx/map (constantly diff-and-commit-changes))
              (rx/take-until stoper))))))
 
 (defn finalize
@@ -267,6 +269,29 @@
       (dissoc state
               :workspace-page
               :workspace-data))))
+
+(def diff-and-commit-changes
+  (ptk/reify ::diff-and-commit-changes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [curr (get-in state [:workspace-data :shapes-by-id])
+            prev (get-in state [:workspace-data-prev :shapes-by-id])
+
+            diff (d/diff-maps prev curr)
+            changes (loop [scs (rest diff)
+                           sc (first diff)
+                           res []]
+                      (if (nil? sc)
+                        res
+                        (let [[_ id shape] sc]
+                          (recur (rest scs)
+                                 (first scs)
+                                 (conj res {:type :mod-shape
+                                            :session-id (:session-id state)
+                                            :operations (d/diff-maps (get prev id) shape)
+                                            :id id})))))]
+        (when-not (empty? changes)
+          (rx/of (commit-changes changes)))))))
 
 ;; --- Fetch Workspace Users
 
@@ -465,7 +490,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [increase #(nth c/zoom-levels
-                           (+ (index-of c/zoom-levels %) 1)
+                           (+ (d/index-of c/zoom-levels %) 1)
                            (last c/zoom-levels))]
         (update-in state [:workspace-local :zoom] (fnil increase 1))))))
 
@@ -474,7 +499,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [decrease #(nth c/zoom-levels
-                           (- (index-of c/zoom-levels %) 1)
+                           (- (d/index-of c/zoom-levels %) 1)
                            (first c/zoom-levels))]
         (update-in state [:workspace-local :zoom] (fnil decrease 1))))))
 
@@ -632,11 +657,7 @@
                  (fn [selected]
                    (if (contains? selected id)
                      (disj selected id)
-                     (conj selected id)))))
-
-    ptk/WatchEvent
-    (watch [_ state s]
-      (rx/of (activate-flag :element-options)))))
+                     (conj selected id)))))))
 
 (def deselect-all
   "Clear all possible state of drawing, edition
@@ -694,16 +715,7 @@
     IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
-      (let [shape-old (get-in state [:workspace-data :shapes-by-id id])
-            shape-new (merge shape-old attrs)
-            operations (d/diff-maps shape-old shape-new)
-            change {:type :mod-shape
-                    :session-id (:session-id state)
-                    :operations operations
-                    :id id}]
-        (-> state
-            (assoc-in [:workspace-data :shapes-by-id id] shape-new)
-            (update ::batched-changes (fnil conj []) change))))))
+      (update-in state [:workspace-data :shapes-by-id id] merge attrs))))
 
 ;; --- Update Page Options
 
@@ -714,15 +726,7 @@
     IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
-      (let [opts-old (get-in state [:workspace-data :options])
-            opts-new (merge opts-old opts)
-            operations (d/diff-maps opts-old opts-new)
-            change {:type :mod-opts
-                    :session-id (:session-id state)
-                    :operations operations}]
-        (-> state
-            (assoc-in [:workspace-data :options] opts-new)
-            (update ::batched-changes (fnil conj []) change))))))
+      (update-in state [:workspace-data :options] merge opts))))
 
 ;; --- Update Selected Shapes attrs
 
@@ -787,16 +791,15 @@
 ;; --- Delete Selected
 
 (defn impl-dissoc-shape
-  "Given a shape, removes it from the state."
-  [state id]
-  (-> state
-      (update-in [:workspace-data :canvas] (fn [items] (filterv #(not= % id) items)))
-      (update-in [:workspace-data :shapes] (fn [items] (filterv #(not= % id) items)))
-      (update-in [:workspace-data :shapes-by-id] dissoc id)))
-
-(defn impl-lookup-shape
-  [state id]
-  (get-in state [:workspace-data :shapes-by-id id]))
+  "Given a shape id, removes it from the state."
+  [id]
+  (ptk/reify ::impl-dissoc-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:workspace-data :canvas] (fn [items] (filterv #(not= % id) items)))
+          (update-in [:workspace-data :shapes] (fn [items] (filterv #(not= % id) items)))
+          (update-in [:workspace-data :shapes-by-id] dissoc id)))))
 
 (def delete-selected
   "Deselect all and remove all selected shapes."
@@ -813,9 +816,9 @@
                                 {:type (if (= type :canvas) :del-canvas :del-shape)
                                  :session-id session-id
                                  :id id})))]
-        (rx/merge
+        (rx/concat
          (rx/of deselect-all)
-         (rx/from (map (fn [id] #(impl-dissoc-shape % id)) selected))
+         (rx/from (map impl-dissoc-shape selected))
          (rx/of (commit-changes changes)))))))
 
 ;; --- Rename Shape
@@ -846,6 +849,7 @@
   [loc]
   (us/assert ::direction loc)
   (ptk/reify ::move-selected-layer
+    IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (let [id (first (get-in state [:workspace-local :selected]))
@@ -860,8 +864,8 @@
   (let [shapes (get-in state [:workspace-data :shapes])
         index (case opt
                 :top 0
-                :down (min (- (count shapes) 1) (inc (index-of shapes sid)))
-                :up (max 0 (- (index-of shapes sid) 1))
+                :down (min (- (count shapes) 1) (inc (d/index-of shapes sid)))
+                :up (max 0 (- (d/index-of shapes sid) 1))
                 :bottom (- (count shapes) 1))]
     (update-in state [:workspace-data :shapes]
                (fn [items]
@@ -977,16 +981,8 @@
                   xfmt (or (:modifier-mtx shape) (gmt/matrix))
                   shape-old (dissoc shape :modifier-mtx)
                   shape-new (geom/transform shape-old xfmt)
-                  shape-new (recalculate-shape-canvas-relation state shape-new)
-                  operations (d/diff-maps shape-old shape-new)
-                  change {:type :mod-shape
-                          :session-id (:session-id state)
-                          :operations operations
-                          :id id}]
-              (-> state
-                  (assoc-in [:workspace-data :shapes-by-id id] shape-new)
-                  (update ::batched-changes (fnil conj []) change))))]
-
+                  shape-new (recalculate-shape-canvas-relation state shape-new)]
+              (assoc-in state [:workspace-data :shapes-by-id id] shape-new)))]
     (ptk/reify ::materialize-temporal-modifier-in-bulk
       IBatchedChange
       ptk/UpdateEvent
@@ -1001,7 +997,9 @@
     (update [_ state]
       (let [pid (get-in state [:workspace-page :id])
             data (get-in state [:pages-data pid])]
-        (update-in state [:pages-data pid] cp/process-changes changes)))
+        (-> state
+            (update-in [:pages-data pid] cp/process-changes changes)
+            (assoc :workspace-data-prev (:workspace-data state)))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -1059,7 +1057,7 @@
       (->> stream
            (rx/filter #(= % :interrupt))
            (rx/take 1)
-           (rx/map (fn [_] #(dissoc-in % [:workspace-local :edition])))))))
+           (rx/map (fn [_] #(d/dissoc-in % [:workspace-local :edition])))))))
 
 ;; --- Select for Drawing
 
@@ -1106,16 +1104,7 @@
     IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
-      (let [shape-old (get-in state [:workspace-data :shapes-by-id id])
-            shape-new (geom/resize-dim shape-old dimensions)
-            operations (d/diff-maps shape-old shape-new)
-            change {:type :mod-shape
-                    :session-id (:session-id state)
-                    :operations operations
-                    :id id}]
-        (-> state
-            (assoc-in [:workspace-data :shapes-by-id id] shape-new)
-            (update ::batched-changes (fnil conj []) change))))))
+      (update-in state [:workspace-data :shapes-by-id id] geom/resize-dim dimensions))))
 
 ;; --- Shape Proportions
 
@@ -1143,21 +1132,20 @@
 
 ;; --- Path Modifications
 
-;; TODO: revisit
-(deftype UpdatePath [id index delta]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:workspace-data :shapes-by-id id :segments index] gpt/add delta)))
-
 (defn update-path
   "Update a concrete point in the path shape."
   [id index delta]
-  {:pre [(uuid? id) (number? index) (gpt/point? delta)]}
-  (UpdatePath. id index delta))
+  (us/assert ::us/uuid id)
+  (us/assert ::us/integer index)
+  (us/assert gpt/point? delta)
+  (ptk/reify ::update-path
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-data :shapes-by-id id :segments index] gpt/add delta))))
 
 ;; --- Initial Path Point Alignment
 
-;; TODO: revisit
+;; TODO: revisit on alignemt refactor
 (deftype InitialPathPointAlign [id index]
   ptk/WatchEvent
   (watch [_ state s]
@@ -1177,88 +1165,71 @@
 
 ;; --- Shape Visibility
 
-;; TODO: revisit
-(defn set-hidden-attr
-  [id value]
+(declare impl-update-shape-hidden)
+
+(defn hide-shape
+  [id]
   (us/assert ::us/uuid id)
-  (us/assert ::us/boolean value)
-  (letfn [(impl-set-hidden [state id]
-            (let [{:keys [type] :as shape} (get-in state [:shapes id])]
-              (as-> state $
-                (assoc-in $ [:shapes id :hidden] value)
-                (if (= :canvas type)
-                  (let [shapes (get-in state [:pages (:page shape) :shapes])
-                        xform (comp (map #(get-in state [:shapes %]))
-                                    (filter #(= id (:canvas %)))
-                                    (map :id))]
-                    (reduce impl-set-hidden $ (sequence xform shapes)))
-                  $))))]
-    (ptk/reify ::set-hidden-attr
-      ptk/UpdateEvent
-      (update [_ state]
-        (impl-set-hidden state id)))))
+  (ptk/reify ::hide-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (impl-update-shape-hidden state id true))))
+
+(defn show-shape
+  [id]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::hide-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (impl-update-shape-hidden state id false))))
+
+(defn- impl-update-shape-hidden
+  [state id hidden?]
+  (let [type  (get-in state [:workspace-data :shapes-by-id id :type])
+        state (update-in state [:workspace-data :shapes-by-id id] assoc :hidden hidden?)]
+    (cond-> state
+      (= type :canvas)
+      (update-in [:workspace-data :shapes-by-id]
+                 (fn [shapes]
+                   (reduce-kv (fn [shapes key {:keys [canvas] :as val}]
+                                (cond-> shapes
+                                  (= id canvas) (update key assoc :hidden hidden?)))
+                              shapes
+                              shapes))))))
 
 ;; --- Shape Blocking
 
-;; TODO: revisit
-(defn set-blocked-attr
-  [id value]
+(declare impl-update-shape-blocked)
+
+(defn block-shape
+  [id]
   (us/assert ::us/uuid id)
-  (us/assert ::us/boolean value)
-  (letfn [(impl-set-blocked [state id]
-            (let [{:keys [type] :as shape} (get-in state [:shapes id])]
-              (as-> state $
-                (assoc-in $ [:shapes id :blocked] value)
-                (if (= :canvas type)
-                  (let [shapes (get-in state [:pages (:page shape) :shapes])
-                        xform (comp (map #(get-in state [:shapes %]))
-                                    (filter #(= id (:canvas %)))
-                                    (map :id))]
-                    (reduce impl-set-blocked $ (sequence xform shapes)))
-                  $))))]
-    (ptk/reify ::set-blocked-attr
-      ptk/UpdateEvent
-      (update [_ state]
-        (impl-set-blocked state id)))))
+  (ptk/reify ::hide-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (impl-update-shape-blocked state id true))))
 
-;; --- Shape Locking
-
-;; TODO: revisit
-(deftype LockShape [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-locked [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :locked] true)
-                    (reduce mark-locked $ (:items shape)))
-                  (assoc-in state [:shapes id :locked] true))))]
-      (mark-locked state id))))
-
-;; TODO: revisit
-(defn lock-shape
+(defn unblock-shape
   [id]
-  {:pre [(uuid? id)]}
-  (LockShape. id))
+  (us/assert ::us/uuid id)
+  (ptk/reify ::hide-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (impl-update-shape-blocked state id false))))
 
-(deftype UnlockShape [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (letfn [(mark-unlocked [state id]
-              (let [shape (get-in state [:shapes id])]
-                (if (= :group (:type shape))
-                  (as-> state $
-                    (assoc-in $ [:shapes id :locked] false)
-                    (reduce mark-unlocked $ (:items shape)))
-                  (assoc-in state [:shapes id :locked] false))))]
-      (mark-unlocked state id))))
-
-;; TODO: revisit
-(defn unlock-shape
-  [id]
-  {:pre [(uuid? id)]}
-  (UnlockShape. id))
+(defn- impl-update-shape-blocked
+  [state id hidden?]
+  (let [type  (get-in state [:workspace-data :shapes-by-id id :type])
+        state (update-in state [:workspace-data :shapes-by-id id] assoc :blocked hidden?)]
+    (cond-> state
+      (= type :canvas)
+      (update-in [:workspace-data :shapes-by-id]
+                 (fn [shapes]
+                   (reduce-kv (fn [shapes key {:keys [canvas] :as val}]
+                                (cond-> shapes
+                                  (= id canvas) (update key assoc :blocked hidden?)))
+                              shapes
+                              shapes))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas Interactions

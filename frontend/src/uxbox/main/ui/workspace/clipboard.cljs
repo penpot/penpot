@@ -29,7 +29,7 @@
   (fn [own props]
     []
     (letfn [(on-paste [item]
-              (st/emit! (udw/paste-from-clipboard (:id item)))
+              #_(st/emit! (udw/paste-from-clipboard (:id item)))
               (udl/close!))
             (on-close [event]
               (dom/prevent-default event)
