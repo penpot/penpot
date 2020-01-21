@@ -197,11 +197,11 @@
     }
   },
   "ds.num-elements" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:111" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    },
-    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:111" ]
+    }
   },
   "ds.position" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:52" ],
@@ -239,11 +239,11 @@
     }
   },
   "ds.settings.icons" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/icons.cljs:72" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    },
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/icons.cljs:72" ]
+    }
   },
   "ds.size" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:33" ],
@@ -582,11 +582,11 @@
     }
   },
   "settings.exit" : {
+    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:46" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    },
-    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:46" ]
+    }
   },
   "settings.notifications" : {
     "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:43" ],

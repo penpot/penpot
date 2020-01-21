@@ -18,23 +18,22 @@
 
 (defn- find-translations-in-form
   [form]
-  (let [messages (atom [])]
-    (run! (fn [node]
+  (reduce (fn [messages node]
             (let [found (->> node
                              (filter #(and (seq? %) (= :string (first %))))
                              (map (fn [item]
                                     (let [mdata (meta item)]
                                       {:code (edn/read-string (second item))
                                        :line (get-in mdata [::pa/start :row])}))))]
-              (swap! messages into found)))
+              (into messages found)))
+          []
           (->> (tree-seq seq? seq form)
                (filter #(and (seq? %)
                              (seq? (second %))
                              (= :list (first %))
                              (= :symbol (first (second %)))
                              (or (= "t" (second (second %)))
-                                 (= "tr" (second (second %))))))))
-    @messages))
+                                 (= "tr" (second (second %)))))))))
 
 (defn- find-translations
   [path]
