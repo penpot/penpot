@@ -444,45 +444,6 @@
   []
   (InitializeIconsToolbox.))
 
-;; --- Clipboard Management
-
-(defrecord CopyToClipboard []
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [selected (get-in state [:workspace :selected])
-          item {:id (uuid/next)
-                :created-at (dt/now)
-                :items selected}
-          clipboard (-> (:clipboard state)
-                        empty
-                        (conj item))]
-      (assoc state :clipboard
-             (if (> (count clipboard) 5)
-               (pop clipboard)
-               clipboard)))))
-
-(defn copy-to-clipboard
-  "Copy selected shapes to clipboard."
-  []
-  (CopyToClipboard.))
-
-(defrecord PasteFromClipboard [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    state
-    #_(let [page-id (get-in state [:workspace :page :id])
-          selected (if (nil? id)
-                     (first (:clipboard state))
-                     (->> (:clipboard state)
-                          (filter #(= id (:id %)))
-                          (first)))]
-      (ds/duplicate-shapes state (:items selected) page-id))))
-
-(defn paste-from-clipboard
-  "Copy selected shapes to clipboard."
-  ([] (PasteFromClipboard. nil))
-  ([id] (PasteFromClipboard. id)))
-
 ;; --- Zoom Management
 
 (def increase-zoom
