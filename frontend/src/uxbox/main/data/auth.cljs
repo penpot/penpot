@@ -13,7 +13,7 @@
    [beicon.core :as rx]
    [potok.core :as ptk]
    [uxbox.common.spec :as us]
-   [uxbox.main.repo.core :as rp]
+   [uxbox.main.repo :as rp]
    [uxbox.main.store :refer [initial-state]]
    [uxbox.main.data.users :as du]
    [uxbox.util.messages :as um]

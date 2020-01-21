@@ -109,7 +109,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (let [params {:page id :pinned true}]
-        (->> (rp/req :fetch/page-history params)
+        #_(->> (rp/req :fetch/page-history params)
              (rx/map :payload)
              (rx/map pinned-history-fetched))))))
 
@@ -148,7 +148,7 @@
                             :max (or max 20)}
                            (when since
                              {:since since}))]
-         (->> (rp/req :fetch/page-history params)
+         #_(->> (rp/req :fetch/page-history params)
               (rx/map :payload)
               (rx/map history-fetched)))))))
 
@@ -262,7 +262,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/concat
-       (->> (rp/req :update/page-history item)
+       #_(->> (rp/req :update/page-history item)
             (rx/map :payload)
             (rx/map history-updated))
        (->> (rx/filter history-updated? stream)

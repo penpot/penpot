@@ -112,9 +112,8 @@ function build-frontend {
            --mount source=`pwd`,type=bind,target=/root/uxbox  \
            --mount source=${BUILDENV_IMGNAME}-m2,target=/root/.m2 \
            -w /root/uxbox/frontend \
-           -e UXBOX_API_URL="/api" \
-           -e UXBOX_VIEW_URL="/view" \
-           -e UXBOX_DEMO_WARNING=true \
+           -e UXBOX_API_URL=${UXBOX_API_URL} \
+           -e UXBOX_DEMO_WARNING=${UXBOX_DEMO_WARNING} \
            $IMAGE ./scripts/build-app.sh
 }
 

@@ -12,7 +12,7 @@
    [potok.core :as ptk]
    [uxbox.common.spec :as us]
    [uxbox.main.store :as st]
-   [uxbox.main.repo.core :as rp]
+   [uxbox.main.repo :as rp]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]
    [uxbox.util.data :refer (jscoll->vec)]

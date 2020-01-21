@@ -11,7 +11,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [uxbox.common.spec :as us]
-   [uxbox.main.repo.core :as rp]
+   [uxbox.main.repo :as rp]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.messages :as uum]
    [uxbox.util.storage :refer [storage]]))
@@ -87,7 +87,7 @@
                        (assoc :email (:email data))
                        (assoc :username (:username data))
                        (assoc-in [:metadata :language] (:language data)))]
-          (->> (rp/req :update/profile data)
+          #_(->> (rp/req :update/profile data)
                (rx/map :payload)
                (rx/do on-success)
                (rx/map profile-fetched)
@@ -110,7 +110,7 @@
     (watch [_ state s]
       (let [params {:old-password (:password-old data)
                     :password (:password-1 data)}]
-        (->> (rp/req :update/profile-password params)
+        #_(->> (rp/req :update/profile-password params)
              (rx/catch rp/client-error? (fn [e]
                                           (on-error (:payload e))
                                           (rx/empty)))
@@ -123,7 +123,7 @@
 (deftype UpdatePhoto [file done]
   ptk/WatchEvent
   (watch [_ state stream]
-    (->> (rp/req :update/profile-photo {:file file})
+    #_(->> (rp/req :update/profile-photo {:file file})
          (rx/do done)
          (rx/map (constantly fetch-profile)))))
 

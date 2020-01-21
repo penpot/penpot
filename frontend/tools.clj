@@ -2,6 +2,7 @@
          '[clojure.java.shell :as shell]
          '[clojure.java.io :as io]
          '[clojure.edn :as edn]
+         '[clojure.string :as str]
          '[figwheel.main.api :as figwheel]
          '[environ.core :refer [env]])
 (require '[cljs.build.api :as api]
@@ -27,12 +28,21 @@
 
 ;; --- Generic Build Options
 
-(def demo? (edn/read-string (:uxbox-demo-warning env "true")))
-
 (def closure-defines
-  {'uxbox.config.url (:uxbox-api-url env "http://localhost:6060/api")
-   'uxbox.config.viewurl (:uxbox-view-url env "/view/index.html")
-   'uxbox.config.demo-warning demo?})
+  (let [url       (-> (:uxbox-api-url env "")
+                      (str/trim))
+        demo-warn (-> (:uxbox-demo-warning env "")
+                      (str/trim))]
+    {'uxbox.config.url
+     (cond
+       (empty? url) "http://localhost:6060"
+       (str/starts-with? url "http") url
+       (str/starts-with? url "\"") (edn/read-string url))
+     'uxbox.config.demo-warning
+     (cond
+       (empty? demo-warn) false
+       (= "true" demo-warn) true
+       :else false)}))
 
 (def default-build-options
   {:cache-analysis true

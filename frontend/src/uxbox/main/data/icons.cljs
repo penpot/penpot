@@ -10,7 +10,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [uxbox.main.repo.core :as rp]
+   [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.util.data :refer (jscoll->vec)]
    [uxbox.util.dom :as dom]

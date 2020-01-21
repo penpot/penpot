@@ -12,7 +12,7 @@
    [potok.core :as ptk]
    [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
-   [uxbox.main.repo.core :as rp]
+   [uxbox.main.repo :as rp]
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
    [uxbox.util.timers :as ts]

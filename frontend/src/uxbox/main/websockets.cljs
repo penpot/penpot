@@ -8,9 +8,11 @@
   "A interface to webworkers exposed functionality."
   (:require
    [goog.events :as ev]
+   [uxbox.config :as cfg]
    [beicon.core :as rx]
    [potok.core :as ptk])
   (:import
+   goog.Uri
    goog.net.WebSocket
    goog.net.WebSocket.EventType))
 
@@ -19,6 +21,14 @@
   (-send [_ message] "send a message")
   (-close [_] "close websocket"))
 
+(defn url
+  [path]
+  (let [url (.parse Uri cfg/url)]
+    (.setPath url path)
+    (if (= (.getScheme url) "http")
+      (.setScheme url "ws")
+      (.setScheme url "wss"))
+    (.toString url)))
 
 (defn open
   [uri]

@@ -18,7 +18,7 @@
    [uxbox.main.data.projects :as dp]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
-   [uxbox.main.repo.core :as rp]
+   [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.main.websockets :as ws]
@@ -77,8 +77,8 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (let [uri (str "ws://localhost:6060/sub/" file-id)]
-        (assoc-in state [:ws file-id] (ws/open uri))))
+      (let [url (ws/url (str "/sub/" file-id))]
+        (assoc-in state [:ws file-id] (ws/open url))))
 
     ptk/WatchEvent
     (watch [_ state stream]
