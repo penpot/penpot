@@ -61,7 +61,7 @@ command for reformat the file, and track the usage locations (the
 "used-in" list) before commiting the file into the repository:
 
 ```bash
-clojure -Adev translations.clj collectmessages src/uxbox/main/ resources/locales.json
+clojure -Adev locales.clj collect src/uxbox/main/ resources/locales.json
 ```
 
 NOTE: Later, we will need to think and implement the way to export and

@@ -196,6 +196,13 @@
       "fr" : null
     }
   },
+  "ds.num-elements" : {
+    "translations" : {
+      "en" : null,
+      "fr" : null
+    },
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:111" ]
+  },
   "ds.position" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:52" ],
     "translations" : {
@@ -230,6 +237,13 @@
       "en" : null,
       "fr" : null
     }
+  },
+  "ds.settings.icons" : {
+    "translations" : {
+      "en" : null,
+      "fr" : null
+    },
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/icons.cljs:72" ]
   },
   "ds.size" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:33" ],
@@ -567,6 +581,13 @@
       "fr" : "Votre nom d'utilisateur"
     }
   },
+  "settings.exit" : {
+    "translations" : {
+      "en" : null,
+      "fr" : null
+    },
+    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:46" ]
+  },
   "settings.notifications" : {
     "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:43" ],
     "translations" : {
@@ -862,7 +883,7 @@
     }
   },
   "workspace.options.measures" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:65", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:65", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:67", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70", "src/uxbox/main/ui/workspace/sidebar/options/canvas.cljs:51" ],
     "translations" : {
       "en" : "Size, position & rotation",
       "fr" : "Taille, position et rotation"
@@ -876,21 +897,21 @@
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:74", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:93", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:93", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:99" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:74", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:93", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:96", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:99", "src/uxbox/main/ui/workspace/sidebar/options/canvas.cljs:80" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
     }
   },
   "workspace.options.rotation-radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:110", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:116" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:113", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:116" ],
     "translations" : {
       "en" : "Rotation & Radius",
       "fr" : "TODO"
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:38", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:72" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:38", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/canvas.cljs:53" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
@@ -953,7 +974,7 @@
     }
   },
   "workspace.sidebar.layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/layers.cljs:261" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/layers.cljs:289" ],
     "translations" : {
       "en" : "Layers",
       "fr" : "Couches"

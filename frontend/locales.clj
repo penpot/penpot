@@ -1,16 +1,12 @@
 (require '[clojure.pprint :as pp :refer [pprint]])
-(require '[clojure.java.shell :as shell])
-(require '[environ.core :refer [env]])
 
-(require '[clojure.walk :as walk]
-         '[clojure.edn :as edn]
-         '[clojure.set :as set])
+(require '[clojure.edn :as edn]
+         '[clojure.set :as set]
+         '[clojure.java.io :as io])
 
 (require '[datoteka.core :as fs]
-         '[jsonista.core :as json])
-(require '[clojure.java.io :as io]
-         '[clojure.tools.reader :as r]
-         '[clojure.tools.reader.reader-types :as rt])
+         '[jsonista.core :as json]
+         '[parcera.core :as pa])
 
 (import 'java.nio.file.Paths
         'java.nio.file.Path
@@ -18,74 +14,51 @@
         'java.nio.file.SimpleFileVisitor
         'java.nio.file.FileVisitResult)
 
-(extend-protocol io/Coercions
-  Path
-  (as-file [it] (.toFile it))
-  (as-url [it] (io/as-url (.toFile it))))
-
 (defmulti task first)
 
 (defn- find-translations-in-form
-  [env form]
-  (->> form
-       (walk/postwalk
-        (fn [fm]
-          (cond
-            (and (list? fm)
-                 (= (first fm) 'tr)
-                 (string? (second fm)))
-            (let [m (meta (first fm))]
-              (swap! env conj {:code (second fm)
-                               :file (:file m)
-                               :line (:line m)}))
+  [form]
+  (let [messages (atom [])]
+    (run! (fn [node]
+            (let [found (->> node
+                             (filter #(and (seq? %) (= :string (first %))))
+                             (map (fn [item]
+                                    (let [mdata (meta item)]
+                                      {:code (edn/read-string (second item))
+                                       :line (get-in mdata [::pa/start :row])}))))]
+              (swap! messages into found)))
+          (->> (tree-seq seq? seq form)
+               (filter #(and (seq? %)
+                             (seq? (second %))
+                             (= :list (first %))
+                             (= :symbol (first (second %)))
+                             (or (= "t" (second (second %)))
+                                 (= "tr" (second (second %))))))))
+    @messages))
 
-            (and (list? fm)
-                 (= (first fm) 't)
-                 (symbol? (second fm)))
-            (let [m (meta (first fm))
-                  code (first (drop 2 fm))]
-              (swap! env conj {:code code
-                               :file (:file m)
-                               :line (:line m)})))
-          fm))))
-
-(defn- find-translations-in-file
-  [env file]
-  (let [rdr (-> (io/as-file file)
-                (io/reader)
-                (rt/source-logging-push-back-reader 1 file))]
-    (try
-      (binding [r/*default-data-reader-fn* (constantly nil)
-                r/*alias-map* {'dw (create-ns 'user)
-                               'fm (create-ns 'user)
-                               'us (create-ns 'user)
-                               'dp (create-ns 'user)
-                               'cp (create-ns 'user)}]
-        (loop []
-          (let [form (r/read {:eof ::end} rdr)]
-            (when (not= ::end form)
-              (find-translations-in-form env form)
-              (recur)))))
-      (catch Exception e
-        ;; (.printStackTrace e)
-        (println (str "ERROR: on procesing " file "; ignoring..."))))))
-
-(defn- find-translations-in-directory
-  [env file]
-  (->> (proxy [SimpleFileVisitor] []
-         (visitFile [path attrs]
-           (when (= (fs/ext path) "cljs")
-             (find-translations-in-file env path))
-           FileVisitResult/CONTINUE)
-         (postVisitDirectory [dir exc]
-           FileVisitResult/CONTINUE))
-       (Files/walkFileTree (fs/path file))))
+(defn- find-translations
+  [path]
+  (let [forms (pa/ast (slurp path))
+        spath (str path)]
+    (->> forms
+         (filter #(and (seq? %) (= :list (first %))))
+         (reduce (fn [messages form]
+                   (->> (find-translations-in-form form)
+                        (map #(assoc % :file spath))
+                        (into messages))) []))))
 
 (defn- collect-translations
   [path]
-  (let [env (atom [])]
-    (find-translations-in-directory env path)
-    @env))
+  (let [messages (atom [])]
+    (->> (proxy [SimpleFileVisitor] []
+           (visitFile [path attrs]
+             (when (= (fs/ext path) "cljs")
+               (swap! messages into (find-translations path)))
+             FileVisitResult/CONTINUE)
+           (postVisitDirectory [dir exc]
+             FileVisitResult/CONTINUE))
+         (Files/walkFileTree (fs/path path)))
+    @messages))
 
 (defn- read-json-file
   [path]
@@ -167,15 +140,18 @@
 
 (defn- update-translations
   [{:keys [find-directory output-path] :as props}]
-  (let [data (read-json-file output-path)
+  (let [
+        data (read-json-file output-path)
         translations (collect-translations find-directory)
-        data (synchronize-translations data translations)]
+        data (synchronize-translations data translations)
+        ]
     (write-result! data output-path)))
 
-(defmethod task "collectmessages"
+(defmethod task "collect"
   [[_ in-path out-path]]
   (update-translations {:find-directory in-path
                         :output-path out-path}))
+
 
 (defmethod task "merge-with-legacy"
   [[_ path lang legacy-path]]

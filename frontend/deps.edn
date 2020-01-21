@@ -27,7 +27,13 @@
     com.bhauman/figwheel-main {:mvn/version "0.2.3"}
     org.clojure/tools.namespace {:mvn/version "0.3.1"}
     metosin/jsonista {:mvn/version "0.2.5"}
-    funcool/datoteka {:mvn/version "1.2.0"}}
+    funcool/datoteka {:mvn/version "1.2.0"}
+
+    ;; i18n parsing
+    carocad/parcera {:mvn/version "0.11.0"}
+    org.antlr/antlr4-runtime {:mvn/version "4.7"}}
+
+
    :extra-paths ["test"]}
 
   :repl
