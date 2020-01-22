@@ -9,11 +9,11 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.db :as db]
+   [uxbox.common.spec :as us]
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
    [uxbox.services.queries.icons :refer [decode-icon-row]]
    [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]
    [uxbox.util.uuid :as uuid]))
 
 ;; --- Helpers & Specs
@@ -45,7 +45,7 @@
 (sm/defmutation ::create-icons-collection
   [{:keys [id user name] :as params}]
   (let [id  (or id (uuid/next))
-        sql "insert into icons_collections (id, user_id, name)
+        sql "insert into icon_collections (id, user_id, name)
              values ($1, $2, $3) returning *"]
     (db/query-one db/pool [sql id user name])))
 
@@ -56,7 +56,7 @@
 
 (sm/defmutation ::update-icons-collection
   [{:keys [id user name] :as params}]
-  (let [sql "update icons_collections
+  (let [sql "update icon_collections
                 set name = $3
               where id = $1
                 and user_id = $2
@@ -97,7 +97,7 @@
 
 (sm/defmutation ::delete-icons-collection
   [{:keys [user id] :as params}]
-  (let [sql "update icons_collections
+  (let [sql "update icon_collections
                 set deleted_at = clock_timestamp()
               where id = $1
                 and user_id = $2

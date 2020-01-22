@@ -16,7 +16,6 @@
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.rect :refer [rect-shape]]
-   ;; [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.util.data :refer [parse-int]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]))

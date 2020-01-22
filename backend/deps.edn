@@ -1,27 +1,36 @@
-{:deps
+{:mvn/repos
+ {"central" {:url "https://repo1.maven.org/maven2/"}
+  "clojars" {:url "https://clojars.org/repo"}
+  "jcenter" {:url "https://jcenter.bintray.com/"}}
+ :deps
  {org.clojure/clojure {:mvn/version "1.10.1"}
-  funcool/promesa {:mvn/version "5.0.0-SNAPSHOT"}
+  funcool/promesa {:mvn/version "5.0.0"}
   funcool/cuerdas {:mvn/version "2.2.1"}
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "0.5.0"}
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.12.1"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.12.1"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.12.1"}
-  funcool/datoteka {:mvn/version "1.1.0"}
-  expound/expound {:mvn/version "0.7.2"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.13.0"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.13.0"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.13.0"}
+  org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.13.0"}
+  funcool/datoteka {:mvn/version "1.2.0"}
+  expound/expound {:mvn/version "0.8.4"}
   instaparse/instaparse {:mvn/version "1.4.10"}
   com.cognitect/transit-clj {:mvn/version "0.8.319"}
 
-  ;; vertx deps
-  ;; vertx-clojure/vertx {:mvn/version "0.0.0-SNAPSHOT"}
-  metosin/reitit-core {:mvn/version "0.3.10"}
-  metosin/sieppari {:mvn/version "0.0.0-alpha8"}
-  io.vertx/vertx-core {:mvn/version "3.8.4"}
-  io.vertx/vertx-web {:mvn/version "3.8.4"}
-  io.vertx/vertx-web-client {:mvn/version "3.8.4"}
+  ;; TODO: vendorize pgclient under `vertx-clojure/vertx-pgclient`
   io.vertx/vertx-pg-client {:mvn/version "3.8.4"}
-  ;; end verx deps
+
+  vertx-clojure/vertx
+  {:local/root "vendor/vertx"
+   :deps/manifest :pom}
+
+  funcool/sodi
+  {:local/root "vendor/sodi"
+   :deps/manifest :pom}
+
+  io.github.resilience4j/resilience4j-core {:mvn/version "1.2.0"}
+  io.github.resilience4j/resilience4j-ratelimiter {:mvn/version "1.2.0"}
 
   lambdaisland/uri {:mvn/version "1.1.0"}
 
@@ -29,9 +38,6 @@
   org.jsoup/jsoup {:mvn/version "1.12.1"}
   hiccup/hiccup {:mvn/version "1.0.5"}
   org.im4java/im4java {:mvn/version "1.4.0"}
-
-  buddy/buddy-sign {:mvn/version "3.1.0"}
-  buddy/buddy-hashers {:mvn/version "1.4.0"}
 
   org.xerial.snappy/snappy-java {:mvn/version "1.1.7.3"}
   com.github.spullara.mustache.java/compiler {:mvn/version "0.9.6"}
@@ -44,7 +50,7 @@
 
   mount/mount {:mvn/version "0.1.16"}
   environ/environ {:mvn/version "1.1.0"}}
- :paths ["src" "vendor" "resources" "../common"]
+ :paths ["src" "resources" "../common" "common"]
  :aliases
  {:dev
   {:extra-deps
@@ -53,13 +59,14 @@
     fipp/fipp {:mvn/version "0.6.21"}
     criterium/criterium {:mvn/version "0.4.5"}
     mockery/mockery {:mvn/version "0.1.4"}}
-   :extra-paths ["test"]}
+   :extra-paths ["tests"]}
 
   :repl
   {:main-opts  ["-m" "rebel-readline.main"]}
 
-  :test
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-554"}}}
+  :tests
+  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-565"}}
+   :main-opts ["-m" "kaocha.runner"]}
 
   :ancient
   {:main-opts ["-m" "deps-ancient.deps-ancient"]

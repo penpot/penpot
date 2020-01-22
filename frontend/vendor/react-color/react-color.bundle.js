@@ -5057,14 +5057,13 @@ var EditableInput = exports.EditableInput = function (_ref) {
   }
 
   _createClass(EditableInput, [{
-    key: 'componentWillReceiveProps',
-    value: function componentWillReceiveProps(nextProps) {
-      var input = this.input;
-      if (nextProps.value !== this.state.value) {
-        if (input === document.activeElement) {
-          this.setState({ blurValue: String(nextProps.value).toUpperCase() });
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate(prevProps, prevState) {
+      if (this.props.value !== this.state.value && (prevProps.value !== this.props.value || prevState.value !== this.state.value)) {
+        if (this.input === document.activeElement) {
+          this.setState({ blurValue: String(this.props.value).toUpperCase() });
         } else {
-          this.setState({ value: String(nextProps.value).toUpperCase(), blurValue: !this.state.blurValue && String(nextProps.value).toUpperCase() });
+          this.setState({ value: String(this.props.value).toUpperCase(), blurValue: !this.state.blurValue && String(this.props.value).toUpperCase() });
         }
       }
     }
@@ -5086,7 +5085,7 @@ var EditableInput = exports.EditableInput = function (_ref) {
   }, {
     key: 'setUpdatedValue',
     value: function setUpdatedValue(value, e) {
-      var onChangeValue = this.props.label !== null ? this.getValueObjectWithLabel(value) : value;
+      var onChangeValue = this.props.label ? this.getValueObjectWithLabel(value) : value;
       this.props.onChange && this.props.onChange(onChangeValue, e);
 
       var isPercentage = getIsPercentage(e.target.value);
@@ -5832,14 +5831,16 @@ var calculateChange = exports.calculateChange = function calculateChange(e, hsl,
     left = 0;
   } else if (left > containerWidth) {
     left = containerWidth;
-  } else if (top < 0) {
+  }
+
+  if (top < 0) {
     top = 0;
   } else if (top > containerHeight) {
     top = containerHeight;
   }
 
-  var saturation = left * 100 / containerWidth;
-  var bright = -(top * 100 / containerHeight) + 100;
+  var saturation = left / containerWidth;
+  var bright = 1 - top / containerHeight;
 
   return {
     h: hsl.h,
@@ -7403,11 +7404,6 @@ var ColorWrap = exports.ColorWrap = function ColorWrap(Picker) {
     }
 
     _createClass(ColorPicker, [{
-      key: 'componentWillReceiveProps',
-      value: function componentWillReceiveProps(nextProps) {
-        this.setState(_extends({}, _color2.default.toState(nextProps.color, this.state.oldHue)));
-      }
-    }, {
       key: 'render',
       value: function render() {
         var optionalEvents = {};
@@ -7418,6 +7414,11 @@ var ColorWrap = exports.ColorWrap = function ColorWrap(Picker) {
         return _react2.default.createElement(Picker, _extends({}, this.props, this.state, {
           onChange: this.handleChange
         }, optionalEvents));
+      }
+    }], [{
+      key: 'getDerivedStateFromProps',
+      value: function getDerivedStateFromProps(nextProps, state) {
+        return _extends({}, _color2.default.toState(nextProps.color, state.oldHue));
       }
     }]);
 

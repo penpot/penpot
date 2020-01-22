@@ -1,0 +1,292 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+.workspace-bar {
+  align-items: center;
+  background-color: $primary-ui-bg;
+  border-bottom: 1px solid  $soft-ui-border;
+  display: flex;
+  height: 50px;
+  padding: $x-small $medium $x-small 65px;
+  position: relative;
+  z-index: 11;
+
+  .main-icon {
+    align-items: center;
+    background-color: $secondary-ui-bg;
+    cursor: pointer;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 50px;
+
+    a {
+      height: 35px;
+
+      svg {
+        fill: $medium-ui-icons;
+        height: 35px;
+        width: 35px;
+
+        }
+
+      &:hover {
+
+        svg {
+          fill: $main-ui-color;
+        }
+
+      }
+
+    }
+
+  }
+
+  .project-tree-btn {
+    align-items: center;
+    background-color: $secondary-ui-bg;
+    border-radius: $br-small;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: flex;
+    padding: $x-small $x-small $x-small $medium;
+    width: 164px;
+
+    svg {
+      fill: $intense-ui-icons;
+      height: 20px;
+      margin-right: $small;
+      width: 20px;
+    }
+
+    span {
+      color: $intense-ui-text;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &:hover {
+      background-color: $dark-ui-bg;
+      border-color: $soft-ui-border;
+    }
+
+    &.selected {
+      background-color: $main-ui-color;
+
+      svg {
+        fill: $color-white;
+      }
+
+      span {
+        color: $color-white;
+      }
+
+    }
+  }
+
+  .workspace-options {
+    display: flex;
+
+    .options-btn {
+      align-items: center;
+      border-right: 4px double $soft-ui-border;
+      display: flex;
+      margin: 0;
+
+      &:last-child {
+        border: none;
+      }
+
+      li {
+        align-items: center;
+        background-color: $secondary-ui-bg;
+        border: 1px solid transparent;
+        border-radius: $br-small;
+        cursor: pointer;
+        display: flex;
+        flex-shrink: 0;
+        height: 30px;
+        justify-content: center;
+        margin: 0 $small;
+        position: relative;
+        width: 30px;
+
+        a {
+          padding-top: 6px;
+        }
+
+        svg {
+          fill: $intense-ui-icons;
+          height: 18px;
+          width: 18px;
+        }
+
+        &:hover {
+          background-color: $dark-ui-bg;
+          border-color: $soft-ui-border;
+        }
+
+        &.selected {
+          background-color: $main-ui-color;
+
+          svg {
+            fill: $color-white;
+          }
+
+        }
+
+        &.view-mode {
+          background-color: $intense-ui-icons;
+
+          svg {
+            fill: $secondary-ui-bg;
+          }
+
+          &:hover {
+            background-color: $color-white;
+            border-color: $soft-ui-border;
+
+            svg {
+              fill: $intense-ui-icons;
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
+    .options-view {
+      align-items: center;
+      display: flex;
+      justify-content: content;
+      margin: 0;
+
+      li {
+        align-items: center;
+        display: flex;
+        flex-shrink: 0;
+        height: 30px;
+        margin: 0 $small;
+        position: relative;
+        width: 60px;
+
+        &.zoom-input {
+          width: 85px;
+          padding: 0 25px;
+          position: relative;
+
+          .add-zoom,
+          .remove-zoom {
+            align-items: center;
+            border-radius: 50%;
+            border: 1px solid $intense-ui-border;
+            cursor: pointer;
+            color: $intense-ui-border;
+            display: none;
+            flex-shrink: 0;
+            font-size: $fs20;
+            font-weight: bold;
+            height: 20px;
+            justify-content: center;
+            position: absolute;
+            top: 5px;
+            width: 20px;
+
+            &:hover {
+              border-color: $color-primary;
+              color: $color-primary;
+            }
+
+          }
+
+          .add-zoom {
+            left: -5px;
+          }
+
+          .remove-zoom {
+            padding-top: 4px;
+            right: -5px;
+          }
+
+          &:hover {
+
+            .add-zoom,
+            .remove-zoom {
+              display: flex;
+              @include animation(0s,.3s,fadeIn);
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+}
+
+.options-btn {
+  align-items: center;
+  border-right: 4px double $soft-ui-border;
+  display: flex;
+  margin: 0;
+
+  &:last-child {
+    border: none;
+  }
+
+  li {
+    align-items: center;
+    background-color: $secondary-ui-bg;
+    border: 1px solid transparent;
+    border-radius: $br-small;
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    height: 30px;
+    justify-content: center;
+    margin: 0 $small;
+    position: relative;
+    width: 30px;
+
+    a {
+      padding-top: 6px;
+    }
+
+    svg {
+      fill: $intense-ui-icons;
+      height: 18px;
+      width: 18px;
+    }
+
+    &:hover {
+      background-color: $dark-ui-bg;
+      border-color: $soft-ui-border;
+    }
+
+    &.selected {
+      background-color: $main-ui-color;
+
+      svg {
+        fill: $color-white;
+      }
+
+    }
+
+  }
+
+}

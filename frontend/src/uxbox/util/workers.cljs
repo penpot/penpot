@@ -19,7 +19,7 @@
 (deftype WebWorker [stream wrk]
   IWorker
   (-ask [this message]
-    (let [sender (uuid/random)
+    (let [sender (uuid/next)
           data (assoc message :sender sender)
           data (t/encode data)]
       (.postMessage wrk data)
@@ -28,7 +28,7 @@
            (rx/take 1))))
 
   (-send [this message]
-    (let [sender (uuid/random)
+    (let [sender (uuid/next)
           data (assoc message :sender sender)
           data (t/encode data)]
       (.postMessage wrk data)

@@ -1,5 +1,4 @@
 figwheel_server.log
-pom.xml
 *jar
 *-init.clj
 .lein-deps-sum
@@ -8,15 +7,14 @@ pom.xml
 .lein-plugins/
 .repl
 .nrepl-port
+.cpcache
+.rebel_readline_history
+/vendor/**/target
 node_modules
-/backend/.cpcache
 /backend/target/
 /backend/resources/public/media
 /backend/dist/
 /backend/-
-/backend/.rebel_readline_history
-/frontend/.rebel_readline_history
-/frontend/.cpcache
 /frontend/npm-debug.log
 /frontend/target/
 /frontend/dist/

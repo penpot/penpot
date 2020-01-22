@@ -2,16 +2,18 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
 ;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns ^:figwheel-hooks uxbox.main
   (:require
    [cljs.spec.alpha :as s]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.users :as udu]
-   [uxbox.main.locales.en :as en]
-   [uxbox.main.locales.fr :as fr]
    [uxbox.main.store :as st]
    [uxbox.main.ui :as ui]
    [uxbox.main.ui.lightbox :refer [lightbox]]
@@ -19,7 +21,7 @@
    [uxbox.main.ui.loader :refer [loader]]
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
-   [uxbox.util.i18n :as i18n :refer [tr]]
+   [uxbox.util.i18n :as i18n]
    [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]
    [uxbox.util.storage :refer [storage]]
@@ -28,31 +30,19 @@
 ;; --- i18n
 
 (declare reinit)
-(s/check-asserts true)
-
-(i18n/update-locales! (fn [locales]
-                        (-> locales
-                            (assoc "en" en/locales)
-                            (assoc "fr" fr/locales))))
-
-(i18n/on-locale-change!
- (fn [new old]
-   (println "Locale changed from" old " to " new)
-   (reinit)))
+;; (rx/sub! i18n/locale-sub #(reinit))
 
 ;; --- Error Handling
 
 (defn- on-navigate
   [router path]
   (let [match (rt/match router path)]
-    (prn "main$on-navigate" path)
-
     (cond
       (and (= path "") (:auth storage))
       (st/emit! (rt/nav :dashboard-projects))
 
       (and (= path "") (not (:auth storage)))
-      (st/emit! (rt/nav :auth/login))
+      (st/emit! (rt/nav :login))
 
       (nil? match)
       (prn "TODO 404 main")
@@ -81,7 +71,8 @@
 (def app-sym (.for js/Symbol "uxbox.app"))
 
 (defn ^:export init
-  []
+  [translations]
+  (i18n/init! (js/JSON.parse translations))
   (unchecked-set js/window app-sym "main")
   (st/init)
   (init-ui))

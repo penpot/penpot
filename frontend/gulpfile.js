@@ -1,18 +1,19 @@
-const gulp = require("gulp");
-const scss = require("gulp-sass");
 const autoprefixer = require('gulp-autoprefixer');
-const rimraf = require("rimraf");
-const mustache = require("gulp-mustache");
-const rename = require("gulp-rename");
+const cleancss = require("gulp-clean-css");
+const fs = require("fs");
+const gulp = require("gulp");
 const gulpif = require("gulp-if");
 const gzip = require("gulp-gzip");
-const cleancss = require("gulp-clean-css");
+const l = require("lodash");
+const mustache = require("gulp-mustache");
+const rename = require("gulp-rename");
+const rimraf = require("rimraf");
+const scss = require("gulp-sass");
 
 const paths = {};
 paths.app = "./resources/";
 paths.output = "./resources/public/";
-paths.dist = "./dist/";
-paths.target = "./target/";
+paths.dist = "./target/dist/";
 paths.scss = paths.app + "styles/**/*.scss";
 
 /***********************************************
@@ -32,10 +33,7 @@ gulp.task("dist:clean", function(next) {
 });
 
 function makeAutoprefixer() {
-  return autoprefixer('last 2 version',
-                      'safari 5',
-                      'ios 6',
-                      'android 4');
+  return autoprefixer('last 2 version');
 }
 
 
@@ -72,12 +70,29 @@ gulp.task("scss:main", scssPipeline({
   output: paths.output + "css/"
 }));
 
-gulp.task("scss:view", scssPipeline({
-  input: paths.app + "styles/view.scss",
-  output: paths.output + "css/"
-}));
+// gulp.task("scss:view", scssPipeline({
+//   input: paths.app + "styles/view.scss",
+//   output: paths.output + "css/"
+// }));
 
-gulp.task("scss", gulp.parallel("scss:main", "scss:view"));
+gulp.task("scss", gulp.parallel("scss:main"));
+
+function readLocales() {
+  const path = __dirname + "/resources/locales.json";
+  const content = JSON.parse(fs.readFileSync(path, {encoding: "utf8"}));
+
+  let result = {};
+  for (let key of Object.keys(content)) {
+    const item = content[key];
+    if (l.isString(item)) {
+      result[key] = {"en": item};
+    } else if (l.isPlainObject(item) && l.isPlainObject(item.translations)) {
+      result[key] = item.translations;
+    }
+  }
+
+  return JSON.stringify(result);
+}
 
 // Templates
 
@@ -86,8 +101,12 @@ function templatePipeline(options) {
     const input = options.input;
     const output = options.output;
     const ts = Math.floor(new Date());
+
+    const locales = readLocales();
+
     const tmpl = mustache({
-      ts: ts
+      ts: ts,
+      tr: JSON.stringify(locales),
     });
 
     return gulp.src(input)
@@ -98,27 +117,28 @@ function templatePipeline(options) {
 }
 
 gulp.task("template:main", templatePipeline({
-  input: paths.app + "index.mustache",
-  output: paths.output,
+  input: paths.app + "templates/index.mustache",
+  output: paths.output
 }));
 
-gulp.task("template:view", templatePipeline({
-  input: paths.app + "view.mustache",
-  output: paths.output + "view/",
-  jspath: "/js/view.js",
-  csspath: "/css/view.css"
-}));
+// gulp.task("template:view", templatePipeline({
+//   input: paths.app + "templates/view.mustache",
+//   output: paths.output + "view/"
+// }));
 
-gulp.task("template", gulp.parallel("template:view", "template:main"));
+gulp.task("templates", gulp.parallel("template:main"));
 
 // Entry Point
 
 gulp.task("watch:main", function() {
   gulp.watch(paths.scss, gulp.task("scss"));
+  gulp.watch([paths.app + "templates/*.mustache",
+              paths.app + "locales.json"],
+             gulp.task("templates"));
 });
 
 gulp.task("watch", gulp.series(
-  gulp.parallel("scss", "template"),
+  gulp.parallel("scss", "templates"),
   gulp.task("watch:main")
 ));
 
@@ -133,16 +153,16 @@ gulp.task("dist:clean", function(next) {
 // Templates
 
 gulp.task("dist:template:main", templatePipeline({
-  input: paths.app + "index.mustache",
+  input: paths.app + "templates/index.mustache",
   output: paths.dist,
 }));
 
-gulp.task("dist:template:view", templatePipeline({
-  input: paths.app + "view.mustache",
-  output: paths.dist + "view/",
-}));
+// gulp.task("dist:template:view", templatePipeline({
+//   input: paths.app + "view.mustache",
+//   output: paths.dist + "view/",
+// }));
 
-gulp.task("dist:template", gulp.parallel("dist:template:view", "dist:template:main"));
+gulp.task("dist:templates", gulp.parallel("dist:template:main"));
 
 // Styles
 
@@ -151,12 +171,12 @@ gulp.task("dist:scss:main", scssPipeline({
   output: paths.dist + "css/"
 }));
 
-gulp.task("dist:scss:view", scssPipeline({
-  input: paths.app + "styles/view.scss",
-  output: paths.dist + "css/"
-}));
+// gulp.task("dist:scss:view", scssPipeline({
+//   input: paths.app + "styles/view.scss",
+//   output: paths.dist + "css/"
+// }));
 
-gulp.task("dist:scss", gulp.parallel("dist:scss:main", "dist:scss:view"));
+gulp.task("dist:scss", gulp.parallel("dist:scss:main"));
 
 // Copy
 
@@ -184,7 +204,7 @@ gulp.task("dist:gzip", function() {
 // Entry Point
 
 gulp.task("dist", gulp.parallel(
-  gulp.task("dist:template"),
+  gulp.task("dist:templates"),
   gulp.task("dist:scss"),
   gulp.task("dist:copy")
 ));

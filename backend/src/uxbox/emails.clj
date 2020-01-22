@@ -10,28 +10,18 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.config :as cfg]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.media :as media]
-   [uxbox.util.exceptions :as ex]
    [uxbox.util.emails :as emails]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]))
+   [uxbox.util.blob :as blob]))
 
 ;; --- Defaults
 
 (def default-context
   {:static media/resolve-asset
    :comment (constantly nil)})
-
-;; --- Register Email
-
-(s/def ::name ::us/string)
-(s/def ::register
-  (s/keys :req-un [::name]))
-
-(def register
-  "A new profile registration welcome email."
-  (emails/build ::register default-context))
 
 ;; --- Public API
 
@@ -44,8 +34,8 @@
 (defn send!
   "Schedule the email for sending."
   [email context]
-  (s/assert fn? email)
-  (s/assert map? context)
+  (us/assert fn? email)
+  (us/assert map? context)
   (let [defaults {:from (:email-from cfg/config)
                   :reply-to (:email-reply-to cfg/config)}
         data (->> (merge defaults context)
@@ -56,3 +46,22 @@
              values ($1, $2) returning *"]
     (-> (db/query-one db/pool [sql data priority])
         (p/then' (constantly nil)))))
+
+;; --- Emails
+
+(s/def ::name ::us/string)
+(s/def ::register
+  (s/keys :req-un [::name]))
+
+(def register
+  "A new profile registration welcome email."
+  (emails/build ::register default-context))
+
+(s/def ::token ::us/string)
+(s/def ::password-recovery
+  (s/keys :req-un [::name ::token]))
+
+(def password-recovery
+  "A password recovery notification email."
+  (emails/build ::password-recovery default-context))
+

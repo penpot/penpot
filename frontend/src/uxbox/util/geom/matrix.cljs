@@ -2,8 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.geom.matrix
   (:require [cuerdas.core :as str]
@@ -13,63 +15,23 @@
 
 ;; --- Matrix Impl
 
-(defrecord Matrix [a b c d tx ty])
-
-(defprotocol ICoerce
-  "Matrix coersion protocol."
-  (-matrix [v] "Return a matrix instance."))
-
-(extend-type Matrix
-  cljs.core/IDeref
-  (-deref [v]
-    (mapv #(get v %) [:a :c :b :d :tx :ty]))
-
+(defrecord Matrix [a b c d e f]
   Object
-  (toString [v]
-    (->> (str/join "," @v)
-         (str/format "matrix(%s)"))))
-
-(extend-protocol ICoerce
-  nil
-  (-matrix [_]
-    (Matrix. 1 0 0 1 0 0))
-
-  Matrix
-  (-matrix [v] v)
-
-  cljs.core/PersistentVector
-  (-matrix [v]
-    (let [[a b c d tx ty] v]
-      (Matrix. a b c d tx ty)))
-
-  cljs.core/IndexedSeq
-  (-matrix [v]
-    (let [[a b c d tx ty] v]
-      (Matrix. a b c d tx ty))))
+  (toString [_]
+    (str "matrix(" a "," b "," c "," d "," e "," f ")")))
 
 (defn multiply
-  ([m om]
-   (let [a1 (:a m)
-         b1 (:b m)
-         c1 (:c m)
-         d1 (:d m)
-         a2 (:a om)
-         b2 (:b om)
-         c2 (:c om)
-         d2 (:d om)
-         tx1 (:tx m)
-         ty1 (:ty m)
-         tx2 (:tx om)
-         ty2 (:ty om)]
-     (Matrix.
-      (+ (* a2 a1) (* c2 c1))
-      (+ (* a2 b1) (* c2 d1))
-      (+ (* b2 a1) (* d2 c1))
-      (+ (* b2 b1) (* d2 d1))
-      (+ tx1 (* tx2 a1) (* ty2 c1))
-      (+ ty1 (* tx2 b1) (* ty2 d1)))))
-  ([m om & others]
-   (reduce multiply (multiply m om) others)))
+  ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f :as m1}
+    {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f :as m2}]
+   (Matrix.
+    (+ (* m1a m2a) (* m1c m2b))
+    (+ (* m1b m2a) (* m1d m2b))
+    (+ (* m1a m2c) (* m1c m2d))
+    (+ (* m1b m2c) (* m1d m2d))
+    (+ (* m1a m2e) (* m1c m2f) m1e)
+    (+ (* m1b m2e) (* m1d m2f) m1f)))
+  ([m1 m2 & others]
+   (reduce multiply (multiply m1 m2) others)))
 
 (defn ^boolean matrix?
   "Return true if `v` is Matrix instance."
@@ -80,23 +42,18 @@
   "Create a new matrix instance."
   ([]
    (Matrix. 1 0 0 1 0 0))
-  ([v]
-   (-matrix v))
-  ([a b c d tx ty]
-   (Matrix. a b c d tx ty)))
+  ([a b c d e f]
+   (Matrix. a b c d e f)))
 
 (defn translate-matrix
-  ([pt]
-   (let [pt (gpt/point pt)]
-     (Matrix. 1 0 0 1 (:x pt) (:y pt))))
-  ([x y]
-   (translate-matrix (gpt/point x y))))
+  [{x :x y :y :as pt}]
+  (assert (gpt/point? pt))
+  (Matrix. 1 0 0 1 x y))
 
 (defn scale-matrix
-  ([s]
-   (Matrix. s 0 0 s 0 0))
-  ([sx sy]
-   (Matrix. sx 0 0 sy 0 0)))
+  [{x :x y :y :as pt}]
+  (assert (gpt/point? pt))
+  (Matrix. x 0 0 y 0 0))
 
 (defn rotate-matrix
   [a]
@@ -105,7 +62,8 @@
              (mth/sin a)
              (- (mth/sin a))
              (mth/cos a)
-             0 0)))
+             0
+             0)))
 
 (defn rotate
   "Apply rotation transformation to the matrix."
@@ -113,76 +71,23 @@
    (multiply m (rotate-matrix angle)))
   ([m angle center]
    (multiply m
-           (translate-matrix center)
-           (rotate-matrix angle)
-           (translate-matrix (gpt/negate center)))))
-
-(defn rotate*
-  ([m angle]
-   (let [center (gpt/point 0 0)]
-     (rotate m angle center)))
-  ([m angle center]
-   (let [angle (mth/radians angle)
-         x (:x center)
-         y (:y center)
-         cos (mth/cos angle)
-         sin (mth/sin angle)
-         nsin (- sin)
-         tx (- x (+ (* x cos)) (* y sin))
-         ty (- y (- (* x sin)) (* y cos))
-         a (+ (* cos (:a m)) (* sin (:c m)))
-         b (+ (* cos (:b m)) (* sin (:d m)))
-         c (+ (* nsin (:a m)) (* cos (:c m)))
-         d (+ (* nsin (:b m)) (* cos (:d m)))
-         tx' (+ (:tx m) (* tx (:a m)) (* ty (:c m)))
-         ty' (+ (:ty m) (* tx (:b m)) (* ty (:d m)))]
-     (Matrix. a b c d tx' ty'))))
+             (translate-matrix center)
+             (rotate-matrix angle)
+             (translate-matrix (gpt/negate center)))))
 
 (defn scale
   "Apply scale transformation to the matrix."
-  ([m v] (scale m v v))
-  ([m vx vy] (multiply m (scale-matrix vx vy))))
-
-  ;; ([m v] (scale m v v))
-  ;; ([m x y]
-  ;;  (assoc m
-  ;;         :a (* (:a m) x)
-  ;;         :c (* (:c m) x)
-  ;;         :b (* (:b m) y)
-  ;;         :d (* (:d m) y))))
+  ([m scale] (multiply m (scale-matrix scale)))
+  ([m scale center]
+   (multiply m
+             (translate-matrix center)
+             (scale-matrix scale)
+             (translate-matrix (gpt/negate center)))))
 
 (defn translate
   "Apply translate transformation to the matrix."
-  ([m pt]
-   (multiply m (translate-matrix pt)))
-  ([m x y]
-   (translate m (gpt/point x y))))
-
-  ;; ([m pt]
-  ;;  (let [pt (gpt/point pt)]
-  ;;    (assoc m
-  ;;           :tx (+ (:tx m) (* (:x pt) (:a m)) (* (:y pt) (:b m)))
-  ;;           :ty (+ (:ty m) (* (:x pt) (:c m)) (* (:y pt) (:d m))))))
-  ;; ([m x y]
-  ;;  (translate m (gpt/point x y))))
-
-(defn ^boolean invertible?
-  [{:keys [a b c d tx ty] :as m}]
-  (let [det (- (* a d) (* c b))]
-    (and (not (mth/nan? det))
-         (mth/finite? tx)
-         (mth/finite? ty))))
-
-(defn invert
-  [{:keys [a b c d tx ty] :as m}]
-  (when (invertible? m)
-    (let [det (- (* a d) (* c b))]
-      (Matrix. (/ d det)
-               (/ (- b) det)
-               (/ (- c) det)
-               (/ a det)
-               (/ (- (* c ty) (* d tx)) det)
-               (/ (- (* b tx) (* a ty)) det)))))
+  [m pt]
+  (multiply m (translate-matrix pt)))
 
 ;; --- Transit Adapter
 

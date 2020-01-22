@@ -14,10 +14,9 @@ volumes:
 services:
   main:
     privileged: true
-    build:
-      context: ./
-    hostname: 'uxboxdev-main'
-    container_name: 'uxboxdev-main'
+    image: "uxbox-devenv"
+    hostname: 'uxbox-devenv-main'
+    container_name: 'uxbox-devenv-main'
     command: "/home/uxbox/init.sh"
     stop_signal: SIGINT
     depends_on:
@@ -25,9 +24,8 @@ services:
       - smtp
     volumes:
       - "main_user_data:/home/uxbox/local"
-      - "${PWD}:/home/uxbox/uxbox"
       - "${HOME}/.m2:/home/uxbox/.m2"
-      - "${HOME}/.gitconfig:/home/uxbox/.gitconfig"
+      - "${PWD}:/home/uxbox/uxbox"
 
     ports:
       - 3449:3449
@@ -40,9 +38,9 @@ services:
       - UXBOX_HTTP_SERVER_DEBUG=true
       - UXBOX_HTTP_SERVER_CORS="http://${HOST_IP}:8080"
       # Database setup
-      - UXBOX_DATABASE_URI="postgresql://postgres/uxbox"
-      - UXBOX_DATABASE_USERNAME="uxbox"
-      - UXBOX_DATABASE_PASSWORD="uxbox"
+      - UXBOX_DATABASE_URI=postgresql://postgres/uxbox
+      - UXBOX_DATABASE_USERNAME=uxbox
+      - UXBOX_DATABASE_PASSWORD=uxbox
       # Backend setup (for usage with Nginx proxy)
       - UXBOX_MEDIA_URI="http://${HOST_IP}:8080/media/"
       - UXBOX_ASSETS_URI="http://${HOST_IP}:8080/static/"
@@ -50,7 +48,7 @@ services:
       - UXBOX_API_URL=/api
 
   smtp:
-    container_name: 'uxboxdev-smtp'
+    container_name: 'uxbox-devenv-smtp'
     image: mwader/postfix-relay
     restart: always
     environment:
@@ -60,14 +58,14 @@ services:
   postgres:
     image: postgres:12
     command: postgres -c config_file=/etc/postgresql.conf
-    hostname: 'uxboxdev-postgres'
-    container_name: 'uxboxdev-postgres'
+    hostname: 'uxbox-devenv-postgres'
+    container_name: 'uxbox-devenv-postgres'
     restart: always
     stop_signal: SIGINT
     ports:
       - 5432:5432
     environment:
-      - POSTGRES_INITDB_ARGS="--data-checksums"
+      - POSTGRES_INITDB_ARGS=--data-checksums
       - POSTGRES_DB=uxbox
       - POSTGRES_USER=uxbox
       - POSTGRES_PASSWORD=uxbox

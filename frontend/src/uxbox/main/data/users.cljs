@@ -6,13 +6,14 @@
 
 (ns uxbox.main.data.users
   (:require
-   [cljs.spec.alpha :as s]
    [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [potok.core :as ptk]
-   [uxbox.main.repo.core :as rp]
+   [uxbox.common.spec :as us]
+   [uxbox.main.repo :as rp]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.messages :as uum]
-   [uxbox.util.spec :as us]
    [uxbox.util.storage :refer [storage]]))
 
 ;; --- Common Specs
@@ -31,7 +32,7 @@
 
 ;; --- Profile Fetched
 
-(s/def ::profile-fetched-params
+(s/def ::profile-fetched
   (s/keys :req-un [::id
                    ::username
                    ::fullname
@@ -41,8 +42,8 @@
 
 (defn profile-fetched
   [data]
-  (s/assert ::profile-fetched-params data)
-  (reify
+  (us/assert ::profile-fetched data)
+  (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :profile data))
@@ -72,9 +73,9 @@
 
 (defn form->update-profile
   [data on-success on-error]
-  (s/assert ::update-profile-params data)
-  (s/assert ::us/fn on-error)
-  (s/assert ::us/fn on-success)
+  (us/assert ::update-profile-params data)
+  (us/assert fn? on-error)
+  (us/assert fn? on-success)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -86,7 +87,7 @@
                        (assoc :email (:email data))
                        (assoc :username (:username data))
                        (assoc-in [:metadata :language] (:language data)))]
-          (->> (rp/req :update/profile data)
+          #_(->> (rp/req :update/profile data)
                (rx/map :payload)
                (rx/do on-success)
                (rx/map profile-fetched)
@@ -101,15 +102,15 @@
 
 (defn update-password
   [data {:keys [on-success on-error]}]
-  (s/assert ::update-password-params data)
-  (s/assert ::us/fn on-success)
-  (s/assert ::us/fn on-error)
+  (us/assert ::update-password-params data)
+  (us/assert fn? on-success)
+  (us/assert fn? on-error)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
       (let [params {:old-password (:password-old data)
                     :password (:password-1 data)}]
-        (->> (rp/req :update/profile-password params)
+        #_(->> (rp/req :update/profile-password params)
              (rx/catch rp/client-error? (fn [e]
                                           (on-error (:payload e))
                                           (rx/empty)))
@@ -122,13 +123,15 @@
 (deftype UpdatePhoto [file done]
   ptk/WatchEvent
   (watch [_ state stream]
-    (->> (rp/req :update/profile-photo {:file file})
+    #_(->> (rp/req :update/profile-photo {:file file})
          (rx/do done)
          (rx/map (constantly fetch-profile)))))
+
+(s/def ::file #(instance? js/File %))
 
 (defn update-photo
   ([file] (update-photo file (constantly nil)))
   ([file done]
-   {:pre [(us/file? file)
-          (fn? done)]}
+   (us/assert ::file file)
+   (us/assert fn? done)
    (UpdatePhoto. file done)))

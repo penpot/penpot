@@ -10,9 +10,9 @@
    [cuerdas.core :as str]
    [vertx.core :as vc]
    [uxbox.core :refer [system]]
+   [uxbox.common.exceptions :as ex]
    [uxbox.util.uuid :as uuid]
-   [uxbox.util.dispatcher :as uds]
-   [uxbox.util.exceptions :as ex]))
+   [uxbox.util.dispatcher :as uds]))
 
 ;; (def logging-interceptor
 ;;   {:enter (fn [data]
@@ -24,10 +24,6 @@
 ;;                   type (get-in data [:request ::type])]
 ;;               (log/info "service" type "processed in" elapsed)
 ;;               data))})
-
-(defmacro defstr
-  [sym str]
-  `(def ~sym (str/istr ~str)))
 
 (defn raise-not-found-if-nil
   [v]

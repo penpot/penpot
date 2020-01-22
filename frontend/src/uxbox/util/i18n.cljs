@@ -7,42 +7,42 @@
 
 (ns uxbox.util.i18n
   "A i18n foundation."
-  (:require [cuerdas.core :as str]
-            [uxbox.config :as cfg]
-            [uxbox.util.storage :refer [storage]]))
+  (:require
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]
+   [beicon.core :as rx]
+   [goog.object :as gobj]
+   [uxbox.config :as cfg]
+   [uxbox.util.transit :as t]
+   [uxbox.util.storage :refer [storage]]))
 
-(defonce locale (atom (get storage ::locale cfg/default-language)))
-(defonce state (atom {}))
+(defonce locale (get storage ::locale cfg/default-language))
+(defonce locale-sub (rx/subject))
+(defonce translations #js {})
 
-(defn update-locales!
-  [callback]
-  (swap! state callback))
+;; The traslations `data` is a javascript object and should be treated
+;; with `goog.object` namespace functions instead of a standart
+;; clojure functions. This is for performance reasons because this
+;; code is executed in the critical part (application bootstrap) and
+;; used in many parts of the application.
+
+(defn init!
+  [data]
+  (set! translations data))
 
 (defn set-current-locale!
   [v]
   (swap! storage assoc ::locale v)
-  (reset! locale v))
+  (set! locale v)
+  (rx/push! locale-sub v))
 
 (defn set-default-locale!
   []
   (set-current-locale! cfg/default-language))
 
-(defn on-locale-change!
-  [callback]
-  (add-watch locale ::main (fn [_ _ old-locale new-locale]
-                             (when (not= old-locale new-locale)
-                               (callback new-locale old-locale)))))
-
-;; A marker type that is used just for mark
-;; a parameter that reprsentes the counter.
-
 (deftype C [val]
   IDeref
   (-deref [o] val))
-
-(defn c
-  [x]
-  (C. x))
 
 (defn ^boolean c?
   [r]
@@ -50,29 +50,41 @@
 
 ;; A main public api for translate strings.
 
-(defn tr
-  "Translate the string."
-  ([t]
-   (let [default (name t)
-         locale  (deref locale)
-         value  (or (get-in @state [locale t])
-                    default)]
-     (if (vector? value)
-       (or (second value) default)
+;; A marker type that is used just for mark
+;; a parameter that reprsentes the counter.
+
+(defn c
+  [x]
+  (C. x))
+
+(defn t
+  ([locale code]
+   (let [code (name code)
+         value (gobj/getValueByKeys translations code locale)
+         value (if (nil? value) code value)]
+     (if (array? value)
+       (aget value 0)
        value)))
-  ([t & args]
-   (let [locale (deref locale)
-         value (get-in @state [locale t] (name t))
+  ([locale code & args]
+   (let [code (name code)
+         value (gobj/getValueByKeys translations code locale)
+         value (if (nil? value) code value)
          plural (first (filter c? args))
-         args (mapv #(if (c? %) @% %) args)
-         value (cond
-                 (and (vector? value)
-                      (= 3 (count value)))
-                 (nth value (min 2 @plural))
-
-                 (vector? value)
-                 (if (= @plural 1) (first value) (second value))
-
-                 :else
+         value (if (array? value)
+                 (if (= @plural 1) (aget value 0) (aget value 1))
                  value)]
-     (apply str/format value args))))
+     (apply str/format value (map #(if (c? %) @% %) args)))))
+
+(defn tr
+  ([code] (t locale code))
+  ([code & args] (apply t locale code args)))
+
+(defn use-locale
+  []
+  (let [[locale set-locale] (mf/useState locale)]
+    (mf/useEffect (fn []
+                    (let [sub (rx/sub! locale-sub #(set-locale %))]
+                      #(rx/dispose! sub)))
+                  #js [])
+    locale))
+

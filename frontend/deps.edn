@@ -3,19 +3,19 @@
   org.clojure/clojure {:mvn/version "1.10.1"}
   com.cognitect/transit-cljs {:mvn/version "0.8.256"}
 
-  cljsjs/react {:mvn/version "16.11.0-0"}
-  cljsjs/react-dom {:mvn/version "16.11.0-0"}
-  cljsjs/react-dom-server {:mvn/version "16.11.0-0"}
+  cljsjs/react {:mvn/version "16.12.0-1"}
+  cljsjs/react-dom {:mvn/version "16.12.0-1"}
+  cljsjs/react-dom-server {:mvn/version "16.12.0-1"}
 
   environ/environ {:mvn/version "1.1.0"}
   metosin/reitit-core {:mvn/version "0.3.10"}
   expound/expound {:mvn/version "0.7.2"}
 
-  funcool/beicon {:mvn/version "5.1.0"}
-  funcool/cuerdas {:mvn/version "2.2.0"}
-  funcool/lentes {:mvn/version "1.3.3"}
+  funcool/beicon {:mvn/version "6.0.0-SNAPSHOT"}
+  funcool/cuerdas {:mvn/version "2.2.1"}
+  funcool/lentes {:mvn/version "1.4.0-SNAPSHOT"}
   funcool/potok {:mvn/version "2.8.0-SNAPSHOT"}
-  funcool/promesa {:mvn/version "4.0.2"}
+  funcool/promesa {:mvn/version "5.0.0"}
   funcool/rumext {:mvn/version "2.0.0-SNAPSHOT"}
   }
  :paths ["src" "vendor" "resources" "../common"]
@@ -25,7 +25,15 @@
    {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
     com.bhauman/rebel-readline {:mvn/version "0.1.4"}
     com.bhauman/figwheel-main {:mvn/version "0.2.3"}
-    org.clojure/tools.namespace {:mvn/version "0.3.1"}}
+    org.clojure/tools.namespace {:mvn/version "0.3.1"}
+    metosin/jsonista {:mvn/version "0.2.5"}
+    funcool/datoteka {:mvn/version "1.2.0"}
+
+    ;; i18n parsing
+    carocad/parcera {:mvn/version "0.11.0"}
+    org.antlr/antlr4-runtime {:mvn/version "4.7"}}
+
+
    :extra-paths ["test"]}
 
   :repl

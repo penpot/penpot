@@ -8,11 +8,11 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]))
+   [uxbox.util.blob :as blob]))
 
 (declare decode-row)
 
@@ -23,9 +23,10 @@
 (s/def ::token ::us/string)
 (s/def ::user ::us/uuid)
 
+
 ;; --- Query: Projects
 
-(su/defstr sql:projects
+(def sql:projects
   "select p.*
      from project_users as pu
     inner join projects as p on (p.id = pu.project_id)
@@ -40,6 +41,7 @@
   [{:keys [user] :as params}]
   (-> (db/query db/pool [sql:projects user])
       (p/then' (partial mapv decode-row))))
+
 
 ;; --- Helpers
 

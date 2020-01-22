@@ -10,61 +10,43 @@
 
 goog.provide("uxbox.util.rng_impl");
 goog.require("cljs.core");
+goog.require("goog.object");
 
 goog.scope(function() {
   const self = uxbox.util.rng_impl;
-  const global = goog.global;
+  const platform = cljs.core._STAR_target_STAR_;
 
-  // Check if nodejs rng is available (high quality);
-  if (cljs.core._STAR_target_STAR_ === "nodejs") {
+  if (platform === "nodejs") {
     const crypto = require("crypto");
-
-    self.fill = function(buf) {
-      crypto.randomFillSync(buf);
-      return buf;
-    };
 
     self.getBytes = function(n) {
       return crypto.randomBytes(n);
     };
-  }
 
-  // Check if whatwg rng is available (high quality);
-  else if (global.crypto !== undefined &&
-           global.crypto.getRandomValues !== undefined) {
+  } else {
+    const gobj = goog.object;
+    const global = goog.global;
+    const crypto = gobj.get(global, "crypto");
 
-    self.fill = function(buf) {
-      global.crypto.getRandomValues(buf);
-      return buf;
-    };
+    if (crypto === undefined) {
+      console.warn("No high quality RNG available, switching back to Math.random.", platform);
 
-    self.getBytes = function(n) {
-      const buf = new Uint8Array(16);
-      global.crypto.getRandomValues(buf);
-      return buf;
-    };
-  }
+      self.getBytes = function(n) {
+        const buf = new Uint8Array(n);
 
-  // Switch Back to the Math.random (low quality);
-  else {
-    console.warn("No high quality RNG available, switching back to Math.random.");
+        for (let i = 0, r; i < n; i++) {
+          if ((i & 0x03) === 0) { r = Math.random() * 0x100000000; }
+          buf[i] = r >>> ((i & 0x03) << 3) & 0xff;
+        }
 
-    self.fill = function(buf) {
-      for (let i = 0, r; i < buf.length; i++) {
-        if ((i & 0x03) === 0) { r = Math.random() * 0x100000000; }
-        buf[i] = r >>> ((i & 0x03) << 3) & 0xff;
-      }
-
-      return buf;
-    };
-
-    self.getBytes = function(n) {
-      const buf = new Array(n);
-      for (let i = 0, r; i < n; i++) {
-        if ((i & 0x03) === 0) { r = Math.random() * 0x100000000; }
-        buf[i] = r >>> ((i & 0x03) << 3) & 0xff;
-      }
-      return buf;
-    };
+        return buf;
+      };
+    } else {
+      self.getBytes = function(n) {
+        const buf = new Uint8Array(n);
+        crypto.getRandomValues(buf);
+        return buf;
+      };
+    }
   }
 });

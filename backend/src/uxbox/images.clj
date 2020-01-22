@@ -12,9 +12,9 @@
    [datoteka.core :as fs]
    [datoteka.proto :as pt]
    [datoteka.storages :as st]
-   [uxbox.media :as media]
-   [uxbox.util.data :refer (dissoc-in)]
-   [uxbox.util.spec :as us])
+   [uxbox.common.data :as d]
+   [uxbox.common.spec :as us]
+   [uxbox.media :as media])
   (:import
    java.io.ByteArrayInputStream
    java.io.InputStream
@@ -43,8 +43,8 @@
                 width 200
                 height 200}
            :as opts}]
-   (s/assert ::thumbnail-opts opts)
-   (s/assert fs/path? input)
+   (us/assert ::thumbnail-opts opts)
+   (us/assert fs/path? input)
    (let [tmp (fs/create-tempfile :suffix (str "." format))
          opr (doto (IMOperation.)
                (.addImage)
@@ -60,7 +60,7 @@
 
 (defn make-thumbnail
   [input {:keys [width height format quality] :as opts}]
-  (s/assert ::thumbnail-opts opts)
+  (us/assert ::thumbnail-opts opts)
   (let [[filename ext] (fs/split-ext (fs/name input))
         suffix (->> [width height quality format]
                     (interpose ".")
@@ -102,6 +102,6 @@
       entry
       (let [url (str (st/public-url storage value))]
         (-> entry
-            (dissoc-in src)
+            (d/dissoc-in src)
             (assoc-in dst url))))))
 

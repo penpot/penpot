@@ -4,7 +4,43 @@
 ;;
 ;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.main.ui.shapes.attrs)
+(ns uxbox.main.ui.shapes.attrs
+  (:require [cuerdas.core :as str]))
+
+
+;; (defn camel-case
+;;   "Returns camel case version of the key, e.g. :http-equiv becomes :httpEquiv."
+;;   [k]
+;;   (if (or (keyword? k)
+;;           (string? k)
+;;           (symbol? k))
+;;     (let [[first-word & words] (str/split (name k) #"-")]
+;;       (if (or (empty? words)
+;;               (= "aria" first-word)
+;;               (= "data" first-word))
+;;         k
+;;         (-> (map str/capital words)
+;;             (conj first-word)
+;;             str/join
+;;             keyword)))
+;;     k))
+
+(defn- process-key
+  [k]
+  (if (keyword? k)
+    (cond
+      (keyword-identical? k :stroke-color) :stroke
+      (keyword-identical? k :fill-color) :fill
+      (str/includes? (name k) "-") (str/camel k)
+      :else k)))
+
+(defn- process-attrs
+  [m]
+  (persistent!
+   (reduce-kv (fn [m k v]
+                (assoc! m (process-key k) v))
+              (transient {})
+              m)))
 
 (def shape-style-attrs
   #{:fill-color
@@ -17,12 +53,6 @@
     :rx
     :ry})
 
-(def shape-default-attrs
-  {:stroke-color "#000000"
-   :stroke-opacity 1
-   :fill-color "#000000"
-   :fill-opacity 1})
-
 (defn- stroke-type->dasharray
   [style]
   (case style
@@ -30,24 +60,12 @@
     :dotted "5,5"
     :dashed "10,10"))
 
-(defn- rename-attr
-  [[key value :as pair]]
-  (case key
-    :stroke-color [:stroke value]
-    :fill-color [:fill value]
-    pair))
-
-(defn- rename-attrs
-  [attrs]
-  (into {} (map rename-attr) attrs))
-
 (defn- transform-stroke-attrs
   [{:keys [stroke-style] :or {stroke-style :none} :as attrs}]
   (case stroke-style
     :none (dissoc attrs :stroke-style :stroke-width :stroke-opacity :stroke-color)
-    :solid (-> (merge shape-default-attrs attrs)
-               (dissoc :stroke-style))
-    (-> (merge shape-default-attrs attrs)
+    :solid (dissoc attrs :stroke-style)
+    (-> attrs
         (assoc :stroke-dasharray (stroke-type->dasharray stroke-style))
         (dissoc :stroke-style))))
 
@@ -56,4 +74,4 @@
   [shape]
   (-> (select-keys shape shape-style-attrs)
       (transform-stroke-attrs)
-      (rename-attrs)))
+      (process-attrs)))

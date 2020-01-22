@@ -18,11 +18,8 @@
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.color :as color]
-   [uxbox.util.data :refer [classnames normalize-props]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.matrix :as gmt]))
-
-;; TODO: this code need a good refactor
 
 ;; --- Events
 
@@ -37,8 +34,8 @@
 ;; --- Text Wrapper
 
 (declare text-shape-html)
-(declare text-shape-wrapper)
 (declare text-shape-edit)
+(declare text-shape)
 
 (mf/defc text-wrapper
   [{:keys [shape] :as props}]
@@ -58,7 +55,7 @@
                  :on-mouse-down on-mouse-down}
        (if edition?
          [:& text-shape-edit {:shape shape}]
-         [:& text-shape-wrapper {:shape shape}])])))
+         [:& text-shape {:shape shape}])])))
 
 ;; --- Text Styles Helpers
 
@@ -72,7 +69,9 @@
            text-align
            line-height
            letter-spacing
-           user-select]
+           user-select
+           width
+           height]
     :or {fill-color "#000000"
          fill-opacity 1
          font-family "sourcesanspro"
@@ -87,144 +86,55 @@
   (let [color (-> fill-color
                   (color/hex->rgba fill-opacity)
                   (color/rgb->str))]
-    (merge
-     {:fontSize (str font-size "px")
-      :color color
-      :whiteSpace "pre-wrap"
-      :textAlign text-align
-      :fontFamily font-family
-      :fontWeight font-weight
-      :fontStyle font-style}
-     (when user-select {:userSelect "auto"})
-     (when line-height {:lineHeight line-height})
-     (when letter-spacing {:letterSpacing letter-spacing}))))
+    (rumext.util/map->obj
+     (merge
+      {:fontSize (str font-size "px")
+       :color color
+       :width width
+       :height height
+       :whiteSpace "pre-wrap"
+       :textAlign text-align
+       :fontFamily font-family
+       :fontWeight font-weight
+       :fontStyle font-style
+       :margin "0px"
+       :padding "0px"
+       :border "0px"
+       :resize "none"
+       :background "transparent"}
+      (when user-select {:userSelect "auto"})
+      (when line-height {:lineHeight line-height})
+      (when letter-spacing {:letterSpacing letter-spacing})))))
 
 ;; --- Text Shape Edit
 
-(mf/def text-shape-edit
-  :mixins [mf/memo]
-
-  :init
-  (fn [own props]
-    (assoc own ::container (mf/create-ref)))
-
-  :did-mount
-  (fn [own]
-    (let [shape (get-in own [::mf/props :shape])
-          dom (mf/ref-node (::container own))]
-      (set! (.-textContent dom) (:content shape ""))
-      (.focus dom)
-      own))
-
-  :render
-  (fn [own {:keys [shape] :as props}]
-    (let [{:keys [id x1 y1 content width height]} (geom/size shape)
-          style (make-style shape)
-          on-input (fn [ev]
-                     (let [content (dom/event->inner-text ev)]
-                       (st/emit! (udw/update-shape-attrs id {:content content}))))]
-      [:foreignObject {:x x1 :y y1 :width width :height height}
-       [:div {:style (normalize-props style)
-              :ref (::container own)
-              :on-input on-input
-              :contentEditable true}]])))
+(mf/defc text-shape-edit
+  [{:keys [shape] :as props}]
+  (let [ref (mf/use-ref)
+        {:keys [id x y width height content]} shape]
+    (mf/use-effect
+     #(fn []
+        (let [content (-> (mf/ref-val ref)
+                          (dom/get-value))]
+          (st/emit! (udw/update-shape id {:content content})))))
+    [:foreignObject {:x x :y y :width width :height height}
+     [:textarea {:style (make-style shape)
+                 :default-value content
+                 :ref ref}]]))
 
 ;; --- Text Shape Wrapper
 
-(mf/def text-shape-wrapper
-  :mixins [mf/memo]
+(mf/defc text-shape
+  [{:keys [shape] :as props}]
+  (let [{:keys [id rotation modifier-mtx]} shape
+        shape (cond
+                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
+                :else shape)
 
-  :init
-  (fn [own props]
-    (assoc own ::fobject (mf/create-ref)))
-
-  ;; NOTE: this is a hack for the browser rendering.
-  ;;
-  ;; Without forcing rerender, when the shape is displaced
-  ;; and only x and y attrs are updated in dom, the whole content
-  ;; of the foreignObject becomes sometimes partially or
-  ;; completelly invisible. The complete dom rerender fixes that
-  ;; problem.
-
-  :did-mount
-  (fn [own]
-    (let [shape (get-in own [::mf/props :shape])
-          dom (mf/ref-node (::fobject own))
-          html (dom/render-to-html (text-shape-html shape))]
-      (set! (.-innerHTML dom) html))
-    own)
-
-  :render
-  (fn [own {:keys [shape] :as props}]
-    (let [{:keys [id modifiers]} shape
-          {:keys [displacement resize]} modifiers
-          xfmt (cond-> (gmt/matrix)
-                 displacement (gmt/multiply displacement)
-                 resize (gmt/multiply resize))
-
-          {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
-                                                     (geom/size))
-          moving? (boolean displacement)]
-      [:foreignObject {:x x1
-                       :y y1
-                       :class (classnames :move-cursor moving?)
-                       :id (str id)
-                       :ref (::fobject own)
-                       :width width
-                       :height height}])))
-
-;; --- Text Shape Html
-
-(mf/def text-shape-html
-  :mixins [mf/memo]
-  :render
-  (fn [own {:keys [content] :as shape}]
-    (let [style (make-style shape)]
-      [:div {:style style} content])))
-
-;; --- Text Shape Html
-
-(mf/def text-shape
-  :mixins [mf/memo]
-  :key-fn pr-str
-
-  :init
-  (fn [own props]
-    (assoc own ::fobject (mf/create-ref)))
-
-  ;; NOTE: this is a hack for the browser rendering.
-  ;;
-  ;; Without forcing rerender, when the shape is displaced
-  ;; and only x and y attrs are updated in dom, the whole content
-  ;; of the foreignObject becomes sometimes partially or
-  ;; completelly invisible. The complete dom rerender fixes that
-  ;; problem.
-
-  :did-mount
-  (fn [own]
-    (let [shape (::mf/props own)
-          dom (mf/ref-node (::fobject own))
-          html (dom/render-to-html (text-shape-html shape))]
-      (set! (.-innerHTML dom) html))
-    own)
-
-  :render
-  (fn [own {:keys [id content modifiers] :as shape}]
-    (let [{:keys [displacement resize]} modifiers
-          xfmt (cond-> (gmt/matrix)
-                 displacement (gmt/multiply displacement)
-                 resize (gmt/multiply resize))
-
-          {:keys [x1 y1 width height] :as shape} (-> (geom/transform shape xfmt)
-                                                     (geom/size))
-          moving? (boolean displacement)
-          style (make-style shape)]
-      [:foreignObject {:x x1
-                       :y y1
-                       :class (classnames :move-cursor moving?)
-                       :id (str id)
-                       :ref (::fobject own)
-                       :width width
-                       :height height}
-       [:div {:style style}
-        [:p content]]])))
+        {:keys [x y width height content]} shape]
+    [:foreignObject {:x x
+                     :y y
+                     :id (str id)
+                     :width width
+                     :height height}
+     [:div {:style (make-style shape)} content]]))

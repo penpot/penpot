@@ -16,6 +16,7 @@
    [uxbox.http.session :as session]
    [uxbox.http.handlers :as handlers]
    [uxbox.http.debug :as debug]
+   [uxbox.http.ratelimit :as rl]
    [uxbox.http.ws :as ws]
    [vertx.core :as vc]
    [vertx.http :as vh]
@@ -44,16 +45,22 @@
                       interceptors/format-response-body
                       (vxi/errors errors/handle)]
 
-        routes [["/sub/:page-id" {:interceptors [(vxi/cookies)
+        login-handler (rl/ratelimit handlers/login-handler
+                                    {:limit 10
+                                     :period 1000
+                                     :timeout 200
+                                     :name "login-handler"})
+
+        routes [["/sub/:file-id" {:interceptors [(vxi/cookies)
                                                  (vxi/cors cors-opts)
+                                                 interceptors/format-response-body
                                                  (session/auth)]
                                   :get ws/handler}]
 
                 ["/api" {:interceptors interceptors}
                  ["/echo" {:all handlers/echo-handler}]
-                 ["/login" {:post handlers/login-handler}]
+                 ["/login" {:post login-handler}]
                  ["/logout" {:post handlers/logout-handler}]
-                 ["/register" {:post handlers/register-handler}]
                  ["/debug"
                   ["/emails" {:get debug/emails-list}]
                   ["/emails/:id" {:get debug/email}]]
@@ -71,6 +78,9 @@
     (vh/server ctx {:handler handler
                     :port (:http-server-port cfg/config)})))
 
+(defstate instances
+  :start (.availableProcessors (Runtime/getRuntime)))
+
 (defstate server
   :start (let [factory (vc/verticle {:on-start on-start})]
-           @(vc/deploy! system factory {:instances 4})))
+           @(vc/deploy! system factory {:instances instances})))

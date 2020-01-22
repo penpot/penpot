@@ -9,11 +9,11 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.db :as db]
-   [uxbox.util.spec :as us]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
-   [uxbox.util.exceptions :as ex]
    [uxbox.util.uuid :as uuid]))
 
 ;; --- Helpers & Specs
@@ -77,7 +77,7 @@
     (check-edition-permissions! conn user id)
     (rename-project conn params)))
 
-(su/defstr sql:rename-project
+(def sql:rename-project
   "update projects
       set name = $2
     where id = $1

@@ -2,18 +2,22 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.mutations.project-files
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.db :as db]
-   [uxbox.util.spec :as us]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
+   [uxbox.common.pages :as cp]
    [uxbox.services.mutations :as sm]
    [uxbox.services.mutations.projects :as proj]
    [uxbox.services.util :as su]
-   [uxbox.util.exceptions :as ex]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]))
 
@@ -59,7 +63,7 @@
                    (ex/raise :type :validation
                              :code :not-authorized))))))
 
-;; --- Mutation: Create Project
+;; --- Mutation: Create Project File
 
 (declare create-file)
 (declare create-page)
@@ -72,9 +76,9 @@
   [{:keys [user project-id] :as params}]
   (db/with-atomic [conn db/pool]
     (proj/check-edition-permissions! conn user project-id)
-    (p/let [file (create-file conn params)]
-      (create-page conn (assoc params :file-id (:id file)))
-      file)))
+    (p/let [file (create-file conn params)
+            page (create-page conn (assoc params :file-id (:id file)))]
+      (assoc file :pages [(:id page)]))))
 
 (defn create-file
   [conn {:keys [id user name project-id] :as params}]
@@ -88,7 +92,7 @@
   [conn {:keys [user file-id] :as params}]
   (let [id  (uuid/next)
         name "Page 1"
-        data (blob/encode {})
+        data (blob/encode cp/default-page-data)
         sql "insert into project_pages (id, user_id, file_id, name, version,
                                         ordering, data)
              values ($1, $2, $3, $4, 0, 1, $5) returning id"]
@@ -107,7 +111,7 @@
     (check-edition-permissions! conn user id)
     (rename-file conn params)))
 
-(su/defstr sql:rename-file
+(def sql:rename-file
   "update project_files
       set name = $2
     where id = $1

@@ -11,6 +11,10 @@
             [uxbox.main.constants :as c]
             [uxbox.main.store :as st]))
 
+(def profile
+  (-> (l/key :profile)
+      (l/derive st/state)))
+
 (def workspace
   (-> (l/key :workspace-local)
       (l/derive st/state)))
@@ -29,6 +33,10 @@
 
 (def workspace-file
   (-> (l/key :workspace-file)
+      (l/derive st/state)))
+
+(def workspace-users
+  (-> (l/key :workspace-users)
       (l/derive st/state)))
 
 (def workspace-data

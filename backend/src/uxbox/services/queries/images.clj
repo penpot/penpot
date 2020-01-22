@@ -9,6 +9,8 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [promesa.exec :as px]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.media :as media]
    [uxbox.images :as images]
@@ -16,8 +18,6 @@
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
    [uxbox.util.data :as data]
-   [uxbox.util.exceptions :as ex]
-   [uxbox.util.spec :as us]
    [uxbox.util.uuid :as uuid]
    [vertx.core :as vc]))
 
@@ -53,7 +53,7 @@
 (def ^:private images-collections-sql
   "select *,
           (select count(*) from images where collection_id = ic.id) as num_images
-     from images_collections as ic
+     from image_collections as ic
     where (ic.user_id = $1 or
            ic.user_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and ic.deleted_at is null
@@ -75,34 +75,44 @@
                 and deleted_at is null;"]
     (db/query-one conn [sql id])))
 
-;; (s/def ::retrieve-image
-;;   (s/keys :req-un [::user ::us/id]))
+(s/def ::id ::us/uuid)
+(s/def ::image-by-id
+  (s/keys :req-un [::user ::id]))
 
-;; (defmethod core/query :retrieve-image
-;;   [params]
-;;   (s/assert ::retrieve-image params)
-;;   (with-open [conn (db/connection)]
-;;     (retrieve-image conn params)))
+(sq/defquery ::image-by-id
+  [params]
+  (-> (retrieve-image db/pool (:id params))
+      (p/then populate-thumbnail)
+      (p/then populate-urls)))
 
 ;; --- Query Images by Collection (id)
 
-(def images-by-collection-sql
+(def sql:images-by-collection
   "select * from images
     where (user_id = $1 or
            user_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and deleted_at is null
-      and case when $2::uuid is null then collection_id is null
-               else collection_id = $2::uuid
-          end
-   order by created_at desc;")
+   order by created_at desc")
 
-(s/def ::images-by-collection-query
+(def sql:images-by-collection1
+  (str "with images as (" sql:images-by-collection ")
+        select im.* from images as im
+         where im.collection_id is null"))
+
+(def sql:images-by-collection2
+  (str "with images as (" sql:images-by-collection ")
+        select im.* from images as im
+         where im.collection_id = $2"))
+
+(s/def ::images-by-collection
   (s/keys :req-un [::user]
           :opt-un [::collection-id]))
 
 (sq/defquery ::images-by-collection
   [{:keys [user collection-id] :as params}]
-  (let [sqlv [images-by-collection-sql user collection-id]]
+  (let [sqlv (if (nil? collection-id)
+               [sql:images-by-collection1 user]
+               [sql:images-by-collection2 user collection-id])]
     (-> (db/query db/pool sqlv)
         (p/then populate-thumbnails)
         (p/then #(mapv populate-urls %)))))

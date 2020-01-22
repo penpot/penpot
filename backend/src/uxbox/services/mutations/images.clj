@@ -11,6 +11,8 @@
    [datoteka.storages :as ds]
    [promesa.core :as p]
    [promesa.exec :as px]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.media :as media]
    [uxbox.images :as images]
@@ -18,8 +20,6 @@
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
    [uxbox.util.data :as data]
-   [uxbox.util.exceptions :as ex]
-   [uxbox.util.spec :as us]
    [uxbox.util.uuid :as uuid]
    [vertx.core :as vc]))
 
@@ -60,7 +60,7 @@
 
 (sm/defmutation ::create-image-collection
   [{:keys [id user name] :as params}]
-  (let [sql "insert into images_collections (id, user_id, name)
+  (let [sql "insert into image_collections (id, user_id, name)
              values ($1, $2, $3) returning *;"]
     (db/query-one db/pool [sql (or id (uuid/next)) user name])))
 
@@ -71,7 +71,7 @@
 
 (sm/defmutation ::update-images-collection
   [{:keys [id user name] :as params}]
-  (let [sql "update images_collections
+  (let [sql "update image_collections
                 set name = $3
               where id = $1
                 and user_id = $2
@@ -85,7 +85,7 @@
 
 (sm/defmutation ::delete-images-collection
   [{:keys [id user] :as params}]
-  (let [sql "update images_collections
+  (let [sql "update image_collections
                 set deleted_at = clock_timestamp()
               where id = $1
                 and user_id = $2
@@ -102,13 +102,13 @@
     (-> (ds/save storage filename path)
         (su/handle-on-context))))
 
-(def ^:private create-image-sql
+(def sql:create-image
   "insert into images (user_id, name, collection_id, path, width, height, mimetype)
    values ($1, $2, $3, $4, $5, $6, $7) returning *")
 
 (defn- store-image-in-db
   [conn {:keys [id user name path collection-id height width mimetype]}]
-  (let [sqlv [create-image-sql user name collection-id
+  (let [sqlv [sql:create-image user name collection-id
               path width height mimetype]]
     (-> (db/query-one conn sqlv)
         (p/then populate-thumbnail)
@@ -117,7 +117,15 @@
 (def valid-image-types?
   #{"image/jpeg", "image/png", "image/webp"})
 
-(s/def ::file ::us/upload)
+(s/def :uxbox$upload/name ::us/string)
+(s/def :uxbox$upload/size ::us/integer)
+(s/def :uxbox$upload/mtype ::us/string)
+(s/def ::upload
+  (s/keys :req-un [:uxbox$upload/name
+                   :uxbox$upload/size
+                   :uxbox$upload/mtype]))
+
+(s/def ::file ::upload)
 (s/def ::width ::us/integer)
 (s/def ::height ::us/integer)
 (s/def ::mimetype valid-image-types?)

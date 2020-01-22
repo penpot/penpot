@@ -10,14 +10,14 @@
    [cuerdas.core :as str]
    [beicon.core :as rx]
    [potok.core :as ptk]
+   [uxbox.common.spec :as us]
    [uxbox.main.store :as st]
-   [uxbox.main.repo.core :as rp]
+   [uxbox.main.repo :as rp]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]
    [uxbox.util.data :refer (jscoll->vec)]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.time :as ts]
-   [uxbox.util.spec :as us]
    [uxbox.util.router :as r]
    [uxbox.util.files :as files]))
 
@@ -29,11 +29,11 @@
 (s/def ::modified-at inst?)
 (s/def ::created-at inst?)
 (s/def ::mimetype string?)
-(s/def ::thumbnail us/url-str?)
+(s/def ::thumbnail string?)
 (s/def ::id uuid?)
-(s/def ::url us/url-str?)
-(s/def ::collection-id (s/nilable ::us/uuid))
-(s/def ::user-id ::us/uuid)
+(s/def ::url string?)
+(s/def ::collection-id (s/nilable uuid?))
+(s/def ::user-id uuid?)
 
 (s/def ::collection-entity
   (s/keys :req-un [::id
@@ -55,80 +55,50 @@
                    ::url
                    ::user-id]))
 
-;; --- Initialize
-
-(defrecord Initialize []
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:dashboard :images] {:selected #{}})))
-
-(defn initialize
-  []
-  (Initialize.))
-
-;; --- Color Collections Fetched
-
-(defrecord CollectionsFetched [items]
-  ptk/UpdateEvent
-  (update [_ state]
-    (reduce (fn [state {:keys [id user] :as item}]
-              (let [type (if (uuid/zero? (:user-id item)) :builtin :own)
-                    item (assoc item :type type)]
-                (assoc-in state [:images-collections id] item)))
-            state
-            items)))
+;; --- Collections Fetched
 
 (defn collections-fetched
   [items]
-  {:pre [(us/valid? (s/every ::collection-entity) items)]}
-  (CollectionsFetched. items))
+  (us/assert (s/every ::collection-entity) items)
+  (ptk/reify ::collections-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce (fn [state {:keys [id user] :as item}]
+                (let [type (if (uuid/zero? (:user-id item)) :builtin :own)
+                      item (assoc item :type type)]
+                  (assoc-in state [:images-collections id] item)))
+              state
+              items))))
 
 ;; --- Fetch Color Collections
 
-(defrecord FetchCollections []
-  ptk/WatchEvent
-  (watch [_ state s]
-    (->> (rp/query! :images-collections)
-         (rx/map collections-fetched))))
-
-(defn fetch-collections
-  []
-  (FetchCollections.))
+(def fetch-collections
+  (ptk/reify ::fetch-collections
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query! :images-collections)
+           (rx/map collections-fetched)))))
 
 ;; --- Collection Created
 
-(defrecord CollectionCreated [item]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [{:keys [id] :as item} (assoc item :type :own)]
-      (update state :images-collections assoc id item)))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (rt/nav :dashboard/images nil {:type :own :id (:id item)}))))
-
 (defn collection-created
   [item]
-  {:pre [(us/valid? ::collection-entity item)]}
-  (CollectionCreated. item))
+  (us/assert ::collection-entity item)
+  (ptk/reify ::collection-created
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [{:keys [id] :as item} (assoc item :type :own)]
+        (update state :images-collections assoc id item)))))
 
 ;; --- Create Collection
 
-(defrecord CreateCollection []
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [data {:name (tr "ds.default-library-title" (gensym "c"))}]
-      (->> (rp/mutation! :create-image-collection data)
-           (rx/map :payload)
-           (rx/map collection-created)))))
-
-(defn create-collection
-  []
-  (CreateCollection.))
-
-(defn collections-fetched?
-  [v]
-  (instance? CollectionsFetched v))
+(def create-collection
+  (ptk/reify ::create-collection
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [data {:name (tr "ds.default-library-title" (gensym "c"))}]
+        (->> (rp/mutation! :create-image-collection data)
+             (rx/map collection-created))))))
 
 ;; --- Collection Updated
 
@@ -139,7 +109,7 @@
 
 (defn collection-updated
   [item]
-  {:pre [(us/valid? ::collection-entity item)]}
+  (us/assert ::collection-entity item)
   (CollectionUpdated. item))
 
 ;; --- Update Collection
@@ -189,61 +159,55 @@
 
 ;; --- Image Created
 
-(defrecord ImageCreated [item]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update state :images assoc (:id item) item)))
-
 (defn image-created
   [item]
-  {:pre [(us/valid? ::image-entity item)]}
-  (ImageCreated. item))
+  (us/assert ::image-entity item)
+  (ptk/reify ::image-created
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :images assoc (:id item) item))))
 
 ;; --- Create Image
 
 (def allowed-file-types #{"image/jpeg" "image/png"})
 
-(defrecord CreateImages [id files on-uploaded]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:dashboard :images :uploading] true))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (letfn [(image-size [file]
-              (->> (files/get-image-size file)
-                   (rx/map (partial vector file))))
-            (allowed-file? [file]
-              (contains? allowed-file-types (.-type file)))
-            (finalize-upload [state]
-              (assoc-in state [:dashboard :images :uploading] false))
-            (prepare [[file [width height]]]
-              (cond-> {:name (.-name file)
-                       :mimetype (.-type file)
-                       :id (uuid/random)
-                       :file file
-                       :width width
-                       :height height}
-                id (assoc :collection-id id)))]
-      (->> (rx/from-coll files)
-           (rx/filter allowed-file?)
-           (rx/mapcat image-size)
-           (rx/map prepare)
-           (rx/mapcat #(rp/mutation! :create-image %))
-           (rx/map :payload)
-           (rx/reduce conj [])
-           (rx/do #(st/emit! finalize-upload))
-           (rx/do on-uploaded)
-           (rx/mapcat identity)
-           (rx/map image-created)))))
-
 (defn create-images
-  ([id files]
-   {:pre [(or (uuid? id) (nil? id))]}
-   (CreateImages. id files (constantly nil)))
+  ([id files] (create-images id files identity))
   ([id files on-uploaded]
-   {:pre [(or (uuid? id) (nil? id)) (fn? on-uploaded)]}
-   (CreateImages. id files on-uploaded)))
+   (us/assert (s/nilable ::us/uuid) id)
+   (us/assert fn? on-uploaded)
+   (ptk/reify ::create-images
+     ptk/UpdateEvent
+     (update [_ state]
+       (assoc-in state [:dashboard :images :uploading] true))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (letfn [(image-size [file]
+                 (->> (files/get-image-size file)
+                      (rx/map (partial vector file))))
+               (allowed-file? [file]
+                 (contains? allowed-file-types (.-type file)))
+               (finalize-upload [state]
+                 (assoc-in state [:dashboard :images :uploading] false))
+               (prepare [[file [width height]]]
+                 (cond-> {:name (.-name file)
+                          :mimetype (.-type file)
+                          :id (uuid/next)
+                          :file file
+                          :width width
+                          :height height}
+                   id (assoc :collection-id id)))]
+         (->> (rx/from files)
+              (rx/filter allowed-file?)
+              (rx/mapcat image-size)
+              (rx/map prepare)
+              (rx/mapcat #(rp/mutation! :create-image %))
+              (rx/reduce conj [])
+              (rx/do #(st/emit! finalize-upload))
+              (rx/do on-uploaded)
+              (rx/mapcat identity)
+              (rx/map image-created)))))))
 
 ;; --- Update Image
 
@@ -259,32 +223,29 @@
 
 ;; --- Images Fetched
 
-(defrecord ImagesFetched [items]
-  ptk/UpdateEvent
-  (update [_ state]
-    (reduce (fn [state {:keys [id] :as image}]
-              (assoc-in state [:images id] image))
-            state
-            items)))
-
 (defn images-fetched
   [items]
-  (ImagesFetched. items))
+  (us/assert (s/every ::image-entity) items)
+  (ptk/reify ::images-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce (fn [state {:keys [id] :as image}]
+                (assoc-in state [:images id] image))
+              state
+              items))))
 
 ;; --- Fetch Images
-
-(defrecord FetchImages [id]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [params (cond-> {} id (assoc :collection-id id))]
-      (->> (rp/query! :images-by-collection params)
-           (rx/map images-fetched)))))
 
 (defn fetch-images
   "Fetch a list of images of the selected collection"
   [id]
-  {:pre [(or (uuid? id) (nil? id))]}
-  (FetchImages. id))
+  (us/assert (s/nilable ::us/uuid) id)
+  (ptk/reify ::fetch-images
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [params (cond-> {} id (assoc :collection-id id))]
+        (->> (rp/query! :images-by-collection params)
+             (rx/map images-fetched))))))
 
 ;; --- Fetch Image
 
@@ -392,10 +353,10 @@
   (watch [_ state stream]
     (let [selected (get-in state [:dashboard :images :selected])]
       (rx/merge
-       (->> (rx/from-coll selected)
+       (->> (rx/from selected)
             (rx/flat-map #(rp/mutation! :copy-image {:id % :collection-id id}))
             (rx/map image-created))
-       (->> (rx/from-coll selected)
+       (->> (rx/from selected)
             (rx/map deselect-image))))))
 
 (defn copy-selected
@@ -418,9 +379,9 @@
   (watch [_ state stream]
     (let [selected (get-in state [:dashboard :images :selected])]
       (rx/merge
-       (->> (rx/from-coll selected)
+       (->> (rx/from selected)
             (rx/map persist-image))
-       (->> (rx/from-coll selected)
+       (->> (rx/from selected)
             (rx/map deselect-image))))))
 
 (defn move-selected
@@ -434,7 +395,7 @@
   ptk/WatchEvent
   (watch [_ state stream]
     (let [selected (get-in state [:dashboard :images :selected])]
-      (->> (rx/from-coll selected)
+      (->> (rx/from selected)
            (rx/map delete-image)))))
 
 (defn delete-selected

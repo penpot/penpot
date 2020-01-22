@@ -1,0 +1,28 @@
+{
+  "name": "uxbox",
+  "version": "0.1.0",
+  "description": "The Open-Source prototyping tool",
+  "author": "Uxbox",
+  "license": "SEE LICENSE IN <LICENSE>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uxbox/uxbox"
+  },
+  "scripts": {},
+  "devDependencies": {
+    "gulp": "4.0.2",
+    "gulp-autoprefixer": "^7.0.1",
+    "gulp-clean-css": "^4.2.0",
+    "gulp-gzip": "^1.4.2",
+    "gulp-if": "^3.0.0",
+    "gulp-mustache": "^4.1.2",
+    "gulp-plumber": "^1.2.1",
+    "gulp-rename": "^2.0.0",
+    "gulp-sass": "^4.0.2",
+    "rimraf": "^3.0.0"
+  },
+  "dependencies": {
+    "source-map-support": "^0.5.16",
+    "transformation-matrix": "^2.2.0"
+  }
+}

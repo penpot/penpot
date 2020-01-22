@@ -9,24 +9,24 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
-   [uxbox.main.data.pages :as udp]
+   [uxbox.common.spec :as us]
+   [uxbox.main.data.projects :as dp]
    [uxbox.main.repo :as rp]
-   [uxbox.util.data :refer [replace-by-id index-by]]
-   [uxbox.util.spec :as us]))
+   [uxbox.util.data :refer [replace-by-id index-by]]))
 
 ;; --- Schema
 
-(s/def ::pinned ::us/bool)
-(s/def ::id ::us/uuid)
-(s/def ::label ::us/string)
-(s/def ::project ::us/uuid)
-(s/def ::created-at ::us/inst)
-(s/def ::modified-at ::us/inst)
-(s/def ::version ::us/number)
-(s/def ::user ::us/uuid)
+(s/def ::pinned boolean?)
+(s/def ::id uuid?)
+(s/def ::label string?)
+(s/def ::project uuid?)
+(s/def ::created-at inst?)
+(s/def ::modified-at inst?)
+(s/def ::version number?)
+(s/def ::user uuid?)
 
 (s/def ::shapes
-  (s/every ::udp/minimal-shape :kind vector?))
+  (s/every ::dp/minimal-shape :kind vector?))
 
 (s/def ::data
   (s/keys :req-un [::shapes]))
@@ -52,7 +52,7 @@
 
 (defn initialize
   [id]
-  (s/assert ::us/uuid id)
+  (us/assert ::us/uuid id)
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
@@ -71,13 +71,13 @@
 
 (defn watch-page-changes
   [id]
-  (s/assert ::us/uuid id)
+  (us/assert ::us/uuid id)
   (reify
     ptk/WatchEvent
     (watch [_ state stream]
       #_(let [stopper (rx/filter #(= % ::stop-page-watcher) stream)]
         (->> stream
-             (rx/filter udp/page-persisted?)
+             (rx/filter dp/page-persisted?)
              (rx/debounce 1000)
              (rx/flat-map #(rx/of (fetch-history id)
                                   (fetch-pinned-history id)))
@@ -87,7 +87,7 @@
 
 (defn pinned-history-fetched
   [items]
-  (s/assert ::history-entries items)
+  (us/assert ::history-entries items)
   (ptk/reify ::pinned-history-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -104,12 +104,12 @@
 
 (defn fetch-pinned-history
   [id]
-  (s/assert ::us/uuid id)
+  (us/assert ::us/uuid id)
   (ptk/reify ::fetch-pinned-history
     ptk/WatchEvent
     (watch [_ state s]
       (let [params {:page id :pinned true}]
-        (->> (rp/req :fetch/page-history params)
+        #_(->> (rp/req :fetch/page-history params)
              (rx/map :payload)
              (rx/map pinned-history-fetched))))))
 
@@ -117,7 +117,7 @@
 
 (defn history-fetched
   [items]
-  (s/assert ::history-entries items)
+  (us/assert ::history-entries items)
   (ptk/reify ::history-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -140,7 +140,7 @@
   ([id]
    (fetch-history id nil))
   ([id {:keys [since max]}]
-   (s/assert ::us/uuid id)
+   (us/assert ::us/uuid id)
    (ptk/reify ::fetch-history
      ptk/WatchEvent
      (watch [_ state s]
@@ -148,7 +148,7 @@
                             :max (or max 20)}
                            (when since
                              {:since since}))]
-         (->> (rp/req :fetch/page-history params)
+         #_(->> (rp/req :fetch/page-history params)
               (rx/map :payload)
               (rx/map history-fetched)))))))
 
@@ -182,7 +182,7 @@
 
 (defn select
   [version]
-  (s/assert int? version)
+  (us/assert int? version)
   (ptk/reify ::select
     ptk/UpdateEvent
     (update [_ state]
@@ -192,7 +192,7 @@
                      (assoc :history true
                             :data (:data item)))]
         (-> state
-            (udp/unpack-page page)
+            (dp/unpack-page page)
             (assoc-in [:workspace pid :history :selected] version))))))
 
 ;; --- Apply Selected History
@@ -209,7 +209,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       #_(let [pid (get-in state [:workspace :current])]
-        (rx/of (udp/persist-page pid))))))
+        (rx/of (dp/persist-page pid))))))
 
 ;; --- Deselect Page History
 
@@ -219,7 +219,7 @@
     (update [_ state]
       #_(let [pid (get-in state [:workspace :current])
             packed (get-in state [:packed-pages pid])]
-        (-> (udp/unpack-page state packed)
+        (-> (dp/unpack-page state packed)
             (assoc-in [:workspace pid :history :selected] nil))))))
 
   ;; --- Refresh Page History
@@ -238,7 +238,7 @@
 
 (defn history-updated
   [item]
-  (s/assert ::history-entry item)
+  (us/assert ::history-entry item)
   (ptk/reify ::history-item-updated
     ptk/UpdateEvent
     (update [_ state]
@@ -262,7 +262,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/concat
-       (->> (rp/req :update/page-history item)
+       #_(->> (rp/req :update/page-history item)
             (rx/map :payload)
             (rx/map history-updated))
        (->> (rx/filter history-updated? stream)

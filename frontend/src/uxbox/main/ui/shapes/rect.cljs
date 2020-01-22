@@ -7,6 +7,7 @@
 (ns uxbox.main.ui.shapes.rect
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
@@ -31,13 +32,6 @@
 
 ;; --- Rect Shape
 
-(defn- rotate
-  [mt {:keys [x1 y1 x2 y2 width height rotation] :as shape}]
-  (let [x-center (+ x1 (/ width 2))
-        y-center (+ y1 (/ height 2))
-        center (gpt/point x-center y-center)]
-    (gmt/rotate* mt rotation center)))
-
 (mf/defc rect-shape
   [{:keys [shape] :as props}]
   (let [{:keys [id rotation modifier-mtx]} shape
@@ -46,18 +40,21 @@
                 (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
                 :else shape)
 
-        {:keys [x1 y1 width height] :as shape} (geom/size shape)
+        {:keys [x y width height]} shape
 
-        transform (when (pos? rotation)
-                    (str (rotate (gmt/matrix) shape)))
+        transform (when (and rotation (pos? rotation))
+                    (str/format "rotate(%s %s %s)"
+                                rotation
+                                (+ x (/ width 2))
+                                (+ y (/ height 2))))
 
-        moving? (boolean modifier-mtx)
-
-        props {:x x1 :y y1
-               :id (str "shape-" id)
-               :className (classnames :move-cursor moving?)
-               :width width
-               :height height
-               :transform transform}
-        attrs (merge (attrs/extract-style-attrs shape) props)]
-    [:& "rect" attrs]))
+        props (-> (attrs/extract-style-attrs shape)
+                  (assoc :x x
+                         :y y
+                         :transform transform
+                         :id (str "shape-" id)
+                         :width width
+                         :height height
+                         ;; :transform transform
+                         ))]
+    [:& "rect" props]))

@@ -6,147 +6,275 @@
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.options.text
-  (:require [lentes.core :as l]
-            [potok.core :as ptk]
-            [uxbox.main.store :as st]
-            [uxbox.main.geom :as geom]
-            [uxbox.main.data.workspace :as udw]
-            [uxbox.builtins.icons :as i]
-            [uxbox.util.i18n :refer (tr)]
-            [uxbox.util.router :as r]
-            [rumext.core :as mx :include-macros true]
-            [uxbox.util.dom :as dom]
-            [uxbox.util.math :refer (precision-or-0)]
-            [uxbox.util.data :refer (parse-int
-                                     parse-float
-                                     read-string
-                                     index-by-id)]))
+  (:require
+   [rumext.core :as mx]
+   [rumext.alpha :as mf]
+   [potok.core :as ptk]
+   [uxbox.common.data :as d]
+   [uxbox.main.store :as st]
+   [uxbox.main.geom :as geom]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.builtins.icons :as i]
+   [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.router :as r]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.math :as math :refer [precision-or-0]]
+   [uxbox.util.data :refer [parse-int
+                            parse-float
+                            read-string
+                            index-by-id]]))
+
+
+(mf/defc measures-menu
+  [{:keys [shape] :as props}]
+  (let [on-size-change
+        (fn [event attr]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-integer 0))]
+            (st/emit! (udw/update-dimensions (:id shape) {attr value}))))
+
+        on-proportion-lock-change
+        (fn [event]
+          (st/emit! (udw/toggle-shape-proportion-lock (:id shape))))
+
+        on-position-change
+        (fn [event attr]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-integer))
+                point (gpt/point {attr value})]
+            (st/emit! (udw/update-position (:id shape) point))))
+
+        on-rotation-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-integer 0))]
+            (st/emit! (udw/update-shape (:id shape) {:rotation value}))))
+
+        on-radius-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-double 0))]
+            (st/emit! (udw/update-shape (:id shape) {:rx value :ry value}))))
+
+        on-width-change #(on-size-change % :width)
+        on-height-change #(on-size-change % :height)
+        on-pos-x-change #(on-position-change % :x)
+        on-pos-y-change #(on-position-change % :y)]
+
+    [:div.element-set
+     [:div.element-set-title (tr "workspace.options.measures")]
+     [:div.element-set-content
+      [:span (tr "workspace.options.size")]
+
+      ;; WIDTH & HEIGHT
+      [:div.row-flex
+       [:div.input-element.pixels
+        [:input.input-text {:type "number"
+                            :min "0"
+                            :on-change on-width-change
+                            :value (-> (:width shape)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]
+
+       [:div.lock-size {:class (when (:proportion-lock shape) "selected")
+                        :on-click on-proportion-lock-change}
+        (if (:proportion-lock shape)
+          i/lock
+          i/unlock)]
+
+       [:div.input-element.pixels
+        [:input.input-text {:type "number"
+                            :min "0"
+                            :on-change on-height-change
+                            :value (-> (:height shape)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]]
+
+      ;; POSITION
+      [:span (tr "workspace.options.position")]
+      [:div.row-flex
+       [:div.input-element.pixels
+        [:input.input-text {:placeholder "x"
+                            :type "number"
+                            :on-change on-pos-x-change
+                            :value (-> (:x shape)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]
+       [:div.input-element.pixels
+        [:input.input-text {:placeholder "y"
+                            :type "number"
+                            :on-change on-pos-y-change
+                            :value (-> (:y shape)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]]
+
+      [:span (tr "workspace.options.rotation-radius")]
+      [:div.row-flex
+       [:div.input-element.degrees
+        [:input.input-text {:placeholder ""
+                            :type "number"
+                            :min 0
+                            :max 360
+                            :on-change on-rotation-change
+                            :value (-> (:rotation shape 0)
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))}]]
+
+       [:div.input-element.pixels
+        [:input.input-text
+         {:placeholder "rx"
+          :type "number"
+          :on-change on-radius-change
+          :value (-> (:rx shape)
+                     (math/precision 2)
+                     (d/coalesce-str "0"))}]]]]]))
+
+
 
 (declare +fonts+)
-(declare +fonts-by-id+)
 
-(mx/defc text-menu
-  {:mixins [mx/static]}
-  [menu {:keys [id] :as shape}]
-  (letfn [(update-attrs [attrs]
-            (st/emit! (udw/update-shape-attrs id attrs)))
-          (on-font-family-change [event]
-            (let [value (dom/event->value event)
-                  attrs {:font-family (read-string value)
-                         :font-weight "normal"
-                         :font-style "normal"}]
-              (update-attrs attrs)))
-          (on-font-size-change [event]
-            (let [value (-> (dom/event->value event)
-                            (parse-int 0))]
-              (update-attrs {:font-size value})))
-          (on-font-letter-spacing-change [event]
-            (let [value (-> (dom/event->value event)
-                            (parse-float))]
-              (update-attrs {:letter-spacing value})))
-          (on-font-line-height-change [event]
-            (let [value (-> (dom/event->value event)
-                            (parse-float))]
-              (update-attrs {:line-height value})))
-          (on-font-align-change [event value]
-            (update-attrs {:text-align value}))
-          (on-font-style-change [event]
-            (let [[weight style] (-> (dom/event->value event)
-                                     (read-string))]
-              (update-attrs {:font-style style
-                             :font-weight weight})))]
-    (let [{:keys [font-family
-                  font-style
-                  font-weight
-                  font-size
-                  text-align
-                  line-height
-                  letter-spacing]
-           :or {font-family "sourcesanspro"
-                font-style "normal"
-                font-weight "normal"
-                font-size 16
-                text-align "left"
-                letter-spacing 1
-                line-height 1.4}} shape
-          styles (:styles (first (filter #(= (:id %) font-family) +fonts+)))]
-      [:div.element-set {:key (str (:id menu))}
-       [:div.element-set-title (:name menu)]
-       [:div.element-set-content
+(mf/defc fonts-menu
+  [{:keys [shape] :as props}]
+  (let [id (:id shape)
+        font-family (:font-family shape "sourcesanspro")
+        font-style (:font-style shape "normal")
+        font-weight (:font-weight shape "normal")
+        font-size (:font-size shape 16)
+        text-align (:text-align shape "left")
+        line-height (:line-height shape 1.4)
+        letter-spacing (:letter-spacing shape 1)
 
-        [:span (tr "ds.font-family")]
-        [:div.row-flex
-         [:select.input-select {:value (pr-str font-family)
-                                :on-change on-font-family-change}
-          (for [font +fonts+]
-            [:option {:value (pr-str (:id font))
-                      :key (:id font)} (:name font)])]]
+        styles (:styles (d/seek #(= (:id %) font-family) +fonts+))
 
-        [:span (tr "ds.size-weight")]
-        [:div.row-flex
-         [:div.editable-select
-          [:select.input-select
-           {:id "common-font-sizes"
-            :value font-size
-            :on-change on-font-size-change}
-           [:option {:value "8"} "8"]
-           [:option {:value "9"} "9"]
-           [:option {:value "10"} "10"]
-           [:option {:value "11"} "11"]
-           [:option {:value "12"} "12"]
-           [:option {:value "14"} "14"]
-           [:option {:value "18"} "18"]
-           [:option {:value "24"} "24"]
-           [:option {:value "36"} "36"]
-           [:option {:value "48"} "48"]
-           [:option {:value "72"} "72"]]
-          [:input.input-text
-           {:placeholder (tr "ds.font-size")
-            :type "number"
-            :min "0"
-            :max "200"
-            :value (precision-or-0 font-size 2)
-            :on-change on-font-size-change}]]
-         [:select.input-select {:value (pr-str [font-weight font-style])
-                                :on-change on-font-style-change}
-          (for [style styles
-                :let [data (mapv #(get style %) [:weight :style])]]
-            [:option {:value (pr-str data)
-                      :key (:name style)} (:name style)])]]
+        on-font-family-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value))
+                attrs {:font-family value
+                       :font-weight "normal"
+                       :font-style "normal"}]
+            (st/emit! (udw/update-shape id attrs))))
 
-        [:span (tr "ds.line-height-letter-spacing")]
-        [:div.row-flex
-         [:input.input-text
-          {:placeholder (tr "ds.line-height")
-           :type "number"
-           :step "0.1"
-           :min "0"
-           :max "200"
-           :value (precision-or-0 line-height 2)
-           :on-change on-font-line-height-change}]
-         [:input.input-text
-          {:placeholder (tr "ds.letter-spacing")
-           :type "number"
-           :step "0.1"
-           :min "0"
-           :max "200"
-           :value (precision-or-0 letter-spacing 2)
-           :on-change on-font-letter-spacing-change}]]
+        on-font-size-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-integer 0))
+                attrs {:font-size value}]
+            (st/emit! (udw/update-shape id attrs))))
 
-        [:span (tr "ds.text-align")]
-        [:div.row-flex.align-icons
-         [:span {:class (when (= text-align "left") "current")
-                 :on-click #(on-font-align-change % "left")}
-          i/align-left]
-         [:span {:class (when (= text-align "center") "current")
-                 :on-click #(on-font-align-change % "center")}
-          i/align-center]
-         [:span {:class (when (= text-align "right") "current")
-                 :on-click #(on-font-align-change % "right")}
-          i/align-right]
-         [:span {:class (when (= text-align "justify") "current")
-                 :on-click #(on-font-align-change % "justify")}
-          i/align-justify]]]])))
+        on-font-letter-spacing-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-double 0))
+                attrs {:letter-spacing value}]
+            (st/emit! (udw/update-shape id attrs))))
+
+        on-font-line-height-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-double 0))
+                attrs {:line-height value}]
+            (st/emit! (udw/update-shape id attrs))))
+
+        on-font-align-change
+        (fn [event value]
+          (let [attrs {:text-align value}]
+            (st/emit! (udw/update-shape id attrs))))
+
+        on-font-style-change
+        (fn [event]
+          (let [[weight style] (-> (dom/get-target event)
+                                   (dom/get-value)
+                                   (d/read-string))
+                attrs {:font-style style
+                       :font-weight weight}]
+            (st/emit! (udw/update-shape id attrs))))
+        ]
+    [:div.element-set
+     [:div.element-set-title (tr "workspace.options.font-options")]
+     [:div.element-set-content
+      [:span (tr "workspace.options.font-family")]
+      [:div.row-flex
+       [:select.input-select {:value font-family
+                              :on-change on-font-family-change}
+        (for [font +fonts+]
+          [:option {:value (:id font)
+                    :key (:id font)}
+           (:name font)])]]
+
+      [:span (tr "workspace.options.font-weight")]
+      [:div.row-flex
+       [:div.editable-select
+        [:select.input-select {:value font-size
+                               :on-change on-font-size-change}
+         [:option {:value "8"} "8"]
+         [:option {:value "9"} "9"]
+         [:option {:value "10"} "10"]
+         [:option {:value "11"} "11"]
+         [:option {:value "12"} "12"]
+         [:option {:value "14"} "14"]
+         [:option {:value "18"} "18"]
+         [:option {:value "24"} "24"]
+         [:option {:value "36"} "36"]
+         [:option {:value "48"} "48"]
+         [:option {:value "72"} "72"]]
+        [:input.input-text {:type "number"
+                            :min "0"
+                            :max "200"
+                            :value (-> font-size
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))
+                            :on-change on-font-size-change}]]
+
+       [:select.input-select {:value (pr-str [font-weight font-style])
+                              :on-change on-font-style-change}
+        (for [style styles
+              :let [data (mapv #(get style %) [:weight :style])]]
+          [:option {:value (pr-str data)
+                    :key (:name style)}
+           (:name style)])]]
+
+      [:span (tr "workspace.options.line-height-letter-spacing")]
+      [:div.row-flex
+       [:input.input-text {:type "number"
+                           :step "0.1"
+                           :min "0"
+                           :max "200"
+                           :value (-> line-height
+                                      (math/precision 2)
+                                      (d/coalesce-str "0"))
+                           :on-change on-font-line-height-change}]
+       [:input.input-text {:type "number"
+                           :step "0.1"
+                           :min "0"
+                           :max "200"
+                           :value (-> letter-spacing
+                                      (math/precision 2)
+                                      (d/coalesce-str "0"))
+                           :on-change on-font-letter-spacing-change}]]
+
+      [:span (tr "workspace.options.text-align")]
+      [:div.row-flex.align-icons
+       [:span {:class (when (= text-align "left") "current")
+               :on-click #(on-font-align-change % "left")}
+        i/align-left]
+       [:span {:class (when (= text-align "center") "current")
+               :on-click #(on-font-align-change % "center")}
+        i/align-center]
+       [:span {:class (when (= text-align "right") "current")
+               :on-click #(on-font-align-change % "right")}
+        i/align-right]
+       [:span {:class (when (= text-align "justify") "current")
+               :on-click #(on-font-align-change % "justify")}
+        i/align-justify]]]]))
 
 (def +fonts+
   [{:id "sourcesanspro"
@@ -341,5 +469,8 @@
               :style "italic"}]}
    ])
 
-(def +fonts-by-id+
-  (index-by-id +fonts+))
+(mf/defc options
+  [{:keys [shape] :as props}]
+  [:div
+   [:& measures-menu {:shape shape}]
+   [:& fonts-menu {:shape shape}]])

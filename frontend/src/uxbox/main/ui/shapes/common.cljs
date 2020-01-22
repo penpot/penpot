@@ -17,7 +17,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.workspace.streams :as uws]
+   [uxbox.main.streams :as uws]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
@@ -34,8 +34,8 @@
             stoper (rx/filter uws/mouse-up? stream)
             position @uws/mouse-position]
         (rx/concat
-         (when (refs/alignment-activated? flags)
-           (rx/of (dw/initial-selection-align selected)))
+         ;; (when (refs/alignment-activated? flags)
+         ;;   (rx/of (dw/initial-selection-align selected)))
          (->> (uws/mouse-position-deltas position)
               (rx/map #(dw/apply-temporal-displacement-in-bulk selected %))
               (rx/take-until stoper))

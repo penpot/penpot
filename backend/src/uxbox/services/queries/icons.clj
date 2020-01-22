@@ -8,11 +8,11 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.exceptions :as ex]
-   [uxbox.util.spec :as us]))
+   [uxbox.util.blob :as blob]))
 
 ;; --- Helpers & Specs
 
@@ -28,10 +28,10 @@
 
 ;; --- Query: Collections
 
-(def ^:private icons-collections-sql
+(def sql:icons-collections
   "select *,
           (select count(*) from icons where collection_id = ic.id) as num_icons
-     from icons_collections as ic
+     from icon_collections as ic
     where (ic.user_id = $1 or
            ic.user_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and ic.deleted_at is null
@@ -42,7 +42,7 @@
 
 (sq/defquery ::icons-collections
   [{:keys [user] :as params}]
-  (let [sqlv [icons-collections-sql user]]
+  (let [sqlv [sql:icons-collections user]]
     (db/query db/pool sqlv)))
 
 ;; --- Icons By Collection ID

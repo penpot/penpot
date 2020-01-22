@@ -9,7 +9,7 @@
   (:require [cljs.spec.alpha :as s]
             [beicon.core :as rx]
             [potok.core :as ptk]
-            [uxbox.util.spec :as us]
+            [uxbox.common.spec :as us]
             [uxbox.util.workers :as uw]))
 
 (s/def ::width number?)
@@ -26,7 +26,7 @@
 ;; This excludes webworker instantiation on nodejs where
 ;; the tests are run.
 (when (not= *target* "nodejs")
-  (defonce worker (uw/init "/js/worker.js")))
+  (defonce worker (uw/init "js/worker.js")))
 
 (defn align-point
   [point]
@@ -36,6 +36,6 @@
 
 (defn initialize-alignment
   [params]
-  {:pre [(us/valid? ::initialize-alignment-params params)]}
+  (us/assert ::initialize-alignment-params params)
   (let [message (assoc params :cmd :grid-init)]
     (uw/send! worker message)))

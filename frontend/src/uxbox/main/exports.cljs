@@ -7,18 +7,17 @@
 (ns uxbox.main.exports
   "The main logic for SVG export functionality."
   (:require
+   [cljsjs.react.dom.server]
    [rumext.alpha :as mf]
-   [uxbox.main.store :as st]
-   ;; [uxbox.main.ui.shapes.circle :refer [circle-shape]]
-   ;; [uxbox.main.ui.shapes.group :refer [group-shape]]
-   ;; [uxbox.main.ui.shapes.icon :refer [icon-shape]]
-   ;; [uxbox.main.ui.shapes.image :refer [image-shape]]
-   ;; [uxbox.main.ui.shapes.path :refer [path-shape]]
-   ;; [uxbox.main.ui.shapes.rect :refer [rect-shape]]
-   ;; [uxbox.main.ui.shapes.text :refer [text-shape]]
-   [uxbox.util.dom :as dom]))
-
-;; (def ^:dynamic *state* st/state)
+   [uxbox.util.math :as mth]
+   [uxbox.main.geom :as geom]
+   [uxbox.main.ui.shapes.canvas :as canvas]
+   [uxbox.main.ui.shapes.circle :as circle]
+   [uxbox.main.ui.shapes.icon :as icon]
+   [uxbox.main.ui.shapes.image :as image]
+   [uxbox.main.ui.shapes.path :as path]
+   [uxbox.main.ui.shapes.rect :as rect]
+   [uxbox.main.ui.shapes.text :as text]))
 
 (mf/defc background
   []
@@ -26,47 +25,56 @@
    {:x 0 :y 0
     :width "100%"
     :height "100%"
-    :fill "white"}])
+    :fill "#b1b2b5"}])
 
-(declare shape-component)
-(declare shape-wrapper)
+(defn- calculate-dimensions
+  [data]
+  (let [shapes (vals (:shapes-by-id data))
+        shape (geom/shapes->rect-shape shapes)
+        width (+ (:x shape) (:width shape) 100)
+        height (+ (:y shape) (:height shape) 100)]
+    {:width (if (mth/nan? width) 100 width)
+     :height (if (mth/nan? height) 100 height)}))
 
-(defn- make-shape-element
-  [state shape]
-  #_(mf/html
-   (case (:type shape)
-     ;; :text [:& text-shape {:shape shape}]
-     :icon [:& icon-shape {:shape shape}]
-     :rect [:& rect-shape {:shape shape}]
-     :path [:& path-shape {:shape shape}]
-     :circle [:& circle-shape {:shape shape}]
-     :image (let [image-id (:image shape)
-                  image (get-in state [:images image-id])]
-              [:& image-shape {:shape shape :image image}]))))
+(mf/defc shape-wrapper
+  [{:keys [shape] :as props}]
+  (when (and shape (not (:hidden shape)))
+    (case (:type shape)
+      :canvas [:& rect/rect-shape {:shape shape}]
+      :curve [:& path/path-shape {:shape shape}]
+      :text [:& text/text-shape {:shape shape}]
+      :icon [:& icon/icon-shape {:shape shape}]
+      :rect [:& rect/rect-shape {:shape shape}]
+      :path [:& path/path-shape {:shape shape}]
+      :image [:& image/image-shape {:shape shape}]
+      :circle [:& circle/circle-shape {:shape shape}])))
 
 (mf/defc page-svg
-  [{:keys [page state] :as props}]
-  #_(let [{:keys [width height]} (:metadata page)]
-    [:svg {:width width
-           :height height
-           :view-box (str "0 0 " width " " height)
+  [{:keys [data] :as props}]
+  (let [shapes-by-id (:shapes-by-id data)
+        shapes (map #(get shapes-by-id %) (:shapes data []))
+        canvas (map #(get shapes-by-id %) (:canvas data []))
+        dim (calculate-dimensions data)]
+    [:svg {:view-box (str "0 0 " (:width dim 0) " " (:height dim 0))
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
-     ;; TODO: properly handle background
-     #_(background)
-     (for [sid (reverse (:shapes page))]
-       (when-let [shape (get-in state [:shapes sid])]
-         [:g {:key sid} (make-shape-element state shape)]))]))
+     (background)
+     [:*
+      (for [item canvas]
+        [:& shape-wrapper {:shape item :key (:id item)}])
+      (for [item shapes]
+        [:& shape-wrapper {:shape item :key (:id item)}])]]))
 
-(defn render-page
-  [id]
-  #_(try
-    (let [state (deref st/state)
-          page (get-in state [:pages id])]
-      (when (:shapes page)
-        (dom/render-to-html
-         (mf/element page-svg #js {:page page :state state}))))
-    (catch :default e
-      (js/console.log e)
-      nil)))
+;; (defn- render-html
+;;   [component]
+;;   (.renderToStaticMarkup js/ReactDOMServer component))
+
+;; (defn render
+;;   [{:keys [data] :as page}]
+;;   (try
+;;     (-> (mf/element page-svg #js {:data data})
+;;         (render-html))
+;;     (catch :default e
+;;       (js/console.log e)
+;;       nil)))

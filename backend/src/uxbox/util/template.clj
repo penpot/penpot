@@ -11,7 +11,7 @@
    [clojure.tools.logging :as log]
    [clojure.walk :as walk]
    [clojure.java.io :as io]
-   [uxbox.util.exceptions :as ex])
+   [uxbox.common.exceptions :as ex])
   (:import
    java.io.StringReader
    java.util.HashMap

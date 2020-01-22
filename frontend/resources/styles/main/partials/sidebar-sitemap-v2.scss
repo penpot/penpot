@@ -1,0 +1,279 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+.sitemap {
+
+  .project-title {
+    align-items: center;
+    border-bottom: 1px solid $soft-ui-border;
+    display: flex;
+    padding: $x-small;
+    width: 100%;
+
+    span {
+      color: $intense-ui-text;
+      font-size: $fs14;
+      font-weight: bold;
+      max-width: 80%;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .add-page {
+      align-items: center;
+      background-color: $soft-ui-icons;
+      border-radius: $br-small;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      margin-left: auto;
+      padding: $x-small;
+
+      svg {
+        fill: $intense-ui-icons;
+        height: 16px;
+        width: 16px;
+      }
+
+      &:hover {
+        background-color: $dark-ui-bg;
+        border-color: $soft-ui-border;
+      }
+
+    }
+
+  }
+
+  .element-list {
+
+    li {
+      align-items: center;
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+
+      .page-icon {
+
+        svg {
+          fill: $medium-ui-icons;
+          height: 15px;
+          margin-right: $x-small;
+          width: 15px;
+        }
+
+      }
+
+      span {
+        color: $medium-ui-text;
+        font-size: $fs14;
+        max-width: 75%;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .page-actions {
+        align-items: center;
+        display: none;
+        margin-left: auto;
+
+        a {
+
+          svg {
+            fill: $soft-ui-icons;
+            height: 15px;
+            margin-left: $x-small;
+            width: 15px;
+
+            &:hover {
+              fill: $intense-ui-icons;
+            }
+
+          }
+
+        }
+
+      }
+
+      &:hover {
+
+        .page-icon {
+
+          svg {
+            fill: $main-ui-color;
+          }
+
+        }
+
+        span {
+          color: $main-ui-color;
+        }
+
+      }
+
+      &.selected {
+
+        .page-icon {
+
+          svg {
+            fill: $main-ui-color;
+          }
+
+        }
+
+        span {
+          color: $main-ui-color;
+          font-weight: bold;
+        }
+
+      }
+
+    }
+
+    &:hover {
+
+      .page-actions {
+        display: flex;
+        @include animation(0s,.3s,fadeIn);
+      }
+
+    }
+
+    .element-list-body {
+      align-items: center;
+      border-bottom: 1px solid $soft-ui-border;
+      display: flex;
+      padding: $small;
+      transition: none;
+      width: 100%;
+
+      svg {
+        fill: $soft-ui-icons;
+        height: 13px;
+        margin-right: 8px;
+        width: 13px;
+      }
+
+      .element-actions {
+        align-items: center;
+        display: flex;
+        flex-shrink: 0;
+        width: 62px;
+      }
+
+      .element-icon {
+
+        svg {
+          fill: $medium-ui-icons;
+        }
+
+      }
+
+      .toggle-content {
+        margin-left: auto;
+        width: 12px;
+
+        svg {
+          fill: $intense-ui-icons;
+          transform: rotate(90deg);
+          width: 10px;
+        }
+
+        &.inverse {
+          svg { transform: rotate(270deg); }
+        }
+
+        &:hover {
+
+          svg {
+            fill: $medium-ui-icons;
+          }
+
+        }
+
+      }
+
+      &.group {
+
+        &.open {
+
+          .toggle-content {
+            flex-shrink: 0;
+
+            svg {
+              transform: rotate(270deg);
+            }
+
+          }
+
+        }
+
+      }
+
+      span.element-name {
+        min-width: 40px;
+        min-height: 16px;
+        display: block;
+
+        color: $medium-ui-text;
+        font-size: $fs13;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      &.selected {
+
+        .element-icon {
+
+          svg {
+            fill: $main-ui-color;
+          }
+
+        }
+
+        span {
+          color: $main-ui-color;
+        }
+
+      }
+
+      .selected {
+
+        svg {
+          fill: $intense-ui-icons;
+        }
+
+      }
+
+      &:hover {
+        border-color: $main-ui-color;
+
+        .element-icon {
+
+          svg {
+            fill: $intense-ui-icons;
+          }
+
+        }
+
+        span {
+          color: $intense-ui-text;
+        }
+
+      }
+
+      &.dragging {
+        // TODO: revisit this
+        background-color: #eee;
+      }
+    }
+  }
+
+}

@@ -40,7 +40,7 @@
   [{:keys [on-submit value] :as props}]
   (let [local (mf/use-var value)]
     [:div.lightbox-body
-     [:h3 (tr "ds.color-lightbox.title")]
+     [:h3 (tr "ds.color-lightbox.title" )]
      [:form
       [:div.row-flex.center
        [:& colorpicker {:value (or @local "#00ccff")
@@ -61,7 +61,7 @@
           (delete []
             (st/emit!
              (dc/delete-collection (:id coll))
-             (rt/nav :dashboard/colors nil {:type (:type coll)})))
+             (rt/nav :dashboard-colors nil {:type (:type coll)})))
 
           (on-delete []
             (modal/show! confirm-dialog {:on-accept delete}))]
@@ -79,7 +79,7 @@
         editable? (= type :own)]
     (letfn [(on-click [event]
               (let [type (or type :own)]
-                (st/emit! (rt/nav :dashboard/colors nil {:type type :id id}))))
+                (st/emit! (rt/nav :dashboard-colors nil {:type type :id id}))))
             (on-input-change [event]
                 (let [value (dom/get-target event)
                       value (dom/get-value value)]
@@ -107,14 +107,14 @@
             :on-key-down on-input-keyup}]
           [:span.close {:on-click on-cancel} i/close]]
          [:span.element-title name])
-       [:span.element-subtitle
+       #_[:span.element-subtitle
         (tr "ds.num-elements" (t/c colors))]])))
 
 (mf/defc nav
   [{:keys [id type colls selected-coll] :as props}]
   (let [own? (= type :own)
         builtin? (= type :builtin)
-        select-tab #(st/emit! (rt/nav :dashboard/colors nil {:type %}))]
+        select-tab #(st/emit! (rt/nav :dashboard-colors nil {:type %}))]
     [:div.library-bar
      [:div.library-bar-inside
       [:ul.library-tabs
@@ -259,7 +259,8 @@
   [{:keys [id type coll] :as props}]
   (let [selected (mf/deref selected-colors-iref)]
     [:section.dashboard-grid.library
-     [:& grid-header {:coll coll}]
+     (when coll
+       [:& grid-header {:coll coll}])
      [:& grid {:coll coll :id id  :type type :selected selected}]
      (when (seq selected)
        [:& grid-options {:id id :type type
@@ -282,14 +283,12 @@
                         (first colls))
         id (:id selected-coll)]
 
-    (mf/use-effect #(st/emit! (dc/initialize)) #js [id type])
     (mf/use-effect #(st/emit! (dc/fetch-collections)))
 
     [:section.dashboard-content
      [:& nav {:type type
               :id id
-              :colls colls
-              :selected-coll selected-coll}]
+              :colls colls}]
      [:& content {:type type
                   :id id
                   :coll selected-coll}]]))

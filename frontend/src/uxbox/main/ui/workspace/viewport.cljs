@@ -11,15 +11,16 @@
    [goog.events :as events]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.streams :as ms]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.workspace.grid :refer [grid]]
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
-   [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
 
    [uxbox.main.ui.shapes :refer [shape-wrapper]]
@@ -36,8 +37,8 @@
 
 (mf/defc coordinates
   [{:keys [zoom] :as props}]
-  (let [coords (some-> (use-rxsub uws/mouse-position)
-                       (gpt/divide zoom)
+  (let [coords (some-> (use-rxsub ms/mouse-position)
+                       (gpt/divide (gpt/point zoom zoom))
                        (gpt/round 0))]
     [:ul.coordinates
      [:span {:alt "x"}
@@ -72,24 +73,39 @@
 
 ;; --- Selection Rect
 
+(defn- selection->rect
+  [data]
+  (let [start (:start data)
+        stop (:stop data)
+        start-x (min (:x start) (:x stop))
+        start-y (min (:y start) (:y stop))
+        end-x (max (:x start) (:x stop))
+        end-y (max (:y start) (:y stop))]
+    (assoc data
+           :type :rect
+           :x start-x
+           :y start-y
+           :width (- end-x start-x)
+           :height (- end-y start-y))))
+
 (def ^:private handle-selrect
   (letfn [(update-state [state position]
             (let [selrect (get-in state [:workspace-local :selrect])]
               (if selrect
                 (assoc-in state [:workspace-local :selrect]
-                          (dw/selection->rect (assoc selrect :stop position)))
+                          (selection->rect (assoc selrect :stop position)))
                 (assoc-in state [:workspace-local :selrect]
-                          (dw/selection->rect {:start position :stop position})))))
+                          (selection->rect {:start position :stop position})))))
 
           (clear-state [state]
             (update state :workspace-local dissoc :selrect))]
     (ptk/reify ::handle-selrect
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [stoper (rx/filter #(or (dw/interrupt? %) (uws/mouse-up? %)) stream)]
+        (let [stoper (rx/filter #(or (dw/interrupt? %) (ms/mouse-up? %)) stream)]
           (rx/concat
            (rx/of dw/deselect-all)
-           (->> uws/mouse-position
+           (->> ms/mouse-position
                 (rx/map (fn [pos] #(update-state % pos)))
                 (rx/take-until stoper))
            (rx/of dw/select-shapes-by-current-selrect
@@ -99,13 +115,11 @@
   {:wrap [mf/wrap-memo]}
   [{:keys [data] :as props}]
   (when data
-    (let [{:keys [x1 y1 width height]} (geom/size data)]
-      [:rect.selection-rect
-       {:x x1
-        :y y1
-        :width width
-        :height height}])))
-
+    [:rect.selection-rect
+     {:x (:x data)
+      :y (:y data)
+      :width (:width data)
+      :height (:height data)}]))
 
 ;; --- Viewport Positioning
 
@@ -120,12 +134,14 @@
       ptk/EffectEvent
       (effect [_ state stream]
         (let [stoper (rx/filter #(= ::finish-positioning %) stream)
-              reference @uws/mouse-position
+              reference @ms/mouse-position
               dom (dom/get-element "workspace-viewport")]
-          (-> (rx/take-until stoper uws/mouse-position)
+          (-> (rx/take-until stoper ms/mouse-position)
               (rx/subscribe #(on-point dom reference %))))))))
 
 ;; --- Viewport
+
+(declare remote-user-cursors)
 
 (mf/defc canvas-and-shapes
   {:wrap [mf/wrap-memo]}
@@ -134,10 +150,10 @@
         shapes-by-id (:shapes-by-id data)
         shapes (map #(get shapes-by-id %) (:shapes data []))
         canvas (map #(get shapes-by-id %) (:canvas data []))]
-    [:*
+    [:g.shapes
      (for [item canvas]
        [:& shape-wrapper {:shape item :key (:id item)}])
-     (for [item (reverse shapes)]
+     (for [item shapes]
        [:& shape-wrapper {:shape item :key (:id item)}])]))
 
 (mf/defc viewport
@@ -156,7 +172,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :down ctrl? shift?)))
+                (st/emit! (ms/->MouseEvent :down ctrl? shift?)))
               (when (not edition)
                 (if drawing-tool
                   (st/emit! (start-drawing drawing-tool))
@@ -169,7 +185,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :context-menu ctrl? shift?))))
+                (st/emit! (ms/->MouseEvent :context-menu ctrl? shift?))))
 
             (on-mouse-up [event]
               (dom/stop-propagation event)
@@ -177,7 +193,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :up ctrl? shift?))))
+                (st/emit! (ms/->MouseEvent :up ctrl? shift?))))
 
             (on-click [event]
               (dom/stop-propagation event)
@@ -185,7 +201,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :click ctrl? shift?))))
+                (st/emit! (ms/->MouseEvent :click ctrl? shift?))))
 
             (on-double-click [event]
               (dom/stop-propagation event)
@@ -193,7 +209,7 @@
                     shift? (kbd/shift? event)
                     opts {:shift? shift?
                           :ctrl? ctrl?}]
-                (st/emit! (uws/mouse-event :double-click ctrl? shift?))))
+                (st/emit! (ms/->MouseEvent :double-click ctrl? shift?))))
 
             (translate-point-to-viewport [pt]
               (let [viewport (mf/ref-node viewport-ref)
@@ -211,7 +227,7 @@
                           :shift? shift?
                           :ctrl? ctrl?}]
                 (when-not (.-repeat bevent)
-                  (st/emit! (uws/keyboard-event :down key ctrl? shift?))
+                  (st/emit! (ms/->KeyboardEvent :down key ctrl? shift?))
                   (when (kbd/space? event)
                     (st/emit! handle-viewport-positioning)
                     #_(st/emit! (dw/start-viewport-positioning))))))
@@ -225,13 +241,13 @@
                           :ctrl? ctrl?}]
                 (when (kbd/space? event)
                   (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
-                (st/emit! (uws/keyboard-event :up key ctrl? shift?))))
+                (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?))))
 
             (on-mouse-move [event]
               (let [pt (gpt/point (.-clientX event)
                                   (.-clientY event))
                     pt (translate-point-to-viewport pt)]
-                (st/emit! (uws/->PointerEvent :viewport pt
+                (st/emit! (ms/->PointerEvent :viewport pt
                                               (kbd/ctrl? event)
                                               (kbd/shift? event)))))
 
@@ -242,7 +258,6 @@
                   (events/unlistenByKey key1)
                   (events/unlistenByKey key2))))]
       (mf/use-effect on-mount)
-      ;; (prn "viewport$render")
       [:*
        [:& coordinates {:zoom zoom}]
        [:svg.viewport {:width (* c/viewport-width zoom)
@@ -270,9 +285,58 @@
                            :modifiers (:modifiers local)}])]
 
          (if (contains? flags :grid)
-           [:& grid {:page page}])]
+           [:& grid])]
 
         (when (contains? flags :ruler)
           [:& ruler {:zoom zoom :ruler (:ruler local)}])
 
+
+        ;; -- METER CURSOR MULTIUSUARIO
+        [:& remote-user-cursors {:page page}]
+
         [:& selrect {:data (:selrect local)}]]])))
+
+
+(mf/defc remote-user-cursor
+  [{:keys [pointer user] :as props}]
+  [:g.multiuser-cursor {:key (:user-id pointer)
+                        :transform (str "translate(" (:x pointer) "," (:y pointer) ") scale(4)")}
+   [:path {:fill (:color user)
+           :d "M5.292 4.027L1.524.26l-.05-.01L0 0l.258 1.524 3.769 3.768zm-.45 0l-.313.314L1.139.95l.314-.314zm-.5.5l-.315.316-3.39-3.39.315-.315 3.39 3.39zM1.192.526l-.668.667L.431.646.64.43l.552.094z"
+           :font-family "sans-serif"}]
+   [:g {:transform "translate(0 -291.708)"}
+    [:rect {:width "21.415"
+            :height "5.292"
+            :x "6.849"
+            :y "291.755"
+            :fill (:color user)
+            :fill-opacity ".893"
+            :paint-order "stroke fill markers"
+            :rx ".794"
+            :ry ".794"}]
+    [:text {:x "9.811"
+            :y "295.216"
+            :fill "#fff"
+            :stroke-width ".265"
+            :font-family "Open Sans"
+            :font-size"2.91"
+            :font-weight "400"
+            :letter-spacing"0"
+            :style {:line-height "1.25"}
+            :word-spacing "0"
+            ;; :style="line-height:1
+            }
+     (:fullname user)]]])
+
+(mf/defc remote-user-cursors
+  [{:keys [page] :as props}]
+  (let [users (mf/deref refs/workspace-users)
+        pointers (->> (vals (:pointer users))
+                      (remove #(not= (:id page) (:page-id %)))
+                      (filter #((:active users) (:user-id %))))]
+    (for [pointer pointers]
+      (let [user (get-in users [:by-id (:user-id pointer)])]
+        [:& remote-user-cursor {:pointer pointer
+                                :user user
+                                :key (:user-id pointer)}]))))
+

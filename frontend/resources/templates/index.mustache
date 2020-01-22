@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>UXBOX - The Open-Source prototyping tool</title>
+    <link href="css/main.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    <link rel="icon" href="/images/favicon.png" />
+  </head>
+  <body>
+    <section id="app" tabindex="1"></section>
+    <section id="lightbox"></section>
+    <section id="loader"></section>
+    <section id="modal"></section>
+
+    <script src="js/cljs_base.js?ts={{& ts}}"></script>
+    <script src="js/main.js?ts={{& ts}}"></script>
+    <script>uxbox.main.init({{& tr }})</script>
+  </body>
+</html>

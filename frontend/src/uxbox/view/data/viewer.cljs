@@ -10,7 +10,6 @@
             [uxbox.util.router :as rt]
             [uxbox.util.data :refer (parse-int)]
             [uxbox.main.repo :as rp]
-            [uxbox.main.data.pages :as udpg]
             [uxbox.main.data.projects :as udpj]))
 
 ;; --- Initialize
@@ -62,7 +61,7 @@
 (defrecord LoadData [token]
   ptk/WatchEvent
   (watch [_ state stream]
-    (->> (rp/req :fetch/project-by-token token)
+    #_(->> (rp/req :fetch/project-by-token token)
          (rx/map :payload)
          (rx/map data-loaded))))
 
@@ -120,7 +119,7 @@
     (let [existing (get-in state [:images id])]
       (if existing
         (rx/empty)
-        (->> (rp/req :fetch/image {:id id})
+        #_(->> (rp/req :fetch/image {:id id})
              (rx/map :payload)
              (rx/map image-fetched))))))
 

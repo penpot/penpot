@@ -8,6 +8,6 @@ if [ ! -e ~/local/.fixtures-loaded ]; then
     touch ~/local/.fixtures-loaded
 fi
 
-clojure ${CLOJURE_OPTS} -m uxbox.main
+clojure -m uxbox.main
 
 

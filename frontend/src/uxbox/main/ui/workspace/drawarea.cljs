@@ -15,8 +15,8 @@
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.streams :as ms]
    [uxbox.main.ui.shapes :as shapes]
-   [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.main.workers :as uwrk]
    [uxbox.util.math :as mth]
    [uxbox.util.dom :as dom]
@@ -51,8 +51,7 @@
     :fill-opacity 0
     :segments []}
    {:type :canvas
-    :name "Canvas"
-    :stroke-color "#000000"}
+    :name "Canvas"}
    {:type :curve
     :name "Path"
     :stroke-style :solid
@@ -89,7 +88,7 @@
   [type]
   (let [tool (seek #(= type (:type %)) minimal-shapes)]
     (assert tool "unexpected drawing tool")
-    (assoc tool :id (uuid/random))))
+    (assoc tool :id (uuid/next))))
 
 (defn handle-drawing
   [type]
@@ -109,18 +108,17 @@
 (def handle-drawing-generic
   (letfn [(initialize-drawing [state point]
             (let [shape (get-in state [:workspace-local :drawing])
-                  shape (geom/setup shape {:x1 (:x point)
-                                           :y1 (:y point)
-                                           :x2 (+ (:x point) 2)
-                                           :y2 (+ (:y point) 2)})]
+                  shape (geom/setup shape {:x (:x point)
+                                           :y (:y point)
+                                           :width 2
+                                           :height 2})]
               (assoc-in state [:workspace-local :drawing] (assoc shape ::initialized? true))))
 
           (resize-shape [shape point lock?]
-            (let [shape (-> (geom/shape->rect-shape shape)
-                            (geom/size))
-                  result (geom/resize-shape :bottom-right shape point lock?)
-                  scale (geom/calculate-scale-ratio shape result)
-                  mtx (geom/generate-resize-matrix :bottom-right shape scale)]
+            (let [shape' (geom/shape->rect-shape shape)
+                  result (geom/resize-shape :bottom-right shape' point lock?)
+                  scale (geom/calculate-scale-ratio shape' result)
+                  mtx (geom/generate-resize-matrix :bottom-right shape' scale)]
               (assoc shape :modifier-mtx mtx)))
 
           (update-drawing [state point lock?]
@@ -132,31 +130,31 @@
         (let [{:keys [zoom flags]} (:workspace-local state)
               align? (refs/alignment-activated? flags)
 
-              stoper? #(or (uws/mouse-up? %) (= % :interrupt))
+              stoper? #(or (ms/mouse-up? %) (= % :interrupt))
               stoper (rx/filter stoper? stream)
 
-              mouse (->> uws/mouse-position
+              mouse (->> ms/mouse-position
                          (rx/mapcat #(conditional-align % align?))
-                         (rx/map #(gpt/divide % zoom)))]
+                         (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (->> mouse
                 (rx/take 1)
                 (rx/map (fn [pt] #(initialize-drawing % pt))))
            (->> mouse
-                (rx/with-latest vector uws/mouse-position-ctrl)
+                (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map (fn [[pt ctrl?]] #(update-drawing % pt ctrl?)))
                 (rx/take-until stoper))
            (rx/of handle-finish-drawing)))))))
 
 (def handle-drawing-path
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
-             (or (= event :interrupt)
-                 (and (uws/mouse-event? event)
-                      (or (and (= type :double-click) shift)
-                          (= type :context-menu)))
-                 (and (uws/keyboard-event? event)
-                      (= type :down)
-                      (= 13 (:key event)))))
+            (or (= event ::end-path-drawing)
+                (and (ms/mouse-event? event)
+                     (or (and (= type :double-click) shift)
+                         (= type :context-menu)))
+                (and (ms/keyboard-event? event)
+                     (= type :down)
+                     (= 13 (:key event)))))
 
           (initialize-drawing [state point]
             (-> state
@@ -181,24 +179,24 @@
         (let [{:keys [zoom flags]} (:workspace-local state)
 
               align? (refs/alignment-activated? flags)
-              last-point (volatile! (gpt/divide @uws/mouse-position zoom))
+              last-point (volatile! (gpt/divide @ms/mouse-position (gpt/point zoom)))
 
               stoper (->> (rx/filter stoper-event? stream)
                           (rx/share))
 
-              mouse (->> (rx/sample 10 uws/mouse-position)
+              mouse (->> (rx/sample 10 ms/mouse-position)
                          (rx/mapcat #(conditional-align % align?))
-                         (rx/map #(gpt/divide % zoom)))
+                         (rx/map #(gpt/divide % (gpt/point zoom))))
 
               points (->> stream
-                          (rx/filter uws/mouse-click?)
+                          (rx/filter ms/mouse-click?)
                           (rx/filter #(false? (:shift %)))
                           (rx/with-latest vector mouse)
                           (rx/map second))
 
               counter (rx/merge (rx/scan #(inc %) 1 points) (rx/of 1))
               stream' (->> mouse
-                          (rx/with-latest vector uws/mouse-position-ctrl)
+                          (rx/with-latest vector ms/mouse-position-ctrl)
                           (rx/with-latest vector counter)
                           (rx/map flatten))
 
@@ -238,8 +236,7 @@
 
 (def handle-drawing-curve
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
-             (or (= event :interrupt)
-                 (and (uws/mouse-event? event) (= type :up))))
+            (ms/mouse-event? event) (= type :up))
 
           (initialize-drawing [state]
             (assoc-in state [:workspace-local :drawing ::initialized?] true))
@@ -256,9 +253,9 @@
         (let [{:keys [zoom flags]} (:workspace-local state)
               align? (refs/alignment-activated? flags)
               stoper (rx/filter stoper-event? stream)
-              mouse  (->> (rx/sample 10 uws/mouse-position)
+              mouse  (->> (rx/sample 10 ms/mouse-position)
                           (rx/mapcat #(conditional-align % align?))
-                          (rx/map #(gpt/divide % zoom)))]
+                          (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (rx/of initialize-drawing)
            (->> mouse
@@ -280,9 +277,11 @@
                          (geom/transform shape modifier-mtx)
                          shape)
                  shape (dissoc shape ::initialized? :modifier-mtx)]
-             ;; Add & select the cred shape to the workspace
-             (rx/of (dw/add-shape shape)
-                    dw/select-first-shape))))))))
+             ;; Add & select the created shape to the workspace
+             (rx/of dw/deselect-all
+                    (if (= :canvas (:type shape))
+                      (dw/add-canvas shape)
+                      (dw/add-shape shape))))))))))
 
 (def close-drawing-path
   (ptk/reify ::close-drawing-path
@@ -305,10 +304,10 @@
 
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]
-  (let [{:keys [x1 y1 width height]} (geom/selection-rect shape)]
+  (let [{:keys [x y width height]} (geom/shape->rect-shape shape)]
     [:g
      [:& shapes/shape-wrapper {:shape shape}]
-     [:rect.main {:x x1 :y y1
+     [:rect.main {:x x :y y
                   :width width
                   :height height
                   :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
@@ -322,7 +321,8 @@
             (dom/stop-propagation event)
             (st/emit! (dw/set-tooltip nil)
                       close-drawing-path
-                      :interrupt))
+                      ::end-path-drawing))
+
           (on-mouse-enter [event]
             (st/emit! (dw/set-tooltip "Click to close the path")))
           (on-mouse-leave [event]

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>funcool</groupId>
+  <artifactId>sodi</artifactId>
+  <version>0.0.0-alpha.1</version>
+  <name>sodi</name>
+  <description>Cryptographic Utilities for Clojure</description>
+  <url>https://github.com/funcool/sodi</url>
+  <scm>
+    <connection>scm:git:git://github.com/funcool/sodi.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/funcool/sodi.git</developerConnection>
+    <tag>master</tag>
+    <url>https://github.com/funcool/sodi</url>
+  </scm>
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+  </build>
+  <dependencies>
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojure</artifactId>
+      <version>1.10.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.goterl.lazycode</groupId>
+      <artifactId>lazysodium-java</artifactId>
+      <version>4.2.4</version>
+    </dependency>
+  </dependencies>
+  <repositories>
+    <repository>
+      <id>clojars</id>
+      <url>https://repo.clojars.org/</url>
+    </repository>
+  </repositories>
+</project>

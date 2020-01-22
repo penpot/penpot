@@ -13,8 +13,7 @@
    [expound.alpha :as expound]
    [sieppari.core :as sp]
    [sieppari.context :as spx]
-   [uxbox.util.spec :as us]
-   [uxbox.util.exceptions :as ex])
+   [uxbox.common.exceptions :as ex])
   (:import
    clojure.lang.IDeref
    clojure.lang.MapEntry

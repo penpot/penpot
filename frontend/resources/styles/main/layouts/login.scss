@@ -97,6 +97,10 @@
         font-size: $fs13;
         justify-content: space-between;
         margin-top: $medium;
+
+        a {
+          text-align: center;
+        }
       }
 
     }

@@ -8,11 +8,11 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
-   [uxbox.util.spec :as us]
    [uxbox.util.sql :as sql]))
 
 ;; --- Helpers & Specs
@@ -24,7 +24,7 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 
-(def ^:private sql:generic-project-pages
+(def sql:generic-project-pages
   "select pp.*
      from project_pages as pp
     inner join project_files as pf on (pf.id = pp.file_id)
@@ -38,27 +38,9 @@
 
 ;; --- Query: Project Pages (By File ID)
 
-(def ^:private sql:project-pages
+(def sql:project-pages
   (str "with pages as (" sql:generic-project-pages ")"
        " select * from pages where file_id = $2"))
-
-;; (defn project-pages-sql
-;;   [user]
-;;   (-> (sql/from ["project_pages" "pp"])
-;;       (sql/join ["project_files" "pf"] "pf.id = pp.file_id")
-;;       (sql/join ["projects" "p"] "p.id = pf.project_id")
-;;       (sql/ljoin ["project_users", "pu"] "pu.project_id = p.id")
-;;       (sql/ljoin ["project_file_users", "pfu"] "pfu.file_id = pf.id")
-;;       (sql/select "pp.*")
-;;       (sql/where ["((pfu.user_id = ? and pfu.can_edit = true) or
-;;                  (pu.user_id = ? and pu.can_edit = true))" user user])
-;;       (sql/order "pp.created_at")))
-
-;; (let [sql (-> (project-pages-sql user)
-;;               (sql/where ["pp.file_id = ?" file-id])
-;;               (sql/fmt))]
-;;   (-> (db/query db/pool sql)
-;;       (p/then #(mapv decode-row %)))))
 
 (s/def ::project-pages
   (s/keys :req-un [::user ::file-id]))
@@ -138,9 +120,9 @@
 ;; --- Helpers
 
 (defn decode-row
-  [{:keys [data metadata operations] :as row}]
+  [{:keys [data metadata changes] :as row}]
   (when row
     (cond-> row
       data (assoc :data (blob/decode data))
       metadata (assoc :metadata (blob/decode metadata))
-      operations (assoc :operations (blob/decode operations)))))
+      changes (assoc :changes (blob/decode changes)))))

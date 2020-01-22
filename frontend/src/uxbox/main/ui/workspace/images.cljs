@@ -129,13 +129,9 @@
                        (read-string)
                        (swap! local assoc :id))]
 
-    (mf/use-effect
-     {:fn #(do (st/emit! (udi/fetch-collections))
-               (st/emit! (udi/fetch-images nil)))})
-
-    (mf/use-effect
-     {:deps #js [type id]
-      :fn #(st/emit! (udi/fetch-images id))})
+    (mf/use-effect #(st/emit! udi/fetch-collections))
+    (mf/use-effect {:deps #js [(str id)]
+                    :fn #(st/emit! (udi/fetch-images id))})
 
     [:div.lightbox-body.big-lightbox
      [:h3 (tr "image.import-library")]

@@ -1,7 +1,10 @@
-(require '[clojure.pprint :refer [pprint]])
-(require '[clojure.java.shell :as shell])
-(require '[figwheel.main.api :as figwheel])
-(require '[environ.core :refer [env]])
+(require '[clojure.pprint :refer [pprint]]
+         '[clojure.java.shell :as shell]
+         '[clojure.java.io :as io]
+         '[clojure.edn :as edn]
+         '[clojure.string :as str]
+         '[figwheel.main.api :as figwheel]
+         '[environ.core :refer [env]])
 (require '[cljs.build.api :as api]
          '[cljs.repl :as repl]
          '[cljs.repl.node :as node])
@@ -11,6 +14,8 @@
          '[rebel-readline.clojure.service.local]
          '[rebel-readline.cljs.service.local]
          '[rebel-readline.cljs.repl])
+
+(import 'java.io.ByteArrayOutputStream)
 
 (defmulti task first)
 
@@ -23,13 +28,21 @@
 
 ;; --- Generic Build Options
 
-(def debug? (boolean (:uxbox-debug env nil)))
-(def demo? (boolean (:uxbox-demo env nil)))
-
 (def closure-defines
-  {"uxbox.config.url" (:uxbox-api-url env "http://localhost:6060/api")
-   "uxbox.config.viewurl" (:uxbox-view-url env "/view/index.html")
-   "uxbox.config.isdemo" demo?})
+  (let [url       (-> (:uxbox-api-url env "")
+                      (str/trim))
+        demo-warn (-> (:uxbox-demo-warning env "")
+                      (str/trim))]
+    {'uxbox.config.url
+     (cond
+       (empty? url) "http://localhost:6060"
+       (str/starts-with? url "http") url
+       (str/starts-with? url "\"") (edn/read-string url))
+     'uxbox.config.demo-warning
+     (cond
+       (empty? demo-warn) false
+       (= "true" demo-warn) true
+       :else false)}))
 
 (def default-build-options
   {:cache-analysis true
@@ -37,6 +50,7 @@
    :language-in  :ecmascript6
    :language-out :ecmascript5
    :closure-defines closure-defines
+   :anon-fn-naming-policy :mapped
    :optimizations :none
    :infer-externs true
    :verbose true
@@ -59,9 +73,9 @@
    :asset-path "/js"
    :modules {:main {:entries #{"uxbox.main"}
                     :output-to "resources/public/js/main.js"}
-             :view {:entries #{"uxbox.view"}
-                    :output-to "resources/public/js/view.js"
-                    }}})
+             ;; :view {:entries #{"uxbox.view"}
+             ;;        :output-to "resources/public/js/view.js"}
+             }})
 
 (def worker-build-options
   {:main 'uxbox.worker
@@ -74,36 +88,42 @@
   (-> (merge default-build-options
              main-build-options
              dist-build-options)
-      (assoc :output-dir "dist/js")
-      (assoc-in [:modules :main :output-to] "dist/js/main.js")
-      (assoc-in [:modules :view :output-to] "dist/js/view.js")))
+      (assoc :output-dir "target/dist/js/")
+      (assoc-in [:modules :main :output-to] "target/dist/js/main.js")
+      #_(assoc-in [:modules :view :output-to] "target/dist/js/view.js")))
 
-(def main-dbg-dist-build-options
-  (merge main-dist-build-options
-         {:optimizations :advanced
-          :pseudo-names true
-          :pretty-print true}))
+(def main-dist-dbg-build-options
+  (-> (merge main-dist-build-options
+             {:optimizations :advanced
+              :pseudo-names true
+              :pretty-print true})
+      (assoc :output-dir "target/dist/dbg/js/")
+      (assoc-in [:modules :main :output-to] "target/dist/dbg/js/main.js")
+      #_(assoc-in [:modules :view :output-to] "target/dist/dbg/js/view.js")))
 
 (def worker-dist-build-options
   (merge default-build-options
          worker-build-options
          dist-build-options
-         {:output-to "dist/js/worker.js"
-          :output-dir "dist/js/worker"
-          :source-map "dist/js/worker.js.map"}))
+         {:output-to  "target/dist/js/worker.js"
+          :output-dir "target/dist/js/worker"
+          :source-map "target/dist/js/worker.js.map"}))
 
-(def worker-dbg-dist-build-options
+(def worker-dist-dbg-build-options
   (merge worker-dist-build-options
          {:optimizations :advanced
           :pseudo-names true
-          :pretty-print true}))
+          :pretty-print true
+          :output-to  "target/dist/dbg/js/worker.js"
+          :output-dir "target/dist/dbg/js/worker"
+          :source-map "target/dist/dbg/js/worker.js.map"}))
 
 ;; --- Tasks Definitions
 
 (defmethod task "dist:main"
   [args]
   (let [cfg main-dist-build-options]
-    (pprint cfg)
+    ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
 (defmethod task "dist:worker"
@@ -112,27 +132,24 @@
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
-(defmethod task "dbg-dist:main"
+(defmethod task "dist-dbg:main"
   [args]
-  (let [cfg main-dbg-dist-build-options]
+  (let [cfg main-dist-dbg-build-options]
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
-(defmethod task "dbg-dist:worker"
+(defmethod task "dist-dbg:worker"
   [args]
-  (let [cfg worker-dbg-dist-build-options]
+  (let [cfg worker-dist-dbg-build-options]
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
 (defmethod task "dist:all"
   [args]
   (task ["dist:main"])
-  (task ["dist:worker"]))
-
-(defmethod task "dbg-dist:all"
-  [args]
-  (task ["dbg-dist:main"])
-  (task ["dbg-dist:worker"]))
+  (task ["dist:worker"])
+  (task ["dist-dbg:main"])
+  (task ["dist-dbg:worker"]))
 
 (defmethod task "repl:node"
   [args]
@@ -197,6 +214,7 @@
    :pprint-config false
    :load-warninged-code false
    :auto-testing false
+   :reload-dependents true
    :reload-clj-files true
    :css-dirs ["resources/public/css"]
    :ring-server-options {:port 3449 :host "0.0.0.0"}

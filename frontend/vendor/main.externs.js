@@ -49,5 +49,8 @@ var TopLevel = {
   "result": function() {},
   "readAsText": function() {},
   "src": function() {},
-  "readAsDataURL": function() {}
+  "readAsDataURL": function() {},
+  "crypto": {
+    "getRandomValues": function() {}
+  }
 };

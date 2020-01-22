@@ -1,0 +1,91 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+.settings-bar {
+  background-color: $primary-ui-bg;
+  bottom: 0;
+  height: 100%;
+  position: fixed;
+  right: 0;
+  width: 230px;
+  z-index: 10;
+
+  &.settings-bar-left {
+    left: 0
+  }
+
+  .settings-bar-inside {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 50px;
+    height: 100%;
+
+    .tool-window {
+      border-bottom: 1px solid $medium-ui-border;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      width: 100%;
+
+      .tool-window-bar {
+        align-items: center;
+        border-bottom: 1px solid $medium-ui-border;
+        display: flex;
+        flex-shrink: 0;
+        padding: 2px $x-small;
+
+        svg {
+          fill: $intense-ui-icons;
+          height: 12px;
+          width: 12px;
+        }
+
+        span {
+          color: $intense-ui-text;
+          font-weight: bold;
+        }
+
+        .tool-window-icon {
+          margin-right: $small;
+        }
+
+        .tool-window-close {
+          cursor: pointer;
+          margin-left: auto;
+          transform: rotate(45deg);
+
+          &:hover {
+
+            svg {
+              fill: $color-danger;
+            }
+
+          }
+
+        }
+
+      }
+
+      .tool-window-content {
+        display: flex;
+        flex-wrap: wrap;
+        overflow-y: auto;
+        padding-bottom: $medium;
+      }
+
+      &#layers {
+        padding-bottom: 30px;
+      }
+
+    }
+
+  }
+
+}

@@ -18,7 +18,7 @@
 
 ;; --- Delete Projects
 
-(def ^:private clean-deleted-projects-sql
+(def sql:remove-deleted-projects
   "DELETE FROM projects
     WHERE deleted_at is not null
       AND (now()-deleted_at)::interval > '10 day'::interval
@@ -28,10 +28,11 @@
   "Clean deleted projects."
   [opts]
   (db/with-atomic [conn db/pool]
-    (-> (db/query-one conn clean-deleted-projects-sql)
+    (-> (db/query-one conn sql:remove-deleted-projects)
         (p/then (constantly nil)))))
 
 (defstate projects-cleaner-task
-  :start (uj/schedule! system #'clean-deleted-projects {::uj/interval 3600000})) ;; 1h
+  :start (uj/schedule! system #'clean-deleted-projects
+                       {::uj/interval 3600000})) ;; 1h
 
 

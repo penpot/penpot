@@ -9,7 +9,7 @@
    [beicon.core :as rx]
    [clojure.set :as set]
    [potok.core :as ptk]
-   [uxbox.main.repo.core :as rp]
+   [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.util.color :as color]
    [uxbox.util.i18n :refer [tr]]
@@ -17,20 +17,13 @@
    [uxbox.util.time :as dt]
    [uxbox.util.uuid :as uuid]))
 
+;; TODO: need a good refactor
+
 ;; --- Initialize
 
 (declare fetch-collections)
 (declare persist-collections)
 (declare collections-fetched?)
-
-(defrecord Initialize []
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:dashboard :colors] {:selected #{}})))
-
-(defn initialize
-  []
-  (Initialize.))
 
 ;; --- Collections Fetched
 
@@ -56,7 +49,7 @@
 (defrecord FetchCollections []
   ptk/WatchEvent
   (watch [_ state s]
-    (->> (rp/query! :kvstore-entry {:key "color-collections"})
+    (->> (rp/query! :user-attr {:key "color-collections"})
          (rx/map collections-fetched)
          (rx/catch (fn [{:keys [type] :as error}]
                      (if (= type :not-found)
@@ -86,7 +79,7 @@
 
 (defn create-collection
   []
-  (let [id (uuid/random)]
+  (let [id (uuid/next)]
     (CreateCollection. id)))
 
 ;; --- Persist Collections
@@ -99,10 +92,9 @@
           version (or (get state ::version) -1)
           value (->> (get state :colors-collections)
                      (into {} xform))
-          data {:id "color-collections"
-                :version version
-                :value value}]
-      (->> (rp/mutation! :upsert-kvstore data)
+          data {:key "color-collections"
+                :val value}]
+      (->> (rp/mutation! :upsert-user-attr data)
            (rx/map collections-fetched)))))
 
 (defn persist-collections

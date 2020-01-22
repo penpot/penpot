@@ -18,13 +18,13 @@
    [datoteka.storages :as st]
    [datoteka.core :as fs]
    [uxbox.config]
+   [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.http]
    [uxbox.migrations]
    [uxbox.media :as media]
    [uxbox.util.svg :as svg]
    [uxbox.util.transit :as t]
-   [uxbox.util.spec :as us]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.data :as data])
@@ -56,7 +56,7 @@
   [conn {:keys [name] :as item}]
   (log/info "Creating or updating icons collection:" name)
   (let [id (uuid/namespaced +icons-uuid-ns+ name)
-        sql "insert into icons_collections (id, user_id, name)
+        sql "insert into icon_collections (id, user_id, name)
              values ($1, '00000000-0000-0000-0000-000000000000'::uuid, $2)
                  on conflict (id)
                  do update set name = $2
@@ -122,8 +122,8 @@
   "Create or replace image collection by its name."
   [conn {:keys [name] :as item}]
   (log/info "Creating or updating image collection:" name)
-  (let [id (uuid/namespaced +icons-uuid-ns+ name)
-        sql "insert into images_collections (id, user_id, name)
+  (let [id (uuid/namespaced +images-uuid-ns+ name)
+        sql "insert into image_collections (id, user_id, name)
              values ($1, '00000000-0000-0000-0000-000000000000'::uuid, $2)
                  on conflict (id)
                  do update set name = $2

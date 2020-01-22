@@ -12,11 +12,11 @@
    [rumext.alpha :as mf]
    [uxbox.main.constants :as c]
    [uxbox.main.data.history :as udh]
-   [uxbox.main.data.pages :as udp]
    [uxbox.main.data.undo :as udu]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.streams :as ms]
    [uxbox.main.ui.confirm]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.messages :refer [messages-widget]]
@@ -30,7 +30,6 @@
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
-   [uxbox.main.ui.workspace.streams :as uws]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
@@ -43,7 +42,7 @@
   (let [target (.-target event)
         top (.-scrollTop target)
         left (.-scrollLeft target)]
-    (st/emit! (uws/scroll-event (gpt/point left top)))))
+    (st/emit! (ms/->ScrollEvent (gpt/point left top)))))
 
 (defn- on-wheel
   [event canvas]
@@ -51,17 +50,18 @@
     (let [prev-zoom @refs/selected-zoom
           dom (mf/ref-node canvas)
           scroll-position (scroll/get-current-position-absolute dom)
-          mouse-point @uws/mouse-position]
+          mouse-point @ms/mouse-position]
       (dom/prevent-default event)
       (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
-        (st/emit! (udw/decrease-zoom))
-        (st/emit! (udw/increase-zoom)))
+        (st/emit! (dw/decrease-zoom))
+        (st/emit! (dw/increase-zoom)))
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
-  [{:keys [layout page file] :as params}]
+  [{:keys [page file flags] :as params}]
   (let [canvas (mf/use-ref nil)
+        layout (mf/deref refs/workspace-layout)
         left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep layout [:icons :drawtools
@@ -69,6 +69,9 @@
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?))]
+    [:*
+     (when (:colorpalette layout)
+       [:& colorpalette])
 
      [:main.main-content
       [:section.workspace-content
@@ -91,31 +94,34 @@
       (when left-sidebar?
         [:& left-sidebar {:file file :page page :layout layout}])
       (when right-sidebar?
-        [:& right-sidebar {:page page :layout layout}])]))
+        [:& right-sidebar {:page page :layout layout}])]]))
 
 (mf/defc workspace
   [{:keys [file-id page-id] :as props}]
+  (mf/use-effect
+   {:deps (mf/deps file-id page-id)
+    :fn (fn []
+          (st/emit! (dw/initialize file-id page-id))
+          #(st/emit! (dw/finalize file-id page-id)))})
 
   (mf/use-effect
-   {:deps #js [file-id page-id]
+   {:deps (mf/deps file-id)
+    :fn (fn []
+          (st/emit! (dw/initialize-ws file-id))
+          #(st/emit! (dw/finalize-ws file-id)))})
+
+  (mf/use-effect
+   {:deps (mf/deps file-id page-id)
     :fn (fn []
           (let [sub (shortcuts/init)]
-            (st/emit! (udw/initialize file-id page-id))
             #(rx/cancel! sub)))})
 
-  (let [layout (mf/deref refs/workspace-layout)
-        file   (mf/deref refs/workspace-file)
-        page   (mf/deref refs/workspace-page)
-        flags  (mf/deref refs/selected-flags)]
-
+  (let [file (mf/deref refs/workspace-file)
+        page (mf/deref refs/workspace-page)]
     [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
-     [:& header {:page page :layout layout :flags flags}]
+     [:& header {:page page}]
 
-     (when (:colorpalette flags)
-       [:& colorpalette])
-
-     (when (and layout page)
-       [:& workspace-content {:layout layout
-                              :file file
+     (when page
+       [:& workspace-content {:file file
                               :page page}])]))

@@ -1,0 +1,75 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+// Colors
+$color-white: #ffffff;
+$color-black: #000000;
+$color-gray: #90969d;
+
+// Main color
+$color-primary: #78dbbe;
+
+// Secondary colors
+$color-success: #b6dd75;
+$color-complete : #a599c6;
+$color-warning: #e6a16f;
+$color-danger: #de4762;
+$color-info: #59b9e2;
+
+// Mixing Color varriable for creating both light and dark colors
+$mix-percentage-dark: 81%;
+$mix-percentage-darker: 60%;
+$mix-percentage-light: 80%;
+$mix-percentage-lighter: 20%;
+
+// Gray scale
+$color-gray-light: mix($color-gray, $color-white, $mix-percentage-light);
+$color-gray-lighter: mix($color-gray, $color-white, $mix-percentage-lighter);
+$color-gray-dark: mix($color-gray, $color-black, $mix-percentage-dark);
+$color-gray-darker: mix($color-gray, $color-black, $mix-percentage-darker);
+
+// Lighter colors
+$color-success-light: mix($color-success, $color-white, $mix-percentage-light);
+$color-success-lighter: mix($color-success, $color-white, $mix-percentage-lighter);
+
+$color-complete-light: mix($color-complete, $color-white, $mix-percentage-light);
+$color-complete-lighter: mix($color-complete, $color-white, $mix-percentage-lighter);
+
+$color-primary-light: mix($color-primary, $color-white, $mix-percentage-light);
+$color-primary-lighter: mix($color-primary, $color-white, $mix-percentage-lighter);
+
+$color-warning-light: mix($color-warning, $color-white, $mix-percentage-light);
+$color-warning-lighter: mix($color-warning, $color-white, $mix-percentage-lighter);
+
+$color-danger-light: mix($color-danger, $color-white, $mix-percentage-light);
+$color-danger-lighter: mix($color-danger, $color-white, $mix-percentage-lighter);
+
+$color-info-light: mix($color-info, $color-white, $mix-percentage-light);
+$color-info-lighter: mix($color-info, $color-white, $mix-percentage-lighter);
+
+// Darker colors
+$color-success-dark: mix($color-success, $color-black, $mix-percentage-dark);
+$color-success-darker: mix($color-success, $color-black, $mix-percentage-darker);
+
+$color-complete-dark: mix($color-complete, $color-black, $mix-percentage-dark);
+$color-complete-darker: mix($color-complete, $color-black, $mix-percentage-darker);
+
+$color-primary-dark: mix($color-primary, $color-black, $mix-percentage-dark);
+$color-primary-darker: mix($color-primary, $color-black, $mix-percentage-darker);
+
+$color-warning-dark: mix($color-warning, $color-black, $mix-percentage-dark);
+$color-warning-darker: mix($color-warning, $color-black, $mix-percentage-darker);
+
+$color-danger-dark: mix($color-danger, $color-black, $mix-percentage-dark);
+$color-danger-darker: mix($color-danger, $color-black, $mix-percentage-darker);
+
+$color-info-dark: mix($color-info, $color-black, $mix-percentage-dark);
+$color-info-darker: mix($color-info, $color-black, $mix-percentage-darker);
+
+// bg transparent
+$color-dark-bg: rgba(0,0,0,.4);
+$color-light-bg: rgba(255,255,255,.6);
