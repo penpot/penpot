@@ -11,7 +11,7 @@
    [cognitect.transit :as t])
   (:import java.time.Instant
            java.time.OffsetDateTime
-           java.sql.Timestamp))
+           java.time.Duration))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Serialization Layer conversions
@@ -41,24 +41,6 @@
   {Instant instant-write-handler
    OffsetDateTime offset-datetime-write-handler})
 
-;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ;; Persistence Layer Conversions
-;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (extend-protocol sp/IParam
-;;   Instant
-;;   (-param [self ctx]
-;;     (si/sql->param "{0}::timestamptz" (.toString self))))
-
-;; (extend-protocol sp/ISQLType
-;;   Timestamp
-;;   (-convert [self]
-;;     (.toInstant self))
-
-;;   java.time.OffsetDateTime
-;;   (-convert [self]
-;;     (.toInstant self)))
-
 (defmethod print-method Instant
   [mv ^java.io.Writer writer]
   (.write writer (str "#instant \"" (.toString mv) "\"")))
@@ -78,3 +60,34 @@
 (defn now
   []
   (Instant/now))
+
+(defn- obj->duration
+  [{:keys [days minutes seconds hours nanos millis]}]
+  (cond-> (Duration/ofMillis (if (int? millis) ^long millis 0))
+    (int? days) (.plusDays ^long days)
+    (int? hours) (.plusHours ^long hours)
+    (int? minutes) (.plusMinutes ^long minutes)
+    (int? seconds) (.plusSeconds ^long seconds)
+    (int? nanos) (.plusNanos ^long nanos)))
+
+(defn duration?
+  [v]
+  (instance? Duration v))
+
+(defn duration
+  [ms-or-obj]
+  (cond
+    (duration? ms-or-obj)
+    ms-or-obj
+
+    (integer? ms-or-obj)
+    (Duration/ofMillis ms-or-obj)
+
+    :else
+    (obj->duration ms-or-obj)))
+
+(extend-protocol clojure.core/Inst
+  java.time.Duration
+  (inst-ms* [v] (.toMillis ^java.time.Duration v)))
+
+
