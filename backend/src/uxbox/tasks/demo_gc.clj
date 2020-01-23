@@ -5,20 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.main
+(ns uxbox.tasks.demo-gc
+  "Demo accounts garbage collector."
   (:require
-   [mount.core :as mount]
-   [uxbox.config :as cfg]
-   [uxbox.migrations]
-   [uxbox.db]
-   [uxbox.http]
-   #_[uxbox.scheduled-jobs])
-  (:gen-class))
+   [clojure.tools.logging :as log]))
 
-;; --- Entry point
+;; TODO
 
-(defn -main
-  [& args]
-  (mount/start))
+(defn handler
+  {:uxbox.tasks/name "demo-gc"}
+  [{:keys [props] :as task}]
+  )

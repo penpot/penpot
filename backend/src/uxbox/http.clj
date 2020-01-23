@@ -9,8 +9,8 @@
    [clojure.tools.logging :as log]
    [mount.core :as mount :refer [defstate]]
    [promesa.core :as p]
-   [uxbox.config :as cfg]
    [uxbox.core :refer [system]]
+   [uxbox.config :as cfg]
    [uxbox.http.errors :as errors]
    [uxbox.http.interceptors :as interceptors]
    [uxbox.http.session :as session]
@@ -22,13 +22,6 @@
    [vertx.http :as vh]
    [vertx.web :as vw]
    [vertx.web.interceptors :as vxi]))
-
-(declare login-handler)
-(declare logout-handler)
-(declare register-handler)
-(declare mutation-handler)
-(declare query-handler)
-(declare echo-handler)
 
 (defn- on-start
   [ctx]
@@ -78,9 +71,11 @@
     (vh/server ctx {:handler handler
                     :port (:http-server-port cfg/config)})))
 
-(defstate instances
-  :start (.availableProcessors (Runtime/getRuntime)))
+(def num-cpus
+  (delay (.availableProcessors (Runtime/getRuntime))))
 
 (defstate server
-  :start (let [factory (vc/verticle {:on-start on-start})]
-           @(vc/deploy! system factory {:instances instances})))
+  :start (let [vf (vc/verticle {:on-start on-start})]
+           @(vc/deploy! system vf {:instances @num-cpus})))
+
+

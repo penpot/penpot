@@ -13,9 +13,9 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
+   [uxbox.tasks :as tasks]
    [uxbox.media :as media]
-   [uxbox.util.emails :as emails]
-   [uxbox.util.blob :as blob]))
+   [uxbox.util.emails :as emails]))
 
 ;; --- Defaults
 
@@ -33,19 +33,17 @@
 
 (defn send!
   "Schedule the email for sending."
-  [email context]
-  (us/assert fn? email)
-  (us/assert map? context)
-  (let [defaults {:from (:email-from cfg/config)
-                  :reply-to (:email-reply-to cfg/config)}
-        data (->> (merge defaults context)
-                  (email)
-                  (blob/encode))
-        priority (case (:priority context :high) :low 1 :high 10)
-        sql "insert into email_queue (data, priority)
-             values ($1, $2) returning *"]
-    (-> (db/query-one db/pool [sql data priority])
-        (p/then' (constantly nil)))))
+  ([email context] (send! db/pool email context))
+  ([conn email context]
+   (us/assert fn? email)
+   (us/assert map? context)
+   (let [defaults {:from (:email-from cfg/config)
+                   :reply-to (:email-reply-to cfg/config)}
+         data (->> (merge defaults context)
+                   (email))]
+     (tasks/schedule! conn {:name "sendmail"
+                            :delay 0
+                            :props data}))))
 
 ;; --- Emails
 
