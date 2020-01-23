@@ -3,9 +3,9 @@
   funcool/promesa {:mvn/version "5.0.0"}
   metosin/reitit-core {:mvn/version "0.3.10"}
   metosin/sieppari {:mvn/version "0.0.0-alpha8"}
-  io.vertx/vertx-core {:mvn/version "3.8.4"}
-  io.vertx/vertx-web {:mvn/version "3.8.4"}
-  io.vertx/vertx-web-client {:mvn/version "3.8.4"}}
+  io.vertx/vertx-core {:mvn/version "4.0.0-milestone4"}
+  io.vertx/vertx-web {:mvn/version "4.0.0-milestone4"}
+  io.vertx/vertx-web-client {:mvn/version "4.0.0-milestone4"}}
  :paths ["src" "resources"]
  :aliases
  {:dev
