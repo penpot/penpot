@@ -15,8 +15,7 @@
    [uxbox.core :refer [system]]
    [uxbox.util.data :as data]
    [uxbox.util.pgsql :as pg]
-   [vertx.core :as vx])
-  (:import io.vertx.core.buffer.Buffer))
+   [vertx.core :as vx]))
 
 (defn- create-pool
   [config system]
@@ -28,7 +27,7 @@
                   (assoc :password password)
                   (str))]
     (log/info "creating connection pool with" dburi)
-    (pg/tl-pool dburi {:system system})))
+    (pg/pool dburi {:system system :max-size 8})))
 
 (defstate pool
   :start (create-pool cfg/config system))
