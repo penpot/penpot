@@ -36,7 +36,6 @@
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
   org.jsoup/jsoup {:mvn/version "1.12.1"}
-  hiccup/hiccup {:mvn/version "1.0.5"}
   org.im4java/im4java {:mvn/version "1.4.0"}
 
   org.xerial.snappy/snappy-java {:mvn/version "1.1.7.3"}
@@ -65,7 +64,7 @@
   {:main-opts  ["-m" "rebel-readline.main"]}
 
   :tests
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-565"}}
+  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-581"}}
    :main-opts ["-m" "kaocha.runner"]}
 
   :ancient
