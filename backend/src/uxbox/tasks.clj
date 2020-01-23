@@ -40,11 +40,16 @@
 
 ;; --- State initialization
 
+;; TODO: missing self maintanance task; when the queue table is full
+;; of completed/failed task, the performance starts degrading
+;; linearly, so after some arbitrary number of tasks is processed, we
+;; need to perform a maintenance and delete some old tasks.
+
 (def ^:private tasks
   [#'uxbox.tasks.demo-gc/handler
    #'uxbox.tasks.sendmail/handler])
 
-(defstate tasks
-  :start (as-> (impl/verticle tasks) $$
+(defstate small-tasks
+  :start (as-> (impl/verticle {:tasks tasks :queue "default"}) $$
            (vc/deploy! system $$ {:instances 1})
            (deref $$)))

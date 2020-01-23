@@ -17,4 +17,5 @@
 (defn handler
   {:uxbox.tasks/name "demo-gc"}
   [{:keys [props] :as task}]
+  (prn "debug" props)
   )
