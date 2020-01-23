@@ -26,18 +26,15 @@
     {:desc "Initial projects tables"
      :name "0003-projects"
      :fn (mg/resource "migrations/0003.projects.sql")}
-    {:desc "Initial emails related tables"
-     :name "0004-emails"
-     :fn (mg/resource "migrations/0004.emails.sql")}
+    {:desc "Initial tasks related tables"
+     :name "0004-tasks"
+     :fn (mg/resource "migrations/0004.tasks.sql")}
     {:desc "Initial images tables"
      :name "0005-images"
      :fn (mg/resource "migrations/0005.images.sql")}
     {:desc "Initial icons tables"
      :name "0006-icons"
      :fn (mg/resource "migrations/0006.icons.sql")}
-    {:desc "Initial tasks tables"
-     :name "0007-tasks"
-     :fn (mg/resource "migrations/0007.tasks.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
