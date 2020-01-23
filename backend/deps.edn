@@ -19,7 +19,7 @@
   com.cognitect/transit-clj {:mvn/version "0.8.319"}
 
   ;; TODO: vendorize pgclient under `vertx-clojure/vertx-pgclient`
-  io.vertx/vertx-pg-client {:mvn/version "3.8.4"}
+  io.vertx/vertx-pg-client {:mvn/version "4.0.0-milestone4"}
 
   vertx-clojure/vertx
   {:local/root "vendor/vertx"
