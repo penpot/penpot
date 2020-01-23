@@ -32,9 +32,13 @@
    [uxbox.util.uuid :as uuid]
    [vertx.core :as vc]))
 
-(def sql:create-demo-user
+(def sql:insert-user
   "insert into users (id, fullname, username, email, password, photo, is_demo)
    values ($1, $2, $3, $4, $5, '', true) returning *")
+
+(def sql:insert-email
+  "insert into user_emails (user_id, email, is_main)
+   values ($1, $2, true)")
 
 (sm/defmutation ::create-demo-profile
   [params]
@@ -47,6 +51,7 @@
                      (sodi.util/bytes->b64s))
         password' (sodi.pwhash/derive password)]
     (db/with-atomic [conn db/pool]
-      (db/query-one conn [sql:create-demo-user id fullname username email password'])
+      (db/query-one conn [sql:insert-user id fullname username email password'])
+      (db/query-one conn [sql:insert-email id email])
       {:username username
        :password password})))
