@@ -26,10 +26,6 @@
 (declare build-actor)
 (declare build-disposable)
 
-;; --- Protocols
-
-(definterface IVerticleFactory)
-
 ;; --- Public Api
 
 (s/def :vertx.core$system/threads pos?)
@@ -61,6 +57,7 @@
   promise execution chain."
   ([prm] (handle-on-context prm (current-context)))
   ([prm ctx]
+   (assert (instance? Context ctx) "`ctx` should be a valid Context instance")
    (let [d (p/deferred)]
      (p/finally prm (fn [v e]
                       (.runOnContext
@@ -71,6 +68,14 @@
                                       (p/reject! d e)
                                       (p/resolve! d v)))))))
      d)))
+
+(defn run-on-context
+  [ctx f]
+  (.runOnContext
+   ^Context ctx
+   ^Handler (reify Handler
+              (handle [_ v']
+                (f ctx)))))
 
 (s/def :vertx.core$verticle/on-start fn?)
 (s/def :vertx.core$verticle/on-stop fn?)
@@ -84,15 +89,15 @@
   "Creates a verticle instance (factory)."
   [options]
   (s/assert ::verticle-options options)
+  ^{::verticle true ::options options}
   (reify
-    IVerticleFactory
     Supplier
     (get [_] (build-verticle options))))
 
 (defn verticle?
   "Return `true` if `v` is instance of `IVerticleFactory`."
   [v]
-  (instance? IVerticleFactory v))
+  (true? (::verticle (meta v))))
 
 (s/def :vertx.core$actor/on-message fn?)
 (s/def ::actor-options
@@ -107,8 +112,8 @@
   [topic options]
   (s/assert string? topic)
   (s/assert ::actor-options options)
+  ^{::verticle true ::options options ::topic topic}
   (reify
-    IVerticleFactory
     Supplier
     (get [_] (build-actor topic options))))
 
@@ -149,7 +154,8 @@
 (defn- build-verticle
   [{:keys [on-start on-stop on-error]
     :or {on-error (constantly nil)
-         on-stop (constantly nil)}}]
+         on-stop (constantly nil)}
+    :as options}]
   (let [vsm (volatile! nil)
         ctx (volatile! nil)
         lst (volatile! nil)]
@@ -212,9 +218,10 @@
     opts))
 
 (defn- opts->vertx-options
-  [{:keys [threads on-error]}]
+  [{:keys [threads worker-threads on-error]}]
   (let [opts (VertxOptions.)]
     (when threads (.setEventLoopPoolSize opts (int threads)))
+    (when worker-threads (.setWorkerPoolSize opts (int worker-threads)))
     (when on-error (.exceptionHandler (vu/fn->handler on-error)))
     opts))
 
