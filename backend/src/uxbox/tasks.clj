@@ -26,16 +26,9 @@
 
 ;; --- Public API
 
-(s/def ::name ::us/string)
-(s/def ::delay ::us/integer)
-(s/def ::props map?)
-(s/def ::task-spec
-  (s/keys :req-un [::name ::delay] :opt-un [::props]))
-
 (defn schedule!
   ([task] (schedule! db/pool task))
   ([conn task]
-   (us/assert ::task-spec task)
    (impl/schedule! conn task)))
 
 ;; --- State initialization
@@ -50,6 +43,6 @@
    #'uxbox.tasks.sendmail/handler])
 
 (defstate small-tasks
-  :start (as-> (impl/verticle {:tasks tasks :queue "default"}) $$
+  :start (as-> (impl/verticle tasks {:queue "default"}) $$
            (vc/deploy! system $$ {:instances 1})
            (deref $$)))

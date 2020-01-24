@@ -10,12 +10,12 @@
 (ns uxbox.tasks.demo-gc
   "Demo accounts garbage collector."
   (:require
-   [clojure.tools.logging :as log]))
-
-;; TODO
+   [clojure.tools.logging :as log]
+   [uxbox.common.exceptions :as ex]))
 
 (defn handler
   {:uxbox.tasks/name "demo-gc"}
   [{:keys [props] :as task}]
-  (prn "debug" props)
-  )
+  (ex/raise :type :foobar
+            :code :foobaz
+            :hint "Foo bar"))
