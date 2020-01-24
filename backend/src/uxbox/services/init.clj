@@ -24,6 +24,7 @@
 
 (defn- load-mutation-services
   []
+  (require 'uxbox.services.mutations.demo)
   (require 'uxbox.services.mutations.icons)
   (require 'uxbox.services.mutations.images)
   (require 'uxbox.services.mutations.projects)
