@@ -692,12 +692,13 @@
 ;; --- Update Selected Shapes attrs
 
 (defn update-selected-shapes
-  [& attrs]
-  (ptk/reify ::update-selected-shapes-attrs
+  [attrs]
+  (s/assert ::shape-attrs attrs)
+  (ptk/reify ::update-selected-shapes
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])]
-        (rx/from (map #(apply update-shape % attrs) selected))))))
+        (rx/from (map #(update-shape % attrs) selected))))))
 
 ;; --- Shape Movement (using keyboard shorcuts)
 
