@@ -62,12 +62,12 @@
 
 (defn absolute-move
   "Move the shape to the exactly specified position."
-  [shape point]
+  [shape position]
   (case (:type shape)
-    :icon (absolute-move-rect shape point)
-    :image (absolute-move-rect shape point)
-    :rect (absolute-move-rect shape point)
-    :circle (absolute-move-circle shape point)))
+    :icon (absolute-move-rect shape position)
+    :image (absolute-move-rect shape position)
+    :rect (absolute-move-rect shape position)
+    :circle (absolute-move-circle shape position)))
 
 (defn- absolute-move-rect
   "A specialized function for absolute moviment

@@ -43,9 +43,8 @@
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-integer))
-                point (gpt/point {attr value})]
-            (st/emit! (udw/update-position (:id shape) point))))
+                          (d/parse-integer))]
+            (st/emit! (udw/update-position (:id shape) {attr value}))))
 
         on-rotation-change
         (fn [event]

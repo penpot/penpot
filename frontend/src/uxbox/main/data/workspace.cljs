@@ -1083,14 +1083,20 @@
 
 ;; --- Update Shape Position
 
+(s/def ::x number?)
+(s/def ::y number?)
+(s/def ::position
+  (s/keys :opt-un [::x ::y]))
+
 (defn update-position
-  [id point]
+  [id position]
   (us/assert ::us/uuid id)
-  (us/assert gpt/point? point)
+  (us/assert ::position position)
   (ptk/reify ::update-position
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-data :shapes-by-id id] geom/absolute-move point))))
+      (update-in state [:workspace-data :shapes-by-id id]
+                 geom/absolute-move position))))
 
 ;; --- Path Modifications
 
