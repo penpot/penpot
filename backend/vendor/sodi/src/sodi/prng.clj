@@ -34,5 +34,5 @@
   [^long numbytes]
   (let [buffer (ByteBuffer/allocate numbytes)]
     (.putLong buffer (System/currentTimeMillis))
-    (.put buffer (random-bytes (.remaining buffer) rng))
+    (.put buffer (random-bytes (.remaining buffer)))
     (.array buffer)))
