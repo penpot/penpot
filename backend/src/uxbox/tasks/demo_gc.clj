@@ -16,6 +16,5 @@
 (defn handler
   {:uxbox.tasks/name "demo-gc"}
   [{:keys [props] :as task}]
-  (ex/raise :type :foobar
-            :code :foobaz
-            :hint "Foo bar"))
+  (Thread/sleep 500)
+  (prn (.getName (Thread/currentThread)) "demo-gc" (:id task) (:props task)))

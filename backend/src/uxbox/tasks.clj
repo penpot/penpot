@@ -39,10 +39,21 @@
 ;; need to perform a maintenance and delete some old tasks.
 
 (def ^:private tasks
-  [#'uxbox.tasks.demo-gc/handler
-   #'uxbox.tasks.sendmail/handler])
+  {"demo-gc" #'uxbox.tasks.demo-gc/handler
+   "sendmail" #'uxbox.tasks.sendmail/handler})
 
-(defstate small-tasks
-  :start (as-> (impl/verticle tasks {:queue "default"}) $$
+(defstate tasks-worker
+  :start (as-> (impl/worker-verticle {:tasks tasks}) $$
            (vc/deploy! system $$ {:instances 1})
+           (deref $$)))
+
+(def ^:private schedule
+  [{:id "every 1 hour"
+    :cron #uxbox/cron "1 1 */1 * * ? *"
+    :fn #'uxbox.tasks.demo-gc/handler
+    :props {:foo "bar"}}])
+
+(defstate scheduler
+  :start (as-> (impl/scheduler-verticle {:schedule schedule}) $$
+           (vc/deploy! system $$ {:instances 1 :worker true})
            (deref $$)))

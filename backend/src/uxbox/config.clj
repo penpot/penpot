@@ -31,8 +31,6 @@
           (log/warn (str/istr "can't parse `~{key}` env value"))
           default)))))
 
-
-
 ;; --- Configuration Loading & Parsing
 
 (defn read-config

@@ -29,7 +29,7 @@ CREATE INDEX users__is_demo
    AND is_demo IS true;
 
 --- Table used for register all used emails by the user
-CREATE TABLE IF NOT EXISTS user_emails (
+CREATE TABLE user_emails (
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -46,7 +46,7 @@ CREATE INDEX user_emails__user_id__idx
 
 --- Table for user key value attributes
 
-CREATE TABLE IF NOT EXISTS user_attrs (
+CREATE TABLE user_attrs (
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS user_attrs (
 
 --- Table for store verification tokens
 
-CREATE TABLE IF NOT EXISTS tokens (
+CREATE TABLE tokens (
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token text NOT NULL,
 
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS tokens (
 
 --- Table for store user sessions.
 
-CREATE TABLE IF NOT EXISTS sessions (
+CREATE TABLE sessions (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),

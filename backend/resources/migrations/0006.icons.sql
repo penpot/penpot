@@ -1,6 +1,6 @@
 -- Tables
 
-CREATE TABLE IF NOT EXISTS icon_collections (
+CREATE TABLE icon_collections (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS icon_collections (
   name text NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS icons (
+CREATE TABLE icons (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 

@@ -1,6 +1,6 @@
 -- Tables
 
-CREATE TABLE IF NOT EXISTS projects (
+CREATE TABLE projects (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
@@ -11,7 +11,10 @@ CREATE TABLE IF NOT EXISTS projects (
   name text NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS project_users (
+CREATE INDEX projects__user_id__idx
+    ON projects(user_id);
+
+CREATE TABLE project_users (
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
 
@@ -23,7 +26,13 @@ CREATE TABLE IF NOT EXISTS project_users (
   PRIMARY KEY (user_id, project_id)
 );
 
-CREATE TABLE IF NOT EXISTS project_files (
+CREATE INDEX project_users__user_id__idx
+    ON project_users(user_id);
+
+CREATE INDEX project_users__project_id__idx
+    ON project_users(project_id);
+
+CREATE TABLE project_files (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -35,7 +44,26 @@ CREATE TABLE IF NOT EXISTS project_files (
   deleted_at timestamptz DEFAULT NULL
 );
 
-CREATE TABLE IF NOT EXISTS project_file_users (
+CREATE INDEX project_files__user_id__idx
+    ON project_files(user_id);
+
+CREATE INDEX project_files__project_id__idx
+    ON project_files(project_id);
+
+CREATE TABLE project_file_media (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  file_id uuid NOT NULL REFERENCES project_files(id) ON DELETE CASCADE,
+
+  type text NOT NULL,
+  path text NOT NULL,
+
+  metadata bytea NULL DEFAULT NULL
+);
+
+CREATE INDEX project_file_media__file_id__idx
+    ON project_file_media(file_id);
+
+CREATE TABLE project_file_users (
   file_id uuid NOT NULL REFERENCES project_files(id) ON DELETE CASCADE,
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
@@ -47,7 +75,13 @@ CREATE TABLE IF NOT EXISTS project_file_users (
   PRIMARY KEY (user_id, file_id)
 );
 
-CREATE TABLE IF NOT EXISTS project_pages (
+CREATE INDEX project_file_users__user_id__idx
+    ON project_file_users(user_id);
+
+CREATE INDEX project_file_users__file_id__idx
+    ON project_file_users(file_id);
+
+CREATE TABLE project_pages (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -64,7 +98,13 @@ CREATE TABLE IF NOT EXISTS project_pages (
   data bytea NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS project_page_snapshots (
+CREATE INDEX project_pages__user_id__idx
+    ON project_pages(user_id);
+
+CREATE INDEX project_pages__file_id__idx
+    ON project_pages(file_id);
+
+CREATE TABLE project_page_snapshots (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   user_id uuid NULL REFERENCES users(id) ON DELETE SET NULL,
@@ -81,18 +121,11 @@ CREATE TABLE IF NOT EXISTS project_page_snapshots (
   changes bytea NULL DEFAULT NULL
 );
 
--- Indexes
+CREATE INDEX project_page_snapshots__user_id__idx
+    ON project_page_snapshots(user_id);
 
-CREATE INDEX projects__user_id__idx ON projects(user_id);
-
-CREATE INDEX project_files__user_id__idx ON project_files(user_id);
-CREATE INDEX project_files__project_id__idx ON project_files(project_id);
-
-CREATE INDEX project_pages__user_id__idx ON project_pages(user_id);
-CREATE INDEX project_pages__file_id__idx ON project_pages(file_id);
-
-CREATE INDEX project_page_snapshots__page_id__idx ON project_page_snapshots(page_id);
-CREATE INDEX project_page_snapshots__user_id__idx ON project_page_snapshots(user_id);
+CREATE INDEX project_page_snapshots__page_id_id__idx
+    ON project_page_snapshots(page_id);
 
 -- Triggers
 
