@@ -5,16 +5,17 @@
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns vertx.core
-  (:require [clojure.spec.alpha :as s]
-            [promesa.core :as p]
-            [vertx.eventbus :as vxe]
-            [vertx.util :as vu])
+  (:require
+   [clojure.spec.alpha :as s]
+   [promesa.core :as p]
+   [vertx.eventbus :as vxe]
+   [vertx.util :as vu])
   (:import
+   io.vertx.core.AsyncResult
    io.vertx.core.Context
    io.vertx.core.DeploymentOptions
-   io.vertx.core.Future
-   io.vertx.core.Promise
    io.vertx.core.Handler
+   io.vertx.core.Promise
    io.vertx.core.Verticle
    io.vertx.core.Vertx
    io.vertx.core.VertxOptions
@@ -51,6 +52,27 @@
 (defn current-context
   []
   (Vertx/currentContext))
+
+(defn wrap-blocking
+  ([f] (wrap-blocking (current-context) f))
+  ([ctx f]
+   (let [^Vertx vsm (vu/resolve-system ctx)]
+     (fn [& args]
+       (let [d (p/deferred)]
+         (.executeBlocking
+          vsm
+          (reify Handler
+            (handle [_ prm]
+              (try
+                (.resolve ^Promise prm (apply f args))
+                (catch Throwable e
+                  (.fail ^Promise prm e)))))
+          false
+          (reify Handler
+            (handle [_ ar]
+              (if (.failed ^AsyncResult ar)
+                (p/reject! d (.cause ^AsyncResult ar))
+                (p/resolve! d (.result ^AsyncResult ar)))))))))))
 
 (defn handle-on-context
   "Attaches the context (current if not explicitly provided) to the
