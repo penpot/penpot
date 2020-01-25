@@ -58,19 +58,19 @@
         state  (atom nil)
         taskfn (fn wrapped-task []
                  (-> (p/do! ((::fn opts) opts))
-                     (p/catch' (constantly nil)) ; explicitly ignore all errors
+                     (p/catch' (constantly nil))  ; explicitly ignore all errors
                      (p/then'  (fn [_]            ; the user needs to catch errors
-                                 (when repeat
+                                 (if repeat
                                    (let [tid (schedule-once! vsm delay wrapped-task)]
                                      (reset! state tid)
-                                     nil))))))
-        tid  (schedule-once! vsm delay taskfn)]
-    (reset! state tid)
+                                     nil))
+                                 (do
+                                   (reset! state nil)
+                                   nil)))))
+        tid (reset! state (schedule-once! vsm delay taskfn))]
     (reify
       java.lang.AutoCloseable
       (close [this]
-        (locking this
-          (when-let [timer-id (deref state)]
-            (.cancelTimer system timer-id)
-            (reset! state nil)))))))
+        (when (compare-and-set! state tid nil)
+          (.cancelTimer system tid))))))
 
