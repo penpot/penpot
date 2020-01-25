@@ -155,21 +155,23 @@
       base-uri (assoc ::base-uri (uri base-uri))
       xf (assoc ::xf xf))))
 
-(defn- bytes->sha256
-  [^bytes data]
-  (let [^MessageDigest md (MessageDigest/getInstance "SHA-256")]
-    (.update md data)
-    (.digest md)))
+;; This is don't need to be secure and we dont need to reseed it; the
+;; security guarranties of this prng instance are very low (we only
+;; use it for generate a random path where store the file).
 
-(defn hash-path
+(def ^:private prng
+  (delay
+    (doto (java.security.SecureRandom/getInstance "SHA1PRNG")
+      (.setSeed (sodi.prng/random-bytes 64)))))
+
+(defn random-path
   [^Path path]
   (let [name (str (.getFileName path))
-        hash (-> (sodi.prng/random-nonce 64)
-                 (bytes->sha256)
+        hash (-> (sodi.prng/random-bytes @prng 10)
                  (sodi.util/bytes->b64s))
-        tokens (re-seq #"[\w\d\-\_]{3}" hash)
-        path-tokens (take 6 tokens)
-        rest-tokens (drop 6 tokens)
+        tokens (re-seq #"[\w\d\-\_]{2}" hash)
+        path-tokens (take 3 tokens)
+        rest-tokens (drop 3 tokens)
         path (fs/path path-tokens)
         frest (apply str rest-tokens)]
     (fs/path (list path frest name))))
