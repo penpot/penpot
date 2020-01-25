@@ -21,10 +21,14 @@
   bytes taken from secure random number generator.
   This method should be used to generate a random
   iv/salt or arbitrary length."
-  [^long numbytes]
-  (let [buffer (byte-array numbytes)]
-    (.nextBytes rng buffer)
-    buffer))
+  ([^long numbytes]
+   (let [buffer (byte-array numbytes)]
+     (.nextBytes rng buffer)
+     buffer))
+  ([^SecureRandom rng ^long numbytes]
+   (let [buffer (byte-array numbytes)]
+     (.nextBytes rng buffer)
+     buffer)))
 
 (defn random-nonce
   "Generate a secure nonce based on current time
