@@ -99,7 +99,7 @@
   [{:keys [name path] :as upload}]
   (let [filename (fs/name name)
         storage media/images-storage]
-    (-> (ds/save storage filename path)
+    (-> (ds/save storage filename (fs/path path))
         (su/handle-on-context))))
 
 (def sql:create-image
