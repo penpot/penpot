@@ -80,12 +80,10 @@
     (mf/use-effect
      {:fn #(st/emit! di/fetch-collections)})
 
-    (prn "icons-toolbox")
-
     [:div#form-figures.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/icon-set]
-      [:span (t locale "ds.settings.icons")]
+      [:span (t locale "workspace.sidebar.icons")]
       [:div.tool-window-close #_{:on-click on-close} i/close]]
      [:div.tool-window-content
       [:& icons-collections {:collections collections
@@ -93,44 +91,3 @@
                              :on-change (constantly nil)
                              }]
       [:& icons-list {:collection-id nil}]]]))
-
-
-
-  ;; #_(let [drawing (mx/react drawing-shape-ref)
-  ;;       selected (mx/react icons-toolbox-ref)
-  ;;       colls (mx/react icons/collections-ref)
-  ;;       selected-coll (get colls selected)
-
-  ;;       colls (->> (vals (mx/react icons/collections-ref))
-  ;;                  (sort-by :name))
-  ;;       icons (->> (vals (mx/react icons/icons-ref))
-  ;;                  (filter #(= (:id selected-coll) (:collection %))))]
-  ;;   (letfn [(on-close [event]
-  ;;             (st/emit! (dw/toggle-flag :icons)))
-  ;;           (on-select [icon event]
-  ;;             (st/emit! (dw/select-for-drawing icon)))
-  ;;           (on-change [event]
-  ;;             (let [value (read-string (dom/event->value event))]
-  ;;               (st/emit! (dw/select-for-drawing nil)
-  ;;                         (dw/select-icons-toolbox-collection value))))]
-  ;;     [:div#form-figures.tool-window
-  ;;      [:div.tool-window-bar
-  ;;       [:div.tool-window-icon i/icon-set]
-  ;;       [:span (tr "ds.settings.icons")]
-  ;;       [:div.tool-window-close {:on-click on-close} i/close]]
-  ;;      [:div.tool-window-content
-  ;;       [:div.figures-catalog
-  ;;        ;; extract component: set selector
-  ;;        [:select.input-select.small {:on-change on-change
-  ;;                                     :value (pr-str (:id selected-coll))}
-  ;;         [:option {:value (pr-str nil)} "Storage"]
-  ;;         (for [coll colls]
-  ;;           [:option {:key (str "icon-coll" (:id coll))
-  ;;                     :value (pr-str (:id coll))}
-  ;;            (:name coll)])]]
-  ;;       (for [icon icons
-  ;;             :let [selected? (= drawing icon)]]
-  ;;         [:div.figure-btn {:key (str (:id icon))
-  ;;                           :class (when selected? "selected")
-  ;;                           :on-click (partial on-select icon)}
-  ;;          (icon-wrapper icon)])]])))

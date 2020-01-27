@@ -38,6 +38,7 @@
     :circle i/circle
     :path i/curve
     :rect i/box
+    :curve i/curve
     :text i/text
     nil))
 
@@ -145,7 +146,6 @@
                             :on-click toggle-blocking}
         i/lock]]
       [:& element-icon {:shape shape}]
-      ;; [:div.element-icon (element-icon shape)]
       [:& layer-name {:shape shape}]]]))
 
 (mf/defc canvas-item

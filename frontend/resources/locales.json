@@ -980,6 +980,12 @@
       "fr" : "Couches"
     }
   },
+  "workspace.sidebar.icons" : {
+    "translations" : {
+      "en" : "Icons",
+      "fr" : "Icône"
+    }
+  },
   "workspace.sidebar.sitemap" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:135" ],
     "translations" : {
