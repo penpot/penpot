@@ -39,7 +39,9 @@
   [rows]
   (if (empty? rows)
     rows
-    (p/all (map populate-thumbnail rows))))
+    (vc/blocking
+     (mapv (fn [row]
+             (images/populate-thumbnail row +thumbnail-options+)) rows))))
 
 (defn populate-urls
   [row]

@@ -57,6 +57,30 @@
   []
   (Vertx/currentContext))
 
+(defmacro blocking
+  [& body]
+  `(let [vsm# (-> (current-context)
+                  (vu/resolve-system))
+         d# (p/deferred)]
+     (.executeBlocking
+      vsm#
+      (reify Handler
+        (handle [_ prm#]
+          (try
+            (.complete prm# (do ~@body))
+            (catch Throwable e#
+              (.fail prm# e#)))))
+      true
+      (reify Handler
+        (handle [_ ar#]
+          (if (.failed ^AsyncResult ar#)
+            (p/reject! d# (.cause ^AsyncResult ar#))
+            (p/resolve! d# (.result ^AsyncResult ar#))))))
+     d#))
+
+
+
+
 (defn wrap-blocking
   ([f] (wrap-blocking (current-context) f))
   ([ctx f]
