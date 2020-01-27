@@ -235,7 +235,7 @@
                               :default-value (:name image)}]
         [:h3 {:on-double-click on-edit} (:name image)])
       [:span.date (str (tr "ds.uploaded-at"
-                           (dt/format (:created-at image) "DD/MM/YYYY")))]]]))
+                           (dt/format (:created-at image) "dd/MM/yyyy")))]]]))
 
 ;; --- Grid Form
 
