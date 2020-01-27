@@ -29,17 +29,16 @@
 
 ;; --- Helpers
 
-(defn- element-icon
-  [item]
-  (case (:type item)
-    :icon (icon/icon-svg item)
+(mf/defc element-icon
+  [{:keys [shape] :as props}]
+  (case (:type shape)
+    :icon [:& icon/icon-svg {:shape shape}]
     :image i/image
     :line i/line
     :circle i/circle
     :path i/curve
     :rect i/box
     :text i/text
-    :group i/folder
     nil))
 
 ;; --- Layer Name
@@ -145,7 +144,8 @@
        [:div.block-element {:class (when (:blocked shape) "selected")
                             :on-click toggle-blocking}
         i/lock]]
-      [:div.element-icon (element-icon shape)]
+      [:& element-icon {:shape shape}]
+      ;; [:div.element-icon (element-icon shape)]
       [:& layer-name {:shape shape}]]]))
 
 (mf/defc canvas-item

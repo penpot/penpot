@@ -40,6 +40,7 @@
     :name "Rect"
     :stroke-color "#000000"}
    {:type :image}
+   {:type :icon}
    {:type :circle
     :name "Circle"}
    {:type :path
@@ -305,15 +306,16 @@
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]
   (let [{:keys [x y width height]} (geom/shape->rect-shape shape)]
-    [:g
-     [:& shapes/shape-wrapper {:shape shape}]
-     [:rect.main {:x x :y y
-                  :width width
-                  :height height
-                  :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-                  :style {:stroke "#333"
-                          :fill "transparent"
-                          :stroke-opacity "1"}}]]))
+    (when (and x y)
+      [:g
+       [:& shapes/shape-wrapper {:shape shape}]
+       [:rect.main {:x x :y y
+                    :width width
+                    :height height
+                    :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
+                    :style {:stroke "#333"
+                            :fill "transparent"
+                            :stroke-opacity "1"}}]])))
 
 (mf/defc path-draw-area
   [{:keys [shape] :as props}]

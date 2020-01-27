@@ -304,7 +304,7 @@
 
 ;; --- Grid
 
-(defn- make-icons-iref
+(defn make-icons-iref
   [id]
   (-> (comp (l/key :icons)
             (l/lens (fn [icons]

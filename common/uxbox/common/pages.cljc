@@ -11,7 +11,6 @@
 (s/def ::shape-id uuid?)
 (s/def ::session-id uuid?)
 (s/def ::name string?)
-(s/def ::type keyword?)
 
 ;; Page Options
 (s/def ::grid-x number?)
@@ -47,7 +46,7 @@
 (s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
 (s/def ::stroke-width number?)
 (s/def ::text-align #{"left" "right" "center" "justify"})
-(s/def ::type #{:rect :path :circle :image :text :canvas :curve})
+(s/def ::type #{:rect :path :circle :image :text :canvas :curve :icon})
 (s/def ::x number?)
 (s/def ::y number?)
 (s/def ::cx number?)
