@@ -51,7 +51,7 @@
   [{:id "every 1 hour"
     :cron #uxbox/cron "1 1 */1 * * ? *"
     :fn #'uxbox.tasks.demo-gc/handler
-    :props {:foo "bar"}}])
+    :props {:foo 1}}])
 
 (defstate scheduler
   :start (as-> (impl/scheduler-verticle {:schedule schedule}) $$

@@ -16,5 +16,8 @@
 (defn handler
   {:uxbox.tasks/name "demo-gc"}
   [{:keys [props] :as task}]
-  (Thread/sleep 500)
-  (prn (.getName (Thread/currentThread)) "demo-gc" (:id task) (:props task)))
+  (try
+    (Thread/sleep 100)
+    (prn (.getName (Thread/currentThread)) "demo-gc" (:id task) (:props task))
+    (catch Throwable e
+      nil)))

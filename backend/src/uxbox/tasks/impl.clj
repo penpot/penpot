@@ -180,14 +180,11 @@
   (db/with-atomic [conn db/pool]
     (-> (db/query-one conn [sql:lock-scheduled-task id])
         (p/then (fn [result]
-                  (if result
-                    (do
-                      (prn (thr-name) "execute-scheduled-task" "task-locked")
-                      (-> (p/do! ((:fn stask) stask))
-                          (p/catch (fn [e]
-                                     (log/warn "Excepton happens on executing scheduled task" e)
-                                     nil))))
-                    (prn (thr-name) "execute-scheduled-task" "task-already-locked"))))
+                  (when result
+                    (-> (p/do! ((:fn stask) stask))
+                        (p/catch (fn [e]
+                                   (log/warn "Excepton happens on executing scheduled task" e)
+                                   nil))))))
         (p/finally (fn [v e]
                      (-> (vc/current-context)
                          (schedule-task stask)))))))
@@ -196,14 +193,13 @@
   [cron]
   (s/assert tm/cron? cron)
   (let [^Instant now (tm/now)
-        ^Instant next (.toInstant (.getNextValidTimeAfter cron (Date/from now)))
+        ^Instant next (tm/next-valid-instant-from cron now)
         ^Duration duration (Duration/between now next)]
     (.toMillis duration)))
 
 (defn- schedule-task
   [ctx {:keys [cron] :as stask}]
   (let [ms (ms-until-valid cron)]
-    (prn (thr-name) "schedule-task" (:id stask) ms)
     (vt/schedule! ctx (assoc stask
                              :ctx ctx
                              ::vt/once true
