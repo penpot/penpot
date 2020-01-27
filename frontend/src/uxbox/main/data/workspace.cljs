@@ -255,7 +255,7 @@
                               stream)]
         (->> stream
              (rx/filter #(satisfies? IBatchedChange %))
-             (rx/debounce 500)
+             (rx/debounce 200)
              (rx/map (constantly diff-and-commit-changes))
              (rx/take-until stoper))))))
 
