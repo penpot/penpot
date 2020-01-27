@@ -71,12 +71,13 @@
                 (.complete ^Promise prm (apply f args))
                 (catch Throwable e
                   (.fail ^Promise prm e)))))
-          false
+          true
           (reify Handler
             (handle [_ ar]
               (if (.failed ^AsyncResult ar)
                 (p/reject! d (.cause ^AsyncResult ar))
-                (p/resolve! d (.result ^AsyncResult ar)))))))))))
+                (p/resolve! d (.result ^AsyncResult ar))))))
+         d)))))
 
 (defn handle-on-context
   "Attaches the context (current if not explicitly provided) to the

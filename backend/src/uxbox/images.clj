@@ -79,7 +79,7 @@
 
 (defn populate-thumbnail
   [entry {:keys [src dst] :as opts}]
-  {:pre [(map? entry)]}
+  (assert (map? entry))
   (let [src (if (vector? src) src [src])
         dst (if (vector? dst) dst [dst])
         src (get-in entry src)]
@@ -93,8 +93,8 @@
 
 (defn populate-urls
   [entry storage src dst]
-  {:pre [(map? entry)
-         (st/storage? storage)]}
+  (assert (map? entry))
+  (assert (st/storage? storage))
   (let [src (if (vector? src) src [src])
         dst (if (vector? dst) dst [dst])
         value (get-in entry src)]

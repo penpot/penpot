@@ -32,8 +32,8 @@
 (defn populate-thumbnail
   [row]
   (let [opts +thumbnail-options+]
-    (-> (px/submit! #(images/populate-thumbnails row opts))
-        (su/handle-on-context))))
+    (-> (p/promise row)
+        (p/then (vc/wrap-blocking #(images/populate-thumbnail % opts))))))
 
 (defn populate-thumbnails
   [rows]
