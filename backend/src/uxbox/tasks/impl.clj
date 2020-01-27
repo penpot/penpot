@@ -34,7 +34,7 @@
 ;; --- Task Execution
 
 (defn- string-strack-trace
-  [err]
+  [^Throwable err]
   (with-out-str
     (.printStackTrace err (java.io.PrintWriter. *out*))))
 

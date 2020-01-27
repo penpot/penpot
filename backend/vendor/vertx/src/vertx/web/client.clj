@@ -43,7 +43,7 @@
 (defn get
   ([session url] (get session url {}))
   ([session url opts]
-   (let [^HttpRequest req (.getAbs session url)
+   (let [^HttpRequest req (.getAbs ^WebClientSession session url)
          d (p/deferred)]
      (.send req (vu/deferred->handler d))
      (p/then d (fn [^HttpResponse res]

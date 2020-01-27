@@ -6,12 +6,14 @@
 
 (ns uxbox.util.time
   (:require
+   [clojure.spec.alpha :as s]
    [uxbox.common.exceptions :as ex]
    [cognitect.transit :as t])
   (:import
    java.time.Instant
    java.time.OffsetDateTime
    java.time.Duration
+   java.util.Date
    org.apache.logging.log4j.core.util.CronExpression))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -161,13 +163,18 @@
   [v]
   (instance? CronExpression v))
 
+(defn next-valid-instant-from
+  [^CronExpression cron ^Instant now]
+  (s/assert cron? cron)
+  (.toInstant (.getNextValidTimeAfter cron (Date/from now))))
+
 (defmethod print-method CronExpression
   [mv ^java.io.Writer writer]
-  (.write writer (str "#uxbox/cron \"" (.toString mv) "\"")))
+  (.write writer (str "#uxbox/cron \"" (.toString ^CronExpression mv) "\"")))
 
 (defmethod print-dup CronExpression
   [o w]
-  (print-ctor o (fn [o w] (print-dup (.toString  o) w)) w))
+  (print-ctor o (fn [o w] (print-dup (.toString ^CronExpression o) w)) w))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Serialization
@@ -178,12 +185,12 @@
 (def ^:private instant-write-handler
   (t/write-handler
    (constantly "m")
-   (fn [v] (str (.toEpochMilli v)))))
+   (fn [v] (str (.toEpochMilli ^Instant v)))))
 
 (def ^:private offset-datetime-write-handler
   (t/write-handler
    (constantly "m")
-   (fn [v] (str (.toEpochMilli (.toInstant v))))))
+   (fn [v] (str (.toEpochMilli (.toInstant ^OffsetDateTime v))))))
 
 (def ^:private read-handler
   (t/read-handler
@@ -199,7 +206,7 @@
 
 (defmethod print-method Instant
   [mv ^java.io.Writer writer]
-  (.write writer (str "#instant \"" (.toString mv) "\"")))
+  (.write writer (str "#instant \"" (.toString ^Instant mv) "\"")))
 
 (defmethod print-dup Instant [o w]
   (print-method o w))

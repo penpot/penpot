@@ -100,7 +100,8 @@
         f `(fn ~args ~@body)]
     `(do
        (s/assert dispatcher? ~sym)
-       (.add ~sym ~key ~f ~meta)
+       (.add ~(with-meta sym {:tag 'uxbox.util.dispatcher.IDispatcher})
+             ~key ~f ~meta)
        ~sym)))
 
 (def spec-interceptor

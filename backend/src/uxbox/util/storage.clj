@@ -58,7 +58,7 @@
     path))
 
 (defn blob
-  [v]
+  [^String v]
   (let [data (.getBytes v "UTF-8")]
     (ByteArrayInputStream. ^bytes data)))
 
@@ -162,7 +162,7 @@
 (def ^:private prng
   (delay
     (doto (java.security.SecureRandom/getInstance "SHA1PRNG")
-      (.setSeed (sodi.prng/random-bytes 64)))))
+      (.setSeed ^bytes (sodi.prng/random-bytes 64)))))
 
 (defn random-path
   [^Path path]

@@ -45,6 +45,10 @@
      (vxe/configure! vsm opts)
      vsm)))
 
+(defn stop
+  [^Vertx o]
+  (.close o))
+
 (defn get-or-create-context
   [vsm]
   (.getOrCreateContext ^Vertx (vu/resolve-system vsm)))
@@ -64,7 +68,7 @@
           (reify Handler
             (handle [_ prm]
               (try
-                (.resolve ^Promise prm (apply f args))
+                (.complete ^Promise prm (apply f args))
                 (catch Throwable e
                   (.fail ^Promise prm e)))))
           false
@@ -191,7 +195,7 @@
            (p/handle (fn [state error]
                        (if error
                          (do
-                           (.fail o error)
+                           (.fail o  ^Throwable error)
                            (on-error @ctx error))
                          (do
                            (when (map? state)
@@ -202,7 +206,7 @@
                  (fn [_ err]
                    (if err
                      (do (on-error err)
-                         (.fail o err))
+                         (.fail o ^Throwable err))
                      (.complete o))))))))
 
 (defn- build-actor
@@ -244,7 +248,7 @@
   (let [opts (VertxOptions.)]
     (when threads (.setEventLoopPoolSize opts (int threads)))
     (when worker-threads (.setWorkerPoolSize opts (int worker-threads)))
-    (when on-error (.exceptionHandler (vu/fn->handler on-error)))
+    #_(when on-error (.exceptionHandler opts (vu/fn->handler on-error)))
     opts))
 
 

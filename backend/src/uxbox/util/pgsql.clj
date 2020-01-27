@@ -17,8 +17,13 @@
    io.vertx.core.AsyncResult
    io.vertx.core.buffer.Buffer
    io.vertx.pgclient.PgPool
+   io.vertx.pgclient.PgConnection
    io.vertx.sqlclient.impl.ArrayTuple
+   io.vertx.sqlclient.SqlClient
    io.vertx.sqlclient.RowSet
+   io.vertx.sqlclient.Row
+   io.vertx.sqlclient.Tuple
+   io.vertx.sqlclient.Transaction
    io.vertx.sqlclient.PoolOptions))
 
 (declare impl-execute)
@@ -79,10 +84,10 @@
   (p/map first (apply query args)))
 
 (defn row->map
-  [row]
+  [^Row row]
   (reduce (fn [acc index]
             (let [cname (.getColumnName row index)]
-              (assoc acc cname (.getValue row index))))
+              (assoc acc cname (.getValue row ^int index))))
           {}
           (range (.size row))))
 
@@ -102,18 +107,21 @@
   [resolve reject]
   (reify Handler
     (handle [_ ar]
-      (if (.failed ar)
-        (reject (.cause ar))
-        (resolve (.result ar))))))
+      (if (.failed ^AsyncResult ar)
+        (reject (.cause ^AsyncResult ar))
+        (resolve (.result ^AsyncResult ar))))))
 
 (defn- impl-execute
-  [conn sql params]
+  [^SqlClient conn ^String sql params]
   (if (seq params)
-    (p/create #(.preparedQuery conn sql (seqable->tuple params) (impl-handler %1 %2)))
-    (p/create #(.query conn sql (impl-handler %1 %2)))))
+    (p/create #(.preparedQuery conn sql
+                               ^Tuple (seqable->tuple params)
+                               ^Handler (impl-handler %1 %2)))
+    (p/create #(.query conn sql
+                       ^Handler (impl-handler %1 %2)))))
 
 (defn- impl-query
-  [conn sql params {:keys [xfm] :as opts}]
+  [^SqlClient conn ^String sql params {:keys [xfm] :as opts}]
   (let [conn (if (instance? IDeref conn) @conn conn)]
     (-> (impl-execute conn sql params)
         (p/catch (fn [err]
@@ -126,11 +134,11 @@
 (defn impl-transact
   [pool f]
   (let [pool (if (instance? IDeref pool) @pool pool)]
-    (letfn [(commit [tx]
+    (letfn [(commit [^Transaction tx]
               (p/create #(.commit tx (impl-handler %1 %2))))
-            (rollback [tx]
+            (rollback [^Transaction tx]
               (p/create #(.rollback tx (impl-handler %1 %2))))
-            (on-connect [conn]
+            (on-connect [^PgConnection conn]
               (let [tx (.begin conn)
                     df (p/deferred)]
                 (-> (f conn)
@@ -147,6 +155,6 @@
                                                       (p/reject! df e')
                                                       (p/resolve! df v)))))))))
                 df))]
-      (-> (p/create #(.getConnection pool (impl-handler %1 %2)))
+      (-> (p/create #(.getConnection ^PgPool pool (impl-handler %1 %2)))
           (p/bind on-connect)))))
 

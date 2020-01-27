@@ -72,5 +72,5 @@
       java.lang.AutoCloseable
       (close [this]
         (when (compare-and-set! state tid nil)
-          (.cancelTimer system tid))))))
+          (.cancelTimer ^Vertx system tid))))))
 

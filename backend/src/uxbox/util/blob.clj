@@ -58,7 +58,7 @@
         (decode-v1 data udata-len)))))
 
 (defn- decode-v1
-  [data udata-len]
+  [^bytes data udata-len]
   (let [^bytes output-ba (byte-array udata-len)]
     (Snappy/uncompress data 6 (- (alength data) 6) output-ba 0)
     (t/decode output-ba {:type :json})))
