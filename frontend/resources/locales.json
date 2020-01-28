@@ -85,11 +85,11 @@
     "permanent" : true
   },
   "ds.height" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:46" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    }
+    },
+    "unused" : true
   },
   "ds.history.pinned" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:95" ],
@@ -204,11 +204,11 @@
     }
   },
   "ds.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:52" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    }
+    },
+    "unused" : true
   },
   "ds.projects" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/header.cljs:39" ],
@@ -218,11 +218,11 @@
     }
   },
   "ds.rotation" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:67" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    }
+    },
+    "unused" : true
   },
   "ds.search.placeholder" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/projects.cljs:195" ],
@@ -239,18 +239,18 @@
     }
   },
   "ds.settings.icons" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/icons.cljs:72" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    }
+    },
+    "unused" : true
   },
   "ds.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:33" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    }
+    },
+    "unused" : true
   },
   "ds.store-colors-title" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:126" ],
@@ -316,11 +316,11 @@
     }
   },
   "ds.width" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon_measures.cljs:36" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    }
+    },
+    "unused" : true
   },
   "ds.your-colors-title" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:123" ],
@@ -848,21 +848,21 @@
     }
   },
   "workspace.options.font-family" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:204" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:203" ],
     "translations" : {
       "en" : "Font Family",
       "fr" : "Police de caractères"
     }
   },
   "workspace.options.font-options" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:202" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:201" ],
     "translations" : {
       "en" : "Fonts & Font Size",
       "fr" : "TODO"
     }
   },
   "workspace.options.font-weight" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:213" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:212" ],
     "translations" : {
       "en" : "Font Size & Weight",
       "fr" : "Taille et graisse"
@@ -876,14 +876,14 @@
     }
   },
   "workspace.options.line-height-letter-spacing" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:245" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:244" ],
     "translations" : {
       "en" : "Line height and Letter spacing",
       "fr" : "Hauteur de ligne et Espacement de caractères"
     }
   },
   "workspace.options.measures" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:65", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:67", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70", "src/uxbox/main/ui/workspace/sidebar/options/canvas.cljs:51" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/canvas.cljs:50", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:66" ],
     "translations" : {
       "en" : "Size, position & rotation",
       "fr" : "Taille, position et rotation"
@@ -897,21 +897,21 @@
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:74", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:93", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:96", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:99", "src/uxbox/main/ui/workspace/sidebar/options/canvas.cljs:80" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:98", "src/uxbox/main/ui/workspace/sidebar/options/canvas.cljs:79", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:95" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
     }
   },
   "workspace.options.rotation-radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:113", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:116" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:107", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:112" ],
     "translations" : {
       "en" : "Rotation & Radius",
       "fr" : "TODO"
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:38", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/canvas.cljs:53" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:71", "src/uxbox/main/ui/workspace/sidebar/options/canvas.cljs:52", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:68" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
@@ -967,10 +967,17 @@
     }
   },
   "workspace.options.text-align" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:264" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:263" ],
     "translations" : {
       "en" : "Text Alignment",
       "fr" : "Alignement de texte"
+    }
+  },
+  "workspace.sidebar.icons" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/icons.cljs:87" ],
+    "translations" : {
+      "en" : "Icons",
+      "fr" : "Icône"
     }
   },
   "workspace.sidebar.layers" : {
@@ -978,12 +985,6 @@
     "translations" : {
       "en" : "Layers",
       "fr" : "Couches"
-    }
-  },
-  "workspace.sidebar.icons" : {
-    "translations" : {
-      "en" : "Icons",
-      "fr" : "Icône"
     }
   },
   "workspace.sidebar.sitemap" : {

@@ -9,6 +9,7 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [uxbox.common.data :as d]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.icons :as di]
    [uxbox.main.data.workspace :as dw]
@@ -23,11 +24,14 @@
 
 (mf/defc icons-collections
   [{:keys [collections value on-change] :as props}]
-
   [:div.figures-catalog
    ;; extract component: set selector
-   [:select.input-select.small {:on-change on-change
-                                :value (pr-str value)}
+   [:select.input-select.small
+    {:on-change (fn [event]
+                  (let [val (-> (dom/get-target event)
+                                (dom/get-value))]
+                    (on-change (d/read-string val))))
+     :value (pr-str value)}
     [:option {:value (pr-str nil)} "Storage"]
     (for [coll collections]
       [:option {:key (str "icon-coll" (:id coll))
@@ -62,8 +66,11 @@
 (mf/defc icons-toolbox
   [props]
   (let [locale (i18n/use-locale)
+        selected (mf/use-state nil)
+
         local (mf/deref refs/workspace-local)
-        collections (mf/deref icons/collections-iref)
+
+        collections (vals (mf/deref icons/collections-iref))
         collection (first collections)
 
         on-close
@@ -71,11 +78,9 @@
           (st/emit! (dw/toggle-layout-flag :icons)))
 
         on-change
-        (fn [event]
-          (let [value (read-string (dom/event->value event))]
-            (st/emit! (dw/select-for-drawing nil)
-                      #_(dw/select-icons-toolbox-collection value))))
-        ]
+        (fn [val]
+          (st/emit! (dw/select-for-drawing nil))
+          (reset! selected val))]
 
     (mf/use-effect
      {:fn #(st/emit! di/fetch-collections)})
@@ -84,10 +89,10 @@
      [:div.tool-window-bar
       [:div.tool-window-icon i/icon-set]
       [:span (t locale "workspace.sidebar.icons")]
-      [:div.tool-window-close #_{:on-click on-close} i/close]]
+      [:div.tool-window-close {:on-click on-close} i/close]]
      [:div.tool-window-content
       [:& icons-collections {:collections collections
-                             :value (:id collection)
-                             :on-change (constantly nil)
+                             :value @selected
+                             :on-change on-change
                              }]
-      [:& icons-list {:collection-id nil}]]]))
+      [:& icons-list {:collection-id @selected}]]]))
