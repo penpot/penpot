@@ -24,6 +24,7 @@
     :icon (move-rect shape dpoint)
     :image (move-rect shape dpoint)
     :rect (move-rect shape dpoint)
+    :canvas (move-rect shape dpoint)
     :text (move-rect shape dpoint)
     :curve (move-path shape dpoint)
     :path (move-path shape dpoint)
@@ -65,6 +66,7 @@
   [shape position]
   (case (:type shape)
     :icon (absolute-move-rect shape position)
+    :canvas (absolute-move-rect shape position)
     :image (absolute-move-rect shape position)
     :rect (absolute-move-rect shape position)
     :circle (absolute-move-circle shape position)))
