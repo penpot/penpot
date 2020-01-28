@@ -62,7 +62,7 @@
 ;; --- Helpers
 
 (defn unpack-page
-  [state {:keys [id data metadata] :as page}]
+  [state {:keys [id data] :as page}]
   (-> state
       (update :pages assoc id (dissoc page :data))
       (update :pages-data assoc id data)))

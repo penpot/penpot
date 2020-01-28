@@ -181,7 +181,8 @@
   "select s.id, s.changes
      from project_page_snapshots as s
     where s.page_id = $1
-      and s.version > $2")
+      and s.version > $2
+    order by s.created_at asc")
 
 (defn- retrieve-lagged-changes
   [conn snapshot params]

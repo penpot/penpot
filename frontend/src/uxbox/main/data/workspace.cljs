@@ -60,7 +60,6 @@
 (declare handle-page-snapshot)
 (declare shapes-changes-commited)
 (declare commit-changes)
-(declare commit-batched-changes)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Websockets Events
@@ -245,7 +244,6 @@
         (assoc state
                :workspace-local workspace-default
                :workspace-data data
-               :workspace-data-prev data
                :workspace-page page)))
 
     ptk/WatchEvent
@@ -274,8 +272,9 @@
   (ptk/reify ::diff-and-commit-changes
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [curr (get-in state [:workspace-data :shapes-by-id])
-            prev (get-in state [:workspace-data-prev :shapes-by-id])
+      (let [pid (get-in state [:workspace-page :id])
+            curr (get-in state [:workspace-data :shapes-by-id])
+            prev (get-in state [:pages-data pid :shapes-by-id])
 
             diff (d/diff-maps prev curr)
             changes (loop [scs (rest diff)
@@ -959,9 +958,7 @@
     (update [_ state]
       (let [pid (get-in state [:workspace-page :id])
             data (get-in state [:pages-data pid])]
-        (-> state
-            (update-in [:pages-data pid] cp/process-changes changes)
-            (assoc :workspace-data-prev (:workspace-data state)))))
+        (update-in state [:pages-data pid] cp/process-changes changes)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -972,21 +969,6 @@
         (->> (rp/mutation :update-project-page params)
              (rx/map shapes-changes-commited))))))
 
-(def commit-batched-changes
-  (ptk/reify ::commit-batched-changes
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (get-in state [:workspace-page :id])
-            data (get-in state [:pages-data pid])
-            changes (::batched-changes state)]
-        (update-in state [:pages-data pid] cp/process-changes changes)))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [changes (::batched-changes state)]
-        (rx/of #(dissoc % ::batched-changes)
-               (commit-changes changes))))))
-
 (s/def ::shapes-changes-commited
   (s/keys :req-un [::page-id ::version ::cp/changes]))
 
@@ -996,13 +978,11 @@
   (ptk/reify ::shapes-changes-commited
     ptk/UpdateEvent
     (update [_ state]
-      (let [sid (:session-id state)
-            changes (remove #(= sid (:session-id %)) changes)]
-        (-> state
-            (assoc-in [:workspace-page :version] version)
-            (assoc-in [:pages page-id :version] version)
-            (update-in [:pages-data page-id] cp/process-changes changes)
-            (update :workspace-data cp/process-changes changes))))))
+      (-> state
+          (assoc-in [:workspace-page :version] version)
+          (assoc-in [:pages page-id :version] version)
+          (update-in [:pages-data page-id] cp/process-changes changes)
+          (update :workspace-data cp/process-changes changes)))))
 
 ;; --- Start shape "edition mode"
 
