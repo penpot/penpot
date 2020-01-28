@@ -164,8 +164,8 @@
   (ptk/reify ::handle-page-snapshot
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [local (:workspace-local state)]
-        (when (= (:page-id local) page-id)
+      (let [page-id' (get-in state [:workspace-page :id])]
+        (when (= page-id page-id')
           (rx/of (shapes-changes-commited msg)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
