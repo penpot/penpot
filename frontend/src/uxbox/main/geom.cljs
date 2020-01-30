@@ -575,6 +575,7 @@
   xf-resolve-shapes
   (comp (map shape->rect-shape)
         (map resolve-modifier)
+        (map shape->rect-shape)
         (map resolve-rotation)
         (map shape->rect-shape)))
 

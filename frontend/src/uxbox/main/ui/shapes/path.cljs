@@ -62,23 +62,30 @@
 (mf/defc path-shape
   [{:keys [shape background?] :as props}]
   (let [modifier-mtx (:modifier-mtx shape)
+        rotation (:rotation shape)
+
         shape (cond
                 (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
                 :else shape)
 
-        moving? (boolean modifier-mtx)
+        {:keys [id x y width height]} (geom/shape->rect-shape shape)
+
+        transform (when (and rotation (pos? rotation))
+                    (str/format "rotate(%s %s %s)"
+                                rotation
+                                (+ x (/ width 2))
+                                (+ y (/ height 2))))
 
         pdata (render-path shape)
-        props {:id (str (:id shape))
-               :class (classnames :move-cursor moving?)
-               :d pdata}
-
-        attrs (merge (attrs/extract-style-attrs shape) props)]
+        props (-> (attrs/extract-style-attrs shape)
+                  (assoc :transform transform
+                         :id (str "shape-" id)
+                         :d pdata))]
     (if background?
       [:g
        [:path {:stroke "transparent"
                :fill "transparent"
                :stroke-width "20px"
                :d pdata}]
-       [:> :path (normalize-props attrs)]]
-      [:> :path (normalize-props attrs)])))
+       [:& "path" props]]
+      [:& "path" props])))
