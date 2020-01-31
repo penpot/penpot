@@ -9,16 +9,24 @@
 
 (ns uxbox.main
   (:require
-   [mount.core :as mount]
-   [uxbox.config :as cfg]
-   [uxbox.migrations]
-   [uxbox.db]
-   [uxbox.http]
-   #_[uxbox.scheduled-jobs])
-  (:gen-class))
+   [mount.core :as mount]))
+
+(defn- enable-asserts
+  [_]
+  (let [m (System/getProperty "uxbox.enable-asserts")]
+    (or (nil? m) (= "true" m))))
+
+;; Set value for current thread binding.
+(set! *assert* (enable-asserts nil))
+
+;; Set value for all new threads bindings.
+(alter-var-root #'*assert* enable-asserts)
 
 ;; --- Entry point
 
 (defn -main
   [& args]
+  (load "uxbox/config"
+        "uxbox/migrations"
+        "uxbox/http")
   (mount/start))
