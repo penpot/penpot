@@ -90,7 +90,7 @@
   ([id extra-context]
    (s/assert keyword? id)
    (fn [context]
-     (us/assert ::context context)
+     (us/verify ::context context)
      (when-let [spec (s/get-spec id)]
        (s/assert spec context))
 

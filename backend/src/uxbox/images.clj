@@ -43,8 +43,8 @@
                 width 200
                 height 200}
            :as opts}]
-   (us/assert ::thumbnail-opts opts)
-   (us/assert fs/path? input)
+   (us/verify ::thumbnail-opts opts)
+   (us/verify fs/path? input)
    (let [tmp (fs/create-tempfile :suffix (str "." format))
          opr (doto (IMOperation.)
                (.addImage)
@@ -60,7 +60,7 @@
 
 (defn make-thumbnail
   [input {:keys [width height format quality] :as opts}]
-  (us/assert ::thumbnail-opts opts)
+  (us/verify ::thumbnail-opts opts)
   (let [[filename ext] (fs/split-ext (fs/name input))
         suffix (->> [width height quality format]
                     (interpose ".")

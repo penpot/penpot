@@ -127,7 +127,7 @@
 
 (defn handle-who
   [{:keys [users] :as msg}]
-  (us/assert set? users)
+  (us/verify set? users)
   (ptk/reify ::handle-who
     ptk/UpdateEvent
     (update [_ state]
@@ -279,8 +279,8 @@
 (defn initialize
   "Initialize the workspace state."
   [file-id page-id]
-  (us/assert ::us/uuid file-id)
-  (us/assert ::us/uuid page-id)
+  (us/verify ::us/uuid file-id)
+  (us/verify ::us/uuid page-id)
   (ptk/reify ::initialize
     ptk/WatchEvent
     (watch [_ state stream]
@@ -303,7 +303,7 @@
 
 (defn- initialize-layout
   [file-id]
-  (us/assert ::us/uuid file-id)
+  (us/verify ::us/uuid file-id)
   (ptk/reify ::initialize-layout
     ptk/UpdateEvent
     (update [_ state]
@@ -311,7 +311,7 @@
 
 (defn- initialize-file
   [file-id]
-  (us/assert ::us/uuid file-id)
+  (us/verify ::us/uuid file-id)
   (ptk/reify ::initialize-file
     ptk/UpdateEvent
     (update [_ state]
@@ -345,8 +345,8 @@
 
 (defn finalize
   [file-id page-id]
-  (us/assert ::us/uuid file-id)
-  (us/assert ::us/uuid page-id)
+  (us/verify ::us/uuid file-id)
+  (us/verify ::us/uuid page-id)
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
@@ -404,7 +404,7 @@
 
 (defn toggle-layout-flag
   [flag]
-  (us/assert keyword? flag)
+  (us/verify keyword? flag)
   (ptk/reify ::toggle-layout-flag
     ptk/UpdateEvent
     (update [_ state]
@@ -418,7 +418,7 @@
 
 (defn activate-flag
    [flag]
-  (us/assert keyword? flag)
+  (us/verify keyword? flag)
   (ptk/reify ::activate-flag
     ptk/UpdateEvent
     (update [_ state]
@@ -430,7 +430,7 @@
 
 (defn deactivate-flag
   [flag]
-  (us/assert keyword? flag)
+  (us/verify keyword? flag)
   (ptk/reify ::deactivate-flag
     ptk/UpdateEvent
     (update [_ state]
@@ -438,7 +438,7 @@
 
 (defn toggle-flag
   [flag]
-  (us/assert keyword? flag)
+  (us/verify keyword? flag)
   (ptk/reify ::toggle-flag
     ptk/WatchEvent
     (watch [_ state stream]
@@ -559,7 +559,7 @@
 
 ;; (defn initialize-alignment
 ;;   [id]
-;;   (us/assert ::us/uuid id)
+;;   (us/verify ::us/uuid id)
 ;;   (ptk/reify ::initialize-alignment
 ;;     ptk/WatchEvent
 ;;     (watch [_ state stream]
@@ -617,7 +617,7 @@
 
 (defn add-shape
   [data]
-  (us/assert ::shape-attrs data)
+  (us/verify ::shape-attrs data)
   (let [id (uuid/next)]
     (ptk/reify ::add-shape
       ptk/UpdateEvent
@@ -646,7 +646,7 @@
 
 (defn add-canvas
   [data]
-  (us/assert ::shape-attrs data)
+  (us/verify ::shape-attrs data)
   (let [id (uuid/next)]
     (ptk/reify ::add-canvas
       ptk/UpdateEvent
@@ -695,7 +695,7 @@
 
 (defn select-shape
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::select-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -755,8 +755,8 @@
 
 (defn update-shape
   [id attrs]
-  (us/assert ::us/uuid id)
-  (us/assert ::shape-attrs attrs)
+  (us/verify ::us/uuid id)
+  (us/verify ::shape-attrs attrs)
   (ptk/reify ::update-shape
     IBatchedChange
     ptk/UpdateEvent
@@ -767,7 +767,7 @@
 
 (defn update-options
   [opts]
-  (us/assert ::cp/options opts)
+  (us/verify ::cp/options opts)
   (ptk/reify ::update-options
     IBatchedChange
     ptk/UpdateEvent
@@ -778,7 +778,7 @@
 
 (defn update-selected-shapes
   [attrs]
-  (s/assert ::shape-attrs attrs)
+  (us/verify ::shape-attrs attrs)
   (ptk/reify ::update-selected-shapes
     ptk/WatchEvent
     (watch [_ state stream]
@@ -819,8 +819,8 @@
 
 (defn move-selected
   [direction align?]
-  (us/assert ::direction direction)
-  (us/assert boolean? align?)
+  (us/verify ::direction direction)
+  (us/verify boolean? align?)
 
   (ptk/reify ::move-selected
     ptk/WatchEvent
@@ -872,8 +872,8 @@
 
 (defn rename-shape
   [id name]
-  (us/assert ::us/uuid id)
-  (us/assert string? name)
+  (us/verify ::us/uuid id)
+  (us/verify string? name)
   (ptk/reify ::rename-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -894,7 +894,7 @@
 
 (defn order-selected-shapes
   [loc]
-  (us/assert ::direction loc)
+  (us/verify ::direction loc)
   (ptk/reify ::move-selected-layer
     IBatchedChange
     ptk/UpdateEvent
@@ -924,8 +924,8 @@
 
 (defn temporal-shape-order-change
   [id index]
-  (us/assert ::us/uuid id)
-  (us/assert number? index)
+  (us/verify ::us/uuid id)
+  (us/verify number? index)
   (ptk/reify ::change-shape-order
     ptk/UpdateEvent
     (update [_ state]
@@ -953,8 +953,8 @@
 
 (defn change-canvas-order
   [{:keys [id index] :as params}]
-  (us/assert ::us/uuid id)
-  (us/assert ::us/number index)
+  (us/verify ::us/uuid id)
+  (us/verify ::us/number index)
   (ptk/reify ::change-canvas-order
     ptk/UpdateEvent
     (update [_ state]
@@ -969,7 +969,7 @@
 (defn initial-selection-align
   "Align the selection of shapes."
   [ids]
-  (us/assert ::set-of-uuid ids)
+  (us/verify ::set-of-uuid ids)
   (ptk/reify ::initialize-shapes-align-in-bulk
     ptk/WatchEvent
     (watch [_ state stream]
@@ -986,8 +986,8 @@
 
 (defn assoc-temporal-modifier-in-bulk
   [ids xfmt]
-  (us/assert ::set-of-uuid ids)
-  (us/assert gmt/matrix? xfmt)
+  (us/verify ::set-of-uuid ids)
+  (us/verify gmt/matrix? xfmt)
   (ptk/reify ::assoc-temporal-modifier-in-bulk
     ptk/UpdateEvent
     (update [_ state]
@@ -997,8 +997,8 @@
   "Apply the same displacement delta to all shapes identified by the
   set if ids."
   [ids delta]
-  (us/assert ::set-of-uuid ids)
-  (us/assert gpt/point? delta)
+  (us/verify ::set-of-uuid ids)
+  (us/verify gpt/point? delta)
   (letfn [(process-shape [state id]
             (let [prev (get-in state [:workspace-data :shapes-by-id id :modifier-mtx] (gmt/matrix))
                   xfmt (gmt/translate prev delta)]
@@ -1038,7 +1038,7 @@
 
 (defn commit-changes
   [changes]
-  (us/assert ::cp/changes changes)
+  (us/verify ::cp/changes changes)
   (ptk/reify ::commit-changes
     ptk/UpdateEvent
     (update [_ state]
@@ -1060,7 +1060,7 @@
 
 (defn shapes-changes-commited
   [{:keys [page-id version changes] :as params}]
-  (us/assert ::shapes-changes-commited params)
+  (us/verify ::shapes-changes-commited params)
   (ptk/reify ::shapes-changes-commited
     ptk/UpdateEvent
     (update [_ state]
@@ -1126,13 +1126,25 @@
   of the shape using the width and height attrs
   instread final point of coordinates."
   [id dimensions]
-  (us/assert ::us/uuid id)
-  (us/assert ::update-dimensions dimensions)
+  (us/verify ::us/uuid id)
+  (us/verify ::update-dimensions dimensions)
   (ptk/reify ::update-dimensions
     IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-data :shapes-by-id id] geom/resize-dim dimensions))))
+
+
+(defn update-rect-dimensions
+  [id attr value]
+  (us/verify ::us/uuid id)
+  (us/verify #{:width :height} attr)
+  (us/verify ::us/number value)
+  (ptk/reify ::update-rect-dimensions
+    IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-data :shapes-by-id id] geom/resize-rect attr value))))
 
 ;; --- Shape Proportions
 
@@ -1156,8 +1168,8 @@
 
 (defn update-position
   [id position]
-  (us/assert ::us/uuid id)
-  (us/assert ::position position)
+  (us/verify ::us/uuid id)
+  (us/verify ::position position)
   (ptk/reify ::update-position
     ptk/UpdateEvent
     (update [_ state]
@@ -1169,9 +1181,9 @@
 (defn update-path
   "Update a concrete point in the path shape."
   [id index delta]
-  (us/assert ::us/uuid id)
-  (us/assert ::us/integer index)
-  (us/assert gpt/point? delta)
+  (us/verify ::us/uuid id)
+  (us/verify ::us/integer index)
+  (us/verify gpt/point? delta)
   (ptk/reify ::update-path
     ptk/UpdateEvent
     (update [_ state]
@@ -1203,7 +1215,7 @@
 
 (defn hide-shape
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::hide-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -1211,7 +1223,7 @@
 
 (defn show-shape
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::hide-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -1237,7 +1249,7 @@
 
 (defn block-shape
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::hide-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -1245,7 +1257,7 @@
 
 (defn unblock-shape
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::hide-shape
     ptk/UpdateEvent
     (update [_ state]
@@ -1271,7 +1283,7 @@
 
 (defn select-canvas
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::select-canvas
     ptk/UpdateEvent
     (update [_ state]
@@ -1292,7 +1304,7 @@
 
 (defn go-to-page
   [page-id]
-  (us/assert ::us/uuid page-id)
+  (us/verify ::us/uuid page-id)
   (ptk/reify ::go-to
     ptk/WatchEvent
     (watch [_ state stream]

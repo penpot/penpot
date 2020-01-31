@@ -266,7 +266,7 @@
 
 (defn schedule!
   [conn {:keys [name delay props queue key] :as options}]
-  (us/assert ::task-options options)
+  (us/verify ::task-options options)
   (let [queue (if (string? queue) queue "default")
         duration (-> (tm/duration delay)
                      (duration->pginterval))

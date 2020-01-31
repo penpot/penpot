@@ -42,7 +42,7 @@
 
 (defn profile-fetched
   [data]
-  (us/assert ::profile-fetched data)
+  (us/verify ::profile-fetched data)
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -73,9 +73,9 @@
 
 (defn form->update-profile
   [data on-success on-error]
-  (us/assert ::update-profile-params data)
-  (us/assert fn? on-error)
-  (us/assert fn? on-success)
+  (us/verify ::update-profile-params data)
+  (us/verify fn? on-error)
+  (us/verify fn? on-success)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -102,9 +102,9 @@
 
 (defn update-password
   [data {:keys [on-success on-error]}]
-  (us/assert ::update-password-params data)
-  (us/assert fn? on-success)
-  (us/assert fn? on-error)
+  (us/verify ::update-password-params data)
+  (us/verify fn? on-success)
+  (us/verify fn? on-error)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -132,6 +132,6 @@
 (defn update-photo
   ([file] (update-photo file (constantly nil)))
   ([file done]
-   (us/assert ::file file)
-   (us/assert fn? done)
+   (us/verify ::file file)
+   (us/verify fn? done)
    (UpdatePhoto. file done)))

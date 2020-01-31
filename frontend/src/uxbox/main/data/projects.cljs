@@ -134,7 +134,7 @@
 
 (defn projects-fetched
   [projects]
-  (us/assert (s/every ::project) projects)
+  (us/verify (s/every ::project) projects)
   (ptk/reify ::projects-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -158,7 +158,7 @@
 
 (defn fetch-file
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::fetch-file
     ptk/WatchEvent
     (watch [_ state stream]
@@ -169,7 +169,7 @@
 
 (defn files-fetched
   [files]
-  (us/assert (s/every ::file) files)
+  (us/verify (s/every ::file) files)
   (ptk/reify ::files-fetched
     cljs.core/IDeref
     (-deref [_] files)
@@ -227,7 +227,7 @@
 
 (defn delete-project
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::delete-project
     ptk/UpdateEvent
     (update [_ state]
@@ -242,7 +242,7 @@
 
 (defn delete-file
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::delete-file
     ptk/UpdateEvent
     (update [_ state]
@@ -273,7 +273,7 @@
 
 (defn go-to
   [file-id]
-  (us/assert ::us/uuid file-id)
+  (us/verify ::us/uuid file-id)
   (ptk/reify ::go-to
     ptk/WatchEvent
     (watch [_ state stream]
@@ -284,7 +284,7 @@
 
 (defn go-to-project
   [id]
-  (us/assert (s/nilable ::us/uuid) id)
+  (us/verify (s/nilable ::us/uuid) id)
   (ptk/reify ::go-to-project
     ptk/WatchEvent
     (watch [_ state stream]
@@ -299,7 +299,7 @@
 
 (defn fetch-pages
   [file-id]
-  (us/assert ::us/uuid file-id)
+  (us/verify ::us/uuid file-id)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -310,7 +310,7 @@
 
 (defn pages-fetched
   [pages]
-  (us/assert (s/every ::page) pages)
+  (us/verify (s/every ::page) pages)
   (ptk/reify ::pages-fetched
     IDeref
     (-deref [_] pages)
@@ -326,7 +326,7 @@
 (defn fetch-page
   "Fetch page by id."
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -337,7 +337,7 @@
 
 (defn page-fetched
   [data]
-  (us/assert ::page data)
+  (us/verify ::page data)
   (ptk/reify ::page-fetched
     IDeref
     (-deref [_] data)
@@ -368,7 +368,7 @@
 
 (defn page-created
   [{:keys [id file-id] :as page}]
-  (us/assert ::page page)
+  (us/verify ::page page)
   (ptk/reify ::page-created
     cljs.core/IDeref
     (-deref [_] page)
@@ -393,8 +393,8 @@
 
 (defn rename-page
   [id name]
-  (us/assert ::us/uuid id)
-  (us/assert string? name)
+  (us/verify ::us/uuid id)
+  (us/verify string? name)
   (ptk/reify ::rename-page
     ptk/UpdateEvent
     (update [_ state]
@@ -452,7 +452,7 @@
 
 (defn page-persisted
   [{:keys [id] :as page}]
-  (us/assert ::page page)
+  (us/verify ::page page)
   (ptk/reify ::page-persisted
     cljs.core/IDeref
     (-deref [_] page)

@@ -52,7 +52,7 @@
 
 (defn initialize
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
@@ -71,7 +71,7 @@
 
 (defn watch-page-changes
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (reify
     ptk/WatchEvent
     (watch [_ state stream]
@@ -87,7 +87,7 @@
 
 (defn pinned-history-fetched
   [items]
-  (us/assert ::history-entries items)
+  (us/verify ::history-entries items)
   (ptk/reify ::pinned-history-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -104,7 +104,7 @@
 
 (defn fetch-pinned-history
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::fetch-pinned-history
     ptk/WatchEvent
     (watch [_ state s]
@@ -117,7 +117,7 @@
 
 (defn history-fetched
   [items]
-  (us/assert ::history-entries items)
+  (us/verify ::history-entries items)
   (ptk/reify ::history-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -140,7 +140,7 @@
   ([id]
    (fetch-history id nil))
   ([id {:keys [since max]}]
-   (us/assert ::us/uuid id)
+   (us/verify ::us/uuid id)
    (ptk/reify ::fetch-history
      ptk/WatchEvent
      (watch [_ state s]
@@ -182,7 +182,7 @@
 
 (defn select
   [version]
-  (us/assert int? version)
+  (us/verify int? version)
   (ptk/reify ::select
     ptk/UpdateEvent
     (update [_ state]
@@ -238,7 +238,7 @@
 
 (defn history-updated
   [item]
-  (us/assert ::history-entry item)
+  (us/verify ::history-entry item)
   (ptk/reify ::history-item-updated
     ptk/UpdateEvent
     (update [_ state]

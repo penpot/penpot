@@ -59,7 +59,7 @@
 
 (defn collections-fetched
   [items]
-  (us/assert (s/every ::collection-entity) items)
+  (us/verify (s/every ::collection-entity) items)
   (ptk/reify ::collections-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -83,7 +83,7 @@
 
 (defn collection-created
   [item]
-  (us/assert ::collection-entity item)
+  (us/verify ::collection-entity item)
   (ptk/reify ::collection-created
     ptk/UpdateEvent
     (update [_ state]
@@ -109,7 +109,7 @@
 
 (defn collection-updated
   [item]
-  (us/assert ::collection-entity item)
+  (us/verify ::collection-entity item)
   (CollectionUpdated. item))
 
 ;; --- Update Collection
@@ -161,7 +161,7 @@
 
 (defn image-created
   [item]
-  (us/assert ::image-entity item)
+  (us/verify ::image-entity item)
   (ptk/reify ::image-created
     ptk/UpdateEvent
     (update [_ state]
@@ -174,8 +174,8 @@
 (defn create-images
   ([id files] (create-images id files identity))
   ([id files on-uploaded]
-   (us/assert (s/nilable ::us/uuid) id)
-   (us/assert fn? on-uploaded)
+   (us/verify (s/nilable ::us/uuid) id)
+   (us/verify fn? on-uploaded)
    (ptk/reify ::create-images
      ptk/UpdateEvent
      (update [_ state]
@@ -225,7 +225,7 @@
 
 (defn images-fetched
   [items]
-  (us/assert (s/every ::image-entity) items)
+  (us/verify (s/every ::image-entity) items)
   (ptk/reify ::images-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -239,7 +239,7 @@
 (defn fetch-images
   "Fetch a list of images of the selected collection"
   [id]
-  (us/assert (s/nilable ::us/uuid) id)
+  (us/verify (s/nilable ::us/uuid) id)
   (ptk/reify ::fetch-images
     ptk/WatchEvent
     (watch [_ state s]

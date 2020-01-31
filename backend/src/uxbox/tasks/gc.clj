@@ -39,7 +39,7 @@
 (defn- delete-project
   "Clean deleted projects."
   [{:keys [id] :as props}]
-  (us/assert ::delete-project props)
+  (us/verify ::delete-project props)
   (db/with-atomic [conn db/pool]
     (-> (db/query-one conn [sql:delete-project id])
         (p/then (constantly nil)))))

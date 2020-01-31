@@ -48,7 +48,7 @@
 
 (defn login
   [{:keys [username password] :as data}]
-  (us/assert ::login-params data)
+  (us/verify ::login-params data)
   (ptk/reify ::login
     ptk/UpdateEvent
     (update [_ state]
@@ -119,8 +119,8 @@
 
 (defn request-profile-recovery
   [data on-success]
-  (us/assert ::recovery-request data)
-  (us/assert fn? on-success)
+  (us/verify ::recovery-request data)
+  (us/verify fn? on-success)
   (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
     (watch [_ state stream]
@@ -141,7 +141,7 @@
 
 (defn recover-profile
   [{:keys [token password on-error on-success] :as data}]
-  (us/assert ::recover-profile data)
+  (us/verify ::recover-profile data)
   (ptk/reify ::recover-profile
     ptk/WatchEvent
     (watch [_ state stream]
