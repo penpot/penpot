@@ -571,8 +571,12 @@
     (gmt/matrix? modifier-mtx)
     (transform modifier-mtx)))
 
-(def ^:private
-  xf-resolve-shapes
+;; NOTE: we need applu `shape->rect-shape` 3 times because we need to
+;; update the x1 x2 y1 y2 attributes on each step; this is because
+;; some transform functions still uses that attributes. WE NEED TO
+;; REFACTOR this, and remove any usage of the old xN yN attributes.
+
+(def ^:private xf-resolve-shapes
   (comp (map shape->rect-shape)
         (map resolve-modifier)
         (map shape->rect-shape)

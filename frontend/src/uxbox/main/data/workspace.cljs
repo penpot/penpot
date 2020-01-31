@@ -169,6 +169,92 @@
           (rx/of (shapes-changes-commited msg)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Undo/Redo
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (def undo-hierarchy
+;;   (-> (make-hierarchy)
+;;       (derive ::update-shape ::undo-signal)
+;;       (derive ::update-options ::undo-signal)
+;;       (derive ::move-selected-layer ::undo-signal)
+;;       (derive ::materialize-temporal-modifier-in-bulk ::undo-signal)
+;;       (derive ::update-dimensions ::undo-signal)
+;;       (derive ::add-shape ::undo-signal)
+;;       (derive ::add-canvas ::undo-signal)))
+
+;; (def MAX-UNDO-SIZE 50)
+
+;; (defn- conj-undo-entry
+;;   [undo data]
+;;   (let [undo (conj undo data)]
+;;     (if (> (count undo) MAX-UNDO-SIZE)
+;;       (into [] (take MAX-UNDO-SIZE undo))
+;;       undo)))
+
+;; ptk/UpdateEvent
+;; (update [_ state]
+;;   (let [pid (get-in state [:workspace-page :id])
+;;         data (:workspace-data state)
+;;         undo (-> (get-in state [:undo pid] [])
+;;                  (conj-undo-entry data))]
+;;     (prn "diff-and-commit-changes" "undo=" (count undo))
+;;     (-> state
+;;         (assoc-in [:undo pid] undo)
+;;         (update :workspace-local dissoc :undo-index))))
+
+;; (defn initialize-undo
+;;   [page-id]
+;;   (ptk/reify ::initialize-page
+;;     ptk/WatchEvent
+;;     (watch [_ state stream]
+;;       (let [stoper (rx/filter #(or (ptk/type? ::finalize %)
+;;                                    (ptk/type? ::initialize-page %))
+;;                               stream)
+;;             undo-event? #(or (isa? (ptk/type %) ::undo-signal)
+;;                              (satisfies? IBatchedChange %))]
+;;         (->> stream
+;;              (rx/filter #(satisfies? IBatchedChange %))
+;;              (rx/debounce 200)
+;;              (rx/map (constantly diff-and-commit-changes))
+;;              (rx/take-until stoper))))))
+
+;; (def undo
+;;   (ptk/reify ::undo
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (let [pid (get-in state [:workspace-page :id])
+;;             undo (get-in state [:undo pid] [])
+;;             index (get-in state [:workspace-local :undo-index])
+;;             index (or index (dec (count undo)))]
+;;         (if (or (empty? undo) (= index 0))
+;;           state
+;;           (let [index (dec index)]
+;;             (-> state
+;;                 (assoc :workspace-data (nth undo index))
+;;                 (assoc-in [:workspace-local :undo-index] index))))))))
+
+;; (def redo
+;;   (ptk/reify ::redo
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (let [pid (get-in state [:workspace-page :id])
+;;             undo (get-in state [:undo pid] [])
+;;             index (get-in state [:workspace-local :undo-index])
+;;             index (or index (dec (count undo)))]
+;;         (if (or (empty? undo) (= index (dec (count undo))))
+;;           state
+;;           (let [index (inc index)]
+;;             (-> state
+;;                 (assoc :workspace-data (nth undo index))
+;;                 (assoc-in [:workspace-local :undo-index] index))))))))
+
+;; (def reset-undo-index
+;;   (ptk/reify ::reset-undo-index
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (update :workspace-local dissoc :undo-index))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General workspace events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

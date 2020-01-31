@@ -198,6 +198,20 @@
                         % operations))
     data))
 
+;; (defn- process-mod-shape
+;;   [data {:keys [id operations] :as change}]
+;;   (if-let [shape (get-in data [:shapes-by-id id])]
+;;     (let [shape (reduce (fn [shape [_ att val]]
+;;                           (if (nil? val)
+;;                             (dissoc shape att)
+;;                             (assoc shape att val)))
+;;                         shape
+;;                         operations)]
+;;       (if (empty? shape)
+;;         (update data :shapes-by-id dissoc id)
+;;         (update data :shapes-by-id assoc id shape)))
+;;     data))
+
 (defn- process-mod-opts
   [data {:keys [operations]}]
   (update data :options
