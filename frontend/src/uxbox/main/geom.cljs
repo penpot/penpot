@@ -203,8 +203,12 @@
   instead of absolute positions."
   [shape opts]
   (case (:type shape)
-    :cirle (resize-dim-circle shape opts)
-    (resize-dim-rect shape opts)))
+    :rect (resize-dim-rect shape opts)
+    :canvas (resize-dim-rect shape opts)
+    :icon (resize-dim-rect shape opts)
+    :image (resize-dim-rect shape opts)
+    :text (resize-dim-rect shape opts)
+    :circle (resize-dim-circle shape opts)))
 
 (defn- resize-dim-rect
   [{:keys [proportion proportion-lock x y] :as shape}
@@ -224,7 +228,6 @@
 (defn- resize-dim-circle
   [{:keys [proportion proportion-lock] :as shape}
    {:keys [rx ry]}]
-  {:pre [(not (and rx ry))]}
   (if-not proportion-lock
     (if rx
       (assoc shape :rx rx)

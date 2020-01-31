@@ -73,7 +73,7 @@
                             :on-change on-size-rx-change
                             :value (-> (:rx shape)
                                        (math/precision 2)
-                                     (d/coalesce-str "0"))}]]
+                                       (d/coalesce-str "0"))}]]
        [:div.lock-size {:class (when (:proportion-lock shape) "selected")
                         :on-click on-proportion-lock-change}
         (if (:proportion-lock shape)
