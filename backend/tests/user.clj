@@ -19,8 +19,7 @@
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
    [promesa.core :as p]
    [promesa.exec :as pe]
-   [mount.core :as mount]
-   [uxbox.main]))
+   [mount.core :as mount]))
 
 ;; --- Benchmarking Tools
 

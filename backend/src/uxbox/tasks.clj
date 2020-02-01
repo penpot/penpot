@@ -21,6 +21,7 @@
    [uxbox.tasks.demo-gc]
    [uxbox.tasks.sendmail]
    [uxbox.tasks.impl :as impl]
+   [uxbox.util.time :as dt]
    [vertx.core :as vc]
    [vertx.timers :as vt]))
 
@@ -49,7 +50,7 @@
 
 (def ^:private schedule
   [{:id "every 1 hour"
-    :cron #uxbox/cron "1 1 */1 * * ? *"
+    :cron (dt/cron "1 1 */1 * * ? *")
     :fn #'uxbox.tasks.demo-gc/handler
     :props {:foo 1}}])
 

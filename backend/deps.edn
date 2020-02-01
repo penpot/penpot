@@ -60,9 +60,6 @@
     mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["tests"]}
 
-  :repl
-  {:main-opts  ["-m" "rebel-readline.main"]}
-
   :tests
   {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-581"}}
    :main-opts ["-m" "kaocha.runner"]}

@@ -16,17 +16,18 @@
   (let [m (System/getProperty "uxbox.enable-asserts")]
     (or (nil? m) (= "true" m))))
 
-;; Set value for current thread binding.
-(set! *assert* (enable-asserts nil))
-
 ;; Set value for all new threads bindings.
 (alter-var-root #'*assert* enable-asserts)
+
+;; Set value for current thread binding.
+(set! *assert* (enable-asserts nil))
 
 ;; --- Entry point
 
 (defn -main
   [& args]
-  (load "uxbox/config"
-        "uxbox/migrations"
-        "uxbox/http")
+  (require 'uxbox.config
+           'uxbox.migrations
+           'uxbox.http
+           'uxbox.tasks)
   (mount/start))

@@ -155,7 +155,7 @@
 
 (defn process-changes
   [data items]
-  (->> (us/assert ::changes items)
+  (->> (us/verify ::changes items)
        (reduce process-change data)))
 
 (defn- process-change
