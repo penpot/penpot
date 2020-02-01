@@ -30,7 +30,7 @@
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/parse-integer 0))]
-            (st/emit! (udw/update-dimensions (:id shape) {attr value}))))
+            (st/emit! (udw/update-rect-dimensions (:id shape) attr value))))
 
         on-proportion-lock-change
         (fn [event]

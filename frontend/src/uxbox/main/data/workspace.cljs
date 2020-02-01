@@ -178,7 +178,6 @@
 ;;       (derive ::update-options ::undo-signal)
 ;;       (derive ::move-selected-layer ::undo-signal)
 ;;       (derive ::materialize-temporal-modifier-in-bulk ::undo-signal)
-;;       (derive ::update-dimensions ::undo-signal)
 ;;       (derive ::add-shape ::undo-signal)
 ;;       (derive ::add-canvas ::undo-signal)))
 
@@ -1115,30 +1114,21 @@
 
 ;; --- Update Dimensions
 
-(s/def ::width ::us/number)
-(s/def ::height ::us/number)
-
-(s/def ::update-dimensions
-  (s/keys :opt-un [::width ::height]))
-
-(defn update-dimensions
-  "A helper event just for update the position
-  of the shape using the width and height attrs
-  instread final point of coordinates."
-  [id dimensions]
-  (us/verify ::us/uuid id)
-  (us/verify ::update-dimensions dimensions)
-  (ptk/reify ::update-dimensions
-    IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-data :shapes-by-id id] geom/resize-dim dimensions))))
-
-
 (defn update-rect-dimensions
   [id attr value]
   (us/verify ::us/uuid id)
   (us/verify #{:width :height} attr)
+  (us/verify ::us/number value)
+  (ptk/reify ::update-rect-dimensions
+    IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-data :shapes-by-id id] geom/resize-rect attr value))))
+
+(defn update-circle-dimensions
+  [id attr value]
+  (us/verify ::us/uuid id)
+  (us/verify #{::rx ::ry} attr)
   (us/verify ::us/number value)
   (ptk/reify ::update-rect-dimensions
     IBatchedChange
