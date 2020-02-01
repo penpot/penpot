@@ -21,31 +21,30 @@
 
     .library-tabs {
       align-items: center;
-      background-color: $secondary-ui-bg;
+      background-color: $color-white;
+      border-bottom: 1px solid $medium-ui-border;
       display: flex;
       justify-content: space-around;
       margin: 0;
       padding-top: 12px;
 
       li {
-        background-color: darken($secondary-ui-bg, 10%);
-        border-top-left-radius: 3px;
-        border-top-right-radius: 3px;
+        background-color: $color-white;
+        border-bottom: 2px solid transparent;
         color: $color-gray;
         cursor: pointer;
-        font-weight: bold;
         font-size: $fs14;
         padding: .6rem;
         text-align: center;
         width: 118px;
 
         &:hover {
-          color: $color-white;
+          color: $intense-ui-text;
         }
 
         &.current {
-          background-color: $primary-ui-bg;
-          color: $main-ui-color;
+          border-color: $main-ui-color;
+          color: $intense-ui-text;
         }
 
       }
