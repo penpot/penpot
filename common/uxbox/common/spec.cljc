@@ -110,15 +110,20 @@
 
 ;; --- Macros
 
-(defn assert*
+(defn spec-assert
   [spec x]
   (s/assert* spec x))
 
-#?(:clj
-   (defmacro assert
-     "Always active assertion macro (does not obey to :elide-asserts)"
-     [spec x]
-     `(assert* ~spec ~x)))
+(defmacro assert
+  "Always active assertion macro (does not obey to :elide-asserts)"
+  [spec x]
+  (when *assert*
+    `(spec-assert ~spec ~x)))
+
+(defmacro verify
+  "Always active assertion macro (does not obey to :elide-asserts)"
+  [spec x]
+  `(spec-assert ~spec ~x))
 
 ;; --- Public Api
 

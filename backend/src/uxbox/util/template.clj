@@ -41,13 +41,13 @@
                              ""))))
 
                      (or (vector? x) (list? x))
-                     (java.util.ArrayList. x)
+                     (java.util.ArrayList. ^java.util.List x)
 
                      (map? x)
-                     (java.util.HashMap. x)
+                     (java.util.HashMap. ^java.util.Map x)
 
                      (set? x)
-                     (java.util.HashSet. x)
+                     (java.util.HashSet. ^java.util.Set x)
 
                      :else
                      x))
@@ -60,7 +60,7 @@
     (let [context (adapt-context context)
           template (.compile +mustache-factory+ path)]
       (with-out-str
-        (let [scope (HashMap. (walk/stringify-keys context))]
+        (let [scope (HashMap. ^java.util.Map (walk/stringify-keys context))]
           (.execute ^Mustache template *out* scope))))
     (catch Exception cause
       (ex/raise :type :internal

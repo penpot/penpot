@@ -15,4 +15,4 @@
 
 (defstate system
   :start (vc/system)
-  :stop (.close system))
+  :stop (vc/stop system))

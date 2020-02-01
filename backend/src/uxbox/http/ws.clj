@@ -17,6 +17,7 @@
    [uxbox.util.uuid :as uuid]
    [uxbox.util.transit :as t]
    [uxbox.util.blob :as blob]
+   [vertx.core :as vc]
    [vertx.http :as vh]
    [vertx.web :as vw]
    [vertx.util :as vu]
@@ -87,12 +88,12 @@
 (defn handler
   [{:keys [user] :as req}]
   (letfn [(on-init [ws]
-            (let [vsm (::vw/execution-context req)
+            (let [ctx (vc/current-context)
                   fid (get-in req [:path-params :file-id])
                   ws  (assoc ws
                              :user-id user
                              :file-id fid)
-                  sem (start-eventbus-consumer! vsm ws fid)]
+                  sem (start-eventbus-consumer! ctx ws fid)]
               (handle-message ws {:type :connect})
               (assoc ws ::sem sem)))
 

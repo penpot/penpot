@@ -7,7 +7,7 @@
 (ns uxbox.main.ui.shapes.icon
   (:require
    [rumext.alpha :as mf]
-   [rumext.core :as mx]
+   [cuerdas.core :as str]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
@@ -32,14 +32,6 @@
 
 ;; --- Icon Shape
 
-(defn- rotate
-  ;; TODO: revisit, i'm not sure if this function is duplicated.
-  [mt {:keys [x1 y1 x2 y2 width height rotation] :as shape}]
-  (let [x-center (+ x1 (/ width 2))
-        y-center (+ y1 (/ height 2))
-        center (gpt/point x-center y-center)]
-    (gmt/rotate mt rotation center)))
-
 (mf/defc icon-shape
   [{:keys [shape] :as props}]
   (let [{:keys [id content metadata rotation modifier-mtx]} shape
@@ -48,26 +40,30 @@
                 (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
                 :else shape)
 
-        {:keys [x1 y1 width height] :as shape} (geom/size shape)
+        {:keys [x y width height] :as shape} shape
 
-        transform (when (pos? rotation)
-                    (str (rotate (gmt/matrix) shape)))
+        transform (when (and rotation (pos? rotation))
+                    (str/format "rotate(%s %s %s)"
+                                rotation
+                                (+ x (/ width 2))
+                                (+ y (/ height 2))))
+
 
         view-box (apply str (interpose " " (:view-box metadata)))
-        moving? (boolean modifier-mtx)
-        props {:id (str id)
-               :x x1
-               :y y1
-               :view-box view-box
-               :class (classnames :move-cursor moving?)
-               :width width
-               :height height
-               :preserve-aspect-ratio "none"
-               :dangerouslySetInnerHTML #js {:__html content}}
 
-        attrs (merge props (attrs/extract-style-attrs shape))]
+        props (-> (attrs/extract-style-attrs shape)
+                  (assoc :x x
+                         :y y
+                         :transform transform
+                         :id (str "shape-" id)
+                         :width width
+                         :height height
+                         :viewBox view-box
+                         :preserveAspectRatio "none"
+                         :dangerouslySetInnerHTML #js {:__html content}
+                         ))]
     [:g {:transform transform}
-     [:> :svg (normalize-props attrs) ]]))
+     [:& "svg" props]]))
 
 ;; --- Icon SVG
 
@@ -75,7 +71,7 @@
   [{:keys [shape] :as props}]
   (let [{:keys [content id metadata]} shape
         view-box (apply str (interpose " " (:view-box metadata)))
-        props {:view-box view-box
+        props {:viewBox view-box
                :id (str "shape-" id)
                :dangerouslySetInnerHTML #js {:__html content}}]
-    [:> :svg (normalize-props props)]))
+    [:& "svg" props]))

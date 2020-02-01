@@ -69,7 +69,7 @@
     (loop [m (transient {})]
       (if (.hasNext it)
         (let [^Map$Entry o (.next it)
-              key (keyword (.toLowerCase (.getKey o)))
+              key (keyword (.toLowerCase ^String (.getKey o)))
               prv (get m key ::default)
               val (.getValue o)]
           (cond

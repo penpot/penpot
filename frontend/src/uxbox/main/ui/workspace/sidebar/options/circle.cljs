@@ -27,7 +27,7 @@
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/parse-integer 0))]
-            (st/emit! (udw/update-dimensions (:id shape) {attr value}))))
+            (st/emit! (udw/update-circle-dimensions (:id shape) attr value))))
 
         on-proportion-lock-change
         (fn [event]
@@ -40,9 +40,8 @@
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-integer))
-                point (gpt/point {attr value})]
-            (st/emit! (udw/update-position (:id shape) point))))
+                          (d/parse-integer))]
+            (st/emit! (udw/update-position (:id shape) {attr value}))))
 
         on-pos-cx-change #(on-position-change % :x)
         on-pos-cy-change #(on-position-change % :y)
@@ -74,7 +73,7 @@
                             :on-change on-size-rx-change
                             :value (-> (:rx shape)
                                        (math/precision 2)
-                                     (d/coalesce-str "0"))}]]
+                                       (d/coalesce-str "0"))}]]
        [:div.lock-size {:class (when (:proportion-lock shape) "selected")
                         :on-click on-proportion-lock-change}
         (if (:proportion-lock shape)

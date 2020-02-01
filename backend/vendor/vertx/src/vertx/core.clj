@@ -5,16 +5,17 @@
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns vertx.core
-  (:require [clojure.spec.alpha :as s]
-            [promesa.core :as p]
-            [vertx.eventbus :as vxe]
-            [vertx.util :as vu])
+  (:require
+   [clojure.spec.alpha :as s]
+   [promesa.core :as p]
+   [vertx.eventbus :as vxe]
+   [vertx.util :as vu])
   (:import
+   io.vertx.core.AsyncResult
    io.vertx.core.Context
    io.vertx.core.DeploymentOptions
-   io.vertx.core.Future
-   io.vertx.core.Promise
    io.vertx.core.Handler
+   io.vertx.core.Promise
    io.vertx.core.Verticle
    io.vertx.core.Vertx
    io.vertx.core.VertxOptions
@@ -25,10 +26,6 @@
 (declare build-verticle)
 (declare build-actor)
 (declare build-disposable)
-
-;; --- Protocols
-
-(definterface IVerticleFactory)
 
 ;; --- Public Api
 
@@ -48,6 +45,10 @@
      (vxe/configure! vsm opts)
      vsm)))
 
+(defn stop
+  [^Vertx o]
+  (.close o))
+
 (defn get-or-create-context
   [vsm]
   (.getOrCreateContext ^Vertx (vu/resolve-system vsm)))
@@ -56,11 +57,58 @@
   []
   (Vertx/currentContext))
 
+(defmacro blocking
+  [& body]
+  `(let [vsm# (-> (current-context)
+                  (vu/resolve-system))
+         d# (p/deferred)]
+     (.executeBlocking
+      vsm#
+      (reify Handler
+        (handle [_ prm#]
+          (try
+            (.complete prm# (do ~@body))
+            (catch Throwable e#
+              (.fail prm# e#)))))
+      true
+      (reify Handler
+        (handle [_ ar#]
+          (if (.failed ^AsyncResult ar#)
+            (p/reject! d# (.cause ^AsyncResult ar#))
+            (p/resolve! d# (.result ^AsyncResult ar#))))))
+     d#))
+
+
+
+
+(defn wrap-blocking
+  ([f] (wrap-blocking (current-context) f))
+  ([ctx f]
+   (let [^Vertx vsm (vu/resolve-system ctx)]
+     (fn [& args]
+       (let [d (p/deferred)]
+         (.executeBlocking
+          vsm
+          (reify Handler
+            (handle [_ prm]
+              (try
+                (.complete ^Promise prm (apply f args))
+                (catch Throwable e
+                  (.fail ^Promise prm e)))))
+          true
+          (reify Handler
+            (handle [_ ar]
+              (if (.failed ^AsyncResult ar)
+                (p/reject! d (.cause ^AsyncResult ar))
+                (p/resolve! d (.result ^AsyncResult ar))))))
+         d)))))
+
 (defn handle-on-context
   "Attaches the context (current if not explicitly provided) to the
   promise execution chain."
   ([prm] (handle-on-context prm (current-context)))
   ([prm ctx]
+   (assert (instance? Context ctx) "`ctx` should be a valid Context instance")
    (let [d (p/deferred)]
      (p/finally prm (fn [v e]
                       (.runOnContext
@@ -71,6 +119,14 @@
                                       (p/reject! d e)
                                       (p/resolve! d v)))))))
      d)))
+
+(defn run-on-context
+  [ctx f]
+  (.runOnContext
+   ^Context ctx
+   ^Handler (reify Handler
+              (handle [_ v']
+                (f ctx)))))
 
 (s/def :vertx.core$verticle/on-start fn?)
 (s/def :vertx.core$verticle/on-stop fn?)
@@ -84,15 +140,15 @@
   "Creates a verticle instance (factory)."
   [options]
   (s/assert ::verticle-options options)
+  ^{::verticle true ::options options}
   (reify
-    IVerticleFactory
     Supplier
     (get [_] (build-verticle options))))
 
 (defn verticle?
   "Return `true` if `v` is instance of `IVerticleFactory`."
   [v]
-  (instance? IVerticleFactory v))
+  (true? (::verticle (meta v))))
 
 (s/def :vertx.core$actor/on-message fn?)
 (s/def ::actor-options
@@ -107,8 +163,8 @@
   [topic options]
   (s/assert string? topic)
   (s/assert ::actor-options options)
+  ^{::verticle true ::options options ::topic topic}
   (reify
-    IVerticleFactory
     Supplier
     (get [_] (build-actor topic options))))
 
@@ -149,7 +205,8 @@
 (defn- build-verticle
   [{:keys [on-start on-stop on-error]
     :or {on-error (constantly nil)
-         on-stop (constantly nil)}}]
+         on-stop (constantly nil)}
+    :as options}]
   (let [vsm (volatile! nil)
         ctx (volatile! nil)
         lst (volatile! nil)]
@@ -163,7 +220,7 @@
            (p/handle (fn [state error]
                        (if error
                          (do
-                           (.fail o error)
+                           (.fail o  ^Throwable error)
                            (on-error @ctx error))
                          (do
                            (when (map? state)
@@ -174,7 +231,7 @@
                  (fn [_ err]
                    (if err
                      (do (on-error err)
-                         (.fail o err))
+                         (.fail o ^Throwable err))
                      (.complete o))))))))
 
 (defn- build-actor
@@ -212,10 +269,11 @@
     opts))
 
 (defn- opts->vertx-options
-  [{:keys [threads on-error]}]
+  [{:keys [threads worker-threads on-error]}]
   (let [opts (VertxOptions.)]
     (when threads (.setEventLoopPoolSize opts (int threads)))
-    (when on-error (.exceptionHandler (vu/fn->handler on-error)))
+    (when worker-threads (.setWorkerPoolSize opts (int worker-threads)))
+    #_(when on-error (.exceptionHandler opts (vu/fn->handler on-error)))
     opts))
 
 

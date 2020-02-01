@@ -35,7 +35,7 @@
 
 (s/def ::email ::us/email)
 (s/def ::fullname ::us/string)
-(s/def ::metadata any?)
+(s/def ::lang ::us/string)
 (s/def ::old-password ::us/string)
 (s/def ::password ::us/string)
 (s/def ::path ::us/string)
@@ -82,6 +82,15 @@
     (-> (retrieve-user db/pool username)
         (p/then' check-user))))
 
+;; --- Mutation: Add additional email
+;; TODO
+
+;; --- Mutation: Mark email as main email
+;; TODO
+
+;; --- Mutation: Verify email (or maybe query?)
+;; TODO
+
 ;; --- Mutation: Update Profile (own)
 
 (defn- check-username-and-email!
@@ -109,23 +118,22 @@
 (def sql:update-profile
   "update users
       set username = $2,
-          email = $3,
-          fullname = $4,
-          metadata = $5
+          fullname = $3,
+          lang = $4
     where id = $1
       and deleted_at is null
    returning *")
 
 (defn- update-profile
-  [conn {:keys [id username email fullname metadata] :as params}]
-  (let [sqlv [sql:update-profile id username
-              email fullname (blob/encode metadata)]]
+  [conn {:keys [id username fullname lang] :as params}]
+  (let [sqlv [sql:update-profile
+              id username fullname lang]]
     (-> (db/query-one conn sqlv)
         (p/then' su/raise-not-found-if-nil)
         (p/then' profile/strip-private-attrs))))
 
 (s/def ::update-profile
-  (s/keys :req-un [::id ::username ::email ::fullname ::metadata]))
+  (s/keys :req-un [::id ::username ::fullname ::lang]))
 
 (sm/defmutation ::update-profile
   [params]
@@ -213,9 +221,13 @@
 
 ;; --- Mutation: Register Profile
 
-(def sql:create-user
+(def sql:insert-user
   "insert into users (id, fullname, username, email, password, photo)
    values ($1, $2, $3, $4, $5, '') returning *")
+
+(def sql:insert-email
+  "insert into user_emails (user_id, email, is_main)
+   values ($1, $2, true)")
 
 (defn- check-profile-existence!
   [conn {:keys [username email] :as params}]
@@ -237,22 +249,24 @@
   [conn {:keys [id username fullname email password] :as params}]
   (let [id (or id (uuid/next))
         password (sodi.pwhash/derive password)
-        sqlv [sql:create-user
-              id
-              fullname
-              username
-              email
-              password]]
-    (db/query-one conn sqlv)))
+        sqlv1 [sql:insert-user id
+               fullname username
+               email password]
+        sqlv2 [sql:insert-email id email]]
+    (p/let [profile (db/query-one conn sqlv1)]
+      (db/query-one conn sqlv2)
+      profile)))
 
 (defn register-profile
   [conn params]
   (-> (create-profile conn params)
       (p/then' profile/strip-private-attrs)
       (p/then (fn [profile]
-                (-> (emails/send! emails/register {:to (:email params)
-                                                   :name (:fullname params)})
-                    (p/then' (constantly profile)))))))
+                  ;; TODO: send a correct link for email verification
+                (p/let [data {:to (:email params)
+                              :name (:fullname params)}]
+                  (emails/send! emails/register data)
+                  profile)))))
 
 (s/def ::register-profile
   (s/keys :req-un [::username ::email ::password ::fullname]))

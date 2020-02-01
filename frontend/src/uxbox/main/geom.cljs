@@ -5,10 +5,13 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.geom
-  (:require [uxbox.util.geom.matrix :as gmt]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.math :as mth]
-            [uxbox.main.store :as st]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [uxbox.common.spec :as us]
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.math :as mth]
+   [uxbox.main.store :as st]))
 
 ;; --- Relative Movement
 
@@ -24,6 +27,7 @@
     :icon (move-rect shape dpoint)
     :image (move-rect shape dpoint)
     :rect (move-rect shape dpoint)
+    :canvas (move-rect shape dpoint)
     :text (move-rect shape dpoint)
     :curve (move-path shape dpoint)
     :path (move-path shape dpoint)
@@ -62,12 +66,13 @@
 
 (defn absolute-move
   "Move the shape to the exactly specified position."
-  [shape point]
+  [shape position]
   (case (:type shape)
-    :icon (absolute-move-rect shape point)
-    :image (absolute-move-rect shape point)
-    :rect (absolute-move-rect shape point)
-    :circle (absolute-move-circle shape point)))
+    :icon (absolute-move-rect shape position)
+    :canvas (absolute-move-rect shape position)
+    :image (absolute-move-rect shape position)
+    :rect (absolute-move-rect shape position)
+    :circle (absolute-move-circle shape position)))
 
 (defn- absolute-move-rect
   "A specialized function for absolute moviment
@@ -193,47 +198,38 @@
 
 ;; --- Resize (Dimentsions)
 
-(declare resize-dim-rect)
-(declare resize-dim-circle)
+(defn resize-rect
+  [shape attr value]
+  (us/assert map? shape)
+  (us/assert #{:width :height} attr)
+  (us/assert number? value)
 
-(defn resize-dim
-  "Resize using calculated dimensions (eg, `width` and `height`)
-  instead of absolute positions."
-  [shape opts]
-  (case (:type shape)
-    :cirle (resize-dim-circle shape opts)
-    (resize-dim-rect shape opts)))
+  (let [{:keys [proportion proportion-lock]} shape]
+    (if-not proportion-lock
+      (assoc shape attr value)
+      (if (= attr :width)
+        (-> shape
+            (assoc :width value)
+            (assoc :height (/ value proportion)))
+        (-> shape
+            (assoc :height value)
+            (assoc :width (* value proportion)))))))
 
-(defn- resize-dim-rect
-  [{:keys [proportion proportion-lock x y] :as shape}
-   {:keys [width height] :as dimensions}]
-  (if-not proportion-lock
-    (if width
-      (assoc shape :width width)
-      (assoc shape :height height))
-    (if width
-      (-> shape
-          (assoc :width width)
-          (assoc :height (/ width proportion)))
-      (-> shape
-          (assoc :height height)
-          (assoc :width (* height proportion))))))
-
-(defn- resize-dim-circle
-  [{:keys [proportion proportion-lock] :as shape}
-   {:keys [rx ry]}]
-  {:pre [(not (and rx ry))]}
-  (if-not proportion-lock
-    (if rx
-      (assoc shape :rx rx)
-      (assoc shape :ry ry))
-    (if rx
-      (-> shape
-          (assoc :rx rx)
-          (assoc :ry (/ rx proportion)))
-      (-> shape
-          (assoc :ry ry)
-          (assoc :rx (* ry proportion))))))
+(defn resize-circle
+  [shape attr value]
+  (us/assert map? shape)
+  (us/assert #{:rx :ry} attr)
+  (us/assert number? value)
+  (let [{:keys [proportion proportion-lock]} shape]
+    (if-not proportion-lock
+      (assoc shape attr value)
+      (if (= attr :rx)
+        (-> shape
+            (assoc :rx value)
+            (assoc :ry (/ value proportion)))
+        (-> shape
+            (assoc :ry value)
+            (assoc :rx (* value proportion)))))))
 
 ;; --- Resize
 
@@ -569,10 +565,15 @@
     (gmt/matrix? modifier-mtx)
     (transform modifier-mtx)))
 
-(def ^:private
-  xf-resolve-shapes
+;; NOTE: we need applu `shape->rect-shape` 3 times because we need to
+;; update the x1 x2 y1 y2 attributes on each step; this is because
+;; some transform functions still uses that attributes. WE NEED TO
+;; REFACTOR this, and remove any usage of the old xN yN attributes.
+
+(def ^:private xf-resolve-shapes
   (comp (map shape->rect-shape)
         (map resolve-modifier)
+        (map shape->rect-shape)
         (map resolve-rotation)
         (map shape->rect-shape)))
 

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -ex
+clojure -Ojmx-remote -A:dev -e "(set! *warn-on-reflection* true)" -m rebel-readline.main

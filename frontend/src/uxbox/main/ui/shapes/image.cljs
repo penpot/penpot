@@ -8,13 +8,13 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [uxbox.main.data.images :as udi]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.data :refer [classnames normalize-props]]
    [uxbox.util.geom.matrix :as gmt]))
 
 ;; --- Refs
@@ -47,17 +47,25 @@
 
 (mf/defc image-shape
   [{:keys [shape image] :as props}]
-  (let [{:keys [id x y width height modifier-mtx]} shape
-        moving? (boolean modifier-mtx)
-        transform (when (gmt/matrix? modifier-mtx)
-                    (str modifier-mtx))
+  (let [{:keys [id rotation modifier-mtx]} shape
+
+        shape (cond
+                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
+                :else shape)
+
+        {:keys [x y width height]} shape
+
+        transform (when (and rotation (pos? rotation))
+                    (str/format "rotate(%s %s %s)"
+                                rotation
+                                (+ x (/ width 2))
+                                (+ y (/ height 2))))
 
         props (-> (attrs/extract-style-attrs shape)
                   (assoc :x x
                          :y y
                          :id (str "shape-" id)
                          :preserveAspectRatio "none"
-                         :className (classnames :move-cursor moving?)
                          :xlinkHref (:url image)
                          :transform transform
                          :width width

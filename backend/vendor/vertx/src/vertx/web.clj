@@ -52,7 +52,7 @@
      :method (-> request .rawMethod .toLowerCase keyword)
      ::vh/request request
      ::vh/response response
-     ::execution-context (.getContext system)
+     ;; ::execution-context (.getContext system)
      ::routing-context routing-context}))
 
 (defn handler
@@ -147,7 +147,7 @@
                 (let [req (->request rc)
                       efn (fn [err]
                             (.put ^RoutingContext rc "vertx$clj$req" req)
-                            (.fail ^RoutingContext rc err))]
+                            (.fail ^RoutingContext rc ^Throwable err))]
                   (try
                     (-> (vh/-handle-response (f req) req)
                         (p/catch' efn))

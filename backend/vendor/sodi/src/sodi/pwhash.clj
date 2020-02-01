@@ -51,7 +51,7 @@
   [{:keys [alg password salt cpucost] :as options}]
   (let [salt (or salt (rng/random-bytes 16))
         cpucost (or cpucost 50000)
-        pwd (.toCharArray password)
+        pwd (.toCharArray ^String password)
         spec (PBEKeySpec. pwd salt cpucost 512)
         skf  (SecretKeyFactory/getInstance "PBKDF2WithHmacSHA256")
         hash (.getEncoded (.generateSecret skf spec))]

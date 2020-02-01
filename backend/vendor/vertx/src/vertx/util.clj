@@ -35,17 +35,18 @@
   [d]
   (reify Handler
     (handle [_ ar]
-      (if (.failed ar)
-        (p/reject! d (.cause ar))
-        (p/resolve! d (.result ar))))))
+      (if (.failed ^AsyncResult ar)
+        (p/reject! d (.cause ^AsyncResult ar))
+        (p/resolve! d (.result ^AsyncResult ar))))))
 
 (defmacro doseq
   "A faster version of doseq."
   [[bsym csym] & body]
-  `(let [it# (.iterator ~csym)]
-     (loop []
-       (when (.hasNext it#)
-         (let [~bsym (.next it#)]
-           ~@body
-           (recur))))))
+  (let [itsym (gensym "iterator")]
+    `(let [~itsym (.iterator ~(with-meta csym {:tag 'java.lang.Iterable}))]
+       (loop []
+         (when (.hasNext ~(with-meta itsym {:tag 'java.util.Iterator}))
+           (let [~bsym (.next ~itsym)]
+             ~@body
+             (recur)))))))
 

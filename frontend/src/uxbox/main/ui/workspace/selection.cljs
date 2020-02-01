@@ -122,7 +122,7 @@
 
 (mf/defc controls
   [{:keys [shape zoom on-resize on-rotate] :as props}]
-  (let [{:keys [x y width height rotation]} shape
+  (let [{:keys [x y width height rotation] :as shape} (geom/shape->rect-shape shape)
         radius (if (> (max width height) handler-size-threshold) 6.0 4.0)
         transform (geom/rotation-matrix shape)]
     [:g.controls {:transform transform}

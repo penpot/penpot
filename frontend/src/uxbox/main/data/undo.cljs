@@ -24,7 +24,7 @@
 
 (defn watch-page-changes
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (ptk/reify ::watch-page-changes
     ptk/WatchEvent
     (watch [_ state stream]
@@ -40,7 +40,7 @@
 
 (defn save-undo-entry
   [id]
-  (us/assert ::us/uuid id)
+  (us/verify ::us/uuid id)
   (letfn [(cons-entry [stack entry]
             (let [stack (cons entry stack)]
               (if (> (count stack) MAX-STACK-SIZE)

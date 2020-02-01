@@ -122,14 +122,14 @@
 
 (defmethod mutation :login
   [id params]
-  (let [url (str url "/login")]
+  (let [url (str url "/api/login")]
     (->> (impl-send {:method :post :url url :body params})
          (rx/map conditional-decode)
          (rx/mapcat handle-response))))
 
 (defmethod mutation :logout
   [id params]
-  (let [url (str url "/logout")]
+  (let [url (str url "/api/logout")]
     (->> (impl-send {:method :post :url url :body params :auth false})
          (rx/map conditional-decode)
          (rx/mapcat handle-response))))

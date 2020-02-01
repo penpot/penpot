@@ -8,16 +8,26 @@
 ;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main
-  (:require [mount.core :as mount]
-            [uxbox.config :as cfg]
-            [uxbox.migrations]
-            [uxbox.db]
-            [uxbox.http]
-            #_[uxbox.scheduled-jobs])
-  (:gen-class))
+  (:require
+   [mount.core :as mount]))
 
-;; --- Entry point (only for uberjar)
+(defn- enable-asserts
+  [_]
+  (let [m (System/getProperty "uxbox.enable-asserts")]
+    (or (nil? m) (= "true" m))))
+
+;; Set value for all new threads bindings.
+(alter-var-root #'*assert* enable-asserts)
+
+;; Set value for current thread binding.
+(set! *assert* (enable-asserts nil))
+
+;; --- Entry point
 
 (defn -main
   [& args]
+  (require 'uxbox.config
+           'uxbox.migrations
+           'uxbox.http
+           'uxbox.tasks)
   (mount/start))

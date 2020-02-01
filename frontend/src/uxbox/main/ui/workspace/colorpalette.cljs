@@ -29,21 +29,20 @@
 
 (mf/defc palette-item
   [{:keys [color] :as props}]
-  (letfn [(select-color [event]
-            (if (kbd/shift? event)
-              (st/emit! (udw/update-selected-shapes :stroke-color color))
-              (st/emit! (udw/update-selected-shapes :fill-color color))))]
-    (let [rgb-vec (hex->rgb color)
-          rgb-color (apply str "" (interpose ", " rgb-vec))]
-      [:div.color-cell {:key (str color)
-                        :on-click select-color}
-       [:span.color {:style {:background color}}]
-       [:span.color-text color]
-       [:span.color-text rgb-color]])))
+  (let [rgb-vec (hex->rgb color)
+        rgb-color (apply str "" (interpose ", " rgb-vec))
 
-(defn- document-width
-  []
-  (.. js/document -documentElement -clientWidth))
+        select-color
+        (fn [event]
+          (if (kbd/shift? event)
+            (st/emit! (udw/update-selected-shapes {:stroke-color color}))
+            (st/emit! (udw/update-selected-shapes {:fill-color color}))))]
+
+    [:div.color-cell {:key (str color)
+                      :on-click select-color}
+     [:span.color {:style {:background color}}]
+     [:span.color-text color]
+     [:span.color-text rgb-color]]))
 
 (mf/defc palette
   [{:keys [colls] :as props}]
@@ -51,66 +50,77 @@
         colls (->> colls
                    (filter :id)
                    (sort-by :name))
+
         coll  (or (:selected @local)
                   (first colls))
 
-        width (:width @local (* (document-width) 0.84))
+        doc-width (.. js/document -documentElement -clientWidth)
+        width (:width @local (* doc-width 0.84))
         offset (:offset @local 0)
         visible (/ width 86)
         invisible (- (count (:colors coll)) visible)
-        close #(st/emit! (udw/toggle-flag :colorpalette))
+        close #(st/emit! (udw/toggle-layout-flag :colorpalette))
 
         container (mf/use-ref nil)
-        container-child (mf/use-ref nil)]
+        container-child (mf/use-ref nil)
 
-    (letfn [(select-coll [event]
-              (let [id (read-string (dom/event->value event))
-                    selected (seek #(= id (:id %)) colls)]
-                (swap! local assoc :selected selected :position 0)))
-            (on-left-arrow-click [event]
-              (when (> offset 0)
-                (let [element (mf/ref-node container-child)]
-                  (swap! local update :offset dec))))
-            (on-right-arrow-click [event]
-              (when (< offset invisible)
-                (let [element (mf/ref-node container-child)]
-                  (swap! local update :offset inc))))
-            (on-scroll [event]
-              (if (pos? (.. event -nativeEvent -deltaY))
-                (on-right-arrow-click event)
-                (on-left-arrow-click event)))
-            (after-render []
-              (let [dom (mf/ref-node container)
-                    width (.-clientWidth dom)]
-                (when (not= (:width @local) width)
-                  (swap! local assoc :width width))))]
+        select-coll
+        (fn [event]
+          (let [id (read-string (dom/event->value event))
+                selected (seek #(= id (:id %)) colls)]
+            (swap! local assoc :selected selected :position 0)))
 
-      (mf/use-effect {:deps true :fn after-render})
+        on-left-arrow-click
+        (fn [event]
+          (when (> offset 0)
+            (let [element (mf/ref-node container-child)]
+              (swap! local update :offset dec))))
 
-      [:div.color-palette
-       [:div.color-palette-actions
-        [:select.input-select {:on-change select-coll
-                               :default-value (pr-str (:id coll))}
-         (for [item colls]
-           [:option {:key (:id item) :value (pr-str (:id item))}
-            (:name item)])]
+        on-right-arrow-click
+        (fn [event]
+          (when (< offset invisible)
+            (let [element (mf/ref-node container-child)]
+              (swap! local update :offset inc))))
 
-        #_[:div.color-palette-buttons
+        on-scroll
+        (fn [event]
+          (if (pos? (.. event -nativeEvent -deltaY))
+            (on-right-arrow-click event)
+            (on-left-arrow-click event)))
+
+        after-render
+        (fn []
+          (let [dom (mf/ref-node container)
+                width (.-clientWidth dom)]
+            (when (not= (:width @local) width)
+              (swap! local assoc :width width))))]
+
+    (mf/use-effect {:deps true :fn after-render})
+
+    [:div.color-palette
+     [:div.color-palette-actions
+      [:select.input-select {:on-change select-coll
+                             :default-value (pr-str (:id coll))}
+       (for [item colls]
+         [:option {:key (:id item) :value (pr-str (:id item))}
+          (:name item)])]
+
+      #_[:div.color-palette-buttons
          [:div.btn-palette.edit.current i/pencil]
          [:div.btn-palette.create i/close]]]
 
-       [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
+     [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
 
-       [:div.color-palette-content {:ref container :on-wheel on-scroll}
-        [:div.color-palette-inside {:ref container-child
-                                    :style {:position "relative"
-                                            :width (str (* 86 (count (:colors coll))) "px")
-                                            :right (str (* 86 offset) "px")}}
-         (for [color (:colors coll)]
-           [:& palette-item {:color color :key color}])]]
+     [:div.color-palette-content {:ref container :on-wheel on-scroll}
+      [:div.color-palette-inside {:ref container-child
+                                  :style {:position "relative"
+                                          :width (str (* 86 (count (:colors coll))) "px")
+                                          :right (str (* 86 offset) "px")}}
+       (for [color (:colors coll)]
+         [:& palette-item {:color color :key color}])]]
 
-       [:span.right-arrow {:on-click on-right-arrow-click}  i/arrow-slide]
-       [:span.close-palette {:on-click close} i/close]])))
+     [:span.right-arrow {:on-click on-right-arrow-click}  i/arrow-slide]
+     [:span.close-palette {:on-click close} i/close]]))
 
 (mf/defc colorpalette
   [props]

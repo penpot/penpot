@@ -36,6 +36,6 @@
 
 (defn initialize-alignment
   [params]
-  (us/assert ::initialize-alignment-params params)
+  (us/verify ::initialize-alignment-params params)
   (let [message (assoc params :cmd :grid-init)]
     (uw/send! worker message)))

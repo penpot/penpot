@@ -40,7 +40,7 @@
     (loop [m (transient {})]
       (if (.hasNext it)
         (let [^Map$Entry me (.next it)
-              key (.toLowerCase (.getKey me))
+              key (.toLowerCase ^String (.getKey me))
               val (.getValue me)]
           (recur (assoc! m key val)))
         (persistent! m)))))
@@ -91,8 +91,8 @@
     (.setReusePort opts true)
     (.setTcpNoDelay opts true)
     (.setTcpFastOpen opts true)
-    (when host (.setHost opts host))
-    (when port (.setPort opts port))
+    (when host (.setHost opts ^String host))
+    (when port (.setPort opts ^int port))
     opts))
 
 (defn- resolve-handler
@@ -135,7 +135,8 @@
 (extend-protocol IAsyncBody
   (Class/forName "[B")
   (-handle-body [data res]
-    (.end ^HttpServerResponse res (Buffer/buffer data)))
+    (.end ^HttpServerResponse res (Buffer/buffer ^bytes data)))
+
   Buffer
   (-handle-body [data res]
     (.end ^HttpServerResponse res ^Buffer data))

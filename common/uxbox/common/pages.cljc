@@ -11,7 +11,6 @@
 (s/def ::shape-id uuid?)
 (s/def ::session-id uuid?)
 (s/def ::name string?)
-(s/def ::type keyword?)
 
 ;; Page Options
 (s/def ::grid-x number?)
@@ -47,7 +46,7 @@
 (s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
 (s/def ::stroke-width number?)
 (s/def ::text-align #{"left" "right" "center" "justify"})
-(s/def ::type #{:rect :path :circle :image :text :canvas :curve})
+(s/def ::type #{:rect :path :circle :image :text :canvas :curve :icon})
 (s/def ::x number?)
 (s/def ::y number?)
 (s/def ::cx number?)
@@ -156,7 +155,7 @@
 
 (defn process-changes
   [data items]
-  (->> (us/assert ::changes items)
+  (->> (us/verify ::changes items)
        (reduce process-change data)))
 
 (defn- process-change
@@ -198,6 +197,20 @@
                             (assoc shape att val)))
                         % operations))
     data))
+
+;; (defn- process-mod-shape
+;;   [data {:keys [id operations] :as change}]
+;;   (if-let [shape (get-in data [:shapes-by-id id])]
+;;     (let [shape (reduce (fn [shape [_ att val]]
+;;                           (if (nil? val)
+;;                             (dissoc shape att)
+;;                             (assoc shape att val)))
+;;                         shape
+;;                         operations)]
+;;       (if (empty? shape)
+;;         (update data :shapes-by-id dissoc id)
+;;         (update data :shapes-by-id assoc id shape)))
+;;     data))
 
 (defn- process-mod-opts
   [data {:keys [operations]}]

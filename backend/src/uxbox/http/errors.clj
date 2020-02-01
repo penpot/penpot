@@ -44,7 +44,7 @@
 
 (defmethod handle-exception :service-error
   [err req]
-  (handle-exception (.getCause err) req))
+  (handle-exception (.getCause ^Throwable err) req))
 
 (defmethod handle-exception :parse
   [err req]
@@ -56,7 +56,7 @@
   [err req]
   (log/error "Unhandled exception on request:" (:path req) "\n"
              (with-out-str
-                (.printStackTrace err (java.io.PrintWriter. *out*))))
+                (.printStackTrace ^Throwable err (java.io.PrintWriter. *out*))))
   {:status 500
    :body {:type :exception
           :message (ex-message err)
@@ -66,5 +66,5 @@
   [error req]
   (if (or (instance? java.util.concurrent.CompletionException error)
           (instance? java.util.concurrent.ExecutionException error))
-    (handle-exception (.getCause error) req)
+    (handle-exception (.getCause ^Throwable error) req)
     (handle-exception error req)))

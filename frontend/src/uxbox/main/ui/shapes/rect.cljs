@@ -55,6 +55,5 @@
                          :id (str "shape-" id)
                          :width width
                          :height height
-                         ;; :transform transform
                          ))]
     [:& "rect" props]))

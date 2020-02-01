@@ -19,7 +19,7 @@
   com.cognitect/transit-clj {:mvn/version "0.8.319"}
 
   ;; TODO: vendorize pgclient under `vertx-clojure/vertx-pgclient`
-  io.vertx/vertx-pg-client {:mvn/version "3.8.4"}
+  io.vertx/vertx-pg-client {:mvn/version "4.0.0-milestone4"}
 
   vertx-clojure/vertx
   {:local/root "vendor/vertx"
@@ -36,7 +36,6 @@
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
   org.jsoup/jsoup {:mvn/version "1.12.1"}
-  hiccup/hiccup {:mvn/version "1.0.5"}
   org.im4java/im4java {:mvn/version "1.4.0"}
 
   org.xerial.snappy/snappy-java {:mvn/version "1.1.7.3"}
@@ -61,11 +60,8 @@
     mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["tests"]}
 
-  :repl
-  {:main-opts  ["-m" "rebel-readline.main"]}
-
   :tests
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-565"}}
+  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-581"}}
    :main-opts ["-m" "kaocha.runner"]}
 
   :ancient
