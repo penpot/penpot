@@ -21,38 +21,14 @@
    [uxbox.util.uuid :as uuid]
    [vertx.core :as vc]))
 
-(def +thumbnail-options+
-  {:src :path
-   :dst :thumbnail
-   :width 300
-   :height 100
-   :quality 92
-   :format "webp"})
-
-(defn populate-thumbnail
-  [row]
-  (let [opts +thumbnail-options+]
-    (-> (p/promise row)
-        (p/then (vc/wrap-blocking #(images/populate-thumbnail % opts))))))
-
-(defn populate-thumbnails
-  [rows]
-  (if (empty? rows)
-    rows
-    (vc/blocking
-     (mapv (fn [row]
-             (images/populate-thumbnail row +thumbnail-options+)) rows))))
-
-(defn populate-urls
-  [row]
-  (images/populate-urls row media/images-storage :path :url))
-
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::user ::us/uuid)
 (s/def ::collection-id (s/nilable ::us/uuid))
 
-(def ^:private images-collections-sql
+;; --- Query: Images Collections
+
+(def ^:private sql:collections
   "select *,
           (select count(*) from images where collection_id = ic.id) as num_images
      from image_collections as ic
@@ -66,9 +42,10 @@
 
 (sq/defquery ::images-collections
   [{:keys [user] :as params}]
-  (db/query db/pool [images-collections-sql user]))
+  (db/query db/pool [sql:collections user]))
 
-;; --- Retrieve Image
+
+;; --- Query: Image by ID
 
 (defn retrieve-image
   [conn id]
@@ -84,10 +61,10 @@
 (sq/defquery ::image-by-id
   [params]
   (-> (retrieve-image db/pool (:id params))
-      (p/then populate-thumbnail)
-      (p/then populate-urls)))
+      (p/then' #(images/resolve-urls % :path :uri))
+      (p/then' #(images/resolve-urls % :thumb-path :thumb-uri))))
 
-;; --- Query Images by Collection (id)
+;; --- Query: Images by collection ID
 
 (def sql:images-by-collection
   "select * from images
@@ -96,12 +73,7 @@
       and deleted_at is null
    order by created_at desc")
 
-(def sql:images-by-collection1
-  (str "with images as (" sql:images-by-collection ")
-        select im.* from images as im
-         where im.collection_id is null"))
-
-(def sql:images-by-collection2
+(def sql:images-by-collection
   (str "with images as (" sql:images-by-collection ")
         select im.* from images as im
          where im.collection_id = $2"))
@@ -110,12 +82,14 @@
   (s/keys :req-un [::user]
           :opt-un [::collection-id]))
 
+;; TODO: check if we can resolve url with transducer for reduce
+;; garbage generation for each request
+
 (sq/defquery ::images-by-collection
   [{:keys [user collection-id] :as params}]
-  (let [sqlv (if (nil? collection-id)
-               [sql:images-by-collection1 user]
-               [sql:images-by-collection2 user collection-id])]
+  (let [sqlv [sql:images-by-collection user collection-id]]
     (-> (db/query db/pool sqlv)
-        (p/then populate-thumbnails)
-        (p/then #(mapv populate-urls %)))))
-
+        (p/then' (fn [rows]
+                   (->> rows
+                        (mapv #(images/resolve-urls % :path :uri))
+                        (mapv #(images/resolve-urls % :thumb-path :thumb-uri))))))))

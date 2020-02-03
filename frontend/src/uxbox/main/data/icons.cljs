@@ -10,12 +10,13 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
+   [uxbox.common.spec :as us]
+   [uxbox.common.data :as d]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
-   [uxbox.util.data :refer (jscoll->vec)]
    [uxbox.util.dom :as dom]
-   [uxbox.util.files :as files]
-   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.webapi :as wapi]
+   [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as r]
    [uxbox.util.uuid :as uuid]))
 
@@ -24,14 +25,7 @@
 (s/def ::created-at inst?)
 (s/def ::modified-at inst?)
 (s/def ::user-id uuid?)
-
-;; (s/def ::collection-id (s/nilable ::us/uuid))
-
-;; (s/def ::mimetype string?)
-;; (s/def ::thumbnail us/url-str?)
-;; (s/def ::width number?)
-;; (s/def ::height number?)
-;; (s/def ::url us/url-str?)
+(s/def ::collection-id ::us/uuid)
 
 (s/def ::collection
   (s/keys :req-un [::id
@@ -39,6 +33,32 @@
                    ::created-at
                    ::modified-at
                    ::user-id]))
+
+
+(declare fetch-icons)
+
+(defn initialize
+  [collection-id]
+  (s/assert ::us/uuid collection-id)
+  (ptk/reify ::initialize
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:dashboard-icons :selected] #{}))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (fetch-icons collection-id)))))
+
+;; --- Fetch Collections
+
+(declare collections-fetched)
+
+(def fetch-collections
+  (ptk/reify ::fetch-collections
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query! :icons-collections)
+           (rx/map collections-fetched)))))
 
 ;; --- Collections Fetched
 
@@ -58,14 +78,20 @@
               state
               items))))
 
-;; --- Fetch Collections
 
-(def fetch-collections
-  (ptk/reify ::fetch-collections
+;; --- Create Collection
+
+(declare collection-created)
+
+(def create-collection
+  (ptk/reify ::create-collection
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/query! :icons-collections)
-           (rx/map collections-fetched)))))
+      (let [name (tr "ds.default-library-title" (gensym "c"))
+            data {:name name}]
+        (->> (rp/mutation! :create-icons-collection data)
+             (rx/map collection-created))))))
+
 
 ;; --- Collection Created
 
@@ -78,70 +104,35 @@
       (let [{:keys [id] :as item} (assoc item :type :own)]
         (update state :icons-collections assoc id item)))))
 
-;; --- Create Collection
-
-(def create-collection
-  (ptk/reify ::create-collection
-    ptk/WatchEvent
-    (watch [_ state s]
-      (let [name (tr "ds.default-library-title" (gensym "c"))
-            data {:name name}]
-        (->> (rp/mutation! :create-icons-collection data)
-             (rx/map collection-created))))))
-
-;; --- Collection Updated
-
-(defn collection-updated
-  [item]
-  (ptk/reify ::collection-updated
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:icons-collections (:id item)] merge item))))
-
-;; --- Update Collection
-
-(defrecord UpdateCollection [id]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [data (get-in state [:icons-collections id])]
-      (->> (rp/mutation! :update-icons-collection data)
-           (rx/map collection-updated)))))
-
-(defn update-collection
-  [id]
-  (UpdateCollection. id))
-
 ;; --- Rename Collection
-
-(defrecord RenameCollection [id name]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:icons-collections id :name] name))
-
-  ptk/WatchEvent
-  (watch [_ state s]
-    (rx/of (update-collection id))))
 
 (defn rename-collection
   [id name]
-  (RenameCollection. id name))
+  (ptk/reify ::rename-collection
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:icons-collections id :name] name))
+
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [params {:id id :name name}]
+        (->> (rp/mutation! :rename-icons-collection params)
+             (rx/ignore))))))
 
 ;; --- Delete Collection
 
-(defrecord DeleteCollection [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update state :icons-collections dissoc id))
-
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [type (get-in state [:dashboard :icons :type])]
-      (->> (rp/mutation! :delete-icons-collection {:id id})
-           (rx/map #(r/nav :dashboard-icons {:type type}))))))
-
 (defn delete-collection
-  [id]
-  (DeleteCollection. id))
+  [id on-success]
+  (ptk/reify ::delete-collection
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :icons-collections dissoc id))
+
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/mutation! :delete-icons-collection {:id id})
+           (rx/tap on-success)
+           (rx/ignore)))))
 
 ;; --- Icon Created
 
@@ -157,9 +148,11 @@
 
 ;; --- Create Icon
 
+(declare icon-created)
+
 (defn- parse-svg
   [data]
-  {:pre [(string? data)]}
+  (s/assert ::us/string data)
   (let [valid-tags #{"defs" "path" "circle" "rect" "metadata" "g"
                      "radialGradient" "stop"}
         div (dom/create-element "div")
@@ -194,7 +187,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (letfn [(parse [file]
-                (->> (files/read-as-text file)
+                (->> (wapi/read-file-as-text file)
                      (rx/map parse-svg)))
               (allowed? [file]
                 (= (.-type file) "image/svg+xml"))
@@ -207,7 +200,7 @@
                  :metadata metadata})]
         (->> (rx/from files)
              (rx/filter allowed?)
-             (rx/flat-map parse)
+             (rx/merge-map parse)
              (rx/map prepare)
              (rx/flat-map #(rp/mutation! :create-icon %))
              (rx/map icon-created))))))
@@ -226,184 +219,158 @@
 
 ;; --- Persist Icon
 
-(defrecord PersistIcon [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [data (get-in state [:icons id])]
-      (->> (rp/mutation! :update-icon data)
-           (rx/map icon-persisted)))))
-
 (defn persist-icon
   [id]
-  {:pre [(uuid? id)]}
-  (PersistIcon. id))
-
-;; --- Icons Fetched
-
-(defrecord IconsFetched [items]
-  ptk/UpdateEvent
-  (update [_ state]
-    (reduce (fn [state {:keys [id] :as icon}]
-              (let [icon (assoc icon :type :icon)]
-                (assoc-in state [:icons id] icon)))
-            state
-            items)))
-
-(defn icons-fetched
-  [items]
-  (IconsFetched. items))
+  (s/assert ::us/uuid id)
+  (ptk/reify ::persist-icon
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [data (get-in state [:icons id])]
+        (->> (rp/mutation! :update-icon data)
+             (rx/ignore))))))
 
 ;; --- Load Icons
 
-(defrecord FetchIcons [id]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [params (cond-> {} id (assoc :collection-id id))]
-      (->> (rp/query! :icons-by-collection params)
-           (rx/map icons-fetched)))))
+(declare icons-fetched)
 
 (defn fetch-icons
   [id]
-  {:pre [(or (uuid? id) (nil? id))]}
-  (FetchIcons. id))
+  (ptk/reify ::fetch-icons
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [params (cond-> {} id (assoc :collection-id id))]
+        (->> (rp/query! :icons-by-collection params)
+             (rx/map icons-fetched))))))
 
-;; --- Delete Icons
+;; --- Icons Fetched
 
-(defrecord DeleteIcon [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (-> state
-        (update :icons dissoc id)
-        (update-in [:dashboard :icons :selected] disj id)))
-
-  ptk/WatchEvent
-  (watch [_ state s]
-    (->> (rp/mutation! :delete-icon {:id id})
-         (rx/ignore))))
-
-(defn delete-icon
-  [id]
-  {:pre [(uuid? id)]}
-  (DeleteIcon. id))
+(defn icons-fetched
+  [items]
+  ;; TODO: specs
+  (ptk/reify ::icons-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [icons (d/index-by :id items)]
+        (assoc state :icons icons)))))
 
 ;; --- Rename Icon
 
-(defrecord RenameIcon [id name]
-  ptk/UpdateEvent
-  (update [_ state]
-    (assoc-in state [:icons id :name] name))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (rx/of (persist-icon id))))
-
 (defn rename-icon
   [id name]
-  {:pre [(uuid? id) (string? name)]}
-  (RenameIcon. id name))
+  (s/assert ::us/uuid id)
+  (s/assert ::us/string name)
+  (ptk/reify ::rename-icon
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:icons id :name] name))
 
-;; --- Select icon
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (persist-icon id)))))
 
-(defrecord SelectIcon [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:dashboard :icons :selected] conj id)))
+;; --- Icon Selection
 
-(defrecord DeselectIcon [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:dashboard :icons :selected] disj id)))
-
-(defrecord ToggleIconSelection [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [selected (get-in state [:dashboard :icons :selected])]
-      (rx/of
-       (if (selected id)
-         (DeselectIcon. id)
-         (SelectIcon. id))))))
+(defn select-icon
+  [id]
+  (ptk/reify ::select-icon
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:dashboard-icons :selected] (fnil conj #{}) id))))
 
 (defn deselect-icon
   [id]
-  {:pre [(uuid? id)]}
-  (DeselectIcon. id))
+  (ptk/reify ::deselect-icon
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:dashboard-icons :selected] (fnil disj #{}) id))))
 
-(defn toggle-icon-selection
+(def deselect-all-icons
+  (ptk/reify ::deselect-all-icons
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:dashboard-icons :selected] #{}))))
+
+;; --- Delete Icons
+
+(defn delete-icon
   [id]
-  (ToggleIconSelection. id))
+  (ptk/reify ::delete-icon
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :icons dissoc id))
 
-;; --- Copy Selected Icon
-
-(defrecord CopySelected [id]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [selected (get-in state [:dashboard :icons :selected])]
+    ptk/WatchEvent
+    (watch [_ state s]
       (rx/merge
-       (->> (rx/from selected)
-            (rx/map #(get-in state [:icons %]))
-            (rx/map #(dissoc % :id))
-            (rx/map #(assoc % :collection-id id))
-            (rx/flat-map #(rp/mutation :create-icon %))
-            (rx/map :payload)
-            (rx/map icon-created))
-       (->> (rx/from selected)
-            (rx/map deselect-icon))))))
-
-(defn copy-selected
-  [id]
-  {:pre [(or (uuid? id) (nil? id))]}
-  (CopySelected. id))
-
-;; --- Move Selected Icon
-
-(defrecord MoveSelected [id]
-  ptk/UpdateEvent
-  (update [_ state]
-    (let [selected (get-in state [:dashboard :icons :selected])]
-      (reduce (fn [state icon]
-                (assoc-in state [:icons icon :collection] id))
-              state
-              selected)))
-
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [selected (get-in state [:dashboard :icons :selected])]
-      (rx/merge
-       (->> (rx/from selected)
-            (rx/map persist-icon))
-       (->> (rx/from selected)
-            (rx/map deselect-icon))))))
-
-(defn move-selected
-  [id]
-  {:pre [(or (uuid? id) (nil? id))]}
-  (MoveSelected. id))
+       (rx/of deselect-all-icons)
+       (->> (rp/mutation! :delete-icon {:id id})
+            (rx/ignore))))))
 
 ;; --- Delete Selected
 
-(defrecord DeleteSelected []
-  ptk/WatchEvent
-  (watch [_ state stream]
-    (let [selected (get-in state [:dashboard :icons :selected])]
-      (->> (rx/from selected)
-           (rx/map delete-icon)))))
-
-(defn delete-selected
-  []
-  (DeleteSelected.))
-
+(def delete-selected
+  (ptk/reify ::delete-selected
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [selected (get-in state [:dashboard-icons :selected])]
+        (->> (rx/from selected)
+             (rx/map delete-icon))))))
 ;; --- Update Opts (Filtering & Ordering)
-
-(defrecord UpdateOpts [order filter edition]
-  ptk/UpdateEvent
-  (update [_ state]
-    (update-in state [:dashboard :icons] merge
-               {:edition edition}
-               (when order {:order order})
-               (when filter {:filter filter}))))
 
 (defn update-opts
   [& {:keys [order filter edition]
-      :or {edition false}
-      :as opts}]
-  (UpdateOpts. order filter edition))
+      :or {edition false}}]
+  (ptk/reify ::update-opts
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-icons merge
+              {:edition edition}
+              (when order {:order order})
+              (when filter {:filter filter})))))
+
+;; --- Copy Selected Icon
+
+;; (defrecord CopySelected [id]
+;;   ptk/WatchEvent
+;;   (watch [_ state stream]
+;;     (let [selected (get-in state [:dashboard :icons :selected])]
+;;       (rx/merge
+;;        (->> (rx/from selected)
+;;             (rx/map #(get-in state [:icons %]))
+;;             (rx/map #(dissoc % :id))
+;;             (rx/map #(assoc % :collection-id id))
+;;             (rx/flat-map #(rp/mutation :create-icon %))
+;;             (rx/map :payload)
+;;             (rx/map icon-created))
+;;        (->> (rx/from selected)
+;;             (rx/map deselect-icon))))))
+
+;; (defn copy-selected
+;;   [id]
+;;   {:pre [(or (uuid? id) (nil? id))]}
+;;   (CopySelected. id))
+
+;; --- Move Selected Icon
+
+;; (defrecord MoveSelected [id]
+;;   ptk/UpdateEvent
+;;   (update [_ state]
+;;     (let [selected (get-in state [:dashboard :icons :selected])]
+;;       (reduce (fn [state icon]
+;;                 (assoc-in state [:icons icon :collection] id))
+;;               state
+;;               selected)))
+
+;;   ptk/WatchEvent
+;;   (watch [_ state stream]
+;;     (let [selected (get-in state [:dashboard :icons :selected])]
+;;       (rx/merge
+;;        (->> (rx/from selected)
+;;             (rx/map persist-icon))
+;;        (->> (rx/from selected)
+;;             (rx/map deselect-icon))))))
+
+;; (defn move-selected
+;;   [id]
+;;   {:pre [(or (uuid? id) (nil? id))]}
+;;   (MoveSelected. id))

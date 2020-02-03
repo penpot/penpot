@@ -19,6 +19,8 @@
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
    [promesa.core :as p]
    [promesa.exec :as pe]
+   [uxbox.migrations]
+   [uxbox.util.storage :as st]
    [mount.core :as mount]))
 
 ;; --- Benchmarking Tools
@@ -58,7 +60,7 @@
 (defn- run-tests
   ([] (run-tests #"^uxbox.tests.*"))
   ([o]
-   ;; (repl/refresh)
+   (repl/refresh)
    (cond
      (instance? java.util.regex.Pattern o)
      (test/run-all-tests o)

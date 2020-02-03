@@ -40,10 +40,7 @@
 
 (mf/defc icons-list
   [{:keys [collection-id] :as props}]
-  (let [icons-iref (mf/use-memo
-                    {:fn #(icons/make-icons-iref collection-id)
-                     :deps (mf/deps collection-id)})
-        icons (mf/deref icons-iref)
+  (let [icons (mf/deref icons/icons-iref)
 
         on-select
         (fn [event data]

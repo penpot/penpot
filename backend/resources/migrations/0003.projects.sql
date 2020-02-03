@@ -50,18 +50,30 @@ CREATE INDEX project_files__user_id__idx
 CREATE INDEX project_files__project_id__idx
     ON project_files(project_id);
 
-CREATE TABLE project_file_media (
+CREATE TABLE project_file_images (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   file_id uuid NOT NULL REFERENCES project_files(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
-  type text NOT NULL,
+  name text NOT NULL,
+
   path text NOT NULL,
+  width int NOT NULL,
+  height int NOT NULL,
+  mtype text NOT NULL,
 
-  metadata bytea NULL DEFAULT NULL
+  thumb_path text NOT NULL,
+  thumb_width int NOT NULL,
+  thumb_height int NOT NULL,
+  thumb_quality int NOT NULL,
+  thumb_mtype text NOT NULL
 );
 
-CREATE INDEX project_file_media__file_id__idx
-    ON project_file_media(file_id);
+CREATE INDEX project_file_images__file_id__idx
+    ON project_file_images(file_id);
+
+CREATE INDEX project_file_images__user_id__idx
+    ON project_file_images(user_id);
 
 CREATE TABLE project_file_users (
   file_id uuid NOT NULL REFERENCES project_files(id) ON DELETE CASCADE,

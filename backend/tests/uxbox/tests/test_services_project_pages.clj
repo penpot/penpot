@@ -36,9 +36,9 @@
 
         data {::sm/type :create-project-page
               :data {:canvas []
+                     :options {}
                      :shapes []
                      :shapes-by-id {}}
-              :metadata {}
               :file-id (:id pf)
               :ordering 1
               :name "test page"
@@ -50,7 +50,6 @@
     (t/is (= (:user data) (get-in out [:result :user-id])))
     (t/is (= (:name data) (get-in out [:result :name])))
     (t/is (= (:data data) (get-in out [:result :data])))
-    (t/is (= (:metadata data) (get-in out [:result :metadata])))
     (t/is (= 0 (get-in out [:result :version])))))
 
 (t/deftest mutation-update-project-page-data
@@ -61,6 +60,7 @@
         data {::sm/type :update-project-page-data
               :id (:id page)
               :data {:shapes [(uuid/next)]
+                     :options {}
                      :canvas []
                      :shapes-by-id {}}
               :file-id (:id file)
@@ -85,7 +85,7 @@
               :id (:id page)
               :version 99
               :user (:id user)
-              :operations []}
+              :changes []}
 
         out (th/try-on! (sm/handle data))]
 
@@ -111,18 +111,21 @@
               :id (:id page)
               :version 0
               :user (:id user)
-              :operations [[:add-shape sid {:id sid :type :rect}]]}
+              :changes [{:type :add-shape
+                         :id sid
+                         :session-id (uuid/next)
+                         :shape {:id sid
+                                 :name "Rect"
+                                 :type :rect}}]}
 
         out (th/try-on! (sm/handle data))]
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
-    (t/is (= 0 (count (:result out))))
-    ;; (t/is (= 1 (count (:result out))))
-    ;; (t/is (= (:id data) (get-in out [:result 0 :page-id])))
-    ;; (t/is (= 1 (count (get-in out [:result 0 :operations]))))
-    ;; (t/is (= :add-shape (get-in out [:result 0 :operations 0 0])))
-    ;; (t/is (= sid (get-in out [:result 0 :operations 0 1])))
+
+    (t/is (= 1 (get-in out [:result :version])))
+    (t/is (= (:id page) (get-in out [:result :page-id])))
+    (t/is (= :add-shape (get-in out [:result :changes 0 :type])))
     ))
 
 (t/deftest mutation-update-project-page-3
@@ -132,11 +135,17 @@
         page @(th/create-project-page db/pool (:id user) (:id file) 1)
 
         sid  (uuid/next)
+
         data {::sm/type :update-project-page
               :id (:id page)
               :version 0
               :user (:id user)
-              :operations [[:add-shape sid {:id sid :type :rect}]]}
+              :changes [{:type :add-shape
+                         :id sid
+                         :session-id (uuid/next)
+                         :shape {:id sid
+                                 :name "Rect"
+                                 :type :rect}}]}
 
         out1 (th/try-on! (sm/handle data))
         out2 (th/try-on! (sm/handle data))]
@@ -146,12 +155,12 @@
 
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
-    (t/is (= 0 (count (:result out1))))
-    (t/is (= 1 (count (:result out2))))
-    (t/is (= (:id data) (get-in out2 [:result 0 :page-id])))
-    (t/is (= 1 (count (get-in out2 [:result 0 :operations]))))
-    (t/is (= :add-shape (get-in out2 [:result 0 :operations 0 0])))
-    (t/is (= sid (get-in out2 [:result 0 :operations 0 1])))
+
+    (t/is (= 1 (count (get-in out1 [:result :changes]))))
+    (t/is (= 2 (count (get-in out2 [:result :changes]))))
+
+    (t/is (= (:id data) (get-in out1 [:result :page-id])))
+    (t/is (= (:id data) (get-in out2 [:result :page-id])))
     ))
 
 (t/deftest mutation-delete-project-page

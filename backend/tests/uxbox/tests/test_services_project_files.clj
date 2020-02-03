@@ -2,11 +2,17 @@
   (:require
    [clojure.test :as t]
    [promesa.core :as p]
+   [datoteka.core :as fs]
    [uxbox.db :as db]
+   [uxbox.media :as media]
+   [uxbox.core :refer [system]]
    [uxbox.http :as http]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
-   [uxbox.tests.helpers :as th]))
+   [uxbox.tests.helpers :as th]
+   [uxbox.util.storage :as ust]
+   [uxbox.util.uuid :as uuid]
+   [vertx.core :as vc]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -40,7 +46,7 @@
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
     (t/is (= (:name data) (get-in out [:result :name])))
-    #_(t/is (= (:project-id data) (get-in out [:result :project-id])))))
+    (t/is (= (:project-id data) (get-in out [:result :project-id])))))
 
 (t/deftest mutation-rename-project-file
   (let [user @(th/create-user db/pool 1)
@@ -73,4 +79,78 @@
           res @(db/query db/pool [sql (:id proj)])]
       (t/is (empty? res)))))
 
-;; ;; TODO: add permisions related tests
+(t/deftest mutation-upload-file-image
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        pf   @(th/create-project-file db/pool (:id user) (:id proj) 1)
+
+        content {:name "sample.jpg"
+                 :path "tests/uxbox/tests/_files/sample.jpg"
+                 :mtype "image/jpeg"
+                 :size 312043}
+        data {::sm/type :upload-project-file-image
+              :user (:id user)
+              :file-id (:id pf)
+              :name "testfile"
+              :content content
+              :width 800
+              :height 800}
+
+        out  (with-redefs [vc/*context* (vc/get-or-create-context system)]
+               (th/try-on! (sm/handle data)))]
+
+    ;; (th/print-result! out)
+
+    (t/is (= (:id pf) (get-in out [:result :file-id])))
+    (t/is (= (:name data) (get-in out [:result :name])))
+    (t/is (= (:width data) (get-in out [:result :width])))
+    (t/is (= (:height data) (get-in out [:result :height])))
+    (t/is (= (:mimetype data) (get-in out [:result :mimetype])))
+
+    (t/is (string? (get-in out [:result :path])))
+    (t/is (string? (get-in out [:result :thumb-path])))
+    (t/is (string? (get-in out [:result :uri])))
+    (t/is (string? (get-in out [:result :thumb-uri])))))
+
+(t/deftest mutation-import-image-file-from-collection
+  (let [user @(th/create-user db/pool 1)
+        proj @(th/create-project db/pool (:id user) 1)
+        pf   @(th/create-project-file db/pool (:id user) (:id proj) 1)
+        coll @(th/create-images-collection db/pool (:id user) 1)
+        image-id (uuid/next)
+
+        content {:name "sample.jpg"
+                 :path "tests/uxbox/tests/_files/sample.jpg"
+                 :mtype "image/jpeg"
+                 :size 312043}
+
+        data {::sm/type :upload-image
+              :id image-id
+              :user (:id user)
+              :collection-id (:id coll)
+              :name "testfile"
+              :content content}
+        out1 (th/try-on! (sm/handle data))]
+
+    ;; (th/print-result! out1)
+    (t/is (nil? (:error out1)))
+    (t/is (= image-id (get-in out1 [:result :id])))
+    (t/is (= "testfile" (get-in out1 [:result :name])))
+    (t/is (= "image/jpeg" (get-in out1 [:result :mtype])))
+    (t/is (= "image/webp" (get-in out1 [:result :thumb-mtype])))
+
+    (let [data2 {::sm/type :import-image-to-file
+                 :image-id image-id
+                 :file-id (:id pf)
+                 :user (:id user)}
+          out2 (th/try-on! (sm/handle data2))]
+
+      ;; (th/print-result! out2)
+      (t/is (nil? (:error out2)))
+      (t/is (not= (get-in out2 [:result :path])
+                  (get-in out1 [:result :path])))
+      (t/is (not= (get-in out2 [:result :thumb-path])
+                  (get-in out1 [:result :thumb-path]))))))
+
+
+

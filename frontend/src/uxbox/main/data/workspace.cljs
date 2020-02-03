@@ -54,6 +54,7 @@
 ;; --- Declarations
 
 (declare fetch-users)
+(declare fetch-images)
 (declare handle-who)
 (declare handle-pointer-update)
 (declare handle-pointer-send)
@@ -289,7 +290,8 @@
            (rx/of (dp/fetch-file file-id)
                   (dp/fetch-pages file-id)
                   (initialize-layout file-id)
-                  (fetch-users file-id))
+                  (fetch-users file-id)
+                  (fetch-images file-id))
            (->> (rx/zip (rx/filter (ptk/type? ::dp/pages-fetched) stream)
                         (rx/filter (ptk/type? ::dp/files-fetched) stream))
                 (rx/take 1)
@@ -398,6 +400,7 @@
                 (update-in state [:workspace-users :by-id (:id user)] merge user))
               state
               users))))
+
 
 ;; --- Toggle layout flag
 
@@ -1302,6 +1305,94 @@
             path-params {:file-id file-id}
             query-params {:page-id page-id}]
         (rx/of (rt/nav :workspace path-params query-params))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Workspace Images
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Fetch Workspace Images
+
+(declare images-fetched)
+
+(defn fetch-images
+  [file-id]
+  (ptk/reify ::fetch-images
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :project-file-images {:file-id file-id})
+           (rx/map images-fetched)))))
+
+(defn images-fetched
+  [images]
+  (ptk/reify ::images-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [images (d/index-by :id images)]
+        (assoc state :workspace-images images)))))
+
+
+;; --- Upload Image
+
+(declare image-uploaded)
+(def allowed-file-types #{"image/jpeg" "image/png"})
+
+(defn upload-image
+  ([file] (upload-image file identity))
+  ([file on-uploaded]
+   (us/verify fn? on-uploaded)
+   (ptk/reify ::upload-image
+     ptk/UpdateEvent
+     (update [_ state]
+       (assoc-in state [:workspace-local :uploading] true))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [allowed-file? #(contains? allowed-file-types (.-type %))
+             finalize-upload #(assoc-in % [:workspace-local :uploading] false)
+             file-id (get-in state [:workspace-page :file-id])
+
+             on-success #(do (st/emit! finalize-upload)
+                             (on-uploaded %))
+             on-error #(do (st/emit! finalize-upload)
+                           (rx/throw %))
+
+             prepare
+             (fn [file]
+               {:name (.-name file)
+                :file-id file-id
+                :content file})]
+         (->> (rx/of file)
+              (rx/filter allowed-file?)
+              (rx/map prepare)
+              (rx/mapcat #(rp/mutation! :upload-project-file-image %))
+              (rx/do on-success)
+              (rx/map image-uploaded)
+              (rx/catch on-error)))))))
+
+(s/def ::id ::us/uuid)
+(s/def ::name ::us/string)
+(s/def ::width ::us/number)
+(s/def ::height ::us/number)
+(s/def ::mtype ::us/string)
+(s/def ::uri ::us/string)
+(s/def ::thumb-uri ::us/string)
+
+(s/def ::image
+  (s/keys :req-un [::id
+                   ::name
+                   ::width
+                   ::height
+                   ::uri
+                   ::thumb-uri]))
+
+(defn image-uploaded
+  [item]
+  (us/verify ::image item)
+  (ptk/reify ::image-created
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-images assoc (:id item) item))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions

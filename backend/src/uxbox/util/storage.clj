@@ -164,20 +164,31 @@
     (doto (java.security.SecureRandom/getInstance "SHA1PRNG")
       (.setSeed ^bytes (sodi.prng/random-bytes 64)))))
 
-(defn random-path
-  [^Path path]
-  (let [name (str (.getFileName path))
-        hash (-> (sodi.prng/random-bytes @prng 10)
-                 (sodi.util/bytes->b64s))
-        tokens (re-seq #"[\w\d\-\_]{2}" hash)
-        path-tokens (take 3 tokens)
-        rest-tokens (drop 3 tokens)
-        path (fs/path path-tokens)
-        frest (apply str rest-tokens)]
-    (fs/path (list path frest name))))
+(defn with-xf
+  [storage xfm]
+  (let [xf (::xf storage)]
+    (if (nil? xf)
+      (assoc storage ::xf xfm)
+      (assoc storage ::xf (comp xf xfm)))))
 
-(defn slugify-filename
-  [path]
-  (let [parent (or (fs/parent path) "")
-        [name ext] (fs/split-ext (fs/name path))]
-    (fs/path parent (str (str/uslug name) ext))))
+(def random-path
+  (map (fn [^Path path]
+         (let [name (str (.getFileName path))
+               hash (-> (sodi.prng/random-bytes @prng 10)
+                        (sodi.util/bytes->b64s))
+               tokens (re-seq #"[\w\d\-\_]{2}" hash)
+               path-tokens (take 3 tokens)
+               rest-tokens (drop 3 tokens)
+               path (fs/path path-tokens)
+               frest (apply str rest-tokens)]
+           (fs/path (list path frest name))))))
+
+(def slugify-filename
+  (map (fn [path]
+         (let [parent (or (fs/parent path) "")
+               [name ext] (fs/split-ext (fs/name path))]
+           (fs/path parent (str (str/uslug name) ext))))))
+
+(defn prefix-path
+  [prefix]
+  (map (fn [^Path path] (fs/join (fs/path prefix) path))))

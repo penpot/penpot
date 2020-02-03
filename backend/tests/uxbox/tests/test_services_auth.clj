@@ -31,7 +31,7 @@
     (let [error (ex-cause (:error out))]
       (t/is (th/ex-info? error))
       (t/is (th/ex-of-type? error :validation))
-      (t/is (th/ex-of-code? error :uxbox.services.mutations.auth/wrong-credentials)))))
+      (t/is (th/ex-of-code? error :uxbox.services.mutations.profile/wrong-credentials)))))
 
 (t/deftest success-auth
   (let [user @(th/create-user db/pool 1)

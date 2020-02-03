@@ -1,176 +1,158 @@
 (ns uxbox.tests.test-images
-  #_(:require [clojure.test :as t]
-            [promesa.core :as p]
-            [suricatta.core :as sc]
-            [clojure.java.io :as io]
-            [datoteka.storages :as st]
-            [uxbox.db :as db]
-            [uxbox.sql :as sql]
-            [uxbox.media :as media]
-            [uxbox.http :as http]
-            [uxbox.services.images :as images]
-            [uxbox.services :as usv]
-            [uxbox.tests.helpers :as th]))
+  (:require
+   [clojure.test :as t]
+   [promesa.core :as p]
+   [datoteka.core :as fs]
+   [clojure.java.io :as io]
+   [uxbox.db :as db]
+   [uxbox.core :refer [system]]
+   [uxbox.services.mutations :as sm]
+   [uxbox.services.queries :as sq]
+   [uxbox.util.storage :as ust]
+   [uxbox.util.uuid :as uuid]
+   [uxbox.tests.helpers :as th]
+   [vertx.core :as vc]))
 
-;; (t/use-fixtures :once th/state-init)
-;; (t/use-fixtures :each th/database-reset)
+(t/use-fixtures :once th/state-init)
+(t/use-fixtures :each th/database-reset)
 
-;; (t/deftest test-http-list-image-collections
-;;   (with-open [conn (db/connection)]
-;;     (let [user (th/create-user conn 1)
-;;           data {:user (:id user)
-;;                 :name "coll1"}
-;;           coll (images/create-collection conn data)]
-;;       (th/with-server {:handler @http/app}
-;;         (let [uri (str th/+base-url+ "/api/library/image-collections")
-;;               [status data] (th/http-get user uri)]
-;;           ;; (println "RESPONSE:" status data)
-;;           (t/is (= 200 status))
-;;           (t/is (= 1 (count data))))))))
+(t/deftest images-collections-crud
+  (let [id    (uuid/next)
+        user @(th/create-user db/pool 2)]
 
-;; (t/deftest test-http-create-image-collection
-;;   (with-open [conn (db/connection)]
-;;     (let [user (th/create-user conn 1)]
-;;       (th/with-server {:handler @http/app}
-;;         (let [uri (str th/+base-url+ "/api/library/image-collections")
-;;               data {:user (:id user)
-;;                     :name "coll1"}
-;;               params {:body data}
-;;               [status data] (th/http-post user uri params)]
-;;           ;; (println "RESPONSE:" status data)
-;;           (t/is (= 201 status))
-;;           (t/is (= (:user data) (:id user)))
-;;           (t/is (= (:name data) "coll1")))))))
+    (t/testing "create collection"
+      (let [data {::sm/type :create-images-collection
+                  :name "sample collection"
+                  :user (:id user)
+                  :id id}
+            out (th/try-on! (sm/handle data))]
 
-;; (t/deftest test-http-update-image-collection
-;;   (with-open [conn (db/connection)]
-;;     (let [user (th/create-user conn 1)
-;;           data {:user (:id user)
-;;                 :name "coll1"}
-;;           coll (images/create-collection conn data)]
-;;       (th/with-server {:handler @http/app}
-;;         (let [uri (str th/+base-url+ "/api/library/image-collections/" (:id coll))
-;;               params {:body (assoc coll :name "coll2")}
-;;               [status data] (th/http-put user uri params)]
-;;           ;; (println "RESPONSE:" status data)
-;;           (t/is (= 200 status))
-;;           (t/is (= (:user data) (:id user)))
-;;           (t/is (= (:name data) "coll2")))))))
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (= (:id user) (get-in out [:result :user-id])))
+        (t/is (= (:name data) (get-in out [:result :name])))))
 
-;; (t/deftest test-http-image-collection-delete
-;;   (with-open [conn (db/connection)]
-;;     (let [user (th/create-user conn 1)
-;;           data {:user (:id user)
-;;                 :name "coll1"
-;;                 :data #{1}}
-;;           coll (images/create-collection conn data)]
-;;       (th/with-server {:handler @http/app}
-;;         (let [uri (str th/+base-url+ "/api/library/image-collections/" (:id coll))
-;;               [status data] (th/http-delete user uri)]
-;;           (t/is (= 204 status))
-;;           (let [sqlv (sql/get-image-collections {:user (:id user)})
-;;                 result (sc/fetch conn sqlv)]
-;;             (t/is (empty? result))))))))
+    (t/testing "update collection"
+      (let [data {::sm/type :rename-images-collection
+                  :name "sample collection renamed"
+                  :user (:id user)
+                  :id id}
+            out (th/try-on! (sm/handle data))]
 
-;; (t/deftest test-http-create-image
-;;   (with-open [conn (db/connection)]
-;;     (let [user (th/create-user conn 1)]
-;;       (th/with-server {:handler @http/app}
-;;         (let [uri (str th/+base-url+ "/api/library/images")
-;;               parts [{:name "sample.jpg"
-;;                       :part-name "file"
-;;                       :content (io/input-stream
-;;                                 (io/resource "uxbox/tests/_files/sample.jpg"))}
-;;                      {:part-name "user" :content (str (:id user))}
-;;                      {:part-name "width" :content "100"}
-;;                      {:part-name "height" :content "100"}
-;;                      {:part-name "mimetype" :content "image/png"}]
-;;               [status data] (th/http-multipart user uri parts)]
-;;           ;; (println "RESPONSE:" status data)
-;;           (t/is (= 201 status))
-;;           (t/is (= (:user data) (:id user)))
-;;           (t/is (= (:name data) "sample.jpg")))))))
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
 
-;; (t/deftest test-http-update-image
-;;   (with-open [conn (db/connection)]
-;;     (let [user (th/create-user conn 1)
-;;           data {:user (:id user)
-;;                 :name "test.png"
-;;                 :path "some/path"
-;;                 :width 100
-;;                 :height 100
-;;                 :mimetype "image/png"
-;;                 :collection nil}
-;;           img (images/create-image conn data)]
-;;       (th/with-server {:handler @http/app}
-;;         (let [uri (str th/+base-url+ "/api/library/images/" (:id img))
-;;               params {:body (assoc img :name "my stuff")}
-;;               [status data] (th/http-put user uri params)]
-;;           ;; (println "RESPONSE:" status data)
-;;           (t/is (= 200 status))
-;;           (t/is (= (:user data) (:id user)))
-;;           (t/is (= (:name data) "my stuff")))))))
+        (t/is (= id (get-in out [:result :id])))
+        (t/is (= (:id user) (get-in out [:result :user-id])))
+        (t/is (= (:name data) (get-in out [:result :name])))))
 
-;; (t/deftest test-http-copy-image
-;;   (with-open [conn (db/connection)]
-;;     (let [user (th/create-user conn 1)
-;;           storage media/images-storage
-;;           filename "sample.jpg"
-;;           rcs (io/resource "uxbox/tests/_files/sample.jpg")
-;;           path @(st/save storage filename rcs)
-;;           data {:user (:id user)
-;;                 :name filename
-;;                 :path (str path)
-;;                 :width 100
-;;                 :height 100
-;;                 :mimetype "image/jpg"
-;;                 :collection nil}
-;;           img (images/create-image conn data)]
-;;       (th/with-server {:handler @http/app}
-;;         (let [uri (str th/+base-url+ "/api/library/images/" (:id img) "/copy")
-;;               body {:id (:id img)
-;;                     :collection nil}
-;;               params {:body body}
-;;               [status data] (th/http-put user uri params)]
-;;           ;; (println "RESPONSE:" status data)
-;;           (t/is (= 200 status))
-;;           (let [sqlv (sql/get-images {:user (:id user) :collection nil})
-;;                 result (sc/fetch conn sqlv)]
-;;             (t/is (= 2 (count result)))))))))
+    (t/testing "query collections"
+      (let [data {::sq/type :images-collections
+                  :user (:id user)}
+            out (th/try-on! (sq/handle data))]
 
-;; (t/deftest test-http-delete-image
-;;   (with-open [conn (db/connection)]
-;;     (let [user (th/create-user conn 1)
-;;           data {:user (:id user)
-;;                 :name "test.png"
-;;                 :path "some/path"
-;;                 :width 100
-;;                 :height 100
-;;                 :mimetype "image/png"
-;;                 :collection nil}
-;;           img (images/create-image conn data)]
-;;       (th/with-server {:handler @http/app}
-;;         (let [uri (str th/+base-url+ "/api/library/images/" (:id img))
-;;               [status data] (th/http-delete user uri)]
-;;           (t/is (= 204 status))
-;;           (let [sqlv (sql/get-images {:user (:id user) :collection nil})
-;;                 result (sc/fetch conn sqlv)]
-;;             (t/is (empty? result))))))))
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
 
-;; (t/deftest test-http-list-images
-;;   (with-open [conn (db/connection)]
-;;     (let [user (th/create-user conn 1)
-;;           data {:user (:id user)
-;;                 :name "test.png"
-;;                 :path "some/path"
-;;                 :width 100
-;;                 :height 100
-;;                 :mimetype "image/png"
-;;                 :collection nil}
-;;           img (images/create-image conn data)]
-;;       (th/with-server {:handler @http/app}
-;;         (let [uri (str th/+base-url+ "/api/library/images")
-;;               [status data] (th/http-get user uri)]
-;;           ;; (println "RESPONSE:" status data)
-;;           (t/is (= 200 status))
-;;           (t/is (= 1 (count data))))))))
+        (t/is (= 1 (count (:result out))))
+        (t/is (= (:id user) (get-in out [:result 0 :user-id])))
+        (t/is (= id (get-in out [:result 0 :id])))))
+
+    (t/testing "delete collection"
+      (let [data {::sm/type :delete-images-collection
+                  :user (:id user)
+                  :id id}
+
+            out (th/try-on! (sm/handle data))]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (= id (get-in out [:result :id])))))
+
+    (t/testing "query collections after delete"
+      (let [data {::sq/type :images-collections
+                  :user (:id user)}
+            out (th/try-on! (sq/handle data))]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (= 0 (count (:result out))))))
+    ))
+
+(t/deftest images-crud
+  (let [user @(th/create-user db/pool 1)
+        coll @(th/create-images-collection db/pool (:id user) 1)
+        image-id (uuid/next)]
+
+    (t/testing "upload image to collection"
+      (let [content {:name "sample.jpg"
+                     :path "tests/uxbox/tests/_files/sample.jpg"
+                     :mtype "image/jpeg"
+                     :size 312043}
+            data {::sm/type :upload-image
+                  :id image-id
+                  :user (:id user)
+                  :collection-id (:id coll)
+                  :name "testfile"
+                  :content content}
+            out (th/try-on! (sm/handle data))]
+        ;; out  (with-redefs [vc/*context* (vc/get-or-create-context system)]
+        ;;        (th/try-on! (sm/handle data)))]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (t/is (= image-id (get-in out [:result :id])))
+        (t/is (= "testfile" (get-in out [:result :name])))
+        (t/is (= "image/jpeg" (get-in out [:result :mtype])))
+        (t/is (= "image/webp" (get-in out [:result :thumb-mtype])))
+        (t/is (= 800 (get-in out [:result :width])))
+        (t/is (= 800 (get-in out [:result :height])))
+
+        (t/is (string? (get-in out [:result :path])))
+        (t/is (string? (get-in out [:result :thumb-path])))
+        (t/is (string? (get-in out [:result :uri])))
+        (t/is (string? (get-in out [:result :thumb-uri])))))
+
+
+    (t/testing "list images by collection"
+      (let [data {::sq/type :images-by-collection
+                  :user (:id user)
+                  :collection-id (:id coll)}
+            out (th/try-on! (sq/handle data))]
+        ;; (th/print-result! out)
+
+        (t/is (= image-id (get-in out [:result 0 :id])))
+        (t/is (= "testfile" (get-in out [:result 0 :name])))
+        (t/is (= "image/jpeg" (get-in out [:result 0 :mtype])))
+        (t/is (= "image/webp" (get-in out [:result 0 :thumb-mtype])))
+        (t/is (= 800 (get-in out [:result 0 :width])))
+        (t/is (= 800 (get-in out [:result 0 :height])))
+
+        (t/is (string? (get-in out [:result 0 :path])))
+        (t/is (string? (get-in out [:result 0 :thumb-path])))
+        (t/is (string? (get-in out [:result 0 :uri])))
+        (t/is (string? (get-in out [:result 0 :thumb-uri])))))
+
+    (t/testing "get image by id"
+      (let [data {::sq/type :image-by-id
+                  :user (:id user)
+                  :id image-id}
+            out (th/try-on! (sq/handle data))]
+        ;; (th/print-result! out)
+
+        (t/is (= image-id (get-in out [:result :id])))
+        (t/is (= "testfile" (get-in out [:result :name])))
+        (t/is (= "image/jpeg" (get-in out [:result :mtype])))
+        (t/is (= "image/webp" (get-in out [:result :thumb-mtype])))
+        (t/is (= 800 (get-in out [:result :width])))
+        (t/is (= 800 (get-in out [:result :height])))
+
+        (t/is (string? (get-in out [:result :path])))
+        (t/is (string? (get-in out [:result :thumb-path])))
+        (t/is (string? (get-in out [:result :uri])))
+        (t/is (string? (get-in out [:result :thumb-uri])))))
+    ))
+
+;; TODO: (soft) delete image
+

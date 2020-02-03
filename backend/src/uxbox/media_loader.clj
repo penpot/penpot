@@ -14,9 +14,8 @@
    [clojure.edn :as edn]
    [promesa.core :as p]
    [mount.core :as mount]
-   [cuerdas.core :as str]
-   [datoteka.storages :as st]
    [datoteka.core :as fs]
+   [cuerdas.core :as str]
    [uxbox.config]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
@@ -27,7 +26,9 @@
    [uxbox.util.transit :as t]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
-   [uxbox.util.data :as data])
+   [uxbox.util.data :as data]
+   [uxbox.services.mutations.images :as images]
+   [uxbox.util.storage :as ust])
   (:import
    java.io.Reader
    java.io.PushbackReader
@@ -65,7 +66,7 @@
     (-> (db/query-one conn [sql id name])
         (p/then' (constantly id)))))
 
-(def create-icon-sql
+(def sql:create-icon
   "insert into icons (user_id, id, collection_id, name, metadata, content)
    values ('00000000-0000-0000-0000-000000000000'::uuid, $1, $2, $3, $4, $5)
        on conflict (id)
@@ -85,7 +86,9 @@
         extension (second (fs/split-ext filename))
         data (svg/parse localpath)
         mdata (select-keys data [:width :height :view-box])]
-    (db/query-one conn [create-icon-sql icon-id id
+    (db/query-one conn [sql:create-icon
+                        icon-id
+                        id
                         (:name data filename)
                         (blob/encode mdata)
                         (:content data)])))
@@ -123,56 +126,43 @@
   [conn {:keys [name] :as item}]
   (log/info "Creating or updating image collection:" name)
   (let [id (uuid/namespaced +images-uuid-ns+ name)
+        user uuid/zero
         sql "insert into image_collections (id, user_id, name)
-             values ($1, '00000000-0000-0000-0000-000000000000'::uuid, $2)
-                 on conflict (id)
-                 do update set name = $2
-             returning *;"
-        sqlv [sql id name]]
-    (-> (db/query-one conn [sql id name])
-        (p/then' (constantly id)))))
-
-(defn- retrieve-image-size
-  [path]
-  (let [info (Info. (str path) true)]
-    [(.getImageWidth info) (.getImageHeight info)]))
+             values ($1, $2, $3)
+             on conflict (id) do nothing
+             returning *;"]
+    (-> (db/query-one db/pool [sql id user name])
+        (p/then (constantly id)))))
 
 (defn- image-exists?
   [conn id]
   (s/assert ::us/uuid id)
-  (let [sql "select id
-               from images as i
-              where i.id = $1
-                and i.user_id = '00000000-0000-0000-0000-000000000000'::uuid"]
+  (let [sql "select id from images as i
+              where i.id = $1 and i.user_id = '00000000-0000-0000-0000-000000000000'::uuid"]
     (-> (db/query-one conn [sql id])
         (p/then (fn [row] (if row true false))))))
-
-(def create-image-sql
- "insert into images (user_id, id, collection_id, name, path, width, height, mimetype)
-  values ('00000000-0000-0000-0000-000000000000'::uuid, $1, $2, $3, $4, $5, $6, $7)
-  returning *;")
 
 (defn- create-image
   [conn id image-id localpath]
   (s/assert fs/path? localpath)
   (s/assert ::us/uuid id)
   (s/assert ::us/uuid image-id)
-  (let [storage media/images-storage
-        filename (fs/name localpath)
-        [width height] (retrieve-image-size localpath)
+  (let [filename (fs/name localpath)
         extension (second (fs/split-ext filename))
-        mimetype (case extension
-                   ".jpg" "image/jpeg"
-                   ".png" "image/png")]
-    (-> (st/save storage filename localpath)
-        (p/then (fn [path]
-                  (db/query-one conn [create-image-sql image-id id
-                                      filename
-                                      (str path)
-                                      width
-                                      height
-                                      mimetype])))
-        (p/then (constantly nil)))))
+        file (io/as-file localpath)
+        mtype (case extension
+                ".jpg"  "image/jpeg"
+                ".png"  "image/png"
+                ".webp" "image/webp")]
+
+    (images/create-image conn {:content {:path localpath
+                                         :name filename
+                                         :mtype mtype
+                                         :size (.length file)}
+                               :id image-id
+                               :collection-id id
+                               :user uuid/zero
+                               :name filename})))
 
 (defn- import-image
   [conn id fpath]
@@ -218,7 +208,7 @@
     (exit! -1))
   (fs/path path))
 
-(defn- read-import-file
+(defn- read-file
   [path]
   (let [path (validate-path path)
         reader (java.io.PushbackReader. (io/reader path))]
@@ -244,7 +234,7 @@
 
 (defn -main
   [& [path]]
-  (let [[basedir data] (read-import-file path)]
+  (let [[basedir data] (read-file path)]
     (start-system)
     (-> (db/with-atomic [conn db/pool]
           (importer conn basedir data))

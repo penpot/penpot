@@ -13,6 +13,7 @@
    [promesa.core :as p]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
+   [uxbox.images :as images]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]))
@@ -26,24 +27,6 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::user ::us/uuid)
-
-(def sql:generic-project-files
-  "select distinct on (pf.id, pf.created_at)
-          pf.*,
-          p.name as project_name,
-          array_agg(pp.id) over pages_w as pages,
-          first_value(pp.data) over pages_w as data
-     from project_files as pf
-    inner join projects as p on (pf.project_id = p.id)
-    inner join project_users as pu on (p.id = pu.project_id)
-     left join project_pages as pp on (pf.id = pp.file_id)
-    where pu.user_id = $1
-      and pu.can_edit = true
-      and pf.deleted_at is null
-      and pp.deleted_at is null
-   window pages_w as (partition by pf.id order by pp.created_at
-                      range BETWEEN UNBOUNDED PRECEDING
-                                AND UNBOUNDED FOLLOWING)")
 
 ;; --- Query: Project Files
 
@@ -60,33 +43,77 @@
     (retrieve-recent-files db/pool params)
     (retrieve-project-files db/pool params)))
 
-(def sql:project-files
-  (str "with files as (" sql:generic-project-files ")
-        select * from files where project_id = $2
-         order by created_at asc"))
+(def ^:private sql:generic-project-files
+  "select distinct
+          pf.*,
+          array_agg(pp.id) over pages_w as pages,
+          first_value(pp.data) over pages_w as data,
+          p.name as project_name
+     from project_users as pu
+    inner join project_files as pf on (pf.project_id = pu.project_id)
+    inner join projects as p on (p.id = pf.project_id)
+     left join project_pages as pp on (pf.id = pp.file_id)
+    where pu.user_id = $1
+      and pu.can_edit = true
+   window pages_w as (partition by pf.id order by pp.created_at
+                      range between unbounded preceding
+                                and unbounded following)
+    order by pf.created_at")
 
-(def sql:recent-files
-  (str "with files as (" sql:generic-project-files ")
-        select * from files
-         order by modified_at desc
-         limit $2"))
+(def ^:private sql:project-files
+  (str "with files as (" sql:generic-project-files ") "
+       "select * from files where project_id = $2"))
 
 (defn retrieve-project-files
   [conn {:keys [user project-id]}]
   (-> (db/query conn [sql:project-files user project-id])
       (p/then' (partial mapv decode-row))))
 
+(def ^:private sql:recent-files
+  "with project_files as (
+      (select pf.*,
+              array_agg(pp.id) over pages_w as pages,
+              first_value(pp.data) over pages_w as data,
+              p.name as project_name
+         from project_users as pu
+        inner join project_files as pf on (pf.project_id = pu.project_id)
+        inner join projects as p on (p.id = pf.project_id)
+         left join project_pages as pp on (pf.id = pp.file_id)
+        where pu.user_id = $1
+          and pu.can_edit = true
+       window pages_w as (partition by pf.id order by pp.created_at
+                          range between unbounded preceding
+                                    and unbounded following))
+      union
+      (select pf.*,
+              array_agg(pp.id) over pages_w as pages,
+              first_value(pp.data) over pages_w as data,
+              p.name as project_name
+         from project_file_users as pfu
+        inner join project_files as pf on (pfu.file_id = pf.id)
+        inner join projects as p  on (p.id = pf.project_id)
+         left join project_pages as pp on (pf.id = pp.file_id)
+        where pfu.user_id = $1
+          and pfu.can_edit = true
+       window pages_w as (partition by pf.id order by pp.created_at
+                          range between unbounded preceding
+                                    and unbounded following))
+   ) select pf1.*
+       from project_files as pf1
+      order by pf1.modified_at desc
+      limit $2;")
+
+
 (defn retrieve-recent-files
   [conn {:keys [user]}]
   (-> (db/query conn [sql:recent-files user 20])
       (p/then' (partial mapv decode-row))))
 
-
 ;; --- Query: Project File (By ID)
 
-(def sql:project-file
-  (str "with files as (" sql:generic-project-files ")
-        select * from files where id = $2"))
+(def ^:private sql:project-file
+  (str "with files as (" sql:generic-project-files ") "
+       "select * from files where id = $2"))
 
 (s/def ::project-file
   (s/keys :req-un [::user ::id]))
@@ -96,36 +123,10 @@
   (-> (db/query-one db/pool [sql:project-file user id])
       (p/then' decode-row)))
 
-
 ;; --- Query: Users of the File
 
-(def sql:file-users
-  "select u.id, u.fullname, u.photo
-     from users as u
-     join project_file_users as pfu on (pfu.user_id = u.id)
-    where pfu.file_id = $1
-   union all
-   select u.id, u.fullname, u.photo
-     from users as u
-     join project_users as pu on (pu.user_id = u.id)
-    where pu.project_id = $2")
-
-(def sql:file-users
-  "select u.id, u.fullname, u.photo
-     from users as u
-     join project_file_users as pfu on (pfu.user_id = u.id)
-    where pfu.file_id = $1
-   union all
-   select u.id, u.fullname, u.photo
-     from users as u
-     join project_users as pu on (pu.user_id = u.id)
-    where pu.project_id = $2")
-
 (declare retrieve-minimal-file)
-
-(def sql:minimal-file
-  (str "with files as (" sql:generic-project-files ")
-        select id, project_id from files where id = $2"))
+(declare retrieve-file-users)
 
 (s/def ::project-file-users
   (s/keys :req-un [::user ::file-id]))
@@ -134,20 +135,65 @@
   [{:keys [user file-id] :as params}]
   (db/with-atomic [conn db/pool]
     (-> (retrieve-minimal-file conn user file-id)
-        (p/then (fn [{:keys [id project-id]}]
-                  (db/query conn [sql:file-users id project-id]))))))
+        (p/then #(retrieve-file-users conn %)))))
+
+(def ^:private sql:minimal-file
+  (str "with files as (" sql:generic-project-files ") "
+       "select id, project_id from files where id = $2"))
 
 (defn- retrieve-minimal-file
   [conn user-id file-id]
   (-> (db/query-one conn [sql:minimal-file user-id file-id])
       (p/then' su/raise-not-found-if-nil)))
 
+(def ^:private sql:file-users
+  "select u.id, u.fullname, u.photo
+     from users as u
+     join project_file_users as pfu on (pfu.user_id = u.id)
+    where pfu.file_id = $1
+    union all
+   select u.id, u.fullname, u.photo
+     from users as u
+     join project_users as pu on (pu.user_id = u.id)
+    where pu.project_id = $2")
+
+(defn- retrieve-file-users
+  [conn {:keys [id project-id] :as file}]
+  (let [sqlv [sql:file-users id project-id]]
+    (db/query conn sqlv)))
+
+
+;; --- Query: Images of the File
+
+(declare retrieve-file-images)
+
+(s/def ::project-file-images
+  (s/keys :req-un [::user ::file-id]))
+
+(sq/defquery ::project-file-images
+  [{:keys [user file-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (-> (retrieve-minimal-file conn user file-id)
+        (p/then #(retrieve-file-images conn %)))))
+
+(def ^:private sql:file-images
+  "select pfi.*
+     from project_file_images as pfi
+    where pfi.file_id = $1")
+
+(defn retrieve-file-images
+  [conn {:keys [id] :as file}]
+  (let [sqlv [sql:file-images id]
+        xf (comp (map #(images/resolve-urls % :path :uri))
+                 (map #(images/resolve-urls % :thumb-path :thumb-uri)))]
+    (-> (db/query conn sqlv)
+        (p/then' #(into [] xf %)))))
+
 ;; --- Helpers
 
 (defn decode-row
-  [{:keys [metadata pages data] :as row}]
+  [{:keys [pages data] :as row}]
   (when row
     (cond-> row
       data (assoc :data (blob/decode data))
-      pages (assoc :pages (vec (remove nil? pages)))
-      metadata (assoc :metadata (blob/decode metadata)))))
+      pages (assoc :pages (vec (remove nil? pages))))))

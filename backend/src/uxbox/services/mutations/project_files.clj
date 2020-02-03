@@ -11,15 +11,21 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [datoteka.core :as fs]
    [uxbox.db :as db]
+   [uxbox.media :as media]
+   [uxbox.images :as images]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.common.pages :as cp]
    [uxbox.services.mutations :as sm]
    [uxbox.services.mutations.projects :as proj]
+   [uxbox.services.mutations.images :as imgs]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.util.uuid :as uuid]
+   [uxbox.util.storage :as ust]
+   [vertx.core :as vc]))
 
 ;; --- Helpers & Specs
 
@@ -123,7 +129,8 @@
     (-> (db/query-one conn [sql id name])
         (p/then' su/constantly-nil))))
 
-;; --- Mutation: Delete Project
+
+;; --- Mutation: Delete Project File
 
 (declare delete-file)
 
@@ -147,3 +154,97 @@
   (let [sql sql:delete-file]
     (-> (db/query-one conn [sql id])
         (p/then' su/constantly-nil))))
+
+;; --- Mutation: Upload File Image
+
+(s/def ::file-id ::us/uuid)
+(s/def ::content ::imgs/upload)
+
+(s/def ::upload-project-file-image
+  (s/keys :req-un [::user ::file-id ::name ::content]
+          :opt-un [::id]))
+
+(declare create-file-image)
+
+(sm/defmutation ::upload-project-file-image
+  [{:keys [user file-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (check-edition-permissions! conn user file-id)
+    (create-file-image conn params)))
+
+(def ^:private
+  sql:insert-file-image
+  "insert into project_file_images
+     (file_id, user_id, name, path, width, height, mtype,
+      thumb_path, thumb_width, thumb_height, thumb_quality, thumb_mtype)
+   values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+   returning *")
+
+(defn- create-file-image
+  [conn {:keys [content file-id user name] :as params}]
+  (when-not (imgs/valid-image-types? (:mtype content))
+    (ex/raise :type :validation
+              :code :image-type-not-allowed
+              :hint "Seems like you are uploading an invalid image."))
+
+  (p/let [image-opts (vc/blocking (images/info (:path content)))
+          image-path (imgs/persist-image-on-fs content)
+          thumb-opts imgs/thumbnail-options
+          thumb-path (imgs/persist-image-thumbnail-on-fs thumb-opts image-path)
+
+          sqlv [sql:insert-file-image
+                file-id
+                user
+                name
+                (str image-path)
+                (:width image-opts)
+                (:height image-opts)
+                (:mtype content)
+                (str thumb-path)
+                (:width thumb-opts)
+                (:height thumb-opts)
+                (:quality thumb-opts)
+                (images/format->mtype (:format thumb-opts))]]
+    (-> (db/query-one db/pool sqlv)
+        (p/then' #(images/resolve-urls % :path :uri))
+        (p/then' #(images/resolve-urls % :thumb-path :thumb-uri)))))
+
+;; --- Mutation: Import from collection
+
+(declare copy-image!)
+
+(s/def ::import-image-to-file
+  (s/keys :req-un [::image-id ::file-id ::user]))
+
+(def ^:private sql:select-image-by-id
+  "select img.* from images as img where id=$1")
+
+(sm/defmutation ::import-image-to-file
+  [{:keys [image-id file-id user]}]
+  (db/with-atomic [conn db/pool]
+    (p/let [image (-> (db/query-one conn [sql:select-image-by-id image-id])
+                      (p/then' su/raise-not-found-if-nil))
+            image-path (copy-image! (:path image))
+            thumb-path (copy-image! (:thumb-path image))
+            sqlv [sql:insert-file-image
+                  file-id
+                  user
+                  (:name image)
+                  (str image-path)
+                  (:width image)
+                  (:height image)
+                  (:mtype image)
+                  (str thumb-path)
+                  (:thumb-width image)
+                  (:thumb-height image)
+                  (:thumb-quality image)
+                  (:thumb-mtype image)]]
+      (-> (db/query-one db/pool sqlv)
+          (p/then' #(images/resolve-urls % :path :uri))
+          (p/then' #(images/resolve-urls % :thumb-path :thumb-uri))))))
+
+(defn- copy-image!
+  [path]
+  (vc/blocking
+   (let [image-path (ust/lookup media/media-storage path)]
+     (ust/save! media/media-storage (fs/name image-path) image-path))))

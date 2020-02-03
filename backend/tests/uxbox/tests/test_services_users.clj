@@ -32,8 +32,7 @@
                     ::sm/type :update-profile
                     :fullname "Full Name"
                     :username "user222"
-                    :metadata {:foo "bar"}
-                    :email "user222@uxbox.io")
+                    :lang "en")
         out (th/try-on! (sm/handle data))]
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -43,20 +42,20 @@
     (t/is (= (:metadata data) (get-in out [:result :metadata])))
     (t/is (not (contains? (:result out) :password)))))
 
-(t/deftest test-mutation-update-profile-photo
-  (let [user  @(th/create-user db/pool 1)
-        data {::sm/type :update-profile-photo
-              :user (:id user)
-              :file {:name "sample.jpg"
-                     :path (fs/path "test/uxbox/tests/_files/sample.jpg")
-                     :size 123123
-                     :mtype "image/jpeg"}}
+;; (t/deftest test-mutation-update-profile-photo
+;;   (let [user  @(th/create-user db/pool 1)
+;;         data {::sm/type :update-profile-photo
+;;               :user (:id user)
+;;               :file {:name "sample.jpg"
+;;                      :path (fs/path "test/uxbox/tests/_files/sample.jpg")
+;;                      :size 123123
+;;                      :mtype "image/jpeg"}}
 
-        out (th/try-on! (sm/handle data))]
-    ;; (th/print-result! out)
-    (t/is (nil? (:error out)))
-    (t/is (= (:id user) (get-in out [:result :id])))
-    (t/is (str/starts-with? (get-in out [:result :photo]) "http"))))
+;;         out (th/try-on! (sm/handle data))]
+;;     ;; (th/print-result! out)
+;;     (t/is (nil? (:error out)))
+;;     (t/is (= (:id user) (get-in out [:result :id])))
+;;     (t/is (str/starts-with? (get-in out [:result :photo]) "http"))))
 
 ;; (t/deftest test-mutation-register-profile
 ;;   (let[data {:fullname "Full Name"

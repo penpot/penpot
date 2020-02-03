@@ -178,46 +178,46 @@
 
 ;; --- Mutation: Update Photo
 
-(s/def :uxbox$upload/name ::us/string)
-(s/def :uxbox$upload/size ::us/integer)
-(s/def :uxbox$upload/mtype ::us/string)
-(s/def ::upload
-  (s/keys :req-un [:uxbox$upload/name
-                   :uxbox$upload/size
-                   :uxbox$upload/mtype]))
+;; (s/def :uxbox$upload/name ::us/string)
+;; (s/def :uxbox$upload/size ::us/integer)
+;; (s/def :uxbox$upload/mtype ::us/string)
+;; (s/def ::upload
+;;   (s/keys :req-un [:uxbox$upload/name
+;;                    :uxbox$upload/size
+;;                    :uxbox$upload/mtype]))
 
-(s/def ::file ::upload)
-(s/def ::update-profile-photo
-  (s/keys :req-un [::user ::file]))
+;; (s/def ::file ::upload)
+;; (s/def ::update-profile-photo
+;;   (s/keys :req-un [::user ::file]))
 
-(def valid-image-types?
-  #{"image/jpeg", "image/png", "image/webp"})
+;; (def valid-image-types?
+;;   #{"image/jpeg", "image/png", "image/webp"})
 
-(sm/defmutation ::update-profile-photo
-  [{:keys [user file] :as params}]
-  (letfn [(store-photo [{:keys [name path] :as upload}]
-            (let [filename (fs/name name)
-                  storage media/images-storage]
-              (-> (ds/save storage filename path)
-                  #_(su/handle-on-context))))
+;; (sm/defmutation ::update-profile-photo
+;;   [{:keys [user file] :as params}]
+;;   (letfn [(store-photo [{:keys [name path] :as upload}]
+;;             (let [filename (fs/name name)
+;;                   storage media/media-storage]
+;;               (-> (ds/save storage filename path)
+;;                   #_(su/handle-on-context))))
 
-          (update-user-photo [path]
-            (let [sql "update users
-                          set photo = $1
-                        where id = $2
-                          and deleted_at is null
-                       returning id, photo"]
-              (-> (db/query-one db/pool [sql (str path) user])
-                  (p/then' su/raise-not-found-if-nil)
-                  (p/then profile/resolve-thumbnail))))]
+;;           (update-user-photo [path]
+;;             (let [sql "update users
+;;                           set photo = $1
+;;                         where id = $2
+;;                           and deleted_at is null
+;;                        returning id, photo"]
+;;               (-> (db/query-one db/pool [sql (str path) user])
+;;                   (p/then' su/raise-not-found-if-nil)
+;;                   (p/then profile/resolve-thumbnail))))]
 
-    (when-not (valid-image-types? (:mtype file))
-      (ex/raise :type :validation
-                :code :image-type-not-allowed
-                :hint "Seems like you are uploading an invalid image."))
+;;     (when-not (valid-image-types? (:mtype file))
+;;       (ex/raise :type :validation
+;;                 :code :image-type-not-allowed
+;;                 :hint "Seems like you are uploading an invalid image."))
 
-    (-> (store-photo file)
-        (p/then update-user-photo))))
+;;     (-> (store-photo file)
+;;         (p/then update-user-photo))))
 
 ;; --- Mutation: Register Profile
 

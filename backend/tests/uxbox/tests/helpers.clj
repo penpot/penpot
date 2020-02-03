@@ -5,17 +5,18 @@
    [cuerdas.core :as str]
    [mount.core :as mount]
    [environ.core :refer [env]]
-   [datoteka.storages :as st]
    [uxbox.services.mutations.profile :as profile]
    [uxbox.services.mutations.projects :as projects]
    [uxbox.services.mutations.project-files :as files]
    [uxbox.services.mutations.project-pages :as pages]
+   [uxbox.services.mutations.images :as images]
    [uxbox.fixtures :as fixtures]
    [uxbox.migrations]
    [uxbox.media]
    [uxbox.db :as db]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
+   [uxbox.util.storage :as ust]
    [uxbox.config :as cfg]))
 
 (defn state-init
@@ -28,9 +29,7 @@
                       #'uxbox.services.init/mutation-services
                       #'uxbox.migrations/migrations
                       #'uxbox.media/assets-storage
-                      #'uxbox.media/media-storage
-                      #'uxbox.media/images-storage
-                      #'uxbox.media/thumbnails-storage})
+                      #'uxbox.media/media-storage})
         (mount/swap {#'uxbox.config/config config})
         (mount/start))
     (try
@@ -55,8 +54,8 @@
   (try
     (next)
     (finally
-      (st/clear! uxbox.media/media-storage)
-      (st/clear! uxbox.media/assets-storage))))
+      (ust/clear! uxbox.media/media-storage)
+      (ust/clear! uxbox.media/assets-storage))))
 
 (defn mk-uuid
   [prefix & args]
@@ -96,10 +95,17 @@
                            :file-id file-id
                            :name (str "page" i)
                            :ordering i
-                           :data {:shapes []
+                           :data {:version 1
+                                  :shapes []
+                                  :options {}
                                   :canvas []
-                                  :shapes-by-id {}}
-                           :metadata {}}))
+                                  :shapes-by-id {}}}))
+
+(defn create-images-collection
+  [conn user-id i]
+  (images/create-images-collection conn {:id (mk-uuid "imgcoll" i)
+                                         :user user-id
+                                         :name (str "image collection " i)}))
 
 (defn handle-error
   [err]

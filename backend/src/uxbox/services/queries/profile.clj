@@ -31,15 +31,15 @@
 
 ;; --- Query: Profile (own)
 
-(defn resolve-thumbnail
-  [user]
-  (let [opts {:src :photo
-              :dst :photo
-              :size [100 100]
-              :quality 90
-              :format "jpg"}]
-    (-> (px/submit! #(images/populate-thumbnails user opts))
-        (su/handle-on-context))))
+;; (defn resolve-thumbnail
+;;   [user]
+;;   (let [opts {:src :photo
+;;               :dst :photo
+;;               :size [100 100]
+;;               :quality 90
+;;               :format "jpg"}]
+;;     (-> (px/submit! #(images/populate-thumbnails user opts))
+;;         (su/handle-on-context))))
 
 (defn retrieve-profile
   [conn id]
