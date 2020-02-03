@@ -49,37 +49,44 @@
   [^Vertx o]
   (.close o))
 
+(def ^:dynamic *context* nil)
+
 (defn get-or-create-context
   [vsm]
-  (.getOrCreateContext ^Vertx (vu/resolve-system vsm)))
+  (or *context* (.getOrCreateContext ^Vertx (vu/resolve-system vsm))))
 
 (defn current-context
   []
-  (Vertx/currentContext))
+  (or *context* (Vertx/currentContext)))
 
 (defmacro blocking
   [& body]
-  `(let [vsm# (-> (current-context)
-                  (vu/resolve-system))
-         d# (p/deferred)]
-     (.executeBlocking
-      vsm#
-      (reify Handler
-        (handle [_ prm#]
-          (try
-            (.complete prm# (do ~@body))
-            (catch Throwable e#
-              (.fail prm# e#)))))
-      true
-      (reify Handler
-        (handle [_ ar#]
-          (if (.failed ^AsyncResult ar#)
-            (p/reject! d# (.cause ^AsyncResult ar#))
-            (p/resolve! d# (.result ^AsyncResult ar#))))))
-     d#))
-
-
-
+  (let [sym-vsm (with-meta (gensym "blocking")
+                  {:tag 'io.vertx.core.Vertx})
+        sym-e   (with-meta (gensym "blocking")
+                  {:tag 'java.lang.Throwable})
+        sym-prm (gensym "blocking")
+        sym-ar  (gensym "blocking")]
+    `(let [~sym-vsm (-> (current-context)
+                        (vu/resolve-system))
+           d# (p/deferred)]
+       (.executeBlocking
+        ~sym-vsm
+        (reify Handler
+          (handle [_ ~sym-prm]
+            (let [prm# ~(with-meta sym-prm {:tag 'io.vertx.core.Promise})]
+              (try
+                (.complete prm# (do ~@body))
+                (catch Throwable ~sym-e
+                  (.fail prm# ~sym-e))))))
+        true
+        (reify Handler
+          (handle [_ ~sym-ar]
+            (let [ar# ~(with-meta sym-ar {:tag 'io.vertx.core.AsyncResult})]
+              (if (.failed ar#)
+                (p/reject! d# (.cause ar#))
+                (p/resolve! d# (.result ar#)))))))
+       d#)))
 
 (defn wrap-blocking
   ([f] (wrap-blocking (current-context) f))
