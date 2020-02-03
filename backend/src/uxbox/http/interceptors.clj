@@ -2,11 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.http.interceptors
   (:require
    [vertx.web :as vw]
+   [uxbox.config :as cfg]
    [uxbox.common.exceptions :as ex]
    [uxbox.util.transit :as t])
   (:import
@@ -30,12 +34,15 @@
 
 (def format-response-body
   {:leave (fn [{:keys [response] :as data}]
-            (let [body (:body response)]
+            (let [body (:body response)
+                  type (if (:debug-humanize-transit cfg/config)
+                         :json-verbose
+                         :json)]
               (cond
                 (coll? body)
                 (-> data
                     (assoc-in [:response :body]
-                              (t/bytes->buffer (t/encode body)))
+                              (t/bytes->buffer (t/encode body {:type type})))
                     (update-in [:response :headers]
                                assoc "content-type" "application/transit+json"))
 

@@ -31,6 +31,7 @@
    :smtp-enabled false
    :allow-demo-users true
    :registration-enabled true
+   :debug-humanize-transit true
    })
 
 (s/def ::http-server-port ::us/integer)
