@@ -4,6 +4,7 @@
    [promesa.core :as p]
    [cuerdas.core :as str]
    [mount.core :as mount]
+   [environ.core :refer [env]]
    [datoteka.storages :as st]
    [uxbox.services.mutations.profile :as profile]
    [uxbox.services.mutations.projects :as projects]
@@ -19,7 +20,7 @@
 
 (defn state-init
   [next]
-  (let [config (cfg/read-test-config)]
+  (let [config (cfg/read-test-config env)]
     (-> (mount/only #{#'uxbox.config/config
                       #'uxbox.core/system
                       #'uxbox.db/pool
