@@ -29,20 +29,12 @@
 ;; --- Generic Build Options
 
 (def closure-defines
-  (let [url       (-> (:uxbox-api-url env "http://127.0.0.1:6060")
-                      (str/trim))
-        demo-warn (-> (:uxbox-demo-warning env "")
-                      (str/trim))]
-    {'uxbox.config.url
-     (cond
-       (empty? url) "http://localhost:6060"
-       (str/starts-with? url "http") url
-       (str/starts-with? url "\"") (edn/read-string url))
-     'uxbox.config.demo-warning
-     (cond
-       (empty? demo-warn) false
-       (= "true" demo-warn) true
-       :else false)}))
+  (let [url       (some-> (:uxbox-api-url env)
+                          (str/trim))
+        demo-warn (some-> (:uxbox-demo-warning env)
+                          (str/trim))]
+    {'uxbox.config.url (if (nil? url) "http://localhost:6060"  url)
+     'uxbox.config.demo-warning (= "true" demo-warn)}))
 
 (def default-build-options
   {:cache-analysis true
