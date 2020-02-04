@@ -31,16 +31,6 @@
 
 ;; --- Query: Profile (own)
 
-;; (defn resolve-thumbnail
-;;   [user]
-;;   (let [opts {:src :photo
-;;               :dst :photo
-;;               :size [100 100]
-;;               :quality 90
-;;               :format "jpg"}]
-;;     (-> (px/submit! #(images/populate-thumbnails user opts))
-;;         (su/handle-on-context))))
-
 (defn retrieve-profile
   [conn id]
   (let [sql "select * from users where id=$1 and deleted_at is null"]
@@ -52,12 +42,12 @@
 (sq/defquery ::profile
   [{:keys [user] :as params}]
   (-> (retrieve-profile db/pool user)
-      (p/then' strip-private-attrs)))
+      (p/then' strip-private-attrs)
+      (p/then' #(images/resolve-media-uris % [:photo :photo-uri]))))
 
 ;; --- Attrs Helpers
 
 (defn strip-private-attrs
   "Only selects a publicy visible user attrs."
   [profile]
-  (select-keys profile [:id :username :fullname :metadata
-                        :email :created-at :photo]))
+  (select-keys profile [:id :fullname :lang :email :created-at :photo]))

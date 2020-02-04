@@ -2,6 +2,9 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
@@ -17,7 +20,6 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
-   [uxbox.main.ui.users :refer [user]]
    [uxbox.main.ui.workspace.images :refer [import-image-modal]]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.math :as mth]

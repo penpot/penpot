@@ -79,10 +79,10 @@
       (p/then' (constantly nil))))
 
 (defn- handle-task
-  [handlers {:keys [name] :as task}]
-  (let [task-fn (get handlers name)]
+  [tasks {:keys [name] :as item}]
+  (let [task-fn (get tasks name)]
     (if task-fn
-      (task-fn task)
+      (task-fn item)
       (do
         (log/warn "no task handler found for" (pr-str name))
         nil))))
@@ -103,7 +103,7 @@
       props (assoc :props (blob/decode props)))))
 
 (defn- event-loop
-  [{:keys [handlers] :as options}]
+  [{:keys [tasks] :as options}]
   (let [queue (:queue options "default")
         max-retries (:max-retries options 3)]
     (db/with-atomic [conn db/pool]
@@ -111,7 +111,7 @@
           (p/then decode-task-row)
           (p/then (fn [item]
                     (when item
-                      (-> (p/do! (handle-task handlers item))
+                      (-> (p/do! (handle-task tasks item))
                           (p/handle (fn [v e]
                                       (if e
                                         (if (>= (:retry-num item) max-retries)

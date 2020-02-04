@@ -2,8 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2016-2019 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.settings.password
   (:require
@@ -30,13 +33,22 @@
   [event form]
   (dom/prevent-default event)
   (let [data (:clean-data form)
-        opts {:on-success #(st/emit! (um/info (tr "settings.password.password-saved")))
+        mdata {:on-success #(st/emit! (um/info (tr "settings.password.password-saved")))
               :on-error #(on-error form %)}]
-    (st/emit! (udu/update-password data opts))))
+    (st/emit! (udu/update-password (with-meta data mdata)))))
 
 (s/def ::password-1 ::fm/not-empty-string)
 (s/def ::password-2 ::fm/not-empty-string)
 (s/def ::password-old ::fm/not-empty-string)
+
+(defn password-equality
+  [data]
+  (let [password-1 (:password-1 data)
+        password-2 (:password-2 data)]
+    (when (and password-1 password-2
+               (not= password-1 password-2))
+      {:password-2 {:code ::password-not-equal
+                    :message "profile.password.not-equal"}})))
 
 (s/def ::password-form
   (s/keys :req-un [::password-1
@@ -45,7 +57,9 @@
 
 (mf/defc password-form
   [props]
-  (let [{:keys [data] :as form} (fm/use-form ::password-form {})]
+  (let [{:keys [data] :as form} (fm/use-form2 :spec ::password-form
+                                              :validators [password-equality]
+                                              :initial {})]
     [:form.password-form {:on-submit #(on-submit % form)}
      [:span.user-settings-label (tr "settings.password.change-password")]
      [:input.input-text
@@ -67,7 +81,8 @@
        :on-blur (fm/on-input-blur form :password-1)
        :on-change (fm/on-input-change form :password-1)
        :placeholder (tr "settings.password.new-password")}]
-     ;; [:& fm/field-error {:form form :field :password-1}]
+
+     [:& fm/field-error {:form form :field :password-1}]
 
      [:input.input-text
       {:type "password"
@@ -77,7 +92,8 @@
        :on-blur (fm/on-input-blur form :password-2)
        :on-change (fm/on-input-change form :password-2)
        :placeholder (tr "settings.password.confirm-password")}]
-     ;; [:& fm/field-error {:form form :field :password-2}]
+
+     [:& fm/field-error {:form form :field :password-2}]
 
      [:input.btn-primary
       {:type "submit"

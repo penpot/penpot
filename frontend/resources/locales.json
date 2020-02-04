@@ -34,8 +34,7 @@
       "fr" : "+ Nouvelle couleur"
     }
   },
-  "ds.colors" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/header.cljs:48" ],
+  "dashboard.header.colors" : {
     "translations" : {
       "en" : "COLORS",
       "fr" : "COULEURS"
@@ -112,8 +111,7 @@
       "fr" : "+ Nouvel icône"
     }
   },
-  "ds.icons" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/header.cljs:42" ],
+  "dashboard.header.icons" : {
     "translations" : {
       "en" : "ICONS",
       "fr" : "ICÔNES"
@@ -133,8 +131,7 @@
       "fr" : "+ Nouvelle image"
     }
   },
-  "ds.images" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/header.cljs:45" ],
+  "dashboard.header.images" : {
     "translations" : {
       "en" : "IMAGES",
       "fr" : "IMAGES"
@@ -210,8 +207,7 @@
     },
     "unused" : true
   },
-  "ds.projects" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/header.cljs:39" ],
+  "dashboard.header.projects" : {
     "translations" : {
       "en" : "PROJECTS",
       "fr" : "PROJETS"
@@ -287,8 +283,7 @@
       "fr" : "Mise en ligne : %s"
     }
   },
-  "ds.user.exit" : {
-    "used-in" : [ "src/uxbox/main/ui/users.cljs:43" ],
+  "dashboard.header.user-menu.logout" : {
     "translations" : {
       "en" : "Exit",
       "fr" : "Quitter"
@@ -301,15 +296,13 @@
       "fr" : "Notifications"
     }
   },
-  "ds.user.password" : {
-    "used-in" : [ "src/uxbox/main/ui/users.cljs:37" ],
+  "dashboard.header.user-menu.password" : {
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe"
     }
   },
-  "ds.user.profile" : {
-    "used-in" : [ "src/uxbox/main/ui/users.cljs:34" ],
+  "dashboard.header.user-menu.profile" : {
     "translations" : {
       "en" : "Profile",
       "fr" : "Profil"
@@ -441,11 +434,11 @@
       "fr" : null
     }
   },
-  "login.email-or-username" : {
+  "login.email" : {
     "used-in" : [ "src/uxbox/main/ui/login.cljs:63" ],
     "translations" : {
-      "en" : "Email or Username",
-      "fr" : "adresse email ou nom d'utilisateur"
+      "en" : "Email",
+      "fr" : "adresse email"
     }
   },
   "login.forgot-password" : {
@@ -532,11 +525,11 @@
       "fr" : null
     }
   },
-  "profile.recovery.username-or-email" : {
+  "profile.recovery.email" : {
     "used-in" : [ "src/uxbox/main/ui/profile/recovery_request.cljs:54" ],
     "translations" : {
-      "en" : "Username or Email Address",
-      "fr" : "adresse email ou nom d'utilisateur"
+      "en" : "Email Address",
+      "fr" : "adresse email"
     }
   },
   "profile.register.already-have-account" : {
@@ -572,13 +565,6 @@
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe"
-    }
-  },
-  "profile.register.username" : {
-    "used-in" : [ "src/uxbox/main/ui/profile/register.cljs:87" ],
-    "translations" : {
-      "en" : "Your username",
-      "fr" : "Votre nom d'utilisateur"
     }
   },
   "settings.exit" : {
@@ -693,7 +679,7 @@
       "fr" : "Nom, nom d'utilisateur et adresse email"
     }
   },
-  "settings.profile.section-i18n-data" : {
+  "settings.profile.lang" : {
     "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:117" ],
     "translations" : {
       "en" : "Default language",

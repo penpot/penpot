@@ -55,8 +55,8 @@
                 width 200
                 height 200}
            :as opts}]
-   ;; (us/verify ::thumbnail-opts opts)
-   (us/verify fs/path? input)
+   (us/assert ::thumbnail-opts opts)
+   (us/assert fs/path? input)
    (let [ext (format->extension format)
          tmp (fs/create-tempfile :suffix ext)
          opr (doto (IMOperation.)
@@ -80,6 +80,33 @@
        (fs/delete tmp)
        (ByteArrayInputStream. thumbnail-data)))))
 
+(defn generate-thumbnail2
+  ([input] (generate-thumbnail input nil))
+  ([input {:keys [quality format width height]
+           :or {format "jpeg"
+                quality 92
+                width 200
+                height 200}
+           :as opts}]
+   (us/assert ::thumbnail-opts opts)
+   (us/assert fs/path? input)
+   (let [ext (format->extension format)
+         tmp (fs/create-tempfile :suffix ext)
+         opr (doto (IMOperation.)
+               (.addImage)
+               (.autoOrient)
+               (.strip)
+               (.thumbnail (int width) (int height) "^")
+               (.gravity "center")
+               (.extent (int width) (int height))
+               (.quality (double quality))
+               (.addImage))]
+     (doto (ConvertCmd.)
+       (.run opr (into-array (map str [input tmp]))))
+     (let [thumbnail-data (fs/slurp-bytes tmp)]
+       (fs/delete tmp)
+       (ByteArrayInputStream. thumbnail-data)))))
+
 (defn info
   [path]
   (let [instance (Info. (str path))]
@@ -96,3 +123,19 @@
       row
       (let [url (ust/public-uri media/media-storage value)]
         (assoc-in row dst (str url))))))
+
+(defn- resolve-uri
+  [storage row src dst]
+  (let [src (if (vector? src) src [src])
+        dst (if (vector? dst) dst [dst])
+        value (get-in row src)]
+    (if (empty? value)
+      row
+      (let [url (ust/public-uri media/media-storage value)]
+        (assoc-in row dst (str url))))))
+
+(defn resolve-media-uris
+  [row & pairs]
+  (us/assert map? row)
+  (us/assert (s/coll-of vector?) pairs)
+  (reduce #(resolve-uri media/media-storage %1 (nth %2 0) (nth %2 1)) row pairs))

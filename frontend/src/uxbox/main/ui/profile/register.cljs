@@ -21,14 +21,12 @@
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
 
-(s/def ::username ::fm/not-empty-string)
 (s/def ::fullname ::fm/not-empty-string)
 (s/def ::password ::fm/not-empty-string)
 (s/def ::email ::fm/email)
 
 (s/def ::register-form
-  (s/keys :req-un [::username
-                   ::password
+  (s/keys :req-un [::password
                    ::fullname
                    ::email]))
 
@@ -42,11 +40,6 @@
     (swap! form assoc-in [:errors :email]
            {:type ::api
             :message "errors.api.form.email-already-exists"})
-
-    :uxbox.services.users/username-already-exists
-    (swap! form assoc-in [:errors :username]
-           {:type ::api
-            :message "errors.api.form.username-already-exists"})
 
     (st/emit! (tr "errors.api.form.unexpected-error"))))
 
@@ -75,20 +68,6 @@
       [:& fm/field-error {:form form
                           :type #{::api}
                           :field :fullname}]
-
-      [:input.input-text
-       {:type "text"
-        :name "username"
-        :tab-index "2"
-        :class (fm/error-class form :username)
-        :on-blur (fm/on-input-blur form :username)
-        :on-change (fm/on-input-change form :username)
-        :value (:username data "")
-        :placeholder (tr "profile.register.username")}]
-
-      [:& fm/field-error {:form form
-                          :type #{::api}
-                          :field :username}]
 
       [:input.input-text
        {:type "email"

@@ -6,7 +6,6 @@ CREATE TABLE users (
   deleted_at timestamptz NULL,
 
   fullname text NOT NULL DEFAULT '',
-  username text NOT NULL,
   email text NOT NULL,
   photo text NOT NULL,
   password text NOT NULL,
@@ -14,10 +13,6 @@ CREATE TABLE users (
   lang text NULL,
   is_demo boolean NOT NULL DEFAULT false
 );
-
-CREATE UNIQUE INDEX users__username__idx
-    ON users (username)
- WHERE deleted_at IS null;
 
 CREATE UNIQUE INDEX users__email__idx
     ON users (email)
@@ -87,10 +82,9 @@ CREATE INDEX sessions__user_id__idx
 
 -- Insert a placeholder system user.
 
-INSERT INTO users (id, fullname, username, email, photo, password)
+INSERT INTO users (id, fullname, email, photo, password)
 VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
         'System User',
-        '00000000-0000-0000-0000-000000000000',
         'system@uxbox.io',
         '',
         '!');

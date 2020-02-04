@@ -66,11 +66,10 @@
 (defn create-user
   [conn i]
   (profile/create-profile conn {:id (mk-uuid "user" i)
-                              :fullname (str "User " i)
-                              :username (str "user" i)
-                              :email (str "user" i ".test@uxbox.io")
-                              :password "123123"
-                              :metadata {}}))
+                                :fullname (str "User " i)
+                                :email (str "user" i ".test@nodomain.com")
+                                :password "123123"
+                                :metadata {}}))
 
 (defn create-project
   [conn user-id i]

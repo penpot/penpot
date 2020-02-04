@@ -33,10 +33,6 @@
       ([self f x y] (update-fn #(f % x y)))
       ([self f x y more] (update-fn #(apply f % x y more))))))
 
-(defn- translate-error-type
-  [name]
-  "errors.undefined-error")
-
 (defn- interpret-problem
   [acc {:keys [path pred val via in] :as problem}]
   ;; (prn "interpret-problem" problem)
@@ -45,11 +41,11 @@
          (list? pred)
          (= (first (last pred)) 'cljs.core/contains?))
     (let [path (conj path (last (last pred)))]
-      (assoc-in acc path {:name ::missing :type :builtin}))
+      (assoc-in acc path {:code ::missing :type :builtin}))
 
     (and (not (empty? path))
          (not (empty? via)))
-    (assoc-in acc path {:name (last via) :type :builtin})
+    (assoc-in acc path {:code (last via) :type :builtin})
 
     :else acc))
 
@@ -64,6 +60,28 @@
 
 
         errors (merge (reduce interpret-problem {} problems)
+                      (:errors state))]
+    (-> (assoc state
+               :errors errors
+               :clean-data (when (not= clean-data ::s/invalid) clean-data)
+               :valid (and (empty? errors)
+                           (not= clean-data ::s/invalid)))
+        (impl-mutator update-state))))
+
+(defn use-form2
+  [& {:keys [spec validators initial]}]
+  (let [[state update-state] (mf/useState {:data (if (fn? initial) (initial) initial)
+                                           :errors {}
+                                           :touched {}})
+        clean-data (s/conform spec (:data state))
+        problems (when (= ::s/invalid clean-data)
+                   (::s/problems (s/explain-data spec (:data state))))
+
+        errors (merge (reduce interpret-problem {} problems)
+                      (when (not= clean-data ::s/invalid)
+                        (reduce (fn [errors vf]
+                                  (merge errors (vf clean-data)))
+                                {} validators))
                       (:errors state))]
     (-> (assoc state
                :errors errors
@@ -95,17 +113,17 @@
   [{:keys [form field type]
     :or {only (constantly true)}
     :as props}]
-  (let [touched? (get-in form [:touched field])
-        {:keys [message code] :as error} (get-in form [:errors field])]
-    (when (and touched? error
-               (cond
-                 (nil? type) true
-                 (keyword? type) (= (:type error) type)
-                 (ifn? type) (type (:type error))
-                 :else false))
-      (prn "field-error" error)
+  (let [{:keys [code message] :as error} (get-in form [:errors field])
+        touched? (get-in form [:touched field])
+        show? (and touched? error message
+                   (cond
+                     (nil? type) true
+                     (keyword? type) (= (:type error) type)
+                     (ifn? type) (type (:type error))
+                     :else false))]
+    (when show?
       [:ul.form-errors
-       [:li {:key code} (tr message)]])))
+       [:li {:key (:code error)} (tr (:message error))]])))
 
 (defn error-class
   [form field]
@@ -115,7 +133,6 @@
 
 ;; --- Form Specs and Conformers
 
-;; TODO: migrate to uxbox.util.spec
 (s/def ::email ::us/email)
 (s/def ::not-empty-string ::us/not-empty-string)
 (s/def ::color ::us/color)

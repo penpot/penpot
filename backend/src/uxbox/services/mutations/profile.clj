@@ -27,8 +27,10 @@
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
    [uxbox.services.queries.profile :as profile]
+   [uxbox.services.mutations.images :as imgs]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
+   [uxbox.util.storage :as ust]
    [vertx.core :as vc]))
 
 ;; --- Helpers & Specs
@@ -36,36 +38,25 @@
 (s/def ::email ::us/email)
 (s/def ::fullname ::us/string)
 (s/def ::lang ::us/string)
-(s/def ::old-password ::us/string)
-(s/def ::password ::us/string)
 (s/def ::path ::us/string)
 (s/def ::user ::us/uuid)
-(s/def ::username ::us/string)
+(s/def ::password ::us/string)
+(s/def ::old-password ::us/string)
 
-;; --- Utilities
-
-(def sql:user-by-username-or-email
-  "select u.*
-     from users as u
-    where u.username=$1 or u.email=$1
-      and u.deleted_at is null")
-
-(defn- retrieve-user
-  [conn username]
-  (db/query-one conn [sql:user-by-username-or-email username]))
 
 ;; --- Mutation: Login
 
-(s/def ::username ::us/string)
-(s/def ::password ::us/string)
+(declare retrieve-user)
+
+(s/def ::email ::us/email)
 (s/def ::scope ::us/string)
 
 (s/def ::login
-  (s/keys :req-un [::username ::password]
+  (s/keys :req-un [::email ::password]
           :opt-un [::scope]))
 
 (sm/defmutation ::login
-  [{:keys [username password scope] :as params}]
+  [{:keys [email password scope] :as params}]
   (letfn [(check-password [user password]
             (let [result (sodi.pwhash/verify password (:password user))]
               (:valid result)))
@@ -79,8 +70,19 @@
                         :code ::wrong-credentials))
 
             {:id (:id user)})]
-    (-> (retrieve-user db/pool username)
+    (-> (retrieve-user db/pool email)
         (p/then' check-user))))
+
+(def sql:user-by-email
+  "select u.*
+     from users as u
+    where u.email=$1
+      and u.deleted_at is null")
+
+(defn- retrieve-user
+  [conn email]
+  (db/query-one conn [sql:user-by-email email]))
+
 
 ;; --- Mutation: Add additional email
 ;; TODO
@@ -93,65 +95,39 @@
 
 ;; --- Mutation: Update Profile (own)
 
-(defn- check-username-and-email!
-  [conn {:keys [id username email] :as params}]
-  (let [sql1 "select exists
-                (select * from users
-                  where username = $2
-                    and id != $1
-                  ) as val"
-        sql2 "select exists
-                (select * from users
-                  where email = $2
-                    and id != $1
-                  ) as val"]
-    (p/let [res1 (db/query-one conn [sql1 id username])
-            res2 (db/query-one conn [sql2 id email])]
-      (when (:val res1)
-        (ex/raise :type :validation
-                  :code ::username-already-exists))
-      (when (:val res2)
-        (ex/raise :type :validation
-                  :code ::email-already-exists))
-      params)))
-
-(def sql:update-profile
+(def ^:private sql:update-profile
   "update users
-      set username = $2,
-          fullname = $3,
-          lang = $4
+      set fullname = $2,
+          lang = $3
     where id = $1
       and deleted_at is null
    returning *")
 
 (defn- update-profile
-  [conn {:keys [id username fullname lang] :as params}]
-  (let [sqlv [sql:update-profile
-              id username fullname lang]]
+  [conn {:keys [id fullname lang] :as params}]
+  (let [sqlv [sql:update-profile id fullname lang]]
     (-> (db/query-one conn sqlv)
         (p/then' su/raise-not-found-if-nil)
         (p/then' profile/strip-private-attrs))))
 
 (s/def ::update-profile
-  (s/keys :req-un [::id ::username ::fullname ::lang]))
+  (s/keys :req-un [::id ::fullname ::lang]))
 
 (sm/defmutation ::update-profile
   [params]
   (db/with-atomic [conn db/pool]
-    (-> (p/resolved params)
-        (p/then (partial check-username-and-email! conn))
-        (p/then (partial update-profile conn)))))
+    (update-profile conn params)))
+
 
 ;; --- Mutation: Update Password
 
-(defn- validate-password
+(defn- validate-password!
   [conn {:keys [user old-password] :as params}]
   (p/let [profile (profile/retrieve-profile conn user)
           result (sodi.pwhash/verify old-password (:password profile))]
     (when-not (:valid result)
       (ex/raise :type :validation
-                :code ::old-password-not-match))
-    params))
+                :code ::old-password-not-match))))
 
 (defn update-password
   [conn {:keys [user password]}]
@@ -159,99 +135,112 @@
                 set password = $2
               where id = $1
                 and deleted_at is null
-            returning id"]
+            returning id"
+        password (sodi.pwhash/derive password)]
     (-> (db/query-one conn [sql user password])
         (p/then' su/raise-not-found-if-nil)
         (p/then' su/constantly-nil))))
 
-(s/def ::update-password
-  (s/keys :req-un [::user ::us/password ::old-password]))
+(s/def ::update-profile-password
+  (s/keys :req-un [::user ::password ::old-password]))
 
-(sm/defmutation :update-password
-  {:doc "Update self password."
-   :spec ::update-password}
+(sm/defmutation ::update-profile-password
   [params]
   (db/with-atomic [conn db/pool]
-    (-> (p/resolved params)
-        (p/then (partial validate-password conn))
-        (p/then (partial update-password conn)))))
+    (validate-password! conn params)
+    (update-password conn params)))
+
 
 ;; --- Mutation: Update Photo
 
-;; (s/def :uxbox$upload/name ::us/string)
-;; (s/def :uxbox$upload/size ::us/integer)
-;; (s/def :uxbox$upload/mtype ::us/string)
-;; (s/def ::upload
-;;   (s/keys :req-un [:uxbox$upload/name
-;;                    :uxbox$upload/size
-;;                    :uxbox$upload/mtype]))
+(declare upload-photo)
+(declare update-profile-photo)
 
-;; (s/def ::file ::upload)
-;; (s/def ::update-profile-photo
-;;   (s/keys :req-un [::user ::file]))
+(s/def ::file ::imgs/upload)
+(s/def ::update-profile-photo
+  (s/keys :req-un [::user ::file]))
 
-;; (def valid-image-types?
-;;   #{"image/jpeg", "image/png", "image/webp"})
+(sm/defmutation ::update-profile-photo
+  [{:keys [user file] :as params}]
+  (db/with-atomic [conn db/pool]
+    ;; TODO: send task for delete old photo
+    (-> (upload-photo conn params)
+        (p/then (partial update-profile-photo conn user)))))
 
-;; (sm/defmutation ::update-profile-photo
-;;   [{:keys [user file] :as params}]
-;;   (letfn [(store-photo [{:keys [name path] :as upload}]
-;;             (let [filename (fs/name name)
-;;                   storage media/media-storage]
-;;               (-> (ds/save storage filename path)
-;;                   #_(su/handle-on-context))))
+(defn- upload-photo
+  [conn {:keys [file user]}]
+  (when-not (imgs/valid-image-types? (:mtype file))
+    (ex/raise :type :validation
+              :code :image-type-not-allowed
+              :hint "Seems like you are uploading an invalid image."))
+  (vc/blocking
+   (let [thumb-opts {:width 256
+                     :height 256
+                     :quality 75
+                     :format "webp"}
+         prefix (-> (sodi.prng/random-bytes 8)
+                    (sodi.util/bytes->b64s))
+         name   (str prefix ".webp")
+         photo  (images/generate-thumbnail2 (fs/path (:path file)) thumb-opts)]
+     (ust/save! media/media-storage name photo))))
 
-;;           (update-user-photo [path]
-;;             (let [sql "update users
-;;                           set photo = $1
-;;                         where id = $2
-;;                           and deleted_at is null
-;;                        returning id, photo"]
-;;               (-> (db/query-one db/pool [sql (str path) user])
-;;                   (p/then' su/raise-not-found-if-nil)
-;;                   (p/then profile/resolve-thumbnail))))]
+(defn- update-profile-photo
+  [conn user path]
+  (let [sql "update users set photo=$1 where id=$2 and deleted_at is null returning id"]
+    (-> (db/query-one conn [sql (str path) user])
+        (p/then' su/raise-not-found-if-nil))))
 
-;;     (when-not (valid-image-types? (:mtype file))
-;;       (ex/raise :type :validation
-;;                 :code :image-type-not-allowed
-;;                 :hint "Seems like you are uploading an invalid image."))
-
-;;     (-> (store-photo file)
-;;         (p/then update-user-photo))))
 
 ;; --- Mutation: Register Profile
 
-(def sql:insert-user
-  "insert into users (id, fullname, username, email, password, photo)
-   values ($1, $2, $3, $4, $5, '') returning *")
+(declare check-profile-existence!)
+(declare register-profile)
 
-(def sql:insert-email
+(s/def ::register-profile
+  (s/keys :req-un [::email ::password ::fullname]))
+
+(sm/defmutation ::register-profile
+  [params]
+  (when-not (:registration-enabled cfg/config)
+    (ex/raise :type :restriction
+              :code :registration-disabled))
+  (db/with-atomic [conn db/pool]
+    (check-profile-existence! conn params)
+    (register-profile conn params)))
+
+(def ^:private sql:insert-user
+  "insert into users (id, fullname, email, password, photo)
+   values ($1, $2, $3, $4, '') returning *")
+
+(def ^:private sql:insert-email
   "insert into user_emails (user_id, email, is_main)
    values ($1, $2, true)")
 
+(def ^:private sql:profile-existence
+  "select exists (select * from users
+                   where email = $1
+                     and deleted_at is null) as val")
+
 (defn- check-profile-existence!
-  [conn {:keys [username email] :as params}]
-  (let [sql "select exists
-               (select * from users
-                 where username = $1
-                   or  email = $2
-                 ) as val"]
-    (-> (db/query-one conn [sql username email])
-        (p/then (fn [result]
-                  (when (:val result)
-                    (ex/raise :type :validation
-                              :code ::username-or-email-already-exists))
-                  params)))))
+  [conn {:keys [email] :as params}]
+  (-> (db/query-one conn [sql:profile-existence email])
+      (p/then' (fn [result]
+                 (when (:val result)
+                   (ex/raise :type :validation
+                             :code ::email-already-exists))
+                 params))))
 
 (defn create-profile
   "Create the user entry on the database with limited input
   filling all the other fields with defaults."
-  [conn {:keys [id username fullname email password] :as params}]
+  [conn {:keys [id fullname email password] :as params}]
   (let [id (or id (uuid/next))
         password (sodi.pwhash/derive password)
-        sqlv1 [sql:insert-user id
-               fullname username
-               email password]
+        sqlv1 [sql:insert-user
+               id
+               fullname
+               email
+               password]
         sqlv2 [sql:insert-email id email]]
     (p/let [profile (db/query-one conn sqlv1)]
       (db/query-one conn sqlv2)
@@ -263,34 +252,22 @@
       (p/then' profile/strip-private-attrs)
       (p/then (fn [profile]
                   ;; TODO: send a correct link for email verification
-                (p/let [data {:to (:email params)
-                              :name (:fullname params)}]
-                  (emails/send! emails/register data)
-                  profile)))))
-
-(s/def ::register-profile
-  (s/keys :req-un [::username ::email ::password ::fullname]))
-
-(sm/defmutation ::register-profile
-  [params]
-  (when-not (:registration-enabled cfg/config)
-    (ex/raise :type :restriction
-              :code :registration-disabled))
-  (db/with-atomic [conn db/pool]
-    (-> (p/resolved params)
-        (p/then (partial check-profile-existence! conn))
-        (p/then (partial register-profile conn)))))
+                (let [data {:to (:email params)
+                            :name (:fullname params)}]
+                  (p/do!
+                   (emails/send! emails/register data)
+                   profile))))))
 
 ;; --- Mutation: Request Profile Recovery
 
 (s/def ::request-profile-recovery
-  (s/keys :req-un [::username]))
+  (s/keys :req-un [::email]))
 
 (def sql:insert-recovery-token
   "insert into tokens (user_id, token) values ($1, $2)")
 
 (sm/defmutation ::request-profile-recovery
-  [{:keys [username] :as params}]
+  [{:keys [email] :as params}]
   (letfn [(create-recovery-token [conn {:keys [id] :as user}]
             (let [token (-> (sodi.prng/random-bytes 32)
                             (sodi.util/bytes->b64s))
@@ -298,12 +275,13 @@
               (-> (db/query-one conn [sql id token])
                   (p/then (constantly (assoc user :token token))))))
           (send-email-notification [conn user]
-            (emails/send! emails/password-recovery
+            (emails/send! conn
+                          emails/password-recovery
                           {:to (:email user)
                            :token (:token user)
                            :name (:fullname user)}))]
     (db/with-atomic [conn db/pool]
-      (-> (retrieve-user conn username)
+      (-> (retrieve-user conn email)
           (p/then' su/raise-not-found-if-nil)
           (p/then #(create-recovery-token conn %))
           (p/then #(send-email-notification conn %))

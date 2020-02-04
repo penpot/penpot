@@ -33,8 +33,8 @@
    [vertx.core :as vc]))
 
 (def sql:insert-user
-  "insert into users (id, fullname, username, email, password, photo, is_demo)
-   values ($1, $2, $3, $4, $5, '', true) returning *")
+  "insert into users (id, fullname, email, password, photo, is_demo)
+   values ($1, $2, $3, $4, '', true) returning *")
 
 (def sql:insert-email
   "insert into user_emails (user_id, email, is_main)
@@ -44,14 +44,13 @@
   [params]
   (let [id (uuid/next)
         sem (System/currentTimeMillis)
-        username (str "demo-" sem)
-        email    (str username ".demo@uxbox.io")
+        email    (str "demo-" sem ".demo@nodomain.com")
         fullname (str "Demo User " sem)
         password (-> (sodi.prng/random-bytes 12)
                      (sodi.util/bytes->b64s))
         password' (sodi.pwhash/derive password)]
     (db/with-atomic [conn db/pool]
-      (db/query-one conn [sql:insert-user id fullname username email password'])
+      (db/query-one conn [sql:insert-user id fullname email password'])
       (db/query-one conn [sql:insert-email id email])
-      {:username username
+      {:email email
        :password password})))
