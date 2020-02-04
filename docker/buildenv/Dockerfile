@@ -3,7 +3,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v12.14.1 \
-    CLOJURE_VERSION=1.10.1.492 \
+    CLOJURE_VERSION=1.10.1.507 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -26,9 +26,16 @@ RUN set -ex; \
         rlwrap \
         python \
         build-essential \
-        openjdk-11-jdk \
     ; \
     rm -rf /var/lib/apt/lists/*;
+
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9 && \
+    echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list && \
+    apt-get -qq update && \
+    apt-get -qqy install zulu-13 && \
+    rm -rf /var/lib/apt/lists/*;
+
+ENV JAVA_HOME=/usr/lib/jvm/zulu-13-amd64/
 
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc

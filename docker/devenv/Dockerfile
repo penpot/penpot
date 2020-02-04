@@ -5,7 +5,7 @@ ARG EXTERNAL_UID=1000
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v12.14.1 \
-    CLOJURE_VERSION=1.10.1.492 \
+    CLOJURE_VERSION=1.10.1.507 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -32,8 +32,22 @@ RUN set -ex; \
         build-essential \
         imagemagick \
         webp \
-        openjdk-11-jdk \
+        jq \
     ; \
+    rm -rf /var/lib/apt/lists/*;
+
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9 && \
+    echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list && \
+    apt-get -qq update && \
+    apt-get -qqy install zulu-13 && \
+    rm -rf /var/lib/apt/lists/*;
+
+ENV JAVA_HOME=/usr/lib/jvm/zulu-13-amd64/
+
+RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" >> /etc/apt/sources.list.d/postgresql.list && \
+    apt-get -qq update && \
+    apt-get -qqy install postgresql-client-12 && \
     rm -rf /var/lib/apt/lists/*;
 
 COPY files/bashrc /root/.bashrc
