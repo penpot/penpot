@@ -6,6 +6,6 @@
 
 (ns uxbox.config)
 
-(goog-define url "http://127.0.0.1:6060")
+(goog-define url "")
 (goog-define demo-warning false)
 (goog-define default-language "en")

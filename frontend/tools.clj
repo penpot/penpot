@@ -29,7 +29,7 @@
 ;; --- Generic Build Options
 
 (def closure-defines
-  (let [url       (-> (:uxbox-api-url env "")
+  (let [url       (-> (:uxbox-api-url env "http://127.0.0.1:6060")
                       (str/trim))
         demo-warn (-> (:uxbox-demo-warning env "")
                       (str/trim))]
