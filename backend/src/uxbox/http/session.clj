@@ -53,5 +53,4 @@
                   (p/then' (fn [user-id]
                              (if user-id
                                (update data :request assoc :user user-id)
-                               data)))
-                  (vc/handle-on-context))))})
+                               data))))))})
