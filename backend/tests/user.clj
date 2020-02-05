@@ -18,7 +18,7 @@
    [clojure.repl :refer :all]
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
    [promesa.core :as p]
-   [promesa.exec :as pe]
+   [promesa.exec :as px]
    [uxbox.migrations]
    [uxbox.util.storage :as st]
    [mount.core :as mount]))

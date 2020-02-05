@@ -9,6 +9,7 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [promesa.exec :as px]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.images :as images]

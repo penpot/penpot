@@ -28,8 +28,10 @@
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
    [uxbox.services.mutations.profile :as profile]
+   [uxbox.tasks :as tasks]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
+   [uxbox.util.time :as tm]
    [vertx.core :as vc]))
 
 (def sql:insert-user
@@ -41,7 +43,7 @@
    values ($1, $2, true)")
 
 (sm/defmutation ::create-demo-profile
-  [params]
+  [_]
   (let [id (uuid/next)
         sem (System/currentTimeMillis)
         email    (str "demo-" sem ".demo@nodomain.com")
@@ -52,5 +54,10 @@
     (db/with-atomic [conn db/pool]
       (db/query-one conn [sql:insert-user id fullname email password'])
       (db/query-one conn [sql:insert-email id email])
+
+      ;; Schedule deletion of the demo profile
+      (tasks/schedule! conn {:name "remove-demo-profile"
+                             :delay (tm/duration {:hours 48})
+                             :props {:id id}})
       {:email email
        :password password})))

@@ -7,17 +7,26 @@
 ;;
 ;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.tasks.demo-gc
+(ns uxbox.tasks.remove-media
   "Demo accounts garbage collector."
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
-   [uxbox.common.exceptions :as ex]))
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
+   [uxbox.media :as media]
+   [uxbox.util.storage :as ust]
+   [vertx.util :as vu]))
+
+(s/def ::path ::us/string)
+(s/def ::props
+  (s/keys :req-un [::path]))
 
 (defn handler
-  {:uxbox.tasks/name "demo-gc"}
   [{:keys [props] :as task}]
-  (try
-    (Thread/sleep 100)
-    (prn (.getName (Thread/currentThread)) "demo-gc" (:id task) (:props task))
-    (catch Throwable e
-      nil)))
+  (us/verify ::props props)
+  (vu/blocking
+   (when (ust/exists? media/media-storage (:path props))
+     (ust/delete! media/media-storage (:path props))
+     (log/debug "Media " (:path props) " removed."))))
+

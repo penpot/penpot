@@ -22,6 +22,7 @@
    [uxbox.db :as db]
    [uxbox.emails :as emails]
    [uxbox.images :as images]
+   [uxbox.tasks :as tasks]
    [uxbox.media :as media]
    [uxbox.services.mutations :as sm]
    [uxbox.services.mutations.images :as imgs]
@@ -46,7 +47,7 @@
 
 ;; --- Mutation: Login
 
-(declare retrieve-user)
+(declare retrieve-user-by-email)
 
 (s/def ::email ::us/email)
 (s/def ::scope ::us/string)
@@ -70,7 +71,7 @@
                         :code ::wrong-credentials))
 
             {:id (:id user)})]
-    (-> (retrieve-user db/pool email)
+    (-> (retrieve-user-by-email db/pool email)
         (p/then' check-user))))
 
 (def sql:user-by-email
@@ -79,7 +80,7 @@
     where u.email=$1
       and u.deleted_at is null")
 
-(defn- retrieve-user
+(defn- retrieve-user-by-email
   [conn email]
   (db/query-one conn [sql:user-by-email email]))
 
@@ -163,9 +164,14 @@
 (sm/defmutation ::update-profile-photo
   [{:keys [user file] :as params}]
   (db/with-atomic [conn db/pool]
-    ;; TODO: send task for delete old photo
-    (-> (upload-photo conn params)
-        (p/then (partial update-profile-photo conn user)))))
+    (p/let [profile (profile/retrieve-profile conn user)
+            photo (upload-photo conn params)]
+
+      ;; Schedule deletion of old photo
+      (tasks/schedule! conn {:name "remove-media"
+                             :props {:path (:photo profile)}})
+      ;; Save new photo
+      (update-profile-photo conn user photo))))
 
 (defn- upload-photo
   [conn {:keys [file user]}]
@@ -281,7 +287,7 @@
                            :token (:token user)
                            :name (:fullname user)}))]
     (db/with-atomic [conn db/pool]
-      (-> (retrieve-user conn email)
+      (-> (retrieve-user-by-email conn email)
           (p/then' su/raise-not-found-if-nil)
           (p/then #(create-recovery-token conn %))
           (p/then #(send-email-notification conn %))
