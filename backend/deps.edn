@@ -29,9 +29,6 @@
   {:local/root "vendor/sodi"
    :deps/manifest :pom}
 
-  io.github.resilience4j/resilience4j-core {:mvn/version "1.2.0"}
-  io.github.resilience4j/resilience4j-ratelimiter {:mvn/version "1.2.0"}
-
   lambdaisland/uri {:mvn/version "1.1.0"}
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
