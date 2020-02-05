@@ -13,7 +13,7 @@
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [postal.core :as postal]
-   [vertx.core :as vc]
+   [vertx.util :as vu]
    [promesa.core :as p]
    [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
@@ -49,7 +49,7 @@
 
 (defn send-email
   [email]
-  (vc/blocking
+  (vu/blocking
    (let [config (get-smtp-config cfg/config)
          result (if (:enabled config)
                   (postal/send-message config email)

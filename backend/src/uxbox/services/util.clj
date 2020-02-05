@@ -8,7 +8,7 @@
   (:require
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
-   [vertx.core :as vc]
+   [vertx.util :as vu]
    [uxbox.core :refer [system]]
    [uxbox.common.exceptions :as ex]
    [uxbox.util.uuid :as uuid]
@@ -36,5 +36,5 @@
 
 (defn handle-on-context
   [p]
-  (->> (vc/get-or-create-context system)
-       (vc/handle-on-context p)))
+  (->> (vu/current-context system)
+       (vu/handle-on-context p)))

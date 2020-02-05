@@ -22,7 +22,7 @@
    [uxbox.util.data :as data]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.storage :as ust]
-   [vertx.core :as vc]))
+   [vertx.util :as vu]))
 
 (def thumbnail-options
   {:width 800
@@ -142,7 +142,7 @@
     (ex/raise :type :validation
               :code :image-type-not-allowed
               :hint "Seems like you are uploading an invalid image."))
-  (p/let [image-opts (vc/blocking (images/info (:path content)))
+  (p/let [image-opts (vu/blocking (images/info (:path content)))
           image-path (persist-image-on-fs content)
           thumb-opts thumbnail-options
           thumb-path (persist-image-thumbnail-on-fs thumb-opts image-path)
@@ -179,13 +179,13 @@
 
 (defn persist-image-on-fs
   [{:keys [name path] :as upload}]
-  (vc/blocking
+  (vu/blocking
    (let [filename (fs/name name)]
      (ust/save! media/media-storage filename path))))
 
 (defn persist-image-thumbnail-on-fs
   [thumb-opts input-path]
-  (vc/blocking
+  (vu/blocking
    (let [input-path (ust/lookup media/media-storage input-path)
          thumb-data (images/generate-thumbnail input-path thumb-opts)
          [filename ext] (fs/split-ext (fs/name input-path))

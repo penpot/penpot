@@ -30,7 +30,8 @@
    [uxbox.util.blob :as blob]
    [uxbox.util.storage :as ust]
    [uxbox.util.uuid :as uuid]
-   [vertx.core :as vc]))
+   [uxbox.util.time :as tm]
+   [vertx.util :as vu]))
 
 ;; --- Helpers & Specs
 
@@ -172,7 +173,7 @@
     (ex/raise :type :validation
               :code :image-type-not-allowed
               :hint "Seems like you are uploading an invalid image."))
-  (vc/blocking
+  (vu/blocking
    (let [thumb-opts {:width 256
                      :height 256
                      :quality 75

@@ -25,7 +25,7 @@
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.storage :as ust]
-   [vertx.core :as vc]))
+   [vertx.util :as vu]))
 
 ;; --- Helpers & Specs
 
@@ -187,7 +187,7 @@
               :code :image-type-not-allowed
               :hint "Seems like you are uploading an invalid image."))
 
-  (p/let [image-opts (vc/blocking (images/info (:path content)))
+  (p/let [image-opts (vu/blocking (images/info (:path content)))
           image-path (imgs/persist-image-on-fs content)
           thumb-opts imgs/thumbnail-options
           thumb-path (imgs/persist-image-thumbnail-on-fs thumb-opts image-path)
@@ -245,6 +245,6 @@
 
 (defn- copy-image!
   [path]
-  (vc/blocking
+  (vu/blocking
    (let [image-path (ust/lookup media/media-storage path)]
      (ust/save! media/media-storage (fs/name image-path) image-path))))

@@ -12,7 +12,7 @@
    [uxbox.tests.helpers :as th]
    [uxbox.util.storage :as ust]
    [uxbox.util.uuid :as uuid]
-   [vertx.core :as vc]))
+   [vertx.util :as vu]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
