@@ -17,9 +17,9 @@
    [uxbox.util.uuid :as uuid]
    [uxbox.util.transit :as t]
    [uxbox.util.blob :as blob]
-   [vertx.core :as vc]
    [vertx.http :as vh]
    [vertx.web :as vw]
+   [vertx.impl :as vi]
    [vertx.util :as vu]
    [vertx.eventbus :as ve])
   (:import
@@ -88,7 +88,7 @@
 (defn handler
   [{:keys [user] :as req}]
   (letfn [(on-init [ws]
-            (let [ctx (vc/current-context)
+            (let [ctx (vu/current-context)
                   fid (get-in req [:path-params :file-id])
                   ws  (assoc ws
                              :user-id user
@@ -128,14 +128,14 @@
       (-> (p/do! (on-init @local))
           (p/then (fn [data]
                     (vreset! local data)
-                    (.textMessageHandler ws (vu/fn->handler
+                    (.textMessageHandler ws (vi/fn->handler
                                              (fn [msg]
                                                (-> (p/do! (on-message @local msg))
                                                    (p/then (fn [data]
                                                              (when (instance? WebSocket data)
                                                                (vreset! local data))
                                                              (.fetch ws 1)))))))
-                    (.closeHandler ws (vu/fn->handler (fn [& args] (on-close @local))))))))))
+                    (.closeHandler ws (vi/fn->handler (fn [& args] (on-close @local))))))))))
 
 (defn ws-websocket
   []
