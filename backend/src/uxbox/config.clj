@@ -47,6 +47,7 @@
 (s/def ::email-reply-to ::us/email)
 (s/def ::email-from ::us/email)
 (s/def ::smtp-host ::us/string)
+(s/def ::smtp-port ::us/integer)
 (s/def ::smtp-user (s/nilable ::us/string))
 (s/def ::smtp-password (s/nilable ::us/string))
 (s/def ::smtp-tls ::us/boolean)
@@ -70,6 +71,7 @@
                    ::email-reply-to
                    ::email-from
                    ::smtp-host
+                   ::smtp-port
                    ::smtp-user
                    ::smtp-password
                    ::smtp-tls

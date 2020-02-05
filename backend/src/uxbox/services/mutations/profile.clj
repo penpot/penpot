@@ -254,7 +254,7 @@
                 (let [data {:to (:email params)
                             :name (:fullname params)}]
                   (p/do!
-                   (emails/send! emails/register data)
+                   (emails/send! conn emails/register data)
                    profile))))))
 
 ;; --- Mutation: Request Profile Recovery

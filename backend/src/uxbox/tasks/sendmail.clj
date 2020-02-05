@@ -13,6 +13,7 @@
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [postal.core :as postal]
+   [vertx.core :as vc]
    [promesa.core :as p]
    [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
@@ -48,16 +49,16 @@
 
 (defn send-email
   [email]
-  (p/future
-    (let [config (get-smtp-config cfg/config)
-          result (if (:enabled config)
-                   (postal/send-message config email)
-                   (send-email-to-console email))]
-      (when (not= (:error result) :SUCCESS)
-        (ex/raise :type :sendmail-error
-                  :code :email-not-sent
-                  :context result))
-      nil)))
+  (vc/blocking
+   (let [config (get-smtp-config cfg/config)
+         result (if (:enabled config)
+                  (postal/send-message config email)
+                  (send-email-to-console email))]
+     (when (not= (:error result) :SUCCESS)
+       (ex/raise :type :sendmail-error
+                 :code :email-not-sent
+                 :context result))
+     nil)))
 
 (defn handler
   {:uxbox.tasks/name "sendmail"}

@@ -102,6 +102,13 @@
     (cond-> row
       props (assoc :props (blob/decode props)))))
 
+(defn- log-error
+  [item err]
+  (log/error "Unhandled exception on task '" (:name item)
+             "' (retry:" (:retry-num item) ") \n"
+             (with-out-str
+               (.printStackTrace ^Throwable err (java.io.PrintWriter. *out*)))))
+
 (defn- event-loop
   [{:keys [tasks] :as options}]
   (let [queue (:queue options "default")
@@ -114,9 +121,11 @@
                       (-> (p/do! (handle-task tasks item))
                           (p/handle (fn [v e]
                                       (if e
-                                        (if (>= (:retry-num item) max-retries)
-                                          (mark-as-failed conn item e)
-                                          (reschedule conn item e))
+                                        (do
+                                          (log-error item e)
+                                          (if (>= (:retry-num item) max-retries)
+                                            (mark-as-failed conn item e)
+                                            (reschedule conn item e)))
                                         (mark-as-completed conn item))))
                           (p/then' (constantly ::handled))))))))))
 
