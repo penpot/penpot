@@ -10,6 +10,7 @@ figwheel_server.log
 .cpcache
 .rebel_readline_history
 /vendor/**/target
+/cd.md
 node_modules
 /backend/target/
 /backend/resources/public/media
