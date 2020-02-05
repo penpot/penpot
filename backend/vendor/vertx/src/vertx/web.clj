@@ -12,8 +12,8 @@
    [promesa.core :as p]
    [sieppari.core :as sp]
    [reitit.core :as rt]
-   [vertx.http :as vh]
-   [vertx.util :as vu])
+   [vertx.http :as http]
+   [vertx.impl :as impl])
   (:import
    clojure.lang.IPersistentMap
    clojure.lang.Keyword
@@ -48,10 +48,10 @@
         ^Vertx system (.vertx routing-context)]
     {:body (.getBody routing-context)
      :path (.path request)
-     :headers (vh/->headers (.headers request))
+     :headers (http/->headers (.headers request))
      :method (-> request .rawMethod .toLowerCase keyword)
-     ::vh/request request
-     ::vh/response response
+     ::http/request request
+     ::http/response response
      ;; ::execution-context (.getContext system)
      ::routing-context routing-context}))
 
@@ -62,7 +62,7 @@
   If the handler is a vector, the sieppari intercerptos engine will be used
   to resolve the execution of the interceptors + handler."
   [vsm & handlers]
-  (let [^Vertx vsm (vu/resolve-system vsm)
+  (let [^Vertx vsm (impl/resolve-system vsm)
         ^Router router (Router/router vsm)]
     (reduce #(%2 %1) router handlers)))
 
@@ -134,7 +134,7 @@
                 (let [err (.failure ^RoutingContext rc)
                       req (.get ^RoutingContext rc "vertx$clj$req")]
                   (-> (p/do! (on-error err req))
-                      (vh/-handle-response req))))))
+                      (http/-handle-response req))))))
 
            (.handler
             (doto (BodyHandler/create true)
@@ -149,7 +149,7 @@
                             (.put ^RoutingContext rc "vertx$clj$req" req)
                             (.fail ^RoutingContext rc ^Throwable err))]
                   (try
-                    (-> (vh/-handle-response (f req) req)
+                    (-> (http/-handle-response (f req) req)
                         (p/catch' efn))
                     (catch Exception err
                       (efn err)))))))))

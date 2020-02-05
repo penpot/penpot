@@ -8,13 +8,12 @@
   "High level http client."
   (:refer-clojure :exclude [get])
   (:require
-   [clojure.tools.logging :as log]
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [sieppari.core :as sp]
    [reitit.core :as rt]
-   [vertx.http :as vh]
-   [vertx.util :as vu])
+   [vertx.http :as http]
+   [vertx.impl :as impl])
   (:import
    clojure.lang.IPersistentMap
    clojure.lang.Keyword
@@ -33,7 +32,7 @@
 (defn create
   ([vsm] (create vsm {}))
   ([vsm opts]
-   (let [^Vertx system (vu/resolve-system vsm)]
+   (let [^Vertx system (impl/resolve-system vsm)]
      (WebClient/create system))))
 
 (defn session
@@ -45,9 +44,9 @@
   ([session url opts]
    (let [^HttpRequest req (.getAbs ^WebClientSession session url)
          d (p/deferred)]
-     (.send req (vu/deferred->handler d))
+     (.send req (impl/deferred->handler d))
      (p/then d (fn [^HttpResponse res]
                  {:body (.bodyAsBuffer res)
                   :status (.statusCode res)
-                  :headers (vh/->headers (.headers res))})))))
+                  :headers (http/->headers (.headers res))})))))
 

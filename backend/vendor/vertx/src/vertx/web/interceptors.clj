@@ -11,9 +11,9 @@
    [clojure.string :as str]
    [promesa.core :as p]
    [reitit.core :as r]
-   [vertx.http :as vh]
-   [vertx.web :as vw]
-   [vertx.util :as vu]
+   [vertx.http :as http]
+   [vertx.web :as web]
+   [vertx.util :as util]
    [sieppari.context :as spx]
    [sieppari.core :as sp])
   (:import
@@ -45,16 +45,16 @@
   []
   {:enter
    (fn [data]
-     (let [^HttpServerRequest req (get-in data [:request ::vh/request])
+     (let [^HttpServerRequest req (get-in data [:request ::http/request])
            parse-cookie (fn [^Cookie item] [(.getName item) (.getValue item)])
            cookies (into {} (map parse-cookie) (vals (.cookieMap req)))]
        (update data :request assoc :cookies cookies)))
    :leave
    (fn [data]
      (let [cookies (get-in data [:response :cookies])
-           ^HttpServerResponse res (get-in data [:request ::vh/response])]
+           ^HttpServerResponse res (get-in data [:request ::http/response])]
        (when (map? cookies)
-         (vu/doseq [[key val] cookies]
+         (util/doseq [[key val] cookies]
            (if (nil? val)
              (.removeCookie res key)
              (.addCookie res (build-cookie key val)))))
@@ -87,7 +87,7 @@
   ([] (params nil))
   ([{:keys [attr] :or {attr :params}}]
    {:enter (fn [data]
-             (let [request (get-in data [:request ::vh/request])
+             (let [request (get-in data [:request ::http/request])
                    params (parse-params request)]
                (update data :request assoc attr params)))}))
 
@@ -97,7 +97,7 @@
   ([] (uploads nil))
   ([{:keys [attr] :or {attr :uploads}}]
    {:enter (fn [data]
-             (let [context (get-in data [:request ::vw/routing-context])
+             (let [context (get-in data [:request ::web/routing-context])
                    uploads (reduce (fn [acc ^FileUpload upload]
                                      (assoc! acc
                                              (keyword (.name upload))

@@ -6,7 +6,7 @@
 
 (ns vertx.eventbus
   (:require [promesa.core :as p]
-            [vertx.util :as vu])
+            [vertx.impl :as impl])
   (:import io.vertx.core.Vertx
            io.vertx.core.Handler
            io.vertx.core.Context
@@ -70,7 +70,7 @@
                ^String topic
                ^Object msg
                ^DeliveryOptions opts
-               ^Handler (vu/deferred->handler d))
+               ^Handler (impl/deferred->handler d))
      (p/then' d build-message))))
 
 (defn configure!
