@@ -47,7 +47,7 @@
 
 (defn- reschedule
   [conn task error]
-  (let [explain (string-strack-trace error)
+  (let [explain (ex-message error)
         sqlv [sql:mark-as-retry explain (:id task)]]
     (-> (db/query-one conn sqlv)
         (p/then' (constantly nil)))))
@@ -61,8 +61,8 @@
 
 (defn- mark-as-failed
   [conn task error]
-  (let [error (string-strack-trace error)
-        sqlv [sql:mark-as-failed error (:id task)]]
+  (let [explain (ex-message error)
+        sqlv [sql:mark-as-failed explain (:id task)]]
     (-> (db/query-one conn sqlv)
         (p/then' (constantly nil)))))
 
@@ -117,7 +117,8 @@
           (p/then decode-task-row)
           (p/then (fn [item]
                     (when item
-                      (log/debug "Execute task " (:name item))
+                      (log/info "Execute task" (:name item)
+                                "with props" (pr-str (:props item)))
                       (-> (p/do! (handle-task tasks item))
                           (p/handle (fn [v e]
                                       (if e
@@ -153,7 +154,7 @@
   [ctx {:keys [tasks] :as options}]
   (vt/schedule! ctx (assoc options
                            ::vt/fn #'event-loop-handler
-                           ::vt/delay 3000
+                           ::vt/delay 5000
                            ::vt/repeat true)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -273,7 +274,9 @@
 ;; --- Schedule API
 
 (s/def ::name ::us/string)
-(s/def ::delay ::us/integer)
+(s/def ::delay
+  (s/or :int ::us/integer
+        :duration tm/duration?))
 (s/def ::queue ::us/string)
 (s/def ::task-options
   (s/keys :req-un [::name]
@@ -284,8 +287,11 @@
          :or {delay 0 props {} queue "default"}
          :as options}]
   (us/verify ::task-options options)
-  (let [duration (-> (tm/duration delay)
-                     (duration->pginterval))
+  (let [duration (tm/duration delay)
+        pginterval (duration->pginterval duration)
         props (blob/encode props)]
-    (-> (db/query-one conn  [sql:insert-new-task name props queue duration])
+    (log/info "Schedule task" name
+              ;; "with props" (pr-str props)
+              "to be executed in" (str duration))
+    (-> (db/query-one conn  [sql:insert-new-task name props queue pginterval])
         (p/then' (fn [task] (:id task))))))
