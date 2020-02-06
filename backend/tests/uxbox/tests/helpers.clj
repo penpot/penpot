@@ -17,7 +17,10 @@
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.storage :as ust]
-   [uxbox.config :as cfg]))
+   [uxbox.config :as cfg]
+   [vertx.util :as vu]))
+
+(def ^:dynamic *context* nil)
 
 (defn state-init
   [next]
@@ -33,7 +36,8 @@
         (mount/swap {#'uxbox.config/config config})
         (mount/start))
     (try
-      (next)
+      (binding [*context* (vu/get-or-create-context uxbox.core/system)]
+        (next))
       (finally
         (mount/stop)))))
 
@@ -120,13 +124,17 @@
      (catch Exception e#
        [(handle-error e#) nil])))
 
-
 (defmacro try-on!
   [expr]
   `(try
-     (let [result# (deref ~expr)]
-       {:error nil
-        :result result#})
+     (let [d# (p/deferred)]
+       (->> #(p/finally ~expr (fn [v# e#]
+                                (if e#
+                                  (p/reject! d# e#)
+                                  (p/resolve! d# v#))))
+            (vu/run-on-context! *context*))
+       (array-map :error nil
+                  :result (deref d#)))
      (catch Exception e#
        {:error (handle-error e#)
         :result nil})))

@@ -96,8 +96,7 @@
               :width 800
               :height 800}
 
-        out  (with-redefs [vc/*context* (vc/get-or-create-context system)]
-               (th/try-on! (sm/handle data)))]
+        out (th/try-on! (sm/handle data))]
 
     ;; (th/print-result! out)
 
@@ -110,7 +109,8 @@
     (t/is (string? (get-in out [:result :path])))
     (t/is (string? (get-in out [:result :thumb-path])))
     (t/is (string? (get-in out [:result :uri])))
-    (t/is (string? (get-in out [:result :thumb-uri])))))
+    (t/is (string? (get-in out [:result :thumb-uri])))
+    ))
 
 (t/deftest mutation-import-image-file-from-collection
   (let [user @(th/create-user db/pool 1)
