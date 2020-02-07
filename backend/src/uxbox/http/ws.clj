@@ -9,31 +9,29 @@
   (:require
    [clojure.tools.logging :as log]
    [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
    [uxbox.emails :as emails]
    [uxbox.http.session :as session]
    [uxbox.services.init]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
-   [uxbox.util.uuid :as uuid]
-   [uxbox.util.transit :as t]
    [uxbox.util.blob :as blob]
+   [uxbox.util.transit :as t]
+   [uxbox.util.uuid :as uuid]
+   [vertx.eventbus :as ve]
    [vertx.http :as vh]
-   [vertx.web :as vw]
    [vertx.impl :as vi]
    [vertx.util :as vu]
-   [vertx.eventbus :as ve])
+   [vertx.web :as vw]
+   [vertx.web.websockets :as ws])
   (:import
-   io.vertx.core.Future
-   io.vertx.core.Promise
    io.vertx.core.Handler
+   io.vertx.core.Promise
    io.vertx.core.Vertx
    io.vertx.core.buffer.Buffer
    io.vertx.core.http.HttpServerRequest
    io.vertx.core.http.HttpServerResponse
    io.vertx.core.http.ServerWebSocket))
-
-(declare ws-websocket)
-(declare ws-send!)
 
 ;; --- State Management
 
@@ -42,7 +40,7 @@
 
 (defn send!
   [ws message]
-  (ws-send! ws (-> (t/encode message)
+  (ws/send! ws (-> (t/encode message)
                    (t/bytes->str))))
 
 (defmulti handle-message
@@ -85,63 +83,35 @@
 
 ;; --- Handler
 
+(defn- on-init
+  [req ws]
+  (let [ctx (vu/current-context)
+        file-id (get-in req [:path-params :file-id])
+        user-id (:user req)
+        ws (assoc ws
+                  :user-id user-id
+                  :file-id file-id)
+        sem (start-eventbus-consumer! ctx ws file-id)]
+    (handle-message ws {:type :connect})
+    (assoc ws ::sem sem)))
+
+(defn- on-text-message
+  [ws message]
+  (->> (t/str->bytes message)
+       (t/decode)
+       (handle-message ws)))
+
+(defn- on-close
+  [ws]
+  (let [file-id (:file-id ws)]
+    (handle-message ws {:type :disconnect
+                        :file-id file-id})
+    (.unregister (::sem ws))))
+
 (defn handler
   [{:keys [user] :as req}]
-  (letfn [(on-init [ws]
-            (let [ctx (vu/current-context)
-                  fid (get-in req [:path-params :file-id])
-                  ws  (assoc ws
-                             :user-id user
-                             :file-id fid)
-                  sem (start-eventbus-consumer! ctx ws fid)]
-              (handle-message ws {:type :connect})
-              (assoc ws ::sem sem)))
+  (ws/websocket :on-init (partial on-init req)
+                :on-text-message on-text-message
+                ;; :on-error on-error
+                :on-close on-close))
 
-          (on-message [ws message]
-            (try
-              (->> (t/str->bytes message)
-                   (t/decode)
-                   (handle-message ws))
-              (catch Throwable err
-                (log/error "Unexpected exception:\n"
-                           (with-out-str
-                             (.printStackTrace err (java.io.PrintWriter. *out*)))))))
-
-          (on-close [ws]
-            (let [fid (get-in req [:path-params :file-id])]
-              (handle-message ws {:type :disconnect :file-id fid})
-              (.unregister (::sem ws))))]
-
-    (-> (ws-websocket)
-        (assoc :on-init on-init
-               :on-message on-message
-               :on-close on-close))))
-
-;; --- Internal (vertx api) (experimental)
-
-(defrecord WebSocket [on-init on-message on-close]
-  vh/IAsyncResponse
-  (-handle-response [this ctx]
-    (let [^HttpServerRequest req (::vh/request ctx)
-          ^ServerWebSocket ws (.upgrade req)
-          local (volatile! (assoc this :ws ws))]
-      (-> (p/do! (on-init @local))
-          (p/then (fn [data]
-                    (vreset! local data)
-                    (.textMessageHandler ws (vi/fn->handler
-                                             (fn [msg]
-                                               (-> (p/do! (on-message @local msg))
-                                                   (p/then (fn [data]
-                                                             (when (instance? WebSocket data)
-                                                               (vreset! local data))
-                                                             (.fetch ws 1)))))))
-                    (.closeHandler ws (vi/fn->handler (fn [& args] (on-close @local))))))))))
-
-(defn ws-websocket
-  []
-  (->WebSocket nil nil nil))
-
-(defn ws-send!
-  [ws msg]
-  (.writeTextMessage ^ServerWebSocket (:ws ws)
-                     ^String msg))
