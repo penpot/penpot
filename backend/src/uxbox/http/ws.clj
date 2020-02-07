@@ -20,11 +20,12 @@
    [uxbox.util.uuid :as uuid]
    [vertx.eventbus :as ve]
    [vertx.http :as vh]
-   [vertx.impl :as vi]
    [vertx.util :as vu]
+   [vertx.timers :as vt]
    [vertx.web :as vw]
    [vertx.web.websockets :as ws])
   (:import
+   java.lang.AutoCloseable
    io.vertx.core.Handler
    io.vertx.core.Promise
    io.vertx.core.Vertx
@@ -91,9 +92,11 @@
         ws (assoc ws
                   :user-id user-id
                   :file-id file-id)
-        sem (start-eventbus-consumer! ctx ws file-id)]
+        send-ping #(send! ws {:type :ping})
+        sem1 (start-eventbus-consumer! ctx ws file-id)
+        sem2 (vt/schedule-periodic! ctx 30000 send-ping)]
     (handle-message ws {:type :connect})
-    (assoc ws ::sem sem)))
+    (assoc ws ::sem1 sem1 ::sem2 sem2)))
 
 (defn- on-text-message
   [ws message]
@@ -106,7 +109,8 @@
   (let [file-id (:file-id ws)]
     (handle-message ws {:type :disconnect
                         :file-id file-id})
-    (.unregister (::sem ws))))
+    (.close ^AutoCloseable (::sem1 ws))
+    (.close ^AutoCloseable (::sem2 ws))))
 
 (defn handler
   [{:keys [user] :as req}]

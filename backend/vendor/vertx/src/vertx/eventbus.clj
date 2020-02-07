@@ -7,15 +7,16 @@
 (ns vertx.eventbus
   (:require [promesa.core :as p]
             [vertx.impl :as impl])
-  (:import io.vertx.core.Vertx
-           io.vertx.core.Handler
-           io.vertx.core.Context
-           io.vertx.core.eventbus.Message
-           io.vertx.core.eventbus.MessageConsumer
-           io.vertx.core.eventbus.DeliveryOptions
-           io.vertx.core.eventbus.EventBus
-           io.vertx.core.eventbus.MessageCodec
-           java.util.function.Supplier))
+  (:import
+   io.vertx.core.Vertx
+   io.vertx.core.Handler
+   io.vertx.core.Context
+   io.vertx.core.eventbus.Message
+   io.vertx.core.eventbus.MessageConsumer
+   io.vertx.core.eventbus.DeliveryOptions
+   io.vertx.core.eventbus.EventBus
+   io.vertx.core.eventbus.MessageCodec
+   java.util.function.Supplier))
 
 (declare opts->delivery-opts)
 (declare resolve-eventbus)
@@ -36,7 +37,9 @@
                                            (.resume consumer)
                                            (.reply msg (or res err)
                                                    (opts->delivery-opts {}))))))))
-    consumer))
+    (reify java.lang.AutoCloseable
+      (close [it]
+        (.unregister consumer)))))
 
 (defn publish!
   ([vsm topic msg] (publish! vsm topic msg {}))

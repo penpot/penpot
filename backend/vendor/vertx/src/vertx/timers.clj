@@ -26,7 +26,7 @@
       (close [_]
         (.cancelTimer system timer-id)))))
 
-(defn sechdule-periodic!
+(defn schedule-periodic!
   [vsm ms f]
   (let [^Vertx system (impl/resolve-system vsm)
         ^Handler handler (impl/fn->handler (fn [v] (f)))
