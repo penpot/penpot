@@ -126,7 +126,7 @@
                            (p/recur))))))))
 
 (defn- log-error
-  [err]
+  [^Throwable err]
   (log/error "Unexpected exception on websocket handler:\n"
              (with-out-str
                (.printStackTrace err (java.io.PrintWriter. *out*)))))
@@ -143,6 +143,7 @@
 
 (defn handler
   [{:keys [user] :as req}]
-  (ws/websocket :handler (partial websocket-handler req)
-                ;; :on-error on-error
-                ))
+  (ws/websocket
+   {:handler (partial websocket-handler req)
+    :input-buffer-size 64
+    :output-buffer-size 64}))
