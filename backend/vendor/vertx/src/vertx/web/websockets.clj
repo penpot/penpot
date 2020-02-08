@@ -13,6 +13,7 @@
    [vertx.web :as vw]
    [vertx.impl :as vi]
    [vertx.util :as vu]
+   [vertx.stream :as vs]
    [vertx.eventbus :as ve])
   (:import
    java.lang.AutoCloseable
@@ -25,31 +26,29 @@
    io.vertx.core.http.HttpServerResponse
    io.vertx.core.http.ServerWebSocket))
 
-(defprotocol IWebSocket
-  (send! [it message]))
-
-(defrecord WebSocket [conn]
+(defrecord WebSocket [conn input output]
   AutoCloseable
   (close [it]
-    (.close ^ServerWebSocket conn))
+    (vs/close! input)
+    (vs/close! output)))
 
-  IWebSocket
-  (send! [it message]
-    (let [d (p/deferred)]
-      (cond
-        (string? message)
-        (.writeTextMessage ^ServerWebSocket conn
-                           ^String message
+(defn- write-to-websocket
+  [conn message]
+  (let [d (p/deferred)]
+    (cond
+      (string? message)
+      (.writeTextMessage ^ServerWebSocket conn
+                         ^String message
+                         ^Handler (vi/deferred->handler d))
+
+      (instance? Buffer message)
+      (.writeBinaryMessage ^ServerWebSocket conn
+                           ^Buffer message
                            ^Handler (vi/deferred->handler d))
 
-        (instance? Buffer message)
-        (.writeBinaryMessage ^ServerWebSocket conn
-                             ^Buffer message
-                             ^Handler (vi/deferred->handler d))
-
-        :else
-        (p/reject! (ex-info "invalid message type" {:message message})))
-      d)))
+      :else
+      (p/reject! (ex-info "invalid message type" {:message message})))
+    d))
 
 (defn- default-on-error
   [ws err]
@@ -58,46 +57,50 @@
                (.printStackTrace err (java.io.PrintWriter. *out*))))
   (.close ^AutoCloseable ws))
 
-(defrecord WebSocketResponse [on-init on-text-message on-error on-close]
+(defrecord WebSocketResponse [handler on-error]
   vh/IAsyncResponse
-  (-handle-response [it ctx]
-    (let [^HttpServerRequest req (::vh/request ctx)
+  (-handle-response [it request]
+    (let [^HttpServerRequest req (::vh/request request)
           ^ServerWebSocket conn (.upgrade req)
 
-          wsref (volatile! (->WebSocket conn))
+          inp-s (vs/stream 64)
+          out-s (vs/stream 64)
 
-          impl-on-error (fn [e] (on-error @wsref e))
-          impl-on-close (fn [_] (on-close @wsref))
+          ctx (vu/current-context)
+          ws  (->WebSocket conn inp-s out-s)
+
+          impl-on-error
+          (fn [e] (on-error ws e))
+
+          impl-on-close
+          (fn [_]
+            (vs/close! inp-s)
+            (vs/close! out-s))
 
           impl-on-message
           (fn [message]
-            (-> (p/do! (on-text-message @wsref message))
-                (p/finally (fn [res err]
-                             (if err
-                               (impl-on-error err)
-                               (do
-                                 (.fetch conn 1)
-                                 (when (instance? WebSocket res)
-                                   (vreset! wsref res))))))))]
+            (when-not (vs/offer! inp-s message)
+              (.pause conn)
+              (prn "BUFF")
+              (-> (vs/put! inp-s message)
+                  (p/then' (fn [res]
+                             (when-not (false? res)
+                               (.resume conn)))))))]
 
-      (-> (p/do! (on-init @wsref))
-          (p/finally (fn [data error]
-                       (cond
-                         (not (nil? error))
-                         (impl-on-error error)
+      (.exceptionHandler conn (vi/fn->handler impl-on-error))
+      (.textMessageHandler conn (vi/fn->handler impl-on-message))
+      (.closeHandler conn (vi/fn->handler impl-on-close))
 
-                         (instance? WebSocket data)
-                         (do
-                           (vreset! wsref data)
-                           (.exceptionHandler conn (vi/fn->handler impl-on-error))
-                           (.textMessageHandler conn (vi/fn->handler impl-on-message))
-                           (.closeHandler conn (vi/fn->handler impl-on-close)))
+      (vs/loop []
+        (p/let [msg (vs/take! out-s)]
+          (when-not (nil? msg)
+            (p/do!
+             (write-to-websocket conn msg)
+             (p/recur)))))
 
-                         :else
-                         (.reject conn)))))
-      nil)))
+      (vu/run-on-context! ctx #(handler ws)))))
 
 (defn websocket
-  [& {:keys [on-init on-text-message on-error on-close]
+  [& {:keys [handler on-error]
       :or {on-error default-on-error}}]
-  (->WebSocketResponse on-init on-text-message on-error on-close))
+  (->WebSocketResponse handler on-error))

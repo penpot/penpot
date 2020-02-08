@@ -23,6 +23,7 @@
    [vertx.util :as vu]
    [vertx.timers :as vt]
    [vertx.web :as vw]
+   [vertx.stream :as vs]
    [vertx.web.websockets :as ws])
   (:import
    java.lang.AutoCloseable
@@ -40,9 +41,10 @@
   (atom {}))
 
 (defn send!
-  [ws message]
-  (ws/send! ws (-> (t/encode message)
-                   (t/bytes->str))))
+  [{:keys [output] :as ws} message]
+  (let [msg (-> (t/encode message)
+                (t/bytes->str))]
+    (vs/put! output msg)))
 
 (defmulti handle-message
   (fn [ws message] (:type message)))
@@ -52,14 +54,14 @@
   (let [local (swap! state assoc-in [file-id user-id] ws)
         sessions (get local file-id)
         message {:type :who :users (set (keys sessions))}]
-    (run! #(send! % message) (vals sessions))))
+    (p/run! #(send! % message) (vals sessions))))
 
 (defmethod handle-message :disconnect
   [{:keys [user-id] :as ws} {:keys [file-id] :as message}]
   (let [local (swap! state update file-id dissoc user-id)
         sessions (get local file-id)
         message {:type :who :users (set (keys sessions))}]
-    (run! #(send! % message) (vals sessions))))
+    (p/run! #(send! % message) (vals sessions))))
 
 (defmethod handle-message :who
   [{:keys [file-id] :as ws} message]
@@ -71,7 +73,7 @@
   (let [sessions (->> (vals (get @state file-id))
                       (remove #(= user-id (:user-id %))))
         message (assoc message :user-id user-id)]
-    (run! #(send! % message) sessions)))
+    (p/run! #(send! % message) sessions)))
 
 (defn- on-eventbus-message
   [{:keys [file-id user-id] :as ws} {:keys [body] :as message}]
@@ -85,7 +87,7 @@
 ;; --- Handler
 
 (defn- on-init
-  [req ws]
+  [ws req]
   (let [ctx (vu/current-context)
         file-id (get-in req [:path-params :file-id])
         user-id (:user req)
@@ -94,11 +96,11 @@
                   :file-id file-id)
         send-ping #(send! ws {:type :ping})
         sem1 (start-eventbus-consumer! ctx ws file-id)
-        sem2 (vt/schedule-periodic! ctx 30000 send-ping)]
+        sem2 (vt/schedule-periodic! ctx 5000 send-ping)]
     (handle-message ws {:type :connect})
-    (assoc ws ::sem1 sem1 ::sem2 sem2)))
+    (p/resolved (assoc ws ::sem1 sem1 ::sem2 sem2))))
 
-(defn- on-text-message
+(defn- on-message
   [ws message]
   (->> (t/str->bytes message)
        (t/decode)
@@ -109,13 +111,38 @@
   (let [file-id (:file-id ws)]
     (handle-message ws {:type :disconnect
                         :file-id file-id})
-    (.close ^AutoCloseable (::sem1 ws))
-    (.close ^AutoCloseable (::sem2 ws))))
+    (when-let [sem1 (::sem1 ws)]
+      (.close ^AutoCloseable sem1))
+    (when-let [sem2 (::sem2 ws)]
+      (.close ^AutoCloseable sem2))))
+
+(defn- rcv-loop
+  [{:keys [input] :as ws}]
+  (vs/loop []
+    (-> (vs/take! input)
+        (p/then (fn [message]
+                  (when message
+                    (p/do! (on-message ws message)
+                           (p/recur))))))))
+
+(defn- log-error
+  [err]
+  (log/error "Unexpected exception on websocket handler:\n"
+             (with-out-str
+               (.printStackTrace err (java.io.PrintWriter. *out*)))))
+
+(defn websocket-handler
+  [req ws]
+  (p/let [ws (on-init ws req)]
+      (-> (rcv-loop ws)
+          (p/finally (fn [_ error]
+                       (.close ^AutoCloseable ws)
+                       (on-close ws)
+                       (when error
+                         (log-error error)))))))
 
 (defn handler
   [{:keys [user] :as req}]
-  (ws/websocket :on-init (partial on-init req)
-                :on-text-message on-text-message
+  (ws/websocket :handler (partial websocket-handler req)
                 ;; :on-error on-error
-                :on-close on-close))
-
+                ))

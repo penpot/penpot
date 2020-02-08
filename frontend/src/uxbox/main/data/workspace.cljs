@@ -98,7 +98,7 @@
 
               (->> stream
                    (rx/filter ms/pointer-event?)
-                   (rx/sample 150)
+                   (rx/sample 50)
                    (rx/map #(handle-pointer-send file-id (:pt %)))))
 
              (rx/take-until stoper))))))
