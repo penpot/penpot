@@ -118,11 +118,12 @@
 
         on-drop
         (fn [item monitor]
-          (st/emit! dw/commit-shape-order-change))
+          (prn "index" index)
+          (st/emit! (dw/commit-shape-order-change (:shape-id item))))
 
         on-hover
         (fn [item monitor]
-          (st/emit! (dw/temporal-shape-order-change (:shape-id item) index)))
+          (st/emit! (dw/shape-order-change (:shape-id item) index)))
 
         [dprops dnd-ref] (use-sortable
                           {:type "layer-item"

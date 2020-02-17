@@ -165,95 +165,84 @@
   (ptk/reify ::handle-page-change
     ptk/WatchEvent
     (watch [_ state stream]
-      (prn "handle-page-change")
       (let [page-id' (get-in state [:workspace-page :id])]
         (when (= page-id page-id')
           (rx/of (shapes-changes-commited msg)))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Undo/Redo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (def undo-hierarchy
-;;   (-> (make-hierarchy)
-;;       (derive ::update-shape ::undo-signal)
-;;       (derive ::update-options ::undo-signal)
-;;       (derive ::move-selected-layer ::undo-signal)
-;;       (derive ::materialize-temporal-modifier-in-bulk ::undo-signal)
-;;       (derive ::add-shape ::undo-signal)
-;;       (derive ::add-canvas ::undo-signal)))
+(def MAX-UNDO-SIZE 50)
 
-;; (def MAX-UNDO-SIZE 50)
+(defn- conj-undo-entry
+  [undo data]
+  (let [undo (conj undo data)]
+    (if (> (count undo) MAX-UNDO-SIZE)
+      (into [] (take MAX-UNDO-SIZE undo))
+      undo)))
 
-;; (defn- conj-undo-entry
-;;   [undo data]
-;;   (let [undo (conj undo data)]
-;;     (if (> (count undo) MAX-UNDO-SIZE)
-;;       (into [] (take MAX-UNDO-SIZE undo))
-;;       undo)))
+(defn- materialize-undo
+  [changes index]
+  (ptk/reify ::materialize-undo
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-data cp/process-changes changes)
+          (assoc-in [:workspace-local :undo-index] index)))))
 
-;; ptk/UpdateEvent
-;; (update [_ state]
-;;   (let [pid (get-in state [:workspace-page :id])
-;;         data (:workspace-data state)
-;;         undo (-> (get-in state [:undo pid] [])
-;;                  (conj-undo-entry data))]
-;;     (prn "diff-and-commit-changes" "undo=" (count undo))
-;;     (-> state
-;;         (assoc-in [:undo pid] undo)
-;;         (update :workspace-local dissoc :undo-index))))
+(defn- reset-undo
+  [index]
+  (ptk/reify ::reset-undo
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-local dissoc :undo-index)
+          (update-in [:workspace-local :undo]
+                     (fn [queue]
+                       (into [] (take (inc index) queue))))))))
 
-;; (defn initialize-undo
-;;   [page-id]
-;;   (ptk/reify ::initialize-page
-;;     ptk/WatchEvent
-;;     (watch [_ state stream]
-;;       (let [stoper (rx/filter #(or (ptk/type? ::finalize %)
-;;                                    (ptk/type? ::initialize-page %))
-;;                               stream)
-;;             undo-event? #(or (isa? (ptk/type %) ::undo-signal)
-;;                              (satisfies? IBatchedChange %))]
-;;         (->> stream
-;;              (rx/filter #(satisfies? IBatchedChange %))
-;;              (rx/debounce 200)
-;;              (rx/map (constantly diff-and-commit-changes))
-;;              (rx/take-until stoper))))))
+(s/def ::undo-changes ::cp/changes)
+(s/def ::redo-changes ::cp/changes)
+(s/def ::undo-entry
+  (s/keys :req-un [::undo-changes ::redo-changes]))
 
-;; (def undo
-;;   (ptk/reify ::undo
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (let [pid (get-in state [:workspace-page :id])
-;;             undo (get-in state [:undo pid] [])
-;;             index (get-in state [:workspace-local :undo-index])
-;;             index (or index (dec (count undo)))]
-;;         (if (or (empty? undo) (= index 0))
-;;           state
-;;           (let [index (dec index)]
-;;             (-> state
-;;                 (assoc :workspace-data (nth undo index))
-;;                 (assoc-in [:workspace-local :undo-index] index))))))))
+(defn- append-undo
+  [entry]
+  (us/verify ::undo-entry entry)
+  (ptk/reify ::append-undo
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :undo] (fnil conj-undo-entry []) entry))))
 
-;; (def redo
-;;   (ptk/reify ::redo
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (let [pid (get-in state [:workspace-page :id])
-;;             undo (get-in state [:undo pid] [])
-;;             index (get-in state [:workspace-local :undo-index])
-;;             index (or index (dec (count undo)))]
-;;         (if (or (empty? undo) (= index (dec (count undo))))
-;;           state
-;;           (let [index (inc index)]
-;;             (-> state
-;;                 (assoc :workspace-data (nth undo index))
-;;                 (assoc-in [:workspace-local :undo-index] index))))))))
+(def undo
+  (ptk/reify ::undo
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [local (:workspace-local state)
+            undo (:undo local [])
+            index (or (:undo-index local)
+                      (dec (count undo)))]
+        (when-not (or (empty? undo) (= index -1))
+          (let [changes (get-in undo [index :undo-changes])]
+            (rx/of (materialize-undo changes (dec index))
+                   (commit-changes changes [] false))))))))
 
-;; (def reset-undo-index
-;;   (ptk/reify ::reset-undo-index
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (update :workspace-local dissoc :undo-index))))
+(def redo
+  (ptk/reify ::redo
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [local (:workspace-local state)
+            undo (:undo local [])
+            index (or (:undo-index local)
+                      (dec (count undo)))]
+        (when-not (or (empty? undo) (= index (dec (count undo))))
+          (let [changes (get-in undo [(inc index) :redo-changes])]
+            (rx/of (materialize-undo changes (inc index))
+                   (commit-changes changes [] false))))))))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
@@ -341,9 +330,10 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page (get-in state [:pages page-id])
-            data (get-in state [:pages-data page-id])]
+            data (get-in state [:pages-data page-id])
+            local (get-in state [:workspace-cache page-id] workspace-default)]
         (assoc state
-               :workspace-local workspace-default
+               :workspace-local local
                :workspace-data data
                :workspace-page page)))
 
@@ -365,10 +355,24 @@
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
-      state
-      #_(dissoc state
-                :workspace-page
-                :workspace-data))))
+      (let [local (:workspace-local state)]
+        (assoc-in state [:workspace-cache page-id] local)))))
+
+(defn- generate-changes
+  [session-id prev curr]
+  (let [diff (d/diff-maps prev curr)]
+    (loop [scs (rest diff)
+           sc (first diff)
+           res []]
+      (if (nil? sc)
+        res
+        (let [[_ id shape] sc]
+          (recur (rest scs)
+                 (first scs)
+                 (conj res {:type :mod-shape
+                            :session-id session-id
+                            :operations (d/diff-maps (get prev id) shape)
+                            :id id})))))))
 
 (def diff-and-commit-changes
   (ptk/reify ::diff-and-commit-changes
@@ -377,23 +381,11 @@
       (let [pid (get-in state [:workspace-page :id])
             curr (get-in state [:workspace-data :shapes-by-id])
             prev (get-in state [:pages-data pid :shapes-by-id])
-
-            diff (d/diff-maps prev curr)
-            changes (loop [scs (rest diff)
-                           sc (first diff)
-                           res []]
-                      (if (nil? sc)
-                        res
-                        (let [[_ id shape] sc]
-                          (recur (rest scs)
-                                 (first scs)
-                                 (conj res {:type :mod-shape
-                                            :session-id (:session-id state)
-                                            :operations (d/diff-maps (get prev id) shape)
-                                            :id id})))))]
+            session-id (:session-id state)
+            changes (generate-changes session-id prev curr)
+            undo-changes (generate-changes session-id curr prev)]
         (when-not (empty? changes)
-          (rx/of (commit-changes changes)))))))
-
+          (rx/of (commit-changes changes undo-changes)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching & Uploading
@@ -924,6 +916,9 @@
           (rx/of (commit-changes [{:type :add-shape
                                    :session-id sid
                                    :shape shape
+                                   :id id}]
+                                 [{:type :del-shape
+                                   :session-id sid
                                    :id id}])
                  (select-shape id)))))))
 
@@ -952,6 +947,9 @@
           (rx/of (commit-changes [{:type :add-canvas
                                    :session-id sid
                                    :shape shape
+                                   :id id}]
+                                 [{:type :del-canvas
+                                   :session-id sid
                                    :id id}])))))))
 
 
@@ -975,10 +973,15 @@
                                :id (:id shape)
                                :shape shape
                                :session-id sid})
+                            shapes)
+            uchanges  (mapv (fn [shape]
+                              {:type :del-shape
+                               :id (:id shape)
+                               :session-id sid})
                             shapes)]
         (rx/merge
          (rx/from (map (fn [s] #(impl-assoc-shape % s)) shapes))
-         (rx/of (commit-changes changes)))))))
+         (rx/of (commit-changes changes uchanges)))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
@@ -1151,11 +1154,18 @@
                          (map (fn [{:keys [type id] :as shape}]
                                 {:type (if (= type :canvas) :del-canvas :del-shape)
                                  :session-id session-id
-                                 :id id})))]
+                                 :id id})))
+            uchanges (->> selected
+                          (map lookup-shape)
+                          (map (fn [{:keys [type id] :as shape}]
+                                 {:type (if (= type :canvas) :add-canvas :add-shape)
+                                  :session-id session-id
+                                  :shape shape
+                                  :id id})))]
         (rx/concat
          (rx/of deselect-all)
          (rx/from (map impl-dissoc-shape selected))
-         (rx/of (commit-changes changes)))))))
+         (rx/of (commit-changes changes uchanges)))))))
 
 ;; --- Rename Shape
 
@@ -1164,18 +1174,19 @@
   (us/verify ::us/uuid id)
   (us/verify string? name)
   (ptk/reify ::rename-shape
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:shapes id :name] name))
-
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [session-id (:session-id state)
-            change {:type :mod-shape
-                    :id id
-                    :session-id session-id
-                    :operations [[:set :name name]]}]
-        (rx/of (commit-changes [change]))))))
+      (let [shape (get-in state [:workspace-data :shapes-by-id id])
+            session-id (:session-id state)
+            change  {:type :mod-shape
+                     :id id
+                     :session-id session-id
+                     :operations [[:set :name name]]}
+            uchange {:type :mod-shape
+                     :id id
+                     :session-id session-id
+                     :operations [[:set :name (:name shape)]]}]
+        (rx/of (commit-changes [change] [uchange]))))))
 
 ;; --- Shape Vertical Ordering
 
@@ -1211,7 +1222,7 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
-(defn temporal-shape-order-change
+(defn shape-order-change
   [id index]
   (us/verify ::us/uuid id)
   (us/verify number? index)
@@ -1221,22 +1232,31 @@
       (let [shapes (get-in state [:workspace-data :shapes])
             shapes (into [] (remove #(= % id)) shapes)
             [before after] (split-at index shapes)
-            shapes (d/concat [] before [id] after)
-            change {:type :mov-shape
-                    :session-id (:session-id state)
-                    :move-after-id (last before)
-                    :id id}]
-        (-> state
-            (assoc-in [:workspace-data :shapes] shapes)
-            (assoc ::tmp-shape-order-change change))))))
+            shapes (d/concat [] before [id] after)]
+        (assoc-in state [:workspace-data :shapes] shapes)))))
 
-(def commit-shape-order-change
+(defn commit-shape-order-change
+  [id]
   (ptk/reify ::commit-shape-order-change
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [change (::tmp-shape-order-change state)]
-        (rx/of #(dissoc state ::tmp-shape-order-change)
-               (commit-changes [change]))))))
+      (let [page-id (get-in state [:workspace-page :id])
+            curr-shapes (get-in state [:workspace-data :shapes])
+            prev-shapes (get-in state [:pages-data page-id :shapes])
+
+            curr-index (d/index-of curr-shapes id)
+            prev-index (d/index-of prev-shapes id)
+            session-id (:session-id state)
+
+            change {:type :mov-shape
+                    :session-id session-id
+                    :id id
+                    :index curr-index}
+            uchange {:type :mov-shape
+                    :session-id session-id
+                     :id id
+                     :index prev-index}]
+        (rx/of (commit-changes [change] [uchange]))))))
 
 ;; --- Change Canvas Order (D&D Ordering)
 
@@ -1326,23 +1346,35 @@
         (reduce process-shape state ids)))))
 
 (defn commit-changes
-  [changes]
-  (us/verify ::cp/changes changes)
-  (ptk/reify ::commit-changes
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (get-in state [:workspace-page :id])
-            data (get-in state [:pages-data pid])]
-        (update-in state [:pages-data pid] cp/process-changes changes)))
+  ([changes undo-changes] (commit-changes changes undo-changes true))
+  ([changes undo-changes save-undo?]
+   (us/verify ::cp/changes changes)
+   (us/verify ::cp/changes undo-changes)
+   (ptk/reify ::commit-changes
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [pid (get-in state [:workspace-page :id])
+             data (get-in state [:pages-data pid])]
+         (update-in state [:pages-data pid] cp/process-changes changes)))
 
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page (:workspace-page state)
-            params {:id (:id page)
-                    :revn (:revn page)
-                    :changes (vec changes)}]
-        (->> (rp/mutation :update-page params)
-             (rx/map shapes-changes-commited))))))
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [page (:workspace-page state)
+             uidx (get-in state [:workspace-local :undo-index] ::not-found)
+             params {:id (:id page)
+                     :revn (:revn page)
+                     :changes (vec changes)}]
+         (rx/concat
+          (when (and save-undo? (not= uidx ::not-found))
+            (rx/of (reset-undo uidx)))
+
+          (when save-undo?
+            (let [entry {:undo-changes undo-changes
+                         :redo-changes changes}]
+              (rx/of (append-undo entry))))
+
+          (->> (rp/mutation :update-page params)
+               (rx/map shapes-changes-commited))))))))
 
 (s/def ::shapes-changes-commited
   (s/keys :req-un [::page-id ::revn ::cp/changes]))
