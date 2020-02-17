@@ -12,7 +12,7 @@
    [uxbox.core :refer [system]]
    [uxbox.config :as cfg]
    [uxbox.http.errors :as errors]
-   [uxbox.http.interceptors :as interceptors]
+   [uxbox.http.middleware :as middleware]
    [uxbox.http.session :as session]
    [uxbox.http.handlers :as handlers]
    [uxbox.http.debug :as debug]
@@ -20,7 +20,7 @@
    [vertx.core :as vc]
    [vertx.http :as vh]
    [vertx.web :as vw]
-   [vertx.web.interceptors :as vxi]))
+   [vertx.web.middleware :as vwm]))
 
 (defn- on-start
   [ctx]
@@ -30,30 +30,32 @@
                    :allow-methods #{:post :get :patch :head :options :put}
                    :allow-headers #{:x-requested-with :content-type :cookie}}
 
-        interceptors [(vxi/cookies)
-                      (vxi/params)
-                      (vxi/cors cors-opts)
-                      interceptors/parse-request-body
-                      interceptors/format-response-body
-                      (vxi/errors errors/handle)]
+        routes [["/sub/:file-id" {:middleware [[vwm/cookies]
+                                               [vwm/cors cors-opts]
+                                               [middleware/format-response-body]
+                                               [session/auth]]
+                                  :handler ws/handler
+                                  :method :get}]
 
-        routes [["/sub/:file-id" {:interceptors [(vxi/cookies)
-                                                 (vxi/cors cors-opts)
-                                                 interceptors/format-response-body
-                                                 (session/auth)]
-                                  :get ws/handler}]
+                ["/api" {:middleware [[vwm/cookies]
+                                      [vwm/params]
+                                      [vwm/cors cors-opts]
+                                      [middleware/parse-request-body]
+                                      [middleware/format-response-body]
+                                      [middleware/method-match]
+                                      [vwm/errors errors/handle]]}
+                 ["/echo" {:handler handlers/echo-handler}]
 
-                ["/api" {:interceptors interceptors}
-                 ["/echo" {:all handlers/echo-handler}]
-                 ["/login" {:post handlers/login-handler}]
-                 ["/logout" {:post handlers/logout-handler}]
-                 ["/debug"
-                  ["/emails" {:get debug/emails-list}]
-                  ["/emails/:id" {:get debug/email}]]
-                 ["/w" {:interceptors [(session/auth)]}
-                  ["/mutation/:type" {:interceptors [(vxi/uploads)]
-                                      :post handlers/mutation-handler}]
-                  ["/query/:type" {:get handlers/query-handler}]]]]
+                 ["/login" {:handler handlers/login-handler
+                            :method :post}]
+                 ["/logout" {:handler handlers/logout-handler
+                             :method :post}]
+                 ["/w" {:middleware [session/auth]}
+                  ["/mutation/:type" {:middleware [vwm/uploads]
+                                      :handler handlers/mutation-handler
+                                      :method :post}]
+                  ["/query/:type" {:handler handlers/query-handler
+                                   :method :get}]]]]
 
         handler (vw/handler ctx
                             (vw/assets "/media/*" {:root "resources/public/media/"})

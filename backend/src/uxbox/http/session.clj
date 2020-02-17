@@ -7,7 +7,6 @@
 (ns uxbox.http.session
   (:require
    [promesa.core :as p]
-   [sieppari.context :as spx]
    [vertx.core :as vc]
    [uxbox.db :as db]
    [uxbox.util.uuid :as uuid]))
@@ -45,12 +44,16 @@
     (catch java.lang.IllegalArgumentException e
       nil)))
 
-(defn auth
-  []
-  {:enter (fn [data]
-            (let [token (parse-token (:request data))]
-              (-> (retrieve token)
-                  (p/then' (fn [user-id]
-                             (if user-id
-                               (update data :request assoc :user user-id)
-                               data))))))})
+(defn- wrap-auth
+  [handler]
+  (fn [request]
+    (let [token (parse-token request)]
+      (-> (retrieve token)
+          (p/then (fn [profile-id]
+                    (if profile-id
+                      (handler (assoc request :profile-id profile-id))
+                      (handler request))))))))
+
+(def auth
+  {:nane ::auth
+   :compile (constantly wrap-auth)})

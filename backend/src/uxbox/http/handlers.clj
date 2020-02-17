@@ -7,6 +7,7 @@
 (ns uxbox.http.handlers
   (:require
    [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
    [uxbox.emails :as emails]
    [uxbox.http.session :as session]
    [uxbox.services.init]
