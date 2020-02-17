@@ -58,7 +58,7 @@
     (st/emit! #(assoc % :router router))
     (add-watch html-history/path ::main #(on-navigate router %4))
 
-    (when (:auth storage)
+    (when (:profile storage)
       (st/emit! udu/fetch-profile))
 
     (mf/mount (mf/element ui/app) (dom/get-element "app"))

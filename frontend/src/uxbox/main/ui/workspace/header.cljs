@@ -87,7 +87,7 @@
       {:alt (tr "header.sitemap")
        :class (when (contains? layout :sitemap) "selected")
        :on-click #(st/emit! (dw/toggle-layout-flag :sitemap))}
-      [:span (:project-name file) " / " (:name file)]]
+      [:span (:name file)]]
 
      [:& active-users]
 

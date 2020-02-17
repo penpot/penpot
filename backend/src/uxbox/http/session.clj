@@ -17,26 +17,26 @@
   "Retrieves a user id associated with the provided auth token."
   [token]
   (when token
-    (let [sql "select user_id from sessions where id = $1"]
+    (let [sql "select profile_id from session where id = $1"]
       (-> (db/query-one db/pool [sql token])
-          (p/then' (fn [row] (when row (:user-id row))))))))
+          (p/then' (fn [row] (when row (:profile-id row))))))))
 
 (defn create
   [user-id user-agent]
   (let [id  (uuid/random)
-        sql "insert into sessions (id, user_id, user_agent) values ($1, $2, $3)"]
+        sql "insert into session (id, profile_id, user_agent) values ($1, $2, $3)"]
     (-> (db/query-one db/pool [sql id user-id user-agent])
         (p/then (constantly (str id))))))
 
 (defn delete
   [token]
-  (let [sql "delete from sessions where id = $1"]
+  (let [sql "delete from session where id = $1"]
     (-> (db/query-one db/pool [sql token])
         (p/then' (constantly nil)))))
 
 ;; --- Interceptor
 
-(defn parse-token
+(defn- parse-token
   [request]
   (try
     (when-let [token (get-in request [:cookies "auth-token"])]

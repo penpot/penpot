@@ -11,8 +11,6 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [expound.alpha :as expound]
-   [sieppari.core :as sp]
-   [sieppari.context :as spx]
    [uxbox.common.exceptions :as ex])
   (:import
    clojure.lang.IDeref
@@ -45,8 +43,7 @@
     (let [key (get params attr)
           f   (.get ^Map reg key)]
       (when (nil? f)
-        (ex/raise :type :not-found
-                  :code :method-not-found
+        (ex/raise :type :method-not-found
                   :hint "No method found for the current request."))
       (f params))))
 

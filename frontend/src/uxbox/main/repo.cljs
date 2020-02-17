@@ -120,7 +120,7 @@
           (seq params))
     (send-mutation! id form)))
 
-(defmethod mutation :upload-project-file-image
+(defmethod mutation :upload-file-image
   [id params]
   (let [form (js/FormData.)]
     (run! (fn [[key val]]

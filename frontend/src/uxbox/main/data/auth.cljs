@@ -30,14 +30,9 @@
 (defn logged-in
   [data]
   (ptk/reify ::logged-in
-    ptk/UpdateEvent
-    (update [this state]
-      (assoc state :auth data))
-
     ptk/WatchEvent
-    (watch [this state s]
-      (swap! storage assoc :auth data)
-      (rx/of du/fetch-profile
+    (watch [this state stream]
+      (rx/of (du/profile-fetched data)
              (rt/navigate :dashboard-projects)))))
 
 ;; --- Login

@@ -1,4 +1,4 @@
-CREATE TABLE users (
+CREATE TABLE profile (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -14,18 +14,26 @@ CREATE TABLE users (
   is_demo boolean NOT NULL DEFAULT false
 );
 
-CREATE UNIQUE INDEX users__email__idx
-    ON users (email)
+CREATE UNIQUE INDEX profile__email__idx
+    ON profile (email)
  WHERE deleted_at IS null;
 
-CREATE INDEX users__is_demo
-    ON users (is_demo)
+CREATE INDEX profile__is_demo
+    ON profile (is_demo)
  WHERE deleted_at IS null
    AND is_demo IS true;
 
---- Table used for register all used emails by the user
-CREATE TABLE user_emails (
-  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+INSERT INTO profile (id, fullname, email, photo, password)
+VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
+        'System Profile',
+        'system@uxbox.io',
+        '',
+        '!');
+
+
+
+CREATE TABLE profile_email (
+  profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   verified_at timestamptz NULL DEFAULT NULL,
@@ -36,13 +44,58 @@ CREATE TABLE user_emails (
   is_verified boolean NOT NULL DEFAULT false
 );
 
-CREATE INDEX user_emails__user_id__idx
-    ON user_emails (user_id);
+CREATE INDEX profile_email__profile_id__idx
+    ON profile_email (profile_id);
 
---- Table for user key value attributes
+CREATE UNIQUE INDEX profile_email__email__idx
+    ON profile_email (email);
 
-CREATE TABLE user_attrs (
-  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+
+CREATE TABLE team (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  deleted_at timestamptz NULL,
+
+  name text NOT NULL,
+  photo text NOT NULL,
+
+  is_default boolean NOT NULL DEFAULT false
+);
+
+CREATE TRIGGER team__modified_at__tgr
+BEFORE UPDATE ON team
+   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
+
+
+
+CREATE TABLE team_profile_rel (
+  team_id uuid NOT NULL REFERENCES team(id) ON DELETE CASCADE,
+  profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE RESTRICT,
+
+  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+
+  is_admin boolean DEFAULT false,
+  is_owner boolean DEFAULT false,
+  can_edit boolean DEFAULT false,
+
+  PRIMARY KEY (team_id, profile_id)
+);
+
+COMMENT ON TABLE team_profile_rel
+     IS 'Relation between teams and profiles (NM)';
+
+CREATE TRIGGER team_profile_rel__modified_at__tgr
+BEFORE UPDATE ON team_profile_rel
+   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
+
+
+
+CREATE TABLE profile_attr (
+  profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -50,52 +103,39 @@ CREATE TABLE user_attrs (
   key text NOT NULL,
   val bytea NOT NULL,
 
-  PRIMARY KEY (key, user_id)
+  PRIMARY KEY (key, profile_id)
 );
 
---- Table for store verification tokens
+CREATE INDEX profile_attr__profile_id__idx
+    ON profile_attr(profile_id);
 
-CREATE TABLE tokens (
-  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+CREATE TRIGGER profile_attr__modified_at__tgr
+BEFORE UPDATE ON profile_attr
+   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
+
+
+
+CREATE TABLE password_recovery_token (
+  profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
   token text NOT NULL,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   used_at timestamptz NULL,
 
-  PRIMARY KEY (token, user_id)
+  PRIMARY KEY (profile_id, token)
 );
 
---- Table for store user sessions.
 
-CREATE TABLE sessions (
+
+CREATE TABLE session (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
 
-  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  profile_id uuid REFERENCES profile(id) ON DELETE CASCADE,
   user_agent text NULL
 );
 
-CREATE INDEX sessions__user_id__idx
-    ON sessions (user_id);
-
--- Insert a placeholder system user.
-
-INSERT INTO users (id, fullname, email, photo, password)
-VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
-        'System User',
-        'system@uxbox.io',
-        '',
-        '!');
-
---- Triggers
-
-CREATE TRIGGER users__modified_at__tgr
-BEFORE UPDATE ON users
-   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
-
-CREATE TRIGGER user_attrs__modified_at__tgr
-BEFORE UPDATE ON user_attrs
-   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
-
+CREATE INDEX session__profile_id__idx
+    ON session(profile_id);

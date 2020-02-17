@@ -79,7 +79,7 @@
   (ptk/reify ::fetch-collections
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/query! :images-collections)
+      (->> (rp/query! :image-collections)
            (rx/map collections-fetched)))))
 
 
@@ -108,7 +108,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (let [data {:name (tr "ds.default-library-title" (gensym "c"))}]
-        (->> (rp/mutation! :create-images-collection data)
+        (->> (rp/mutation! :create-image-collection data)
              (rx/map collection-created))))))
 
 ;; --- Collection Created
@@ -134,7 +134,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (let [params {:id id :name name}]
-        (->> (rp/mutation! :rename-images-collection params)
+        (->> (rp/mutation! :rename-image-collection params)
              (rx/ignore))))))
 
 ;; --- Delete Collection
@@ -148,7 +148,7 @@
 
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/mutation! :delete-images-collection {:id id})
+      (->> (rp/mutation! :delete-image-collection {:id id})
            (rx/tap on-success)
            (rx/ignore)))))
 

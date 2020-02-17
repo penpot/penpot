@@ -1,6 +1,6 @@
-CREATE TABLE image_collections (
+CREATE TABLE image_collection (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -9,13 +9,19 @@ CREATE TABLE image_collections (
   name text NOT NULL
 );
 
-CREATE INDEX image_collections__user_id__idx
-    ON image_collections(user_id);
+CREATE INDEX image_collection__profile_id__idx
+    ON image_collection(profile_id);
 
-CREATE TABLE images (
+CREATE TRIGGER image_collection__modified_at__tgr
+BEFORE UPDATE ON image_collection
+   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
+
+
+
+CREATE TABLE image (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  collection_id uuid NOT NULL REFERENCES image_collections(id) ON DELETE CASCADE,
+  profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
+  collection_id uuid NOT NULL REFERENCES image_collection(id) ON DELETE CASCADE,
 
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -35,17 +41,17 @@ CREATE TABLE images (
   thumb_mtype text NOT NULL
 );
 
-CREATE INDEX images__user_id__idx
-    ON images(user_id);
+CREATE INDEX image__profile_id__idx
+    ON image(profile_id);
 
-CREATE INDEX images__collection_id__idx
-    ON images(collection_id);
+CREATE INDEX image__collection_id__idx
+    ON image(collection_id);
 
-CREATE TRIGGER image_collections__modified_at__tgr
-BEFORE UPDATE ON image_collections
+CREATE TRIGGER image__modified_at__tgr
+BEFORE UPDATE ON image
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
 
-CREATE TRIGGER images__modified_at__tgr
-BEFORE UPDATE ON images
-   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
+CREATE TRIGGER image__on_delete__tgr
+ AFTER DELETE ON image
+   FOR EACH ROW EXECUTE PROCEDURE handle_delete();
 

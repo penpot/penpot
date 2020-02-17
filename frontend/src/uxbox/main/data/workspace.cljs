@@ -58,12 +58,12 @@
 (declare handle-who)
 (declare handle-pointer-update)
 (declare handle-pointer-send)
-(declare handle-page-snapshot)
+(declare handle-page-change)
 (declare shapes-changes-commited)
 (declare commit-changes)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Websockets Events
+;; Workspace WebSocket
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- Initialize WebSocket
@@ -93,7 +93,7 @@
                              (case type
                                :who (handle-who msg)
                                :pointer-update (handle-pointer-update msg)
-                               :page-snapshot (handle-page-snapshot msg)
+                               :page-change (handle-page-change msg)
                                ::unknown))))
 
               (->> stream
@@ -160,11 +160,12 @@
                  :y (:y point)}]
         (ws/-send ws (t/encode msg))))))
 
-(defn handle-page-snapshot
-  [{:keys [user-id page-id version operations] :as msg}]
-  (ptk/reify ::handle-page-snapshot
+(defn handle-page-change
+  [{:keys [profile-id page-id revn operations] :as msg}]
+  (ptk/reify ::handle-page-change
     ptk/WatchEvent
     (watch [_ state stream]
+      (prn "handle-page-change")
       (let [page-id' (get-in state [:workspace-page :id])]
         (when (= page-id page-id')
           (rx/of (shapes-changes-commited msg)))))))
@@ -254,9 +255,9 @@
 ;;     (update [_ state]
 ;;       (update :workspace-local dissoc :undo-index))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; General workspace events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Workspace Initialization
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- Initialize Workspace
 
@@ -275,6 +276,9 @@
 (declare initialize-layout)
 (declare initialize-page)
 (declare initialize-file)
+(declare fetch-file-with-users)
+(declare fetch-pages)
+(declare fetch-page)
 
 (defn initialize
   "Initialize the workspace state."
@@ -286,21 +290,31 @@
     (watch [_ state stream]
       (let [file (:workspace-file state)]
         (if (not= (:id file) file-id)
+          (do
+            ;; (reset! st/loader true)
+            (rx/merge
+             (rx/of (fetch-file-with-users file-id)
+                    (fetch-pages file-id)
+                    (initialize-layout file-id)
+                    (fetch-images file-id))
+             (->> (rx/zip (rx/filter (ptk/type? ::pages-fetched) stream)
+                          (rx/filter (ptk/type? ::file-fetched) stream))
+                  (rx/take 1)
+                  (rx/do (fn [_]
+                           (uxbox.util.timers/schedule 500 #(reset! st/loader false))))
+                  (rx/mapcat (fn [_]
+                               (rx/of (initialize-file file-id)
+                                      (initialize-page page-id)
+                                      #_(initialize-alignment page-id)))))))
+
           (rx/merge
-           (rx/of (dp/fetch-file file-id)
-                  (dp/fetch-pages file-id)
-                  (initialize-layout file-id)
-                  (fetch-users file-id)
-                  (fetch-images file-id))
-           (->> (rx/zip (rx/filter (ptk/type? ::dp/pages-fetched) stream)
-                        (rx/filter (ptk/type? ::dp/files-fetched) stream))
+           (rx/of (fetch-page page-id))
+           (->> stream
+                (rx/filter (ptk/type? ::pages-fetched))
                 (rx/take 1)
-                (rx/do #(reset! st/loader false))
-                (rx/mapcat #(rx/of (initialize-file file-id)
-                                   (initialize-page page-id)
-                                   #_(initialize-alignment page-id)))))
-          (rx/of (initialize-file file-id)
-                 (initialize-page page-id)))))))
+                (rx/merge-map (fn [_]
+                                (rx/of (initialize-file file-id)
+                                       (initialize-page page-id)))))))))))
 
 (defn- initialize-layout
   [file-id]
@@ -351,9 +365,10 @@
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state
-              :workspace-page
-              :workspace-data))))
+      state
+      #_(dissoc state
+                :workspace-page
+                :workspace-data))))
 
 (def diff-and-commit-changes
   (ptk/reify ::diff-and-commit-changes
@@ -379,17 +394,69 @@
         (when-not (empty? changes)
           (rx/of (commit-changes changes)))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Fetching & Uploading
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Specs
+
+(s/def ::id ::us/uuid)
+(s/def ::profile-id ::us/uuid)
+(s/def ::name string?)
+(s/def ::type keyword?)
+(s/def ::file-id ::us/uuid)
+(s/def ::created-at ::us/inst)
+(s/def ::modified-at ::us/inst)
+(s/def ::version ::us/integer)
+(s/def ::revn ::us/integer)
+(s/def ::ordering ::us/integer)
+(s/def ::metadata (s/nilable ::cp/metadata))
+(s/def ::data ::cp/data)
+
+(s/def ::file ::dp/file)
+(s/def ::page
+  (s/keys :req-un [::id
+                   ::name
+                   ::file-id
+                   ::version
+                   ::revn
+                   ::created-at
+                   ::modified-at
+                   ::ordering
+                   ::data]))
+
 ;; --- Fetch Workspace Users
 
 (declare users-fetched)
+(declare file-fetched)
 
-(defn fetch-users
-  [file-id]
-  (ptk/reify ::fetch-users
+(defn fetch-file-with-users
+  [id]
+  (us/verify ::us/uuid id)
+  (ptk/reify ::fetch-file-with-users
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :project-file-users {:file-id file-id})
-           (rx/map users-fetched)))))
+      (->> (rp/query :file-with-users {:id id})
+           (rx/merge-map (fn [result]
+                           (rx/of (file-fetched (dissoc result :users))
+                                  (users-fetched (:users result)))))))))
+(defn fetch-file
+  [id]
+  (us/verify ::us/uuid id)
+  (ptk/reify ::fetch-file
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :file {:id id})
+           (rx/map file-fetched)))))
+
+(defn file-fetched
+  [{:keys [id] :as file}]
+  (us/verify ::file file)
+  (ptk/reify ::file-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :files assoc id file))))
 
 (defn users-fetched
   [users]
@@ -401,6 +468,226 @@
               state
               users))))
 
+
+;; --- Fetch Pages
+
+(declare pages-fetched)
+(declare unpack-page)
+
+(defn fetch-pages
+  [file-id]
+  (us/verify ::us/uuid file-id)
+  (ptk/reify ::fetch-pages
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query :pages {:file-id file-id})
+           (rx/map pages-fetched)))))
+
+(defn fetch-page
+  [page-id]
+  (us/verify ::us/uuid page-id)
+  (ptk/reify ::fetch-pages
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query :page {:id page-id})
+           (rx/map #(pages-fetched [%]))))))
+
+(defn pages-fetched
+  [pages]
+  (us/verify (s/every ::page) pages)
+  (ptk/reify ::pages-fetched
+    IDeref
+    (-deref [_] pages)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce unpack-page state pages))))
+
+;; --- Page Crud
+
+(declare page-created)
+
+(def create-empty-page
+  (ptk/reify ::create-empty-page
+    ptk/WatchEvent
+    (watch [this state stream]
+      (let [file-id (get-in state [:workspace-page :file-id])
+            name (str "Page " (gensym "p"))
+            ordering (count (get-in state [:files file-id :pages]))
+            params {:name name
+                    :file-id file-id
+                    :ordering ordering
+                    :data cp/default-page-data}]
+        (->> (rp/mutation :create-page params)
+             (rx/map page-created))))))
+
+(defn page-created
+  [{:keys [id file-id] :as page}]
+  (us/verify ::page page)
+  (ptk/reify ::page-created
+    cljs.core/IDeref
+    (-deref [_] page)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:workspace-file :pages] (fnil conj []) id)
+          (unpack-page page)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (fetch-file file-id)))))
+
+(s/def ::rename-page
+  (s/keys :req-un [::id ::name]))
+
+(defn rename-page
+  [id name]
+  (us/verify ::us/uuid id)
+  (us/verify string? name)
+  (ptk/reify ::rename-page
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (get-in state [:workspac-page :id])
+            state (assoc-in state [:pages id :name] name)]
+        (cond-> state
+          (= pid id) (assoc-in [:workspace-page :name] name))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:id id :name name}]
+        (->> (rp/mutation :rename-page params)
+             (rx/map #(ptk/data-event ::page-renamed params)))))))
+
+(declare purge-page)
+(declare go-to-file)
+
+(defn delete-page
+  [id]
+  {:pre [(uuid? id)]}
+  (reify
+    ptk/UpdateEvent
+    (update [_ state]
+      (purge-page state id))
+
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [page (:workspace-page state)]
+        (rx/merge
+         (->> (rp/mutation :delete-page  {:id id})
+              (rx/flat-map (fn [_]
+                             (if (= id (:id page))
+                               (rx/of (go-to-file (:file-id page)))
+                               (rx/empty))))))))))
+
+
+;; --- Fetch Workspace Images
+
+(declare images-fetched)
+
+(defn fetch-images
+  [file-id]
+  (ptk/reify ::fetch-images
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :file-images {:file-id file-id})
+           (rx/map images-fetched)))))
+
+(defn images-fetched
+  [images]
+  (ptk/reify ::images-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [images (d/index-by :id images)]
+        (assoc state :workspace-images images)))))
+
+
+;; --- Upload Image
+
+(declare image-uploaded)
+(def allowed-file-types #{"image/jpeg" "image/png"})
+
+(defn upload-image
+  ([file] (upload-image file identity))
+  ([file on-uploaded]
+   (us/verify fn? on-uploaded)
+   (ptk/reify ::upload-image
+     ptk/UpdateEvent
+     (update [_ state]
+       (assoc-in state [:workspace-local :uploading] true))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [allowed-file? #(contains? allowed-file-types (.-type %))
+             finalize-upload #(assoc-in % [:workspace-local :uploading] false)
+             file-id (get-in state [:workspace-page :file-id])
+
+             on-success #(do (st/emit! finalize-upload)
+                             (on-uploaded %))
+             on-error #(do (st/emit! finalize-upload)
+                           (rx/throw %))
+
+             prepare
+             (fn [file]
+               {:name (.-name file)
+                :file-id file-id
+                :content file})]
+         (->> (rx/of file)
+              (rx/filter allowed-file?)
+              (rx/map prepare)
+              (rx/mapcat #(rp/mutation! :upload-file-image %))
+              (rx/do on-success)
+              (rx/map image-uploaded)
+              (rx/catch on-error)))))))
+
+
+(s/def ::id ::us/uuid)
+(s/def ::name ::us/string)
+(s/def ::width ::us/number)
+(s/def ::height ::us/number)
+(s/def ::mtype ::us/string)
+(s/def ::uri ::us/string)
+(s/def ::thumb-uri ::us/string)
+
+(s/def ::image
+  (s/keys :req-un [::id
+                   ::name
+                   ::width
+                   ::height
+                   ::uri
+                   ::thumb-uri]))
+
+(defn image-uploaded
+  [item]
+  (us/verify ::image item)
+  (ptk/reify ::image-created
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-images assoc (:id item) item))))
+
+
+;; --- Helpers
+
+(defn unpack-page
+  [state {:keys [id data] :as page}]
+  (-> state
+      (update :pages assoc id (dissoc page :data))
+      (update :pages-data assoc id data)))
+
+(defn purge-page
+  "Remove page and all related stuff from the state."
+  [state id]
+  (if-let [file-id (get-in state [:pages id :file-id])]
+    (-> state
+        (update-in [:files file-id :pages] #(filterv (partial not= id) %))
+        (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
+        (update :pages dissoc id)
+        (update :pages-data dissoc id))
+    state))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Workspace State Manipulation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- Toggle layout flag
 
@@ -1052,23 +1339,23 @@
     (watch [_ state stream]
       (let [page (:workspace-page state)
             params {:id (:id page)
-                    :version (:version page)
+                    :revn (:revn page)
                     :changes (vec changes)}]
-        (->> (rp/mutation :update-project-page params)
+        (->> (rp/mutation :update-page params)
              (rx/map shapes-changes-commited))))))
 
 (s/def ::shapes-changes-commited
-  (s/keys :req-un [::page-id ::version ::cp/changes]))
+  (s/keys :req-un [::page-id ::revn ::cp/changes]))
 
 (defn shapes-changes-commited
-  [{:keys [page-id version changes] :as params}]
+  [{:keys [page-id revn changes] :as params}]
   (us/verify ::shapes-changes-commited params)
   (ptk/reify ::shapes-changes-commited
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-page :version] version)
-          (assoc-in [:pages page-id :version] version)
+          (assoc-in [:workspace-page :revn] revn)
+          (assoc-in [:pages page-id :revn] revn)
           (update-in [:pages-data page-id] cp/process-changes changes)
           (update :workspace-data cp/process-changes changes)))))
 
@@ -1298,7 +1585,7 @@
 (defn go-to-page
   [page-id]
   (us/verify ::us/uuid page-id)
-  (ptk/reify ::go-to
+  (ptk/reify ::go-to-page
     ptk/WatchEvent
     (watch [_ state stream]
       (let [file-id (get-in state [:workspace-page :file-id])
@@ -1306,93 +1593,16 @@
             query-params {:page-id page-id}]
         (rx/of (rt/nav :workspace path-params query-params))))))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Workspace Images
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- Fetch Workspace Images
-
-(declare images-fetched)
-
-(defn fetch-images
+(defn go-to-file
   [file-id]
-  (ptk/reify ::fetch-images
+  (us/verify ::us/uuid file-id)
+  (ptk/reify ::go-to-file
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :project-file-images {:file-id file-id})
-           (rx/map images-fetched)))))
-
-(defn images-fetched
-  [images]
-  (ptk/reify ::images-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [images (d/index-by :id images)]
-        (assoc state :workspace-images images)))))
-
-
-;; --- Upload Image
-
-(declare image-uploaded)
-(def allowed-file-types #{"image/jpeg" "image/png"})
-
-(defn upload-image
-  ([file] (upload-image file identity))
-  ([file on-uploaded]
-   (us/verify fn? on-uploaded)
-   (ptk/reify ::upload-image
-     ptk/UpdateEvent
-     (update [_ state]
-       (assoc-in state [:workspace-local :uploading] true))
-
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [allowed-file? #(contains? allowed-file-types (.-type %))
-             finalize-upload #(assoc-in % [:workspace-local :uploading] false)
-             file-id (get-in state [:workspace-page :file-id])
-
-             on-success #(do (st/emit! finalize-upload)
-                             (on-uploaded %))
-             on-error #(do (st/emit! finalize-upload)
-                           (rx/throw %))
-
-             prepare
-             (fn [file]
-               {:name (.-name file)
-                :file-id file-id
-                :content file})]
-         (->> (rx/of file)
-              (rx/filter allowed-file?)
-              (rx/map prepare)
-              (rx/mapcat #(rp/mutation! :upload-project-file-image %))
-              (rx/do on-success)
-              (rx/map image-uploaded)
-              (rx/catch on-error)))))))
-
-(s/def ::id ::us/uuid)
-(s/def ::name ::us/string)
-(s/def ::width ::us/number)
-(s/def ::height ::us/number)
-(s/def ::mtype ::us/string)
-(s/def ::uri ::us/string)
-(s/def ::thumb-uri ::us/string)
-
-(s/def ::image
-  (s/keys :req-un [::id
-                   ::name
-                   ::width
-                   ::height
-                   ::uri
-                   ::thumb-uri]))
-
-(defn image-uploaded
-  [item]
-  (us/verify ::image item)
-  (ptk/reify ::image-created
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-images assoc (:id item) item))))
+      (let [page-ids (get-in state [:files file-id :pages])
+            path-params {:file-id file-id}
+            query-params {:page-id (first page-ids)}]
+        (rx/of (rt/nav :workspace path-params query-params))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions

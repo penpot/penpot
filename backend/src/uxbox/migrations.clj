@@ -35,6 +35,9 @@
     {:desc "Initial icons tables"
      :name "0006-icons"
      :fn (mg/resource "migrations/0006.icons.sql")}
+    {:desc "Initial colors tables"
+     :name "0007-colors"
+     :fn (mg/resource "migrations/0007.colors.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

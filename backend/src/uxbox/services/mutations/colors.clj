@@ -5,9 +5,9 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.mutations.icons
+(ns uxbox.services.mutations.colors
   (:require
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
@@ -21,13 +21,11 @@
    [uxbox.media :as media]
    [uxbox.images :as images]
    [uxbox.tasks :as tasks]
-   [uxbox.services.queries.icons :refer [decode-row]]
+   [uxbox.services.queries.colors :refer [decode-row]]
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
-   [uxbox.util.data :as data]
    [uxbox.util.uuid :as uuid]
-   [uxbox.util.storage :as ust]
    [vertx.util :as vu]))
 
 ;; --- Helpers & Specs
@@ -36,44 +34,31 @@
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
 (s/def ::collection-id ::us/uuid)
-(s/def ::width ::us/integer)
-(s/def ::height ::us/integer)
-
-(s/def ::view-box
-  (s/and (s/coll-of number?)
-         #(= 4 (count %))
-         vector?))
-
 (s/def ::content ::us/string)
-(s/def ::mimetype ::us/string)
-
-(s/def ::metadata
-  (s/keys :opt-un [::width ::height ::view-box ::mimetype]))
-
 
 
 ;; --- Mutation: Create Collection
 
-(declare create-icon-collection)
+(declare create-color-collection)
 
-(s/def ::create-icon-collection
+(s/def ::create-color-collection
   (s/keys :req-un [::profile-id ::name]
           :opt-un [::id]))
 
-(sm/defmutation ::create-icon-collection
+(sm/defmutation ::create-color-collection
   [{:keys [id profile-id name] :as params}]
   (db/with-atomic [conn db/pool]
-    (create-icon-collection conn params)))
+    (create-color-collection conn params)))
 
-(def ^:private sql:create-icon-collection
-  "insert into icon_collection (id, profile_id, name)
+(def ^:private sql:create-color-collection
+  "insert into color_collection (id, profile_id, name)
    values ($1, $2, $3)
    returning *;")
 
-(defn- create-icon-collection
+(defn- create-color-collection
   [conn {:keys [id profile-id name] :as params}]
   (let [id (or id (uuid/next))]
-    (db/query-one conn [sql:create-icon-collection id profile-id name])))
+    (db/query-one conn [sql:create-color-collection id profile-id name])))
 
 
 
@@ -81,7 +66,7 @@
 
 (def ^:private sql:select-collection
   "select id, profile_id
-     from icon_collection
+     from color_collection
     where id=$1 and deleted_at is null
       for update")
 
@@ -94,33 +79,31 @@
                 :code :not-authorized))))
 
 
-
 ;; --- Mutation: Update Collection
 
 (def ^:private sql:rename-collection
-  "update icon_collection
+  "update color_collection
       set name = $2
     where id = $1
    returning *")
 
-(s/def ::rename-icon-collection
+(s/def ::rename-color-collection
   (s/keys :req-un [::profile-id ::name ::id]))
 
-(sm/defmutation ::rename-icon-collection
+(sm/defmutation ::rename-color-collection
   [{:keys [id profile-id name] :as params}]
   (db/with-atomic [conn db/pool]
     (check-collection-edition-permissions! conn profile-id id)
     (db/query-one conn [sql:rename-collection id name])))
 
 
+;; --- Copy Color
 
-;; ;; --- Copy Icon
+;; (declare create-color)
 
-;; (declare create-icon)
-
-;; (defn- retrieve-icon
+;; (defn- retrieve-color
 ;;   [conn {:keys [profile-id id]}]
-;;   (let [sql "select * from icon
+;;   (let [sql "select * from color
 ;;               where id = $1
 ;;                 and deleted_at is null
 ;;                 and (profile_id = $2 or
@@ -128,30 +111,30 @@
 ;;   (-> (db/query-one conn [sql id profile-id])
 ;;       (p/then' su/raise-not-found-if-nil))))
 
-;; (s/def ::copy-icon
+;; (s/def ::copy-color
 ;;   (s/keys :req-un [:us/id ::collection-id ::profile-id]))
 
-;; (sm/defmutation ::copy-icon
+;; (sm/defmutation ::copy-color
 ;;   [{:keys [profile-id id collection-id] :as params}]
 ;;   (db/with-atomic [conn db/pool]
-;;     (-> (retrieve-icon conn {:profile-id profile-id :id id})
-;;         (p/then (fn [icon]
-;;                   (let [icon (-> (dissoc icon :id)
+;;     (-> (retrieve-color conn {:profile-id profile-id :id id})
+;;         (p/then (fn [color]
+;;                   (let [color (-> (dissoc color :id)
 ;;                                  (assoc :collection-id collection-id))]
-;;                     (create-icon conn icon)))))))
+;;                     (create-color conn color)))))))
 
 ;; --- Delete Collection
 
 (def ^:private sql:mark-collection-deleted
-  "update icon_collection
+  "update color_collection
       set deleted_at = clock_timestamp()
     where id = $1
    returning id")
 
-(s/def ::delete-icon-collection
+(s/def ::delete-color-collection
   (s/keys :req-un [::profile-id ::id]))
 
-(sm/defmutation ::delete-icon-collection
+(sm/defmutation ::delete-color-collection
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
     (check-collection-edition-permissions! conn profile-id id)
@@ -160,77 +143,76 @@
 
 
 
-;; --- Mutation: Create Icon (Upload)
+;; --- Mutation: Create Color (Upload)
 
-(declare create-icon)
+(declare create-color)
 
-(s/def ::create-icon
-  (s/keys :req-un [::profile-id ::name ::metadata ::content ::collection-id]
+(s/def ::create-color
+  (s/keys :req-un [::profile-id ::name ::content ::collection-id]
           :opt-un [::id]))
 
-(sm/defmutation ::create-icon
+(sm/defmutation ::create-color
   [{:keys [profile-id collection-id] :as params}]
   (db/with-atomic [conn db/pool]
     (check-collection-edition-permissions! conn profile-id collection-id)
-    (create-icon conn params)))
+    (create-color conn params)))
 
-(def ^:private sql:create-icon
-  "insert into icon (id, profile_id, name, collection_id, content, metadata)
-   values ($1, $2, $3, $4, $5, $6) returning *")
+(def ^:private sql:create-color
+  "insert into color (id, profile_id, name, collection_id, content)
+   values ($1, $2, $3, $4, $5) returning *")
 
-(defn create-icon
-  [conn {:keys [id profile-id name collection-id metadata content]}]
+(defn create-color
+  [conn {:keys [id profile-id name collection-id content]}]
   (let [id (or id (uuid/next))]
-    (-> (db/query-one conn [sql:create-icon id profile-id name
-                            collection-id content (blob/encode metadata)])
+    (-> (db/query-one conn [sql:create-color id profile-id name collection-id content])
         (p/then' decode-row))))
 
 
 
-;; --- Mutation: Update Icon
+;; --- Mutation: Update Color
 
-(def ^:private sql:update-icon
-  "update icon
+(def ^:private sql:update-color
+  "update color
       set name = $3,
           collection_id = $4
     where id = $1
       and profile_id = $2
    returning *")
 
-(s/def ::update-icon
+(s/def ::update-color
   (s/keys :req-un [::id ::profile-id ::name ::collection-id]))
 
-(sm/defmutation ::update-icon
+(sm/defmutation ::update-color
   [{:keys [id name profile-id collection-id] :as params}]
   (db/with-atomic [conn db/pool]
     (check-collection-edition-permissions! conn profile-id collection-id)
-    (-> (db/query-one db/pool [sql:update-icon id profile-id  name collection-id])
+    (-> (db/query-one db/pool [sql:update-color id profile-id  name collection-id])
         (p/then' su/raise-not-found-if-nil))))
 
 
 
-;; --- Mutation: Delete Icon
+;; --- Mutation: Delete Color
 
-(def ^:private sql:mark-icon-deleted
-  "update icon
+(def ^:private sql:mark-color-deleted
+  "update color
       set deleted_at = clock_timestamp()
     where id = $1
       and profile_id = $2
    returning id")
 
-(s/def ::delete-icon
+(s/def ::delete-color
   (s/keys :req-un [::profile-id ::id]))
 
-(sm/defmutation ::delete-icon
+(sm/defmutation ::delete-color
   [{:keys [id profile-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (-> (db/query-one conn [sql:mark-icon-deleted id profile-id])
+    (-> (db/query-one conn [sql:mark-color-deleted id profile-id])
         (p/then' su/raise-not-found-if-nil))
 
     ;; Schedule object deletion
     (tasks/schedule! conn {:name "delete-object"
                            :delay cfg/default-deletion-delay
-                           :props {:id id :type :icon}})
+                           :props {:id id :type :color}})
 
     nil))
 

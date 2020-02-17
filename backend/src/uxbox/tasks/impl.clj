@@ -38,7 +38,7 @@
     (.printStackTrace err (java.io.PrintWriter. *out*))))
 
 (def ^:private sql:mark-as-retry
-  "update tasks
+  "update task
       set scheduled_at = clock_timestamp() + '5 seconds'::interval,
           error = $1,
           status = 'retry',
@@ -53,7 +53,7 @@
         (p/then' (constantly nil)))))
 
 (def ^:private sql:mark-as-failed
-  "update tasks
+  "update task
       set scheduled_at = clock_timestamp() + '5 seconds'::interval,
           error = $1,
           status = 'failed'
@@ -67,7 +67,7 @@
         (p/then' (constantly nil)))))
 
 (def ^:private sql:mark-as-completed
-  "update tasks
+  "update task
       set completed_at = clock_timestamp(),
           status = 'completed'
     where id = $1")
@@ -87,7 +87,7 @@
         nil))))
 
 (def ^:private sql:select-next-task
-  "select * from tasks as t
+  "select * from task as t
     where t.scheduled_at <= now()
       and t.queue = $1
       and (t.status = 'new' or (t.status = 'retry' and t.retry_num <= $2))
@@ -141,7 +141,7 @@
                     (event-loop-handler (assoc options ::counter (inc counter)))))))))
 
 (def ^:private sql:insert-new-task
-  "insert into tasks (name, props, queue, scheduled_at)
+  "insert into task (name, props, queue, scheduled_at)
    values ($1, $2, $3, clock_timestamp()+cast($4::text as interval))
    returning id")
 
@@ -162,7 +162,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:privatr sql:upsert-scheduled-task
-  "insert into scheduled_tasks (id, cron_expr)
+  "insert into scheduled_task (id, cron_expr)
    values ($1, $2)
        on conflict (id)
        do update set cron_expr=$2")
@@ -178,7 +178,7 @@
     (p/run! (partial synchronize-schedule-item conn) schedule)))
 
 (def ^:private sql:lock-scheduled-task
-  "select id from scheduled_tasks where id=$1 for update skip locked")
+  "select id from scheduled_task where id=$1 for update skip locked")
 
 (declare schedule-task)
 

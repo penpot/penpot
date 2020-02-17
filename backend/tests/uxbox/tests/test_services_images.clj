@@ -1,4 +1,4 @@
-(ns uxbox.tests.test-images
+(ns uxbox.tests.test-services-images
   (:require
    [clojure.test :as t]
    [promesa.core :as p]
@@ -16,26 +16,28 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest images-collections-crud
-  (let [id    (uuid/next)
-        user @(th/create-user db/pool 2)]
+(t/deftest image-collections-crud
+  (let [id      (uuid/next)
+        profile @(th/create-profile db/pool 2)]
 
     (t/testing "create collection"
-      (let [data {::sm/type :create-images-collection
+      (let [data {::sm/type :create-image-collection
                   :name "sample collection"
-                  :user (:id user)
+                  :profile-id (:id profile)
                   :id id}
             out (th/try-on! (sm/handle data))]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (= (:id user) (get-in out [:result :user-id])))
-        (t/is (= (:name data) (get-in out [:result :name])))))
+
+        (let [result (:result out)]
+          (t/is (= (:id profile)  (:profile-id result)))
+          (t/is (= (:name data) (:name result))))))
 
     (t/testing "update collection"
-      (let [data {::sm/type :rename-images-collection
+      (let [data {::sm/type :rename-image-collection
                   :name "sample collection renamed"
-                  :user (:id user)
+                  :profile-id (:id profile)
                   :id id}
             out (th/try-on! (sm/handle data))]
 
@@ -43,35 +45,35 @@
         (t/is (nil? (:error out)))
 
         (t/is (= id (get-in out [:result :id])))
-        (t/is (= (:id user) (get-in out [:result :user-id])))
+        (t/is (= (:id profile) (get-in out [:result :profile-id])))
         (t/is (= (:name data) (get-in out [:result :name])))))
 
     (t/testing "query collections"
-      (let [data {::sq/type :images-collections
-                  :user (:id user)}
+      (let [data {::sq/type :image-collections
+                  :profile-id (:id profile)}
             out (th/try-on! (sq/handle data))]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
 
         (t/is (= 1 (count (:result out))))
-        (t/is (= (:id user) (get-in out [:result 0 :user-id])))
+        (t/is (= (:id profile) (get-in out [:result 0 :profile-id])))
         (t/is (= id (get-in out [:result 0 :id])))))
 
     (t/testing "delete collection"
-      (let [data {::sm/type :delete-images-collection
-                  :user (:id user)
+      (let [data {::sm/type :delete-image-collection
+                  :profile-id (:id profile)
                   :id id}
 
             out (th/try-on! (sm/handle data))]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (= id (get-in out [:result :id])))))
+        (t/is (nil? (:result out)))))
 
     (t/testing "query collections after delete"
-      (let [data {::sq/type :images-collections
-                  :user (:id user)}
+      (let [data {::sq/type :image-collections
+                  :profile-id (:id profile)}
             out (th/try-on! (sq/handle data))]
 
         ;; (th/print-result! out)
@@ -80,8 +82,8 @@
     ))
 
 (t/deftest images-crud
-  (let [user @(th/create-user db/pool 1)
-        coll @(th/create-images-collection db/pool (:id user) 1)
+  (let [profile @(th/create-profile db/pool 1)
+        coll @(th/create-image-collection db/pool (:id profile) 1)
         image-id (uuid/next)]
 
     (t/testing "upload image to collection"
@@ -91,13 +93,11 @@
                      :size 312043}
             data {::sm/type :upload-image
                   :id image-id
-                  :user (:id user)
+                  :profile-id (:id profile)
                   :collection-id (:id coll)
                   :name "testfile"
                   :content content}
             out (th/try-on! (sm/handle data))]
-        ;; out  (with-redefs [vc/*context* (vc/get-or-create-context system)]
-        ;;        (th/try-on! (sm/handle data)))]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -114,10 +114,9 @@
         (t/is (string? (get-in out [:result :uri])))
         (t/is (string? (get-in out [:result :thumb-uri])))))
 
-
     (t/testing "list images by collection"
-      (let [data {::sq/type :images-by-collection
-                  :user (:id user)
+      (let [data {::sq/type :images
+                  :profile-id (:id profile)
                   :collection-id (:id coll)}
             out (th/try-on! (sq/handle data))]
         ;; (th/print-result! out)
@@ -134,9 +133,9 @@
         (t/is (string? (get-in out [:result 0 :uri])))
         (t/is (string? (get-in out [:result 0 :thumb-uri])))))
 
-    (t/testing "get image by id"
-      (let [data {::sq/type :image-by-id
-                  :user (:id user)
+    (t/testing "single image"
+      (let [data {::sq/type :image
+                  :profile-id (:id profile)
                   :id image-id}
             out (th/try-on! (sq/handle data))]
         ;; (th/print-result! out)
@@ -152,7 +151,38 @@
         (t/is (string? (get-in out [:result :thumb-path])))
         (t/is (string? (get-in out [:result :uri])))
         (t/is (string? (get-in out [:result :thumb-uri])))))
+
+    (t/testing "delete images"
+      (let [data {::sm/type :delete-image
+                  :profile-id (:id profile)
+                  :id image-id}
+            out (th/try-on! (sm/handle data))]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (get-in out [:result])))))
+
+    (t/testing "query image after delete"
+      (let [data {::sq/type :image
+                  :profile-id (:id profile)
+                  :id image-id}
+            out (th/try-on! (sq/handle data))]
+
+        ;; (th/print-result! out)
+        (let [error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :service-error)))
+
+        (let [error (ex-cause (:error out))]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found)))))
+
+    (t/testing "query images after delete"
+      (let [data {::sq/type :images
+                  :profile-id (:id profile)
+                  :collection-id (:id coll)}
+            out (th/try-on! (sq/handle data))]
+        ;; (th/print-result! out)
+        (let [result (:result out)]
+          (t/is (= 0 (count result))))))
     ))
-
-;; TODO: (soft) delete image
-

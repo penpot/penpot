@@ -2,6 +2,9 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.queries.images
@@ -23,73 +26,74 @@
 
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
-(s/def ::user ::us/uuid)
+(s/def ::profile-id ::us/uuid)
 (s/def ::collection-id (s/nilable ::us/uuid))
 
-;; --- Query: Images Collections
+;; --- Query: Image Collections
 
 (def ^:private sql:collections
   "select *,
-          (select count(*) from images where collection_id = ic.id) as num_images
-     from image_collections as ic
-    where (ic.user_id = $1 or
-           ic.user_id = '00000000-0000-0000-0000-000000000000'::uuid)
+          (select count(*) from image where collection_id = ic.id) as num_images
+     from image_collection as ic
+    where (ic.profile_id = $1 or
+           ic.profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and ic.deleted_at is null
     order by ic.created_at desc;")
 
-(s/def ::images-collections
-  (s/keys :req-un [::user]))
+(s/def ::image-collections
+  (s/keys :req-un [::profile-id]))
 
-(sq/defquery ::images-collections
-  [{:keys [user] :as params}]
-  (db/query db/pool [sql:collections user]))
+(sq/defquery ::image-collections
+  [{:keys [profile-id] :as params}]
+  (db/query db/pool [sql:collections profile-id]))
 
 
-;; --- Query: Image by ID
 
-(defn retrieve-image
-  [conn id]
-  (let [sql "select * from images
-              where id = $1
-                and deleted_at is null;"]
-    (db/query-one conn [sql id])))
+;; --- Query: Image (by ID)
+
+(declare retrieve-image)
 
 (s/def ::id ::us/uuid)
-(s/def ::image-by-id
-  (s/keys :req-un [::user ::id]))
+(s/def ::image
+  (s/keys :req-un [::profile-id ::id]))
 
-(sq/defquery ::image-by-id
-  [params]
-  (-> (retrieve-image db/pool (:id params))
+(sq/defquery ::image
+  [{:keys [id] :as params}]
+  (-> (retrieve-image db/pool id)
       (p/then' #(images/resolve-urls % :path :uri))
       (p/then' #(images/resolve-urls % :thumb-path :thumb-uri))))
 
-;; --- Query: Images by collection ID
+(defn retrieve-image
+  [conn id]
+  (let [sql "select * from image
+              where id = $1
+                and deleted_at is null;"]
+    (-> (db/query-one conn [sql id])
+        (p/then' su/raise-not-found-if-nil))))
 
-(def sql:images-by-collection
-  "select * from images
-    where (user_id = $1 or
-           user_id = '00000000-0000-0000-0000-000000000000'::uuid)
+
+
+;; --- Query: Images (by collection)
+
+(def ^:private sql:images
+  "select *
+     from image
+    where (profile_id = $1 or
+           profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and deleted_at is null
+      and collection_id = $2
    order by created_at desc")
 
-(def sql:images-by-collection
-  (str "with images as (" sql:images-by-collection ")
-        select im.* from images as im
-         where im.collection_id = $2"))
-
-(s/def ::images-by-collection
-  (s/keys :req-un [::user]
-          :opt-un [::collection-id]))
+(s/def ::images
+  (s/keys :req-un [::profile-id ::collection-id]))
 
 ;; TODO: check if we can resolve url with transducer for reduce
 ;; garbage generation for each request
 
-(sq/defquery ::images-by-collection
-  [{:keys [user collection-id] :as params}]
-  (let [sqlv [sql:images-by-collection user collection-id]]
-    (-> (db/query db/pool sqlv)
-        (p/then' (fn [rows]
-                   (->> rows
-                        (mapv #(images/resolve-urls % :path :uri))
-                        (mapv #(images/resolve-urls % :thumb-path :thumb-uri))))))))
+(sq/defquery ::images
+  [{:keys [profile-id collection-id] :as params}]
+  (-> (db/query db/pool [sql:images profile-id collection-id])
+      (p/then' (fn [rows]
+                 (->> rows
+                      (mapv #(images/resolve-urls % :path :uri))
+                      (mapv #(images/resolve-urls % :thumb-path :thumb-uri)))))))

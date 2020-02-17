@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.services.queries.icons
+(ns uxbox.services.queries.colors
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
@@ -42,61 +42,61 @@
 
 (def ^:private sql:collections
   "select *,
-          (select count(*) from icon where collection_id = ic.id) as num_icons
-     from icon_collection as ic
+          (select count(*) from color where collection_id = ic.id) as num_colors
+     from color_collection as ic
     where (ic.profile_id = $1 or
            ic.profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and ic.deleted_at is null
     order by ic.created_at desc")
 
-(s/def ::icon-collections
+(s/def ::color-collections
   (s/keys :req-un [::profile-id]))
 
-(sq/defquery ::icon-collections
+(sq/defquery ::color-collections
   [{:keys [profile-id] :as params}]
   (let [sqlv [sql:collections profile-id]]
     (db/query db/pool sqlv)))
 
 
 
-;; --- Icons By Collection ID
+;; --- Colors By Collection ID
 
-(def ^:private sql:icons
+(def ^:private sql:colors
   "select *
-     from icon as i
+     from color as i
     where (i.profile_id = $1 or
            i.profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
       and i.deleted_at is null
       and i.collection_id = $2
     order by i.created_at desc")
 
-(s/def ::icons
+(s/def ::colors
   (s/keys :req-un [::profile-id ::collection-id]))
 
-(sq/defquery ::icons
+(sq/defquery ::colors
   [{:keys [profile-id collection-id] :as params}]
-  (-> (db/query db/pool [sql:icons profile-id collection-id])
+  (-> (db/query db/pool [sql:colors profile-id collection-id])
       (p/then' #(mapv decode-row %))))
 
 
-;; --- Query: Icon (by ID)
 
-(declare retrieve-icon)
+;; --- Query: Color (by ID)
+
+(declare retrieve-color)
 
 (s/def ::id ::us/uuid)
-(s/def ::icon
+(s/def ::color
   (s/keys :req-un [::profile-id ::id]))
 
-(sq/defquery ::icon
+(sq/defquery ::color
   [{:keys [id] :as params}]
-  (-> (retrieve-icon db/pool id)
+  (-> (retrieve-color db/pool id)
       (p/then' su/raise-not-found-if-nil)))
 
-(defn retrieve-icon
+(defn retrieve-color
   [conn id]
-  (let [sql "select * from icon
+  (let [sql "select * from color
               where id = $1
                 and deleted_at is null;"]
     (-> (db/query-one conn [sql id])
         (p/then' su/raise-not-found-if-nil))))
-

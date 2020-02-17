@@ -37,8 +37,7 @@
 
 ;; --- State Management
 
-(defonce state
-  (atom {}))
+(def state (atom {}))
 
 (defn send!
   [{:keys [output] :as ws} message]
@@ -50,15 +49,15 @@
   (fn [ws message] (:type message)))
 
 (defmethod handle-message :connect
-  [{:keys [file-id user-id] :as ws} message]
-  (let [local (swap! state assoc-in [file-id user-id] ws)
+  [{:keys [file-id profile-id] :as ws} message]
+  (let [local (swap! state assoc-in [file-id profile-id] ws)
         sessions (get local file-id)
         message {:type :who :users (set (keys sessions))}]
     (p/run! #(send! % message) (vals sessions))))
 
 (defmethod handle-message :disconnect
-  [{:keys [user-id] :as ws} {:keys [file-id] :as message}]
-  (let [local (swap! state update file-id dissoc user-id)
+  [{:keys [profile-id] :as ws} {:keys [file-id] :as message}]
+  (let [local (swap! state update file-id dissoc profile-id)
         sessions (get local file-id)
         message {:type :who :users (set (keys sessions))}]
     (p/run! #(send! % message) (vals sessions))))
@@ -69,14 +68,14 @@
     (send! ws {:type :who :users (set users)})))
 
 (defmethod handle-message :pointer-update
-  [{:keys [user-id file-id] :as ws} message]
+  [{:keys [profile-id file-id] :as ws} message]
   (let [sessions (->> (vals (get @state file-id))
-                      (remove #(= user-id (:user-id %))))
-        message (assoc message :user-id user-id)]
+                      (remove #(= profile-id (:profile-id %))))
+        message (assoc message :profile-id profile-id)]
     (p/run! #(send! % message) sessions)))
 
 (defn- on-eventbus-message
-  [{:keys [file-id user-id] :as ws} {:keys [body] :as message}]
+  [{:keys [file-id profile-id] :as ws} {:keys [body] :as message}]
   (send! ws body))
 
 (defn- start-eventbus-consumer!
@@ -90,9 +89,9 @@
   [ws req]
   (let [ctx (vu/current-context)
         file-id (get-in req [:path-params :file-id])
-        user-id (:user req)
+        profile-id (:profile-id req)
         ws (assoc ws
-                  :user-id user-id
+                  :profile-id profile-id
                   :file-id file-id)
         send-ping #(send! ws {:type :ping})
         sem1 (start-eventbus-consumer! ctx ws file-id)

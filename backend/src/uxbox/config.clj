@@ -16,7 +16,8 @@
    [cuerdas.core :as str]
    [environ.core :refer [env]]
    [mount.core :refer [defstate]]
-   [uxbox.common.exceptions :as ex]))
+   [uxbox.common.exceptions :as ex]
+   [uxbox.util.time :as tm]))
 
 (def defaults
   {:http-server-port 6060
@@ -106,3 +107,6 @@
 
 (defstate config
   :start (read-config env))
+
+(def default-deletion-delay
+  (tm/duration {:hours 48}))
