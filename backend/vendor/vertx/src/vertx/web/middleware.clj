@@ -4,8 +4,8 @@
 ;;
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns vertx.web.interceptors
-  "High level api for http servers."
+(ns vertx.web.middleware
+  "Common middleware's."
   (:require
    [clojure.spec.alpha :as s]
    [clojure.string :as str]
@@ -13,9 +13,7 @@
    [reitit.core :as r]
    [vertx.http :as http]
    [vertx.web :as web]
-   [vertx.util :as util]
-   [sieppari.context :as spx]
-   [sieppari.core :as sp])
+   [vertx.util :as util])
   (:import
    clojure.lang.Keyword
    clojure.lang.MapEntry
@@ -41,24 +39,36 @@
     (:path data) (.setPath (:path data))
     (:secure data) (.setSecure true)))
 
-(defn cookies
-  []
-  {:enter
-   (fn [data]
-     (let [^HttpServerRequest req (get-in data [:request ::http/request])
-           parse-cookie (fn [^Cookie item] [(.getName item) (.getValue item)])
-           cookies (into {} (map parse-cookie) (vals (.cookieMap req)))]
-       (update data :request assoc :cookies cookies)))
-   :leave
-   (fn [data]
-     (let [cookies (get-in data [:response :cookies])
-           ^HttpServerResponse res (get-in data [:request ::http/response])]
-       (when (map? cookies)
-         (util/doseq [[key val] cookies]
-           (if (nil? val)
-             (.removeCookie res key)
-             (.addCookie res (build-cookie key val)))))
-       data))})
+(defn- handle-cookies-response
+  [request {:keys [cookies] :as response}]
+  (let [^HttpServerResponse res (::http/response request)]
+    (util/doseq [[key val] cookies]
+      (if (nil? val)
+        (.removeCookie res key)
+        (.addCookie res (build-cookie key val))))))
+
+(defn- cookie->vector
+  [^Cookie item]
+  [(.getName item) (.getValue item)])
+
+(defn- wrap-cookies
+  [handler]
+  (let [xf (map cookie->vector)]
+    (fn [request]
+      (let [req (::http/request request)
+            cookies (.cookieMap ^HttpServerRequest req)
+            cookies (into {} xf (vals cookies))]
+        (-> (p/do! (handler (assoc request :cookies cookies)))
+            (p/then' (fn [response]
+                       (when (and (map? response)
+                                  (map? (:cookies response)))
+                         (handle-cookies-response request response))
+                       response)))))))
+
+(def cookies
+  {:name ::cookies
+   :compile (constantly wrap-cookies)})
+
 
 ;; --- Params
 
@@ -83,46 +93,54 @@
             (recur (assoc! m key [prv val]))))
         (persistent! m)))))
 
-(defn params
-  ([] (params nil))
-  ([{:keys [attr] :or {attr :params}}]
-   {:enter (fn [data]
-             (let [request (get-in data [:request ::http/request])
-                   params (parse-params request)]
-               (update data :request assoc attr params)))}))
+(defn- wrap-params
+  [handler]
+  (fn [request]
+    (let [req (::http/request request)
+          params (parse-params req)]
+      (handler (assoc request :params params)))))
+
+(def params
+  {:name ::params
+   :compile (constantly wrap-params)})
+
 
 ;; --- Uploads
 
-(defn uploads
-  ([] (uploads nil))
-  ([{:keys [attr] :or {attr :uploads}}]
-   {:enter (fn [data]
-             (let [context (get-in data [:request ::web/routing-context])
-                   uploads (reduce (fn [acc ^FileUpload upload]
-                                     (assoc! acc
-                                             (keyword (.name upload))
-                                             {:type :uploaded-file
-                                              :mtype (.contentType upload)
-                                              :path (.uploadedFileName upload)
-                                              :name (.fileName upload)
-                                              :size (.size upload)}))
-                                   (transient {})
-                                   (.fileUploads ^RoutingContext context))]
-               (update data :request assoc attr (persistent! uploads))))}))
+(defn- wrap-uploads
+  [handler]
+  (fn [request]
+    (let [rctx (::web/routing-context request)
+          uploads (.fileUploads ^RoutingContext rctx)
+          uploads (reduce (fn [acc ^FileUpload upload]
+                            (assoc acc
+                                   (keyword (.name upload))
+                                   {:type :uploaded-file
+                                    :mtype (.contentType upload)
+                                    :path (.uploadedFileName upload)
+                                    :name (.fileName upload)
+                                    :size (.size upload)}))
+                          {}
+                          uploads)]
+      (handler (assoc request :uploads uploads)))))
+
+(def uploads
+  {:name ::uploads
+   :compile (constantly wrap-uploads)})
 
 ;; --- Errors
 
-(defn errors
-  "A error handling interceptor."
-  [handler-fn]
-  {:error
-   (fn [data]
-     (let [request (:request data)
-           error (:error data)
-           response (handler-fn error request)]
-       (-> data
-           (assoc :response response)
-           (dissoc :error))))})
+(defn- wrap-errors
+  [handler on-error]
+  (fn [request]
+    (-> (p/do! (handler request))
+        (p/catch (fn [error]
+                   (on-error error request))))))
+
+(def errors
+  {:name ::errors
+   :compile (constantly wrap-errors)})
+
 
 ;; --- CORS
 
@@ -140,8 +158,8 @@
                    ::expose-headers
                    ::max-age]))
 
-(defn cors
-  [opts]
+(defn wrap-cors
+  [handler opts]
   (s/assert ::cors-opts opts)
   (letfn [(preflight? [{:keys [method headers] :as ctx}]
             (and (= method :options)
@@ -184,19 +202,16 @@
                 (:allow-headers opts)
                 (assoc "access-control-allow-headers"
                        (-> (normalize (:allow-headers opts))
-                           (str/lower-case))))))
+                           (str/lower-case))))))]
+    (fn [request]
+      (if (preflight? request)
+        {:status 204 :headers (get-headers request)}
+        (-> (p/do! (handler request))
+            (p/then (fn [response]
+                      (if (map? response)
+                        (update response :headers merge (get-headers request))
+                        response))))))))
 
-          (enter [data]
-            (let [ctx (:request data)]
-              (if (preflight? ctx)
-                (spx/terminate (assoc data ::preflight true))
-                data)))
-
-          (leave [data]
-            (let [headers (get-headers (:request data))]
-              (if (::preflight data)
-                (assoc data :response {:status 204 :headers headers})
-                (update-in data [:response :headers] merge headers))))]
-
-    {:enter enter
-     :leave leave}))
+(def cors
+  {:name ::cors
+   :compile (constantly wrap-cors)})

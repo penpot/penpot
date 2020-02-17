@@ -12,8 +12,7 @@
    [vertx.core :as vc]
    [vertx.eventbus :as ve]
    [vertx.http :as vh]
-   [vertx.web :as vw]
-   [vertx.web.interceptors :as vwi])
+   [vertx.web :as vw])
   (:import
    io.vertx.core.http.HttpServerRequest
    io.vertx.core.http.HttpServerResponse))

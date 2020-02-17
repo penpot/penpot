@@ -57,11 +57,6 @@
       <artifactId>core.async</artifactId>
       <version>0.7.559</version>
     </dependency>
-    <dependency>
-      <groupId>metosin</groupId>
-      <artifactId>sieppari</artifactId>
-      <version>0.0.0-alpha8</version>
-    </dependency>
   </dependencies>
   <repositories>
     <repository>

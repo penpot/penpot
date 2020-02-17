@@ -10,7 +10,6 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
-   [sieppari.core :as sp]
    [reitit.core :as rt]
    [vertx.http :as http]
    [vertx.impl :as impl])

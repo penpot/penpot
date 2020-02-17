@@ -75,6 +75,7 @@ The `deploy!` function also accepts an additional parameter for
 options, and at this momment it only accepts as single option:
 
 - `:instances` - number of instances to launch of the same verticle.
+- `:worker` - use worker thread pool or the default event-loop.
 
 
 ### Event Bus
@@ -196,7 +197,7 @@ Lets start with a complete example:
 ```clojure
 (require '[vertx.http :as vh])
 (require '[vertx.web :as vw])
-(require '[vertx.web.interceptors :as vwi])
+(require '[vertx.web.middleware :as vwm])
 
 (defn hello-world-handler
   [req]
@@ -205,8 +206,9 @@ Lets start with a complete example:
 
 (defn on-start
   [ctx]
-  (let [routes [["/" {:interceptors [(vwi/cookies)]
-                      :all hello-world-handler}]]
+  (let [routes [["/" {:middleware [vwm/cookies]
+                      :handler hello-world-handler
+                      :method :get}]]
         handler (vw/handler ctx
                             (vw/assets "/static/*" {:root "resources/public/static"})
                             (vw/router routes))]
@@ -217,25 +219,24 @@ Lets start with a complete example:
      (vc/deploy! system))
 ```
 
-The routes are defined using `reitit-core` and the interceptors are
-using `sieppari` as underlying implementation. The request object is
-very similar to the one explained in `vertx.http`.
+The routes are defined using `reitit-core`. The request object is very
+similar to the one explained in `vertx.http`.
 
 The main difference with `vertx.http` is that the handler is called
 when the body is ready to be used and is available under `:body`
 keyword on the request.
 
 All additional features such that reading the query/form params,
-parse/write cookies, cors and file uploads are provided with
-interceptors as pluggable pieces:
+parse/write cookies, cors and file uploads are provided with additional middleware
+wrappers:
 
-- `vertx.web.interceptors/uploads` parses the vertx uploaded file data
+- `vertx.web.middleware/uploads` parses the vertx uploaded file data
   structure and expose it as clojure maps under `:uploads` key.
-- `vertx.web.interceptors/params` parses the query string and form
+- `vertx.web.middleware/params` parses the query string and form
   params in the body if the content-type is appropriate and exposes
   them under `:params`.
-- `vertx.web.interceptors/cors` properly sets the CORS headers.
-- `vertx.web.interceptors/cookies` handles the cookies reading from
+- `vertx.web.middleware/cors` properly sets the CORS headers.
+- `vertx.web.middleware/cookies` handles the cookies reading from
   the request and cookies writing from the response.
 
 

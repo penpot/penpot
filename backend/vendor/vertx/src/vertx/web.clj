@@ -10,8 +10,8 @@
    [clojure.tools.logging :as log]
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
-   [sieppari.core :as sp]
    [reitit.core :as rt]
+   [reitit.middleware :as rmw]
    [vertx.http :as http]
    [vertx.impl :as impl])
   (:import
@@ -57,10 +57,7 @@
 
 (defn handler
   "Wraps a user defined funcion based handler into a vertx-web aware
-  handler (with support for multipart uploads.
-
-  If the handler is a vector, the sieppari intercerptos engine will be used
-  to resolve the execution of the interceptors + handler."
+  handler (with support for multipart uploads)."
   [vsm & handlers]
   (let [^Vertx vsm (impl/resolve-system vsm)
         ^Router router (Router/router vsm)]
@@ -89,23 +86,13 @@
   {:status 500
    :body "Internal server error!\n"})
 
-(defn- run-chain
-  [ctx chain handler]
-  (let [d (p/deferred)]
-    (sp/execute (conj chain handler) ctx #(p/resolve! d %) #(p/reject! d %))
-    d))
-
 (defn- router-handler
   [router {:keys [path method] :as ctx}]
-  (let [{:keys [data path-params] :as match} (rt/match-by-path router path)
-        handler-fn (or (get data method)
-                       (get data :all)
-                       default-handler)
-        interceptors (get data :interceptors)
-        ctx (assoc ctx ::match match :path-params path-params)]
-    (if (empty? interceptors)
-      (handler-fn ctx)
-      (run-chain ctx interceptors handler-fn))))
+  (if-let [{:keys [result path-params] :as match} (rt/match-by-path router path)]
+    (let [handler-fn (:handler result)
+          ctx (assoc ctx ::match match :path-params path-params)]
+      (handler-fn ctx))
+    (default-handler ctx)))
 
 (defn router
   ([routes] (router routes {}))
@@ -120,8 +107,8 @@
                  log-requests? false
                  time-response? true}
             :as options}]
-   (let [rtr (rt/router routes options)
-         f #(router-handler rtr %)]
+   (let [rtr (rt/router routes {:compile rmw/compile-result})
+         rtf #(router-handler rtr %)]
      (fn [^Router router]
        (let [^Route route (.route router)]
          (when time-response? (.handler route (ResponseTimeHandler/create)))
@@ -149,8 +136,9 @@
                             (.put ^RoutingContext rc "vertx$clj$req" req)
                             (.fail ^RoutingContext rc ^Throwable err))]
                   (try
-                    (-> (http/-handle-response (f req) req)
-                        (p/catch' efn))
+                    (let [result (rtf req)]
+                      (-> (http/-handle-response result req)
+                          (p/catch' efn)))
                     (catch Exception err
                       (efn err)))))))))
          router))))
