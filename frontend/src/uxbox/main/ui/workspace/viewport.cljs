@@ -23,7 +23,7 @@
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
 
-   [uxbox.main.ui.shapes :refer [shape-wrapper]]
+   [uxbox.main.ui.shapes :refer [shape-wrapper canvas-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
 
@@ -149,11 +149,14 @@
   (let [data (mf/deref refs/workspace-data)
         shapes-by-id (:shapes-by-id data)
         shapes (map #(get shapes-by-id %) (:shapes data []))
-        canvas (map #(get shapes-by-id %) (:canvas data []))]
+        canvas (map #(get shapes-by-id %) (:canvas data []))
+        unassinged (filter #(nil? (:canvas %)) shapes)]
     [:g.shapes
      (for [item canvas]
-       [:& shape-wrapper {:shape item :key (:id item)}])
-     (for [item shapes]
+       (let [shapes (filter #(= (:canvas %) (:id item)) shapes)]
+         [:& canvas-wrapper {:shape item :key (:id item)
+                             :childs shapes}]))
+     (for [item unassinged]
        [:& shape-wrapper {:shape item :key (:id item)}])]))
 
 (mf/defc viewport

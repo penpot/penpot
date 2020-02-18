@@ -13,12 +13,15 @@
   (:require
    [potok.core :as ptk]
    [beicon.core :as rx]
+   [uxbox.common.data :as d]
+   [uxbox.common.spec :as us]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.streams :as uws]
    [uxbox.main.workers :as uwrk]
+   [uxbox.main.geom :as geom]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.dom :as dom]))
@@ -34,13 +37,92 @@
             stoper (rx/filter uws/mouse-up? stream)
             position @uws/mouse-position]
         (rx/concat
-         ;; (when (refs/alignment-activated? flags)
-         ;;   (rx/of (dw/initial-selection-align selected)))
          (->> (uws/mouse-position-deltas position)
-              (rx/map #(dw/apply-temporal-displacement-in-bulk selected %))
+              (rx/map #(dw/apply-displacement-in-bulk selected %))
               (rx/take-until stoper))
-         (rx/of (dw/materialize-temporal-modifier-in-bulk selected)
+         (rx/of (dw/materialize-displacement-in-bulk selected)
                 ::dw/page-data-update))))))
+
+;; (defn apply-canvas-displacement
+;;   "Apply the same displacement delta to all shapes identified by the
+;;   set if ids."
+;;   [id delta]
+;;   (us/verify ::us/uuid id)
+;;   (us/verify gpt/point? delta)
+;;   (ptk/reify ::apply-temporal-displacement-in-bulk
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (let [shape (get-in state [:workspace-data :shapes-by-id id])
+;;             prev-xfmt (:displacement-modifier shape (gmt/matrix))
+;;             xfmt (gmt/translate prev-xfmt delta)]
+;;         (->> (assoc shape :displacement-modifier xfmt)
+;;              (assoc-in state [:workspace-data :shapes-by-id id]))))))
+
+;; (defn materialize-canvas-displacement
+;;   [id]
+;;   (us/verify ::us/uuid id)
+;;   (ptk/reify ::materialize-temporal-modifier
+;;     dw/IBatchedChange
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (let [data (:workspace-data state)
+;;             shapes-map (:shapes-by-id data)
+
+;;             canvas  (get shapes-map id)
+
+;;             xfmt (or (:displacement-modifier canvas) (gmt/matrix))
+
+;;             canvas (-> canvas
+;;                        (dissoc :displacement-modifier)
+;;                        (geom/transform xfmt))
+
+;;             shapes (->> (:shapes data [])
+;;                         (map #(get shapes-map %))
+;;                         (filter #(= (:canvas %) id))
+;;                         (map #(geom/transform % xfmt)))
+
+;;             shapes (d/index-by :id shapes)
+;;             shapes (assoc shapes (:id canvas) canvas)]
+
+;;         (update-in state [:workspace-data :shapes-by-id] merge shapes)))))
+
+;; (defn- move-canvas
+;;   [id delta]
+;;   (ptk/reify ::move-canvas
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (let [data (:workspace-data state)
+;;             shapes-map (:shapes-by-id data)
+
+;;             canvas  (-> (get shapes-map id)
+;;                         (geom/move delta))
+
+;;             shapes (->> (:shapes data [])
+;;                         (map #(get shapes-map %))
+;;                         (filter #(= (:canvas %) id))
+;;                         (map #(geom/move % delta)))
+
+;;             shapes (d/index-by :id shapes)
+;;             shapes (assoc shapes (:id canvas) canvas)]
+
+;;         (update-in state [:workspace-data :shapes-by-id] merge shapes)))))
+
+
+(def start-move-canvas
+  (ptk/reify ::start-move-selected
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [flags (get-in state [:workspace-local :flags])
+            selected (get-in state [:workspace-local :selected])
+            stoper (rx/filter uws/mouse-up? stream)
+            canvas-id (first selected)
+            position @uws/mouse-position]
+
+        (rx/concat
+         (->> (uws/mouse-position-deltas position)
+              (rx/map #(dw/apply-canvas-displacement canvas-id %))
+              (rx/take-until stoper))
+         (rx/of (dw/materialize-canvas-displacement canvas-id)))))))
 
 (defn on-mouse-down
   [event {:keys [id type] :as shape} selected]
@@ -54,7 +136,7 @@
         (= type :canvas)
         (when selected?
           (dom/stop-propagation event)
-          (st/emit! start-move-selected))
+          (st/emit! start-move-canvas))
 
         (and (not selected?) (empty? selected))
         (do

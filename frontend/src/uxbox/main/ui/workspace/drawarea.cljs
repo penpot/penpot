@@ -120,7 +120,7 @@
                   result (geom/resize-shape :bottom-right shape' point lock?)
                   scale (geom/calculate-scale-ratio shape' result)
                   mtx (geom/generate-resize-matrix :bottom-right shape' scale)]
-              (assoc shape :modifier-mtx mtx)))
+              (assoc shape :resize-modifier mtx)))
 
           (update-drawing [state point lock?]
             (update-in state [:workspace-local :drawing] resize-shape point lock?))]
@@ -273,11 +273,11 @@
         (rx/concat
          (rx/of dw/clear-drawing)
          (when (::initialized? shape)
-           (let [modifier-mtx (:modifier-mtx shape)
-                 shape (if (gmt/matrix? modifier-mtx)
-                         (geom/transform shape modifier-mtx)
+           (let [modifier (:resize-modifier shape)
+                 shape (if (gmt/matrix? modifier)
+                         (geom/transform shape modifier)
                          shape)
-                 shape (dissoc shape ::initialized? :modifier-mtx)]
+                 shape (dissoc shape ::initialized? :resize-modifier)]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all
                     (if (= :canvas (:type shape))

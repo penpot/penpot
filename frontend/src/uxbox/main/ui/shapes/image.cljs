@@ -33,13 +33,14 @@
 
 (mf/defc image-shape
   [{:keys [shape] :as props}]
-  (let [{:keys [id rotation modifier-mtx metadata]} shape
+  (let [ds-modifier (:displacement-modifier shape)
+        rz-modifier (:resize-modifier shape)
 
-        shape (cond
-                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
-                :else shape)
+        shape (cond-> shape
+                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
 
-        {:keys [x y width height]} shape
+        {:keys [id x y width height rotation metadata]} shape
 
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"
