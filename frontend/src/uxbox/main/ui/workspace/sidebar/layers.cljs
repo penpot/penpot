@@ -79,6 +79,7 @@
 ;; --- Layer Item
 
 (mf/defc layer-item
+  {:wrap [#(mf/wrap-memo % =)]}
   [{:keys [shape selected index] :as props}]
   (let [selected? (contains? selected (:id shape))
 
@@ -148,6 +149,7 @@
       [:& layer-name {:shape shape}]]]))
 
 (mf/defc canvas-item
+  {:wrap [#(mf/wrap-memo % =)]}
   [{:keys [canvas shapes selected index] :as props}]
   (let [selected? (contains? selected (:id canvas))
         local (mf/use-state {:collapsed false})
@@ -240,6 +242,7 @@
 ;; --- Layers List
 
 (mf/defc layers-list
+  {:wrap [#(mf/wrap-memo % =)]}
   [{:keys [shapes selected] :as props}]
   [:ul.element-list
    (for [[index shape] shapes]
@@ -249,6 +252,7 @@
                      :key (:id shape)}])])
 
 (mf/defc canvas-list
+  {:wrap [#(mf/wrap-memo % =)]}
   [{:keys [shapes canvas selected] :as props}]
   [:ul.element-list
    (for [[index item] canvas]
@@ -261,6 +265,7 @@
 ;; --- Layers Toolbox
 
 (mf/defc layers-toolbox
+  {:wrap [mf/wrap-memo]}
   [{:keys [page] :as props}]
   (let [locale (i18n/use-locale)
         on-click #(st/emit! (dw/toggle-layout-flag :layers))
@@ -269,15 +274,16 @@
         data (mf/deref refs/workspace-data)
 
         shapes-map (:shapes-by-id data)
+        strip #(select-keys % [:id :canvas :name :type])
 
         canvas (->> (:canvas data)
                     (map #(get shapes-map %))
-                    #_(remove nil?)
+                    (map strip)
                     (d/enumerate))
 
         shapes (->> (:shapes data)
                     (map #(get shapes-map %))
-                    #_(remove nil?))
+                    (map strip))
 
         all-shapes (d/enumerate shapes)
         unc-shapes (->> shapes

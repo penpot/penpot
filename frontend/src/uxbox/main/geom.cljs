@@ -560,10 +560,13 @@
   (transform shape (rotation-matrix shape)))
 
 (defn resolve-modifier
-  [{:keys [modifier-mtx] :as shape}]
+  [{:keys [resize-modifier displacement-modifier] :as shape}]
   (cond-> shape
-    (gmt/matrix? modifier-mtx)
-    (transform modifier-mtx)))
+    (gmt/matrix? resize-modifier)
+    (transform resize-modifier)
+
+    (gmt/matrix? displacement-modifier)
+    (transform displacement-modifier)))
 
 ;; NOTE: we need applu `shape->rect-shape` 3 times because we need to
 ;; update the x1 x2 y1 y2 attributes on each step; this is because

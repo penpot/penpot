@@ -34,6 +34,7 @@
    :ctrl+z #(st/emit! dw/undo)
    :ctrl+shift+z #(st/emit! dw/redo)
    :ctrl+y #(st/emit! dw/redo)
+   :ctrl+q #(st/emit! dw/reinitialize-undo)
    :ctrl+b #(st/emit! (dw/select-for-drawing :rect))
    :ctrl+e #(st/emit! (dw/select-for-drawing :circle))
    :ctrl+t #(st/emit! (dw/select-for-drawing :text))

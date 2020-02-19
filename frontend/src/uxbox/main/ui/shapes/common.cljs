@@ -43,71 +43,6 @@
          (rx/of (dw/materialize-displacement-in-bulk selected)
                 ::dw/page-data-update))))))
 
-;; (defn apply-canvas-displacement
-;;   "Apply the same displacement delta to all shapes identified by the
-;;   set if ids."
-;;   [id delta]
-;;   (us/verify ::us/uuid id)
-;;   (us/verify gpt/point? delta)
-;;   (ptk/reify ::apply-temporal-displacement-in-bulk
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (let [shape (get-in state [:workspace-data :shapes-by-id id])
-;;             prev-xfmt (:displacement-modifier shape (gmt/matrix))
-;;             xfmt (gmt/translate prev-xfmt delta)]
-;;         (->> (assoc shape :displacement-modifier xfmt)
-;;              (assoc-in state [:workspace-data :shapes-by-id id]))))))
-
-;; (defn materialize-canvas-displacement
-;;   [id]
-;;   (us/verify ::us/uuid id)
-;;   (ptk/reify ::materialize-temporal-modifier
-;;     dw/IBatchedChange
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (let [data (:workspace-data state)
-;;             shapes-map (:shapes-by-id data)
-
-;;             canvas  (get shapes-map id)
-
-;;             xfmt (or (:displacement-modifier canvas) (gmt/matrix))
-
-;;             canvas (-> canvas
-;;                        (dissoc :displacement-modifier)
-;;                        (geom/transform xfmt))
-
-;;             shapes (->> (:shapes data [])
-;;                         (map #(get shapes-map %))
-;;                         (filter #(= (:canvas %) id))
-;;                         (map #(geom/transform % xfmt)))
-
-;;             shapes (d/index-by :id shapes)
-;;             shapes (assoc shapes (:id canvas) canvas)]
-
-;;         (update-in state [:workspace-data :shapes-by-id] merge shapes)))))
-
-;; (defn- move-canvas
-;;   [id delta]
-;;   (ptk/reify ::move-canvas
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (let [data (:workspace-data state)
-;;             shapes-map (:shapes-by-id data)
-
-;;             canvas  (-> (get shapes-map id)
-;;                         (geom/move delta))
-
-;;             shapes (->> (:shapes data [])
-;;                         (map #(get shapes-map %))
-;;                         (filter #(= (:canvas %) id))
-;;                         (map #(geom/move % delta)))
-
-;;             shapes (d/index-by :id shapes)
-;;             shapes (assoc shapes (:id canvas) canvas)]
-
-;;         (update-in state [:workspace-data :shapes-by-id] merge shapes)))))
-
-
 (def start-move-canvas
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
@@ -125,9 +60,11 @@
          (rx/of (dw/materialize-canvas-displacement canvas-id)))))))
 
 (defn on-mouse-down
-  [event {:keys [id type] :as shape} selected]
-  (let [selected? (contains? selected id)
-        drawing? @refs/selected-drawing-tool]
+  ([event shape] (on-mouse-down event shape nil))
+  ([event {:keys [id type] :as shape} kk-tmp]
+   (let [selected @refs/selected-shapes
+         selected? (contains? selected id)
+         drawing? @refs/selected-drawing-tool]
     (when-not (:blocked shape)
       (cond
         drawing?
@@ -156,4 +93,4 @@
         :else
         (do
           (dom/stop-propagation event)
-          (st/emit! start-move-selected))))))
+          (st/emit! start-move-selected)))))))

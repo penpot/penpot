@@ -22,10 +22,13 @@
 (declare rect-shape)
 
 (mf/defc rect-wrapper
+  {:wrap [#(mf/wrap-memo % =)]}
   [{:keys [shape] :as props}]
-  (let [selected (mf/deref refs/selected-shapes)
-        selected? (contains? selected (:id shape))
-        on-mouse-down #(common/on-mouse-down % shape selected)]
+  (let [selected-iref (mf/use-memo
+                       {:fn #(refs/make-selected (:id shape))
+                        :deps (mf/deps (:id shape))})
+        selected? (mf/deref selected-iref)
+        on-mouse-down #(common/on-mouse-down % shape)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
      [:& rect-shape {:shape shape}]]))

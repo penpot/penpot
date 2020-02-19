@@ -54,6 +54,11 @@
   (-> (l/key :selected)
       (l/derive workspace-local)))
 
+(defn make-selected
+  [id]
+  (-> (l/lens #(contains? % id))
+      (l/derive selected-shapes)))
+
 (def selected-canvas
   (-> (l/key :selected-canvas)
       (l/derive workspace-local)))

@@ -32,7 +32,6 @@
 
 (mf/defc circle-shape
   [{:keys [shape] :as props}]
-
   (let [ds-modifier (:displacement-modifier shape)
         rz-modifier (:resize-modifier shape)
 
@@ -56,4 +55,4 @@
                          :transform transform
                          :id (str "shape-" id)
                          ))]
-    [:& "elipse" props]))
+    [:& "ellipse" props]))

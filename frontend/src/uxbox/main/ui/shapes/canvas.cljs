@@ -33,7 +33,7 @@
 (declare canvas-wrapper)
 
 (mf/defc shape-wrapper
-  {:wrap [mf/wrap-memo]}
+  {:wrap [#(mf/wrap-memo % =)]}
   [{:keys [shape] :as props}]
   (when (and shape (not (:hidden shape)))
     (case (:type shape)
@@ -50,13 +50,17 @@
   {:fill-color "#ffffff"})
 
 (declare canvas-shape)
+(declare translate-to-canvas)
 
 (mf/defc canvas-wrapper
+  {:wrap [#(mf/wrap-memo % =)]}
   [{:keys [shape childs] :as props}]
   (when (and shape (not (:hidden shape)))
-    (let [selected (mf/deref refs/selected-shapes)
-          selected? (contains? selected (:id shape))
-          on-mouse-down #(common/on-mouse-down % shape selected)
+    (let [selected-iref (mf/use-memo
+                         {:fn #(refs/make-selected (:id shape))
+                          :deps (mf/deps (:id shape))})
+          selected? (mf/deref selected-iref)
+          on-mouse-down #(common/on-mouse-down % shape)
           shape (merge canvas-default-props shape)
 
           on-double-click
@@ -69,23 +73,11 @@
            :on-mouse-down on-mouse-down}
        [:& canvas-shape {:shape shape :childs childs}]])))
 
-(defn- translate-to-canvas
-  [shape canvas-ds-modifier pt]
-  (let [rz-modifier (:resize-modifier shape)
-        shape (cond-> shape
-                (gmt/matrix? canvas-ds-modifier)
-                (geom/transform canvas-ds-modifier)
-
-                (gmt/matrix? rz-modifier)
-                (-> (geom/transform rz-modifier)
-                    (dissoc :resize-modifier)))]
-    (geom/move shape pt)))
-
 (mf/defc canvas-shape
   [{:keys [shape childs] :as props}]
   (let [rotation    (:rotation shape)
         ds-modifier (:displacement-modifier shape)
-        rz-modifier (:modifier-mtx shape)
+        rz-modifier (:resize-modifier shape)
 
         shape (cond-> shape
                 (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
@@ -101,12 +93,22 @@
                          :height height
                          ))
 
-        translate #(translate-to-canvas % ds-modifier (gpt/point (- x) (- y)))]
+        translate #(translate-to-canvas % ds-modifier (gpt/point (- x) (- y)))
+        ]
 
     [:svg {:x x :y y :width width :height height}
      [:& "rect" props]
-     (for [item (map translate childs)]
-       [:& shape-wrapper {:shape item :key (:id item)}])]))
+     (for [item childs]
+       [:& shape-wrapper {:shape (translate item) :key (:id item)}])]))
 
+(defn- translate-to-canvas
+  [shape canvas-ds-modifier pt]
+  (let [rz-modifier (:resize-modifier shape)
+        shape (cond-> shape
+                (gmt/matrix? canvas-ds-modifier)
+                (geom/transform canvas-ds-modifier)
 
-
+                (gmt/matrix? rz-modifier)
+                (-> (geom/transform rz-modifier)
+                    (dissoc :resize-modifier)))]
+    (geom/move shape pt)))

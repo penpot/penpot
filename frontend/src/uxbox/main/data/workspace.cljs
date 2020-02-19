@@ -12,6 +12,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
+   [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
    [uxbox.main.constants :as c]
    [uxbox.main.data.icons :as udi]
@@ -242,6 +243,11 @@
             (rx/of (materialize-undo changes (inc index))
                    (commit-changes changes [] false))))))))
 
+(def reinitialize-undo
+  (ptk/reify ::reset-undo
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :undo-index :undo))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1200,7 +1206,6 @@
   (ptk/reify ::delete-canvas
     ptk/WatchEvent
     (watch [_ state stream]
-      (prn "delete-shapes" ids)
       (let [shapes-map (get-in state [:workspace-data :shapes-by-id])
             session-id (:session-id state)
 
@@ -1235,7 +1240,6 @@
   (ptk/reify ::delete-shapes
     ptk/WatchEvent
     (watch [_ state stream]
-      (prn "delete-canvas" id)
       (let [shapes-map (get-in state [:workspace-data :shapes-by-id])
             session-id (:session-id state)
 
@@ -1576,6 +1580,25 @@
           (->> (rp/mutation :update-page params)
                (rx/map shapes-changes-commited))))))))
 
+
+(defn- check-page-integrity
+  [data]
+  (let [items (d/concat (:shapes data)
+                        (:canvas data))]
+    (loop [id (first items)
+           ids (rest items)]
+      (let [content (get-in data [:shapes-by-id id])]
+        (cond
+          (nil? id)
+          nil
+          (nil? content)
+          (ex/raise :type :validation
+                    :code :shape-integrity
+                    :context {:id id})
+
+          :else
+          (recur (first ids) (rest ids)))))))
+
 (s/def ::shapes-changes-commited
   (s/keys :req-un [::page-id ::revn ::cp/changes]))
 
@@ -1589,7 +1612,12 @@
           (assoc-in [:workspace-page :revn] revn)
           (assoc-in [:pages page-id :revn] revn)
           (update-in [:pages-data page-id] cp/process-changes changes)
-          (update :workspace-data cp/process-changes changes)))))
+          (update :workspace-data cp/process-changes changes)))
+
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (when *assert*
+        (check-page-integrity (:workspace-data state))))))
 
 ;; --- Start shape "edition mode"
 

@@ -147,17 +147,18 @@
   {:wrap [mf/wrap-memo]}
   [props]
   (let [data (mf/deref refs/workspace-data)
-        shapes-by-id (:shapes-by-id data)
-        shapes (map #(get shapes-by-id %) (:shapes data []))
-        canvas (map #(get shapes-by-id %) (:canvas data []))
-        unassinged (filter #(nil? (:canvas %)) shapes)]
+        shapes-map (:shapes-by-id data)
+        shapes (->> (map #(get shapes-map %) (:shapes data []))
+                    (group-by :canvas))
+        canvas (map #(get shapes-map %) (:canvas data []))]
     [:g.shapes
      (for [item canvas]
-       (let [shapes (filter #(= (:canvas %) (:id item)) shapes)]
-         [:& canvas-wrapper {:shape item :key (:id item)
-                             :childs shapes}]))
-     (for [item unassinged]
-       [:& shape-wrapper {:shape item :key (:id item)}])]))
+       [:& canvas-wrapper {:shape item
+                           :key (:id item)
+                           :childs (get shapes (:id item))}])
+     (for [item (get shapes nil)]
+       [:& shape-wrapper {:shape item
+                          :key (:id item)}])]))
 
 (mf/defc viewport
   [{:keys [page] :as props}]
