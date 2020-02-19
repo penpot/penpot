@@ -28,12 +28,12 @@
 
 (defn concat
   [& colls]
-  (loop [result (first colls)
+  (loop [result (transient (first colls))
          colls (rest colls)]
     (if (seq colls)
-      (recur (reduce conj result (first colls))
+      (recur (reduce conj! result (first colls))
              (rest colls))
-      result)))
+      (persistent! result))))
 
 (defn enumerate
   ([items] (enumerate items 0))
