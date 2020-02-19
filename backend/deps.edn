@@ -35,7 +35,8 @@
   org.jsoup/jsoup {:mvn/version "1.12.1"}
   org.im4java/im4java {:mvn/version "1.4.0"}
 
-  org.xerial.snappy/snappy-java {:mvn/version "1.1.7.3"}
+  org.lz4/lz4-java {:mvn/version "1.7.1"}
+
   com.github.spullara.mustache.java/compiler {:mvn/version "0.9.6"}
   commons-io/commons-io {:mvn/version "2.6"}
   com.draines/postal {:mvn/version "2.0.3"
@@ -51,7 +52,9 @@
  {:dev
   {:extra-deps
    {com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-    org.clojure/tools.namespace {:mvn/version "0.3.1"}
+    org.clojure/tools.namespace {:mvn/version "1.0.0"}
+    org.clojure/test.check {:mvn/version "1.0.0"}
+
     fipp/fipp {:mvn/version "0.6.21"}
     criterium/criterium {:mvn/version "0.4.5"}
     mockery/mockery {:mvn/version "0.1.4"}}
