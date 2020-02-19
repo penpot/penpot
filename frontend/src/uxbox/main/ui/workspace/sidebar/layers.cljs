@@ -84,7 +84,6 @@
 
         toggle-blocking
         (fn [event]
-          (prn "toggle-blocking" (:blocked shape))
           (dom/stop-propagation event)
           (if (:blocked shape)
             (st/emit! (dw/unblock-shape (:id shape)))
@@ -118,7 +117,6 @@
 
         on-drop
         (fn [item monitor]
-          (prn "index" index)
           (st/emit! (dw/commit-shape-order-change (:shape-id item))))
 
         on-hover
@@ -270,20 +268,21 @@
         selected (mf/deref refs/selected-shapes)
         data (mf/deref refs/workspace-data)
 
-        shapes-by-id (:shapes-by-id data)
+        shapes-map (:shapes-by-id data)
 
         canvas (->> (:canvas data)
-                    (map #(get shapes-by-id %))
+                    (map #(get shapes-map %))
+                    #_(remove nil?)
                     (d/enumerate))
 
         shapes (->> (:shapes data)
-                    (map #(get shapes-by-id %)))
+                    (map #(get shapes-map %))
+                    #_(remove nil?))
 
         all-shapes (d/enumerate shapes)
         unc-shapes (->> shapes
                         (filter #(nil? (:canvas %)))
                         (d/enumerate))]
-
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]

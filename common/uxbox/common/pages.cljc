@@ -110,10 +110,12 @@
 (defmulti change-spec-impl :type)
 
 (defmethod change-spec-impl :add-shape [_]
-  (s/keys :req-un [::shape ::id ::session-id]))
+  (s/keys :req-un [::shape ::id ::session-id]
+          :opt-un [::index]))
 
 (defmethod change-spec-impl :add-canvas [_]
-  (s/keys :req-un [::shape ::id ::session-id]))
+  (s/keys :req-un [::shape ::id ::session-id]
+          :opt-un [::index]))
 
 (defmethod change-spec-impl :mod-shape [_]
   (s/keys :req-un [::id ::operations ::session-id]))
@@ -169,21 +171,36 @@
     :mod-opts (process-mod-opts data change)))
 
 (defn- process-add-shape
-  [data {:keys [id shape] :as change}]
+  [data {:keys [id index shape] :as change}]
   (-> data
       (update :shapes (fn [shapes]
-                        (if (some #{id} shapes)
+                        (cond
+                          (some #{id} shapes)
                           shapes
-                          (conj shapes id))))
+
+                          (nil? index)
+                          (conj shapes id)
+
+                          :else
+                          (let [[before after] (split-at index shapes)]
+                            (d/concat [] before [id] after)))))
       (update :shapes-by-id assoc id shape)))
 
 (defn- process-add-canvas
-  [data {:keys [id shape] :as change}]
+  [data {:keys [id shape index] :as change}]
   (-> data
       (update :canvas (fn [shapes]
-                        (if (some #{id} shapes)
+                        (cond
+                          (some #{id} shapes)
                           shapes
-                          (conj shapes id))))
+
+                          (nil? index)
+                          (conj shapes id)
+
+                          :else
+                          (let [[before after] (split-at index shapes)]
+                            (d/concat [] before [id] after)))))
+
       (update :shapes-by-id assoc id shape)))
 
 (defn- process-mod-shape

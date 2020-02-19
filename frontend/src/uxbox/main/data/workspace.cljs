@@ -955,36 +955,6 @@
 
 ;; --- Duplicate Selected
 
-(defn impl-duplicate-shape
-  [state id]
-  (let [shape (get-in state [:workspace-data :shapes-by-id id])]
-    (assoc shape :id (uuid/next))))
-
-;; (defn duplicate-shapes
-;;   [ids]
-;;   (us/verify (s/every ::us/uuid) ids)
-;;   (ptk/reify ::duplicate-selected
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (let [duplicate #(-> (get-in state [:workspace-data :shapes-by-id %])
-;;                            (assoc :id (uuid/next)))]
-;;         (reduce
-
-;;             shapes    (map duplicate selected)
-;;             sid       (:session-id state)
-;;             changes   (mapv (fn [shape]
-;;                               {:type :add-shape
-;;                                :id (:id shape)
-;;                                :shape shape
-;;                                :session-id sid})
-;;                             shapes)
-;;             uchanges  (mapv (fn [shape]
-;;                               {:type :del-shape
-;;                                :id (:id shape)
-;;                                :session-id sid})
-;;                             shapes)]
-;;         (rx/merge
-
 (defn duplicate-shapes
   [shapes]
   (ptk/reify ::duplicate-shapes
@@ -1209,43 +1179,129 @@
 
 ;; --- Delete Selected
 
-(defn impl-dissoc-shape
+(defn- impl-dissoc-shape
   "Given a shape id, removes it from the state."
-  [id]
-  (ptk/reify ::impl-dissoc-shape
+  [state id]
+  (-> state
+      (update-in [:workspace-data :canvas] (fn [v] (filterv #(not= % id) v)))
+      (update-in [:workspace-data :shapes] (fn [v] (filterv #(not= % id) v)))
+      (update-in [:workspace-data :shapes-by-id] dissoc id)))
+
+(defn- impl-purge-shapes
+  [ids]
+  (ptk/reify ::impl-purge-shapes
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (update-in [:workspace-data :canvas] (fn [items] (filterv #(not= % id) items)))
-          (update-in [:workspace-data :shapes] (fn [items] (filterv #(not= % id) items)))
-          (update-in [:workspace-data :shapes-by-id] dissoc id)))))
+      (reduce impl-dissoc-shape state ids))))
+
+(defn- delete-shapes
+  [ids]
+  (us/assert ::set-of-uuid ids)
+  (ptk/reify ::delete-canvas
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (prn "delete-shapes" ids)
+      (let [shapes-map (get-in state [:workspace-data :shapes-by-id])
+            session-id (:session-id state)
+
+            shapes (->> (get-in state [:workspace-data :shapes])
+                        (map #(get shapes-map %))
+                        (d/enumerate)
+                        (map (fn [[i s]] (assoc s ::index i)))
+                        (filter #(contains? ids (:id %))))
+
+            rchanges (mapv (fn [item]
+                              {:type :del-shape
+                               :id (:id item)
+                               :session-id session-id})
+                            shapes)
+            uchanges (mapv (fn [item]
+                              {:type :add-shape
+                               :id (:id item)
+                               :shape (dissoc item ::index)
+                               :session-id session-id
+                               :index (::index item)})
+                            shapes)]
+
+        (rx/of (impl-purge-shapes (map :id shapes))
+               (commit-changes rchanges uchanges))))))
+
+;; NOTE: this event has "repeated" logic; we want reuse the
+;; `delete-shape` event here because we need to perform an atomic
+;; operation that the user can undo in one step.
+
+(defn- delete-canvas
+  [id]
+  (ptk/reify ::delete-shapes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (prn "delete-canvas" id)
+      (let [shapes-map (get-in state [:workspace-data :shapes-by-id])
+            session-id (:session-id state)
+
+            shapes (->> (get-in state [:workspace-data :shapes])
+                        (map #(get shapes-map %))
+                        (d/enumerate)
+                        (map (fn [[i s]] (assoc s ::index i)))
+                        (filter (fn [s] (= (:canvas s) id))))
+
+            canvas (->> (get-in state [:workspace-data :canvas])
+                        (map #(get shapes-map %))
+                        (d/enumerate)
+                        (map (fn [[i s]] (assoc s ::index i)))
+                        (filter (fn [s] (= (:id s) id))))
+
+            rchanges1 (mapv (fn [item]
+                              {:type :del-shape
+                               :id (:id item)
+                               :session-id session-id})
+                            shapes)
+            uchanges1 (mapv (fn [item]
+                              {:type :add-shape
+                               :id (:id item)
+                               :shape (dissoc item ::index)
+                               :session-id session-id
+                               :index (::index item)})
+                            shapes)
+            rchanges2 (mapv (fn [item]
+                              {:type :del-canvas
+                               :id (:id item)
+                               :session-id session-id})
+                            canvas)
+            uchanges2 (mapv (fn [item]
+                              {:type :add-canvas
+                               :id (:id item)
+                               :shape (dissoc item ::index)
+                               :session-id session-id
+                               :index (::index item)})
+                            canvas)]
+
+        (rx/of (impl-purge-shapes (d/concat [] (map :id shapes) (map :id canvas)))
+               (commit-changes (d/concat [] rchanges1 rchanges2)
+                               (d/concat [] uchanges1 uchanges2)))))))
 
 (def delete-selected
   "Deselect all and remove all selected shapes."
   (ptk/reify ::delete-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [session-id (:session-id state)
-            lookup-shape #(get-in state [:workspace-data :shapes-by-id %])
+      (let [lookup   #(get-in state [:workspace-data :shapes-by-id %])
             selected (get-in state [:workspace-local :selected])
 
-            changes (->> selected
-                         (map lookup-shape)
-                         (map (fn [{:keys [type id] :as shape}]
-                                {:type (if (= type :canvas) :del-canvas :del-shape)
-                                 :session-id session-id
-                                 :id id})))
-            uchanges (->> selected
-                          (map lookup-shape)
-                          (map (fn [{:keys [type id] :as shape}]
-                                 {:type (if (= type :canvas) :add-canvas :add-shape)
-                                  :session-id session-id
-                                  :shape shape
-                                  :id id})))]
-        (rx/concat
-         (rx/of deselect-all)
-         (rx/from (map impl-dissoc-shape selected))
-         (rx/of (commit-changes changes uchanges)))))))
+            shapes (map lookup selected)
+            shape? #(not= (:type %) :canvas)]
+
+        (cond
+          (and (= (count shapes) 1)
+               (= (:type (first shapes)) :canvas))
+          (rx/of (delete-canvas (first selected)))
+
+          (and (pos? (count shapes))
+               (every? shape? shapes))
+          (rx/of (delete-shapes selected))
+
+          :else
+          (rx/empty))))))
 
 ;; --- Rename Shape
 
