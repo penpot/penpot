@@ -1757,6 +1757,7 @@
   [id]
   (us/verify ::us/uuid id)
   (ptk/reify ::hide-shape
+    IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (impl-update-shape-hidden state id true))))
@@ -1764,24 +1765,41 @@
 (defn show-shape
   [id]
   (us/verify ::us/uuid id)
-  (ptk/reify ::hide-shape
+  (ptk/reify ::show-shape
+    IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (impl-update-shape-hidden state id false))))
 
+(defn hide-canvas
+  [id]
+  (us/verify ::us/uuid id)
+  (ptk/reify ::hide-shape
+    IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [hide #(impl-update-shape-hidden %1 %2 true)
+            ids (->> (vals (get-in state [:workspace-data :shapes-by-id]))
+                     (filter #(= (:canvas %) id))
+                     (map :id))]
+        (reduce hide state (cons id ids))))))
+
+(defn show-canvas
+  [id]
+  (us/verify ::us/uuid id)
+  (ptk/reify ::hide-shape
+    IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [show #(impl-update-shape-hidden %1 %2 false)
+            ids (->> (vals (get-in state [:workspace-data :shapes-by-id]))
+                     (filter #(= (:canvas %) id))
+                     (map :id))]
+        (reduce show state (cons id ids))))))
+
 (defn- impl-update-shape-hidden
   [state id hidden?]
-  (let [type  (get-in state [:workspace-data :shapes-by-id id :type])
-        state (update-in state [:workspace-data :shapes-by-id id] assoc :hidden hidden?)]
-    (cond-> state
-      (= type :canvas)
-      (update-in [:workspace-data :shapes-by-id]
-                 (fn [shapes]
-                   (reduce-kv (fn [shapes key {:keys [canvas] :as val}]
-                                (cond-> shapes
-                                  (= id canvas) (update key assoc :hidden hidden?)))
-                              shapes
-                              shapes))))))
+  (assoc-in state [:workspace-data :shapes-by-id id :hidden] hidden?))
 
 ;; --- Shape Blocking
 

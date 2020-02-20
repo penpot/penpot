@@ -173,8 +173,8 @@
         (fn [event]
           (dom/stop-propagation event)
           (if (:hidden canvas)
-            (st/emit! (dw/show-shape (:id canvas)))
-            (st/emit! (dw/hide-shape (:id canvas)))))
+            (st/emit! (dw/show-canvas (:id canvas)))
+            (st/emit! (dw/hide-canvas (:id canvas)))))
 
         select-shape
         (fn [event]
@@ -274,7 +274,7 @@
         data (mf/deref refs/workspace-data)
 
         shapes-map (:shapes-by-id data)
-        strip #(select-keys % [:id :canvas :name :type])
+        strip #(select-keys % [:id :canvas :name :type :hidden :blocked])
 
         canvas (->> (:canvas data)
                     (map #(get shapes-map %))
