@@ -36,10 +36,15 @@
 
         on-position-change
         (fn [event attr]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer))]
-            (st/emit! (udw/update-position (:id shape) {attr value}))))
+          (let [cval (-> (dom/get-target event)
+                         (dom/get-value)
+                         (d/parse-integer))
+                pval (get shape attr)
+                delta (if (= attr :x)
+                        (gpt/point (math/neg (- pval cval)) 0)
+                        (gpt/point 0 (math/neg (- pval cval))))]
+            (st/emit! (udw/apply-canvas-displacement (:id shape) delta)
+                      (udw/materialize-canvas-displacement (:id shape)))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
