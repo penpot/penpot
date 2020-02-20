@@ -64,7 +64,7 @@
   (ptk/reify ::clear-user-data
     ptk/UpdateEvent
     (update [_ state]
-      (merge state (dissoc initial-state :route :router)))
+      (select-keys state [:route :router :session-id]))
 
     ptk/WatchEvent
     (watch [_ state s]
@@ -79,7 +79,7 @@
 (def logout
   (ptk/reify ::logout
     ptk/WatchEvent
-    (watch [_ state s]
+    (watch [_ state stream]
       (rx/of (rt/nav :login)
              clear-user-data))))
 

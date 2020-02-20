@@ -109,7 +109,7 @@
     (and (map? error)
          (= :authentication type)
          (= :unauthorized code))
-    (ts/schedule 0 #(st/emit! (rt/nav :login)))
+    (ts/schedule 0 #(st/emit! logout))
 
     ;; Network error
     (and (map? error)
