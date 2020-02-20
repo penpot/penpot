@@ -154,15 +154,6 @@ function usage {
     echo "- run-all-tests                    Execute unit tests for both backend and frontend."
     echo "- run-frontend-tests               Execute unit tests for frontend only."
     echo "- run-backend-tests                Execute unit tests for backend only."
-    echo ""
-    echo "- build-images                     Build a 'release ready' docker images for both backend and frontend"
-    echo "- build-frontend-image             Build a 'release ready' docker image for frontend (debug version)"
-    echo "- build-frontend-dbg-image         Build a debug docker image for frontend"
-    echo "- build-backend-image              Build a 'release ready' docker images for backend"
-    echo "- log                              Attach to docker logs."
-    echo "- run                              Run 'production ready' docker compose"
-    echo "- stop                             Stop 'production ready' docker compose"
-    echo "- drop                             Remove the production oriented docker-compose containers and volumes."
 }
 
 case $1 in

@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns ^:figwheel-hooks uxbox.main
   (:require
