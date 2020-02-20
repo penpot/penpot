@@ -721,6 +721,12 @@
       "fr" : "Mettre à jour les paramètres"
     }
   },
+  "workspace.viewport.click-to-close-path": {
+    "translations": {
+      "en": "Click to close the path"
+    }
+  },
+
   "workspace.header.canvas" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:95" ],
     "translations" : {

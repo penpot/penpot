@@ -46,6 +46,16 @@
      [:span {:alt "y"}
       (str "Y: " (:y coords "-"))]]))
 
+(mf/defc cursor-tooltip
+  [{:keys [zoom tooltip] :as props}]
+  (let [coords (some-> (use-rxsub ms/mouse-position)
+                       (gpt/divide (gpt/point zoom zoom)))
+        pos-x (- (:x coords) 100)
+        pos-y (+ (:y coords) 30)]
+    [:g {:transform (str "translate(" pos-x "," pos-y ")")}
+     [:foreignObject {:width 200 :height 100 :style {:text-align "center"}}
+      [:span tooltip]]]))
+
 ;; --- Cursor tooltip
 
 (defn- get-shape-tooltip
@@ -59,17 +69,6 @@
     :path "Click to draw a Path"
     :circle "Drag to draw a Circle"
     nil))
-
-;; (mf/defc cursor-tooltip
-;;   {:wrap [mf/wrap-memo]}
-;;   [{:keys [tooltip]}]
-;;   (let [coords (mf/deref refs/window-mouse-position)]
-;;     [:span.cursor-tooltip
-;;      {:style
-;;       {:position "fixed"
-;;        :left (str (+ (:x coords) 5) "px")
-;;        :top (str (- (:y coords) 25) "px")}}
-;;      tooltip]))
 
 ;; --- Selection Rect
 
@@ -166,6 +165,7 @@
                 zoom
                 flags
                 edition
+                tooltip
                 selected]
          :as local} (mf/deref refs/workspace-local)
         viewport-ref (mf/use-ref nil)
@@ -290,6 +290,9 @@
 
          (if (contains? flags :grid)
            [:& grid])]
+
+        (when tooltip
+          [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])
 
         (when (contains? flags :ruler)
           [:& ruler {:zoom zoom :ruler (:ruler local)}])

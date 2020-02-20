@@ -734,9 +734,16 @@
           (rx/of (deactivate-flag flag))
           (rx/of (activate-flag flag)))))))
 
-(defn set-tooltip
-  [txt]
-  ::todo)
+;; --- Tooltip
+
+(defn assign-cursor-tooltip
+  [content]
+  (ptk/reify ::assign-cursor-tooltip
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (string? content)
+        (assoc-in state [:workspace-local :tooltip] content)
+        (assoc-in state [:workspace-local :tooltip] nil)))))
 
 ;; --- Workspace Ruler
 

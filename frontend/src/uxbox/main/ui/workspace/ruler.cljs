@@ -56,7 +56,7 @@
   (letfn [(on-mouse-down [event]
             (dom/stop-propagation event)
             (st/emit! :interrupt
-                      (udw/set-tooltip nil)
+                      (udw/assign-cursor-tooltip nil)
                       (udw/start-ruler)))
           (on-mouse-up [event]
             (dom/stop-propagation event)
