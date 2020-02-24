@@ -30,6 +30,7 @@
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.data :as data]
+   [uxbox.services.mutations.colors :as colors]
    [uxbox.services.mutations.icons :as icons]
    [uxbox.services.mutations.images :as images]
    [uxbox.util.storage :as ust])
@@ -40,14 +41,22 @@
 
 ;; --- Constants & Helpers
 
-(def ^:const +images-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6e")
-(def ^:const +icons-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6f")
+(def ^:const +images-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6a")
+(def ^:const +icons-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6b")
+(def ^:const +colors-uuid-ns+ #uuid "3642a582-565f-4070-beba-af797ab27a6c")
 
+(s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::path ::us/string)
 (s/def ::regex #(instance? java.util.regex.Pattern %))
-(s/def ::import-item
+
+(s/def ::colors (s/every ::us/color :kind set?))
+
+(s/def ::import-item-media
   (s/keys :req-un [::name ::path ::regex]))
+
+(s/def ::import-item-color
+  (s/keys :req-un [::name ::id ::colors]))
 
 (defn exit!
   ([] (exit! 0))
@@ -55,7 +64,9 @@
    (System/exit code)))
 
 
-;; --- Icons Libraries Importer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Icons Libraries Importer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- icon-library-exists?
   [conn id]
@@ -72,7 +83,6 @@
     (icons/create-library conn {:team-id uuid/zero
                                 :id id
                                 :name name})))
-
 
 (defn- create-icons-library-if-not-exists
   [conn {:keys [name] :as item}]
@@ -128,7 +138,7 @@
 
 (defn- process-icons-library
   [conn basedir {:keys [path regex] :as item}]
-  (s/assert ::import-item item)
+  (s/assert ::import-item-media item)
   (-> (create-icons-library-if-not-exists conn item)
       (p/then (fn [library-id]
                 (->> (assoc item :path (fs/join basedir path))
@@ -213,13 +223,77 @@
 
 (defn- process-images-library
   [conn basedir {:keys [path regex] :as item}]
-  (s/assert ::import-item item)
+  (s/assert ::import-item-media item)
   (-> (create-images-library-if-not-exists conn item)
       (p/then (fn [library-id]
                 (->> (assoc item :path (fs/join basedir path))
                      (import-images conn library-id))))))
 
-;; --- Entry Point
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Colors Libraries Importer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- color-library-exists?
+  [conn id]
+  (s/assert ::us/uuid id)
+  (let [sql "select id from color_library where id = $1"]
+    (-> (db/query-one conn [sql id])
+        (p/then (fn [row] (if row true false))))))
+
+(defn- create-colors-library
+  [conn {:keys [name] :as item}]
+  (let [id (uuid/namespaced +colors-uuid-ns+ name)]
+    (log/info "Creating color library:" name)
+    (colors/create-library conn {:id id
+                                 :team-id uuid/zero
+                                 :name name})))
+
+
+(defn- create-colors-library-if-not-exists
+  [conn {:keys [name] :as item}]
+  (let [id (uuid/namespaced +colors-uuid-ns+ name)]
+    (-> (color-library-exists? conn id)
+        (p/then (fn [exists?]
+                  (when-not exists?
+                    (create-colors-library conn item))))
+        (p/then (constantly id)))))
+
+(defn- create-color
+  [conn library-id content]
+  (s/assert ::us/uuid library-id)
+  (s/assert ::us/color content)
+
+  (let [color-id (uuid/namespaced +colors-uuid-ns+ (str library-id content))]
+    (log/info "Creating color" content color-id)
+    (-> (colors/create-color conn {:id color-id
+                                   :library-id library-id
+                                   :name content
+                                   :content content})
+        (p/then' (constantly color-id)))))
+
+(defn- prune-colors
+  [conn library-id]
+  (-> (db/query-one conn ["delete from color where library_id=$1" library-id])
+      (p/then (constantly nil))))
+
+(defn- import-colors
+  [conn library-id {:keys [colors] :as item}]
+  (us/verify ::import-item-color item)
+  (p/do!
+   (prune-colors conn library-id)
+   (p/run! #(create-color conn library-id %) colors)))
+
+(defn- process-colors-library
+  [conn {:keys [name id colors] :as item}]
+  (us/verify ::import-item-color item)
+  (-> (create-colors-library-if-not-exists conn item)
+      (p/then #(import-colors conn % item))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Entry Point
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- validate-path
   [path]
@@ -253,10 +327,12 @@
 (defn- importer
   [conn basedir data]
   (let [images (:images data)
-        icons (:icons data)]
+        icons (:icons data)
+        colors (:colors data)]
     (p/do!
      (p/run! #(process-images-library conn basedir %) images)
      (p/run! #(process-icons-library conn basedir %) icons)
+     (p/run! #(process-colors-library conn %) colors)
      nil)))
 
 (defn -main
