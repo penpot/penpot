@@ -69,6 +69,12 @@ CREATE TRIGGER team__modified_at__tgr
 BEFORE UPDATE ON team
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
 
+INSERT INTO team (id, name, photo, is_default)
+VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
+        'System Team',
+        '',
+        true);
+
 
 
 CREATE TABLE team_profile_rel (

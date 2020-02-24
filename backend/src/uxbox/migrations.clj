@@ -12,8 +12,6 @@
    [uxbox.util.migrations :as mg]
    [uxbox.util.template :as tmpl]))
 
-;; --- Migrations
-
 (def +migrations+
   {:name "uxbox-main"
    :steps
@@ -29,20 +27,13 @@
     {:desc "Initial tasks related tables"
      :name "0004-tasks"
      :fn (mg/resource "migrations/0004.tasks.sql")}
-    {:desc "Initial images tables"
-     :name "0005-images"
-     :fn (mg/resource "migrations/0005.images.sql")}
-    {:desc "Initial icons tables"
-     :name "0006-icons"
-     :fn (mg/resource "migrations/0006.icons.sql")}
-    {:desc "Initial colors tables"
-     :name "0007-colors"
-     :fn (mg/resource "migrations/0007.colors.sql")}
-    ]})
+    {:desc "Initial libraries tables"
+     :name "0005-libraries"
+     :fn (mg/resource "migrations/0005.libraries.sql")}]})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn migrate
   []

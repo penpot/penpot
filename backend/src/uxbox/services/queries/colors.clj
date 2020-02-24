@@ -17,6 +17,7 @@
    [uxbox.db :as db]
    [uxbox.media :as media]
    [uxbox.images :as images]
+   [uxbox.services.queries.teams :as teams]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
@@ -28,55 +29,85 @@
 
 (s/def ::id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
-(s/def ::collection-id (s/nilable ::us/uuid))
-
-(defn decode-row
-  [{:keys [metadata] :as row}]
-  (when row
-    (cond-> row
-      metadata (assoc :metadata (blob/decode metadata)))))
+(s/def ::team-id ::us/uuid)
+(s/def ::library-id (s/nilable ::us/uuid))
 
 
 
-;; --- Query: Collections
+;; --- Query: Colors Librarys
 
-(def ^:private sql:collections
-  "select *,
-          (select count(*) from color where collection_id = ic.id) as num_colors
-     from color_collection as ic
-    where (ic.profile_id = $1 or
-           ic.profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and ic.deleted_at is null
-    order by ic.created_at desc")
+(def ^:private sql:libraries
+  "select lib.*,
+          (select count(*) from color where library_id = lib.id) as num_colors
+     from color_library as lib
+    where lib.team_id = $1
+      and lib.deleted_at is null
+    order by lib.created_at desc")
 
-(s/def ::color-collections
-  (s/keys :req-un [::profile-id]))
+(s/def ::color-libraries
+  (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::color-collections
-  [{:keys [profile-id] :as params}]
-  (let [sqlv [sql:collections profile-id]]
-    (db/query db/pool sqlv)))
+(sq/defquery ::color-libraries
+  [{:keys [profile-id team-id]}]
+  (db/with-atomic [conn db/pool]
+    (teams/check-edition-permissions! conn profile-id team-id)
+    (db/query conn [sql:libraries team-id])))
 
 
 
-;; --- Colors By Collection ID
+;; --- Query: Color Library
 
-(def ^:private sql:colors
-  "select *
-     from color as i
-    where (i.profile_id = $1 or
-           i.profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and i.deleted_at is null
-      and i.collection_id = $2
-    order by i.created_at desc")
+(declare retrieve-library)
+
+(s/def ::color-library
+  (s/keys :req-un [::profile-id ::id]))
+
+(sq/defquery ::color-library
+  [{:keys [profile-id id]}]
+  (db/with-atomic [conn db/pool]
+    (p/let [lib (retrieve-library conn id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      lib)))
+
+(def ^:private sql:single-library
+  "select lib.*,
+          (select count(*) from color where library_id = lib.id) as num_colors
+     from color_library as lib
+    where lib.deleted_at is null
+      and lib.id = $1")
+
+(defn- retrieve-library
+  [conn id]
+  (-> (db/query-one conn [sql:single-library id])
+      (p/then' su/raise-not-found-if-nil)))
+
+
+
+;; --- Query: Colors (by library)
+
+(declare retrieve-colors)
 
 (s/def ::colors
-  (s/keys :req-un [::profile-id ::collection-id]))
+  (s/keys :req-un [::profile-id ::library-id]))
 
 (sq/defquery ::colors
-  [{:keys [profile-id collection-id] :as params}]
-  (-> (db/query db/pool [sql:colors profile-id collection-id])
-      (p/then' #(mapv decode-row %))))
+  [{:keys [profile-id library-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [lib (retrieve-library conn library-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      (retrieve-colors conn library-id))))
+
+(def ^:private sql:colors
+  "select color.*
+     from color as color
+    inner join color_library as lib on (lib.id = color.library_id)
+    where color.deleted_at is null
+      and color.library_id = $1
+   order by created_at desc")
+
+(defn- retrieve-colors
+  [conn library-id]
+  (db/query conn [sql:colors library-id]))
 
 
 
@@ -89,14 +120,22 @@
   (s/keys :req-un [::profile-id ::id]))
 
 (sq/defquery ::color
-  [{:keys [id] :as params}]
-  (-> (retrieve-color db/pool id)
-      (p/then' su/raise-not-found-if-nil)))
+  [{:keys [profile-id id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [color (retrieve-color conn id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id color))
+      color)))
+
+(def ^:private sql:single-color
+  "select color.*,
+          lib.team_id as team_id
+     from color as color
+    inner join color_library as lib on (lib.id = color.library_id)
+    where color.deleted_at is null
+      and color.id = $1
+   order by created_at desc")
 
 (defn retrieve-color
   [conn id]
-  (let [sql "select * from color
-              where id = $1
-                and deleted_at is null;"]
-    (-> (db/query-one conn [sql id])
-        (p/then' su/raise-not-found-if-nil))))
+  (-> (db/query-one conn [sql:single-color id])
+      (p/then' su/raise-not-found-if-nil)))

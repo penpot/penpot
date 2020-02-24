@@ -17,6 +17,7 @@
    [uxbox.db :as db]
    [uxbox.media :as media]
    [uxbox.images :as images]
+   [uxbox.services.queries.teams :as teams]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
@@ -27,8 +28,9 @@
 ;; --- Helpers & Specs
 
 (s/def ::id ::us/uuid)
+(s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
-(s/def ::collection-id (s/nilable ::us/uuid))
+(s/def ::library-id ::us/uuid)
 
 (defn decode-row
   [{:keys [metadata] :as row}]
@@ -38,45 +40,82 @@
 
 
 
-;; --- Query: Collections
+;; --- Query: Icons Librarys
 
-(def ^:private sql:collections
-  "select *,
-          (select count(*) from icon where collection_id = ic.id) as num_icons
-     from icon_collection as ic
-    where (ic.profile_id = $1 or
-           ic.profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and ic.deleted_at is null
-    order by ic.created_at desc")
+(def ^:private sql:libraries
+  "select lib.*,
+          (select count(*) from icon where library_id = lib.id) as num_icons
+     from icon_library as lib
+    where lib.team_id = $1
+      and lib.deleted_at is null
+    order by lib.created_at desc")
 
-(s/def ::icon-collections
-  (s/keys :req-un [::profile-id]))
+(s/def ::icon-libraries
+  (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::icon-collections
-  [{:keys [profile-id] :as params}]
-  (let [sqlv [sql:collections profile-id]]
-    (db/query db/pool sqlv)))
+(sq/defquery ::icon-libraries
+  [{:keys [profile-id team-id]}]
+  (db/with-atomic [conn db/pool]
+    (teams/check-edition-permissions! conn profile-id team-id)
+    (db/query conn [sql:libraries team-id])))
 
 
 
-;; --- Icons By Collection ID
+;; --- Query: Icon Library
 
-(def ^:private sql:icons
-  "select *
-     from icon as i
-    where (i.profile_id = $1 or
-           i.profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and i.deleted_at is null
-      and i.collection_id = $2
-    order by i.created_at desc")
+(declare retrieve-library)
+
+(s/def ::icon-library
+  (s/keys :req-un [::profile-id ::id]))
+
+(sq/defquery ::icon-library
+  [{:keys [profile-id id]}]
+  (db/with-atomic [conn db/pool]
+    (p/let [lib (retrieve-library conn id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      lib)))
+
+(def ^:private sql:single-library
+  "select lib.*,
+          (select count(*) from icon where library_id = lib.id) as num_icons
+     from icon_library as lib
+    where lib.deleted_at is null
+      and lib.id = $1")
+
+(defn- retrieve-library
+  [conn id]
+  (-> (db/query-one conn [sql:single-library id])
+      (p/then' su/raise-not-found-if-nil)))
+
+
+
+;; --- Query: Icons (by library)
+
+(declare retrieve-icons)
 
 (s/def ::icons
-  (s/keys :req-un [::profile-id ::collection-id]))
+  (s/keys :req-un [::profile-id ::library-id]))
 
 (sq/defquery ::icons
-  [{:keys [profile-id collection-id] :as params}]
-  (-> (db/query db/pool [sql:icons profile-id collection-id])
-      (p/then' #(mapv decode-row %))))
+  [{:keys [profile-id library-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [lib (retrieve-library conn library-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      (-> (retrieve-icons conn library-id)
+          (p/then' (fn [rows] (mapv decode-row rows)))))))
+
+(def ^:private sql:icons
+  "select icon.*
+     from icon as icon
+    inner join icon_library as lib on (lib.id = icon.library_id)
+    where icon.deleted_at is null
+      and icon.library_id = $1
+   order by created_at desc")
+
+(defn- retrieve-icons
+  [conn library-id]
+  (db/query conn [sql:icons library-id]))
+
 
 
 ;; --- Query: Icon (by ID)
@@ -88,15 +127,23 @@
   (s/keys :req-un [::profile-id ::id]))
 
 (sq/defquery ::icon
-  [{:keys [id] :as params}]
-  (-> (retrieve-icon db/pool id)
-      (p/then' su/raise-not-found-if-nil)))
+  [{:keys [profile-id id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [icon (retrieve-icon conn id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id icon))
+      (decode-row icon))))
+
+(def ^:private sql:single-icon
+  "select icon.*,
+          lib.team_id as team_id
+     from icon as icon
+    inner join icon_library as lib on (lib.id = icon.library_id)
+    where icon.deleted_at is null
+      and icon.id = $1
+   order by created_at desc")
 
 (defn retrieve-icon
   [conn id]
-  (let [sql "select * from icon
-              where id = $1
-                and deleted_at is null;"]
-    (-> (db/query-one conn [sql id])
-        (p/then' su/raise-not-found-if-nil))))
+  (-> (db/query-one conn [sql:single-icon id])
+      (p/then' su/raise-not-found-if-nil)))
 

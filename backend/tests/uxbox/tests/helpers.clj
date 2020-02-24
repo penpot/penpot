@@ -111,22 +111,22 @@
                                     :shapes-by-id {}}}))
 
 
-(defn create-image-collection
-  [conn profile-id i]
-  (#'images/create-image-collection conn {:id (mk-uuid "imgcoll" i)
-                                          :profile-id profile-id
-                                          :name (str "image collection " i)}))
+(defn create-image-library
+  [conn team-id i]
+  (#'images/create-library conn {:id (mk-uuid "imgcoll" i)
+                                 :team-id team-id
+                                 :name (str "image library " i)}))
 
-(defn create-icon-collection
-  [conn profile-id i]
-  (#'icons/create-icon-collection conn {:id (mk-uuid "imgcoll" i)
-                                        :profile-id profile-id
-                                        :name (str "icon collection " i)}))
-(defn create-color-collection
-  [conn profile-id i]
-  (#'colors/create-color-collection conn {:id (mk-uuid "imgcoll" i)
-                                          :profile-id profile-id
-                                          :name (str "color collection " i)}))
+(defn create-icon-library
+  [conn team-id i]
+  (#'icons/create-library conn {:id (mk-uuid "imgcoll" i)
+                                :team-id team-id
+                                :name (str "icon library " i)}))
+(defn create-color-library
+  [conn team-id i]
+  (#'colors/create-library conn {:id (mk-uuid "imgcoll" i)
+                                 :team-id team-id
+                                 :name (str "color library " i)}))
 
 (defn handle-error
   [^Throwable err]

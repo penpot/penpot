@@ -173,8 +173,8 @@
           (t/is (string? (:thumb-path result)))
           (t/is (string? (:thumb-uri result))))))
 
-    (t/testing "import from collection"
-      (let [coll @(th/create-image-collection db/pool (:id prof) 1)
+    (t/testing "import from library"
+      (let [lib @(th/create-image-library db/pool (:id team) 1)
             image-id (uuid/next)
 
             content {:name "sample.jpg"
@@ -185,7 +185,7 @@
             data {::sm/type :upload-image
                   :id image-id
                   :profile-id (:id prof)
-                  :collection-id (:id coll)
+                  :library-id (:id lib)
                   :name "testfile"
                   :content content}
             out1 (th/try-on! (sm/handle data))]

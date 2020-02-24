@@ -5,47 +5,105 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.queries.images
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
-   [promesa.exec :as px]
-   [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
-   [uxbox.media :as media]
    [uxbox.images :as images]
+   [uxbox.services.queries.teams :as teams]
    [uxbox.services.queries :as sq]
-   [uxbox.services.util :as su]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.data :as data]
-   [uxbox.util.uuid :as uuid]
-   [vertx.core :as vc]))
+   [uxbox.services.util :as su]))
 
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
-(s/def ::collection-id (s/nilable ::us/uuid))
+(s/def ::library-id ::us/uuid)
 
-;; --- Query: Image Collections
+;; --- Query: Image Librarys
 
-(def ^:private sql:collections
-  "select *,
-          (select count(*) from image where collection_id = ic.id) as num_images
-     from image_collection as ic
-    where (ic.profile_id = $1 or
-           ic.profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and ic.deleted_at is null
-    order by ic.created_at desc;")
+(def ^:private sql:libraries
+  "select lib.*,
+          (select count(*) from image where library_id = lib.id) as num_images
+     from image_library as lib
+    where lib.team_id = $1
+      and lib.deleted_at is null
+    order by lib.created_at desc")
 
-(s/def ::image-collections
-  (s/keys :req-un [::profile-id]))
+(s/def ::image-libraries
+  (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::image-collections
-  [{:keys [profile-id] :as params}]
-  (db/query db/pool [sql:collections profile-id]))
+(sq/defquery ::image-libraries
+  [{:keys [profile-id team-id]}]
+  (db/with-atomic [conn db/pool]
+    (teams/check-edition-permissions! conn profile-id team-id)
+    (db/query conn [sql:libraries team-id])))
+
+
+;; --- Query: Image Library
+
+(declare retrieve-library)
+
+(s/def ::image-library
+  (s/keys :req-un [::profile-id ::id]))
+
+(sq/defquery ::image-library
+  [{:keys [profile-id id]}]
+  (db/with-atomic [conn db/pool]
+    (p/let [lib (retrieve-library conn id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      lib)))
+
+(def ^:private sql:single-library
+  "select lib.*,
+          (select count(*) from image where library_id = lib.id) as num_images
+     from image_library as lib
+    where lib.deleted_at is null
+      and lib.id = $1")
+
+(defn- retrieve-library
+  [conn id]
+  (-> (db/query-one conn [sql:single-library id])
+      (p/then' su/raise-not-found-if-nil)))
+
+
+
+;; --- Query: Images (by library)
+
+(declare retrieve-images)
+
+(s/def ::images
+  (s/keys :req-un [::profile-id ::library-id]))
+
+;; TODO: check if we can resolve url with transducer for reduce
+;; garbage generation for each request
+
+(sq/defquery ::images
+  [{:keys [profile-id library-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [lib (retrieve-library conn library-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      (-> (retrieve-images conn library-id)
+          (p/then' (fn [rows]
+                     (->> rows
+                          (mapv #(images/resolve-urls % :path :uri))
+                          (mapv #(images/resolve-urls % :thumb-path :thumb-uri)))))))))
+
+
+(def ^:private sql:images
+  "select img.*
+     from image as img
+    inner join image_library as lib on (lib.id = img.library_id)
+    where img.deleted_at is null
+      and img.library_id = $1
+   order by created_at desc")
+
+(defn- retrieve-images
+  [conn library-id]
+  (db/query conn [sql:images library-id]))
 
 
 
@@ -58,42 +116,27 @@
   (s/keys :req-un [::profile-id ::id]))
 
 (sq/defquery ::image
-  [{:keys [id] :as params}]
-  (-> (retrieve-image db/pool id)
-      (p/then' #(images/resolve-urls % :path :uri))
-      (p/then' #(images/resolve-urls % :thumb-path :thumb-uri))))
+  [{:keys [profile-id id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [img (retrieve-image conn id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id img))
+      (-> img
+          (images/resolve-urls :path :uri)
+          (images/resolve-urls :thumb-path :thumb-uri)))))
+
+(def ^:private sql:single-image
+  "select img.*,
+          lib.team_id as team_id
+     from image as img
+    inner join image_library as lib on (lib.id = img.library_id)
+    where img.deleted_at is null
+      and img.id = $1
+   order by created_at desc")
 
 (defn retrieve-image
   [conn id]
-  (let [sql "select * from image
-              where id = $1
-                and deleted_at is null;"]
-    (-> (db/query-one conn [sql id])
-        (p/then' su/raise-not-found-if-nil))))
+  (-> (db/query-one conn [sql:single-image id])
+      (p/then' su/raise-not-found-if-nil)))
 
 
 
-;; --- Query: Images (by collection)
-
-(def ^:private sql:images
-  "select *
-     from image
-    where (profile_id = $1 or
-           profile_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and deleted_at is null
-      and collection_id = $2
-   order by created_at desc")
-
-(s/def ::images
-  (s/keys :req-un [::profile-id ::collection-id]))
-
-;; TODO: check if we can resolve url with transducer for reduce
-;; garbage generation for each request
-
-(sq/defquery ::images
-  [{:keys [profile-id collection-id] :as params}]
-  (-> (db/query db/pool [sql:images profile-id collection-id])
-      (p/then' (fn [rows]
-                 (->> rows
-                      (mapv #(images/resolve-urls % :path :uri))
-                      (mapv #(images/resolve-urls % :thumb-path :thumb-uri)))))))
