@@ -97,7 +97,7 @@
       set name = $2
     where id = $1")
 
-(defn select-library-for-update
+(defn- select-library-for-update
   [conn id]
   (-> (db/query-one conn [sql:select-library-for-update id])
       (p/then' su/raise-not-found-if-nil)))

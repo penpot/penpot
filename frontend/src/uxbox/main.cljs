@@ -27,12 +27,7 @@
    [uxbox.util.storage :refer [storage]]
    [uxbox.util.timers :as ts]))
 
-;; --- i18n
-
 (declare reinit)
-;; (rx/sub! i18n/locale-sub #(reinit))
-
-;; --- Error Handling
 
 (defn- on-navigate
   [router path]

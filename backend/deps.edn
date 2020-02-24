@@ -54,11 +54,16 @@
    {com.bhauman/rebel-readline {:mvn/version "0.1.4"}
     org.clojure/tools.namespace {:mvn/version "1.0.0"}
     org.clojure/test.check {:mvn/version "1.0.0"}
+    clj-kondo {:mvn/version "RELEASE"}
 
     fipp/fipp {:mvn/version "0.6.21"}
     criterium/criterium {:mvn/version "0.4.5"}
     mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["tests"]}
+
+  :lint
+  {:extra-deps {clj-kondo {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "clj-kondo.main"]}
 
   :tests
   {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-581"}}
