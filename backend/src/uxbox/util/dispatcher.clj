@@ -44,7 +44,8 @@
           f   (.get ^Map reg key)]
       (when (nil? f)
         (ex/raise :type :method-not-found
-                  :hint "No method found for the current request."))
+                  :hint "No method found for the current request."
+                  :context {:key key}))
       (f params))))
 
 (defn dispatcher?

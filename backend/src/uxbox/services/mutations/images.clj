@@ -58,7 +58,7 @@
    values ($1, $2, $3)
    returning *;")
 
-(defn- create-library
+(defn create-library
   [conn {:keys [id team-id name]}]
   (let [id (or id (uuid/next))]
     (db/query-one conn [sql:create-library id team-id name])))

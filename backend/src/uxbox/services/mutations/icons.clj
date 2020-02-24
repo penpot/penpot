@@ -64,7 +64,7 @@
    values ($1, $2, $3)
    returning *;")
 
-(defn- create-library
+(defn create-library
   [conn {:keys [team-id id name] :as params}]
   (let [id (or id (uuid/next))]
     (db/query-one conn [sql:create-library id team-id name])))
@@ -97,7 +97,7 @@
       set name = $2
     where id = $1")
 
-(defn- select-library-for-update
+(defn select-library-for-update
   [conn id]
   (-> (db/query-one conn [sql:select-library-for-update id])
       (p/then' su/raise-not-found-if-nil)))
@@ -218,7 +218,7 @@
      from icon as i
     inner join icon_library as lib on (lib.id = i.library_id)
     where i.id = $1
-      for update of i")
+      for update")
 
 (def ^:private sql:rename-icon
   "update icon
