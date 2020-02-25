@@ -27,5 +27,5 @@
                 :on-click (partial on-click page-id)
                 :id (str "page-" page-id)
                 :key page-id}
-           [:div.page-icon i/page]
+           [:div.page-icon i/file-html]
            [:span (:name page)]]))]]))
