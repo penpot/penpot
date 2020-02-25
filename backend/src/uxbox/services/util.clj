@@ -8,22 +8,11 @@
   (:require
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
-   [vertx.core :as vc]
+   [vertx.util :as vu]
    [uxbox.core :refer [system]]
    [uxbox.common.exceptions :as ex]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.dispatcher :as uds]))
-
-;; (def logging-interceptor
-;;   {:enter (fn [data]
-;;             (let [type (get-in data [:request ::type])]
-;;               (assoc data ::start-time (System/nanoTime))))
-;;    :leave (fn [data]
-;;             (let [elapsed (- (System/nanoTime) (::start-time data))
-;;                   elapsed (str (quot elapsed 1000000) "ms")
-;;                   type (get-in data [:request ::type])]
-;;               (log/info "service" type "processed in" elapsed)
-;;               data))})
 
 (defn raise-not-found-if-nil
   [v]
@@ -36,5 +25,5 @@
 
 (defn handle-on-context
   [p]
-  (->> (vc/get-or-create-context system)
-       (vc/handle-on-context p)))
+  (->> (vu/current-context system)
+       (vu/handle-on-context p)))

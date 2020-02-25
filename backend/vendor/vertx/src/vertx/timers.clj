@@ -9,7 +9,7 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
-   [vertx.util :as vu])
+   [vertx.impl :as impl])
   (:import
    io.vertx.core.Vertx
    io.vertx.core.Handler))
@@ -18,18 +18,18 @@
 
 (defn schedule-once!
   [vsm ms f]
-  (let [^Vertx system (vu/resolve-system vsm)
-        ^Handler handler (vu/fn->handler (fn [v] (f)))
+  (let [^Vertx system (impl/resolve-system vsm)
+        ^Handler handler (impl/fn->handler (fn [v] (f)))
         timer-id (.setTimer system ms handler)]
     (reify
       java.lang.AutoCloseable
       (close [_]
         (.cancelTimer system timer-id)))))
 
-(defn sechdule-periodic!
+(defn schedule-periodic!
   [vsm ms f]
-  (let [^Vertx system (vu/resolve-system vsm)
-        ^Handler handler (vu/fn->handler (fn [v] (f)))
+  (let [^Vertx system (impl/resolve-system vsm)
+        ^Handler handler (impl/fn->handler (fn [v] (f)))
         timer-id (.setPeriodic system ms handler)]
     (reify
       java.lang.AutoCloseable
@@ -54,7 +54,7 @@
   (when (and (not once) (not repeat))
     (throw (IllegalArgumentException. "you should specify `once` or `repeat` params")))
 
-  (let [system (vu/resolve-system vsm)
+  (let [system (impl/resolve-system vsm)
         state  (atom nil)
         taskfn (fn wrapped-task []
                  (-> (p/do! ((::fn opts) opts))

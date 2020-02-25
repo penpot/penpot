@@ -13,12 +13,15 @@
   (:require
    [potok.core :as ptk]
    [beicon.core :as rx]
+   [uxbox.common.data :as d]
+   [uxbox.common.spec :as us]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.streams :as uws]
    [uxbox.main.workers :as uwrk]
+   [uxbox.main.geom :as geom]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.dom :as dom]))
@@ -34,18 +37,34 @@
             stoper (rx/filter uws/mouse-up? stream)
             position @uws/mouse-position]
         (rx/concat
-         ;; (when (refs/alignment-activated? flags)
-         ;;   (rx/of (dw/initial-selection-align selected)))
          (->> (uws/mouse-position-deltas position)
-              (rx/map #(dw/apply-temporal-displacement-in-bulk selected %))
+              (rx/map #(dw/apply-displacement-in-bulk selected %))
               (rx/take-until stoper))
-         (rx/of (dw/materialize-temporal-modifier-in-bulk selected)
+         (rx/of (dw/materialize-displacement-in-bulk selected)
                 ::dw/page-data-update))))))
 
+(def start-move-canvas
+  (ptk/reify ::start-move-selected
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [flags (get-in state [:workspace-local :flags])
+            selected (get-in state [:workspace-local :selected])
+            stoper (rx/filter uws/mouse-up? stream)
+            canvas-id (first selected)
+            position @uws/mouse-position]
+
+        (rx/concat
+         (->> (uws/mouse-position-deltas position)
+              (rx/map #(dw/apply-canvas-displacement canvas-id %))
+              (rx/take-until stoper))
+         (rx/of (dw/materialize-canvas-displacement canvas-id)))))))
+
 (defn on-mouse-down
-  [event {:keys [id type] :as shape} selected]
-  (let [selected? (contains? selected id)
-        drawing? @refs/selected-drawing-tool]
+  ([event shape] (on-mouse-down event shape nil))
+  ([event {:keys [id type] :as shape} kk-tmp]
+   (let [selected @refs/selected-shapes
+         selected? (contains? selected id)
+         drawing? @refs/selected-drawing-tool]
     (when-not (:blocked shape)
       (cond
         drawing?
@@ -54,7 +73,7 @@
         (= type :canvas)
         (when selected?
           (dom/stop-propagation event)
-          (st/emit! start-move-selected))
+          (st/emit! start-move-canvas))
 
         (and (not selected?) (empty? selected))
         (do
@@ -74,4 +93,4 @@
         :else
         (do
           (dom/stop-propagation event)
-          (st/emit! start-move-selected))))))
+          (st/emit! start-move-selected)))))))

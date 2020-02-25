@@ -12,11 +12,9 @@
    [uxbox.util.dispatcher :as uds]))
 
 (uds/defservice handle
-  {:dispatch-by ::type
-   :interceptors [uds/spec-interceptor
-                  uds/wrap-errors
-                  #_logging-interceptor
-                  #_context-interceptor]})
+  :dispatch-by ::type
+  :wrap [uds/wrap-spec
+         uds/wrap-error])
 
 (defmacro defmutation
   [key & rest]

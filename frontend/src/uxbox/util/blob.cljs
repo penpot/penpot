@@ -7,6 +7,8 @@
 (ns uxbox.util.blob
   "Helpers for work with HTML5 Blob objects.")
 
+;; TODO: DEPRECATED
+
 (defn ^boolean blob?
   [v]
   (instance? js/Blob v))

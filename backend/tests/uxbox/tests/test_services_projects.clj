@@ -6,60 +6,75 @@
    [uxbox.http :as http]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
-   [uxbox.tests.helpers :as th]))
+   [uxbox.tests.helpers :as th]
+   [uxbox.util.uuid :as uuid]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest query-projects
-  (let [user @(th/create-user db/pool 1)
-        proj @(th/create-project db/pool (:id user) 1)
-        data {::sq/type :projects
-              :user (:id user)}
-        out (th/try-on! (sq/handle data))]
-    ;; (th/print-result! out)
-    (t/is (nil? (:error out)))
-    (t/is (= 1 (count (:result out))))
-    (t/is (= (:id proj) (get-in out [:result 0 :id])))
-    (t/is (= (:name proj) (get-in out [:result 0 :name])))))
+(t/deftest projects-crud
+  (let [prof @(th/create-profile db/pool 1)
+        team @(th/create-team db/pool (:id prof) 1)
+        project-id (uuid/next)]
 
-(t/deftest mutation-create-project
-  (let [user @(th/create-user db/pool 1)
-        data {::sm/type :create-project
-              :user (:id user)
-              :name "test project"}
-        out (th/try-on! (sm/handle data))]
-    ;; (th/print-result! out)
-    (t/is (nil? (:error out)))
-    (t/is (= (:name data) (get-in out [:result :name])))))
+    (t/testing "create a project"
+      (let [data {::sm/type :create-project
+                  :id project-id
+                  :profile-id (:id prof)
+                  :team-id (:id team)
+                  :name "test project"}
+            out (th/try-on! (sm/handle data))]
+        ;; (th/print-result! out)
 
-(t/deftest mutation-rename-project
-  (let [user @(th/create-user db/pool 1)
-        proj @(th/create-project db/pool (:id user) 1)
-        data {::sm/type :rename-project
-              :id (:id proj)
-              :name "test project mod"
-              :user (:id user)}
-        out  (th/try-on! (sm/handle data))]
-    ;; (th/print-result! out)
-    (t/is (nil? (:error out)))
-    (t/is (= (:id data) (get-in out [:result :id])))
-    (t/is (= (:user data) (get-in out [:result :user-id])))
-    (t/is (= (:name data) (get-in out [:result :name])))))
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (= (:name data) (:name result))))))
 
-(t/deftest mutation-delete-project
-  (let [user @(th/create-user db/pool 1)
-        proj @(th/create-project db/pool (:id user) 1)
-        data {::sm/type :delete-project
-              :id (:id proj)
-              :user (:id user)}
-        out  (th/try-on! (sm/handle data))]
-    ;; (th/print-result! out)
-    (t/is (nil? (:error out)))
-    (t/is (nil? (:result out)))
+    (t/testing "query a list of projects"
+      (let [data {::sq/type :projects-by-team
+                  :team-id (:id team)
+                  :profile-id (:id prof)}
+            out (th/try-on! (sq/handle data))]
+        ;; (th/print-result! out)
 
-    (let [sql "select * from projects where user_id=$1 and deleted_at is null"
-          res @(db/query db/pool [sql (:id user)])]
-      (t/is (empty? res)))))
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (= 1 (count result)))
+          (t/is project-id (get-in result [0 :id]))
+          (t/is "test project" (get-in result [0 :name])))))
 
-;; TODO: add permisions related tests
+    (t/testing "rename project"
+      (let [data {::sm/type :rename-project
+                  :id project-id
+                  :name "renamed project"
+                  :profile-id (:id prof)}
+            out  (th/try-on! (sm/handle data))]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (let [result (:result out)]
+          (t/is (= (:id data) (:id result)))
+          (t/is (= (:name data) (:name result)))
+          (t/is (= (:profile-id data) (:id prof))))))
+
+    (t/testing "delete project"
+      (let [data {::sm/type :delete-project
+                  :id project-id
+                  :profile-id (:id prof)}
+            out  (th/try-on! (sm/handle data))]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out)))))
+
+    (t/testing "query a list of projects after delete"
+      (let [data {::sq/type :projects-by-team
+                  :team-id (:id team)
+                  :profile-id (:id prof)}
+            out (th/try-on! (sq/handle data))]
+        ;; (th/print-result! out)
+
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (= 1 (count result))))))
+    ))

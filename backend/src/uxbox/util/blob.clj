@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.blob
   "A generic blob storage encoding. Mainly used for
@@ -14,7 +17,9 @@
    java.io.ByteArrayOutputStream
    java.io.DataInputStream
    java.io.DataOutputStream
-   org.xerial.snappy.Snappy))
+   net.jpountz.lz4.LZ4Factory
+   net.jpountz.lz4.LZ4FastDecompressor
+   net.jpountz.lz4.LZ4Compressor))
 
 (defprotocol IDataToBytes
   (->bytes [data] "convert data to bytes"))
@@ -29,17 +34,21 @@
   String
   (->bytes [data] (.getBytes ^String data "UTF-8")))
 
+(def lz4-factory (LZ4Factory/fastestInstance))
+
 (defn encode
-  "A function used for encode data for persist in the database."
   [data]
   (let [data (t/encode data {:type :json})
         data-len (alength ^bytes data)
-        cdata (Snappy/compress ^bytes data)]
+        cp (.fastCompressor ^LZ4Factory lz4-factory)
+        max-len (.maxCompressedLength cp data-len)
+        cdata (byte-array max-len)
+        clen (.compress ^LZ4Compressor cp ^bytes data 0 data-len cdata 0 max-len)]
     (with-open [^ByteArrayOutputStream baos (ByteArrayOutputStream. (+ (alength cdata) 2 4))
                 ^DataOutputStream dos (DataOutputStream. baos)]
       (.writeShort dos (short 1)) ;; version number
       (.writeInt dos (int data-len))
-      (.write dos ^bytes cdata (int 0) (alength cdata))
+      (.write dos ^bytes cdata (int 0) clen)
       (-> (.toByteArray baos)
           (t/bytes->buffer)))))
 
@@ -53,12 +62,14 @@
                 dis  (DataInputStream. bais)]
       (let [version (.readShort dis)
             udata-len (.readInt dis)]
-        (when (not= version 1)
-          (throw (ex-info "unsupported version" {:version version})))
-        (decode-v1 data udata-len)))))
+        (case version
+          1 (decode-v1 data udata-len)
+          (throw (ex-info "unsupported version" {:version version})))))))
 
 (defn- decode-v1
-  [^bytes data udata-len]
-  (let [^bytes output-ba (byte-array udata-len)]
-    (Snappy/uncompress data 6 (- (alength data) 6) output-ba 0)
-    (t/decode output-ba {:type :json})))
+  [^bytes cdata ^long udata-len]
+  (let [^LZ4FastDecompressor dcp (.fastDecompressor ^LZ4Factory lz4-factory)
+        ^bytes udata (byte-array udata-len)]
+    (.decompress dcp cdata 6 udata 0 udata-len)
+    (t/decode udata {:type :json})))
+

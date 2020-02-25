@@ -11,8 +11,6 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [expound.alpha :as expound]
-   [sieppari.core :as sp]
-   [sieppari.context :as spx]
    [uxbox.common.exceptions :as ex])
   (:import
    clojure.lang.IDeref
@@ -21,47 +19,43 @@
    java.util.HashMap))
 
 (definterface IDispatcher
-  (^void add [key f metadata]))
+  (^void add [key f]))
 
-(deftype Dispatcher [reg attr interceptors]
+(defn- wrap-handler
+  [items handler]
+  (reduce #(%2 %1) handler items))
+
+(deftype Dispatcher [reg attr wrap-fns]
   IDispatcher
-  (add [this key f metadata]
-    (.put ^Map reg key (MapEntry/create f metadata))
-    this)
+  (add [this key f]
+    (let [f (wrap-handler wrap-fns f)]
+      (.put ^Map reg key f)
+      this))
 
   clojure.lang.IDeref
   (deref [_]
     {:registry reg
      :attr attr
-     :interceptors interceptors})
+     :wrap-fns wrap-fns})
 
   clojure.lang.IFn
   (invoke [_ params]
     (let [key (get params attr)
-          entry (.get ^Map reg key)]
-      (if (nil? entry)
-        (p/rejected (ex/error :type :not-found
-                              :code :method-not-found
-                              :hint "No method found for the current request."))
-        (let [f (.key ^MapEntry entry)
-              m (.val ^MapEntry entry)
-              d (p/deferred)]
-
-          (sp/execute (conj interceptors f)
-                      (with-meta params m)
-                      #(p/resolve! d %)
-                      #(p/reject! d %))
-          d)))))
+          f   (.get ^Map reg key)]
+      (when (nil? f)
+        (ex/raise :type :method-not-found
+                  :hint "No method found for the current request."
+                  :context {:key key}))
+      (f params))))
 
 (defn dispatcher?
   [v]
   (instance? IDispatcher v))
 
 (defmacro defservice
-  [sname {:keys [dispatch-by interceptors]}]
-  `(defonce ~sname (Dispatcher. (HashMap.)
-                                ~dispatch-by
-                                ~interceptors)))
+  [sname & {:keys [dispatch-by wrap]}]
+  `(def ~sname (Dispatcher. (HashMap.) ~dispatch-by ~wrap)))
+
 (defn parse-defmethod
   [args]
   (loop [r {}
@@ -94,40 +88,53 @@
           (assoc r :args v :body n)
           (throw (ex-info "missing arguments vector" {}))))))
 
+(defn add-method
+  [^Dispatcher dsp key f meta]
+  (let [f (with-meta f meta)]
+    (.add dsp key f)
+    dsp))
+
 (defmacro defmethod
   [& args]
   (let [{:keys [key meta sym args body]} (parse-defmethod args)
         f `(fn ~args ~@body)]
     `(do
        (s/assert dispatcher? ~sym)
-       (.add ~(with-meta sym {:tag 'uxbox.util.dispatcher.IDispatcher})
-             ~key ~f ~meta)
-       ~sym)))
+       (add-method ~sym ~key ~f ~meta))))
 
-(def spec-interceptor
-  "An interceptor that conforms the request with the user provided
-  spec."
-  {:enter (fn [{:keys [request] :as data}]
-            (let [{:keys [spec]} (meta request)]
-              (if-let [spec (s/get-spec spec)]
-                (let [result (s/conform spec request)]
-                  (if (not= result ::s/invalid)
-                    (assoc data :request result)
-                    (let [data (s/explain-data spec request)]
-                      (ex/raise :type :validation
-                                :code :spec-validation
-                                :explain (with-out-str
-                                           (expound/printer data))
-                                :data (::s/problems data)))))
-                data)))})
+(defn wrap-spec
+  [handler]
+  (let [mdata (meta handler)
+        spec (s/get-spec (:spec mdata))]
+    (if (nil? spec)
+      handler
+      (with-meta
+        (fn [params]
+          (let [result (s/conform spec params)]
+            (if (not= result ::s/invalid)
+              (handler result)
+              (let [data (s/explain-data spec params)]
+                (ex/raise :type :validation
+                          :code :spec-validation
+                          :explain (with-out-str
+                                     (expound/printer data))
+                          :data (::s/problems data))))))
+        (assoc mdata ::wrap-spec true)))))
 
-(def wrap-errors
-  {:error
-   (fn [data]
-     (let [error (:error data)
-           mdata (meta (:request data))]
-       (assoc data :error (ex/error :type :service-error
+(defn wrap-error
+  [handler]
+  (let [mdata (meta handler)]
+    (with-meta
+      (fn [params]
+        (try
+          (-> (handler params)
+              (p/catch' (fn [error]
+                          (ex/raise :type :service-error
                                     :name (:spec mdata)
-                                    :cause error))))})
-
+                                    :cause error))))
+          (catch Throwable error
+            (p/rejected (ex/error :type :service-error
+                                  :name (:spec mdata)
+                                  :cause error)))))
+      (assoc mdata ::wrap-error true))))
 

@@ -2,6 +2,9 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
@@ -9,7 +12,7 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.builtins.icons :as i :include-macros true]
    [uxbox.config :as cfg]
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.undo :as udu]
@@ -17,7 +20,6 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
-   [uxbox.main.ui.users :refer [user]]
    [uxbox.main.ui.workspace.images :refer [import-image-modal]]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.math :as mth]
@@ -85,7 +87,7 @@
       {:alt (tr "header.sitemap")
        :class (when (contains? layout :sitemap) "selected")
        :on-click #(st/emit! (dw/toggle-layout-flag :sitemap))}
-      [:span (:project-name file) " / " (:name file)]]
+      [:span (:name file)]]
 
      [:& active-users]
 
@@ -100,7 +102,8 @@
         {:alt (tr "workspace.header.rect")
          :class (when (= selected-drawtool :rect) "selected")
          :on-click (partial select-drawtool :rect)}
-        i/box]
+        i/box
+        ]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "workspace.header.circle")
          :class (when (= selected-drawtool :circle) "selected")

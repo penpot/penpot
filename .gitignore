@@ -10,6 +10,7 @@ figwheel_server.log
 .cpcache
 .rebel_readline_history
 /vendor/**/target
+/cd.md
 node_modules
 /backend/target/
 /backend/resources/public/media
@@ -19,11 +20,7 @@ node_modules
 /frontend/target/
 /frontend/dist/
 /frontend/out/
-/frontend/resources/public/js/compiled/**
-/frontend/resources/public/css
-/frontend/resources/public/js
-/frontend/resources/public/view
-/frontend/resources/public/index.html
+/frontend/resources/public/*
 /docker/frontend/dist
 /docker/backend/dist
 /media

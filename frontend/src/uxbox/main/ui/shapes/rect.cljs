@@ -22,10 +22,13 @@
 (declare rect-shape)
 
 (mf/defc rect-wrapper
+  {:wrap [#(mf/wrap-memo % =)]}
   [{:keys [shape] :as props}]
-  (let [selected (mf/deref refs/selected-shapes)
-        selected? (contains? selected (:id shape))
-        on-mouse-down #(common/on-mouse-down % shape selected)]
+  (let [selected-iref (mf/use-memo
+                       {:fn #(refs/make-selected (:id shape))
+                        :deps (mf/deps (:id shape))})
+        selected? (mf/deref selected-iref)
+        on-mouse-down #(common/on-mouse-down % shape)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
      [:& rect-shape {:shape shape}]]))
@@ -34,13 +37,14 @@
 
 (mf/defc rect-shape
   [{:keys [shape] :as props}]
-  (let [{:keys [id rotation modifier-mtx]} shape
+  (let [ds-modifier (:displacement-modifier shape)
+        rz-modifier (:resize-modifier shape)
 
-        shape (cond
-                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
-                :else shape)
+        shape (cond-> shape
+                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
 
-        {:keys [x y width height]} shape
+        {:keys [id x y width height rotation]} shape
 
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"

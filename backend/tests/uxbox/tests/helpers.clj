@@ -4,22 +4,30 @@
    [promesa.core :as p]
    [cuerdas.core :as str]
    [mount.core :as mount]
-   [datoteka.storages :as st]
+   [environ.core :refer [env]]
    [uxbox.services.mutations.profile :as profile]
    [uxbox.services.mutations.projects :as projects]
-   [uxbox.services.mutations.project-files :as files]
-   [uxbox.services.mutations.project-pages :as pages]
+   [uxbox.services.mutations.teams :as teams]
+   [uxbox.services.mutations.files :as files]
+   [uxbox.services.mutations.pages :as pages]
+   [uxbox.services.mutations.images :as images]
+   [uxbox.services.mutations.icons :as icons]
+   [uxbox.services.mutations.colors :as colors]
    [uxbox.fixtures :as fixtures]
    [uxbox.migrations]
    [uxbox.media]
    [uxbox.db :as db]
    [uxbox.util.blob :as blob]
    [uxbox.util.uuid :as uuid]
-   [uxbox.config :as cfg]))
+   [uxbox.util.storage :as ust]
+   [uxbox.config :as cfg]
+   [vertx.util :as vu]))
+
+(def ^:dynamic *context* nil)
 
 (defn state-init
   [next]
-  (let [config (cfg/read-test-config)]
+  (let [config (cfg/read-test-config env)]
     (-> (mount/only #{#'uxbox.config/config
                       #'uxbox.core/system
                       #'uxbox.db/pool
@@ -27,13 +35,12 @@
                       #'uxbox.services.init/mutation-services
                       #'uxbox.migrations/migrations
                       #'uxbox.media/assets-storage
-                      #'uxbox.media/media-storage
-                      #'uxbox.media/images-storage
-                      #'uxbox.media/thumbnails-storage})
+                      #'uxbox.media/media-storage})
         (mount/swap {#'uxbox.config/config config})
         (mount/start))
     (try
-      (next)
+      (binding [*context* (vu/get-or-create-context uxbox.core/system)]
+        (next))
       (finally
         (mount/stop)))))
 
@@ -54,8 +61,8 @@
   (try
     (next)
     (finally
-      (st/clear! uxbox.media/media-storage)
-      (st/clear! uxbox.media/assets-storage))))
+      (ust/clear! uxbox.media/media-storage)
+      (ust/clear! uxbox.media/assets-storage))))
 
 (defn mk-uuid
   [prefix & args]
@@ -63,45 +70,66 @@
 
 ;; --- Profile creation
 
-(defn create-user
+(defn create-profile
   [conn i]
-  (profile/create-profile conn {:id (mk-uuid "user" i)
-                              :fullname (str "User " i)
-                              :username (str "user" i)
-                              :email (str "user" i ".test@uxbox.io")
-                              :password "123123"
-                              :metadata {}}))
+  (#'profile/register-profile conn {:id (mk-uuid "profile" i)
+                                    :fullname (str "Profile " i)
+                                    :email (str "profile" i ".test@nodomain.com")
+                                    :password "123123"}))
+
+(defn create-team
+  [conn profile-id i]
+  (#'teams/create-team conn {:id (mk-uuid "team" i)
+                             :profile-id profile-id
+                             :name (str "team" i)}))
 
 (defn create-project
-  [conn user-id i]
-  (projects/create-project conn {:id (mk-uuid "project" i)
-                                 :user user-id
-                                 :version 1
-                                 :name (str "sample project " i)}))
+  [conn profile-id team-id i]
+  (#'projects/create-project conn {:id (mk-uuid "project" i)
+                                   :profile-id profile-id
+                                   :team-id team-id
+                                   :name (str "project" i)}))
+
+(defn create-file
+  [conn profile-id project-id i]
+  (#'files/create-file conn {:id (mk-uuid "file" i)
+                             :profile-id profile-id
+                             :project-id project-id
+                             :name (str "file" i)}))
+
+(defn create-page
+  [conn profile-id file-id i]
+  (#'pages/create-page conn {:id (mk-uuid "page" i)
+                             :profile-id profile-id
+                             :file-id file-id
+                             :name (str "page" i)
+                             :ordering i
+                             :data {:version 1
+                                    :shapes []
+                                    :options {}
+                                    :canvas []
+                                    :shapes-by-id {}}}))
 
 
-(defn create-project-file
-  [conn user-id project-id i]
-  (files/create-file conn {:id (mk-uuid "project-file" i)
-                           :user user-id
-                           :project-id project-id
-                           :name (str "sample project file" i)}))
+(defn create-image-library
+  [conn team-id i]
+  (#'images/create-library conn {:id (mk-uuid "imgcoll" i)
+                                 :team-id team-id
+                                 :name (str "image library " i)}))
 
-
-(defn create-project-page
-  [conn user-id file-id i]
-  (pages/create-page conn {:id (mk-uuid "page" i)
-                           :user user-id
-                           :file-id file-id
-                           :name (str "page" i)
-                           :ordering i
-                           :data {:shapes []
-                                  :canvas []
-                                  :shapes-by-id {}}
-                           :metadata {}}))
+(defn create-icon-library
+  [conn team-id i]
+  (#'icons/create-library conn {:id (mk-uuid "imgcoll" i)
+                                :team-id team-id
+                                :name (str "icon library " i)}))
+(defn create-color-library
+  [conn team-id i]
+  (#'colors/create-library conn {:id (mk-uuid "imgcoll" i)
+                                 :team-id team-id
+                                 :name (str "color library " i)}))
 
 (defn handle-error
-  [err]
+  [^Throwable err]
   (if (instance? java.util.concurrent.ExecutionException err)
     (handle-error (.getCause err))
     err))
@@ -114,13 +142,18 @@
      (catch Exception e#
        [(handle-error e#) nil])))
 
-
 (defmacro try-on!
   [expr]
   `(try
-     (let [result# (deref ~expr)]
-       {:error nil
-        :result result#})
+     (let [d# (p/deferred)]
+       (->> #(p/finally (p/do! ~expr)
+                        (fn [v# e#]
+                          (if e#
+                            (p/reject! d# e#)
+                            (p/resolve! d# v#))))
+            (vu/run-on-context! *context*))
+       (array-map :error nil
+                  :result (deref d#)))
      (catch Exception e#
        {:error (handle-error e#)
         :result nil})))
@@ -141,8 +174,11 @@
       (= :spec-validation (:code data))
       (println (:explain data))
 
+      (= :service-error (:type data))
+      (print-error! (.getCause ^Throwable error))
+
       :else
-      (.printStackTrace error))))
+      (.printStackTrace ^Throwable error))))
 
 (defn print-result!
   [{:keys [error result]}]

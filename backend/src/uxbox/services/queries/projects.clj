@@ -16,37 +16,38 @@
 
 (declare decode-row)
 
-;; --- Helpers & Specs
-
-(s/def ::id ::us/uuid)
-(s/def ::name ::us/string)
-(s/def ::token ::us/string)
-(s/def ::user ::us/uuid)
-
-
 ;; --- Query: Projects
 
-(def sql:projects
-  "select p.*
-     from project_users as pu
-    inner join projects as p on (p.id = pu.project_id)
-    where pu.can_edit = true
-      and pu.user_id = $1
-    order by p.created_at asc")
+(def ^:private sql:projects
+  "with projects as (
+     select p.*
+       from project as p
+      inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
+      where tpr.profile_id = $1
+        and (tpr.is_admin = true or
+             tpr.is_owner = true or
+             tpr.can_edit = true)
+      union
+     select p.*
+       from project as p
+      inner join project_profile_rel as ppr on (ppr.project_id = p.id)
+      where ppr.profile_id = $1
+        and (ppr.is_admin = true or
+             ppr.is_owner = true or
+             ppr.can_edit = true)
+   )
+   select *
+     from projects
+    where team_id = $2
+    order by created_at asc")
 
-(s/def ::projects
-  (s/keys :req-un [::user]))
+(s/def ::team-id ::us/uuid)
+(s/def ::profile-id ::us/uuid)
 
-(sq/defquery ::projects
-  [{:keys [user] :as params}]
-  (-> (db/query db/pool [sql:projects user])
-      (p/then' (partial mapv decode-row))))
+(s/def ::projects-by-team
+  (s/keys :req-un [::profile-id ::team-id]))
 
+(sq/defquery ::projects-by-team
+  [{:keys [profile-id team-id] :as params}]
+  (db/query db/pool [sql:projects profile-id team-id]))
 
-;; --- Helpers
-
-(defn decode-row
-  [{:keys [metadata] :as row}]
-  (when row
-    (cond-> row
-      metadata (assoc :metadata (blob/decode metadata)))))

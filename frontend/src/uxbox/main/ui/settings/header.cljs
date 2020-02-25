@@ -13,8 +13,8 @@
    [uxbox.main.data.auth :as da]
    [uxbox.main.data.projects :as dp]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.users :refer [user]]
-   [uxbox.util.i18n :refer [tr]]
+   [uxbox.main.ui.dashboard.header :refer [user]]
+   [uxbox.util.i18n :as i18n :refer [tr t]]
    [uxbox.util.router :as rt]))
 
 (mf/defc header-link
@@ -24,25 +24,18 @@
 
 (mf/defc header
   [{:keys [section] :as props}]
-  (let [profile? (= section :settings/profile)
-        password? (= section :settings/password)
-        notifications? (= section :settings/notifications)]
+  (let [profile? (= section :settings-profile)
+        password? (= section :settings-password)]
     [:header#main-bar.main-bar
      [:div.main-logo
-      [:& header-link {:section :dashboard/projects
+      [:& header-link {:section :dashboard-projects
                        :content i/logo}]]
      [:ul.main-nav
       [:li {:class (when profile? "current")}
-       [:& header-link {:section :settings/profile
+       [:& header-link {:section :settings-profile
                         :content (tr "settings.profile")}]]
       [:li {:class (when password? "current")}
-       [:& header-link {:section :settings/password
-                        :content (tr "settings.password")}]]
-      [:li {:class (when notifications? "current")}
-       [:& header-link {:section :settings/notifications
-                        :content (tr "settings.notifications")}]]
-      #_[:li {:on-click #(st/emit! (da/logout))}
-       [:& header-link {:section :logout
-                        :content (tr "settings.exit")}]]]
+       [:& header-link {:section :settings-password
+                        :content (tr "settings.password")}]]]
      [:& user]]))
 

@@ -11,7 +11,6 @@
    [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.projects :as dp]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
@@ -45,7 +44,7 @@
                 ;; parent (.-parentNode parent)
                 name (dom/get-value target)]
             ;; (set! (.-draggable parent) true)
-            (st/emit! (dp/rename-page (:id page) name))
+            (st/emit! (dw/rename-page (:id page) name))
             (swap! local assoc :edition false)))
 
         on-key-down (fn [event]
@@ -56,7 +55,7 @@
                         (kbd/esc? event)
                         (swap! local assoc :edition false)))
 
-        delete-fn #(st/emit! (dp/delete-page (:id page)))
+        delete-fn #(st/emit! (dw/delete-page (:id page)))
         on-delete #(do
                      (dom/prevent-default %)
                      (dom/stop-propagation %)
@@ -78,7 +77,7 @@
                                       :dragging (:dragging? dprops))
                               :on-click navigate-fn
                               :on-double-click on-double-click}
-      [:div.page-icon i/page]
+      [:div.page-icon i/file-html]
       (if (:edition @local)
         [:*
          [:input.element-name {:type "text"
@@ -128,7 +127,7 @@
 
 (mf/defc sitemap-toolbox
   [{:keys [file page] :as props}]
-  (let [on-create-click #(st/emit! dp/create-empty-page)
+  (let [on-create-click #(st/emit! dw/create-empty-page)
         locale (i18n/use-locale)]
     [:div.sitemap.tool-window
      [:div.tool-window-bar

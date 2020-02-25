@@ -10,25 +10,37 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
-   [datoteka.proto :as pt]
-   [datoteka.storages :as st]
    [uxbox.common.data :as d]
    [uxbox.common.spec :as us]
+   [uxbox.util.storage :as ust]
    [uxbox.media :as media])
   (:import
    java.io.ByteArrayInputStream
    java.io.InputStream
    org.im4java.core.ConvertCmd
+   org.im4java.core.Info
    org.im4java.core.IMOperation))
 
-;; TODO: make this module non-blocking
+;; --- Helpers
+
+(defn format->extension
+  [format]
+  (case format
+    "jpeg" ".jpg"
+    "webp" ".webp"))
+
+(defn format->mtype
+  [format]
+  (case format
+    "jpeg" "image/jpeg"
+    "webp" "image/webp"))
 
 ;; --- Thumbnails Generation
 
 (s/def ::width integer?)
 (s/def ::height integer?)
 (s/def ::quality #(< 0 % 101))
-(s/def ::format #{"jpg" "webp"})
+(s/def ::format #{"jpeg" "webp"})
 (s/def ::thumbnail-opts
   (s/keys :opt-un [::format ::quality ::width ::height]))
 
@@ -37,19 +49,56 @@
 
 (defn generate-thumbnail
   ([input] (generate-thumbnail input nil))
-  ([input {:keys [size quality format width height]
-           :or {format "jpg"
+  ([input {:keys [quality format width height]
+           :or {format "jpeg"
                 quality 92
                 width 200
                 height 200}
            :as opts}]
-   (us/verify ::thumbnail-opts opts)
-   (us/verify fs/path? input)
-   (let [tmp (fs/create-tempfile :suffix (str "." format))
+   (us/assert ::thumbnail-opts opts)
+   (us/assert fs/path? input)
+   (let [ext (format->extension format)
+         tmp (fs/create-tempfile :suffix ext)
+         opr (doto (IMOperation.)
+               (.addImage)
+
+               (.autoOrient)
+               (.strip)
+               (.thumbnail (int width) (int height) ">")
+               (.quality (double quality))
+
+               ;; (.autoOrient)
+               ;; (.strip)
+               ;; (.thumbnail (int width) (int height) "^")
+               ;; (.gravity "center")
+               ;; (.extent (int width) (int height))
+               ;; (.quality (double quality))
+               (.addImage))]
+     (doto (ConvertCmd.)
+       (.run opr (into-array (map str [input tmp]))))
+     (let [thumbnail-data (fs/slurp-bytes tmp)]
+       (fs/delete tmp)
+       (ByteArrayInputStream. thumbnail-data)))))
+
+(defn generate-thumbnail2
+  ([input] (generate-thumbnail input nil))
+  ([input {:keys [quality format width height]
+           :or {format "jpeg"
+                quality 92
+                width 200
+                height 200}
+           :as opts}]
+   (us/assert ::thumbnail-opts opts)
+   (us/assert fs/path? input)
+   (let [ext (format->extension format)
+         tmp (fs/create-tempfile :suffix ext)
          opr (doto (IMOperation.)
                (.addImage)
                (.autoOrient)
-               (.resize (int width) (int height) "^")
+               (.strip)
+               (.thumbnail (int width) (int height) "^")
+               (.gravity "center")
+               (.extent (int width) (int height))
                (.quality (double quality))
                (.addImage))]
      (doto (ConvertCmd.)
@@ -58,50 +107,35 @@
        (fs/delete tmp)
        (ByteArrayInputStream. thumbnail-data)))))
 
-(defn make-thumbnail
-  [input {:keys [width height format quality] :as opts}]
-  (us/verify ::thumbnail-opts opts)
-  (let [[filename ext] (fs/split-ext (fs/name input))
-        suffix (->> [width height quality format]
-                    (interpose ".")
-                    (apply str))
-        thumbnail-path (fs/path input (str "thumb-" suffix))
-        images-storage media/images-storage
-        thumbs-storage media/thumbnails-storage]
-    (if @(st/exists? thumbs-storage thumbnail-path)
-      (str (st/public-url thumbs-storage thumbnail-path))
-      (if @(st/exists? images-storage input)
-        (let [datapath @(st/lookup images-storage input)
-              thumbnail (generate-thumbnail datapath opts)
-              path @(st/save thumbs-storage thumbnail-path thumbnail)]
-          (str (st/public-url thumbs-storage path)))
-        nil))))
+(defn info
+  [path]
+  (let [instance (Info. (str path))]
+    {:width (.getImageWidth instance)
+     :height (.getImageHeight instance)}))
 
-(defn populate-thumbnail
-  [entry {:keys [src dst] :as opts}]
-  (assert (map? entry))
+(defn resolve-urls
+  [row src dst]
+  (s/assert map? row)
   (let [src (if (vector? src) src [src])
         dst (if (vector? dst) dst [dst])
-        src (get-in entry src)]
-     (if (empty? src)
-       entry
-       (assoc-in entry dst (make-thumbnail src opts)))))
-
-(defn populate-thumbnails
-  [entry & settings]
-  (reduce populate-thumbnail entry settings))
-
-(defn populate-urls
-  [entry storage src dst]
-  (assert (map? entry))
-  (assert (st/storage? storage))
-  (let [src (if (vector? src) src [src])
-        dst (if (vector? dst) dst [dst])
-        value (get-in entry src)]
+        value (get-in row src)]
     (if (empty? value)
-      entry
-      (let [url (str (st/public-url storage value))]
-        (-> entry
-            (d/dissoc-in src)
-            (assoc-in dst url))))))
+      row
+      (let [url (ust/public-uri media/media-storage value)]
+        (assoc-in row dst (str url))))))
 
+(defn- resolve-uri
+  [storage row src dst]
+  (let [src (if (vector? src) src [src])
+        dst (if (vector? dst) dst [dst])
+        value (get-in row src)]
+    (if (empty? value)
+      row
+      (let [url (ust/public-uri media/media-storage value)]
+        (assoc-in row dst (str url))))))
+
+(defn resolve-media-uris
+  [row & pairs]
+  (us/assert map? row)
+  (us/assert (s/coll-of vector?) pairs)
+  (reduce #(resolve-uri media/media-storage %1 (nth %2 0) (nth %2 1)) row pairs))

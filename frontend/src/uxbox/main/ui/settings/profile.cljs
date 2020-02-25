@@ -17,31 +17,19 @@
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
-   [uxbox.util.i18n :as i18n :refer [tr]]
-   [uxbox.util.interop :refer [iterable->seq]]
+   [uxbox.util.i18n :as i18n :refer [tr t]]
    [uxbox.util.messages :as um]))
 
-
-(defn- profile->form
-  [profile]
-  (let [language (get-in profile [:metadata :language])]
-    (-> (select-keys profile [:fullname :username :email])
-        (cond-> language (assoc :language language)))))
-
-(def ^:private profile-ref
+(def ^:private profile-iref
   (-> (l/key :profile)
       (l/derive st/state)))
 
 (s/def ::fullname ::fm/not-empty-string)
-(s/def ::username ::fm/not-empty-string)
-(s/def ::language ::fm/not-empty-string)
+(s/def ::lang ::fm/not-empty-string)
 (s/def ::email ::fm/email)
 
 (s/def ::profile-form
-  (s/keys :req-un [::fullname
-                   ::username
-                   ::language
-                   ::email]))
+  (s/keys :req-un [::fullname ::lang ::email]))
 
 (defn- on-error
   [error form]
@@ -56,26 +44,24 @@
            {:type ::api
             :message "errors.api.form.username-already-exists"})))
 
-(defn- initial-data
-  []
-  (merge {:language @i18n/locale}
-         (profile->form (deref profile-ref))))
-
 (defn- on-submit
   [event form]
   (dom/prevent-default event)
   (let [data (:clean-data form)
         on-success #(st/emit! (um/info (tr "settings.profile.profile-saved")))
         on-error #(on-error % form)]
-    (st/emit! (udu/form->update-profile data on-success on-error))))
+    (st/emit! (udu/update-profile (with-meta data
+                                    {:on-success on-success
+                                     :on-error on-error})))))
 
 ;; --- Profile Form
 
 (mf/defc profile-form
   [props]
-  (let [{:keys [data] :as form} (fm/use-form ::profile-form initial-data)]
+  (let [locale (i18n/use-locale)
+        {:keys [data] :as form} (fm/use-form ::profile-form #(deref profile-iref))]
     [:form.profile-form {:on-submit #(on-submit % form)}
-     [:span.user-settings-label (tr "settings.profile.section-basic-data")]
+     [:span.user-settings-label (t locale "settings.profile.section-basic-data")]
      [:input.input-text
       {:type "text"
        :name "fullname"
@@ -83,23 +69,11 @@
        :on-blur (fm/on-input-blur form :fullname)
        :on-change (fm/on-input-change form :fullname)
        :value (:fullname data "")
-       :placeholder (tr "settings.profile.your-name")}]
+       :placeholder (t locale "settings.profile.your-name")}]
 
      [:& fm/field-error {:form form
                          :type #{::api}
                          :field :fullname}]
-     [:input.input-text
-      {:type "text"
-       :name "username"
-       :class (fm/error-class form :username)
-       :on-blur (fm/on-input-blur form :username)
-       :on-change (fm/on-input-change form :username)
-       :value (:username data "")
-       :placeholder (tr "settings.profile.your-username")}]
-
-     [:& fm/field-error {:form form
-                         :type #{::api}
-                         :field :username}]
 
      [:input.input-text
       {:type "email"
@@ -108,18 +82,18 @@
        :on-blur (fm/on-input-blur form :email)
        :on-change (fm/on-input-change form :email)
        :value (:email data "")
-       :placeholder (tr "settings.profile.your-email")}]
+       :placeholder (t locale "settings.profile.your-email")}]
 
      [:& fm/field-error {:form form
                          :type #{::api}
                          :field :email}]
 
-     [:span.user-settings-label (tr "settings.profile.section-i18n-data")]
-     [:select.input-select {:value (:language data)
-                            :name "language"
-                            :class (fm/error-class form :language)
-                            :on-blur (fm/on-input-blur form :language)
-                            :on-change (fm/on-input-change form :language)}
+     [:span.user-settings-label (t locale "settings.profile.lang")]
+     [:select.input-select {:value (:lang data)
+                            :name "lang"
+                            :class (fm/error-class form :lang)
+                            :on-blur (fm/on-input-blur form :lang)
+                            :on-change (fm/on-input-change form :lang)}
       [:option {:value "en"} "English"]
       [:option {:value "fr"} "Français"]]
 
@@ -127,28 +101,30 @@
       {:type "submit"
        :class (when-not (:valid form) "btn-disabled")
        :disabled (not (:valid form))
-       :value (tr "settings.update-settings")}]]))
+       :value (t locale "settings.update-settings")}]]))
 
 ;; --- Profile Photo Form
 
 (mf/defc profile-photo-form
-  []
-  (letfn [(on-change [event]
-            (let [target (dom/get-target event)
-                  file (-> (dom/get-files target)
-                           (iterable->seq)
-                           (first))]
-              (st/emit! (udu/update-photo file))
-              (dom/clean-value! target)))]
-    (let [{:keys [photo] :as profile} (mf/deref profile-ref)
-          photo (if (or (str/empty? photo) (nil? photo))
-                  "images/avatar.jpg"
-                  photo)]
-      [:form.avatar-form
-       [:img {:src photo}]
-       [:input {:type "file"
-                :value ""
-                :on-change on-change}]])))
+  [props]
+  (let [photo (:photo-uri (mf/deref profile-iref))
+        photo (if (or (str/empty? photo) (nil? photo))
+                "images/avatar.jpg"
+                photo)
+
+        on-change
+        (fn [event]
+          (let [target (dom/get-target event)
+                file (-> (dom/get-files target)
+                         (array-seq)
+                         (first))]
+            (st/emit! (udu/update-photo {:file file}))
+            (dom/clean-value! target)))]
+    [:form.avatar-form
+     [:img {:src photo}]
+     [:input {:type "file"
+              :value ""
+              :on-change on-change}]]))
 
 ;; --- Profile Page
 

@@ -7,7 +7,6 @@
 (ns uxbox.http.session
   (:require
    [promesa.core :as p]
-   [sieppari.context :as spx]
    [vertx.core :as vc]
    [uxbox.db :as db]
    [uxbox.util.uuid :as uuid]))
@@ -18,26 +17,26 @@
   "Retrieves a user id associated with the provided auth token."
   [token]
   (when token
-    (let [sql "select user_id from sessions where id = $1"]
+    (let [sql "select profile_id from session where id = $1"]
       (-> (db/query-one db/pool [sql token])
-          (p/then' (fn [row] (when row (:user-id row))))))))
+          (p/then' (fn [row] (when row (:profile-id row))))))))
 
 (defn create
   [user-id user-agent]
   (let [id  (uuid/random)
-        sql "insert into sessions (id, user_id, user_agent) values ($1, $2, $3)"]
+        sql "insert into session (id, profile_id, user_agent) values ($1, $2, $3)"]
     (-> (db/query-one db/pool [sql id user-id user-agent])
         (p/then (constantly (str id))))))
 
 (defn delete
   [token]
-  (let [sql "delete from sessions where id = $1"]
+  (let [sql "delete from session where id = $1"]
     (-> (db/query-one db/pool [sql token])
         (p/then' (constantly nil)))))
 
 ;; --- Interceptor
 
-(defn parse-token
+(defn- parse-token
   [request]
   (try
     (when-let [token (get-in request [:cookies "auth-token"])]
@@ -45,13 +44,16 @@
     (catch java.lang.IllegalArgumentException e
       nil)))
 
-(defn auth
-  []
-  {:enter (fn [data]
-            (let [token (parse-token (:request data))]
-              (-> (retrieve token)
-                  (p/then' (fn [user-id]
-                             (if user-id
-                               (update data :request assoc :user user-id)
-                               data)))
-                  (vc/handle-on-context))))})
+(defn- wrap-auth
+  [handler]
+  (fn [request]
+    (let [token (parse-token request)]
+      (-> (retrieve token)
+          (p/then (fn [profile-id]
+                    (if profile-id
+                      (handler (assoc request :profile-id profile-id))
+                      (handler request))))))))
+
+(def auth
+  {:nane ::auth
+   :compile (constantly wrap-auth)})

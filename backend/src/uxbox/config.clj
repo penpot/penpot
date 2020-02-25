@@ -16,52 +16,24 @@
    [cuerdas.core :as str]
    [environ.core :refer [env]]
    [mount.core :refer [defstate]]
-   [uxbox.common.exceptions :as ex]))
+   [uxbox.common.exceptions :as ex]
+   [uxbox.util.time :as tm]))
 
-;; --- Configuration Reading & Loading
-
-(defn lookup-env
-  [env key default]
-  (let [value (get env key ::empty)]
-    (if (= value ::empty)
-      default
-      (try
-        (read-string value)
-        (catch Exception e
-          (log/warn (str/istr "can't parse `~{key}` env value"))
-          default)))))
-
-;; --- Configuration Loading & Parsing
-
-(defn read-config
-  []
-  {:http-server-port (:uxbox-http-server-port env 6060)
-   :http-server-debug (:uxbox-http-server-debug env true)
-   :http-server-cors (:uxbox-http-server-cors env "http://localhost:3449")
-
-   :database-username (:uxbox-database-username env nil)
-   :database-password (:uxbox-database-password env nil)
-   :database-uri (:uxbox-database-uri env "postgresql://127.0.0.1/uxbox")
-   :media-directory (:uxbox-media-directory env "resources/public/media")
-   :media-uri (:uxbox-media-uri env "http://localhost:6060/media/")
-   :assets-directory (:uxbox-assets-directory env "resources/public/static")
-   :assets-uri (:uxbox-assets-uri env "http://localhost:6060/static/")
-
-   :google-api-key (:uxbox-google-api-key env nil)
-
-   :email-reply-to (:uxbox-email-reply-to env "no-reply@nodomain.com")
-   :email-from (:uxbox-email-from env "no-reply@nodomain.com")
-
-   :smtp-host (:uxbox-smtp-host env "smtp")
-   :smtp-port (:uxbox-smtp-port env 25)
-   :smtp-user (:uxbox-smtp-user env nil)
-   :smtp-password (:uxbox-smtp-password env nil)
-   :smtp-tls (:uxbox-smtp-tls env false)
-   :smtp-ssl (:uxbox-smtp-ssl env false)
-   :smtp-enabled (:uxbox-smtp-enabled env false)
-
-   :allow-demo-users (:uxbox-allow-demo-users env true)
-   :registration-enabled (:uxbox-registration-enabled env true)})
+(def defaults
+  {:http-server-port 6060
+   :http-server-cors "http://localhost:3449"
+   :database-uri "postgresql://127.0.0.1/uxbox"
+   :media-directory "resources/public/media"
+   :assets-directory "resources/public/static"
+   :media-uri "http://localhost:6060/media/"
+   :assets-uri "http://localhost:6060/static/"
+   :email-reply-to "no-reply@nodomain.com"
+   :email-from "no-reply@nodomain.com"
+   :smtp-enabled false
+   :allow-demo-users true
+   :registration-enabled true
+   :debug-humanize-transit true
+   })
 
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-debug ::us/boolean)
@@ -76,6 +48,7 @@
 (s/def ::email-reply-to ::us/email)
 (s/def ::email-from ::us/email)
 (s/def ::smtp-host ::us/string)
+(s/def ::smtp-port ::us/integer)
 (s/def ::smtp-user (s/nilable ::us/string))
 (s/def ::smtp-password (s/nilable ::us/string))
 (s/def ::smtp-tls ::us/boolean)
@@ -83,9 +56,10 @@
 (s/def ::smtp-enabled ::us/boolean)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::registration-enabled ::us/boolean)
+(s/def ::debug-humanize-transit ::us/boolean)
 
 (s/def ::config
-  (s/keys :req-un [::http-server-cors
+  (s/keys :opt-un [::http-server-cors
                    ::http-server-debug
                    ::http-server-port
                    ::database-username
@@ -98,35 +72,41 @@
                    ::email-reply-to
                    ::email-from
                    ::smtp-host
+                   ::smtp-port
                    ::smtp-user
                    ::smtp-password
                    ::smtp-tls
                    ::smtp-ssl
                    ::smtp-enabled
+                   ::debug-humanize-transit
                    ::allow-demo-users
                    ::registration-enabled]))
 
+(defn env->config
+  [env]
+  (reduce-kv (fn [acc k v]
+               (cond-> acc
+                 (str/starts-with? (name k) "uxbox-")
+                 (assoc (keyword (subs (name k) 6)) v)))
+             {}
+             env))
+
+(defn read-config
+  [env]
+  (->> (env->config env)
+       (merge defaults)
+       (us/conform ::config)))
+
 (defn read-test-config
-  []
-  (assoc (read-config)
+  [env]
+  (assoc (read-config env)
          :database-uri "postgresql://postgres/uxbox_test"
          :media-directory "/tmp/uxbox/media"
          :assets-directory "/tmp/uxbox/static"
          :migrations-verbose false))
 
 (defstate config
-  :start (us/conform ::config (read-config)))
+  :start (read-config env))
 
-;; --- Secret Loading & Parsing
-
-;; (defn- initialize-secret
-;;   [config]
-;;   (let [secret (:secret config)]
-;;     (when-not secret
-;;       (ex/raise :code ::missing-secret-key
-;;                 :message "Missing `:secret` key in config."))
-;;     (hash/blake2b-256 secret)))
-;;
-;; (defstate secret
-;;   :start (initialize-secret config))
-
+(def default-deletion-delay
+  (tm/duration {:hours 48}))

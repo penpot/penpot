@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns ^:figwheel-hooks uxbox.main
   (:require
@@ -27,12 +27,7 @@
    [uxbox.util.storage :refer [storage]]
    [uxbox.util.timers :as ts]))
 
-;; --- i18n
-
 (declare reinit)
-;; (rx/sub! i18n/locale-sub #(reinit))
-
-;; --- Error Handling
 
 (defn- on-navigate
   [router path]
@@ -58,7 +53,7 @@
     (st/emit! #(assoc % :router router))
     (add-watch html-history/path ::main #(on-navigate router %4))
 
-    (when (:auth storage)
+    (when (:profile storage)
       (st/emit! udu/fetch-profile))
 
     (mf/mount (mf/element ui/app) (dom/get-element "app"))

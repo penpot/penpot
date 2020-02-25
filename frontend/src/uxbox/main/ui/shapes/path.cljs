@@ -61,14 +61,14 @@
 
 (mf/defc path-shape
   [{:keys [shape background?] :as props}]
-  (let [modifier-mtx (:modifier-mtx shape)
-        rotation (:rotation shape)
+  (let [ds-modifier (:displacement-modifier shape)
+        rz-modifier (:resize-modifier shape)
 
-        shape (cond
-                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
-                :else shape)
+        shape (cond-> shape
+                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
 
-        {:keys [id x y width height]} (geom/shape->rect-shape shape)
+        {:keys [id x y width height rotation]} (geom/shape->rect-shape shape)
 
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"

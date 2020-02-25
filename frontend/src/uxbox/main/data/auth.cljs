@@ -21,33 +21,27 @@
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.storage :refer [storage]]))
 
-(s/def ::username string?)
+(s/def ::email ::us/email)
 (s/def ::password string?)
 (s/def ::fullname string?)
-(s/def ::email ::us/email)
 
 ;; --- Logged In
 
 (defn logged-in
   [data]
   (ptk/reify ::logged-in
-    ptk/UpdateEvent
-    (update [this state]
-      (assoc state :auth data))
-
     ptk/WatchEvent
-    (watch [this state s]
-      (swap! storage assoc :auth data)
-      (rx/of du/fetch-profile
+    (watch [this state stream]
+      (rx/of (du/profile-fetched data)
              (rt/navigate :dashboard-projects)))))
 
 ;; --- Login
 
 (s/def ::login-params
-  (s/keys :req-un [::username ::password]))
+  (s/keys :req-un [::email ::password]))
 
 (defn login
-  [{:keys [username password] :as data}]
+  [{:keys [email password] :as data}]
   (us/verify ::login-params data)
   (ptk/reify ::login
     ptk/UpdateEvent
@@ -56,7 +50,7 @@
 
     ptk/WatchEvent
     (watch [this state s]
-      (let [params {:username username
+      (let [params {:email email
                     :password password
                     :scope "webapp"}
             on-error #(rx/of (um/error (tr "errors.auth.unauthorized")))]
@@ -70,7 +64,7 @@
   (ptk/reify ::clear-user-data
     ptk/UpdateEvent
     (update [_ state]
-      (merge state (dissoc initial-state :route :router)))
+      (select-keys state [:route :router :session-id]))
 
     ptk/WatchEvent
     (watch [_ state s]
@@ -85,7 +79,7 @@
 (def logout
   (ptk/reify ::logout
     ptk/WatchEvent
-    (watch [_ state s]
+    (watch [_ state stream]
       (rx/of (rt/nav :login)
              clear-user-data))))
 
@@ -93,7 +87,6 @@
 
 (s/def ::register
   (s/keys :req-un [::fullname
-                   ::username
                    ::password
                    ::email]))
 
@@ -115,7 +108,7 @@
 ;; --- Recovery Request
 
 (s/def ::recovery-request
-  (s/keys :req-un [::username]))
+  (s/keys :req-un [::email]))
 
 (defn request-profile-recovery
   [data on-success]

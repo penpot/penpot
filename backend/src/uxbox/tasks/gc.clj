@@ -20,31 +20,34 @@
    [uxbox.db :as db]
    [uxbox.util.blob :as blob]))
 
-;; TODO: add images-gc with proper resource removal
-;; TODO: add icons-gc
-;; TODO: add pages-gc
-;; TODO: test this
+;; TODO: delete media referenced in pendint_to_delete table
 
-;; --- Delete Projects
+;; (def ^:private sql:delete-item
+;;   "with items_part as (
+;;      select i.id
+;;        from pending_to_delete as i
+;;       order by i.created_at
+;;       limit 1
+;;       for update skip locked
+;;    )
+;;    delete from pending_to_delete
+;;     where id in (select id from items_part)
+;;    returning *")
 
-(def ^:private sql:delete-project
-  "delete from projects
-    where id = $1
-      and deleted_at is not null;")
+;; (defn- remove-items
+;;   []
+;;   (vu/loop []
+;;     (db/with-atomic [conn db/pool]
+;;       (-> (db/query-one conn sql:delete-item)
+;;           (p/then decode-row)
+;;           (p/then (vu/wrap-blocking remove-media))
+;;           (p/then (fn [item]
+;;                     (when (not (empty? items))
+;;                       (p/recur))))))))
 
-(s/def ::id ::us/uuid)
-(s/def ::delete-project
-  (s/keys :req-un [::id]))
-
-(defn- delete-project
-  "Clean deleted projects."
-  [{:keys [id] :as props}]
-  (us/verify ::delete-project props)
-  (db/with-atomic [conn db/pool]
-    (-> (db/query-one conn [sql:delete-project id])
-        (p/then (constantly nil)))))
-
-(defn handler
-  {:uxbox.tasks/name "delete-project"}
-  [{:keys [props] :as task}]
-  (delete-project props))
+;; (defn- remove-media
+;;   [{:keys
+;;   (doseq [item files]
+;;     (ust/delete! media/media-storage (:path item))
+;;     (ust/delete! media/media-storage (:thumb-path item)))
+;;   files)

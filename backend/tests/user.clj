@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns user
   (:require
@@ -17,8 +17,12 @@
    [clojure.java.io :as io]
    [clojure.repl :refer :all]
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
+   [clj-kondo.core :as kondo]
    [promesa.core :as p]
-   [promesa.exec :as pe]
+   [promesa.exec :as px]
+   [uxbox.migrations]
+   [uxbox.util.storage :as st]
+   [uxbox.util.time :as tm]
    [mount.core :as mount]))
 
 ;; --- Benchmarking Tools
@@ -58,7 +62,7 @@
 (defn- run-tests
   ([] (run-tests #"^uxbox.tests.*"))
   ([o]
-   ;; (repl/refresh)
+   (repl/refresh)
    (cond
      (instance? java.util.regex.Pattern o)
      (test/run-all-tests o)
@@ -68,3 +72,17 @@
        (do (require (symbol sns))
            (test/test-vars [(resolve o)]))
        (test/test-ns o)))))
+
+(defn lint
+  ([] (lint ""))
+  ([path]
+   (-> (kondo/run!
+        {:lint [(str "src/" path)]
+         :cache false
+         :config {:linters
+                  {:unresolved-symbol
+                   {:exclude ['(uxbox.services.mutations/defmutation)
+                              '(uxbox.services.queries/defquery)
+                              '(promesa.core/let)]}}}})
+       (kondo/print!))))
+

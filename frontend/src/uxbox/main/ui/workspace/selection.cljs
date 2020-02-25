@@ -35,7 +35,7 @@
             (let [result (geom/resize-shape vid shape point lock?)
                   scale (geom/calculate-scale-ratio shape result)
                   mtx (geom/generate-resize-matrix vid shape scale)]
-              (rx/of (dw/assoc-temporal-modifier-in-bulk ids mtx))))
+              (rx/of (dw/assoc-resize-modifier-in-bulk ids mtx))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Ctrl key and the shapes own proportion
@@ -64,8 +64,7 @@
                 (rx/map normalize-proportion-lock)
                 (rx/mapcat (partial resize shape))
                 (rx/take-until stoper))
-           (rx/of (dw/materialize-temporal-modifier-in-bulk ids)
-                  ::dw/page-data-update)))))))
+           (rx/of (dw/materialize-resize-modifier-in-bulk ids))))))))
 
 (defn start-rotate
   [shape]
@@ -261,9 +260,13 @@
                        (st/emit! (start-resize %1 #{(:id shape)} shape)))
         on-rotate #(do (dom/stop-propagation %)
                        (st/emit! (start-rotate shape)))
-        modifier (:modifier-mtx shape)
-        shape (-> (geom/shape->rect-shape shape)
-                  (geom/transform (or modifier (gmt/matrix))))]
+
+        ds-modifier (:displacement-modifier shape)
+        rz-modifier (:resize-modifier shape)
+        shape (cond-> (geom/shape->rect-shape shape)
+                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))]
+
     [:& controls {:shape shape
                   :zoom zoom
                   :on-rotate on-rotate

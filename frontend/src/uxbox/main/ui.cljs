@@ -6,7 +6,7 @@
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui
   (:require
@@ -44,15 +44,13 @@
 
 (def routes
   [["/login" :login]
-   ["/profile"
-    ["/register" :profile-register]
-    ["/recovery/request" :profile-recovery-request]
-    ["/recovery" :profile-recovery]]
+   ["/register" :profile-register]
+   ["/recovery/request" :profile-recovery-request]
+   ["/recovery" :profile-recovery]
 
    ["/settings"
-    ["/profile" :settings/profile]
-    ["/password" :settings/password]
-    ["/notifications" :settings/notifications]]
+    ["/profile" :settings-profile]
+    ["/password" :settings-password]]
 
    ["/dashboard"
     ["/projects" :dashboard-projects]
@@ -72,9 +70,8 @@
       :profile-recovery-request (mf/element profile-recovery-request-page)
       :profile-recovery (mf/element profile-recovery-page)
 
-      (:settings/profile
-       :settings/password
-       :settings/notifications)
+      (:settings-profile
+       :settings-password)
       (mf/element settings/settings #js {:route route})
 
       :dashboard-projects
@@ -112,7 +109,7 @@
     (and (map? error)
          (= :authentication type)
          (= :unauthorized code))
-    (ts/schedule 0 #(st/emit! (rt/nav :login)))
+    (ts/schedule 0 #(st/emit! logout))
 
     ;; Network error
     (and (map? error)

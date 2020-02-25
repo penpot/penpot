@@ -53,6 +53,7 @@
 (s/def ::cy number?)
 (s/def ::width number?)
 (s/def ::height number?)
+(s/def ::index integer?)
 
 (s/def ::shape-attrs
   (s/keys :opt-un [::blocked
@@ -65,7 +66,6 @@
                    ::font-style
                    ::font-weight
                    ::hidden
-                   ;; ::page-id ??
                    ::letter-spacing
                    ::line-height
                    ::locked
@@ -103,7 +103,6 @@
 
 ;; Changes related
 (s/def ::operation (s/tuple #{:set} keyword? any?))
-(s/def ::move-after-id (s/nilable uuid?))
 
 (s/def ::operations
   (s/coll-of ::operation :kind vector?))
@@ -111,16 +110,18 @@
 (defmulti change-spec-impl :type)
 
 (defmethod change-spec-impl :add-shape [_]
-  (s/keys :req-un [::shape ::id ::session-id]))
+  (s/keys :req-un [::shape ::id ::session-id]
+          :opt-un [::index]))
 
 (defmethod change-spec-impl :add-canvas [_]
-  (s/keys :req-un [::shape ::id ::session-id]))
+  (s/keys :req-un [::shape ::id ::session-id]
+          :opt-un [::index]))
 
 (defmethod change-spec-impl :mod-shape [_]
   (s/keys :req-un [::id ::operations ::session-id]))
 
 (defmethod change-spec-impl :mov-shape [_]
-  (s/keys :req-un [::id ::move-after-id ::session-id]))
+  (s/keys :req-un [::id ::index ::session-id]))
 
 (defmethod change-spec-impl :mod-opts [_]
   (s/keys :req-un [::operations ::session-id]))
@@ -170,21 +171,36 @@
     :mod-opts (process-mod-opts data change)))
 
 (defn- process-add-shape
-  [data {:keys [id shape] :as change}]
+  [data {:keys [id index shape] :as change}]
   (-> data
       (update :shapes (fn [shapes]
-                        (if (some #{id} shapes)
+                        (cond
+                          (some #{id} shapes)
                           shapes
-                          (conj shapes id))))
+
+                          (nil? index)
+                          (conj shapes id)
+
+                          :else
+                          (let [[before after] (split-at index shapes)]
+                            (d/concat [] before [id] after)))))
       (update :shapes-by-id assoc id shape)))
 
 (defn- process-add-canvas
-  [data {:keys [id shape] :as change}]
+  [data {:keys [id shape index] :as change}]
   (-> data
       (update :canvas (fn [shapes]
-                        (if (some #{id} shapes)
+                        (cond
+                          (some #{id} shapes)
                           shapes
-                          (conj shapes id))))
+
+                          (nil? index)
+                          (conj shapes id)
+
+                          :else
+                          (let [[before after] (split-at index shapes)]
+                            (d/concat [] before [id] after)))))
+
       (update :shapes-by-id assoc id shape)))
 
 (defn- process-mod-shape
@@ -198,20 +214,6 @@
                         % operations))
     data))
 
-;; (defn- process-mod-shape
-;;   [data {:keys [id operations] :as change}]
-;;   (if-let [shape (get-in data [:shapes-by-id id])]
-;;     (let [shape (reduce (fn [shape [_ att val]]
-;;                           (if (nil? val)
-;;                             (dissoc shape att)
-;;                             (assoc shape att val)))
-;;                         shape
-;;                         operations)]
-;;       (if (empty? shape)
-;;         (update data :shapes-by-id dissoc id)
-;;         (update data :shapes-by-id assoc id shape)))
-;;     data))
-
 (defn- process-mod-opts
   [data {:keys [operations]}]
   (update data :options
@@ -222,19 +224,19 @@
                    % operations)))
 
 (defn- process-mov-shape
-  [data {:keys [id move-after-id]}]
+  [data {:keys [id index]}]
   (let [shapes (:shapes data)
-        shapes' (into [] (remove #(= % id) shapes))
-        index (d/index-of shapes' move-after-id)]
+        current-index (d/index-of shapes id)
+        shapes' (into [] (remove #(= % id) shapes))]
     (cond
-      (= id move-after-id)
-      (assoc data :shapes shapes)
+      (= index current-index)
+      data
 
-      (nil? index)
+      (nil? current-index)
       (assoc data :shapes (d/concat [id] shapes'))
 
       :else
-      (let [[before after] (split-at (inc index) shapes')]
+      (let [[before after] (split-at index shapes')]
         (assoc data :shapes (d/concat [] before [id] after))))))
 
 (defn- process-del-shape

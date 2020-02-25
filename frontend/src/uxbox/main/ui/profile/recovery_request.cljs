@@ -26,8 +26,8 @@
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.router :as rt]))
 
-(s/def ::username ::us/not-empty-string)
-(s/def ::recovery-request-form (s/keys :req-un [::username]))
+(s/def ::email ::us/email)
+(s/def ::recovery-request-form (s/keys :req-un [::email]))
 
 (mf/defc recovery-form
   []
@@ -46,12 +46,12 @@
     [:form {:on-submit on-submit}
      [:div.login-content
       [:input.input-text
-       {:name "username"
-        :value (:username data "")
-        :class (fm/error-class form :username)
-        :on-blur (fm/on-input-blur form :username)
-        :on-change (fm/on-input-change form :username)
-        :placeholder (t locale "profile.recovery.username-or-email")
+       {:name "email"
+        :value (:email data "")
+        :class (fm/error-class form :email)
+        :on-blur (fm/on-input-blur form :email)
+        :on-change (fm/on-input-change form :email)
+        :placeholder (t locale "profile.recovery.email")
         :type "text"}]
       [:input.btn-primary
        {:name "login"

@@ -9,6 +9,7 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [promesa.exec :as px]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.images :as images]
@@ -27,37 +28,59 @@
 (s/def ::password ::us/string)
 (s/def ::path ::us/string)
 (s/def ::user ::us/uuid)
-(s/def ::username ::us/string)
+(s/def ::profile-id ::us/uuid)
 
 ;; --- Query: Profile (own)
 
-(defn resolve-thumbnail
-  [user]
-  (let [opts {:src :photo
-              :dst :photo
-              :size [100 100]
-              :quality 90
-              :format "jpg"}]
-    (-> (px/submit! #(images/populate-thumbnails user opts))
-        (su/handle-on-context))))
-
 (defn retrieve-profile
   [conn id]
-  (let [sql "select * from users where id=$1 and deleted_at is null"]
+  (let [sql "select * from profile where id=$1 and deleted_at is null"]
     (db/query-one db/pool [sql id])))
 
+
+;; NOTE: this query make the assumption that union all preserves the
+;; order so the first id will always be the team id and the second the
+;; project_id; this is a postgresql behavior because UNION ALL works
+;; like APPEND operation.
+
+(def ^:private sql:default-team-and-project
+  "select t.id
+     from team as t
+    inner join team_profile_rel as tpr on (tpr.team_id = t.id)
+    where tpr.profile_id = $1
+      and tpr.is_owner is true
+      and t.is_default is true
+    union all
+   select p.id
+     from project as p
+    inner join project_profile_rel as tpr on (tpr.project_id = p.id)
+    where tpr.profile_id = $1
+      and tpr.is_owner is true
+      and p.is_default is true")
+
+(defn retrieve-additional-data
+  [conn id]
+  (-> (db/query conn [sql:default-team-and-project id])
+      (p/then' (fn [[team project]]
+                 {:default-team-id (:id team)
+                  :default-project-id (:id project)}))))
+
 (s/def ::profile
-  (s/keys :req-un [::user]))
+  (s/keys :req-un [::profile-id]))
 
 (sq/defquery ::profile
-  [{:keys [user] :as params}]
-  (-> (retrieve-profile db/pool user)
-      (p/then' strip-private-attrs)))
+  [{:keys [profile-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [prof (-> (retrieve-profile conn profile-id)
+                     (p/then' su/raise-not-found-if-nil)
+                     (p/then' strip-private-attrs)
+                     (p/then' #(images/resolve-media-uris % [:photo :photo-uri])))
+            addt (retrieve-additional-data conn profile-id)]
+      (merge prof addt))))
 
 ;; --- Attrs Helpers
 
 (defn strip-private-attrs
-  "Only selects a publicy visible user attrs."
+  "Only selects a publicy visible profile attrs."
   [profile]
-  (select-keys profile [:id :username :fullname :metadata
-                        :email :created-at :photo]))
+  (select-keys profile [:id :fullname :lang :email :created-at :photo]))

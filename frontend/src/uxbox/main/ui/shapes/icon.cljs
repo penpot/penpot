@@ -34,20 +34,20 @@
 
 (mf/defc icon-shape
   [{:keys [shape] :as props}]
-  (let [{:keys [id content metadata rotation modifier-mtx]} shape
+  (let [ds-modifier (:displacement-modifier shape)
+        rz-modifier (:resize-modifier shape)
 
-        shape (cond
-                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
-                :else shape)
+        shape (cond-> shape
+                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
 
-        {:keys [x y width height] :as shape} shape
+        {:keys [id x y width height metadata rotation content] :as shape} shape
 
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"
                                 rotation
                                 (+ x (/ width 2))
                                 (+ y (/ height 2))))
-
 
         view-box (apply str (interpose " " (:view-box metadata)))
 

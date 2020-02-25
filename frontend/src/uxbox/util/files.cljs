@@ -10,6 +10,8 @@
             [cuerdas.core :as str]
             [uxbox.util.blob :as blob]))
 
+;; TODO: DEPRECATED
+
 (defn read-as-text
   [file]
   (rx/create

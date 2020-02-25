@@ -6,7 +6,6 @@
 
 (ns uxbox.main.ui.shapes.image
   (:require
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [uxbox.main.data.images :as udi]
@@ -17,13 +16,6 @@
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.geom.matrix :as gmt]))
 
-;; --- Refs
-
-(defn image-ref
-  [id]
-  (-> (l/in [:images id])
-      (l/derive st/state)))
-
 ;; --- Image Wrapper
 
 (declare image-shape)
@@ -31,42 +23,42 @@
 (mf/defc image-wrapper
   [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
-        image (mf/deref (image-ref (:image shape)))
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape selected)]
-
-    (mf/use-effect #(st/emit! (udi/fetch-image (:image shape))))
-
-    (when image
-      [:g.shape {:class (when selected? "selected")
-                 :on-mouse-down on-mouse-down}
-       [:& image-shape {:shape shape
-                        :image image}]])))
+    [:g.shape {:class (when selected? "selected")
+               :on-mouse-down on-mouse-down}
+     [:& image-shape {:shape shape}]]))
 
 ;; --- Image Shape
 
 (mf/defc image-shape
-  [{:keys [shape image] :as props}]
-  (let [{:keys [id rotation modifier-mtx]} shape
+  [{:keys [shape] :as props}]
+  (let [ds-modifier (:displacement-modifier shape)
+        rz-modifier (:resize-modifier shape)
 
-        shape (cond
-                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
-                :else shape)
+        shape (cond-> shape
+                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
 
-        {:keys [x y width height]} shape
+        {:keys [id x y width height rotation metadata]} shape
 
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"
                                 rotation
                                 (+ x (/ width 2))
                                 (+ y (/ height 2))))
+        uri  (if (or (> (:thumb-width metadata) width)
+                     (> (:thumb-height metadata) height))
+               (:thumb-uri metadata)
+               (:uri metadata))
+
 
         props (-> (attrs/extract-style-attrs shape)
                   (assoc :x x
                          :y y
                          :id (str "shape-" id)
                          :preserveAspectRatio "none"
-                         :xlinkHref (:url image)
+                         :xlinkHref uri
                          :transform transform
                          :width width
                          :height height))]

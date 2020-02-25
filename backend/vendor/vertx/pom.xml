@@ -30,7 +30,7 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
-      <version>3.8.4</version>
+      <version>4.0.0-milestone4</version>
     </dependency>
     <dependency>
       <groupId>metosin</groupId>
@@ -40,7 +40,7 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-web</artifactId>
-      <version>3.8.4</version>
+      <version>4.0.0-milestone4</version>
     </dependency>
     <dependency>
       <groupId>funcool</groupId>
@@ -50,12 +50,12 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-web-client</artifactId>
-      <version>3.8.4</version>
+      <version>4.0.0-milestone4</version>
     </dependency>
     <dependency>
-      <groupId>metosin</groupId>
-      <artifactId>sieppari</artifactId>
-      <version>0.0.0-alpha8</version>
+      <groupId>org.clojure</groupId>
+      <artifactId>core.async</artifactId>
+      <version>0.7.559</version>
     </dependency>
   </dependencies>
   <repositories>

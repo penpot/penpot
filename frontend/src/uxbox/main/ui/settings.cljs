@@ -13,9 +13,8 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.main.ui.settings.header :refer [header]]
-   [uxbox.main.ui.settings.notifications :as notifications]
-   [uxbox.main.ui.settings.password :as password]
-   [uxbox.main.ui.settings.profile :as profile]))
+   [uxbox.main.ui.settings.password :refer [password-page]]
+   [uxbox.main.ui.settings.profile :refer [profile-page]]))
 
 (mf/defc settings
   {:wrap [mf/wrap-memo]}
@@ -25,9 +24,8 @@
      [:& messages-widget]
      [:& header {:section section}]
      (case section
-       :settings/profile (mf/element profile/profile-page)
-       :settings/password (mf/element password/password-page)
-       :settings/notifications (mf/element notifications/notifications-page))]))
+       :settings-profile (mf/element profile-page)
+       :settings-password (mf/element password-page))]))
 
 
 

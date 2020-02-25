@@ -7,6 +7,7 @@
 (ns uxbox.http.handlers
   (:require
    [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
    [uxbox.emails :as emails]
    [uxbox.http.session :as session]
    [uxbox.services.init]
@@ -33,8 +34,8 @@
   (let [type (keyword (get-in req [:path-params :type]))
         data (merge (:params req)
                     {::sq/type type
-                     :user (:user req)})]
-    (if (or (:user req)
+                     :profile-id (:profile-id req)})]
+    (if (or (:profile-id req)
             (isa? query-types-hierarchy type ::unauthenticated))
       (-> (sq/handle (with-meta data {:req req}))
           (p/then' (fn [result]
@@ -51,8 +52,8 @@
                     (:body-params req)
                     (:uploads req)
                     {::sm/type type
-                     :user (:user req)})]
-    (if (or (:user req)
+                     :profile-id (:profile-id req)})]
+    (if (or (:profile-id req)
             (isa? mutation-types-hierarchy type ::unauthenticated))
       (-> (sm/handle (with-meta data {:req req}))
           (p/then' (fn [result]
@@ -65,12 +66,11 @@
   [req]
   (let [data (:body-params req)
         user-agent (get-in req [:headers "user-agent"])]
-    (-> (sm/handle (assoc data ::sm/type :login))
-        (p/then #(session/create (:id %) user-agent))
-        (p/then' (fn [token]
-                   {:status 204
-                    :cookies {"auth-token" {:value token :path "/"}}
-                    :body ""})))))
+    (p/let [profile (sm/handle (assoc data ::sm/type :login))
+            token   (session/create (:id profile) user-agent)]
+      {:status 200
+       :cookies {"auth-token" {:value token :path "/"}}
+       :body profile})))
 
 (defn logout-handler
   [req]
@@ -82,22 +82,10 @@
                     :cookies {"auth-token" nil}
                     :body ""})))))
 
-;; (defn register-handler
-;;   [req]
-;;   (let [data (merge (:body-params req)
-;;                     {::sm/type :register-profile})
-;;         user-agent (get-in req [:headers "user-agent"])]
-;;     (-> (sm/handle (with-meta data {:req req}))
-;;         (p/then (fn [{:keys [id] :as user}]
-;;                   (session/create id user-agent)))
-;;         (p/then' (fn [token]
-;;                   {:status 204
-;;                    :body ""})))))
-
 (defn echo-handler
   [req]
-  {:status 200
-   :body {:params (:params req)
-          :cookies (:cookies req)
-          :headers (:headers req)}})
+  (p/promise {:status 200
+              :body {:params (:params req)
+                     :cookies (:cookies req)
+                     :headers (:headers req)}}))
 

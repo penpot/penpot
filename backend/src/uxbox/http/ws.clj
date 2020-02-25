@@ -9,58 +9,58 @@
   (:require
    [clojure.tools.logging :as log]
    [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
    [uxbox.emails :as emails]
    [uxbox.http.session :as session]
    [uxbox.services.init]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
-   [uxbox.util.uuid :as uuid]
-   [uxbox.util.transit :as t]
    [uxbox.util.blob :as blob]
-   [vertx.core :as vc]
+   [uxbox.util.transit :as t]
+   [uxbox.util.uuid :as uuid]
+   [vertx.eventbus :as ve]
    [vertx.http :as vh]
-   [vertx.web :as vw]
    [vertx.util :as vu]
-   [vertx.eventbus :as ve])
+   [vertx.timers :as vt]
+   [vertx.web :as vw]
+   [vertx.stream :as vs]
+   [vertx.web.websockets :as ws])
   (:import
-   io.vertx.core.Future
-   io.vertx.core.Promise
+   java.lang.AutoCloseable
    io.vertx.core.Handler
+   io.vertx.core.Promise
    io.vertx.core.Vertx
    io.vertx.core.buffer.Buffer
    io.vertx.core.http.HttpServerRequest
    io.vertx.core.http.HttpServerResponse
    io.vertx.core.http.ServerWebSocket))
 
-(declare ws-websocket)
-(declare ws-send!)
-
 ;; --- State Management
 
-(defonce state
-  (atom {}))
+(def state (atom {}))
 
 (defn send!
-  [ws message]
-  (ws-send! ws (-> (t/encode message)
-                   (t/bytes->str))))
+  [{:keys [output] :as ws} message]
+  (let [msg (-> (t/encode message)
+                (t/bytes->str))]
+    (vs/put! output msg)))
 
 (defmulti handle-message
   (fn [ws message] (:type message)))
 
 (defmethod handle-message :connect
-  [{:keys [file-id user-id] :as ws} message]
-  (let [local (swap! state assoc-in [file-id user-id] ws)
+  [{:keys [file-id profile-id] :as ws} message]
+  (let [local (swap! state assoc-in [file-id profile-id] ws)
         sessions (get local file-id)
         message {:type :who :users (set (keys sessions))}]
-    (run! #(send! % message) (vals sessions))))
+    (p/run! #(send! % message) (vals sessions))))
 
 (defmethod handle-message :disconnect
-  [{:keys [user-id] :as ws} {:keys [file-id] :as message}]
-  (let [local (swap! state update file-id dissoc user-id)
+  [{:keys [profile-id] :as ws} {:keys [file-id] :as message}]
+  (let [local (swap! state update file-id dissoc profile-id)
         sessions (get local file-id)
         message {:type :who :users (set (keys sessions))}]
-    (run! #(send! % message) (vals sessions))))
+    (p/run! #(send! % message) (vals sessions))))
 
 (defmethod handle-message :who
   [{:keys [file-id] :as ws} message]
@@ -68,14 +68,14 @@
     (send! ws {:type :who :users (set users)})))
 
 (defmethod handle-message :pointer-update
-  [{:keys [user-id file-id] :as ws} message]
+  [{:keys [profile-id file-id] :as ws} message]
   (let [sessions (->> (vals (get @state file-id))
-                      (remove #(= user-id (:user-id %))))
-        message (assoc message :user-id user-id)]
-    (run! #(send! % message) sessions)))
+                      (remove #(= profile-id (:profile-id %))))
+        message (assoc message :profile-id profile-id)]
+    (p/run! #(send! % message) sessions)))
 
 (defn- on-eventbus-message
-  [{:keys [file-id user-id] :as ws} {:keys [body] :as message}]
+  [{:keys [file-id profile-id] :as ws} {:keys [body] :as message}]
   (send! ws body))
 
 (defn- start-eventbus-consumer!
@@ -85,63 +85,64 @@
 
 ;; --- Handler
 
+(defn- on-init
+  [ws req]
+  (let [ctx (vu/current-context)
+        file-id (get-in req [:path-params :file-id])
+        profile-id (:profile-id req)
+        ws (assoc ws
+                  :profile-id profile-id
+                  :file-id file-id)
+        send-ping #(send! ws {:type :ping})
+        sem1 (start-eventbus-consumer! ctx ws file-id)
+        sem2 (vt/schedule-periodic! ctx 5000 send-ping)]
+    (handle-message ws {:type :connect})
+    (p/resolved (assoc ws ::sem1 sem1 ::sem2 sem2))))
+
+(defn- on-message
+  [ws message]
+  (->> (t/str->bytes message)
+       (t/decode)
+       (handle-message ws)))
+
+(defn- on-close
+  [ws]
+  (let [file-id (:file-id ws)]
+    (handle-message ws {:type :disconnect
+                        :file-id file-id})
+    (when-let [sem1 (::sem1 ws)]
+      (.close ^AutoCloseable sem1))
+    (when-let [sem2 (::sem2 ws)]
+      (.close ^AutoCloseable sem2))))
+
+(defn- rcv-loop
+  [{:keys [input] :as ws}]
+  (vs/loop []
+    (-> (vs/take! input)
+        (p/then (fn [message]
+                  (when message
+                    (p/do! (on-message ws message)
+                           (p/recur))))))))
+
+(defn- log-error
+  [^Throwable err]
+  (log/error "Unexpected exception on websocket handler:\n"
+             (with-out-str
+               (.printStackTrace err (java.io.PrintWriter. *out*)))))
+
+(defn websocket-handler
+  [req ws]
+  (p/let [ws (on-init ws req)]
+      (-> (rcv-loop ws)
+          (p/finally (fn [_ error]
+                       (.close ^AutoCloseable ws)
+                       (on-close ws)
+                       (when error
+                         (log-error error)))))))
+
 (defn handler
   [{:keys [user] :as req}]
-  (letfn [(on-init [ws]
-            (let [ctx (vc/current-context)
-                  fid (get-in req [:path-params :file-id])
-                  ws  (assoc ws
-                             :user-id user
-                             :file-id fid)
-                  sem (start-eventbus-consumer! ctx ws fid)]
-              (handle-message ws {:type :connect})
-              (assoc ws ::sem sem)))
-
-          (on-message [ws message]
-            (try
-              (->> (t/str->bytes message)
-                   (t/decode)
-                   (handle-message ws))
-              (catch Throwable err
-                (log/error "Unexpected exception:\n"
-                           (with-out-str
-                             (.printStackTrace err (java.io.PrintWriter. *out*)))))))
-
-          (on-close [ws]
-            (let [fid (get-in req [:path-params :file-id])]
-              (handle-message ws {:type :disconnect :file-id fid})
-              (.unregister (::sem ws))))]
-
-    (-> (ws-websocket)
-        (assoc :on-init on-init
-               :on-message on-message
-               :on-close on-close))))
-
-;; --- Internal (vertx api) (experimental)
-
-(defrecord WebSocket [on-init on-message on-close]
-  vh/IAsyncResponse
-  (-handle-response [this ctx]
-    (let [^HttpServerRequest req (::vh/request ctx)
-          ^ServerWebSocket ws (.upgrade req)
-          local (volatile! (assoc this :ws ws))]
-      (-> (p/do! (on-init @local))
-          (p/then (fn [data]
-                    (vreset! local data)
-                    (.textMessageHandler ws (vu/fn->handler
-                                             (fn [msg]
-                                               (-> (p/do! (on-message @local msg))
-                                                   (p/then (fn [data]
-                                                             (when (instance? WebSocket data)
-                                                               (vreset! local data))
-                                                             (.fetch ws 1)))))))
-                    (.closeHandler ws (vu/fn->handler (fn [& args] (on-close @local))))))))))
-
-(defn ws-websocket
-  []
-  (->WebSocket nil nil nil))
-
-(defn ws-send!
-  [ws msg]
-  (.writeTextMessage ^ServerWebSocket (:ws ws)
-                     ^String msg))
+  (ws/websocket
+   {:handler (partial websocket-handler req)
+    :input-buffer-size 64
+    :output-buffer-size 64}))

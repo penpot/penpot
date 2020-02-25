@@ -32,28 +32,27 @@
 
 (mf/defc circle-shape
   [{:keys [shape] :as props}]
-  (let [{:keys [id rotation cx cy modifier-mtx]} shape
+  (let [ds-modifier (:displacement-modifier shape)
+        rz-modifier (:resize-modifier shape)
 
-        shape (cond
-                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
-                :else shape)
+        shape (cond-> shape
+                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
 
-        center (gpt/point (:cx shape)
-                          (:cy shape))
+        {:keys [id cx cy rx ry rotation]} shape
 
-        rotation (or rotation 0)
-
-        moving? (boolean modifier-mtx)
-
+        center    (gpt/point cx cy)
+        rotation  (or rotation 0)
         transform (when (pos? rotation)
                     (str (-> (gmt/matrix)
                              (gmt/rotate rotation center))))
 
-        props {:id (str "shape-" id)
-               :class (classnames :move-cursor moving?)
-               :transform transform}
-
-        attrs (merge props
-                     (attrs/extract-style-attrs shape)
-                     (select-keys shape [:cx :cy :rx :ry]))]
-    [:> :ellipse (normalize-props attrs)]))
+        props (-> (attrs/extract-style-attrs shape)
+                  (assoc :cx cx
+                         :cy cy
+                         :rx rx
+                         :ry ry
+                         :transform transform
+                         :id (str "shape-" id)
+                         ))]
+    [:& "ellipse" props]))

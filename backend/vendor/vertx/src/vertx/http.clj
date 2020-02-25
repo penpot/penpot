@@ -9,7 +9,8 @@
   clojure idiomatic api, refer to the `vertx.web` namespace."
   (:require [clojure.spec.alpha :as s]
             [promesa.core :as p]
-            [vertx.util :as vu])
+            [vertx.util :as util]
+            [vertx.impl :as impl])
   (:import
    java.util.Map$Entry
    clojure.lang.MapEntry
@@ -73,7 +74,7 @@
   "Starts a vertx http server."
   [vsm {:keys [handler] :as options}]
   (s/assert ::server-options options)
-  (let [^Vertx vsm (vu/resolve-system vsm)
+  (let [^Vertx vsm (impl/resolve-system vsm)
         ^HttpServerOptions opts (opts->http-server-options options)
         ^HttpServer srv (.createHttpServer vsm opts)
         ^Handler handler (resolve-handler handler)]
@@ -98,7 +99,7 @@
 (defn- resolve-handler
   [handler]
   (cond
-    (fn? handler) (vu/fn->handler handler)
+    (fn? handler) (impl/fn->handler handler)
     (instance? Handler handler) handler
     :else (throw (ex-info "invalid handler" {}))))
 
@@ -107,7 +108,7 @@
   (let [headers (:headers response)
         status (:status response 200)]
     (when (map? headers)
-      (vu/doseq [[key val] headers]
+      (util/doseq [[key val] headers]
         (.putHeader res ^String (name key) ^String (str val))))
     (.setStatusCode res status)))
 

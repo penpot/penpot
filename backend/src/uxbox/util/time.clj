@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.time
   (:require
@@ -54,9 +57,21 @@
     :else
     (obj->duration ms-or-obj)))
 
+(defn parse-duration
+  [s]
+  (assert (string? s))
+  (Duration/parse s))
+
 (extend-protocol clojure.core/Inst
   java.time.Duration
-  (inst-ms* [v] (.toMillis ^java.time.Duration v)))
+  (inst-ms* [v] (.toMillis ^Duration v)))
+
+(defmethod print-method Duration
+  [mv ^java.io.Writer writer]
+  (.write writer (str "#uxbox/duration \"" (.toString ^Duration mv) "\"")))
+
+(defmethod print-dup Duration [o w]
+  (print-method o w))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Cron Expression
@@ -206,7 +221,7 @@
 
 (defmethod print-method Instant
   [mv ^java.io.Writer writer]
-  (.write writer (str "#instant \"" (.toString ^Instant mv) "\"")))
+  (.write writer (str "#uxbox/instant \"" (.toString ^Instant mv) "\"")))
 
 (defmethod print-dup Instant [o w]
   (print-method o w))

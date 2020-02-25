@@ -1,11 +1,10 @@
 FROM debian:buster
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
-ARG EXTERNAL_UID=1000
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v12.14.1 \
-    CLOJURE_VERSION=1.10.1.492 \
+    CLOJURE_VERSION=1.10.1.507 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -32,12 +31,29 @@ RUN set -ex; \
         build-essential \
         imagemagick \
         webp \
-        openjdk-11-jdk \
+        jq \
     ; \
+    rm -rf /var/lib/apt/lists/*;
+
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9 && \
+    echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list && \
+    apt-get -qq update && \
+    apt-get -qqy install zulu-13 && \
+    rm -rf /var/lib/apt/lists/*;
+
+ENV JAVA_HOME=/usr/lib/jvm/zulu-13-amd64/
+
+RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" >> /etc/apt/sources.list.d/postgresql.list && \
+    apt-get -qq update && \
+    apt-get -qqy install postgresql-client-12 && \
     rm -rf /var/lib/apt/lists/*;
 
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
+COPY files/phantomjs-mock /usr/bin/phantomjs
+
+ARG EXTERNAL_UID=1000
 
 RUN set -ex; \
     useradd -m -g users -s /bin/zsh -u $EXTERNAL_UID uxbox; \
@@ -53,7 +69,6 @@ RUN set -ex; \
 USER uxbox
 WORKDIR /home/uxbox
 
-COPY files/package.json /home/uxbox/package.json
 COPY files/bashrc /home/uxbox/.bashrc
 COPY files/zshrc /home/uxbox/.zshrc
 COPY files/vimrc /home/uxbox/.vimrc
@@ -67,9 +82,6 @@ RUN set -ex; \
     bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm alias default $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm use default";
-
-RUN set -ex; \
-    bash -c "source .nvm/nvm.sh && npm install";
 
 EXPOSE 3449
 EXPOSE 6060

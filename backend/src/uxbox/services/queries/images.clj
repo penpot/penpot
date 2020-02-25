@@ -2,120 +2,141 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.services.queries.images
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
-   [promesa.exec :as px]
-   [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
-   [uxbox.media :as media]
    [uxbox.images :as images]
+   [uxbox.services.queries.teams :as teams]
    [uxbox.services.queries :as sq]
-   [uxbox.services.util :as su]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.data :as data]
-   [uxbox.util.uuid :as uuid]
-   [vertx.core :as vc]))
-
-(def +thumbnail-options+
-  {:src :path
-   :dst :thumbnail
-   :width 300
-   :height 100
-   :quality 92
-   :format "webp"})
-
-(defn populate-thumbnail
-  [row]
-  (let [opts +thumbnail-options+]
-    (-> (p/promise row)
-        (p/then (vc/wrap-blocking #(images/populate-thumbnail % opts))))))
-
-(defn populate-thumbnails
-  [rows]
-  (if (empty? rows)
-    rows
-    (vc/blocking
-     (mapv (fn [row]
-             (images/populate-thumbnail row +thumbnail-options+)) rows))))
-
-(defn populate-urls
-  [row]
-  (images/populate-urls row media/images-storage :path :url))
+   [uxbox.services.util :as su]))
 
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
-(s/def ::user ::us/uuid)
-(s/def ::collection-id (s/nilable ::us/uuid))
+(s/def ::profile-id ::us/uuid)
+(s/def ::library-id ::us/uuid)
 
-(def ^:private images-collections-sql
-  "select *,
-          (select count(*) from images where collection_id = ic.id) as num_images
-     from image_collections as ic
-    where (ic.user_id = $1 or
-           ic.user_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and ic.deleted_at is null
-    order by ic.created_at desc;")
+;; --- Query: Image Librarys
 
-(s/def ::images-collections
-  (s/keys :req-un [::user]))
+(def ^:private sql:libraries
+  "select lib.*,
+          (select count(*) from image where library_id = lib.id) as num_images
+     from image_library as lib
+    where lib.team_id = $1
+      and lib.deleted_at is null
+    order by lib.created_at desc")
 
-(sq/defquery ::images-collections
-  [{:keys [user] :as params}]
-  (db/query db/pool [images-collections-sql user]))
+(s/def ::image-libraries
+  (s/keys :req-un [::profile-id ::team-id]))
 
-;; --- Retrieve Image
+(sq/defquery ::image-libraries
+  [{:keys [profile-id team-id]}]
+  (db/with-atomic [conn db/pool]
+    (teams/check-edition-permissions! conn profile-id team-id)
+    (db/query conn [sql:libraries team-id])))
+
+
+;; --- Query: Image Library
+
+(declare retrieve-library)
+
+(s/def ::image-library
+  (s/keys :req-un [::profile-id ::id]))
+
+(sq/defquery ::image-library
+  [{:keys [profile-id id]}]
+  (db/with-atomic [conn db/pool]
+    (p/let [lib (retrieve-library conn id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      lib)))
+
+(def ^:private sql:single-library
+  "select lib.*,
+          (select count(*) from image where library_id = lib.id) as num_images
+     from image_library as lib
+    where lib.deleted_at is null
+      and lib.id = $1")
+
+(defn- retrieve-library
+  [conn id]
+  (-> (db/query-one conn [sql:single-library id])
+      (p/then' su/raise-not-found-if-nil)))
+
+
+
+;; --- Query: Images (by library)
+
+(declare retrieve-images)
+
+(s/def ::images
+  (s/keys :req-un [::profile-id ::library-id]))
+
+;; TODO: check if we can resolve url with transducer for reduce
+;; garbage generation for each request
+
+(sq/defquery ::images
+  [{:keys [profile-id library-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [lib (retrieve-library conn library-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      (-> (retrieve-images conn library-id)
+          (p/then' (fn [rows]
+                     (->> rows
+                          (mapv #(images/resolve-urls % :path :uri))
+                          (mapv #(images/resolve-urls % :thumb-path :thumb-uri)))))))))
+
+
+(def ^:private sql:images
+  "select img.*
+     from image as img
+    inner join image_library as lib on (lib.id = img.library_id)
+    where img.deleted_at is null
+      and img.library_id = $1
+   order by created_at desc")
+
+(defn- retrieve-images
+  [conn library-id]
+  (db/query conn [sql:images library-id]))
+
+
+
+;; --- Query: Image (by ID)
+
+(declare retrieve-image)
+
+(s/def ::id ::us/uuid)
+(s/def ::image
+  (s/keys :req-un [::profile-id ::id]))
+
+(sq/defquery ::image
+  [{:keys [profile-id id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (p/let [img (retrieve-image conn id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id img))
+      (-> img
+          (images/resolve-urls :path :uri)
+          (images/resolve-urls :thumb-path :thumb-uri)))))
+
+(def ^:private sql:single-image
+  "select img.*,
+          lib.team_id as team_id
+     from image as img
+    inner join image_library as lib on (lib.id = img.library_id)
+    where img.deleted_at is null
+      and img.id = $1
+   order by created_at desc")
 
 (defn retrieve-image
   [conn id]
-  (let [sql "select * from images
-              where id = $1
-                and deleted_at is null;"]
-    (db/query-one conn [sql id])))
+  (-> (db/query-one conn [sql:single-image id])
+      (p/then' su/raise-not-found-if-nil)))
 
-(s/def ::id ::us/uuid)
-(s/def ::image-by-id
-  (s/keys :req-un [::user ::id]))
 
-(sq/defquery ::image-by-id
-  [params]
-  (-> (retrieve-image db/pool (:id params))
-      (p/then populate-thumbnail)
-      (p/then populate-urls)))
-
-;; --- Query Images by Collection (id)
-
-(def sql:images-by-collection
-  "select * from images
-    where (user_id = $1 or
-           user_id = '00000000-0000-0000-0000-000000000000'::uuid)
-      and deleted_at is null
-   order by created_at desc")
-
-(def sql:images-by-collection1
-  (str "with images as (" sql:images-by-collection ")
-        select im.* from images as im
-         where im.collection_id is null"))
-
-(def sql:images-by-collection2
-  (str "with images as (" sql:images-by-collection ")
-        select im.* from images as im
-         where im.collection_id = $2"))
-
-(s/def ::images-by-collection
-  (s/keys :req-un [::user]
-          :opt-un [::collection-id]))
-
-(sq/defquery ::images-by-collection
-  [{:keys [user collection-id] :as params}]
-  (let [sqlv (if (nil? collection-id)
-               [sql:images-by-collection1 user]
-               [sql:images-by-collection2 user collection-id])]
-    (-> (db/query db/pool sqlv)
-        (p/then populate-thumbnails)
-        (p/then #(mapv populate-urls %)))))
 

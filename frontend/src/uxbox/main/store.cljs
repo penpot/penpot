@@ -54,24 +54,9 @@
    nil))
 
 (def initial-state
-  {:route nil
-   :router nil
-   :session-id (uuid/next)
-   :auth (:auth storage)
-   :profile (:profile storage)
-   :clipboard #queue []
-   :undo {}
-   :workspace-layout nil
-   :workspace-local nil
-   :workspace-pdata nil
-   :images-collections nil
-   :images nil
-   :icons-collections nil
-   :icons nil
-   :colors-collections colors/collections
-   :projects nil
-   :pages nil
-   :pages-data nil})
+  {:session-id (uuid/next)
+   :profile (:profile storage)})
+   ;; :colors-collections colors/collections})
 
 (defn init
   "Initialize the state materialization."

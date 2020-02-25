@@ -112,7 +112,23 @@
   ([id] (mutation id {}))
   ([id params] (mutation id params)))
 
-(defmethod mutation :create-image
+(defmethod mutation :upload-image
+  [id params]
+  (let [form (js/FormData.)]
+    (run! (fn [[key val]]
+            (.append form (name key) val))
+          (seq params))
+    (send-mutation! id form)))
+
+(defmethod mutation :upload-file-image
+  [id params]
+  (let [form (js/FormData.)]
+    (run! (fn [[key val]]
+            (.append form (name key) val))
+          (seq params))
+    (send-mutation! id form)))
+
+(defmethod mutation :update-profile-photo
   [id params]
   (let [form (js/FormData.)]
     (run! (fn [[key val]]

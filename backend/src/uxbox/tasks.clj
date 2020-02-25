@@ -18,8 +18,10 @@
    [uxbox.config :as cfg]
    [uxbox.core :refer [system]]
    [uxbox.db :as db]
-   [uxbox.tasks.demo-gc]
    [uxbox.tasks.sendmail]
+   [uxbox.tasks.remove-media]
+   [uxbox.tasks.delete-profile]
+   [uxbox.tasks.delete-object]
    [uxbox.tasks.impl :as impl]
    [uxbox.util.time :as dt]
    [vertx.core :as vc]
@@ -28,9 +30,10 @@
 ;; --- Public API
 
 (defn schedule!
-  ([task] (schedule! db/pool task))
-  ([conn task]
-   (impl/schedule! conn task)))
+  ([opts] (schedule! db/pool opts))
+  ([conn opts]
+   (s/assert ::impl/task-options opts)
+   (impl/schedule! conn opts)))
 
 ;; --- State initialization
 
@@ -40,7 +43,9 @@
 ;; need to perform a maintenance and delete some old tasks.
 
 (def ^:private tasks
-  {"demo-gc" #'uxbox.tasks.demo-gc/handler
+  {"delete-profile" #'uxbox.tasks.delete-profile/handler
+   "delete-object" #'uxbox.tasks.delete-object/handler
+   "remove-media" #'uxbox.tasks.remove-media/handler
    "sendmail" #'uxbox.tasks.sendmail/handler})
 
 (defstate tasks-worker
@@ -48,13 +53,13 @@
            (vc/deploy! system $$ {:instances 1})
            (deref $$)))
 
-(def ^:private schedule
-  [{:id "every 1 hour"
-    :cron (dt/cron "1 1 */1 * * ? *")
-    :fn #'uxbox.tasks.demo-gc/handler
-    :props {:foo 1}}])
+;; (def ^:private schedule
+;;   [{:id "every 1 hour"
+;;     :cron (dt/cron "1 1 */1 * * ? *")
+;;     :fn #'uxbox.tasks.gc/handler
+;;     :props {:foo 1}}])
 
-(defstate scheduler
-  :start (as-> (impl/scheduler-verticle {:schedule schedule}) $$
-           (vc/deploy! system $$ {:instances 1 :worker true})
-           (deref $$)))
+;; (defstate scheduler
+;;   :start (as-> (impl/scheduler-verticle {:schedule schedule}) $$
+;;            (vc/deploy! system $$ {:instances 1 :worker true})
+;;            (deref $$)))

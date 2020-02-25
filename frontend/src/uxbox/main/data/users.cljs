@@ -19,7 +19,6 @@
 ;; --- Common Specs
 
 (s/def ::id uuid?)
-(s/def ::username string?)
 (s/def ::fullname string?)
 (s/def ::email ::us/email)
 (s/def ::password string?)
@@ -30,19 +29,18 @@
 (s/def ::password-2 string?)
 (s/def ::password-old string?)
 
-;; --- Profile Fetched
-
-(s/def ::profile-fetched
+(s/def ::profile
   (s/keys :req-un [::id
-                   ::username
                    ::fullname
                    ::email
                    ::created-at
                    ::photo]))
 
+;; --- Profile Fetched
+
 (defn profile-fetched
   [data]
-  (us/verify ::profile-fetched data)
+  (us/verify ::profile data)
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
@@ -51,7 +49,7 @@
     ptk/EffectEvent
     (effect [_ state stream]
       (swap! storage assoc :profile data)
-      (when-let [lang (get-in data [:metadata :language])]
+      (when-let [lang (:lang data)]
         (i18n/set-current-locale! lang)))))
 
 ;; --- Fetch Profile
@@ -65,73 +63,56 @@
 
 ;; --- Update Profile
 
-(s/def ::update-profile-params
-  (s/keys :req-un [::fullname
-                   ::email
-                   ::username
-                   ::language]))
-
-(defn form->update-profile
-  [data on-success on-error]
-  (us/verify ::update-profile-params data)
-  (us/verify fn? on-error)
-  (us/verify fn? on-success)
-  (reify
+(defn update-profile
+  [data]
+  (us/assert ::profile data)
+  (ptk/reify ::update-profile
     ptk/WatchEvent
     (watch [_ state s]
-      (letfn [(handle-error [{payload :payload}]
-                (on-error payload)
-                (rx/empty))]
-        (let [data (-> (:profile state)
-                       (assoc :fullname (:fullname data))
-                       (assoc :email (:email data))
-                       (assoc :username (:username data))
-                       (assoc-in [:metadata :language] (:language data)))]
-          #_(->> (rp/req :update/profile data)
-               (rx/map :payload)
-               (rx/do on-success)
-               (rx/map profile-fetched)
-               (rx/catch rp/client-error? handle-error)))))))
+      (let [mdata (meta data)
+            on-success (:on-success mdata identity)
+            on-error (:on-error mdata identity)
+            handle-error #(do (on-error (:payload %))
+                              (rx/empty))]
+        (->> (rp/mutation :update-profile data)
+             (rx/do on-success)
+             (rx/map profile-fetched)
+             (rx/catch rp/client-error? handle-error))))))
 
 ;; --- Update Password (Form)
 
-(s/def ::update-password-params
+(s/def ::update-password
   (s/keys :req-un [::password-1
                    ::password-2
                    ::password-old]))
 
 (defn update-password
-  [data {:keys [on-success on-error]}]
-  (us/verify ::update-password-params data)
-  (us/verify fn? on-success)
-  (us/verify fn? on-error)
-  (reify
+  [data]
+  (us/verify ::update-password data)
+  (ptk/reify ::update-password
     ptk/WatchEvent
     (watch [_ state s]
-      (let [params {:old-password (:password-old data)
+      (let [mdata (meta data)
+            on-success (:on-success mdata identity)
+            on-error (:on-error mdata identity)
+            params {:old-password (:password-old data)
                     :password (:password-1 data)}]
-        #_(->> (rp/req :update/profile-password params)
-             (rx/catch rp/client-error? (fn [e]
-                                          (on-error (:payload e))
-                                          (rx/empty)))
+        (->> (rp/mutation :update-profile-password params)
+             (rx/catch rp/client-error? #(do (on-error (:payload %))
+                                             (rx/empty)))
              (rx/do on-success)
              (rx/ignore))))))
 
 
-;; --- Update Photo
-
-(deftype UpdatePhoto [file done]
-  ptk/WatchEvent
-  (watch [_ state stream]
-    #_(->> (rp/req :update/profile-photo {:file file})
-         (rx/do done)
-         (rx/map (constantly fetch-profile)))))
+;; --- Update Photoo
 
 (s/def ::file #(instance? js/File %))
 
 (defn update-photo
-  ([file] (update-photo file (constantly nil)))
-  ([file done]
-   (us/verify ::file file)
-   (us/verify fn? done)
-   (UpdatePhoto. file done)))
+  [{:keys [file] :as params}]
+  (us/verify ::file file)
+  (ptk/reify ::update-photo
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/mutation :update-profile-photo {:file file})
+           (rx/map (constantly fetch-profile))))))

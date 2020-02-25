@@ -9,7 +9,7 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [vertx.eventbus :as vxe]
-   [vertx.util :as vu])
+   [vertx.impl :as impl])
   (:import
    io.vertx.core.AsyncResult
    io.vertx.core.Context
@@ -48,85 +48,6 @@
 (defn stop
   [^Vertx o]
   (.close o))
-
-(defn get-or-create-context
-  [vsm]
-  (.getOrCreateContext ^Vertx (vu/resolve-system vsm)))
-
-(defn current-context
-  []
-  (Vertx/currentContext))
-
-(defmacro blocking
-  [& body]
-  `(let [vsm# (-> (current-context)
-                  (vu/resolve-system))
-         d# (p/deferred)]
-     (.executeBlocking
-      vsm#
-      (reify Handler
-        (handle [_ prm#]
-          (try
-            (.complete prm# (do ~@body))
-            (catch Throwable e#
-              (.fail prm# e#)))))
-      true
-      (reify Handler
-        (handle [_ ar#]
-          (if (.failed ^AsyncResult ar#)
-            (p/reject! d# (.cause ^AsyncResult ar#))
-            (p/resolve! d# (.result ^AsyncResult ar#))))))
-     d#))
-
-
-
-
-(defn wrap-blocking
-  ([f] (wrap-blocking (current-context) f))
-  ([ctx f]
-   (let [^Vertx vsm (vu/resolve-system ctx)]
-     (fn [& args]
-       (let [d (p/deferred)]
-         (.executeBlocking
-          vsm
-          (reify Handler
-            (handle [_ prm]
-              (try
-                (.complete ^Promise prm (apply f args))
-                (catch Throwable e
-                  (.fail ^Promise prm e)))))
-          true
-          (reify Handler
-            (handle [_ ar]
-              (if (.failed ^AsyncResult ar)
-                (p/reject! d (.cause ^AsyncResult ar))
-                (p/resolve! d (.result ^AsyncResult ar))))))
-         d)))))
-
-(defn handle-on-context
-  "Attaches the context (current if not explicitly provided) to the
-  promise execution chain."
-  ([prm] (handle-on-context prm (current-context)))
-  ([prm ctx]
-   (assert (instance? Context ctx) "`ctx` should be a valid Context instance")
-   (let [d (p/deferred)]
-     (p/finally prm (fn [v e]
-                      (.runOnContext
-                       ^Context ctx
-                       ^Handler (reify Handler
-                                  (handle [_ v']
-                                    (if e
-                                      (p/reject! d e)
-                                      (p/resolve! d v)))))))
-     d)))
-
-(defn run-on-context
-  [ctx f]
-  (.runOnContext
-   ^Context ctx
-   ^Handler (reify Handler
-              (handle [_ v']
-                (f ctx)))))
 
 (s/def :vertx.core$verticle/on-start fn?)
 (s/def :vertx.core$verticle/on-stop fn?)
@@ -185,7 +106,7 @@
      (.deployVerticle ^Vertx vsm
                       ^Supplier supplier
                       ^DeploymentOptions o
-                      ^Handler (vu/deferred->handler d))
+                      ^Handler (impl/deferred->handler d))
      (p/then' d (fn [id] (build-disposable vsm id))))))
 
 (defn undeploy!
@@ -195,9 +116,9 @@
   [vsm id]
   (s/assert string? id)
   (let [d (p/deferred)]
-    (.undeploy ^Vertx (vu/resolve-system vsm)
+    (.undeploy ^Vertx (impl/resolve-system vsm)
                ^String id
-               ^Handler (vu/deferred->handler d))
+               ^Handler (impl/deferred->handler d))
     d))
 
 ;; --- Impl
@@ -273,7 +194,7 @@
   (let [opts (VertxOptions.)]
     (when threads (.setEventLoopPoolSize opts (int threads)))
     (when worker-threads (.setWorkerPoolSize opts (int worker-threads)))
-    #_(when on-error (.exceptionHandler opts (vu/fn->handler on-error)))
+    #_(when on-error (.exceptionHandler opts (impl/fn->handler on-error)))
     opts))
 
 

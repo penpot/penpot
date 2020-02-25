@@ -21,17 +21,16 @@
    [uxbox.util.blob :as blob]
    [uxbox.util.time :as tm]
    [vertx.core :as vc]
+   [vertx.util :as vu]
    [vertx.timers :as vt])
   (:import
    java.time.Duration
    java.time.Instant
    java.util.Date))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Implementation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- Task Execution
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tasks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- string-strack-trace
   [^Throwable err]
@@ -39,7 +38,7 @@
     (.printStackTrace err (java.io.PrintWriter. *out*))))
 
 (def ^:private sql:mark-as-retry
-  "update tasks
+  "update task
       set scheduled_at = clock_timestamp() + '5 seconds'::interval,
           error = $1,
           status = 'retry',
@@ -48,13 +47,13 @@
 
 (defn- reschedule
   [conn task error]
-  (let [explain (string-strack-trace error)
+  (let [explain (ex-message error)
         sqlv [sql:mark-as-retry explain (:id task)]]
     (-> (db/query-one conn sqlv)
         (p/then' (constantly nil)))))
 
 (def ^:private sql:mark-as-failed
-  "update tasks
+  "update task
       set scheduled_at = clock_timestamp() + '5 seconds'::interval,
           error = $1,
           status = 'failed'
@@ -62,13 +61,13 @@
 
 (defn- mark-as-failed
   [conn task error]
-  (let [error (string-strack-trace error)
-        sqlv [sql:mark-as-failed error (:id task)]]
+  (let [explain (ex-message error)
+        sqlv [sql:mark-as-failed explain (:id task)]]
     (-> (db/query-one conn sqlv)
         (p/then' (constantly nil)))))
 
 (def ^:private sql:mark-as-completed
-  "update tasks
+  "update task
       set completed_at = clock_timestamp(),
           status = 'completed'
     where id = $1")
@@ -79,16 +78,16 @@
       (p/then' (constantly nil))))
 
 (defn- handle-task
-  [handlers {:keys [name] :as task}]
-  (let [task-fn (get handlers name)]
+  [tasks {:keys [name] :as item}]
+  (let [task-fn (get tasks name)]
     (if task-fn
-      (task-fn task)
+      (task-fn item)
       (do
         (log/warn "no task handler found for" (pr-str name))
         nil))))
 
 (def ^:private sql:select-next-task
-  "select * from tasks as t
+  "select * from task as t
     where t.scheduled_at <= now()
       and t.queue = $1
       and (t.status = 'new' or (t.status = 'retry' and t.retry_num <= $2))
@@ -102,8 +101,15 @@
     (cond-> row
       props (assoc :props (blob/decode props)))))
 
+(defn- log-task-error
+  [item err]
+  (log/error "Unhandled exception on task '" (:name item)
+             "' (retry:" (:retry-num item) ") \n"
+             (with-out-str
+               (.printStackTrace ^Throwable err (java.io.PrintWriter. *out*)))))
+
 (defn- event-loop
-  [{:keys [handlers] :as options}]
+  [{:keys [tasks] :as options}]
   (let [queue (:queue options "default")
         max-retries (:max-retries options 3)]
     (db/with-atomic [conn db/pool]
@@ -111,12 +117,16 @@
           (p/then decode-task-row)
           (p/then (fn [item]
                     (when item
-                      (-> (p/do! (handle-task handlers item))
+                      (log/info "Execute task" (:name item)
+                                "with props" (pr-str (:props item)))
+                      (-> (p/do! (handle-task tasks item))
                           (p/handle (fn [v e]
                                       (if e
-                                        (if (>= (:retry-num item) max-retries)
-                                          (mark-as-failed conn item e)
-                                          (reschedule conn item e))
+                                        (do
+                                          (log-task-error item e)
+                                          (if (>= (:retry-num item) max-retries)
+                                            (mark-as-failed conn item e)
+                                            (reschedule conn item e)))
                                         (mark-as-completed conn item))))
                           (p/then' (constantly ::handled))))))))))
 
@@ -131,7 +141,7 @@
                     (event-loop-handler (assoc options ::counter (inc counter)))))))))
 
 (def ^:private sql:insert-new-task
-  "insert into tasks (name, props, queue, scheduled_at)
+  "insert into task (name, props, queue, scheduled_at)
    values ($1, $2, $3, clock_timestamp()+cast($4::text as interval))
    returning id")
 
@@ -144,14 +154,15 @@
   [ctx {:keys [tasks] :as options}]
   (vt/schedule! ctx (assoc options
                            ::vt/fn #'event-loop-handler
-                           ::vt/delay 3000
+                           ::vt/delay 5000
                            ::vt/repeat true)))
 
-
-;; --- Task Scheduling
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Scheduled Tasks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:privatr sql:upsert-scheduled-task
-  "insert into scheduled_tasks (id, cron_expr)
+  "insert into scheduled_task (id, cron_expr)
    values ($1, $2)
        on conflict (id)
        do update set cron_expr=$2")
@@ -167,28 +178,33 @@
     (p/run! (partial synchronize-schedule-item conn) schedule)))
 
 (def ^:private sql:lock-scheduled-task
-  "select id from scheduled_tasks where id=$1 for update skip locked")
+  "select id from scheduled_task where id=$1 for update skip locked")
 
 (declare schedule-task)
 
-(defn thr-name
-  []
-  (.getName (Thread/currentThread)))
+(defn- log-scheduled-task-error
+  [item err]
+  (log/error "Unhandled exception on scheduled task '" (:id item) "' \n"
+             (with-out-str
+               (.printStackTrace ^Throwable err (java.io.PrintWriter. *out*)))))
 
 (defn- execute-scheduled-task
   [{:keys [id cron] :as stask}]
   (db/with-atomic [conn db/pool]
+    ;; First we try to lock the task in the database, if locking us
+    ;; successful, then we execute the scheduled task; if locking is
+    ;; not possible (because other instance is already locked id) we
+    ;; just skip it and schedule to be executed in the next slot.
     (-> (db/query-one conn [sql:lock-scheduled-task id])
         (p/then (fn [result]
                   (when result
                     (-> (p/do! ((:fn stask) stask))
                         (p/catch (fn [e]
-                                   (log/warn "Excepton happens on executing scheduled task" e)
+                                   (log-scheduled-task-error stask e)
                                    nil))))))
         (p/finally (fn [v e]
-                     (-> (vc/current-context)
+                     (-> (vu/current-context)
                          (schedule-task stask)))))))
-
 (defn ms-until-valid
   [cron]
   (s/assert tm/cron? cron)
@@ -212,9 +228,9 @@
       (p/then' (fn [_]
                  (run! #(schedule-task ctx %) schedule)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public API
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- Worker Verticle
 
@@ -258,18 +274,24 @@
 ;; --- Schedule API
 
 (s/def ::name ::us/string)
-(s/def ::delay ::us/integer)
+(s/def ::delay
+  (s/or :int ::us/integer
+        :duration tm/duration?))
 (s/def ::queue ::us/string)
 (s/def ::task-options
-  (s/keys :req-un [::name ::delay]
-          :opt-un [::props ::queue]))
+  (s/keys :req-un [::name]
+          :opt-un [::delay ::props ::queue]))
 
 (defn schedule!
-  [conn {:keys [name delay props queue key] :as options}]
+  [conn {:keys [name delay props queue key]
+         :or {delay 0 props {} queue "default"}
+         :as options}]
   (us/verify ::task-options options)
-  (let [queue (if (string? queue) queue "default")
-        duration (-> (tm/duration delay)
-                     (duration->pginterval))
+  (let [duration (tm/duration delay)
+        pginterval (duration->pginterval duration)
         props (blob/encode props)]
-    (-> (db/query-one conn  [sql:insert-new-task name props queue duration])
+    (log/info "Schedule task" name
+              ;; "with props" (pr-str props)
+              "to be executed in" (str duration))
+    (-> (db/query-one conn  [sql:insert-new-task name props queue pginterval])
         (p/then' (fn [task] (:id task))))))

@@ -2,6 +2,9 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
 ;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
@@ -14,6 +17,7 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.projects :as udp]
+   [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]
    [uxbox.main.exports :as exports]
    [uxbox.main.ui.modal :as modal]
@@ -137,13 +141,12 @@
                    (sort-by order))
         on-click #(do
                     (dom/prevent-default %)
-                    (st/emit! (udp/create-file {:project-id id})))]
+                    (st/emit! dsh/create-file))]
     [:section.dashboard-grid
      [:div.dashboard-grid-content
       [:div.dashboard-grid-row
-       (when id
-         [:div.grid-item.add-project {:on-click on-click}
-          [:span (tr "ds.new-file")]])
+       [:div.grid-item.add-project {:on-click on-click}
+        [:span (tr "ds.new-file")]]
        (for [item files]
          [:& grid-item {:file item :key (:id item)}])]]]))
 
@@ -195,16 +198,20 @@
          :placeholder (tr "ds.search.placeholder")}]
        [:div.clear-search i/close]]
       [:ul.library-elements
-       [:li.recent-projects {:on-click #(st/emit! (udp/go-to-project nil))
-             :class-name (when (nil? id) "current")}
+       [:li.recent-projects #_{:on-click #(st/emit! (udp/go-to-project nil))
+                               :class-name (when (nil? id) "current")}
         [:span.element-title "Recent"]]
 
+       [:li.recent-projects {:on-click #(st/emit! (udp/go-to-project nil))
+                             :class-name (when (nil? id) "current")}
+        [:span.element-title "Drafts"]]
+
        [:div.projects-row
-        [:span "PROJECTS"]
-        [:a.add-project {:on-click #(st/emit! udp/create-project)}
+        [:span "PROJECTS/TEAMS TODO"]
+        #_[:a.add-project {:on-click #(st/emit! udp/create-project)}
          i/close]]
 
-       (for [item projects]
+       #_(for [item projects]
          [:& nav-item {:id (:id item)
                        :key (:id item)
                        :name (:name item)
@@ -213,14 +220,9 @@
 ;; --- Component: Content
 
 (def files-ref
-  (letfn [(selector [state]
-            (let [id  (get-in state [:dashboard-projects :id])
-                  ids (get-in state [:dashboard-projects :files id])
-                  xf  (comp (map #(get-in state [:files %]))
-                            (remove nil?))]
-              (into [] xf ids)))]
-    (-> (l/lens selector)
-        (l/derive st/state))))
+  (-> (comp (l/key :files)
+            (l/lens vals))
+      (l/derive st/state)))
 
 (mf/defc content
   [{:keys [id] :as props}]
@@ -233,8 +235,7 @@
 
 (mf/defc projects-page
   [{:keys [id] :as props}]
-  (mf/use-effect #(st/emit! udp/fetch-projects))
-  (mf/use-effect {:fn #(st/emit! (udp/initialize id))
+  (mf/use-effect {:fn #(st/emit! dsh/initialize-drafts)
                   :deps #js [id]})
   [:section.dashboard-content
    [:& nav {:id id}]

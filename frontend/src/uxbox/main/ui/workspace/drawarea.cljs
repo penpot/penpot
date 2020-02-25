@@ -24,6 +24,7 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.path :as path]
    [uxbox.util.geom.point :as gpt]
+   [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.uuid :as uuid]))
 
 ;; --- Events
@@ -120,7 +121,7 @@
                   result (geom/resize-shape :bottom-right shape' point lock?)
                   scale (geom/calculate-scale-ratio shape' result)
                   mtx (geom/generate-resize-matrix :bottom-right shape' scale)]
-              (assoc shape :modifier-mtx mtx)))
+              (assoc shape :resize-modifier mtx)))
 
           (update-drawing [state point lock?]
             (update-in state [:workspace-local :drawing] resize-shape point lock?))]
@@ -273,11 +274,11 @@
         (rx/concat
          (rx/of dw/clear-drawing)
          (when (::initialized? shape)
-           (let [modifier-mtx (:modifier-mtx shape)
-                 shape (if (gmt/matrix? modifier-mtx)
-                         (geom/transform shape modifier-mtx)
+           (let [modifier (:resize-modifier shape)
+                 shape (if (gmt/matrix? modifier)
+                         (geom/transform shape modifier)
                          shape)
-                 shape (dissoc shape ::initialized? :modifier-mtx)]
+                 shape (dissoc shape ::initialized? :resize-modifier)]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all
                     (if (= :canvas (:type shape))
@@ -319,16 +320,23 @@
 
 (mf/defc path-draw-area
   [{:keys [shape] :as props}]
-  (letfn [(on-click [event]
-            (dom/stop-propagation event)
-            (st/emit! (dw/set-tooltip nil)
-                      close-drawing-path
-                      ::end-path-drawing))
+  (let [locale (i18n/use-locale)
 
-          (on-mouse-enter [event]
-            (st/emit! (dw/set-tooltip "Click to close the path")))
-          (on-mouse-leave [event]
-            (st/emit! (dw/set-tooltip nil)))]
+        on-click
+        (fn [event]
+          (dom/stop-propagation event)
+          (st/emit! (dw/assign-cursor-tooltip nil)
+                    close-drawing-path
+                    ::end-path-drawing))
+
+        on-mouse-enter
+        (fn [event]
+          (let [msg (t locale "workspace.viewport.click-to-close-path")]
+            (st/emit! (dw/assign-cursor-tooltip msg))))
+
+        on-mouse-leave
+        (fn [event]
+          (st/emit! (dw/assign-cursor-tooltip nil)))]
     (when-let [{:keys [x y] :as segment} (first (:segments shape))]
       [:g
        [:& shapes/shape-wrapper {:shape shape}]

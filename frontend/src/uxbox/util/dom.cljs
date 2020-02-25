@@ -11,7 +11,10 @@
 (ns uxbox.util.dom
   (:require
    [goog.dom :as dom]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [uxbox.util.blob :as blob]))
 
 ;; --- Deprecated methods
 
@@ -131,3 +134,5 @@
 (defn query
   [el query]
   (.querySelector el query))
+
+

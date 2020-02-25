@@ -23,18 +23,17 @@
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]))
 
-(s/def ::username ::us/not-empty-string)
+(s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
 
 (s/def ::login-form
-  (s/keys :req-un [::username ::password]))
+  (s/keys :req-un [::email ::password]))
 
 (defn- on-submit
   [event form]
   (dom/prevent-default event)
-  (let [{:keys [username password]} (:clean-data form)]
-    (st/emit! (da/login {:username username
-                         :password password}))))
+  (let [{:keys [email password]} (:clean-data form)]
+    (st/emit! (da/login {:email email :password password}))))
 
 (mf/defc demo-warning
   [_]
@@ -54,13 +53,13 @@
         [:& demo-warning])
 
       [:input.input-text
-       {:name "username"
+       {:name "email"
         :tab-index "2"
-        :value (:username data "")
-        :class (fm/error-class form :username)
-        :on-blur (fm/on-input-blur form :username)
-        :on-change (fm/on-input-change form :username)
-        :placeholder (tr "login.email-or-username")
+        :value (:email data "")
+        :class (fm/error-class form :email)
+        :on-blur (fm/on-input-blur form :email)
+        :on-change (fm/on-input-change form :email)
+        :placeholder (tr "login.email")
         :type "text"}]
       [:input.input-text
        {:name "password"
