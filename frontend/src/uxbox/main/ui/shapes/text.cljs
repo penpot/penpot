@@ -8,6 +8,7 @@
   (:require
    [cuerdas.core :as str]
    [goog.events :as events]
+   [goog.object :as gobj]
    [lentes.core :as l]
    [rumext.core :as mx]
    [rumext.alpha :as mf]
@@ -111,14 +112,35 @@
 (mf/defc text-shape-edit
   [{:keys [shape] :as props}]
   (let [ref (mf/use-ref)
-        {:keys [id x y width height content]} shape]
+        {:keys [id x y width height content]} shape
+
+        on-unmount
+        (fn []
+          (let [content (-> (mf/ref-val ref)
+                            (dom/get-value))]
+          (st/emit! (udw/update-shape id {:content content}))))
+
+
+        on-blur
+        (fn [event]
+          (st/emit! udw/clear-edition-mode
+                    udw/deselect-all))]
     (mf/use-effect
-     #(fn []
-        (let [content (-> (mf/ref-val ref)
-                          (dom/get-value))]
-          (st/emit! (udw/update-shape id {:content content})))))
+     #(let [dom (mf/ref-val ref)
+            val (dom/get-value dom)]
+        (.focus dom)
+        (gobj/set dom "selectionStart" (count val))
+        (gobj/set dom "selectionEnd" (count val))
+        (fn []
+          (let [content (-> (mf/ref-val ref)
+                            (dom/get-value))]
+            (st/emit! (udw/update-shape id {:content content}))))))
+
+
+
     [:foreignObject {:x x :y y :width width :height height}
      [:textarea {:style (make-style shape)
+                 :on-blur on-blur
                  :default-value content
                  :ref ref}]]))
 
@@ -126,14 +148,25 @@
 
 (mf/defc text-shape
   [{:keys [shape] :as props}]
-  (let [{:keys [id rotation modifier-mtx]} shape
-        shape (cond
-                (gmt/matrix? modifier-mtx) (geom/transform shape modifier-mtx)
-                :else shape)
+  (let [ds-modifier (:displacement-modifier shape)
+        rz-modifier (:resize-modifier shape)
 
-        {:keys [x y width height content]} shape]
+        shape (cond-> shape
+                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
+
+
+        {:keys [id x y width height rotation content]} shape
+
+        transform (when (and rotation (pos? rotation))
+                    (str/format "rotate(%s %s %s)"
+                                rotation
+                                (+ x (/ width 2))
+                                (+ y (/ height 2))))]
+
     [:foreignObject {:x x
                      :y y
+                     :transform transform
                      :id (str id)
                      :width width
                      :height height}

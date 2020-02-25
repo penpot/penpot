@@ -1628,9 +1628,11 @@
 
 ;; --- Start shape "edition mode"
 
+(declare clear-edition-mode)
+
 (defn start-edition-mode
   [id]
-  {:pre [(uuid? id)]}
+  (us/assert ::us/uuid id)
   (ptk/reify ::start-edition-mode
     ptk/UpdateEvent
     (update [_ state]
@@ -1641,7 +1643,13 @@
       (->> stream
            (rx/filter #(= % :interrupt))
            (rx/take 1)
-           (rx/map (fn [_] #(d/dissoc-in % [:workspace-local :edition])))))))
+           (rx/map (constantly clear-edition-mode))))))
+
+(def clear-edition-mode
+  (ptk/reify ::clear-edition-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :edition))))
 
 ;; --- Select for Drawing
 
