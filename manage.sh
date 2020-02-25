@@ -3,12 +3,9 @@ set -e
 
 REV=`git log -n 1 --pretty=format:%h -- docker/`
 DEVENV_IMGNAME="uxbox-devenv"
-BUILDENV_IMGNAME="uxbox-buildenv"
 
 function build-devenv {
     echo "Building development image $DEVENV_IMGNAME:latest with UID $EXTERNAL_UID..."
-
-    cp ./frontend/build/package.json docker/devenv/files/package.json;
 
     local EXTERNAL_UID=${1:-$(id -u)}
 
@@ -16,33 +13,11 @@ function build-devenv {
            -t $DEVENV_IMGNAME:latest \
            --build-arg EXTERNAL_UID=$EXTERNAL_UID \
            docker/devenv/;
-
-    rm -rf docker/devenv/files/package.json;
-}
-
-function build-buildenv {
-    echo "Building buildenv image..."
-
-    docker volume create ${BUILDENV_IMGNAME}-m2
-
-    cp ./frontend/build/package.json docker/buildenv/files/package.json;
-
-    docker build --rm=true \
-           -t $BUILDENV_IMGNAME:latest \
-           docker/buildenv/;
-
-    rm -rf docker/buildenv/files/package.json;
 }
 
 function build-devenv-if-not-exists {
     if [[ ! $(docker images $DEVENV_IMGNAME:latest -q) ]]; then
         build-devenv $@
-    fi
-}
-
-function build-buildenv-if-not-exists {
-    if [[ ! $(docker images $BUILDENV_IMGNAME:latest -q) ]]; then
-        build-buildenv $@
     fi
 }
 
@@ -70,48 +45,16 @@ function run-devenv {
     docker exec -ti uxbox-devenv-main /home/uxbox/start-tmux.sh
 }
 
-# function run-all-tests {
-#     echo "Testing frontend..."
-#     run-frontend-tests $@ || exit 1;
-#     echo "Testing backend..."
-#     run-backend-tests $@ || exit 1;
-# }
-
-# function run-frontend-tests {
-#     build-devenv-if-not-exists $@;
-
-#     IMAGE=$DEVENV_IMGNAME:latest
-
-#     echo "Running development image $CONTAINER to test backend..."
-#     docker run -ti --rm \
-#            -w /home/uxbox/uxbox/frontend \
-#            -v `pwd`:/home/uxbox/uxbox \
-#            -v $HOME/.m2:/home/uxbox/.m2 \
-#            $IMAGE ./scripts/build-and-run-tests.sh
-# }
-
-# function run-backend-tests {
-#     build-devenv-if-not-exists $@;
-
-#     IMAGE=$DEVENV_IMGNAME:latest
-
-#     docker run -ti --rm \
-#            -w /home/uxbox/uxbox/backend \
-#            -v `pwd`:/home/uxbox/uxbox \
-#            -v $HOME/.m2:/home/uxbox/.m2 \
-#            $IMAGE ./scripts/run-tests-in-docker.sh
-# }
-
 function build-frontend {
-    build-buildenv-if-not-exists;
+    build-devenv-if-not-exists;
 
-    local IMAGE=$BUILDENV_IMGNAME:latest;
+    local IMAGE=$DEVENV_IMGNAME:latest;
 
     echo "Running development image $IMAGE to build frontend."
     docker run -t --rm \
-           --mount source=`pwd`,type=bind,target=/root/uxbox  \
-           --mount source=${BUILDENV_IMGNAME}-m2,target=/root/.m2 \
-           -w /root/uxbox/frontend \
+           --mount source=`pwd`,type=bind,target=/home/uxbox/uxbox \
+           --mount source=${HOME}/.m2,type=bind,target=/home/uxbox/.m2 \
+           -w /home/uxbox/uxbox/frontend \
            -e UXBOX_API_URL=${UXBOX_API_URL} \
            -e UXBOX_DEMO_WARNING=${UXBOX_DEMO_WARNING} \
            $IMAGE ./scripts/build-app.sh
@@ -157,10 +100,6 @@ function usage {
 }
 
 case $1 in
-    build-buildenv)
-        build-buildenv ${@:2}
-        ;;
-
     ## devenv related commands
     build-devenv)
         build-devenv ${@:2}

@@ -12,7 +12,7 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.builtins.icons :as i :include-macros true]
    [uxbox.config :as cfg]
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.undo :as udu]
@@ -102,7 +102,8 @@
         {:alt (tr "workspace.header.rect")
          :class (when (= selected-drawtool :rect) "selected")
          :on-click (partial select-drawtool :rect)}
-        i/box]
+        i/box
+        ]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "workspace.header.circle")
          :class (when (= selected-drawtool :circle) "selected")

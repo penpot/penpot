@@ -27,7 +27,7 @@
        {:alt (tr "viewer.sitemap")
         :class (when sitemap? "selected")
         :on-click toggle-sitemap}
-       i/project-tree]
+       i/tree]
        [:li.tooltip.tooltip-right
         {:alt (tr "viewer.interactions")
          :class (when interactions? "selected")

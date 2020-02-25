@@ -51,6 +51,7 @@ RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
+COPY files/phantomjs-mock /usr/bin/phantomjs
 
 ARG EXTERNAL_UID=1000
 
@@ -68,7 +69,6 @@ RUN set -ex; \
 USER uxbox
 WORKDIR /home/uxbox
 
-COPY files/package.json /home/uxbox/package.json
 COPY files/bashrc /home/uxbox/.bashrc
 COPY files/zshrc /home/uxbox/.zshrc
 COPY files/vimrc /home/uxbox/.vimrc
@@ -82,9 +82,6 @@ RUN set -ex; \
     bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm alias default $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm use default";
-
-RUN set -ex; \
-    bash -c "source .nvm/nvm.sh && npm install";
 
 EXPOSE 3449
 EXPOSE 6060

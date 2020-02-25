@@ -77,7 +77,7 @@
                                       :dragging (:dragging? dprops))
                               :on-click navigate-fn
                               :on-double-click on-double-click}
-      [:div.page-icon i/page]
+      [:div.page-icon i/file-html]
       (if (:edition @local)
         [:*
          [:input.element-name {:type "text"
