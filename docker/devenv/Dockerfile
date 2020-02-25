@@ -1,7 +1,6 @@
 FROM debian:buster
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
-ARG EXTERNAL_UID=1000
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v12.14.1 \
@@ -52,6 +51,8 @@ RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 
 COPY files/bashrc /root/.bashrc
 COPY files/vimrc /root/.vimrc
+
+ARG EXTERNAL_UID=1000
 
 RUN set -ex; \
     useradd -m -g users -s /bin/zsh -u $EXTERNAL_UID uxbox; \
