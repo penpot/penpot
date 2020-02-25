@@ -154,8 +154,8 @@
      (for [item canvas]
        [:& canvas-wrapper {:shape item
                            :key (:id item)
-                           :childs (get shapes (:id item))}])
-     (for [item (get shapes nil)]
+                           :childs (reverse (get shapes (:id item)))}])
+     (for [item (reverse (get shapes nil))]
        [:& shape-wrapper {:shape item
                           :key (:id item)}])]))
 
