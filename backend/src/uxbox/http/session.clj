@@ -48,7 +48,7 @@
   [handler]
   (fn [request]
     (let [token (parse-token request)]
-      (-> (retrieve token)
+      (-> (p/do! (retrieve token))
           (p/then (fn [profile-id]
                     (if profile-id
                       (handler (assoc request :profile-id profile-id))

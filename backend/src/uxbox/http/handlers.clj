@@ -74,13 +74,13 @@
 
 (defn logout-handler
   [req]
-  (let [token (get-in req [:cookies "auth-token"])
-        token (uuid/from-string token)]
-    (-> (session/delete token)
-        (p/then' (fn [token]
-                   {:status 204
-                    :cookies {"auth-token" nil}
-                    :body ""})))))
+  (some-> (get-in req [:cookies "auth-token"])
+          (uuid/from-string)
+          (session/delete)
+          (p/then' (fn [token]
+                     {:status 204
+                      :cookies {"auth-token" nil}
+                      :body ""}))))
 
 (defn echo-handler
   [req]
