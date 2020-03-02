@@ -3,7 +3,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v12.14.1 \
+ENV NODE_VERSION=v12.16.1 \
     CLOJURE_VERSION=1.10.1.507 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8

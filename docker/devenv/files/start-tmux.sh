@@ -1,5 +1,14 @@
 #!/usr/bin/env zsh
 
+set -e;
+source ~/.zshrc
+
+echo "[start-tmux.sh] Installing node dependencies"
+pushd ~/uxbox/frontend/
+rm -rf node_modules;
+npm ci;
+popd
+
 tmux -2 new-session -d -s uxbox
 
 tmux new-window -t uxbox:1 -n 'figwheel'
