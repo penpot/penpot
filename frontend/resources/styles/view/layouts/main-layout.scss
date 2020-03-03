@@ -16,8 +16,8 @@
 }
 
 .view-nav {
-  background-color: $primary-ui-bg;
-  border-top: 1px solid $soft-ui-border;
+  background-color: $color-gray-50;
+  border-top: 1px solid $color-gray-60;
   border-right: 0;
   display: flex;
   flex-shrink: 0;
@@ -25,7 +25,7 @@
   width: 100%;
 
   @include bp(tablet) {
-    border-right: 1px solid $soft-ui-border;
+    border-right: 1px solid $color-gray-60;
     border-top: 0;
     height: 100%;
     width: 70px;
@@ -44,7 +44,7 @@
 
   li {
     align-items: center;
-    background-color: $secondary-ui-bg;
+    background-color: $color-gray-60;
     border: 1px solid transparent;
     border-radius: $br-small;
     cursor: pointer;
@@ -61,18 +61,18 @@
     }
 
     svg {
-      fill: $intense-ui-icons;
+      fill: $color-gray-20;
       height: 24px;
       width: 24px;
     }
 
     &:hover {
-      background-color: $dark-ui-bg;
-      border-color: $soft-ui-border;
+      background-color: $color-gray-10;
+      border-color: $color-gray-60;
     }
 
     &.selected {
-      background-color: $main-ui-color;
+      background-color: $color-primary;
 
       svg {
         fill: $color-white;
@@ -85,8 +85,8 @@
 }
 
 .view-sitemap {
-  background-color: $primary-ui-bg;
-  border-top: 1px solid $soft-ui-border;
+  background-color: $color-gray-50;
+  border-top: 1px solid $color-gray-60;
   border-right: 0;
   display: flex;
   flex-direction: column;
@@ -96,13 +96,13 @@
   overflow: scroll;
 
   .sitemap-title {
-    border-bottom: 1px solid $soft-ui-border;
+    border-bottom: 1px solid $color-gray-60;
     padding: $small;
     font-weight: bold;
   }
 
   @include bp(tablet) {
-    border-right: 1px solid $soft-ui-border;
+    border-right: 1px solid $color-gray-60;
     border-top: 0;
     height: 100%;
     width: 220px;
@@ -116,7 +116,7 @@
 
   li {
     align-items: center;
-    border-bottom: 1px solid $soft-ui-border;
+    border-bottom: 1px solid $color-gray-60;
     cursor: pointer;
     display: flex;
     flex-direction: row;
@@ -126,7 +126,7 @@
     .page-icon {
 
       svg {
-        fill: $medium-ui-icons;
+        fill: $color-gray-30;
         height: 15px;
         margin-right: $x-small;
         width: 15px;
@@ -135,7 +135,7 @@
     }
 
     span {
-      color: $medium-ui-text;
+      color: $color-gray-20;
       font-size: $fs14;
       max-width: 75%;
       overflow-x: hidden;
@@ -151,13 +151,13 @@
       a {
 
         svg {
-          fill: $soft-ui-icons;
+          fill: $color-gray-60;
           height: 15px;
           margin-left: $x-small;
           width: 15px;
 
           &:hover {
-            fill: $intense-ui-icons;
+            fill: $color-gray-20;
           }
 
         }
@@ -171,13 +171,13 @@
       .page-icon {
 
         svg {
-          fill: $main-ui-color;
+          fill: $color-primary;
         }
 
       }
 
       span {
-        color: $main-ui-color;
+        color: $color-primary;
       }
 
     }
@@ -187,13 +187,13 @@
       .page-icon {
 
         svg {
-          fill: $main-ui-color;
+          fill: $color-primary;
         }
 
       }
 
       span {
-        color: $main-ui-color;
+        color: $color-primary;
         font-weight: bold;
       }
 
@@ -213,7 +213,7 @@
 }
 
 .view-canvas {
-  background-color: $secondary-ui-bg;
+  background-color: $color-gray-60;
   width: 100%;
   overflow: scroll;
   display: flex;

@@ -22,7 +22,7 @@
     .library-tabs {
       align-items: center;
       background-color: $color-white;
-      border-bottom: 1px solid $medium-ui-border;
+      border-bottom: 1px solid $color-gray-20;
       display: flex;
       justify-content: space-around;
       margin: 0;
@@ -39,12 +39,12 @@
         width: 118px;
 
         &:hover {
-          color: $intense-ui-text;
+          color: $color-gray-60;
         }
 
         &.current {
-          border-color: $main-ui-color;
-          color: $intense-ui-text;
+          border-color: $color-primary;
+          color: $color-gray-60;
         }
 
       }
@@ -67,7 +67,7 @@
         padding: $small $medium;
 
         span.element-title {
-          color: $intense-ui-text;
+          color: $color-gray-60;
           font-size: $fs14;
           overflow-x: hidden;
           text-overflow: ellipsis;
@@ -75,8 +75,8 @@
         }
   
         &.recent-projects {
-          border-top: 1px solid $dark-ui-bg;
-          border-bottom: 1px solid $dark-ui-bg;
+          border-top: 1px solid $color-gray-10;
+          border-bottom: 1px solid $color-gray-10;
         }
 
         input.element-title {
@@ -86,7 +86,7 @@
         }
 
         .close {
-            background: $primary-ui-bg;
+            background: $color-gray-50;
             cursor: pointer;
             padding: 5px 10px;
 
@@ -104,15 +104,15 @@
         }
 
         &:hover {
-          background-color: $main-ui-color;
-          color: $intense-ui-text;
+          background-color: $color-primary;
+          color: $color-gray-60;
         }
 
         &.current {
 
           span.element-title,
           .element-subtitle {
-            color: $intense-ui-text;
+            color: $color-gray-60;
             font-weight: bold;
           }
           input.element-title {
@@ -140,7 +140,7 @@
 
   .add-project {
     align-items: center;
-    background-color: $dark-ui-bg;
+    background-color: $color-gray-10;
     border-radius: $br-small;
     border: 1px solid transparent;
     cursor: pointer;
@@ -150,16 +150,16 @@
     padding: $x-small;
 
     svg {
-      fill: $soft-ui-icons;
+      fill: $color-gray-60;
       height: 16px;
       width: 16px;
     }
 
     &:hover {
-      background-color: $main-ui-color;
+      background-color: $color-primary;
 
       svg {
-        fill: $soft-ui-icons;
+        fill: $color-gray-60;
       }
     }
   }
@@ -174,7 +174,7 @@
   .input-text {
     background: $color-white;
     border: 0;
-    color: $intense-ui-text;
+    color: $color-gray-60;
     font-size: $fs14;
     padding: 4px 8px;
     margin: 0;
@@ -190,7 +190,7 @@
     padding: 0 5px;
 
     svg {
-      fill: $medium-ui-icons;
+      fill: $color-gray-30;
       height: 15px;
       transform: rotate(45deg);
       width: 15px;

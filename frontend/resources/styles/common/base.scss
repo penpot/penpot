@@ -6,8 +6,8 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 body {
-  background-color: lighten($dark-ui-bg, 5%);
-  color: $medium-ui-text;
+  background-color: lighten($color-gray-10, 5%);
+  color: $color-gray-20;
   display: flex;
   flex-direction: column;
   font-family: "sourcesanspro", sans-serif;
@@ -55,7 +55,7 @@ svg {
 
 a {
   cursor: pointer;
-  color: $main-ui-color;
+  color: $color-primary;
 
   &:hover {
     color: $color-primary-dark;
@@ -209,7 +209,7 @@ h4 {
 }
 
 hr {
-  border-top: solid 1px $soft-ui-border;
+  border-top: solid 1px $color-gray-60;
   border-right: 0;
   border-left: 0;
   border-bottom: 0;

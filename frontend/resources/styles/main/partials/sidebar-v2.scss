@@ -6,7 +6,7 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .settings-bar {
-  background-color: $primary-ui-bg;
+  background-color: $color-gray-50;
   bottom: 0;
   height: 100%;
   position: fixed;
@@ -28,7 +28,7 @@
     height: 100%;
 
     .tool-window {
-      border-bottom: 1px solid $medium-ui-border;
+      border-bottom: 1px solid $color-gray-20;
       display: flex;
       flex-direction: column;
       flex: 1;
@@ -36,19 +36,19 @@
 
       .tool-window-bar {
         align-items: center;
-        border-bottom: 1px solid $medium-ui-border;
+        border-bottom: 1px solid $color-gray-20;
         display: flex;
         flex-shrink: 0;
         padding: 2px $x-small;
 
         svg {
-          fill: $intense-ui-icons;
+          fill: $color-gray-20;
           height: 12px;
           width: 12px;
         }
 
         span {
-          color: $intense-ui-text;
+          color: $color-gray-60;
           font-weight: bold;
         }
 

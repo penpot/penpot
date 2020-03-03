@@ -23,7 +23,7 @@
 
   .lightbox-body {
     align-items: center;
-    background-color: $secondary-ui-bg;
+    background-color: $color-gray-60;
     border-radius: $br-medium;
     display: flex;
     flex-direction: column;
@@ -117,7 +117,7 @@
       }
 
       span {
-        color: $intense-ui-text;
+        color: $color-gray-60;
         font-size: $fs12;
         margin-left: $small;
       }
@@ -162,7 +162,7 @@
   &:hover {
 
     .big-svg {
-      background-color: $main-ui-color;
+      background-color: $color-primary;
 
       svg {
         fill: $color-white;
@@ -185,7 +185,7 @@
 
     .clipboard-item {
       align-items: center;
-      border-bottom: 1px solid $soft-ui-border;
+      border-bottom: 1px solid $color-gray-60;
       cursor: pointer;
       display: flex;
       padding: $small;
@@ -196,7 +196,7 @@
 
         svg {
           height: 20px;
-          fill: $medium-ui-border;
+          fill: $color-gray-20;
           margin-right: $medium;
           width: 20px;
         }
@@ -206,10 +206,10 @@
       &:hover {
 
         span {
-          color: $main-ui-color;
+          color: $color-primary;
 
           svg {
-            fill: $main-ui-color
+            fill: $color-primary
           }
 
         }
@@ -234,7 +234,7 @@
 // Export dialog
 .content-col {
   align-items: center;
-  border-right: 1px solid $soft-ui-border;
+  border-right: 1px solid $color-gray-60;
   display: flex;
   flex-direction: column;
   flex: 300px;
@@ -252,7 +252,7 @@
 
   .icon {
     align-items: center;
-    background-color: $soft-ui-icons;
+    background-color: $color-gray-60;
     border-radius: $br-medium;
     display: flex;
     flex-shrink: 0;
@@ -261,7 +261,7 @@
     width: 120px;
 
     svg {
-      fill: $medium-ui-icons;
+      fill: $color-gray-30;
       height: 50px;
       width: 50px;
     }
@@ -305,14 +305,14 @@
     }
 
     :last-child {
-      border-right: 1px solid $soft-ui-border;
+      border-right: 1px solid $color-gray-60;
       border-top-right-radius: $br-medium;
       border-bottom-right-radius: $br-medium;
     }
 
     li {
       align-items: center;
-      border: 1px solid $soft-ui-border;
+      border: 1px solid $color-gray-60;
       border-right: none;
       cursor: pointer;
       display: flex;
@@ -322,7 +322,7 @@
       white-space: nowrap;
 
       &:hover {
-        color: $intense-ui-text;
+        color: $color-gray-60;
       }
 
       &.current {
@@ -340,7 +340,7 @@
 
   .library-item {
     border-radius: $br-medium;
-    border: 1px solid $soft-ui-border;
+    border: 1px solid $color-gray-60;
     cursor: pointer;
     display: flex;
     flex-direction: column;

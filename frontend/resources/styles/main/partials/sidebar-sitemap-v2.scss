@@ -9,13 +9,13 @@
 
   .project-title {
     align-items: center;
-    border-bottom: 1px solid $soft-ui-border;
+    border-bottom: 1px solid $color-gray-60;
     display: flex;
     padding: $x-small;
     width: 100%;
 
     span {
-      color: $intense-ui-text;
+      color: $color-gray-60;
       font-size: $fs14;
       font-weight: bold;
       max-width: 80%;
@@ -26,7 +26,7 @@
 
     .add-page {
       align-items: center;
-      background-color: $soft-ui-icons;
+      background-color: $color-gray-60;
       border-radius: $br-small;
       border: 1px solid transparent;
       cursor: pointer;
@@ -36,14 +36,14 @@
       padding: $x-small;
 
       svg {
-        fill: $intense-ui-icons;
+        fill: $color-gray-20;
         height: 16px;
         width: 16px;
       }
 
       &:hover {
-        background-color: $dark-ui-bg;
-        border-color: $soft-ui-border;
+        background-color: $color-gray-10;
+        border-color: $color-gray-60;
       }
 
     }
@@ -61,7 +61,7 @@
       .page-icon {
 
         svg {
-          fill: $medium-ui-icons;
+          fill: $color-gray-30;
           height: 15px;
           margin-right: $x-small;
           width: 15px;
@@ -70,7 +70,7 @@
       }
 
       span {
-        color: $medium-ui-text;
+        color: $color-gray-20;
         font-size: $fs14;
         max-width: 75%;
         overflow-x: hidden;
@@ -86,13 +86,13 @@
         a {
 
           svg {
-            fill: $soft-ui-icons;
+            fill: $color-gray-60;
             height: 15px;
             margin-left: $x-small;
             width: 15px;
 
             &:hover {
-              fill: $intense-ui-icons;
+              fill: $color-gray-20;
             }
 
           }
@@ -106,13 +106,13 @@
         .page-icon {
 
           svg {
-            fill: $main-ui-color;
+            fill: $color-primary;
           }
 
         }
 
         span {
-          color: $main-ui-color;
+          color: $color-primary;
         }
 
       }
@@ -122,13 +122,13 @@
         .page-icon {
 
           svg {
-            fill: $main-ui-color;
+            fill: $color-primary;
           }
 
         }
 
         span {
-          color: $main-ui-color;
+          color: $color-primary;
           font-weight: bold;
         }
 
@@ -147,14 +147,14 @@
 
     .element-list-body {
       align-items: center;
-      border-bottom: 1px solid $soft-ui-border;
+      border-bottom: 1px solid $color-gray-60;
       display: flex;
       padding: $small;
       transition: none;
       width: 100%;
 
       svg {
-        fill: $soft-ui-icons;
+        fill: $color-gray-60;
         height: 13px;
         margin-right: 8px;
         width: 13px;
@@ -170,7 +170,7 @@
       .element-icon {
 
         svg {
-          fill: $medium-ui-icons;
+          fill: $color-gray-30;
         }
 
       }
@@ -180,7 +180,7 @@
         width: 12px;
 
         svg {
-          fill: $intense-ui-icons;
+          fill: $color-gray-20;
           transform: rotate(90deg);
           width: 10px;
         }
@@ -192,7 +192,7 @@
         &:hover {
 
           svg {
-            fill: $medium-ui-icons;
+            fill: $color-gray-30;
           }
 
         }
@@ -221,7 +221,7 @@
         min-height: 16px;
         display: block;
 
-        color: $medium-ui-text;
+        color: $color-gray-20;
         font-size: $fs13;
         overflow-x: hidden;
         text-overflow: ellipsis;
@@ -233,13 +233,13 @@
         .element-icon {
 
           svg {
-            fill: $main-ui-color;
+            fill: $color-primary;
           }
 
         }
 
         span {
-          color: $main-ui-color;
+          color: $color-primary;
         }
 
       }
@@ -247,24 +247,24 @@
       .selected {
 
         svg {
-          fill: $intense-ui-icons;
+          fill: $color-gray-20;
         }
 
       }
 
       &:hover {
-        border-color: $main-ui-color;
+        border-color: $color-primary;
 
         .element-icon {
 
           svg {
-            fill: $intense-ui-icons;
+            fill: $color-gray-20;
           }
 
         }
 
         span {
-          color: $intense-ui-text;
+          color: $color-gray-60;
         }
 
       }

@@ -24,13 +24,13 @@
       width: 100%;
       .edit {
           padding: 5px 10px;
-          background: $primary-ui-bg;
+          background: $color-gray-50;
           border: none;
           height: 100%;
       }
       .close {
           padding: 5px 10px;
-          background: $primary-ui-bg;
+          background: $color-gray-50;
           cursor: pointer;
           svg {
             transform: rotate(45deg);
@@ -124,7 +124,7 @@
         width: 100%;
 
         h3 {
-          color: $intense-ui-text;
+          color: $color-gray-60;
           font-size: $fs15;
           font-weight: 400;
           overflow: hidden;
@@ -136,7 +136,7 @@
         }
 
         span.date {
-          color: $medium-ui-text;
+          color: $color-gray-20;
           font-size: $fs12;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -150,13 +150,13 @@
         justify-content: center;
 
         span {
-          color: $intense-ui-text;
+          color: $color-gray-60;
           font-size: $fs15;
         }
 
         &:hover {
           background-color: $color-white;
-          border: 2px solid $main-ui-color;
+          border: 2px solid $color-primary;
         }
 
       }
@@ -164,10 +164,10 @@
       // PROJECTS, ELEMENTS & ICONS GRID
       &.project-th {
         background-color: $color-white;
-        // border: 2px solid $dark-ui-bg;
+        // border: 2px solid $color-gray-10;
 
         &:hover {
-          border-color: $main-ui-color;
+          border-color: $color-primary;
         }
 
         .project-th-actions {
@@ -200,7 +200,7 @@
               margin-right: 0;
 
               svg {
-                fill: $medium-ui-icons;
+                fill: $color-gray-30;
                 margin-right: 0;
               }
 
@@ -219,14 +219,14 @@
               margin-right: 0;
 
               svg {
-                fill: $medium-ui-icons;
+                fill: $color-gray-30;
               }
 
               &:hover {
                 transform: scale(1.4);
 
                 svg {
-                  fill: $soft-ui-icons;
+                  fill: $color-gray-60;
                 }
 
               }
@@ -245,7 +245,7 @@
         border-bottom: 2px solid lighten($color-gray-light, 12%);
 
         &:hover {
-          border-color: $main-ui-color;
+          border-color: $color-primary;
         }
 
       }
@@ -322,7 +322,7 @@
 .multiselect-bar {
   @include animation(0,.5s,fadeInUp);
   align-items: center;
-  background-color: $primary-ui-bg;
+  background-color: $color-gray-50;
   display: flex;
   left: 0;
   justify-content: center;
@@ -347,12 +347,12 @@
 
     svg {
       cursor: pointer;
-      fill: $medium-ui-icons;
+      fill: $color-gray-30;
       height: 20px;
       width: 20px;
 
       &:hover {
-        fill: $intense-ui-icons;
+        fill: $color-gray-20;
       }
 
     }
@@ -377,7 +377,7 @@
   position: relative;
 
   .move-list {
-    background-color: $dark-ui-bg;
+    background-color: $color-gray-10;
     border-radius: $br-small;
     bottom: 30px;
     display: flex;

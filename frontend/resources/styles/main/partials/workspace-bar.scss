@@ -7,8 +7,8 @@
 
 .workspace-bar {
   align-items: center;
-  background-color: $primary-ui-bg;
-  border-bottom: 1px solid  $soft-ui-border;
+  background-color: $color-gray-50;
+  border-bottom: 1px solid  $color-gray-60;
   display: flex;
   height: 40px;
   padding: $x-small $medium $x-small 65px;
@@ -17,7 +17,7 @@
 
   .main-icon {
     align-items: center;
-    background-color: $secondary-ui-bg;
+    background-color: $color-gray-60;
     cursor: pointer;
     display: flex;
     height: 100%;
@@ -31,7 +31,7 @@
       height: 30px;
 
       svg {
-        fill: $medium-ui-icons;
+        fill: $color-gray-30;
         height: 30px;
         width: 30px;
 
@@ -40,7 +40,7 @@
       &:hover {
 
         svg {
-          fill: $main-ui-color;
+          fill: $color-primary;
         }
 
       }
@@ -56,14 +56,14 @@
     padding: $x-small;
 
     svg {
-      fill: $intense-ui-icons;
+      fill: $color-gray-20;
       height: 20px;
       margin-right: $small;
       width: 20px;
     }
 
     span {
-      color: $soft-ui-text;
+      color: $color-gray-10;
       font-size: $fs14;
       overflow-x: hidden;
       text-overflow: ellipsis;
@@ -78,7 +78,7 @@
 
     .options-btn {
       align-items: center;
-      border-right: 4px double $soft-ui-border;
+      border-right: 4px double $color-gray-60;
       display: flex;
       margin: 0;
 
@@ -105,7 +105,7 @@
         }
 
         svg {
-          fill: $intense-ui-icons;
+          fill: $color-gray-20;
           height: 18px;
           width: 18px;
         }
@@ -128,7 +128,7 @@
           &:hover {
 
             svg {
-              fill: $soft-ui-icons;
+              fill: $color-gray-60;
             }
           }
 
@@ -161,7 +161,7 @@
         position: relative;
 
         span {
-          color: $medium-ui-text;
+          color: $color-gray-20;
           font-size: $fs15;
         }
 
@@ -169,9 +169,9 @@
         .remove-zoom {
           align-items: center;
           border-radius: 50%;
-          border: 1px solid $intense-ui-border;
+          border: 1px solid $color-gray-40;
           cursor: pointer;
-          color: $intense-ui-border;
+          color: $color-gray-40;
           display: none;
           flex-shrink: 0;
           font-size: $fs20;
@@ -218,7 +218,7 @@
 
 .options-btn {
   align-items: center;
-  border-right: 4px double $soft-ui-border;
+  border-right: 4px double $color-gray-60;
   display: flex;
   margin: 0;
 
@@ -228,7 +228,7 @@
 
   li {
     align-items: center;
-    background-color: $secondary-ui-bg;
+    background-color: $color-gray-60;
     border: 1px solid transparent;
     border-radius: $br-small;
     cursor: pointer;
@@ -245,18 +245,18 @@
     }
 
     svg {
-      fill: $intense-ui-icons;
+      fill: $color-gray-20;
       height: 18px;
       width: 18px;
     }
 
     &:hover {
-      background-color: $dark-ui-bg;
-      border-color: $soft-ui-border;
+      background-color: $color-gray-10;
+      border-color: $color-gray-60;
     }
 
     &.selected {
-      background-color: $main-ui-color;
+      background-color: $color-primary;
 
       svg {
         fill: $color-white;
@@ -273,7 +273,7 @@
   display: flex;
 
   .view-mode {
-    background-color: $intense-ui-icons;
+    background-color: $color-gray-20;
     align-items: center;
     border-radius: $br-small;
     cursor: pointer;
@@ -290,16 +290,16 @@
     }
 
     svg {
-      fill: $secondary-ui-bg;
+      fill: $color-gray-60;
       height: 18px;
       width: 18px;
     }
 
     &:hover {
-      background-color: $main-ui-color;
+      background-color: $color-primary;
 
       svg {
-        fill: $soft-ui-icons;
+        fill: $color-gray-60;
       }
 
     }

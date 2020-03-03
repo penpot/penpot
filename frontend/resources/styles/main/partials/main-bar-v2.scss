@@ -7,7 +7,7 @@
 
 .main-bar {
   align-items: center;
-  background-color: $primary-ui-bg;
+  background-color: $color-gray-50;
   display: flex;
   height: 60px;
   padding: $x-small $medium;
@@ -17,7 +17,7 @@
   .main-logo {
 
     svg {
-      fill: $medium-ui-icons;
+      fill: $color-gray-30;
       height: 40px;
       width: 120px;
     }
@@ -35,11 +35,11 @@
   li {
 
     a {
-      color: $soft-ui-text;
+      color: $color-gray-10;
       padding: 1rem;
 
       &:hover {
-        color: $intense-ui-text;
+        color: $color-gray-60;
       }
 
     }
@@ -47,7 +47,7 @@
     &.current {
 
       a {
-        color: $intense-ui-text;
+        color: $color-gray-60;
       }
 
     }
@@ -64,7 +64,7 @@
   position: relative;
 
   span {
-    color: $medium-ui-text;
+    color: $color-gray-20;
     margin: $small;
   }
 
@@ -76,9 +76,9 @@
   }
 
   .dropdown {
-    background-color: $secondary-ui-bg;
+    background-color: $color-gray-60;
     border-radius: $br-small;
-    border: 1px solid $soft-ui-border;
+    border: 1px solid $color-gray-60;
     min-width: 150px;
     padding: 0 $small;
     position: absolute;
@@ -93,23 +93,23 @@
       padding: $small 0;
 
       svg {
-        fill: $medium-ui-text;
+        fill: $color-gray-20;
         height: 12px;
         width: 12px;
       }
 
       span {
-        color: $medium-ui-text;
+        color: $color-gray-20;
       }
 
       &:hover {
 
         span {
-          color: $intense-ui-text;
+          color: $color-gray-60;
         }
 
         svg {
-          fill: $intense-ui-text;
+          fill: $color-gray-60;
         }
 
       }

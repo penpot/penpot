@@ -14,15 +14,15 @@
   }
 
   .element-icons {
-    background-color: $secondary-ui-bg;
-    border: 1px solid $soft-ui-border;
+    background-color: $color-gray-60;
+    border: 1px solid $color-gray-60;
     border-radius: $br-small;
     display: flex;
     margin: $x-small;
 
     li {
       align-items: center;
-      border-right: 1px solid $soft-ui-border;
+      border-right: 1px solid $color-gray-60;
       border-radius: $br-small;
       cursor: pointer;
       display: flex;
@@ -31,7 +31,7 @@
       padding: $small;
 
       svg {
-        fill: $intense-ui-icons;
+        fill: $color-gray-20;
         height: 15px;
         width: 15px;
       }
@@ -39,13 +39,13 @@
       &:hover {
 
         svg {
-          fill: $main-ui-color;
+          fill: $color-primary;
         }
 
       }
 
       &.selected {
-        background-color: $main-ui-color;
+        background-color: $color-primary;
 
         svg {
           fill: $color-white;
@@ -62,12 +62,12 @@
   }
 
   .element-set {
-    border-bottom: 1px solid $soft-ui-border;
-    color: $medium-ui-text;
+    border-bottom: 1px solid $color-gray-60;
+    color: $color-gray-20;
     margin: 0 $x-small;
 
     .element-set-title {
-      color: $soft-ui-text;
+      color: $color-gray-10;
       font-size: $fs14;
       margin-top: $x-small;
       padding: $x-small;
@@ -81,7 +81,7 @@
 
     li {
       align-items: center;
-      border-bottom: 1px solid $soft-ui-border;
+      border-bottom: 1px solid $color-gray-60;
       display: flex;
       flex-direction: row;
       padding: $small;
@@ -90,7 +90,7 @@
       .list-icon {
 
         svg {
-          fill: $medium-ui-icons;
+          fill: $color-gray-30;
           height: 15px;
           margin-right: $x-small;
           width: 15px;
@@ -99,7 +99,7 @@
       }
 
       span {
-        color: $medium-ui-text;
+        color: $color-gray-20;
         font-size: $fs14;
         max-width: 75%;
         overflow-x: hidden;
@@ -116,13 +116,13 @@
         a {
 
           svg {
-            fill: $soft-ui-icons;
+            fill: $color-gray-60;
             height: 15px;
             margin-left: $x-small;
             width: 15px;
 
             &:hover {
-              fill: $intense-ui-icons;
+              fill: $color-gray-20;
             }
 
           }
@@ -136,13 +136,13 @@
         .list-icon {
 
           svg {
-            fill: $main-ui-color;
+            fill: $color-primary;
           }
 
         }
 
         span {
-          color: $main-ui-color;
+          color: $color-primary;
         }
 
       }
@@ -152,13 +152,13 @@
         .list-icon {
 
           svg {
-            fill: $main-ui-color;
+            fill: $color-primary;
           }
 
         }
 
         span {
-          color: $main-ui-color;
+          color: $color-primary;
           font-weight: bold;
         }
 
@@ -185,37 +185,37 @@
   padding: $small $x-small;
 
   .input-text {
-    background-color: $input-bg;
-    border-color: $intense-ui-border;
-    color: $soft-ui-text;
+    background-color: $color-gray-50;
+    border-color: $color-gray-40;
+    color: $color-gray-10;
     font-size: $fs13;
     margin: $x-small;
     padding: $x-small;
     width: 100%;
 
     &:focus {
-      color: lighten($soft-ui-text, 8%);
-      border-color: $medium-ui-border;
+      color: lighten($color-gray-10, 8%);
+      border-color: $color-gray-20;
     }
 
   }
 
   .input-select {
-    color: $soft-ui-text;
+    color: $color-gray-10;
 
     &:focus {
-      color: lighten($soft-ui-text, 8%);
+      color: lighten($color-gray-10, 8%);
     }
 
     option {
-      color: $intense-ui-text;
+      color: $color-gray-60;
       background: $color-white;
       font-size: $fs12;
     }
   }
 
   span {
-    color: $soft-ui-text;
+    color: $color-gray-10;
     font-size: $fs12;
   }
 
@@ -224,12 +224,12 @@
     width: 20%;
 
     svg {
-      fill: $medium-ui-text;
+      fill: $color-gray-20;
       height: 15px;
       width: 15px;
 
       &:hover {
-        fill: $main-ui-color;
+        fill: $color-primary;
       }
 
     }
@@ -237,7 +237,7 @@
     &.selected {
 
       svg {
-        fill: $main-ui-color;
+        fill: $color-primary;
       }
 
     }
@@ -276,8 +276,8 @@
       width: 100%;
 
       option {
-        color: $intense-ui-text;
-        background: $secondary-ui-bg;
+        color: $color-gray-60;
+        background: $color-gray-60;
         font-size: $fs12;
       }
     }
@@ -286,7 +286,7 @@
 
 .color-th {
   background-color: $color-gray-lighter;
-  border: 1px solid $intense-ui-border;
+  border: 1px solid $color-gray-40;
   border-radius: $br-small;
   cursor: pointer;
   flex-shrink: 0;
@@ -296,20 +296,20 @@
 
   &.palette-th {
     align-items: center;
-    border: 1px solid $medium-ui-icons;
+    border: 1px solid $color-gray-30;
     display: flex;
     justify-content: center;
 
     svg {
-      fill: $medium-ui-icons;
+      fill: $color-gray-30;
       height: 16px;
       width: 16px;
     }
 
     &:hover {
-      border-color: $main-ui-color;
+      border-color: $color-primary;
       svg {
-        fill: $main-ui-color;
+        fill: $color-primary;
       }
 
     }
@@ -324,7 +324,7 @@
   span {
 
     svg {
-      fill: $medium-ui-icons;
+      fill: $color-gray-30;
       height: 20px;
       margin: $x-small $small;
       width: 20px;
@@ -334,7 +334,7 @@
     &.current {
 
       svg {
-        fill: $main-ui-color;
+        fill: $color-primary;
       }
 
     }
@@ -362,7 +362,7 @@
     width: 15px;
 
     .color-bar-select {
-      background-color: $primary-ui-bg;
+      background-color: $color-gray-50;
       height: 3px;
       left: -4px;
       position: absolute;

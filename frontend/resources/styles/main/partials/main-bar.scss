@@ -7,7 +7,7 @@
 
 .main-bar {
   align-items: center;
-  background-color: $primary-ui-bg;
+  background-color: $color-gray-50;
   display: flex;
   height: 40px;
   padding: $x-small $medium;
@@ -18,7 +18,7 @@
     padding-top: $x-small;
 
     svg {
-      fill: $intense-ui-icons;
+      fill: $color-gray-20;
       height: 30px;
       width: 100px;
     }
@@ -38,11 +38,11 @@
 
     a {
       border-bottom: 2px solid transparent;
-      color: $soft-ui-text;
+      color: $color-gray-10;
       margin: $x-small $big;
 
       &:hover {
-        border-color: $main-ui-color;
+        border-color: $color-primary;
       }
 
     }
@@ -50,7 +50,7 @@
     &.current {
 
       a {
-        border-color: $main-ui-color;
+        border-color: $color-primary;
       }
 
     }
@@ -67,7 +67,7 @@
   position: relative;
 
   span {
-    color: $medium-ui-text;
+    color: $color-gray-20;
     margin: $small;
   }
 
@@ -108,11 +108,11 @@
       &:hover {
 
         span {
-          color: $intense-ui-text;
+          color: $color-gray-60;
         }
 
         svg {
-          fill: $intense-ui-text;
+          fill: $color-gray-60;
         }
 
       }

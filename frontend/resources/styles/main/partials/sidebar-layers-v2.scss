@@ -6,7 +6,7 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .layers-tools {
-  border-top: 1px solid $medium-ui-border;
+  border-top: 1px solid $color-gray-20;
   bottom: 0;
   display: flex;
   height: 30px;
@@ -25,12 +25,12 @@
       cursor: pointer;
 
       svg {
-        fill: $medium-ui-icons;
+        fill: $color-gray-30;
         height: 14px;
         width: 14px;
 
         &:hover {
-          fill: $intense-ui-text;
+          fill: $color-gray-60;
         }
 
       }
@@ -40,7 +40,7 @@
 
         svg {
           cursor: auto;
-          fill: $soft-ui-icons;
+          fill: $color-gray-60;
         }
 
       }
@@ -92,7 +92,7 @@
   width: 100%;
 
   ul {
-    border-left: 6px solid $intense-ui-border;
+    border-left: 6px solid $color-gray-40;
     margin: 0;
   }
 
@@ -124,14 +124,14 @@
 
     .element-list-body {
       align-items: center;
-      border-bottom: 1px solid $soft-ui-border;
+      border-bottom: 1px solid $color-gray-60;
       display: flex;
       padding: $small;
       transition: none;
       width: 100%;
 
       svg {
-        fill: $soft-ui-icons;
+        fill: $color-gray-60;
         height: 13px;
         margin-right: 8px;
         width: 13px;
@@ -147,7 +147,7 @@
       .element-icon {
 
         svg {
-          fill: $medium-ui-icons;
+          fill: $color-gray-30;
         }
 
       }
@@ -157,7 +157,7 @@
         width: 12px;
 
         svg {
-          fill: $intense-ui-icons;
+          fill: $color-gray-20;
           transform: rotate(90deg);
           width: 10px;
         }
@@ -169,7 +169,7 @@
         &:hover {
 
           svg {
-            fill: $medium-ui-icons;
+            fill: $color-gray-30;
           }
 
         }
@@ -198,7 +198,7 @@
         min-height: 16px;
         display: block;
 
-        color: $medium-ui-text;
+        color: $color-gray-20;
         font-size: $fs13;
         overflow-x: hidden;
         text-overflow: ellipsis;
@@ -210,13 +210,13 @@
         .element-icon {
 
           svg {
-            fill: $main-ui-color;
+            fill: $color-primary;
           }
 
         }
 
         span {
-          color: $main-ui-color;
+          color: $color-primary;
         }
 
       }
@@ -224,38 +224,38 @@
       .selected {
 
         svg {
-          fill: $intense-ui-icons;
+          fill: $color-gray-20;
         }
 
       }
 
       &:hover {
-        border-color: $main-ui-color;
+        border-color: $color-primary;
 
         .element-icon {
 
           svg {
-            fill: $intense-ui-icons;
+            fill: $color-gray-20;
           }
 
         }
 
         span {
-          color: $intense-ui-text;
+          color: $color-gray-60;
         }
 
       }
 
       &.drag-top {
-        border-top: 40px solid $soft-ui-border !important;
+        border-top: 40px solid $color-gray-60 !important;
       }
 
       &.drag-bottom {
-        border-bottom: 40px solid $soft-ui-border !important;
+        border-bottom: 40px solid $color-gray-60 !important;
       }
 
       &.drag-inside {
-        border: 2px solid $main-ui-color !important;
+        border: 2px solid $color-primary !important;
       }
 
     }
