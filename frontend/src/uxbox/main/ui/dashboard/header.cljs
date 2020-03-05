@@ -39,21 +39,23 @@
     [:header#main-bar.main-bar
      [:div.main-logo
       [:& header-link {:section :dashboard-projects
-                       :content i/logo}]]
-     [:ul.main-nav
-      [:li {:class (when projects? "current")}
-       [:& header-link {:section :dashboard-projects
-                        :content (t locale "dashboard.header.projects")}]]
-      [:li {:class (when icons? "current")}
-       [:& header-link {:section :dashboard-icons
-                        :content (t locale "dashboard.header.icons")}]]
-      [:li {:class (when images? "current")}
-       [:& header-link {:section :dashboard-images
-                        :content (t locale "dashboard.header.images")}]]
-      [:li {:class (when colors? "current")}
-       [:& header-link {:section :dashboard-colors
-                        :content (t locale "dashboard.header.colors")}]]]
-     [:& user]]))
+                       :content i/logo-icon}]]
+     [:& user]
+     [:h1.dashboard-title "Personal"]
+     [:a.btn-dashboard "+ New project"]]))
+    ;  [:ul.main-nav
+    ;   [:li {:class (when projects? "current")}
+    ;    [:& header-link {:section :dashboard-projects
+    ;                     :content (t locale "dashboard.header.projects")}]]
+    ;   [:& header-link {:section :dashboard-icons
+    ;      [:li {:class (when icons? "current")}
+    ;                   :content (t locale "dashboard.header.icons")}]]
+    ;   [:li {:class (when images? "current")}
+    ;    [:& header-link {:section :dashboard-images
+    ;                     :content (t locale "dashboard.header.images")}]]
+    ;   [:li {:class (when colors? "current")}
+    ;    [:& header-link {:section :dashboard-colors
+    ;                     :content (t locale "dashboard.header.colors")}]]]]))
 
 
 ;; --- User Widget
@@ -74,8 +76,8 @@
     [:div.user-zone {:on-click #(st/emit! (rt/nav :settings-profile))
                      :on-mouse-enter #(reset! open true)
                      :on-mouse-leave #(reset! open false)}
-     [:span (:fullname profile)]
      [:img {:src photo}]
+     [:span (:fullname profile)]
      (when @open
        [:& user-menu])]))
 
