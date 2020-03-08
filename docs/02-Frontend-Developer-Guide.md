@@ -6,6 +6,28 @@ application.
 **TODO**
 
 
+## Icons & Assets
+
+The icons used on the frontend application are loaded using svgsprite
+(properly handled by the gulp watch task). All icons should be on SVG
+format located in `resources/images/icons`. The gulp task will
+generate the sprite and the embedd it into the `index.html`.
+
+Then, you can reference the icon from the sprite using the
+`uxbox.builtins.icons/icon-xref` macro:
+
+```clojure
+(ns some.namespace
+  (:require-macros [uxbox.builtins.icons :refer [icon-xref]]))
+
+(icon-xref :arrow)
+```
+
+For performance reasons, all used icons are statically defined in the
+`src/uxbox/buitings/icons.cljs` file.
+
+
+
 ## Translations (I18N) ##
 
 ### How it Works ###

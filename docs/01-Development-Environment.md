@@ -8,7 +8,7 @@ The main development environment consists in a docker compose
 configuration that starts the external services and the development
 container (called **devenv**).
 
-We use tmux script in order to multiplex the signle terminal and run
+We use tmux script in order to multiplex the single terminal and run
 both the backend and frontend in the same container.
 
 
@@ -77,22 +77,19 @@ The backend related environment is located in the tmux **window 2**,
 and you can go directly to it using `ctrl+b 2` shortcut.
 
 By default the backend will be started in non-interactive mode for
-convenience but you can just press `Ctrl+c` and execute `clojure
--J-XX:-OmitStackTraceInFastThrow -Adev:repl` for start the repl.
-
+convenience but you can just press `Ctrl+c` and execute `./bin/repl`
+for start the repl.
 
 On the REPL you have this helper functions:
 - `(start)`: start all the environment
 - `(stop)`: stops the environment
 - `(restart)`: stops, reload and start again.
 
+And many other that are defined in the `tests/user.clj` file.
+
 If some exception is raised when code is reloaded, just use
 `(repl/refresh-all)` in order to finish correctly the code swaping and
 later use `(restart)` again.
-
-
-If this is your first run, you maybe want to load fixtures first:
-`(load-fixtures)`.
 
 For more information, please refer to: `03-Backend-Guide.md`.
 

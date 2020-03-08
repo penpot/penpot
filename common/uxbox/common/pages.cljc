@@ -186,7 +186,7 @@
 
 (defmethod process-change :add-obj
   [data {:keys [id obj frame-id index] :as change}]
-  (us/assert! (contains? (:objects data) frame-id) "process-change/add-obj")
+  (assert (contains? (:objects data) frame-id) "process-change/add-obj")
   (let [obj (assoc obj
                    :frame-id frame-id
                    :id id)]
@@ -220,13 +220,13 @@
 
 (defmethod process-change :mod-obj
   [data {:keys [id operations] :as change}]
-  (us/assert! (contains? (:objects data) id) "process-change/mod-obj")
+  (assert (contains? (:objects data) id) "process-change/mod-obj")
   (update-in data [:objects id]
              #(reduce process-obj-operation % operations)))
 
 (defmethod process-change :mov-obj
   [data {:keys [id frame-id] :as change}]
-  (us/assert! (contains? (:objects data) frame-id))
+  (assert (contains? (:objects data) frame-id))
   (let [frame-id' (get-in data [:objects id :frame-id])]
     (when (not= frame-id frame-id')
       (-> data

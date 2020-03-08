@@ -6,19 +6,20 @@ and backend, such as: code style hints, architecture dicisions, etc...
 
 ## Assertions ##
 
-UXBOX source code has 3 types of assertions that can be used: simple,
-spec, and dev-spec.
+UXBOX source code has this types of assertions:
 
-The simple assertion consists in using the clojure builting `assert`
-macro. This asserts are only executed on development mode. On
-production environment all assets like this will be ignored by
-runtime.
+**assert**: just using the clojure builtin `assert` macro.
 
 Example:
 
 ```clojure
 (assert (number? 3) "optional message")
 ```
+
+This asserts are only executed on development mode. On production
+environment all assets like this will be ignored by runtime.
+
+**spec/assert**: using the `uxbox.common.spec/assert` macro.
 
 Also, if you are using clojure.spec, you have the spec based
 `clojure.spec.alpha/assert` macro. In the same way as the
@@ -28,25 +29,33 @@ removed by the compiler/runtime.
 Example:
 
 ````clojure
-(require '[clojure.spec.alpha :as s])
+(require '[clojure.spec.alpha :as s]
+         '[uxbox.common.spec :as us])
 
 (s/def ::number number?)
 
-(s/assert ::number 3)
+(us/assert ::number 3)
 ```
 
-And finally, for cases when you want a permanent assert (including in
-production code), you need to use `uxbox.common.spec/assert` macro. It
-has the same call signature as `clojure.spec.alpha/assert`.
+In the same way as the `assert` macro, this performs the spec
+assertion only on development build. On production this code will
+completely removed.
+
+**spec/verify**: An assertion type that is executed always.
 
 Example:
 
 ```clojure
 (require '[uxbox.common.spec :as us])
 
-(us/assert ::number 3)
+(us/verify ::number 3)
 ```
 
 This macro enables you have assetions on production code.
 
+**Why don't use the `clojure.spec.alpha/assert` instead of the `uxbox.common.spec/assert`?**
+
+The uxbox variant does not peforms additional runtime checks for know
+if asserts are disabled in "runtime". As a result it generates much
+simplier code at development and production builds.
 

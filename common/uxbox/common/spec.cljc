@@ -110,27 +110,12 @@
 
 ;; --- Macros
 
-(defmacro assert!
-  "Evaluates expr and throws an exception if it does not evaluate to
-  logical true."
-  ([x]
-   (when *assert*
-     `(when-not ~x
-        (throw (ex/error :type :assertion-error
-                         :hint (str "Assert failed: " (pr-str '~x)))))))
-  ([x message]
-   (when *assert*
-     `(when-not ~x
-        (throw (ex/error :type :assertion-error
-                         :hint (str "Assert failed: " (pr-str '~x))
-                         :message ~message))))))
-
 (defn spec-assert
   [spec x]
   (s/assert* spec x))
 
 (defmacro assert
-  "Always active assertion macro (does not obey to :elide-asserts)"
+  "Development only assertion macro."
   [spec x]
   (when *assert*
     `(spec-assert ~spec ~x)))
