@@ -5,7 +5,9 @@
 ;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.shapes.attrs
-  (:require [cuerdas.core :as str]))
+  (:require
+   [cuerdas.core :as str]
+   [uxbox.util.interop :as interop]))
 
 
 ;; (defn camel-case
@@ -58,7 +60,8 @@
   (case style
     :mixed "5,5,1,5"
     :dotted "5,5"
-    :dashed "10,10"))
+    :dashed "10,10"
+    nil))
 
 (defn- transform-stroke-attrs
   [{:keys [stroke-style] :or {stroke-style :none} :as attrs}]
@@ -75,3 +78,21 @@
   (-> (select-keys shape shape-style-attrs)
       (transform-stroke-attrs)
       (process-attrs)))
+
+
+;; TODO: migrate all the code to use this function and then, rename.
+
+(defn extract-style-attrs2
+  [shape]
+  (let [stroke-style (:stroke-style shape :none)
+        attrs #js {:fill (:fill-color shape nil)
+                   :opacity (:opacity shape nil)
+                   :rx (:rx shape nil)
+                   :ry (:ry shape nil)}]
+    (when (not= :none stroke-style)
+      (interop/obj-assign! attrs
+                           #js {:stroke (:stroke-color shape nil)
+                                :strokeWidth (:stroke-width shape nil)
+                                :strokeOpacity (:stroke-opacity shape nil)
+                                :strokeDasharray (stroke-type->dasharray stroke-style)}))
+    attrs))

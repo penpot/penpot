@@ -3,9 +3,9 @@
   org.clojure/clojure {:mvn/version "1.10.1"}
   com.cognitect/transit-cljs {:mvn/version "0.8.256"}
 
-  cljsjs/react {:mvn/version "16.12.0-1"}
-  cljsjs/react-dom {:mvn/version "16.12.0-1"}
-  cljsjs/react-dom-server {:mvn/version "16.12.0-1"}
+  cljsjs/react {:mvn/version "16.13.0-0"}
+  cljsjs/react-dom {:mvn/version "16.13.0-0"}
+  cljsjs/react-dom-server {:mvn/version "16.13.0-0"}
 
   environ/environ {:mvn/version "1.1.0"}
   metosin/reitit-core {:mvn/version "0.3.10"}

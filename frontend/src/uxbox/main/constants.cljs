@@ -9,8 +9,8 @@
 (def viewport-width 4000)
 (def viewport-height 4000)
 
-(def canvas-start-x 1200)
-(def canvas-start-y 1200)
+(def frame-start-x 1200)
+(def frame-start-y 1200)
 
 (def grid-x-axis 10)
 (def grid-y-axis 10)

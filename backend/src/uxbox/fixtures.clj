@@ -12,6 +12,7 @@
    [mount.core :as mount]
    [promesa.core :as p]
    [uxbox.config :as cfg]
+   [uxbox.common.pages :as cp]
    [uxbox.common.data :as d]
    [uxbox.core]
    [uxbox.db :as db]
@@ -149,12 +150,7 @@
         create-page
         (fn [conn owner-id project-id file-id index]
           (p/let [id (mk-uuid "page" project-id file-id index)
-                  data {:version 1
-                        :shapes []
-                        :canvas []
-                        :options {}
-                        :shapes-by-id {}}
-
+                  data cp/default-page-data
                   name (str "page " index)
                   version 0
                   ordering index

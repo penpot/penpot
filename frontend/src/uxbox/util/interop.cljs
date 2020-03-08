@@ -11,3 +11,7 @@
   "Convert an es6 iterable into cljs Seq."
   [v]
   (seq (js/Array.from v)))
+
+(defn obj-assign!
+  [obj1 obj2]
+  (js/Object.assign obj1 obj2))

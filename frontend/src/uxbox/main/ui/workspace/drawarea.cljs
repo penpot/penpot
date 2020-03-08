@@ -52,7 +52,7 @@
     :fill-color "#000000"
     :fill-opacity 0
     :segments []}
-   {:type :canvas
+   {:type :frame
     :name "Canvas"}
    {:type :curve
     :name "Path"
@@ -281,8 +281,8 @@
                  shape (dissoc shape ::initialized? :resize-modifier)]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all
-                    (if (= :canvas (:type shape))
-                      (dw/add-canvas shape)
+                    (if (= :frame (:type shape))
+                      (dw/add-frame shape)
                       (dw/add-shape shape))))))))))
 
 (def close-drawing-path

@@ -94,9 +94,9 @@
      [:div.workspace-options
       [:ul.options-btn
        [:li.tooltip.tooltip-bottom
-        {:alt (tr "workspace.header.canvas")
-         :class (when (= selected-drawtool :canvas) "selected")
-         :on-click (partial select-drawtool :canvas)}
+        {:alt (tr "workspace.header.frame")
+         :class (when (= selected-drawtool :frame) "selected")
+         :on-click (partial select-drawtool :frame)}
         i/artboard]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "workspace.header.rect")

@@ -45,10 +45,10 @@
     (st/emit! (ms/->ScrollEvent (gpt/point left top)))))
 
 (defn- on-wheel
-  [event canvas]
+  [event frame]
   (when (kbd/ctrl? event)
     (let [prev-zoom @refs/selected-zoom
-          dom (mf/ref-node canvas)
+          dom (mf/ref-node frame)
           scroll-position (scroll/get-current-position-absolute dom)
           mouse-point @ms/mouse-position]
       (dom/prevent-default event)
@@ -60,7 +60,7 @@
 
 (mf/defc workspace-content
   [{:keys [page file flags] :as params}]
-  (let [canvas (mf/use-ref nil)
+  (let [frame (mf/use-ref nil)
         layout (mf/deref refs/workspace-layout)
         left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                 :document-history])))
@@ -77,7 +77,7 @@
       [:section.workspace-content
        {:class classes
         :on-scroll on-scroll
-        :on-wheel #(on-wheel % canvas)}
+        :on-wheel #(on-wheel % frame)}
 
        [:& history-dialog]
 
@@ -87,7 +87,7 @@
           [:& horizontal-rule]
           [:& vertical-rule]])
 
-       [:section.workspace-viewport {:id "workspace-viewport" :ref canvas}
+       [:section.workspace-viewport {:id "workspace-viewport" :ref frame}
         [:& viewport {:page page}]]]
 
       ;; Aside

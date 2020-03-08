@@ -43,21 +43,21 @@
          (rx/of (dw/materialize-displacement-in-bulk selected)
                 ::dw/page-data-update))))))
 
-(def start-move-canvas
+(def start-move-frame
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [flags (get-in state [:workspace-local :flags])
             selected (get-in state [:workspace-local :selected])
             stoper (rx/filter uws/mouse-up? stream)
-            canvas-id (first selected)
+            frame-id (first selected)
             position @uws/mouse-position]
 
         (rx/concat
          (->> (uws/mouse-position-deltas position)
-              (rx/map #(dw/apply-canvas-displacement canvas-id %))
+              (rx/map #(dw/apply-frame-displacement frame-id %))
               (rx/take-until stoper))
-         (rx/of (dw/materialize-canvas-displacement canvas-id)))))))
+         (rx/of (dw/materialize-frame-displacement frame-id)))))))
 
 (defn on-mouse-down
   ([event shape] (on-mouse-down event shape nil))
@@ -70,10 +70,10 @@
         drawing?
         nil
 
-        (= type :canvas)
+        (= type :frame)
         (when selected?
           (dom/stop-propagation event)
-          (st/emit! start-move-canvas))
+          (st/emit! start-move-frame))
 
         (and (not selected?) (empty? selected))
         (do

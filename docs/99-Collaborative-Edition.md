@@ -9,34 +9,63 @@ and persistence protocol.
 This is a page data structure:
 
 ```
-{:version 1
+{:version 2
  :options {}
- :shapes [<id>, ...]
- :canvas [<id>, ...]
- :shapes-by-id {<id> <object>, ...}}
+
+ :rmap
+ {:id1 :default
+  :id2 :default
+  :id3 :id1}
+
+ :objects
+ {:root
+  {:type :root
+   :shapes [:id1 :id2]}
+
+  :id1
+  {:type :canvas
+   :shapes [:id3]}
+
+  :id2 {:type :rect}
+  :id3 {:type :circle}}}
 ```
+
 
 This is a potential list of persistent ops:
 
 ```
-;; Generic (Shapes & Canvas)
-[:mod-shape <id> [:set <attr> <val?>], ...]
+{:type :mod-opts
+ :operations [<op>, ...]
 
-;; Example:
-;; [:mod-shape 1 [:set :x 2] [:set :y 3]]
+{:type :add-obj
+ :id <uuid>
+ :parent <uuid>
+ :obj <shape-object>}
 
-;; Specific
-[:add-shape <id> <object>]
-[:add-canvas <id> <object>]
+{:type :mod-obj
+ :id   <uuid>
+ :operations [<op>, ...]}
 
-[:del-shape <id>]
-[:del-canvas <id>]
+{:type :mov-obj
+ :id <uuid>
+ :dest <uuid>}
 
-[:mov-canvas <id> :after <id|null>] ;; null implies at first position
-[:mov-shape <id> :after <id|null>]
-
-[:mod-opts [:set <attr> <val>], [:del <attr> nil], ...]
+{:type :del-obj
+ :id   <uuid>}
 ```
+
+This is a potential list of operations:
+
+```
+{:type :set
+ :attr <any>
+ :val  <any>}
+
+{:type :mov
+ :id <uuid>
+ :index <int>}
+```
+
 
 ## Ephemeral communication (Websocket protocol)
 
