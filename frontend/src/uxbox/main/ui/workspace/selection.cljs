@@ -133,7 +133,7 @@
                           :stroke-opacity "1"}}]
 
      (when (and (fn? on-rotate)
-                (not= :canvas (:type shape)))
+                (not= :frame (:type shape)))
        [:*
         [:path {:stroke "#31EFB8"
                 :stroke-opacity "1"
@@ -255,7 +255,7 @@
                   :on-resize on-resize}]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom] :as props}]
+  [{:keys [shape zoom objects] :as props}]
   (let [on-resize #(do (dom/stop-propagation %2)
                        (st/emit! (start-resize %1 #{(:id shape)} shape)))
         on-rotate #(do (dom/stop-propagation %)
@@ -263,6 +263,7 @@
 
         ds-modifier (:displacement-modifier shape)
         rz-modifier (:resize-modifier shape)
+        ;; shape (geom/resolve-shape objects shape)
         shape (cond-> (geom/shape->rect-shape shape)
                 (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
                 (gmt/matrix? ds-modifier) (geom/transform ds-modifier))]
@@ -274,11 +275,13 @@
 
 (mf/defc selection-handlers
   [{:keys [selected edition zoom] :as props}]
-  (let [data   (mf/deref refs/workspace-data)
+  (let [data    (mf/deref refs/workspace-data)
+        objects (:objects data)
+
         ;; We need remove posible nil values because on shape
         ;; deletion many shape will reamin selected and deleted
         ;; in the same time for small instant of time
-        shapes (->> (map #(get-in data [:shapes-by-id %]) selected)
+        shapes (->> (map #(get objects %) selected)
                     (remove nil?))
         num (count shapes)
         {:keys [id type] :as shape} (first shapes)]
@@ -303,4 +306,5 @@
 
       :else
       [:& single-selection-handlers {:shape shape
+                                     :objects objects
                                      :zoom zoom}])))

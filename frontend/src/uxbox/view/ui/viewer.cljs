@@ -13,7 +13,7 @@
    [uxbox.util.data :refer [seek]]
    [uxbox.view.data.viewer :as dv]
    [uxbox.view.store :as st]
-   [uxbox.view.ui.viewer.canvas :refer [canvas]]
+   [uxbox.view.ui.viewer.frame :refer [frame]]
    [uxbox.view.ui.viewer.nav :refer [nav]]
    [uxbox.view.ui.viewer.sitemap :refer [sitemap]]
    [lentes.core :as l]))
@@ -45,4 +45,4 @@
                       :pages pages
                       :selected id}])
        [:& nav {:flags flags}]
-       [:& canvas {:page (seek #(= id (:id %)) pages)}]])))
+       [:& frame {:page (seek #(= id (:id %)) pages)}]])))

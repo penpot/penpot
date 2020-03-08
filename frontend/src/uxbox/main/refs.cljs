@@ -59,8 +59,8 @@
   (-> (l/lens #(contains? % id))
       (l/derive selected-shapes)))
 
-(def selected-canvas
-  (-> (l/key :selected-canvas)
+(def selected-frame
+  (-> (l/key :selected-frame)
       (l/derive workspace-local)))
 
 (def toolboxes

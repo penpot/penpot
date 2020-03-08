@@ -8,7 +8,7 @@
 ;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.ui.workspace.sidebar.options.canvas
+(ns uxbox.main.ui.workspace.sidebar.options.frame
   (:require
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
@@ -43,8 +43,8 @@
                 delta (if (= attr :x)
                         (gpt/point (math/neg (- pval cval)) 0)
                         (gpt/point 0 (math/neg (- pval cval))))]
-            (st/emit! (udw/apply-canvas-displacement (:id shape) delta)
-                      (udw/materialize-canvas-displacement (:id shape)))))
+            (st/emit! (udw/apply-frame-displacement (:id shape) delta)
+                      (udw/materialize-frame-displacement (:id shape)))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)

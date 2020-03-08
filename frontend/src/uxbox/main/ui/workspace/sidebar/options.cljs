@@ -13,7 +13,7 @@
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.workspace.sidebar.options.canvas :as canvas]
+   [uxbox.main.ui.workspace.sidebar.options.frame :as frame]
    [uxbox.main.ui.workspace.sidebar.options.rect :as rect]
    [uxbox.main.ui.workspace.sidebar.options.icon :as icon]
    [uxbox.main.ui.workspace.sidebar.options.circle :as circle]
@@ -29,7 +29,7 @@
   [{:keys [shape] :as props}]
   [:div
    (case (:type shape)
-     :canvas [:& canvas/options {:shape shape}]
+     :frame [:& frame/options {:shape shape}]
      :text [:& text/options {:shape shape}]
      :rect [:& rect/options {:shape shape}]
      :icon [:& icon/options {:shape shape}]
@@ -43,7 +43,7 @@
   [{:keys [shape-id] :as props}]
   (let [shape-iref (mf/use-memo
                     {:deps (mf/deps shape-id)
-                     :fn #(-> (l/in [:workspace-data :shapes-by-id shape-id])
+                     :fn #(-> (l/in [:workspace-data :objects shape-id])
                               (l/derive st/state))})
         shape (mf/deref shape-iref)]
     [:& shape-options {:shape shape}]))

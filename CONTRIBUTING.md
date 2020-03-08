@@ -158,5 +158,3 @@ This is an example of the aspect of the line:
 
 Please, use your real name (sorry, no pseudonyms or anonymous
 contributions are allowed).
-
-

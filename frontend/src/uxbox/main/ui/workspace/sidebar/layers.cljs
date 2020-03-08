@@ -21,6 +21,7 @@
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [t]]))
 
 (def ^:private shapes-iref
@@ -76,34 +77,35 @@
        {:on-double-click on-click}
        (:name shape "")])))
 
-;; --- Layer Item
+
+(def strip-attrs
+  #(select-keys % [:id :frame :name :type :hidden :blocked]))
 
 (mf/defc layer-item
-  {:wrap [#(mf/wrap-memo % =)]}
-  [{:keys [shape selected index] :as props}]
-  (let [selected? (contains? selected (:id shape))
-
+  {:wrap [mf/wrap-memo]}
+  [{:keys [index item selected] :as props}]
+  (let [selected? (contains? selected (:id item))
         toggle-blocking
         (fn [event]
           (dom/stop-propagation event)
-          (if (:blocked shape)
-            (st/emit! (dw/unblock-shape (:id shape)))
-            (st/emit! (dw/block-shape (:id shape)))))
+          (if (:blocked item)
+            (st/emit! (dw/unblock-shape (:id item)))
+            (st/emit! (dw/block-shape (:id item)))))
 
         toggle-visibility
         (fn [event]
           (dom/stop-propagation event)
-          (if (:hidden shape)
-            (st/emit! (dw/show-shape (:id shape)))
-            (st/emit! (dw/hide-shape (:id shape)))))
+          (if (:hidden item)
+            (st/emit! (dw/show-shape (:id item)))
+            (st/emit! (dw/hide-shape (:id item)))))
 
         select-shape
         (fn [event]
           (dom/prevent-default event)
-          (let [id (:id shape)]
+          (let [id (:id item)]
             (cond
-              (or (:blocked shape)
-                  (:hidden shape))
+              (or (:blocked item)
+                  (:hidden item))
               nil
 
               (.-ctrlKey event)
@@ -118,7 +120,7 @@
 
         on-drop
         (fn [item monitor]
-          (st/emit! (dw/commit-shape-order-change (:shape-id item))))
+          #_(st/emit! (dw/commit-shape-order-change (:shape-id item))))
 
         on-hover
         (fn [item monitor]
@@ -126,8 +128,8 @@
 
         [dprops dnd-ref] (use-sortable
                           {:type "layer-item"
-                           :data {:shape-id (:id shape)
-                                  :page-id (:page shape)
+                           :data {:shape-id (:id item)
+                                  :page-id (:page item)
                                   :index index}
                            :on-hover on-hover
                            :on-drop on-drop})]
@@ -139,23 +141,21 @@
                               :on-click select-shape
                               :on-double-click #(dom/stop-propagation %)}
       [:div.element-actions
-       [:div.toggle-element {:class (when-not (:hidden shape) "selected")
+       [:div.toggle-element {:class (when-not (:hidden item) "selected")
                              :on-click toggle-visibility}
         i/eye]
-       [:div.block-element {:class (when (:blocked shape) "selected")
+       [:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
         i/lock]]
-      [:& element-icon {:shape shape}]
-      [:& layer-name {:shape shape}]]]))
+      [:& element-icon {:shape item}]
+      [:& layer-name {:shape item}]]]))
 
-(mf/defc canvas-item
+(mf/defc layer-frame-item
   {:wrap [#(mf/wrap-memo % =)]}
-  [{:keys [canvas shapes selected index] :as props}]
-  (let [selected? (contains? selected (:id canvas))
+  [{:keys [item selected index objects] :as props}]
+  (let [selected? (contains? selected (:id item))
         local (mf/use-state {:collapsed false})
         collapsed? (:collapsed @local)
-
-        shapes (filter #(= (:canvas (second %)) (:id canvas)) shapes)
 
         toggle-collapse
         (fn [event]
@@ -165,24 +165,24 @@
         toggle-blocking
         (fn [event]
           (dom/stop-propagation event)
-          (if (:blocked canvas)
-            (st/emit! (dw/unblock-shape (:id canvas)))
-            (st/emit! (dw/block-shape (:id canvas)))))
+          (if (:blocked item)
+            (st/emit! (dw/unblock-shape (:id item)))
+            (st/emit! (dw/block-shape (:id item)))))
 
         toggle-visibility
         (fn [event]
           (dom/stop-propagation event)
-          (if (:hidden canvas)
-            (st/emit! (dw/show-canvas (:id canvas)))
-            (st/emit! (dw/hide-canvas (:id canvas)))))
+          (if (:hidden item)
+            (st/emit! (dw/show-frame (:id item)))
+            (st/emit! (dw/hide-frame (:id item)))))
 
         select-shape
         (fn [event]
           (dom/prevent-default event)
-          (let [id (:id canvas)]
+          (let [id (:id item)]
             (cond
-              (or (:blocked canvas)
-                  (:hidden canvas))
+              (or (:blocked item)
+                  (:hidden item))
               nil
 
               (.-ctrlKey event)
@@ -201,13 +201,13 @@
 
         on-hover
         (fn [item monitor]
-          (st/emit! (dw/change-canvas-order {:id (:canvas-id item)
+          (st/emit! (dw/change-frame-order {:id (:frame-id item)
                                              :index index})))
 
         [dprops dnd-ref] (use-sortable
-                          {:type "canvas-item"
-                           :data {:canvas-id (:id canvas)
-                                  :page-id (:page canvas)
+                          {:type "frame-item"
+                           :data {:frame-id (:id item)
+                                  :page-id (:page item)
                                   :index index}
                            :on-hover on-hover
                            :on-drop on-drop})]
@@ -219,84 +219,68 @@
                               :on-click select-shape
                               :on-double-click #(dom/stop-propagation %)}
       [:div.element-actions
-       [:div.toggle-element {:class (when-not (:hidden canvas) "selected")
+       [:div.toggle-element {:class (when-not (:hidden item) "selected")
                              :on-click toggle-visibility}
         i/eye]
-       #_[:div.block-element {:class (when (:blocked canvas) "selected")
+       #_[:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
           i/lock]]
       [:div.element-icon i/folder]
-      [:& layer-name {:shape canvas}]
+      [:& layer-name {:shape item}]
       [:span.toggle-content
        {:on-click toggle-collapse
         :class (when-not collapsed? "inverse")}
        i/arrow-slide]]
      (when-not collapsed?
        [:ul
-        (for [[index shape] shapes]
-          [:& layer-item {:shape shape
-                          :selected selected
-                          :index index
-                          :key (:id shape)}])])]))
+        (for [[index id] (d/enumerate (:shapes item))]
+          (let [item (get objects id)]
+            (if (= (:type item) :frame)
+              [:& layer-frame-item
+               {:item item
+                :key (:id item)
+                :objects objects
+                :index index}]
+              [:& layer-item
+               {:item item
+                :index index
+                :key (:id item)}])))])]))
 
-;; --- Layers List
-
-(mf/defc layers-list
-  {:wrap [#(mf/wrap-memo % =)]}
-  [{:keys [shapes selected] :as props}]
-  [:ul.element-list
-   (for [[index shape] shapes]
-     [:& layer-item {:shape shape
-                     :selected selected
-                     :index index
-                     :key (:id shape)}])])
-
-(mf/defc canvas-list
-  {:wrap [#(mf/wrap-memo % =)]}
-  [{:keys [shapes canvas selected] :as props}]
-  [:ul.element-list
-   (for [[index item] canvas]
-     [:& canvas-item {:canvas item
-                      :shapes shapes
-                      :selected selected
-                      :index index
-                      :key (:id item)}])])
+(mf/defc layers-tree
+  {:wrap [mf/wrap-memo]}
+  [props]
+  (let [selected (mf/deref refs/selected-shapes)
+        data (mf/deref refs/workspace-data)
+        objects (:objects data)
+        root (get objects uuid/zero)]
+    [:ul.element-list
+     (for [[index id] (d/enumerate (:shapes root))]
+       (let [item (get objects id)]
+         (if (= (:type item) :frame)
+           [:& layer-frame-item
+            {:item item
+             :key (:id item)
+             :objects objects
+             :index index}]
+           [:& layer-item
+            {:item item
+             :index index
+             :key (:id item)}])))]))
 
 ;; --- Layers Toolbox
+
+;; NOTE: we need to consider using something like react window for
+;; only render visible items instead of all.
 
 (mf/defc layers-toolbox
   {:wrap [mf/wrap-memo]}
   [{:keys [page] :as props}]
   (let [locale (i18n/use-locale)
-        on-click #(st/emit! (dw/toggle-layout-flag :layers))
-
-        selected (mf/deref refs/selected-shapes)
-        data (mf/deref refs/workspace-data)
-
-        shapes-map (:shapes-by-id data)
-        strip #(select-keys % [:id :canvas :name :type :hidden :blocked])
-
-        canvas (->> (:canvas data)
-                    (map #(get shapes-map %))
-                    (map strip)
-                    (d/enumerate))
-
-        shapes (->> (:shapes data)
-                    (map #(get shapes-map %))
-                    (map strip))
-
-        all-shapes (d/enumerate shapes)
-        unc-shapes (->> shapes
-                        (filter #(nil? (:canvas %)))
-                        (d/enumerate))]
+        on-click #(st/emit! (dw/toggle-layout-flag :layers))]
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]
       [:span (t locale "workspace.sidebar.layers")]
       #_[:div.tool-window-close {:on-click on-click} i/close]]
      [:div.tool-window-content
-      [:& canvas-list {:canvas canvas
-                       :shapes all-shapes
-                       :selected selected}]
-      [:& layers-list {:shapes unc-shapes
-                       :selected selected}]]]))
+      [:& layers-tree]]]))

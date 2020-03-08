@@ -8,7 +8,7 @@
 ;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.ui.shapes.canvas
+(ns uxbox.main.ui.shapes.frame
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
@@ -30,14 +30,24 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
 
-(declare canvas-wrapper)
+(declare frame-wrapper)
+
+
+(defn wrap-memo-shape
+  ([component]
+   (js/React.memo
+    component
+    (fn [np op]
+      (let [n-shape (aget np "shape")
+            o-shape (aget op "shape")]
+        (= n-shape o-shape))))))
 
 (mf/defc shape-wrapper
-  {:wrap [#(mf/wrap-memo % =)]}
+  {:wrap [wrap-memo-shape]}
   [{:keys [shape] :as props}]
   (when (and shape (not (:hidden shape)))
     (case (:type shape)
-      :canvas [:& canvas-wrapper {:shape shape :childs []}]
+      :frame [:& frame-wrapper {:shape shape :childs []}]
       :curve [:& path/path-wrapper {:shape shape}]
       :text [:& text/text-wrapper {:shape shape}]
       :icon [:& icon/icon-wrapper {:shape shape}]
@@ -46,22 +56,48 @@
       :image [:& image/image-wrapper {:shape shape}]
       :circle [:& circle/circle-wrapper {:shape shape}])))
 
-(def canvas-default-props
+(def frame-default-props
   {:fill-color "#ffffff"})
 
-(declare canvas-shape)
-(declare translate-to-canvas)
+(declare frame-shape)
+(declare translate-to-frame)
 
-(mf/defc canvas-wrapper
-  {:wrap [#(mf/wrap-memo % =)]}
-  [{:keys [shape childs] :as props}]
+(def kaka [1 2 3])
+
+(defn wrap-memo-frame
+  ([component]
+   (js/React.memo
+    component
+    (fn [np op]
+      (let [n-shape (aget np "shape")
+            o-shape (aget op "shape")
+            n-objs  (aget np "objects")
+            o-objs  (aget op "objects")
+
+            ids (:shapes n-shape)]
+        (and (identical? n-shape o-shape)
+             (loop [id (first ids)
+                    ids (rest ids)]
+               (if (nil? id)
+                 true
+                 (if (identical? (get n-objs id)
+                                 (get o-objs id))
+                   (recur (first ids) (rest ids))
+                   false)))))))))
+
+
+(mf/defc frame-wrapper
+  {:wrap [wrap-memo-frame]}
+  [{:keys [shape objects] :as props}]
   (when (and shape (not (:hidden shape)))
     (let [selected-iref (mf/use-memo
                          {:fn #(refs/make-selected (:id shape))
                           :deps (mf/deps (:id shape))})
           selected? (mf/deref selected-iref)
           on-mouse-down #(common/on-mouse-down % shape)
-          shape (merge canvas-default-props shape)
+          shape (merge frame-default-props shape)
+
+          childs (mapv #(get objects %) (:shapes shape))
 
           on-double-click
           (fn [event]
@@ -71,9 +107,9 @@
       [:g {:class (when selected? "selected")
            :on-double-click on-double-click
            :on-mouse-down on-mouse-down}
-       [:& canvas-shape {:shape shape :childs childs}]])))
+       [:& frame-shape {:shape shape :childs childs}]])))
 
-(mf/defc canvas-shape
+(mf/defc frame-shape
   [{:keys [shape childs] :as props}]
   (let [rotation    (:rotation shape)
         ds-modifier (:displacement-modifier shape)
@@ -93,7 +129,7 @@
                          :height height
                          ))
 
-        translate #(translate-to-canvas % ds-modifier (gpt/point (- x) (- y)))
+        translate #(translate-to-frame % ds-modifier (gpt/point (- x) (- y)))
         ]
 
     [:svg {:x x :y y :width width :height height}
@@ -101,12 +137,12 @@
      (for [item childs]
        [:& shape-wrapper {:shape (translate item) :key (:id item)}])]))
 
-(defn- translate-to-canvas
-  [shape canvas-ds-modifier pt]
+(defn- translate-to-frame
+  [shape frame-ds-modifier pt]
   (let [rz-modifier (:resize-modifier shape)
         shape (cond-> shape
-                (gmt/matrix? canvas-ds-modifier)
-                (geom/transform canvas-ds-modifier)
+                (gmt/matrix? frame-ds-modifier)
+                (geom/transform frame-ds-modifier)
 
                 (gmt/matrix? rz-modifier)
                 (-> (geom/transform rz-modifier)

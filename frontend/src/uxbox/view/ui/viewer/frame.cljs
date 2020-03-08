@@ -5,7 +5,7 @@
 ;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2016-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.view.ui.viewer.canvas
+(ns uxbox.view.ui.viewer.frame
   (:require
    [rumext.alpha :as mf]
    [uxbox.view.ui.viewer.shapes :as shapes]))
@@ -25,12 +25,12 @@
 
 (declare shape)
 
-(mf/defc canvas
+(mf/defc frame
   {:wrap [mf/wrap-memo]}
   [{:keys [page] :as props}]
   #_(let [{:keys [metadata id]} page
         {:keys [width height]} metadata]
-    [:div.view-canvas
+    [:div.view-frame
      [:svg.page-layout {:width width
                         :height height}
       [:& background metadata]
