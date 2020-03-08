@@ -10,7 +10,8 @@ that can be passed in different ways. The preferred one is using
 environment variables.
 
 
-A probably incomplete list of available options (with respective defaults):
+This is a probably incomplete list of available options (with
+respective defaults):
 
 - `UXBOX_HTTP_SERVER_PORT=6060`
 - `UXBOX_HTTP_SERVER_CORS=http://localhost:3449`
