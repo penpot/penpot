@@ -17,73 +17,15 @@
    [uxbox.main.data.auth :as da]
    [uxbox.main.data.projects :as dp]
    [uxbox.main.store :as st]
+   [uxbox.main.refs :as refs]
    [uxbox.main.ui.navigation :as nav]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.router :as rt]))
 
-(declare user)
+;; --- Component: User Menu
 
-(mf/defc header-link
-  [{:keys [section content] :as props}]
-  (let [on-click #(st/emit! (rt/nav section))]
-    [:a {:on-click on-click} content]))
-
-(mf/defc header
-  [{:keys [section] :as props}]
-  (let [locale (i18n/use-locale)
-        projects? (= section :dashboard-projects)
-        icons? (= section :dashboard-icons)
-        images? (= section :dashboard-images)
-        colors? (= section :dashboard-colors)]
-    [:header#main-bar.main-bar
-     [:div.main-logo
-      [:& header-link {:section :dashboard-projects
-                       :content i/logo-icon}]]
-     [:& user]
-     [:h1.dashboard-title "Personal"]
-     [:a.btn-dashboard "+ New project"]]))
-    ;  [:ul.main-nav
-    ;   [:li {:class (when projects? "current")}
-    ;    [:& header-link {:section :dashboard-projects
-    ;                     :content (t locale "dashboard.header.projects")}]]
-    ;   [:& header-link {:section :dashboard-icons
-    ;      [:li {:class (when icons? "current")}
-    ;                   :content (t locale "dashboard.header.icons")}]]
-    ;   [:li {:class (when images? "current")}
-    ;    [:& header-link {:section :dashboard-images
-    ;                     :content (t locale "dashboard.header.images")}]]
-    ;   [:li {:class (when colors? "current")}
-    ;    [:& header-link {:section :dashboard-colors
-    ;                     :content (t locale "dashboard.header.colors")}]]]]))
-
-
-;; --- User Widget
-
-(declare user-menu)
-(def profile-ref
-  (-> (l/key :profile)
-      (l/derive st/state)))
-
-(mf/defc user
-  [props]
-  (let [open (mf/use-state false)
-        profile (mf/deref profile-ref)
-        photo (:photo-uri profile "")
-        photo (if (str/empty? photo)
-                "/images/avatar.jpg"
-                photo)]
-    [:div.user-zone {:on-click #(st/emit! (rt/nav :settings-profile))
-                     :on-mouse-enter #(reset! open true)
-                     :on-mouse-leave #(reset! open false)}
-     [:img {:src photo}]
-     [:span (:fullname profile)]
-     (when @open
-       [:& user-menu])]))
-
-;; --- User Menu
-
-(mf/defc user-menu
+(mf/defc profile-menu
   [props]
   (let [locale (i18n/use-locale)
         on-click
@@ -95,11 +37,42 @@
     [:ul.dropdown
      [:li {:on-click #(on-click % :settings-profile)}
       i/user
-      [:span (t locale "dashboard.header.user-menu.profile")]]
+      [:span (t locale "dashboard.header.profile-menu.profile")]]
      [:li {:on-click #(on-click % :settings-password)}
       i/lock
-      [:span (t locale "dashboard.header.user-menu.password")]]
+      [:span (t locale "dashboard.header.profile-menu.password")]]
      [:li {:on-click #(on-click % da/logout)}
       i/exit
-      [:span (t locale "dashboard.header.user-menu.logout")]]]))
+      [:span (t locale "dashboard.header.profile-menu.logout")]]]))
+
+
+
+;; --- Component: Profile
+
+(mf/defc profile-section
+  [{:keys [profile] :as props}]
+  (let [open (mf/use-state false)
+        photo (:photo-uri profile "")
+        photo (if (str/empty? photo)
+                "/images/avatar.jpg"
+                photo)]
+    [:div.user-zone {:on-click #(st/emit! (rt/nav :settings-profile))
+                     :on-mouse-enter #(reset! open true)
+                     :on-mouse-leave #(reset! open false)}
+     [:img {:src photo}]
+     [:span (:fullname profile)]
+     (when @open
+       [:& profile-menu])]))
+
+
+;; --- Component: Header
+
+(mf/defc header
+  [{:keys [profile] :as props}]
+  (let [locale (i18n/use-locale)]
+    [:header#main-bar.main-bar
+     [:div.main-logo i/logo-icon]
+     [:& profile-section {:profile profile}]
+     [:h1.dashboard-title "Personal"]
+     [:a.btn-dashboard "+ New project"]]))
 

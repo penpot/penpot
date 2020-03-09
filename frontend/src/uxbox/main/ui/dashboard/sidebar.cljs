@@ -94,25 +94,26 @@
                      (= selected-team-id (:default-team-id profile)))
         drafts? (and (= selected-section :dashboard-project)
                      (= selected-team-id (:default-team-id profile))
-                     (= selected-project-id (:default-project-id profile)))]
+                     (= selected-project-id (:default-project-id profile)))
+        locale (i18n/use-locale)]
     [:ul.library-elements
      [:li.recent-projects
       {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))
        :class-name (when home? "current")}
       i/user
-      [:span.element-title "Personal"]]
+      [:span.element-title (t locale "dashboard.sidebar.personal")]]
 
      [:li
       {:on-click #(st/emit! (rt/nav :dashboard-project {:team-id team-id
                                                         :project-id "drafts"}))
        :class-name (when drafts? "current")}
       i/file-html
-      [:span.element-title "Drafts"]]
+      [:span.element-title (t locale "dashboard.sidebar.drafts")]]
 
 
      [:li
       i/icon-set
-      [:span.element-title "Libraries"]]
+      [:span.element-title (t locale "dashboard.sidebar.libraries")]]
 
      [:div.projects-row
       [:span "PROJECTS"]
