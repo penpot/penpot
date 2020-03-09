@@ -47,7 +47,7 @@
         {:keys [team-id project-id]} (parse-params route profile)]
     [:main.dashboard-main
      [:& messages-widget]
-     [:& header {}]
+     [:& header {:profile profile}]
      [:section.dashboard-content
       [:& sidebar {:team-id team-id
                    :project-id project-id

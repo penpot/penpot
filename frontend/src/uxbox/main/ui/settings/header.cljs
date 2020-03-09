@@ -13,7 +13,6 @@
    [uxbox.main.data.auth :as da]
    [uxbox.main.data.projects :as dp]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.dashboard.header :refer [user]]
    [uxbox.util.i18n :as i18n :refer [tr t]]
    [uxbox.util.router :as rt]))
 
@@ -37,5 +36,5 @@
       [:li {:class (when password? "current")}
        [:& header-link {:section :settings-password
                         :content (tr "settings.password")}]]]
-     [:& user]]))
+     #_[:& user]]))
 

@@ -49,5 +49,5 @@
    {:fn #(st/emit! (dsh/initialize-team team-id))
     :deps (mf/deps team-id)})
 
-  [:section.dashboard-grid.library
+  [:section
    [:p "TODO"]])
