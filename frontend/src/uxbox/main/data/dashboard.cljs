@@ -56,6 +56,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare fetch-files)
+(declare fetch-projects)
 
 (def initialize-drafts
   (ptk/reify ::initialize
@@ -69,8 +70,41 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
-        (rx/of (fetch-files (:project-id local)))))))
+        (rx/of (fetch-files (:project-id local))
+               (fetch-projects (:team-id local)))))))
 
+(defn initialize-team
+  [team-id]
+  (us/verify ::us/uuid team-id)
+  (ptk/reify ::initialize
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local assoc
+              :project-id nil
+              :team-id team-id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [local (:dashboard-local state)]
+        ;; TODO
+        ))))
+
+(defn initialize-project
+  [team-id project-id]
+  (us/verify ::us/uuid team-id)
+  (us/verify ::us/uuid project-id)
+  (ptk/reify ::initialize
+     ptk/UpdateEvent
+     (update [_ state]
+       (update state :dashboard-local assoc
+               :team-id team-id
+               :project-id project-id))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [local (:dashboard-local state)]
+         (rx/of (fetch-files (:project-id local))
+                (fetch-projects (:team-id local)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching
@@ -80,11 +114,13 @@
 
 (declare projects-fetched)
 
-(def fetch-projects
+(defn fetch-projects
+  [team-id]
+  (us/assert ::us/uuid team-id)
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :projects)
+      (->> (rp/query :projects-by-team {:team-id team-id})
            (rx/map projects-fetched)))))
 
 (defn projects-fetched
@@ -122,6 +158,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Create Project
+
+(def create-project
+  (ptk/reify ::create-project
+    ptk/WatchEvent
+    (watch [this state stream]
+      (let [name (str "New Project " (gensym "p"))
+            team-id (get-in state [:dashboard-local :team-id])]
+        (->> (rp/mutation! :create-project {:name name :team-id team-id})
+             (rx/map (fn [data]
+                       (projects-fetched [data]))))))))
 
 ;; --- Rename Project
 
@@ -215,12 +263,12 @@
 
 ;; --- Update Opts (Filtering & Ordering)
 
-(defn update-opts
-  [& {:keys [order filter] :as opts}]
-  (ptk/reify ::update-opts
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :dashboard-local merge
-              (when order {:order order})
-              (when filter {:filter filter})))))
+;; (defn update-opts
+;;   [& {:keys [order filter] :as opts}]
+;;   (ptk/reify ::update-opts
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (update state :dashboard-local merge
+;;               (when order {:order order})
+;;               (when filter {:filter filter})))))
 
