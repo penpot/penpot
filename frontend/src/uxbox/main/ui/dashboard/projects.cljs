@@ -200,15 +200,22 @@
       [:ul.library-elements
        [:li.recent-projects #_{:on-click #(st/emit! (udp/go-to-project nil))
                                :class-name (when (nil? id) "current")}
-        [:span.element-title "Recent"]]
+        i/user
+        [:span.element-title "Personal"]]
 
-       [:li.recent-projects {:on-click #(st/emit! (udp/go-to-project nil))
+       [:li {:on-click #(st/emit! (udp/go-to-project nil))
                              :class-name (when (nil? id) "current")}
+        i/file-html
         [:span.element-title "Drafts"]]
 
+       [:li {:on-click #(st/emit! (udp/go-to-project nil))
+                             :class-name (when (nil? id) "current")}
+        i/icon-set
+        [:span.element-title "Libraries"]]
+
        [:div.projects-row
-        [:span "PROJECTS/TEAMS TODO"]
-        #_[:a.add-project {:on-click #(st/emit! udp/create-project)}
+        [:span "PROJECTS"]
+        [:a.add-project {:on-click #(st/emit! udp/create-project)}
          i/close]]
 
        #_(for [item projects]
