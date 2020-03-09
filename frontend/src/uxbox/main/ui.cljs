@@ -17,14 +17,16 @@
    [rumext.alpha :as mf]
    [uxbox.common.exceptions :as ex]
    [uxbox.builtins.icons :as i]
+   [uxbox.common.exceptions :as ex]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.projects :as dp]
+   [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.login :refer [login-page]]
    [uxbox.main.ui.profile.register :refer [profile-register-page]]
    [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
    [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
-   [uxbox.main.ui.dashboard :as dashboard]
+   [uxbox.main.ui.dashboard :refer [dashboard]]
    [uxbox.main.ui.settings :as settings]
    [uxbox.main.ui.shapes]
    [uxbox.main.ui.workspace :as workspace]
@@ -43,6 +45,13 @@
 
 ;; --- Routes
 
+;; (comment
+;;   "/dashboard/self"
+;;   "/dashboard/self/drafts"
+;;   "/dashboard/self/<project-id>"
+;;   "/dashboard/<team-id>"
+;;   "/dashboard/<team-id>/<project-id>"
+
 (def routes
   [["/login" :login]
    ["/register" :profile-register]
@@ -54,12 +63,28 @@
     ["/password" :settings-password]]
 
    ["/dashboard"
-    ["/projects" :dashboard-projects]
-    ["/icons" :dashboard-icons]
-    ["/images" :dashboard-images]
-    ["/colors" :dashboard-colors]]
+    ["/:team-id" :dashboard-team]
+    ["/:team-id/:project-id" :dashboard-project]]
 
    ["/workspace/:file-id" :workspace]])
+
+(defn- parse-team-id
+  [route profile]
+  (let [team-id (get-in route [:params :path :team-id])]
+    (cond
+      (uuid-str? team-id) (uuid team-id)
+      (= "self" team-id)  (:default-team-id profile)
+      :else               (ex/raise :type :validation
+                                    :code :invalid-team-id))))
+
+(defn- parse-project-id
+  [route profile]
+  (let [project-id (get-in route [:params :path :project-id])]
+    (cond
+      (uuid-str? project-id)  (uuid project-id)
+      (= "drafts" project-id) (:default-project-id profile)
+      :else                   (ex/raise :type :validation
+                                        :code :invalid-project-id))))
 
 (mf/defc app-error
   [{:keys [error] :as props}]
@@ -73,18 +98,25 @@
   [props]
   (let [route (mf/deref route-iref)]
     (case (get-in route [:data :name])
-      :login (mf/element login-page)
+      :login
+      (mf/element login-page)
 
-      :profile-register (mf/element profile-register-page)
-      :profile-recovery-request (mf/element profile-recovery-request-page)
-      :profile-recovery (mf/element profile-recovery-page)
+      :profile-register
+      (mf/element profile-register-page)
+
+      :profile-recovery-request
+      (mf/element profile-recovery-request-page)
+
+      :profile-recovery
+      (mf/element profile-recovery-page)
 
       (:settings-profile
        :settings-password)
       (mf/element settings/settings #js {:route route})
 
-      :dashboard-projects
-      (mf/element dashboard/dashboard-projects #js {:route route})
+      (:dashboard-team
+       :dashboard-project)
+      (mf/element dashboard #js {:route route})
 
       (:dashboard-icons
        :dashboard-images

@@ -5,10 +5,10 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.ui.dashboard.projects
+(ns uxbox.main.ui.dashboard.project
   (:refer-clojure :exclude [sort-by])
   (:require
    [cuerdas.core :as str]
@@ -20,32 +20,19 @@
    [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]
    [uxbox.main.exports :as exports]
+   [uxbox.main.refs :as refs]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
-   [uxbox.main.ui.dashboard.common :as common]
-   [uxbox.util.data :refer [read-string]]
+   [uxbox.main.ui.dashboard.header :refer [header]]
+   [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
+   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.util.data :refer [uuid-str?]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]))
 
-;; --- Helpers & Constants
-
-(def +ordering-options+
-  {:name "ds.ordering.by-name"
-   :modified "ds.ordering.by-last-update"
-   :created "ds.ordering.by-creation-date"})
-
-;; --- Refs
-
-(def opts-iref
-  (-> (l/key :dashboard-projects)
-      (l/derive st/state)))
-
-(def projects-iref
-  (-> (l/key :projects)
-      (l/derive st/state)))
 
 ;; --- Helpers
 
@@ -150,100 +137,29 @@
        (for [item files]
          [:& grid-item {:file item :key (:id item)}])]]]))
 
-;; --- Component: Nav
 
-(mf/defc nav-item
-  [{:keys [id name selected?] :as props}]
-  (let [local (mf/use-state {:name name})
-        editable? (not (nil? id))
-        on-click #(st/emit! (udp/go-to-project id))
-        on-dbl-click #(when editable? (swap! local assoc :edit true))
-        on-input #(as-> % $
-                    (dom/get-target $)
-                    (dom/get-value $)
-                    (swap! local assoc :name $))
-        on-cancel #(swap! local assoc :edit false :name name)
-        on-keyup #(cond
-                    (kbd/esc? %)
-                    (on-cancel)
 
-                    (kbd/enter? %)
-                    (let [name (-> % dom/get-target dom/get-value)]
-                      (st/emit! (udp/rename-project id name))
-                      (swap! local assoc :edit false)))]
-
-    [:li {:on-click on-click
-          :on-double-click on-dbl-click
-          :class-name (when selected? "current")}
-     (if (:edit @local)
-       [:div
-        [:input.element-title {:value (:name @local)
-                               :on-change on-input
-                               :on-key-down on-keyup}]
-        [:span.close {:on-click on-cancel} i/close]]
-       [:span.element-title name])]))
-
-(mf/defc nav
-  [{:keys [id] :as props}]
-  (let [projects (->> (mf/deref projects-iref)
-                      (vals)
-                      (sort-by :created-at))]
-    [:div.library-bar
-     [:div.library-bar-inside
-      [:form.dashboard-search
-       [:input.input-text
-        {:key :images-search-box
-         :type "text"
-         :auto-focus true
-         :placeholder (tr "ds.search.placeholder")}]
-       [:div.clear-search i/close]]
-      [:ul.library-elements
-       [:li.recent-projects #_{:on-click #(st/emit! (udp/go-to-project nil))
-                               :class-name (when (nil? id) "current")}
-        i/user
-        [:span.element-title "Personal"]]
-
-       [:li {:on-click #(st/emit! (udp/go-to-project nil))
-                             :class-name (when (nil? id) "current")}
-        i/file-html
-        [:span.element-title "Drafts"]]
-
-       [:li {:on-click #(st/emit! (udp/go-to-project nil))
-                             :class-name (when (nil? id) "current")}
-        i/icon-set
-        [:span.element-title "Libraries"]]
-
-       [:div.projects-row
-        [:span "PROJECTS"]
-        [:a.add-project {:on-click #(st/emit! udp/create-project)}
-         i/close]]
-
-       #_(for [item projects]
-         [:& nav-item {:id (:id item)
-                       :key (:id item)
-                       :name (:name item)
-                       :selected? (= (:id item) id)}])]]]))
-
-;; --- Component: Content
+;; --- Component: Project
 
 (def files-ref
   (-> (comp (l/key :files)
             (l/lens vals))
       (l/derive st/state)))
 
-(mf/defc content
-  [{:keys [id] :as props}]
+(def opts-iref
+  (-> (l/key :dashboard-projects)
+      (l/derive st/state)))
+
+(mf/defc project-page
+  [{:keys [section team-id project-id] :as props}]
   (let [opts (mf/deref opts-iref)
         files (mf/deref files-ref)]
+
+    (mf/use-effect
+     {:fn #(st/emit! (dsh/initialize-project team-id project-id))
+      :deps (mf/deps team-id project-id)})
+
     [:section.dashboard-grid.library
-     [:& grid {:id id :opts opts :files files}]]))
+     [:& grid {:id project-id :opts opts :files files}]]))
 
-;; --- Projects Page
 
-(mf/defc projects-page
-  [{:keys [id] :as props}]
-  (mf/use-effect {:fn #(st/emit! dsh/initialize-drafts)
-                  :deps #js [id]})
-  [:section.dashboard-content
-   [:& nav {:id id}]
-   [:& content {:id id}]])

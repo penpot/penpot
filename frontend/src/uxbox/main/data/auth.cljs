@@ -33,7 +33,7 @@
     ptk/WatchEvent
     (watch [this state stream]
       (rx/of (du/profile-fetched data)
-             (rt/navigate :dashboard-projects)))))
+             (rt/navigate :dashboard-team {:team-id "self"})))))
 
 ;; --- Login
 

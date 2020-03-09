@@ -23,6 +23,8 @@
    [uxbox.util.timers :as ts]
    [uxbox.util.uuid :as uuid]))
 
+;; WARN: this file is deprecated.
+
 ;; --- Specs
 
 (s/def ::id ::us/uuid)
@@ -147,21 +149,6 @@
     (watch [_ state stream]
       (->> (rp/query :file {:id id})
            (rx/map #(files-fetched [%]))))))
-
-;; --- Files Fetched
-
-;; --- Create Project
-
-(declare project-created)
-
-(def create-project
-  (ptk/reify ::create-project
-    ptk/WatchEvent
-    (watch [this state stream]
-      (let [name (str "New Project " (gensym "p"))]
-        (->> (rp/mutation! :create-project {:name name})
-             (rx/map (fn [data]
-                       (projects-fetched [data]))))))))
 
 ;; --- Create File
 
