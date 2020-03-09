@@ -60,11 +60,20 @@
       padding-bottom: 20px;
 
       li {
+        align-items: center;
         cursor: pointer;
         display: flex;
-        flex-direction: column;
         flex-shrink: 0;
-        padding: $small $medium;
+        padding: $medium $small;
+
+        svg {
+          border-radius: 3px;
+          fill: $color-black;
+          height: 24px;
+          margin-right: $small;
+          padding: $x-small;
+          width: 24px;
+        }
 
         span.element-title {
           color: $color-gray-60;
@@ -76,7 +85,15 @@
   
         &.recent-projects {
           border-top: 1px solid $color-gray-10;
-          border-bottom: 1px solid $color-gray-10;
+          
+          svg {
+            background-color: $color-black;
+            fill: $color-white;
+          }
+          
+          span {
+            font-size: $fs15;
+          }
         }
 
         input.element-title {
@@ -109,6 +126,10 @@
         }
 
         &.current {
+
+          svg {
+            fill: $color-black;
+          }
 
           span.element-title,
           .element-subtitle {
@@ -151,8 +172,8 @@
 
     svg {
       fill: $color-gray-60;
-      height: 16px;
-      width: 16px;
+      height: 13px;
+      width: 13px;
     }
 
     &:hover {
@@ -182,12 +203,18 @@
     width: 100%;
   }
 
+  &:focus,
+  &:focus-within {
+    border-color: $color-black;
+  }
+
   .clear-search {
     align-items: center;
     cursor: pointer;
     display: flex;
-    height: 28px;
+    height: 22px;
     padding: 0 5px;
+    width: 22px;
 
     svg {
       fill: $color-gray-30;
