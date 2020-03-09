@@ -151,7 +151,7 @@
         shapes  (->> (:shapes root)
                      (map #(get objects %)))]
     [:g.shapes
-     (for [item shapes]
+     (for [item (reverse shapes)]
        (if (= (:type item) :frame)
          [:& frame-wrapper {:shape item
                             :key (:id item)

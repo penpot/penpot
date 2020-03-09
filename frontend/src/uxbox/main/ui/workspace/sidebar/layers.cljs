@@ -120,15 +120,15 @@
 
         on-drop
         (fn [item monitor]
-          #_(st/emit! (dw/commit-shape-order-change (:shape-id item))))
+          (st/emit! (dw/commit-shape-order-change (:obj-id item))))
 
         on-hover
         (fn [item monitor]
-          (st/emit! (dw/shape-order-change (:shape-id item) index)))
+          (st/emit! (dw/shape-order-change (:obj-id item) index)))
 
         [dprops dnd-ref] (use-sortable
-                          {:type "layer-item"
-                           :data {:shape-id (:id item)
+                          {:type (str "layer-item" (:frame-id item))
+                           :data {:obj-id (:id item)
                                   :page-id (:page item)
                                   :index index}
                            :on-hover on-hover
@@ -197,16 +197,15 @@
 
         on-drop
         (fn [item monitor]
-          (st/emit! ::dw/page-data-update))
+          (st/emit! (dw/commit-shape-order-change (:obj-id item))))
 
         on-hover
         (fn [item monitor]
-          (st/emit! (dw/change-frame-order {:id (:frame-id item)
-                                             :index index})))
+          (st/emit! (dw/shape-order-change (:obj-id item) index)))
 
         [dprops dnd-ref] (use-sortable
-                          {:type "frame-item"
-                           :data {:frame-id (:id item)
+                          {:type (str "layer-item" (:frame-id item))
+                           :data {:obj-id (:id item)
                                   :page-id (:page item)
                                   :index index}
                            :on-hover on-hover

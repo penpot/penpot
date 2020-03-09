@@ -981,6 +981,7 @@
    :stroke-opacity 1
    :frame-id uuid/zero
    :fill-color "#ffffff"
+   :shapes []
    :fill-opacity 1})
 
 (defn add-frame
@@ -1376,23 +1377,28 @@
   (ptk/reify ::commit-shape-order-change
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (get-in state [:workspace-page :id])
-            curr-shapes (get-in state [:workspace-data :shapes])
-            prev-shapes (get-in state [:pages-data page-id :shapes])
 
-            curr-index (d/index-of curr-shapes id)
-            prev-index (d/index-of prev-shapes id)
+      (let [obj (get-in state [:workspace-data :objects id])
+            pid (get-in state [:workspace-page :id])
+
+            cfrm (get-in state [:workspace-data :objects (:frame-id obj)])
+            pfrm (get-in state [:pages-data pid :objects (:frame-id obj)])
+
+            cindex (d/index-of (:shapes cfrm) id)
+            pindex (d/index-of (:shapes pfrm) id)
+
             session-id (:session-id state)
 
-            change {:type :mov-shape
-                    :session-id session-id
-                    :id id
-                    :index curr-index}
-            uchange {:type :mov-shape
-                    :session-id session-id
-                     :id id
-                     :index prev-index}]
-        (rx/of (commit-changes [change] [uchange]))))))
+            rchange {:type :mod-obj
+                     :session-id session-id
+                     :id (:id cfrm)
+                     :operations [{:type :order :id id :index cindex}]}
+            uchange {:type :mod-obj
+                     :session-id session-id
+                     :id (:id cfrm)
+                     :operations [{:type :order :id id :index pindex}]}]
+        (prn "commit-shape-order-change3" rchange)
+        (rx/of (commit-changes [rchange] [uchange]))))))
 
 ;; --- Change Frame Order (D&D Ordering)
 
@@ -1400,7 +1406,7 @@
   [{:keys [id index] :as params}]
   (us/verify ::us/uuid id)
   (us/verify ::us/number index)
-  (ptk/reify ::change-frame-order
+  #_(ptk/reify ::change-frame-order
     ptk/UpdateEvent
     (update [_ state]
       (let [shapes (get-in state [:workspace-data :frame])
@@ -1458,14 +1464,11 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [[rch uch] (impl-diff state)]
-          ;; (prn "rehash-shape-frame-relationship" rch)
-          ;; (prn "rehash-shape-frame-relationship" uch)
           (when-not (empty? rch)
             (rx/of (commit-changes rch uch {:commit-local? true}))))))))
 
 (defn assoc-resize-modifier-in-bulk
   [ids xfmt]
-  ;; (prn "assoc-resize-modifier-in-bulk" ids)
   (us/verify ::set-of-uuid ids)
   (us/verify gmt/matrix? xfmt)
   (ptk/reify ::assoc-resize-modifier-in-bulk
@@ -1484,14 +1487,10 @@
     (ptk/reify ::materialize-resize-modifier-in-bulk
       ptk/UpdateEvent
       (update [_ state]
-
-        ;; (prn "materialize-resize-modifier-in-bulk$update" ids)
-
         (reduce process-shape state ids))
 
       ptk/WatchEvent
       (watch [_ state stream]
-        ;; (prn "materialize-resize-modifier-in-bulk$watch" ids)
         (rx/of diff-and-commit-changes
                (rehash-shape-frame-relationship ids))))))
 

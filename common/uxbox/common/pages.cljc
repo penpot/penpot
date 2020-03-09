@@ -119,7 +119,7 @@
 (defmethod operation-spec-impl :set [_]
   (s/keys :req-un [::attr ::val]))
 
-(defmethod operation-spec-impl :mov [_]
+(defmethod operation-spec-impl :order [_]
   (s/keys :req-un [::id ::index]))
 
 (s/def ::operation (s/multi-spec operation-spec-impl :type))
@@ -179,6 +179,9 @@
 (defmulti process-change
   (fn [data change] (:type change)))
 
+(defmulti process-operation
+  (fn [_ op] (:type op)))
+
 (defn process-changes
   [data items]
   (->> (us/verify ::changes items)
@@ -205,24 +208,11 @@
                        (let [[before after] (split-at index shapes)]
                          (d/concat [] before [id] after))))))))
 
-(defn- process-obj-operation
-  [shape op]
-  (case (:type op)
-    :set
-    (let [attr (:attr op)
-          val  (:val op)]
-      (if (nil? val)
-        (dissoc shape attr)
-        (assoc shape attr val)))
-
-    (ex/raise :type :not-implemented
-              :hint "TODO")))
-
 (defmethod process-change :mod-obj
   [data {:keys [id operations] :as change}]
   (assert (contains? (:objects data) id) "process-change/mod-obj")
   (update-in data [:objects id]
-             #(reduce process-obj-operation % operations)))
+             #(reduce process-operation % operations)))
 
 (defmethod process-change :mov-obj
   [data {:keys [id frame-id] :as change}]
@@ -242,102 +232,26 @@
         (update-in [:objects frame-id :shapes]
                    (fn [s] (filterv #(not= % id) s))))))
 
-;; (defn- process-change
-;;   [data {:keys [type] :as change}]
-;;   (case type
-;;     :add-obj (process-add-obj data change)
-;;     :mod-obj (process-mod-obj data change)
+(defmethod process-operation :set
+  [shape op]
+  (let [attr (:attr op)
+        val  (:val op)]
+    (if (nil? val)
+      (dissoc shape attr)
+      (assoc shape attr val))))
 
-;;     ;; :add-shape (process-add-shape data change)
-;;     ;; :add-canvas (process-add-canvas data change)
-;;     ;; :mod-shape (process-mod-shape data change)
-;;     ;; :mov-shape (process-mov-shape data change)
-;;     ;; :del-shape (process-del-shape data change)
-;;     ;; :del-canvas (process-del-canvas data change)
-;;     ;; :mod-opts (process-mod-opts data change)
-;;     ))
+(defmethod process-operation :order
+  [obj {:keys [id index]}]
+  (prn "process-operation" :order obj)
+  (assert (vector? (:shapes obj)) ":shapes should be a vector")
+  (update obj :shapes (fn [items]
+                        (let [[b a] (->> (remove #(= % id) items)
+                                         (split-at index))]
+                          (vec (concat b [id] a))))))
 
-;; (defn- process-add-obj
+(defmethod process-operation :default
+  [shape op]
+  (ex/raise :type :operation-not-implemented
+            :context {:type (:type op)}))
 
-
-;; (defn- process-add-shape
-;;   [data {:keys [id index shape] :as change}]
-;;   (-> data
-;;       (update :shapes (fn [shapes]
-;;                         (cond
-;;                           (some #{id} shapes)
-;;                           shapes
-
-;;                           (nil? index)
-;;                           (conj shapes id)
-
-;;                           :else
-;;                           (let [[before after] (split-at index shapes)]
-;;                             (d/concat [] before [id] after)))))
-;;       (update :shapes-by-id assoc id shape)))
-
-;; (defn- process-add-canvas
-;;   [data {:keys [id shape index] :as change}]
-;;   (-> data
-;;       (update :canvas (fn [shapes]
-;;                         (cond
-;;                           (some #{id} shapes)
-;;                           shapes
-
-;;                           (nil? index)
-;;                           (conj shapes id)
-
-;;                           :else
-;;                           (let [[before after] (split-at index shapes)]
-;;                             (d/concat [] before [id] after)))))
-
-;;       (update :shapes-by-id assoc id shape)))
-
-;; (defn- process-mod-shape
-;;   [data {:keys [id operations] :as change}]
-;;   (if (get-in data [:shapes-by-id id])
-;;     (update-in data [:shapes-by-id id]
-;;                #(reduce (fn [shape [_ att val]]
-;;                           (if (nil? val)
-;;                             (dissoc shape att)
-;;                             (assoc shape att val)))
-;;                         % operations))
-;;     data))
-
-;; (defn- process-mod-opts
-;;   [data {:keys [operations]}]
-;;   (update data :options
-;;           #(reduce (fn [options [_ att val]]
-;;                      (if (nil? val)
-;;                        (dissoc options att)
-;;                        (assoc options att val)))
-;;                    % operations)))
-
-;; (defn- process-mov-shape
-;;   [data {:keys [id index]}]
-;;   (let [shapes (:shapes data)
-;;         current-index (d/index-of shapes id)
-;;         shapes' (into [] (remove #(= % id) shapes))]
-;;     (cond
-;;       (= index current-index)
-;;       data
-
-;;       (nil? current-index)
-;;       (assoc data :shapes (d/concat [id] shapes'))
-
-;;       :else
-;;       (let [[before after] (split-at index shapes')]
-;;         (assoc data :shapes (d/concat [] before [id] after))))))
-
-;; (defn- process-del-shape
-;;   [data {:keys [id] :as change}]
-;;   (-> data
-;;       (update :shapes (fn [s] (filterv #(not= % id) s)))
-;;       (update :shapes-by-id dissoc id)))
-
-;; (defn- process-del-canvas
-;;   [data {:keys [id] :as change}]
-;;   (-> data
-;;       (update :canvas (fn [s] (filterv #(not= % id) s)))
-;;       (update :shapes-by-id dissoc id)))
 
