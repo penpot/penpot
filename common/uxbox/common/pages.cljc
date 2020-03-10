@@ -6,6 +6,7 @@
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
 ;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+
 (ns uxbox.common.pages
   "A common (clj/cljs) functions and specs for pages."
   (:require
@@ -142,21 +143,6 @@
 (defmethod change-spec-impl :mov-obj [_]
   (s/keys :req-un [::id ::frame-id]
           :opt-un [::session-id]))
-
-;; (defmethod change-spec-impl :mod-shape [_]
-;;   (s/keys :req-un [::id ::operations ::session-id]))
-
-;; (defmethod change-spec-impl :mov-shape [_]
-;;   (s/keys :req-un [::id ::index ::session-id]))
-
-;; (defmethod change-spec-impl :mod-opts [_]
-;;   (s/keys :req-un [::operations ::session-id]))
-
-;; (defmethod change-spec-impl :del-shape [_]
-;;   (s/keys :req-un [::id ::session-id]))
-
-;; (defmethod change-spec-impl :del-canvas [_]
-;;   (s/keys :req-un [::id ::session-id]))
 
 (s/def ::change (s/multi-spec change-spec-impl :type))
 (s/def ::changes (s/coll-of ::change))
