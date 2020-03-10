@@ -10,59 +10,9 @@
 
 (ns uxbox.main.ui.dashboard.header
   (:require
-   [cuerdas.core :as str]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
-   [uxbox.main.data.auth :as da]
-   [uxbox.main.data.projects :as dp]
-   [uxbox.main.store :as st]
-   [uxbox.main.refs :as refs]
-   [uxbox.main.ui.navigation :as nav]
-   [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]
-   [uxbox.util.router :as rt]))
-
-;; --- Component: User Menu
-
-(mf/defc profile-menu
-  [props]
-  (let [locale (i18n/use-locale)
-        on-click
-        (fn [event section]
-          (dom/stop-propagation event)
-          (if (keyword? section)
-            (st/emit! (rt/nav section))
-            (st/emit! section)))]
-    [:ul.dropdown
-     [:li {:on-click #(on-click % :settings-profile)}
-      i/user
-      [:span (t locale "dashboard.header.profile-menu.profile")]]
-     [:li {:on-click #(on-click % :settings-password)}
-      i/lock
-      [:span (t locale "dashboard.header.profile-menu.password")]]
-     [:li {:on-click #(on-click % da/logout)}
-      i/exit
-      [:span (t locale "dashboard.header.profile-menu.logout")]]]))
-
-
-
-;; --- Component: Profile
-
-(mf/defc profile-section
-  [{:keys [profile] :as props}]
-  (let [open (mf/use-state false)
-        photo (:photo-uri profile "")
-        photo (if (str/empty? photo)
-                "/images/avatar.jpg"
-                photo)]
-    [:div.user-zone {:on-click #(st/emit! (rt/nav :settings-profile))
-                     :on-mouse-enter #(reset! open true)
-                     :on-mouse-leave #(reset! open false)}
-     [:img {:src photo}]
-     [:span (:fullname profile)]
-     (when @open
-       [:& profile-menu])]))
+   [uxbox.main.ui.dashboard.profile :refer [profile-section]]))
 
 
 ;; --- Component: Header
@@ -71,8 +21,6 @@
   [{:keys [profile] :as props}]
   (let [locale (i18n/use-locale)]
     [:header#main-bar.main-bar
-     [:div.main-logo i/logo-icon]
-     [:& profile-section {:profile profile}]
      [:h1.dashboard-title "Personal"]
      [:a.btn-dashboard "+ New project"]]))
 

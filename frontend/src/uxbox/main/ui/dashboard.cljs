@@ -12,6 +12,7 @@
   (:require
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.main.refs :as refs]
@@ -19,6 +20,7 @@
    [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
    [uxbox.main.ui.dashboard.project :refer [project-page]]
    [uxbox.main.ui.dashboard.team :refer [team-page]]
+   [uxbox.main.ui.dashboard.profile :refer [profile-section]]
    [uxbox.main.ui.messages :refer [messages-widget]]))
 
 (defn- ^boolean uuid-str?
@@ -52,15 +54,19 @@
         {:keys [team-id project-id]} (parse-params route profile)]
     [:main.dashboard-main
      [:& messages-widget]
-     [:& header {:profile profile}]
-     [:section.dashboard-content
+     [:section.dashboard-layout
+      [:div.main-logo i/logo-icon]
+      [:& profile-section {:profile profile}]
       [:& sidebar {:team-id team-id
                    :project-id project-id
                    :section section}]
-      (case section
-        :dashboard-team
-        (mf/element team-page #js {:team-id team-id})
+      [:div.dashboard-content
+       [:& header]
+       (case section
+         :dashboard-team
+         (mf/element team-page #js {:team-id team-id})
 
-        :dashboard-project
-        (mf/element project-page #js {:team-id team-id
-                                      :project-id project-id}))]]))
+         :dashboard-project
+         (mf/element project-page #js {:team-id team-id
+                                       :project-id project-id}))]]])
+  )

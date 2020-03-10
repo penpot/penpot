@@ -15,21 +15,23 @@
   position: relative;
   z-index: 10;
 
-  .main-logo {
-    border-right: 1px solid $color-gray-10;
-    padding-right: $small;
-    padding-top: $x-small;
-
-    svg {
-      fill: $color-black;
-      height: 30px;
-      width: 30px;
-    }
-
-  }
-
+  
   .btn-dashboard {
     margin-left: auto;
+  }
+
+}
+
+.main-logo {
+  border-right: 1px solid $color-gray-10;
+  border-bottom: 1px solid $color-gray-10;
+  text-align: center;
+  padding-top: $x-small;
+
+  svg {
+    fill: $color-black;
+    height: 30px;
+    width: 30px;
   }
 
 }
@@ -76,6 +78,7 @@
 .user-zone {
   align-items: center;
   border-right: 1px solid $color-gray-10;
+  border-bottom: 1px solid $color-gray-10;
   cursor: pointer;
   display: flex;
   padding: 0 $x-small 0 $small;
