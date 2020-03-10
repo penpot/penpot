@@ -15,6 +15,7 @@
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
+   [uxbox.common.exceptions :as ex]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.projects :as dp]
