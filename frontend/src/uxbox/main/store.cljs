@@ -9,7 +9,6 @@
             [lentes.core :as l]
             [potok.core :as ptk]
             [uxbox.util.uuid :as uuid]
-            [uxbox.builtins.colors :as colors]
             [uxbox.util.storage :refer [storage]]))
 
 (enable-console-print!)
@@ -59,7 +58,6 @@
 (def initial-state
   {:session-id (uuid/next)
    :profile (:profile storage)})
-   ;; :colors-collections colors/collections})
 
 (defn init
   "Initialize the state materialization."
