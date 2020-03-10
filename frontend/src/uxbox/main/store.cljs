@@ -21,7 +21,7 @@
 (defonce store (ptk/store {:on-error #(*on-error* %)}))
 (defonce stream (ptk/input-stream store))
 
-(defn repr-event
+(defn- repr-event
   [event]
   (cond
     (satisfies? ptk/Event event)
@@ -34,12 +34,15 @@
     :else
     (str "unk: " (pr-str event))))
 
-(defonce debug (as-> stream $
-                 (rx/filter ptk/event? $)
-                 ;; Comment this line if you want full debug.
-                 (rx/ignore $)
-                 (rx/subscribe $ (fn [event]
-                                   (println "[stream]: " (repr-event event))))))
+(defonce ^:dynamic *debug* (atom false))
+
+(when *assert*
+  (defonce debug-subscription
+    (as-> stream $
+      (rx/filter ptk/event? $)
+      (rx/filter (fn [s] (deref *debug*)) $)
+      (rx/subscribe $ (fn [event]
+                        (println "[stream]: " (repr-event event)))))))
 
 (def auth-ref
   (-> (l/key :auth)
