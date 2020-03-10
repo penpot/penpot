@@ -7,17 +7,11 @@
 
 .library-bar {
   background-color: $color-white;
-  bottom: 0;
-  height: 100%;
-  left: 0;
-  position: fixed;
-  width: 230px;
 
   .library-bar-inside {
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding-top: 40px;
 
     .library-tabs {
       align-items: center;

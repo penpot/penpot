@@ -46,6 +46,6 @@
   (mf/use-effect
    {:fn #(st/emit! (dsh/initialize-team team-id))
     :deps (mf/deps team-id)})
-
+  
   [:section
-   [:p "TODO"]])
+   [:p "TEAM PAGE"]])
