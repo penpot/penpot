@@ -111,26 +111,6 @@
                not-found))
            not-found coll)))
 
-;; --- String utils
-
-(def +uuid-re+
-  #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-
-(defn uuid-str?
-  [v]
-  (and (string? v)
-       (re-seq +uuid-re+ v)))
-
-;; --- Interop
-
-(defn jscoll->vec
-  "Convert array like js object into vector."
-  [v]
-  (-> (clj->js [])
-      (.-slice)
-      (.call v)
-      (js->clj)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numbers Parsing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

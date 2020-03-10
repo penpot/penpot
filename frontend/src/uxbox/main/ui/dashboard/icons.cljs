@@ -22,7 +22,7 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.util.components :refer [chunked-list]]
-   [uxbox.util.data :refer [read-string jscoll->vec seek]]
+   [uxbox.util.data :refer [read-string seek]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [tr t]]
    [uxbox.util.router :as rt]

@@ -22,18 +22,14 @@
    [uxbox.main.data.projects :as dp]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.login :refer [login-page]]
-   [uxbox.main.ui.profile.register :refer [profile-register-page]]
-   [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
-   [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
    [uxbox.main.ui.dashboard :refer [dashboard]]
+   [uxbox.main.ui.login :refer [login-page]]
+   [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
+   [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
+   [uxbox.main.ui.profile.register :refer [profile-register-page]]
    [uxbox.main.ui.settings :as settings]
    [uxbox.main.ui.shapes]
    [uxbox.main.ui.workspace :as workspace]
-   [uxbox.util.data :refer [parse-int uuid-str?]]
-   [uxbox.util.components :refer [wrap-catch]]
-   [uxbox.util.dom :as dom]
-   [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]
@@ -86,15 +82,8 @@
       :else                   (ex/raise :type :validation
                                         :code :invalid-project-id))))
 
-(mf/defc app-error
-  [{:keys [error] :as props}]
-  (let [data (ex-data error)]
-    (case (:type data)
-      :not-found [:span "404"]
-      [:span "Internal application errror"])))
 
 (mf/defc app
-  {:wrap [#(wrap-catch % app-error)]}
   [props]
   (let [route (mf/deref route-iref)]
     (case (get-in route [:data :name])
@@ -117,11 +106,6 @@
       (:dashboard-team
        :dashboard-project)
       (mf/element dashboard #js {:route route})
-
-      (:dashboard-icons
-       :dashboard-images
-       :dashboard-colors)
-      (mf/element dashboard/dashboard-assets #js {:route route})
 
       :workspace
       (let [file-id (uuid (get-in route [:params :path :file-id]))

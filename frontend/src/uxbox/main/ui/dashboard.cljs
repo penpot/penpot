@@ -13,13 +13,18 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.main.refs :as refs]
-   [uxbox.util.data :refer [uuid-str?]]
    [uxbox.main.ui.dashboard.header :refer [header]]
    [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
    [uxbox.main.ui.dashboard.project :refer [project-page]]
    [uxbox.main.ui.dashboard.team :refer [team-page]]
    [uxbox.main.ui.messages :refer [messages-widget]]))
+
+(defn- ^boolean uuid-str?
+  [s]
+  (and (string? s)
+       (boolean (re-seq us/uuid-rx s))))
 
 (defn- parse-params
   [route profile]

@@ -73,6 +73,7 @@
         (rx/of (fetch-files (:project-id local))
                (fetch-projects (:team-id local)))))))
 
+
 (defn initialize-team
   [team-id]
   (us/verify ::us/uuid team-id)
@@ -86,8 +87,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
-        ;; TODO
-        ))))
+        (rx/of (fetch-projects (:team-id local)))))))
+
 
 (defn initialize-project
   [team-id project-id]
