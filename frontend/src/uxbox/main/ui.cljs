@@ -23,12 +23,12 @@
    [uxbox.main.ui.profile.register :refer [profile-register-page]]
    [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
    [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
-
    [uxbox.main.ui.dashboard :as dashboard]
    [uxbox.main.ui.settings :as settings]
    [uxbox.main.ui.shapes]
    [uxbox.main.ui.workspace :as workspace]
    [uxbox.util.data :refer [parse-int uuid-str?]]
+   [uxbox.util.components :refer [wrap-catch]]
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :refer [tr]]
@@ -60,7 +60,15 @@
 
    ["/workspace/:file-id" :workspace]])
 
+(mf/defc app-error
+  [{:keys [error] :as props}]
+  (let [data (ex-data error)]
+    (case (:type data)
+      :not-found [:span "404"]
+      [:span "Internal application errror"])))
+
 (mf/defc app
+  {:wrap [#(wrap-catch % app-error)]}
   [props]
   (let [route (mf/deref route-iref)]
     (case (get-in route [:data :name])
