@@ -9,9 +9,7 @@
 ;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.team
-  (:refer-clojure :exclude [sort-by])
   (:require
-   [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]

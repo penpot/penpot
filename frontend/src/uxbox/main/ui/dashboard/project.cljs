@@ -27,7 +27,6 @@
    [uxbox.main.ui.dashboard.header :refer [header]]
    [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
    [uxbox.main.ui.messages :refer [messages-widget]]
-   [uxbox.util.data :refer [uuid-str?]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]
