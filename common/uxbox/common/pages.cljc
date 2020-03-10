@@ -242,7 +242,6 @@
 
 (defmethod process-operation :order
   [obj {:keys [id index]}]
-  (prn "process-operation" :order obj)
   (assert (vector? (:shapes obj)) ":shapes should be a vector")
   (update obj :shapes (fn [items]
                         (let [[b a] (->> (remove #(= % id) items)
