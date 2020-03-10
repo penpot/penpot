@@ -1257,6 +1257,8 @@
       (let [objects (get-in state [:workspace-data :objects])
             session-id (:session-id state)
 
+            ids (seq ids)
+
             rchanges (mapv #(array-map :type :del-obj :id %) ids)
             uchanges (mapv (fn [id]
                              (let [obj (get objects id)
@@ -1267,7 +1269,7 @@
                                 :frame-id (:id frm)
                                 :index idx
                                 :obj obj}))
-                           ids)]
+                           (reverse ids))]
         (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn- delete-frame
