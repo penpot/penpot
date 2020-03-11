@@ -28,20 +28,11 @@
 
 ;; --- Generic Build Options
 
-(def closure-defines
-  (let [url       (some-> (:uxbox-api-url env)
-                          (str/trim))
-        demo-warn (some-> (:uxbox-demo-warning env)
-                          (str/trim))]
-    {'uxbox.config.url (if (nil? url) "http://localhost:6060"  url)
-     'uxbox.config.demo-warning (= "true" demo-warn)}))
-
 (def default-build-options
   {:cache-analysis true
    :parallel-build true
    :language-in  :ecmascript6
    :language-out :ecmascript5
-   :closure-defines closure-defines
    :anon-fn-naming-policy :mapped
    :optimizations :none
    :infer-externs true
