@@ -52,13 +52,10 @@
 ;; --- Specific Build Options
 
 (def main-build-options
-  {:output-dir "resources/public/js"
-   :asset-path "/js"
-   :modules {:main {:entries #{"uxbox.main"}
-                    :output-to "resources/public/js/main.js"}
-             ;; :view {:entries #{"uxbox.view"}
-             ;;        :output-to "resources/public/js/view.js"}
-             }})
+  {:output-dir "resources/public/js/main/"
+   :output-to "resources/public/js/main.js"
+   :main 'uxbox.main
+   :asset-path "/js/main"})
 
 ;; (def worker-build-options
 ;;   {:main 'uxbox.worker
@@ -71,18 +68,18 @@
   (-> (merge default-build-options
              main-build-options
              dist-build-options)
-      (assoc :output-dir "target/dist/js/")
-      (assoc-in [:modules :main :output-to] "target/dist/js/main.js")
-      #_(assoc-in [:modules :view :output-to] "target/dist/js/view.js")))
+      (assoc :output-dir "target/dist/js/main/"
+             :source-map "target/dist/js/main.js.map"
+             :output-to "target/dist/js/main.js")))
 
 (def main-dist-dbg-build-options
-  (-> (merge main-dist-build-options
-             {:optimizations :advanced
-              :pseudo-names true
-              :pretty-print true})
-      (assoc :output-dir "target/dist/dbg/js/")
-      (assoc-in [:modules :main :output-to] "target/dist/dbg/js/main.js")
-      #_(assoc-in [:modules :view :output-to] "target/dist/dbg/js/view.js")))
+  (assoc main-dist-build-options
+         :optimizations :advanced
+         :pseudo-names true
+         :pretty-print true
+         :output-dir "target/dist/dbg/js/main/"
+         :source-map "target/dist/dbg/js/main.js.map"
+         :output-to "target/dist/dbg/js/main.js"))
 
 ;; (def worker-dist-build-options
 ;;   (merge default-build-options
