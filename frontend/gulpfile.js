@@ -211,7 +211,10 @@ gulp.task("watch:main", function() {
   gulp.watch([paths.resources + "templates/*.mustache",
               paths.resources + "locales.json",
               paths.resources + "images/**/*"],
-             gulp.series("templates", "dev:copy:images", "dev:copy:icons-sprite"));
+             gulp.series("templates",
+                         "dev:copy:images",
+                         "dev:copy:templates",
+                         "dev:copy:icons-sprite"));
 });
 
 gulp.task("watch", gulp.series(

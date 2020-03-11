@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.data.workspace
   (:require
@@ -1779,23 +1779,23 @@
 
 ;; --- Initial Path Point Alignment
 
-;; TODO: revisit on alignemt refactor
-(deftype InitialPathPointAlign [id index]
-  ptk/WatchEvent
-  (watch [_ state s]
-    (let [shape (get-in state [:workspace-data :objects id])
-          point (get-in shape [:segments index])]
-      (->> (uwrk/align-point point)
-           (rx/map #(update-path id index %))))))
+;; ;; TODO: revisit on alignemt refactor
+;; (deftype InitialPathPointAlign [id index]
+;;   ptk/WatchEvent
+;;   (watch [_ state s]
+;;     (let [shape (get-in state [:workspace-data :objects id])
+;;           point (get-in shape [:segments index])]
+;;       (->> (uwrk/align-point point)
+;;            (rx/map #(update-path id index %))))))
 
-(defn initial-path-point-align
-  "Event responsible of align a specified point of the
-  shape by `index` with the grid."
-  [id index]
-  {:pre [(uuid? id)
-         (number? index)
-         (not (neg? index))]}
-  (InitialPathPointAlign. id index))
+;; (defn initial-path-point-align
+;;   "Event responsible of align a specified point of the
+;;   shape by `index` with the grid."
+;;   [id index]
+;;   {:pre [(uuid? id)
+;;          (number? index)
+;;          (not (neg? index))]}
+;;   (InitialPathPointAlign. id index))
 
 ;; --- Shape Visibility
 
