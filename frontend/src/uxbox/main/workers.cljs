@@ -12,30 +12,30 @@
             [uxbox.common.spec :as us]
             [uxbox.util.workers :as uw]))
 
-(s/def ::width number?)
-(s/def ::height number?)
-(s/def ::x-axis number?)
-(s/def ::y-axis number?)
+;; (s/def ::width number?)
+;; (s/def ::height number?)
+;; (s/def ::x-axis number?)
+;; (s/def ::y-axis number?)
 
-(s/def ::initialize-alignment-params
-  (s/keys :req-un [::width
-                   ::height
-                   ::x-axis
-                   ::y-axis]))
+;; (s/def ::initialize-alignment-params
+;;   (s/keys :req-un [::width
+;;                    ::height
+;;                    ::x-axis
+;;                    ::y-axis]))
 
-;; This excludes webworker instantiation on nodejs where
-;; the tests are run.
-(when (not= *target* "nodejs")
-  (defonce worker (uw/init "js/worker.js")))
+;; ;; This excludes webworker instantiation on nodejs where
+;; ;; the tests are run.
+;; (when (not= *target* "nodejs")
+;;   (defonce worker (uw/init "js/worker.js")))
 
-(defn align-point
-  [point]
-  (let [message {:cmd :grid-align :point point}]
-    (->> (uw/ask! worker message)
-         (rx/map :point))))
+;; (defn align-point
+;;   [point]
+;;   (let [message {:cmd :grid-align :point point}]
+;;     (->> (uw/ask! worker message)
+;;          (rx/map :point))))
 
-(defn initialize-alignment
-  [params]
-  (us/verify ::initialize-alignment-params params)
-  (let [message (assoc params :cmd :grid-init)]
-    (uw/send! worker message)))
+;; (defn initialize-alignment
+;;   [params]
+;;   (us/verify ::initialize-alignment-params params)
+;;   (let [message (assoc params :cmd :grid-init)]
+;;     (uw/send! worker message)))

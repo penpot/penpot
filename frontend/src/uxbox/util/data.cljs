@@ -9,7 +9,7 @@
   (:require [cljs.reader :as r]
             [cuerdas.core :as str]))
 
-;; TODO: partially move to uxbox.common.helpers
+;; TODO: partially move to uxbox.common.data
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data structure manipulation

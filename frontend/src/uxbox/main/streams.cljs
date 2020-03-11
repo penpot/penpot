@@ -79,10 +79,10 @@
   (->> (rx/concat (rx/of current)
                   (rx/sample 10 mouse-position))
        (rx/map #(gpt/divide % (gpt/point @refs/selected-zoom)))
-       (rx/mapcat (fn [point]
-                    (if @refs/selected-alignment
-                      (uwrk/align-point point)
-                      (rx/of point))))
+       ;; (rx/mapcat (fn [point]
+       ;;              (if @refs/selected-alignment
+       ;;                (uwrk/align-point point)
+       ;;                (rx/of point))))
        (rx/buffer 2 1)
        (rx/map (fn [[old new]]
                  (gpt/subtract new old)))))

@@ -46,10 +46,11 @@
 
           ;; Applies alginment to point if it is currently
           ;; activated on the current workspace
-          (apply-grid-alignment [point]
-            (if @refs/selected-alignment
-              (uwrk/align-point point)
-              (rx/of point)))]
+          ;; (apply-grid-alignment [point]
+          ;;   (if @refs/selected-alignment
+          ;;     (uwrk/align-point point)
+          ;;     (rx/of point)))
+          ]
     (reify
       ptk/WatchEvent
       (watch [_ state stream]
@@ -59,7 +60,7 @@
           (rx/concat
            (->> ms/mouse-position
                 (rx/map apply-zoom)
-                (rx/mapcat apply-grid-alignment)
+                ;; (rx/mapcat apply-grid-alignment)
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map normalize-proportion-lock)
                 (rx/mapcat (partial resize shape))
@@ -202,8 +203,8 @@
             (let [stoper (get-edition-stream-stoper)
                   stream (->> (ms/mouse-position-deltas @ms/mouse-position)
                               (rx/take-until stoper))]
-              (when @refs/selected-alignment
-                (st/emit! (dw/initial-path-point-align (:id shape) index)))
+              ;; (when @refs/selected-alignment
+              ;;   (st/emit! (dw/initial-path-point-align (:id shape) index)))
               (rx/subscribe stream #(on-handler-move % index))))
 
           (get-edition-stream-stoper []

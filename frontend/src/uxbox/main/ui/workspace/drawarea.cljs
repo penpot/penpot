@@ -136,7 +136,7 @@
               stoper (rx/filter stoper? stream)
 
               mouse (->> ms/mouse-position
-                         (rx/mapcat #(conditional-align % align?))
+                         ;; (rx/mapcat #(conditional-align % align?))
                          (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (->> mouse
@@ -187,7 +187,7 @@
                           (rx/share))
 
               mouse (->> (rx/sample 10 ms/mouse-position)
-                         (rx/mapcat #(conditional-align % align?))
+                         ;; (rx/mapcat #(conditional-align % align?))
                          (rx/map #(gpt/divide % (gpt/point zoom))))
 
               points (->> stream
@@ -256,7 +256,7 @@
               align? (refs/alignment-activated? flags)
               stoper (rx/filter stoper-event? stream)
               mouse  (->> (rx/sample 10 ms/mouse-position)
-                          (rx/mapcat #(conditional-align % align?))
+                          ;; (rx/mapcat #(conditional-align % align?))
                           (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (rx/of initialize-drawing)
@@ -349,7 +349,7 @@
            :on-mouse-enter on-mouse-enter
            :on-mouse-leave on-mouse-leave}])])))
 
-(defn- conditional-align [point align?]
-  (if align?
-    (uwrk/align-point point)
-    (rx/of point)))
+;; (defn- conditional-align [point align?]
+;;   (if align?
+;;     (uwrk/align-point point)
+;;     (rx/of point)))

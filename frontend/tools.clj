@@ -60,12 +60,12 @@
              ;;        :output-to "resources/public/js/view.js"}
              }})
 
-(def worker-build-options
-  {:main 'uxbox.worker
-   :target :webworker
-   :output-to "resources/public/js/worker.js"
-   :output-dir "resources/public/js/worker"
-   :asset-path "/js/worker"})
+;; (def worker-build-options
+;;   {:main 'uxbox.worker
+;;    :target :webworker
+;;    :output-to "resources/public/js/worker.js"
+;;    :output-dir "resources/public/js/worker"
+;;    :asset-path "/js/worker"})
 
 (def main-dist-build-options
   (-> (merge default-build-options
@@ -84,22 +84,22 @@
       (assoc-in [:modules :main :output-to] "target/dist/dbg/js/main.js")
       #_(assoc-in [:modules :view :output-to] "target/dist/dbg/js/view.js")))
 
-(def worker-dist-build-options
-  (merge default-build-options
-         worker-build-options
-         dist-build-options
-         {:output-to  "target/dist/js/worker.js"
-          :output-dir "target/dist/js/worker"
-          :source-map "target/dist/js/worker.js.map"}))
+;; (def worker-dist-build-options
+;;   (merge default-build-options
+;;          worker-build-options
+;;          dist-build-options
+;;          {:output-to  "target/dist/js/worker.js"
+;;           :output-dir "target/dist/js/worker"
+;;           :source-map "target/dist/js/worker.js.map"}))
 
-(def worker-dist-dbg-build-options
-  (merge worker-dist-build-options
-         {:optimizations :advanced
-          :pseudo-names true
-          :pretty-print true
-          :output-to  "target/dist/dbg/js/worker.js"
-          :output-dir "target/dist/dbg/js/worker"
-          :source-map "target/dist/dbg/js/worker.js.map"}))
+;; (def worker-dist-dbg-build-options
+;;   (merge worker-dist-build-options
+;;          {:optimizations :advanced
+;;           :pseudo-names true
+;;           :pretty-print true
+;;           :output-to  "target/dist/dbg/js/worker.js"
+;;           :output-dir "target/dist/dbg/js/worker"
+;;           :source-map "target/dist/dbg/js/worker.js.map"}))
 
 ;; --- Tasks Definitions
 
@@ -109,11 +109,11 @@
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
-(defmethod task "dist:worker"
-  [args]
-  (let [cfg worker-dist-build-options]
-    ;; (pprint cfg)
-    (api/build (api/inputs "src") cfg)))
+;; (defmethod task "dist:worker"
+;;   [args]
+;;   (let [cfg worker-dist-build-options]
+;;     ;; (pprint cfg)
+;;     (api/build (api/inputs "src") cfg)))
 
 (defmethod task "dist-dbg:main"
   [args]
@@ -121,18 +121,18 @@
     ;; (pprint cfg)
     (api/build (api/inputs "src") cfg)))
 
-(defmethod task "dist-dbg:worker"
-  [args]
-  (let [cfg worker-dist-dbg-build-options]
-    ;; (pprint cfg)
-    (api/build (api/inputs "src") cfg)))
+;; (defmethod task "dist-dbg:worker"
+;;   [args]
+;;   (let [cfg worker-dist-dbg-build-options]
+;;     ;; (pprint cfg)
+;;     (api/build (api/inputs "src") cfg)))
 
 (defmethod task "dist:all"
   [args]
   (task ["dist:main"])
-  (task ["dist:worker"])
+  #_(task ["dist:worker"])
   (task ["dist-dbg:main"])
-  (task ["dist-dbg:worker"]))
+  #_(task ["dist-dbg:worker"]))
 
 (defmethod task "repl:node"
   [args]
@@ -189,8 +189,9 @@
 (def figwheel-builds
   {:main {:id "main"
           :options (merge default-build-options main-build-options)}
-   :worker {:id "worker"
-            :options (merge default-build-options worker-build-options)}})
+   ;; :worker {:id "worker"
+   ;;          :options (merge default-build-options worker-build-options)}
+   })
 
 (def figwheel-options
   {:open-url false
@@ -208,7 +209,7 @@
   (figwheel/start
    figwheel-options
    (:main figwheel-builds)
-   (:worker figwheel-builds)))
+   #_(:worker figwheel-builds)))
 
 ;;; Build script entrypoint. This should be the last expression.
 
