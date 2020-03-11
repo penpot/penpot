@@ -10,7 +10,19 @@
 (ns uxbox.config
   (:require [goog.object :as gobj]))
 
-(let [config (gobj/get goog.global "uxboxConfig")]
+(defn- get-current-origin
+  []
+  (let [location (gobj/get goog.global "location")]
+    (gobj/get location "origin")))
+
+(let [config (gobj/get goog.global "uxboxConfig")
+      backend-url (gobj/get config "backendURL" "http://localhost:6060")]
+
   (def default-language "en")
-  (def url (gobj/get config "apiUrl" "http://localhost:6060/"))
-  (def demo-warning (gobj/get config "demoWarning" true)))
+  (def demo-warning (gobj/get config "demoWarning" true))
+
+  (def url
+    (if (= backend-url "samesite")
+      (get-current-origin)
+      backend-url)))
+

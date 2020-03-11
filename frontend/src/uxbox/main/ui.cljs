@@ -64,24 +64,6 @@
 
    ["/workspace/:file-id" :workspace]])
 
-(defn- parse-team-id
-  [route profile]
-  (let [team-id (get-in route [:params :path :team-id])]
-    (cond
-      (uuid-str? team-id) (uuid team-id)
-      (= "self" team-id)  (:default-team-id profile)
-      :else               (ex/raise :type :validation
-                                    :code :invalid-team-id))))
-
-(defn- parse-project-id
-  [route profile]
-  (let [project-id (get-in route [:params :path :project-id])]
-    (cond
-      (uuid-str? project-id)  (uuid project-id)
-      (= "drafts" project-id) (:default-project-id profile)
-      :else                   (ex/raise :type :validation
-                                        :code :invalid-project-id))))
-
 
 (mf/defc app
   [props]

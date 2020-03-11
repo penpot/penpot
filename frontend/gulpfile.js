@@ -101,13 +101,18 @@ function readLocales() {
 }
 
 function readConfig() {
-  const apiUrl = process.env.UXBOX_API_URL;
+  const backendURL = process.env.UXBOX_BACKEND_URL;
   const demoWarn = process.env.UXBOX_DEMO_WARNING;
 
-  return JSON.stringify({
-    apiUrl: (apiUrl === undefined ? "http://localhost:6060" : apiUrl.trim()),
-    demoWarning: demoWarn === "true",
-  });
+  let cfg = {
+    demoWarning: demoWarn === "true"
+  };
+
+  if (backendURL !== undefined) {
+    cfg.backendURL = backendURL;
+  }
+
+  return JSON.stringify(cfg);
 }
 
 function templatePipeline(options) {
