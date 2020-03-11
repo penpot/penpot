@@ -100,6 +100,16 @@ function readLocales() {
   return JSON.stringify(result);
 }
 
+function readConfig() {
+  const apiUrl = process.env.UXBOX_API_URL;
+  const demoWarn = process.env.UXBOX_DEMO_WARNING;
+
+  return JSON.stringify({
+    apiUrl: (apiUrl === undefined ? "http://localhost:6060" : apiUrl.trim()),
+    demoWarning: demoWarn === "true",
+  });
+}
+
 function templatePipeline(options) {
   return function() {
     const input = options.input;
@@ -108,11 +118,13 @@ function templatePipeline(options) {
 
     const locales = readLocales();
     const icons = readSvgSprite();
+    const config = readConfig();
 
     const tmpl = mustache({
       ts: ts,
       ic: icons,
-      tr: JSON.stringify(locales),
+      config: JSON.stringify(config),
+      translations: JSON.stringify(locales),
     });
 
     return gulp.src(input)
