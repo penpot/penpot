@@ -10,9 +10,6 @@
   flex-direction: column;
   font-size: $fs14;
   height: 100%;
-  padding: $medium;
-  // ACTIVITY BAR PADDING
-  //padding: $medium 250px $medium $medium;
 
   .dashboard-title {
     margin: $medium 0;
@@ -75,15 +72,13 @@
   .dashboard-grid-content {
     display: flex;
     height: 100%;
-    min-height: 60vh;
-    overflow: scroll;
     width: 100%;
 
     .dashboard-grid-row {
       display: flex;
       flex-wrap: wrap;
-      margin-bottom: auto;
       width: 100%;
+      align-content: flex-start;
     }
 
     .grid-item {
@@ -94,12 +89,28 @@
       flex-direction: column;
       flex-shrink: 0;
       height: 200px;
-      margin: $medium $medium 0 $medium;
+      margin: $medium;
       max-width: 300px;
       min-width: 260px;
       position: relative;
       text-align: center;
       width: 18%;
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+
+      & .overlay {
+        border-radius: 4px;
+        border: 2px solid $color-primary;
+        height: 100%;
+        opacity: 0;
+        pointer-events: none;
+        position: absolute;
+        width: 100%;
+        z-index: 1;
+      }
+      &:hover .overlay {
+        display: block;
+        opacity: 1;
+      }
 
       &.small-item {
         max-width: 12%;
@@ -145,9 +156,10 @@
 
       }
 
-      &.add-project {
+      &.add-file {
         border: 1px dashed $color-gray-light;
         justify-content: center;
+        box-shadow: none;
 
         span {
           color: $color-gray-60;
@@ -399,5 +411,18 @@
     }
 
   }
+}
 
+.grid-files-empty {
+    align-items: center;
+    border: 1px dashed $color-gray-20;
+    display: flex;
+    flex-direction: column;
+    margin: $size-4;
+    padding: 3rem;
+    width: 100%;
+}
+
+.grid-files-link-text {
+    color: $color-black;
 }

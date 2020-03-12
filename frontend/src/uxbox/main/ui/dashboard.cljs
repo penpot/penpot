@@ -19,11 +19,11 @@
    [uxbox.main.ui.dashboard.header :refer [header]]
    [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
    [uxbox.main.ui.dashboard.project :refer [project-page]]
-   [uxbox.main.ui.dashboard.team :refer [team-page]]
+   [uxbox.main.ui.dashboard.recent-files :refer [recent-files-page]]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
    [uxbox.main.ui.messages :refer [messages-widget]]))
 
-(defn- ^boolean uuid-str?
+(defn ^boolean uuid-str?
   [s]
   (and (string? s)
        (boolean (re-seq us/uuid-rx s))))
@@ -64,7 +64,7 @@
        [:& header]
        (case section
          :dashboard-team
-         (mf/element team-page #js {:team-id team-id})
+         (mf/element recent-files-page #js {:team-id team-id})
 
          :dashboard-project
          (mf/element project-page #js {:team-id team-id

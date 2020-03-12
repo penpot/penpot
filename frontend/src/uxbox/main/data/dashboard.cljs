@@ -57,9 +57,10 @@
 
 (declare fetch-files)
 (declare fetch-projects)
+(declare fetch-recent-files)
 
 (def initialize-drafts
-  (ptk/reify ::initialize
+  (ptk/reify ::initialize-drafts
     ptk/UpdateEvent
     (update [_ state]
       (let [profile (:profile state)]
@@ -77,7 +78,7 @@
 (defn initialize-team
   [team-id]
   (us/verify ::us/uuid team-id)
-  (ptk/reify ::initialize
+  (ptk/reify ::initialize-team
     ptk/UpdateEvent
     (update [_ state]
       (update state :dashboard-local assoc
@@ -87,14 +88,15 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
-        (rx/of (fetch-projects (:team-id local)))))))
+        (rx/of (fetch-projects (:team-id local))
+               (fetch-recent-files (:team-id local)))))))
 
 
 (defn initialize-project
   [team-id project-id]
   (us/verify ::us/uuid team-id)
   (us/verify ::us/uuid project-id)
-  (ptk/reify ::initialize
+  (ptk/reify ::initialize-project
      ptk/UpdateEvent
      (update [_ state]
        (update state :dashboard-local assoc
@@ -155,6 +157,26 @@
       (let [state (dissoc state :files)
             files (d/index-by :id files)]
         (assoc state :files files)))))
+
+;; --- Fetch recent files
+
+(declare recent-files-fetched)
+
+(defn fetch-recent-files
+  [team-id]
+  (ptk/reify ::fetch-recent-files
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:team-id team-id}]
+        (->> (rp/query :recent-files params)
+             (rx/map recent-files-fetched))))))
+
+(defn recent-files-fetched
+  [recent-files]
+  (ptk/reify ::recent-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :recent-files recent-files))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
@@ -239,12 +261,12 @@
 
 (declare file-created)
 
-(def create-file
+(defn create-file
+  [project-id]
   (ptk/reify ::create-draft-file
     ptk/WatchEvent
     (watch [_ state stream]
       (let [name (str "New File " (gensym "p"))
-            project-id (get-in state [:dashboard-local :project-id])
             params {:name name :project-id project-id}]
         (->> (rp/mutation! :create-file params)
              (rx/map file-created))))))
@@ -255,7 +277,9 @@
   (ptk/reify ::create-draft-file
     ptk/UpdateEvent
     (update [this state]
-      (update state :files assoc (:id data) data))))
+      (-> state
+          (update :files assoc (:id data) data)
+          (update :recent-files update (:project-id data) conj data)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

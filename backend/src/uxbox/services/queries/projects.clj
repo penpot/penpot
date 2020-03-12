@@ -20,7 +20,9 @@
 
 (def ^:private sql:projects
   "with projects as (
-     select p.*
+     select p.*,
+       (select count(*) from file as f
+        where f.project_id = p.id and deleted_at is null) as file_count
        from project as p
       inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
       where tpr.profile_id = $1
@@ -28,7 +30,9 @@
              tpr.is_owner = true or
              tpr.can_edit = true)
       union
-     select p.*
+     select p.*,
+        (select count(*) from file as f
+         where f.project_id = p.id and deleted_at is null)
        from project as p
       inner join project_profile_rel as ppr on (ppr.project_id = p.id)
       where ppr.profile_id = $1
@@ -47,7 +51,10 @@
 (s/def ::projects-by-team
   (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::projects-by-team
-  [{:keys [profile-id team-id] :as params}]
+(defn projects-by-team [profile-id team-id]
   (db/query db/pool [sql:projects profile-id team-id]))
+
+(sq/defquery ::projects-by-team
+  [{:keys [profile-id team-id]}]
+  (projects-by-team profile-id team-id))
 

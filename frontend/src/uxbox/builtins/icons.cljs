@@ -74,6 +74,7 @@
 (def ungroup (icon-xref :ungroup))
 (def unlock (icon-xref :unlock))
 (def user (icon-xref :user))
+(def recent (icon-xref :recent))
 
 (def loader-pencil
   (html
