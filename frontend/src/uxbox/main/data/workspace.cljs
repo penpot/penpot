@@ -1253,15 +1253,12 @@
 
 (defn- delete-shapes
   [ids]
-  (us/assert ::set-of-uuid ids)
+  (us/assert (s/coll-of ::us/uuid) ids)
   (ptk/reify ::delete-shapes
     ptk/WatchEvent
     (watch [_ state stream]
       (let [objects (get-in state [:workspace-data :objects])
             session-id (:session-id state)
-
-            ids (seq ids)
-
             rchanges (mapv #(array-map :type :del-obj :id %) ids)
             uchanges (mapv (fn [id]
                              (let [obj (get objects id)
@@ -1282,7 +1279,7 @@
     (watch [_ state stream]
       (let [objects (get-in state [:workspace-data :objects])
             obj (get objects id)
-            ids (d/concat #{} (:shapes obj) [(:id obj)])]
+            ids (d/concat [] (:shapes obj) [(:id obj)])]
         (rx/of (delete-shapes ids))))))
 
 (def delete-selected
