@@ -101,15 +101,15 @@ function readLocales() {
 }
 
 function readConfig() {
-  const backendURL = process.env.UXBOX_BACKEND_URL;
+  const publicURL = process.env.UXBOX_PUBLIC_URL;
   const demoWarn = process.env.UXBOX_DEMO_WARNING;
 
   let cfg = {
     demoWarning: demoWarn === "true"
   };
 
-  if (backendURL !== undefined) {
-    cfg.backendURL = backendURL;
+  if (publicURL !== undefined) {
+    cfg.publicURL = publicURL;
   }
 
   return JSON.stringify(cfg);
