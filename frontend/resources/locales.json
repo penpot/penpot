@@ -1,4 +1,10 @@
 {
+  "dashboard.grid.empty-files" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:125" ],
+    "translations" : {
+      "en" : "You still have no files here"
+    }
+  },
   "dashboard.header.colors" : {
     "translations" : {
       "en" : "COLORS",
@@ -20,6 +26,27 @@
     },
     "unused" : true
   },
+  "dashboard.header.profile-menu.logout" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/profile.cljs:46" ],
+    "translations" : {
+      "en" : "Exit",
+      "fr" : "Quitter"
+    }
+  },
+  "dashboard.header.profile-menu.password" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/profile.cljs:43" ],
+    "translations" : {
+      "en" : "Password",
+      "fr" : "Mot de passe"
+    }
+  },
+  "dashboard.header.profile-menu.profile" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/profile.cljs:40" ],
+    "translations" : {
+      "en" : "Profile",
+      "fr" : "Profil"
+    }
+  },
   "dashboard.header.projects" : {
     "translations" : {
       "en" : "PROJECTS",
@@ -27,47 +54,30 @@
     },
     "unused" : true
   },
-  "dashboard.header.profile-menu.logout" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/header.cljs:104" ],
-    "translations" : {
-      "en" : "Exit",
-      "fr" : "Quitter"
-    }
-  },
-  "dashboard.header.profile-menu.password" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/header.cljs:101" ],
-    "translations" : {
-      "en" : "Password",
-      "fr" : "Mot de passe"
-    }
-  },
-  "dashboard.header.profile-menu.profile" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/header.cljs:98" ],
-    "translations" : {
-      "en" : "Profile",
-      "fr" : "Profil"
-    }
-  },
   "dashboard.sidebar.drafts" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:111" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:112" ],
     "translations" : {
       "en" : "Drafts"
     }
   },
   "dashboard.sidebar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:116" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:117" ],
     "translations" : {
       "en" : "Libraries"
     }
   },
-  "dashboard.sidebar.recent": "Recent",
   "dashboard.sidebar.personal" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:104" ],
     "translations" : {
       "en" : "Personal"
+    },
+    "unused" : true
+  },
+  "dashboard.sidebar.recent" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:105" ],
+    "translations" : {
+      "en" : "Recent"
     }
   },
-  "dashboard.grid.empty-files": "You still have no files here",
   "ds.accept" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:113" ],
     "translations" : {
@@ -210,7 +220,7 @@
     }
   },
   "ds.multiselect-bar.delete" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:214", "src/uxbox/main/ui/dashboard/icons.cljs:221", "src/uxbox/main/ui/dashboard/images.cljs:187" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:214", "src/uxbox/main/ui/dashboard/images.cljs:187", "src/uxbox/main/ui/dashboard/icons.cljs:221" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "Supprimer"
@@ -238,7 +248,7 @@
     "unused" : true
   },
   "ds.new-file" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:136" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:121", "src/uxbox/main/ui/dashboard/grid.cljs:127" ],
     "translations" : {
       "en" : "+ New File",
       "fr" : null
@@ -266,7 +276,7 @@
     "unused" : true
   },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:139" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:140" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher..."
@@ -315,14 +325,14 @@
     }
   },
   "ds.updated-at" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:73" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:54" ],
     "translations" : {
       "en" : "Updated: %s",
       "fr" : "Mis à jour: %s"
     }
   },
   "ds.uploaded-at" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/icons.cljs:309", "src/uxbox/main/ui/dashboard/images.cljs:271" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/images.cljs:271", "src/uxbox/main/ui/dashboard/icons.cljs:309" ],
     "translations" : {
       "en" : "Uploaded at %s",
       "fr" : "Mise en ligne : %s"
@@ -392,14 +402,14 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:152" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:131" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:146" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:125" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal."
@@ -504,7 +514,7 @@
     }
   },
   "profile.recovery.go-to-login" : {
-    "used-in" : [ "src/uxbox/main/ui/profile/recovery_request.cljs:65", "src/uxbox/main/ui/profile/recovery.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery.cljs:81", "src/uxbox/main/ui/profile/recovery_request.cljs:65" ],
     "translations" : {
       "en" : "Go back!",
       "fr" : "Retour!"
@@ -644,7 +654,7 @@
     }
   },
   "settings.password" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:39" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:38" ],
     "translations" : {
       "en" : "PASSWORD",
       "fr" : "MOT DE PASSE"
@@ -686,7 +696,7 @@
     }
   },
   "settings.profile" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:36" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:35" ],
     "translations" : {
       "en" : "PROFILE",
       "fr" : "PROFIL"
@@ -791,11 +801,11 @@
     }
   },
   "workspace.header.frame" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:97" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    },
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:97" ]
+    }
   },
   "workspace.header.grid" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:175" ],
@@ -903,7 +913,7 @@
     }
   },
   "workspace.options.measures" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:55" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:55", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:69" ],
     "translations" : {
       "en" : "Size, position & rotation",
       "fr" : "Taille, position et rotation"
@@ -917,7 +927,7 @@
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:98", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:84" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:84", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:98" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
@@ -931,7 +941,7 @@
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:71", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:57" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:57", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:71" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
