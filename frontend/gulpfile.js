@@ -103,6 +103,8 @@ function readLocales() {
 function readConfig() {
   const publicURL = process.env.UXBOX_PUBLIC_URL;
   const demoWarn = process.env.UXBOX_DEMO_WARNING;
+  const deployDate = process.env.UXBOX_DEPLOY_DATE;
+  const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
 
   let cfg = {
     demoWarning: demoWarn === "true"
@@ -110,6 +112,14 @@ function readConfig() {
 
   if (publicURL !== undefined) {
     cfg.publicURL = publicURL;
+  }
+
+  if (deployDate !== undefined) {
+    cfg.deployDate = deployDate;
+  }
+
+  if (deployCommit !== undefined) {
+    cfg.deployCommit = deployCommit;
   }
 
   return JSON.stringify(cfg);
