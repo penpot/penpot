@@ -25,7 +25,7 @@
    {:x 0 :y 0
     :width "100%"
     :height "100%"
-    :fill "#b1b2b5"}])
+    :fill "#AFB2BF"}])
 
 (defn- calculate-dimensions
   [data]

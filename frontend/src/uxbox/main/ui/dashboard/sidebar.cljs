@@ -57,12 +57,14 @@
           :on-double-click on-dbl-click
           :class-name (when selected? "current")}
      (if (:edit @local)
-       [:div
+       [:div.edit-wrapper
         [:input.element-title {:value (:name @local)
                                :on-change on-input
                                :on-key-down on-keyup}]
         [:span.close {:on-click on-cancel} i/close]]
-       [:span.element-title name])]))
+       [:*
+        i/folder
+        [:span.element-title name]])]))
 
 (def projects-iref
   (-> (l/key :projects)
@@ -99,8 +101,8 @@
      [:li.recent-projects
       {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))
        :class-name (when home? "current")}
-      i/user
-      [:span.element-title (t locale "dashboard.sidebar.personal")]]
+      i/recent
+      [:span.element-title (t locale "dashboard.sidebar.recent")]]
 
      [:li
       {:on-click #(st/emit! (rt/nav :dashboard-project {:team-id team-id

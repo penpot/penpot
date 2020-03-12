@@ -60,12 +60,14 @@
       "en" : "Libraries"
     }
   },
+  "dashboard.sidebar.recent": "Recent",
   "dashboard.sidebar.personal" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:104" ],
     "translations" : {
       "en" : "Personal"
     }
   },
+  "dashboard.grid.empty-files": "You still have no files here",
   "ds.accept" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:113" ],
     "translations" : {

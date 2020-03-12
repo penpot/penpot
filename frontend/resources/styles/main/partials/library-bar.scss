@@ -49,7 +49,7 @@
       display: flex;
       flex-direction: column;
       height: calc(95% - 1rem);
-      margin-bottom: 1rem;
+      margin-bottom: $size-4;
       overflow-y: auto;
       padding-bottom: 20px;
 
@@ -58,15 +58,14 @@
         cursor: pointer;
         display: flex;
         flex-shrink: 0;
-        padding: $medium $small;
+        padding: $size-4 $size-2;
 
         svg {
           border-radius: 3px;
           fill: $color-black;
-          height: 24px;
-          margin-right: $small;
-          padding: $x-small;
-          width: 24px;
+          margin-right: 8px;
+          height: $size-4;
+          width: $size-4;
         }
 
         span.element-title {
@@ -81,7 +80,6 @@
           border-top: 1px solid $color-gray-10;
           
           svg {
-            background-color: $color-black;
             fill: $color-white;
           }
           
@@ -90,22 +88,30 @@
           }
         }
 
+        & .edit-wrapper {
+            display: flex;
+        }
+
         input.element-title {
           border: 0;
           height: 30px;
           padding: 5px;
+          margin: 0;
+          width: 100%;
+          background-color: $color-white;
         }
 
         .close {
-            background: $color-gray-50;
+            background-color: $color-white;
             cursor: pointer;
-            padding: 5px 10px;
+            padding: 3px 5px;
 
             svg {
               fill: $color-gray;
-              height: 20px;
+              height: 15px;
               transform: rotate(45deg) translateY(7px);
-              width: 20px;
+              width: 15px;
+              margin: 0;
             }
         }
 
@@ -114,39 +120,20 @@
           font-style: italic;
         }
 
-        &:hover {
-          background-color: $color-primary;
+        &:hover,
+        &.current {
+          background-color: $color-primary-lighter;
           color: $color-gray-60;
         }
-
-        &.current {
-
-          svg {
-            fill: $color-black;
-          }
-
-          span.element-title,
-          .element-subtitle {
-            color: $color-gray-60;
-            font-weight: bold;
-          }
-          input.element-title {
-            color: $color-gray-dark;
-          }
-        }
-
       }
-
     }
-
   }
-
 }
 
 .projects-row {
   align-items: center;
   display: flex;
-  padding: $medium;
+  padding: $size-2;
 
   span {
     color: $color-gray-30;
@@ -166,8 +153,8 @@
 
     svg {
       fill: $color-gray-60;
-      height: 13px;
-      width: 13px;
+      height: $size-2;
+      width: $size-2;
     }
 
     &:hover {
@@ -184,7 +171,7 @@
   align-items: center;
   border: 1px solid $color-gray-10;
   display: flex;
-  margin: $medium;
+  margin: $size-2;
   
   .input-text {
     background: $color-white;
