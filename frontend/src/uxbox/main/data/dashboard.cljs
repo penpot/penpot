@@ -279,7 +279,7 @@
     (update [this state]
       (-> state
           (update :files assoc (:id data) data)
-          (update :recent-files update (:project-id data) conj data)))))
+          (update-in [:recent-files (:project-id data)] conj data)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

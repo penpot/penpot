@@ -17,7 +17,7 @@
    [uxbox.services.queries.projects :refer [ projects-by-team ]]
    [uxbox.services.queries.files :refer [ decode-row ]]))
 
-(def ^:private sql:project_files_recent
+(def ^:private sql:project-files-recent
   "select distinct
           f.*,
           array_agg(pg.id) over pages_w as pages,
@@ -40,7 +40,7 @@
 
 (defn recent-by-project [profile-id project]
   (let [project-id (:id project)]
-    (-> (db/query db/pool [sql:project_files_recent profile-id project-id])
+    (-> (db/query db/pool [sql:project-files-recent profile-id project-id])
         (p/then (partial mapv decode-row)))))
 
 (s/def ::team-id ::us/uuid)
