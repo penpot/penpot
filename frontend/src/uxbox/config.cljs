@@ -16,13 +16,8 @@
     (gobj/get location "origin")))
 
 (let [config (gobj/get goog.global "uxboxConfig")
-      backend-url (gobj/get config "backendURL" "http://localhost:6060")]
+      public-url (gobj/get config "publicURL" "http://localhost:6060")]
 
   (def default-language "en")
   (def demo-warning (gobj/get config "demoWarning" true))
-
-  (def url
-    (if (= backend-url "samesite")
-      (get-current-origin)
-      backend-url)))
-
+  (def url public-url))
