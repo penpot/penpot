@@ -24,7 +24,6 @@
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.dashboard.common :as common]
-   [uxbox.main.ui.dashboard.header :refer [header]]
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
@@ -96,6 +95,8 @@
         drafts? (and (= selected-section :dashboard-project)
                      (= selected-team-id (:default-team-id profile))
                      (= selected-project-id (:default-project-id profile)))
+        library? (and (= selected-section :dashboard-library)
+                      (= selected-team-id (:default-team-id profile)))
         locale (i18n/use-locale)]
     [:ul.library-elements
      [:li.recent-projects
@@ -113,6 +114,8 @@
 
 
      [:li
+      {:on-click #(st/emit! (rt/nav :dashboard-library {:team-id team-id}))
+       :class-name (when library? "current")}
       i/icon-set
       [:span.element-title (t locale "dashboard.sidebar.libraries")]]
 

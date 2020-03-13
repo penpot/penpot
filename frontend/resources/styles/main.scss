@@ -29,6 +29,7 @@
 @import 'main/layouts/login';
 @import 'main/layouts/projects-page';
 @import 'main/layouts/recent-files-page';
+@import 'main/layouts/library-page';
 
 //#################################################
 // Commons
@@ -63,6 +64,7 @@
 @import 'main/partials/colorpicker';
 @import 'main/partials/forms';
 @import 'main/partials/loader';
+@import 'main/partials/context-menu';
 
 //#################################################
 // Resources

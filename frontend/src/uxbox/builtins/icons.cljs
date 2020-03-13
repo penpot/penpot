@@ -17,6 +17,7 @@
 (def align-right (icon-xref :align-right))
 (def alignment (icon-xref :alignment))
 (def arrow (icon-xref :arrow))
+(def arrow-down (icon-xref :arrow-down))
 (def arrow-end (icon-xref :arrow-end))
 (def arrow-slide (icon-xref :arrow-slide))
 (def artboard (icon-xref :artboard))

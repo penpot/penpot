@@ -90,7 +90,8 @@
 
       (:dashboard-search
        :dashboard-team
-       :dashboard-project)
+       :dashboard-project
+       :dashboard-library)
       (mf/element dashboard #js {:route route})
 
       :workspace

@@ -39,7 +39,14 @@
   (-> (l/key :recent-files)
       (l/derive st/state)))
 
-;; --- Component: Drafts Page
+;; --- Component: Recent files
+
+(mf/defc recent-files-header
+  [{:keys [profile] :as props}]
+  (let [locale (i18n/use-locale)]
+    [:header#main-bar.main-bar
+     [:h1.dashboard-title "Recent"]
+     [:a.btn-dashboard "+ New project"]]))
 
 (mf/defc recent-project
   [{:keys [project files first? locale] :as props}]
@@ -70,11 +77,13 @@
         recent-files (mf/deref recent-files-ref)
         locale (i18n/use-locale)]
     (when (and projects recent-files)
-      [:section.recent-files-page
-       (for [project projects]
-         [:& recent-project {:project project
-                             :locale locale
-                             :key (:id project)
-                             :files (get recent-files (:id project))
-                             :first? (= project (first projects))}])])))
+      [:*
+       [:& recent-files-header]
+       [:section.recent-files-page
+        (for [project projects]
+          [:& recent-project {:project project
+                              :locale locale
+                              :key (:id project)
+                              :files (get recent-files (:id project))
+                              :first? (= project (first projects))}])]])))
 

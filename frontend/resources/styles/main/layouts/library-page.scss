@@ -1,0 +1,273 @@
+.library-page {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 40px 1fr;
+    grid-template-columns: 14.5rem 1fr;
+    grid-template-areas: "header header" "sidebar content";
+    border-right: 1px solid $color-gray;
+
+    & .main-bar {
+        grid-area: header;
+    }
+
+    & .library-sidebar {
+        grid-area: sidebar;
+    }
+
+    & .library-content {
+        grid-area: content;
+        overflow: hidden;
+    }
+}
+
+.library-page #main-bar {
+    position: relative;
+}
+
+.library-header-navigation {
+    display: flex;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    justify-content: center;
+}
+
+.library-header-navigation-item {
+    margin: 0 $size-4;
+    color: $color-gray;
+    text-transform: uppercase;
+    border-bottom: 1px solid transparent;
+    
+    &:hover, &.current {
+        color: $color-black;
+        border-bottom: 1px solid $color-primary;
+    }
+}
+
+.library-sidebar {
+    background-color: $color-white;
+    padding: $size-2;
+}
+
+.library-sidebar-add-item {
+    background-color: $color-primary;
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: $size-2;
+    width: 100%;
+
+    &:hover {
+        background-color: $color-black;
+        color: $color-primary;
+    }
+}
+
+.library-sidebar-list {
+    margin-top: $size-4;
+}
+
+.library-sidebar-list-element {
+    padding: $size-4 $size-2;
+    cursor: pointer;
+
+    & a {
+        color: $color-black;
+    }
+
+    &:hover {
+        background-color: $color-primary-lighter;
+    }
+
+    &.current a {
+        font-weight: bold;
+    }
+}
+
+.library-top-menu {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid #e3e3e3;
+    justify-content: space-between;
+    padding: $size-2 1.5rem;
+    
+    svg {
+        width: 16px;
+        height: 16px;
+        fill: #7C7C7C;
+        cursor: pointer;
+
+        &:hover {
+            fill: $color-primary;
+        }
+    }
+
+    & > * {
+        align-items: center;
+    }
+}
+
+.library-top-menu-current-element {
+    display: flex;
+}
+
+.library-top-menu-current-element-name {
+    font-size: 15px;
+    line-height: 18px;
+    color: $color-black;
+    font-weight: normal;
+    margin-right: $size-2;
+}
+
+.library-top-menu-current-action {
+    & svg {
+        width: 10px;
+        height: 10px;
+    }
+}
+
+.library-top-menu-actions {
+    display: flex;
+
+    .btn-dashboard {
+        background-color: transparent;
+        margin-left: $size-2;
+    }
+}
+
+.library-page-cards-container {
+    padding: $size-2;
+    display: flex;
+    flex-wrap: wrap;
+    overflow: scroll;
+    height: 100%;
+    align-content: flex-start;
+}
+
+.library-card {
+    margin: $size-2;
+    background: $color-white;
+
+    &.library-icon, &.library-color {
+        width: 200px;
+    }
+
+    &.library-image {
+        width: 300px;
+    }
+    
+    height: 200px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    position: relative;
+
+    & .library-card-footer-menu {
+        visibility: hidden;
+        opacity: 0;
+    }
+    
+    &:hover .library-card-footer-menu {
+        visibility: visible;
+        opacity: 1;
+    }
+}
+
+.library-card .input-checkbox {
+    margin: 0;
+    top: $size-2;
+    right: $size-2;
+    position: absolute;
+
+    & label {
+        margin: 0;
+
+        &:before {
+            margin: 0;
+            background-color: white;
+            border: 1px solid #AFB2BF;
+        }
+    }
+}
+
+
+.library-card-image {
+    height: 136px;
+
+    .library-color & {
+        height: 104px;
+    }
+    
+    padding: $size-2;
+    overflow: hidden;
+    text-align: center;
+    display: flex;
+    
+    & svg, & img {
+        margin: auto;
+        width: auto;
+        height: auto;
+        max-height: 100%;
+        max-width: 100%;
+    }
+}
+
+.library-card-footer {
+    border-top: 1px solid $color-gray-lighter;
+    padding: $size-2 $size-2 $size-2 $size-4;
+    display: grid;
+    grid-template-rows: 50% 50%;
+    grid-template-columns: 1fr 16px 1px;
+    grid-template-areas: "name . ." "timestamp menu options";
+
+    .library-card.library-color & {
+        height: 50%;
+        text-align: center;
+    }
+}
+
+.library-card-footer-name {
+    color: $color-black;
+    grid-area: name;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.library-card-footer-timestamp {
+    font-size: 12px;
+    grid-area: timestamp;
+}
+
+.library-card-footer-color {
+    font-size: 15px;
+    grid-area: timestamp;
+}
+
+.library-card-footer-color-label {
+    color: $color-gray;
+    margin-right: 0.25rem;
+}
+
+.library-card-footer-color-rgb {
+    color: $color-black;
+}
+
+.library-card-footer-menu {
+    grid-area: menu;
+    cursor: pointer;
+    
+    & svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+
+.library-card-footer .context-menu {
+    grid-area: options;
+    & .context-menu-items {
+        top: 1.5rem;
+    }
+}

@@ -16,11 +16,11 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.dashboard.header :refer [header]]
    [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
    [uxbox.main.ui.dashboard.search :refer [search-page]]
    [uxbox.main.ui.dashboard.project :refer [project-page]]
    [uxbox.main.ui.dashboard.recent-files :refer [recent-files-page]]
+   [uxbox.main.ui.dashboard.library :refer [library-page]]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
    [uxbox.main.ui.messages :refer [messages-widget]]))
 
@@ -66,13 +66,15 @@
                    :search-term search-term
                    :section section}]
       [:div.dashboard-content
-       [:& header]
        (case section
          :dashboard-search
          (mf/element search-page #js {:team-id team-id :search-term search-term})
 
          :dashboard-team
          (mf/element recent-files-page #js {:team-id team-id})
+
+         :dashboard-library
+         (mf/element library-page #js {:team-id team-id})
 
          :dashboard-project
          (mf/element project-page #js {:team-id team-id
