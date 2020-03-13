@@ -918,6 +918,19 @@ input[type=range]:focus::-ms-fill-upper {
 
   }
 
+ &.tooltip-right {
+
+    &:hover {
+
+      &::after {
+        top: 15%;
+        left: 120%;
+      }
+
+    }
+
+  }
+
   &.tooltip-hover {
 
     &:hover {

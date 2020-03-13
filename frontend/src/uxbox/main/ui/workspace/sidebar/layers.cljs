@@ -279,7 +279,8 @@
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]
-      [:span (t locale "workspace.sidebar.layers")]
+      ;[:span (t locale "workspace.sidebar.layers")]
+      [:span "Page 1"]
       #_[:div.tool-window-close {:on-click on-click} i/close]]
      [:div.tool-window-content
       [:& layers-tree]]]))
