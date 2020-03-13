@@ -58,8 +58,11 @@
     ["/password" :settings-password]]
 
    ["/dashboard"
-    ["/:team-id" :dashboard-team]
-    ["/:team-id/:project-id" :dashboard-project]]
+    ["/team/:team-id"
+     ["/" :dashboard-team]
+     ["/search" :dashboard-search]
+     ["/project/:project-id" :dashboard-project]
+     ["/library" :dashboard-library]]]
 
    ["/workspace/:file-id" :workspace]])
 
@@ -84,7 +87,8 @@
        :settings-password)
       (mf/element settings/settings #js {:route route})
 
-      (:dashboard-team
+      (:dashboard-search
+       :dashboard-team
        :dashboard-project)
       (mf/element dashboard #js {:route route})
 

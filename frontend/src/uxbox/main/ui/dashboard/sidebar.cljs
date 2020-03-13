@@ -13,6 +13,7 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [goog.functions :as f]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.dashboard :as dsh]
@@ -84,7 +85,7 @@
         :team-id team-id
         }])))
 
-(mf/defc sidear-team
+(mf/defc sidebar-team
   [{:keys [profile
            team-id
            selected-section
@@ -125,21 +126,61 @@
        :selected-project-id selected-project-id
        :team-id team-id}]]))
 
+
+(def debounced-emit! (f/debounce st/emit! 500))
+
 (mf/defc sidebar
-  [{:keys [section team-id project-id] :as props}]
+  [{:keys [section team-id project-id search-term] :as props}]
   (let [locale (i18n/use-locale)
-        profile (mf/deref refs/profile)]
+        profile (mf/deref refs/profile)
+        search-term-not-nil (or search-term "")
+
+        on-search-focus
+        (fn [event]
+          (let [target (dom/get-target event)
+                value (dom/get-value target)]
+            (.select target)
+            (if (empty? value)
+              (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {}))
+              (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {:search-term value})))))
+
+        on-search-blur
+        (fn [event]
+          (let [target (dom/get-target event)]
+            (dom/clean-value! target)
+            (debounced-emit! (rt/nav :dashboard-team {:team-id team-id}))))
+
+        on-search-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value))]
+            (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {:search-term value}))))
+
+        on-clear-click
+        (fn [event]
+          (let [search-input (dom/get-element "search-input")]
+            (dom/clean-value! search-input)
+            (.focus search-input)
+            (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {}))))]
+
     [:div.library-bar
      [:div.library-bar-inside
       [:form.dashboard-search
        [:input.input-text
         {:key :images-search-box
+         :id "search-input"
          :type "text"
-         :auto-focus true
-         :placeholder (t locale "ds.search.placeholder")}]
-       [:div.clear-search i/close]]
-      [:& sidear-team {:selected-team-id team-id
-                       :selected-project-id project-id
-                       :selected-section section
-                       :profile profile
-                       :team-id "self"}]]]))
+         :placeholder (t locale "ds.search.placeholder")
+         :default-value search-term-not-nil
+         :autoComplete "off"
+         :on-focus on-search-focus
+         :on-blur on-search-blur
+         :on-change on-search-change}]
+       [:div.clear-search
+        {:on-click on-clear-click}
+        i/close]]
+      [:& sidebar-team {:selected-team-id team-id
+                        :selected-project-id project-id
+                        :selected-section section
+                        :profile profile
+                        :team-id "self"}]]]))
