@@ -333,6 +333,7 @@
         (assoc state :workspace-file file)))))
 
 (declare diff-and-commit-changes)
+(declare initialize-persistence)
 
 (defn initialize-page
   [page-id]
@@ -354,12 +355,14 @@
                                    (ptk/type? ::initialize-page %))
                               stream)]
         (rx/concat
+         (rx/of (initialize-persistence (get-in state [:workspace-page :id])))
          (->> stream
               (rx/filter #(satisfies? IBatchedChange %))
               (rx/debounce 200)
-              (rx/map (constantly diff-and-commit-changes))
+              (rx/map (fn [_] (diff-and-commit-changes page-id)))
               (rx/take-until stoper))
          #_(rx/of diff-and-commit-changes))))))
+
 
 (defn finalize
   [file-id page-id]
@@ -410,7 +413,8 @@
     (reduce impl-diff [] (set/union (set (keys (:objects prev)))
                                     (set (keys (:objects curr)))))))
 
-(def diff-and-commit-changes
+(defn diff-and-commit-changes
+  [page-id]
   (ptk/reify ::diff-and-commit-changes
     ptk/WatchEvent
     (watch [_ state stream]
@@ -424,6 +428,51 @@
         ;; (prn "diff-and-commit-changes2" undo-changes)
         (when-not (empty? changes)
           (rx/of (commit-changes changes undo-changes)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Persistence
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare persist-changes)
+
+(defn initialize-persistence
+  [page-id]
+  (ptk/reify ::initialize-persistence
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state ::page-id page-id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stoper (rx/filter #(or (ptk/type? ::finalize %)
+                                   (ptk/type? ::initialize-page %))
+                              stream)
+            notifier (->> stream
+                          (rx/filter (ptk/type? ::commit-changes))
+                          (rx/debounce 1000)
+                          (rx/merge stoper))]
+        (->> stream
+             (rx/filter (ptk/type? ::commit-changes))
+             (rx/map deref)
+             (rx/buffer-until notifier)
+             (rx/map vec)
+             (rx/filter (complement empty?))
+             (rx/map #(persist-changes page-id %))
+             (rx/take-until (rx/delay 100 stoper)))))))
+
+(defn persist-changes
+  [page-id changes]
+  (ptk/reify ::persist-changes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (prn "persist-changes" changes)
+      (let [session-id (:session-id state)
+            page (:workspace-page state)
+            params {:id (:id page)
+                    :revn (:revn page)
+                    :changes (vec (mapcat identity changes))}]
+        #_(->> (rp/mutation :update-page params)
+               (rx/map shapes-changes-commited))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching & Uploading
@@ -1312,19 +1361,10 @@
   (us/verify ::us/uuid id)
   (us/verify string? name)
   (ptk/reify ::rename-shape
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [shape (get-in state [:workspace-data :objects id])
-            session-id (:session-id state)
-            change  {:type :mod-shape
-                     :id id
-                     :session-id session-id
-                     :operations [[:set :name name]]}
-            uchange {:type :mod-shape
-                     :id id
-                     :session-id session-id
-                     :operations [[:set :name (:name shape)]]}]
-        (rx/of (commit-changes [change] [uchange]))))))
+    IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-data :objects id] assoc :name name))))
 
 ;; --- Shape Vertical Ordering
 
@@ -1493,8 +1533,9 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (rx/of diff-and-commit-changes
-               (rehash-shape-frame-relationship ids))))))
+        (let [pid (get-in state [:workspace-page :id])]
+          (rx/of (diff-and-commit-changes pid)
+                 (rehash-shape-frame-relationship ids)))))))
 
 
 (defn apply-displacement-in-bulk
@@ -1531,8 +1572,9 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (rx/of diff-and-commit-changes
-               (rehash-shape-frame-relationship ids))))))
+        (let [pid (get-in state [:workspace-page :id])]
+          (rx/of (diff-and-commit-changes pid)
+                 (rehash-shape-frame-relationship ids)))))))
 
 
 (defn apply-frame-displacement
@@ -1587,6 +1629,9 @@
    (us/verify ::cp/changes undo-changes)
 
    (ptk/reify ::commit-changes
+     cljs.core/IDeref
+     (-deref [_] changes)
+
      ptk/UpdateEvent
      (update [_ state]
        (let [pid (get-in state [:workspace-page :id])
@@ -1598,9 +1643,11 @@
      (watch [_ state stream]
        (let [page (:workspace-page state)
              uidx (get-in state [:workspace-local :undo-index] ::not-found)
+             session-id (:session-id state)
+             changes (into [] (map #(assoc % :session-id session-id)) changes)
              params {:id (:id page)
                      :revn (:revn page)
-                     :changes (vec changes)}]
+                     :changes changes}]
 
          (rx/concat
           (when (and save-undo? (not= uidx ::not-found))
@@ -1609,29 +1656,8 @@
           (when save-undo?
             (let [entry {:undo-changes undo-changes
                          :redo-changes changes}]
-              (rx/of (append-undo entry))))
+              (rx/of (append-undo entry))))))))))
 
-          (->> (rp/mutation :update-page params)
-               (rx/map shapes-changes-commited))))))))
-
-
-;; (defn- check-page-integrity
-;;   [data]
-;;   (let [items (d/concat (:shapes data)
-;;                         (:frame data))]
-;;     (loop [id (first items)
-;;            ids (rest items)]
-;;       (let [content (get-in data [:objects id])]
-;;         (cond
-;;           (nil? id)
-;;           nil
-;;           (nil? content)
-;;           (ex/raise :type :validation
-;;                     :code :shape-integrity
-;;                     :context {:id id})
-;;
-;;           :else
-;;           (recur (first ids) (rest ids)))))))
 
 (s/def ::shapes-changes-commited
   (s/keys :req-un [::page-id ::revn ::cp/changes]))
@@ -1639,22 +1665,18 @@
 (defn shapes-changes-commited
   [{:keys [page-id revn changes] :as params}]
   (us/verify ::shapes-changes-commited params)
-  (ptk/reify ::shapes-changes-commited
+  (ptk/reify ::changes-commited
     ptk/UpdateEvent
     (update [_ state]
-      ;; (prn "shapes-changes-commited$update"
-      ;;      (get-in state [:workspace-page :id])
-      ;;      page-id)
-      (-> state
-          (assoc-in [:workspace-page :revn] revn)
-          (assoc-in [:pages page-id :revn] revn)
-          (update-in [:pages-data page-id] cp/process-changes changes)
-          (update :workspace-data cp/process-changes changes)))
-
-    ptk/EffectEvent
-    (effect [_ state stream]
-      #_(when *assert*
-        (check-page-integrity (:workspace-data state))))))
+      (let [sid (:session-id state)
+            state (-> state
+                      (assoc-in [:workspace-page :revn] revn)
+                      (assoc-in [:pages page-id :revn] revn))]
+        (if (not (every? #(= sid (:session-id %)) changes))
+          (-> state
+              (update :workspace-data cp/process-changes changes)
+              (update-in [:pages-data page-id] cp/process-changes changes))
+          state)))))
 
 ;; --- Start shape "edition mode"
 
