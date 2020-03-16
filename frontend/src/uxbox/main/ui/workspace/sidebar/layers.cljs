@@ -118,13 +118,13 @@
               (st/emit! dw/deselect-all
                         (dw/select-shape id)))))
 
-        on-drop
-        (fn [item monitor]
-          (st/emit! (dw/commit-shape-order-change (:obj-id item))))
-
         on-hover
         (fn [item monitor]
           (st/emit! (dw/shape-order-change (:obj-id item) index)))
+
+        on-drop
+        (fn [item monitor]
+          (st/emit! (dw/commit-shape-order-change (:obj-id item))))
 
         [dprops dnd-ref] (use-sortable
                           {:type (str "layer-item" (:frame-id item))

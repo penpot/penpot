@@ -63,19 +63,15 @@
 ;; --- Header Component
 
 (mf/defc header
-  [{:keys [page] :as props}]
-  (let [toggle #(st/emit! (dw/toggle-flag %))
-        toggle-layout #(st/emit! (dw/toggle-layout-flag %))
-        on-undo (constantly nil)
-        on-redo (constantly nil)
+  [{:keys [page file layout] :as props}]
+  (let [toggle-layout #(st/emit! (dw/toggle-layout-flag %))
+        on-undo #(st/emit! (udu/undo))
+        on-redo #(st/emit! (udu/redo))
         on-image #(modal/show! import-image-modal {})
         ;;on-download #(udl/open! :download)
-        layout (mf/deref refs/workspace-layout)
-        flags (mf/deref refs/selected-flags)
-        file (mf/deref refs/workspace-file)
         selected-drawtool (mf/deref refs/selected-drawing-tool)
         select-drawtool #(st/emit! :interrupt
-                                   (dw/deactivate-ruler)
+                                   #_(dw/deactivate-ruler)
                                    (dw/select-for-drawing %))]
 
     [:header#workspace-bar.workspace-bar
@@ -173,13 +169,13 @@
         i/ruler]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "workspace.header.grid")
-         :class (when (contains? flags :grid) "selected")
-         :on-click (partial toggle :grid)}
+         :class (when (contains? layout :grid) "selected")
+         :on-click (partial toggle-layout :grid)}
         i/grid]
        [:li.tooltip.tooltip-bottom
         {:alt (tr "workspace.header.grid-snap")
-         :class (when (contains? flags :grid-snap) "selected")
-         :on-click (partial toggle :grid-snap)}
+         :class (when (contains? layout :grid-snap) "selected")
+         :on-click (partial toggle-layout :grid-snap)}
         i/grid-snap]]]
      ;; [:li.tooltip.tooltip-bottom
      ;;  {:alt (tr "header.align")}

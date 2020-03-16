@@ -47,7 +47,9 @@
       (l/derive st/state)))
 
 (def workspace-data
-  (-> (l/key :workspace-data)
+  (-> (l/lens (fn [state]
+                (let [page-id (get-in state [:workspace-page :id])]
+                  (get-in state [:workspace-data page-id]))))
       (l/derive st/state)))
 
 (def selected-shapes
@@ -68,14 +70,6 @@
       (l/derive workspace-local)))
 
 ;; DEPRECATED
-(def flags
-  (-> (l/key :flags)
-      (l/derive workspace-local)))
-
-(def selected-flags
-  (-> (l/key :flags)
-      (l/derive workspace-local)))
-
 (def selected-zoom
   (-> (l/key :zoom)
       (l/derive workspace-local)))

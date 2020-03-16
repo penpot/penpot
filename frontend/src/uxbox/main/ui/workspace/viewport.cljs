@@ -9,7 +9,9 @@
   (:require
    [beicon.core :as rx]
    [goog.events :as events]
+   [goog.object :as gobj]
    [potok.core :as ptk]
+   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
@@ -141,12 +143,28 @@
 ;; --- Viewport
 
 (declare remote-user-cursors)
+(declare frames)
 
-(mf/defc frame-and-shapes
-  {:wrap [mf/wrap-memo]}
+(defn- build-workspace-data-iref
+  [page-id]
+  (-> (l/in [:workspace-data page-id])
+      (l/derive st/state)))
+
+(mf/defrc frames-wrapper
+  ;; {:wrap [mf/wrap-memo]}
   [props]
-  (let [data (mf/deref refs/workspace-data)
-        objects (:objects data)
+  (let [page     (gobj/get props "page")
+        page-id  (:id page)
+        data-ref (mf/use-memo {:fn #(-> (l/in [:workspace-data page-id])
+                                        (l/derive st/state))
+                               :deps (mf/deps page-id)})
+        data (mf/deref data-ref)]
+    [:& frames {:data data}]))
+
+(mf/defc frames
+  {:wrap [mf/wrap-memo]}
+  [{:keys [data] :as props}]
+  (let [objects (:objects data)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))]
@@ -298,7 +316,7 @@
        ;;  {:id "foobar"
        ;;   :on-render (perf/react-on-profile)}
        ;;  [:& frame-and-shapes]]
-       [:& frame-and-shapes]
+       [:& frames-wrapper {:page page}]
 
        (when (seq selected)
          [:& selection-handlers {:selected selected
