@@ -34,6 +34,7 @@
    :smtp-enabled false
    :allow-demo-users true
    :registration-enabled true
+   :registration-domain-whitelist ""
    :debug-humanize-transit true
    })
 
@@ -58,6 +59,7 @@
 (s/def ::smtp-enabled ::us/boolean)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::registration-enabled ::us/boolean)
+(s/def ::registration-domain-whitelist ::us/string)
 (s/def ::debug-humanize-transit ::us/boolean)
 
 (s/def ::config
