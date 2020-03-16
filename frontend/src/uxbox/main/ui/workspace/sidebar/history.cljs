@@ -75,7 +75,8 @@
   [props]
   (let [history (mf/deref refs/history)
         section (mf/use-state :main)
-        close #(st/emit! (dw/toggle-flag :history))
+        ;; close #(st/emit! (dw/toggle-flag :history))
+        close (constantly nil)
         main? (= @section :main)
         pinned? (= @section :pinned)
         show-main #(st/emit! (udh/select-section :main))

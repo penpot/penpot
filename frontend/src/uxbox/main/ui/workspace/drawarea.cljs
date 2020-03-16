@@ -53,7 +53,7 @@
     :fill-opacity 0
     :segments []}
    {:type :frame
-    :name "Canvas"}
+    :name "Artboard"}
    {:type :curve
     :name "Path"
     :stroke-style :solid

@@ -112,16 +112,19 @@
 
 (s/def ::attr keyword?)
 (s/def ::val  any?)
-(s/def ::parent-id uuid?)
 (s/def ::frame-id uuid?)
+(s/def ::loc #{:top :bottom :up :down})
 
 (defmulti operation-spec-impl :type)
 
 (defmethod operation-spec-impl :set [_]
   (s/keys :req-un [::attr ::val]))
 
-(defmethod operation-spec-impl :order [_]
+(defmethod operation-spec-impl :abs-order [_]
   (s/keys :req-un [::id ::index]))
+
+(defmethod operation-spec-impl :rel-order [_]
+  (s/keys :req-un [::id ::loc]))
 
 (s/def ::operation (s/multi-spec operation-spec-impl :type))
 (s/def ::operations (s/coll-of ::operation))
@@ -226,13 +229,31 @@
       (dissoc shape attr)
       (assoc shape attr val))))
 
-(defmethod process-operation :order
+(defmethod process-operation :abs-order
   [obj {:keys [id index]}]
   (assert (vector? (:shapes obj)) ":shapes should be a vector")
   (update obj :shapes (fn [items]
                         (let [[b a] (->> (remove #(= % id) items)
                                          (split-at index))]
                           (vec (concat b [id] a))))))
+
+
+(defmethod process-operation :rel-order
+  [obj {:keys [id loc] :as change}]
+  (assert (vector? (:shapes obj)) ":shapes should be a vector")
+  (let [shapes (:shapes obj)
+        cindex (d/index-of shapes id)
+        nindex (case loc
+                 :top 0
+                 :down (min (- (count shapes) 1) (inc cindex))
+                 :up (max 0 (- cindex 1))
+                 :bottom (- (count shapes) 1))]
+    (update obj :shapes
+            (fn [shapes]
+              (let [[fst snd] (->> (remove #(= % id) shapes)
+                                   (split-at nindex))]
+                (d/concat [] fst [id] snd))))))
+
 
 (defmethod process-operation :default
   [shape op]

@@ -58,9 +58,8 @@
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
-  [{:keys [page file flags] :as params}]
+  [{:keys [page file layout] :as params}]
   (let [frame (mf/use-ref nil)
-        layout (mf/deref refs/workspace-layout)
         left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep layout [:icons :drawtools
@@ -87,13 +86,14 @@
           [:& vertical-rule]])
 
        [:section.workspace-viewport {:id "workspace-viewport" :ref frame}
-        [:& viewport {:page page}]]]
+        [:& viewport {:page page :file file}]]]
 
       ;; Aside
       (when left-sidebar?
         [:& left-sidebar {:file file :page page :layout layout}])
       (when right-sidebar?
         [:& right-sidebar {:page page :layout layout}])]]))
+
 
 (mf/defc workspace
   [{:keys [file-id page-id] :as props}]
@@ -110,17 +110,24 @@
           #(st/emit! (dw/finalize-ws file-id)))})
 
   (mf/use-effect
+   {:fn #(st/emit! dw/initialize-layout)})
+
+  (mf/use-effect
    {:deps (mf/deps file-id page-id)
     :fn (fn []
           (let [sub (shortcuts/init)]
             #(rx/cancel! sub)))})
 
   (let [file (mf/deref refs/workspace-file)
-        page (mf/deref refs/workspace-page)]
+        page (mf/deref refs/workspace-page)
+        layout (mf/deref refs/workspace-layout)]
     [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
-     [:& header {:page page}]
+     [:& header {:page page
+                 :file file
+                 :layout layout}]
 
      (when page
        [:& workspace-content {:file file
-                              :page page}])]))
+                              :page page
+                              :layout layout}])]))

@@ -48,7 +48,7 @@ This is a potential list of persistent ops:
 
 {:type :mov-obj
  :id <uuid>
- :dest <uuid>}
+ :frame-id <uuid>}
 
 {:type :del-obj
  :id   <uuid>}
@@ -61,9 +61,13 @@ This is a potential list of operations:
  :attr <any>
  :val  <any>}
 
-{:type :mov
+{:type :abs-order
  :id <uuid>
  :index <int>}
+ 
+{:type :rel-order
+ :id <uuid>
+ :loc <one-of:up,down,top,bottom>}
 ```
 
 

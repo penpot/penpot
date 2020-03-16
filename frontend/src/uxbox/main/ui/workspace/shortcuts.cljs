@@ -39,10 +39,10 @@
    :ctrl+t #(st/emit! (dw/select-for-drawing :text))
    :esc #(st/emit! :interrupt dw/deselect-all)
    :delete #(st/emit! dw/delete-selected)
-   :ctrl+up #(st/emit! (dw/order-selected-shapes :up))
-   :ctrl+down #(st/emit! (dw/order-selected-shapes :down))
-   :ctrl+shift+up #(st/emit! (dw/order-selected-shapes :top))
-   :ctrl+shift+down #(st/emit! (dw/order-selected-shapes :bottom))
+   :ctrl+up #(st/emit! (dw/vertical-order-selected :up))
+   :ctrl+down #(st/emit! (dw/vertical-order-selected :down))
+   :ctrl+shift+up #(st/emit! (dw/vertical-order-selected :top))
+   :ctrl+shift+down #(st/emit! (dw/vertical-order-selected :bottom))
    :shift+up #(st/emit! (dw/move-selected :up true))
    :shift+down #(st/emit! (dw/move-selected :down true))
    :shift+right #(st/emit! (dw/move-selected :right true))
@@ -66,7 +66,7 @@
 
     ;; Initialize shortcut listener.
     (let [event KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED
-             callback #(sink (keyword (.-identifier %)))
+          callback #(sink (keyword (.-identifier %)))
           key (events/listen handler event callback)]
       (fn []
         (events/unlistenByKey key)
