@@ -47,6 +47,8 @@
 .library-sidebar {
     background-color: $color-white;
     padding: $size-2;
+    height: 100%;
+    overflow: hidden;
 }
 
 .library-sidebar-add-item {
@@ -66,11 +68,17 @@
 
 .library-sidebar-list {
     margin-top: $size-4;
+    overflow: scroll;
+    height: 100%;
+    padding-bottom: 4rem;
 }
 
 .library-sidebar-list-element {
     padding: $size-4 $size-2;
     cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     & a {
         color: $color-black;
@@ -138,17 +146,19 @@
 }
 
 .library-page-cards-container {
-    padding: $size-2;
+    align-content: flex-start;
     display: flex;
     flex-wrap: wrap;
-    overflow: scroll;
     height: 100%;
-    align-content: flex-start;
+    overflow: scroll;
+    padding: $size-2;
+    padding-bottom: 4rem;
 }
 
 .library-card {
     margin: $size-2;
     background: $color-white;
+    border: 2px solid transparent;
 
     &.library-icon, &.library-color {
         width: 200px;
@@ -167,7 +177,11 @@
         visibility: hidden;
         opacity: 0;
     }
-    
+
+    &:hover {
+        border: 2px solid $color-primary;
+    }
+
     &:hover .library-card-footer-menu {
         visibility: visible;
         opacity: 1;
@@ -204,7 +218,7 @@
     text-align: center;
     display: flex;
     
-    & svg, & img {
+    & object, & svg, & img {
         margin: auto;
         width: auto;
         height: auto;

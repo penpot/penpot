@@ -23,6 +23,8 @@
   {:http-server-port 6060
    :http-server-cors "http://localhost:3449"
    :database-uri "postgresql://127.0.0.1/uxbox"
+   :database-username "uxbox"
+   :database-password "uxbox"
    :media-directory "resources/public/media"
    :assets-directory "resources/public/static"
    :media-uri "http://localhost:6060/media/"

@@ -398,3 +398,46 @@
 ;;   {:pre [(or (uuid? id) (nil? id))]}
 ;;   (MoveSelected. id))
 
+
+;;;;;;; NEW
+
+(declare fetch-image-libraries-result)
+
+(defn fetch-image-libraries
+  [team-id]
+  (s/assert ::us/uuid team-id)
+  (ptk/reify ::fetch-image-libraries
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query! :image-libraries {:team-id team-id})
+           (rx/map fetch-image-libraries-result)))))
+
+(defn fetch-image-libraries-result [result]
+  (ptk/reify ::fetch-image-libraries-result
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:library :image-libraries] result)))))
+
+(declare fetch-image-library-result)
+
+(defn fetch-image-library
+  [library-id]
+  (ptk/reify ::fetch-image-library
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:library :selected-items] nil)))
+    
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query! :image {:library-id library-id})
+           (rx/map fetch-image-library-result)))))
+
+(defn fetch-image-library-result
+  [data]
+  (ptk/reify ::fetch-image-library
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:library :selected-items] data)))))

@@ -66,9 +66,20 @@
    values ($1, $2, $3, $4, $5, $6)
    returning id;")
 
+(def sql:create-icon-library
+  "insert into icon_library (team_id, name) 
+   values ($1, $2)
+   returning id;")
+
+(def sql:create-icon
+  "insert into icon_library (library_id, name, content, metadata)
+   values ($1, $2, $3, $4)
+   returning id;")
+
+
 (def preset-small
-  {:num-teams 50
-   :num-profiles 50
+  {:num-teams 5
+   :num-profiles 5
    :num-profiles-per-team 5
    :num-projects-per-team 5
    :num-files-per-project 5

@@ -6,9 +6,11 @@
 
 (ns uxbox.main.data.colors
   (:require
+   [cljs.spec.alpha :as s]
    [beicon.core :as rx]
    [clojure.set :as set]
    [potok.core :as ptk]
+   [uxbox.common.spec :as us]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.util.color :as color]
@@ -241,3 +243,47 @@
 (defn delete-colors
   [coll-id colors]
   (DeleteColors. coll-id colors))
+
+
+;;;; NEW
+
+(declare fetch-color-libraries-result)
+
+(defn fetch-color-libraries
+  [team-id]
+  (s/assert ::us/uuid team-id)
+  (ptk/reify ::fetch-color-libraries
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query! :color-libraries {:team-id team-id})
+           (rx/map fetch-color-libraries-result)))))
+
+(defn fetch-color-libraries-result [result]
+  (ptk/reify ::fetch-color-libraries-result
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:library :color-libraries] result)))))
+
+(declare fetch-color-library-result)
+
+(defn fetch-color-library
+  [library-id]
+  (ptk/reify ::fetch-color-library
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:library :selected-items] nil)))
+    
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query! :colors {:library-id library-id})
+           (rx/map fetch-color-library-result)))))
+
+(defn fetch-color-library-result
+  [data]
+  (ptk/reify ::fetch-color-library
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:library :selected-items] data)))))

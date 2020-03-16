@@ -56,7 +56,20 @@
      ["/" :dashboard-team]
      ["/search" :dashboard-search]
      ["/project/:project-id" :dashboard-project]
-     ["/library" :dashboard-library]]]
+     ["/library"
+      ["/icons"
+       ["" { :name :dashboard-library-icons-index :section :icons}]
+       ["/:library-id" { :name :dashboard-library-icons :section :icons}]]
+
+      ["/images"
+       ["" { :name :dashboard-library-images-index :section :images}]
+       ["/:library-id" { :name :dashboard-library-images :section :images}]]
+
+      ["/palettes"
+       ["" { :name :dashboard-library-palettes-index :section :palettes}]
+       ["/:library-id" { :name :dashboard-library-palettes :section :palettes }]]
+      
+      ]]]
 
    ["/workspace/:file-id" :workspace]])
 
@@ -91,7 +104,12 @@
       (:dashboard-search
        :dashboard-team
        :dashboard-project
-       :dashboard-library)
+       :dashboard-library-icons
+       :dashboard-library-icons-index
+       :dashboard-library-images
+       :dashboard-library-images-index
+       :dashboard-library-palettes
+       :dashboard-library-palettes-index)
       (mf/element dashboard #js {:route route})
 
       :workspace

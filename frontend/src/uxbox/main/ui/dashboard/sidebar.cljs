@@ -95,7 +95,7 @@
         drafts? (and (= selected-section :dashboard-project)
                      (= selected-team-id (:default-team-id profile))
                      (= selected-project-id (:default-project-id profile)))
-        library? (and (= selected-section :dashboard-library)
+        library? (and (str/starts-with? (name selected-section) "dashboard-library")
                       (= selected-team-id (:default-team-id profile)))
         locale (i18n/use-locale)]
     [:ul.library-elements
@@ -114,7 +114,7 @@
 
 
      [:li
-      {:on-click #(st/emit! (rt/nav :dashboard-library {:team-id team-id}))
+      {:on-click #(st/emit! (rt/nav :dashboard-library-icons-index {:team-id team-id}))
        :class-name (when library? "current")}
       i/icon-set
       [:span.element-title (t locale "dashboard.sidebar.libraries")]]

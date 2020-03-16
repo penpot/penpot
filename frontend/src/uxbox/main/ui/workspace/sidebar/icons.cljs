@@ -15,7 +15,7 @@
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.dashboard.icons :as icons]
+   #_[uxbox.main.ui.dashboard.icons :as icons]
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
@@ -40,7 +40,7 @@
 
 (mf/defc icons-list
   [{:keys [collection-id] :as props}]
-  (let [icons (mf/deref icons/icons-iref)
+  (let [icons [] #_(mf/deref icons/icons-iref) ;; TODO: Fix this
 
         on-select
         (fn [event data]
@@ -67,7 +67,7 @@
 
         local (mf/deref refs/workspace-local)
 
-        collections (vals (mf/deref icons/collections-iref))
+        collections (vals [] #_(mf/deref icons/collections-iref)) ;; TODO: FIX THIS
         collection (first collections)
 
         on-close
