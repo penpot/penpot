@@ -335,7 +335,6 @@
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
-      ;; (prn "initialize-page" page-id)
       (let [page (get-in state [:pages page-id])
             data (get-in state [:pages-data page-id])
             local (get-in state [:workspace-cache page-id] workspace-default)]
@@ -356,7 +355,6 @@
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
-      ;; (prn "finalize-page" page-id)
       (let [local (:workspace-local state)]
         (assoc-in state [:workspace-cache page-id] local)))))
 
@@ -409,8 +407,6 @@
 
             changes (generate-changes prev curr)
             undo-changes (generate-changes curr prev)]
-        ;; (prn "diff-and-commit-changes1" changes)
-        ;; (prn "diff-and-commit-changes2" undo-changes)
         (when-not (empty? changes)
           (rx/of (commit-changes changes undo-changes)))))))
 
