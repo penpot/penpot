@@ -75,7 +75,7 @@
                (fetch-projects (:team-id local)))))))
 
 
-(defn initialize-team
+(defn initialize-recent
   [team-id]
   (us/verify ::us/uuid team-id)
   (ptk/reify ::initialize-team
@@ -132,7 +132,7 @@
   (ptk/reify ::projects-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (let [assoc-project #(update-in %1 [:projects (:id %2)] merge %2)]
+      (let [assoc-project #(assoc-in %1 [:projects (:id %2)] %2)]
         (reduce assoc-project state projects)))))
 
 ;; --- Fetch Files
@@ -252,9 +252,13 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [params {:id id :name name}]
+      (let [local (:dashboard-local state)
+            params {:id id :name name}]
+        ;; NOTE: this is a temporal (quick & dirty) solution for
+        ;; refreshing the results; we need to think in a better way to
+        ;; do it instead of a simple and complete data refresh.
         (->> (rp/mutation :rename-file params)
-             (rx/ignore))))))
+             (rx/map (fn [_] (initialize-recent (:team-id local)))))))))
 
 
 ;; --- Create File
