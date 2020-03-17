@@ -64,7 +64,6 @@
     :deps (mf/deps team-id)})
   (let [projects (->> (mf/deref projects-ref)
                       (vals)
-                      (filter #(pos? (:file-count %)))
                       (sort-by :modified-at)
                       (reverse))
 
