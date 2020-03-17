@@ -49,11 +49,9 @@
      [:div.recent-files-row-title
       [:h2.recent-files-row-title-name (:name project)]
       [:span.recent-files-row-title-info (str (:file-count project) " files")]
-      (when files
-        (let [time (-> (first files)
-                       (:modified-at)
-                       (dt/timeago {:locale locale}))]
-          [:span.recent-files-row-title-info (str ", " time)]))]
+      (let [time (-> (:modified-at project)
+                     (dt/timeago {:locale locale}))]
+        [:span.recent-files-row-title-info (str ", " time)])]
      [:& grid {:id (:id project)
                :files (or files [])
                :hide-new? true}]]))

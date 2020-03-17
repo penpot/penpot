@@ -14,10 +14,6 @@ CREATE TABLE project (
 CREATE INDEX project__team_id__idx
     ON project(team_id);
 
-CREATE TRIGGER project__modified_at__tgr
-BEFORE UPDATE ON project
-   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
-
 
 
 CREATE TABLE project_profile_rel (
@@ -56,11 +52,6 @@ CREATE TABLE file (
   name text NOT NULL
 );
 
-CREATE TRIGGER file__modified_at__tgr
-BEFORE UPDATE ON file
-   FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
-
-
 CREATE TABLE file_profile_rel (
   file_id uuid NOT NULL REFERENCES file(id) ON DELETE CASCADE,
   profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
@@ -85,9 +76,8 @@ CREATE INDEX file_profile_rel__file_id__idx
     ON file_profile_rel(file_id);
 
 CREATE TRIGGER file_profile_rel__modified_at__tgr
-BEFORE UPDATE ON file
+BEFORE UPDATE ON file_profile_rel
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
-
 
 
 CREATE TABLE file_image (
