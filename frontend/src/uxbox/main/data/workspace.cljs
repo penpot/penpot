@@ -20,7 +20,7 @@
    [uxbox.config :as cfg]
    [uxbox.main.constants :as c]
    [uxbox.main.data.icons :as udi]
-   [uxbox.main.data.projects :as dp]
+   [uxbox.main.data.dashboard :as dd]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.repo :as rp]
@@ -444,7 +444,7 @@
 (s/def ::metadata (s/nilable ::cp/metadata))
 (s/def ::data ::cp/data)
 
-(s/def ::file ::dp/file)
+(s/def ::file ::dd/file)
 (s/def ::page
   (s/keys :req-un [::id
                    ::name

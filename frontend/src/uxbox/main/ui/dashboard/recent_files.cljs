@@ -15,7 +15,6 @@
    [uxbox.builtins.icons :as i]
    [uxbox.common.exceptions :as ex]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.projects :as udp]
    [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]
    [uxbox.main.exports :as exports]

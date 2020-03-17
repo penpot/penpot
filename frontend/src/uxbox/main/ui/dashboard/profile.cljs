@@ -15,7 +15,6 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :as da]
-   [uxbox.main.data.projects :as dp]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.navigation :as nav]

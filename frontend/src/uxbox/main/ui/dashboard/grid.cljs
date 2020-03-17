@@ -4,7 +4,6 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.projects :as udp]
    [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]
    [uxbox.main.exports :as exports]

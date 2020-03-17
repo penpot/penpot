@@ -15,7 +15,6 @@
    [uxbox.builtins.icons :as i :include-macros true]
    [uxbox.config :as cfg]
    [uxbox.main.data.history :as udh]
-   [uxbox.main.data.undo :as udu]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -67,8 +66,8 @@
   [{:keys [page] :as props}]
   (let [toggle #(st/emit! (dw/toggle-flag %))
         toggle-layout #(st/emit! (dw/toggle-layout-flag %))
-        on-undo #(st/emit! (udu/undo))
-        on-redo #(st/emit! (udu/redo))
+        on-undo (constantly nil)
+        on-redo (constantly nil)
         on-image #(modal/show! import-image-modal {})
         ;;on-download #(udl/open! :download)
         layout (mf/deref refs/workspace-layout)

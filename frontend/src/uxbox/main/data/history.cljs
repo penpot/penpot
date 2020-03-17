@@ -10,7 +10,7 @@
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
    [uxbox.common.spec :as us]
-   [uxbox.main.data.projects :as dp]
+   [uxbox.common.pages :as cp]
    [uxbox.main.repo :as rp]
    [uxbox.util.data :refer [replace-by-id index-by]]))
 
@@ -26,7 +26,7 @@
 (s/def ::user uuid?)
 
 (s/def ::shapes
-  (s/every ::dp/minimal-shape :kind vector?))
+  (s/every ::cp/minimal-shape :kind vector?))
 
 (s/def ::data
   (s/keys :req-un [::shapes]))

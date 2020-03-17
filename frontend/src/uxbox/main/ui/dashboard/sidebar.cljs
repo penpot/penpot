@@ -15,7 +15,6 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.projects :as udp]
    [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
@@ -50,7 +49,7 @@
 
                     (kbd/enter? %)
                     (let [name (-> % dom/get-target dom/get-value)]
-                      (st/emit! (udp/rename-project id name))
+                      (st/emit! (dsh/rename-project id name))
                       (swap! local assoc :edit false)))]
 
     [:li {:on-click on-click
