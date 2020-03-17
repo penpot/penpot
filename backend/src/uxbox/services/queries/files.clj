@@ -49,7 +49,7 @@
    window pages_w as (partition by f.id order by pg.created_at
                       range between unbounded preceding
                                 and unbounded following)
-    order by f.created_at")
+    order by f.modified_at desc")
 
 (s/def ::project-id ::us/uuid)
 (s/def ::files

@@ -43,7 +43,7 @@
    select *
      from projects
     where team_id = $2
-    order by created_at asc")
+    order by modified_at desc")
 
 (s/def ::team-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
