@@ -12,19 +12,19 @@
   (let [children (gobj/get props "children")
         on-close (gobj/get props "on-close")
 
-        on-document-clicked
+        on-click
         (fn [event]
           (on-close))
 
-        on-document-keyup
+        on-keyup
         (fn [event]
           (when (= (.-keyCode event) 27) ; ESC
             (on-close)))
 
         on-mount
         (fn []
-          (let [lkey1 (events/listen js/document EventType.CLICK on-document-clicked)
-                lkey2 (events/listen js/document EventType.KEYUP on-document-keyup)]
+          (let [lkey1 (events/listen js/document EventType.CLICK on-click)
+                lkey2 (events/listen js/document EventType.KEYUP on-keyup)]
             #(do
                (events/unlistenByKey lkey1)
                (events/unlistenByKey lkey2))))]
@@ -34,6 +34,9 @@
 
 (mf/defrc dropdown
   [props]
+  (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
+  (assert (boolean? (gobj/get props "show")) "missing `show` prop")
+
   (when (gobj/get props "show")
     [:div.dropdown
      (mf/element dropdown-container props)]))
