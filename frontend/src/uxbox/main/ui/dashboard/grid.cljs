@@ -13,28 +13,8 @@
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
+   [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]))
-
-;; --- Helpers
-
-(defn sort-by
-  [ordering files]
-  (case ordering
-    :name (cljs.core/sort-by :name files)
-    :created (reverse (cljs.core/sort-by :created-at files))
-    :modified (reverse (cljs.core/sort-by :modified-at files))
-    files))
-
-(defn contains-term?
-  [phrase term]
-  (let [term (name term)]
-    (str/includes? (str/lower phrase) (str/trim (str/lower term)))))
-
-(defn filter-by
-  [term files]
-  (if (str/blank? term)
-    files
-    (filter #(contains-term? (:name %) term) files)))
 
 ;; --- Grid Item Thumbnail
 
@@ -57,14 +37,16 @@
   {:wrap [mf/wrap-memo]}
   [{:keys [file] :as props}]
   (let [local (mf/use-state {})
-        on-navigate #(st/emit! (udp/go-to (:id file)))
-        delete-fn #(st/emit! nil (udp/delete-file (:id file)))
+        on-navigate #(st/emit! (rt/nav :workspace
+                                            {:file-id (:id file)}
+                                            {:page-id (first (:pages file))}))
+        delete-fn #(st/emit! nil (dsh/delete-file (:id file)))
         on-delete #(do
                      (dom/stop-propagation %)
                      (modal/show! confirm-dialog {:on-accept delete-fn}))
 
         on-blur #(let [name (-> % dom/get-target dom/get-value)]
-                   (st/emit! (udp/rename-file (:id file) name))
+                   (st/emit! (dsh/rename-file (:id file) name))
                    (swap! local assoc :edition false))
 
         on-key-down #(when (kbd/enter? %) (on-blur %))
@@ -106,9 +88,6 @@
   (let [locale (i18n/use-locale)
         order (:order opts :modified)
         filter (:filter opts "")
-        files (->> files
-                   (filter-by filter)
-                   (sort-by order))
         on-click #(do
                     (dom/prevent-default %)
                     (st/emit! (dsh/create-file id)))]
