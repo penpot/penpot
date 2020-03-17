@@ -7,7 +7,7 @@
   (:import goog.events.EventType
            goog.events.KeyCodes))
 
-(mf/defrc dropdown'
+(mf/defrc dropdown-container
   [props]
   (let [children (gobj/get props "children")
         on-close (gobj/get props "on-close")
@@ -30,10 +30,10 @@
                (events/unlistenByKey lkey2))))]
 
     (mf/use-effect {:fn on-mount})
-    [:div.dropdown
-     children]))
+    children))
 
 (mf/defrc dropdown
   [props]
   (when (gobj/get props "show")
-    (mf/element dropdown' props)))
+    [:div.dropdown
+     (mf/element dropdown-container props)]))
