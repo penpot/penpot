@@ -15,7 +15,7 @@
   position: relative;
   z-index: 10;
 
-  
+
   .btn-dashboard {
     margin-left: auto;
   }
@@ -84,7 +84,7 @@
   padding: 0 $x-small 0 $small;
   position: relative;
   width: 180px;
-  
+
   span {
     @include text-ellipsis;
     color: $color-black;
@@ -100,45 +100,47 @@
   }
 
   .dropdown {
-    background-color: $color-gray-60;
-    border-radius: $br-small;
-    min-width: 150px;
-    padding: 0 $small;
     position: absolute;
     top: 0;
-    right: 0;
-    width: 100%;
+    left: 0;
     z-index: 12;
-    @include animation(0,.2s,fadeInDown);
+    width: 180px;
 
-    li {
-      font-size: $fs13;
-      padding: $small 0;
+    ul.profile-menu {
+      background-color: $color-gray-60;
+      border-radius: $br-small;
+      padding: 0 $small;
 
-      svg {
-        fill: $color-gray-20;
-        height: 12px;
-        width: 12px;
-      }
+      @include animation(0,.2s,fadeInDown);
 
-      span {
-        color: $color-white;
-      }
-
-      &:hover {
-
-        span {
-          color: $color-primary;
-        }
+      li {
+        font-size: $fs13;
+        padding: $small 0;
 
         svg {
-          fill: $color-primary;
+          fill: $color-gray-20;
+          height: 12px;
+          width: 12px;
+        }
+
+        span {
+          color: $color-white;
+        }
+
+        &:hover {
+
+          span {
+            color: $color-primary;
+          }
+
+          svg {
+            fill: $color-primary;
+          }
+
         }
 
       }
-
     }
-
   }
 
 }

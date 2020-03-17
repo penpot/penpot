@@ -1,0 +1,79 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+.left-toolbar {
+  background-color: $color-gray-50;
+  bottom: 0;
+  height: 100%;
+  position: fixed;
+  left: 0;
+  width: 40px;
+  z-index: 11;
+}
+
+.left-toolbar-inside {
+  align-items: center;
+  border-right: 1px solid $color-gray-60;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  padding-top: 40px;
+  height: 100%;
+}
+
+.left-toolbar-options {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+
+  li {
+    align-items: center;
+    background-color: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    height: 40px;
+    justify-content: center;
+    margin: $x-small 0;
+    position: relative;
+    width: 40px;
+
+    svg {
+      fill: $color-gray-20;
+      height: 18px;
+      width: 18px;
+    }
+
+    &:hover {
+      background-color: $color-primary;
+
+      svg {
+        fill: $color-gray-50;
+      }
+
+    }
+
+    &.selected {
+      background-color: $color-gray-60;
+
+      svg {
+        fill: $color-primary;
+      }
+
+    }
+
+  }
+
+  &.panels {
+    margin-top: auto;
+  }
+
+}
+
+    

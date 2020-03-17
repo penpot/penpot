@@ -10,6 +10,7 @@
    [beicon.core :as rx]
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.workspace :as dw]
@@ -29,6 +30,7 @@
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
+   [uxbox.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
@@ -85,8 +87,12 @@
           [:& horizontal-rule]
           [:& vertical-rule]])
 
-       [:section.workspace-viewport {:id "workspace-viewport" :ref frame}
+       [:section.workspace-viewport {:id "workspace-viewport"
+                                     :ref frame}
         [:& viewport {:page page :file file}]]]
+
+      [:& left-toolbar {:page page
+                        :layout layout}]
 
       ;; Aside
       (when left-sidebar?

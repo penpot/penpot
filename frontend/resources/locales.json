@@ -1020,8 +1020,8 @@
   "workspace.sidebar.sitemap" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:134" ],
     "translations" : {
-      "en" : "Sitemap",
-      "fr" : "Plan du site"
+      "en" : "Pages",
+      "fr" : "Pages"
     }
   },
   "workspace.viewport.click-to-close-path" : {
