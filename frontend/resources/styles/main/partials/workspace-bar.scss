@@ -15,6 +15,47 @@
   position: relative;
   z-index: 12;
 
+  .dropdown {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    width: 230px;
+    z-index: 12;
+    @include animation(0,.2s,fadeInDown);
+
+    .workspace-menu {
+      background-color: $color-gray-60;
+      border-radius: $br-small;
+      padding: 0 $small;
+
+      li {
+        font-size: $fs13;
+        padding: $small 0;
+
+        svg {
+          fill: $color-gray-20;
+          height: 12px;
+          width: 12px;
+        }
+
+        span {
+          color: $color-white;
+        }
+
+        &:hover {
+          span {
+            color: $color-primary;
+          }
+          svg {
+            fill: $color-primary;
+          }
+
+        }
+      }
+    }
+  }
+
+
   .main-icon {
     align-items: center;
     background-color: $color-gray-60;
@@ -239,7 +280,7 @@
   cursor: pointer;
   display: flex;
   margin: 0;
-  
+
   li {
     margin-left: $small;
     position: relative;

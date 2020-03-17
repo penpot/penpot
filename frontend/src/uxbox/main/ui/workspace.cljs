@@ -10,7 +10,7 @@
    [beicon.core :as rx]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i :include-macros true]
+   [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.workspace :as dw]
@@ -30,6 +30,7 @@
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
+   [uxbox.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
@@ -86,49 +87,12 @@
           [:& horizontal-rule]
           [:& vertical-rule]])
 
-       [:section.workspace-viewport {:id "workspace-viewport" :ref frame}
+       [:section.workspace-viewport {:id "workspace-viewport"
+                                     :ref frame}
         [:& viewport {:page page :file file}]]]
 
-      ;; --- Left toolbar (NEW COMPONENT)
-
-      [:div.left-toolbar
-       [:div.left-toolbar-inside
-        [:ul.left-toolbar-options
-         [:li.tooltip.tooltip-right
-          {:alt "Artboard"}
-          i/artboard]
-         [:li.tooltip.tooltip-right
-          {:alt "Box"}
-          i/box]
-         [:li.tooltip.tooltip-right
-          {:alt "Circle"}
-          i/circle]
-         [:li.tooltip.tooltip-right
-          {:alt "Text"}
-          i/text]
-         [:li.tooltip.tooltip-right
-          {:alt "Insert image"}
-          i/image]
-         [:li.tooltip.tooltip-right
-          {:alt "Pencil tool"}
-          i/pencil]
-         [:li.tooltip.tooltip-right
-          {:alt "Curves tool"}
-          i/curve]]
-
-        [:ul.left-toolbar-options.panels
-         [:li.tooltip.tooltip-right
-          {:alt "Layers"}
-          i/layers]
-         [:li.tooltip.tooltip-right
-          {:alt "Libraries"}
-          i/icon-set]
-         [:li.tooltip.tooltip-right
-          {:alt "History"}
-          i/undo-history]
-         [:li.tooltip.tooltip-right
-          {:alt "Palette"}
-          i/palette]]]]
+      [:& left-toolbar {:page page
+                        :layout layout}]
 
       ;; Aside
       (when left-sidebar?

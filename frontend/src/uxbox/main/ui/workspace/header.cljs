@@ -20,7 +20,8 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.images :refer [import-image-modal]]
-   [uxbox.util.i18n :refer [tr]]
+   [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.util.i18n :as i18n :refer [tr t]]
    [uxbox.util.math :as mth]
    [uxbox.util.router :as rt]))
 
@@ -66,6 +67,9 @@
   (let [toggle-layout #(st/emit! (dw/toggle-layout-flag %))
         on-undo (constantly nil)
         on-redo (constantly nil)
+        locale (i18n/use-locale)
+
+        show-menu? (mf/use-state false)
 
         on-image #(modal/show! import-image-modal {})
         ;;on-download #(udl/open! :download)
@@ -74,12 +78,19 @@
                                    #_(dw/deactivate-ruler)
                                    (dw/select-for-drawing %))]
 
-    [:header#workspace-bar.workspace-bar
+    [:header.workspace-bar
      [:div.main-icon
       [:a {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))}
        i/logo-icon]]
 
-     [:div.menu-btn i/actions]
+     [:div.menu-btn {:on-click #(reset! show-menu? true)} i/actions]
+
+     [:& dropdown {:show @show-menu?
+                   :on-close #(reset! show-menu? false)}
+      [:ul.workspace-menu
+       [:li i/user [:span (t locale "dashboard.header.profile-menu.profile")]]
+       [:li i/lock [:span (t locale "dashboard.header.profile-menu.password")]]
+       [:li i/exit [:span (t locale "dashboard.header.profile-menu.logout")]]]]
 
      [:div.project-tree-btn
       {:alt (tr "header.sitemap")

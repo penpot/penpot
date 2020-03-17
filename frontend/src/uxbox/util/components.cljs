@@ -11,6 +11,7 @@
    [rumext.alpha :as mf]
    [uxbox.util.timers :refer [schedule-on-idle]]))
 
+
 (mf/defc chunked-list
   [{:keys [items children initial-size chunk-size]
     :or {initial-size 30 chunk-size 5}
@@ -72,5 +73,3 @@
                            (mf/element component #js {}))))))
 
     ctor)))
-
-
