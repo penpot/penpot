@@ -11,8 +11,7 @@
             [potok.core :as ptk]
             [uxbox.main.store :as st]
             [uxbox.main.data.lightbox :as dl]
-            [uxbox.main.data.workspace :as dw]
-            [uxbox.main.data.undo :as du])
+            [uxbox.main.data.workspace :as dw])
   (:import goog.events.EventType
            goog.events.KeyCodes
            goog.ui.KeyboardShortcutHandler))
