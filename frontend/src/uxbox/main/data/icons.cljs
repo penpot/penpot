@@ -76,6 +76,26 @@
       (-> state
           (assoc-in [:library :selected-items] data)))))
 
+(declare create-icon-library-result)
+
+(defn create-icon-library
+  [team-id name]
+  (ptk/reify ::create-icon-library
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/mutation! :create-icon-library {:team-id team-id
+                                               :name name})
+           (rx/map create-icon-library-result)))))
+
+(defn create-icon-library-result [result]
+  (ptk/reify ::create-icon-library-result
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:library :icon-libraries] #(into [result] %))))))
+
+
+
 ;; (declare fetch-icons)
 ;; 
 ;; (defn initialize
@@ -92,32 +112,32 @@
 ;; 
 ;; --- Fetch Collections
 
-(declare collections-fetched)
-
-(def fetch-collections
-  (ptk/reify ::fetch-collections
-    ptk/WatchEvent
-    (watch [_ state s]
-      (->> (rp/query! :icons-collections)
-           (rx/map collections-fetched)))))
-
-;; --- Collections Fetched
-
-(defn collections-fetched
-  [items]
-  (s/assert (s/every ::collection) items)
-  (ptk/reify ::collections-fetched
-    cljs.core/IDeref
-    (-deref [_] items)
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (reduce (fn [state {:keys [id user] :as item}]
-                (let [type (if (uuid/zero? (:user-id item)) :builtin :own)
-                      item (assoc item :type type)]
-                  (assoc-in state [:icons-collections id] item)))
-              state
-              items))))
+;; (declare collections-fetched)
+;; 
+;; (def fetch-collections
+;;   (ptk/reify ::fetch-collections
+;;     ptk/WatchEvent
+;;     (watch [_ state s]
+;;       (->> (rp/query! :icons-collections)
+;;            (rx/map collections-fetched)))))
+;; 
+;; ;; --- Collections Fetched
+;; 
+;; (defn collections-fetched
+;;   [items]
+;;   (s/assert (s/every ::collection) items)
+;;   (ptk/reify ::collections-fetched
+;;     cljs.core/IDeref
+;;     (-deref [_] items)
+;; 
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (reduce (fn [state {:keys [id user] :as item}]
+;;                 (let [type (if (uuid/zero? (:user-id item)) :builtin :own)
+;;                       item (assoc item :type type)]
+;;                   (assoc-in state [:icons-collections id] item)))
+;;               state
+;;               items))))
 
 
 ;; ;; --- Create Collection
@@ -175,77 +195,75 @@
 ;;            (rx/tap on-success)
 ;;            (rx/ignore)))))
 ;; 
-;; ;; --- Icon Created
-;; 
-;; (defrecord IconCreated [item]
-;;   ptk/UpdateEvent
-;;   (update [_ state]
-;;     (let [{:keys [id] :as item} (assoc item :type :icon)]
-;;       (update state :icons assoc id item))))
-;; 
-;; (defn icon-created
-;;   [item]
-;;   (IconCreated. item))
-;; 
-;; ;; --- Create Icon
-;; 
-;; (declare icon-created)
-;; 
-;; (defn- parse-svg
-;;   [data]
-;;   (s/assert ::us/string data)
-;;   (let [valid-tags #{"defs" "path" "circle" "rect" "metadata" "g"
-;;                      "radialGradient" "stop"}
-;;         div (dom/create-element "div")
-;;         gc (dom/create-element "div")
-;;         g (dom/create-element "http://www.w3.org/2000/svg" "g")
-;;         _ (dom/set-html! div data)
-;;         svg (dom/query div "svg")]
-;;     (loop [child (dom/get-first-child svg)]
-;;       (if child
-;;         (let [tagname (dom/get-tag-name child)]
-;;           (if  (contains? valid-tags tagname)
-;;             (dom/append-child! g child)
-;;             (dom/append-child! gc child))
-;;           (recur (dom/get-first-child svg)))
-;;         (let [width (.. svg -width -baseVal -value)
-;;               height (.. svg -height -baseVal -value)
-;;               view-box [(.. svg -viewBox -baseVal -x)
-;;                         (.. svg -viewBox -baseVal -y)
-;;                         (.. svg -viewBox -baseVal -width)
-;;                         (.. svg -viewBox -baseVal -height)]
-;;               props {:width width
-;;                      :mimetype "image/svg+xml"
-;;                      :height height
-;;                      :view-box view-box}]
-;;           [(dom/get-outer-html g) props])))))
-;; 
-;; 
-;; (defn create-icons
-;;   [id files]
-;;   (s/assert (s/nilable uuid?) id)
-;;   (ptk/reify ::create-icons
-;;     ptk/WatchEvent
-;;     (watch [_ state s]
-;;       (letfn [(parse [file]
-;;                 (->> (wapi/read-file-as-text file)
-;;                      (rx/map parse-svg)))
-;;               (allowed? [file]
-;;                 (= (.-type file) "image/svg+xml"))
-;;               (prepare [[content metadata]]
-;;                 {:collection-id id
-;;                  :content content
-;;                  :id (uuid/next)
-;;                  ;; TODO Keep the name of the original icon
-;;                  :name (str "Icon " (gensym "i"))
-;;                  :metadata metadata})]
-;;         (->> (rx/from files)
-;;              (rx/filter allowed?)
-;;              (rx/merge-map parse)
-;;              (rx/map prepare)
-;;              (rx/flat-map #(rp/mutation! :create-icon %))
-;;              (rx/map icon-created))))))
-;; 
+;; --- Icon Created
+
+;; --- Create Icon
+(defn- parse-svg
+  [data]
+  (s/assert ::us/string data)
+  (let [valid-tags #{"defs" "path" "circle" "rect" "metadata" "g"
+                     "radialGradient" "stop"}
+        div (dom/create-element "div")
+        gc (dom/create-element "div")
+        g (dom/create-element "http://www.w3.org/2000/svg" "g")
+        _ (dom/set-html! div data)
+        svg (dom/query div "svg")]
+    (loop [child (dom/get-first-child svg)]
+      (if child
+        (let [tagname (dom/get-tag-name child)]
+          (if  (contains? valid-tags tagname)
+            (dom/append-child! g child)
+            (dom/append-child! gc child))
+          (recur (dom/get-first-child svg)))
+        (let [width (.. svg -width -baseVal -value)
+              height (.. svg -height -baseVal -value)
+              view-box [(.. svg -viewBox -baseVal -x)
+                        (.. svg -viewBox -baseVal -y)
+                        (.. svg -viewBox -baseVal -width)
+                        (.. svg -viewBox -baseVal -height)]
+              props {:width width
+                     :mimetype "image/svg+xml"
+                     :height height
+                     :view-box view-box}]
+          [(dom/get-outer-html g) props])))))
+
+
+(declare create-icon-result)
+
+(defn create-icons
+  [library-id files]
+  (s/assert (s/nilable uuid?) library-id)
+  (ptk/reify ::create-icons
+    ptk/WatchEvent
+    (watch [_ state s]
+      (letfn [(parse [file]
+                (->> (wapi/read-file-as-text file)
+                     (rx/map parse-svg)))
+              (allowed? [file]
+                (= (.-type file) "image/svg+xml"))
+              (prepare [[content metadata]]
+                {:library-id library-id
+                 :content content
+                 :id (uuid/next)
+                 ;; TODO Keep the name of the original icon
+                 :name (str "Icon " (gensym "i"))
+                 :metadata metadata})]
+        (->> (rx/from files)
+             (rx/filter allowed?)
+             (rx/merge-map parse)
+             (rx/map prepare)
+             (rx/flat-map #(rp/mutation! :create-icon %))
+             (rx/map create-icon-result))))))
+
+(defn create-icon-result
+  [item]
+  (ptk/reify ::create-icon-result
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [{:keys [id] :as item} (assoc item :type :icon)]
+        (-> state
+            (update-in [:library :selected-items] #(into [item] %)))))))
+
 ;; ;; --- Icon Persisted
 ;; 
 ;; (defrecord IconPersisted [id data]
@@ -272,27 +290,27 @@
 ;; 
 ;; --- Load Icons
 
-(declare icons-fetched)
-
-(defn fetch-icons
-  [id]
-  (ptk/reify ::fetch-icons
-    ptk/WatchEvent
-    (watch [_ state s]
-      (let [params (cond-> {} id (assoc :collection-id id))]
-        (->> (rp/query! :icons-by-collection params)
-             (rx/map icons-fetched))))))
-
-;; --- Icons Fetched
-
-(defn icons-fetched
-  [items]
-  ;; TODO: specs
-  (ptk/reify ::icons-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [icons (d/index-by :id items)]
-        (assoc state :icons icons)))))
+;; (declare icons-fetched)
+;; 
+;; (defn fetch-icons
+;;   [id]
+;;   (ptk/reify ::fetch-icons
+;;     ptk/WatchEvent
+;;     (watch [_ state s]
+;;       (let [params (cond-> {} id (assoc :collection-id id))]
+;;         (->> (rp/query! :icons-by-collection params)
+;;              (rx/map icons-fetched))))))
+;; 
+;; ;; --- Icons Fetched
+;; 
+;; (defn icons-fetched
+;;   [items]
+;;   ;; TODO: specs
+;;   (ptk/reify ::icons-fetched
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (let [icons (d/index-by :id items)]
+;;         (assoc state :icons icons)))))
 
 ;; ;; --- Rename Icon
 ;; 

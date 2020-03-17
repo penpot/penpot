@@ -285,3 +285,53 @@
         top: 1.5rem;
     }
 }
+
+
+.modal-create-color {
+    position: relative;
+    background-color: $color-white;
+    padding: 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    & .sketch-picker {
+        box-shadow: none !important;
+        border: 1px solid $color-gray-lighter !important;
+        border-radius: 0 !important;
+
+        & input {
+            background-color: $color-white;
+        }
+    }
+
+    & .close {
+        position: absolute;
+        right: 1rem;
+        transform: rotate(45deg);
+        top: 1rem;
+
+        svg {
+            fill: $color-black;
+            height: 20px;
+            width: 20px;
+
+            &:hover {
+                fill: $color-danger;
+            }
+
+        }
+    }
+
+    & .btn-primary {
+        width: 10rem;
+        padding: 0.5rem;
+        margin-top: 1rem;
+    }
+}
+
+.modal-create-color-title {
+    color: $color-black;
+    font-size: 24px;
+    font-weight: normal;
+}

@@ -1125,5 +1125,8 @@
     "translations" : {
       "en" : "Click to close the path"
     }
-  }
+  },
+
+  "modal.create-color.new-color": "New Color",
+  "modal.create-color.edit-color": "Edit Color"
 }

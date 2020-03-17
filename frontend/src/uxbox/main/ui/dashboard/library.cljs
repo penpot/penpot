@@ -16,13 +16,77 @@
    [uxbox.util.router :as rt]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.color :as uc]
+   [uxbox.util.dom :as dom]
    [uxbox.main.data.icons :as dico]
    [uxbox.main.data.images :as dimg]
    [uxbox.main.data.colors :as dcol]
    [uxbox.builtins.icons :as i]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.dashboard.components.context-menu :refer [context-menu]]))
+   [uxbox.main.ui.components.context-menu :refer [context-menu]]
+   [uxbox.main.ui.modal :as modal]
+   [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.colorpicker :refer [colorpicker most-used-colors]]
+   ))
+
+(mf/defc modal-create-color
+  [{:keys [on-accept on-cancel] :as ctx}]
+  (let [state (mf/use-state { :current-color "#406280" })]
+    (letfn [(accept [event]
+              (dom/prevent-default event)
+              (modal/hide!)
+              (when on-accept (on-accept (:current-color @state))))
+
+            (cancel [event]
+              (dom/prevent-default event)
+              (modal/hide!)
+              (when on-cancel (on-cancel)))]
+      [:div.modal-create-color
+       [:h3.modal-create-color-title (tr "modal.create-color.new-color")]
+       [:& colorpicker {:value (:current-color @state)
+                        :colors (into-array @most-used-colors)
+                        :on-change #(swap! state assoc :current-color %)}]
+     
+       [:input.btn-primary {:type "button"
+                            :value (tr "ds.button.save")
+                            :on-click accept}]
+
+       [:a.close {:href "#" :on-click cancel} i/close]])))
+
+
+(defmulti create-library (fn [x _] x))
+(defmethod create-library :icons [_ team-id]
+  (let [name (str "Icon Library "(gensym "l"))]
+    (st/emit! (dico/create-icon-library team-id name))))
+
+(defmethod create-library :images [_ team-id]
+  (let [name (str "Image Library "(gensym "l"))]
+    (st/emit! (dimg/create-image-library team-id name))))
+
+(defmethod create-library :palettes [_ team-id]
+  (let [name (str "Image Library "(gensym "l"))]
+    (st/emit! (dcol/create-color-library team-id name))))
+
+(defmulti create-item (fn [x _ _] x))
+
+(defmethod create-item :icons [_ library-id data]
+  (let [files (->> data
+                  (dom/get-target)
+                  (dom/get-files)
+                  (array-seq))]
+    (st/emit! (dico/create-icons library-id files))))
+
+(defmethod create-item :images [_ library-id data]
+  (let [files (->> data
+                  (dom/get-target)
+                  (dom/get-files)
+                  (array-seq))]
+    (st/emit! (dimg/create-images library-id files))))
+
+(defmethod create-item :palettes [_ library-id]
+  (letfn [(dispatch-color [color]
+            (st/emit! (dcol/create-color library-id color)))]
+    (modal/show! modal-create-color {:on-accept dispatch-color})))
 
 (mf/defc library-header
   [{:keys [section team-id] :as props}]
@@ -51,22 +115,23 @@
   (let [locale (i18n/use-locale)]
     [:aside.library-sidebar
      [:button.library-sidebar-add-item
-      {:type "button"}
+      {:type "button"
+       :on-click #(create-library section team-id)}
       (t locale (str "dashboard.library.add-library." (name section)))]
      [:ul.library-sidebar-list
       (for [item items]
         [:li.library-sidebar-list-element
          {:key (:id item)
           :class-name (when (= library-id (:id item)) "current")
-          :on-click (fn [] (let [path (keyword (str "dashboard-library-" (name section)))
-                                 route (rt/nav path {:team-id team-id
-                                                     :library-id (:id item)})]
-                             (dico/fetch-icon-library (:id item))
-                             (st/emit! route)))}
+          :on-click
+          (fn []
+            (let [path (keyword (str "dashboard-library-" (name section)))]
+              (dico/fetch-icon-library (:id item))
+              (st/emit! (rt/nav path {:team-id team-id :library-id (:id item)}))))}
          [:a  (:name item)]])]]))
 
 (mf/defc library-top-menu
-  [{:keys [selected section]}]
+  [{:keys [selected section library-id]}]
   (let [state (mf/use-state {:is-open false})
         locale (i18n/use-locale)]
     [:header.library-top-menu
@@ -75,13 +140,27 @@
       [:a.library-top-menu-current-action
        { :on-click #(swap! state update :is-open not)}
        [:span i/arrow-down]]
-      [:& context-menu {:is-open (:is-open @state)
-                        :options [[(t locale "ds.button.rename") #(println "Rename")]
-                                  [(t locale "ds.button.delete") #(println "Delete")]]}]]
+      [:& context-menu
+       {:show (:is-open @state)
+        :on-close #(swap! state update :is-open not)
+        :options [[(t locale "ds.button.rename") #(println "Rename")]
+                  [(t locale "ds.button.delete") #(println "Delete")]]}]]
 
      [:div.library-top-menu-actions
       [:a i/trash]
-      [:a.btn-dashboard (t locale (str "dashboard.library.add-item." (name section)))]]]))
+
+      (if (= section :palettes)
+        [:button.btn-dashboard
+         {:on-click #(create-item section library-id)}
+         (t locale (str "dashboard.library.add-item." (name section)))]
+
+        [:*
+         [:label {:for "file-upload" :class-name "btn-dashboard"}
+          (t locale (str "dashboard.library.add-item." (name section)))]
+         [:input {:on-change #(create-item section library-id %)
+                  :id "file-upload" :type "file" :style {:display "none"}}]]
+       
+        )]]))
 
 (mf/defc library-icon-card
   [{:keys [id name url content metadata]}]
@@ -107,11 +186,13 @@
       [:div.library-card-footer-menu
        { :on-click #(swap! state update :is-open not) }
        i/actions]
-      [:& context-menu {:is-open (:is-open @state)
-                        :options [[(t locale "ds.button.delete") #(println "Delete")]]}]]]))
+      [:& context-menu
+       {:show (:is-open @state)
+        :on-close #(swap! state update :is-open not)
+        :options [[(t locale "ds.button.delete") #(println "Delete")]]}]]]))
 
 (mf/defc library-image-card
-  [{:keys [id name url]}]
+  [{:keys [id name thumb-uri]}]
   (let [locale (i18n/use-locale)
         state (mf/use-state {:is-open false})]
     [:div.library-card.library-image
@@ -122,39 +203,44 @@
                #_(:checked false)}]
       [:label {:for (str "image-" id)}]]
      [:div.library-card-image
-      [:img {:src url}]]
+      [:img {:src thumb-uri}]]
      [:div.library-card-footer
       [:div.library-card-footer-name name]
       [:div.library-card-footer-timestamp "Less than 5 seconds ago"]
       [:div.library-card-footer-menu
        { :on-click #(swap! state update :is-open not) }
        i/actions]
-      [:& context-menu {:is-open (:is-open @state)
-                        :options [[(t locale "ds.button.delete") #(println "Delete")]]}]]]))
+      [:& context-menu
+       {:show (:is-open @state)
+        :on-close #(swap! state update :is-open not)
+        :options [[(t locale "ds.button.delete") #(println "Delete")]]}]]]))
 
 (mf/defc library-color-card
   [{ :keys [ id content ] }]
-  (let [locale (i18n/use-locale)
-        state (mf/use-state {:is-open false})]
-    [:div.library-card.library-color
-     [:div.input-checkbox.check-primary
-      [:input {:type "checkbox"
-               :id (str "color-" id)
-               :on-change #(println "toggle-selection")
-               #_(:checked false)}]
-      [:label {:for (str "color-" id)}]]
-     [:div.library-card-image
-      { :style { :background-color content }}]
-     [:div.library-card-footer
-      [:div.library-card-footer-name content ]
-      [:div.library-card-footer-color
-       [:span.library-card-footer-color-label "RGB"]
-       [:span.library-card-footer-color-rgb (str/join " " (uc/hex->rgb content))]]
-      [:div.library-card-footer-menu
-       { :on-click #(swap! state update :is-open not) }
-       i/actions]
-      [:& context-menu {:is-open (:is-open @state)
-                        :options [[(t locale "ds.button.delete") #(println "Delete")]]}]]]))
+  (when content
+    (let [locale (i18n/use-locale)
+         state (mf/use-state {:is-open false})]
+     [:div.library-card.library-color
+      [:div.input-checkbox.check-primary
+       [:input {:type "checkbox"
+                :id (str "color-" id)
+                :on-change #(println "toggle-selection")
+                #_(:checked false)}]
+       [:label {:for (str "color-" id)}]]
+      [:div.library-card-image
+       { :style { :background-color content }}]
+      [:div.library-card-footer
+       [:div.library-card-footer-name content ]
+       [:div.library-card-footer-color
+        [:span.library-card-footer-color-label "RGB"]
+        [:span.library-card-footer-color-rgb (str/join " " (uc/hex->rgb content))]]
+       [:div.library-card-footer-menu
+        { :on-click #(swap! state update :is-open not) }
+        i/actions]
+       [:& context-menu
+        {:show (:is-open @state)
+         :on-close #(swap! state update :is-open not)
+         :options [[(t locale "ds.button.delete") #(println "Delete")]]}]]])))
 
 (def icon-libraries-ref
   (-> (comp (l/key :library) (l/key :icon-libraries))
@@ -197,11 +283,11 @@
 
      (when library-id
        [:section.library-content
-        [:& library-top-menu {:selected selected-library :section section}]
+        [:& library-top-menu {:selected selected-library :section section :library-id library-id}]
         [:div.library-page-cards-container
          (for [item items]
            (let [item (assoc item :key (:id item))]
              (case section
                :icons [:& library-icon-card item]
-               :images [:& library-image-card { :name "Nicolas Cage" :url "https://www.placecage.com/200/200" }]
+               :images [:& library-image-card item]
                :palettes [:& library-color-card item ])))]])]))

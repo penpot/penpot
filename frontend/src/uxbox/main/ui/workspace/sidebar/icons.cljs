@@ -46,7 +46,7 @@
         (fn [event data]
           (st/emit! (dw/select-for-drawing :icon data)))]
 
-    (mf/use-effect
+    #_(mf/use-effect
      {:fn #(st/emit! (di/fetch-icons collection-id))
       :deps (mf/deps collection-id)})
 
@@ -79,7 +79,7 @@
           (st/emit! (dw/select-for-drawing nil))
           (reset! selected val))]
 
-    (mf/use-effect
+    #_(mf/use-effect
      {:fn #(st/emit! di/fetch-collections)})
 
     [:div#form-figures.tool-window
