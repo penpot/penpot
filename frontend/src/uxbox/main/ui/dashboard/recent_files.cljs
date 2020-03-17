@@ -42,36 +42,43 @@
 
 ;; --- Component: Drafts Page
 
+(mf/defc recent-project
+  [{:keys [project files first? locale] :as props}]
+  (let [project-id (:id project)]
+    [:div.recent-files-row
+     {:class-name (when first? "first")}
+     [:div.recent-files-row-title
+      [:h2.recent-files-row-title-name (:name project)]
+      [:span.recent-files-row-title-info (str (:file-count project) " files")]
+      (when files
+        (let [time (-> (first files)
+                       (:modified-at)
+                       (dt/timeago {:locale locale}))]
+          [:span.recent-files-row-title-info (str ", " time)]))]
+     [:& grid {:id (:id project)
+               :files (or files [])
+               :hide-new? true}]]))
+
+
 (mf/defc recent-files-page
   [{:keys [section team-id] :as props}]
   (mf/use-effect
-   {:fn #(st/emit! (dsh/initialize-team team-id))
+   {:fn #(st/emit! (dsh/initialize-recent team-id))
     :deps (mf/deps team-id)})
-  (let [projects (mf/deref projects-ref)
+  (let [projects (->> (mf/deref projects-ref)
+                      (vals)
+                      (filter #(pos? (:file-count %)))
+                      (sort-by :modified-at)
+                      (reverse))
+
         recent-files (mf/deref recent-files-ref)
         locale (i18n/use-locale)]
-    (if projects
+    (when (and projects recent-files)
       [:section.recent-files-page
-       (for [project (vals projects)]
-         [:div.recent-files-row
-          {:key (:id project)
-           :class-name (when (= project (first (vals projects))) "first")}
-          [:div.recent-files-row-title
-           [:h2.recent-files-row-title-name (:name project)]
-           [:span.recent-files-row-title-info (str (:file-count project) " files")]
-           (when (and recent-files (recent-files (:id project)))
-             (let [time (-> (project :id)
-                            (recent-files)
-                            (first)
-                            :modified-at
-                            (dt/timeago {:locale locale}))]
-               [:span.recent-files-row-title-info (str ", " time)]))]
-          [:& grid {:id (:id project)
-                    :files (or
-                            (and recent-files (recent-files (:id project)))
-                            [])
-                    :hide-new? true}]])]
-      [:section
-       [:p "empty"]])
-    ))
+       (for [project projects]
+         [:& recent-project {:project project
+                             :locale locale
+                             :key (:id project)
+                             :files (get recent-files (:id project))
+                             :first? (= project (first projects))}])])))
 
