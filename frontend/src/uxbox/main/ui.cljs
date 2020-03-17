@@ -19,7 +19,6 @@
    [uxbox.builtins.icons :as i]
    [uxbox.common.exceptions :as ex]
    [uxbox.main.data.auth :refer [logout]]
-   [uxbox.main.data.projects :as dp]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.dashboard :refer [dashboard]]
