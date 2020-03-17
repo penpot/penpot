@@ -9,7 +9,6 @@
 ;; Copyright (c) 2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.dashboard.project
-  (:refer-clojure :exclude [sort-by])
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
@@ -24,7 +23,9 @@
 
 (mf/defc project-page
   [{:keys [section team-id project-id] :as props}]
-  (let [files (mf/deref files-ref)]
+  (let [files (->> (mf/deref files-ref)
+                   (sort-by :modified-at)
+                   (reverse))]
     (mf/use-effect
      {:fn #(st/emit! (dsh/initialize-project team-id project-id))
       :deps (mf/deps team-id project-id)})
