@@ -430,7 +430,7 @@
                               stream)
             notifier (->> stream
                           (rx/filter (ptk/type? ::commit-changes))
-                          (rx/debounce 1000)
+                          (rx/debounce 2000)
                           (rx/merge stoper))]
         (rx/merge
          (->> stream
