@@ -457,7 +457,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [session-id (:session-id state)
-            page (:workspace-page state)
+            page (get-in state [:pages page-id])
             changes (->> changes
                          (mapcat identity)
                          (map #(assoc % :session-id session-id))
@@ -1606,10 +1606,8 @@
   (ptk/reify ::changes-commited
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (::page-id state)
-            session-id (:session-id state)
+      (let [session-id (:session-id state)
             state (-> state
-                      (assoc-in [:workspace-page :revn] revn)
                       (assoc-in [:pages page-id :revn] revn))
             changes (filter #(not= session-id (:session-id %)) changes)]
         (-> state
