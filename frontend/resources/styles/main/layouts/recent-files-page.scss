@@ -1,0 +1,43 @@
+.recent-files-page {
+    overflow: scroll;
+    height: 100%;
+}
+
+.recent-files-row {
+    padding: 1rem;
+    border-top: 1px solid $color-gray-10;
+
+    &:hover {
+        background-color: white;
+    }
+
+    &.first {
+        border-top: none;
+    }
+}
+
+.recent-files-row-title {
+    display: flex;
+    flex-direction: row;
+    margin-left: $medium;
+    margin-top: $medium;
+}
+
+.recent-files-row-title-name, .recent-files-row-title-info {
+    font-size: 15px;
+    line-height: 1rem;
+    font-weight: unset;
+}
+
+.recent-files-row-title-name {
+    color: black;
+    margin-right: $medium;
+}
+
+.recent-files-row-title-info {
+}
+
+.recent-files-empty {
+    margin: 30px;
+    font-size: 20px
+}

@@ -12,8 +12,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.data :refer [classnames normalize-props]]
-   [uxbox.util.dom :as dom]
+   [uxbox.util.interop :as interop]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
 
@@ -21,23 +20,19 @@
 
 (declare rect-shape)
 
-(mf/defc rect-wrapper
-  {:wrap [#(mf/wrap-memo % =)]}
-  [{:keys [shape] :as props}]
-  (let [selected-iref (mf/use-memo
-                       {:fn #(refs/make-selected (:id shape))
-                        :deps (mf/deps (:id shape))})
-        selected? (mf/deref selected-iref)
+(mf/defrc rect-wrapper
+  [props]
+  (let [shape (unchecked-get props "shape")
         on-mouse-down #(common/on-mouse-down % shape)]
-    [:g.shape {:class (when selected? "selected")
-               :on-mouse-down on-mouse-down}
+    [:g.shape {:on-mouse-down on-mouse-down}
      [:& rect-shape {:shape shape}]]))
 
 ;; --- Rect Shape
 
-(mf/defc rect-shape
-  [{:keys [shape] :as props}]
-  (let [ds-modifier (:displacement-modifier shape)
+(mf/defrc rect-shape
+  [props]
+  (let [shape (unchecked-get props "shape")
+        ds-modifier (:displacement-modifier shape)
         rz-modifier (:resize-modifier shape)
 
         shape (cond-> shape
@@ -52,12 +47,13 @@
                                 (+ x (/ width 2))
                                 (+ y (/ height 2))))
 
-        props (-> (attrs/extract-style-attrs shape)
-                  (assoc :x x
-                         :y y
-                         :transform transform
-                         :id (str "shape-" id)
-                         :width width
-                         :height height
-                         ))]
-    [:& "rect" props]))
+        props (-> (attrs/extract-style-attrs2 shape)
+                  (interop/obj-assign!
+                   #js {:x x
+                        :y y
+                        :transform transform
+                        :id (str "shape-" id)
+                        :width width
+                        :height height}))]
+
+    [:> "rect" props]))

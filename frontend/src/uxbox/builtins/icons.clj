@@ -8,14 +8,6 @@
 (ns uxbox.builtins.icons
   (:require [rumext.alpha]))
 
-(defmacro inline-icon
-  [id]
-  (let [href (str "#icon-" (name id))]
-    `(rumext.alpha/html
-      [:svg {:width 500 :height 500}
-       [:use {:xlinkHref ~href}]])))
-
-
 (defmacro icon-xref
   [id]
   (let [href (str "#icon-" (name id))]

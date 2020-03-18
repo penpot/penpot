@@ -12,21 +12,21 @@
 
     li {
       background-color: transparent;
-      border: 1px solid $medium-ui-border;
+      border: 1px solid $color-gray-20;
       border-radius: $br-small;
       cursor: pointer;
       margin: $medium;
       padding: $small $medium;
 
       &:hover {
-        background-color: $dark-ui-bg;
+        background-color: $color-gray-10;
         border-color: transparent;
       }
 
       &.current {
-        background-color: $primary-ui-bg;
+        background-color: $color-gray-50;
         border: 0;
-        color: $main-ui-color;
+        color: $color-primary;
       }
 
     }
@@ -42,14 +42,14 @@
   width: 500px;
 
   .user-settings-label {
-    border-bottom: 1px solid $soft-ui-border;
+    border-bottom: 1px solid $color-gray-60;
     font-weight: bold;
     margin: $x-small 0 $medium 0;
     padding: $medium;
   }
 
   .input-text {
-    color: $intense-ui-text;
+    color: $color-gray-60;
   }
 
   .btn-primary {

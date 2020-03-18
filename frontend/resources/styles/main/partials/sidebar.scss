@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+// Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .settings-bar {
-  background-color: $primary-ui-bg;
+  background-color: $color-gray-50;
   bottom: 0;
   height: 100%;
   position: fixed;
@@ -15,7 +15,7 @@
   z-index: 10;
 
   &.settings-bar-left {
-    left: 0
+    left: 40px;
   }
 
   .settings-bar-inside {
@@ -28,7 +28,7 @@
     height: 100%;
 
     .tool-window {
-      border-bottom: 1px solid $soft-ui-border;
+      border-bottom: 1px solid $color-gray-60;
       display: flex;
       flex-direction: column;
       flex: 1;
@@ -41,13 +41,13 @@
         padding: $small;
 
         svg {
-          fill: $intense-ui-icons;
+          fill: $color-gray-20;
           height: 12px;
           width: 12px;
         }
 
         span {
-          color: $soft-ui-text;
+          color: $color-gray-10;
           font-size: $fs14;
         }
 

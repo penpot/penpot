@@ -55,10 +55,29 @@
 ;; Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare search-files)
+
+(defn initialize-search
+  [team-id search-term]
+  (ptk/reify ::initialize-search
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local assoc
+              :search-result nil))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [local (:dashboard-local state)]
+        (when-not (empty? search-term)
+          (rx/of (search-files team-id search-term)))))))
+
+
 (declare fetch-files)
+(declare fetch-projects)
+(declare fetch-recent-files)
 
 (def initialize-drafts
-  (ptk/reify ::initialize
+  (ptk/reify ::initialize-drafts
     ptk/UpdateEvent
     (update [_ state]
       (let [profile (:profile state)]
@@ -69,8 +88,43 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
-        (rx/of (fetch-files (:project-id local)))))))
+        (rx/of (fetch-files (:project-id local))
+               (fetch-projects (:team-id local)))))))
 
+
+(defn initialize-recent
+  [team-id]
+  (us/verify ::us/uuid team-id)
+  (ptk/reify ::initialize-team
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local assoc
+              :project-id nil
+              :team-id team-id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [local (:dashboard-local state)]
+        (rx/of (fetch-projects (:team-id local))
+               (fetch-recent-files (:team-id local)))))))
+
+
+(defn initialize-project
+  [team-id project-id]
+  (us/verify ::us/uuid team-id)
+  (us/verify ::us/uuid project-id)
+  (ptk/reify ::initialize-project
+     ptk/UpdateEvent
+     (update [_ state]
+       (update state :dashboard-local assoc
+               :team-id team-id
+               :project-id project-id))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [local (:dashboard-local state)]
+         (rx/of (fetch-files (:project-id local))
+                (fetch-projects (:team-id local)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching
@@ -80,11 +134,13 @@
 
 (declare projects-fetched)
 
-(def fetch-projects
+(defn fetch-projects
+  [team-id]
+  (us/assert ::us/uuid team-id)
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :projects)
+      (->> (rp/query :projects-by-team {:team-id team-id})
            (rx/map projects-fetched)))))
 
 (defn projects-fetched
@@ -93,8 +149,31 @@
   (ptk/reify ::projects-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (let [assoc-project #(update-in %1 [:projects (:id %2)] merge %2)]
+      (let [assoc-project #(assoc-in %1 [:projects (:id %2)] %2)]
         (reduce assoc-project state projects)))))
+
+;; --- Search Files
+
+(declare files-searched)
+
+(defn search-files
+  [team-id search-term]
+  (us/assert ::us/uuid team-id)
+  (us/assert ::us/string search-term)
+  (ptk/reify ::search-files
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :search-files {:team-id team-id :search-term search-term})
+           (rx/map files-searched)))))
+
+(defn files-searched
+  [files]
+  (us/verify (s/every ::file) files)
+  (ptk/reify ::files-searched
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local assoc
+              :search-result files))))
 
 ;; --- Fetch Files
 
@@ -119,9 +198,41 @@
             files (d/index-by :id files)]
         (assoc state :files files)))))
 
+;; --- Fetch recent files
+
+(declare recent-files-fetched)
+
+(defn fetch-recent-files
+  [team-id]
+  (ptk/reify ::fetch-recent-files
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:team-id team-id}]
+        (->> (rp/query :recent-files params)
+             (rx/map recent-files-fetched))))))
+
+(defn recent-files-fetched
+  [recent-files]
+  (ptk/reify ::recent-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :recent-files recent-files))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Create Project
+
+(def create-project
+  (ptk/reify ::create-project
+    ptk/WatchEvent
+    (watch [this state stream]
+      (let [name (str "New Project " (gensym "p"))
+            team-id (get-in state [:dashboard-local :team-id])]
+        (->> (rp/mutation! :create-project {:name name :team-id team-id})
+             (rx/map (fn [data]
+                       (projects-fetched [data]))))))))
 
 ;; --- Rename Project
 
@@ -181,21 +292,25 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [params {:id id :name name}]
+      (let [local (:dashboard-local state)
+            params {:id id :name name}]
+        ;; NOTE: this is a temporal (quick & dirty) solution for
+        ;; refreshing the results; we need to think in a better way to
+        ;; do it instead of a simple and complete data refresh.
         (->> (rp/mutation :rename-file params)
-             (rx/ignore))))))
+             (rx/map (fn [_] (initialize-recent (:team-id local)))))))))
 
 
 ;; --- Create File
 
 (declare file-created)
 
-(def create-file
+(defn create-file
+  [project-id]
   (ptk/reify ::create-draft-file
     ptk/WatchEvent
     (watch [_ state stream]
       (let [name (str "New File " (gensym "p"))
-            project-id (get-in state [:dashboard-local :project-id])
             params {:name name :project-id project-id}]
         (->> (rp/mutation! :create-file params)
              (rx/map file-created))))))
@@ -206,7 +321,9 @@
   (ptk/reify ::create-draft-file
     ptk/UpdateEvent
     (update [this state]
-      (update state :files assoc (:id data) data))))
+      (-> state
+          (update :files assoc (:id data) data)
+          (update-in [:recent-files (:project-id data)] conj data)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -215,12 +332,12 @@
 
 ;; --- Update Opts (Filtering & Ordering)
 
-(defn update-opts
-  [& {:keys [order filter] :as opts}]
-  (ptk/reify ::update-opts
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :dashboard-local merge
-              (when order {:order order})
-              (when filter {:filter filter})))))
+;; (defn update-opts
+;;   [& {:keys [order filter] :as opts}]
+;;   (ptk/reify ::update-opts
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (update state :dashboard-local merge
+;;               (when order {:order order})
+;;               (when filter {:filter filter})))))
 

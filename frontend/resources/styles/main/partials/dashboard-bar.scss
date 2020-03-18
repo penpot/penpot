@@ -32,15 +32,15 @@
 
     .input-select {
       background-color: transparent;
-      border-color: $soft-ui-border;
+      border-color: $color-gray-60;
       font-size: $fs14;
       margin-bottom: 0;
       margin-left: $medium;
       padding: 3px 25px 3px 3px;
 
       option {
-        color: $intense-ui-text;
-        background: $secondary-ui-bg;
+        color: $color-gray-60;
+        background: $color-gray-60;
       }
     }
 
@@ -52,9 +52,9 @@
     margin-left: $small;
 
     .input-text {
-      background: $input-bg;
+      background: $color-gray-50;
       border: 0;
-      color: $intense-ui-text;
+      color: $color-gray-60;
       padding: 4px 8px;
       margin: 0;
       max-width: 160px;
@@ -62,14 +62,15 @@
 
     .clear-search {
       align-items: center;
-      background: $input-bg;
+      background: $color-gray-50;
       cursor: pointer;
       display: flex;
-      height: 28px;
+      height: 22px;
       padding: 0 5px;
+      width: 22px;
 
       svg {
-        fill: $medium-ui-icons;
+        fill: $color-gray-30;
         height: 15px;
         transform: rotate(45deg);
         width: 15px;

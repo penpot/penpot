@@ -16,21 +16,20 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.exceptions :as ex]
    [uxbox.main.data.auth :refer [logout]]
-   [uxbox.main.data.projects :as dp]
+   [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.components.error :refer [wrap-catch]]
+   [uxbox.main.ui.dashboard :refer [dashboard]]
    [uxbox.main.ui.login :refer [login-page]]
-   [uxbox.main.ui.profile.register :refer [profile-register-page]]
-   [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
    [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
-
-   [uxbox.main.ui.dashboard :as dashboard]
+   [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
+   [uxbox.main.ui.profile.register :refer [profile-register-page]]
    [uxbox.main.ui.settings :as settings]
    [uxbox.main.ui.shapes]
    [uxbox.main.ui.workspace :as workspace]
-   [uxbox.util.data :refer [parse-int uuid-str?]]
-   [uxbox.util.dom :as dom]
-   [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]
@@ -53,34 +52,65 @@
     ["/password" :settings-password]]
 
    ["/dashboard"
-    ["/projects" :dashboard-projects]
-    ["/icons" :dashboard-icons]
-    ["/images" :dashboard-images]
-    ["/colors" :dashboard-colors]]
+    ["/team/:team-id"
+     ["/" :dashboard-team]
+     ["/search" :dashboard-search]
+     ["/project/:project-id" :dashboard-project]
+     ["/library"
+      ["/icons"
+       ["" { :name :dashboard-library-icons-index :section :icons}]
+       ["/:library-id" { :name :dashboard-library-icons :section :icons}]]
+
+      ["/images"
+       ["" { :name :dashboard-library-images-index :section :images}]
+       ["/:library-id" { :name :dashboard-library-images :section :images}]]
+
+      ["/palettes"
+       ["" { :name :dashboard-library-palettes-index :section :palettes}]
+       ["/:library-id" { :name :dashboard-library-palettes :section :palettes }]]
+      
+      ]]]
 
    ["/workspace/:file-id" :workspace]])
 
+(mf/defc app-error
+  [{:keys [error] :as props}]
+  (let [data (ex-data error)]
+    (case (:type data)
+      :not-found [:span "404"]
+      [:span "Internal application errror"])))
+
 (mf/defc app
+  {:wrap [#(wrap-catch % {:fallback app-error})]}
   [props]
   (let [route (mf/deref route-iref)]
     (case (get-in route [:data :name])
-      :login (mf/element login-page)
+      :login
+      (mf/element login-page)
 
-      :profile-register (mf/element profile-register-page)
-      :profile-recovery-request (mf/element profile-recovery-request-page)
-      :profile-recovery (mf/element profile-recovery-page)
+      :profile-register
+      (mf/element profile-register-page)
+
+      :profile-recovery-request
+      (mf/element profile-recovery-request-page)
+
+      :profile-recovery
+      (mf/element profile-recovery-page)
 
       (:settings-profile
        :settings-password)
       (mf/element settings/settings #js {:route route})
 
-      :dashboard-projects
-      (mf/element dashboard/dashboard-projects #js {:route route})
-
-      (:dashboard-icons
-       :dashboard-images
-       :dashboard-colors)
-      (mf/element dashboard/dashboard-assets #js {:route route})
+      (:dashboard-search
+       :dashboard-team
+       :dashboard-project
+       :dashboard-library-icons
+       :dashboard-library-icons-index
+       :dashboard-library-images
+       :dashboard-library-images-index
+       :dashboard-library-palettes
+       :dashboard-library-palettes-index)
+      (mf/element dashboard #js {:route route})
 
       :workspace
       (let [file-id (uuid (get-in route [:params :path :file-id]))

@@ -10,9 +10,6 @@
   flex-direction: column;
   font-size: $fs14;
   height: 100%;
-  padding: $medium;
-  // ACTIVITY BAR PADDING
-  //padding: $medium 250px $medium $medium;
 
   .dashboard-title {
     margin: $medium 0;
@@ -24,13 +21,13 @@
       width: 100%;
       .edit {
           padding: 5px 10px;
-          background: $primary-ui-bg;
+          background: $color-gray-50;
           border: none;
           height: 100%;
       }
       .close {
           padding: 5px 10px;
-          background: $primary-ui-bg;
+          background: $color-gray-50;
           cursor: pointer;
           svg {
             transform: rotate(45deg);
@@ -75,15 +72,13 @@
   .dashboard-grid-content {
     display: flex;
     height: 100%;
-    min-height: 60vh;
-    overflow: scroll;
     width: 100%;
 
     .dashboard-grid-row {
       display: flex;
       flex-wrap: wrap;
-      margin-bottom: auto;
       width: 100%;
+      align-content: flex-start;
     }
 
     .grid-item {
@@ -94,12 +89,28 @@
       flex-direction: column;
       flex-shrink: 0;
       height: 200px;
-      margin: $medium $medium 0 $medium;
+      margin: $medium;
       max-width: 300px;
       min-width: 260px;
       position: relative;
       text-align: center;
       width: 18%;
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+
+      & .overlay {
+        border-radius: 4px;
+        border: 2px solid $color-primary;
+        height: 100%;
+        opacity: 0;
+        pointer-events: none;
+        position: absolute;
+        width: 100%;
+        z-index: 1;
+      }
+      &:hover .overlay {
+        display: block;
+        opacity: 1;
+      }
 
       &.small-item {
         max-width: 12%;
@@ -124,7 +135,7 @@
         width: 100%;
 
         h3 {
-          color: $intense-ui-text;
+          color: $color-gray-60;
           font-size: $fs15;
           font-weight: 400;
           overflow: hidden;
@@ -136,7 +147,7 @@
         }
 
         span.date {
-          color: $medium-ui-text;
+          color: $color-gray-20;
           font-size: $fs12;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -145,18 +156,19 @@
 
       }
 
-      &.add-project {
+      &.add-file {
         border: 1px dashed $color-gray-light;
         justify-content: center;
+        box-shadow: none;
 
         span {
-          color: $intense-ui-text;
+          color: $color-gray-60;
           font-size: $fs15;
         }
 
         &:hover {
           background-color: $color-white;
-          border: 2px solid $main-ui-color;
+          border: 2px solid $color-primary;
         }
 
       }
@@ -164,10 +176,10 @@
       // PROJECTS, ELEMENTS & ICONS GRID
       &.project-th {
         background-color: $color-white;
-        // border: 2px solid $dark-ui-bg;
+        // border: 2px solid $color-gray-10;
 
         &:hover {
-          border-color: $main-ui-color;
+          border-color: $color-primary;
         }
 
         .project-th-actions {
@@ -200,7 +212,7 @@
               margin-right: 0;
 
               svg {
-                fill: $medium-ui-icons;
+                fill: $color-gray-30;
                 margin-right: 0;
               }
 
@@ -219,14 +231,14 @@
               margin-right: 0;
 
               svg {
-                fill: $medium-ui-icons;
+                fill: $color-gray-30;
               }
 
               &:hover {
                 transform: scale(1.4);
 
                 svg {
-                  fill: $soft-ui-icons;
+                  fill: $color-gray-60;
                 }
 
               }
@@ -245,7 +257,7 @@
         border-bottom: 2px solid lighten($color-gray-light, 12%);
 
         &:hover {
-          border-color: $main-ui-color;
+          border-color: $color-primary;
         }
 
       }
@@ -295,7 +307,7 @@
 
   // STYLES FOR LIBRARIES
   &.library {
-    padding: $medium $medium $medium 230px;
+    padding: $medium;
   }
 
 }
@@ -322,7 +334,7 @@
 .multiselect-bar {
   @include animation(0,.5s,fadeInUp);
   align-items: center;
-  background-color: $primary-ui-bg;
+  background-color: $color-gray-50;
   display: flex;
   left: 0;
   justify-content: center;
@@ -347,12 +359,12 @@
 
     svg {
       cursor: pointer;
-      fill: $medium-ui-icons;
+      fill: $color-gray-30;
       height: 20px;
       width: 20px;
 
       &:hover {
-        fill: $intense-ui-icons;
+        fill: $color-gray-20;
       }
 
     }
@@ -377,7 +389,7 @@
   position: relative;
 
   .move-list {
-    background-color: $dark-ui-bg;
+    background-color: $color-gray-10;
     border-radius: $br-small;
     bottom: 30px;
     display: flex;
@@ -399,5 +411,18 @@
     }
 
   }
+}
 
+.grid-files-empty {
+    align-items: center;
+    border: 1px dashed $color-gray-20;
+    display: flex;
+    flex-direction: column;
+    margin: $size-4;
+    padding: 3rem;
+    width: 100%;
+}
+
+.grid-files-link-text {
+    color: $color-black;
 }

@@ -35,29 +35,33 @@
       (let [flags (get-in state [:workspace-local :flags])
             selected (get-in state [:workspace-local :selected])
             stoper (rx/filter uws/mouse-up? stream)
-            position @uws/mouse-position]
+            zero-point? #(= % (gpt/point 0 0))
+            position @uws/mouse-position
+            deltas (atom 0)]
         (rx/concat
          (->> (uws/mouse-position-deltas position)
+              (rx/filter (complement zero-point?))
+              (rx/tap #(swap! deltas inc))
               (rx/map #(dw/apply-displacement-in-bulk selected %))
               (rx/take-until stoper))
-         (rx/of (dw/materialize-displacement-in-bulk selected)
-                ::dw/page-data-update))))))
+         (rx/of (dw/materialize-displacement-in-bulk selected)))))))
 
-(def start-move-canvas
-  (ptk/reify ::start-move-selected
+(def start-move-frame
+  (ptk/reify ::start-move-frame
     ptk/WatchEvent
     (watch [_ state stream]
       (let [flags (get-in state [:workspace-local :flags])
             selected (get-in state [:workspace-local :selected])
             stoper (rx/filter uws/mouse-up? stream)
-            canvas-id (first selected)
+            zero-point? #(= % (gpt/point 0 0))
+            frame-id (first selected)
             position @uws/mouse-position]
-
         (rx/concat
          (->> (uws/mouse-position-deltas position)
-              (rx/map #(dw/apply-canvas-displacement canvas-id %))
+              (rx/filter (complement zero-point?))
+              (rx/map #(dw/apply-frame-displacement frame-id %))
               (rx/take-until stoper))
-         (rx/of (dw/materialize-canvas-displacement canvas-id)))))))
+         (rx/of (dw/materialize-frame-displacement frame-id)))))))
 
 (defn on-mouse-down
   ([event shape] (on-mouse-down event shape nil))
@@ -70,10 +74,10 @@
         drawing?
         nil
 
-        (= type :canvas)
+        (= type :frame)
         (when selected?
           (dom/stop-propagation event)
-          (st/emit! start-move-canvas))
+          (st/emit! start-move-frame))
 
         (and (not selected?) (empty? selected))
         (do

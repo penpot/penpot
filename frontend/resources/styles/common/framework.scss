@@ -35,7 +35,7 @@
 .btn-primary {
   @extend %btn;
   align-items: center;
-  background: $main-ui-color;
+  background: $color-primary;
   color: $color-white;
   justify-content: center;
   display: flex;
@@ -131,6 +131,23 @@
   }
 }
 
+.btn-dashboard {
+  @extend %btn;
+  background-color: $color-white;
+  border: 1px solid $color-black;
+  border-radius: 2px;
+  color: $color-black;
+  font-size: $fs12;
+  font-weight: normal;
+  padding: $x-small $small;
+
+  &:hover {
+    background-color: $color-primary;
+    border-color: $color-primary;
+    color: $color-black;
+  }
+}
+
 input[type=button][disabled],
 .btn-disabled {
   opacity: .5;
@@ -185,7 +202,7 @@ ul.slider-dots {
 
     &.current,
     &:hover {
-      background-color: $dark-ui-bg;
+      background-color: $color-gray-10;
     }
 
   }
@@ -319,7 +336,7 @@ ul.slider-dots {
   width: 100%;
 
   &::after {
-    color: $medium-ui-text;
+    color: $color-gray-20;
     font-size: $fs12;
     height: 20px;
     position: absolute;
@@ -366,9 +383,9 @@ ul.slider-dots {
 
 input,
 select {
-  background-color: $input-bg;
+  background-color: $color-gray-50;
   box-sizing: border-box;
-  color: $intense-ui-text;
+  color: $color-gray-60;
   font-family: "sourcesanspro", sans-serif;
   font-size: $fs16;
   margin-bottom: $medium;
@@ -402,8 +419,8 @@ input[type="checkbox"]:focus {
 
 .input-text {
   border: none;
-  border-bottom: 1px solid $soft-ui-border;
-  background-color: $input-bg;
+  border-bottom: 1px solid $color-gray-60;
+  background-color: $color-gray-50;
   box-shadow: none;
   outline: none;
   padding: $small $big $small $small;
@@ -414,7 +431,7 @@ input[type="checkbox"]:focus {
   }
 
   &:focus {
-    border-color: $intense-ui-border;
+    border-color: $color-gray-40;
     box-shadow: none;
 
     @include placeholder {
@@ -442,10 +459,10 @@ input[type="checkbox"]:focus {
 // Element-name
 
 input.element-name {
-  background-color: $dark-ui-bg;
-  border: 1px solid $intense-ui-border;
+  background-color: $color-gray-10;
+  border: 1px solid $color-gray-40;
   border-radius: $br-small;
-  color: $intense-ui-text;
+  color: $color-gray-60;
   font-size: $fs13;
   margin: 0px;
   padding: 3px;
@@ -456,7 +473,7 @@ input.element-name {
 
 .input-select {
   @extend .input-text;
-  background-image: url("/images/svg/arrow-down-white.svg");
+  background-image: url("/images/icons/arrow-down-white.svg");
   background-repeat: no-repeat;
   background-position: 95% 48%;
   background-size: 10px;
@@ -491,9 +508,9 @@ input.element-name {
       width: 20px;
       height: 20px;
       margin-right: 10px;
-      background-color: $primary-ui-bg;
-      border: 1px solid $soft-ui-border;
-      box-shadow: inset 0 0 0 0 $main-ui-color ;
+      background-color: $color-gray-50;
+      border: 1px solid $color-gray-60;
+      box-shadow: inset 0 0 0 0 $color-primary ;
       box-sizing: border-box;
     }
 
@@ -753,7 +770,7 @@ input[type=range]::-webkit-slider-runnable-track {
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
   border-radius: 25px;
   border: 0px solid #000101;
 }
@@ -763,13 +780,13 @@ input[type=range]::-webkit-slider-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $intense-ui-icons;
+  background: $color-gray-20;
   cursor: pointer;
   -webkit-appearance: none;
   margin-top: -8px;
 }
 input[type=range]:focus::-webkit-slider-runnable-track {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
 }
 input[type=range]::-moz-range-track {
   width: 100%;
@@ -777,7 +794,7 @@ input[type=range]::-moz-range-track {
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
   border-radius: 25px;
   border: 0px solid #000101;
 }
@@ -787,7 +804,7 @@ input[type=range]::-moz-range-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $intense-ui-icons;
+  background: $color-gray-20;
   cursor: pointer;
 }
 input[type=range]::-ms-track {
@@ -801,13 +818,13 @@ input[type=range]::-ms-track {
   color: transparent;
 }
 input[type=range]::-ms-fill-lower {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
   border: 0px solid #000101;
   border-radius: 50px;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
 }
 input[type=range]::-ms-fill-upper {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
   border: 0px solid #000101;
   border-radius: 50px;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
@@ -818,14 +835,14 @@ input[type=range]::-ms-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $intense-ui-icons;
+  background: $color-gray-20;
   cursor: pointer;
 }
 input[type=range]:focus::-ms-fill-lower {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
 }
 input[type=range]:focus::-ms-fill-upper {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
 }
 
 // Scroll bar (chrome)
@@ -840,11 +857,11 @@ input[type=range]:focus::-ms-fill-upper {
     background-color: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background-color: $scrollbar-bg;
+    background-color: $color-gray-20;
 
     &:hover {
-      background-color: darken($scrollbar-bg, 14%);
-      outline: 2px solid $main-ui-color;
+      background-color: darken($color-gray-20, 14%);
+      outline: 2px solid $color-primary;
     }
 
 }
@@ -859,7 +876,7 @@ input[type=range]:focus::-ms-fill-upper {
     &::after {
       background-color: $color-white;
       border-radius: $br-small;
-      color: $intense-ui-text;
+      color: $color-gray-60;
       content: attr(alt);
       font-size: $fs11;
       font-weight: bold;
@@ -901,6 +918,19 @@ input[type=range]:focus::-ms-fill-upper {
 
   }
 
+ &.tooltip-right {
+
+    &:hover {
+
+      &::after {
+        top: 15%;
+        left: 120%;
+      }
+
+    }
+
+  }
+
   &.tooltip-hover {
 
     &:hover {
@@ -910,7 +940,7 @@ input[type=range]:focus::-ms-fill-upper {
         background-color: $color-white;
         box-sizing: border-box;
         border-radius: 0;
-        color: $intense-ui-text;
+        color: $color-gray-60;
         display: flex;
         height: 100%;
         justify-content: center;

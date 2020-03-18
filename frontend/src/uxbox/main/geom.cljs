@@ -27,7 +27,7 @@
     :icon (move-rect shape dpoint)
     :image (move-rect shape dpoint)
     :rect (move-rect shape dpoint)
-    :canvas (move-rect shape dpoint)
+    :frame (move-rect shape dpoint)
     :text (move-rect shape dpoint)
     :curve (move-path shape dpoint)
     :path (move-path shape dpoint)
@@ -69,7 +69,7 @@
   [shape position]
   (case (:type shape)
     :icon (absolute-move-rect shape position)
-    :canvas (absolute-move-rect shape position)
+    :frame (absolute-move-rect shape position)
     :image (absolute-move-rect shape position)
     :rect (absolute-move-rect shape position)
     :circle (absolute-move-circle shape position)))
@@ -482,6 +482,25 @@
            :width width
            :height height)))
 
+;; --- Resolve Shape
+
+(declare resolve-rect-shape)
+(declare translate-from-frame)
+(declare translate-to-frame)
+
+(defn resolve-shape
+  [objects shape]
+  (case (:type shape)
+    :rect (resolve-rect-shape objects shape)
+    :frame (resolve-rect-shape objects shape)))
+
+(defn- resolve-rect-shape
+  [objects {:keys [parent] :as shape}]
+  (loop [pobj (get objects parent)]
+    (if (= :frame (:type pobj))
+      (translate-from-frame shape pobj)
+      (recur (get objects (:parent pobj))))))
+
 ;; --- Transform Shape
 
 (declare transform-rect)
@@ -492,7 +511,7 @@
   "Apply the matrix transformation to shape."
   [{:keys [type] :as shape} xfmt]
   (case type
-    :canvas (transform-rect shape xfmt)
+    :frame (transform-rect shape xfmt)
     :rect (transform-rect shape xfmt)
     :icon (transform-rect shape xfmt)
     :text (transform-rect shape xfmt)
@@ -598,6 +617,14 @@
      :width (- maxx minx)
      :height (- maxy miny)
      :type :rect}))
+
+(defn translate-to-frame
+  [shape {:keys [x y] :as frame}]
+  (move shape (gpt/point (- x) (- y))))
+
+(defn translate-from-frame
+  [shape {:keys [x y] :as frame}]
+  (move shape (gpt/point (+ x) (+ y))))
 
 ;; --- Helpers
 

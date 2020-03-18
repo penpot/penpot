@@ -125,5 +125,5 @@
 (mf/defc colorpalette
   [props]
   (let [colls (mf/deref collections-iref)]
-    (mf/use-effect #(st/emit! (udc/fetch-collections)))
+    #_(mf/use-effect #(st/emit! (udc/fetch-collections)))
     [:& palette {:colls (vals colls)}]))

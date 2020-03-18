@@ -100,6 +100,31 @@ function readLocales() {
   return JSON.stringify(result);
 }
 
+function readConfig() {
+  const publicURL = process.env.UXBOX_PUBLIC_URL;
+  const demoWarn = process.env.UXBOX_DEMO_WARNING;
+  const deployDate = process.env.UXBOX_DEPLOY_DATE;
+  const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
+
+  let cfg = {
+    demoWarning: demoWarn === "true"
+  };
+
+  if (publicURL !== undefined) {
+    cfg.publicURL = publicURL;
+  }
+
+  if (deployDate !== undefined) {
+    cfg.deployDate = deployDate;
+  }
+
+  if (deployCommit !== undefined) {
+    cfg.deployCommit = deployCommit;
+  }
+
+  return JSON.stringify(cfg);
+}
+
 function templatePipeline(options) {
   return function() {
     const input = options.input;
@@ -108,11 +133,13 @@ function templatePipeline(options) {
 
     const locales = readLocales();
     const icons = readSvgSprite();
+    const config = readConfig();
 
     const tmpl = mustache({
       ts: ts,
       ic: icons,
-      tr: JSON.stringify(locales),
+      config: JSON.stringify(config),
+      translations: JSON.stringify(locales),
     });
 
     return gulp.src(input)
@@ -199,7 +226,10 @@ gulp.task("watch:main", function() {
   gulp.watch([paths.resources + "templates/*.mustache",
               paths.resources + "locales.json",
               paths.resources + "images/**/*"],
-             gulp.series("templates", "dev:copy:images", "dev:copy:icons-sprite"));
+             gulp.series("templates",
+                         "dev:copy:images",
+                         "dev:copy:templates",
+                         "dev:copy:icons-sprite"));
 });
 
 gulp.task("watch", gulp.series(

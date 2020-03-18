@@ -57,27 +57,6 @@
                not-found))
            not-found coll)))
 
-(defn diff-maps
-  [ma mb]
-  (let [ma-keys (set (keys ma))
-        mb-keys (set (keys mb))
-        added (set/difference mb-keys ma-keys)
-        removed (set/difference ma-keys mb-keys)
-        both (set/intersection ma-keys mb-keys)]
-    (concat
-     (mapv #(vector :set % (get mb %)) added)
-     (mapv #(vector :set % nil) removed)
-     (loop [k (first both)
-            r (rest both)
-            rs []]
-       (if k
-         (let [vma (get ma k)
-               vmb (get mb k)]
-           (if (= vma vmb)
-             (recur (first r) (rest r) rs)
-             (recur (first r) (rest r) (conj rs [:set k vmb]))))
-         rs)))))
-
 (defn index-by
   "Return a indexed map of the collection keyed by the result of
   executing the getter over each element of the collection."

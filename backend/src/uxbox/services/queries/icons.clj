@@ -31,6 +31,7 @@
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
 (s/def ::library-id ::us/uuid)
+(s/def ::team-id ::us/uuid)
 
 (defn decode-row
   [{:keys [metadata] :as row}]

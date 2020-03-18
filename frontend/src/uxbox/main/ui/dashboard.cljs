@@ -1,43 +1,97 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+
 (ns uxbox.main.ui.dashboard
   (:require
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
-   [uxbox.util.data :refer [parse-int uuid-str?]]
-   [uxbox.main.ui.dashboard.header :refer [header]]
-   [uxbox.main.ui.dashboard.projects :as projects]
-   [uxbox.main.ui.dashboard.icons :as icons]
-   [uxbox.main.ui.dashboard.images :as images]
-   [uxbox.main.ui.dashboard.colors :as colors]
+   [uxbox.builtins.icons :as i]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
+   [uxbox.main.ui.dashboard.search :refer [search-page]]
+   [uxbox.main.ui.dashboard.project :refer [project-page]]
+   [uxbox.main.ui.dashboard.recent-files :refer [recent-files-page]]
+   [uxbox.main.ui.dashboard.library :refer [library-page]]
+   [uxbox.main.ui.dashboard.profile :refer [profile-section]]
    [uxbox.main.ui.messages :refer [messages-widget]]))
 
-(mf/defc dashboard-projects
+(defn ^boolean uuid-str?
+  [s]
+  (and (string? s)
+       (boolean (re-seq us/uuid-rx s))))
+
+(defn- parse-params
+  [route profile]
+  (let [search-term (get-in route [:params :query :search-term])
+        route-name (get-in route [:data :name])
+        team-id (get-in route [:params :path :team-id])
+        project-id (get-in route [:params :path :project-id])
+        library-id (get-in route [:params :path :library-id])]
+    (cond->
+      {:search-term search-term}
+
+      (uuid-str? team-id)
+      (assoc :team-id (uuid team-id))
+
+      (= "self" team-id)
+      (assoc :team-id (:default-team-id profile))
+
+      (uuid-str? project-id)
+      (assoc :project-id (uuid project-id))
+
+      (and (= "drafts" project-id)
+           (= "self" team-id))
+      (assoc :project-id (:default-project-id profile))
+
+      (str/starts-with? (name route-name) "dashboard-library")
+      (assoc :library-section (get-in route [:data :section]))
+
+      (uuid-str? library-id)
+      (assoc :library-id (uuid library-id)))))
+
+
+(mf/defc dashboard
   [{:keys [route] :as props}]
-  (let [id (get-in route [:params :query :project-id])
-        id (when (uuid-str? id) (uuid id))]
+  (let [profile (mf/deref refs/profile)
+        page (get-in route [:data :name])
+        {:keys [search-term team-id project-id library-id library-section] :as params}
+        (parse-params route profile)]
     [:main.dashboard-main
      [:& messages-widget]
-     [:& header {:section :dashboard-projects}]
-     [:& projects/projects-page {:id id}]]))
+     [:section.dashboard-layout
+      [:div.main-logo i/logo-icon]
+      [:& profile-section {:profile profile}]
+      [:& sidebar {:team-id team-id
+                   :project-id project-id
+                   :section page}]
+      [:div.dashboard-content
+       (case page
+         :dashboard-search
+         (mf/element search-page #js {:team-id team-id :search-term search-term})
 
-(mf/defc dashboard-assets
-  [{:keys [route] :as props}]
-  (let [section (get-in route [:data :name])
-        {:keys [id type]} (get-in route [:params :query])
-        id (cond
-             ;; (str/digits? id) (parse-int id)
-             (uuid-str? id) (uuid id)
-             (str/empty-or-nil? id) nil
-             :else id)
-        type (if (str/alpha? type) (keyword type) :own)]
-    [:main.dashboard-main
-     [:& messages-widget]
-     [:& header {:section section}]
-     (case section
-       :dashboard-icons
-       [:& icons/icons-page {:type type :id id}]
+         :dashboard-team
+         (mf/element recent-files-page #js {:team-id team-id})
 
-       :dashboard-images
-       [:& images/images-page {:type type :id id}]
+         (:dashboard-library-icons
+          :dashboard-library-icons-index
+          :dashboard-library-images
+          :dashboard-library-images-index
+          :dashboard-library-palettes
+          :dashboard-library-palettes-index)
+         (mf/element library-page #js {:team-id team-id
+                                       :library-id library-id
+                                       :section library-section})
 
-       :dashboard-colors
-       [:& colors/colors-page {:type type :id id}])]))
+         :dashboard-project
+         (mf/element project-page #js {:team-id team-id
+                                       :project-id project-id}))]]])
+  )

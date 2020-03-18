@@ -12,7 +12,7 @@
             [uxbox.builtins.icons :as i]
             [rumext.core :as mx :include-macros true]
             [uxbox.main.ui.lightbox :as lbx]
-            [uxbox.main.ui.dashboard.header :refer (header)]
+            #_[uxbox.main.ui.dashboard.header :refer (header)]
             [uxbox.util.dom :as dom]))
 
 ;; --- Page Title

@@ -11,7 +11,7 @@
    [rumext.alpha :as mf]
    [uxbox.util.math :as mth]
    [uxbox.main.geom :as geom]
-   [uxbox.main.ui.shapes.canvas :as canvas]
+   [uxbox.main.ui.shapes.frame :as frame]
    [uxbox.main.ui.shapes.circle :as circle]
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.main.ui.shapes.image :as image]
@@ -25,7 +25,7 @@
    {:x 0 :y 0
     :width "100%"
     :height "100%"
-    :fill "#b1b2b5"}])
+    :fill "#AFB2BF"}])
 
 (defn- calculate-dimensions
   [data]
@@ -40,7 +40,7 @@
   [{:keys [shape] :as props}]
   (when (and shape (not (:hidden shape)))
     (case (:type shape)
-      :canvas [:& rect/rect-shape {:shape shape}]
+      :frame [:& rect/rect-shape {:shape shape}]
       :curve [:& path/path-shape {:shape shape}]
       :text [:& text/text-shape {:shape shape}]
       :icon [:& icon/icon-shape {:shape shape}]
@@ -53,7 +53,7 @@
   [{:keys [data] :as props}]
   (let [shapes-by-id (:shapes-by-id data)
         shapes (map #(get shapes-by-id %) (:shapes data []))
-        canvas (map #(get shapes-by-id %) (:canvas data []))
+        frame (map #(get shapes-by-id %) (:frame data []))
         dim (calculate-dimensions data)]
     [:svg {:view-box (str "0 0 " (:width dim 0) " " (:height dim 0))
            :version "1.1"
@@ -61,7 +61,7 @@
            :xmlns "http://www.w3.org/2000/svg"}
      (background)
      [:*
-      (for [item canvas]
+      (for [item frame]
         [:& shape-wrapper {:shape item :key (:id item)}])
       (for [item shapes]
         [:& shape-wrapper {:shape item :key (:id item)}])]]))

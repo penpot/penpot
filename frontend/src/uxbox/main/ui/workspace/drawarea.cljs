@@ -52,8 +52,8 @@
     :fill-color "#000000"
     :fill-opacity 0
     :segments []}
-   {:type :canvas
-    :name "Canvas"}
+   {:type :frame
+    :name "Artboard"}
    {:type :curve
     :name "Path"
     :stroke-style :solid
@@ -136,7 +136,7 @@
               stoper (rx/filter stoper? stream)
 
               mouse (->> ms/mouse-position
-                         (rx/mapcat #(conditional-align % align?))
+                         ;; (rx/mapcat #(conditional-align % align?))
                          (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (->> mouse
@@ -187,7 +187,7 @@
                           (rx/share))
 
               mouse (->> (rx/sample 10 ms/mouse-position)
-                         (rx/mapcat #(conditional-align % align?))
+                         ;; (rx/mapcat #(conditional-align % align?))
                          (rx/map #(gpt/divide % (gpt/point zoom))))
 
               points (->> stream
@@ -256,7 +256,7 @@
               align? (refs/alignment-activated? flags)
               stoper (rx/filter stoper-event? stream)
               mouse  (->> (rx/sample 10 ms/mouse-position)
-                          (rx/mapcat #(conditional-align % align?))
+                          ;; (rx/mapcat #(conditional-align % align?))
                           (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (rx/of initialize-drawing)
@@ -281,8 +281,8 @@
                  shape (dissoc shape ::initialized? :resize-modifier)]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all
-                    (if (= :canvas (:type shape))
-                      (dw/add-canvas shape)
+                    (if (= :frame (:type shape))
+                      (dw/add-frame shape)
                       (dw/add-shape shape))))))))))
 
 (def close-drawing-path
@@ -349,7 +349,7 @@
            :on-mouse-enter on-mouse-enter
            :on-mouse-leave on-mouse-leave}])])))
 
-(defn- conditional-align [point align?]
-  (if align?
-    (uwrk/align-point point)
-    (rx/of point)))
+;; (defn- conditional-align [point align?]
+;;   (if align?
+;;     (uwrk/align-point point)
+;;     (rx/of point)))

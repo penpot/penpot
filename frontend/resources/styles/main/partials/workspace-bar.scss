@@ -7,17 +7,58 @@
 
 .workspace-bar {
   align-items: center;
-  background-color: $primary-ui-bg;
-  border-bottom: 1px solid  $soft-ui-border;
+  background-color: $color-gray-50;
+  border-bottom: 1px solid  $color-gray-60;
   display: flex;
   height: 40px;
-  padding: $x-small $medium $x-small 65px;
+  padding: $x-small $medium $x-small 55px;
   position: relative;
-  z-index: 11;
+  z-index: 12;
+
+  .dropdown {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    width: 230px;
+    z-index: 12;
+    @include animation(0,.2s,fadeInDown);
+
+    .workspace-menu {
+      background-color: $color-gray-60;
+      border-radius: $br-small;
+      padding: 0 $small;
+
+      li {
+        font-size: $fs13;
+        padding: $small 0;
+
+        svg {
+          fill: $color-gray-20;
+          height: 12px;
+          width: 12px;
+        }
+
+        span {
+          color: $color-white;
+        }
+
+        &:hover {
+          span {
+            color: $color-primary;
+          }
+          svg {
+            fill: $color-primary;
+          }
+
+        }
+      }
+    }
+  }
+
 
   .main-icon {
     align-items: center;
-    background-color: $secondary-ui-bg;
+    background-color: $color-gray-60;
     cursor: pointer;
     display: flex;
     height: 100%;
@@ -25,28 +66,52 @@
     left: 0;
     position: absolute;
     top: 0;
-    width: 50px;
+    width: 40px;
 
     a {
       height: 30px;
 
       svg {
-        fill: $medium-ui-icons;
+        fill: $color-gray-30;
         height: 30px;
-        width: 30px;
+        width: 28px;
 
         }
 
       &:hover {
 
         svg {
-          fill: $main-ui-color;
+          fill: $color-primary;
         }
 
       }
 
     }
 
+  }
+
+  .menu-btn {
+    align-items: center;
+    background-color: $color-gray-60;
+    cursor: pointer;
+    border-radius: $br-small;
+    display: flex;
+    margin-right: $x-small;
+    padding: $x-small;
+
+    svg {
+      height: 15px;
+      fill: $color-gray-20;
+      width: 15px;
+    }
+
+    &:hover {
+      background-color: $color-primary;
+
+      svg {
+        fill: $color-gray-60;
+      }
+    }
   }
 
   .project-tree-btn {
@@ -56,18 +121,23 @@
     padding: $x-small;
 
     svg {
-      fill: $intense-ui-icons;
+      fill: $color-gray-20;
       height: 20px;
       margin-right: $small;
       width: 20px;
     }
 
     span {
-      color: $soft-ui-text;
+      color: $color-white;
       font-size: $fs14;
       overflow-x: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      &.project-name {
+        color: $color-gray-20;
+        margin-right: $x-small;
+      }
     }
 
   }
@@ -75,141 +145,38 @@
   .workspace-options {
     display: flex;
     margin: auto;
-
-    .options-btn {
-      align-items: center;
-      border-right: 4px double $soft-ui-border;
-      display: flex;
-      margin: 0;
-
-      &:last-child {
-        border: none;
-      }
-
-      li {
-        align-items: center;
-        background-color: transparent;
-        border: 1px solid transparent;
-        border-radius: $br-small;
-        cursor: pointer;
-        display: flex;
-        flex-shrink: 0;
-        height: 30px;
-        justify-content: center;
-        margin: 0 $small;
-        position: relative;
-        width: 30px;
-
-        a {
-          padding-top: 6px;
-        }
-
-        svg {
-          fill: $intense-ui-icons;
-          height: 18px;
-          width: 18px;
-        }
-
-        &:hover {
-          background-color: $color-primary;
-
-          svg {
-            fill: $color-gray-50;
-          }
-
-        }
-
-        &.selected {
-
-          svg {
-            fill: $color-primary;
-          }
-
-          &:hover {
-
-            svg {
-              fill: $soft-ui-icons;
-            }
-          }
-
-        }
-
-      }
-
-    }
-
   }
 
-  .options-view {
+}
+
+.zoom-input {
+  align-items: center;
+  display: flex;
+
+  span {
+    color: $color-gray-10;
+    font-size: $fs15;
+    margin: 0 $x-small;
+  }
+
+  .add-zoom,
+  .remove-zoom {
     align-items: center;
+    background-color: $color-gray-60;
+    border-radius: $br-small;
+    cursor: pointer;
+    color: $color-gray-20;
     display: flex;
-    justify-content: content;
-    margin: 0;
+    flex-shrink: 0;
+    font-size: $fs20;
+    font-weight: bold;
+    height: 20px;
+    justify-content: center;
+    width: 20px;
 
-    li {
-      align-items: center;
-      display: flex;
-      flex-shrink: 0;
-      height: 30px;
-      margin: 0 $small;
-      position: relative;
-      width: 60px;
-
-      &.zoom-input {
-        width: 85px;
-        padding: 0 25px;
-        position: relative;
-
-        span {
-          color: $medium-ui-text;
-          font-size: $fs15;
-        }
-
-        .add-zoom,
-        .remove-zoom {
-          align-items: center;
-          border-radius: 50%;
-          border: 1px solid $intense-ui-border;
-          cursor: pointer;
-          color: $intense-ui-border;
-          display: none;
-          flex-shrink: 0;
-          font-size: $fs20;
-          font-weight: bold;
-          height: 20px;
-          justify-content: center;
-          position: absolute;
-          top: 5px;
-          width: 20px;
-
-          &:hover {
-            border-color: $color-primary;
-            color: $color-primary;
-          }
-
-        }
-
-        .add-zoom {
-          left: -5px;
-        }
-
-        .remove-zoom {
-          padding-top: 4px;
-          right: -5px;
-        }
-
-        &:hover {
-
-          .add-zoom,
-          .remove-zoom {
-            display: flex;
-            @include animation(0s,.3s,fadeIn);
-          }
-
-        }
-
-      }
-
+    &:hover {
+      background-color: $color-primary;
+      color: $color-gray-60;
     }
 
   }
@@ -218,7 +185,7 @@
 
 .options-btn {
   align-items: center;
-  border-right: 4px double $soft-ui-border;
+  border-right: 4px double $color-gray-60;
   display: flex;
   margin: 0;
 
@@ -228,7 +195,7 @@
 
   li {
     align-items: center;
-    background-color: $secondary-ui-bg;
+    background-color: $color-gray-60;
     border: 1px solid transparent;
     border-radius: $br-small;
     cursor: pointer;
@@ -245,18 +212,18 @@
     }
 
     svg {
-      fill: $intense-ui-icons;
+      fill: $color-gray-20;
       height: 18px;
       width: 18px;
     }
 
     &:hover {
-      background-color: $dark-ui-bg;
-      border-color: $soft-ui-border;
+      background-color: $color-gray-10;
+      border-color: $color-gray-60;
     }
 
     &.selected {
-      background-color: $main-ui-color;
+      background-color: $color-primary;
 
       svg {
         fill: $color-white;
@@ -273,7 +240,7 @@
   display: flex;
 
   .view-mode {
-    background-color: $intense-ui-icons;
+    background-color: $color-gray-20;
     align-items: center;
     border-radius: $br-small;
     cursor: pointer;
@@ -290,16 +257,16 @@
     }
 
     svg {
-      fill: $secondary-ui-bg;
+      fill: $color-gray-60;
       height: 18px;
       width: 18px;
     }
 
     &:hover {
-      background-color: $main-ui-color;
+      background-color: $color-primary;
 
       svg {
-        fill: $soft-ui-icons;
+        fill: $color-gray-60;
       }
 
     }
@@ -313,7 +280,7 @@
   cursor: pointer;
   display: flex;
   margin: 0;
-  
+
   li {
     margin-left: $small;
     position: relative;

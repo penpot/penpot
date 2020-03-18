@@ -8,8 +8,8 @@
 .color-palette {
   @include animation(0,.5s,fadeInUp);
   align-items: center;
-  background-color: $primary-ui-bg;
-  border-top: 1px solid $soft-ui-border;
+  background-color: $color-gray-50;
+  border-top: 1px solid $color-gray-60;
   display: flex;
   padding: 1rem;
   position: absolute;
@@ -77,7 +77,7 @@
     }
   }
   &.current {
-    background-color: $main-ui-color;
+    background-color: $color-primary;
     border-color: $color-white;
     svg {
       fill: $color-white;
@@ -111,7 +111,7 @@
   flex-basis: 66px;
   .color {
     background-color: $color-gray-lighter;
-    border: 2px solid $soft-ui-border;
+    border: 2px solid $color-gray-60;
     border-radius: 50%;
     flex-shrink: 0;
     margin-bottom: .4rem;
@@ -153,7 +153,7 @@
     margin-left: 1.5rem;
     .color {
       align-items: center;
-      background-color: $primary-ui-bg;
+      background-color: $color-gray-50;
       border: 3px dashed $color-gray-lighter;
       cursor: pointer;
       display: flex;
@@ -201,7 +201,7 @@
 }
 
 .color-tooltip {
-  background-color: $primary-ui-bg;
+  background-color: $color-gray-50;
   border: 1px solid $color-gray-lighter;
   border-radius: 3px;
   left: -102px;
@@ -217,7 +217,7 @@
       max-width: 100px;
     }
     &::after {
-      background-color: $primary-ui-bg;
+      background-color: $color-gray-50;
       bottom: -32px;
       border-bottom: 1px solid $color-gray-lighter;
       border-right: 1px solid $color-gray-lighter;

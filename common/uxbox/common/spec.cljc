@@ -115,7 +115,7 @@
   (s/assert* spec x))
 
 (defmacro assert
-  "Always active assertion macro (does not obey to :elide-asserts)"
+  "Development only assertion macro."
   [spec x]
   (when *assert*
     `(spec-assert ~spec ~x)))

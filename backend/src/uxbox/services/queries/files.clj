@@ -28,6 +28,46 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
+(s/def ::team-id ::us/uuid)
+(s/def ::search-term ::us/string)
+
+;; --- Query: Files search
+
+(def ^:private sql:search-files
+  "with projects as (
+     select p.*
+       from project as p
+      inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
+      where tpr.profile_id = $1
+        and p.team_id = $2
+        and p.deleted_at is null
+        and (tpr.is_admin = true or
+             tpr.is_owner = true or
+             tpr.can_edit = true)
+      union
+     select p.*
+       from project as p
+      inner join project_profile_rel as ppr on (ppr.project_id = p.id)
+      where ppr.profile_id = $1
+        and p.team_id = $2
+        and p.deleted_at is null
+        and (ppr.is_admin = true or
+             ppr.is_owner = true or
+             ppr.can_edit = true)
+   )
+   select file.*
+     from file
+    inner join projects as pr on (file.project_id = pr.id)
+    where file.name ilike ('%' || $3 || '%')
+    order by file.created_at asc")
+
+(s/def ::search-files
+  (s/keys :req-un [::profile-id ::team-id ::search-term]))
+
+(sq/defquery ::search-files
+  [{:keys [profile-id team-id search-term] :as params}]
+  (-> (db/query db/pool [sql:search-files profile-id team-id search-term])
+      (p/then (partial mapv decode-row))))
 
 ;; --- Query: Draft Files
 
@@ -49,7 +89,7 @@
    window pages_w as (partition by f.id order by pg.created_at
                       range between unbounded preceding
                                 and unbounded following)
-    order by f.created_at")
+    order by f.modified_at desc")
 
 (s/def ::project-id ::us/uuid)
 (s/def ::files

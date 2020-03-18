@@ -19,7 +19,7 @@
 
 .figure-btn {
   align-items: center;
-  background-color: $secondary-ui-bg;
+  background-color: $color-gray-60;
   border-radius: 3px;
   border: 1px solid transparent;
   cursor: pointer;
@@ -31,18 +31,18 @@
   width: 54px;
 
   svg {
-    fill: $intense-ui-icons;
+    fill: $color-gray-20;
     height: 40px;
     width: 40px;
   }
 
   &:hover {
-    background-color: $dark-ui-bg;
-    border-color: $soft-ui-border;
+    background-color: $color-gray-10;
+    border-color: $color-gray-60;
   }
 
   &.selected {
-    background-color: $main-ui-color;
+    background-color: $color-primary;
 
     svg {
       fill: $color-white;

@@ -11,6 +11,7 @@
   (:require
    [cljs.spec.alpha :as s]
    [beicon.core :as rx]
+   [goog.object :as gobj]
    [rumext.alpha :as mf]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.users :as udu]
@@ -66,11 +67,12 @@
 (def app-sym (.for js/Symbol "uxbox.app"))
 
 (defn ^:export init
-  [translations]
-  (i18n/init! (js/JSON.parse translations))
-  (unchecked-set js/window app-sym "main")
-  (st/init)
-  (init-ui))
+  []
+  (let [translations (gobj/get goog.global "uxboxTranslations")]
+    (i18n/init! translations)
+    (unchecked-set js/window app-sym "main")
+    (st/init)
+    (init-ui)))
 
 (defn reinit
   []
@@ -84,3 +86,8 @@
   []
   (when (= "main" (unchecked-get js/window app-sym))
     (reinit)))
+
+(defn ^:export toggle-debug
+  []
+  (swap! st/*debug* not))
+

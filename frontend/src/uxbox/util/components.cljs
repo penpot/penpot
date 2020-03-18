@@ -11,6 +11,8 @@
    [rumext.alpha :as mf]
    [uxbox.util.timers :refer [schedule-on-idle]]))
 
+;; TODO: this file is DEPRECATED (pending deletion)
+
 (mf/defc chunked-list
   [{:keys [items children initial-size chunk-size]
     :or {initial-size 30 chunk-size 5}
@@ -39,13 +41,3 @@
       (mf/use-effect {:deps true :fn #(after-render state)})
       (for [item (:current @state)]
         (children item)))))
-
-(defn use-rxsub
-  [ob]
-  (let [[state reset-state!] (mf/useState @ob)]
-    (mf/useEffect
-     (fn []
-       (let [sub (rx/subscribe ob #(reset-state! %))]
-         #(rx/cancel! sub)))
-     #js [ob])
-    state))

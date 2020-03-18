@@ -9,7 +9,9 @@
   (:require
    [beicon.core :as rx]
    [goog.events :as events]
+   [goog.object :as gobj]
    [potok.core :as ptk]
+   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
@@ -22,13 +24,12 @@
    [uxbox.main.ui.workspace.grid :refer [grid]]
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
-
-   [uxbox.main.ui.shapes :refer [shape-wrapper canvas-wrapper]]
+   [uxbox.main.ui.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
-
-   [uxbox.util.data :refer [parse-int]]
-   [uxbox.util.components :refer [use-rxsub]]
+   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
+   [uxbox.util.perf :as perf]
+   [uxbox.util.uuid :as uuid]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt])
   (:import goog.events.EventType))
@@ -141,23 +142,40 @@
 ;; --- Viewport
 
 (declare remote-user-cursors)
+(declare frames)
 
-(mf/defc canvas-and-shapes
-  {:wrap [mf/wrap-memo]}
+(defn- build-workspace-data-iref
+  [page-id]
+  (-> (l/in [:workspace-data page-id])
+      (l/derive st/state)))
+
+(mf/defrc frames-wrapper
+  ;; {:wrap [mf/wrap-memo]}
   [props]
-  (let [data (mf/deref refs/workspace-data)
-        shapes-map (:shapes-by-id data)
-        shapes (->> (map #(get shapes-map %) (:shapes data []))
-                    (group-by :canvas))
-        canvas (map #(get shapes-map %) (:canvas data []))]
+  (let [page     (gobj/get props "page")
+        page-id  (:id page)
+        data-ref (mf/use-memo {:fn #(-> (l/in [:workspace-data page-id])
+                                        (l/derive st/state))
+                               :deps (mf/deps page-id)})
+        data (mf/deref data-ref)]
+    [:& frames {:data data}]))
+
+(mf/defc frames
+  {:wrap [mf/wrap-memo]}
+  [{:keys [data] :as props}]
+  (let [objects (:objects data)
+        root    (get objects uuid/zero)
+        shapes  (->> (:shapes root)
+                     (map #(get objects %)))]
     [:g.shapes
-     (for [item canvas]
-       [:& canvas-wrapper {:shape item
-                           :key (:id item)
-                           :childs (get shapes (:id item))}])
-     (for [item (get shapes nil)]
-       [:& shape-wrapper {:shape item
-                          :key (:id item)}])]))
+     (for [item (reverse shapes)]
+       (if (= (:type item) :frame)
+         [:& frame-wrapper {:shape item
+                            :key (:id item)
+                            :objects objects}]
+         [:& shape-wrapper {:shape item
+                            :key (:id item)}]))]))
+
 
 (mf/defc viewport
   [{:keys [page] :as props}]
@@ -169,139 +187,157 @@
                 selected]
          :as local} (mf/deref refs/workspace-local)
         viewport-ref (mf/use-ref nil)
-        zoom (or zoom 1)]
-    (letfn [(on-mouse-down [event]
-              (dom/stop-propagation event)
-              (let [ctrl? (kbd/ctrl? event)
-                    shift? (kbd/shift? event)
-                    opts {:shift? shift?
-                          :ctrl? ctrl?}]
-                (st/emit! (ms/->MouseEvent :down ctrl? shift?)))
-              (when (not edition)
-                (if drawing-tool
-                  (st/emit! (start-drawing drawing-tool))
-                  (st/emit! handle-selrect))))
+        zoom (or zoom 1)
 
-            (on-context-menu [event]
-              (dom/prevent-default event)
-              (dom/stop-propagation event)
-              (let [ctrl? (kbd/ctrl? event)
-                    shift? (kbd/shift? event)
-                    opts {:shift? shift?
-                          :ctrl? ctrl?}]
-                (st/emit! (ms/->MouseEvent :context-menu ctrl? shift?))))
+        on-mouse-down
+        (fn [event]
+          (dom/stop-propagation event)
+          (let [ctrl? (kbd/ctrl? event)
+                shift? (kbd/shift? event)
+                opts {:shift? shift?
+                      :ctrl? ctrl?}]
+            (st/emit! (ms/->MouseEvent :down ctrl? shift?)))
+          (when (not edition)
+            (if drawing-tool
+              (st/emit! (start-drawing drawing-tool))
+              (st/emit! handle-selrect))))
 
-            (on-mouse-up [event]
-              (dom/stop-propagation event)
-              (let [ctrl? (kbd/ctrl? event)
-                    shift? (kbd/shift? event)
-                    opts {:shift? shift?
-                          :ctrl? ctrl?}]
-                (st/emit! (ms/->MouseEvent :up ctrl? shift?))))
+        on-context-menu
+        (fn [event]
+          (dom/prevent-default event)
+          (dom/stop-propagation event)
+          (let [ctrl? (kbd/ctrl? event)
+                shift? (kbd/shift? event)
+                opts {:shift? shift?
+                      :ctrl? ctrl?}]
+            (st/emit! (ms/->MouseEvent :context-menu ctrl? shift?))))
 
-            (on-click [event]
-              (dom/stop-propagation event)
-              (let [ctrl? (kbd/ctrl? event)
-                    shift? (kbd/shift? event)
-                    opts {:shift? shift?
-                          :ctrl? ctrl?}]
-                (st/emit! (ms/->MouseEvent :click ctrl? shift?))))
+        on-mouse-up
+        (fn [event]
+          (dom/stop-propagation event)
+          (let [ctrl? (kbd/ctrl? event)
+                shift? (kbd/shift? event)
+                opts {:shift? shift?
+                      :ctrl? ctrl?}]
+            (st/emit! (ms/->MouseEvent :up ctrl? shift?))))
 
-            (on-double-click [event]
-              (dom/stop-propagation event)
-              (let [ctrl? (kbd/ctrl? event)
-                    shift? (kbd/shift? event)
-                    opts {:shift? shift?
-                          :ctrl? ctrl?}]
-                (st/emit! (ms/->MouseEvent :double-click ctrl? shift?))))
+        on-click
+        (fn [event]
+          (dom/stop-propagation event)
+          (let [ctrl? (kbd/ctrl? event)
+                shift? (kbd/shift? event)
+                opts {:shift? shift?
+                      :ctrl? ctrl?}]
+            (st/emit! (ms/->MouseEvent :click ctrl? shift?))))
 
-            (translate-point-to-viewport [pt]
-              (let [viewport (mf/ref-node viewport-ref)
-                    brect (.getBoundingClientRect viewport)
-                    brect (gpt/point (parse-int (.-left brect))
-                                     (parse-int (.-top brect)))]
-                (gpt/subtract pt brect)))
+        on-double-click
+        (fn [event]
+          (dom/stop-propagation event)
+          (let [ctrl? (kbd/ctrl? event)
+                shift? (kbd/shift? event)
+                opts {:shift? shift?
+                      :ctrl? ctrl?}]
+            (st/emit! (ms/->MouseEvent :double-click ctrl? shift?))))
 
-            (on-key-down [event]
-              (let [bevent (.getBrowserEvent event)
-                    key (.-keyCode event)
-                    ctrl? (kbd/ctrl? event)
-                    shift? (kbd/shift? event)
-                    opts {:key key
-                          :shift? shift?
-                          :ctrl? ctrl?}]
-                (when-not (.-repeat bevent)
-                  (st/emit! (ms/->KeyboardEvent :down key ctrl? shift?))
-                  (when (kbd/space? event)
-                    (st/emit! handle-viewport-positioning)
-                    #_(st/emit! (dw/start-viewport-positioning))))))
+        on-key-down
+        (fn [event]
+          (let [bevent (.getBrowserEvent event)
+                key (.-keyCode event)
+                ctrl? (kbd/ctrl? event)
+                shift? (kbd/shift? event)
+                opts {:key key
+                      :shift? shift?
+                      :ctrl? ctrl?}]
+            (when-not (.-repeat bevent)
+              (st/emit! (ms/->KeyboardEvent :down key ctrl? shift?))
+              (when (kbd/space? event)
+                (st/emit! handle-viewport-positioning)
+                #_(st/emit! (dw/start-viewport-positioning))))))
 
-            (on-key-up [event]
-              (let [key (.-keyCode event)
-                    ctrl? (kbd/ctrl? event)
-                    shift? (kbd/shift? event)
-                    opts {:key key
-                          :shift? shift?
-                          :ctrl? ctrl?}]
-                (when (kbd/space? event)
-                  (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
-                (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?))))
+        on-key-up
+        (fn [event]
+          (let [key (.-keyCode event)
+                ctrl? (kbd/ctrl? event)
+                shift? (kbd/shift? event)
+                opts {:key key
+                      :shift? shift?
+                      :ctrl? ctrl?}]
+            (when (kbd/space? event)
+              (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
+            (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?))))
 
-            (on-mouse-move [event]
-              (let [pt (gpt/point (.-clientX event)
-                                  (.-clientY event))
-                    pt (translate-point-to-viewport pt)]
-                (st/emit! (ms/->PointerEvent :viewport pt
-                                              (kbd/ctrl? event)
-                                              (kbd/shift? event)))))
+        ;; translate-point-to-viewport
+        ;; (fn [pt]
+        ;;   (let [viewport (mf/ref-node viewport-ref)
+        ;;         brect (.getBoundingClientRect viewport)
+        ;;         brect (gpt/point (parse-int (.-left brect))
+        ;;                          (parse-int (.-top brect)))]
+        ;;     (gpt/subtract pt brect)))
 
-            (on-mount []
-              (let [key1 (events/listen js/document EventType.KEYDOWN on-key-down)
-                    key2 (events/listen js/document EventType.KEYUP on-key-up)]
-                (fn []
-                  (events/unlistenByKey key1)
-                  (events/unlistenByKey key2))))]
-      (mf/use-effect on-mount)
-      [:*
-       [:& coordinates {:zoom zoom}]
-       [:svg.viewport {:width (* c/viewport-width zoom)
-                       :height (* c/viewport-height zoom)
-                       :ref viewport-ref
-                       :class (when drawing-tool "drawing")
-                       :on-context-menu on-context-menu
-                       :on-click on-click
-                       :on-double-click on-double-click
-                       :on-mouse-move on-mouse-move
-                       :on-mouse-down on-mouse-down
-                       :on-mouse-up on-mouse-up}
-        [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
-         [:*
-          [:& canvas-and-shapes]
+        on-mouse-move
+        (fn [event]
+          ;; NOTE: offsetX and offsetY are marked as "experimental" on
+          ;; MDN site but seems like they are supported on all
+          ;; browsers so we can avoid translation opetation just using
+          ;; this attributes.
+          (let [;; pt (gpt/point (.-clientX event)
+                ;;               (.-clientY event))
+                ;; pt (translate-point-to-viewport pt)
+                pt (gpt/point (.-offsetX (.-nativeEvent event))
+                               (.-offsetY (.-nativeEvent event)))]
+            (st/emit! (ms/->PointerEvent :viewport pt
+                                         (kbd/ctrl? event)
+                                         (kbd/shift? event)))))
 
-          (when (seq selected)
-            [:& selection-handlers {:selected selected
-                                    :zoom zoom
-                                    :edition edition}])
+        on-mount
+        (fn []
+          (let [key1 (events/listen js/document EventType.KEYDOWN on-key-down)
+                key2 (events/listen js/document EventType.KEYUP on-key-up)]
+            (fn []
+              (events/unlistenByKey key1)
+              (events/unlistenByKey key2))))]
 
-          (when-let [drawing-shape (:drawing local)]
-            [:& draw-area {:shape drawing-shape
-                           :zoom zoom
-                           :modifiers (:modifiers local)}])]
+    (mf/use-effect on-mount)
+    [:*
+     [:& coordinates {:zoom zoom}]
+     [:svg.viewport {:width (* c/viewport-width zoom)
+                     :height (* c/viewport-height zoom)
+                     :ref viewport-ref
+                     :class (when drawing-tool "drawing")
+                     :on-context-menu on-context-menu
+                     :on-click on-click
+                     :on-double-click on-double-click
+                     :on-mouse-move on-mouse-move
+                     :on-mouse-down on-mouse-down
+                     :on-mouse-up on-mouse-up}
+      [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
+       ;; [:> js/React.Profiler
+       ;;  {:id "foobar"
+       ;;   :on-render (perf/react-on-profile)}
+       ;;  [:& frame-and-shapes]]
+       [:& frames-wrapper {:page page}]
 
-         (if (contains? flags :grid)
-           [:& grid])]
+       (when (seq selected)
+         [:& selection-handlers {:selected selected
+                                 :zoom zoom
+                                 :edition edition}])
 
-        (when tooltip
-          [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])
+       (when-let [drawing-shape (:drawing local)]
+         [:& draw-area {:shape drawing-shape
+                        :zoom zoom
+                        :modifiers (:modifiers local)}])
 
-        (when (contains? flags :ruler)
-          [:& ruler {:zoom zoom :ruler (:ruler local)}])
+       (if (contains? flags :grid)
+         [:& grid])]
 
+      (when tooltip
+        [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])
 
-        ;; -- METER CURSOR MULTIUSUARIO
-        [:& remote-user-cursors {:page page}]
+      (when (contains? flags :ruler)
+        [:& ruler {:zoom zoom :ruler (:ruler local)}])
 
-        [:& selrect {:data (:selrect local)}]]])))
+      [:& remote-user-cursors {:page page}]
+      [:& selrect {:data (:selrect local)}]]]))
 
 
 (mf/defc remote-user-cursor

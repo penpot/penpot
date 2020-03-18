@@ -14,7 +14,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as s]
    [uxbox.main.streams :as ms]
-   [uxbox.util.components :refer [use-rxsub]]
+   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
    [uxbox.util.dom :as dom]))
 
 ;; --- Constants & Helpers

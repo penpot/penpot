@@ -14,8 +14,11 @@
     <section id="loader"></section>
     <section id="modal"></section>
 
-    <script src="js/cljs_base.js?ts={{& ts}}"></script>
+    <script>
+      window.uxboxConfig = JSON.parse({{& config }});
+      window.uxboxTranslations = JSON.parse({{& translations }});
+    </script>
     <script src="js/main.js?ts={{& ts}}"></script>
-    <script>uxbox.main.init({{& tr }})</script>
+    <script>uxbox.main.init()</script>
   </body>
 </html>

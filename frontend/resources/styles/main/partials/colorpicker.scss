@@ -48,7 +48,7 @@
     }
 
     .input-text {
-      color: $intense-ui-text;
+      color: $color-gray-60;
       font-size: $fs13;
       margin: 5px;
       padding: 5px;
@@ -58,7 +58,7 @@
   }
 
   span {
-    color: $medium-ui-text;
+    color: $color-gray-20;
     font-size: $fs12;
   }
 
@@ -154,27 +154,27 @@
 
   .color-info {
     input {
-      border: 1px solid $intense-ui-border;
+      border: 1px solid $color-gray-40;
       border-radius: $br-small;
-      color: $soft-ui-text;
+      color: $color-gray-10;
       margin: 3px 0 0 $x-small;
       padding: 0 $x-small;
       width: 58px;
       font-size: $fs13;
 
       &:focus {
-        border-color: $soft-ui-text;
+        border-color: $color-gray-10;
       }
     }
   }
 
   .type {
-    color: $soft-ui-text;
+    color: $color-gray-10;
     margin-right: $x-small;
   }
 
   .number {
-    color: $intense-ui-text;
+    color: $color-gray-60;
   }
 }
 
@@ -190,14 +190,14 @@
   width: auto;
 
   span {
-    color: $medium-ui-text;
+    color: $color-gray-20;
     font-size: $fs12;
   }
 
   .inputs-area {
 
     .input-text {
-      color: $intense-ui-text;
+      color: $color-gray-60;
       font-size: $fs13;
       margin: 5px;
       padding: 5px;

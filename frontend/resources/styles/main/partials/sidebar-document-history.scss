@@ -8,15 +8,15 @@
 .document-history {
 
   .history-tabs {
-    background-color: $secondary-ui-bg;
+    background-color: $color-gray-60;
     display: flex;
     width: 100%;
 
     li {
-      background: darken($secondary-ui-bg, 12%);
+      background: darken($color-gray-60, 12%);
       border-top-right-radius: $br-small;
       border-top-left-radius: $br-small;
-      color: $intense-ui-text;
+      color: $color-gray-60;
       cursor: pointer;
       font-size: $fs14;
       font-weight: bold;
@@ -27,8 +27,8 @@
       width: 50%;
 
       &.selected {
-        background-color: $primary-ui-bg;
-        color: $main-ui-color;
+        background-color: $color-gray-50;
+        color: $color-primary;
       }
 
     }
@@ -42,7 +42,7 @@
 
     li {
       align-items: center;
-      border-bottom: 1px solid $soft-ui-border;
+      border-bottom: 1px solid $color-gray-60;
       cursor: pointer;
       display: flex;
       font-size: $fs14;
@@ -57,13 +57,13 @@
         a {
 
           svg {
-            fill: $soft-ui-icons;
+            fill: $color-gray-60;
             height: 15px;
             margin-left: $x-small;
             width: 15px;
 
             &:hover {
-              fill: $intense-ui-icons;
+              fill: $color-gray-20;
             }
 
           }
@@ -75,13 +75,13 @@
         cursor: pointer;
 
         svg {
-          fill: $soft-ui-icons;
+          fill: $color-gray-60;
           height: 12px;
           margin-right: $small;
           width: 12px;
 
           &:hover {
-            fill: $intense-ui-icons;
+            fill: $color-gray-20;
           }
 
         }
@@ -89,7 +89,7 @@
         &.selected {
 
           svg {
-            fill: $intense-ui-icons;
+            fill: $color-gray-20;
           }
 
         }
@@ -97,11 +97,11 @@
       }
 
       &:hover {
-        color: $main-ui-color;
+        color: $color-primary;
       }
 
       &.current {
-        color: $main-ui-color;
+        color: $color-primary;
         font-weight: bold;
 
         span {
@@ -109,7 +109,7 @@
           display: flex;
 
           &::before {
-            background-color: $main-ui-color;
+            background-color: $color-primary;
             border-radius: 50%;
             content: "";
             height: 6px;

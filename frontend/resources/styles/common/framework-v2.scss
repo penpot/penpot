@@ -35,7 +35,7 @@
 .btn-primary {
   @extend %btn;
   align-items: center;
-  background: $main-ui-color;
+  background: $color-primary;
   color: $color-white;
   justify-content: center;
   display: flex;
@@ -185,7 +185,7 @@ ul.slider-dots {
 
     &.current,
     &:hover {
-      background-color: $dark-ui-bg;
+      background-color: $color-gray-10;
     }
 
   }
@@ -319,7 +319,7 @@ ul.slider-dots {
   width: 100%;
 
   &::after {
-    color: $soft-ui-text;
+    color: $color-gray-10;
     font-size: $fs12;
     height: 20px;
     position: absolute;
@@ -366,9 +366,9 @@ ul.slider-dots {
 
 input,
 select {
-  background-color: $input-bg;
+  background-color: $color-gray-50;
   box-sizing: border-box;
-  color: $intense-ui-text;
+  color: $color-gray-60;
   font-family: "sourcesanspro", sans-serif;
   font-size: $fs16;
   margin-bottom: $medium;
@@ -402,8 +402,8 @@ input[type="checkbox"]:focus {
 
 .input-text {
   border: none;
-  border-bottom: 1px solid $soft-ui-border;
-  background-color: $input-bg;
+  border-bottom: 1px solid $color-gray-60;
+  background-color: $color-gray-50;
   box-shadow: none;
   outline: none;
   padding: $small $big $small $small;
@@ -414,7 +414,7 @@ input[type="checkbox"]:focus {
   }
 
   &:focus {
-    border-color: $intense-ui-border;
+    border-color: $color-gray-40;
     box-shadow: none;
 
     @include placeholder {
@@ -442,7 +442,7 @@ input[type="checkbox"]:focus {
 // Element-name
 
 input.element-name {
-  border: 1px solid $soft-ui-border;
+  border: 1px solid $color-gray-60;
   border-radius: $br-small;
   font-size: $fs13;
   margin: 0px;
@@ -489,9 +489,9 @@ input.element-name {
       width: 20px;
       height: 20px;
       margin-right: 10px;
-      background-color: $primary-ui-bg;
-      border: 1px solid $soft-ui-border;
-      box-shadow: inset 0 0 0 0 $main-ui-color ;
+      background-color: $color-gray-50;
+      border: 1px solid $color-gray-60;
+      box-shadow: inset 0 0 0 0 $color-primary ;
       box-sizing: border-box;
     }
 
@@ -751,7 +751,7 @@ input[type=range]::-webkit-slider-runnable-track {
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
   border-radius: 25px;
   border: 0px solid #000101;
 }
@@ -761,13 +761,13 @@ input[type=range]::-webkit-slider-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $intense-ui-icons;
+  background: $color-gray-20;
   cursor: pointer;
   -webkit-appearance: none;
   margin-top: -8px;
 }
 input[type=range]:focus::-webkit-slider-runnable-track {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
 }
 input[type=range]::-moz-range-track {
   width: 100%;
@@ -775,7 +775,7 @@ input[type=range]::-moz-range-track {
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
   border-radius: 25px;
   border: 0px solid #000101;
 }
@@ -785,7 +785,7 @@ input[type=range]::-moz-range-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $intense-ui-icons;
+  background: $color-gray-20;
   cursor: pointer;
 }
 input[type=range]::-ms-track {
@@ -799,13 +799,13 @@ input[type=range]::-ms-track {
   color: transparent;
 }
 input[type=range]::-ms-fill-lower {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
   border: 0px solid #000101;
   border-radius: 50px;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
 }
 input[type=range]::-ms-fill-upper {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
   border: 0px solid #000101;
   border-radius: 50px;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
@@ -816,14 +816,14 @@ input[type=range]::-ms-thumb {
   height: 24px;
   width: 8px;
   border-radius: 7px;
-  background: $intense-ui-icons;
+  background: $color-gray-20;
   cursor: pointer;
 }
 input[type=range]:focus::-ms-fill-lower {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
 }
 input[type=range]:focus::-ms-fill-upper {
-  background: $secondary-ui-bg;
+  background: $color-gray-60;
 }
 
 // Scroll bar (chrome)
@@ -838,11 +838,11 @@ input[type=range]:focus::-ms-fill-upper {
     background-color: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background-color: $scrollbar-bg;
+    background-color: $color-gray-20;
 
     &:hover {
-      background-color: darken($scrollbar-bg, 14%);
-      outline: 2px solid $main-ui-color;
+      background-color: darken($color-gray-20, 14%);
+      outline: 2px solid $color-primary;
     }
 
 }
@@ -855,9 +855,9 @@ input[type=range]:focus::-ms-fill-upper {
   &:hover {
 
     &::after {
-      background-color: $primary-ui-bg;
+      background-color: $color-gray-50;
       border-radius: $br-small;
-      color: $medium-ui-text;
+      color: $color-gray-20;
       content: attr(alt);
       font-size: $fs11;
       font-weight: bold;
@@ -905,10 +905,10 @@ input[type=range]:focus::-ms-fill-upper {
 
       &::after {
         align-items: center;
-        background-color: $input-bg;
+        background-color: $color-gray-50;
         box-sizing: border-box;
         border-radius: 0;
-        color: $intense-ui-text;
+        color: $color-gray-60;
         display: flex;
         height: 100%;
         justify-content: center;

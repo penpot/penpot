@@ -7,22 +7,17 @@
 
 .library-bar {
   background-color: $color-white;
-  bottom: 0;
-  height: 100%;
-  left: 0;
-  position: fixed;
-  width: 230px;
 
   .library-bar-inside {
+    border-right: 1px solid $color-gray-lighter;
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding-top: 40px;
 
     .library-tabs {
       align-items: center;
       background-color: $color-white;
-      border-bottom: 1px solid $medium-ui-border;
+      border-bottom: 1px solid $color-gray-20;
       display: flex;
       justify-content: space-around;
       margin: 0;
@@ -39,12 +34,12 @@
         width: 118px;
 
         &:hover {
-          color: $intense-ui-text;
+          color: $color-gray-60;
         }
 
         &.current {
-          border-color: $main-ui-color;
-          color: $intense-ui-text;
+          border-color: $color-primary;
+          color: $color-gray-60;
         }
 
       }
@@ -55,19 +50,27 @@
       display: flex;
       flex-direction: column;
       height: calc(95% - 1rem);
-      margin-bottom: 1rem;
+      margin-bottom: $size-4;
       overflow-y: auto;
       padding-bottom: 20px;
 
       li {
+        align-items: center;
         cursor: pointer;
         display: flex;
-        flex-direction: column;
         flex-shrink: 0;
-        padding: $small $medium;
+        padding: $size-4 $size-2;
+
+        svg {
+          border-radius: 3px;
+          fill: $color-black;
+          margin-right: 8px;
+          height: $size-4;
+          width: $size-4;
+        }
 
         span.element-title {
-          color: $intense-ui-text;
+          color: $color-gray-60;
           font-size: $fs14;
           overflow-x: hidden;
           text-overflow: ellipsis;
@@ -75,26 +78,41 @@
         }
   
         &.recent-projects {
-          border-top: 1px solid $dark-ui-bg;
-          border-bottom: 1px solid $dark-ui-bg;
+          border-top: 1px solid $color-gray-10;
+          
+          svg {
+            fill: $color-white;
+          }
+          
+          span {
+            font-size: $fs15;
+          }
+        }
+
+        & .edit-wrapper {
+            display: flex;
         }
 
         input.element-title {
           border: 0;
           height: 30px;
           padding: 5px;
+          margin: 0;
+          width: 100%;
+          background-color: $color-white;
         }
 
         .close {
-            background: $primary-ui-bg;
+            background-color: $color-white;
             cursor: pointer;
-            padding: 5px 10px;
+            padding: 3px 5px;
 
             svg {
               fill: $color-gray;
-              height: 20px;
+              height: 15px;
               transform: rotate(45deg) translateY(7px);
-              width: 20px;
+              width: 15px;
+              margin: 0;
             }
         }
 
@@ -103,35 +121,20 @@
           font-style: italic;
         }
 
-        &:hover {
-          background-color: $main-ui-color;
-          color: $intense-ui-text;
-        }
-
+        &:hover,
         &.current {
-
-          span.element-title,
-          .element-subtitle {
-            color: $intense-ui-text;
-            font-weight: bold;
-          }
-          input.element-title {
-            color: $color-gray-dark;
-          }
+          background-color: $color-primary-lighter;
+          color: $color-gray-60;
         }
-
       }
-
     }
-
   }
-
 }
 
 .projects-row {
   align-items: center;
   display: flex;
-  padding: $medium;
+  padding: $size-2;
 
   span {
     color: $color-gray-30;
@@ -140,7 +143,7 @@
 
   .add-project {
     align-items: center;
-    background-color: $dark-ui-bg;
+    background-color: $color-gray-10;
     border-radius: $br-small;
     border: 1px solid transparent;
     cursor: pointer;
@@ -150,16 +153,16 @@
     padding: $x-small;
 
     svg {
-      fill: $soft-ui-icons;
-      height: 16px;
-      width: 16px;
+      fill: $color-gray-60;
+      height: $size-2;
+      width: $size-2;
     }
 
     &:hover {
-      background-color: $main-ui-color;
+      background-color: $color-primary;
 
       svg {
-        fill: $soft-ui-icons;
+        fill: $color-gray-60;
       }
     }
   }
@@ -169,12 +172,12 @@
   align-items: center;
   border: 1px solid $color-gray-10;
   display: flex;
-  margin: $medium;
+  margin: $size-2;
   
   .input-text {
     background: $color-white;
     border: 0;
-    color: $intense-ui-text;
+    color: $color-gray-60;
     font-size: $fs14;
     padding: 4px 8px;
     margin: 0;
@@ -182,15 +185,21 @@
     width: 100%;
   }
 
+  &:focus,
+  &:focus-within {
+    border-color: $color-black;
+  }
+
   .clear-search {
     align-items: center;
     cursor: pointer;
     display: flex;
-    height: 28px;
+    height: 22px;
     padding: 0 5px;
+    width: 22px;
 
     svg {
-      fill: $medium-ui-icons;
+      fill: $color-gray-30;
       height: 15px;
       transform: rotate(45deg);
       width: 15px;

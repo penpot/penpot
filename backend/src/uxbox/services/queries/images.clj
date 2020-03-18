@@ -21,6 +21,7 @@
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
+(s/def ::team-id ::us/uuid)
 (s/def ::library-id ::us/uuid)
 
 ;; --- Query: Image Librarys

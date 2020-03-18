@@ -7,22 +7,31 @@
 
 .main-bar {
   align-items: center;
-  background-color: $primary-ui-bg;
+  background-color: $color-white;
+  border-bottom: 1px solid $color-gray-10;
   display: flex;
   height: 40px;
-  padding: $x-small $medium;
+  padding: $x-small $small;
   position: relative;
   z-index: 10;
 
-  .main-logo {
-    padding-top: $x-small;
 
-    svg {
-      fill: $intense-ui-icons;
-      height: 30px;
-      width: 100px;
-    }
+  .btn-dashboard {
+    margin-left: auto;
+  }
 
+}
+
+.main-logo {
+  border-right: 1px solid $color-gray-10;
+  border-bottom: 1px solid $color-gray-10;
+  text-align: center;
+  padding-top: $x-small;
+
+  svg {
+    fill: $color-black;
+    height: 30px;
+    width: 30px;
   }
 
 }
@@ -38,11 +47,11 @@
 
     a {
       border-bottom: 2px solid transparent;
-      color: $soft-ui-text;
+      color: $color-gray-10;
       margin: $x-small $big;
 
       &:hover {
-        border-color: $main-ui-color;
+        border-color: $color-primary;
       }
 
     }
@@ -50,7 +59,7 @@
     &.current {
 
       a {
-        border-color: $main-ui-color;
+        border-color: $color-primary;
       }
 
     }
@@ -59,16 +68,28 @@
 
 }
 
+.dashboard-title {
+  color: $color-black;
+  font-size: $fs15;
+  font-weight: normal;
+  margin: 0 $x-big;
+}
+
 .user-zone {
   align-items: center;
+  border-right: 1px solid $color-gray-10;
+  border-bottom: 1px solid $color-gray-10;
   cursor: pointer;
   display: flex;
-  margin-left: auto;
+  padding: 0 $x-small 0 $small;
   position: relative;
+  width: 180px;
 
   span {
-    color: $medium-ui-text;
+    @include text-ellipsis;
+    color: $color-black;
     margin: $small;
+    font-size: $fs12;
   }
 
   img {
@@ -79,46 +100,47 @@
   }
 
   .dropdown {
-    background-color: $color-white;
-    border-radius: $br-small;
-    border: 1px solid $color-gray-10;
-    min-width: 150px;
-    padding: 0 $small;
     position: absolute;
     top: 0;
-    right: 0;
-    width: 100%;
+    left: 0;
     z-index: 12;
-    @include animation(0,.2s,fadeInDown);
+    width: 180px;
 
-    li {
-      font-size: $fs13;
-      padding: $small 0;
+    ul.profile-menu {
+      background-color: $color-gray-60;
+      border-radius: $br-small;
+      padding: 0 $small;
 
-      svg {
-        fill: $color-gray-40;
-        height: 12px;
-        width: 12px;
-      }
+      @include animation(0,.2s,fadeInDown);
 
-      span {
-        color: $color-gray-40;
-      }
-
-      &:hover {
-
-        span {
-          color: $intense-ui-text;
-        }
+      li {
+        font-size: $fs13;
+        padding: $small 0;
 
         svg {
-          fill: $intense-ui-text;
+          fill: $color-gray-20;
+          height: 12px;
+          width: 12px;
+        }
+
+        span {
+          color: $color-white;
+        }
+
+        &:hover {
+
+          span {
+            color: $color-primary;
+          }
+
+          svg {
+            fill: $color-primary;
+          }
+
         }
 
       }
-
     }
-
   }
 
 }

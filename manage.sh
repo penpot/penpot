@@ -73,8 +73,10 @@ function build-frontend {
            --mount source=`pwd`,type=bind,target=/home/uxbox/uxbox \
            --mount source=${HOME}/.m2,type=bind,target=/home/uxbox/.m2 \
            -w /home/uxbox/uxbox/frontend \
-           -e UXBOX_API_URL=${UXBOX_API_URL} \
+           -e UXBOX_PUBLIC_URL=${UXBOX_PUBLIC_URL} \
            -e UXBOX_DEMO_WARNING=${UXBOX_DEMO_WARNING} \
+           -e UXBOX_DEPLOY_DATE=${UXBOX_DEPLOY_DATE} \
+           -e UXBOX_DEPLOY_COMMIT=${UXBOX_DEPLOY_COMMIT} \
            $IMAGE ./scripts/build-app.sh
 }
 

@@ -10,9 +10,9 @@
    [beicon.core :as rx]
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.history :as udh]
-   [uxbox.main.data.undo :as udu]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -30,6 +30,7 @@
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
+   [uxbox.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
@@ -45,10 +46,10 @@
     (st/emit! (ms/->ScrollEvent (gpt/point left top)))))
 
 (defn- on-wheel
-  [event canvas]
+  [event frame]
   (when (kbd/ctrl? event)
     (let [prev-zoom @refs/selected-zoom
-          dom (mf/ref-node canvas)
+          dom (mf/ref-node frame)
           scroll-position (scroll/get-current-position-absolute dom)
           mouse-point @ms/mouse-position]
       (dom/prevent-default event)
@@ -59,9 +60,8 @@
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
-  [{:keys [page file flags] :as params}]
-  (let [canvas (mf/use-ref nil)
-        layout (mf/deref refs/workspace-layout)
+  [{:keys [page file layout] :as params}]
+  (let [frame (mf/use-ref nil)
         left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                 :document-history])))
         right-sidebar? (not (empty? (keep layout [:icons :drawtools
@@ -77,7 +77,7 @@
       [:section.workspace-content
        {:class classes
         :on-scroll on-scroll
-        :on-wheel #(on-wheel % canvas)}
+        :on-wheel #(on-wheel % frame)}
 
        [:& history-dialog]
 
@@ -87,14 +87,19 @@
           [:& horizontal-rule]
           [:& vertical-rule]])
 
-       [:section.workspace-viewport {:id "workspace-viewport" :ref canvas}
-        [:& viewport {:page page}]]]
+       [:section.workspace-viewport {:id "workspace-viewport"
+                                     :ref frame}
+        [:& viewport {:page page :file file}]]]
+
+      [:& left-toolbar {:page page
+                        :layout layout}]
 
       ;; Aside
       (when left-sidebar?
         [:& left-sidebar {:file file :page page :layout layout}])
       (when right-sidebar?
         [:& right-sidebar {:page page :layout layout}])]]))
+
 
 (mf/defc workspace
   [{:keys [file-id page-id] :as props}]
@@ -111,17 +116,23 @@
           #(st/emit! (dw/finalize-ws file-id)))})
 
   (mf/use-effect
+   {:fn #(st/emit! dw/initialize-layout)})
+
+  (mf/use-effect
    {:deps (mf/deps file-id page-id)
     :fn (fn []
           (let [sub (shortcuts/init)]
             #(rx/cancel! sub)))})
-
   (let [file (mf/deref refs/workspace-file)
-        page (mf/deref refs/workspace-page)]
+        page (mf/deref refs/workspace-page)
+        layout (mf/deref refs/workspace-layout)]
     [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
-     [:& header {:page page}]
+     [:& header {:page page
+                 :file file
+                 :layout layout}]
 
      (when page
        [:& workspace-content {:file file
-                              :page page}])]))
+                              :page page
+                              :layout layout}])]))

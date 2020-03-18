@@ -6,7 +6,7 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .workspace-content {
-  background-color: $canvas-bg;
+  background-color: $color-canvas;
   display: flex;
   height: 100%;
   /* width: 100%; */
@@ -16,7 +16,7 @@
   padding: 0;
   margin: 0;
   position: fixed;
-  right: 230px;
+  right: 190px;
 
   &.scrolling {
     cursor: grab;
@@ -115,10 +115,10 @@
     top: 0px;
 
     rect {
-      fill: $canvas-bg;
+      fill: $color-canvas;
     }
     path {
-      stroke: $medium-ui-text;
+      stroke: $color-gray-20;
     }
   }
 
@@ -128,10 +128,10 @@
     left: 0px;
 
     rect {
-      fill: $canvas-bg;
+      fill: $color-canvas;
     }
     path {
-      stroke: $medium-ui-text;
+      stroke: $color-gray-20;
     }
   }
 

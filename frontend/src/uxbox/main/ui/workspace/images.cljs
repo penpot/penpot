@@ -160,8 +160,8 @@
                         (d/read-string)
                         (swap! local assoc :collection-id))]
 
-    (mf/use-effect #(st/emit! udi/fetch-collections))
-    (mf/use-effect
+    #_(mf/use-effect #(st/emit! udi/fetch-collections))
+    #_(mf/use-effect
      {:deps (mf/deps collection-id)
       :fn #(when collection-id
              (st/emit! (udi/fetch-images collection-id)))})
