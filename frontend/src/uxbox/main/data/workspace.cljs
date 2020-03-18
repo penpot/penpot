@@ -827,6 +827,54 @@
 ;;          (->> (uwrk/initialize-alignment params)
 ;;               (rx/map #(activate-flag :grid-indexed))))))))
 
+;; --- Selection Rect
+
+(declare select-shapes-by-current-selrect)
+(declare deselect-all)
+
+(defn- selrect->shape
+  [selrect]
+  (let [start (:start selrect)
+        stop (:stop selrect)
+        start-x (min (:x start) (:x stop))
+        start-y (min (:y start) (:y stop))
+        end-x (max (:x start) (:x stop))
+        end-y (max (:y start) (:y stop))]
+    {:type :rect
+     :x start-x
+     :y start-y
+     :width (- end-x start-x)
+     :height (- end-y start-y)}))
+
+(defn update-selrect
+  [selrect]
+  (ptk/reify ::update-selrect
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selrect] selrect))))
+
+(def handle-selection
+  (ptk/reify ::handle-selection
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stoper (rx/filter #(or (interrupt? %)
+                                   (ms/mouse-up? %))
+                              stream)]
+        (rx/concat
+         (rx/of deselect-all)
+         (->> ms/mouse-position
+              (rx/scan (fn [selrect pos]
+                         (if selrect
+                           (assoc selrect :stop pos)
+                           {:start pos :stop pos}))
+                       nil)
+              (rx/map selrect->shape)
+              (rx/map update-selrect)
+              (rx/take-until stoper))
+         (rx/of select-shapes-by-current-selrect
+                (update-selrect nil)))))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shapes events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1875,6 +1923,25 @@
             path-params {:file-id file-id}
             query-params {:page-id (first page-ids)}]
         (rx/of (rt/nav :workspace path-params query-params))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Context Menu
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn show-context-menu
+  [{:keys [position] :as params}]
+  (ptk/reify ::show-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :context-menu] {:position position}))))
+
+
+(def hide-context-menu
+  (ptk/reify ::hide-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :context-menu] nil))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions

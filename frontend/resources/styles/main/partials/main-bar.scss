@@ -99,47 +99,44 @@
     width: 25px;
   }
 
-  .dropdown {
+  ul.profile-menu {
     position: absolute;
     top: 0;
     left: 0;
     z-index: 12;
     width: 180px;
+    background-color: $color-gray-60;
+    border-radius: $br-small;
+    padding: 0 $small;
 
-    ul.profile-menu {
-      background-color: $color-gray-60;
-      border-radius: $br-small;
-      padding: 0 $small;
+    @include animation(0,.2s,fadeInDown);
 
-      @include animation(0,.2s,fadeInDown);
+    li {
+      font-size: $fs13;
+      padding: $small 0;
 
-      li {
-        font-size: $fs13;
-        padding: $small 0;
+      svg {
+        fill: $color-gray-20;
+        height: 12px;
+        width: 12px;
+      }
 
-        svg {
-          fill: $color-gray-20;
-          height: 12px;
-          width: 12px;
-        }
+      span {
+        color: $color-white;
+      }
+
+      &:hover {
 
         span {
-          color: $color-white;
+          color: $color-primary;
         }
 
-        &:hover {
-
-          span {
-            color: $color-primary;
-          }
-
-          svg {
-            fill: $color-primary;
-          }
-
+        svg {
+          fill: $color-primary;
         }
 
       }
+
     }
   }
 

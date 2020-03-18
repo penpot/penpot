@@ -21,7 +21,7 @@
   [v]
   (instance? KeyboardEvent v))
 
-(defrecord MouseEvent [type ctrl shift])
+(defrecord MouseEvent [type button ctrl shift])
 
 (defn mouse-event?
   [v]
@@ -61,6 +61,15 @@
         ob  (->> st/stream
                  (rx/filter pointer-event?)
                  (rx/filter #(= :viewport (:source %)))
+                 (rx/map :pt))]
+    (rx/subscribe-with ob sub)
+    sub))
+
+(defonce workspace-mouse-position
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter pointer-event?)
+                 (rx/filter #(= :workspace (:source %)))
                  (rx/map :pt))]
     (rx/subscribe-with ob sub)
     sub))

@@ -68,33 +68,37 @@
   ([event {:keys [id type] :as shape} kk-tmp]
    (let [selected @refs/selected-shapes
          selected? (contains? selected id)
-         drawing? @refs/selected-drawing-tool]
-    (when-not (:blocked shape)
-      (cond
-        drawing?
-        nil
+         drawing? @refs/selected-drawing-tool
+         button (.-which (.-nativeEvent event))]
+     (when-not (:blocked shape)
+       (cond
+         (not= 1 button)
+         nil
 
-        (= type :frame)
-        (when selected?
-          (dom/stop-propagation event)
-          (st/emit! start-move-frame))
+         drawing?
+         nil
 
-        (and (not selected?) (empty? selected))
-        (do
-          (dom/stop-propagation event)
-          (st/emit! dw/deselect-all
-                    (dw/select-shape id)
-                    start-move-selected))
+         (= type :frame)
+         (when selected?
+           (dom/stop-propagation event)
+           (st/emit! start-move-frame))
 
-        (and (not selected?) (not (empty? selected)))
-        (do
-          (dom/stop-propagation event)
-          (if (kbd/shift? event)
-            (st/emit! (dw/select-shape id))
-            (st/emit! dw/deselect-all
-                      (dw/select-shape id)
-                      start-move-selected)))
-        :else
-        (do
-          (dom/stop-propagation event)
-          (st/emit! start-move-selected)))))))
+         (and (not selected?) (empty? selected))
+         (do
+           (dom/stop-propagation event)
+           (st/emit! dw/deselect-all
+                     (dw/select-shape id)
+                     start-move-selected))
+
+         (and (not selected?) (not (empty? selected)))
+         (do
+           (dom/stop-propagation event)
+           (if (kbd/shift? event)
+             (st/emit! (dw/select-shape id))
+             (st/emit! dw/deselect-all
+                       (dw/select-shape id)
+                       start-move-selected)))
+         :else
+         (do
+           (dom/stop-propagation event)
+           (st/emit! start-move-selected)))))))

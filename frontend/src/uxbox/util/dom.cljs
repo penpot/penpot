@@ -14,6 +14,7 @@
    [cuerdas.core :as str]
    [beicon.core :as rx]
    [cuerdas.core :as str]
+   [uxbox.util.geom.point :as gpt]
    [uxbox.util.blob :as blob]))
 
 ;; --- Deprecated methods
@@ -135,4 +136,8 @@
   [el query]
   (.querySelector el query))
 
-
+(defn get-client-position
+  [event]
+  (let [x (.-clientX event)
+        y (.-clientY event)]
+    (gpt/point x y)))

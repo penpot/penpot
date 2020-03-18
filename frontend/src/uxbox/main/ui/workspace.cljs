@@ -22,9 +22,8 @@
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.main.ui.workspace.viewport :refer [viewport]]
    [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
-   ;; [uxbox.main.ui.workspace.download]
+   [uxbox.main.ui.workspace.context-menu :refer [context-menu]]
    [uxbox.main.ui.workspace.header :refer [header]]
-   ;; [uxbox.main.ui.workspace.images]
    [uxbox.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [uxbox.main.ui.workspace.scroll :as scroll]
    [uxbox.main.ui.workspace.shortcuts :as shortcuts]
@@ -74,6 +73,7 @@
        [:& colorpalette])
 
      [:main.main-content
+      [:& context-menu {}]
       [:section.workspace-content
        {:class classes
         :on-scroll on-scroll

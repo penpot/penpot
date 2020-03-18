@@ -10,8 +10,8 @@
    [beicon.core :as rx]
    [goog.events :as events]
    [goog.object :as gobj]
-   [potok.core :as ptk]
    [lentes.core :as l]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
@@ -21,17 +21,17 @@
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.workspace.grid :refer [grid]]
-   [uxbox.main.ui.workspace.ruler :refer [ruler]]
-   [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
+   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
    [uxbox.main.ui.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
+   [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
+   [uxbox.main.ui.workspace.grid :refer [grid]]
+   [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
-   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
-   [uxbox.util.perf :as perf]
-   [uxbox.util.uuid :as uuid]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.point :as gpt])
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.perf :as perf]
+   [uxbox.util.uuid :as uuid])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget
@@ -73,45 +73,7 @@
 
 ;; --- Selection Rect
 
-(defn- selection->rect
-  [data]
-  (let [start (:start data)
-        stop (:stop data)
-        start-x (min (:x start) (:x stop))
-        start-y (min (:y start) (:y stop))
-        end-x (max (:x start) (:x stop))
-        end-y (max (:y start) (:y stop))]
-    (assoc data
-           :type :rect
-           :x start-x
-           :y start-y
-           :width (- end-x start-x)
-           :height (- end-y start-y))))
-
-(def ^:private handle-selrect
-  (letfn [(update-state [state position]
-            (let [selrect (get-in state [:workspace-local :selrect])]
-              (if selrect
-                (assoc-in state [:workspace-local :selrect]
-                          (selection->rect (assoc selrect :stop position)))
-                (assoc-in state [:workspace-local :selrect]
-                          (selection->rect {:start position :stop position})))))
-
-          (clear-state [state]
-            (update state :workspace-local dissoc :selrect))]
-    (ptk/reify ::handle-selrect
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [stoper (rx/filter #(or (dw/interrupt? %) (ms/mouse-up? %)) stream)]
-          (rx/concat
-           (rx/of dw/deselect-all)
-           (->> ms/mouse-position
-                (rx/map (fn [pos] #(update-state % pos)))
-                (rx/take-until stoper))
-           (rx/of dw/select-shapes-by-current-selrect
-                  clear-state)))))))
-
-(mf/defc selrect
+(mf/defc selection-rect
   {:wrap [mf/wrap-memo]}
   [{:keys [data] :as props}]
   (when data
@@ -195,12 +157,14 @@
           (let [ctrl? (kbd/ctrl? event)
                 shift? (kbd/shift? event)
                 opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :down ctrl? shift?)))
-          (when (not edition)
-            (if drawing-tool
-              (st/emit! (start-drawing drawing-tool))
-              (st/emit! handle-selrect))))
+                      :ctrl? ctrl?}
+                button (.-which (.-nativeEvent event))]
+            (st/emit! (ms/->MouseEvent :down button ctrl? shift?))
+            (when (and (not edition)
+                       (= 1 (.-which (.-nativeEvent event))))
+              (if drawing-tool
+                (st/emit! (start-drawing drawing-tool))
+                (st/emit! dw/handle-selection)))))
 
         on-context-menu
         (fn [event]
@@ -209,8 +173,10 @@
           (let [ctrl? (kbd/ctrl? event)
                 shift? (kbd/shift? event)
                 opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :context-menu ctrl? shift?))))
+                      :ctrl? ctrl?}
+                cpos (dom/get-client-position event)]
+            (st/emit! (ms/->MouseEvent :context-menu 3 ctrl? shift?)
+                      (dw/show-context-menu {:position cpos}))))
 
         on-mouse-up
         (fn [event]
@@ -218,8 +184,9 @@
           (let [ctrl? (kbd/ctrl? event)
                 shift? (kbd/shift? event)
                 opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :up ctrl? shift?))))
+                      :ctrl? ctrl?}
+                button (.-which (.-nativeEvent event))]
+            (st/emit! (ms/->MouseEvent :up button ctrl? shift?))))
 
         on-click
         (fn [event]
@@ -227,8 +194,9 @@
           (let [ctrl? (kbd/ctrl? event)
                 shift? (kbd/shift? event)
                 opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :click ctrl? shift?))))
+                      :ctrl? ctrl?}
+                button (.-which (.-nativeEvent event))]
+            (st/emit! (ms/->MouseEvent :click button ctrl? shift?))))
 
         on-double-click
         (fn [event]
@@ -236,8 +204,9 @@
           (let [ctrl? (kbd/ctrl? event)
                 shift? (kbd/shift? event)
                 opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :double-click ctrl? shift?))))
+                      :ctrl? ctrl?}
+                button (.-which (.-nativeEvent event))]
+            (st/emit! (ms/->MouseEvent :double-click button ctrl? shift?))))
 
         on-key-down
         (fn [event]
@@ -280,22 +249,31 @@
           ;; MDN site but seems like they are supported on all
           ;; browsers so we can avoid translation opetation just using
           ;; this attributes.
-          (let [;; pt (gpt/point (.-clientX event)
-                ;;               (.-clientY event))
-                ;; pt (translate-point-to-viewport pt)
+          (let [;; pt (translate-point-to-viewport pt)
                 pt (gpt/point (.-offsetX (.-nativeEvent event))
                                (.-offsetY (.-nativeEvent event)))]
             (st/emit! (ms/->PointerEvent :viewport pt
                                          (kbd/ctrl? event)
                                          (kbd/shift? event)))))
 
+        on-mouse-move'
+        (fn [event]
+          (let [pt (gpt/point (.-clientX event)
+                              (.-clientY event))]
+            (st/emit! (ms/->PointerEvent :workspace pt
+                                         (kbd/ctrl? event)
+                                         (kbd/shift? event)))))
+
         on-mount
         (fn []
           (let [key1 (events/listen js/document EventType.KEYDOWN on-key-down)
-                key2 (events/listen js/document EventType.KEYUP on-key-up)]
+                key2 (events/listen js/document EventType.KEYUP on-key-up)
+                key3 (events/listen js/document EventType.MOUSEMOVE on-mouse-move')]
             (fn []
               (events/unlistenByKey key1)
-              (events/unlistenByKey key2))))]
+              (events/unlistenByKey key2)
+              (events/unlistenByKey key3)
+              )))]
 
     (mf/use-effect on-mount)
     [:*
@@ -337,7 +315,7 @@
         [:& ruler {:zoom zoom :ruler (:ruler local)}])
 
       [:& remote-user-cursors {:page page}]
-      [:& selrect {:data (:selrect local)}]]]))
+      [:& selection-rect {:data (:selrect local)}]]]))
 
 
 (mf/defc remote-user-cursor

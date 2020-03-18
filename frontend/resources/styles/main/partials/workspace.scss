@@ -5,6 +5,47 @@
 // Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
+.main-content {
+  .context-menu {
+    position: absolute;
+    top: 40px;
+    left: 740px;
+    width: 230px;
+    z-index: 12;
+    @include animation(0,.2s,fadeInDown);
+
+    background-color: $color-gray-60;
+    border-radius: $br-small;
+    padding: 0 $small;
+
+    li {
+      font-size: $fs13;
+      padding: $small 0;
+      cursor: pointer;
+
+      svg {
+        fill: $color-gray-20;
+        height: 12px;
+        width: 12px;
+      }
+
+      span {
+        color: $color-white;
+      }
+
+      &:hover {
+        span {
+          color: $color-primary;
+        }
+        svg {
+          fill: $color-primary;
+        }
+
+      }
+    }
+  }
+}
+
 .workspace-content {
   background-color: $color-canvas;
   display: flex;
@@ -76,7 +117,6 @@
     width: 100%;
 
     .viewport {
-
       &.drawing {
         cursor: cell;
       }
