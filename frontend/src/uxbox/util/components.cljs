@@ -41,26 +41,3 @@
       (mf/use-effect {:deps true :fn #(after-render state)})
       (for [item (:current @state)]
         (children item)))))
-
-(defn wrap-catch
-  ([component error-component] (wrap-catch component error-component (constantly nil)))
-  ([component error-component on-error]
-   (let [ctor (fn [props]
-                (this-as this
-                  (unchecked-set this "state" #js {})
-                  (.call js/React.Component this props)))
-         _    (goog/inherits ctor js/React.Component)
-         prot (unchecked-get ctor "prototype")]
-    (unchecked-set ctor "displayName" (str "Catch(" (unchecked-get component "displayName") ")"))
-    (unchecked-set ctor "getDerivedStateFromError" (fn [error] #js {:error error}))
-    (unchecked-set prot "componentDidCatch" (fn [e i] (on-error e i)))
-    (unchecked-set prot "render"
-                   (fn []
-                     (this-as this
-                       (let [state (unchecked-get this "state")
-                             error (unchecked-get state "error")]
-                         (if error
-                           (mf/element error-component #js {:error error})
-                           (mf/element component #js {}))))))
-
-    ctor)))
