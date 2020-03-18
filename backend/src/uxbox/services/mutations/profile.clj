@@ -10,6 +10,7 @@
 (ns uxbox.services.mutations.profile
   (:require
    [clojure.spec.alpha :as s]
+   [clojure.string :as str]
    [datoteka.core :as fs]
    [promesa.core :as p]
    [promesa.exec :as px]
@@ -214,11 +215,23 @@
 (s/def ::register-profile
   (s/keys :req-un [::email ::password ::fullname]))
 
+(defn email-domain-in-whitelist?
+  "Returns true if email's domain is in the given whitelist or if given whitelist is an empty string."
+  [whitelist email]
+  (if (str/blank? whitelist)
+    true
+    (let [domains (str/split whitelist #",\s*")
+          email-domain (second (str/split email #"@"))]
+      (contains? (set domains) email-domain))))
+
 (sm/defmutation ::register-profile
   [params]
   (when-not (:registration-enabled cfg/config)
     (ex/raise :type :restriction
               :code :registration-disabled))
+  (when-not (email-domain-in-whitelist? (:registration-domain-whitelist cfg/config) (:email params))
+    (ex/raise :type :validation
+              :code ::email-domain-is-not-allowed))
   (db/with-atomic [conn db/pool]
     (check-profile-existence! conn params)
     (-> (register-profile conn params)

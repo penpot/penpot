@@ -32,6 +32,7 @@ respective defaults):
 - `UXBOX_SMTP_TLS=`      (defaults to `false`)
 - `UXBOX_SMTP_ENABLED=false`
 - `UXBOX_REGISTRATION_ENABLED=true`
+- `UXBOX_REGISTRATION_DOMAIN_WHITELIST=""` (comma-separated domains, defaults to `""` which means that all domains are allowed)
 - `UXBOX_DEBUG_HUMANIZE_TRANSIT=true`
 
 

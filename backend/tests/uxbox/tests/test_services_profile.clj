@@ -18,6 +18,7 @@
    [uxbox.db :as db]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
+   [uxbox.services.mutations.profile :as profile]
    [uxbox.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
@@ -190,6 +191,15 @@
         (t/is (nil? (:error out)))
         (t/is (= 0 (count (:result out))))))
     ))
+
+(t/deftest registration-domain-whitelist
+  (let [whitelist "gmail.com, hey.com, ya.ru"]
+    (t/testing "allowed email domain"
+      (t/is (true? (profile/email-domain-in-whitelist? whitelist "username@ya.ru")))
+      (t/is (true? (profile/email-domain-in-whitelist? "" "username@somedomain.com"))))
+
+    (t/testing "not allowed email domain"
+      (t/is (false? (profile/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
 
 ;; TODO: profile deletion with teams
 ;; TODO: profile deletion with owner teams
