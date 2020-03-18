@@ -2,16 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs S.L
 
-(ns uxbox.util.components
+(ns uxbox.main.ui.components.chunked-list
   "A collection of general purpose utility components."
   (:require
    [beicon.core :as rx]
    [rumext.alpha :as mf]
    [uxbox.util.timers :refer [schedule-on-idle]]))
-
-;; TODO: this file is DEPRECATED (pending deletion)
 
 (mf/defc chunked-list
   [{:keys [items children initial-size chunk-size]
@@ -41,26 +42,3 @@
       (mf/use-effect {:deps true :fn #(after-render state)})
       (for [item (:current @state)]
         (children item)))))
-
-(defn wrap-catch
-  ([component error-component] (wrap-catch component error-component (constantly nil)))
-  ([component error-component on-error]
-   (let [ctor (fn [props]
-                (this-as this
-                  (unchecked-set this "state" #js {})
-                  (.call js/React.Component this props)))
-         _    (goog/inherits ctor js/React.Component)
-         prot (unchecked-get ctor "prototype")]
-    (unchecked-set ctor "displayName" (str "Catch(" (unchecked-get component "displayName") ")"))
-    (unchecked-set ctor "getDerivedStateFromError" (fn [error] #js {:error error}))
-    (unchecked-set prot "componentDidCatch" (fn [e i] (on-error e i)))
-    (unchecked-set prot "render"
-                   (fn []
-                     (this-as this
-                       (let [state (unchecked-get this "state")
-                             error (unchecked-get state "error")]
-                         (if error
-                           (mf/element error-component #js {:error error})
-                           (mf/element component #js {}))))))
-
-    ctor)))

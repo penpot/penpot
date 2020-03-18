@@ -27,9 +27,8 @@
    [uxbox.main.ui.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
-   [uxbox.util.data :refer [parse-int]]
+   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
    [uxbox.util.perf :as perf]
-   [uxbox.util.components :refer [use-rxsub]]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt])
