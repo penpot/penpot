@@ -123,7 +123,6 @@
     :fn (fn []
           (let [sub (shortcuts/init)]
             #(rx/cancel! sub)))})
-
   (let [file (mf/deref refs/workspace-file)
         page (mf/deref refs/workspace-page)
         layout (mf/deref refs/workspace-layout)]

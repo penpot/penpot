@@ -15,12 +15,13 @@
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
-   [uxbox.common.exceptions :as ex]
    [uxbox.builtins.icons :as i]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.exceptions :as ex]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.components.error :refer [wrap-catch]]
    [uxbox.main.ui.dashboard :refer [dashboard]]
    [uxbox.main.ui.login :refer [login-page]]
    [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
@@ -66,8 +67,15 @@
 
    ["/workspace/:file-id" :workspace]])
 
+(mf/defc app-error
+  [{:keys [error] :as props}]
+  (let [data (ex-data error)]
+    (case (:type data)
+      :not-found [:span "404"]
+      [:span "Internal application errror"])))
 
 (mf/defc app
+  {:wrap [#(wrap-catch % {:fallback app-error})]}
   [props]
   (let [route (mf/deref route-iref)]
     (case (get-in route [:data :name])
