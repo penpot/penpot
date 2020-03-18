@@ -5,6 +5,8 @@
       "en" : "You still have no files here"
     }
   },
+  "dashboard.grid.edit": "Edit",
+  "dashboard.grid.delete": "Delete",
   "dashboard.header.colors" : {
     "translations" : {
       "en" : "COLORS",
