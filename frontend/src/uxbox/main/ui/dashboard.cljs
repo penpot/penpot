@@ -18,6 +18,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.dashboard.header :refer [header]]
    [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
+   [uxbox.main.ui.dashboard.search :refer [search-page]]
    [uxbox.main.ui.dashboard.project :refer [project-page]]
    [uxbox.main.ui.dashboard.recent-files :refer [recent-files-page]]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
@@ -30,9 +31,12 @@
 
 (defn- parse-params
   [route profile]
-  (let [team-id (get-in route [:params :path :team-id])
+  (let [search-term (get-in route [:params :query :search-term])
+        team-id (get-in route [:params :path :team-id])
         project-id (get-in route [:params :path :project-id])]
-    (cond-> {}
+    (cond->
+      {:search-term search-term}
+
       (uuid-str? team-id)
       (assoc :team-id (uuid team-id))
 
@@ -51,7 +55,7 @@
   [{:keys [route] :as props}]
   (let [profile (mf/deref refs/profile)
         section (get-in route [:data :name])
-        {:keys [team-id project-id]} (parse-params route profile)]
+        {:keys [search-term team-id project-id]} (parse-params route profile)]
     [:main.dashboard-main
      [:& messages-widget]
      [:section.dashboard-layout
@@ -59,10 +63,14 @@
       [:& profile-section {:profile profile}]
       [:& sidebar {:team-id team-id
                    :project-id project-id
+                   :search-term search-term
                    :section section}]
       [:div.dashboard-content
        [:& header]
        (case section
+         :dashboard-search
+         (mf/element search-page #js {:team-id team-id :search-term search-term})
+
          :dashboard-team
          (mf/element recent-files-page #js {:team-id team-id})
 

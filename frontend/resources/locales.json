@@ -54,14 +54,38 @@
     },
     "unused" : true
   },
+  "dashboard.search.no-matches-for" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/search.cljs:47" ],
+    "translations" : {
+      "en" : "No matches found for \"%s\""
+    }
+  },
+  "dashboard.search.results-for" : {
+    "translations" : {
+      "en" : "Search results for \"%s\""
+    },
+    "unused" : true
+  },
+  "dashboard.search.searching-for" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/search.cljs:43" ],
+    "translations" : {
+      "en" : "Searching for %s..."
+    }
+  },
+  "dashboard.search.type-something" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/search.cljs:39" ],
+    "translations" : {
+      "en" : "Type to search results"
+    }
+  },
   "dashboard.sidebar.drafts" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:113" ],
     "translations" : {
       "en" : "Drafts"
     }
   },
   "dashboard.sidebar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:117" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:118" ],
     "translations" : {
       "en" : "Libraries"
     }
@@ -73,7 +97,7 @@
     "unused" : true
   },
   "dashboard.sidebar.recent" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:105" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:106" ],
     "translations" : {
       "en" : "Recent"
     }
@@ -142,7 +166,7 @@
     }
   },
   "ds.default-library-title" : {
-    "used-in" : [ "src/uxbox/main/data/colors.cljs:68", "src/uxbox/main/data/icons.cljs:90", "src/uxbox/main/data/images.cljs:110" ],
+    "used-in" : [ "src/uxbox/main/data/icons.cljs:90", "src/uxbox/main/data/colors.cljs:68", "src/uxbox/main/data/images.cljs:110" ],
     "translations" : {
       "en" : "Unnamed Collection (%s)",
       "fr" : "Collection sans nom (%s)"
@@ -220,7 +244,7 @@
     }
   },
   "ds.multiselect-bar.delete" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/colors.cljs:214", "src/uxbox/main/ui/dashboard/images.cljs:187", "src/uxbox/main/ui/dashboard/icons.cljs:221" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/icons.cljs:221", "src/uxbox/main/ui/dashboard/colors.cljs:214", "src/uxbox/main/ui/dashboard/images.cljs:187" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "Supprimer"
@@ -276,7 +300,7 @@
     "unused" : true
   },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:140" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:168" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher..."
@@ -332,7 +356,7 @@
     }
   },
   "ds.uploaded-at" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/images.cljs:271", "src/uxbox/main/ui/dashboard/icons.cljs:309" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/icons.cljs:309", "src/uxbox/main/ui/dashboard/images.cljs:271" ],
     "translations" : {
       "en" : "Uploaded at %s",
       "fr" : "Mise en ligne : %s"
@@ -402,14 +426,14 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:131" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:135" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:125" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:129" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal."
@@ -514,7 +538,7 @@
     }
   },
   "profile.recovery.go-to-login" : {
-    "used-in" : [ "src/uxbox/main/ui/profile/recovery.cljs:81", "src/uxbox/main/ui/profile/recovery_request.cljs:65" ],
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery_request.cljs:65", "src/uxbox/main/ui/profile/recovery.cljs:81" ],
     "translations" : {
       "en" : "Go back!",
       "fr" : "Retour!"
@@ -871,7 +895,7 @@
     }
   },
   "workspace.options.color" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:47", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:124", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:124", "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:47", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:81" ],
     "translations" : {
       "en" : "Color",
       "fr" : "Couleur"
@@ -913,7 +937,7 @@
     }
   },
   "workspace.options.measures" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:55", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:69" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:69", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:55", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66" ],
     "translations" : {
       "en" : "Size, position & rotation",
       "fr" : "Taille, position et rotation"
@@ -927,21 +951,21 @@
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:84", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:98" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:98", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:84", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:95" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
     }
   },
   "workspace.options.rotation-radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:107", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:115" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:107", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:112" ],
     "translations" : {
       "en" : "Rotation & Radius",
       "fr" : "TODO"
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:57", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:71" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:71", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:57", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:68" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"

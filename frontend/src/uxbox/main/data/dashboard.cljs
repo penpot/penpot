@@ -55,6 +55,23 @@
 ;; Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare search-files)
+
+(defn initialize-search
+  [team-id search-term]
+  (ptk/reify ::initialize-search
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local assoc
+              :search-result nil))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [local (:dashboard-local state)]
+        (when-not (empty? search-term)
+          (rx/of (search-files team-id search-term)))))))
+
+
 (declare fetch-files)
 (declare fetch-projects)
 (declare fetch-recent-files)
@@ -134,6 +151,29 @@
     (update [_ state]
       (let [assoc-project #(assoc-in %1 [:projects (:id %2)] %2)]
         (reduce assoc-project state projects)))))
+
+;; --- Search Files
+
+(declare files-searched)
+
+(defn search-files
+  [team-id search-term]
+  (us/assert ::us/uuid team-id)
+  (us/assert ::us/string search-term)
+  (ptk/reify ::search-files
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :search-files {:team-id team-id :search-term search-term})
+           (rx/map files-searched)))))
+
+(defn files-searched
+  [files]
+  (us/verify (s/every ::file) files)
+  (ptk/reify ::files-searched
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local assoc
+              :search-result files))))
 
 ;; --- Fetch Files
 

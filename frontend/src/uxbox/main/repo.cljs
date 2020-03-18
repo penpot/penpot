@@ -47,7 +47,7 @@
         request {:method method
                  :url url
                  :headers headers
-                 :query-string (when query (encode-query query))
+                 :query query
                  :body (if (map? body) (t/encode body) body)}
         options {:response-type response-type
                  :credentials? true}]
