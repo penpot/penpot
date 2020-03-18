@@ -9,6 +9,7 @@
   background-color: $color-white;
 
   .library-bar-inside {
+    border-right: 1px solid $color-gray-lighter;
     display: flex;
     flex-direction: column;
     height: 100%;

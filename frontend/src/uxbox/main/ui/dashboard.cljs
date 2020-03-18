@@ -16,11 +16,11 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.dashboard.header :refer [header]]
    [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
    [uxbox.main.ui.dashboard.search :refer [search-page]]
    [uxbox.main.ui.dashboard.project :refer [project-page]]
    [uxbox.main.ui.dashboard.recent-files :refer [recent-files-page]]
+   [uxbox.main.ui.dashboard.library :refer [library-page]]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
    [uxbox.main.ui.messages :refer [messages-widget]]))
 
@@ -32,8 +32,10 @@
 (defn- parse-params
   [route profile]
   (let [search-term (get-in route [:params :query :search-term])
+        route-name (get-in route [:data :name])
         team-id (get-in route [:params :path :team-id])
-        project-id (get-in route [:params :path :project-id])]
+        project-id (get-in route [:params :path :project-id])
+        library-id (get-in route [:params :path :library-id])]
     (cond->
       {:search-term search-term}
 
@@ -48,14 +50,21 @@
 
       (and (= "drafts" project-id)
            (= "self" team-id))
-      (assoc :project-id (:default-project-id profile)))))
+      (assoc :project-id (:default-project-id profile))
+
+      (str/starts-with? (name route-name) "dashboard-library")
+      (assoc :library-section (get-in route [:data :section]))
+
+      (uuid-str? library-id)
+      (assoc :library-id (uuid library-id)))))
 
 
 (mf/defc dashboard
   [{:keys [route] :as props}]
   (let [profile (mf/deref refs/profile)
-        section (get-in route [:data :name])
-        {:keys [search-term team-id project-id]} (parse-params route profile)]
+        page (get-in route [:data :name])
+        {:keys [search-term team-id project-id library-id library-section] :as params}
+        (parse-params route profile)]
     [:main.dashboard-main
      [:& messages-widget]
      [:section.dashboard-layout
@@ -63,16 +72,24 @@
       [:& profile-section {:profile profile}]
       [:& sidebar {:team-id team-id
                    :project-id project-id
-                   :search-term search-term
-                   :section section}]
+                   :section page}]
       [:div.dashboard-content
-       [:& header]
-       (case section
+       (case page
          :dashboard-search
          (mf/element search-page #js {:team-id team-id :search-term search-term})
 
          :dashboard-team
          (mf/element recent-files-page #js {:team-id team-id})
+
+         (:dashboard-library-icons
+          :dashboard-library-icons-index
+          :dashboard-library-images
+          :dashboard-library-images-index
+          :dashboard-library-palettes
+          :dashboard-library-palettes-index)
+         (mf/element library-page #js {:team-id team-id
+                                       :library-id library-id
+                                       :section library-section})
 
          :dashboard-project
          (mf/element project-page #js {:team-id team-id

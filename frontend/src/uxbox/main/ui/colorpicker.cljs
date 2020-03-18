@@ -6,6 +6,8 @@
 
 (ns uxbox.main.ui.colorpicker
   (:require
+   [lentes.core :as l]
+   [uxbox.main.store :as st]
    [goog.object :as gobj]
    [rumext.alpha :as mf]
    [vendor.react-color]))
@@ -16,5 +18,21 @@
     [:> js/SketchPicker {:color value
                          :disableAlpha true
                          :presetColors colors
-                         :onChangeComplete on-change-complete}]))
+                         :onChangeComplete on-change-complete
+                         :style {:box-shadow "none"}}]))
 
+(defn- lookup-colors
+  [state]
+  (as-> {} $
+    (reduce (fn [acc shape]
+              (-> acc
+                  (update (:fill-color shape) (fnil inc 0))
+                  (update (:stroke-color shape) (fnil inc 0))))
+            $ (vals (:shapes state)))
+    (reverse (sort-by second $))
+    (map first $)
+    (remove nil? $)))
+
+(def most-used-colors
+  (-> (l/lens lookup-colors)
+      (l/derive st/state)))
