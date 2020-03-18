@@ -41,13 +41,6 @@
 
 ;; --- Routes
 
-;; (comment
-;;   "/dashboard/self"
-;;   "/dashboard/self/drafts"
-;;   "/dashboard/self/<project-id>"
-;;   "/dashboard/<team-id>"
-;;   "/dashboard/<team-id>/<project-id>"
-
 (def routes
   [["/login" :login]
    ["/register" :profile-register]
