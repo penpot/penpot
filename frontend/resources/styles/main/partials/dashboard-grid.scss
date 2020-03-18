@@ -180,12 +180,16 @@
 
         &:hover {
           border-color: $color-primary;
+
+          .project-th-actions {
+            display: flex;
+          }
         }
 
         .project-th-actions {
           align-items: center;
           bottom: 0;
-          display: flex;
+          display: none;
           left: 0;
           justify-content: flex-end;
           padding: $small;
@@ -207,6 +211,25 @@
             align-items: center;
             display: flex;
             margin-right: $small;
+
+            &.menu {
+              margin-right: 0;
+
+              svg {
+                fill: $color-gray-30;
+                margin-right: 0;
+              }
+
+              &:hover {
+                transform: scale(1.4);
+
+                svg {
+                  fill: $color-danger;
+                }
+
+              }
+
+            }
 
             &.delete {
               margin-right: 0;

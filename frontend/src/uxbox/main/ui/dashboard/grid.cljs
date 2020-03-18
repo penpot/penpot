@@ -10,6 +10,7 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.components.context-menu :refer [context-menu]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]
@@ -35,7 +36,9 @@
 (mf/defc grid-item
   {:wrap [mf/wrap-memo]}
   [{:keys [file] :as props}]
-  (let [local (mf/use-state {})
+  (let [local (mf/use-state {:menu-open false
+                             :edition false})
+        locale (i18n/use-locale)
         on-navigate #(st/emit! (rt/nav :workspace
                                             {:file-id (:id file)}
                                             {:page-id (first (:pages file))}))
@@ -49,9 +52,12 @@
                    (swap! local assoc :edition false))
 
         on-key-down #(when (kbd/enter? %) (on-blur %))
+        on-menu-click #(do
+                         (dom/stop-propagation %)
+                         (swap! local assoc :menu-open true))
+        on-menu-close #(swap! local assoc :menu-open false)
         on-edit #(do
                    (dom/stop-propagation %)
-                   (dom/prevent-default %)
                    (swap! local assoc :edition true))]
     [:div.grid-item.project-th {:on-click on-navigate}
      [:div.overlay]
@@ -73,12 +79,13 @@
       ;; [:div.project-th-icon.comments
       ;;  i/chat
       ;;  [:span "0"]]
-      [:div.project-th-icon.edit
-       {:on-click on-edit}
-       i/pencil]
-      [:div.project-th-icon.delete
-       {:on-click on-delete}
-       i/trash]]]))
+      [:div.project-th-icon.menu
+       {:on-click on-menu-click}
+       i/actions]
+      [:& context-menu {:on-close on-menu-close
+                        :show (:menu-open @local)
+                        :options [[(t locale "dashboard.grid.edit") on-edit]
+                                  [(t locale "dashboard.grid.delete") on-delete]]}]]]))
 
 ;; --- Grid
 
