@@ -12,7 +12,7 @@
    [lentes.core :as l]
    [rumext.core :as mx]
    [rumext.alpha :as mf]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -45,18 +45,20 @@
         edition (mf/deref refs/selected-edition)
         edition? (= edition id)
         selected? (and (contains? selected id)
-                       (= (count selected) 1))]
-    (letfn [(on-mouse-down [event]
-              (handle-mouse-down event shape selected))
-            (on-double-click [event]
-              (dom/stop-propagation event)
-              (st/emit! (udw/start-edition-mode id)))]
-      [:g.shape {:class (when selected? "selected")
-                 :on-double-click on-double-click
-                 :on-mouse-down on-mouse-down}
-       (if edition?
-         [:& text-shape-edit {:shape shape}]
-         [:& text-shape {:shape shape}])])))
+                       (= (count selected) 1))
+
+        on-mouse-down #(common/on-mouse-down % shape)
+        on-context-menu #(common/on-context-menu % shape)
+        on-double-click
+        (fn [event]
+          (when selected?
+            (st/emit! (dw/start-edition-mode (:id shape)))))]
+    [:g.shape {:on-double-click on-double-click
+               :on-mouse-down on-mouse-down
+               :on-context-menu on-context-menu}
+     (if edition?
+       [:& text-shape-edit {:shape shape}]
+       [:& text-shape {:shape shape}])]))
 
 ;; --- Text Styles Helpers
 
@@ -118,13 +120,13 @@
         (fn []
           (let [content (-> (mf/ref-val ref)
                             (dom/get-value))]
-          (st/emit! (udw/update-shape id {:content content}))))
+          (st/emit! (dw/update-shape id {:content content}))))
 
 
         on-blur
         (fn [event]
-          (st/emit! udw/clear-edition-mode
-                    udw/deselect-all))]
+          (st/emit! dw/clear-edition-mode
+                    dw/deselect-all))]
     (mf/use-effect
      #(let [dom (mf/ref-val ref)
             val (dom/get-value dom)]
@@ -134,7 +136,7 @@
         (fn []
           (let [content (-> (mf/ref-val ref)
                             (dom/get-value))]
-            (st/emit! (udw/update-shape id {:content content}))))))
+            (st/emit! (dw/update-shape id {:content content}))))))
 
 
 
