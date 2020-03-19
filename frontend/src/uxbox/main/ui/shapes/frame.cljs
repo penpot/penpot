@@ -134,7 +134,7 @@
 
     [:svg {:x x :y y :width width :height height}
      [:& "rect" props]
-     (for [item childs]
+     (for [item (reverse childs)]
        [:& shape-wrapper {:shape (translate item) :key (:id item)}])]))
 
 (defn- translate-to-frame
