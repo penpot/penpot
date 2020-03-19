@@ -39,7 +39,6 @@
   (s/keys ::req-un [::id
                     ::name
                     ::team-id
-                    ::version
                     ::profile-id
                     ::created-at
                     ::modified-at]))
@@ -89,7 +88,7 @@
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
         (rx/of (fetch-files (:project-id local))
-               (fetch-projects (:team-id local)))))))
+               (fetch-projects (:team-id local) (:project-id local)))))))
 
 
 (defn initialize-recent
@@ -105,7 +104,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
-        (rx/of (fetch-projects (:team-id local))
+        (rx/of (fetch-projects (:team-id local) (:project-id nil))
                (fetch-recent-files (:team-id local)))))))
 
 
@@ -123,8 +122,8 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [local (:dashboard-local state)]
-         (rx/of (fetch-files (:project-id local))
-                (fetch-projects (:team-id local)))))))
+         (rx/of (fetch-projects (:team-id local) (:project-id local))
+                (fetch-files (:project-id local)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching
@@ -135,22 +134,28 @@
 (declare projects-fetched)
 
 (defn fetch-projects
-  [team-id]
+  [team-id project-id]
   (us/assert ::us/uuid team-id)
+  (us/assert (s/nilable ::us/uuid) project-id)
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rp/query :projects-by-team {:team-id team-id})
-           (rx/map projects-fetched)))))
+           (rx/map (projects-fetched project-id))))))
 
 (defn projects-fetched
-  [projects]
-  (us/verify (s/every ::project) projects)
-  (ptk/reify ::projects-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [assoc-project #(assoc-in %1 [:projects (:id %2)] %2)]
-        (reduce assoc-project state projects)))))
+  [project-id]
+  (us/assert (s/nilable ::us/uuid) project-id)
+  (fn [projects]
+    (us/verify (s/every ::project) projects)
+    (ptk/reify ::projects-fetched
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [find-project #(first (filter (fn [p] (= (:id p) %1)) projects))
+              set-project #(assoc %1 :project (find-project project-id))
+              assoc-project #(assoc-in %1 [:projects (:id %2)] %2)
+              reduce-projects #(reduce assoc-project %1 projects)]
+            (-> state set-project reduce-projects))))))
 
 ;; --- Search Files
 
