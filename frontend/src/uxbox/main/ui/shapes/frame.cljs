@@ -38,8 +38,8 @@
    (js/React.memo
     component
     (fn [np op]
-      (let [n-shape (aget np "shape")
-            o-shape (aget op "shape")]
+      (let [n-shape (unchecked-get np "shape")
+            o-shape (unchecked-get op "shape")]
         (= n-shape o-shape))))))
 
 (mf/defc shape-wrapper
