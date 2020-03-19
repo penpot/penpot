@@ -23,8 +23,10 @@
 (mf/defrc rect-wrapper
   [props]
   (let [shape (unchecked-get props "shape")
-        on-mouse-down #(common/on-mouse-down % shape)]
-    [:g.shape {:on-mouse-down on-mouse-down}
+        on-mouse-down #(common/on-mouse-down % shape)
+        on-context-menu #(common/on-context-menu % shape)]
+    [:g.shape {:on-mouse-down on-mouse-down
+               :on-context-menu on-context-menu}
      [:& rect-shape {:shape shape}]]))
 
 ;; --- Rect Shape

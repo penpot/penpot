@@ -165,11 +165,8 @@
         (fn [event]
           (dom/prevent-default event)
           (dom/stop-propagation event)
-          (let [ctrl? (kbd/ctrl? event)
-                shift? (kbd/shift? event)
-                opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :context-menu ctrl? shift?))))
+          (let [position (dom/get-client-position event)]
+            (st/emit! (dw/show-context-menu {:position position}))))
 
         on-mouse-up
         (fn [event]
@@ -225,25 +222,14 @@
               (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
             (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?))))
 
-        ;; translate-point-to-viewport
-        ;; (fn [pt]
-        ;;   (let [viewport (mf/ref-node viewport-ref)
-        ;;         brect (.getBoundingClientRect viewport)
-        ;;         brect (gpt/point (parse-int (.-left brect))
-        ;;                          (parse-int (.-top brect)))]
-        ;;     (gpt/subtract pt brect)))
-
         on-mouse-move
         (fn [event]
           ;; NOTE: offsetX and offsetY are marked as "experimental" on
           ;; MDN site but seems like they are supported on all
           ;; browsers so we can avoid translation opetation just using
           ;; this attributes.
-          (let [;; pt (gpt/point (.-clientX event)
-                ;;               (.-clientY event))
-                ;; pt (translate-point-to-viewport pt)
-                pt (gpt/point (.-offsetX (.-nativeEvent event))
-                               (.-offsetY (.-nativeEvent event)))]
+          (let [pt (dom/get-offset-position event)]
+            (reset! last-position pt)
             (st/emit! (ms/->PointerEvent :viewport pt
                                          (kbd/ctrl? event)
                                          (kbd/shift? event)))))
@@ -251,10 +237,14 @@
         on-mount
         (fn []
           (let [key1 (events/listen js/document EventType.KEYDOWN on-key-down)
-                key2 (events/listen js/document EventType.KEYUP on-key-up)]
+                key2 (events/listen js/document EventType.KEYUP on-key-up)
+                dnode (mf/ref-val viewport-ref)
+                key3 (events/listen dnode EventType.MOUSEMOVE on-mouse-move)]
             (fn []
               (events/unlistenByKey key1)
-              (events/unlistenByKey key2))))]
+              (events/unlistenByKey key2)
+              (events/unlistenByKey key3)
+              )))]
 
     (mf/use-effect on-mount)
     [:*
@@ -266,7 +256,6 @@
                      :on-context-menu on-context-menu
                      :on-click on-click
                      :on-double-click on-double-click
-                     :on-mouse-move on-mouse-move
                      :on-mouse-down on-mouse-down
                      :on-mouse-up on-mouse-up}
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}

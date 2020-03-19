@@ -1923,6 +1923,51 @@
         (rx/of (rt/nav :workspace path-params query-params))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Context Menu
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::point gpt/point?)
+
+(defn show-context-menu
+  [{:keys [position] :as params}]
+  (us/verify ::point position)
+  (ptk/reify ::show-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :context-menu] {:position position}))))
+
+(defn show-shape-context-menu
+  [{:keys [position shape] :as params}]
+  (us/verify ::point position)
+  (us/verify ::cp/minimal-shape shape)
+  (ptk/reify ::show-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [selected (get-in state [:workspace-local :selected])
+            selected (cond
+                       (empty? selected)
+                       (conj selected (:id shape))
+
+                       (contains? selected (:id shape))
+                       selected
+
+                       :else
+                       #{(:id shape)})
+            mdata {:position position
+                   :selected selected
+                   :shape shape}]
+        (-> state
+            (assoc-in [:workspace-local :context-menu] mdata)
+            (assoc-in [:workspace-local :selected] selected))))))
+
+(def hide-context-menu
+  (ptk/reify ::hide-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :context-menu] nil))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
