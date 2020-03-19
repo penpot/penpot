@@ -14,6 +14,7 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
+   [uxbox.common.data :as d]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
@@ -222,14 +223,19 @@
               (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
             (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?))))
 
+        translate-point-to-viewport
+        (fn [pt]
+          (let [viewport (mf/ref-node viewport-ref)
+                brect (.getBoundingClientRect viewport)
+                brect (gpt/point (d/parse-integer (.-left brect))
+                                 (d/parse-integer (.-top brect)))]
+            (gpt/subtract pt brect)))
+
         on-mouse-move
         (fn [event]
-          ;; NOTE: offsetX and offsetY are marked as "experimental" on
-          ;; MDN site but seems like they are supported on all
-          ;; browsers so we can avoid translation opetation just using
-          ;; this attributes.
-          (let [pt (dom/get-offset-position event)]
-            (reset! last-position pt)
+          (let [pt (gpt/point (.-clientX event)
+                              (.-clientY event))
+                pt (translate-point-to-viewport pt)]
             (st/emit! (ms/->PointerEvent :viewport pt
                                          (kbd/ctrl? event)
                                          (kbd/shift? event)))))

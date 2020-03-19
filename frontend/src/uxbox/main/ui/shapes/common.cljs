@@ -32,16 +32,13 @@
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [flags (get-in state [:workspace-local :flags])
-            selected (get-in state [:workspace-local :selected])
+      (let [selected (get-in state [:workspace-local :selected])
             stoper (rx/filter uws/mouse-up? stream)
             zero-point? #(= % (gpt/point 0 0))
-            position @uws/mouse-position
-            deltas (atom 0)]
+            position @uws/mouse-position]
         (rx/concat
          (->> (uws/mouse-position-deltas position)
               (rx/filter (complement zero-point?))
-              (rx/tap #(swap! deltas inc))
               (rx/map #(dw/apply-displacement-in-bulk selected %))
               (rx/take-until stoper))
          (rx/of (dw/materialize-displacement-in-bulk selected)))))))
@@ -50,8 +47,7 @@
   (ptk/reify ::start-move-frame
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [flags (get-in state [:workspace-local :flags])
-            selected (get-in state [:workspace-local :selected])
+      (let [selected (get-in state [:workspace-local :selected])
             stoper (rx/filter uws/mouse-up? stream)
             zero-point? #(= % (gpt/point 0 0))
             frame-id (first selected)
