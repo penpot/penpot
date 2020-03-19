@@ -118,6 +118,14 @@
               (st/emit! dw/deselect-all
                         (dw/select-shape id)))))
 
+        on-context-menu
+        (fn [event]
+          (dom/prevent-default event)
+          (dom/stop-propagation event)
+          (let [pos (dom/get-client-position event)]
+            (st/emit! (dw/show-shape-context-menu {:position pos
+                                                   :shape item}))))
+
         on-hover
         (fn [item monitor]
           (st/emit! (dw/shape-order-change (:obj-id item) index)))
@@ -134,6 +142,7 @@
                            :on-hover on-hover
                            :on-drop on-drop})]
     [:li {:ref dnd-ref
+          :on-context-menu on-context-menu
           :class (dom/classnames
                   :selected selected?
                   :dragging-TODO (:dragging? dprops))}
@@ -195,6 +204,14 @@
               (st/emit! dw/deselect-all
                         (dw/select-shape id)))))
 
+        on-context-menu
+        (fn [event]
+          (dom/prevent-default event)
+          (dom/stop-propagation event)
+          (let [pos (dom/get-client-position event)]
+            (st/emit! (dw/show-shape-context-menu {:position pos
+                                                   :shape item}))))
+
         on-drop
         (fn [item monitor]
           (st/emit! (dw/commit-shape-order-change (:obj-id item))))
@@ -211,6 +228,7 @@
                            :on-hover on-hover
                            :on-drop on-drop})]
     [:li.group {:ref dnd-ref
+                :on-context-menu on-context-menu
                 :class (dom/classnames
                         :selected selected?
                         :dragging-TODO (:dragging? dprops))}

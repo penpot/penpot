@@ -23,9 +23,11 @@
   [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
-        on-mouse-down #(common/on-mouse-down % shape selected)]
+        on-mouse-down #(common/on-mouse-down % shape)
+        on-context-menu #(common/on-context-menu % shape)]
     [:g.shape {:class (when selected? "selected")
-               :on-mouse-down on-mouse-down}
+               :on-mouse-down on-mouse-down
+               :on-context-menu on-context-menu}
      [:& circle-shape {:shape shape}]]))
 
 ;; --- Circle Shape
