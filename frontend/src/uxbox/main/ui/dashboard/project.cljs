@@ -12,14 +12,33 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [uxbox.util.i18n :as i18n :refer [t]]
+   [uxbox.util.dom :as dom]
    [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]
    [uxbox.main.ui.dashboard.grid :refer [grid]]))
+
+(def project-ref
+  (-> (l/key :project)
+      (l/derive st/state)))
 
 (def files-ref
   (-> (comp (l/key :files)
             (l/lens vals))
       (l/derive st/state)))
+
+(mf/defc project-header
+  [{:keys [profile] :as props}]
+  (let [project (mf/deref project-ref)
+        locale (i18n/use-locale)]
+    [:header#main-bar.main-bar
+     (if (:is-default project)
+       [:h1.dashboard-title (t locale "dashboard.header.draft")]
+       [:h1.dashboard-title (t locale "dashboard.header.project" (:name project))])
+     [:a.btn-dashboard {:on-click #(do
+                                     (dom/prevent-default %)
+                                     (st/emit! (dsh/create-file (:id project))))}
+      (t locale "dashboard.header.new-file")]]))
 
 (mf/defc project-page
   [{:keys [section team-id project-id] :as props}]
@@ -30,6 +49,8 @@
      {:fn #(st/emit! (dsh/initialize-project team-id project-id))
       :deps (mf/deps team-id project-id)})
 
-    [:section.projects-page
-     [:& grid { :id project-id :files files }]]))
+    [:*
+      [:& project-header]
+      [:section.projects-page
+       [:& grid { :id project-id :files files :hide-new? true}]]]))
 
