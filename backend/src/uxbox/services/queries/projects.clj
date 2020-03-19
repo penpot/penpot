@@ -26,6 +26,7 @@
        from project as p
       inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
       where tpr.profile_id = $1
+        and p.deleted_at is null
         and (tpr.is_admin = true or
              tpr.is_owner = true or
              tpr.can_edit = true)
@@ -36,6 +37,7 @@
        from project as p
       inner join project_profile_rel as ppr on (ppr.project_id = p.id)
       where ppr.profile_id = $1
+        and p.deleted_at is null
         and (ppr.is_admin = true or
              ppr.is_owner = true or
              ppr.can_edit = true)

@@ -88,7 +88,7 @@
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
         (rx/of (fetch-files (:project-id local))
-               (fetch-projects (:team-id local) (:project-id local)))))))
+               (fetch-projects (:team-id local)))))))
 
 
 (defn initialize-recent
@@ -104,7 +104,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
-        (rx/of (fetch-projects (:team-id local) (:project-id nil))
+        (rx/of (fetch-projects (:team-id local))
                (fetch-recent-files (:team-id local)))))))
 
 
@@ -122,7 +122,7 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [local (:dashboard-local state)]
-         (rx/of (fetch-projects (:team-id local) (:project-id local))
+         (rx/of (fetch-projects (:team-id local))
                 (fetch-files (:project-id local)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -141,21 +141,15 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rp/query :projects-by-team {:team-id team-id})
-           (rx/map (projects-fetched project-id))))))
+           (rx/map projects-fetched)))))
 
 (defn projects-fetched
-  [project-id]
-  (us/assert (s/nilable ::us/uuid) project-id)
-  (fn [projects]
-    (us/verify (s/every ::project) projects)
-    (ptk/reify ::projects-fetched
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [find-project #(first (filter (fn [p] (= (:id p) %1)) projects))
-              set-project #(assoc %1 :project (find-project project-id))
-              assoc-project #(assoc-in %1 [:projects (:id %2)] %2)
-              reduce-projects #(reduce assoc-project %1 projects)]
-            (-> state set-project reduce-projects))))))
+  [projects]
+  (us/verify (s/every ::project) projects)
+  (ptk/reify ::projects-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :projects (d/index-by :id projects)))))
 
 ;; --- Search Files
 
@@ -221,13 +215,25 @@
   (ptk/reify ::recent-files-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :recent-files recent-files))))
+      (let [flatten-files #(reduce (fn [acc [project-id files]]
+                                     (merge acc (d/index-by :id files)))
+                                   {}
+                                   %1)
+            extract-ids #(reduce (fn [acc [project-id files]]
+                                   (assoc acc project-id (map :id files)))
+                                 {}
+                                 %1)]
+        (assoc state
+               :files (flatten-files recent-files)
+               :recent-file-ids (extract-ids recent-files))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- Create Project
+
+(declare project-created)
 
 (def create-project
   (ptk/reify ::create-project
@@ -236,8 +242,15 @@
       (let [name (str "New Project " (gensym "p"))
             team-id (get-in state [:dashboard-local :team-id])]
         (->> (rp/mutation! :create-project {:name name :team-id team-id})
-             (rx/map (fn [data]
-                       (projects-fetched [data]))))))))
+             (rx/map project-created))))))
+
+(defn project-created
+  [data]
+  (us/verify ::project data)
+  (ptk/reify ::project-created
+    ptk/UpdateEvent
+    (update [this state]
+      (update state :projects assoc (:id data) data))))
 
 ;; --- Rename Project
 
@@ -285,7 +298,7 @@
       (->> (rp/mutation :delete-file {:id id})
            (rx/ignore)))))
 
-;; --- Rename Project
+;; --- Rename File
 
 (defn rename-file
   [id name]
@@ -299,11 +312,8 @@
     (watch [_ state stream]
       (let [local (:dashboard-local state)
             params {:id id :name name}]
-        ;; NOTE: this is a temporal (quick & dirty) solution for
-        ;; refreshing the results; we need to think in a better way to
-        ;; do it instead of a simple and complete data refresh.
         (->> (rp/mutation :rename-file params)
-             (rx/map (fn [_] (initialize-recent (:team-id local)))))))))
+             (rx/ignore))))))
 
 
 ;; --- Create File
@@ -312,7 +322,7 @@
 
 (defn create-file
   [project-id]
-  (ptk/reify ::create-draft-file
+  (ptk/reify ::create-file
     ptk/WatchEvent
     (watch [_ state stream]
       (let [name (str "New File " (gensym "p"))
@@ -323,12 +333,10 @@
 (defn file-created
   [data]
   (us/verify ::file data)
-  (ptk/reify ::create-draft-file
+  (ptk/reify ::file-created
     ptk/UpdateEvent
     (update [this state]
-      (-> state
-          (update :files assoc (:id data) data)
-          (update-in [:recent-files (:project-id data)] conj data)))))
+      (update state :files assoc (:id data) data))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

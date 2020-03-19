@@ -11,6 +11,7 @@
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.components.context-menu :refer [context-menu]]
+   [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]
@@ -51,7 +52,9 @@
                    (st/emit! (dsh/rename-file (:id file) name))
                    (swap! local assoc :edition false))
 
-        on-key-down #(when (kbd/enter? %) (on-blur %))
+        on-key-down #(cond
+                       (kbd/enter? %) (on-blur %)
+                       (kbd/esc? %) (swap! local assoc :edition false))
         on-menu-click #(do
                          (dom/stop-propagation %)
                          (swap! local assoc :menu-open true))
@@ -68,11 +71,11 @@
                               :auto-focus true
                               :on-key-down on-key-down
                               :on-blur on-blur
-                              ;; :on-click on-edit
                               :default-value (:name file)}]
         [:h3 (:name file)])
       [:& grid-item-metadata {:modified-at (:modified-at file)}]]
-     [:div.project-th-actions
+     [:div.project-th-actions {:class (classnames
+                                        :force-display (:menu-open @local))}
       ;; [:div.project-th-icon.pages
       ;;  i/page
       ;;  #_[:span (:total-pages project)]]

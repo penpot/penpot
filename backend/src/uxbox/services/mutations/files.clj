@@ -103,12 +103,12 @@
   "update file
       set name = $2
     where id = $1
-      and deleted_at is null")
+      and deleted_at is null
+     returning *")
 
 (defn- rename-file
   [conn {:keys [id name] :as params}]
-  (-> (db/query-one conn [sql:rename-file id name])
-      (p/then' su/constantly-nil)))
+  (db/query-one conn [sql:rename-file id name]))
 
 
 ;; --- Mutation: Delete Project File

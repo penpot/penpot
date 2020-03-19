@@ -1,18 +1,18 @@
 {
   "dashboard.grid.delete" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:88" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:73", "src/uxbox/main/ui/dashboard/grid.cljs:91" ],
     "translations" : {
       "en" : "Delete"
     }
   },
   "dashboard.grid.edit" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:87" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:72", "src/uxbox/main/ui/dashboard/grid.cljs:90" ],
     "translations" : {
       "en" : "Edit"
     }
   },
   "dashboard.grid.empty-files" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:110" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:113" ],
     "translations" : {
       "en" : "You still have no files here"
     }
@@ -25,7 +25,7 @@
     "unused" : true
   },
   "dashboard.header.draft" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:36" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:58" ],
     "translations" : {
       "en" : "Draft"
     }
@@ -45,9 +45,15 @@
     "unused" : true
   },
   "dashboard.header.new-file" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:41" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:78" ],
     "translations" : {
       "en" : "+ New file"
+    }
+  },
+  "dashboard.header.new-project" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/recent_files.cljs:54" ],
+    "translations" : {
+      "en" : "+ New project"
     }
   },
   "dashboard.header.profile-menu.logout" : {
@@ -72,7 +78,7 @@
     }
   },
   "dashboard.header.project" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:37" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:74" ],
     "translations" : {
       "en" : "Project %s"
     }
@@ -374,7 +380,7 @@
     "unused" : true
   },
   "ds.new-file" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:106", "src/uxbox/main/ui/dashboard/grid.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:109", "src/uxbox/main/ui/dashboard/grid.cljs:115" ],
     "translations" : {
       "en" : "+ New File",
       "fr" : null
@@ -451,7 +457,7 @@
     }
   },
   "ds.updated-at" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:34" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:35" ],
     "translations" : {
       "en" : "Updated: %s",
       "fr" : "Mis à jour: %s"
@@ -528,14 +534,14 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:154" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:160" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:148" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:154" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal."
