@@ -827,6 +827,52 @@
 ;;          (->> (uwrk/initialize-alignment params)
 ;;               (rx/map #(activate-flag :grid-indexed))))))))
 
+;; --- Selection Rect
+
+(declare select-shapes-by-current-selrect)
+(declare deselect-all)
+
+(defn update-selrect
+  [selrect]
+  (ptk/reify ::update-selrect
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selrect] selrect))))
+
+(def handle-selection
+  (letfn [(data->selrect [data]
+            (let [start (:start data)
+                  stop (:stop data)
+                  start-x (min (:x start) (:x stop))
+                  start-y (min (:y start) (:y stop))
+                  end-x (max (:x start) (:x stop))
+                  end-y (max (:y start) (:y stop))]
+              {:type :rect
+               :x start-x
+               :y start-y
+               :width (- end-x start-x)
+               :height (- end-y start-y)}))]
+    (ptk/reify ::handle-selection
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [stoper (rx/filter #(or (interrupt? %)
+                                     (ms/mouse-up? %))
+                                stream)]
+          (rx/concat
+           (rx/of deselect-all)
+           (->> ms/mouse-position
+                (rx/scan (fn [data pos]
+                           (if data
+                             (assoc data :stop pos)
+                             {:start pos :stop pos}))
+                         nil)
+                (rx/map data->selrect)
+                (rx/map update-selrect)
+                (rx/take-until stoper))
+           (rx/of select-shapes-by-current-selrect
+                  (update-selrect nil))))))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shapes events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
