@@ -38,5 +38,4 @@
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")
 
   (when (gobj/get props "show")
-    [:div.dropdown
-     (mf/element dropdown-container props)]))
+    (mf/element dropdown-container props)))
