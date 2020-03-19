@@ -1928,6 +1928,19 @@
 ;; Context Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::point gpt/point?)
+
+;; (defn show-viewport-context-menu
+;;   [{:keys [workspace viewport] :as params}]
+;;   (us/verify ::point workspace)
+;;   (us/verify ::point viewport)
+;;   (ptk/reify ::show-viewport-context-menu
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (assoc-in state [:workspace-local :context-menu] {:position position}))))
+
+
+
 (defn show-context-menu
   [{:keys [position] :as params}]
   (ptk/reify ::show-context-menu

@@ -141,3 +141,9 @@
   (let [x (.-clientX event)
         y (.-clientY event)]
     (gpt/point x y)))
+
+(defn get-offset-position
+  [event]
+  (let [x (.-offsetX event)
+        y (.-offsetY event)]
+    (gpt/point x y)))

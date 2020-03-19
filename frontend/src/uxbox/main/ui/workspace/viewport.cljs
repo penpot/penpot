@@ -149,6 +149,8 @@
                 selected]
          :as local} (mf/deref refs/workspace-local)
         viewport-ref (mf/use-ref nil)
+        last-position (mf/use-var nil)
+
         zoom (or zoom 1)
 
         on-mouse-down
@@ -174,9 +176,12 @@
                 shift? (kbd/shift? event)
                 opts {:shift? shift?
                       :ctrl? ctrl?}
-                cpos (dom/get-client-position event)]
+                workspace-pos (dom/get-client-position event)
+                viewport-pos (dom/get-offset-position event)
+                ]
             (st/emit! (ms/->MouseEvent :context-menu 3 ctrl? shift?)
-                      (dw/show-context-menu {:position cpos}))))
+                      (dw/show-context-menu {:position workspace-pos
+                                             :viewport viewport-pos}))))
 
         on-mouse-up
         (fn [event]
@@ -235,31 +240,21 @@
               (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
             (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?))))
 
-        ;; translate-point-to-viewport
-        ;; (fn [pt]
-        ;;   (let [viewport (mf/ref-node viewport-ref)
-        ;;         brect (.getBoundingClientRect viewport)
-        ;;         brect (gpt/point (parse-int (.-left brect))
-        ;;                          (parse-int (.-top brect)))]
-        ;;     (gpt/subtract pt brect)))
-
-        on-mouse-move
+        on-viewport-mouse-move
         (fn [event]
           ;; NOTE: offsetX and offsetY are marked as "experimental" on
           ;; MDN site but seems like they are supported on all
           ;; browsers so we can avoid translation opetation just using
           ;; this attributes.
-          (let [;; pt (translate-point-to-viewport pt)
-                pt (gpt/point (.-offsetX (.-nativeEvent event))
-                               (.-offsetY (.-nativeEvent event)))]
+          (let [pt (dom/get-offset-position event)]
+            (reset! last-position pt)
             (st/emit! (ms/->PointerEvent :viewport pt
                                          (kbd/ctrl? event)
                                          (kbd/shift? event)))))
 
-        on-mouse-move'
+        on-document-mouse-move
         (fn [event]
-          (let [pt (gpt/point (.-clientX event)
-                              (.-clientY event))]
+          (let [pt (dom/get-client-position event)]
             (st/emit! (ms/->PointerEvent :workspace pt
                                          (kbd/ctrl? event)
                                          (kbd/shift? event)))))
@@ -268,11 +263,15 @@
         (fn []
           (let [key1 (events/listen js/document EventType.KEYDOWN on-key-down)
                 key2 (events/listen js/document EventType.KEYUP on-key-up)
-                key3 (events/listen js/document EventType.MOUSEMOVE on-mouse-move')]
+                key3 (events/listen js/document EventType.MOUSEMOVE on-document-mouse-move)
+
+                dnode (mf/ref-val viewport-ref)
+                key4 (events/listen dnode EventType.MOUSEMOVE on-viewport-mouse-move)]
             (fn []
               (events/unlistenByKey key1)
               (events/unlistenByKey key2)
               (events/unlistenByKey key3)
+              (events/unlistenByKey key4)
               )))]
 
     (mf/use-effect on-mount)
@@ -285,7 +284,7 @@
                      :on-context-menu on-context-menu
                      :on-click on-click
                      :on-double-click on-double-click
-                     :on-mouse-move on-mouse-move
+                     ;; :on-mouse-move on-mouse-move
                      :on-mouse-down on-mouse-down
                      :on-mouse-up on-mouse-up}
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
