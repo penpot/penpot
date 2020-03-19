@@ -10,8 +10,8 @@
    [beicon.core :as rx]
    [goog.events :as events]
    [goog.object :as gobj]
-   [potok.core :as ptk]
    [lentes.core :as l]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
@@ -21,17 +21,17 @@
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.workspace.grid :refer [grid]]
-   [uxbox.main.ui.workspace.ruler :refer [ruler]]
-   [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
+   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
    [uxbox.main.ui.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
+   [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
+   [uxbox.main.ui.workspace.grid :refer [grid]]
+   [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
-   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
-   [uxbox.util.perf :as perf]
-   [uxbox.util.uuid :as uuid]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.point :as gpt])
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.perf :as perf]
+   [uxbox.util.uuid :as uuid])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget
@@ -73,45 +73,7 @@
 
 ;; --- Selection Rect
 
-(defn- selection->rect
-  [data]
-  (let [start (:start data)
-        stop (:stop data)
-        start-x (min (:x start) (:x stop))
-        start-y (min (:y start) (:y stop))
-        end-x (max (:x start) (:x stop))
-        end-y (max (:y start) (:y stop))]
-    (assoc data
-           :type :rect
-           :x start-x
-           :y start-y
-           :width (- end-x start-x)
-           :height (- end-y start-y))))
-
-(def ^:private handle-selrect
-  (letfn [(update-state [state position]
-            (let [selrect (get-in state [:workspace-local :selrect])]
-              (if selrect
-                (assoc-in state [:workspace-local :selrect]
-                          (selection->rect (assoc selrect :stop position)))
-                (assoc-in state [:workspace-local :selrect]
-                          (selection->rect {:start position :stop position})))))
-
-          (clear-state [state]
-            (update state :workspace-local dissoc :selrect))]
-    (ptk/reify ::handle-selrect
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [stoper (rx/filter #(or (dw/interrupt? %) (ms/mouse-up? %)) stream)]
-          (rx/concat
-           (rx/of dw/deselect-all)
-           (->> ms/mouse-position
-                (rx/map (fn [pos] #(update-state % pos)))
-                (rx/take-until stoper))
-           (rx/of dw/select-shapes-by-current-selrect
-                  clear-state)))))))
-
-(mf/defc selrect
+(mf/defc selection-rect
   {:wrap [mf/wrap-memo]}
   [{:keys [data] :as props}]
   (when data
@@ -144,13 +106,7 @@
 (declare remote-user-cursors)
 (declare frames)
 
-(defn- build-workspace-data-iref
-  [page-id]
-  (-> (l/in [:workspace-data page-id])
-      (l/derive st/state)))
-
 (mf/defrc frames-wrapper
-  ;; {:wrap [mf/wrap-memo]}
   [props]
   (let [page     (gobj/get props "page")
         page-id  (:id page)
@@ -187,6 +143,8 @@
                 selected]
          :as local} (mf/deref refs/workspace-local)
         viewport-ref (mf/use-ref nil)
+        last-position (mf/use-var nil)
+
         zoom (or zoom 1)
 
         on-mouse-down
@@ -196,11 +154,12 @@
                 shift? (kbd/shift? event)
                 opts {:shift? shift?
                       :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :down ctrl? shift?)))
-          (when (not edition)
-            (if drawing-tool
-              (st/emit! (start-drawing drawing-tool))
-              (st/emit! handle-selrect))))
+            (st/emit! (ms/->MouseEvent :down ctrl? shift?))
+            (when (and (not edition)
+                       (= 1 (.-which (.-nativeEvent event))))
+              (if drawing-tool
+                (st/emit! (start-drawing drawing-tool))
+                (st/emit! dw/handle-selection)))))
 
         on-context-menu
         (fn [event]
@@ -337,7 +296,7 @@
         [:& ruler {:zoom zoom :ruler (:ruler local)}])
 
       [:& remote-user-cursors {:page page}]
-      [:& selrect {:data (:selrect local)}]]]))
+      [:& selection-rect {:data (:selrect local)}]]]))
 
 
 (mf/defc remote-user-cursor
