@@ -24,17 +24,18 @@
 (mf/defc path-wrapper
   [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
-        selected? (contains? selected (:id shape))]
-    (letfn [(on-mouse-down [event]
-              (common/on-mouse-down event shape selected))
-            (on-double-click [event]
-              (when selected?
-                (st/emit! (dw/start-edition-mode (:id shape)))))]
-      [:g.shape {:class (when selected? "selected")
-                 :on-double-click on-double-click
-                 :on-mouse-down on-mouse-down}
-       [:& path-shape {:shape shape
-                       :background? true}]])))
+        selected? (contains? selected (:id shape))
+        on-mouse-down #(common/on-mouse-down % shape)
+        on-context-menu #(common/on-context-menu % shape)
+        on-double-click
+        (fn [event]
+          (when selected?
+            (st/emit! (dw/start-edition-mode (:id shape)))))]
+    [:g.shape {:on-double-click on-double-click
+               :on-mouse-down on-mouse-down
+               :on-context-menu on-context-menu}
+     [:& path-shape {:shape shape
+                     :background? true}]]))
 
 ;; --- Path Shape
 
