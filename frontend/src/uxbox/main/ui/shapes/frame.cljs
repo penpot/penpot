@@ -38,8 +38,8 @@
    (js/React.memo
     component
     (fn [np op]
-      (let [n-shape (aget np "shape")
-            o-shape (aget op "shape")]
+      (let [n-shape (unchecked-get np "shape")
+            o-shape (unchecked-get op "shape")]
         (= n-shape o-shape))))))
 
 (mf/defc shape-wrapper
@@ -95,6 +95,7 @@
                           :deps (mf/deps (:id shape))})
           selected? (mf/deref selected-iref)
           on-mouse-down #(common/on-mouse-down % shape)
+          on-context-menu #(common/on-context-menu % shape)
           shape (merge frame-default-props shape)
 
           childs (mapv #(get objects %) (:shapes shape))
@@ -105,6 +106,7 @@
             (st/emit! dw/deselect-all
                       (dw/select-shape (:id shape))))]
       [:g {:class (when selected? "selected")
+           :on-context-menu on-context-menu
            :on-double-click on-double-click
            :on-mouse-down on-mouse-down}
        [:& frame-shape {:shape shape :childs childs}]])))
@@ -134,7 +136,7 @@
 
     [:svg {:x x :y y :width width :height height}
      [:& "rect" props]
-     (for [item childs]
+     (for [item (reverse childs)]
        [:& shape-wrapper {:shape (translate item) :key (:id item)}])]))
 
 (defn- translate-to-frame

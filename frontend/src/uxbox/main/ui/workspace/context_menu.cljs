@@ -32,6 +32,24 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
+(mf/defc shape-context-menu
+  [{:keys [shape] :as props}]
+  [:*
+   [:li i/copy [:span "duplicate"]]
+   [:li i/trash [:span "delete"]]])
+
+(mf/defc selection-context-menu
+  [{:keys [shape] :as props}]
+  [:*
+   [:li i/copy [:span "duplicate"]]
+   [:li i/trash [:span "delete"]]])
+
+(mf/defc viewport-context-menu
+  [{:keys [shape] :as props}]
+  [:*
+   [:li i/copy [:span "copy as svg"]]
+   #_[:li i/trash [:span ""]]])
+
 (mf/defc context-menu
   [props]
   (let [mdata (mf/deref menu-ref)]
@@ -41,9 +59,16 @@
       {:style {:top (- (get-in mdata [:position :y]) 20)
                :left (get-in mdata [:position :x])}
        :on-context-menu prevent-default}
-      [:li i/user [:span "action 1"]]
-      [:li i/user [:span "action 2"]]
-      [:li i/user [:span "action 3"]]]]))
+
+      (case (:type mdata)
+        :shape
+        [:& shape-context-menu {:shape (:shape mdata)}]
+
+        :selection
+        [:& selection-context-menu {:shape (:shape mdata)
+                                    :selected (:selected mdata)}]
+
+        [:& viewport-context-menu {}])]]))
 
 
 

@@ -10,6 +10,7 @@
    [cuerdas.core :as str]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.interop :as interop]
@@ -23,8 +24,10 @@
 (mf/defrc rect-wrapper
   [props]
   (let [shape (unchecked-get props "shape")
-        on-mouse-down #(common/on-mouse-down % shape)]
-    [:g.shape {:on-mouse-down on-mouse-down}
+        on-mouse-down #(common/on-mouse-down % shape)
+        on-context-menu #(common/on-context-menu % shape)]
+    [:g.shape {:on-mouse-down on-mouse-down
+               :on-context-menu on-context-menu}
      [:& rect-shape {:shape shape}]]))
 
 ;; --- Rect Shape

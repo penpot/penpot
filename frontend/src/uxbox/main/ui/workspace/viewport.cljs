@@ -106,13 +106,7 @@
 (declare remote-user-cursors)
 (declare frames)
 
-(defn- build-workspace-data-iref
-  [page-id]
-  (-> (l/in [:workspace-data page-id])
-      (l/derive st/state)))
-
 (mf/defrc frames-wrapper
-  ;; {:wrap [mf/wrap-memo]}
   [props]
   (let [page     (gobj/get props "page")
         page-id  (:id page)
@@ -176,13 +170,10 @@
                 shift? (kbd/shift? event)
                 opts {:shift? shift?
                       :ctrl? ctrl?}
-                workspace-pos (dom/get-client-position event)
-                viewport-pos (dom/get-offset-position event)
-                ]
-            (prn "on-context-menu" workspace-pos)
+                position (dom/get-client-position event)]
+            (prn "viewport$on-context-menu" position)
             (st/emit! (ms/->MouseEvent :context-menu 3 ctrl? shift?)
-                      (dw/show-context-menu {:position workspace-pos
-                                             :viewport viewport-pos}))))
+                      (dw/show-context-menu {:position position}))))
 
         on-mouse-up
         (fn [event]

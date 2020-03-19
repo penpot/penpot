@@ -832,20 +832,6 @@
 (declare select-shapes-by-current-selrect)
 (declare deselect-all)
 
-(defn- selrect->shape
-  [selrect]
-  (let [start (:start selrect)
-        stop (:stop selrect)
-        start-x (min (:x start) (:x stop))
-        start-y (min (:y start) (:y stop))
-        end-x (max (:x start) (:x stop))
-        end-y (max (:y start) (:y stop))]
-    {:type :rect
-     :x start-x
-     :y start-y
-     :width (- end-x start-x)
-     :height (- end-y start-y)}))
-
 (defn update-selrect
   [selrect]
   (ptk/reify ::update-selrect
@@ -854,25 +840,37 @@
       (assoc-in state [:workspace-local :selrect] selrect))))
 
 (def handle-selection
-  (ptk/reify ::handle-selection
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stoper (rx/filter #(or (interrupt? %)
-                                   (ms/mouse-up? %))
-                              stream)]
-        (rx/concat
-         (rx/of deselect-all)
-         (->> ms/mouse-position
-              (rx/scan (fn [selrect pos]
-                         (if selrect
-                           (assoc selrect :stop pos)
-                           {:start pos :stop pos}))
-                       nil)
-              (rx/map selrect->shape)
-              (rx/map update-selrect)
-              (rx/take-until stoper))
-         (rx/of select-shapes-by-current-selrect
-                (update-selrect nil)))))))
+  (letfn [(data->selrect [data]
+            (let [start (:start data)
+                  stop (:stop data)
+                  start-x (min (:x start) (:x stop))
+                  start-y (min (:y start) (:y stop))
+                  end-x (max (:x start) (:x stop))
+                  end-y (max (:y start) (:y stop))]
+              {:type :rect
+               :x start-x
+               :y start-y
+               :width (- end-x start-x)
+               :height (- end-y start-y)}))]
+    (ptk/reify ::handle-selection
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [stoper (rx/filter #(or (interrupt? %)
+                                     (ms/mouse-up? %))
+                                stream)]
+          (rx/concat
+           (rx/of deselect-all)
+           (->> ms/mouse-position
+                (rx/scan (fn [data pos]
+                           (if data
+                             (assoc data :stop pos)
+                             {:start pos :stop pos}))
+                         nil)
+                (rx/map data->selrect)
+                (rx/map update-selrect)
+                (rx/take-until stoper))
+           (rx/of select-shapes-by-current-selrect
+                  (update-selrect nil))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1930,24 +1928,25 @@
 
 (s/def ::point gpt/point?)
 
-;; (defn show-viewport-context-menu
-;;   [{:keys [workspace viewport] :as params}]
-;;   (us/verify ::point workspace)
-;;   (us/verify ::point viewport)
-;;   (ptk/reify ::show-viewport-context-menu
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (assoc-in state [:workspace-local :context-menu] {:position position}))))
-
-
-
 (defn show-context-menu
-  [{:keys [position] :as params}]
+  [{:keys [position shape] :as params}]
+  (us/verify ::point position)
+  (us/verify (s/nilable ::cp/minimal-shape) shape)
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :context-menu] {:position position}))))
-
+      (let [selected (get-in state [:workspace-local :selected])
+            type     (cond
+                       (and shape
+                            (contains? selected (:id shape))
+                            (> (count selected) 1)) :selection
+                       (and shape) :shape
+                       :else :viewport)]
+        (assoc-in state [:workspace-local :context-menu]
+                  {:position position
+                   :selected selected
+                   :type type
+                   :shape shape})))))
 
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
