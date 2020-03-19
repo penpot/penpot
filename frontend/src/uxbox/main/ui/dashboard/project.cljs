@@ -12,14 +12,20 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [uxbox.builtins.icons :as i]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.router :as rt]
    [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.modal :as modal]
+   [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.components.context-menu :refer [context-menu]]
    [uxbox.main.ui.dashboard.grid :refer [grid]]))
 
-(def project-ref
-  (-> (l/key :project)
+(def projects-ref
+  (-> (l/key :projects)
       (l/derive st/state)))
 
 (def files-ref
@@ -28,16 +34,47 @@
       (l/derive st/state)))
 
 (mf/defc project-header
-  [{:keys [profile] :as props}]
-  (let [project (mf/deref project-ref)
-        locale (i18n/use-locale)]
+  [{:keys [team-id project-id] :as props}]
+  (let [local (mf/use-state {:menu-open false
+                             :edition false})
+        projects (mf/deref projects-ref)
+        project (get projects project-id)
+        locale (i18n/use-locale)
+        on-menu-click #(swap! local assoc :menu-open true)
+        on-menu-close #(swap! local assoc :menu-open false)
+        on-edit #(swap! local assoc :edition true :menu-open false)
+        on-blur #(let [name (-> % dom/get-target dom/get-value)]
+                   (st/emit! (dsh/rename-project project-id name))
+                   (swap! local assoc :edition false))
+        on-key-down #(cond
+                       (kbd/enter? %) (on-blur %)
+                       (kbd/esc? %) (swap! local assoc :edition false))
+        delete-fn #(do
+                     (st/emit! (dsh/delete-project project-id))
+                     (st/emit! (rt/nav :dashboard-team {:team-id team-id})))
+        on-delete #(modal/show! confirm-dialog {:on-accept delete-fn})]
     [:header#main-bar.main-bar
      (if (:is-default project)
        [:h1.dashboard-title (t locale "dashboard.header.draft")]
-       [:h1.dashboard-title (t locale "dashboard.header.project" (:name project))])
+       [:*
+        (if (:edition @local)
+          [:input.element-name {:type "text"
+                                :auto-focus true
+                                :on-key-down on-key-down
+                                :on-blur on-blur
+                                :default-value (:name project)}]
+          [:h1.dashboard-title
+           [:div.main-bar-icon
+            {:on-click on-menu-click}
+            i/actions]
+           [:& context-menu {:on-close on-menu-close
+                             :show (:menu-open @local)
+                             :options [[(t locale "dashboard.grid.edit") on-edit]
+                                       [(t locale "dashboard.grid.delete") on-delete]]}]
+           (t locale "dashboard.header.project" (:name project))])])
      [:a.btn-dashboard {:on-click #(do
                                      (dom/prevent-default %)
-                                     (st/emit! (dsh/create-file (:id project))))}
+                                     (st/emit! (dsh/create-file project-id)))}
       (t locale "dashboard.header.new-file")]]))
 
 (mf/defc project-page
@@ -47,10 +84,10 @@
                    (reverse))]
     (mf/use-effect
      {:fn #(st/emit! (dsh/initialize-project team-id project-id))
-      :deps (mf/deps team-id project-id)})
+      :deps (mf/deps section team-id project-id)})
 
     [:*
-      [:& project-header]
+      [:& project-header {:team-id team-id :project-id project-id}]
       [:section.projects-page
        [:& grid { :id project-id :files files :hide-new? true}]]]))
 

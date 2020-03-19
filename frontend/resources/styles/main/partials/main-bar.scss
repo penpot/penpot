@@ -15,9 +15,20 @@
   position: relative;
   z-index: 10;
 
+  .element-name {
+    margin-right: $small;
+  }
 
   .btn-dashboard {
+    flex-shrink: 0;
     margin-left: auto;
+  }
+
+  svg {
+    fill: $color-black;
+    height: 14px;
+    margin-right: $x-small;
+    width: 14px;
   }
 
 }
@@ -70,6 +81,7 @@
 
 .dashboard-title {
   color: $color-black;
+  display: flex;
   font-size: $fs15;
   font-weight: normal;
   margin: 0 $x-big;

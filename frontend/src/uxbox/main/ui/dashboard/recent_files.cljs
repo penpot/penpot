@@ -35,8 +35,12 @@
   (-> (l/key :projects)
       (l/derive st/state)))
 
-(def recent-files-ref
-  (-> (l/key :recent-files)
+(def recent-file-ids-ref
+  (-> (l/key :recent-file-ids)
+      (l/derive st/state)))
+
+(def files-ref
+  (-> (l/key :files)
       (l/derive st/state)))
 
 ;; --- Component: Recent files
@@ -46,7 +50,8 @@
   (let [locale (i18n/use-locale)]
     [:header#main-bar.main-bar
      [:h1.dashboard-title "Recent"]
-     [:a.btn-dashboard "+ New project"]]))
+     [:a.btn-dashboard {:on-click #(st/emit! dsh/create-project)}
+      (t locale "dashboard.header.new-project")]]))
 
 (mf/defc recent-project
   [{:keys [project files first? locale] :as props}]
@@ -60,12 +65,12 @@
                      (dt/timeago {:locale locale}))]
         [:span.recent-files-row-title-info (str ", " time)])]
      [:& grid {:id (:id project)
-               :files (or files [])
+               :files files
                :hide-new? true}]]))
 
 
 (mf/defc recent-files-page
-  [{:keys [section team-id] :as props}]
+  [{:keys [team-id] :as props}]
   (mf/use-effect
    {:fn #(st/emit! (dsh/initialize-recent team-id))
     :deps (mf/deps team-id)})
@@ -73,10 +78,11 @@
                       (vals)
                       (sort-by :modified-at)
                       (reverse))
-
-        recent-files (mf/deref recent-files-ref)
+        files (mf/deref files-ref)
+        recent-file-ids (mf/deref recent-file-ids-ref)
         locale (i18n/use-locale)]
-    (when (and projects recent-files)
+
+    (when (and projects recent-file-ids)
       [:*
        [:& recent-files-header]
        [:section.recent-files-page
@@ -84,6 +90,8 @@
           [:& recent-project {:project project
                               :locale locale
                               :key (:id project)
-                              :files (get recent-files (:id project))
+                              :files (->> (get recent-file-ids (:id project))
+                                          (map #(get files %))
+                                          (filter identity)) ;; avoid failure if a "project only" files list is in global state
                               :first? (= project (first projects))}])]])))
 
