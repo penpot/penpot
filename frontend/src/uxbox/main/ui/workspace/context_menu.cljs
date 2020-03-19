@@ -35,12 +35,12 @@
 (mf/defc context-menu
   [props]
   (let [mdata (mf/deref menu-ref)]
-
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
-     [:ul.context-menu {:style {:top (- (get-in mdata [:position :y]) 20)
-                                :left (get-in mdata [:position :x])}
-                        :on-context-menu prevent-default}
+     [:ul.workspace-context-menu
+      {:style {:top (- (get-in mdata [:position :y]) 20)
+               :left (get-in mdata [:position :x])}
+       :on-context-menu prevent-default}
       [:li i/user [:span "action 1"]]
       [:li i/user [:span "action 2"]]
       [:li i/user [:span "action 3"]]]]))

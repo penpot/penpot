@@ -179,6 +179,7 @@
                 workspace-pos (dom/get-client-position event)
                 viewport-pos (dom/get-offset-position event)
                 ]
+            (prn "on-context-menu" workspace-pos)
             (st/emit! (ms/->MouseEvent :context-menu 3 ctrl? shift?)
                       (dw/show-context-menu {:position workspace-pos
                                              :viewport viewport-pos}))))
