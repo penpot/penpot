@@ -123,7 +123,8 @@
           (dom/prevent-default event)
           (dom/stop-propagation event)
           (let [pos (dom/get-client-position event)]
-            (st/emit! (dw/show-context-menu {:position pos}))))
+            (st/emit! (dw/show-shape-context-menu {:position pos
+                                                   :shape item}))))
 
         on-hover
         (fn [item monitor]
@@ -208,7 +209,8 @@
           (dom/prevent-default event)
           (dom/stop-propagation event)
           (let [pos (dom/get-client-position event)]
-            (st/emit! (dw/show-context-menu {:position pos}))))
+            (st/emit! (dw/show-shape-context-menu {:position pos
+                                                   :shape item}))))
 
         on-drop
         (fn [item monitor]

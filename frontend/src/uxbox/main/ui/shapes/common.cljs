@@ -109,6 +109,5 @@
   (dom/prevent-default event)
   (dom/stop-propagation event)
   (let [position (dom/get-client-position event)]
-    (prn "shapes$on-context-menu" shape)
-    (st/emit!(dw/show-context-menu {:position position
-                                    :shape shape}))))
+    (st/emit!(dw/show-shape-context-menu {:position position
+                                          :shape shape}))))

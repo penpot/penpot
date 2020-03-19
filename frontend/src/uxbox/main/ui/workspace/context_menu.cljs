@@ -33,22 +33,26 @@
   (dom/stop-propagation event))
 
 (mf/defc shape-context-menu
-  [{:keys [shape] :as props}]
-  [:*
-   [:li i/copy [:span "duplicate"]]
-   [:li i/trash [:span "delete"]]])
+  [{:keys [mdata] :as props}]
+  (let [shape (:shape mdata)
+        selected (:selected mdata)
 
-(mf/defc selection-context-menu
-  [{:keys [shape] :as props}]
-  [:*
-   [:li i/copy [:span "duplicate"]]
-   [:li i/trash [:span "delete"]]])
+        on-duplicate
+        (fn [event]
+          (st/emit! dw/duplicate-selected))
+
+        on-delete
+        (fn [event]
+          (st/emit! dw/delete-selected)) ]
+    [:*
+     [:li {:on-click on-duplicate} i/copy [:span "duplicate"]]
+     [:li {:on-click on-delete} i/trash [:span "delete"]]]))
 
 (mf/defc viewport-context-menu
-  [{:keys [shape] :as props}]
+  [{:keys [mdata] :as props}]
   [:*
-   [:li i/copy [:span "copy as svg"]]
-   #_[:li i/trash [:span ""]]])
+   [:li i/copy [:span "paste (TODO)"]]
+   [:li i/copy [:span "copy as svg (TODO)"]]])
 
 (mf/defc context-menu
   [props]
@@ -60,15 +64,9 @@
                :left (get-in mdata [:position :x])}
        :on-context-menu prevent-default}
 
-      (case (:type mdata)
-        :shape
-        [:& shape-context-menu {:shape (:shape mdata)}]
-
-        :selection
-        [:& selection-context-menu {:shape (:shape mdata)
-                                    :selected (:selected mdata)}]
-
-        [:& viewport-context-menu {}])]]))
+      (if (:shape mdata)
+        [:& shape-context-menu {:mdata mdata}]
+        [:& viewport-context-menu {:mdata mdata}])]]))
 
 
 
