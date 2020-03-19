@@ -60,6 +60,53 @@
        [:& user-widget {:user (get-in users [:by-id id])
                         :key id}])]))
 
+(mf/defc menu
+  [{:keys [layout] :as props}]
+  (let [show-menu? (mf/use-state false)
+        locale (i18n/use-locale)]
+
+    [:*
+     [:div.menu-btn {:on-click #(reset! show-menu? true)} i/actions]
+
+     [:& dropdown {:show @show-menu?
+                   :on-close #(reset! show-menu? false)}
+      [:ul.workspace-menu
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :rules))}
+        [:span i/ruler]
+        [:span
+         (if (contains? layout :rules)
+           (t locale "workspace.header.menu.hide-rules")
+           (t locale "workspace.header.menu.show-rules"))]]
+
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :grid))}
+        [:span i/grid]
+        [:span
+         (if (contains? layout :grid)
+           (t locale "workspace.header.menu.hide-grid")
+           (t locale "workspace.header.menu.show-grid"))]]
+
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :layers))}
+        [:span i/layers]
+        [:span
+         (if (contains? layout :layers)
+           (t locale "workspace.header.menu.hide-layers")
+           (t locale "workspace.header.menu.show-layers"))]]
+
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+        [:span i/palette]
+        [:span
+         (if (contains? layout :colorpalette)
+           (t locale "workspace.header.menu.hide-palette")
+           (t locale "workspace.header.menu.show-palette"))]]
+
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :libraries))}
+        [:span i/icon-set]
+        [:span
+         (if (contains? layout :libraries)
+           (t locale "workspace.header.menu.hide-libraries")
+           (t locale "workspace.header.menu.show-libraries"))]]
+       ]]]))
+
 ;; --- Header Component
 
 (mf/defc header
@@ -68,8 +115,6 @@
         on-undo (constantly nil)
         on-redo (constantly nil)
         locale (i18n/use-locale)
-
-        show-menu? (mf/use-state false)
 
         on-image #(modal/show! import-image-modal {})
         ;;on-download #(udl/open! :download)
@@ -83,14 +128,8 @@
       [:a {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))}
        i/logo-icon]]
 
-     [:div.menu-btn {:on-click #(reset! show-menu? true)} i/actions]
 
-     [:& dropdown {:show @show-menu?
-                   :on-close #(reset! show-menu? false)}
-      [:ul.workspace-menu
-       [:li i/user [:span (t locale "dashboard.header.profile-menu.profile")]]
-       [:li i/lock [:span (t locale "dashboard.header.profile-menu.password")]]
-       [:li i/exit [:span (t locale "dashboard.header.profile-menu.logout")]]]]
+     [:& menu {:layout layout}]
 
      [:div.project-tree-btn
       {:alt (tr "header.sitemap")
