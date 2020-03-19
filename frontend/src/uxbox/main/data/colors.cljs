@@ -318,12 +318,12 @@
       (->> (rp/mutation! :create-color {:library-id library-id
                                         :content color
                                         :name color})
-           (rx/map create-color-result)))))
+           (rx/map (partial create-color-result library-id))))))
 
 (defn create-color-result
-  [item]
+  [library-id item]
   (ptk/reify ::create-color-result
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:library :selected-items] #(into [item] %) )))))
+          (update-in [:library :selected-items library-id] #(into [item] %) )))))

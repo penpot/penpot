@@ -444,17 +444,17 @@
               (rx/reduce conj [])
               (rx/do on-success)
               (rx/mapcat identity)
-              (rx/map create-images-result)
+              (rx/map (partial create-images-result library-id))
               (rx/catch on-error)))))))
 
 ;; --- Image Created
 
 (defn create-images-result
-  [item]
+  [library-id item]
   #_(us/verify ::image item)
   (ptk/reify ::create-images-result
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:library :selected-items] #(into [item] %))))))
+          (update-in [:library :selected-items library-id] #(into [item] %))))))
 

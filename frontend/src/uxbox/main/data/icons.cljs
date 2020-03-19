@@ -94,7 +94,8 @@
       (-> state
           (update-in [:library :icon-libraries] #(into [result] %))))))
 
-
+;; rename-icon-library
+;; delete-icon-library
 
 ;; (declare fetch-icons)
 ;; 
@@ -253,16 +254,16 @@
              (rx/merge-map parse)
              (rx/map prepare)
              (rx/flat-map #(rp/mutation! :create-icon %))
-             (rx/map create-icon-result))))))
+             (rx/map (partial create-icon-result library-id)))))))
 
 (defn create-icon-result
-  [item]
+  [library-id item]
   (ptk/reify ::create-icon-result
     ptk/UpdateEvent
     (update [_ state]
       (let [{:keys [id] :as item} (assoc item :type :icon)]
         (-> state
-            (update-in [:library :selected-items] #(into [item] %)))))))
+            (update-in [:library :selected-items library-id] #(into [item] %)))))))
 
 ;; ;; --- Icon Persisted
 ;; 

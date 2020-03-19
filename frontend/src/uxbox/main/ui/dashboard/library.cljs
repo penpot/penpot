@@ -17,6 +17,7 @@
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.color :as uc]
    [uxbox.util.dom :as dom]
+   [uxbox.main.data.library :as dlib]
    [uxbox.main.data.icons :as dico]
    [uxbox.main.data.images :as dimg]
    [uxbox.main.data.colors :as dcol]
@@ -27,6 +28,7 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.colorpicker :refer [colorpicker most-used-colors]]
+   [uxbox.main.ui.components.editable-label :refer [editable-label]]
    ))
 
 (mf/defc modal-create-color
@@ -53,19 +55,9 @@
 
        [:a.close {:href "#" :on-click cancel} i/close]])))
 
-
-(defmulti create-library (fn [x _] x))
-(defmethod create-library :icons [_ team-id]
-  (let [name (str "Icon Library "(gensym "l"))]
-    (st/emit! (dico/create-icon-library team-id name))))
-
-(defmethod create-library :images [_ team-id]
-  (let [name (str "Image Library "(gensym "l"))]
-    (st/emit! (dimg/create-image-library team-id name))))
-
-(defmethod create-library :palettes [_ team-id]
-  (let [name (str "Image Library "(gensym "l"))]
-    (st/emit! (dcol/create-color-library team-id name))))
+(defn create-library [section team-id]
+  (let [name (str (str (str/title (name section)) " " (gensym "Library ")))]
+    (st/emit! (dlib/create-library section team-id name))))
 
 (defmulti create-item (fn [x _ _] x))
 
@@ -128,26 +120,42 @@
             (let [path (keyword (str "dashboard-library-" (name section)))]
               (dico/fetch-icon-library (:id item))
               (st/emit! (rt/nav path {:team-id team-id :library-id (:id item)}))))}
-         [:a  (:name item)]])]]))
+         [:& editable-label {:value (:name item)
+                             :on-change #(st/emit! (dlib/rename-library section library-id %))}]
+         ])]]))
 
 (mf/defc library-top-menu
-  [{:keys [selected section library-id]}]
-  (let [state (mf/use-state {:is-open false})
-        locale (i18n/use-locale)]
+  [{:keys [selected section library-id team-id]}]
+  (let [state (mf/use-state {:is-open false
+                             :editing-name false})
+        locale (i18n/use-locale)
+        stop-editing #(swap! state assoc :editing-name false)]
     [:header.library-top-menu
      [:div.library-top-menu-current-element
-      [:h2.library-top-menu-current-element-name (:name selected)]
+      [:& editable-label {:edit (:editing-name @state)
+                          :on-change #(do
+                                        (stop-editing)
+                                        (st/emit! (dlib/rename-library section library-id %)))
+                          :on-cancel #(swap! state assoc :editing-name false)
+                          :class-name "library-top-menu-current-element-name"
+                          :value (:name selected)}]
       [:a.library-top-menu-current-action
        { :on-click #(swap! state update :is-open not)}
        [:span i/arrow-down]]
       [:& context-menu
        {:show (:is-open @state)
         :on-close #(swap! state update :is-open not)
-        :options [[(t locale "ds.button.rename") #(println "Rename")]
-                  [(t locale "ds.button.delete") #(println "Delete")]]}]]
+        :options [[(t locale "ds.button.rename")
+                   #(swap! state assoc :editing-name true)]
+
+                  [(t locale "ds.button.delete")
+                   #(let [path (keyword (str "dashboard-library-" (name section) "-index"))]
+                      (do
+                        (st/emit! (dlib/delete-library section library-id))
+                        (st/emit! (rt/nav path {:team-id team-id}))))]]}]]
 
      [:div.library-top-menu-actions
-      [:a i/trash]
+      [:a.library-top-menu-actions-delete i/trash]
 
       (if (= section :palettes)
         [:button.btn-dashboard
@@ -158,12 +166,17 @@
          [:label {:for "file-upload" :class-name "btn-dashboard"}
           (t locale (str "dashboard.library.add-item." (name section)))]
          [:input {:on-change #(create-item section library-id %)
-                  :id "file-upload" :type "file" :style {:display "none"}}]]
-       
-        )]]))
+                  :id "file-upload"
+                  :type "file"
+                  :multiple true
+                  :accept (case section
+                            :images "image"
+                            :icons "image/svg+xml"
+                            "")
+                  :style {:display "none"}}]])]]))
 
 (mf/defc library-icon-card
-  [{:keys [id name url content metadata]}]
+  [{:keys [id name url content metadata library-id]}]
   (let [locale (i18n/use-locale)
         state (mf/use-state {:is-open false})]
     [:div.library-card.library-icon
@@ -189,10 +202,11 @@
       [:& context-menu
        {:show (:is-open @state)
         :on-close #(swap! state update :is-open not)
-        :options [[(t locale "ds.button.delete") #(println "Delete")]]}]]]))
+        :options [[(t locale "ds.button.delete")
+                   #(st/emit! (dlib/delete-item :icons library-id id))]]}]]]))
 
 (mf/defc library-image-card
-  [{:keys [id name thumb-uri]}]
+  [{:keys [id name thumb-uri library-id]}]
   (let [locale (i18n/use-locale)
         state (mf/use-state {:is-open false})]
     [:div.library-card.library-image
@@ -213,10 +227,11 @@
       [:& context-menu
        {:show (:is-open @state)
         :on-close #(swap! state update :is-open not)
-        :options [[(t locale "ds.button.delete") #(println "Delete")]]}]]]))
+        :options [[(t locale "ds.button.delete")
+                   #(st/emit! (dlib/delete-item :images library-id id))]]}]]]))
 
 (mf/defc library-color-card
-  [{ :keys [ id content ] }]
+  [{ :keys [ id content library-id] }]
   (when content
     (let [locale (i18n/use-locale)
          state (mf/use-state {:is-open false})]
@@ -240,54 +255,61 @@
        [:& context-menu
         {:show (:is-open @state)
          :on-close #(swap! state update :is-open not)
-         :options [[(t locale "ds.button.delete") #(println "Delete")]]}]]])))
+         :options [[(t locale "ds.button.delete")
+                    #(st/emit! (dlib/delete-item :palettes library-id id))]]}]]])))
 
-(def icon-libraries-ref
-  (-> (comp (l/key :library) (l/key :icon-libraries))
+(defn libraries-ref [section]
+  (-> (comp (l/key :library) (l/key section))
       (l/derive st/state)))
 
-(def image-libraries-ref
-  (-> (comp (l/key :library) (l/key :image-libraries))
-      (l/derive st/state)))
-
-(def color-libraries-ref
-  (-> (comp (l/key :library) (l/key :color-libraries))
-      (l/derive st/state)))
-
-(def selected-items-ref
-  (-> (comp (l/key :library) (l/key :selected-items))
+(defn selected-items-ref [library-id]
+  (-> (comp (l/key :library) (l/key :selected-items) (l/key library-id))
       (l/derive st/state)))
 
 (mf/defc library-page
   [{:keys [team-id library-id section]}]
-  (mf/use-effect {:fn #(case section
-                         :icons (st/emit! (dico/fetch-icon-libraries team-id))
-                         :images (st/emit! (dimg/fetch-image-libraries team-id))
-                         :palettes (st/emit! (dcol/fetch-color-libraries team-id)))
-                  :deps (mf/deps section team-id)})
-  (mf/use-effect {:fn #(when library-id
-                         (case section
-                           :icons (st/emit! (dico/fetch-icon-library library-id))
-                           :images (st/emit! (dimg/fetch-image-library library-id))
-                           :palettes (st/emit! (dcol/fetch-color-library library-id))))
-                  :deps (mf/deps library-id)})
-  (let [libraries (case section
-                      :icons (mf/deref icon-libraries-ref)
-                      :images (mf/deref image-libraries-ref)
-                      :palettes (mf/deref color-libraries-ref))
-        items (mf/deref selected-items-ref)
+  (let [libraries (mf/deref (libraries-ref section))
+        items (mf/deref (selected-items-ref library-id))
         selected-library (first (filter #(= (:id %) library-id) libraries))]
+
+    (mf/use-effect {:fn #(st/emit! (dlib/retrieve-libraries section team-id))                  
+                    :deps (mf/deps section team-id)})
+    (mf/use-effect {:fn #(when library-id
+                           (st/emit! (dlib/retrieve-library-data section library-id)))
+                    :deps (mf/deps library-id)})
+    (mf/use-effect {:fn #(if (and (nil? library-id) (> (count libraries) 0))
+                           (let [path (keyword (str "dashboard-library-" (name section)))]
+                             (st/emit! (rt/nav path {:team-id team-id :library-id (:id (first libraries))}))))
+                    :deps (mf/deps library-id section team-id)})
+
     [:div.library-page
      [:& library-header {:section section :team-id team-id}]
      [:& library-sidebar {:items libraries :team-id team-id :library-id library-id :section section}]
 
-     (when library-id
+     (if library-id
        [:section.library-content
-        [:& library-top-menu {:selected selected-library :section section :library-id library-id}]
-        [:div.library-page-cards-container
-         (for [item items]
-           (let [item (assoc item :key (:id item))]
-             (case section
-               :icons [:& library-icon-card item]
-               :images [:& library-image-card item]
-               :palettes [:& library-color-card item ])))]])]))
+        [:& library-top-menu {:selected selected-library :section section :library-id library-id :team-id team-id}]
+        [:*
+         ;; TODO: Fix the chunked list
+         #_[:& chunked-list {:items items
+                             :initial-size 30
+                             :chunk-size 30}
+            (fn [item]
+              (let [item (assoc item :key (:id item))]
+                (case section
+                  :icons [:& library-icon-card item]
+                  :images [:& library-image-card item]
+                  :palettes [:& library-color-card item ])))]
+         (if (> (count items) 0)
+           [:div.library-page-cards-container
+            (for [item items]
+              (let [item (assoc item :key (:id item))]
+                (case section
+                  :icons [:& library-icon-card item]
+                  :images [:& library-image-card item]
+                  :palettes [:& library-color-card item ])))]
+           [:div.library-content-empty
+            [:p.library-content-empty-text "You still have no elements in this library"]])]]
+
+       [:div.library-content-empty
+        [:p.library-content-empty-text "You still have no image libraries."]])]))

@@ -1,0 +1,30 @@
+.editable-label {
+    display: flex;
+
+    &.is-hidden {
+        display: none;
+    }
+}
+
+.editable-label-input {
+    border: 0;
+    height: 30px;
+    padding: 5px;
+    margin: 0;
+    width: 100%;
+    background-color: $color-white;
+}
+
+.editable-label-close {
+    background-color: $color-white;
+    cursor: pointer;
+    padding: 3px 5px;
+
+    & svg {
+        fill: $color-gray;
+        height: 15px;
+        transform: rotate(45deg) translateY(7px);
+        width: 15px;
+        margin: 0;
+    }
+}
