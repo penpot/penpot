@@ -127,6 +127,11 @@
 (defn delete-library
   [type library-id]
   (ptk/reify ::delete-library
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:library :last-deleted-library] library-id)))
+   
     ptk/WatchEvent
     (watch [_ state stream]
       (let [method (case type
@@ -172,4 +177,31 @@
         (-> state
             (update-in [:library :selected-items library-id] update-fn))))))
 
-;; Rename library item
+;; Batch delete
+
+(declare batch-delete-item-result)
+
+(defn batch-delete-item
+  [type library-id item-ids]
+  (ptk/reify ::batch-delete-item
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [method (case type
+                     :icons :delete-icon
+                     :images :delete-image
+                     :palettes :delete-color)]
+        (->> (rx/from item-ids)
+             (rx/flat-map #(rp/mutation! method {:id %}))
+             (rx/last)
+             (rx/map #(batch-delete-item-result type library-id item-ids)))))))
+
+(defn batch-delete-item-result
+  [type library-id item-ids]
+  (ptk/reify ::batch-delete-item-result
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [item-ids-set (set item-ids)
+            update-fn (fn [items]
+                        (filter #(not (item-ids-set (:id %))) items))]
+        (-> state
+            (update-in [:library :selected-items library-id] update-fn))))))

@@ -17,6 +17,7 @@
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.color :as uc]
    [uxbox.util.dom :as dom]
+   [uxbox.util.time :as dt]
    [uxbox.main.data.library :as dlib]
    [uxbox.main.data.icons :as dico]
    [uxbox.main.data.images :as dimg]
@@ -118,14 +119,14 @@
           :on-click
           (fn []
             (let [path (keyword (str "dashboard-library-" (name section)))]
-              (dico/fetch-icon-library (:id item))
+              (dlib/retrieve-libraries :icons (:id item))
               (st/emit! (rt/nav path {:team-id team-id :library-id (:id item)}))))}
          [:& editable-label {:value (:name item)
                              :on-change #(st/emit! (dlib/rename-library section library-id %))}]
          ])]]))
 
 (mf/defc library-top-menu
-  [{:keys [selected section library-id team-id]}]
+  [{:keys [selected section library-id team-id on-delete-selected]}]
   (let [state (mf/use-state {:is-open false
                              :editing-name false})
         locale (i18n/use-locale)
@@ -155,7 +156,9 @@
                         (st/emit! (rt/nav path {:team-id team-id}))))]]}]]
 
      [:div.library-top-menu-actions
-      [:a.library-top-menu-actions-delete i/trash]
+      [:a.library-top-menu-actions-delete
+       {:on-click #(when on-delete-selected (on-delete-selected))}
+       i/trash]
 
       (if (= section :palettes)
         [:button.btn-dashboard
@@ -176,18 +179,25 @@
                   :style {:display "none"}}]])]]))
 
 (mf/defc library-icon-card
-  [{:keys [id name url content metadata library-id]}]
-  (let [locale (i18n/use-locale)
-        state (mf/use-state {:is-open false})]
+  [{:keys [item on-select on-unselect]}]
+  (let [{:keys [id name url content metadata library-id modified-at]} item
+        locale (i18n/use-locale)
+        state (mf/use-state {:is-open false
+                             :selected false})
+        time (dt/timeago modified-at {:locale locale})
+        handle-change (fn []
+                        (swap! state update :selected not)
+                        (if (:selected @state)
+                          (when on-unselect (on-unselect id))
+                          (when on-select (on-select id))))]
     [:div.library-card.library-icon
      [:div.input-checkbox.check-primary
       [:input {:type "checkbox"
                :id (str "icon-" id)
-               :on-change #(println "toggle-selection")
-               #_(:checked false)}]
+               :on-change handle-change
+               :checked (:selected @state)}]
       [:label {:for (str "icon-" id)}]]
      [:div.library-card-image
-      #_[:object { :data url :type "image/svg+xml" }]
       [:svg {:view-box (->> metadata :view-box (str/join " "))
              :width (:width metadata)
              :height (:height metadata) 
@@ -195,7 +205,7 @@
      
      [:div.library-card-footer
       [:div.library-card-footer-name name]
-      [:div.library-card-footer-timestamp "Less than 5 seconds ago"]
+      [:div.library-card-footer-timestamp time]
       [:div.library-card-footer-menu
        { :on-click #(swap! state update :is-open not) }
        i/actions]
@@ -206,21 +216,28 @@
                    #(st/emit! (dlib/delete-item :icons library-id id))]]}]]]))
 
 (mf/defc library-image-card
-  [{:keys [id name thumb-uri library-id]}]
-  (let [locale (i18n/use-locale)
-        state (mf/use-state {:is-open false})]
+  [{:keys [item on-select on-unselect]}]
+  (let [{:keys [id name thumb-uri library-id modified-at]} item
+        locale (i18n/use-locale)
+        state (mf/use-state {:is-open false})
+        time (dt/timeago modified-at {:locale locale})
+        handle-change (fn []
+                        (swap! state update :selected not)
+                        (if (:selected @state)
+                          (when on-unselect (on-unselect id))
+                          (when on-select (on-select id))))]
     [:div.library-card.library-image
      [:div.input-checkbox.check-primary
       [:input {:type "checkbox"
                :id (str "image-" id)
-               :on-change #(println "toggle-selection")
+               :on-change handle-change
                #_(:checked false)}]
       [:label {:for (str "image-" id)}]]
      [:div.library-card-image
       [:img {:src thumb-uri}]]
      [:div.library-card-footer
       [:div.library-card-footer-name name]
-      [:div.library-card-footer-timestamp "Less than 5 seconds ago"]
+      [:div.library-card-footer-timestamp time]
       [:div.library-card-footer-menu
        { :on-click #(swap! state update :is-open not) }
        i/actions]
@@ -231,32 +248,38 @@
                    #(st/emit! (dlib/delete-item :images library-id id))]]}]]]))
 
 (mf/defc library-color-card
-  [{ :keys [ id content library-id] }]
-  (when content
-    (let [locale (i18n/use-locale)
-         state (mf/use-state {:is-open false})]
-     [:div.library-card.library-color
-      [:div.input-checkbox.check-primary
-       [:input {:type "checkbox"
-                :id (str "color-" id)
-                :on-change #(println "toggle-selection")
-                #_(:checked false)}]
-       [:label {:for (str "color-" id)}]]
-      [:div.library-card-image
-       { :style { :background-color content }}]
-      [:div.library-card-footer
-       [:div.library-card-footer-name content ]
-       [:div.library-card-footer-color
-        [:span.library-card-footer-color-label "RGB"]
-        [:span.library-card-footer-color-rgb (str/join " " (uc/hex->rgb content))]]
-       [:div.library-card-footer-menu
-        { :on-click #(swap! state update :is-open not) }
-        i/actions]
-       [:& context-menu
-        {:show (:is-open @state)
-         :on-close #(swap! state update :is-open not)
-         :options [[(t locale "ds.button.delete")
-                    #(st/emit! (dlib/delete-item :palettes library-id id))]]}]]])))
+  [{:keys [item on-select on-unselect]}]
+  (let [{:keys [ id content library-id modified-at]} item
+        locale (i18n/use-locale)
+        state (mf/use-state {:is-open false})
+        handle-change (fn []
+                        (swap! state update :selected not)
+                        (if (:selected @state)
+                          (when on-unselect (on-unselect id))
+                          (when on-select (on-select id))))]
+    (when content
+      [:div.library-card.library-color
+       [:div.input-checkbox.check-primary
+        [:input {:type "checkbox"
+                 :id (str "color-" id)
+                 :on-change handle-change
+                 #_(:checked false)}]
+        [:label {:for (str "color-" id)}]]
+       [:div.library-card-image
+        { :style { :background-color content }}]
+       [:div.library-card-footer
+        [:div.library-card-footer-name content ]
+        [:div.library-card-footer-color
+         [:span.library-card-footer-color-label "RGB"]
+         [:span.library-card-footer-color-rgb (str/join " " (uc/hex->rgb content))]]
+        [:div.library-card-footer-menu
+         { :on-click #(swap! state update :is-open not) }
+         i/actions]
+        [:& context-menu
+         {:show (:is-open @state)
+          :on-close #(swap! state update :is-open not)
+          :options [[(t locale "ds.button.delete")
+                     #(st/emit! (dlib/delete-item :palettes library-id id))]]}]]])))
 
 (defn libraries-ref [section]
   (-> (comp (l/key :library) (l/key section))
@@ -266,21 +289,34 @@
   (-> (comp (l/key :library) (l/key :selected-items) (l/key library-id))
       (l/derive st/state)))
 
+(def last-deleted-library-ref
+  (-> (comp (l/key :library) (l/key :last-deleted-library))
+      (l/derive st/state)))
+
 (mf/defc library-page
   [{:keys [team-id library-id section]}]
-  (let [libraries (mf/deref (libraries-ref section))
+  (let [state (mf/use-state {:selected #{}})
+        libraries (mf/deref (libraries-ref section))
         items (mf/deref (selected-items-ref library-id))
+        last-deleted-library (mf/deref last-deleted-library-ref)
         selected-library (first (filter #(= (:id %) library-id) libraries))]
 
-    (mf/use-effect {:fn #(st/emit! (dlib/retrieve-libraries section team-id))                  
-                    :deps (mf/deps section team-id)})
-    (mf/use-effect {:fn #(when library-id
-                           (st/emit! (dlib/retrieve-library-data section library-id)))
-                    :deps (mf/deps library-id)})
     (mf/use-effect {:fn #(if (and (nil? library-id) (> (count libraries) 0))
                            (let [path (keyword (str "dashboard-library-" (name section)))]
                              (st/emit! (rt/nav path {:team-id team-id :library-id (:id (first libraries))}))))
-                    :deps (mf/deps library-id section team-id)})
+                    :deps (mf/deps libraries)})
+
+    (mf/use-effect {:fn #(if (and library-id (not (some (fn [{id :id}] (= library-id id)) libraries)))
+                           (let [path (keyword (str "dashboard-library-" (name section) "-index"))]
+                             (st/emit! (rt/nav path {:team-id team-id}))))
+                    :deps (mf/deps libraries)})
+
+    (mf/use-effect {:fn #(st/emit! (dlib/retrieve-libraries section team-id))                  
+                    :deps (mf/deps section team-id)})
+
+    (mf/use-effect {:fn #(when (and library-id (not= last-deleted-library library-id))
+                           (st/emit! (dlib/retrieve-library-data section library-id)))
+                    :deps (mf/deps library-id last-deleted-library)})
 
     [:div.library-page
      [:& library-header {:section section :team-id team-id}]
@@ -288,7 +324,14 @@
 
      (if library-id
        [:section.library-content
-        [:& library-top-menu {:selected selected-library :section section :library-id library-id :team-id team-id}]
+        [:& library-top-menu
+         {:selected selected-library
+          :section section
+          :library-id library-id
+          :team-id team-id
+          :on-delete-selected
+          #(when (-> @state :selected count (> 0))
+             (st/emit! (dlib/batch-delete-item section library-id (:selected @state))))}]
         [:*
          ;; TODO: Fix the chunked list
          #_[:& chunked-list {:items items
@@ -303,11 +346,15 @@
          (if (> (count items) 0)
            [:div.library-page-cards-container
             (for [item items]
-              (let [item (assoc item :key (:id item))]
+              (let [item (assoc item :key (:id item))
+                    props {:item item
+                           :key (:id item)
+                           :on-select #(swap! state update :selected conj %)
+                           :on-unselect #(swap! state update :selected disj %)}]
                 (case section
-                  :icons [:& library-icon-card item]
-                  :images [:& library-image-card item]
-                  :palettes [:& library-color-card item ])))]
+                  :icons [:& library-icon-card props]
+                  :images [:& library-image-card props]
+                  :palettes [:& library-color-card props])))]
            [:div.library-content-empty
             [:p.library-content-empty-text "You still have no elements in this library"]])]]
 

@@ -57,7 +57,6 @@
                     (st/emit! (dw/rename-shape (:id shape) name))
                     (swap! local assoc :edition false)))
         on-key-down (fn [event]
-                      (js/console.log event)
                       (when (kbd/enter? event)
                         (on-blur event)))
         on-click (fn [event]
