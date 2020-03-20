@@ -222,13 +222,62 @@
 
 }
 
-// Confirm dialog
-.confirm-dialog {
-  .btn-gray,
-  .btn-success,
-  .btn-delete {
-    margin: 2rem 1rem 0 1rem;
-  }
+.lightbox .confirm-dialog {
+    background-color: $color-white;
+    width: 23rem;
+
+    & .close {
+        right: 1rem;
+        top: 1rem;
+
+        & svg {
+            fill: $color-black;
+        }
+    }
+}
+
+.lightbox .confirm-dialog-title {
+    font-size: 24px;
+    color: $color-black;
+    font-weight: normal;
+    text-align: center;
+}
+
+.confirm-dialog-buttons {
+    display: flex;
+    flex-direction: row;
+    margin-top: 5rem;
+    width: 100%;
+}
+
+.confirm-dialog-cancel-button {
+    border: 1px solid $color-gray;
+    background: $color-gray-lightest;
+    border-radius: 2px;
+    padding: 0.5rem;
+    margin-right: 1rem;
+    justify-content: space-evenly;
+    margin-bottom: 0;
+    width: 100%;
+    cursor: pointer;
+
+    &:hover {
+        background: $color-gray-light;
+    }
+}
+
+.confirm-dialog-accept-button {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid $color-danger;
+    background: $color-danger;
+    color: $color-white;
+    margin-bottom: 0;
+    cursor: pointer;
+
+    &:hover {
+        background: $color-danger-dark;
+    }
 }
 
 // Export dialog

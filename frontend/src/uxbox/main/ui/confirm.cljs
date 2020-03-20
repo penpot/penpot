@@ -14,31 +14,36 @@
    [uxbox.util.dom :as dom]))
 
 (mf/defc confirm-dialog
-  [{:keys [on-accept on-cancel hint] :as ctx}]
-  (letfn [(accept [event]
-            (dom/prevent-default event)
-            (modal/hide!)
-            (on-accept (dissoc ctx :on-accept :on-cancel)))
-          (cancel [event]
-            (dom/prevent-default event)
-            (modal/hide!)
-            (when on-cancel
-              (on-cancel (dissoc ctx :on-accept :on-cancel))))]
+  [{:keys [message on-accept on-cancel hint cancel-text accept-text] :as ctx}]
+  (let [message (or message (tr "ds.confirm-title"))
+        cancel-text (or cancel-text (tr "ds.confirm-cancel"))
+        accept-text (or accept-text (tr "ds.confirm-ok"))
+
+        accept
+        (fn [event]
+          (dom/prevent-default event)
+          (modal/hide!)
+          (on-accept (dissoc ctx :on-accept :on-cancel)))
+
+        cancel
+        (fn [event]
+          (dom/prevent-default event)
+          (modal/hide!)
+          (when on-cancel
+            (on-cancel (dissoc ctx :on-accept :on-cancel))))]
     [:div.lightbox-body.confirm-dialog
-     [:h3 (tr "ds.confirm-title")]
-     (if hint
-       [:span hint])
-     [:div.row-flex
-      [:input.btn-success.btn-small
+     [:h3.confirm-dialog-title message]
+     (if hint [:span hint])
+
+     [:div.confirm-dialog-buttons
+      [:input.confirm-dialog-cancel-button
        {:type "button"
-        :value (tr "ds.confirm-ok")
-        :on-click accept}]
-      [:input.btn-delete.btn-small
+        :value cancel-text
+        :on-click cancel}]
+
+      [:input.confirm-dialog-accept-button
        {:type "button"
-        :value (tr "ds.confirm-cancel")
-        :on-click cancel}]]
-     [:a.close {:href "#"
-                :on-click #(do
-                             (dom/prevent-default %)
-                             (modal/hide!))}
-      i/close]]))
+        :value accept-text
+        :on-click accept}]]
+
+     [:a.close {:href "#" :on-click cancel} i/close]]))

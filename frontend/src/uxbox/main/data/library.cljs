@@ -147,7 +147,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [update-fn (fn [libraries]
-                        (filter #(not= library-id (:id %)) libraries))]
+                        (filterv #(not= library-id (:id %)) libraries))]
         (-> state
             (update-in [:library type] update-fn))))))
 
@@ -173,7 +173,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [update-fn (fn [items]
-                        (filter #(not= item-id (:id %)) items))]
+                        (filterv #(not= item-id (:id %)) items))]
         (-> state
             (update-in [:library :selected-items library-id] update-fn))))))
 
@@ -202,6 +202,6 @@
     (update [_ state]
       (let [item-ids-set (set item-ids)
             update-fn (fn [items]
-                        (filter #(not (item-ids-set (:id %))) items))]
+                        (filterv #(not (item-ids-set (:id %))) items))]
         (-> state
             (update-in [:library :selected-items library-id] update-fn))))))

@@ -4,6 +4,7 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.util.dom :as dom]
+   [uxbox.util.timers :as timers]
    [uxbox.util.data :refer [classnames]]))
 
 (mf/defc editable-label
@@ -13,7 +14,7 @@
         is-editing (or edit (:editing @state))
         start-editing (fn []
                         (swap! state assoc :editing true)
-                        (dom/timeout 100 #(dom/focus! (mf/ref-node input))))
+                        (timers/schedule 100 #(dom/focus! (mf/ref-node input))))
         stop-editing (fn [] (swap! state assoc :editing false))
         cancel-editing (fn []
                          (stop-editing)

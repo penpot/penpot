@@ -150,10 +150,15 @@
                    #(swap! state assoc :editing-name true)]
 
                   [(t locale "ds.button.delete")
-                   #(let [path (keyword (str "dashboard-library-" (name section) "-index"))]
-                      (do
-                        (st/emit! (dlib/delete-library section library-id))
-                        (st/emit! (rt/nav path {:team-id team-id}))))]]}]]
+                   (fn []
+                     (let [path (keyword (str "dashboard-library-" (name section) "-index"))]
+                       (modal/show!
+                        confirm-dialog
+                        {:on-accept #(do
+                                       (st/emit! (dlib/delete-library section library-id))
+                                       (st/emit! (rt/nav path {:team-id team-id})))
+                         :message "Are you sure you want to delete this library?"
+                         :accept-text "Delete"})))]]}]]
 
      [:div.library-top-menu-actions
       [:a.library-top-menu-actions-delete
@@ -213,7 +218,12 @@
        {:show (:is-open @state)
         :on-close #(swap! state update :is-open not)
         :options [[(t locale "ds.button.delete")
-                   #(st/emit! (dlib/delete-item :icons library-id id))]]}]]]))
+                   (fn []
+                     (modal/show!
+                      confirm-dialog
+                      {:on-accept #(st/emit! (dlib/delete-item :icons library-id id))
+                       :message "Are you sure you want to delete this icon?"
+                       :accept-text "Delete"}))]]}]]]))
 
 (mf/defc library-image-card
   [{:keys [item on-select on-unselect]}]
@@ -231,7 +241,7 @@
       [:input {:type "checkbox"
                :id (str "image-" id)
                :on-change handle-change
-               #_(:checked false)}]
+               :checked (:selected @state)}]
       [:label {:for (str "image-" id)}]]
      [:div.library-card-image
       [:img {:src thumb-uri}]]
@@ -245,7 +255,12 @@
        {:show (:is-open @state)
         :on-close #(swap! state update :is-open not)
         :options [[(t locale "ds.button.delete")
-                   #(st/emit! (dlib/delete-item :images library-id id))]]}]]]))
+                   (fn []
+                     (modal/show!
+                      confirm-dialog
+                      {:on-accept #(st/emit! (dlib/delete-item :images library-id id))
+                       :message "Are you sure you want to delete this image?"
+                       :accept-text "Delete"}))]]}]]]))
 
 (mf/defc library-color-card
   [{:keys [item on-select on-unselect]}]
@@ -263,7 +278,7 @@
         [:input {:type "checkbox"
                  :id (str "color-" id)
                  :on-change handle-change
-                 #_(:checked false)}]
+                 :checked (:selected @state)}]
         [:label {:for (str "color-" id)}]]
        [:div.library-card-image
         { :style { :background-color content }}]
@@ -279,7 +294,12 @@
          {:show (:is-open @state)
           :on-close #(swap! state update :is-open not)
           :options [[(t locale "ds.button.delete")
-                     #(st/emit! (dlib/delete-item :palettes library-id id))]]}]]])))
+                     (fn []
+                       (modal/show!
+                        confirm-dialog
+                        {:on-accept #(st/emit! (dlib/delete-item :palettes library-id id))
+                         :message "Are you sure you want to delete this color?"
+                         :accept-text "Delete"}))]]}]]])))
 
 (defn libraries-ref [section]
   (-> (comp (l/key :library) (l/key section))
@@ -330,8 +350,16 @@
           :library-id library-id
           :team-id team-id
           :on-delete-selected
-          #(when (-> @state :selected count (> 0))
-             (st/emit! (dlib/batch-delete-item section library-id (:selected @state))))}]
+          (fn []
+            (when (-> @state :selected count (> 0))
+              (modal/show!
+               confirm-dialog
+               {:on-accept #(st/emit! (dlib/batch-delete-item section library-id (:selected @state)))
+                :message (str "Are you sure you want to delete " (-> @state :selected count) " items?")
+                :accept-text "Delete"})
+              )
+            )
+          }]
         [:*
          ;; TODO: Fix the chunked list
          #_[:& chunked-list {:items items
