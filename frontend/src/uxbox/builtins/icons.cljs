@@ -93,3 +93,12 @@
       {:id "loader-line"
        :d
        "M134.482 157.147v25l518.57.008.002-25-518.572-.008z"}]]]))
+
+(mf/defrc debug-icons-preview
+  [props]
+  [:section.debug-icons-preview
+   (for [[key val] (ns-publics 'uxbox.builtins.icons)]
+     (when (not= key 'debug-icons-preview)
+       [:div.icon-item {:key key}
+        (deref val)
+        [:span (pr-str key)]]))])

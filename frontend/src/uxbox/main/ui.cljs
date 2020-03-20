@@ -17,7 +17,6 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.common.exceptions :as ex]
-   [uxbox.common.exceptions :as ex]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -51,6 +50,9 @@
     ["/profile" :settings-profile]
     ["/password" :settings-password]]
 
+   (when *assert*
+     ["/debug/icons-preview" :debug-icons-preview])
+
    ["/dashboard"
     ["/team/:team-id"
      ["/" :dashboard-team]
@@ -68,7 +70,7 @@
       ["/palettes"
        ["" { :name :dashboard-library-palettes-index :section :palettes}]
        ["/:library-id" { :name :dashboard-library-palettes :section :palettes }]]
-      
+
       ]]]
 
    ["/workspace/:file-id" :workspace]])
@@ -100,6 +102,10 @@
       (:settings-profile
        :settings-password)
       (mf/element settings/settings #js {:route route})
+
+      :debug-icons-preview
+      (when *assert*
+        (mf/element i/debug-icons-preview))
 
       (:dashboard-search
        :dashboard-team
