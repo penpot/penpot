@@ -14,6 +14,7 @@
 
 .context-menu-items {
     background: $color-white;
+    border-radius: $br-small;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
     left: -$size-4;
     min-width: 7rem;
@@ -24,7 +25,7 @@
 .context-menu-action {
     color: $color-black;
     display: block;
-    font-size: 12px;
+    font-size: $fs12;
     padding: $size-2 $size-4;
 
     &:hover {

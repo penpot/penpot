@@ -6,39 +6,35 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .workspace-context-menu {
+  background-color: $color-white;
+  border-radius: $br-small;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+  left: 740px;
   position: absolute;
   top: 40px;
-  left: 740px;
-  width: 230px;
+  width: 200px;
   z-index: 12;
-
-  background-color: $color-gray-60;
-  border-radius: $br-small;
-  padding: 0 $small;
-
+  
   li {
-    font-size: $fs13;
-    padding: $small 0;
+    align-items: center;
+    display: flex;
+    font-size: $fs12;
+    padding: $small;
     cursor: pointer;
 
     svg {
-      fill: $color-gray-20;
+      fill: $color-gray-60;
+      margin-right: $small;
       height: 12px;
       width: 12px;
     }
 
     span {
-      color: $color-white;
+      color: $color-gray-60;
     }
 
     &:hover {
-      span {
-        color: $color-primary;
-      }
-      svg {
-        fill: $color-primary;
-      }
-
+      background-color: $color-gray-lightest;
     }
   }
 }
