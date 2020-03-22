@@ -34,67 +34,8 @@
                    ::modified-at
                    ::user-id]))
 
-
-(declare fetch-icon-libraries-result)
-
-(defn fetch-icon-libraries
-  [team-id]
-  (s/assert ::us/uuid team-id)
-  (ptk/reify ::fetch-icon-libraries
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query! :icon-libraries {:team-id team-id})
-           (rx/map fetch-icon-libraries-result)))))
-
-(defn fetch-icon-libraries-result [result]
-  (ptk/reify ::fetch-icon-libraries-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:library :icon-libraries] result)))))
-
-(declare fetch-icon-library-result)
-
-(defn fetch-icon-library
-  [library-id]
-  (ptk/reify ::fetch-icon-library
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:library :selected-items] nil)))
-    
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query! :icons {:library-id library-id})
-           (rx/map fetch-icon-library-result)))))
-
-(defn fetch-icon-library-result
-  [data]
-  (ptk/reify ::fetch-icon-library
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:library :selected-items] data)))))
-
-(declare create-icon-library-result)
-
-(defn create-icon-library
-  [team-id name]
-  (ptk/reify ::create-icon-library
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/mutation! :create-icon-library {:team-id team-id
-                                               :name name})
-           (rx/map create-icon-library-result)))))
-
-(defn create-icon-library-result [result]
-  (ptk/reify ::create-icon-library-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:library :icon-libraries] #(into [result] %))))))
-
-
+;; rename-icon-library
+;; delete-icon-library
 
 ;; (declare fetch-icons)
 ;; 
@@ -253,16 +194,16 @@
              (rx/merge-map parse)
              (rx/map prepare)
              (rx/flat-map #(rp/mutation! :create-icon %))
-             (rx/map create-icon-result))))))
+             (rx/map (partial create-icon-result library-id)))))))
 
 (defn create-icon-result
-  [item]
+  [library-id item]
   (ptk/reify ::create-icon-result
     ptk/UpdateEvent
     (update [_ state]
       (let [{:keys [id] :as item} (assoc item :type :icon)]
         (-> state
-            (update-in [:library :selected-items] #(into [item] %)))))))
+            (update-in [:library :selected-items library-id] #(into [item] %)))))))
 
 ;; ;; --- Icon Persisted
 ;; 

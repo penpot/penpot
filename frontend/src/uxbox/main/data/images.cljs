@@ -350,67 +350,6 @@
 
 ;;;;;;; NEW
 
-(declare fetch-image-libraries-result)
-
-(defn fetch-image-libraries
-  [team-id]
-  (s/assert ::us/uuid team-id)
-  (ptk/reify ::fetch-image-libraries
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query! :image-libraries {:team-id team-id})
-           (rx/map fetch-image-libraries-result)))))
-
-(defn fetch-image-libraries-result [result]
-  (ptk/reify ::fetch-image-libraries-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:library :image-libraries] result)))))
-
-(declare fetch-image-library-result)
-
-(defn fetch-image-library
-  [library-id]
-  (ptk/reify ::fetch-image-library
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:library :selected-items] nil)))
-    
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query! :images {:library-id library-id})
-           (rx/map fetch-image-library-result)))))
-
-(defn fetch-image-library-result
-  [data]
-  (ptk/reify ::fetch-image-library
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:library :selected-items] data)))))
-
-(declare create-image-library-result)
-
-(defn create-image-library
-  [team-id name]
-  (ptk/reify ::create-image-library
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/mutation! :create-image-library {:team-id team-id
-                                               :name name})
-           (rx/map create-image-library-result)))))
-
-(defn create-image-library-result [result]
-  (ptk/reify ::create-image-library-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:library :image-libraries] #(into [result] %))))))
-
-
-
 ;; --- Create Image
 (declare create-images-result)
 (def allowed-file-types #{"image/jpeg" "image/png"})
@@ -444,17 +383,17 @@
               (rx/reduce conj [])
               (rx/do on-success)
               (rx/mapcat identity)
-              (rx/map create-images-result)
+              (rx/map (partial create-images-result library-id))
               (rx/catch on-error)))))))
 
 ;; --- Image Created
 
 (defn create-images-result
-  [item]
+  [library-id item]
   #_(us/verify ::image item)
   (ptk/reify ::create-images-result
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:library :selected-items] #(into [item] %))))))
+          (update-in [:library :selected-items library-id] #(into [item] %))))))
 

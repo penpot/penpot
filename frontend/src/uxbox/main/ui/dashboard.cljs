@@ -87,7 +87,8 @@
           :dashboard-library-images-index
           :dashboard-library-palettes
           :dashboard-library-palettes-index)
-         (mf/element library-page #js {:team-id team-id
+         (mf/element library-page #js {:key library-id
+                                       :team-id team-id
                                        :library-id library-id
                                        :section library-section})
 

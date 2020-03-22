@@ -20,6 +20,19 @@
     }
 }
 
+.library-content-empty {
+    display: flex;
+    flex-direction: column;
+}
+
+.library-content-empty-text {
+    color: #7C7C7C;
+    border: 1px dashed #AFB2BF;
+    text-align: center;
+    padding: 5rem;
+    margin: 2rem;
+}
+
 .library-page #main-bar {
     position: relative;
 }
@@ -79,16 +92,13 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-
-    & a {
-        color: $color-black;
-    }
+    color: $color-black;
 
     &:hover {
         background-color: $color-primary-lighter;
     }
 
-    &.current a {
+    &.current {
         font-weight: bold;
     }
 }
@@ -143,6 +153,12 @@
         background-color: transparent;
         margin-left: $size-2;
     }
+}
+
+.library-top-menu-actions-delete {
+    display: flex;
+    justify-content: center;
+    flex-direction: column
 }
 
 .library-page-cards-container {
@@ -335,3 +351,4 @@
     font-size: 24px;
     font-weight: normal;
 }
+
