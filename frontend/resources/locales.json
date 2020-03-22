@@ -804,6 +804,17 @@
       "fr" : "MOT DE PASSE"
     }
   },
+  "workspace.header.menu.hide-rules": "Hide rules",
+  "workspace.header.menu.show-rules": "Show rules",
+  "workspace.header.menu.hide-grid": "Hide grid",
+  "workspace.header.menu.show-grid": "Show grid",
+  "workspace.header.menu.hide-layers": "Hide layers",
+  "workspace.header.menu.show-layers": "Show layers",
+  "workspace.header.menu.hide-palette": "Hide color palette",
+  "workspace.header.menu.show-palette": "Show color palette",
+  "workspace.header.menu.hide-libraries": "Hide libraries",
+  "workspace.header.menu.show-libraries": "Show libraries",
+
   "settings.password.change-password" : {
     "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:64" ],
     "translations" : {
