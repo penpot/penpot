@@ -1986,6 +1986,95 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Clipboard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def copy-selected
+  (letfn [(prepare-selected [state selected]
+            (let [data (reduce #(prepare %1 state %2) {} selected)]
+              {:type :copied-shapes
+               :data (assoc data :selected selected)}))
+
+          (prepare [result state id]
+            (let [page-id (::page-id state)
+                  objects (get-in state [:workspace-data page-id :objects])
+                  object  (get objects id)]
+              (cond-> (assoc-in result [:objects id] object)
+                (= :frame (:type object))
+                (as-> $ (reduce #(prepare %1 state %2) $ (:shapes object))))))
+
+          (on-copy-error [error]
+            (js/console.error "Clipboard blocked:" error)
+            (rx/empty))]
+
+    (ptk/reify ::copy-selected
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [selected (get-in state [:workspace-local :selected])
+              cdata    (prepare-selected state selected)]
+          (->> (rx/from (wapi/write-to-clipboard cdata))
+               (rx/catch on-copy-error)
+               (rx/ignore)))))))
+
+
+(defn- paste-impl
+  [{:keys [selected objects] :as data}]
+  (letfn [(prepare-change [id]
+            (let [obj (get objects id)]
+              ;; (prn "prepare-change" id obj)
+              (if (= :frame (:type obj))
+                (prepare-frame-change obj)
+                (prepare-shape-change obj uuid/zero))))
+
+          (prepare-shape-change [obj frame-id]
+            (let [id (uuid/next)]
+              {:type :add-obj
+               :id id
+               :frame-id frame-id
+               :obj (assoc obj :id id :frame-id frame-id)}))
+
+          (prepare-frame-change [obj]
+            (let [frame-id (uuid/next)
+                  sch (->> (map #(get objects %) (:shapes obj))
+                           (map #(prepare-shape-change % frame-id)))
+                  fch {:type :add-obj
+                       :id frame-id
+                       :frame-id uuid/zero
+                       :obj (-> obj
+                                (assoc :id frame-id)
+                                (assoc :frame-id uuid/zero)
+                                (assoc :shapes (mapv :id sch)))}]
+              (d/concat [fch] sch)))]
+
+  (ptk/reify ::paste-impl
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [rchanges (->> (map prepare-change selected)
+                          (flatten))
+            uchanges (map (fn [ch]
+                            {:type :del-obj
+                             :id (:id ch)})
+                          rchanges)]
+        (cljs.pprint/pprint rchanges)
+        (rx/of (commit-changes (vec rchanges)
+                               (vec (reverse uchanges))
+                               {:commit-local? true})))))))
+
+(def paste
+  (ptk/reify ::paste
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rx/from (wapi/read-from-clipboard))
+           (rx/filter #(= :copied-shapes (:type %)))
+           (rx/pr-log "pasting:")
+           (rx/map :data)
+           (rx/map paste-impl)
+           (rx/catch (fn [err]
+                       (js/console.error "Clipboard blocked:" err)
+                       (rx/empty)))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
