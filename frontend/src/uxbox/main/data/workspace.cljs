@@ -358,6 +358,63 @@
       (let [local (:workspace-local state)]
         (assoc-in state [:workspace-cache page-id] local)))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Persistence
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare persist-changes)
+(declare diff-and-commit-changes)
+
+(defn initialize-page-persistence
+  [page-id]
+  (ptk/reify ::initialize-persistence
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state ::page-id page-id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stoper (rx/filter #(or (ptk/type? ::finalize %)
+                                   (ptk/type? ::initialize-page %))
+                              stream)
+            notifier (->> stream
+                          (rx/filter (ptk/type? ::commit-changes))
+                          (rx/debounce 2000)
+                          (rx/merge stoper))]
+        (rx/merge
+         (->> stream
+              (rx/filter (ptk/type? ::commit-changes))
+              (rx/map deref)
+              (rx/buffer-until notifier)
+              (rx/map vec)
+              (rx/filter (complement empty?))
+              (rx/map #(persist-changes page-id %))
+              (rx/take-until (rx/delay 100 stoper)))
+         (->> stream
+              (rx/filter #(satisfies? IBatchedChange %))
+              (rx/debounce 200)
+              (rx/map (fn [_] (diff-and-commit-changes page-id)))
+              (rx/take-until stoper)))))))
+
+(defn persist-changes
+  [page-id changes]
+  (ptk/reify ::persist-changes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [session-id (:session-id state)
+            page (get-in state [:pages page-id])
+            changes (->> changes
+                         (mapcat identity)
+                         (map #(assoc % :session-id session-id))
+                         (vec))
+            params {:id (:id page)
+                    :revn (:revn page)
+                    :changes changes}]
+        (->> (rp/mutation :update-page params)
+             (rx/map shapes-changes-commited))))))
+
+
 (defn- generate-operations
   [ma mb]
   (let [ma-keys (set (keys ma))
@@ -409,60 +466,6 @@
             undo-changes (generate-changes curr prev)]
         (when-not (empty? changes)
           (rx/of (commit-changes changes undo-changes)))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Data Persistence
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(declare persist-changes)
-
-(defn initialize-page-persistence
-  [page-id]
-  (ptk/reify ::initialize-persistence
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state ::page-id page-id))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stoper (rx/filter #(or (ptk/type? ::finalize %)
-                                   (ptk/type? ::initialize-page %))
-                              stream)
-            notifier (->> stream
-                          (rx/filter (ptk/type? ::commit-changes))
-                          (rx/debounce 2000)
-                          (rx/merge stoper))]
-        (rx/merge
-         (->> stream
-              (rx/filter (ptk/type? ::commit-changes))
-              (rx/map deref)
-              (rx/buffer-until notifier)
-              (rx/map vec)
-              (rx/filter (complement empty?))
-              (rx/map #(persist-changes page-id %))
-              (rx/take-until (rx/delay 100 stoper)))
-         (->> stream
-              (rx/filter #(satisfies? IBatchedChange %))
-              (rx/debounce 200)
-              (rx/map (fn [_] (diff-and-commit-changes page-id)))
-              (rx/take-until stoper)))))))
-
-(defn persist-changes
-  [page-id changes]
-  (ptk/reify ::persist-changes
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [session-id (:session-id state)
-            page (get-in state [:pages page-id])
-            changes (->> changes
-                         (mapcat identity)
-                         (map #(assoc % :session-id session-id))
-                         (vec))
-            params {:id (:id page)
-                    :revn (:revn page)
-                    :changes changes}]
-        (->> (rp/mutation :update-page params)
-             (rx/map shapes-changes-commited))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching & Uploading
