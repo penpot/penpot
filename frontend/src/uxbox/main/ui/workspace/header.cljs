@@ -31,11 +31,30 @@
   {:wrap [mf/wrap-memo]}
   [props]
   (let [zoom (mf/deref refs/selected-zoom)
+        show-dropdown? (mf/use-state false)
         increase #(st/emit! dw/increase-zoom)
-        decrease #(st/emit! dw/decrease-zoom)]
+        decrease #(st/emit! dw/decrease-zoom)
+        zoom-to-50 #(st/emit! dw/zoom-to-50)
+        zoom-to-100 #(st/emit! dw/reset-zoom)
+        zoom-to-200 #(st/emit! dw/zoom-to-200)]
     [:div.zoom-input
      [:span.add-zoom {:on-click decrease} "-"]
-     [:span {} (str (mth/round (* 100 zoom)) "%")]
+     [:div {:on-click #(reset! show-dropdown? true)}
+       [:span {} (str (mth/round (* 100 zoom)) "%")]
+       [:span.dropdown-button i/arrow-down]
+       [:& dropdown {:show @show-dropdown?
+                     :on-close #(reset! show-dropdown? false)}
+        [:ul.zoom-dropdown
+          [:li {:on-click increase}
+            "Zoom in" [:span "+"]]
+          [:li {:on-click decrease}
+            "Zoom out" [:span "-"]]
+          [:li {:on-click zoom-to-50}
+            "Zoom to 50%"]
+          [:li {:on-click zoom-to-100}
+            "Zoom to 100%" [:span "Shift + 0"]]
+          [:li {:on-click zoom-to-200}
+            "Zoom to 200%"]]]]
      [:span.remove-zoom {:on-click increase} "+"]]))
 
 ;; --- Header Users

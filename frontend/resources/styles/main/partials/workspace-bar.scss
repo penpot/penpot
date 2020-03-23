@@ -146,11 +146,51 @@
 .zoom-input {
   align-items: center;
   display: flex;
+  position: relative;
 
   span {
     color: $color-gray-10;
     font-size: $fs15;
-    margin: 0 $x-small;
+    margin-left: $x-small;
+  }
+
+  .dropdown-button {
+    svg {
+      fill: $color-gray-10;
+      height: 10px;
+      width: 10px;
+    }
+  }
+
+  .zoom-dropdown {
+    position: absolute;
+    right: 0;
+    z-index: 12;
+    width: 150px;
+    @include animation(0,.2s,fadeInDown);
+
+    background-color: $color-white;
+    border-radius: $br-small;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+    li {
+      color: $color-gray-60;
+      cursor: pointer;
+      font-size: $fs12;
+      display: flex;
+      padding: $small;
+
+      span {
+        color: $color-gray-40;
+        font-size: $fs12;
+        margin-left: auto;
+      }
+
+      &:hover {
+        background-color: $color-primary-lighter;
+      }
+
+    }
   }
 
   .add-zoom,
@@ -161,6 +201,7 @@
     cursor: pointer;
     color: $color-gray-20;
     display: flex;
+    opacity: 0;
     flex-shrink: 0;
     font-size: $fs20;
     font-weight: bold;
@@ -169,10 +210,16 @@
     width: 20px;
 
     &:hover {
-      background-color: $color-primary;
-      color: $color-gray-60;
+      color: $color-primary;
     }
 
+  }
+
+  &:hover {
+    .add-zoom,
+    .remove-zoom {
+      opacity: 100%;
+    }
   }
 
 }
