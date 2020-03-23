@@ -7,8 +7,10 @@
 (ns uxbox.util.webapi
   "HTML5 web api helpers."
   (:require
+   [promesa.core :as p]
    [beicon.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [uxbox.util.transit :as t]))
 
 (defn read-file-as-text
   [file]
@@ -64,5 +66,20 @@
 ;;               #(blob/revoke-uri uri)))]
 ;;     (rx/create on-subscribe)))
 
+
+(defn write-to-clipboard
+  [data]
+  (let [cboard (unchecked-get js/navigator "clipboard")]
+    (.writeText cboard (uxbox.util.transit/encode data))))
+
+(defn- read-from-clipboard
+  []
+  (let [cboard (unchecked-get js/navigator "clipboard")]
+    (-> (.readText cboard)
+        (p/then (fn [data]
+                  (try
+                    (t/decode data)
+                    (catch :default e
+                      nil)))))))
 
 
