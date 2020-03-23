@@ -11,6 +11,8 @@
   (:require
    [clojure.set :as set]
    [beicon.core :as rx]
+   [goog.object :as gobj]
+   [goog.events :as events]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
@@ -36,7 +38,11 @@
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]
    [uxbox.util.uuid :as uuid]
-   [vendor.randomcolor]))
+   [uxbox.util.webapi :as wapi]
+   [vendor.randomcolor])
+  (:import goog.events.EventType
+           goog.events.KeyCodes
+           goog.ui.KeyboardShortcutHandler))
 
 ;; TODO: temporal workaround
 (def clear-ruler nil)
@@ -1097,7 +1103,6 @@
           (rx/empty))))))
 
 
-
 ;; --- Toggle shape's selection status (selected or deselected)
 
 (defn select-shape
@@ -1999,3 +2004,63 @@
             pages (vec (concat before [id] after))]
         (assoc-in state [:projects (:project-id page) :pages] pages)))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shortcuts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def shortcuts
+  {"ctrl+shift+m" #(rx/of (toggle-layout-flag :sitemap))
+   "ctrl+shift+f" #(rx/of (toggle-layout-flag :drawtools))
+   "ctrl+shift+i" #(rx/of (toggle-layout-flag :icons))
+   "ctrl+shift+l" #(rx/of (toggle-layout-flag :layers))
+   "ctrl+0" #(rx/of (reset-zoom))
+   "ctrl+d" #(rx/of duplicate-selected)
+   "ctrl+z" #(rx/of undo)
+   "ctrl+shift+z" #(rx/of redo)
+   "ctrl+y" #(rx/of redo)
+   "ctrl+q" #(rx/of reinitialize-undo)
+   "ctrl+b" #(rx/of (select-for-drawing :rect))
+   "ctrl+e" #(rx/of (select-for-drawing :circle))
+   "ctrl+t" #(rx/of (select-for-drawing :text))
+   "ctrl+c" #(rx/of copy-selected)
+   "ctrl+v" #(rx/of paste)
+   "esc" #(rx/of :interrupt deselect-all)
+   "delete" #(rx/of delete-selected)
+   "ctrl+up" #(rx/of (vertical-order-selected :up))
+   "ctrl+down" #(rx/of (vertical-order-selected :down))
+   "ctrl+shift+up" #(rx/of (vertical-order-selected :top))
+   "ctrl+shift+down" #(rx/of (vertical-order-selected :bottom))
+   "shift+up" #(rx/of (move-selected :up true))
+   "shift+down" #(rx/of (move-selected :down true))
+   "shift+right" #(rx/of (move-selected :right true))
+   "shift+left" #(rx/of (move-selected :left true))
+   "up" #(rx/of (move-selected :up false))
+   "down" #(rx/of (move-selected :down false))
+   "right" #(rx/of (move-selected :right false))
+   "left" #(rx/of (move-selected :left false))})
+
+(def initialize-shortcuts
+  (letfn [(initialize [sink]
+            (let [handler (KeyboardShortcutHandler. js/document)]
+
+              ;; Register shortcuts.
+              (run! #(.registerShortcut handler % %) (keys shortcuts))
+
+              ;; Initialize shortcut listener.
+              (let [event KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED
+                    callback #(sink (gobj/get % "identifier"))
+                    key (events/listen handler event callback)]
+                (fn []
+                  (events/unlistenByKey key)
+                  (.clearKeyListener handler)))))]
+    (ptk/reify ::initialize-shortcuts
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [stoper (rx/filter #(= ::finalize-shortcuts %) stream)]
+          (->> (rx/create initialize)
+               (rx/pr-log "[debug]: shortcut:")
+               (rx/map #(get shortcuts %))
+               (rx/filter fn?)
+               (rx/merge-map (fn [f] (f)))
+               (rx/take-until stoper)))))))
