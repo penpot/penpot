@@ -7,7 +7,8 @@
   (:import goog.events.EventType
            goog.events.KeyCodes))
 
-(mf/defrc dropdown-container
+(mf/defc dropdown-container
+  {::mf/wrap-props false}
   [props]
   (let [children (gobj/get props "children")
         on-close (gobj/get props "on-close")
@@ -32,7 +33,8 @@
     (mf/use-effect {:fn on-mount})
     children))
 
-(mf/defrc dropdown
+(mf/defc dropdown
+  {::mf/wrap-props false}
   [props]
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")

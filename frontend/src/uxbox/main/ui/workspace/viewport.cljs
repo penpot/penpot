@@ -107,7 +107,8 @@
 (declare remote-user-cursors)
 (declare frames)
 
-(mf/defrc frames-wrapper
+(mf/defc frames-wrapper
+  {::mf/wrap-props false}
   [props]
   (let [page     (gobj/get props "page")
         page-id  (:id page)
