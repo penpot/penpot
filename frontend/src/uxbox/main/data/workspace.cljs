@@ -1046,14 +1046,12 @@
                                {:type :add-obj
                                 :id (:id obj)
                                 :frame-id frame-id
-                                :obj (assoc obj :frame-id frame-id)
-                                :session-id (:session-id state)}))
+                                :obj (assoc obj :frame-id frame-id)}))
                            (:shapes frame))
 
             uchanges (mapv (fn [rch]
                              {:type :del-obj
-                              :id (:id rch)
-                              :session-id (:session-id state)})
+                              :id (:id rch)})
                            rchanges)
 
             shapes (mapv :id rchanges)
@@ -1071,7 +1069,7 @@
                      :id frame-id
                      :session-id (:session-id state)}]
         (rx/of (commit-changes (d/concat [rchange] rchanges)
-                               (d/concat [uchange] uchanges)
+                               (d/concat [] uchanges [uchange])
                                {:commit-local? true}))))))
 
 
