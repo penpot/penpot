@@ -1,0 +1,31 @@
+
+.tab-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.tab-container-tabs {
+    background: $color-gray-60;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    font-size: 12px;
+    height: 2.5rem;
+}
+
+.tab-container-tab-title {
+    align-items: center;
+    background: $color-gray-60;
+    border-radius: 2px 2px 0px 0px;
+    color: $color-white;
+    display: flex;
+    justify-content: center;
+    margin: 0.5rem 0.25rem 0 0.25rem ;
+    width: 100%;
+
+    &.current{
+        background: $color-gray-50;
+    }
+}
