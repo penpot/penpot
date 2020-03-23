@@ -60,10 +60,8 @@
 (mf/defc workspace-content
   [{:keys [page file layout] :as params}]
   (let [frame (mf/use-ref nil)
-        left-sidebar? (not (empty? (keep layout [:layers :sitemap
-                                                :document-history])))
-        right-sidebar? (not (empty? (keep layout [:icons :drawtools
-                                                 :element-options])))
+        left-sidebar? (not (empty? (keep layout [:layers :sitemap :document-history :libraries])))
+        right-sidebar? (not (empty? (keep layout [:icons :drawtools :element-options])))
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?))]

@@ -13,6 +13,7 @@
     flex-direction: row;
     font-size: 12px;
     height: 2.5rem;
+    padding: 0 0.25rem;
 }
 
 .tab-container-tab-title {
@@ -28,4 +29,15 @@
     &.current{
         background: $color-gray-50;
     }
+}
+
+.tab-container-content {
+    flex: 1;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.tab-element, .tab-element-content {
+    height: 100%;
 }

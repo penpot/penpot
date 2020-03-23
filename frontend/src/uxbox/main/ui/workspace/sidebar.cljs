@@ -11,11 +11,13 @@
 (ns uxbox.main.ui.workspace.sidebar
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [uxbox.main.ui.workspace.sidebar.icons :refer [icons-toolbox]]
    [uxbox.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [uxbox.main.ui.workspace.sidebar.options :refer [options-toolbox]]
-   [uxbox.main.ui.workspace.sidebar.sitemap :refer [sitemap-toolbox]]))
+   [uxbox.main.ui.workspace.sidebar.sitemap :refer [sitemap-toolbox]]
+   [uxbox.main.ui.workspace.sidebar.libraries :refer [libraries-toolbox]]))
 
 ;; --- Left Sidebar (Component)
 
@@ -24,12 +26,15 @@
   [{:keys [layout page file] :as props}]
   [:aside.settings-bar.settings-bar-left
    [:div.settings-bar-inside
+    {:data-layout (str/join "," layout)}
     (when (contains? layout :sitemap)
       [:& sitemap-toolbox {:file file :page page}])
     (when (contains? layout :document-history)
       [:& history-toolbox])
     (when (contains? layout :layers)
-      [:& layers-toolbox {:page page}])]])
+      [:& layers-toolbox {:page page}])
+    (when (contains? layout :libraries)
+      [:& libraries-toolbox])]])
 
 ;; --- Right Sidebar (Component)
 

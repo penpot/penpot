@@ -1,0 +1,89 @@
+.library-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0.25rem;
+}
+
+.library-tab-content {
+    display: grid;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0.25rem;
+    height: 100%;
+    overflow-y: scroll;
+
+    .icons-tab & {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .images-tab & {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.library-tab-element {
+    border-radius: 4px;
+    border: 1px solid #1F1F1F;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    margin: 0.25rem;
+    overflow: hidden;
+    position: relative;
+    text-align: center;
+
+    & svg, & img {
+        height: auto;
+        margin: auto;
+        max-height: 100%;
+        max-width: 100%;
+        width: auto;
+    }
+
+    &:hover {
+        border-color: $color-primary;
+
+        & .library-tab-element-name {
+            display: inline;
+        }
+    }
+
+    .icons-tab & {
+        background: $color-white;
+        color: $color-black;
+        height: 4rem;
+        width: 4rem;
+        padding: $size-3;
+    }
+
+    .images-tab & {
+        height: 4rem;
+        width: 6.2rem;
+        color: $color-white;
+        padding: $size-2 0;
+    }
+}
+
+.library-tab-element-name {
+    display: none;
+    position: absolute;
+    font-size: 9px;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+
+.library-tab-libraries {
+    margin: 0.5rem;
+    width: 90%;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    color: white;
+    font-size: 12px;
+}
+
+.library-tab-libraries-item {
+    padding: 1rem;
+}

@@ -24,6 +24,30 @@
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]))
 
+(mf/defc library-tab []
+  [:div.library-tab.icons-tab
+   [:select.library-tab-libraries
+    [:option.library-tab-libraries-item "Material design"]
+    [:option.library-tab-libraries-item "Icon library 1"]
+    [:option.library-tab-libraries-item "Icon library 2"]]
+   [:div.library-tab-content
+    (for [_ (range 0 200)]
+      [:div.library-tab-element
+       i/trash
+       [:span.library-tab-element-name "my-icon.svg"]])]])
+
+(mf/defc images-tab []
+  [:div.library-tab.images-tab
+   [:select.library-tab-libraries
+    [:option.library-tab-libraries-item "Material design"]
+    [:option.library-tab-libraries-item "Icon library 1"]
+    [:option.library-tab-libraries-item "Icon library 2"]]
+   [:div.library-tab-content
+    (for [_ (range 0 200)]
+      [:div.library-tab-element
+       [:img {:src "https://www.placecage.com/c/200/300"}]
+       [:span.library-tab-element-name "my-icon.svg"]])]])
+
 (mf/defc libraries-toolbox
   []
   (let [locale (i18n/use-locale)]
@@ -32,8 +56,6 @@
       [:div "Libraries"]
       [:div "All libraries"]]
      [:div.tool-window-content
-      [:& tab-container {:selected :icons :on-change-tab #(println "Change tab")}
-       [:& tab-element {:id :icons :title "Icons"}
-        [:p "ICONS TAB"]]
-       [:& tab-element {:id :images :title "Images"}
-        [:p "IMAGES TAB"]]]]]))
+      [:& tab-container {}
+       [:& tab-element {:id :icons :title "Icons"} [:& library-tab]]
+       [:& tab-element {:id :images :title "Images"} [:& images-tab]]]]]))

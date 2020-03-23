@@ -269,7 +269,9 @@
 
 (declare initialize-alignment)
 
-(def default-layout #{:sitemap :layers :element-options :rules})
+#_(def default-layout #{:sitemap :layers :element-options :rules})
+(def default-layout #{:libraries :rules})
+
 
 (def workspace-default
   {:zoom 1
@@ -770,16 +772,20 @@
 ;; --- Toggle layout flag
 
 (defn toggle-layout-flag
-  [flag]
-  (us/verify keyword? flag)
+  [& flags]
+  ;; Verify all?
+  #_(us/verify keyword? flag)
   (ptk/reify ::toggle-layout-flag
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-layout
-              (fn [flags]
-                (if (contains? flags flag)
-                  (disj flags flag)
-                  (conj flags flag)))))))
+      (let [reduce-fn
+            (fn [state flag]
+              (update state :workspace-layout
+                      (fn [flags]
+                        (if (contains? flags flag)
+                          (disj flags flag)
+                          (conj flags flag)))))]
+        (reduce reduce-fn state flags)))))
 
 ;; --- Tooltip
 
@@ -1101,6 +1107,7 @@
 
           :else
           (rx/empty))))))
+
 
 
 ;; --- Toggle shape's selection status (selected or deselected)
