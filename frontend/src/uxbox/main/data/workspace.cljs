@@ -899,7 +899,7 @@
   in the current workspace page."
   [state]
   (let [page-id (::page-id state)
-        objects (get-in state [:workspace-page page-id :objects])]
+        objects (get-in state [:workspace-data page-id :objects])]
     (into #{} (map :name) (vals objects))))
 
 (defn impl-generate-unique-name
