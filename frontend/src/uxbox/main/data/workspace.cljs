@@ -809,6 +809,18 @@
     (update [_ state]
       (assoc-in state [:workspace-local :zoom] 1))))
 
+(def zoom-to-50
+  (ptk/reify ::zoom-to-50
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :zoom] 0.5))))
+
+(def zoom-to-200
+  (ptk/reify ::zoom-to-200
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :zoom] 2))))
+
 ;; --- Grid Alignment
 
 ;; (defn initialize-alignment
