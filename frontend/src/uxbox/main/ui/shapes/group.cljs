@@ -7,7 +7,6 @@
 (ns uxbox.main.ui.shapes.group
   #_(:require
    [lentes.core :as l]
-   [rumext.core :as mx]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]

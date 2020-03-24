@@ -14,7 +14,7 @@
         is-editing (or edit (:editing @state))
         start-editing (fn []
                         (swap! state assoc :editing true)
-                        (timers/schedule 100 #(dom/focus! (mf/ref-node input))))
+                        (timers/schedule 100 #(dom/focus! (mf/ref-val input))))
         stop-editing (fn [] (swap! state assoc :editing false))
         cancel-editing (fn []
                          (stop-editing)

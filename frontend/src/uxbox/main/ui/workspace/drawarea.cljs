@@ -197,6 +197,7 @@
                           (rx/map second))
 
               counter (rx/merge (rx/scan #(inc %) 1 points) (rx/of 1))
+
               stream' (->> mouse
                           (rx/with-latest vector ms/mouse-position-ctrl)
                           (rx/with-latest vector counter)
@@ -220,7 +221,7 @@
 
            (->> points
                 (rx/take-until stoper)
-                (rx/map (fn [pt]#(insert-point-segment % pt))))
+                (rx/map (fn [pt] #(insert-point-segment % pt))))
 
            (rx/concat
             (->> stream'

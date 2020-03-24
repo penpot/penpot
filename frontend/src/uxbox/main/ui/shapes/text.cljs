@@ -10,7 +10,6 @@
    [goog.events :as events]
    [goog.object :as gobj]
    [lentes.core :as l]
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]

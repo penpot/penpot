@@ -70,16 +70,17 @@
 
 (mf/defc recent-files-page
   [{:keys [team-id] :as props}]
-  (mf/use-effect
-   {:fn #(st/emit! (dsh/initialize-recent team-id))
-    :deps (mf/deps team-id)})
   (let [projects (->> (mf/deref projects-ref)
                       (vals)
                       (sort-by :modified-at)
                       (reverse))
         files (mf/deref files-ref)
         recent-file-ids (mf/deref recent-file-ids-ref)
-        locale (i18n/use-locale)]
+        locale (i18n/use-locale)
+        setup  #(st/emit! (dsh/initialize-recent team-id))]
+
+    (-> (mf/deps team-id)
+        (mf/use-effect #(st/emit! (dsh/initialize-recent team-id))))
 
     (when (and projects recent-file-ids)
       [:*

@@ -30,7 +30,7 @@
                (events/unlistenByKey lkey1)
                (events/unlistenByKey lkey2))))]
 
-    (mf/use-effect {:fn on-mount})
+    (mf/use-effect on-mount)
     children))
 
 (mf/defc dropdown

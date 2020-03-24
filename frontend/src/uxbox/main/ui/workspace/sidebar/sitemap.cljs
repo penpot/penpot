@@ -101,8 +101,8 @@
 
 (mf/defc page-item-wrapper
   [{:keys [page-id index deletable? selected?] :as props}]
-  (let [page-ref (mf/use-memo {:deps (mf/deps page-id)
-                               :fn #(make-page-ref page-id)})
+  (let [page-ref (-> (mf/deps page-id)
+                     (mf/use-memo #(make-page-ref page-id)))
         page (mf/deref page-ref)]
     [:& page-item {:page page
                    :index index

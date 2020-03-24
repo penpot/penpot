@@ -9,7 +9,6 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [rumext.core :as mx]
    [uxbox.builtins.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.main.data.images :as udi]
@@ -49,7 +48,7 @@
   (let [input (mf/use-ref nil)
         uploading? (mf/deref uploading-iref)
 
-        on-upload-click #(dom/click (mf/ref-node input))
+        on-upload-click #(dom/click (mf/ref-val input))
 
         on-uploaded
         (fn [{:keys [id name] :as image}]

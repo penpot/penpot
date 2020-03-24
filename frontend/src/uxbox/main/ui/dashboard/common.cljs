@@ -20,7 +20,7 @@
   (let [edit? (mf/use-state false)
         input (mf/use-ref nil)]
     (letfn [(save []
-              (let [new-value (-> (mf/ref-node input)
+              (let [new-value (-> (mf/ref-val input)
                                   (dom/get-inner-text)
                                   (str/trim))]
                 (on-change new-value)

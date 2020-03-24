@@ -47,7 +47,7 @@
   [event frame]
   (when (kbd/ctrl? event)
     (let [prev-zoom @refs/selected-zoom
-          dom (mf/ref-node frame)
+          dom (mf/ref-val frame)
           scroll-position (scroll/get-current-position-absolute dom)
           mouse-point @ms/mouse-position]
       (dom/prevent-default event)
@@ -102,26 +102,26 @@
 
 (mf/defc workspace
   [{:keys [file-id page-id] :as props}]
-  (mf/use-effect
-   {:deps (mf/deps file-id page-id)
-    :fn (fn []
-          (st/emit! (dw/initialize file-id page-id))
-          #(st/emit! (dw/finalize file-id page-id)))})
 
-  (mf/use-effect
-   {:deps (mf/deps file-id)
-    :fn (fn []
-          (st/emit! (dw/initialize-ws file-id))
-          #(st/emit! (dw/finalize-ws file-id)))})
+  (-> (mf/deps file-id page-id)
+      (mf/use-effect
+       (fn []
+         (st/emit! (dw/initialize file-id page-id))
+         #(st/emit! (dw/finalize file-id page-id)))))
 
-  (mf/use-effect
-   {:fn #(st/emit! dw/initialize-layout)})
+  (-> (mf/deps file-id)
+      (mf/use-effect
+       (fn []
+         (st/emit! (dw/initialize-ws file-id))
+         #(st/emit! (dw/finalize-ws file-id)))))
 
-  (mf/use-effect
-   {:deps (mf/deps file-id)
-    :fn (fn []
-          (st/emit! dw/initialize-shortcuts)
-          #(st/emit! ::dw/finalize-shortcuts))})
+  (-> (mf/deps file-id)
+      (mf/use-effect
+       (fn []
+         (st/emit! dw/initialize-shortcuts)
+         #(st/emit! ::dw/finalize-shortcuts))))
+
+  (mf/use-effect #(st/emit! dw/initialize-layout))
 
   (let [file (mf/deref refs/workspace-file)
         page (mf/deref refs/workspace-page)

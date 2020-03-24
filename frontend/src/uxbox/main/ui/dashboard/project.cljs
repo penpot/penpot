@@ -82,8 +82,8 @@
                    (sort-by :modified-at)
                    (reverse))]
     (mf/use-effect
-     {:fn #(st/emit! (dsh/initialize-project team-id project-id))
-      :deps (mf/deps section team-id project-id)})
+     (mf/deps section team-id project-id)
+     #(st/emit! (dsh/initialize-project team-id project-id)))
 
     [:*
       [:& project-header {:team-id team-id :project-id project-id}]

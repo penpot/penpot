@@ -27,7 +27,7 @@
 
 (defn- on-parent-clicked
   [event parent-ref]
-  (let [parent (mf/ref-node parent-ref)
+  (let [parent (mf/ref-val parent-ref)
         current (dom/get-target event)]
     (when (dom/equals? parent current)
       (reset! state nil)

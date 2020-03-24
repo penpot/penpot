@@ -16,7 +16,7 @@
   funcool/lentes {:mvn/version "1.4.0-SNAPSHOT"}
   funcool/potok {:mvn/version "2.8.0-SNAPSHOT"}
   funcool/promesa {:mvn/version "5.0.0"}
-  funcool/rumext {:mvn/version "2020.03.23-1"}
+  funcool/rumext {:mvn/version "2020.03.24-1"}
   }
  :paths ["src" "vendor" "resources" "../common"]
  :aliases

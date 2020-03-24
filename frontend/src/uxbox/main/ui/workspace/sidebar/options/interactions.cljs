@@ -14,7 +14,6 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.colorpicker :as cp]
-   [uxbox.main.ui.lightbox :as lbx]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :refer [tr]]))
