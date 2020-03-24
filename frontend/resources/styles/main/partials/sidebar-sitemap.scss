@@ -6,34 +6,8 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .sitemap {
-  .tool-window-bar {
-
-    .add-page {
-      align-items: center;
-      background-color: $color-gray-60;
-      border-radius: $br-small;
-      border: 1px solid transparent;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      margin-left: auto;
-      padding: $x-small;
-
-      svg {
-        fill: $color-gray-20;
-        height: 16px;
-        width: 16px;
-      }
-
-      &:hover {
-        background-color: $color-primary;
-
-        svg {
-          fill: $color-gray-60;
-        }
-      }
-    }
-  }
+  flex: none !important;
+  max-height: 190px;
 
   .element-list {
 
@@ -74,13 +48,7 @@
             fill: $color-gray-60;
             height: 15px;
             margin-left: $x-small;
-            opacity: .6;
             width: 15px;
-
-            &:hover {
-              opacity: 1;
-            }
-
           }
 
         }
@@ -104,7 +72,6 @@
 
         .page-actions {
           display: flex;
-          @include animation(0s,.3s,fadeIn);
         }
 
       }
@@ -141,7 +108,6 @@
 
     }
 
-
     .element-list-body {
       align-items: center;
       display: flex;
@@ -169,5 +135,39 @@
       }
     }
   }
+}
 
+.add-page,
+.collapse-pages {
+  align-items: center;
+  background-color: transparent;
+  border-radius: $br-small;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  margin-left: auto;
+  padding: $x-small;
+
+  svg {
+    fill: $color-gray-20;
+    height: 16px;
+    width: 16px;
+  }
+
+  &:hover {
+    background-color: $color-primary;
+
+    svg {
+      fill: $color-gray-60;
+    }
+  }
+}
+
+.collapse-pages {
+  margin-left: $small;
+
+  svg {
+    transform: rotate(90deg);
+  }
 }

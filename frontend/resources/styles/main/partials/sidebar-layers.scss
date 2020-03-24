@@ -2,285 +2,192 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+// Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-.layers-tools {
-  border-top: 1px solid $color-gray-20;
-  bottom: 0;
+.element-list-body {
+  align-items: center;
   display: flex;
-  height: 30px;
-  justify-content: center;
-  position: absolute;
+  height: 35px;
+  padding: $x-small $small;
+  transition: none;
   width: 100%;
 
-  .layers-tools-content {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin: 0;
-    width: 60%;
-
-    li {
-      cursor: pointer;
-
-      svg {
-        fill: $color-gray-30;
-        height: 14px;
-        width: 14px;
-
-        &:hover {
-          fill: $color-gray-60;
-        }
-
-      }
-
-      &.disable {
-        pointer-events: none;
-
-        svg {
-          cursor: auto;
-          fill: $color-gray-60;
-        }
-
-      }
-
-      &.delete-layer {
-
-        svg {
-
-          &:hover {
-            fill: $color-danger;
-          }
-
-        }
-
-      }
-
-      &.layer-up {
-
+  svg {
+    fill: $color-gray-20;
+    height: 13px;
+    flex-shrink: 0;
+    margin-right: 8px;
+    width: 13px;
+  }
+  
+  &.group {
+    &.open {
+      .toggle-content {
+        flex-shrink: 0;
+        
         svg {
           transform: rotate(270deg);
         }
-
       }
-
-      &.layer-down {
-
-        svg {
-          transform: rotate(90deg);
-        }
-
-      }
-
-      &.layer-top {
-
-        svg {
-          transform: rotate(180deg);
-        }
-
-      }
-
     }
-
   }
-
-}
-
-.element-list {
-  margin: 0;
-  width: 100%;
-
-  ul {
-    border-left: 6px solid $color-gray-40;
-    margin: 0;
-  }
-
-  li {
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-
-    &.dragging-TODO {
-      background-color: #eee;
+  
+  &:hover {
+    background-color: $color-primary;
+    
+    svg {
+      fill: $color-gray-60 !important;
     }
-
-    &.open {
-
-      ul {
-
-        li {
-
-          .element-list-body {
-            border-style: dashed;
-          }
-
-        }
-
+    
+    .element-icon,
+    .element-actions {
+      
+      svg {
+        fill: $color-gray-60;
       }
-
     }
-
-    .element-list-body {
-      align-items: center;
+    
+    .element-actions > * {
       display: flex;
-      padding: $x-small $small;
-      transition: none;
-      width: 100%;
+    }
+    
+    span {
+      color: $color-gray-60;
+    }
+    
+    .toggle-content {
+      margin-left: $x-small;
 
       svg {
         fill: $color-gray-60;
-        height: 13px;
-        margin-right: 8px;
-        width: 13px;
       }
+    }
+  }
 
+  &.selected {
+    
+    svg {
+      fill: $color-primary;
+    }
+    
+    .element-icon {
+      
+      svg {
+        fill: $color-primary;
+      }
+    }
+
+    span {
+      color: $color-primary;
+    }
+    
+    &:hover {
+      background-color: $color-primary;
+      
+      .element-icon,
       .element-actions {
-        align-items: center;
-        display: flex;
-        flex-shrink: 0;
-        width: 55px;
-
-        .block-element {
-
-          svg {
-            fill: $color-gray-30;
-          }
-        }
-      }
-
-      .element-icon {
-
         svg {
-          fill: $color-gray-30;
+          fill: $color-gray-60;
         }
-
       }
 
-      .toggle-content {
-        margin-left: auto;
-        width: 12px;
-
-        svg {
-          fill: $color-gray-30;
-          transform: rotate(90deg);
-          width: 10px;
-        }
-
-        &.inverse {
-          svg { transform: rotate(270deg); }
-        }
-
-        &:hover {
-
-          svg {
-            fill: $color-gray-20;
-          }
-
-        }
-
+      .element-name {
+        color: $color-gray-60;
       }
+    }
+  }
+  
+  &.drag-top {
+    border-top: 40px solid $color-gray-60 !important;
+  }
+  
+  &.drag-bottom {
+    border-bottom: 40px solid $color-gray-60 !important;
+  }
+  
+  &.drag-inside {
+    border: 2px solid $color-primary !important;
+  }
+}
 
-      &.group {
+.element-icon {
+  svg {
+    fill: $color-gray-30;
+  }
+}
 
-        &.open {
+input.element-name {
+  max-width: 130px;
+  width: 100%;
+}
 
-          .toggle-content {
-            flex-shrink: 0;
+span.element-name {
+  color: $color-gray-20;
+  display: block;
+  font-size: $fs13;
+  max-width: 130px;
+  min-width: 40px;
+  min-height: 16px;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+  
+.element-actions {
+  display: flex;
+  flex-shrink: 0;
+  height: 14px;
+  margin-left: auto;
+  position: relative;
+  width: 32px;
 
-            svg {
-              transform: rotate(270deg);
-            }
-
-          }
-
-        }
-
-      }
-
-      span.element-name {
-        min-width: 40px;
-        min-height: 16px;
-        display: block;
-
-        color: $color-gray-20;
-        font-size: $fs13;
-        overflow-x: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      &.selected {
+  > * {
+    display: none;
+  }
+  
+  .toggle-element,
+  .block-element {
+    left: 0;
+    position: absolute;
+    top: 0;
         
-        .element-icon {
-          
-          svg {
-            fill: $color-primary;
-          }
-          
-        }
-        
-        span {
-          color: $color-primary;
-        }
-        
-        &:hover {
-          background-color: $color-primary;
-
-          .element-icon,
-          .element-actions {
-            svg {
-              fill: $color-gray-60;
-            }
-          }
-          .element-name {
-            color: $color-gray-60;
-          }
-        }
-
-      }
-
-      .selected {
+    &.selected {
+      display: flex;
 
         svg {
           fill: $color-gray-20;
         }
-
-      }
-
-      &:hover {
-        background-color: $color-primary;
-
-        .element-icon,
-        .element-actions {
-
-          svg {
-            fill: $color-gray-60;
-          }
-
-        }
-
-        span {
-          color: $color-gray-60;
-        }
-
-      }
-
-      &.drag-top {
-        border-top: 40px solid $color-gray-60 !important;
-      }
-
-      &.drag-bottom {
-        border-bottom: 40px solid $color-gray-60 !important;
-      }
-
-      &.drag-inside {
-        border: 2px solid $color-primary !important;
-      }
-
     }
-
   }
+}
 
+.block-element {
+  left: 18px !important;
+
+  svg {
+    fill: $color-gray-30;
+  }
+}
+
+.toggle-content {
+  margin-left: auto;
+  width: 12px;
+  
+  svg {
+    fill: $color-gray-30;
+    transform: rotate(90deg);
+    width: 10px;
+  }
+  
+  &.inverse {
+    svg { transform: rotate(270deg); }
+  }
+  
+  &:hover {
+    svg {
+      fill: $color-gray-60;
+    }
+  }
 }

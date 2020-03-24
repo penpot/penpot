@@ -28,7 +28,9 @@
    [:div.settings-bar-inside
     {:data-layout (str/join "," layout)}
     (when (contains? layout :sitemap)
-      [:& sitemap-toolbox {:file file :page page}])
+      [:& sitemap-toolbox {:file file
+                           :page page
+                           :layout layout}])
     (when (contains? layout :document-history)
       [:& history-toolbox])
     (when (contains? layout :layers)

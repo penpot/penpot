@@ -126,12 +126,17 @@
 ;; --- Sitemap Toolbox
 
 (mf/defc sitemap-toolbox
-  [{:keys [file page] :as props}]
+  [{:keys [file page layout] :as props}]
   (let [on-create-click #(st/emit! dw/create-empty-page)
+        toggle-layout #(st/emit! (dw/toggle-layout-flag %))
         locale (i18n/use-locale)]
     [:div.sitemap.tool-window
      [:div.tool-window-bar
       [:span (t locale "workspace.sidebar.sitemap")]
-      [:div.add-page {:on-click on-create-click} i/close]]
-     [:div.tool-window-content
-      [:& pages-list {:file file :current-page page}]]]))
+      [:div.add-page {:on-click on-create-click} i/close]
+      [:div.collapse-pages {:on-click #(st/emit! (dw/toggle-layout-flag :sitemap-pages))}
+       i/arrow-slide]]
+
+     (when (contains? layout :sitemap-pages)
+       [:div.tool-window-content
+        [:& pages-list {:file file :current-page page}]])]))

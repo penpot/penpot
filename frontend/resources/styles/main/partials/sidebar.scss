@@ -88,12 +88,51 @@
 
       }
 
-      .tool-window-content {
-        display: flex;
-        flex-wrap: wrap;
-        overflow-y: auto;
-        padding-bottom: $medium;
-        height: 100%;
+
+
+    }
+  }
+}
+.tool-window-content {
+  display: flex;
+  flex-wrap: wrap;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.element-list {
+  margin: 0;
+  width: 100%;
+
+  ul {
+    border-left: 9px solid $color-gray-50;
+    margin: 0;
+
+    li {
+      border-left: 1px solid $color-gray-40;
+    }
+  }
+
+  li {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    &.dragging-TODO {
+      background-color: #eee;
+    }
+
+    &.open {
+
+      ul {
+
+        li {
+
+          .element-list-body {
+            border-style: dashed;
+          }
+        }
       }
     }
   }

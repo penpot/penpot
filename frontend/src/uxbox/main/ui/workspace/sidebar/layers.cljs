@@ -148,15 +148,15 @@
      [:div.element-list-body {:class (dom/classnames :selected selected?)
                               :on-click select-shape
                               :on-double-click #(dom/stop-propagation %)}
+      [:& element-icon {:shape item}]
+      [:& layer-name {:shape item}]
       [:div.element-actions
-       [:div.toggle-element {:class (when-not (:hidden item) "selected")
+       [:div.toggle-element {:class (when (:hidden item) "selected")
                              :on-click toggle-visibility}
         i/eye]
        [:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
-        i/lock]]
-      [:& element-icon {:shape item}]
-      [:& layer-name {:shape item}]]]))
+        i/lock]]]]))
 
 (mf/defc layer-frame-item
   {:wrap [#(mf/wrap-memo % =)]}
@@ -234,6 +234,8 @@
      [:div.element-list-body {:class (dom/classnames :selected selected?)
                               :on-click select-shape
                               :on-double-click #(dom/stop-propagation %)}
+      [:div.element-icon i/artboard]
+      [:& layer-name {:shape item}]
       [:div.element-actions
        [:div.toggle-element {:class (when-not (:hidden item) "selected")
                              :on-click toggle-visibility}
@@ -241,8 +243,6 @@
        #_[:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
           i/lock]]
-      [:div.element-icon i/folder]
-      [:& layer-name {:shape item}]
       [:span.toggle-content
        {:on-click toggle-collapse
         :class (when-not collapsed? "inverse")}
@@ -255,15 +255,17 @@
               [:& layer-frame-item
                {:item item
                 :key (:id item)
+                :selected selected
                 :objects objects
                 :index index}]
               [:& layer-item
                {:item item
+                :selected selected
                 :index index
                 :key (:id item)}])))])]))
 
 (mf/defc layers-tree
-  {:wrap [mf/wrap-memo]}
+  {::mf/wrap [mf/wrap-memo]}
   [props]
   (let [selected (mf/deref refs/selected-shapes)
         data (mf/deref refs/workspace-data)
@@ -276,10 +278,12 @@
            [:& layer-frame-item
             {:item item
              :key (:id item)
+             :selected selected
              :objects objects
              :index index}]
            [:& layer-item
             {:item item
+             :selected selected
              :index index
              :key (:id item)}])))]))
 
@@ -296,8 +300,7 @@
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]
-      ;[:span (t locale "workspace.sidebar.layers")]
-      [:span "Page 1"]
+      [:span (:name page)]
       #_[:div.tool-window-close {:on-click on-click} i/close]]
      [:div.tool-window-content
       [:& layers-tree]]]))
