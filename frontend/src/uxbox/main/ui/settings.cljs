@@ -11,21 +11,28 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.ui.dashboard.profile :refer [profile-section]]
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.main.ui.settings.header :refer [header]]
    [uxbox.main.ui.settings.password :refer [password-page]]
    [uxbox.main.ui.settings.profile :refer [profile-page]]))
 
 (mf/defc settings
-  {:wrap [mf/wrap-memo]}
   [{:keys [route] :as props}]
-  (let [section (get-in route [:data :name])]
-    [:main.dashboard-main
+  (let [section (get-in route [:data :name])
+        profile (mf/deref refs/profile)]
+    [:main.settings-main
      [:& messages-widget]
-     [:& header {:section section}]
-     (case section
-       :settings-profile (mf/element profile-page)
-       :settings-password (mf/element password-page))]))
+
+     [:section.settings-layout
+      [:div.main-logo i/logo-icon]
+      [:div.left-bar]
+      [:div.settings-content
+       [:& header {:section section}]
+       (case section
+         :settings-profile (mf/element profile-page)
+         :settings-password (mf/element password-page))]]]))
 
 
 
