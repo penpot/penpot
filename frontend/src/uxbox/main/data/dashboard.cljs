@@ -291,7 +291,11 @@
   (ptk/reify ::delete-file
     ptk/UpdateEvent
     (update [_ state]
-      (update state :files dissoc id))
+      (let [project-id (get-in state [:files id :project-id])
+            recent-project-files (get-in state [:recent-file-ids project-id] [])]
+        (-> state
+          (update :files dissoc id)
+          (assoc-in [:recent-file-ids project-id] (remove #(= % id) recent-project-files)))))
 
     ptk/WatchEvent
     (watch [_ state s]
@@ -336,7 +340,12 @@
   (ptk/reify ::file-created
     ptk/UpdateEvent
     (update [this state]
-      (update state :files assoc (:id data) data))))
+      (let [project-id (:project-id data)
+            file-id (:id data)
+            recent-project-files (get-in state [:recent-file-ids project-id] [])]
+        (-> state
+          (assoc-in [:files file-id] data)
+          (assoc-in [:recent-file-ids project-id] (conj recent-project-files file-id)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
