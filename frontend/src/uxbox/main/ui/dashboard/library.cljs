@@ -122,7 +122,7 @@
               (dlib/retrieve-libraries :icons (:id item))
               (st/emit! (rt/nav path {:team-id team-id :library-id (:id item)}))))}
          [:& editable-label {:value (:name item)
-                             :on-change #(st/emit! (dlib/rename-library section library-id %))}]
+                             :on-change #(st/emit! (dlib/rename-library section team-id library-id %))}]
          ])]]))
 
 (mf/defc library-top-menu
@@ -136,7 +136,7 @@
       [:& editable-label {:edit (:editing-name @state)
                           :on-change #(do
                                         (stop-editing)
-                                        (st/emit! (dlib/rename-library section library-id %)))
+                                        (st/emit! (dlib/rename-library section team-id library-id %)))
                           :on-cancel #(swap! state assoc :editing-name false)
                           :class-name "library-top-menu-current-element-name"
                           :value (:name selected)}]
@@ -155,7 +155,7 @@
                        (modal/show!
                         confirm-dialog
                         {:on-accept #(do
-                                       (st/emit! (dlib/delete-library section library-id))
+                                       (st/emit! (dlib/delete-library section team-id library-id))
                                        (st/emit! (rt/nav path {:team-id team-id})))
                          :message "Are you sure you want to delete this library?"
                          :accept-text "Delete"})))]]}]]
@@ -301,8 +301,8 @@
                          :message "Are you sure you want to delete this color?"
                          :accept-text "Delete"}))]]}]]])))
 
-(defn libraries-ref [section]
-  (-> (comp (l/key :library) (l/key section))
+(defn libraries-ref [section team-id]
+  (-> (comp (l/key :library) (l/key section) (l/key team-id))
       (l/derive st/state)))
 
 (defn selected-items-ref [library-id]
@@ -316,7 +316,7 @@
 (mf/defc library-page
   [{:keys [team-id library-id section]}]
   (let [state (mf/use-state {:selected #{}})
-        libraries (mf/deref (libraries-ref section))
+        libraries (mf/deref (libraries-ref section team-id))
         items (mf/deref (selected-items-ref library-id))
         last-deleted-library (mf/deref last-deleted-library-ref)
         selected-library (first (filter #(= (:id %) library-id) libraries))]

@@ -11,21 +11,23 @@
   background-color: $color-gray-50;
   border-top: 1px solid $color-gray-60;
   display: flex;
-  padding: 1rem;
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
   z-index: 11;
-  .right-arrow,
-  .left-arrow {
-    cursor: pointer;
+
+  & .right-arrow,
+  & .left-arrow {
+      cursor: pointer;
+
     svg {
       fill: $color-gray-light;
-      height: 30px;
+      height: 1rem;
       margin: 0 .5rem;
-      width: 30px;
+      width: 1rem;
     }
+    
     &:hover {
       svg {
         fill: $color-gray-darker;
@@ -35,11 +37,20 @@
       display: none;
     }
   }
+  
+
   .left-arrow {
-    transform: rotate(180deg);
+      transform: rotate(180deg);
+      padding-top: 10px;
   }
+
   &.fade-out-down {
     @include animation(0,.5s,fadeOutDown);
+  }
+
+  &.left-sidebar-open {
+      left: 280px;
+      width: calc(100% - 280px);
   }
 }
 
@@ -48,12 +59,26 @@
   flex-direction: column;
   flex-shrink: 0;
   margin-right: .5rem;
-  width: 200px;
+
+  border: 1px solid #1F1F1F;
+  align-self: stretch;
+  padding: 0.5rem;
+  justify-content: center;
+ 
   .color-palette-buttons {
     align-items: center;
     display: flex;
     justify-content: space-around;
   }
+}
+
+.color-palette-actions-button {
+    cursor: pointer;
+    & svg {
+        width: 1rem;
+        height: 1rem;
+        fill: #AFB2BF;
+    }
 }
 
 .btn-palette {
@@ -90,6 +115,7 @@
   display: flex;
   overflow: hidden;
   width: 100%;
+  padding: 0.25rem;
 }
 
 .color-palette-inside {
@@ -106,15 +132,14 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  margin: 0 10px;
   position: relative;
   flex-basis: 66px;
+
   .color {
     background-color: $color-gray-lighter;
     border: 2px solid $color-gray-60;
     border-radius: 50%;
     flex-shrink: 0;
-    margin-bottom: .4rem;
     padding: 1.5rem;
   }
   .color-text {

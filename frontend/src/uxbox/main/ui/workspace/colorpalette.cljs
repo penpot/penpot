@@ -42,10 +42,10 @@
                       :on-click select-color}
      [:span.color {:style {:background color}}]
      [:span.color-text color]
-     [:span.color-text rgb-color]]))
+     #_[:span.color-text rgb-color]]))
 
 (mf/defc palette
-  [{:keys [colls] :as props}]
+  [{:keys [colls left-sidebar?] :as props}]
   (let [local (mf/use-state {})
         colls (->> colls
                    (filter :id)
@@ -97,9 +97,10 @@
 
     (mf/use-effect nil after-render)
 
-    [:div.color-palette
+    [:div.color-palette {:class (when left-sidebar? "left-sidebar-open")}
      [:div.color-palette-actions
-      [:select.input-select {:on-change select-coll
+      [:div.color-palette-actions-button i/actions]
+      #_[:select.input-select {:on-change select-coll
                              :default-value (pr-str (:id coll))}
        (for [item colls]
          [:option {:key (:id item) :value (pr-str (:id item))}
@@ -116,14 +117,17 @@
                                   :style {:position "relative"
                                           :width (str (* 86 (count (:colors coll))) "px")
                                           :right (str (* 86 offset) "px")}}
-       (for [color (:colors coll)]
-         [:& palette-item {:color color :key color}])]]
+       #_(for [color (:colors coll)]
+           [:& palette-item {:color color :key color}])
+       (for [color (range 0 20)]
+         [:& palette-item {:color "#FFFF00" :key color}])]]
 
      [:span.right-arrow {:on-click on-right-arrow-click}  i/arrow-slide]
-     [:span.close-palette {:on-click close} i/close]]))
+     #_[:span.close-palette {:on-click close} i/close]]))
 
 (mf/defc colorpalette
-  [props]
+  [{:keys [left-sidebar?]}]
   (let [colls (mf/deref collections-iref)]
     #_(mf/use-effect #(st/emit! (udc/fetch-collections)))
-    [:& palette {:colls (vals colls)}]))
+    [:& palette {:left-sidebar? left-sidebar?
+                 :colls (vals colls)}]))

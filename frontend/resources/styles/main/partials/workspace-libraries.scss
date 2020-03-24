@@ -1,3 +1,35 @@
+.libraries-window-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 50%);
+    padding: 0.5rem;
+    align-items: center;
+}
+
+.libraries-window-bar-title {
+    color: #F0F0F0;
+}
+
+.libraries-window-bar-options {
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 0.5rem;
+
+    button {
+        border: none;
+        padding: 0;
+        margin: 0;
+        background: transparent;
+        cursor: pointer;
+    }
+    & svg {
+        width: 0.5rem;
+        height: 0.5rem;
+        fill: #F0F0F0;
+        transform: rotate(90deg);
+    }
+}
+
 .library-tab {
     display: flex;
     flex-direction: column;
@@ -10,7 +42,6 @@
     flex-direction: row;
     flex-wrap: wrap;
     padding: 0.25rem;
-    height: 100%;
     overflow-y: scroll;
 
     .icons-tab & {
@@ -80,8 +111,9 @@
     width: 90%;
     padding: 0.5rem;
     box-sizing: border-box;
-    color: white;
+    color: #AFB2BF;
     font-size: 12px;
+    border: 1px solid #7c7c7c;
 }
 
 .library-tab-libraries-item {

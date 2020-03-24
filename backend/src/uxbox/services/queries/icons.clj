@@ -56,8 +56,10 @@
 
 (sq/defquery ::icon-libraries
   [{:keys [profile-id team-id]}]
+  (println profile-id)
+  (println team-id)
   (db/with-atomic [conn db/pool]
-    (teams/check-edition-permissions! conn profile-id team-id)
+    (teams/check-read-permissions! conn profile-id team-id)
     (db/query conn [sql:libraries team-id])))
 
 
@@ -73,7 +75,7 @@
   [{:keys [profile-id id]}]
   (db/with-atomic [conn db/pool]
     (p/let [lib (retrieve-library conn id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      (teams/check-read-permissions! conn profile-id (:team-id lib))
       lib)))
 
 (def ^:private sql:single-library
@@ -101,7 +103,7 @@
   [{:keys [profile-id library-id] :as params}]
   (db/with-atomic [conn db/pool]
     (p/let [lib (retrieve-library conn library-id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      (teams/check-read-permissions! conn profile-id (:team-id lib))
       (-> (retrieve-icons conn library-id)
           (p/then' (fn [rows] (mapv decode-row rows)))))))
 
@@ -131,7 +133,7 @@
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
     (p/let [icon (retrieve-icon conn id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id icon))
+      (teams/check-read-permissions! conn profile-id (:team-id icon))
       (decode-row icon))))
 
 (def ^:private sql:single-icon

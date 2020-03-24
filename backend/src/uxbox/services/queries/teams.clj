@@ -40,5 +40,14 @@
                    (ex/raise :type :validation
                              :code :not-authorized))))))
 
-
-
+(defn check-read-permissions!
+  [conn profile-id team-id]
+  (-> (db/query-one conn [sql:team-permissions profile-id team-id])
+      (p/then' (fn [row]
+                 (when-not (or (:can-edit row)
+                               (:is-admin row)
+                               (:is-owner row)
+                               ;; We can read global-project owned items
+                               (= team-id #uuid "00000000-0000-0000-0000-000000000000"))
+                   (ex/raise :type :validation
+                             :code :not-authorized))))))

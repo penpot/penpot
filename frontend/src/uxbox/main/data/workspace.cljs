@@ -66,6 +66,7 @@
 
 (declare fetch-users)
 (declare fetch-images)
+(declare fetch-project)
 (declare handle-who)
 (declare handle-pointer-update)
 (declare handle-pointer-send)
@@ -270,7 +271,7 @@
 (declare initialize-alignment)
 
 #_(def default-layout #{:sitemap :layers :element-options :rules})
-(def default-layout #{:libraries :rules})
+(def default-layout #{:libraries :rules :colorpalette})
 
 
 (def workspace-default
@@ -296,7 +297,8 @@
 
 (defn initialize
   "Initialize the workspace state."
-  [file-id page-id]
+  [project-id file-id page-id]
+  (us/verify ::us/uuid project-id)
   (us/verify ::us/uuid file-id)
   (us/verify ::us/uuid page-id)
   (ptk/reify ::initialize
@@ -307,9 +309,11 @@
           (rx/merge
            (rx/of (fetch-file-with-users file-id)
                   (fetch-pages file-id)
-                  (fetch-images file-id))
+                  (fetch-images file-id)
+                  (fetch-project project-id))
            (->> (rx/zip (rx/filter (ptk/type? ::pages-fetched) stream)
-                        (rx/filter (ptk/type? ::file-fetched) stream))
+                        (rx/filter (ptk/type? ::file-fetched) stream)
+                        (rx/filter (ptk/type? ::project-fetched) stream))
                 (rx/take 1)
                 (rx/do (fn [_]
                          (uxbox.util.timers/schedule 500 #(reset! st/loader false))))
@@ -357,7 +361,8 @@
       (rx/of (initialize-page-persistence page-id)))))
 
 (defn finalize
-  [file-id page-id]
+  [project-id file-id page-id]
+  (us/verify ::us/uuid project-id)
   (us/verify ::us/uuid file-id)
   (us/verify ::us/uuid page-id)
   (ptk/reify ::finalize
@@ -495,6 +500,7 @@
 (s/def ::data ::cp/data)
 
 (s/def ::file ::dd/file)
+(s/def ::project ::dd/project)
 (s/def ::page
   (s/keys :req-un [::id
                    ::name
@@ -548,6 +554,25 @@
               state
               users))))
 
+;; --- Fetch Project data
+(declare project-fetched)
+
+(defn fetch-project
+  [id]
+  (us/verify ::us/uuid id)
+  (ptk/reify ::fetch-project
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :project-by-id {:project-id id})
+           (rx/map project-fetched)))))
+
+(defn project-fetched
+  [project]
+  (us/verify ::project project)
+  (ptk/reify ::project-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-project project))))
 
 ;; --- Fetch Pages
 
@@ -1931,7 +1956,8 @@
   (ptk/reify ::go-to-page
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [file-id (get-in state [:workspace-page :file-id])
+      (let [project-id (get-in state [:workspace-project :id])
+            file-id (get-in state [:workspace-page :file-id])
             path-params {:file-id file-id}
             query-params {:page-id page-id}]
         (rx/of (rt/nav :workspace path-params query-params))))))
@@ -1942,8 +1968,9 @@
   (ptk/reify ::go-to-file
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-ids (get-in state [:files file-id :pages])
-            path-params {:file-id file-id}
+      (let [project-id (get-in state [:workspace-project :id])
+            page-ids (get-in state [:files file-id :pages])
+            path-params {:project-id project-id :file-id file-id}
             query-params {:page-id (first page-ids)}]
         (rx/of (rt/nav :workspace path-params query-params))))))
 

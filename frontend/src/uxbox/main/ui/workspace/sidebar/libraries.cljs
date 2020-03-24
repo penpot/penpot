@@ -10,6 +10,7 @@
 (ns uxbox.main.ui.workspace.sidebar.libraries
   (:require
    [lentes.core :as l]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
    [uxbox.builtins.icons :as i]
@@ -22,40 +23,98 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [t]]
-   [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]))
+   [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [uxbox.main.data.library :as dlib]))
 
-(mf/defc library-tab []
-  [:div.library-tab.icons-tab
-   [:select.library-tab-libraries
-    [:option.library-tab-libraries-item "Material design"]
-    [:option.library-tab-libraries-item "Icon library 1"]
-    [:option.library-tab-libraries-item "Icon library 2"]]
-   [:div.library-tab-content
-    (for [_ (range 0 200)]
-      [:div.library-tab-element
-       i/trash
-       [:span.library-tab-element-name "my-icon.svg"]])]])
+(def project-ref
+  (-> (l/key :workspace-project)
+      (l/derive st/state)))
 
-(mf/defc images-tab []
-  [:div.library-tab.images-tab
-   [:select.library-tab-libraries
-    [:option.library-tab-libraries-item "Material design"]
-    [:option.library-tab-libraries-item "Icon library 1"]
-    [:option.library-tab-libraries-item "Icon library 2"]]
-   [:div.library-tab-content
-    (for [_ (range 0 200)]
-      [:div.library-tab-element
-       [:img {:src "https://www.placecage.com/c/200/300"}]
-       [:span.library-tab-element-name "my-icon.svg"]])]])
+(defn libraries-ref [section]
+  (-> (comp (l/key :library) (l/key section))
+      (l/derive st/state)))
+
+(defn selected-items-ref [library-id]
+  (-> (comp (l/key :library) (l/key :selected-items) (l/key library-id))
+      (l/derive st/state)))
+
+(mf/defc icons-tab [{:keys [libraries]}]
+  (when (and libraries (-> libraries count (> 0)))
+    (let [state (mf/use-state {:selected-library (-> libraries first :id)})]
+      (mf/use-effect {:fn (fn []
+                            (st/emit! (dlib/retrieve-library-data :icons (:selected-library @state))))
+                      :deps (mf/deps (:selected-library @state))})
+
+      [:div.library-tab.icons-tab
+       [:select.input-select.library-tab-libraries
+        {:on-change #(swap! state assoc :selected-library (-> % dom/get-target dom/get-value))}
+        (for [library libraries]
+          [:option.library-tab-libraries-item
+           {:key (:id library)
+            :value (:id library)}
+           (:name library)])]
+       [:div.library-tab-content
+        (let [items (mf/deref (selected-items-ref (:selected-library @state)))]
+          (for [item items]
+            [:div.library-tab-element
+             {:key (:id item)}
+             [:svg {:view-box (->> item :metadata :view-box (str/join " "))
+                    :width (-> item :metadata :width)
+                    :height (-> item :metadat :height) 
+                    :dangerouslySetInnerHTML {:__html (:content item)}}]
+             [:span.library-tab-element-name (:name item)]]))]])))
+
+(mf/defc images-tab [{:keys [libraries]}]
+  (when (and libraries (-> libraries count (> 0)))
+    (let [state (mf/use-state {:selected-library (-> libraries first :id)})]
+      (mf/use-effect {:fn (fn []
+                            (st/emit! (dlib/retrieve-library-data :images (:selected-library @state))))
+                      :deps (mf/deps (:selected-library @state))})
+
+      [:div.library-tab.images-tab
+       [:select.input-select.library-tab-libraries
+        {:on-change #(swap! state assoc :selected-library (-> % dom/get-target dom/get-value))}
+        (for [library libraries]
+          [:option.library-tab-libraries-item
+           {:key (:id library)
+            :value (:id library)}
+           (:name library)])]
+       [:div.library-tab-content
+        (let [items (mf/deref (selected-items-ref (:selected-library @state)))]
+          (for [item items]
+            [:div.library-tab-element
+             {:key (:id item)}
+             [:img {:src (:thumb-uri item)}]
+             [:span.library-tab-element-name (:name item)]]))]])))
 
 (mf/defc libraries-toolbox
-  []
-  (let [locale (i18n/use-locale)]
+  [{:keys [key]}]
+  (let [team-id (-> project-ref mf/deref :team-id)
+        locale (i18n/use-locale)]
+    (mf/use-effect {:fn (fn []
+                          (st/emit! (dlib/retrieve-libraries :icons))
+                          (st/emit! (dlib/retrieve-libraries :images)))
+                    :deps (mf/deps key)})
+    (mf/use-effect {:fn (fn []
+                          (when team-id
+                            (do 
+                              (st/emit! (dlib/retrieve-libraries :icons team-id))
+                              (st/emit! (dlib/retrieve-libraries :images team-id)))))
+                    :deps (mf/deps team-id)})
     [:div#libraries.tool-window
-     [:div.tool-window-bar
-      [:div "Libraries"]
-      [:div "All libraries"]]
+     [:div.libraries-window-bar
+      [:div.libraries-window-bar-title "Libraries"]
+      [:div.libraries-window-bar-options
+       "All libraries"
+       [:button {:type "button"}
+        i/arrow-slide]]]
      [:div.tool-window-content
       [:& tab-container {}
-       [:& tab-element {:id :icons :title "Icons"} [:& library-tab]]
-       [:& tab-element {:id :images :title "Images"} [:& images-tab]]]]]))
+       [:& tab-element
+        {:id :icons :title "Icons"}
+        [:& icons-tab {:libraries (-> (libraries-ref :icons) mf/deref vals flatten) }]]
+
+       [:& tab-element
+        {:id :images :title "Images"}
+        [:& images-tab {:libraries (-> (libraries-ref :images) mf/deref vals flatten)}]]]]]))
+

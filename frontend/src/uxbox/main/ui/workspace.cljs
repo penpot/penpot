@@ -67,7 +67,7 @@
                  :no-tool-bar-left (not left-sidebar?))]
     [:*
      (when (:colorpalette layout)
-       [:& colorpalette])
+       [:& colorpalette {:left-sidebar? left-sidebar?}])
 
      [:main.main-content
       [:& context-menu {}]
@@ -99,13 +99,13 @@
 
 
 (mf/defc workspace
-  [{:keys [file-id page-id] :as props}]
+  [{:keys [project-id file-id page-id] :as props}]
 
   (-> (mf/deps file-id page-id)
       (mf/use-effect
        (fn []
-         (st/emit! (dw/initialize file-id page-id))
-         #(st/emit! (dw/finalize file-id page-id)))))
+         (st/emit! (dw/initialize project-id file-id page-id))
+         #(st/emit! (dw/finalize project-id file-id page-id)))))
 
   (-> (mf/deps file-id)
       (mf/use-effect

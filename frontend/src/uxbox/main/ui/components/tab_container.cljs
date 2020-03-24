@@ -15,7 +15,7 @@
         handle-select (fn [tab]
                         (let [id (-> tab .-props .-id)]
                           (swap! state assoc :selected id)
-                          (on-change-tab id)))]
+                          (when on-change-tab (on-change-tab id))))]
     [:div.tab-container
      [:div.tab-container-tabs
       (for [tab children]
