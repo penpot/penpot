@@ -12,25 +12,32 @@
   left: 740px;
   position: absolute;
   top: 40px;
-  width: 200px;
+  width: 216px;
   z-index: 12;
-  
+  // padding: $medium;
+
   li {
     align-items: center;
-    display: flex;
-    font-size: $fs12;
-    padding: $small;
+    font-size: $fs14;
+    padding: $x-small $medium;
     cursor: pointer;
 
-    svg {
-      fill: $color-gray-60;
-      margin-right: $small;
-      height: 12px;
-      width: 12px;
+    display: flex;
+    justify-content: space-between;
+
+
+    &.separator {
+      border-top: 1px solid $color-gray-10;
+      padding: 0px;
+      margin: 2px;
     }
 
-    span {
+    span:first-child {
       color: $color-gray-60;
+    }
+
+    span:last-child {
+      color: $color-gray-20;
     }
 
     &:hover {

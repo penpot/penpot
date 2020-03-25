@@ -32,21 +32,72 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
+(mf/defc menu-entry
+  [{:keys [title shortcut on-click] :as props}]
+  [:li {:on-click on-click}
+   [:span.title title]
+   [:span.shortcut (or shortcut "")]])
+
+(mf/defc menu-separator
+  [props]
+  [:li.separator])
+
 (mf/defc shape-context-menu
   [{:keys [mdata] :as props}]
   (let [shape (:shape mdata)
         selected (:selected mdata)
 
-        on-duplicate
-        (fn [event]
-          (st/emit! dw/duplicate-selected))
-
-        on-delete
-        (fn [event]
-          (st/emit! dw/delete-selected)) ]
+        do-duplicate #(st/emit! dw/duplicate-selected)
+        do-delete #(st/emit! dw/delete-selected)
+        do-copy #(st/emit! dw/copy-selected)
+        do-paste #(st/emit! dw/paste)
+        do-bring-forward #(st/emit! (dw/vertical-order-selected :up))
+        do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
+        do-send-backward #(st/emit! (dw/vertical-order-selected :down))
+        do-send-to-back #(st/emit! (dw/vertical-order-selected :bottom))
+        do-show-shape #(st/emit! (dw/show-shape (:id shape)))
+        do-hide-shape #(st/emit! (dw/hide-shape (:id shape)))
+        do-lock-shape #(st/emit! (dw/block-shape (:id shape)))
+        do-unlock-shape #(st/emit! (dw/unblock-shape (:id shape)))]
     [:*
-     [:li {:on-click on-duplicate} i/copy [:span "duplicate"]]
-     [:li {:on-click on-delete} i/trash [:span "delete"]]]))
+     [:& menu-entry {:title "Copy"
+                     :shortcut "Ctrl + c"
+                     :on-click do-copy}]
+     [:& menu-entry {:title "Paste"
+                     :shortcut "Ctrl + v"
+                     :on-click do-paste}]
+     [:& menu-entry {:title "Duplicate"
+                     :shortcut "Ctrl + d"
+                     :on-click do-duplicate}]
+     [:& menu-separator]
+     [:& menu-entry {:title "Bring forward"
+                     :shortcut "Ctrl + ↑"
+                     :on-click do-bring-forward}]
+     [:& menu-entry {:title "Bring to front"
+                     :shortcut "Ctrl + Shift + ↑"
+                     :on-click do-bring-to-front}]
+     [:& menu-entry {:title "Send backward"
+                     :shortcut "Ctrl + ↓"
+                     :on-click do-send-backward}]
+     [:& menu-entry {:title "Send to back"
+                     :shortcut "Ctrl + Shift + ↓"
+                     :on-click do-send-to-back}]
+     [:& menu-separator]
+     (if (:hidden shape)
+       [:& menu-entry {:title "Show"
+                       :on-click do-show-shape}]
+       [:& menu-entry {:title "Hide"
+                       :on-click do-hide-shape}])
+     (if (:blocked shape)
+       [:& menu-entry {:title "Unlock"
+                       :on-click do-unlock-shape}]
+       [:& menu-entry {:title "Lock"
+                       :on-click do-lock-shape}])
+     [:& menu-separator]
+     [:& menu-entry {:title "Delete"
+                     :shortcut "Supr"
+                     :on-click do-delete}]
+     ]))
 
 (mf/defc viewport-context-menu
   [{:keys [mdata] :as props}]
