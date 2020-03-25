@@ -15,15 +15,27 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.math :as math]))
 
+(declare +size-presets+)
+
 (mf/defc measures-menu
   [{:keys [shape] :as props}]
-  (let [on-size-change
+
+  (let [show-presets-dropdown? (mf/use-state false)
+
+        on-preset-selected
+        (fn [width height]
+          (do
+            (st/emit! (udw/update-rect-dimensions (:id shape) :width width))
+            (st/emit! (udw/update-rect-dimensions (:id shape) :height height))))
+
+        on-size-change
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
@@ -53,7 +65,25 @@
 
     [:div.element-set
      [:div.element-set-title (tr "workspace.options.measures")]
+
      [:div.element-set-content
+
+      [:div.row-flex
+       [:div.custom-select.flex-grow {:on-click #(reset! show-presets-dropdown? true)}
+        [:span (tr "workspace.options.size-presets")]
+        [:span.dropdown-button i/arrow-down]
+         [:& dropdown {:show @show-presets-dropdown?
+                       :on-close #(reset! show-presets-dropdown? false)}
+          [:ul.custom-select-dropdown
+            (for [size-preset +size-presets+]
+             (if-not (:width size-preset)
+              [:li.dropdown-label {:key (:name size-preset)}
+               [:span (:name size-preset)]]
+              [:li {:key (:name size-preset)
+                    :on-click #(on-preset-selected (:width size-preset) (:height size-preset))}
+               (:name size-preset)
+               [:span (:width size-preset) " x " (:height size-preset)]]))]]]]
+
       [:span (tr "workspace.options.size")]
 
       ;; WIDTH & HEIGHT
@@ -97,6 +127,64 @@
                             :value (-> (:y shape)
                                        (math/precision 2)
                                        (d/coalesce-str "0"))}]]]]]))
+
+(def +size-presets+
+  [{:name "APPLE"}
+   {:name "iPhone X"
+    :width 375
+    :height 812}
+   {:name "iPhone 6/7/8 Plus"
+    :width 414
+    :height 736}
+   {:name "iPhone 6/7/8"
+    :width 375
+    :height 667}
+   {:name "iPhone 5/SE"
+    :width 320
+    :height 568}
+   {:name "iPad"
+    :width 768
+    :height 1024}
+   {:name "iPad Pro 10.5in"
+    :width 834
+    :height 1112}
+   {:name "iPad Pro 12.9in"
+    :width 1024
+    :height 1366}
+   {:name "Watch 42mm"
+    :width 312
+    :height 390}
+   {:name "Watch 38mm"
+    :width 272
+    :height 340}
+
+   {:name "GOOGLE"}
+   {:name "Android mobile"
+    :width 360
+    :height 640}
+   {:name "Android tablet"
+    :width 768
+    :height 1024}
+
+   {:name "MICROSOFT"}
+   {:name "Surface Pro 3"
+    :width 1440
+    :height 960}
+   {:name "Surface Pro 4"
+    :width 1368
+    :height 912}
+
+   {:name "WEB"}
+   {:name "Web 1280"
+    :width 1280
+    :height 800}
+   {:name "Web 1366"
+    :width 1366
+    :height 768}
+   {:name "Web 1920"
+    :width 1920
+    :height 1080}
+   ])
 
 (mf/defc options
   [{:keys [shape] :as props}]

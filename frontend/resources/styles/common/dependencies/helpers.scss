@@ -48,6 +48,10 @@ $br-big: 8px;
   }
 }
 
+.flex-grow {
+ flex-grow: 1;
+}
+
 .column-half {
   margin-right: $small;
 }
