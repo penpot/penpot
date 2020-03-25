@@ -9,6 +9,7 @@
   (:require
    [cljsjs.react.dom.server]
    [rumext.alpha :as mf]
+   [uxbox.util.uuid :as uuid]
    [uxbox.util.math :as mth]
    [uxbox.main.geom :as geom]
    [uxbox.main.ui.shapes.frame :as frame]
@@ -29,12 +30,17 @@
 
 (defn- calculate-dimensions
   [data]
-  (let [shapes (vals (:shapes-by-id data))
+  (let [shapes (vals (:objects data))
         shape (geom/shapes->rect-shape shapes)
         width (+ (:x shape) (:width shape) 100)
         height (+ (:y shape) (:height shape) 100)]
     {:width (if (mth/nan? width) 100 width)
      :height (if (mth/nan? height) 100 height)}))
+
+(mf/defc frame-wrapper
+  [{:keys [shape objects] :as props}]
+  (let [childs (mapv #(get objects %) (:shapes shape))]
+    [:& frame/frame-shape {:shape shape :childs childs}]))
 
 (mf/defc shape-wrapper
   [{:keys [shape] :as props}]
@@ -51,20 +57,23 @@
 
 (mf/defc page-svg
   [{:keys [data] :as props}]
-  (let [shapes-by-id (:shapes-by-id data)
-        shapes (map #(get shapes-by-id %) (:shapes data []))
-        frame (map #(get shapes-by-id %) (:frame data []))
+  (let [objects (:objects data)
+        root    (get objects uuid/zero)
+        shapes  (->> (:shapes root)
+                     (map #(get objects %)))
         dim (calculate-dimensions data)]
     [:svg {:view-box (str "0 0 " (:width dim 0) " " (:height dim 0))
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
      [:& background]
-     [:*
-      (for [item frame]
-        [:& shape-wrapper {:shape item :key (:id item)}])
-      (for [item shapes]
-        [:& shape-wrapper {:shape item :key (:id item)}])]]))
+     (for [item (reverse shapes)]
+       (if (= (:type item) :frame)
+         [:& frame-wrapper {:shape item
+                            :key (:id item)
+                            :objects objects}]
+         [:& shape-wrapper {:shape item
+                            :key (:id item)}]))]))
 
 ;; (defn- render-html
 ;;   [component]
