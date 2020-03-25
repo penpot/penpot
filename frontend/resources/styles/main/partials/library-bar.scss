@@ -129,6 +129,14 @@
       }
     }
   }
+
+  &.profile-bar {
+    background-color: $color-gray-10;
+
+    .library-bar-inside {
+      display: none;
+    }
+  }
 }
 
 .projects-row {

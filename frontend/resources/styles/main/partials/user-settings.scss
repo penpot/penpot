@@ -1,51 +1,14 @@
-.user-settings {
-  flex-direction: column;
-}
-
-.user-settings-nav {
-  display: flex;
-
-  .user-settings-nav-inside {
-    align-items: center;
-    display: flex;
-    margin: 0 auto;
-
-    li {
-      background-color: transparent;
-      border: 1px solid $color-gray-20;
-      border-radius: $br-small;
-      cursor: pointer;
-      margin: $medium;
-      padding: $small $medium;
-
-      &:hover {
-        background-color: $color-gray-10;
-        border-color: transparent;
-      }
-
-      &.current {
-        background-color: $color-gray-50;
-        border: 0;
-        color: $color-primary;
-      }
-
-    }
-
-  }
-
-}
-
-.user-settings-content {
+.user-settings-page {
   display: flex;
   flex-direction: column;
   margin: 0 auto;
   width: 500px;
 
   .user-settings-label {
-    border-bottom: 1px solid $color-gray-60;
-    font-weight: bold;
-    margin: $x-small 0 $medium 0;
-    padding: $medium;
+    color: $color-black;
+    font-size: $fs15;
+    margin: $x-big 0 $x-small 0;
+    padding: $medium 0;
   }
 
   .input-text {
@@ -56,24 +19,24 @@
     margin-top: $medium;
   }
 
-}
-
-.profile-form,
-.password-form {
-  display: flex;
-  flex-direction: column;
-}
-
-.avatar-form {
-  align-items: center;
-  display: flex;
-
-  img {
-    border-radius: 50%;
-    flex-shrink: 0;
-    height: 120px;
-    margin-right: $medium;
-    width: 120px;
+  .profile-form,
+  .password-form {
+    display: flex;
+    flex-direction: column;
   }
 
+  .avatar-form {
+    align-items: center;
+    display: flex;
+
+    img {
+      border-radius: 50%;
+      flex-shrink: 0;
+      height: 120px;
+      margin-right: $medium;
+      width: 120px;
+    }
+
+  }
 }
+

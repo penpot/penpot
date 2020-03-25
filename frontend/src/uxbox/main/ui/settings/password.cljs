@@ -105,6 +105,5 @@
 
 (mf/defc password-page
   [props]
-  [:section.dashboard-content.user-settings
-   [:section.user-settings-content
-    [:& password-form]]])
+  [:section.user-settings-page
+   [:& password-form]])

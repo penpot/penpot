@@ -130,8 +130,7 @@
 
 (mf/defc profile-page
   []
-  [:section.dashboard-content.user-settings
-   [:section.user-settings-content
-    [:span.user-settings-label (tr "settings.profile.your-avatar")]
-    [:& profile-photo-form]
-    [:& profile-form]]])
+  [:section.user-settings-page
+   [:span.user-settings-label (tr "settings.profile.your-avatar")]
+   [:& profile-photo-form]
+   [:& profile-form]])

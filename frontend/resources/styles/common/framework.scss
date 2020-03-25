@@ -14,8 +14,7 @@
   border-radius: 3px;
   cursor: pointer;
   display: flex;
-  font-size: $fs16;
-  font-weight: bold;
+  font-size: $fs14;
   justify-content: center;
   padding: 1rem;
   transition: all .4s;
@@ -26,7 +25,7 @@
     flex-shrink: 0;
   }
   &.btn-small {
-    font-size: $fs14;
+    font-size: $fs12;
     padding: .7rem 1rem;
     line-height: 1.15;
   }
@@ -36,13 +35,13 @@
   @extend %btn;
   align-items: center;
   background: $color-primary;
-  color: $color-white;
+  color: $color-black;
   justify-content: center;
   display: flex;
   padding: 1rem;
   &:hover {
-    background: $color-primary-dark;
-    color: $color-white;
+    background: $color-black;
+    color: $color-primary;
   }
 }
 
@@ -137,8 +136,6 @@
   border: 1px solid $color-black;
   border-radius: 2px;
   color: $color-black;
-  font-size: $fs12;
-  font-weight: normal;
   padding: $x-small $small;
 
   &:hover {
@@ -150,7 +147,8 @@
 
 input[type=button][disabled],
 .btn-disabled {
-  opacity: .5;
+  background-color: $color-gray-10;
+  color: $color-gray-40;
   pointer-events: none;
 }
 
@@ -383,11 +381,11 @@ ul.slider-dots {
 
 input,
 select {
-  background-color: $color-gray-50;
+  background-color: $color-white;
   box-sizing: border-box;
   color: $color-gray-60;
   font-family: "sourcesanspro", sans-serif;
-  font-size: $fs16;
+  font-size: $fs14;
   margin-bottom: $medium;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -419,8 +417,8 @@ input[type="checkbox"]:focus {
 
 .input-text {
   border: none;
-  border-bottom: 1px solid $color-gray-60;
-  background-color: $color-gray-50;
+  border-bottom: 1px solid transparent;
+  background-color: $color-white;
   box-shadow: none;
   outline: none;
   padding: $small $big $small $small;
@@ -501,7 +499,7 @@ input.element-name {
     cursor: pointer;
     display: flex;
     margin-right: 15px;
-    font-size: 13px;
+    font-size: $fs13;
 
     &:before{
       content:"";
@@ -622,7 +620,7 @@ input[type=radio]:checked + label:before{
       position: absolute;
       left: 3.2px;
       top: 0px;
-      font-size: 11px;
+      font-size: $fs11;
       transition: border 0.2s linear 0s, color 0.2s linear 0s;
     }
 
@@ -663,7 +661,7 @@ input[type=radio]:checked + label:before{
       &::after {
         content:"✓";
         color: #000000;
-        font-size: 16px;
+        font-size: $fs16;
       }
 
     }
