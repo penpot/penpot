@@ -11,7 +11,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.data :refer [classnames normalize-props]]
+   [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
 
@@ -50,11 +50,11 @@
                              (gmt/rotate rotation center))))
 
         props (-> (attrs/extract-style-attrs shape)
-                  (assoc :cx cx
-                         :cy cy
-                         :rx rx
-                         :ry ry
-                         :transform transform
-                         :id (str "shape-" id)
-                         ))]
-    [:& "ellipse" props]))
+                  (itr/obj-assign!
+                   #js {:cx cx
+                        :cy cy
+                        :rx rx
+                        :ry ry
+                        :transform transform
+                        :id (str "shape-" id)}))]
+    [:> "ellipse" props]))

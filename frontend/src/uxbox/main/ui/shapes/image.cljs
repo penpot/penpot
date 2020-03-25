@@ -14,6 +14,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
+   [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]))
 
 ;; --- Image Wrapper
@@ -54,12 +55,13 @@
 
 
         props (-> (attrs/extract-style-attrs shape)
-                  (assoc :x x
-                         :y y
-                         :id (str "shape-" id)
-                         :preserveAspectRatio "none"
-                         :xlinkHref uri
-                         :transform transform
-                         :width width
-                         :height height))]
-    [:& "image" props]))
+                  (itr/obj-assign!
+                   #js {:x x
+                        :y y
+                        :transform transform
+                        :id (str "shape-" id)
+                        :preserveAspectRatio "none"
+                        :xlinkHref uri
+                        :width width
+                        :height height}))]
+    [:> "image" props]))

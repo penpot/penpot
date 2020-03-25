@@ -55,13 +55,13 @@
         i/image]
        [:li.tooltip.tooltip-right
         {:alt "Pencil tool"
-         :class (when (= selected-drawtool :path) "selected")
-         :on-click (partial select-drawtool :path)}
+         :class (when (= selected-drawtool :curve) "selected")
+         :on-click (partial select-drawtool :curve)}
         i/pencil]
        [:li.tooltip.tooltip-right
         {:alt "Curves tool"
-         :class (when (= selected-drawtool :curve) "selected")
-         :on-click (partial select-drawtool :curve)}
+         :class (when (= selected-drawtool :path) "selected")
+         :on-click (partial select-drawtool :path)}
         i/curve]]
 
       [:ul.left-toolbar-options.panels

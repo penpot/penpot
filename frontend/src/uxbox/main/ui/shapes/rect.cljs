@@ -12,7 +12,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.interop :as interop]
+   [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
 
@@ -51,8 +51,8 @@
                                 (+ x (/ width 2))
                                 (+ y (/ height 2))))
 
-        props (-> (attrs/extract-style-attrs2 shape)
-                  (interop/obj-assign!
+        props (-> (attrs/extract-style-attrs shape)
+                  (itr/obj-assign!
                    #js {:x x
                         :y y
                         :transform transform

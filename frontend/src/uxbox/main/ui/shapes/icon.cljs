@@ -12,7 +12,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.data :refer [classnames normalize-props]]
+   [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
 
@@ -52,18 +52,20 @@
         view-box (apply str (interpose " " (:view-box metadata)))
 
         props (-> (attrs/extract-style-attrs shape)
-                  (assoc :x x
-                         :y y
-                         :transform transform
-                         :id (str "shape-" id)
-                         :width width
-                         :height height
-                         :viewBox view-box
-                         :preserveAspectRatio "none"
-                         :dangerouslySetInnerHTML #js {:__html content}
-                         ))]
+                  (itr/obj-assign!
+                   #js {:x x
+                        :y y
+                        :transform transform
+                        :id (str "shape-" id)
+                        :width width
+                        :height height
+                        :viewBox view-box
+                        :preserveAspectRatio "none"
+                        :dangerouslySetInnerHTML #js {:__html content}}))]
+
+
     [:g {:transform transform}
-     [:& "svg" props]]))
+     [:> "svg" props]]))
 
 ;; --- Icon SVG
 

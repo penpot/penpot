@@ -25,8 +25,8 @@
    [uxbox.main.ui.shapes.path :as path]
    [uxbox.main.ui.shapes.rect :as rect]
    [uxbox.main.ui.shapes.text :as text]
-   [uxbox.util.data :refer [parse-int]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
 
@@ -43,7 +43,7 @@
         (= n-shape o-shape))))))
 
 (mf/defc shape-wrapper
-  {:wrap [wrap-memo-shape]}
+  {::mf/wrap [wrap-memo-shape]}
   [{:keys [shape] :as props}]
   (when (and shape (not (:hidden shape)))
     (case (:type shape)
@@ -85,7 +85,7 @@
 
 
 (mf/defc frame-wrapper
-  {:wrap [wrap-memo-frame]}
+  {::mf/wrap [wrap-memo-frame]}
   [{:keys [shape objects] :as props}]
   (when (and shape (not (:hidden shape)))
     (let [selected-iref (-> (mf/deps (:id shape))
@@ -121,17 +121,16 @@
         {:keys [id x y width height]} shape
 
         props (-> (attrs/extract-style-attrs shape)
-                  (assoc :x 0
-                         :y 0
-                         :id (str "shape-" id)
-                         :width width
-                         :height height
-                         ))
+                  (itr/obj-assign!
+                   #js {:x 0
+                        :y 0
+                        :id (str "shape-" id)
+                        :width width
+                        :height height}))
 
-        translate #(translate-to-frame % ds-modifier (gpt/point (- x) (- y)))
-        ]
+        translate #(translate-to-frame % ds-modifier (gpt/point (- x) (- y)))]
     [:svg {:x x :y y :width width :height height}
-     [:& "rect" props]
+     [:> "rect" props]
      (for [item (reverse childs)]
        [:& shape-wrapper {:shape (translate item) :key (:id item)}])]))
 

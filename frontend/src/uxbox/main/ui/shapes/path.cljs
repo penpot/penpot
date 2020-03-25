@@ -14,7 +14,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.data :refer [classnames normalize-props]]
+   [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]))
 
 ;; --- Path Wrapper
@@ -79,14 +79,15 @@
 
         pdata (render-path shape)
         props (-> (attrs/extract-style-attrs shape)
-                  (assoc :transform transform
-                         :id (str "shape-" id)
-                         :d pdata))]
+                  (itr/obj-assign!
+                   #js {:transform transform
+                        :id (str "shape-" id)
+                        :d pdata}))]
     (if background?
       [:g
        [:path {:stroke "transparent"
                :fill "transparent"
                :stroke-width "20px"
                :d pdata}]
-       [:& "path" props]]
-      [:& "path" props])))
+       [:> "path" props]]
+      [:> "path" props])))
