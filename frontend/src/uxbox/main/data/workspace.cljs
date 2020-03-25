@@ -11,6 +11,8 @@
   (:require
    [clojure.set :as set]
    [beicon.core :as rx]
+   [goog.object :as gobj]
+   [goog.events :as events]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
@@ -36,7 +38,11 @@
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]
    [uxbox.util.uuid :as uuid]
-   [vendor.randomcolor]))
+   [uxbox.util.webapi :as wapi]
+   [vendor.randomcolor])
+  (:import goog.events.EventType
+           goog.events.KeyCodes
+           goog.ui.KeyboardShortcutHandler))
 
 ;; TODO: temporal workaround
 (def clear-ruler nil)
@@ -358,6 +364,63 @@
       (let [local (:workspace-local state)]
         (assoc-in state [:workspace-cache page-id] local)))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Persistence
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare persist-changes)
+(declare diff-and-commit-changes)
+
+(defn initialize-page-persistence
+  [page-id]
+  (ptk/reify ::initialize-persistence
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state ::page-id page-id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stoper (rx/filter #(or (ptk/type? ::finalize %)
+                                   (ptk/type? ::initialize-page %))
+                              stream)
+            notifier (->> stream
+                          (rx/filter (ptk/type? ::commit-changes))
+                          (rx/debounce 2000)
+                          (rx/merge stoper))]
+        (rx/merge
+         (->> stream
+              (rx/filter (ptk/type? ::commit-changes))
+              (rx/map deref)
+              (rx/buffer-until notifier)
+              (rx/map vec)
+              (rx/filter (complement empty?))
+              (rx/map #(persist-changes page-id %))
+              (rx/take-until (rx/delay 100 stoper)))
+         (->> stream
+              (rx/filter #(satisfies? IBatchedChange %))
+              (rx/debounce 200)
+              (rx/map (fn [_] (diff-and-commit-changes page-id)))
+              (rx/take-until stoper)))))))
+
+(defn persist-changes
+  [page-id changes]
+  (ptk/reify ::persist-changes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [session-id (:session-id state)
+            page (get-in state [:pages page-id])
+            changes (->> changes
+                         (mapcat identity)
+                         (map #(assoc % :session-id session-id))
+                         (vec))
+            params {:id (:id page)
+                    :revn (:revn page)
+                    :changes changes}]
+        (->> (rp/mutation :update-page params)
+             (rx/map shapes-changes-commited))))))
+
+
 (defn- generate-operations
   [ma mb]
   (let [ma-keys (set (keys ma))
@@ -409,60 +472,6 @@
             undo-changes (generate-changes curr prev)]
         (when-not (empty? changes)
           (rx/of (commit-changes changes undo-changes)))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Data Persistence
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(declare persist-changes)
-
-(defn initialize-page-persistence
-  [page-id]
-  (ptk/reify ::initialize-persistence
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state ::page-id page-id))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stoper (rx/filter #(or (ptk/type? ::finalize %)
-                                   (ptk/type? ::initialize-page %))
-                              stream)
-            notifier (->> stream
-                          (rx/filter (ptk/type? ::commit-changes))
-                          (rx/debounce 2000)
-                          (rx/merge stoper))]
-        (rx/merge
-         (->> stream
-              (rx/filter (ptk/type? ::commit-changes))
-              (rx/map deref)
-              (rx/buffer-until notifier)
-              (rx/map vec)
-              (rx/filter (complement empty?))
-              (rx/map #(persist-changes page-id %))
-              (rx/take-until (rx/delay 100 stoper)))
-         (->> stream
-              (rx/filter #(satisfies? IBatchedChange %))
-              (rx/debounce 200)
-              (rx/map (fn [_] (diff-and-commit-changes page-id)))
-              (rx/take-until stoper)))))))
-
-(defn persist-changes
-  [page-id changes]
-  (ptk/reify ::persist-changes
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [session-id (:session-id state)
-            page (get-in state [:pages page-id])
-            changes (->> changes
-                         (mapcat identity)
-                         (map #(assoc % :session-id session-id))
-                         (vec))
-            params {:id (:id page)
-                    :revn (:revn page)
-                    :changes changes}]
-        (->> (rp/mutation :update-page params)
-             (rx/map shapes-changes-commited))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching & Uploading
@@ -896,7 +905,7 @@
   in the current workspace page."
   [state]
   (let [page-id (::page-id state)
-        objects (get-in state [:workspace-page page-id :objects])]
+        objects (get-in state [:workspace-data page-id :objects])]
     (into #{} (map :name) (vals objects))))
 
 (defn impl-generate-unique-name
@@ -1043,14 +1052,12 @@
                                {:type :add-obj
                                 :id (:id obj)
                                 :frame-id frame-id
-                                :obj (assoc obj :frame-id frame-id)
-                                :session-id (:session-id state)}))
+                                :obj (assoc obj :frame-id frame-id)}))
                            (:shapes frame))
 
             uchanges (mapv (fn [rch]
                              {:type :del-obj
-                              :id (:id rch)
-                              :session-id (:session-id state)})
+                              :id (:id rch)})
                            rchanges)
 
             shapes (mapv :id rchanges)
@@ -1068,7 +1075,7 @@
                      :id frame-id
                      :session-id (:session-id state)}]
         (rx/of (commit-changes (d/concat [rchange] rchanges)
-                               (d/concat [uchange] uchanges)
+                               (d/concat [] uchanges [uchange])
                                {:commit-local? true}))))))
 
 
@@ -1094,7 +1101,6 @@
 
           :else
           (rx/empty))))))
-
 
 
 ;; --- Toggle shape's selection status (selected or deselected)
@@ -1980,6 +1986,95 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Clipboard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def copy-selected
+  (letfn [(prepare-selected [state selected]
+            (let [data (reduce #(prepare %1 state %2) {} selected)]
+              {:type :copied-shapes
+               :data (assoc data :selected selected)}))
+
+          (prepare [result state id]
+            (let [page-id (::page-id state)
+                  objects (get-in state [:workspace-data page-id :objects])
+                  object  (get objects id)]
+              (cond-> (assoc-in result [:objects id] object)
+                (= :frame (:type object))
+                (as-> $ (reduce #(prepare %1 state %2) $ (:shapes object))))))
+
+          (on-copy-error [error]
+            (js/console.error "Clipboard blocked:" error)
+            (rx/empty))]
+
+    (ptk/reify ::copy-selected
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [selected (get-in state [:workspace-local :selected])
+              cdata    (prepare-selected state selected)]
+          (->> (rx/from (wapi/write-to-clipboard cdata))
+               (rx/catch on-copy-error)
+               (rx/ignore)))))))
+
+
+(defn- paste-impl
+  [{:keys [selected objects] :as data}]
+  (letfn [(prepare-change [id]
+            (let [obj (get objects id)]
+              ;; (prn "prepare-change" id obj)
+              (if (= :frame (:type obj))
+                (prepare-frame-change obj)
+                (prepare-shape-change obj uuid/zero))))
+
+          (prepare-shape-change [obj frame-id]
+            (let [id (uuid/next)]
+              {:type :add-obj
+               :id id
+               :frame-id frame-id
+               :obj (assoc obj :id id :frame-id frame-id)}))
+
+          (prepare-frame-change [obj]
+            (let [frame-id (uuid/next)
+                  sch (->> (map #(get objects %) (:shapes obj))
+                           (map #(prepare-shape-change % frame-id)))
+                  fch {:type :add-obj
+                       :id frame-id
+                       :frame-id uuid/zero
+                       :obj (-> obj
+                                (assoc :id frame-id)
+                                (assoc :frame-id uuid/zero)
+                                (assoc :shapes (mapv :id sch)))}]
+              (d/concat [fch] sch)))]
+
+  (ptk/reify ::paste-impl
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [rchanges (->> (map prepare-change selected)
+                          (flatten))
+            uchanges (map (fn [ch]
+                            {:type :del-obj
+                             :id (:id ch)})
+                          rchanges)]
+        (cljs.pprint/pprint rchanges)
+        (rx/of (commit-changes (vec rchanges)
+                               (vec (reverse uchanges))
+                               {:commit-local? true})))))))
+
+(def paste
+  (ptk/reify ::paste
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rx/from (wapi/read-from-clipboard))
+           (rx/filter #(= :copied-shapes (:type %)))
+           (rx/pr-log "pasting:")
+           (rx/map :data)
+           (rx/map paste-impl)
+           (rx/catch (fn [err]
+                       (js/console.error "Clipboard blocked:" err)
+                       (rx/empty)))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1998,3 +2093,63 @@
             pages (vec (concat before [id] after))]
         (assoc-in state [:projects (:project-id page) :pages] pages)))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shortcuts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def shortcuts
+  {"ctrl+shift+m" #(rx/of (toggle-layout-flag :sitemap))
+   "ctrl+shift+f" #(rx/of (toggle-layout-flag :drawtools))
+   "ctrl+shift+i" #(rx/of (toggle-layout-flag :icons))
+   "ctrl+shift+l" #(rx/of (toggle-layout-flag :layers))
+   "ctrl+0" #(rx/of (reset-zoom))
+   "ctrl+d" #(rx/of duplicate-selected)
+   "ctrl+z" #(rx/of undo)
+   "ctrl+shift+z" #(rx/of redo)
+   "ctrl+y" #(rx/of redo)
+   "ctrl+q" #(rx/of reinitialize-undo)
+   "ctrl+b" #(rx/of (select-for-drawing :rect))
+   "ctrl+e" #(rx/of (select-for-drawing :circle))
+   "ctrl+t" #(rx/of (select-for-drawing :text))
+   "ctrl+c" #(rx/of copy-selected)
+   "ctrl+v" #(rx/of paste)
+   "esc" #(rx/of :interrupt deselect-all)
+   "delete" #(rx/of delete-selected)
+   "ctrl+up" #(rx/of (vertical-order-selected :up))
+   "ctrl+down" #(rx/of (vertical-order-selected :down))
+   "ctrl+shift+up" #(rx/of (vertical-order-selected :top))
+   "ctrl+shift+down" #(rx/of (vertical-order-selected :bottom))
+   "shift+up" #(rx/of (move-selected :up true))
+   "shift+down" #(rx/of (move-selected :down true))
+   "shift+right" #(rx/of (move-selected :right true))
+   "shift+left" #(rx/of (move-selected :left true))
+   "up" #(rx/of (move-selected :up false))
+   "down" #(rx/of (move-selected :down false))
+   "right" #(rx/of (move-selected :right false))
+   "left" #(rx/of (move-selected :left false))})
+
+(def initialize-shortcuts
+  (letfn [(initialize [sink]
+            (let [handler (KeyboardShortcutHandler. js/document)]
+
+              ;; Register shortcuts.
+              (run! #(.registerShortcut handler % %) (keys shortcuts))
+
+              ;; Initialize shortcut listener.
+              (let [event KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED
+                    callback #(sink (gobj/get % "identifier"))
+                    key (events/listen handler event callback)]
+                (fn []
+                  (events/unlistenByKey key)
+                  (.clearKeyListener handler)))))]
+    (ptk/reify ::initialize-shortcuts
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [stoper (rx/filter #(= ::finalize-shortcuts %) stream)]
+          (->> (rx/create initialize)
+               (rx/pr-log "[debug]: shortcut:")
+               (rx/map #(get shortcuts %))
+               (rx/filter fn?)
+               (rx/merge-map (fn [f] (f)))
+               (rx/take-until stoper)))))))

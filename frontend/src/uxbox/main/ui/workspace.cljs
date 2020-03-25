@@ -26,7 +26,6 @@
    [uxbox.main.ui.workspace.header :refer [header]]
    [uxbox.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [uxbox.main.ui.workspace.scroll :as scroll]
-   [uxbox.main.ui.workspace.shortcuts :as shortcuts]
    [uxbox.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-dialog]]
    [uxbox.main.ui.workspace.left-toolbar :refer [left-toolbar]]
@@ -119,10 +118,11 @@
    {:fn #(st/emit! dw/initialize-layout)})
 
   (mf/use-effect
-   {:deps (mf/deps file-id page-id)
+   {:deps (mf/deps file-id)
     :fn (fn []
-          (let [sub (shortcuts/init)]
-            #(rx/cancel! sub)))})
+          (st/emit! dw/initialize-shortcuts)
+          #(st/emit! ::dw/finalize-shortcuts))})
+
   (let [file (mf/deref refs/workspace-file)
         page (mf/deref refs/workspace-page)
         layout (mf/deref refs/workspace-layout)]
