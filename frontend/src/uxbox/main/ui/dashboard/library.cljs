@@ -49,7 +49,7 @@
        [:& colorpicker {:value (:current-color @state)
                         :colors (into-array @most-used-colors)
                         :on-change #(swap! state assoc :current-color %)}]
-     
+
        [:input.btn-primary {:type "button"
                             :value (tr "ds.button.save")
                             :on-click accept}]
@@ -205,9 +205,9 @@
      [:div.library-card-image
       [:svg {:view-box (->> metadata :view-box (str/join " "))
              :width (:width metadata)
-             :height (:height metadata) 
+             :height (:height metadata)
              :dangerouslySetInnerHTML {:__html content}}]]
-     
+
      [:div.library-card-footer
       [:div.library-card-footer-name name]
       [:div.library-card-footer-timestamp time]
@@ -321,22 +321,26 @@
         last-deleted-library (mf/deref last-deleted-library-ref)
         selected-library (first (filter #(= (:id %) library-id) libraries))]
 
-    (mf/use-effect {:fn #(if (and (nil? library-id) (> (count libraries) 0))
-                           (let [path (keyword (str "dashboard-library-" (name section)))]
-                             (st/emit! (rt/nav path {:team-id team-id :library-id (:id (first libraries))}))))
-                    :deps (mf/deps libraries)})
+    (mf/use-effect
+     (mf/deps libraries)
+     #(if (and (nil? library-id) (> (count libraries) 0))
+        (let [path (keyword (str "dashboard-library-" (name section)))]
+          (st/emit! (rt/nav path {:team-id team-id :library-id (:id (first libraries))})))))
 
-    (mf/use-effect {:fn #(if (and library-id (not (some (fn [{id :id}] (= library-id id)) libraries)))
-                           (let [path (keyword (str "dashboard-library-" (name section) "-index"))]
-                             (st/emit! (rt/nav path {:team-id team-id}))))
-                    :deps (mf/deps libraries)})
+    (mf/use-effect
+     (mf/deps libraries)
+     #(if (and library-id (not (some (fn [{id :id}] (= library-id id)) libraries)))
+        (let [path (keyword (str "dashboard-library-" (name section) "-index"))]
+          (st/emit! (rt/nav path {:team-id team-id})))))
 
-    (mf/use-effect {:fn #(st/emit! (dlib/retrieve-libraries section team-id))                  
-                    :deps (mf/deps section team-id)})
+    (mf/use-effect
+     (mf/deps section team-id)
+     #(st/emit! (dlib/retrieve-libraries section team-id)))
 
-    (mf/use-effect {:fn #(when (and library-id (not= last-deleted-library library-id))
-                           (st/emit! (dlib/retrieve-library-data section library-id)))
-                    :deps (mf/deps library-id last-deleted-library)})
+    (mf/use-effect
+     (mf/deps library-id last-deleted-library)
+     #(when (and library-id (not= last-deleted-library library-id))
+        (st/emit! (dlib/retrieve-library-data section library-id))))
 
     [:div.library-page
      [:& library-header {:section section :team-id team-id}]

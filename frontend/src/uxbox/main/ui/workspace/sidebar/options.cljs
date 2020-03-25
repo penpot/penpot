@@ -41,10 +41,10 @@
 
 (mf/defc shape-options-wrapper
   [{:keys [shape-id page-id] :as props}]
-  (let [shape-iref (mf/use-memo
-                    {:deps (mf/deps shape-id page-id)
-                     :fn #(-> (l/in [:workspace-data page-id :objects shape-id])
-                              (l/derive st/state))})
+  (let [shape-iref (-> (mf/deps shape-id page-id)
+                       (mf/use-memo
+                        #(-> (l/in [:workspace-data page-id :objects shape-id])
+                             (l/derive st/state))))
         shape (mf/deref shape-iref)]
     [:& shape-options {:shape shape}]))
 

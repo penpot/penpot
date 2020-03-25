@@ -1,4 +1,4 @@
-(function(react){'use strict';react=react&&react.hasOwnProperty('default')?react['default']:react;var global$1 = (typeof global !== "undefined" ? global :
+(function(react){'use strict';react=react&&Object.prototype.hasOwnProperty.call(react,'default')?react['default']:react;var global$1 = (typeof global !== "undefined" ? global :
             typeof self !== "undefined" ? self :
             typeof window !== "undefined" ? window : {});var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 

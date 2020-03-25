@@ -107,13 +107,14 @@
 (declare remote-user-cursors)
 (declare frames)
 
-(mf/defrc frames-wrapper
+(mf/defc frames-wrapper
+  {::mf/wrap-props false}
   [props]
   (let [page     (gobj/get props "page")
         page-id  (:id page)
-        data-ref (mf/use-memo {:fn #(-> (l/in [:workspace-data page-id])
-                                        (l/derive st/state))
-                               :deps (mf/deps page-id)})
+        data-ref (-> (mf/deps page-id)
+                     (mf/use-memo #(-> (l/in [:workspace-data page-id])
+                                       (l/derive st/state))))
         data (mf/deref data-ref)]
     [:& frames {:data data}]))
 
@@ -225,7 +226,7 @@
 
         translate-point-to-viewport
         (fn [pt]
-          (let [viewport (mf/ref-node viewport-ref)
+          (let [viewport (mf/ref-val viewport-ref)
                 brect (.getBoundingClientRect viewport)
                 brect (gpt/point (d/parse-integer (.-left brect))
                                  (d/parse-integer (.-top brect)))]

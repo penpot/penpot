@@ -10,7 +10,6 @@
   (:require [beicon.core :as rx]
             [potok.core :as ptk]
             [uxbox.main.refs :as refs]
-            [rumext.core :as mx :include-macros true]
             [uxbox.util.dom :as dom]
             [uxbox.util.geom.point :as gpt]))
 

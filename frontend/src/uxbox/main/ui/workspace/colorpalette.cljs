@@ -73,13 +73,13 @@
         on-left-arrow-click
         (fn [event]
           (when (> offset 0)
-            (let [element (mf/ref-node container-child)]
+            (let [element (mf/ref-val container-child)]
               (swap! local update :offset dec))))
 
         on-right-arrow-click
         (fn [event]
           (when (< offset invisible)
-            (let [element (mf/ref-node container-child)]
+            (let [element (mf/ref-val container-child)]
               (swap! local update :offset inc))))
 
         on-scroll
@@ -90,12 +90,12 @@
 
         after-render
         (fn []
-          (let [dom (mf/ref-node container)
+          (let [dom (mf/ref-val container)
                 width (.-clientWidth dom)]
             (when (not= (:width @local) width)
               (swap! local assoc :width width))))]
 
-    (mf/use-effect {:deps true :fn after-render})
+    (mf/use-effect nil after-render)
 
     [:div.color-palette
      [:div.color-palette-actions

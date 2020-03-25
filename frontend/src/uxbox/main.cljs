@@ -17,7 +17,6 @@
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
    [uxbox.main.ui :as ui]
-   [uxbox.main.ui.lightbox :refer [lightbox]]
    [uxbox.main.ui.modal :refer [modal]]
    [uxbox.main.ui.loader :refer [loader]]
    [uxbox.util.dom :as dom]
@@ -58,7 +57,6 @@
       (st/emit! udu/fetch-profile))
 
     (mf/mount (mf/element ui/app) (dom/get-element "app"))
-    (mf/mount (lightbox) (dom/get-element "lightbox"))
     (mf/mount (mf/element modal) (dom/get-element "modal"))
     (mf/mount (mf/element loader) (dom/get-element "loader"))
 
@@ -78,7 +76,7 @@
   []
   (remove-watch html-history/path ::main)
   (mf/unmount (dom/get-element "app"))
-  (mf/unmount (dom/get-element "lightbox"))
+  (mf/unmount (dom/get-element "modal"))
   (mf/unmount (dom/get-element "loader"))
   (init-ui))
 

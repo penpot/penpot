@@ -39,6 +39,6 @@
 
     (let [initial (mf/use-memo initial-state)
           state   (mf/use-state initial)]
-      (mf/use-effect {:deps true :fn #(after-render state)})
+      (mf/use-effect nil #(after-render state))
       (for [item (:current @state)]
         (children item)))))

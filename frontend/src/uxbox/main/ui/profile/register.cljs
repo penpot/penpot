@@ -115,6 +115,6 @@
   [props]
   [:div.login
    [:div.login-body
-    (messages-widget)
+    [:& messages-widget]
     [:a i/logo]
     [:& register-form]]])

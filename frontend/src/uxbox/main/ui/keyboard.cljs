@@ -5,11 +5,11 @@
   (fn [e]
     (= (.-keyCode e) keycode)))
 
-(defn ctrl?
+(defn ^boolean ctrl?
   [event]
   (.-ctrlKey event))
 
-(defn shift?
+(defn ^boolean shift?
   [event]
   (.-shiftKey event))
 

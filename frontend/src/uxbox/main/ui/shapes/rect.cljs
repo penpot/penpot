@@ -20,7 +20,8 @@
 
 (declare rect-shape)
 
-(mf/defrc rect-wrapper
+(mf/defc rect-wrapper
+  {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
         on-mouse-down #(common/on-mouse-down % shape)
@@ -31,7 +32,8 @@
 
 ;; --- Rect Shape
 
-(mf/defrc rect-shape
+(mf/defc rect-shape
+  {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
         ds-modifier (:displacement-modifier shape)

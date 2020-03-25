@@ -94,7 +94,8 @@
        :d
        "M134.482 157.147v25l518.57.008.002-25-518.572-.008z"}]]]))
 
-(mf/defrc debug-icons-preview
+(mf/defc debug-icons-preview
+  {::mf/wrap-props false}
   [props]
   [:section.debug-icons-preview
    (for [[key val] (ns-publics 'uxbox.builtins.icons)]

@@ -62,8 +62,6 @@
 (declare frame-shape)
 (declare translate-to-frame)
 
-(def kaka [1 2 3])
-
 (defn wrap-memo-frame
   ([component]
    (js/React.memo
@@ -90,9 +88,8 @@
   {:wrap [wrap-memo-frame]}
   [{:keys [shape objects] :as props}]
   (when (and shape (not (:hidden shape)))
-    (let [selected-iref (mf/use-memo
-                         {:fn #(refs/make-selected (:id shape))
-                          :deps (mf/deps (:id shape))})
+    (let [selected-iref (-> (mf/deps (:id shape))
+                            (mf/use-memo #(refs/make-selected (:id shape))))
           selected? (mf/deref selected-iref)
           on-mouse-down #(common/on-mouse-down % shape)
           on-context-menu #(common/on-context-menu % shape)

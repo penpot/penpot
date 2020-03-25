@@ -5,7 +5,8 @@
    [uxbox.main.ui.components.dropdown :refer [dropdown-container]]
    [uxbox.util.uuid :as uuid]))
 
-(mf/defrc context-menu
+(mf/defc context-menu
+  {::mf/wrap-props false}
   [props]
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")

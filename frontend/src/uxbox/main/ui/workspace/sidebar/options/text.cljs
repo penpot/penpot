@@ -7,7 +7,6 @@
 
 (ns uxbox.main.ui.workspace.sidebar.options.text
   (:require
-   [rumext.core :as mx]
    [rumext.alpha :as mf]
    [potok.core :as ptk]
    [uxbox.common.data :as d]

@@ -28,8 +28,9 @@
   (let [search-result (mf/deref search-result-ref)
         locale (i18n/use-locale)]
     (mf/use-effect
-     {:fn #(st/emit! (dsh/initialize-search team-id search-term))
-      :deps (mf/deps search-term)})
+     (mf/deps search-term)
+     #(st/emit! (dsh/initialize-search team-id search-term)))
+
     [:section.search-page
       [:section.dashboard-grid
        [:div.dashboard-grid-content
