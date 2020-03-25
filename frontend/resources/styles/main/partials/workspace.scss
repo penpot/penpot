@@ -173,3 +173,13 @@
   }
 
 }
+
+.workspace-frame-label {
+  fill: $color-gray-dark;
+  font-size: $fs12;
+}
+
+.selected .workspace-frame-label {
+  fill: $color-primary-dark;
+}
+
