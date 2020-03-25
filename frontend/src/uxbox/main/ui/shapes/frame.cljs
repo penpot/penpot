@@ -94,8 +94,13 @@
           on-mouse-down #(common/on-mouse-down % shape)
           on-context-menu #(common/on-context-menu % shape)
           shape (merge frame-default-props shape)
+          {:keys [x y width height]} shape
 
           childs (mapv #(get objects %) (:shapes shape))
+
+          ds-modifier (:displacement-modifier shape)
+          label-pos (cond-> (gpt/point x (- y 10))
+                      (gmt/matrix? ds-modifier) (gpt/transform ds-modifier))
 
           on-double-click
           (fn [event]
@@ -106,6 +111,13 @@
            :on-context-menu on-context-menu
            :on-double-click on-double-click
            :on-mouse-down on-mouse-down}
+       [:text {:x (:x label-pos)
+               :y (:y label-pos)
+               :width width
+               :height 20
+               :class-name "workspace-frame-label"
+               :on-click on-double-click} ; user may also select with single click in the label
+        (:name shape)]
        [:& frame-shape {:shape shape :childs childs}]])))
 
 (mf/defc frame-shape
