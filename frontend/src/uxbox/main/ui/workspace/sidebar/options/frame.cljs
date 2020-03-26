@@ -31,9 +31,17 @@
 
         on-preset-selected
         (fn [width height]
-          (do
-            (st/emit! (udw/update-rect-dimensions (:id shape) :width width))
-            (st/emit! (udw/update-rect-dimensions (:id shape) :height height))))
+          (st/emit! (udw/update-rect-dimensions (:id shape) :width width)
+                    (udw/update-rect-dimensions (:id shape) :height height)))
+
+        on-orientation-clicked
+        (fn [orientation]
+         (let [width (:width shape)
+               height (:height shape)
+               new-width (if (= orientation :horiz) (max width height) (min width height))
+               new-height (if (= orientation :horiz) (min width height) (max width height))]
+            (st/emit! (udw/update-rect-dimensions (:id shape) :width new-width)
+                      (udw/update-rect-dimensions (:id shape) :height new-height))))
 
         on-size-change
         (fn [event attr]
@@ -82,7 +90,10 @@
               [:li {:key (:name size-preset)
                     :on-click #(on-preset-selected (:width size-preset) (:height size-preset))}
                (:name size-preset)
-               [:span (:width size-preset) " x " (:height size-preset)]]))]]]]
+               [:span (:width size-preset) " x " (:height size-preset)]]))]]]
+       [:span.orientation-icon {on-click #(on-orientation-clicked :vert)} i/size-vert]
+       [:span.orientation-icon {on-click #(on-orientation-clicked :horiz)} i/size-horiz]
+       ]
 
       [:span (tr "workspace.options.size")]
 
