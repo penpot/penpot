@@ -101,9 +101,11 @@
 
 (mf/defc viewport-context-menu
   [{:keys [mdata] :as props}]
-  [:*
-   [:li i/copy [:span "paste (TODO)"]]
-   [:li i/copy [:span "copy as svg (TODO)"]]])
+  (let [do-paste #(st/emit! dw/paste)]
+    [:*
+     [:& menu-entry {:title "Paste"
+                     :shortcut "Ctrl + v"
+                     :on-click do-paste}]]))
 
 (mf/defc context-menu
   [props]
