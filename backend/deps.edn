@@ -5,7 +5,7 @@
  :deps
  {org.clojure/clojure {:mvn/version "1.10.1"}
   funcool/promesa {:mvn/version "5.1.0"}
-  funcool/cuerdas {:mvn/version "2.2.1"}
+  funcool/cuerdas {:mvn/version "2020.03.26-3"}
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "0.5.0"}
