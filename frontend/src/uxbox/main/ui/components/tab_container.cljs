@@ -8,7 +8,6 @@
 
 (mf/defc tab-container
   [{:keys [children selected on-change-tab]}]
-  (.log js/console (map #(-> % .-props .-title) children))
   (let [first-id (-> children first .-props .-id)
         state (mf/use-state {:selected first-id})
         selected (or selected (:selected @state))
@@ -20,7 +19,8 @@
      [:div.tab-container-tabs
       (for [tab children]
         [:div.tab-container-tab-title
-         {:on-click (partial handle-select tab)
+         {:key (str "tab-" (-> tab .-props .-id))
+          :on-click (partial handle-select tab)
           :class (when (= selected (-> tab .-props .-id)) "current")}
          (-> tab .-props .-title)])]
      [:div.tab-container-content

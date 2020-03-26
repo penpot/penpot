@@ -41,9 +41,8 @@
 (mf/defc icons-tab [{:keys [libraries]}]
   (when (and libraries (-> libraries count (> 0)))
     (let [state (mf/use-state {:selected-library (-> libraries first :id)})]
-      (mf/use-effect {:fn (fn []
-                            (st/emit! (dlib/retrieve-library-data :icons (:selected-library @state))))
-                      :deps (mf/deps (:selected-library @state))})
+      (mf/use-effect (mf/deps (:selected-library @state))
+                     #(st/emit! (dlib/retrieve-library-data :icons (:selected-library @state))))
 
       [:div.library-tab.icons-tab
        [:select.input-select.library-tab-libraries
@@ -67,9 +66,8 @@
 (mf/defc images-tab [{:keys [libraries]}]
   (when (and libraries (-> libraries count (> 0)))
     (let [state (mf/use-state {:selected-library (-> libraries first :id)})]
-      (mf/use-effect {:fn (fn []
-                            (st/emit! (dlib/retrieve-library-data :images (:selected-library @state))))
-                      :deps (mf/deps (:selected-library @state))})
+      (mf/use-effect (mf/deps (:selected-library @state))
+                     #(st/emit! (dlib/retrieve-library-data :images (:selected-library @state))))
 
       [:div.library-tab.images-tab
        [:select.input-select.library-tab-libraries
@@ -91,16 +89,17 @@
   [{:keys [key]}]
   (let [team-id (-> project-ref mf/deref :team-id)
         locale (i18n/use-locale)]
-    (mf/use-effect {:fn (fn []
-                          (st/emit! (dlib/retrieve-libraries :icons))
-                          (st/emit! (dlib/retrieve-libraries :images)))
-                    :deps (mf/deps key)})
-    (mf/use-effect {:fn (fn []
-                          (when team-id
-                            (do 
-                              (st/emit! (dlib/retrieve-libraries :icons team-id))
-                              (st/emit! (dlib/retrieve-libraries :images team-id)))))
-                    :deps (mf/deps team-id)})
+    (mf/use-effect
+     (mf/deps key)
+     #(do
+        (st/emit! (dlib/retrieve-libraries :icons))
+        (st/emit! (dlib/retrieve-libraries :images))))
+    (mf/use-effect
+     (mf/deps team-id)
+     #(when team-id
+        (do 
+          (st/emit! (dlib/retrieve-libraries :icons team-id))
+          (st/emit! (dlib/retrieve-libraries :images team-id)))))
     [:div#libraries.tool-window
      [:div.libraries-window-bar
       [:div.libraries-window-bar-title "Libraries"]
@@ -117,4 +116,5 @@
        [:& tab-element
         {:id :images :title "Images"}
         [:& images-tab {:libraries (-> (libraries-ref :images) mf/deref vals flatten)}]]]]]))
+
 
