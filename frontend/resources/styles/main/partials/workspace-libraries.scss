@@ -3,6 +3,11 @@
     grid-template-columns: repeat(2, 50%);
     padding: 0.5rem;
     align-items: center;
+
+    & .context-menu-items {
+        left: initial;
+        right: 0;
+    }
 }
 
 .libraries-window-bar-title {

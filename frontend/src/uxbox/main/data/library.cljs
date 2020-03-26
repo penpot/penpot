@@ -56,15 +56,15 @@
                      :images :images
                      :palettes :colors)]
         (->> (rp/query! method {:library-id library-id})
-             (rx/map (partial retrieve-library-data-result library-id)))))))
+             (rx/map (partial retrieve-library-data-result type library-id)))))))
 
 (defn retrieve-library-data-result
-  [library-id data]
+  [type library-id data]
   (ptk/reify ::retrieve-library-data-result
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:library :selected-items library-id] data)))))
+          (assoc-in [:library-items type library-id] data)))))
 
 
 ;; Create library
@@ -178,7 +178,7 @@
       (let [update-fn (fn [items]
                         (filterv #(not= item-id (:id %)) items))]
         (-> state
-            (update-in [:library :selected-items library-id] update-fn))))))
+            (update-in [:library-items type library-id] update-fn))))))
 
 ;; Batch delete
 
@@ -207,4 +207,4 @@
             update-fn (fn [items]
                         (filterv #(not (item-ids-set (:id %))) items))]
         (-> state
-            (update-in [:library :selected-items library-id] update-fn))))))
+            (update-in [:library-items type library-id] update-fn))))))

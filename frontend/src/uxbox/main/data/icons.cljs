@@ -203,7 +203,7 @@
     (update [_ state]
       (let [{:keys [id] :as item} (assoc item :type :icon)]
         (-> state
-            (update-in [:library :selected-items library-id] #(into [item] %)))))))
+            (update-in [:library-items :icons library-id] #(into [item] %)))))))
 
 ;; ;; --- Icon Persisted
 ;; 

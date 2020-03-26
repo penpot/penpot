@@ -21,7 +21,8 @@
   .settings-bar-inside {
     align-items: center;
     display: grid;
-
+    grid-template-columns: 100%;
+    
     &[data-layout*='layers'] {
         grid-template-rows: 30% 70%;
     }

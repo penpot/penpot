@@ -52,24 +52,30 @@
       left: 280px;
       width: calc(100% - 280px);
   }
+
+  & .context-menu-items {
+      bottom: 1.5rem;
+      top: initial;
+      min-width: 10rem;
+  }
 }
 
 .color-palette-actions {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  margin-right: .5rem;
-
-  border: 1px solid #1F1F1F;
-  align-self: stretch;
-  padding: 0.5rem;
-  justify-content: center;
- 
-  .color-palette-buttons {
-    align-items: center;
+    align-self: stretch;
+    border: 1px solid #1F1F1F;
+    cursor: pointer;
     display: flex;
-    justify-content: space-around;
-  }
+    flex-direction: column;
+    flex-shrink: 0;
+    justify-content: center;
+    margin-right: .5rem;
+    padding: 0.5rem;
+    
+    .color-palette-buttons {
+        align-items: center;
+        display: flex;
+        justify-content: space-around;
+    }
 }
 
 .color-palette-actions-button {
@@ -115,6 +121,7 @@
   display: flex;
   overflow: hidden;
   width: 100%;
+  height: 4.8rem;
   padding: 0.25rem;
 }
 

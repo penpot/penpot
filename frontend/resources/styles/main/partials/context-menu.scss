@@ -17,7 +17,9 @@
     border-radius: $br-small;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
     left: -$size-4;
+    max-height: 30rem;
     min-width: 7rem;
+    overflow: auto;
     position: absolute;
     top: $size-3;
 }
@@ -27,9 +29,25 @@
     display: block;
     font-size: $fs12;
     padding: $size-2 $size-4;
+    white-space: nowrap;
 
     &:hover {
         color: $color-black;
-        background: $color-primary-lighter;
+        background-color: $color-primary-lighter;
     } 
 }
+
+.context-menu.is-selectable {
+    & .context-menu-action {
+        padding-left: 1.5rem;
+    }
+
+    & .context-menu-item.is-selected .context-menu-action {
+        background-image: url(/images/icons/tick.svg);
+        background-repeat: no-repeat;
+        background-position: 5% 48%;
+        background-size: 10px;
+        font-weight: bold;
+    } 
+}
+

@@ -395,5 +395,5 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:library :selected-items library-id] #(into [item] %))))))
+          (update-in [:library-items :images library-id] #(into [item] %))))))
 

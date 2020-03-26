@@ -305,8 +305,8 @@
   (-> (comp (l/key :library) (l/key section) (l/key team-id))
       (l/derive st/state)))
 
-(defn selected-items-ref [library-id]
-  (-> (comp (l/key :library) (l/key :selected-items) (l/key library-id))
+(defn selected-items-ref [section library-id]
+  (-> (comp (l/key :library-items) (l/key section) (l/key library-id))
       (l/derive st/state)))
 
 (def last-deleted-library-ref
@@ -317,7 +317,7 @@
   [{:keys [team-id library-id section]}]
   (let [state (mf/use-state {:selected #{}})
         libraries (mf/deref (libraries-ref section team-id))
-        items (mf/deref (selected-items-ref library-id))
+        items (mf/deref (selected-items-ref section library-id))
         last-deleted-library (mf/deref last-deleted-library-ref)
         selected-library (first (filter #(= (:id %) library-id) libraries))]
 
