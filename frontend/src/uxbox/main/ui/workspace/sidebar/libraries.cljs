@@ -22,7 +22,7 @@
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.dom :as dom]
    [uxbox.util.uuid :as uuid]
-   [uxbox.util.i18n :as i18n :refer [t]]
+   [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
    [uxbox.main.data.library :as dlib]
@@ -102,11 +102,10 @@
   (let [state (mf/use-state {:menu-open false})
         selected-filter (fn [section] (or (mf/deref (selected-filter-ref section)) :all))
         team-id (-> project-ref mf/deref :team-id)
-        locale (i18n/use-locale)
 
-        filter-to-str {:all "All libraries"
-                       :own "My libraries"
-                       :store "Store libraries"}
+        filter-to-str {:all (tr "workspace.library.all")
+                       :own (tr "workspace.library.own")
+                       :store (tr "workspace.library.store")}
 
         select-option
         (fn [option]
@@ -136,7 +135,7 @@
 
     [:div#libraries.tool-window
      [:div.libraries-window-bar
-      [:div.libraries-window-bar-title "Libraries"]
+      [:div.libraries-window-bar-title (tr "workspace.library.libraries")]
       [:div.libraries-window-bar-options
        {:on-click #(swap! state assoc :menu-open true)}
        (filter-to-str (selected-filter :icons))
@@ -154,12 +153,12 @@
      [:div.tool-window-content
       [:& tab-container {}
        [:& tab-element
-        {:id :icons :title "Icons"}
+        {:id :icons :title (tr "workspace.library.icons")}
         [:& library-tab {:section :icons
                          :libraries (get-libraries :icons) }]]
 
        [:& tab-element
-        {:id :images :title "Images"}
+        {:id :images :title (tr "workspace.library.images")}
         [:& library-tab {:section :images
                          :libraries (get-libraries :images)}]]]]]))
 
