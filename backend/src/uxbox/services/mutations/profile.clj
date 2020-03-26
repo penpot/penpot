@@ -10,7 +10,7 @@
 (ns uxbox.services.mutations.profile
   (:require
    [clojure.spec.alpha :as s]
-   [clojure.string :as str]
+   [cuerdas.core :as str]
    [datoteka.core :as fs]
    [promesa.core :as p]
    [promesa.exec :as px]
@@ -174,8 +174,10 @@
             photo (upload-photo conn params)]
 
       ;; Schedule deletion of old photo
-      (tasks/schedule! conn {:name "remove-media"
-                             :props {:path (:photo profile)}})
+      (when (and (string? (:photo profile))
+                 (not (str/blank? (:photo profile))))
+        (tasks/schedule! conn {:name "remove-media"
+                               :props {:path (:photo profile)}}))
       ;; Save new photo
       (update-profile-photo conn profile-id photo))))
 

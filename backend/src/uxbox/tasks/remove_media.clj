@@ -18,7 +18,7 @@
    [uxbox.util.storage :as ust]
    [vertx.util :as vu]))
 
-(s/def ::path ::us/string)
+(s/def ::path ::us/not-empty-string)
 (s/def ::props
   (s/keys :req-un [::path]))
 
