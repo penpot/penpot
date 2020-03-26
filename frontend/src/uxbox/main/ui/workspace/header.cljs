@@ -45,16 +45,16 @@
        [:& dropdown {:show @show-dropdown?
                      :on-close #(reset! show-dropdown? false)}
         [:ul.zoom-dropdown
-          [:li {:on-click increase}
-            "Zoom in" [:span "+"]]
-          [:li {:on-click decrease}
-            "Zoom out" [:span "-"]]
-          [:li {:on-click zoom-to-50}
-            "Zoom to 50%"]
-          [:li {:on-click zoom-to-100}
-            "Zoom to 100%" [:span "Shift + 0"]]
-          [:li {:on-click zoom-to-200}
-            "Zoom to 200%"]]]]
+         [:li {:on-click increase}
+          "Zoom in" [:span "+"]]
+         [:li {:on-click decrease}
+          "Zoom out" [:span "-"]]
+         [:li {:on-click zoom-to-50}
+          "Zoom to 50%"]
+         [:li {:on-click zoom-to-100}
+          "Zoom to 100%" [:span "Shift + 0"]]
+         [:li {:on-click zoom-to-200}
+          "Zoom to 200%"]]]]
      [:span.remove-zoom {:on-click increase} "+"]]))
 
 ;; --- Header Users
