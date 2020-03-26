@@ -28,18 +28,6 @@
   }
 }
 
-.settings-layout {
-  background-color: $color-white;
-  display: grid;
-  grid-template-rows: 40px 1fr;
-  grid-template-columns: 1fr;
-  height: 100vh;
-
-  & .settings-content {
-    grid-row: 1;
-  }
-}
-
 .dashboard-content {
   background-color: lighten($color-gray-10, 5%);
   display: flex;

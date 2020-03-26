@@ -19,14 +19,17 @@
   (let [profile? (= section :settings-profile)
         password? (= section :settings-password)
         locale (i18n/use-locale)]
-    [:header.main-bar
-     [:nav
-      [:a.nav-item
-       {:class (when profile? "current")
-        :on-click #(st/emit! (rt/nav :settings-profile))}
-       (t locale "settings.profile")]
-      [:a.nav-item
-       {:class (when password? "current")
-        :on-click #(st/emit! (rt/nav :settings-password))}
-       (t locale "settings.password")]]]))
+    [:header
+      [:div.main-logo {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))}
+       i/logo-icon]
+     [:section.main-bar
+      [:nav
+       [:a.nav-item
+        {:class (when profile? "current")
+         :on-click #(st/emit! (rt/nav :settings-profile))}
+        (t locale "settings.profile")]
+       [:a.nav-item
+        {:class (when password? "current")
+         :on-click #(st/emit! (rt/nav :settings-password))}
+        (t locale "settings.password")]]]]))
 

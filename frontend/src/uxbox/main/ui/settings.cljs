@@ -26,14 +26,11 @@
         profile (mf/deref refs/profile)]
     [:main.settings-main
      [:& messages-widget]
-     [:section.settings-layout
-      [:div.settings-content
-       [:div.main-logo {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))}
-        i/logo-icon]
-       [:& header {:section section}]
-       (case section
-         :settings-profile (mf/element profile-page)
-         :settings-password (mf/element password-page))]]]))
+     [:div.settings-content
+      [:& header {:section section}]
+      (case section
+        :settings-profile (mf/element profile-page)
+        :settings-password (mf/element password-page))]]))
 
 
 
