@@ -266,4 +266,4 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:library :selected-items library-id] #(into [item] %) )))))
+          (update-in [:library-items :palettes library-id] #(into [item] %) )))))

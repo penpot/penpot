@@ -73,7 +73,7 @@
 
       ]]]
 
-   ["/workspace/:file-id" :workspace]])
+   ["/workspace/:project-id/:file-id" :workspace]])
 
 (mf/defc app-error
   [{:keys [error] :as props}]
@@ -119,9 +119,11 @@
       (mf/element dashboard #js {:route route})
 
       :workspace
-      (let [file-id (uuid (get-in route [:params :path :file-id]))
+      (let [project-id (uuid (get-in route [:params :path :project-id]))
+            file-id (uuid (get-in route [:params :path :file-id]))
             page-id (uuid (get-in route [:params :query :page-id]))]
-        [:& workspace/workspace {:file-id file-id
+        [:& workspace/workspace {:project-id project-id
+                                 :file-id file-id
                                  :page-id page-id
                                  :key file-id}])
       nil)))

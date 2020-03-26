@@ -41,8 +41,9 @@
                              :edition false})
         locale (i18n/use-locale)
         on-navigate #(st/emit! (rt/nav :workspace
-                                            {:file-id (:id file)}
-                                            {:page-id (first (:pages file))}))
+                                       {:project-id (:project-id file)
+                                        :file-id (:id file)}
+                                       {:page-id (first (:pages file))}))
         delete-fn #(st/emit! nil (dsh/delete-file (:id file)))
         on-delete #(do
                      (dom/stop-propagation %)
@@ -75,7 +76,7 @@
         [:h3 (:name file)])
       [:& grid-item-metadata {:modified-at (:modified-at file)}]]
      [:div.project-th-actions {:class (classnames
-                                        :force-display (:menu-open @local))}
+                                       :force-display (:menu-open @local))}
       ;; [:div.project-th-icon.pages
       ;;  i/page
       ;;  #_[:span (:total-pages project)]]

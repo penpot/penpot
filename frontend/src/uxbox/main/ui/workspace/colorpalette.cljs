@@ -13,16 +13,30 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.colors :as udc]
    [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.library :as dlib]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.util.color :refer [hex->rgb]]
    [uxbox.util.data :refer [read-string seek]]
-   [uxbox.util.dom :as dom]))
+   [uxbox.util.dom :as dom]
+   [uxbox.main.ui.components.context-menu :refer [context-menu]]))
 
 ;; --- Refs
 
-(def collections-iref
-  (-> (l/key :colors-collections)
+(def project-ref
+  (-> (l/key :workspace-project)
+      (l/derive st/state)))
+
+(def libraries-ref
+  (-> (comp (l/key :library) (l/key :palettes))
+      (l/derive st/state)))
+
+(defn selected-items-ref [library-id]
+  (-> (comp (l/key :library-items) (l/key :palettes) (l/key library-id))
+      (l/derive st/state)))
+
+(def selected-library-ref
+  (-> (comp (l/key :library-selected) (l/key :palettes))
       (l/derive st/state)))
 
 ;; --- Components
@@ -30,8 +44,6 @@
 (mf/defc palette-item
   [{:keys [color] :as props}]
   (let [rgb-vec (hex->rgb color)
-        rgb-color (apply str "" (interpose ", " rgb-vec))
-
         select-color
         (fn [event]
           (if (kbd/shift? event)
@@ -41,89 +53,86 @@
     [:div.color-cell {:key (str color)
                       :on-click select-color}
      [:span.color {:style {:background color}}]
-     [:span.color-text color]
-     [:span.color-text rgb-color]]))
+     [:span.color-text color]]))
 
 (mf/defc palette
-  [{:keys [colls] :as props}]
-  (let [local (mf/use-state {})
-        colls (->> colls
-                   (filter :id)
-                   (sort-by :name))
+  [{:keys [libraries left-sidebar?] :as props}]
 
-        coll  (or (:selected @local)
-                  (first colls))
+  (when (and libraries (-> libraries count (> 0)))
+    (let [current-selection (or (mf/deref selected-library-ref) (-> libraries first :id))
+          state (mf/use-state {:show-menu false })]
+      (mf/use-effect
+       (mf/deps current-selection)
+       #(st/emit! (dlib/retrieve-library-data :palettes current-selection)))
+      
+      (let [items (-> current-selection selected-items-ref  mf/deref)
+            doc-width (.. js/document -documentElement -clientWidth)
+            width (:width @state (* doc-width 0.84))
+            offset (:offset @state 0)
+            visible (/ width 86)
+            invisible (- (count items) visible)
+            close #(st/emit! (udw/toggle-layout-flag :colorpalette))
+            container (mf/use-ref nil)
+            container-child (mf/use-ref nil)
 
-        doc-width (.. js/document -documentElement -clientWidth)
-        width (:width @local (* doc-width 0.84))
-        offset (:offset @local 0)
-        visible (/ width 86)
-        invisible (- (count (:colors coll)) visible)
-        close #(st/emit! (udw/toggle-layout-flag :colorpalette))
+            on-left-arrow-click
+            (fn [event]
+              (when (> offset 0)
+                (let [element (mf/ref-val container-child)]
+                  (swap! state update :offset dec))))
 
-        container (mf/use-ref nil)
-        container-child (mf/use-ref nil)
+            on-right-arrow-click
+            (fn [event]
+              (when (< offset invisible)
+                (let [element (mf/ref-val container-child)]
+                  (swap! state update :offset inc))))
 
-        select-coll
-        (fn [event]
-          (let [id (read-string (dom/event->value event))
-                selected (seek #(= id (:id %)) colls)]
-            (swap! local assoc :selected selected :position 0)))
+            on-scroll
+            (fn [event]
+              (if (pos? (.. event -nativeEvent -deltaY))
+                (on-right-arrow-click event)
+                (on-left-arrow-click event)))
 
-        on-left-arrow-click
-        (fn [event]
-          (when (> offset 0)
-            (let [element (mf/ref-val container-child)]
-              (swap! local update :offset dec))))
+            after-render
+            (fn []
+              (let [dom (mf/ref-val container)
+                    width (.-clientWidth dom)]
+                (when (not= (:width @state) width)
+                  (swap! state assoc :width width))))
 
-        on-right-arrow-click
-        (fn [event]
-          (when (< offset invisible)
-            (let [element (mf/ref-val container-child)]
-              (swap! local update :offset inc))))
+            handle-click
+            (fn [library]
+              (st/emit! (dlib/select-library :palettes (:id library))))]
 
-        on-scroll
-        (fn [event]
-          (if (pos? (.. event -nativeEvent -deltaY))
-            (on-right-arrow-click event)
-            (on-left-arrow-click event)))
+        (mf/use-effect nil after-render)
 
-        after-render
-        (fn []
-          (let [dom (mf/ref-val container)
-                width (.-clientWidth dom)]
-            (when (not= (:width @local) width)
-              (swap! local assoc :width width))))]
+        [:div.color-palette {:class (when left-sidebar? "left-sidebar-open")}
+         [:& context-menu {:selectable true
+                           :selected (->> libraries (filter #(= (:id %) current-selection)) first :name) 
+                           :show (:show-menu @state)
+                           :on-close #(swap! state assoc :show-menu false)
+                           :options (mapv #(vector (:name %) (partial handle-click %)) libraries)} ]
+         [:div.color-palette-actions
+          {:on-click #(swap! state assoc :show-menu true)}
+          [:div.color-palette-actions-button i/actions]]
 
-    (mf/use-effect nil after-render)
+         [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
 
-    [:div.color-palette
-     [:div.color-palette-actions
-      [:select.input-select {:on-change select-coll
-                             :default-value (pr-str (:id coll))}
-       (for [item colls]
-         [:option {:key (:id item) :value (pr-str (:id item))}
-          (:name item)])]
+         [:div.color-palette-content {:ref container :on-wheel on-scroll}
+          [:div.color-palette-inside {:ref container-child
+                                      :style {:position "relative"
+                                              :width (str (* 86 (count items)) "px")
+                                              :right (str (* 86 offset) "px")}}
+           (for [item items]
+             [:& palette-item {:color (:content item) :key (:id item)}])]]
 
-      #_[:div.color-palette-buttons
-         [:div.btn-palette.edit.current i/pencil]
-         [:div.btn-palette.create i/close]]]
-
-     [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
-
-     [:div.color-palette-content {:ref container :on-wheel on-scroll}
-      [:div.color-palette-inside {:ref container-child
-                                  :style {:position "relative"
-                                          :width (str (* 86 (count (:colors coll))) "px")
-                                          :right (str (* 86 offset) "px")}}
-       (for [color (:colors coll)]
-         [:& palette-item {:color color :key color}])]]
-
-     [:span.right-arrow {:on-click on-right-arrow-click}  i/arrow-slide]
-     [:span.close-palette {:on-click close} i/close]]))
+         [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))))
 
 (mf/defc colorpalette
-  [props]
-  (let [colls (mf/deref collections-iref)]
-    #_(mf/use-effect #(st/emit! (udc/fetch-collections)))
-    [:& palette {:colls (vals colls)}]))
+  [{:keys [left-sidebar?]}]
+  (let [team-id (-> project-ref mf/deref :team-id)
+        libraries (-> libraries-ref mf/deref vals flatten)]
+    (mf/use-effect #(st/emit! (dlib/retrieve-libraries :palettes)
+                              (dlib/retrieve-libraries :palettes team-id)))
+    [:& palette {:left-sidebar? left-sidebar?
+                 :libraries libraries}]))

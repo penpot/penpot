@@ -40,7 +40,7 @@
 (sq/defquery ::image-libraries
   [{:keys [profile-id team-id]}]
   (db/with-atomic [conn db/pool]
-    (teams/check-edition-permissions! conn profile-id team-id)
+    (teams/check-read-permissions! conn profile-id team-id)
     (db/query conn [sql:libraries team-id])))
 
 
@@ -55,7 +55,7 @@
   [{:keys [profile-id id]}]
   (db/with-atomic [conn db/pool]
     (p/let [lib (retrieve-library conn id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      (teams/check-read-permissions! conn profile-id (:team-id lib))
       lib)))
 
 (def ^:private sql:single-library
@@ -86,7 +86,7 @@
   [{:keys [profile-id library-id] :as params}]
   (db/with-atomic [conn db/pool]
     (p/let [lib (retrieve-library conn library-id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+      (teams/check-read-permissions! conn profile-id (:team-id lib))
       (-> (retrieve-images conn library-id)
           (p/then' (fn [rows]
                      (->> rows
@@ -120,7 +120,7 @@
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
     (p/let [img (retrieve-image conn id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id img))
+      (teams/check-read-permissions! conn profile-id (:team-id img))
       (-> img
           (images/resolve-urls :path :uri)
           (images/resolve-urls :thumb-path :thumb-uri)))))
