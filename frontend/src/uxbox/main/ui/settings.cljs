@@ -12,6 +12,8 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.util.router :as rt]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.main.ui.settings.header :refer [header]]
@@ -24,11 +26,10 @@
         profile (mf/deref refs/profile)]
     [:main.settings-main
      [:& messages-widget]
-
      [:section.settings-layout
-      [:div.main-logo i/logo-icon]
-      [:div.left-bar]
       [:div.settings-content
+       [:div.main-logo {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))}
+        i/logo-icon]
        [:& header {:section section}]
        (case section
          :settings-profile (mf/element profile-page)

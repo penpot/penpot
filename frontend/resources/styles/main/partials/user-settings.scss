@@ -1,10 +1,46 @@
-.user-settings-page {
+.settings-content {
+  .main-logo {
+    position: fixed;
+    left: 0;
+    top:0;
+    width: 40px;
+    height: 40px;
+    z-index: 12;
+    cursor: pointer;
+  }
+
+  nav {
+    display: flex;
+    left: 0;
+    width: 100%;
+    justify-content: center;
+
+    .nav-item {
+      margin: 0 $size-6;
+      color: $color-gray;
+      text-transform: uppercase;
+      border-bottom: 1px solid transparent;
+
+      &:hover {
+        color: $color-black;
+      }
+
+      &.current {
+        color: $color-black;
+        border-bottom: 1px solid $color-primary;
+      }
+    }
+  }
+}
+
+.settings-profile,
+.settings-password {
   display: flex;
   flex-direction: column;
   margin: 0 auto;
   width: 500px;
 
-  .user-settings-label {
+  .settings-label {
     color: $color-black;
     font-size: $fs15;
     margin: $x-big 0 $x-small 0;
@@ -13,6 +49,7 @@
 
   .input-text {
     color: $color-gray-60;
+    background-color: $color-gray-10;
   }
 
   .btn-primary {

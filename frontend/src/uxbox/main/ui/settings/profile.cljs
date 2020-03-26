@@ -25,7 +25,7 @@
       (l/derive st/state)))
 
 (s/def ::fullname ::fm/not-empty-string)
-(s/def ::lang ::fm/not-empty-string)
+(s/def ::lang (s/nilable ::fm/not-empty-string))
 (s/def ::email ::fm/email)
 
 (s/def ::profile-form
@@ -59,9 +59,12 @@
 (mf/defc profile-form
   [props]
   (let [locale (i18n/use-locale)
-        {:keys [data] :as form} (fm/use-form ::profile-form #(deref profile-iref))]
+        form (fm/use-form ::profile-form #(deref profile-iref))
+        data (:data form)]
+    (prn "data" form)
     [:form.profile-form {:on-submit #(on-submit % form)}
-     [:span.user-settings-label (t locale "settings.profile.section-basic-data")]
+     [:span.settings-label (t locale "settings.profile.section-basic-data")]
+
      [:input.input-text
       {:type "text"
        :name "fullname"
@@ -70,7 +73,6 @@
        :on-change (fm/on-input-change form :fullname)
        :value (:fullname data "")
        :placeholder (t locale "settings.profile.your-name")}]
-
      [:& fm/field-error {:form form
                          :type #{::api}
                          :field :fullname}]
@@ -83,13 +85,12 @@
        :on-change (fm/on-input-change form :email)
        :value (:email data "")
        :placeholder (t locale "settings.profile.your-email")}]
-
      [:& fm/field-error {:form form
                          :type #{::api}
                          :field :email}]
 
-     [:span.user-settings-label (t locale "settings.profile.lang")]
-     [:select.input-select {:value (:lang data)
+     [:span.settings-label (t locale "settings.profile.lang")]
+     [:select.input-select {:value (or (:lang data) "en")
                             :name "lang"
                             :class (fm/error-class form :lang)
                             :on-blur (fm/on-input-blur form :lang)
@@ -107,7 +108,8 @@
 
 (mf/defc profile-photo-form
   [props]
-  (let [photo (:photo-uri (mf/deref profile-iref))
+  (let [profile (mf/deref profile-iref)
+        photo (:photo-uri profile)
         photo (if (or (str/empty? photo) (nil? photo))
                 "images/avatar.jpg"
                 photo)
@@ -129,8 +131,10 @@
 ;; --- Profile Page
 
 (mf/defc profile-page
-  []
-  [:section.user-settings-page
-   [:span.user-settings-label (tr "settings.profile.your-avatar")]
-   [:& profile-photo-form]
-   [:& profile-form]])
+  {::mf/wrap-props false}
+  [props]
+  (let [locale (i18n/use-locale)]
+    [:section.settings-profile
+     [:span.settings-label (t locale "settings.profile.your-avatar")]
+     [:& profile-photo-form]
+     [:& profile-form]]))

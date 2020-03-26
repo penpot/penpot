@@ -61,7 +61,7 @@
                                               :validators [password-equality]
                                               :initial {})]
     [:form.password-form {:on-submit #(on-submit % form)}
-     [:span.user-settings-label (tr "settings.password.change-password")]
+     [:span.settings-label (tr "settings.password.change-password")]
      [:input.input-text
       {:type "password"
        :name "password-old"
@@ -105,5 +105,5 @@
 
 (mf/defc password-page
   [props]
-  [:section.user-settings-page
+  [:section.settings-password
    [:& password-form]])

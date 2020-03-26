@@ -20,12 +20,13 @@
         password? (= section :settings-password)
         locale (i18n/use-locale)]
     [:header.main-bar
-     [:nav.library-header-navigation
-      [:a.library-header-navigation-item
+     [:nav
+      [:a.nav-item
        {:class (when profile? "current")
         :on-click #(st/emit! (rt/nav :settings-profile))}
        (t locale "settings.profile")]
-      [:a.library-header-navigation-item
+      [:a.nav-item
        {:class (when password? "current")
         :on-click #(st/emit! (rt/nav :settings-password))}
        (t locale "settings.password")]]]))
+
