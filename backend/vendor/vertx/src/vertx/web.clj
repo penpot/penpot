@@ -69,9 +69,16 @@
    (fn [^Router router]
      (let [^Route route (.route router path)
            ^Handler handler (doto (StaticHandler/create)
+                              (.setCachingEnabled false)
                               (.setWebRoot root)
                               (.setDirectoryListing true))]
        (.handler route handler)
+       ;; A hack for lie to body handler that request is already handled.
+       (.handler route
+                 (reify Handler
+                   (handle [_ rc]
+                     (.put ^RoutingContext rc "__body-handled" true)
+                     (.next ^RoutingContext rc))))
        router))))
 
 (defn- default-handler

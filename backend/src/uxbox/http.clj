@@ -58,7 +58,7 @@
                                    :method :get}]]]]
 
         handler (vw/handler ctx
-                            (vw/assets "/media/*" {:root "resources/public/media/"})
+                            (vw/assets "/media/*" {:root "resources/public/media"})
                             (vw/assets "/static/*" {:root "resources/public/static"})
                             (vw/router routes))]
 
