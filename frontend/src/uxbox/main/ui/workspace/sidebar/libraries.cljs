@@ -23,9 +23,12 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [t]]
+   [uxbox.util.data :refer [classnames]]
    [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
    [uxbox.main.data.library :as dlib]
    [uxbox.main.ui.components.context-menu :refer [context-menu]]))
+
+;; --- Refs
 
 (def project-ref
   (-> (l/key :workspace-project)
@@ -39,109 +42,125 @@
   (-> (comp (l/key :library-items) (l/key section) (l/key library-id))
       (l/derive st/state)))
 
-(mf/defc icons-tab [{:keys [libraries]}]
-  
-  (when (and libraries (-> libraries count (> 0)))
-    (let [state (mf/use-state {:selected-library (-> libraries first :id)})]
-      (mf/use-effect (mf/deps libraries)
-                     #(when (not (some (fn [it] (= (:selected-library @state) (-> it :id))) libraries))
-                        (swap! state assoc :selected-library (-> libraries first :id))))
-      (mf/use-effect (mf/deps (:selected-library @state))
-                     #(st/emit! (dlib/retrieve-library-data :icons (:selected-library @state))))
+(defn selected-library-ref [section]
+  (-> (comp (l/key :library-selected) (l/key section))
+      (l/derive st/state)))
 
-      [:div.library-tab.icons-tab
+(defn selected-filter-ref [section]
+  (-> (comp (l/key :library-filter) (l/key section))
+      (l/derive st/state)))
+
+;; --- Components
+
+(mf/defc library-tab [{:keys [libraries section]}]
+  (when (and libraries (-> libraries count (> 0)))
+    (let [first-id (-> libraries first :id)
+          current-selection (or (mf/deref (selected-library-ref section)) first-id)]
+
+      ;; Check if the current selection is in the list of libraries
+      (mf/use-effect
+       (mf/deps libraries)
+       #(when (not (some (fn [it] (= current-selection (-> it :id))) libraries))
+          (st/emit! (dlib/select-library section first-id))))
+
+      ;; Retrieve the library data given the current selected library
+      (mf/use-effect
+       (mf/deps current-selection)
+       #(st/emit! (dlib/retrieve-library-data section current-selection)))
+
+      [:div.library-tab
+       {:class (classnames :icons-tab (= section :icons)
+                           :images-tab (= section :images))}
        [:select.input-select.library-tab-libraries
-        {:on-change #(swap! state assoc :selected-library (-> % dom/get-target dom/get-value uuid))}
+        {:on-change #(st/emit! (dlib/select-library section (-> % dom/get-target dom/get-value uuid)))}
         (for [library libraries]
           [:option.library-tab-libraries-item
            {:key (:id library)
-            :value (:id library)}
+            :value (:id library)
+            :selected (= current-selection (:id library))}
            (:name library)])]
        [:div.library-tab-content
-        (let [items (mf/deref (selected-items-ref :icons (:selected-library @state)))]
+        (let [items (mf/deref (selected-items-ref section current-selection))]
           (for [item items]
             [:div.library-tab-element
              {:key (:id item)
               :on-click #(st/emit! (dw/select-for-drawing :icon item))}
-             [:svg {:view-box (->> item :metadata :view-box (str/join " "))
-                    :width (-> item :metadata :width)
-                    :height (-> item :metadat :height) 
-                    :dangerouslySetInnerHTML {:__html (:content item)}}]
-             [:span.library-tab-element-name (:name item)]]))]])))
+             (if (= section :icons)
+               [:* ;; ICONS
+                [:svg {:view-box (->> item :metadata :view-box (str/join " "))
+                       :width (-> item :metadata :width)
+                       :height (-> item :metadat :height) 
+                       :dangerouslySetInnerHTML {:__html (:content item)}}]
+                [:span.library-tab-element-name (:name item)]]
 
-(mf/defc images-tab [{:keys [libraries]}]
-  (when (and libraries (-> libraries count (> 0)))
-    (let [state (mf/use-state {:selected-library (-> libraries first :id)})]
-      (mf/use-effect (mf/deps (:selected-library @state))
-                     #(st/emit! (dlib/retrieve-library-data :images (:selected-library @state))))
-
-      [:div.library-tab.images-tab
-       [:select.input-select.library-tab-libraries
-        {:on-change #(swap! state assoc :selected-library (-> % dom/get-target dom/get-value))}
-        (for [library libraries]
-          [:option.library-tab-libraries-item
-           {:key (:id library)
-            :value (:id library)}
-           (:name library)])]
-       [:div.library-tab-content
-        (let [items (mf/deref (selected-items-ref :images (:selected-library @state)))]
-          (for [item items]
-            [:div.library-tab-element
-             {:key (:id item)
-              :on-click #(st/emit! (dw/select-for-drawing :image item))}
-             [:img {:src (:thumb-uri item)}]
-             [:span.library-tab-element-name (:name item)]]))]])))
+               [:* ;; IMAGES
+                [:img {:src (:thumb-uri item)}]
+                [:span.library-tab-element-name (:name item)]])]))]])))
 
 (mf/defc libraries-toolbox
   [{:keys [key]}]
-  (let [state (mf/use-state {:menu-open false
-                             :selected :all})
+  (let [state (mf/use-state {:menu-open false})
+        selected-filter (fn [section] (or (mf/deref (selected-filter-ref section)) :all))
         team-id (-> project-ref mf/deref :team-id)
         locale (i18n/use-locale)
-        key-to-str {:all "All libraries"
-                    :own "My libraries"
-                    :store "Store libraries"}
-        select-option (fn [option] (swap! state assoc :selected option))
 
-        filter-libraries (fn [libraries] (case (:selected @state)
-                                           :all (-> libraries vals flatten)
-                                           :own (libraries team-id)
-                                           :store (libraries uuid/zero)))]
-    (mf/use-effect
-     #(do
-        (st/emit! (dlib/retrieve-libraries :icons))
-        (st/emit! (dlib/retrieve-libraries :images))))
+        filter-to-str {:all "All libraries"
+                       :own "My libraries"
+                       :store "Store libraries"}
+
+        select-option
+        (fn [option]
+          (st/emit!
+           (dlib/change-library-filter :icons option)
+           (dlib/change-library-filter :images option)))
+
+        filter-libraries
+        (fn [section libraries]
+          (case (selected-filter section)
+            :all (-> libraries vals flatten)
+            :own (libraries team-id)
+            :store (libraries uuid/zero)))
+
+        get-libraries
+        (fn [section] (->> (libraries-ref section)
+                           mf/deref
+                           (filter-libraries section)))]
+
     (mf/use-effect
      (mf/deps team-id)
      #(when team-id
-        (do 
-          (st/emit! (dlib/retrieve-libraries :icons team-id))
-          (st/emit! (dlib/retrieve-libraries :images team-id)))))
+        (st/emit! (dlib/retrieve-libraries :icons)
+                  (dlib/retrieve-libraries :images)
+                  (dlib/retrieve-libraries :icons team-id)
+                  (dlib/retrieve-libraries :images team-id))))
+
     [:div#libraries.tool-window
      [:div.libraries-window-bar
       [:div.libraries-window-bar-title "Libraries"]
       [:div.libraries-window-bar-options
        {:on-click #(swap! state assoc :menu-open true)}
-       (key-to-str (:selected @state))
+       (filter-to-str (selected-filter :icons))
        [:button
         {
          :type "button"}
         i/arrow-slide
-        [:& context-menu {:selectable true
-                          :show (:menu-open @state)
-                          :selected (key-to-str (:selected @state))
-                          :on-close #(swap! state assoc :menu-open false)
-                          :options (mapv (fn [[key val]] [val #(select-option key)]) key-to-str)}]]
-       
-       ]]
+        [:& context-menu
+         {:selectable true
+          :show (:menu-open @state)
+          :selected (filter-to-str (selected-filter :icons))
+          :on-close #(swap! state assoc :menu-open false)
+          :options (mapv (fn [[key val]] [val #(select-option key)]) filter-to-str)}]]]]
+
      [:div.tool-window-content
       [:& tab-container {}
        [:& tab-element
         {:id :icons :title "Icons"}
-        [:& icons-tab {:libraries (-> (libraries-ref :icons) mf/deref filter-libraries) }]]
+        [:& library-tab {:section :icons
+                         :libraries (get-libraries :icons) }]]
 
        [:& tab-element
         {:id :images :title "Images"}
-        [:& images-tab {:libraries (-> (libraries-ref :images) mf/deref filter-libraries)}]]]]]))
+        [:& library-tab {:section :images
+                         :libraries (get-libraries :images)}]]]]]))
 
 

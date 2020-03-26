@@ -208,3 +208,24 @@
                         (filterv #(not (item-ids-set (:id %))) items))]
         (-> state
             (update-in [:library-items type library-id] update-fn))))))
+
+;; Workspace - select library
+
+(defn select-library
+  [type library-id]
+  (ptk/reify ::select-library
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:library-selected type] library-id)))))
+
+
+;; Workspace - change library filter
+
+(defn change-library-filter
+  [type filter]
+  (ptk/reify ::change-library-filter
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:library-filter type] filter)))))

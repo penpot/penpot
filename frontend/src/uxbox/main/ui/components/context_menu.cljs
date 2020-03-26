@@ -17,7 +17,6 @@
         options (gobj/get props "options")
         is-selectable (gobj/get props "selectable")
         selected (gobj/get props "selected")]
-    (println "selected" selected)
     (when open?
       [:> dropdown-container props
        [:div.context-menu {:class (classnames :is-open open?

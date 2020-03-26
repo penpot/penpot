@@ -35,6 +35,10 @@
   (-> (comp (l/key :library-items) (l/key :palettes) (l/key library-id))
       (l/derive st/state)))
 
+(def selected-library-ref
+  (-> (comp (l/key :library-selected) (l/key :palettes))
+      (l/derive st/state)))
+
 ;; --- Components
 
 (mf/defc palette-item
@@ -55,12 +59,13 @@
   [{:keys [libraries left-sidebar?] :as props}]
 
   (when (and libraries (-> libraries count (> 0)))
-    (let [state (mf/use-state {:show-menu false
-                               :selected-library (-> libraries first :id)})]
-      (mf/use-effect (mf/deps (:selected-library @state))
-                     #(st/emit! (dlib/retrieve-library-data :palettes (:selected-library @state))))
+    (let [current-selection (or (mf/deref selected-library-ref) (-> libraries first :id))
+          state (mf/use-state {:show-menu false })]
+      (mf/use-effect
+       (mf/deps current-selection)
+       #(st/emit! (dlib/retrieve-library-data :palettes current-selection)))
       
-      (let [items (-> (:selected-library @state) selected-items-ref  mf/deref)
+      (let [items (-> current-selection selected-items-ref  mf/deref)
             doc-width (.. js/document -documentElement -clientWidth)
             width (:width @state (* doc-width 0.84))
             offset (:offset @state 0)
@@ -97,13 +102,13 @@
 
             handle-click
             (fn [library]
-              (swap! state assoc :selected-library (:id library)))]
+              (st/emit! (dlib/select-library :palettes (:id library))))]
 
         (mf/use-effect nil after-render)
 
         [:div.color-palette {:class (when left-sidebar? "left-sidebar-open")}
          [:& context-menu {:selectable true
-                           :selected (->> libraries (filter #(= (:id %) (:selected-library @state))) first :name) 
+                           :selected (->> libraries (filter #(= (:id %) current-selection)) first :name) 
                            :show (:show-menu @state)
                            :on-close #(swap! state assoc :show-menu false)
                            :options (mapv #(vector (:name %) (partial handle-click %)) libraries)} ]
@@ -127,7 +132,7 @@
   [{:keys [left-sidebar?]}]
   (let [team-id (-> project-ref mf/deref :team-id)
         libraries (-> libraries-ref mf/deref vals flatten)]
-    (mf/use-effect #(st/emit! (dlib/retrieve-libraries :palettes)))
-    (mf/use-effect #(st/emit! (dlib/retrieve-libraries :palettes team-id)))
+    (mf/use-effect #(st/emit! (dlib/retrieve-libraries :palettes)
+                              (dlib/retrieve-libraries :palettes team-id)))
     [:& palette {:left-sidebar? left-sidebar?
                  :libraries libraries}]))
