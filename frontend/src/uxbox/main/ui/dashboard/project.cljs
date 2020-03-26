@@ -52,25 +52,22 @@
                      (st/emit! (dsh/delete-project project-id))
                      (st/emit! (rt/nav :dashboard-team {:team-id team-id})))
         on-delete #(modal/show! confirm-dialog {:on-accept delete-fn})]
-    [:header#main-bar.main-bar
+    [:header.main-bar
      (if (:is-default project)
        [:h1.dashboard-title (t locale "dashboard.header.draft")]
        [:*
+        [:div.main-bar-icon {:on-click on-menu-click} i/actions]
+        [:& context-menu {:on-close on-menu-close
+                          :show (:menu-open @local)
+                          :options [[(t locale "dashboard.grid.edit") on-edit]
+                                    [(t locale "dashboard.grid.delete") on-delete]]}]
         (if (:edition @local)
           [:input.element-name {:type "text"
                                 :auto-focus true
                                 :on-key-down on-key-down
                                 :on-blur on-blur
                                 :default-value (:name project)}]
-          [:h1.dashboard-title
-           [:div.main-bar-icon
-            {:on-click on-menu-click}
-            i/actions]
-           [:& context-menu {:on-close on-menu-close
-                             :show (:menu-open @local)
-                             :options [[(t locale "dashboard.grid.edit") on-edit]
-                                       [(t locale "dashboard.grid.delete") on-delete]]}]
-           (t locale "dashboard.header.project" (:name project))])])
+          [:h1.dashboard-title (t locale "dashboard.header.project" (:name project))])])
      [:a.btn-dashboard {:on-click #(do
                                      (dom/prevent-default %)
                                      (st/emit! (dsh/create-file project-id)))}

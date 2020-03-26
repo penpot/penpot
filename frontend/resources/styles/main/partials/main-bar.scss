@@ -12,6 +12,7 @@
   display: flex;
   height: 40px;
   padding: $x-small $small;
+  padding-left: $x-big;
   position: relative;
   z-index: 10;
 
@@ -83,7 +84,6 @@
   display: flex;
   font-size: $fs15;
   font-weight: normal;
-  margin: 0 $x-big;
 }
 
 .user-zone {
