@@ -61,12 +61,16 @@
 
 (mf/defc user-widget
   [{:keys [user self?] :as props}]
-  [:li.tooltip.tooltip-bottom
-   {:alt (:fullname user)
-    :on-click (when self?
-                #(st/emit! (rt/navigate :settings/profile)))}
-   [:img {:style {:border-color (:color user)}
-          :src (if self? "/images/avatar.jpg" "/images/avatar-red.jpg")}]])
+  (let [photo (or (:photo-uri user)
+                  (if self?
+                    "/images/avatar.jpg"
+                    "/images/avatar-red.jpg"))]
+    [:li.tooltip.tooltip-bottom
+     {:alt (:fullname user)
+      :on-click (when self?
+                  #(st/emit! (rt/navigate :settings/profile)))}
+     [:img {:style {:border-color (:color user)}
+            :src photo}]]))
 
 (mf/defc active-users
   [props]
