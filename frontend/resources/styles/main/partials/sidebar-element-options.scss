@@ -273,7 +273,7 @@
 
     .custom-select-dropdown {
       position: absolute;
-      right: 0;
+      left: 0;
       z-index: 12;
       width: 200px;
       max-height: 30rem;
@@ -430,4 +430,21 @@
 
   }
 
+}
+
+.orientation-icon {
+  margin-left: $small;
+
+  svg {
+    stroke: $color-gray-40;
+    stroke-width: 30px;
+    height: 25px;
+    width: 25px;
+  }
+
+  &:hover {
+    svg {
+      stroke: $color-gray-10;
+    }
+  }
 }
