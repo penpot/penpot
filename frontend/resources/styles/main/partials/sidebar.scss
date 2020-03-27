@@ -22,18 +22,35 @@
     align-items: center;
     display: grid;
     grid-template-columns: 100%;
-    
+
+    &[data-layout*='sitemap-pages'] {
+        grid-template-rows: auto;
+    }
+
     &[data-layout*='layers'] {
-        grid-template-rows: 30% 70%;
+        grid-template-rows: auto 1fr;
     }
 
     &[data-layout*='libraries'] {
-        grid-template-rows: 100%;
+        grid-template-rows: auto 1fr;
+    }
+
+    &[data-layout*='layers'][data-layout*='sitemap-pages'] {
+        grid-template-rows: 12rem 1fr;
+    }
+
+    &[data-layout*='libraries'][data-layout*='sitemap-pages'] {
+        grid-template-rows: 12rem 1fr;
     }
 
     &[data-layout*='layers'][data-layout*='libraries'] {
-        grid-template-rows: 15% 25% 60%;
+        grid-template-rows: auto 30% 1fr;
     }
+
+    &[data-layout*='layers'][data-layout*='libraries'][data-layout*='sitemap-pages'] {
+        grid-template-rows: 12rem 25% 1fr;
+    }
+
     
     flex-direction: column;
     overflow: hidden;
