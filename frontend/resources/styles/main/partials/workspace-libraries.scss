@@ -12,6 +12,7 @@
 
 .libraries-window-bar-title {
     color: #F0F0F0;
+    font-size: $fs14;
 }
 
 .libraries-window-bar-options {
@@ -28,8 +29,8 @@
         cursor: pointer;
     }
     & svg {
-        width: 0.5rem;
-        height: 0.5rem;
+        width: 0.7rem;
+        height: 0.7rem;
         fill: #F0F0F0;
         transform: rotate(90deg);
     }

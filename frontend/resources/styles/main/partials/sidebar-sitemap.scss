@@ -150,15 +150,15 @@
 
   svg {
     fill: $color-gray-20;
-    height: 16px;
-    width: 16px;
+    height: 0.7rem;
+    width: 0.7rem;
   }
 
   &:hover {
     background-color: $color-primary;
 
     svg {
-      fill: $color-gray-60;
+      fill: $color-gray-60 !important;
     }
   }
 }
