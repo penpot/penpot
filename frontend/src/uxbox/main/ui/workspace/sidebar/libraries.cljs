@@ -82,20 +82,33 @@
        [:div.library-tab-content
         (let [items (mf/deref (selected-items-ref section current-selection))]
           (for [item items]
-            [:div.library-tab-element
-             {:key (:id item)
-              :on-click #(st/emit! (dw/select-for-drawing :icon item))}
-             (if (= section :icons)
-               [:* ;; ICONS
-                [:svg {:view-box (->> item :metadata :view-box (str/join " "))
-                       :width (-> item :metadata :width)
-                       :height (-> item :metadat :height) 
-                       :dangerouslySetInnerHTML {:__html (:content item)}}]
-                [:span.library-tab-element-name (:name item)]]
+            (if (= section :icons)
+              ;; ICONS
+              [:div.library-tab-element
+               {:key (str "icon-" (:id item))
+                :on-click #(st/emit! (dw/select-for-drawing :icon item))}
 
-               [:* ;; IMAGES
-                [:img {:src (:thumb-uri item)}]
-                [:span.library-tab-element-name (:name item)]])]))]])))
+               [:svg {:view-box (->> item :metadata :view-box (str/join " "))
+                      :width (-> item :metadata :width)
+                      :height (-> item :metadat :height) 
+                      :dangerouslySetInnerHTML {:__html (:content item)}}]
+               [:span.library-tab-element-name (:name item)]]
+
+              ;; IMAGES
+              [:div.library-tab-element
+               {:key (str "image-" (:id item))
+                :on-click #(let [shape {:name name
+                                        :metadata {:width (:width item)
+                                                   :height (:height item)
+                                                   :uri (:uri item)
+                                                   :thumb-width (:thumb-width item)
+                                                   :thumb-height (:thumb-height item)
+                                                   :thumb-uri (:thumb-uri item)}}]
+                             (st/emit! (dw/select-for-drawing :image shape)))}
+
+               [:img {:src (:thumb-uri item)}]
+               [:span.library-tab-element-name (:name item)]])
+            ))]])))
 
 (mf/defc libraries-toolbox
   [{:keys [key]}]
