@@ -1,4 +1,7 @@
+var XR = function() {};
+
 var TopLevel = {
+  "XR": function() {},
   "isDragging": function() {},
   "offsetX": function() {},
   "offsetY": function() {},
