@@ -31,7 +31,8 @@
     :text (move-rect shape dpoint)
     :curve (move-path shape dpoint)
     :path (move-path shape dpoint)
-    :circle (move-circle shape dpoint)))
+    :circle (move-circle shape dpoint)
+    nil))
 
 (defn- move-rect
   "A specialized function for relative movement

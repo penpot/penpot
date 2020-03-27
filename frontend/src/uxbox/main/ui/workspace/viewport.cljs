@@ -234,8 +234,7 @@
 
         on-mouse-move
         (fn [event]
-          (let [pt (gpt/point (.-clientX event)
-                              (.-clientY event))
+          (let [pt (gpt/point (.-clientX event) (.-clientY event))
                 pt (translate-point-to-viewport pt)]
             (st/emit! (ms/->PointerEvent :viewport pt
                                          (kbd/ctrl? event)
@@ -251,7 +250,22 @@
               (events/unlistenByKey key1)
               (events/unlistenByKey key2)
               (events/unlistenByKey key3)
-              )))]
+              )))
+
+        on-drag-over
+        ;; Should prevent only events that we'll handle on-drop
+        (fn [e] (dom/prevent-default e))
+
+        on-drop
+        (fn [event]
+          (let [shape (dom/get-data-transfer event)
+                point (gpt/point (.-clientX event) (.-clientY event))
+                viewport-coord (translate-point-to-viewport point)
+                final-x (- (:x viewport-coord) (/ (:width shape) 2))
+                final-y (- (:y viewport-coord) (/ (:height shape) 2))]
+            (st/emit! (dw/add-shape (-> shape
+                                        (assoc :x final-x)
+                                        (assoc :y final-y))))))]
 
     (mf/use-effect on-mount)
     [:*
@@ -264,7 +278,9 @@
                      :on-click on-click
                      :on-double-click on-double-click
                      :on-mouse-down on-mouse-down
-                     :on-mouse-up on-mouse-up}
+                     :on-mouse-up on-mouse-up
+                     :on-drag-over on-drag-over
+                     :on-drop on-drop}
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
        ;; [:> js/React.Profiler
        ;;  {:id "foobar"

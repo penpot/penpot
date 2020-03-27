@@ -21,6 +21,7 @@
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.timers :as timers]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.data :refer [classnames]]
@@ -50,11 +51,27 @@
   (-> (comp (l/key :library-filter) (l/key section))
       (l/derive st/state)))
 
+(defmulti shape-from-item (fn [type _] type))
+
+(defmethod shape-from-item :icons [_ item]
+  (-> item
+      (assoc :type :icon)
+      (assoc :width (-> item :metadata :width))
+      (assoc :height (-> item :metadata :height))))
+
+(defmethod shape-from-item :images [_ item]
+  (let [metadata (select-keys item [:width :height :thumb-width
+                                    :thumb-height :thumb-uri :uri])]
+    (-> item
+        (assoc :type :image)
+        (assoc :metadata metadata))))
+
 ;; --- Components
 
 (mf/defc library-tab [{:keys [libraries section]}]
   (when (and libraries (-> libraries count (> 0)))
-    (let [first-id (-> libraries first :id)
+    (let [state (mf/use-state {:drag-style false})
+          first-id (-> libraries first :id)
           current-selection (or (mf/deref (selected-library-ref section)) first-id)]
 
       ;; Check if the current selection is in the list of libraries
@@ -82,33 +99,23 @@
        [:div.library-tab-content
         (let [items (mf/deref (selected-items-ref section current-selection))]
           (for [item items]
-            (if (= section :icons)
-              ;; ICONS
-              [:div.library-tab-element
-               {:key (str "icon-" (:id item))
-                :on-click #(st/emit! (dw/select-for-drawing :icon item))}
-
+            [:div.library-tab-element
+             {:draggable true
+              :class (classnames :is-dragging (:drag-style @state))
+              :key (str (:id item))
+              :on-drag-start (fn [event]
+                               (swap! state assoc :drag-style true)
+                               (dom/set-data-transfer event (shape-from-item section item))
+                               ;; This state is so we can give custom css to the dragging
+                               (timers/schedule #(swap! state assoc :drag-style false)))}
+             (if (= section :icons)
                [:svg {:view-box (->> item :metadata :view-box (str/join " "))
                       :width (-> item :metadata :width)
                       :height (-> item :metadat :height) 
                       :dangerouslySetInnerHTML {:__html (:content item)}}]
-               [:span.library-tab-element-name (:name item)]]
-
-              ;; IMAGES
-              [:div.library-tab-element
-               {:key (str "image-" (:id item))
-                :on-click #(let [shape {:name name
-                                        :metadata {:width (:width item)
-                                                   :height (:height item)
-                                                   :uri (:uri item)
-                                                   :thumb-width (:thumb-width item)
-                                                   :thumb-height (:thumb-height item)
-                                                   :thumb-uri (:thumb-uri item)}}]
-                             (st/emit! (dw/select-for-drawing :image shape)))}
-
-               [:img {:src (:thumb-uri item)}]
-               [:span.library-tab-element-name (:name item)]])
-            ))]])))
+               [:img {:draggable false
+                      :src (:thumb-uri item)}])
+             [:span.library-tab-element-name (:name item)]]))]])))
 
 (mf/defc libraries-toolbox
   [{:keys [key]}]
