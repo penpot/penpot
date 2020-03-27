@@ -100,6 +100,15 @@
         color: $color-white;
         padding: $size-2 0;
     }
+
+    &.is-dragging {
+        border-radius: 0;
+        border: none;
+
+        & .library-tab-element-name {
+            display: none;
+        }
+    }
 }
 
 .library-tab-element-name {

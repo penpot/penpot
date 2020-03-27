@@ -15,7 +15,8 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [uxbox.util.geom.point :as gpt]
-   [uxbox.util.blob :as blob]))
+   [uxbox.util.blob :as blob]
+   [uxbox.util.transit :as ts]))
 
 ;; --- Deprecated methods
 
@@ -145,4 +146,14 @@
 (defn focus!
   [node]
   (.focus node))
+
+(defn set-data-transfer
+  [event data]
+  (let [data-string (ts/encode data)]
+    (-> event .-dataTransfer (.setData "text" data-string))))
+
+(defn get-data-transfer
+  [event]
+  (let [data-string (-> event .-dataTransfer (.getData "text"))]
+    (ts/decode data-string)))
 
