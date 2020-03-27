@@ -56,8 +56,6 @@
 
 (sq/defquery ::icon-libraries
   [{:keys [profile-id team-id]}]
-  (println profile-id)
-  (println team-id)
   (db/with-atomic [conn db/pool]
     (teams/check-read-permissions! conn profile-id team-id)
     (db/query conn [sql:libraries team-id])))
