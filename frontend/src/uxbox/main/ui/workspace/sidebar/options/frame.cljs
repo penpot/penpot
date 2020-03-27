@@ -17,6 +17,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.i18n :refer [tr]]
@@ -201,4 +202,5 @@
   [{:keys [shape] :as props}]
   [:div
    [:& measures-menu {:shape shape}]
-   [:& fill-menu {:shape shape}]])
+   [:& fill-menu {:shape shape}]
+   [:& stroke-menu {:shape shape}]])

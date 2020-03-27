@@ -53,6 +53,7 @@
     :fill-opacity 0
     :segments []}
    {:type :frame
+    :stroke-style :none
     :name "Artboard"}
    {:type :curve
     :name "Path"
