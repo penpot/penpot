@@ -5,10 +5,12 @@
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.rdnd
-  (:require [vendor.react-dnd]))
+  (:require
+   ["react-dnd/dist/esm/hooks" :as hooks]
+   ["react-dnd/dist/esm/common" :as common]
+   ["react-dnd-html5-backend" :as backend]))
 
-(def useDrop js/ReactDnd.useDrop)
-(def useDrag js/ReactDnd.useDrag)
-
-(def provider js/ReactDnd.DndProvider)
-(def html5 js/ReactDnd.HTML5Backend)
+(def useDrop hooks/useDrop)
+(def useDrag hooks/useDrag)
+(def provider common/DndProvider)
+(def html5 backend/default)

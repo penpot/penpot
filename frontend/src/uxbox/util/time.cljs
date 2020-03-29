@@ -9,11 +9,18 @@
 
 (ns uxbox.util.time
   (:require
-   [vendor.datefns]
+   ["date-fns/format" :as df-format]
+   ["date-fns/formatDistanceToNow" :as df-format-distance]
+   ["date-fns/locale/fr" :as df-fr-locale]
+   ["date-fns/locale/en-US" :as df-en-locale]
    [goog.object :as gobj]))
 
-(def ^:private dateFns js/dateFns)
-(def ^:private locales (gobj/get js/dateFns "locales"))
+(def ^:private locales
+  #js {:default df-en-locale
+       :en df-en-locale
+       :en_US df-en-locale
+       :fr df-fr-locale
+       :fr_FR df-fr-locale})
 
 (defn now
   "Return the current Instant."
@@ -24,14 +31,14 @@
   ([v fmt] (format v fmt nil))
   ([v fmt {:keys [locale]
            :or {locale "default"}}]
-   (.format dateFns v fmt #js {:locale (gobj/get locales locale)})))
+   (df-format v fmt #js {:locale (gobj/get locales locale)})))
 
 (defn timeago
   ([v] (timeago v nil))
   ([v {:keys [seconds? locale]
        :or {seconds? true
             locale "default"}}]
-   (.formatDistanceToNow dateFns v
-                         #js {:includeSeconds seconds?
-                              :addSuffix true
-                              :locale (gobj/get locales locale)})))
+   (df-format-distance v
+                       #js {:includeSeconds seconds?
+                            :addSuffix true
+                            :locale (gobj/get locales locale)})))

@@ -10,16 +10,16 @@
    [uxbox.main.store :as st]
    [goog.object :as gobj]
    [rumext.alpha :as mf]
-   [vendor.react-color]))
+   ["react-color/lib/components/sketch/Sketch" :as sketch]))
 
 (mf/defc colorpicker
   [{:keys [on-change value colors] :as props}]
   (let [on-change-complete #(on-change (gobj/get % "hex"))]
-    [:> js/SketchPicker {:color value
-                         :disableAlpha true
-                         :presetColors colors
-                         :onChangeComplete on-change-complete
-                         :style {:box-shadow "none"}}]))
+    [:> sketch/default {:color value
+                        :disableAlpha true
+                        :presetColors colors
+                        :onChangeComplete on-change-complete
+                        :style {:box-shadow "none"}}]))
 
 (defn- lookup-colors
   [state]

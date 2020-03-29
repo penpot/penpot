@@ -1,8 +1,0 @@
-{
-  "presets": [
-    ["@babel/preset-env", {"targets": {"browsers": "last 1 Chrome versions"}, "modules": false}],
-    ["@babel/preset-react"]
-  ],
-  "plugins": ["@babel/plugin-proposal-export-default-from",
-              "@babel/plugin-proposal-class-properties"]
-}

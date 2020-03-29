@@ -81,8 +81,12 @@ RUN set -ex; \
     git clone https://github.com/creationix/nvm.git .nvm; \
     bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm alias default $NODE_VERSION"; \
-    bash -c "source .nvm/nvm.sh && nvm use default";
+    bash -c "source .nvm/nvm.sh && nvm use default"; \
+    bash -c "source .nvm/nvm.sh && npm install -g shadow-cljs";
 
+
+EXPOSE 3447
+EXPOSE 3448
 EXPOSE 3449
 EXPOSE 6060
 EXPOSE 9090

@@ -1,0 +1,15 @@
+{:deps {:aliases [:dev]}
+ :dev-http {3449 "classpath:public"}
+ :http {:port 3448}
+ :nrepl {:port 3447}
+
+ :builds
+ {:main
+  {:target :browser
+   :output-dir "resources/public/js/"
+   :asset-path "/js"
+   :modules {:main {:entries [uxbox.main]}}
+   :compiler-options {:output-feature-set :es8}
+   :release {:compiler-options {:pseudo-names false
+                                :pretty-print false}}
+   }}}
