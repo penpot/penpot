@@ -1,2 +1,0 @@
-var ChromePicker = {};
-var SketchPicker = {};

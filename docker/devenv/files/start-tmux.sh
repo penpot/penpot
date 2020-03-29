@@ -11,10 +11,10 @@ popd
 
 tmux -2 new-session -d -s uxbox
 
-tmux new-window -t uxbox:1 -n 'figwheel'
+tmux new-window -t uxbox:1 -n 'shadow watch'
 tmux select-window -t uxbox:1
 tmux send-keys -t uxbox 'cd uxbox/frontend' enter C-l
-tmux send-keys -t uxbox 'clojure -Adev tools.clj figwheel' enter
+tmux send-keys -t uxbox 'shadow-cljs watch main' enter
 
 tmux new-window -t uxbox:2 -n 'backend'
 tmux select-window -t uxbox:2

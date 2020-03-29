@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns ^:figwheel-hooks uxbox.main
+(ns uxbox.main
   (:require
    [cljs.spec.alpha :as s]
    [beicon.core :as rx]
@@ -80,7 +80,7 @@
   (mf/unmount (dom/get-element "loader"))
   (init-ui))
 
-(defn ^:after-load after-load
+(defn ^:dev/after-load after-load
   []
   (when (= "main" (unchecked-get js/window app-sym))
     (reinit)))

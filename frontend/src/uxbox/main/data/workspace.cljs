@@ -39,7 +39,7 @@
    [uxbox.util.transit :as t]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.webapi :as wapi]
-   [vendor.randomcolor])
+   #_[vendor.randomcolor])
   (:import goog.events.EventType
            goog.events.KeyCodes
            goog.ui.KeyboardShortcutHandler))
@@ -132,7 +132,7 @@
 (defn- assign-user-color
   [state user-id]
   (let [user (get-in state [:workspace-users :by-id user-id])
-        color (js/randomcolor)
+        color "#000000" #_(js/randomcolor)
         user (if (string? (:color user))
                user
                (assoc user :color color))]

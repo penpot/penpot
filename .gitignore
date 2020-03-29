@@ -20,6 +20,7 @@ node_modules
 /frontend/target/
 /frontend/dist/
 /frontend/out/
+/frontend/.shadow-cljs
 /frontend/resources/public/*
 /docker/frontend/dist
 /docker/backend/dist
