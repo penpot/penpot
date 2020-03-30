@@ -94,12 +94,13 @@
 }
 
 .library-sidebar-list-element {
-    padding: $size-4 $size-2;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     color: $color-black;
+    cursor: pointer;
+    font-size: $fs14;
+    overflow: hidden;
+    padding: $size-4 $size-2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 
     &:hover {
         background-color: $color-primary-lighter;
@@ -247,6 +248,11 @@
         height: auto;
         max-height: 100%;
         max-width: 100%;
+    }
+
+    & svg {
+        height: 50%;
+        width: 50%;
     }
 }
 
