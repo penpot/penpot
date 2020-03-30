@@ -3,11 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title>UXBOX - The Open-Source prototyping tool</title>
-    <link href="/css/main.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    <title>UXBOX View</title>
+    <link href="/css/view.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
     <link rel="icon" href="/images/favicon.png" />
-    <!-- <link rel="preload" as="image" type="image/svg+xml" -->
-    <!--       href="/images/svg-sprite/symbol/svg/sprite.symbol.svg" /> -->
   </head>
   <body>
     <section id="app" tabindex="1"></section>
@@ -18,7 +16,7 @@
       window.uxboxTranslations = JSON.parse({{& translations }});
     </script>
     <script src="/js/shared.js?ts={{& ts}}"></script>
-    <script src="/js/main.js?ts={{& ts}}"></script>
-    <script>uxbox.main.init()</script>
+    <script src="/js/view.js?ts={{& ts}}"></script>
+    <script>uxbox.view.init()</script>
   </body>
 </html>
