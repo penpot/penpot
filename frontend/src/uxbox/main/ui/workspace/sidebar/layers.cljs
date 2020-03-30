@@ -145,7 +145,8 @@
           :class (dom/classnames
                   :selected selected?
                   :dragging-TODO (:dragging? dprops))}
-     [:div.element-list-body {:class (dom/classnames :selected selected?)
+     [:div.element-list-body {:class (dom/classnames :selected selected?
+                                                     :icon-layer (= (:type item) :icon))
                               :on-click select-shape
                               :on-double-click #(dom/stop-propagation %)}
       [:& element-icon {:shape item}]
