@@ -238,7 +238,7 @@
       [:div.element-icon i/artboard]
       [:& layer-name {:shape item}]
       [:div.element-actions
-       [:div.toggle-element {:class (when-not (:hidden item) "selected")
+       [:div.toggle-element {:class (when (:hidden item) "selected")
                              :on-click toggle-visibility}
         i/eye]
        #_[:div.block-element {:class (when (:blocked item) "selected")
