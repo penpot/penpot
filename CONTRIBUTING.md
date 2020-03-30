@@ -79,7 +79,16 @@ Where type is:
 - :paperclip: `:paperclip:` a commit with other not relevant changes
 - :arrow_up: `:arrow_up:` a commit with dependencies updates
 
-More info: https://gist.github.com/parmentf/035de27d6ed1dce0b36a
+More info:
+ - https://gist.github.com/parmentf/035de27d6ed1dce0b36a
+ - https://gist.github.com/rxaviers/7360908
+
+The subject should be:
+
+- Use the imperative mood.
+- Capitalize the first letter.
+- Don't put a period at the end of the subject line.
+- Put a blank line between the subject line and the body.
 
 
 ## Code of conduct ##
