@@ -202,6 +202,7 @@ span.element-name {
     background-color: rgba(255,255,255,.6);
     border-radius: $br-small;
     flex-shrink: 0;
+    fill: $color-black !important;
     padding: 1px;
   }
 }
