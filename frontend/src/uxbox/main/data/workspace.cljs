@@ -930,26 +930,34 @@
 ;; --- Add shape to Workspace
 
 (defn impl-retrieve-used-names
-  "Returns a set of already used names by shapes
-  in the current workspace page."
-  [state]
-  (let [page-id (::page-id state)
-        objects (get-in state [:workspace-data page-id :objects])]
-    (into #{} (map :name) (vals objects))))
+  [objects]
+  (into #{} (map :name) (vals objects)))
+
+(defn extract-numeric-suffix
+  [basename]
+  (let [result (re-find #"(.*)-([0-9]+)$" basename)]
+    (if result
+      [(get result 1) (+ 1 (js/parseInt (get result 2)))]
+      [basename 1])))
 
 (defn impl-generate-unique-name
-  "A unique name generator based on the current workspace page."
-  [state basename]
-  (let [used (impl-retrieve-used-names state)]
-    (loop [counter 1]
-      (let [candidate (str basename "-" counter)]
+  "A unique name generator"
+  [objects basename]
+  (let [used (impl-retrieve-used-names objects)
+        [prefix initial] (extract-numeric-suffix basename)]
+    (loop [counter initial]
+      (let [candidate (str prefix "-" counter)]
         (if (contains? used candidate)
           (recur (inc counter))
           candidate)))))
 
 (defn impl-assoc-shape
+  "Add a shape to the current workspace page, inside a given frame.
+  Give it a name that is unique in the page"
   [state {:keys [id frame-id] :as data}]
-  (let [name (impl-generate-unique-name state (:name data))
+  (let [page-id (::page-id state)
+        objects (get-in state [:workspace-data page-id :objects])
+        name (impl-generate-unique-name objects (:name data))
         shape (assoc data :name name)
         page-id (::page-id state)]
     (-> state
@@ -2051,27 +2059,48 @@
 
 (defn- paste-impl
   [{:keys [selected objects] :as data}]
-  (letfn [(prepare-change [delta id]
+  (letfn [(prepare-changes [state delta]
+            "Prepare objects to paste: generate new id, give them unique names,
+            and move to the position of mouse pointer"
+            (let [page-id (::page-id state)]
+              (loop [existing-objs (get-in state [:workspace-data page-id :objects])
+                     chgs []
+                     id   (first selected)
+                     ids  (rest selected)]
+                (if (nil? id)
+                  chgs
+                  (let [result (prepare-change id existing-objs delta)
+                        result (if (vector? result) result [result])]
+                    (recur
+                     (reduce conj existing-objs (map (fn [item] {(:id item) (:obj item)}) result))
+                     (into chgs result)
+                     (first ids)
+                     (rest ids)))))))
+
+          (prepare-change [id existing-objs delta]
             (let [obj (get objects id)]
               (if (= :frame (:type obj))
-                (prepare-frame-change obj delta)
-                (prepare-shape-change obj delta uuid/zero))))
+                (prepare-frame-change existing-objs obj delta)
+                (prepare-shape-change existing-objs obj delta uuid/zero))))
 
-          (prepare-shape-change [obj delta frame-id]
+          (prepare-shape-change [objects obj delta frame-id]
             (let [id (uuid/next)
-                  renamed-obj (assoc obj :id id :frame-id frame-id)
+                  name (impl-generate-unique-name objects (:name obj))
+                  renamed-obj (assoc obj :id id :frame-id frame-id :name name)
                   moved-obj (geom/move renamed-obj delta)]
               {:type :add-obj
                :id id
                :frame-id frame-id
                :obj moved-obj}))
 
-          (prepare-frame-change [obj delta]
+          (prepare-frame-change [objects obj delta]
             (let [frame-id (uuid/next)
+                  frame-name (impl-generate-unique-name objects (:name obj))
                   sch (->> (map #(get objects %) (:shapes obj))
-                           (map #(prepare-shape-change % delta frame-id)))
+                           (map #(prepare-shape-change objects % delta frame-id)))
                   renamed-frame (-> obj
                                     (assoc :id frame-id)
+                                    (assoc :name frame-name)
                                     (assoc :frame-id uuid/zero)
                                     (assoc :shapes (mapv :id sch)))
                   moved-frame (geom/move renamed-frame delta)
@@ -2090,8 +2119,7 @@
             delta {:x (- (:x mouse-pos) (:x orig-pos))
                    :y (- (:y mouse-pos) (:y orig-pos))}
 
-            rchanges (->> (map (partial prepare-change delta) selected)
-                          (flatten))
+            rchanges (prepare-changes state delta)
             uchanges (map (fn [ch]
                             {:type :del-obj
                              :id (:id ch)})
