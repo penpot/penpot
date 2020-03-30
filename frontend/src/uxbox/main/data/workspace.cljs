@@ -2051,43 +2051,51 @@
 
 (defn- paste-impl
   [{:keys [selected objects] :as data}]
-  (letfn [(prepare-change [id]
+  (letfn [(prepare-change [delta id]
             (let [obj (get objects id)]
-              ;; (prn "prepare-change" id obj)
               (if (= :frame (:type obj))
-                (prepare-frame-change obj)
-                (prepare-shape-change obj uuid/zero))))
+                (prepare-frame-change obj delta)
+                (prepare-shape-change obj delta uuid/zero))))
 
-          (prepare-shape-change [obj frame-id]
-            (let [id (uuid/next)]
+          (prepare-shape-change [obj delta frame-id]
+            (let [id (uuid/next)
+                  renamed-obj (assoc obj :id id :frame-id frame-id)
+                  moved-obj (geom/move renamed-obj delta)]
               {:type :add-obj
                :id id
                :frame-id frame-id
-               :obj (assoc obj :id id :frame-id frame-id)}))
+               :obj moved-obj}))
 
-          (prepare-frame-change [obj]
+          (prepare-frame-change [obj delta]
             (let [frame-id (uuid/next)
                   sch (->> (map #(get objects %) (:shapes obj))
-                           (map #(prepare-shape-change % frame-id)))
+                           (map #(prepare-shape-change % delta frame-id)))
+                  renamed-frame (-> obj
+                                    (assoc :id frame-id)
+                                    (assoc :frame-id uuid/zero)
+                                    (assoc :shapes (mapv :id sch)))
+                  moved-frame (geom/move renamed-frame delta)
                   fch {:type :add-obj
                        :id frame-id
                        :frame-id uuid/zero
-                       :obj (-> obj
-                                (assoc :id frame-id)
-                                (assoc :frame-id uuid/zero)
-                                (assoc :shapes (mapv :id sch)))}]
+                       :obj moved-frame}]
               (d/concat [fch] sch)))]
 
   (ptk/reify ::paste-impl
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [rchanges (->> (map prepare-change selected)
+      (let [selected-objs (map #(get objects %) selected)
+            orig-pos (geom/selection-rect selected-objs)
+            mouse-pos @ms/mouse-position
+            delta {:x (- (:x mouse-pos) (:x orig-pos))
+                   :y (- (:y mouse-pos) (:y orig-pos))}
+
+            rchanges (->> (map (partial prepare-change delta) selected)
                           (flatten))
             uchanges (map (fn [ch]
                             {:type :del-obj
                              :id (:id ch)})
                           rchanges)]
-        (cljs.pprint/pprint rchanges)
         (rx/of (commit-changes (vec rchanges)
                                (vec (reverse uchanges))
                                {:commit-local? true})))))))
