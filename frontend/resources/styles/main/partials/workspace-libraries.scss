@@ -12,6 +12,7 @@
 
 .libraries-window-bar-title {
     color: #F0F0F0;
+    font-size: $fs14;
 }
 
 .libraries-window-bar-options {
@@ -28,8 +29,8 @@
         cursor: pointer;
     }
     & svg {
-        width: 0.5rem;
-        height: 0.5rem;
+        width: 0.7rem;
+        height: 0.7rem;
         fill: #F0F0F0;
         transform: rotate(90deg);
     }
@@ -39,15 +40,15 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 0.25rem;
 }
 
 .library-tab-content {
     display: grid;
     flex-direction: row;
     flex-wrap: wrap;
+    height: -webkit-fill-available;
     padding: 0.25rem;
-    overflow-y: scroll;
+    overflow-y: auto;
 
     .icons-tab & {
         grid-template-columns: repeat(3, 1fr);

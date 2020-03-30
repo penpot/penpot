@@ -68,7 +68,7 @@
        [:li.tooltip.tooltip-right
         {:alt "Layers"
          :class (when (contains? layout :layers) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :layers :sitemap))}
+         :on-click #(st/emit! (dw/toggle-layout-flag :layers))}
         i/layers]
        [:li.tooltip.tooltip-right
         {:alt "Libraries"
