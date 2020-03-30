@@ -254,6 +254,63 @@
     width: 100%;
   }
 
+  .custom-select {
+    border: 1px solid $color-gray-40;
+    padding: $x-small $big $x-small $x-small;
+    position: relative;
+
+    .dropdown-button {
+      position: absolute;
+      right: $x-small;
+      top: $small;
+
+      svg {
+        fill: $color-gray-40;
+        height: 10px;
+        width: 10px;
+      }
+    }
+
+    .custom-select-dropdown {
+      position: absolute;
+      left: 0;
+      z-index: 12;
+      width: 200px;
+      max-height: 30rem;
+      min-width: 7rem;
+      overflow-y: auto;
+
+      background-color: $color-white;
+      border-radius: $br-small;
+      box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+      li {
+        color: $color-gray-60;
+        cursor: pointer;
+        font-size: $fs14;
+        display: flex;
+        padding: $small;
+
+        span {
+          color: $color-gray-20;
+          margin-left: auto;
+        }
+
+        &.dropdown-label:not(:first-child) {
+          border-top: 1px solid $color-gray-10;
+        }
+
+        &.dropdown-label span {
+          margin-left: 0;
+        }
+
+        &:hover {
+          background-color: $color-primary-lighter;
+        }
+      }
+    }
+  }
+
   .editable-select {
     position: relative;
     width: 100%;
@@ -373,4 +430,21 @@
 
   }
 
+}
+
+.orientation-icon {
+  margin-left: $small;
+
+  svg {
+    stroke: $color-gray-40;
+    stroke-width: 30px;
+    height: 25px;
+    width: 25px;
+  }
+
+  &:hover {
+    svg {
+      stroke: $color-gray-10;
+    }
+  }
 }

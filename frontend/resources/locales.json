@@ -1,12 +1,12 @@
 {
   "dashboard.grid.delete" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:72", "src/uxbox/main/ui/dashboard/grid.cljs:92" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:63", "src/uxbox/main/ui/dashboard/grid.cljs:92" ],
     "translations" : {
       "en" : "Delete"
     }
   },
   "dashboard.grid.edit" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:71", "src/uxbox/main/ui/dashboard/grid.cljs:91" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:62", "src/uxbox/main/ui/dashboard/grid.cljs:91" ],
     "translations" : {
       "en" : "Edit"
     }
@@ -45,7 +45,7 @@
     "unused" : true
   },
   "dashboard.header.new-file" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:77" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:74" ],
     "translations" : {
       "en" : "+ New file"
     }
@@ -78,7 +78,7 @@
     }
   },
   "dashboard.header.project" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:73" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:70" ],
     "translations" : {
       "en" : "Project %s"
     }
@@ -548,7 +548,7 @@
     }
   },
   "header.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:154" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:158" ],
     "translations" : {
       "en" : null,
       "fr" : null
@@ -658,7 +658,7 @@
     }
   },
   "profile.recovery.go-to-login" : {
-    "used-in" : [ "src/uxbox/main/ui/profile/recovery.cljs:81", "src/uxbox/main/ui/profile/recovery_request.cljs:65" ],
+    "used-in" : [ "src/uxbox/main/ui/profile/recovery_request.cljs:65", "src/uxbox/main/ui/profile/recovery.cljs:81" ],
     "translations" : {
       "en" : "Go back!",
       "fr" : "Retour!"
@@ -980,61 +980,61 @@
     "unused" : true
   },
   "workspace.header.menu.hide-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:104" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:108" ],
     "translations" : {
       "en" : "Hide grid"
     }
   },
   "workspace.header.menu.hide-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:111" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:115" ],
     "translations" : {
       "en" : "Hide layers"
     }
   },
   "workspace.header.menu.hide-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:125" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:129" ],
     "translations" : {
       "en" : "Hide libraries"
     }
   },
   "workspace.header.menu.hide-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:118" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:122" ],
     "translations" : {
       "en" : "Hide color palette"
     }
   },
   "workspace.header.menu.hide-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:97" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:101" ],
     "translations" : {
       "en" : "Hide rules"
     }
   },
   "workspace.header.menu.show-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:105" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:109" ],
     "translations" : {
       "en" : "Show grid"
     }
   },
   "workspace.header.menu.show-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:116" ],
     "translations" : {
       "en" : "Show layers"
     }
   },
   "workspace.header.menu.show-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:126" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:130" ],
     "translations" : {
       "en" : "Show libraries"
     }
   },
   "workspace.header.menu.show-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:119" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:123" ],
     "translations" : {
       "en" : "Show color palette"
     }
   },
   "workspace.header.menu.show-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:98" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:102" ],
     "translations" : {
       "en" : "Show rules"
     }
@@ -1075,43 +1075,43 @@
     "unused" : true
   },
   "workspace.library.all" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:106" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:119" ],
     "translations" : {
       "en" : "All libraries"
     }
   },
   "workspace.library.icons" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:156" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:169" ],
     "translations" : {
       "en" : "Icons"
     }
   },
   "workspace.library.images" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:161" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:174" ],
     "translations" : {
       "en" : "Images"
     }
   },
   "workspace.library.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:138" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:151" ],
     "translations" : {
       "en" : "Libraries"
     }
   },
   "workspace.library.own" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:107" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:120" ],
     "translations" : {
       "en" : "My libraries"
     }
   },
   "workspace.library.store" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:108" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:121" ],
     "translations" : {
       "en" : "Store libraries"
     }
   },
   "workspace.options.color" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:47", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:124", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:124", "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:47", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:81" ],
     "translations" : {
       "en" : "Color",
       "fr" : "Couleur"
@@ -1153,7 +1153,7 @@
     }
   },
   "workspace.options.measures" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:55", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:68" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:76", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66" ],
     "translations" : {
       "en" : "Size, position & rotation",
       "fr" : "Taille, position et rotation"
@@ -1167,24 +1167,30 @@
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:84", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:97" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:97", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:126", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:95" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
     }
   },
   "workspace.options.rotation-radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:107", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:114" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:107", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:112" ],
     "translations" : {
       "en" : "Rotation & Radius",
       "fr" : "TODO"
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:57", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:99", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:68" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
+    }
+  },
+  "workspace.options.size-presets" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:82" ],
+    "translations" : {
+      "en" : "Size presets"
     }
   },
   "workspace.options.stroke" : {
@@ -1265,7 +1271,7 @@
     }
   },
   "workspace.viewport.click-to-close-path" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:335" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:338" ],
     "translations" : {
       "en" : "Click to close the path"
     }
