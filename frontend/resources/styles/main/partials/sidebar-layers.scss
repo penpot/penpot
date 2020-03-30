@@ -15,10 +15,10 @@
 
   svg {
     fill: $color-gray-20;
-    height: 13px;
+    height: 16px;
     flex-shrink: 0;
     margin-right: 8px;
-    width: 13px;
+    width: 16px;
   }
   
   &.group {
@@ -143,6 +143,11 @@ span.element-name {
   position: relative;
   width: 32px;
 
+  svg {
+    height: 13px;
+    width: 13px;
+  }
+
   > * {
     display: none;
   }
@@ -189,5 +194,14 @@ span.element-name {
     svg {
       fill: $color-gray-60;
     }
+  }
+}
+
+.icon-layer {
+    > svg {
+    background-color: rgba(255,255,255,.6);
+    border-radius: $br-small;
+    flex-shrink: 0;
+    padding: 1px;
   }
 }
