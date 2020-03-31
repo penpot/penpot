@@ -973,9 +973,8 @@
    :fill-opacity 1})
 
 (defn- calculate-frame-overlap
-  [data shape]
-  (let [objects (:objects data)
-        rshp (geom/shape->rect-shape shape)
+  [objects shape]
+  (let [rshp (geom/shape->rect-shape shape)
 
         xfmt (comp
               (filter #(= :frame (:type %)))
@@ -997,10 +996,10 @@
       ptk/UpdateEvent
       (update [_ state]
         (let [page-id  (::page-id state)
-              data     (get-in state [:workspace-data page-id])
+              objects  (get-in state [:workspace-data page-id :objects])
               shape    (-> (geom/setup-proportions attrs)
                            (assoc :id id))
-              frame-id (calculate-frame-overlap data shape)
+              frame-id (calculate-frame-overlap objects shape)
               shape    (merge shape-default-attrs shape {:frame-id frame-id})]
           (impl-assoc-shape state shape)))
 
@@ -1524,9 +1523,9 @@
               (if (nil? id)
                 [rch uch]
                 (let [pid (::page-id state)
-                      dta (get-in state [:workspace-data pid])
-                      obj (get-in dta [:objects id])
-                      fid (calculate-frame-overlap dta obj)]
+                      objects (get-in state [:workspace-data pid :objects])
+                      obj (get objects id)
+                      fid (calculate-frame-overlap objects obj)]
                   (if (not= fid (:frame-id obj))
                     (recur (first ids)
                            (rest ids)
@@ -2060,8 +2059,8 @@
 (defn- paste-impl
   [{:keys [selected objects] :as data}]
   (letfn [(prepare-changes [state delta]
-            "Prepare objects to paste: generate new id, give them unique names,
-            and move to the position of mouse pointer"
+            "Prepare objects to paste: generate new id, give them unique names, move
+            to the position of mouse pointer, and find in what frame they fit."
             (let [page-id (::page-id state)]
               (loop [existing-objs (get-in state [:workspace-data page-id :objects])
                      chgs []
@@ -2081,17 +2080,21 @@
             (let [obj (get objects id)]
               (if (= :frame (:type obj))
                 (prepare-frame-change existing-objs obj delta)
-                (prepare-shape-change existing-objs obj delta uuid/zero))))
+                (prepare-shape-change existing-objs obj delta nil))))
 
           (prepare-shape-change [objects obj delta frame-id]
             (let [id (uuid/next)
                   name (impl-generate-unique-name objects (:name obj))
-                  renamed-obj (assoc obj :id id :frame-id frame-id :name name)
-                  moved-obj (geom/move renamed-obj delta)]
+                  renamed-obj (assoc obj :id id :name name)
+                  moved-obj (geom/move renamed-obj delta)
+                  frame-id (if frame-id
+                             frame-id
+                             (calculate-frame-overlap objects moved-obj))
+                  reframed-obj (assoc moved-obj :frame-id frame-id)]
               {:type :add-obj
                :id id
                :frame-id frame-id
-               :obj moved-obj}))
+               :obj reframed-obj}))
 
           (prepare-frame-change [objects obj delta]
             (let [frame-id (uuid/next)
