@@ -2056,6 +2056,8 @@
                (rx/ignore)))))))
 
 
+(declare select-pasted-objs)
+
 (defn- paste-impl
   [{:keys [selected objects] :as data}]
   (letfn [(prepare-changes [state delta]
@@ -2129,7 +2131,8 @@
                           rchanges)]
         (rx/of (commit-changes (vec rchanges)
                                (vec (reverse uchanges))
-                               {:commit-local? true})))))))
+                               {:commit-local? true})
+               (select-pasted-objs rchanges)))))))
 
 (def paste
   (ptk/reify ::paste
@@ -2144,6 +2147,13 @@
                        (js/console.error "Clipboard blocked:" err)
                        (rx/empty)))))))
 
+(defn select-pasted-objs
+  [rchanges]
+  (ptk/reify ::select-pasted-objs
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected]
+                (map #(get-in % [:obj :id]) rchanges)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions
