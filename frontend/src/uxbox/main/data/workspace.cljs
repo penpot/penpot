@@ -2239,7 +2239,11 @@
    "ctrl+shift+f" #(rx/of (toggle-layout-flag :drawtools))
    "ctrl+shift+i" #(rx/of (toggle-layout-flag :icons))
    "ctrl+shift+l" #(rx/of (toggle-layout-flag :layers))
-   "ctrl+0" #(rx/of (reset-zoom))
+   "equals" #(rx/of increase-zoom) ; keyName for the key with = and + in US keyboards (see https://unixpapa.com/js/key.html)
+   "dash" #(rx/of decrease-zoom) ; keyName for the key with - and _ in US keyboards
+   "shift+0" #(rx/of zoom-to-50)
+   "shift+1" #(rx/of reset-zoom)
+   "shift+2" #(rx/of zoom-to-200)
    "ctrl+d" #(rx/of duplicate-selected)
    "ctrl+z" #(rx/of undo)
    "ctrl+shift+z" #(rx/of redo)
