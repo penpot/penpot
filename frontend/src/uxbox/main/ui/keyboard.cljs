@@ -5,6 +5,10 @@
   (fn [e]
     (= (.-keyCode e) keycode)))
 
+(defn ^boolean alt?
+  [event]
+  (.-altKey event))
+
 (defn ^boolean ctrl?
   [event]
   (.-ctrlKey event))

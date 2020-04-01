@@ -240,16 +240,26 @@
                                          (kbd/ctrl? event)
                                          (kbd/shift? event)))))
 
+        on-mouse-wheel
+        (fn [event]
+          (when (kbd/ctrl? event)
+            ;; Disable browser zoom with ctrl+mouse wheel
+            (dom/prevent-default event)))
+
         on-mount
         (fn []
           (let [key1 (events/listen js/document EventType.KEYDOWN on-key-down)
                 key2 (events/listen js/document EventType.KEYUP on-key-up)
                 dnode (mf/ref-val viewport-ref)
-                key3 (events/listen dnode EventType.MOUSEMOVE on-mouse-move)]
+                key3 (events/listen dnode EventType.MOUSEMOVE on-mouse-move)
+                ;; bind with passive=false to allow the event to be cancelled
+                ;; https://stackoverflow.com/a/57582286/3219895
+                key4 (events/listen js/window EventType.WHEEL on-mouse-wheel #js {"passive" false})]
             (fn []
               (events/unlistenByKey key1)
               (events/unlistenByKey key2)
               (events/unlistenByKey key3)
+              (events/unlistenByKey key4)
               )))
 
         on-drag-over
