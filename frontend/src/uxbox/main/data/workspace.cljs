@@ -930,26 +930,33 @@
 ;; --- Add shape to Workspace
 
 (defn impl-retrieve-used-names
-  "Returns a set of already used names by shapes
-  in the current workspace page."
-  [state]
-  (let [page-id (::page-id state)
-        objects (get-in state [:workspace-data page-id :objects])]
-    (into #{} (map :name) (vals objects))))
+  [objects]
+  (into #{} (map :name) (vals objects)))
+
+(defn extract-numeric-suffix
+  [basename]
+  (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
+    [p1 (+ 1 (d/parse-integer p2))]
+    [basename 1]))
 
 (defn impl-generate-unique-name
-  "A unique name generator based on the current workspace page."
-  [state basename]
-  (let [used (impl-retrieve-used-names state)]
-    (loop [counter 1]
-      (let [candidate (str basename "-" counter)]
+  "A unique name generator"
+  [objects basename]
+  (let [used (impl-retrieve-used-names objects)
+        [prefix initial] (extract-numeric-suffix basename)]
+    (loop [counter initial]
+      (let [candidate (str prefix "-" counter)]
         (if (contains? used candidate)
           (recur (inc counter))
           candidate)))))
 
 (defn impl-assoc-shape
+  "Add a shape to the current workspace page, inside a given frame.
+  Give it a name that is unique in the page"
   [state {:keys [id frame-id] :as data}]
-  (let [name (impl-generate-unique-name state (:name data))
+  (let [page-id (::page-id state)
+        objects (get-in state [:workspace-data page-id :objects])
+        name (impl-generate-unique-name objects (:name data))
         shape (assoc data :name name)
         page-id (::page-id state)]
     (-> state
@@ -965,9 +972,8 @@
    :fill-opacity 1})
 
 (defn- calculate-frame-overlap
-  [data shape]
-  (let [objects (:objects data)
-        rshp (geom/shape->rect-shape shape)
+  [objects shape]
+  (let [rshp (geom/shape->rect-shape shape)
 
         xfmt (comp
               (filter #(= :frame (:type %)))
@@ -989,10 +995,10 @@
       ptk/UpdateEvent
       (update [_ state]
         (let [page-id  (::page-id state)
-              data     (get-in state [:workspace-data page-id])
+              objects  (get-in state [:workspace-data page-id :objects])
               shape    (-> (geom/setup-proportions attrs)
                            (assoc :id id))
-              frame-id (calculate-frame-overlap data shape)
+              frame-id (calculate-frame-overlap objects shape)
               shape    (merge shape-default-attrs shape {:frame-id frame-id})]
           (impl-assoc-shape state shape)))
 
@@ -1516,9 +1522,9 @@
               (if (nil? id)
                 [rch uch]
                 (let [pid (::page-id state)
-                      dta (get-in state [:workspace-data pid])
-                      obj (get-in dta [:objects id])
-                      fid (calculate-frame-overlap dta obj)]
+                      objects (get-in state [:workspace-data pid :objects])
+                      obj (get objects id)
+                      fid (calculate-frame-overlap objects obj)]
                   (if (not= fid (:frame-id obj))
                     (recur (first ids)
                            (rest ids)
@@ -2049,48 +2055,83 @@
                (rx/ignore)))))))
 
 
+(declare select-pasted-objs)
+
 (defn- paste-impl
   [{:keys [selected objects] :as data}]
-  (letfn [(prepare-change [id]
-            (let [obj (get objects id)]
-              ;; (prn "prepare-change" id obj)
-              (if (= :frame (:type obj))
-                (prepare-frame-change obj)
-                (prepare-shape-change obj uuid/zero))))
+  (letfn [(prepare-changes [state delta]
+            "Prepare objects to paste: generate new id, give them unique names, move
+            to the position of mouse pointer, and find in what frame they fit."
+            (let [page-id (::page-id state)]
+              (loop [existing-objs (get-in state [:workspace-data page-id :objects])
+                     chgs []
+                     id   (first selected)
+                     ids  (rest selected)]
+                (if (nil? id)
+                  chgs
+                  (let [result (prepare-change id existing-objs delta)
+                        result (if (vector? result) result [result])]
+                    (recur
+                     (reduce #(assoc %1 (:id %2) (:obj %2)) existing-objs result)
+                     (into chgs result)
+                     (first ids)
+                     (rest ids)))))))
 
-          (prepare-shape-change [obj frame-id]
-            (let [id (uuid/next)]
+          (prepare-change [id existing-objs delta]
+            (let [obj (get objects id)]
+              (if (= :frame (:type obj))
+                (prepare-frame-change existing-objs obj delta)
+                (prepare-shape-change existing-objs obj delta nil))))
+
+          (prepare-shape-change [objects obj delta frame-id]
+            (let [id (uuid/next)
+                  name (impl-generate-unique-name objects (:name obj))
+                  renamed-obj (assoc obj :id id :name name)
+                  moved-obj (geom/move renamed-obj delta)
+                  frame-id (if frame-id
+                             frame-id
+                             (calculate-frame-overlap objects moved-obj))
+                  reframed-obj (assoc moved-obj :frame-id frame-id)]
               {:type :add-obj
                :id id
                :frame-id frame-id
-               :obj (assoc obj :id id :frame-id frame-id)}))
+               :obj reframed-obj}))
 
-          (prepare-frame-change [obj]
+          (prepare-frame-change [objects obj delta]
             (let [frame-id (uuid/next)
+                  frame-name (impl-generate-unique-name objects (:name obj))
                   sch (->> (map #(get objects %) (:shapes obj))
-                           (map #(prepare-shape-change % frame-id)))
+                           (map #(prepare-shape-change objects % delta frame-id)))
+                  renamed-frame (-> obj
+                                    (assoc :id frame-id)
+                                    (assoc :name frame-name)
+                                    (assoc :frame-id uuid/zero)
+                                    (assoc :shapes (mapv :id sch)))
+                  moved-frame (geom/move renamed-frame delta)
                   fch {:type :add-obj
                        :id frame-id
                        :frame-id uuid/zero
-                       :obj (-> obj
-                                (assoc :id frame-id)
-                                (assoc :frame-id uuid/zero)
-                                (assoc :shapes (mapv :id sch)))}]
+                       :obj moved-frame}]
               (d/concat [fch] sch)))]
 
   (ptk/reify ::paste-impl
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [rchanges (->> (map prepare-change selected)
-                          (flatten))
+      (let [selected-objs (map #(get objects %) selected)
+            wrapper (geom/selection-rect selected-objs)
+            orig-pos (gpt/point (:x1 wrapper) (:y1 wrapper))
+            mouse-pos @ms/mouse-position
+            delta (gpt/subtract mouse-pos orig-pos)
+
+            rchanges (prepare-changes state delta)
             uchanges (map (fn [ch]
                             {:type :del-obj
                              :id (:id ch)})
                           rchanges)]
-        (cljs.pprint/pprint rchanges)
         (rx/of (commit-changes (vec rchanges)
                                (vec (reverse uchanges))
-                               {:commit-local? true})))))))
+                               {:commit-local? true})
+               (select-pasted-objs rchanges)))))))
 
 (def paste
   (ptk/reify ::paste
@@ -2105,6 +2146,13 @@
                        (js/console.error "Clipboard blocked:" err)
                        (rx/empty)))))))
 
+(defn select-pasted-objs
+  [rchanges]
+  (ptk/reify ::select-pasted-objs
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected]
+                (into #{} (map #(get-in % [:obj :id])) rchanges)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions
