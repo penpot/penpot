@@ -935,10 +935,9 @@
 
 (defn extract-numeric-suffix
   [basename]
-  (let [result (re-find #"(.*)-([0-9]+)$" basename)]
-    (if result
-      [(get result 1) (+ 1 (js/parseInt (get result 2)))]
-      [basename 1])))
+  (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
+    [p1 (+ 1 (d/parse-integer p2))]
+    [basename 1]))
 
 (defn impl-generate-unique-name
   "A unique name generator"
@@ -2073,7 +2072,7 @@
                   (let [result (prepare-change id existing-objs delta)
                         result (if (vector? result) result [result])]
                     (recur
-                     (reduce conj existing-objs (map (fn [item] {(:id item) (:obj item)}) result))
+                     (reduce #(assoc %1 (:id %2) (:obj %2)) existing-objs result)
                      (into chgs result)
                      (first ids)
                      (rest ids)))))))
@@ -2119,10 +2118,10 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected-objs (map #(get objects %) selected)
-            orig-pos (geom/selection-rect selected-objs)
+            wrapper (geom/selection-rect selected-objs)
+            orig-pos (gpt/point (:x1 wrapper) (:y1 wrapper))
             mouse-pos @ms/mouse-position
-            delta {:x (- (:x mouse-pos) (:x orig-pos))
-                   :y (- (:y mouse-pos) (:y orig-pos))}
+            delta (gpt/subtract mouse-pos orig-pos)
 
             rchanges (prepare-changes state delta)
             uchanges (map (fn [ch]
@@ -2153,7 +2152,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-local :selected]
-                (map #(get-in % [:obj :id]) rchanges)))))
+                (into #{} (map #(get-in % [:obj :id])) rchanges)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions
