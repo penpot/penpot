@@ -250,7 +250,7 @@
        i/arrow-slide]]
      (when-not collapsed?
        [:ul
-        (for [[index id] (d/enumerate (:shapes item))]
+        (for [[index id] (d/enumerate (reverse (:shapes item)))]
           (let [item (get objects id)]
             (if (= (:type item) :frame)
               [:& layer-frame-item
@@ -273,7 +273,7 @@
         objects (:objects data)
         root (get objects uuid/zero)]
     [:ul.element-list
-     (for [[index id] (d/enumerate (:shapes root))]
+     (for [[index id] (d/enumerate (reverse (:shapes root)))]
        (let [item (get objects id)]
          (if (= (:type item) :frame)
            [:& layer-frame-item

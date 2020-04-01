@@ -1374,57 +1374,6 @@
 
 ;; --- Shape Vertical Ordering
 
-(declare impl-order-shape)
-
-;; TODO
-(defn order-selected-shapes
-  [loc]
-  (us/verify ::direction loc)
-  (ptk/reify ::move-selected-layer
-    IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (first (get-in state [:workspace-local :selected]))
-            type (get-in state [:workspace-data :objects id :type])]
-        ;; NOTE: multiple selection ordering not supported
-        (if (and id (not= type :frame))
-          (impl-order-shape state id loc)
-          state)))))
-
-(defn impl-order-shape
-  [state sid opt]
-  (let [shapes (get-in state [:workspace-data :shapes])
-        index (case opt
-                :top 0
-                :down (min (- (count shapes) 1) (inc (d/index-of shapes sid)))
-                :up (max 0 (- (d/index-of shapes sid) 1))
-                :bottom (- (count shapes) 1))]
-    (update-in state [:workspace-data :shapes]
-               (fn [items]
-                 (let [[fst snd] (->> (remove #(= % sid) items)
-                                      (split-at index))]
-                   (into [] (concat fst [sid] snd)))))))
-
-(defn impl-vertical-order
-  [state id loc]
-  (let [page-id (::page-id state)
-        objects (get-in state [:workspace-data page-id :objects])
-
-        frame-id (get-in objects [id :frame-id])
-        shapes (get-in objects [frame-id :shapes])
-
-        cindex (d/index-of shapes id)
-        nindex (case loc
-                 :top 0
-                 :down (min (- (count shapes) 1) (inc cindex))
-                 :up (max 0 (- cindex 1))
-                 :bottom (- (count shapes) 1))]
-    (update-in state [:workspace-data page-id :objects frame-id :shapes]
-               (fn [shapes]
-                 (let [[fst snd] (->> (remove #(= % id) shapes)
-                                      (split-at nindex))]
-                   (d/concat [] fst [id] snd))))))
-
 (defn vertical-order-selected
   [loc]
   (us/verify ::loc loc)
