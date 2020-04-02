@@ -18,7 +18,8 @@
    [uxbox.main.ui.shapes.image :as image]
    [uxbox.main.ui.shapes.path :as path]
    [uxbox.main.ui.shapes.rect :as rect]
-   [uxbox.main.ui.shapes.text :as text]))
+   [uxbox.main.ui.shapes.text :as text]
+   [uxbox.main.ui.shapes.group :as group]))
 
 (mf/defc background
   []
@@ -37,13 +38,21 @@
     {:width (if (mth/nan? width) 100 width)
      :height (if (mth/nan? height) 100 height)}))
 
+(declare frame-shape)
+(declare group-shape)
+
 (mf/defc frame-wrapper
   [{:keys [shape objects] :as props}]
   (let [childs (mapv #(get objects %) (:shapes shape))]
-    [:& frame/frame-shape {:shape shape :childs childs}]))
+    [:& frame-shape {:shape shape :childs childs}]))
+
+(mf/defc group-wrapper
+  [{:keys [shape-wrapper shape objects] :as props}]
+  (let [children (mapv #(get objects %) (:shapes shape))]
+    [:& group-shape {:shape shape :children children}]))
 
 (mf/defc shape-wrapper
-  [{:keys [shape] :as props}]
+  [{:keys [shape objects] :as props}]
   (when (and shape (not (:hidden shape)))
     (case (:type shape)
       :frame [:& rect/rect-shape {:shape shape}]
@@ -53,7 +62,12 @@
       :rect [:& rect/rect-shape {:shape shape}]
       :path [:& path/path-shape {:shape shape}]
       :image [:& image/image-shape {:shape shape}]
-      :circle [:& circle/circle-shape {:shape shape}])))
+      :circle [:& circle/circle-shape {:shape shape}]
+      :group [:& (group/group-shape shape-wrapper) {:shape shape :shape-wrapper shape-wrapper :objects objects}]
+      nil)))
+
+(def group-shape (group/group-shape shape-wrapper))
+(def frame-shape (frame/frame-shape shape-wrapper))
 
 (mf/defc page-svg
   [{:keys [data] :as props}]
@@ -73,7 +87,8 @@
                             :key (:id item)
                             :objects objects}]
          [:& shape-wrapper {:shape item
-                            :key (:id item)}]))]))
+                            :key (:id item)
+                            :objects objects}]))]))
 
 ;; (defn- render-html
 ;;   [component]

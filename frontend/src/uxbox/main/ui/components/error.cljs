@@ -12,7 +12,8 @@
   (:require
    [beicon.core :as rx]
    [goog.object :as gobj]
-   [rumext.alpha :as mf]))
+   [rumext.alpha :as mf]
+   [cljsjs.react]))
 
 (defn wrap-catch
   [component {:keys [fallback on-error]}]

@@ -23,6 +23,7 @@
    [uxbox.main.constants :as c]
    [uxbox.main.data.icons :as udi]
    [uxbox.main.data.dashboard :as dd]
+   [uxbox.main.data.helpers :as helpers]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.repo :as rp]
@@ -1512,13 +1513,32 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (::page-id state)
-            rfn (fn [state id]
-                  (update-in state [:workspace-data page-id :objects id]
-                             (fn [shape]
-                               (let [mfr (:resize-modifier shape (gmt/matrix))]
-                                 (-> (dissoc shape :resize-modifier)
-                                     (geom/transform mfr))))))]
-        (reduce rfn state ids)))
+            objects (get-in state [:workspace-data page-id :objects])
+
+            ;; Updates the displacement data for a single shape
+            materialize-shape
+            (fn [state id mtx]
+              (update-in
+               state
+               [:workspace-data page-id :objects id]
+               #(-> %
+                    (dissoc :resize-modifier)
+                    (geom/transform mtx))))
+
+            ;; Applies materialize-shape over shape children
+            materialize-children
+            (fn [state id mtx]
+              (reduce #(materialize-shape %1 %2 mtx) state (helpers/get-children id objects)))
+
+            ;; For each shape makes permanent the displacemnt
+            update-shapes
+            (fn [state id]
+              (let [shape (get objects id)
+                    mtx (:resize-modifier shape (gmt/matrix))]
+                (-> state
+                    (materialize-shape id mtx)
+                    (materialize-children id mtx))))]
+        (reduce update-shapes state ids)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -1552,13 +1572,33 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (::page-id state)
-            rfn (fn [state id]
-                  (update-in state [:workspace-data page-id :objects id]
-                             (fn [shape]
-                               (let [mtx (:displacement-modifier shape (gmt/matrix))]
-                                 (-> (dissoc shape :displacement-modifier)
-                                     (geom/transform mtx))))))]
-        (reduce rfn state ids)))
+            objects (get-in state [:workspace-data page-id :objects])
+
+            ;; Updates the displacement data for a single shape
+            materialize-shape
+            (fn [state id mtx]
+              (update-in
+               state
+               [:workspace-data page-id :objects id]
+               #(-> %
+                    (dissoc :displacement-modifier)
+                    (geom/transform mtx))))
+
+            ;; Applies materialize-shape over shape children
+            materialize-children
+            (fn [state id mtx]
+              (reduce #(materialize-shape %1 %2 mtx) state (helpers/get-children id objects)))
+
+            ;; For each shape makes permanent the resize
+            update-shapes
+            (fn [state id]
+              (let [shape (get objects id)
+                    mtx (:displacement-modifier shape (gmt/matrix))]
+                (-> state
+                    (materialize-shape id mtx)
+                    (materialize-children id mtx))))]
+
+        (reduce update-shapes state ids)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -2123,6 +2163,73 @@
         (assoc-in state [:projects (:project-id page) :pages] pages)))))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GROUPS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-parent [object-id objects]
+  (let [include-object
+        (fn [object]
+          (and (:shapes object)
+               (some #(= object-id %) (:shapes object))))]
+    (first (filter include-object objects))))
+
+(defn group-shape [id frame-id selected selection-rect]
+  {:id id
+   :type :group
+   :name (name (gensym "Group-"))
+   :shapes (vec selected)
+   :frame-id frame-id
+   :x (:x selection-rect)
+   :y (:y selection-rect)
+   :width (:width selection-rect)
+   :height (:height selection-rect)})
+
+(defn create-group []
+  (let [id (uuid/next)]
+    (ptk/reify ::create-group
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [selected (get-in state [:workspace-local :selected])]
+          (if (and selected (-> selected count (> 1)))
+            (let [page-id (get-in state [:workspace-page :id])
+                  objects (get-in state [:workspace-data page-id :objects])
+                  parent (get-parent (first selected) (vals objects))
+                  selected-objects (map (partial get objects) selected)
+                  selection-rect (geom/selection-rect selected-objects)
+                  new-shape (group-shape id (-> selected-objects first :frame-id) selected selection-rect)
+                  objects-removed (-> objects
+                                      #_(apply dissoc $ selected)
+                                      (assoc (:id new-shape) new-shape)
+                                      (update-in [(:id parent) :shapes]
+                                                 (fn [shapes] (filter #(not (selected %)) shapes)))
+                                      (update-in [(:id parent) :shapes] conj (:id new-shape)))]
+              (-> state
+                  (assoc-in [:workspace-data page-id :objects] objects-removed )
+                  (assoc-in [:workspace-local :selected] #{(:id new-shape)})))
+            state)))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [obj (get-in state [:workspace-data (::page-id state) :objects id])
+              frame-id (:frame-id obj)
+              frame (get-in state [:workspace-data (::page-id state) :objects frame-id])]
+          (rx/of (commit-changes [{:type :add-obj
+                                   :id id
+                                   :frame-id (:frame-id obj)
+                                   :obj obj}
+                                  {:type :mod-obj
+                                   :id frame-id
+                                   :operations [{:type :set
+                                                 :attr :shapes
+                                                 :val (:shapes frame)}]}]
+                                 [{:type :del-obj :id id}
+                                  {:type :mod-obj
+                                   :id frame-id
+                                   :operations [{:type :set
+                                                 :attr :shapes
+                                                 :val (into (:shapes frame) (:shapes obj))}]}])))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2143,6 +2250,8 @@
    "ctrl+t" #(rx/of (select-for-drawing :text))
    "ctrl+c" #(rx/of copy-selected)
    "ctrl+v" #(rx/of paste)
+   "ctrl+g" #(rx/of (create-group))
+   ;; "ctrl+shift+g" #(rx/of remove-group)
    "esc" #(rx/of :interrupt deselect-all)
    "delete" #(rx/of delete-selected)
    "ctrl+up" #(rx/of (vertical-order-selected :up))

@@ -13,7 +13,8 @@
    [rumext.alpha :as mf]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.shapes.frame :as frame]))
+   [uxbox.main.ui.shapes.frame :as frame]
+   [uxbox.main.ui.shapes.shape :as shape]))
 
-(def shape-wrapper frame/shape-wrapper)
-(def frame-wrapper frame/frame-wrapper)
+(def shape-wrapper shape/shape-wrapper)
+(def frame-wrapper (frame/frame-wrapper shape-wrapper))
