@@ -49,7 +49,7 @@
     [:& shape-options {:shape shape}]))
 
 (mf/defc options-toolbox
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [{:keys [page selected] :as props}]
   (let [close #(st/emit! (udw/toggle-layout-flag :element-options))
         selected (mf/deref refs/selected-shapes)]

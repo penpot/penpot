@@ -75,7 +75,7 @@
 ;; --- Selection Rect
 
 (mf/defc selection-rect
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [{:keys [data] :as props}]
   (when data
     [:rect.selection-rect
@@ -119,7 +119,7 @@
     [:& frames {:data data}]))
 
 (mf/defc frames
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [{:keys [data] :as props}]
   (let [objects (:objects data)
         root    (get objects uuid/zero)

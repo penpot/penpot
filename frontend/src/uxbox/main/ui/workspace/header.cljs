@@ -29,7 +29,7 @@
 ;; --- Zoom Widget
 
 (mf/defc zoom-widget
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [props]
   (let [zoom (mf/deref refs/selected-zoom)
         show-dropdown? (mf/use-state false)

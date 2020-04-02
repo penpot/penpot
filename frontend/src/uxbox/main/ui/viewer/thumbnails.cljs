@@ -78,7 +78,7 @@
          children]]])))
 
 (mf/defc frame-svg
-  {::mf/wrap [mf/wrap-memo]}
+  {::mf/wrap [mf/memo]}
   [{:keys [objects frame zoom] :or {zoom 1} :as props}]
   (let [childs (mapv #(get objects %) (:shapes frame))
         modifier (-> (gpt/point (:x frame) (:y frame))

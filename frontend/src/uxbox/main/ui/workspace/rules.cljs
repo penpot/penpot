@@ -99,7 +99,7 @@
 ;; --- Horizontal Rule Ticks (Component)
 
 (mf/defc horizontal-rule-ticks
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [{:keys [zoom]}]
   (let [path (reduce (partial make-vertical-tick zoom) [] +ticks+)]
     [:g
@@ -110,7 +110,7 @@
 ;; --- Vertical Rule Ticks (Component)
 
 (mf/defc vertical-rule-ticks
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [{:keys [zoom]}]
   (let [path (reduce (partial make-horizontal-tick zoom) [] +ticks+)]
     [:g
@@ -121,7 +121,7 @@
 ;; --- Horizontal Rule (Component)
 
 (mf/defc horizontal-rule
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [props]
   (let [scroll (use-rxsub  ms/viewport-scroll)
         zoom (mf/deref refs/selected-zoom)
@@ -137,7 +137,7 @@
 ;; --- Vertical Rule (Component)
 
 (mf/defc vertical-rule
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [props]
   (let [scroll (use-rxsub ms/viewport-scroll)
         zoom (or (mf/deref refs/selected-zoom) 1)
