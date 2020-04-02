@@ -3,7 +3,6 @@
          '[clojure.java.io :as io]
          '[clojure.edn :as edn]
          '[clojure.string :as str]
-         '[figwheel.main.api :as figwheel]
          '[environ.core :refer [env]])
 (require '[cljs.build.api :as api]
          '[cljs.repl :as repl]
@@ -179,34 +178,6 @@
                 (Thread/sleep 2000)
                 start-watch)))]
     (trampoline start-watch)))
-
-
-;; --- Figwheel Config & Tasks
-
-(def figwheel-builds
-  {:main {:id "main"
-          :options (merge default-build-options main-build-options)}
-   ;; :worker {:id "worker"
-   ;;          :options (merge default-build-options worker-build-options)}
-   })
-
-(def figwheel-options
-  {:open-url false
-   :pprint-config false
-   :load-warninged-code false
-   :auto-testing false
-   :reload-dependents true
-   :reload-clj-files true
-   :css-dirs ["resources/public/css"]
-   :ring-server-options {:port 3449 :host "0.0.0.0"}
-   :watch-dirs ["src" "test" "../common"]})
-
-(defmethod task "figwheel"
-  [& args]
-  (figwheel/start
-   figwheel-options
-   (:main figwheel-builds)
-   #_(:worker figwheel-builds)))
 
 ;;; Build script entrypoint. This should be the last expression.
 

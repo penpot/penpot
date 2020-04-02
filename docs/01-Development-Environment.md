@@ -67,8 +67,19 @@ additional tasks.
 ### Frontend ###
 
 The frontend build process and the http server is located on the tmux
-**window 1**. **Figwheel** is used for build and serve the forntend
-code. For more information, please refer to `02-Frotend-Guide.md`.
+**window 1**. **Shadow-cljs** is used for build and serve the frontend
+code. For more information, please refer to `02-Frontend-Developer-Guide.md`.
+
+By default the **window 1** executes the shadow-cljs watch process, that starts
+a new JVM/Clojure instance if there is no one running. But you may also execute
+`shadow-cljs server`, that starts only the instance. And then, open another
+window with `Ctrl+c` and execute `shadow-cljs watch main` there. This way, the
+process that watches and recompiles connects to it and it restarts faster when
+your code changes.
+
+Finally, you can start a REPL linked to the instance and the current connected
+browser, by opening a third window with `Ctrl+c` and running
+`shadow-cljs cljs-repl main`.
 
 
 ### Backend ###
