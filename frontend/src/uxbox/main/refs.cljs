@@ -47,9 +47,13 @@
       (l/derive st/state)))
 
 (def workspace-data
-  (-> (l/lens (fn [state]
-                (let [page-id (get-in state [:workspace-page :id])]
-                  (get-in state [:workspace-data page-id]))))
+  (-> (l/lens #(let [page-id (get-in % [:workspace-page :id])]
+                 (get-in % [:workspace-data page-id])))
+      (l/derive st/state)))
+
+(def objects
+  (-> (l/lens #(let [page-id (get-in % [:workspace-page :id])]
+                 (get-in % [:workspace-data page-id :objects])))
       (l/derive st/state)))
 
 (def selected-shapes

@@ -41,6 +41,7 @@
     :rect i/box
     :curve i/curve
     :text i/text
+    :group i/folder
     nil))
 
 ;; --- Layer Name
@@ -82,8 +83,16 @@
 
 (mf/defc layer-item
   {:wrap [mf/wrap-memo]}
-  [{:keys [index item selected] :as props}]
+  [{:keys [index item selected objects] :as props}]
   (let [selected? (contains? selected (:id item))
+        local (mf/use-state {:collapsed false})
+        collapsed? (:collapsed @local)
+
+        toggle-collapse
+        (fn [event]
+          (dom/stop-propagation event)
+          (swap! local update :collapsed not))
+
         toggle-blocking
         (fn [event]
           (dom/stop-propagation event)
@@ -151,13 +160,30 @@
                               :on-double-click #(dom/stop-propagation %)}
       [:& element-icon {:shape item}]
       [:& layer-name {:shape item}]
+
       [:div.element-actions
        [:div.toggle-element {:class (when (:hidden item) "selected")
                              :on-click toggle-visibility}
         i/eye]
        [:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
-        i/lock]]]]))
+        i/lock]]
+
+      (when (:shapes item)
+        [:span.toggle-content
+         {:on-click toggle-collapse
+          :class (when-not collapsed? "inverse")}
+         i/arrow-slide])]
+     (when (and (:shapes item) (not collapsed?))
+       [:ul.element-children
+        (for [[index id] (d/enumerate (:shapes item))]
+          (let [item (get objects id)]
+            [:& layer-item
+             {:item item
+              :selected selected
+              :index index
+              :objects objects
+              :key (:id item)}]))])]))
 
 (mf/defc layer-frame-item
   {:wrap [#(mf/wrap-memo % =)]}
@@ -252,18 +278,12 @@
        [:ul
         (for [[index id] (d/enumerate (reverse (:shapes item)))]
           (let [item (get objects id)]
-            (if (= (:type item) :frame)
-              [:& layer-frame-item
-               {:item item
-                :key (:id item)
-                :selected selected
-                :objects objects
-                :index index}]
-              [:& layer-item
-               {:item item
-                :selected selected
-                :index index
-                :key (:id item)}])))])]))
+            [:& layer-item
+             {:item item
+              :selected selected
+              :index index
+              :objects objects
+              :key (:id item)}]))])]))
 
 (mf/defc layers-tree
   {::mf/wrap [mf/wrap-memo]}

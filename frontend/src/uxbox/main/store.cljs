@@ -42,7 +42,6 @@
       (rx/filter (fn [s] (deref *debug*)) $)
       (rx/subscribe $ (fn [event]
                         (println "[stream]: " (repr-event event)))))))
-
 (def auth-ref
   (-> (l/key :auth)
       (l/derive state)))

@@ -32,7 +32,8 @@
     :curve (move-path shape dpoint)
     :path (move-path shape dpoint)
     :circle (move-circle shape dpoint)
-    nil))
+    :group (move-rect shape dpoint)
+    shape))
 
 (defn- move-rect
   "A specialized function for relative movement
@@ -73,7 +74,9 @@
     :frame (absolute-move-rect shape position)
     :image (absolute-move-rect shape position)
     :rect (absolute-move-rect shape position)
-    :circle (absolute-move-circle shape position)))
+    :group (absolute-move-rect shape position)
+    :circle (absolute-move-circle shape position)
+    shape))
 
 (defn- absolute-move-rect
   "A specialized function for absolute moviment
@@ -493,6 +496,7 @@
   [objects shape]
   (case (:type shape)
     :rect (resolve-rect-shape objects shape)
+    :group (resolve-rect-shape objects shape)
     :frame (resolve-rect-shape objects shape)))
 
 (defn- resolve-rect-shape
@@ -511,15 +515,19 @@
 (defn transform
   "Apply the matrix transformation to shape."
   [{:keys [type] :as shape} xfmt]
-  (case type
-    :frame (transform-rect shape xfmt)
-    :rect (transform-rect shape xfmt)
-    :icon (transform-rect shape xfmt)
-    :text (transform-rect shape xfmt)
-    :image (transform-rect shape xfmt)
-    :path (transform-path shape xfmt)
-    :curve (transform-path shape xfmt)
-    :circle (transform-circle shape xfmt)))
+  (if (gmt/matrix? xfmt)
+   (case type
+     :frame (transform-rect shape xfmt)
+     :group (transform-rect shape xfmt)
+     :rect (transform-rect shape xfmt)
+     :icon (transform-rect shape xfmt)
+     :text (transform-rect shape xfmt)
+     :image (transform-rect shape xfmt)
+     :path (transform-path shape xfmt)
+     :curve (transform-path shape xfmt)
+     :circle (transform-circle shape xfmt)
+     shape)
+   shape))
 
 (defn- transform-rect
   [{:keys [x y width height] :as shape} mx]

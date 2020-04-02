@@ -18,13 +18,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :as attrs]
-   [uxbox.main.ui.shapes.circle :as circle]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.main.ui.shapes.icon :as icon]
-   [uxbox.main.ui.shapes.image :as image]
-   [uxbox.main.ui.shapes.path :as path]
-   [uxbox.main.ui.shapes.rect :as rect]
-   [uxbox.main.ui.shapes.text :as text]
    [uxbox.util.dom :as dom]
    [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]
@@ -32,39 +26,14 @@
 
 (declare frame-wrapper)
 
-
-(defn wrap-memo-shape
-  ([component]
-   (js/React.memo
-    component
-    (fn [np op]
-      (let [n-shape (unchecked-get np "shape")
-            o-shape (unchecked-get op "shape")]
-        (= n-shape o-shape))))))
-
-(mf/defc shape-wrapper
-  {::mf/wrap [wrap-memo-shape]}
-  [{:keys [shape] :as props}]
-  (when (and shape (not (:hidden shape)))
-    (case (:type shape)
-      :frame [:& frame-wrapper {:shape shape :childs []}]
-      :curve [:& path/path-wrapper {:shape shape}]
-      :text [:& text/text-wrapper {:shape shape}]
-      :icon [:& icon/icon-wrapper {:shape shape}]
-      :rect [:& rect/rect-wrapper {:shape shape}]
-      :path [:& path/path-wrapper {:shape shape}]
-      :image [:& image/image-wrapper {:shape shape}]
-      :circle [:& circle/circle-wrapper {:shape shape}])))
-
-(def frame-default-props
-  {:fill-color "#ffffff"})
+(def frame-default-props {:fill-color "#ffffff"})
 
 (declare frame-shape)
 (declare translate-to-frame)
 
 (defn wrap-memo-frame
   ([component]
-   (js/React.memo
+   (mf/memo'
     component
     (fn [np op]
       (let [n-shape (aget np "shape")
@@ -84,76 +53,83 @@
                    false)))))))))
 
 
-(mf/defc frame-wrapper
-  {::mf/wrap [wrap-memo-frame]}
-  [{:keys [shape objects] :as props}]
-  (when (and shape (not (:hidden shape)))
-    (let [selected-iref (-> (mf/deps (:id shape))
-                            (mf/use-memo #(refs/make-selected (:id shape))))
-          selected? (mf/deref selected-iref)
-          on-mouse-down #(common/on-mouse-down % shape)
-          on-context-menu #(common/on-context-menu % shape)
-          shape (merge frame-default-props shape)
-          {:keys [x y width height]} shape
+(defn frame-wrapper [shape-wrapper]
+  (mf/fnc frame-wrapper
+    {::mf/wrap [wrap-memo-frame]}
+    [{:keys [shape objects] :as props}]
+    (when (and shape (not (:hidden shape)))
+      (let [selected-iref (-> (mf/deps (:id shape))
+                              (mf/use-memo #(refs/make-selected (:id shape))))
+            selected? (mf/deref selected-iref)
+            on-mouse-down #(common/on-mouse-down % shape)
+            on-context-menu #(common/on-context-menu % shape)
+            shape (merge frame-default-props shape)
+            {:keys [x y width height]} shape
 
-          childs (mapv #(get objects %) (:shapes shape))
+            childs (mapv #(get objects %) (:shapes shape))
 
-          ds-modifier (:displacement-modifier shape)
-          label-pos (cond-> (gpt/point x (- y 10))
-                      (gmt/matrix? ds-modifier) (gpt/transform ds-modifier))
+            ds-modifier (:displacement-modifier shape)
+            label-pos (cond-> (gpt/point x (- y 10))
+                        (gmt/matrix? ds-modifier) (gpt/transform ds-modifier))
 
-          on-double-click
-          (fn [event]
-            (dom/prevent-default event)
-            (st/emit! dw/deselect-all
-                      (dw/select-shape (:id shape))))]
-      [:g {:class (when selected? "selected")
-           :on-context-menu on-context-menu
-           :on-double-click on-double-click
-           :on-mouse-down on-mouse-down}
-       [:text {:x (:x label-pos)
-               :y (:y label-pos)
-               :width width
-               :height 20
-               :class-name "workspace-frame-label"
-               :on-click on-double-click} ; user may also select with single click in the label
-        (:name shape)]
-       [:& frame-shape {:shape shape :childs childs}]])))
+            on-double-click
+            (fn [event]
+              (dom/prevent-default event)
+              (st/emit! dw/deselect-all
+                        (dw/select-shape (:id shape))))]
+        [:g {:class (when selected? "selected")
+             :on-context-menu on-context-menu
+             :on-double-click on-double-click
+             :on-mouse-down on-mouse-down}
+         [:text {:x (:x label-pos)
+                 :y (:y label-pos)
+                 :width width
+                 :height 20
+                 :class-name "workspace-frame-label"
+                 :on-click on-double-click} ; user may also select with single click in the label
+          (:name shape)]
+         [:& (frame-shape shape-wrapper) {:shape shape
+                                          :childs childs}]]))))
 
-(mf/defc frame-shape
-  [{:keys [shape childs] :as props}]
-  (let [rotation    (:rotation shape)
-        ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
+(defn frame-shape [shape-wrapper]
+ (mf/fnc frame-shape
+   [{:keys [shape childs] :as props}]
+   (let [rotation    (:rotation shape)
+         ds-modifier (:displacement-modifier shape)
+         rz-modifier (:resize-modifier shape)
 
-        shape (cond-> shape
-                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
+         shape (cond-> shape
+                 (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                 (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
 
-        {:keys [id x y width height]} shape
+         {:keys [id x y width height]} shape
 
-        props (-> (attrs/extract-style-attrs shape)
-                  (itr/obj-assign!
-                   #js {:x 0
-                        :y 0
-                        :id (str "shape-" id)
-                        :width width
-                        :height height}))
+         props (-> (attrs/extract-style-attrs shape)
+                   (itr/obj-assign!
+                    #js {:x 0
+                         :y 0
+                         :id (str "shape-" id)
+                         :width width
+                         :height height}))]
 
-        translate #(translate-to-frame % ds-modifier (gpt/point (- x) (- y)))]
-    [:svg {:x x :y y :width width :height height}
-     [:> "rect" props]
-     (for [item childs]
-       [:& shape-wrapper {:shape (translate item) :key (:id item)}])]))
+     [:svg {:x x :y y :width width :height height}
+      [:> "rect" props]
+      (for [item childs]
+        [:& shape-wrapper {:shape (translate-to-frame item shape) :key (:id item)}])])))
 
 (defn- translate-to-frame
-  [shape frame-ds-modifier pt]
-  (let [rz-modifier (:resize-modifier shape)
+  [shape frame]
+  (let [pt (gpt/point (- (:x frame)) (- (:y frame)))
+        frame-ds-modifier (:displacement-modifier frame)
+        rz-modifier (:resize-modifier shape)
         shape (cond-> shape
                 (gmt/matrix? frame-ds-modifier)
                 (geom/transform frame-ds-modifier)
 
-                (gmt/matrix? rz-modifier)
+                (and (= (:type shape) :group) (gmt/matrix? rz-modifier))
+                (geom/transform rz-modifier)
+
+                (and (not= (:type shape) :group) (gmt/matrix? rz-modifier))
                 (-> (geom/transform rz-modifier)
                     (dissoc :resize-modifier)))]
     (geom/move shape pt)))
