@@ -5,6 +5,7 @@
 ;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.router
+  (:refer-clojure :exclude [resolve])
   (:require
    [reitit.core :as r]
    [cuerdas.core :as str]
@@ -14,8 +15,6 @@
   (:import
    goog.Uri
    goog.Uri.QueryData))
-
-(defonce +router+ nil)
 
 ;; --- API
 
@@ -37,9 +36,9 @@
            (transient {})
            (.getKeys qdata))))
 
-(defn- resolve-url
-  ([router id] (resolve-url router id {} {}))
-  ([router id params] (resolve-url router id params {}))
+(defn resolve
+  ([router id] (resolve router id {} {}))
+  ([router id params] (resolve router id params {}))
   ([router id params qparams]
    (when-let [match (r/match-by-name router id params)]
      (if (empty? qparams)
@@ -68,7 +67,7 @@
   ([router id] (navigate! router id {} {}))
   ([router id params] (navigate! router id params {}))
   ([router id params qparams]
-   (-> (resolve-url router id params qparams)
+   (-> (resolve router id params qparams)
        (html-history/set-path!))))
 
 (defn match
@@ -83,20 +82,12 @@
                :params params
                :query-params qparams)))))
 
-(defn route-for
-  "Given a location handler and optional parameter map, return the URI
-  for such handler and parameters."
-  ([id] (route-for id {}))
-  ([id params]
-   (str (some-> +router+ (resolve-url id params)))))
-
 ;; --- Navigate (Event)
 
 (deftype Navigate [id params qparams]
   ptk/EffectEvent
   (effect [_ state stream]
     (let [router (:router state)]
-      ;; (prn "Navigate:" id params qparams "| Match:" (resolve-url router id params qparams))
       (navigate! router id params qparams))))
 
 (defn nav
