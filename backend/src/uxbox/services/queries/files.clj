@@ -192,6 +192,16 @@
     inner join file as f on (p.id = f.project_id)
     where f.id = $1")
 
+(defn retrieve-file
+  [conn id]
+  (-> (db/query-one conn [sql:file id])
+      (p/then' su/raise-not-found-if-nil)
+      (p/then' decode-row)))
+
+(defn retrieve-file-users
+  [conn id]
+  (db/query conn [sql:file-users id]))
+
 (s/def ::file-with-users
   (s/keys :req-un [::profile-id ::id]))
 
@@ -199,10 +209,8 @@
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
     (check-edition-permissions! conn profile-id id)
-    (p/let [file  (-> (db/query-one conn [sql:file id])
-                      (p/then' su/raise-not-found-if-nil)
-                      (p/then' decode-row))
-            users (db/query conn [sql:file-users id])]
+    (p/let [file  (retrieve-file conn id)
+            users (retrieve-file-users conn id)]
       (assoc file :users users))))
 
 (s/def ::file
@@ -212,9 +220,7 @@
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
     (check-edition-permissions! conn profile-id id)
-    (-> (db/query-one conn [sql:file id])
-        (p/then' su/raise-not-found-if-nil)
-        (p/then' decode-row))))
+    (retrieve-file conn id)))
 
 ;; --- Query: Project Files
 

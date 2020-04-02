@@ -22,7 +22,7 @@
   (require 'uxbox.services.queries.pages)
   (require 'uxbox.services.queries.profile)
   (require 'uxbox.services.queries.recent-files)
-  ;; (require 'uxbox.services.queries.user-attrs)
+  (require 'uxbox.services.queries.view)
   )
 
 (defn- load-mutation-services
