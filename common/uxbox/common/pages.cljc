@@ -247,10 +247,10 @@
   (let [shapes (:shapes obj)
         cindex (d/index-of shapes id)
         nindex (case loc
-                 :top 0
-                 :down (min (- (count shapes) 1) (inc cindex))
-                 :up (max 0 (- cindex 1))
-                 :bottom (- (count shapes) 1))]
+                 :top (- (count shapes) 1)
+                 :down (max 0 (- cindex 1))
+                 :up (min (- (count shapes) 1) (inc cindex))
+                 :bottom 0)]
     (update obj :shapes
             (fn [shapes]
               (let [[fst snd] (->> (remove #(= % id) shapes)

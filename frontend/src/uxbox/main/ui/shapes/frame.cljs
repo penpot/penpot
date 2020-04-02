@@ -143,7 +143,7 @@
         translate #(translate-to-frame % ds-modifier (gpt/point (- x) (- y)))]
     [:svg {:x x :y y :width width :height height}
      [:> "rect" props]
-     (for [item (reverse childs)]
+     (for [item childs]
        [:& shape-wrapper {:shape (translate item) :key (:id item)}])]))
 
 (defn- translate-to-frame
