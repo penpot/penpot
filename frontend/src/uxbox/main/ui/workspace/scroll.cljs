@@ -49,9 +49,10 @@
 
 (defn get-current-center-absolute
   [dom]
-  (gpt/divide (get-current-center dom) @refs/selected-zoom))
+  (gpt/divide (get-current-center dom) (gpt/point @refs/selected-zoom)))
 
 (defn get-current-position
+  "Get the coordinates of the currently visible point at top left of viewport"
   [dom]
   (let [scroll-left (.-scrollLeft dom)
         scroll-top (.-scrollTop dom)]
@@ -59,10 +60,14 @@
 
 (defn get-current-position-absolute
   [dom]
-    (gpt/divide (get-current-position dom) @refs/selected-zoom))
+    (let [current-position (get-current-position dom)]
+      (gpt/divide (get-current-position dom) (gpt/point @refs/selected-zoom))))
 
 (defn scroll-to-point
   [dom point position]
   (let [viewport-offset (gpt/subtract point position)
-        new-scroll-position (gpt/subtract (gpt/multiply point @refs/selected-zoom) (gpt/multiply viewport-offset @refs/selected-zoom))]
+        selected-zoom (gpt/point @refs/selected-zoom)
+        new-scroll-position (gpt/subtract 
+                              (gpt/multiply point selected-zoom)
+                              (gpt/multiply viewport-offset selected-zoom))]
     (set-scroll-position dom new-scroll-position)))

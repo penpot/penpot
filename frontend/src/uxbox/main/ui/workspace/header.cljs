@@ -50,11 +50,11 @@
          [:li {:on-click decrease}
           "Zoom out" [:span "-"]]
          [:li {:on-click zoom-to-50}
-          "Zoom to 50%"]
+          "Zoom to 50%" [:span "Shift + 0"]]
          [:li {:on-click zoom-to-100}
-          "Zoom to 100%" [:span "Shift + 0"]]
+          "Zoom to 100%" [:span "Shift + 1"]]
          [:li {:on-click zoom-to-200}
-          "Zoom to 200%"]]]]
+          "Zoom to 200%" [:span "Shift + 2"]]]]]
      [:span.remove-zoom {:on-click increase} "+"]]))
 
 ;; --- Header Users

@@ -46,15 +46,13 @@
 (defn- on-wheel
   [event frame]
   (when (kbd/ctrl? event)
-    (let [prev-zoom @refs/selected-zoom
-          dom (mf/ref-val frame)
+    ;; global ctrl+wheel browser zoom must be disabled (see main/ui/workspace/wiewport.cljs)
+    (let [dom (mf/ref-val frame)
           scroll-position (scroll/get-current-position-absolute dom)
           mouse-point @ms/mouse-position]
-      (dom/prevent-default event)
-      (dom/stop-propagation event)
       (if (pos? (.-deltaY event))
-        (st/emit! (dw/decrease-zoom))
-        (st/emit! (dw/increase-zoom)))
+        (st/emit! dw/decrease-zoom)
+        (st/emit! dw/increase-zoom))
       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
