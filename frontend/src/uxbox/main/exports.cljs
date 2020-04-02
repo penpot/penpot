@@ -7,7 +7,6 @@
 (ns uxbox.main.exports
   "The main logic for SVG export functionality."
   (:require
-   [cljsjs.react.dom.server]
    [rumext.alpha :as mf]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.math :as mth]
