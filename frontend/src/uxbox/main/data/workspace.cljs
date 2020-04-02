@@ -1955,7 +1955,7 @@
     (watch [_ state stream]
       (let [project-id (get-in state [:workspace-project :id])
             file-id (get-in state [:workspace-page :file-id])
-            path-params {:project-id project-id :file-id file-id}
+            path-params {:file-id file-id :project-id project-id}
             query-params {:page-id page-id}]
         (rx/of (rt/nav :workspace path-params query-params))))))
 
@@ -2199,7 +2199,7 @@
             (let [page-id (get-in state [:workspace-page :id])
                   objects (get-in state [:workspace-data page-id :objects])
                   parent (get-parent (first selected) (vals objects))
-                  parent-id (:id parent) 
+                  parent-id (:id parent)
                   selected-objects (map (partial get objects) selected)
                   selection-rect (geom/selection-rect selected-objects)
                   frame-id (-> selected-objects first :frame-id)
@@ -2254,7 +2254,7 @@
                              :obj group}
                             {:type :mod-obj
                              :id parent-id
-                             :operations [{:type :set :attr :shapes :val (:shapes parent)}]}]] 
+                             :operations [{:type :set :attr :shapes :val (:shapes parent)}]}]]
               (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))
           rx/empty)))))
 

@@ -11,6 +11,8 @@
             [uxbox.util.uuid :as uuid]
             [uxbox.util.storage :refer [storage]]))
 
+;; TODO: move outside uxbox.main
+
 (enable-console-print!)
 
 (def ^:dynamic *on-error* identity)
@@ -47,6 +49,7 @@
       (l/derive state)))
 
 (defn emit!
+  ([] nil)
   ([event]
    (ptk/emit! store event)
    nil)

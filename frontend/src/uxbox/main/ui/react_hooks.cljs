@@ -11,7 +11,9 @@
   "A collection of general purpose react hooks."
   (:require
    [beicon.core :as rx]
-   [rumext.alpha :as mf]))
+   [goog.events :as events]
+   [rumext.alpha :as mf])
+  (:import goog.events.EventType))
 
 (defn use-rxsub
   [ob]
@@ -22,4 +24,3 @@
          #(rx/cancel! sub)))
      #js [ob])
     state))
-

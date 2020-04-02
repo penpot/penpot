@@ -40,7 +40,7 @@
       (st/emit! (rt/nav :login))
 
       (nil? match)
-      (prn "TODO 404 main")
+      (st/emit! (rt/nav :not-found))
 
       :else
       (st/emit! #(assoc % :route match)))))

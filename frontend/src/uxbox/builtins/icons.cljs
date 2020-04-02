@@ -38,6 +38,7 @@
 (def fill (icon-xref :fill))
 (def folder (icon-xref :folder))
 (def folder-zip (icon-xref :folder-zip))
+(def full-screen (icon-xref :full-screen))
 (def grid (icon-xref :grid))
 (def grid-snap (icon-xref :grid-snap))
 (def icon-set (icon-xref :icon-set))

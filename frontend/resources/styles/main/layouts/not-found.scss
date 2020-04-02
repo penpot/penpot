@@ -1,0 +1,43 @@
+.not-found-layout {
+  display: grid;
+
+  grid-template-rows: 120px auto;
+  grid-template-columns: 1fr;
+}
+
+.not-found-header {
+  grid-column: 1 / span 1;
+  grid-row: 1 / span 1;
+
+  display: flex;
+  align-items: center;
+  padding: 32px;
+
+  svg {
+    height: 55px;
+    width: 170px;
+  }
+
+}
+
+.not-found-content {
+  grid-column: 1 / span 1;
+  grid-row: 1 / span 2;
+  height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .main-message {
+    font-size: 18rem;
+    color: $color-black;
+    line-height: 226px;
+  }
+
+  .desc-message {
+    font-size: 3rem;
+    color: $color-black;
+  }
+}
+

@@ -12,6 +12,8 @@
    [uxbox.util.uuid :as uuid]
    [uxbox.util.math :as mth]
    [uxbox.main.geom :as geom]
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.geom.matrix :as gmt]
    [uxbox.main.ui.shapes.frame :as frame]
    [uxbox.main.ui.shapes.circle :as circle]
    [uxbox.main.ui.shapes.icon :as icon]
@@ -51,6 +53,9 @@
   (let [children (mapv #(get objects %) (:shapes shape))]
     [:& group-shape {:shape shape :children children}]))
 
+(declare group-shape)
+(declare frame-shape)
+
 (mf/defc shape-wrapper
   [{:keys [shape objects] :as props}]
   (when (and shape (not (:hidden shape)))
@@ -63,7 +68,7 @@
       :path [:& path/path-shape {:shape shape}]
       :image [:& image/image-shape {:shape shape}]
       :circle [:& circle/circle-shape {:shape shape}]
-      :group [:& (group/group-shape shape-wrapper) {:shape shape :shape-wrapper shape-wrapper :objects objects}]
+      :group [:& group-shape {:shape shape :objects objects}]
       nil)))
 
 (def group-shape (group/group-shape shape-wrapper))
@@ -90,15 +95,3 @@
                             :key (:id item)
                             :objects objects}]))]))
 
-;; (defn- render-html
-;;   [component]
-;;   (.renderToStaticMarkup js/ReactDOMServer component))
-
-;; (defn render
-;;   [{:keys [data] :as page}]
-;;   (try
-;;     (-> (mf/element page-svg #js {:data data})
-;;         (render-html))
-;;     (catch :default e
-;;       (js/console.log e)
-;;       nil)))
