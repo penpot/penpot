@@ -19,6 +19,7 @@
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.confirm]
    [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.ui.react-hooks :as hooks]
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.main.ui.workspace.viewport :refer [viewport]]
    [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
@@ -111,11 +112,7 @@
          (st/emit! (dw/initialize-ws file-id))
          #(st/emit! (dw/finalize-ws file-id)))))
 
-  (-> (mf/deps file-id)
-      (mf/use-effect
-       (fn []
-         (st/emit! dw/initialize-shortcuts)
-         #(st/emit! ::dw/finalize-shortcuts))))
+  (hooks/use-shortcuts dw/shortcuts)
 
   (mf/use-effect #(st/emit! dw/initialize-layout))
 

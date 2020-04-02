@@ -10,9 +10,12 @@
 (ns uxbox.main.ui.react-hooks
   "A collection of general purpose react hooks."
   (:require
+   [cljs.spec.alpha :as s]
+   [uxbox.common.spec :as us]
    [beicon.core :as rx]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.alpha :as mf]
+   ["mousetrap" :as mousetrap])
   (:import goog.events.EventType))
 
 (defn use-rxsub
@@ -24,3 +27,22 @@
          #(rx/cancel! sub)))
      #js [ob])
     state))
+
+
+(s/def ::shortcuts
+  (s/map-of ::us/string fn?))
+
+(defn use-shortcuts
+  [shortcuts]
+  (us/assert ::shortcuts shortcuts)
+  (mf/use-effect
+   (fn []
+     (->> (seq shortcuts)
+          (run! (fn [[key f]]
+                  (mousetrap/bind key (fn [event]
+                                        (js/console.log "[debug]: shortcut:" key)
+                                        (.preventDefault event)
+                                        (f event))))))
+     (fn [] (mousetrap/reset))))
+  nil)
+

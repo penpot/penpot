@@ -2263,63 +2263,41 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def shortcuts
-  {"ctrl+shift+m" #(rx/of (toggle-layout-flag :sitemap))
-   "ctrl+shift+f" #(rx/of (toggle-layout-flag :drawtools))
-   "ctrl+shift+i" #(rx/of (toggle-layout-flag :icons))
-   "ctrl+shift+l" #(rx/of (toggle-layout-flag :layers))
-   "equals" #(rx/of increase-zoom) ; keyName for the key with = and + in US keyboards (see https://unixpapa.com/js/key.html)
-   "dash" #(rx/of decrease-zoom) ; keyName for the key with - and _ in US keyboards
-   "shift+0" #(rx/of zoom-to-50)
-   "shift+1" #(rx/of reset-zoom)
-   "shift+2" #(rx/of zoom-to-200)
-   "ctrl+d" #(rx/of duplicate-selected)
-   "ctrl+z" #(rx/of undo)
-   "ctrl+shift+z" #(rx/of redo)
-   "ctrl+y" #(rx/of redo)
-   "ctrl+q" #(rx/of reinitialize-undo)
-   "ctrl+b" #(rx/of (select-for-drawing :rect))
-   "ctrl+e" #(rx/of (select-for-drawing :circle))
-   "ctrl+t" #(rx/of (select-for-drawing :text))
-   "ctrl+c" #(rx/of copy-selected)
-   "ctrl+v" #(rx/of paste)
-   "ctrl+g" #(rx/of (create-group))
-   "ctrl+shift+g" #(rx/of (remove-group))
-   "esc" #(rx/of :interrupt deselect-all)
-   "delete" #(rx/of delete-selected)
-   "ctrl+up" #(rx/of (vertical-order-selected :up))
-   "ctrl+down" #(rx/of (vertical-order-selected :down))
-   "ctrl+shift+up" #(rx/of (vertical-order-selected :top))
-   "ctrl+shift+down" #(rx/of (vertical-order-selected :bottom))
-   "shift+up" #(rx/of (move-selected :up true))
-   "shift+down" #(rx/of (move-selected :down true))
-   "shift+right" #(rx/of (move-selected :right true))
-   "shift+left" #(rx/of (move-selected :left true))
-   "up" #(rx/of (move-selected :up false))
-   "down" #(rx/of (move-selected :down false))
-   "right" #(rx/of (move-selected :right false))
-   "left" #(rx/of (move-selected :left false))})
+  {"ctrl+shift+m" #(st/emit! (toggle-layout-flag :sitemap))
+   "ctrl+shift+i" #(st/emit! (toggle-layout-flag :libraries))
+   "ctrl+shift+l" #(st/emit! (toggle-layout-flag :layers))
+   "+" #(st/emit! increase-zoom)
+   "-" #(st/emit! decrease-zoom)
 
-(def initialize-shortcuts
-  (letfn [(initialize [sink]
-            (let [handler (KeyboardShortcutHandler. js/document)]
+   "ctrl+g" #(st/emit! (create-group))
+   "ctrl+shift+g" #(st/emit! (remove-group))
 
-              ;; Register shortcuts.
-              (run! #(.registerShortcut handler % %) (keys shortcuts))
-
-              ;; Initialize shortcut listener.
-              (let [event KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED
-                    callback #(sink (gobj/get % "identifier"))
-                    key (events/listen handler event callback)]
-                (fn []
-                  (events/unlistenByKey key)
-                  (.clearKeyListener handler)))))]
-    (ptk/reify ::initialize-shortcuts
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [stoper (rx/filter #(= ::finalize-shortcuts %) stream)]
-          (->> (rx/create initialize)
-               (rx/pr-log "[debug]: shortcut:")
-               (rx/map #(get shortcuts %))
-               (rx/filter fn?)
-               (rx/merge-map (fn [f] (f)))
-               (rx/take-until stoper)))))))
+   "shift+0" #(st/emit! zoom-to-50)
+   "shift+1" #(st/emit! reset-zoom)
+   "shift+2" #(st/emit! zoom-to-200)
+   "ctrl+d" #(st/emit! duplicate-selected)
+   "ctrl+z" #(st/emit! undo)
+   "ctrl+shift+z" #(st/emit! redo)
+   "ctrl+y" #(st/emit! redo)
+   "ctrl+q" #(st/emit! reinitialize-undo)
+   "ctrl+b" #(st/emit! (select-for-drawing :rect))
+   "ctrl+e" #(st/emit! (select-for-drawing :circle))
+   "ctrl+t" #(st/emit! (select-for-drawing :text))
+   "ctrl+c" #(st/emit! copy-selected)
+   "ctrl+v" #(st/emit! paste)
+   "ctrl+g" #(st/emit! (create-group))
+   ;; "ctrl+shift+g" #(st/emit! remove-group)
+   "esc" #(st/emit! :interrupt deselect-all)
+   "delete" #(st/emit! delete-selected)
+   "ctrl+up" #(st/emit! (vertical-order-selected :up))
+   "ctrl+down" #(st/emit! (vertical-order-selected :down))
+   "ctrl+shift+up" #(st/emit! (vertical-order-selected :top))
+   "ctrl+shift+down" #(st/emit! (vertical-order-selected :bottom))
+   "shift+up" #(st/emit! (move-selected :up true))
+   "shift+down" #(st/emit! (move-selected :down true))
+   "shift+right" #(st/emit! (move-selected :right true))
+   "shift+left" #(st/emit! (move-selected :left true))
+   "up" #(st/emit! (move-selected :up false))
+   "down" #(st/emit! (move-selected :down false))
+   "right" #(st/emit! (move-selected :right false))
+   "left" #(st/emit! (move-selected :left false))})
