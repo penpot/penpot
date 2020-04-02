@@ -16,5 +16,14 @@
     (if shapes
       (concat
        shapes
-       (mapcat get-children shapes))
+       (mapcat #(get-children % objects) shapes))
       [])))
+
+(defn is-shape-grouped
+  "Checks if a shape is inside a group"
+  [shape-id objects]
+  (let [contains-shape-fn
+        (fn [{:keys [shapes]}] ((set shapes) shape-id))
+
+        shapes (remove #(= (:type %) :frame) (vals objects))] 
+    (some contains-shape-fn shapes)))

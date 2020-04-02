@@ -37,7 +37,7 @@
 (declare text-shape)
 
 (mf/defc text-wrapper
-  [{:keys [shape] :as props}]
+  [{:keys [shape frame] :as props}]
   (let [{:keys [id x1 y1 content group]} shape
         selected (mf/deref refs/selected-shapes)
         edition (mf/deref refs/selected-edition)
@@ -55,8 +55,8 @@
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
      (if edition?
-       [:& text-shape-edit {:shape shape}]
-       [:& text-shape {:shape shape}])]))
+       [:& text-shape-edit {:shape (geom/transform-shape frame shape)}]
+       [:& text-shape {:shape (geom/transform-shape frame shape)}])]))
 
 ;; --- Text Styles Helpers
 
@@ -148,15 +148,7 @@
 
 (mf/defc text-shape
   [{:keys [shape] :as props}]
-  (let [ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
-
-        shape (cond-> shape
-                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
-
-
-        {:keys [id x y width height rotation content]} shape
+  (let [{:keys [id x y width height rotation content]} shape
 
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"

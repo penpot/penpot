@@ -22,26 +22,19 @@
 (declare image-shape)
 
 (mf/defc image-wrapper
-  [{:keys [shape] :as props}]
+  [{:keys [shape frame] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     [:& image-shape {:shape shape}]]))
+     [:& image-shape {:shape (geom/transform-shape frame shape)}]]))
 
 ;; --- Image Shape
 
 (mf/defc image-shape
   [{:keys [shape] :as props}]
-  (let [ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
-
-        shape (cond-> shape
-                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
-
-        {:keys [id x y width height rotation metadata]} shape
+  (let [{:keys [id x y width height rotation metadata]} shape
 
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"

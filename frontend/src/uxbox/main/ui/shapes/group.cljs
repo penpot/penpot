@@ -11,11 +11,11 @@
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]
    [uxbox.util.interop :as itr]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.main.ui.shapes.attrs :as attrs]))
+
+(defonce ^:dynamic *debug* (atom false))
 
 (declare translate-to-frame)
 (declare group-shape)
@@ -25,71 +25,53 @@
    {::mf/wrap-props false}
    [props]
    (let [shape (unchecked-get props "shape")
+         frame (unchecked-get props "frame")
          on-mouse-down #(common/on-mouse-down % shape)
          on-context-menu #(common/on-context-menu % shape)
-         objects (-> refs/objects mf/deref)
-         children (mapv #(get objects %) (:shapes shape))
-         frame (get objects (:frame-id shape))]
+         children (-> (refs/objects-by-id (:shapes shape)) mf/deref)
+         on-double-click
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/prevent-default event)
+           #_(st/emit! (dw/select-inside-group)))]
+
      [:g.shape {:on-mouse-down on-mouse-down
-                :on-context-menu on-context-menu}
-      [:& (group-shape shape-wrapper) {:shape shape
-                                       :shape-wrapper shape-wrapper
-                                       :children children
-                                       :frame frame }]])))
+                :on-context-menu on-context-menu
+                :on-double-click on-double-click}
+      [:& (group-shape shape-wrapper) {:frame frame
+                                       :shape (geom/transform-shape frame shape)
+                                       :children children}]])))
 
 (defn group-shape [shape-wrapper]
   (mf/fnc group-shape
     {::mf/wrap-props false}
     [props]
-    (let [shape (unchecked-get props "shape")
+    (let [frame (unchecked-get props "frame")
+          shape (unchecked-get props "shape")
           children (unchecked-get props "children")
-          frame (unchecked-get props "frame")
-
-          ds-modifier (:displacement-modifier shape)
-          rz-modifier (:resize-modifier shape)
-
-          shape (cond-> shape
-                  (and (= "root" (:name frame)) (gmt/matrix? rz-modifier)) (geom/transform rz-modifier)
-                  (gmt/matrix? rz-modifier) (geom/transform ds-modifier))
-
-          {:keys [id x y width height rotation]} shape
+          {:keys [id x y width height rotation
+                  displacement-modifier
+                  resize-modifier]} shape
 
           transform (when (and rotation (pos? rotation))
                       (str/format "rotate(%s %s %s)"
                                   rotation
                                   (+ x (/ width 2))
                                   (+ y (/ height 2))))]
-      [:g
-       (for [item (reverse children)]
-         [:& shape-wrapper {:shape (-> item
-                                       (geom/transform rz-modifier)
-                                       (assoc :displacement-modifier ds-modifier)
-                                       (translate-to-frame frame))
+      [:g {:transform transform}
+       (for [item children]
+         [:& shape-wrapper {:frame frame
+                            :shape (-> item
+                                       (assoc :displacement-modifier displacement-modifier)
+                                       (assoc :resize-modifier resize-modifier))
                             :key (:id item)}])
        
        [:rect {:x x
                :y y
-               :fill "red"
+               :fill (if (deref *debug*) "red" "transparent")
                :opacity 0.8
-               :transform transform
                :id (str "group-" id)
                :width width
                :height height}]])))
 
-(defn- translate-to-frame
-  [shape frame]
-  (let [pt (gpt/point (- (:x frame)) (- (:y frame)))
-        frame-ds-modifier (:displacement-modifier frame)
-        rz-modifier (:resize-modifier shape)
-        shape (cond-> shape
-                (gmt/matrix? frame-ds-modifier)
-                (geom/transform frame-ds-modifier)
-
-                (and (= (:type shape) :group) (gmt/matrix? rz-modifier))
-                (geom/transform rz-modifier)
-                
-                (gmt/matrix? rz-modifier)
-                (-> (geom/transform rz-modifier)
-                    (dissoc :resize-modifier)))]
-    (geom/move shape pt)))
 

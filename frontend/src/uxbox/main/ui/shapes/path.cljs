@@ -22,7 +22,7 @@
 (declare path-shape)
 
 (mf/defc path-wrapper
-  [{:keys [shape] :as props}]
+  [{:keys [shape frame] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape)
@@ -34,7 +34,7 @@
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& path-shape {:shape shape
+     [:& path-shape {:shape (geom/transform-shape frame shape)
                      :background? true}]]))
 
 ;; --- Path Shape
@@ -62,14 +62,7 @@
 
 (mf/defc path-shape
   [{:keys [shape background?] :as props}]
-  (let [ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
-
-        shape (cond-> shape
-                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
-
-        {:keys [id x y width height rotation]} (geom/shape->rect-shape shape)
+  (let [{:keys [id x y width height rotation]} (geom/shape->rect-shape shape)
 
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"

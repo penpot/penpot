@@ -58,7 +58,9 @@
         do-show-shape #(st/emit! (dw/show-shape (:id shape)))
         do-hide-shape #(st/emit! (dw/hide-shape (:id shape)))
         do-lock-shape #(st/emit! (dw/block-shape (:id shape)))
-        do-unlock-shape #(st/emit! (dw/unblock-shape (:id shape)))]
+        do-unlock-shape #(st/emit! (dw/unblock-shape (:id shape)))
+        do-create-group #(st/emit! (dw/create-group))
+        do-remove-group #(st/emit! (dw/remove-group))]
     [:*
      [:& menu-entry {:title "Copy"
                      :shortcut "Ctrl + c"
@@ -83,11 +85,25 @@
                      :shortcut "Ctrl + Shift + ↓"
                      :on-click do-send-to-back}]
      [:& menu-separator]
+
+     (when (> (count selected) 1)
+       [:& menu-entry {:title "Group"
+                       :shortcut "Ctrl + g"
+                       :on-click do-create-group}])
+
+     (when (and (= (count selected)) (= (:type shape) :group))
+       [:& menu-entry {:title "Ungroup"
+                       :shortcut "Ctrl + shift + g"
+                       :on-click do-remove-group}])
+
      (if (:hidden shape)
        [:& menu-entry {:title "Show"
                        :on-click do-show-shape}]
        [:& menu-entry {:title "Hide"
                        :on-click do-hide-shape}])
+
+     
+     
      (if (:blocked shape)
        [:& menu-entry {:title "Unlock"
                        :on-click do-unlock-shape}]

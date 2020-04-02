@@ -1001,7 +1001,9 @@
                            (assoc :id id))
               frame-id (calculate-frame-overlap objects shape)
               shape    (merge shape-default-attrs shape {:frame-id frame-id})]
-          (impl-assoc-shape state shape)))
+          (-> state
+              (impl-assoc-shape shape)
+              (assoc-in [:workspace-local :selected] #{id}))))
 
       ptk/WatchEvent
       (watch [_ state stream]
@@ -1185,6 +1187,9 @@
         data (get-in state [:workspace-data page-id])
         match (fn [acc {:keys [type id] :as shape}]
                 (cond
+                  (helpers/is-shape-grouped (:id shape) (:objects data))
+                  acc
+
                   (geom/contained-in? shape selrect)
                   (conj acc id)
 
@@ -1347,7 +1352,6 @@
 
             shapes (map lookup selected)
             shape? #(not= (:type %) :frame)]
-
         (cond
           (and (= (count shapes) 1)
                (= (:type (first shapes)) :frame))
@@ -1951,7 +1955,7 @@
     (watch [_ state stream]
       (let [project-id (get-in state [:workspace-project :id])
             file-id (get-in state [:workspace-page :file-id])
-            path-params {:file-id file-id}
+            path-params {:project-id project-id :file-id file-id}
             query-params {:page-id page-id}]
         (rx/of (rt/nav :workspace path-params query-params))))))
 
@@ -2197,9 +2201,9 @@
                   parent (get-parent (first selected) (vals objects))
                   selected-objects (map (partial get objects) selected)
                   selection-rect (geom/selection-rect selected-objects)
-                  new-shape (group-shape id (-> selected-objects first :frame-id) selected selection-rect)
+                  frame-id (-> selected-objects first :frame-id)
+                  new-shape (group-shape id frame-id selected selection-rect)
                   objects-removed (-> objects
-                                      #_(apply dissoc $ selected)
                                       (assoc (:id new-shape) new-shape)
                                       (update-in [(:id parent) :shapes]
                                                  (fn [shapes] (filter #(not (selected %)) shapes)))
@@ -2230,6 +2234,11 @@
                                                  :attr :shapes
                                                  :val (into (:shapes frame) (:shapes obj))}]}])))))))
 
+(defn remove-group []
+  (ptk/reify ::remove-group
+    ptk/UpdateEvent
+    (update [_ state] state)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2255,7 +2264,7 @@
    "ctrl+c" #(rx/of copy-selected)
    "ctrl+v" #(rx/of paste)
    "ctrl+g" #(rx/of (create-group))
-   ;; "ctrl+shift+g" #(rx/of remove-group)
+   "ctrl+shift+g" #(rx/of (remove-group))
    "esc" #(rx/of :interrupt deselect-all)
    "delete" #(rx/of delete-selected)
    "ctrl+up" #(rx/of (vertical-order-selected :up))

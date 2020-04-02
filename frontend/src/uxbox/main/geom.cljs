@@ -246,54 +246,37 @@
   [(/ (:width final) (:width origin))
    (/ (:height final) (:height origin))])
 
+(defn- get-vid-coords [vid]
+  (case vid
+    :top-left     [:x2 :y2]
+    :top-right    [:x1 :y2]
+    :top          [:x1 :y2]
+    :bottom-left  [:x2 :y1]
+    :bottom-right [:x  :y ]
+    :bottom       [:x1 :y1]
+    :right        [:x1 :y1]
+    :left         [:x2 :y1]))
+
 (defn generate-resize-matrix
   "Generate the resize transformation matrix given a corner-id, shape
   and the scale factor vector. The shape should be of rect-like type.
 
   Mainly used by drawarea and shape resize on workspace."
   [vid shape [scalex scaley]]
-  (case vid
-    :top-left
+  (let [[cor-x cor-y] (get-vid-coords vid)
+        {:keys [x y width height rotation]} shape
+        cx (+ x (/ width 2))
+        cy (+ y (/ height 2))
+        center (gpt/point cx cy)
+        ]
     (-> (gmt/matrix)
+        ;; Correction first otherwise the scale is going to deform the correction
+        (gmt/translate (gmt/correct-rotation
+                        vid width height scalex scaley rotation))
         (gmt/scale (gpt/point scalex scaley)
-                   (gpt/point (+ (:x2 shape))
-                              (+ (:y2 shape)))))
-    :top-right
-    (-> (gmt/matrix)
-        (gmt/scale (gpt/point scalex scaley)
-                   (gpt/point (+ (:x1 shape))
-                              (+ (:y2 shape)))))
-    :top
-    (-> (gmt/matrix)
-        (gmt/scale (gpt/point scalex scaley)
-                   (gpt/point (+ (:x1 shape))
-                              (+ (:y2 shape)))))
-    :bottom-left
-    (-> (gmt/matrix)
-        (gmt/scale (gpt/point scalex scaley)
-                   (gpt/point (+ (:x2 shape))
-                              (+ (:y1 shape)))))
-    :bottom-right
-    (-> (gmt/matrix)
-        (gmt/scale (gpt/point scalex scaley)
-                   (gpt/point (+ (:x shape))
-                              (+ (:y shape)))))
-    :bottom
-    (-> (gmt/matrix)
-        (gmt/scale (gpt/point scalex scaley)
-                   (gpt/point (+ (:x1 shape))
-                              (+ (:y1 shape)))))
-    :right
-    (-> (gmt/matrix)
-        (gmt/scale (gpt/point scalex scaley)
-                   (gpt/point (+ (:x1 shape))
-                              (+ (:y1 shape)))))
-    :left
-    (-> (gmt/matrix)
-        (gmt/scale (gpt/point scalex scaley)
-                   (gpt/point (+ (:x2 shape))
-                              (+ (:y1 shape)))))))
-
+                   (gpt/point (cor-x shape)
+                              (cor-y shape)))
+        )))
 
 (defn resize-shape
   "Apply a resize transformation to a rect-like shape. The shape
@@ -304,66 +287,12 @@
   with the main objective that on the end of resize have a way
   a calculte the resize ratio with `calculate-scale-ratio`."
   [vid shape {:keys [x y] :as point} lock?]
-  (case vid
-    :top-left
-    (let [width (- (:x2 shape) x)
-          height (- (:y2 shape) y)
-          proportion (:proportion shape 1)]
-      (assoc shape
-             :width width
-             :height (if lock? (/ width proportion) height)))
 
-    :top-right
-    (let [width (- x (:x1 shape))
-          height (- (:y2 shape) y)
-          proportion (:proportion shape 1)]
-      (assoc shape
-             :width width
-             :height (if lock? (/ width proportion) height)))
-
-    :top
-    (let [width (- (:x2 shape) (:x1 shape))
-          height (- (:y2 shape) y)
-          proportion (:proportion shape 1)]
-      (assoc shape
-             :width width
-             :height (if lock? (/ width proportion) height)))
-
-    :bottom-left
-    (let [width (- (:x2 shape) x)
-          height (- y (:y1 shape))
-          proportion (:proportion shape 1)]
-      (assoc shape
-             :width width
-             :height (if lock? (/ width proportion) height)))
-
-    :bottom-right
-    (let [width (- x (:x shape))
-          height (- y (:y shape))
-          proportion (:proportion shape 1)]
-      (assoc shape
-             :width width
-             :height (if lock? (/ width proportion) height)))
-
-    :bottom
-    (let [width (- (:x2 shape) (:x1 shape))
-          height (- y (:y1 shape))
-          proportion (:proportion shape 1)]
-      (assoc shape
-             :width width
-             :height (if lock? (/ width proportion) height)))
-
-    :left
-    (let [width (- (:x2 shape) x)
-          height (- (:y2 shape) (:y1 shape))
-          proportion (:proportion shape 1)]
-      (assoc shape
-             :width width
-             :height (if lock? (/ width proportion) height)))
-
-    :right
-    (let [width (- x (:x1 shape))
-          height (- (:y2 shape) (:y1 shape))
+  (let [[cor-x cor-y] (get-vid-coords vid)]
+    (let [final-x (if (#{:top :bottom} vid) (:x2 shape) x)
+          final-y (if (#{:right :left} vid) (:y2 shape) y)
+          width (Math/abs (- final-x (cor-x shape)))
+          height (Math/abs (- final-y (cor-y shape)))
           proportion (:proportion shape 1)]
       (assoc shape
              :width width
@@ -657,3 +586,11 @@
          (> rx2 sx1)
          (< ry1 sy2)
          (> ry2 sy1))))
+
+(defn transform-shape [frame shape]
+  (let [ds-modifier (:displacement-modifier shape)
+        rz-modifier (:resize-modifier shape)]
+    (cond-> shape
+      (gmt/matrix? rz-modifier) (transform rz-modifier)
+      frame (move (gpt/point (- (:x frame)) (- (:y frame))))
+      (gmt/matrix? ds-modifier) (transform ds-modifier))))

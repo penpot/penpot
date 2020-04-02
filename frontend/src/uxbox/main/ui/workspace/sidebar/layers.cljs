@@ -33,6 +33,7 @@
 (mf/defc element-icon
   [{:keys [shape] :as props}]
   (case (:type shape)
+    :frame i/artboard
     :icon [:& icon/icon-svg {:shape shape}]
     :image i/image
     :line i/line
@@ -177,109 +178,7 @@
      (when (and (:shapes item) (not collapsed?))
        [:ul.element-children
         (for [[index id] (d/enumerate (:shapes item))]
-          (let [item (get objects id)]
-            [:& layer-item
-             {:item item
-              :selected selected
-              :index index
-              :objects objects
-              :key (:id item)}]))])]))
-
-(mf/defc layer-frame-item
-  {:wrap [#(mf/wrap-memo % =)]}
-  [{:keys [item selected index objects] :as props}]
-  (let [selected? (contains? selected (:id item))
-        local (mf/use-state {:collapsed false})
-        collapsed? (:collapsed @local)
-
-        toggle-collapse
-        (fn [event]
-          (dom/stop-propagation event)
-          (swap! local update :collapsed not))
-
-        toggle-blocking
-        (fn [event]
-          (dom/stop-propagation event)
-          (if (:blocked item)
-            (st/emit! (dw/unblock-shape (:id item)))
-            (st/emit! (dw/block-shape (:id item)))))
-
-        toggle-visibility
-        (fn [event]
-          (dom/stop-propagation event)
-          (if (:hidden item)
-            (st/emit! (dw/show-frame (:id item)))
-            (st/emit! (dw/hide-frame (:id item)))))
-
-        select-shape
-        (fn [event]
-          (dom/prevent-default event)
-          (let [id (:id item)]
-            (cond
-              (or (:blocked item)
-                  (:hidden item))
-              nil
-
-              (.-ctrlKey event)
-              (st/emit! (dw/select-shape id))
-
-              (> (count selected) 1)
-              (st/emit! dw/deselect-all
-                        (dw/select-shape id))
-              :else
-              (st/emit! dw/deselect-all
-                        (dw/select-shape id)))))
-
-        on-context-menu
-        (fn [event]
-          (dom/prevent-default event)
-          (dom/stop-propagation event)
-          (let [pos (dom/get-client-position event)]
-            (st/emit! (dw/show-shape-context-menu {:position pos
-                                                   :shape item}))))
-
-        on-drop
-        (fn [item monitor]
-          (st/emit! (dw/commit-shape-order-change (:obj-id item))))
-
-        on-hover
-        (fn [item monitor]
-          (st/emit! (dw/shape-order-change (:obj-id item) index)))
-
-        [dprops dnd-ref] (use-sortable
-                          {:type (str "layer-item" (:frame-id item))
-                           :data {:obj-id (:id item)
-                                  :page-id (:page item)
-                                  :index index}
-                           :on-hover on-hover
-                           :on-drop on-drop})]
-    [:li.group {:ref dnd-ref
-                :on-context-menu on-context-menu
-                :class (dom/classnames
-                        :selected selected?
-                        :dragging-TODO (:dragging? dprops))}
-     [:div.element-list-body {:class (dom/classnames :selected selected?)
-                              :on-click select-shape
-                              :on-double-click #(dom/stop-propagation %)}
-      [:div.element-icon i/artboard]
-      [:& layer-name {:shape item}]
-
-      [:div.element-actions
-       [:div.toggle-element {:class (when (:hidden item) "selected")
-                             :on-click toggle-visibility}
-        (if (:hidden item) i/eye-closed i/eye)]
-       [:div.block-element {:class (when (:blocked item) "selected")
-                              :on-click toggle-blocking}
-          (if (:blocked item) i/lock i/lock-open)]]
-
-      [:span.toggle-content
-       {:on-click toggle-collapse
-        :class (when-not collapsed? "inverse")}
-       i/arrow-slide]]
-     (when-not collapsed?
-       [:ul
-        (for [[index id] (d/enumerate (reverse (:shapes item)))]
-          (let [item (get objects id)]
+          (when-let [item (get objects id)]
             [:& layer-item
              {:item item
               :selected selected
@@ -297,18 +196,12 @@
     [:ul.element-list
      (for [[index id] (d/enumerate (reverse (:shapes root)))]
        (let [item (get objects id)]
-         (if (= (:type item) :frame)
-           [:& layer-frame-item
-            {:item item
-             :key (:id item)
-             :selected selected
-             :objects objects
-             :index index}]
-           [:& layer-item
-            {:item item
-             :selected selected
-             :index index
-             :key (:id item)}])))]))
+         [:& layer-item
+          {:item item
+           :selected selected
+           :index index
+           :objects objects
+           :key (:id item)}]))]))
 
 ;; --- Layers Toolbox
 
