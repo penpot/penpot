@@ -20,7 +20,6 @@
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.components.error :refer [wrap-catch]]
    [uxbox.main.ui.dashboard :refer [dashboard]]
    [uxbox.main.ui.login :refer [login-page]]
    [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
@@ -86,60 +85,64 @@
       :not-found [:& not-found-page {:error data}]
       [:span "Internal application errror"])))
 
+(mf/defc app-container
+  {::mf/wrap [#(mf/catch % {:fallback app-error})]}
+  [{:keys [route] :as props}]
+  (case (get-in route [:data :name])
+    :login
+    [:& login-page]
+
+    :profile-register
+    [:& profile-register-page]
+
+    :profile-recovery-request
+    [:& profile-recovery-request-page]
+
+    :profile-recovery
+    [:& profile-recovery-page]
+
+    :viewer
+    (let [index (d/parse-integer (get-in route [:params :path :index]))
+          page-id (uuid (get-in route [:params :path :page-id]))]
+      [:& viewer-page {:page-id page-id
+                       :index index}])
+
+    (:settings-profile
+     :settings-password)
+    [:& settings/settings {:route route}]
+
+    :debug-icons-preview
+    (when *assert*
+      [:& i/debug-icons-preview])
+
+    (:dashboard-search
+     :dashboard-team
+     :dashboard-project
+     :dashboard-library-icons
+     :dashboard-library-icons-index
+     :dashboard-library-images
+     :dashboard-library-images-index
+     :dashboard-library-palettes
+     :dashboard-library-palettes-index)
+    [:& dashboard {:route route}]
+
+    :workspace
+    (let [project-id (uuid (get-in route [:params :path :project-id]))
+          file-id (uuid (get-in route [:params :path :file-id]))
+          page-id (uuid (get-in route [:params :query :page-id]))]
+      [:& workspace/workspace {:project-id project-id
+                               :file-id file-id
+                               :page-id page-id
+                               :key file-id}])
+
+    :not-found
+    [:& not-found-page {}]))
+
 (mf/defc app
-  {:wrap [#(wrap-catch % {:fallback app-error})]}
-  [props]
+  []
   (let [route (mf/deref route-iref)]
     (when route
-      (case (get-in route [:data :name])
-        :login
-        (mf/element login-page)
-
-        :profile-register
-        (mf/element profile-register-page)
-
-        :profile-recovery-request
-        (mf/element profile-recovery-request-page)
-
-        :profile-recovery
-        (mf/element profile-recovery-page)
-
-        :viewer
-        (let [index (d/parse-integer (get-in route [:params :path :index]))
-              page-id (uuid (get-in route [:params :path :page-id]))]
-          [:& viewer-page {:page-id page-id
-                           :index index}])
-
-        (:settings-profile
-         :settings-password)
-        (mf/element settings/settings #js {:route route})
-
-        :debug-icons-preview
-        (when *assert*
-          (mf/element i/debug-icons-preview))
-
-        (:dashboard-search
-         :dashboard-team
-         :dashboard-project
-         :dashboard-library-icons
-         :dashboard-library-icons-index
-         :dashboard-library-images
-         :dashboard-library-images-index
-         :dashboard-library-palettes
-         :dashboard-library-palettes-index)
-        (mf/element dashboard #js {:route route})
-
-        :workspace
-        (let [project-id (uuid (get-in route [:params :path :project-id]))
-              file-id (uuid (get-in route [:params :path :file-id]))
-              page-id (uuid (get-in route [:params :query :page-id]))]
-          [:& workspace/workspace {:project-id project-id
-                                   :file-id file-id
-                                   :page-id page-id
-                                   :key file-id}])
-
-        :not-found
-        [:& not-found-page {}]))))
+      [:& app-container {:route route :key (get-in route [:data :name])}])))
 
 ;; --- Error Handling
 
