@@ -156,4 +156,3 @@
   [event]
   (let [data-string (-> event .-dataTransfer (.getData "text"))]
     (ts/decode data-string)))
-
