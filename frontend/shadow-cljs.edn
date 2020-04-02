@@ -9,9 +9,13 @@
    :output-dir "resources/public/js/"
    :asset-path "/js"
    :modules {:main {:entries [uxbox.main]}}
-   :compiler-options {:output-feature-set :es8}
-   :release {:output-dir "target/dist/js"
-             :compiler-options {:fn-invoke-direct true
-                                :source-map true
-                                :anon-fn-naming-policy :mapped
-                                :source-map-detail-level :all}}}}}
+   :compiler-options
+   {:output-feature-set :es8
+    :output-wrapper false}
+   :release
+   {:output-dir "target/dist/js"
+    :compiler-options
+    {:fn-invoke-direct true
+     :source-map true
+     :anon-fn-naming-policy :mapped
+     :source-map-detail-level :all}}}}}
