@@ -58,7 +58,10 @@
     {::mf/wrap [wrap-memo-frame]}
     [{:keys [shape objects] :as props}]
     (when (and shape (not (:hidden shape)))
-      (let [selected-iref (-> (mf/deps (:id shape))
+      (let [zoom (mf/deref refs/selected-zoom)
+            inv-zoom (/ 1 zoom)
+
+            selected-iref (-> (mf/deps (:id shape))
                               (mf/use-memo #(refs/make-selected (:id shape))))
             selected? (mf/deref selected-iref)
             on-mouse-down #(common/on-mouse-down % shape)
@@ -81,12 +84,18 @@
              :on-context-menu on-context-menu
              :on-double-click on-double-click
              :on-mouse-down on-mouse-down}
-         [:text {:x (:x label-pos)
-                 :y (:y label-pos)
+         [:text {:x 0
+                 :y 0
                  :width width
                  :height 20
                  :class-name "workspace-frame-label"
-                 :on-click on-double-click} ; user may also select with single click in the label
+                 ; Ensure that the label has always the same font size, regardless of zoom
+                 ; https://css-tricks.com/transforms-on-svg-elements/
+                 :transform (str
+                              "scale(" inv-zoom ", " inv-zoom ") "
+                              "translate(" (* zoom (:x label-pos)) ", " (* zoom (:y label-pos)) ")")
+                 ; User may also select the frame with single click in the label
+                 :on-click on-double-click}
           (:name shape)]
          [:& (frame-shape shape-wrapper) {:shape shape
                                           :childs childs}]]))))
