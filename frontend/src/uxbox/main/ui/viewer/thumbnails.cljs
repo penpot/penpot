@@ -121,16 +121,28 @@
         page-id   (get-in data [:page :id])
 
         on-close #(st/emit! dv/toggle-thumbnails-panel)
+        selected (mf/use-var false)
+
+        on-mouse-leave
+        (fn [event]
+          (when @selected
+            (on-close)))
 
         on-item-click
         (fn [event index]
+          (compare-and-set! selected false true)
           (st/emit! (rt/nav :viewer {:page-id page-id
-                                     :index index})))]
+                                     :index index}))
+          (when @expanded?
+            (on-close)))]
     [:& dropdown' {:on-close on-close
                    :container container
                    :show true}
-     [:section.viewer-thumbnails {:class (classnames :expanded @expanded?)
-                                  :ref container}
+     [:section.viewer-thumbnails
+      {:class (classnames :expanded @expanded?)
+       :ref container
+       :on-mouse-leave on-mouse-leave}
+
       [:& thumbnails-summary {:on-toggle-expand #(swap! expanded? not)
                               :on-close on-close
                               :total (count (:frames data))}]
