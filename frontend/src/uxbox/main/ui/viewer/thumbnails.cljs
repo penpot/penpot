@@ -86,13 +86,12 @@
                      (gmt/translate-matrix))
         frame (assoc frame :displacement-modifier modifier)
 
-        transform (str "scale(" zoom ")")]
-
+        width (* (:width frame) zoom)
+        height (* (:height frame) zoom)]
 
     [:svg {:view-box (str "0 0 " (:width frame 0) " " (:height frame 0))
-           :width (:width frame)
-           :height (:height frame)
-           :transform transform
+           :width width
+           :height height
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
