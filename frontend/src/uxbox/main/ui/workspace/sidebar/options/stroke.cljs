@@ -21,7 +21,9 @@
 
 (mf/defc stroke-menu
   [{:keys [shape] :as props}]
-  (let [on-stroke-style-change
+  (let [show-options (not= (:stroke-style shape) :none)
+
+        on-stroke-style-change
         (fn [event]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
@@ -69,30 +71,35 @@
         [:option {:value ":dashed"} (tr "workspace.options.stroke.dashed")]
         [:option {:value ":mixed"} (tr "workspace.options.stroke.mixed")]]
 
-       [:div.input-element.pixels
-        [:input.input-text {:type "number"
-                            :min "0"
-                            :value (-> (:stroke-width shape)
-                                       (math/precision 2)
-                                       (d/coalesce-str "1"))
-                            :on-change on-stroke-width-change}]]]
+        [:div.input-element {:class (when show-options "pixels")}
+         (when show-options
+           [:input.input-text {:type "number"
+                              :min "0"
+                              :value (-> (:stroke-width shape)
+                                         (math/precision 2)
+                                         (d/coalesce-str "1"))
+                              :on-change on-stroke-width-change}])]]
 
       ;; Stroke Color
-      [:span (tr "workspace.options.color")]
-      [:div.row-flex.color-data
-       [:span.color-th {:style {:background-color (:stroke-color shape)}
-                        :on-click show-color-picker}]
-       [:div.color-info
-        [:input {:read-only true
-                 :default-value (:stroke-color shape "")}]]]
+      (when show-options
+        [:*
+         [:span (tr "workspace.options.color")]
 
-      [:span (tr "workspace.options.opacity")]
-      [:div.row-flex
-       [:input.slidebar {:type "range"
-                         :min "0"
-                         :max "10000"
-                         :value (-> (:stroke-opacity shape 1)
-                                    (* 10000)
-                                    (d/coalesce-str "1"))
-                         :step "1"
-                         :on-change on-stroke-opacity-change}]]]]))
+         [:div.row-flex.color-data
+          [:span.color-th {:style {:background-color (:stroke-color shape)}
+                           :on-click show-color-picker}]
+          [:div.color-info
+           [:input {:read-only true
+                    :default-value (:stroke-color shape "")}]]]
+
+         [:span (tr "workspace.options.opacity")]
+
+         [:div.row-flex
+          [:input.slidebar {:type "range"
+                            :min "0"
+                            :max "10000"
+                            :value (-> (:stroke-opacity shape 1)
+                                       (* 10000)
+                                       (d/coalesce-str "1"))
+                            :step "1"
+                            :on-change on-stroke-opacity-change}]]])]]))
