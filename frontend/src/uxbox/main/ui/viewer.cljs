@@ -46,7 +46,11 @@
 
 (mf/defc viewer-content
   [{:keys [data local index] :as props}]
-  (let [on-mouse-wheel
+  (let [container (mf/use-ref)
+
+        [toggle-fullscreen fullscreen?] (hooks/use-fullscreen container)
+
+        on-mouse-wheel
         (fn [event]
           (when (kbd/ctrl? event)
             ;; Disable browser zoom with ctrl+mouse wheel
@@ -64,8 +68,12 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts dv/shortcuts)
 
-    [:div.viewer-layout
+    [:div.viewer-layout {:class (classnames :fullscreen fullscreen?)
+                         :ref container}
+
      [:& header {:data data
+                 :toggle-fullscreen toggle-fullscreen
+                 :fullscreen? fullscreen?
                  :local local
                  :index index}]
      [:div.viewer-content

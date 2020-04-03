@@ -15,6 +15,8 @@
    [beicon.core :as rx]
    [goog.events :as events]
    [rumext.alpha :as mf]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.webapi :as wapi]
    ["mousetrap" :as mousetrap])
   (:import goog.events.EventType))
 
@@ -45,4 +47,21 @@
                                         (f event))))))
      (fn [] (mousetrap/reset))))
   nil)
+
+(defn use-fullscreen
+  [ref]
+  (let [state (mf/use-state (dom/fullscreen?))
+        change (mf/use-callback #(reset! state (dom/fullscreen?)))
+        toggle (mf/use-callback (mf/deps @state)
+                                #(let [el (mf/ref-val ref)]
+                                   (swap! state not)
+                                   (if @state
+                                     (wapi/exit-fullscreen)
+                                     (wapi/request-fullscreen el))))]
+    (mf/use-effect
+     (fn []
+       (.addEventListener js/document "fullscreenchange" change)
+       #(.removeEventListener js/document "fullscreenchange" change)))
+
+    [toggle @state]))
 

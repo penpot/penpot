@@ -131,6 +131,7 @@
     (update [_ state]
       (update-in state [:viewer-local :show-thumbnails] not))))
 
+;; --- Shortcuts
 
 (def shortcuts
   {"+" #(st/emit! increase-zoom)

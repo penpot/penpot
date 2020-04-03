@@ -56,7 +56,7 @@
      [:span.remove-zoom {:on-click increase} "+"]]))
 
 (mf/defc header
-  [{:keys [data index local] :as props}]
+  [{:keys [data index local fullscreen? toggle-fullscreen] :as props}]
   (let [{:keys [project file page frames]} data
         total (count frames)
         on-click #(st/emit! dv/toggle-thumbnails-panel)
@@ -81,5 +81,8 @@
      [:div.options-zone
       [:span.btn-primary {:on-click on-edit} "Edit page"]
       [:& zoom-widget {:zoom (:zoom local)}]
-      [:span.btn-fullscreen.tooltip.tooltip-bottom {:alt "Full screen"} i/full-screen]]]))
+      [:span.btn-fullscreen.tooltip.tooltip-bottom
+       {:alt "Full screen"
+        :on-click toggle-fullscreen}
+       i/full-screen]]]))
 

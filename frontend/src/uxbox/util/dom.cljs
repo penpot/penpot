@@ -156,3 +156,7 @@
   [event]
   (let [data-string (-> event .-dataTransfer (.getData "text"))]
     (ts/decode data-string)))
+
+(defn fullscreen?
+  []
+  (boolean (.-fullscreenElement js/document)))
