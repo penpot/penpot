@@ -14,8 +14,13 @@
 
 (mf/defc colorpicker
   [{:keys [on-change value colors] :as props}]
-  (let [on-change-complete #(on-change (gobj/get % "hex"))]
-    [:> sketch/default {:color value
+  (let [local-value (mf/use-state value)
+
+        on-change-complete #(do
+                              (reset! local-value %)
+                              (on-change (gobj/get % "hex")))]
+
+    [:> sketch/default {:color @local-value
                         :disableAlpha true
                         :presetColors colors
                         :onChangeComplete on-change-complete
