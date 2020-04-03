@@ -22,7 +22,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
+   [uxbox.main.ui.hooks :refer [use-rxsub]]
    [uxbox.main.ui.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
    [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]

@@ -20,7 +20,7 @@
    [uxbox.builtins.icons :as i]
    [uxbox.util.dom :as dom]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
+   [uxbox.main.ui.hooks :refer [use-rxsub]]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]))
 
 (def menu-ref

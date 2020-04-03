@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs S.L
 
-(ns uxbox.main.ui.react-hooks
+(ns uxbox.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
    [cljs.spec.alpha :as s]

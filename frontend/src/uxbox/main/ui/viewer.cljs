@@ -23,7 +23,7 @@
    [uxbox.main.ui.viewer.header :refer [header]]
    [uxbox.main.ui.viewer.thumbnails :refer [thumbnails-panel frame-svg]]
    [uxbox.util.dom :as dom]
-   [uxbox.main.ui.react-hooks :as hooks]
+   [uxbox.main.ui.hooks :as hooks]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.math :as mth]

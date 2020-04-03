@@ -19,7 +19,7 @@
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.confirm]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.react-hooks :as hooks]
+   [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.main.ui.workspace.viewport :refer [viewport]]
    [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
