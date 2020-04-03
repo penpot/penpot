@@ -32,6 +32,7 @@
 (def exit (icon-xref :exit))
 (def export (icon-xref :export))
 (def eye (icon-xref :eye))
+(def eye-closed (icon-xref :eye-closed))
 (def file-html (icon-xref :file-html))
 (def file-svg (icon-xref :file-svg))
 (def fill (icon-xref :fill))

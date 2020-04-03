@@ -164,7 +164,7 @@
       [:div.element-actions
        [:div.toggle-element {:class (when (:hidden item) "selected")
                              :on-click toggle-visibility}
-        i/eye]
+        (if (:hidden item) i/eye-closed i/eye)]
        [:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
         i/lock]]
@@ -263,13 +263,15 @@
                               :on-double-click #(dom/stop-propagation %)}
       [:div.element-icon i/artboard]
       [:& layer-name {:shape item}]
+
       [:div.element-actions
        [:div.toggle-element {:class (when (:hidden item) "selected")
                              :on-click toggle-visibility}
-        i/eye]
+        (if (:hidden item) i/eye-closed i/eye)]
        #_[:div.block-element {:class (when (:blocked item) "selected")
-                            :on-click toggle-blocking}
+                              :on-click toggle-blocking}
           i/lock]]
+
       [:span.toggle-content
        {:on-click toggle-collapse
         :class (when-not collapsed? "inverse")}
