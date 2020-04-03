@@ -19,10 +19,11 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
-   [uxbox.main.data.viewer :as vd]
+   [uxbox.main.data.viewer :as dv]
    [uxbox.main.ui.viewer.header :refer [header]]
    [uxbox.main.ui.viewer.thumbnails :refer [thumbnails-panel frame-svg]]
    [uxbox.util.dom :as dom]
+   [uxbox.main.ui.react-hooks :as hooks]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.math :as mth]
@@ -61,6 +62,7 @@
               (events/unlistenByKey key1))))]
 
     (mf/use-effect on-mount)
+    (hooks/use-shortcuts dv/shortcuts)
 
     [:div.viewer-layout
      [:& header {:data data
@@ -87,7 +89,7 @@
 
 (mf/defc viewer-page
   [{:keys [page-id index] :as props}]
-  (mf/use-effect (mf/deps page-id) #(st/emit! (vd/initialize page-id)))
+  (mf/use-effect (mf/deps page-id) #(st/emit! (dv/initialize page-id)))
   (let [data (mf/deref viewer-data-ref)
         local (mf/deref viewer-local-ref)]
     (when data

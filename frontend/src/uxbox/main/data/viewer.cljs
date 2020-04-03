@@ -14,6 +14,7 @@
    [potok.core :as ptk]
    [uxbox.main.constants :as c]
    [uxbox.main.repo :as rp]
+   [uxbox.main.store :as st]
    [uxbox.common.spec :as us]
    [uxbox.common.pages :as cp]
    [uxbox.common.data :as d]
@@ -129,3 +130,11 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:viewer-local :show-thumbnails] not))))
+
+
+(def shortcuts
+  {"+" #(st/emit! increase-zoom)
+   "-" #(st/emit! decrease-zoom)
+   "shift+0" #(st/emit! zoom-to-50)
+   "shift+1" #(st/emit! reset-zoom)
+   "shift+2" #(st/emit! zoom-to-200)})
