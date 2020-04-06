@@ -233,26 +233,3 @@
   [conn id]
   (-> (db/query-one conn [sql:mark-page-deleted id])
       (p/then su/constantly-nil)))
-
-
-;; --- Update Page History
-
-;; (defn update-page-history
-;;   [conn {:keys [profile-id id label pinned]}]
-;;   (let [sqlv (sql/update-page-history {:profile-id profile-id
-;;                                        :id id
-;;                                        :label label
-;;                                        :pinned pinned})]
-;;     (some-> (db/fetch-one conn sqlv)
-;;             (decode-row))))
-
-;; (s/def ::label ::us/string)
-;; (s/def ::update-page-history
-;;   (s/keys :req-un [::profile-id ::id ::pinned ::label]))
-
-;; (sm/defmutation :update-page-history
-;;   {:doc "Update page history"
-;;    :spec ::update-page-history}
-;;   [params]
-;;   (with-open [conn (db/connection)]
-;;     (update-page-history conn params)))
