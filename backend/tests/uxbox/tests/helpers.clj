@@ -5,6 +5,7 @@
    [cuerdas.core :as str]
    [mount.core :as mount]
    [environ.core :refer [env]]
+   [uxbox.common.pages :as cp]
    [uxbox.services.mutations.profile :as profile]
    [uxbox.services.mutations.projects :as projects]
    [uxbox.services.mutations.teams :as teams]
@@ -104,11 +105,7 @@
                              :file-id file-id
                              :name (str "page" i)
                              :ordering i
-                             :data {:version 1
-                                    :shapes []
-                                    :options {}
-                                    :canvas []
-                                    :shapes-by-id {}}}))
+                             :data cp/default-page-data}))
 
 
 (defn create-image-library
