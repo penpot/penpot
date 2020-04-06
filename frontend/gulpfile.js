@@ -126,7 +126,6 @@ function templatePipeline(options) {
     const ts = Math.floor(new Date());
 
     const locales = readLocales();
-    // const icons = readSvgSprite();
     const config = readConfig();
 
     const tmpl = mustache({
