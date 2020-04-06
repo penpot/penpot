@@ -2268,10 +2268,8 @@
    "ctrl+shift+l" #(st/emit! (toggle-layout-flag :layers))
    "+" #(st/emit! increase-zoom)
    "-" #(st/emit! decrease-zoom)
-
    "ctrl+g" #(st/emit! (create-group))
    "ctrl+shift+g" #(st/emit! (remove-group))
-
    "shift+0" #(st/emit! zoom-to-50)
    "shift+1" #(st/emit! reset-zoom)
    "shift+2" #(st/emit! zoom-to-200)
@@ -2285,8 +2283,6 @@
    "ctrl+t" #(st/emit! (select-for-drawing :text))
    "ctrl+c" #(st/emit! copy-selected)
    "ctrl+v" #(st/emit! paste)
-   "ctrl+g" #(st/emit! (create-group))
-   ;; "ctrl+shift+g" #(st/emit! remove-group)
    "esc" #(st/emit! :interrupt deselect-all)
    "delete" #(st/emit! delete-selected)
    "ctrl+up" #(st/emit! (vertical-order-selected :up))
