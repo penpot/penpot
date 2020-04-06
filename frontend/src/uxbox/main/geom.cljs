@@ -588,12 +588,13 @@
          (> ry2 sy1))))
 
 (defn transform-shape
-  [frame shape]
-  (let [ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
-        ds-modifier' (:displacement-modifier frame)]
-    (cond-> shape
-      (gmt/matrix? ds-modifier') (transform ds-modifier')
-      (gmt/matrix? rz-modifier)  (transform rz-modifier)
-      frame                      (move (gpt/point (- (:x frame)) (- (:y frame))))
-      (gmt/matrix? ds-modifier)  (transform ds-modifier))))
+  ([shape] (transform-shape nil shape))
+  ([frame shape]
+   (let [ds-modifier (:displacement-modifier shape)
+         rz-modifier (:resize-modifier shape)
+         frame-ds-modifier (:displacement-modifier frame)]
+     (cond-> shape
+       (gmt/matrix? rz-modifier) (transform rz-modifier)
+       frame (move (gpt/point (- (:x frame)) (- (:y frame))))
+       (gmt/matrix? frame-ds-modifier) (transform frame-ds-modifier)
+       (gmt/matrix? ds-modifier) (transform ds-modifier)))))

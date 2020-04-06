@@ -1505,7 +1505,7 @@
       (let [page-id (::page-id state)
             objects (get-in state [:workspace-data page-id :objects])
 
-            ;; Updates the displacement data for a single shape
+            ;; Updates the resize data for a single shape
             materialize-shape
             (fn [state id mtx]
               (update-in
@@ -1525,9 +1525,11 @@
             (fn [state id]
               (let [shape (get objects id)
                     mtx (:resize-modifier shape (gmt/matrix))]
-                (-> state
-                    (materialize-shape id mtx)
-                    (materialize-children id mtx))))]
+                (if (= (:type shape) :frame)
+                  (materialize-shape state id mtx)
+                  (-> state
+                      (materialize-shape id mtx)
+                      (materialize-children id mtx)))))]
         (reduce update-shapes state ids)))
 
     ptk/WatchEvent
@@ -1628,7 +1630,7 @@
                         (dissoc :displacement-modifier)
                         (geom/transform xfmt))
 
-            shapes  (->> (:shapes frame)
+            shapes  (->> (helpers/get-children id objects)
                          (map #(get objects %))
                          (map #(geom/transform % xfmt))
                          (d/index-by :id))
