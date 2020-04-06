@@ -27,3 +27,43 @@
 
         shapes (remove #(= (:type %) :frame) (vals objects))] 
     (some contains-shape-fn shapes)))
+
+(defn get-parent
+  "Retrieve the id of the parent for the shape-id (if exists"
+  [shape-id objects]
+  (let [check-parenthood
+        (fn [shape] (when (and (:shapes shape)
+                               ((set (:shapes shape)) shape-id))
+                      (:id shape)))]
+    (some check-parenthood (vals objects))))
+
+(defn replace-shapes
+  "Replace inside shapes the value `to-replace-id` for the value in items keeping the same order.
+  `to-replace-id` can be a set, a sequable or a single value. Any of these will be changed into a
+  set to make the replacement"
+  [shape to-replace-id items]
+  (let [should-replace
+        (cond
+          (set? to-replace-id) to-replace-id
+          (seqable? to-replace-id) (set to-replace-id)
+          :else #{to-replace-id})
+
+        ;; This function replaces the first ocurrence of the set `should-replace` for the
+        ;; value in `items`. Next elements that match are removed but not replaced again
+        ;; so for example:
+        ;; should-replace = #{2 3 5}
+        ;; (replace-fn [ 1 2 3 4 5] ["a" "b"] [])
+        ;;  => [ 1 "a" "b" 4 ]
+        replace-fn
+        (fn [to-replace acc shapes]
+          (if (empty? shapes)
+            acc
+            (let [cur (first shapes)
+                  rest (subvec shapes 1)]
+              (if (should-replace cur)
+                (recur [] (into acc to-replace) rest)
+                (recur to-replace (conj acc cur) rest)))))
+
+        replace-shapes (partial replace-fn (if (seqable? items) items [items]) [])]
+
+    (update shape :shapes replace-shapes)))

@@ -91,11 +91,11 @@
                    :transform (str
                                "scale(" inv-zoom ", " inv-zoom ") "
                                "translate(" (* zoom (:x label-pos)) ", " (* zoom (:y label-pos)) ")")
-                                        ; User may also select the frame with single click in the label
+                   ;; User may also select the frame with single click in the label
                    :on-click on-double-click}
             (:name shape)]
            [:& (frame-shape shape-wrapper) {:shape shape
-                                            :childs childs}]]))))
+                                            :childs childs}]])))))
 
 (defn frame-shape [shape-wrapper]
  (mf/fnc frame-shape
