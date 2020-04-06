@@ -167,7 +167,7 @@
         (if (:hidden item) i/eye-closed i/eye)]
        [:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
-        i/lock]]
+        (if (:blocked item) i/lock i/lock-open)]]
 
       (when (:shapes item)
         [:span.toggle-content
@@ -268,9 +268,9 @@
        [:div.toggle-element {:class (when (:hidden item) "selected")
                              :on-click toggle-visibility}
         (if (:hidden item) i/eye-closed i/eye)]
-       #_[:div.block-element {:class (when (:blocked item) "selected")
+       [:div.block-element {:class (when (:blocked item) "selected")
                               :on-click toggle-blocking}
-          i/lock]]
+          (if (:blocked item) i/lock i/lock-open)]]
 
       [:span.toggle-content
        {:on-click toggle-collapse

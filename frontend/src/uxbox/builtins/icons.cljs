@@ -47,6 +47,7 @@
 (def line (icon-xref :line))
 (def loader (icon-xref :loader))
 (def lock (icon-xref :lock))
+(def lock-open (icon-xref :lock-open))
 (def logo (icon-xref :uxbox-logo))
 (def logo-icon (icon-xref :uxbox-logo-icon))
 (def mail (icon-xref :mail))
