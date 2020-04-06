@@ -1,3 +1,5 @@
+# Externs file for google Closure Compiler
+# https://shadow-cljs.github.io/docs/UsersGuide.html#_simplified_externs
 getBrowserEvent
 viewBox
 baseVal
