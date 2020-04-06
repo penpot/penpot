@@ -54,7 +54,6 @@
 
 (mf/defc shape-wrapper
   [{:keys [frame shape objects] :as props}]
-  (prn "shape-wrapper" frame)
   (when (and shape (not (:hidden shape)))
     (let [shape (geom/transform-shape frame shape)]
       (case (:type shape)
