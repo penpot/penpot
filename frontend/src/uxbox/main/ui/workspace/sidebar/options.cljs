@@ -14,6 +14,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.workspace.sidebar.options.frame :as frame]
+   [uxbox.main.ui.workspace.sidebar.options.group :as group]
    [uxbox.main.ui.workspace.sidebar.options.rect :as rect]
    [uxbox.main.ui.workspace.sidebar.options.icon :as icon]
    [uxbox.main.ui.workspace.sidebar.options.circle :as circle]
@@ -30,6 +31,7 @@
   [:div
    (case (:type shape)
      :frame [:& frame/options {:shape shape}]
+     :group [:& group/options {:shape shape}]
      :text [:& text/options {:shape shape}]
      :rect [:& rect/options {:shape shape}]
      :icon [:& icon/options {:shape shape}]

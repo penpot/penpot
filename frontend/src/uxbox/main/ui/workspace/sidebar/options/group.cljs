@@ -5,18 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns uxbox.main.ui.workspace.sidebar.options.rect
+(ns uxbox.main.ui.workspace.sidebar.options.group
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
   [:div
-   [:& measures-menu {:shape shape}]
-   [:& fill-menu {:shape shape}]
-   [:& stroke-menu {:shape shape}]])
+   [:& measures-menu {:shape shape}]])
+
