@@ -111,12 +111,13 @@
                   :id page-id
                   :revn 0
                   :profile-id (:id prof)
-                  :changes [{:type :add-shape
+                  :changes [{:type :add-obj
+                             :frame-id uuid/zero
                              :id sid
-                             :session-id (uuid/next)
-                             :shape {:id sid
-                                     :name "Rect"
-                                     :type :rect}}]}
+                             :obj {:id sid
+                                   :name "Rect"
+                                   :frame-id uuid/zero
+                                   :type :rect}}]}
 
             out (th/try-on! (sm/handle data))]
 
@@ -128,7 +129,7 @@
           (t/is (= (:id data) (:page-id result)))
           (t/is (vector (:changes result)))
           (t/is (= 1 (count (:changes result))))
-          (t/is (= :add-shape (get-in result [:changes 0 :type]))))))
+          (t/is (= :add-obj (get-in result [:changes 0 :type]))))))
 
     (t/testing "conflict error"
       (let [data {::sm/type :update-page
@@ -165,14 +166,16 @@
                   :id (:id page)
                   :revn 0
                   :profile-id (:id prof)
-                  :changes [{:type :add-shape
+                  :changes [{:type :add-obj
                              :id sid
-                             :session-id (uuid/next)
-                             :shape {:id sid
-                                     :name "Rect"
-                                     :type :rect}}]}
+                             :frame-id uuid/zero
+                             :obj {:id sid
+                                   :name "Rect"
+                                   :frame-id uuid/zero
+                                   :type :rect}}]}
             out1 (th/try-on! (sm/handle data))
-            out2 (th/try-on! (sm/handle data))]
+            out2 (th/try-on! (sm/handle data))
+            ]
 
         ;; (th/print-result! out1)
         ;; (th/print-result! out2)
@@ -184,7 +187,7 @@
         (t/is (= 2 (count (get-in out2 [:result :changes]))))
 
         (t/is (= (:id data) (get-in out1 [:result :page-id])))
-        (t/is (= (:id data) (get-in out2 [:result :page-id])))))
-    ))
+        (t/is (= (:id data) (get-in out2 [:result :page-id])))
+    ))))
 
 

@@ -76,5 +76,5 @@
 
         (t/is (nil? (:error out)))
         (let [result (:result out)]
-          (t/is (= 1 (count result))))))
+          (t/is (= 0 (count result))))))
     ))

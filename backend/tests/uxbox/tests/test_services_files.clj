@@ -44,9 +44,11 @@
                   :name "new name"
                   :profile-id (:id prof)}
             out  (th/try-on! (sm/handle data))]
+
         ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))))
+        (let [result (:result out)]
+          (t/is (= (:id data) (:id result)))
+          (t/is (= (:name data) (:name result))))))
 
     (t/testing "query files"
       (let [data {::sq/type :files
