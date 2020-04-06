@@ -12,7 +12,8 @@
   (:require [lentes.core :as l]
             [beicon.core :as rx]
             [uxbox.main.constants :as c]
-            [uxbox.main.store :as st]))
+            [uxbox.main.store :as st]
+            [uxbox.main.data.helpers :as helpers]))
 
 (def profile
   (-> (l/key :profile)
@@ -62,10 +63,24 @@
 
 (defn objects-by-id [ids]
   (let [set-ids (set ids)]
-   (-> (l/lens #(let [page-id (get-in % [:workspace-page :id])
-                      objects (get-in % [:workspace-data page-id :objects])]
-                  (filter (fn [it] (set-ids (:id it))) (vals objects))))
-       (l/derive st/state))))
+    (-> (l/lens (fn [state]
+                  (let [page-id (get-in state [:workspace-page :id])
+                        objects (get-in state [:workspace-data page-id :objects])]
+                    (mapv #(get objects %) set-ids))))
+        (l/derive st/state))))
+
+(defn is-child-selected? [id]
+  (let [is-child-selector
+        (fn [state]
+          (let [page-id (get-in state [:workspace-page :id])
+                objects (get-in state [:workspace-data page-id :objects])
+                selected (get-in state [:workspace-local :selected])
+                shape (get objects id)
+                children (helpers/get-children id objects)]
+            (some selected children)))]
+
+    (-> (l/lens is-child-selector)
+        (l/derive st/state))))
 
 (def selected-shapes
   (-> (l/key :selected)

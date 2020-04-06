@@ -1485,6 +1485,27 @@
           (when-not (empty? rch)
             (rx/of (commit-changes rch uch {:commit-local? true}))))))))
 
+(defn- adjust-group-shapes [state ids]
+  (let [page-id (::page-id state)
+        objects (get-in state [:workspace-data page-id :objects])
+        groups-to-adjust (->> ids
+                              (map #(helpers/get-parent % objects))
+                              (map #(get objects %))
+                              (filter #(= (:type %) :group))
+                              (map #(:id %))
+                              distinct)
+
+        update-group
+        (fn [group]
+          (let [group-objects (map #(get objects %) (:shapes group))
+                selrect (geom/selection-rect group-objects)]
+            (merge group (select-keys selrect [:x :y :width :height]))))
+
+        reduce-fn
+        #(update-in %1 [:workspace-data page-id :objects %2] update-group)]
+
+    (reduce reduce-fn state groups-to-adjust)))
+
 (defn assoc-resize-modifier-in-bulk
   [ids xfmt]
   (us/verify ::set-of-uuid ids)
@@ -1530,7 +1551,10 @@
                   (-> state
                       (materialize-shape id mtx)
                       (materialize-children id mtx)))))]
-        (reduce update-shapes state ids)))
+
+        (as-> state $
+          (reduce update-shapes $ ids)
+          (adjust-group-shapes $ ids))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -1557,6 +1581,7 @@
                     (->> (assoc shape :displacement-modifier curr)
                          (assoc-in state [:workspace-data page-id :objects id]))))]
         (reduce rfn state ids)))))
+
 
 (defn materialize-displacement-in-bulk
   [ids]
@@ -1590,7 +1615,9 @@
                     (materialize-shape id mtx)
                     (materialize-children id mtx))))]
 
-        (reduce update-shapes state ids)))
+        (as-> state $
+          (reduce update-shapes $ ids)
+          (adjust-group-shapes $ ids))))
 
     ptk/WatchEvent
     (watch [_ state stream]

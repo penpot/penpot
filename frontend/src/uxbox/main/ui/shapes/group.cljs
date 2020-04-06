@@ -15,7 +15,7 @@
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.main.ui.shapes.attrs :as attrs]))
 
-(defonce ^:dynamic *debug* (atom false))
+(defonce ^:dynamic *debug* (atom true))
 
 (declare translate-to-frame)
 (declare group-shape)
@@ -29,6 +29,7 @@
          on-mouse-down #(common/on-mouse-down % shape)
          on-context-menu #(common/on-context-menu % shape)
          children (-> (refs/objects-by-id (:shapes shape)) mf/deref)
+         is-child-selected? (-> (refs/is-child-selected? (:id shape)) mf/deref)
          on-double-click
          (fn [event]
            (dom/stop-propagation event)
@@ -40,7 +41,8 @@
                 :on-double-click on-double-click}
       [:& (group-shape shape-wrapper) {:frame frame
                                        :shape (geom/transform-shape frame shape)
-                                       :children children}]])))
+                                       :children children
+                                       :is-child-selected? is-child-selected?}]])))
 
 (defn group-shape [shape-wrapper]
   (mf/fnc group-shape
@@ -49,6 +51,7 @@
     (let [frame (unchecked-get props "frame")
           shape (unchecked-get props "shape")
           children (unchecked-get props "children")
+          is-child-selected? (unchecked-get props "is-child-selected?")
           {:keys [id x y width height rotation
                   displacement-modifier
                   resize-modifier]} shape
@@ -61,17 +64,18 @@
       [:g {:transform transform}
        (for [item children]
          [:& shape-wrapper {:frame frame
-                            :shape (-> item
-                                       (assoc :displacement-modifier displacement-modifier)
-                                       (assoc :resize-modifier resize-modifier))
+                            :shape (cond-> item
+                                       displacement-modifier (assoc :displacement-modifier displacement-modifier)
+                                       resize-modifier (assoc :resize-modifier resize-modifier))
                             :key (:id item)}])
        
-       [:rect {:x x
-               :y y
-               :fill (if (deref *debug*) "red" "transparent")
-               :opacity 0.8
-               :id (str "group-" id)
-               :width width
-               :height height}]])))
+       (when (not is-child-selected?)
+         [:rect {:x x
+                 :y y
+                 :fill (if (deref *debug*) "red" "transparent")
+                 :opacity 0.8
+                 :id (str "group-" id)
+                 :width width
+                 :height height}])])))
 
 
