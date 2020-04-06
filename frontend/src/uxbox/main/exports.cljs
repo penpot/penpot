@@ -7,11 +7,12 @@
 (ns uxbox.main.exports
   "The main logic for SVG export functionality."
   (:require
-   [cljsjs.react.dom.server]
    [rumext.alpha :as mf]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.math :as mth]
    [uxbox.main.geom :as geom]
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.geom.matrix :as gmt]
    [uxbox.main.ui.shapes.frame :as frame]
    [uxbox.main.ui.shapes.circle :as circle]
    [uxbox.main.ui.shapes.icon :as icon]
@@ -52,19 +53,19 @@
     [:& group-shape {:shape shape :children children}]))
 
 (mf/defc shape-wrapper
-  [{:keys [shape objects] :as props}]
+  [{:keys [frame shape objects] :as props}]
   (when (and shape (not (:hidden shape)))
-    (case (:type shape)
-      :frame [:& rect/rect-shape {:shape shape}]
-      :curve [:& path/path-shape {:shape shape}]
-      :text [:& text/text-shape {:shape shape}]
-      :icon [:& icon/icon-shape {:shape shape}]
-      :rect [:& rect/rect-shape {:shape shape}]
-      :path [:& path/path-shape {:shape shape}]
-      :image [:& image/image-shape {:shape shape}]
-      :circle [:& circle/circle-shape {:shape shape}]
-      :group [:& (group/group-shape shape-wrapper) {:shape shape :shape-wrapper shape-wrapper :objects objects}]
-      nil)))
+    (let [shape (geom/transform-shape frame shape)]
+      (case (:type shape)
+        :curve [:& path/path-shape {:shape shape}]
+        :text [:& text/text-shape {:shape shape}]
+        :icon [:& icon/icon-shape {:shape shape}]
+        :rect [:& rect/rect-shape {:shape shape}]
+        :path [:& path/path-shape {:shape shape}]
+        :image [:& image/image-shape {:shape shape}]
+        :circle [:& circle/circle-shape {:shape shape}]
+        :group [:& group-wrapper {:shape shape :objects objects}]
+        nil))))
 
 (def group-shape (group/group-shape shape-wrapper))
 (def frame-shape (frame/frame-shape shape-wrapper))
@@ -81,7 +82,7 @@
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
      [:& background]
-     (for [item (reverse shapes)]
+     (for [item shapes]
        (if (= (:type item) :frame)
          [:& frame-wrapper {:shape item
                             :key (:id item)
@@ -90,15 +91,3 @@
                             :key (:id item)
                             :objects objects}]))]))
 
-;; (defn- render-html
-;;   [component]
-;;   (.renderToStaticMarkup js/ReactDOMServer component))
-
-;; (defn render
-;;   [{:keys [data] :as page}]
-;;   (try
-;;     (-> (mf/element page-svg #js {:data data})
-;;         (render-html))
-;;     (catch :default e
-;;       (js/console.log e)
-;;       nil)))

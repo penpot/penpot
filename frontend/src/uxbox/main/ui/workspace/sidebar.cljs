@@ -22,7 +22,7 @@
 ;; --- Left Sidebar (Component)
 
 (mf/defc left-sidebar
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [{:keys [layout page file] :as props}]
   [:aside.settings-bar.settings-bar-left
    [:div.settings-bar-inside

@@ -1,0 +1,173 @@
+
+.viewer-thumbnails {
+  grid-row: 1 / span 1;
+  grid-column:  1 / span 1;
+
+  background-color: $color-gray-50;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 12;
+
+  &.expanded {
+    grid-row: 1 / span 2;
+
+    .btn-expand svg {
+      transform: rotate(180deg);
+    }
+  }
+
+  .thumbnails-summary {
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      width: 50px;
+
+      span {
+        cursor: pointer;
+      }
+
+      svg {
+        fill: $color-gray-30;
+        height: 20px;
+        width: 20px;
+
+        &:hover {
+          fill: $color-white;
+        }
+      }
+
+      .btn-close {
+        transform: rotate(45deg);
+      }
+    }
+
+    .counter {
+      color: $color-gray-10;
+    }
+  }
+
+  .thumbnails-content {
+    display: grid;
+    grid-template-columns: 40px auto 40px;
+    grid-template-rows: auto;
+  }
+
+  .left-scroll-handler {
+    grid-column: 1 / span 1;
+    grid-row: 1 / span 1;
+
+    background-color: $color-gray-50;
+    opacity: 0;
+    display: flex;
+    z-index: 12;
+    cursor: pointer;
+
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    &:hover {
+      opacity: 0.5;
+    }
+
+    svg {
+      transform: rotate(180deg);
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  .right-scroll-handler {
+    grid-column: 3 / span 1;
+    grid-row: 1 / span 1;
+
+    background-color: $color-gray-50;
+    opacity: 0;
+    display: flex;
+    z-index: 12;
+    cursor: pointer;
+
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    &:hover {
+      opacity: 0.5;
+    }
+
+    svg {
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  .thumbnails-list {
+    grid-column: 1 / span 3;
+    grid-row: 1 / span 1;
+
+    display: flex;
+    flex-wrap: nowrap;
+    overflow: hidden;
+
+    .thumbnails-list-inside {
+      display: flex;
+      position: relative;
+    }
+  }
+
+  .thumbnails-list-expanded {
+    grid-column: 1 / span 3;
+    grid-row: 1 / span 1;
+
+    display: flex;
+    flex-wrap: wrap;
+    overflow: hidden;
+  }
+
+  .thumbnail-item {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    cursor: pointer;
+  }
+
+  .thumbnail-preview {
+    background-color: $color-gray-40;
+    width: 120px;
+    min-height: 120px;
+    height: 120px;
+    border: 1px solid $color-gray-20;
+    border-radius: 2px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    &.selected {
+      border-color: $color-primary;
+    }
+
+    &:hover {
+      border-color: $color-primary;
+      border-width: 2px;
+    }
+  }
+
+  .thumbnail-info {
+    padding: 0.5rem 0;
+
+    span {
+      font-size: $fs13;
+    }
+  }
+}

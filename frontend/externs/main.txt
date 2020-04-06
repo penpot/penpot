@@ -1,0 +1,5 @@
+getBrowserEvent
+viewBox
+baseVal
+width
+height

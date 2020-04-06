@@ -77,12 +77,6 @@ function scssPipeline(options) {
 
 // Templates
 
-function readSvgSprite() {
-  const path = paths.build + "/icons-sprite/symbol/svg/sprite.symbol.svg";
-  const content = fs.readFileSync(path, {encoding: "utf8"});
-  return content;
-}
-
 function readLocales() {
   const path = __dirname + "/resources/locales.json";
   const content = JSON.parse(fs.readFileSync(path, {encoding: "utf8"}));
@@ -132,12 +126,10 @@ function templatePipeline(options) {
     const ts = Math.floor(new Date());
 
     const locales = readLocales();
-    const icons = readSvgSprite();
     const config = readConfig();
 
     const tmpl = mustache({
       ts: ts,
-      ic: icons,
       config: JSON.stringify(config),
       translations: JSON.stringify(locales),
     });
@@ -155,7 +147,7 @@ function templatePipeline(options) {
 
 gulp.task("scss:main", scssPipeline({
   input: paths.resources + "styles/main.scss",
-  output: paths.build + "css/main.css"
+  output: paths.output + "css/main.css"
 }));
 
 gulp.task("scss", gulp.parallel("scss:main"));
@@ -163,45 +155,28 @@ gulp.task("scss", gulp.parallel("scss:main"));
 gulp.task("svg:sprite", function() {
   return gulp.src(paths.resources + "images/icons/*.svg")
     .pipe(rename({prefix: 'icon-'}))
-    .pipe(svgSprite({mode:{symbol: {inline: true}}}))
-    .pipe(gulp.dest(paths.build + "icons-sprite/"));
+    .pipe(svgSprite({mode:{symbol: {inline: false}}}))
+    .pipe(gulp.dest(paths.output + "images/svg-sprite/"));
 });
 
 gulp.task("template:main", templatePipeline({
   input: paths.resources + "templates/index.mustache",
-  output: paths.build
+  output: paths.output
 }));
 
-gulp.task("templates", gulp.series("svg:sprite", "template:main"));
+gulp.task("templates", gulp.series("template:main"));
 
 /***********************************************
  * Development
  ***********************************************/
 
 gulp.task("dev:clean", function(next) {
-  rimraf(paths.output, function() {
-    rimraf(paths.build, next);
-  });
+  rimraf(paths.output, next);
 });
 
 gulp.task("dev:copy:images", function() {
   return gulp.src(paths.resources + "images/**/*")
     .pipe(gulp.dest(paths.output + "images/"));
-});
-
-gulp.task("dev:copy:css", function() {
-  return gulp.src(paths.build + "css/**/*")
-    .pipe(gulp.dest(paths.output + "css/"));
-});
-
-gulp.task("dev:copy:icons-sprite", function() {
-  return gulp.src(paths.build + "icons-sprite/**/*")
-    .pipe(gulp.dest(paths.output + "icons-sprite/"));
-});
-
-gulp.task("dev:copy:templates", function() {
-  return gulp.src(paths.build + "index.html")
-    .pipe(gulp.dest(paths.output));
 });
 
 gulp.task("dev:copy:fonts", function() {
@@ -210,31 +185,26 @@ gulp.task("dev:copy:fonts", function() {
 });
 
 gulp.task("dev:copy", gulp.parallel("dev:copy:images",
-                                    "dev:copy:css",
-                                    "dev:copy:fonts",
-                                    "dev:copy:icons-sprite",
-                                    "dev:copy:templates"));
+                                    "dev:copy:fonts"));
 
 gulp.task("dev:dirs", function(next) {
-  mkdirp("./resources/public/css/")
-    .then(() => next())
+  mkdirp("./resources/public/css/").then(() => next())
 });
 
 gulp.task("watch:main", function() {
-  gulp.watch(paths.scss, gulp.series("scss", "dev:copy:css"));
+  gulp.watch(paths.scss, gulp.series("scss"));
+  gulp.watch(paths.resources + "images/**/*",
+             gulp.series("svg:sprite",
+                         "dev:copy:images"));
 
   gulp.watch([paths.resources + "templates/*.mustache",
-              paths.resources + "locales.json",
-              paths.resources + "images/**/*"],
-             gulp.series("templates",
-                         "dev:copy:images",
-                         "dev:copy:templates",
-                         "dev:copy:icons-sprite"));
+              paths.resources + "locales.json"],
+             gulp.series("templates"));
 });
 
 gulp.task("watch", gulp.series(
   "dev:dirs",
-  gulp.parallel("scss", "templates"),
+  gulp.parallel("scss", "templates", "svg:sprite"),
   "dev:copy",
   "watch:main"
 ));
@@ -244,41 +214,13 @@ gulp.task("watch", gulp.series(
  ***********************************************/
 
 gulp.task("dist:clean", function(next) {
-  rimraf(paths.dist, function() {
-    rimraf(paths.build, next);
-  });
+  rimraf(paths.dist, next);
 });
 
-gulp.task("dist:copy:templates", function() {
-  return gulp.src(paths.build + "index.html")
+gulp.task("dist:copy", function() {
+  return gulp.src(paths.output + "**/*")
     .pipe(gulp.dest(paths.dist));
 });
-
-gulp.task("dist:copy:images", function() {
-  return gulp.src(paths.resources + "images/**/*")
-    .pipe(gulp.dest(paths.dist + "images/"));
-});
-
-gulp.task("dist:copy:styles", function() {
-  return gulp.src(paths.build + "css/**/*")
-    .pipe(gulp.dest(paths.dist + "css/"));
-});
-
-gulp.task("dist:copy:icons-sprite", function() {
-  return gulp.src(paths.build + "icons-sprite/**/*")
-    .pipe(gulp.dest(paths.dist + "icons-sprite/"));
-});
-
-gulp.task("dist:copy:fonts", function() {
-  return gulp.src(paths.resources + "/fonts/**/*")
-    .pipe(gulp.dest(paths.dist + "fonts/"));
-});
-
-gulp.task("dist:copy", gulp.parallel("dist:copy:fonts",
-                                     "dist:copy:icons-sprite",
-                                     "dist:copy:styles",
-                                     "dist:copy:templates",
-                                     "dist:copy:images"));
 
 gulp.task("dist:gzip", function() {
   return gulp.src(`${paths.dist}**/!(*.gz|*.br|*.jpg|*.png)`)
@@ -287,8 +229,8 @@ gulp.task("dist:gzip", function() {
 });
 
 gulp.task("dist", gulp.series(
+  "dev:clean",
   "dist:clean",
-  "scss",
-  "templates",
+  gulp.parallel("scss", "templates", "svg:sprite", "dev:copy"),
   "dist:copy"
 ));

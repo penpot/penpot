@@ -20,7 +20,7 @@
       (l/derive refs/workspace-data)))
 
 (mf/defc grid
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [props]
   (prn "grid$render")
   (let [options (mf/deref options-iref)

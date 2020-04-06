@@ -38,6 +38,10 @@
   (-> (l/key :workspace-file)
       (l/derive st/state)))
 
+(def workspace-project
+  (-> (l/key :workspace-project)
+      (l/derive st/state)))
+
 (def workspace-images
   (-> (l/key :workspace-images)
       (l/derive st/state)))

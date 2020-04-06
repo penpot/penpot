@@ -22,7 +22,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.react-hooks :refer [use-rxsub]]
+   [uxbox.main.ui.hooks :refer [use-rxsub]]
    [uxbox.main.ui.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
    [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
@@ -75,7 +75,7 @@
 ;; --- Selection Rect
 
 (mf/defc selection-rect
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [{:keys [data] :as props}]
   (when data
     [:rect.selection-rect
@@ -119,7 +119,7 @@
     [:& frames {:data data}]))
 
 (mf/defc frames
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [{:keys [data] :as props}]
   (let [objects (:objects data)
         root    (get objects uuid/zero)

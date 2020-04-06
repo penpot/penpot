@@ -14,8 +14,8 @@
    [uxbox.db :as db]
    [uxbox.common.spec :as us]
    [uxbox.services.queries :as sq]
-   [uxbox.services.queries.projects :refer [ projects-by-team ]]
-   [uxbox.services.queries.files :refer [ decode-row ]]))
+   [uxbox.services.queries.projects :refer [retrieve-projects]]
+   [uxbox.services.queries.files :refer [decode-row]]))
 
 (def ^:private sql:project-files-recent
   "select distinct
@@ -51,7 +51,7 @@
 
 (sq/defquery ::recent-files
   [{:keys [profile-id team-id]}]
-  (-> (projects-by-team profile-id team-id)
+  (-> (retrieve-projects db/pool profile-id team-id)
       ;; Retrieve for each proyect the 5 more recent files
       (p/then #(p/all (map (partial recent-by-project profile-id) %)))
       ;; Change the structure so it's a map with project-id as keys

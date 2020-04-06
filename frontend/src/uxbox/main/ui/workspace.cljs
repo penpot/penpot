@@ -19,6 +19,7 @@
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.confirm]
    [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.main.ui.workspace.viewport :refer [viewport]]
    [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
@@ -111,21 +112,19 @@
          (st/emit! (dw/initialize-ws file-id))
          #(st/emit! (dw/finalize-ws file-id)))))
 
-  (-> (mf/deps file-id)
-      (mf/use-effect
-       (fn []
-         (st/emit! dw/initialize-shortcuts)
-         #(st/emit! ::dw/finalize-shortcuts))))
+  (hooks/use-shortcuts dw/shortcuts)
 
   (mf/use-effect #(st/emit! dw/initialize-layout))
 
   (let [file (mf/deref refs/workspace-file)
         page (mf/deref refs/workspace-page)
+        project (mf/deref refs/workspace-project)
         layout (mf/deref refs/workspace-layout)]
     [:> rdnd/provider {:backend rdnd/html5}
      [:& messages-widget]
      [:& header {:page page
                  :file file
+                 :project project
                  :layout layout}]
 
      (when page

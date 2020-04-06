@@ -32,18 +32,12 @@
         (fn [event]
           (dom/prevent-default event)
           (dom/stop-propagation event)
-          ;; (let [parent (.-parentNode (.-target event))
-          ;;       parent (.-parentNode parent)]
-          ;;   (set! (.-draggable parent) false))
           (swap! local assoc :edition true))
 
         on-blur
         (fn [event]
           (let [target (dom/event->target event)
-                ;; parent (.-parentNode target)
-                ;; parent (.-parentNode parent)
                 name (dom/get-value target)]
-            ;; (set! (.-draggable parent) true)
             (st/emit! (dw/rename-page (:id page) name))
             (swap! local assoc :edition false)))
 

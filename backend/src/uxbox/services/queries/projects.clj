@@ -16,13 +16,20 @@
 
 (declare decode-row)
 
+;; TODO: this module should be refactored for to separate the
+;; permissions checks from the main queries in the same way as pages
+;; and files. This refactor will make this functions more "reusable"
+;; and will prevent duplicating queries on `queries.view` ns as
+;; example.
+
 ;; --- Query: Projects
 
 (def ^:private sql:projects
   "with projects as (
      select p.*,
-       (select count(*) from file as f
-        where f.project_id = p.id and deleted_at is null) as file_count
+            (select count(*) from file as f
+              where f.project_id = p.id
+                and deleted_at is null) as file_count
        from project as p
       inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
       where tpr.profile_id = $1
@@ -32,8 +39,9 @@
              tpr.can_edit = true)
       union
      select p.*,
-        (select count(*) from file as f
-         where f.project_id = p.id and deleted_at is null)
+            (select count(*) from file as f
+              where f.project_id = p.id
+                and deleted_at is null)
        from project as p
       inner join project_profile_rel as ppr on (ppr.project_id = p.id)
       where ppr.profile_id = $1
@@ -49,11 +57,11 @@
 
 (def ^:private sql:project-by-id
   "select p.*
-   from project as p
-   inner join project_profile_rel as ppr on (ppr.project_id = p.id)
-   where ppr.profile_id = $1 
-     and p.id = $2
-     and p.deleted_at is null
+     from project as p
+    inner join project_profile_rel as ppr on (ppr.project_id = p.id)
+    where ppr.profile_id = $1
+      and p.id = $2
+      and p.deleted_at is null
       and (ppr.is_admin = true or
            ppr.is_owner = true or
            ppr.can_edit = true)")
@@ -68,16 +76,18 @@
 (s/def ::project-by-id
   (s/keys :req-un [::profile-id ::project-id]))
 
-(defn projects-by-team [profile-id team-id]
-  (db/query db/pool [sql:projects profile-id team-id]))
+(defn retrieve-projects
+  [conn profile-id team-id]
+  (db/query conn [sql:projects profile-id team-id]))
 
-(defn project-by-id [profile-id project-id]
-  (db/query-one db/pool [sql:project-by-id profile-id project-id]))
+(defn retrieve-project
+  [conn profile-id id]
+  (db/query-one conn [sql:project-by-id profile-id id]))
 
 (sq/defquery ::projects-by-team
   [{:keys [profile-id team-id]}]
-  (projects-by-team profile-id team-id))
+  (retrieve-projects db/pool profile-id team-id))
 
 (sq/defquery ::project-by-id
   [{:keys [profile-id project-id]}]
-  (project-by-id profile-id project-id))
+  (retrieve-project db/pool profile-id project-id))

@@ -29,6 +29,8 @@
   },
   "dependencies": {
     "date-fns": "^2.11.1",
+    "mousetrap": "^1.6.5",
+    "randomcolor": "^0.5.4",
     "react": "^16.13.1",
     "react-color": "^2.18.0",
     "react-dnd": "^10.0.2",

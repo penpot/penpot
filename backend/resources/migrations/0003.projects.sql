@@ -14,8 +14,6 @@ CREATE TABLE project (
 CREATE INDEX project__team_id__idx
     ON project(team_id);
 
-
-
 CREATE TABLE project_profile_rel (
   profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
   project_id uuid NOT NULL REFERENCES project(id) ON DELETE CASCADE,

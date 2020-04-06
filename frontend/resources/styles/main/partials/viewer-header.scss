@@ -1,0 +1,224 @@
+.viewer-header {
+  align-items: center;
+  background-color: $color-gray-50;
+  border-bottom: 1px solid  $color-gray-60;
+  display: flex;
+  height: 40px;
+  padding: $x-small $medium $x-small 55px;
+  position: relative;
+  z-index: 12;
+  justify-content: space-between;
+
+  .main-icon {
+    align-items: center;
+    background-color: $color-gray-60;
+    cursor: pointer;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 40px;
+
+    a {
+      height: 30px;
+
+      svg {
+        fill: $color-gray-30;
+        height: 30px;
+        width: 28px;
+      }
+
+      &:hover {
+        svg {
+          fill: $color-primary;
+        }
+      }
+    }
+  }
+
+  .sitemap-zone {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    padding: $x-small;
+
+    svg {
+      fill: $color-gray-20;
+      height: 20px;
+      margin-right: $small;
+      width: 20px;
+    }
+
+    span {
+      color: $color-gray-20;
+      margin-right: $x-small;
+      font-size: $fs14;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      &.frame-name {
+        color: $color-white;
+      }
+    }
+
+    .dropdown-button {
+      svg {
+        fill: $color-white;
+        height: 10px;
+        width: 10px;
+      }
+    }
+
+    .page-name {
+      color: $color-white;
+    }
+
+    .counters {
+      margin-left: $size-3;
+    }
+  }
+
+  .options-zone {
+    align-items: center;
+    display: flex;
+    width: 250px;
+    justify-content: space-between;
+
+    .btn-primary {
+      padding: 0.4rem 1rem;
+    }
+
+    .btn-fullscreen {
+      align-items: center;
+      background-color: $color-gray-60;
+      border-radius: $br-small;
+      cursor: pointer;
+      display: flex;
+      height: 25px;
+      justify-content: center;
+      width: 25px;
+
+      svg {
+        fill: $color-gray-20;
+        width: 15px;
+        height: 15px;
+      }
+
+      &:hover {
+        background-color: $color-primary;
+
+        svg {
+          fill: $color-gray-60;
+        }
+      }
+    }
+  }
+
+  .zoom-widget {
+    cursor: pointer;
+
+    align-items: center;
+    display: flex;
+    position: relative;
+
+    .input-container {
+      display: flex;
+    }
+
+    span {
+      color: $color-gray-10;
+      font-size: $fs15;
+      margin-left: $x-small;
+    }
+
+    .dropdown-button svg {
+      fill: $color-gray-10;
+      height: 10px;
+      width: 10px;
+    }
+
+    .zoom-dropdown {
+      position: absolute;
+      right: -25px;
+      top: 45px;
+      z-index: 12;
+      width: 150px;
+
+      background-color: $color-white;
+      border-radius: $br-small;
+      box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+      li {
+        color: $color-gray-60;
+        cursor: pointer;
+        font-size: $fs12;
+        display: flex;
+        padding: $small;
+
+        span {
+          color: $color-gray-40;
+          font-size: $fs12;
+          margin-left: auto;
+        }
+
+        &:hover {
+          background-color: $color-primary-lighter;
+        }
+
+      }
+    }
+
+    .add-zoom,
+    .remove-zoom {
+      align-items: center;
+      background-color: $color-gray-60;
+      border-radius: $br-small;
+      cursor: pointer;
+      color: $color-gray-20;
+      display: flex;
+      opacity: 0;
+      flex-shrink: 0;
+      font-size: $fs20;
+      font-weight: bold;
+      height: 20px;
+      justify-content: center;
+      width: 20px;
+
+      &:hover {
+        color: $color-primary;
+      }
+
+    }
+
+    &:hover {
+      .add-zoom,
+      .remove-zoom {
+        opacity: 100%;
+      }
+    }
+
+  }
+
+  .users-zone {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    margin: 0;
+
+    li {
+      margin-left: $small;
+      position: relative;
+
+      img {
+        border: 3px solid #f3dd14;
+        border-radius: 50%;
+        flex-shrink: 0;
+        height: 25px;
+        width: 25px;
+      }
+    }
+  }
+}

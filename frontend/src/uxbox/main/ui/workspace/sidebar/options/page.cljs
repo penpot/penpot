@@ -70,7 +70,7 @@
       (l/derive refs/workspace-data)))
 
 (mf/defc grid-options
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [props]
   (let [options (->> (mf/deref options-iref)
                      (merge default-options))

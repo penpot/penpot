@@ -2,7 +2,7 @@
   (:require
    [rumext.alpha :as mf]
    [goog.object :as gobj]
-   [uxbox.main.ui.components.dropdown :refer [dropdown-container]]
+   [uxbox.main.ui.components.dropdown :refer [dropdown']]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.data :refer [classnames]]))
 
@@ -18,7 +18,7 @@
         is-selectable (gobj/get props "selectable")
         selected (gobj/get props "selected")]
     (when open?
-      [:> dropdown-container props
+      [:> dropdown' props
        [:div.context-menu {:class (classnames :is-open open?
                                               :is-selectable is-selectable)}
         [:ul.context-menu-items

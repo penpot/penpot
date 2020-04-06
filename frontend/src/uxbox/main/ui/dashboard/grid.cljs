@@ -35,7 +35,7 @@
     (str (t locale "ds.updated-at" time))))
 
 (mf/defc grid-item
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [{:keys [file] :as props}]
   (let [local (mf/use-state {:menu-open false
                              :edition false})

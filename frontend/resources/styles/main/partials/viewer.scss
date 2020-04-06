@@ -1,0 +1,25 @@
+.viewer-content {
+  background-color: black;
+
+  display: grid;
+  grid-template-rows: 232px auto;
+  grid-template-columns: 1fr;
+}
+
+.viewer-preview {
+  height: 100vh;
+
+  grid-row: 1 / span 2;
+  grid-column: 1 / span 1;
+
+  overflow: scroll;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-flow: wrap;
+
+  svg {
+    transform-origin: center;
+  }
+}

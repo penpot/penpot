@@ -36,18 +36,18 @@
 (mf/defc shape-wrapper
   {::mf/wrap [wrap-memo-shape]}
   [{:keys [shape frame] :as props}]
-  (let [opts {:shape shape :frame frame}]
+  (let [opts #js {:shape shape :frame frame}]
     (when (and shape (not (:hidden shape)))
       (case (:type shape)
-        :group [:& group-wrapper opts]
-        :curve [:& path/path-wrapper opts]
-        :text [:& text/text-wrapper opts]
-        :icon [:& icon/icon-wrapper opts]
-        :rect [:& rect/rect-wrapper opts]
-        :path [:& path/path-wrapper opts]
-        :image [:& image/image-wrapper opts]
-        :circle [:& circle/circle-wrapper opts]
-        :frame [:& frame-wrapper opts]
+        :group [:> group-wrapper opts]
+        :curve [:> path/path-wrapper opts]
+        :text [:> text/text-wrapper opts]
+        :icon [:> icon/icon-wrapper opts]
+        :rect [:> rect/rect-wrapper opts]
+        :path [:> path/path-wrapper opts]
+        :image [:> image/image-wrapper opts]
+        :circle [:> circle/circle-wrapper opts]
+        :frame [:> frame-wrapper opts]
         nil))))
 
 (def group-wrapper (group/group-wrapper shape-wrapper))

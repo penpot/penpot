@@ -82,4 +82,10 @@
                     (catch :default e
                       nil)))))))
 
+(defn request-fullscreen
+  [el]
+  (.requestFullscreen el))
 
+(defn exit-fullscreen
+  []
+  (.exitFullscreen js/document))

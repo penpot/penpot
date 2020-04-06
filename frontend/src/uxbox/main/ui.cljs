@@ -5,8 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui
   (:require
@@ -17,21 +16,22 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.common.exceptions :as ex]
+   [uxbox.common.data :as d]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.components.error :refer [wrap-catch]]
    [uxbox.main.ui.dashboard :refer [dashboard]]
    [uxbox.main.ui.login :refer [login-page]]
    [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
    [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
    [uxbox.main.ui.profile.register :refer [profile-register-page]]
+   [uxbox.main.ui.viewer :refer [viewer-page]]
    [uxbox.main.ui.settings :as settings]
+   [uxbox.main.ui.not-found :refer [not-found-page]]
    [uxbox.main.ui.shapes]
    [uxbox.main.ui.workspace :as workspace]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.messages :as uum]
-   [uxbox.util.router :as rt]
    [uxbox.util.timers :as ts]))
 
 (def route-iref
@@ -49,6 +49,9 @@
    ["/settings"
     ["/profile" :settings-profile]
     ["/password" :settings-password]]
+
+   ["/view/:page-id/:index" :viewer]
+   ["/not-found" :not-found]
 
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
@@ -79,54 +82,67 @@
   [{:keys [error] :as props}]
   (let [data (ex-data error)]
     (case (:type data)
-      :not-found [:span "404"]
+      :not-found [:& not-found-page {:error data}]
       [:span "Internal application errror"])))
 
+(mf/defc app-container
+  {::mf/wrap [#(mf/catch % {:fallback app-error})]}
+  [{:keys [route] :as props}]
+  (case (get-in route [:data :name])
+    :login
+    [:& login-page]
+
+    :profile-register
+    [:& profile-register-page]
+
+    :profile-recovery-request
+    [:& profile-recovery-request-page]
+
+    :profile-recovery
+    [:& profile-recovery-page]
+
+    :viewer
+    (let [index (d/parse-integer (get-in route [:params :path :index]))
+          page-id (uuid (get-in route [:params :path :page-id]))]
+      [:& viewer-page {:page-id page-id
+                       :index index}])
+
+    (:settings-profile
+     :settings-password)
+    [:& settings/settings {:route route}]
+
+    :debug-icons-preview
+    (when *assert*
+      [:& i/debug-icons-preview])
+
+    (:dashboard-search
+     :dashboard-team
+     :dashboard-project
+     :dashboard-library-icons
+     :dashboard-library-icons-index
+     :dashboard-library-images
+     :dashboard-library-images-index
+     :dashboard-library-palettes
+     :dashboard-library-palettes-index)
+    [:& dashboard {:route route}]
+
+    :workspace
+    (let [project-id (uuid (get-in route [:params :path :project-id]))
+          file-id (uuid (get-in route [:params :path :file-id]))
+          page-id (uuid (get-in route [:params :query :page-id]))]
+      [:& workspace/workspace {:project-id project-id
+                               :file-id file-id
+                               :page-id page-id
+                               :key file-id}])
+
+    :not-found
+    [:& not-found-page {}]))
+
 (mf/defc app
-  {:wrap [#(wrap-catch % {:fallback app-error})]}
-  [props]
+  []
   (let [route (mf/deref route-iref)]
-    (case (get-in route [:data :name])
-      :login
-      (mf/element login-page)
-
-      :profile-register
-      (mf/element profile-register-page)
-
-      :profile-recovery-request
-      (mf/element profile-recovery-request-page)
-
-      :profile-recovery
-      (mf/element profile-recovery-page)
-
-      (:settings-profile
-       :settings-password)
-      (mf/element settings/settings #js {:route route})
-
-      :debug-icons-preview
-      (when *assert*
-        (mf/element i/debug-icons-preview))
-
-      (:dashboard-search
-       :dashboard-team
-       :dashboard-project
-       :dashboard-library-icons
-       :dashboard-library-icons-index
-       :dashboard-library-images
-       :dashboard-library-images-index
-       :dashboard-library-palettes
-       :dashboard-library-palettes-index)
-      (mf/element dashboard #js {:route route})
-
-      :workspace
-      (let [project-id (uuid (get-in route [:params :path :project-id]))
-            file-id (uuid (get-in route [:params :path :file-id]))
-            page-id (uuid (get-in route [:params :query :page-id]))]
-        [:& workspace/workspace {:project-id project-id
-                                 :file-id file-id
-                                 :page-id page-id
-                                 :key file-id}])
-      nil)))
+    (when route
+      [:& app-container {:route route :key (get-in route [:data :name])}])))
 
 ;; --- Error Handling
 

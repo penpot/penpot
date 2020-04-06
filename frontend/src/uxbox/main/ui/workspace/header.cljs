@@ -22,13 +22,14 @@
    [uxbox.main.ui.workspace.images :refer [import-image-modal]]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.util.i18n :as i18n :refer [tr t]]
+   [uxbox.util.data :refer [classnames]]
    [uxbox.util.math :as mth]
    [uxbox.util.router :as rt]))
 
 ;; --- Zoom Widget
 
 (mf/defc zoom-widget
-  {:wrap [mf/wrap-memo]}
+  {:wrap [mf/memo]}
   [props]
   (let [zoom (mf/deref refs/selected-zoom)
         show-dropdown? (mf/use-state false)
@@ -40,21 +41,21 @@
     [:div.zoom-input
      [:span.add-zoom {:on-click decrease} "-"]
      [:div {:on-click #(reset! show-dropdown? true)}
-       [:span {} (str (mth/round (* 100 zoom)) "%")]
-       [:span.dropdown-button i/arrow-down]
-       [:& dropdown {:show @show-dropdown?
-                     :on-close #(reset! show-dropdown? false)}
-        [:ul.zoom-dropdown
-         [:li {:on-click increase}
-          "Zoom in" [:span "+"]]
-         [:li {:on-click decrease}
-          "Zoom out" [:span "-"]]
-         [:li {:on-click zoom-to-50}
-          "Zoom to 50%" [:span "Shift + 0"]]
-         [:li {:on-click zoom-to-100}
-          "Zoom to 100%" [:span "Shift + 1"]]
-         [:li {:on-click zoom-to-200}
-          "Zoom to 200%" [:span "Shift + 2"]]]]]
+      [:span {} (str (mth/round (* 100 zoom)) "%")]
+      [:span.dropdown-button i/arrow-down]
+      [:& dropdown {:show @show-dropdown?
+                    :on-close #(reset! show-dropdown? false)}
+       [:ul.zoom-dropdown
+        [:li {:on-click increase}
+         "Zoom in" [:span "+"]]
+        [:li {:on-click decrease}
+         "Zoom out" [:span "-"]]
+        [:li {:on-click zoom-to-50}
+         "Zoom to 50%" [:span "Shift + 0"]]
+        [:li {:on-click zoom-to-100}
+         "Zoom to 100%" [:span "Shift + 1"]]
+        [:li {:on-click zoom-to-200}
+         "Zoom to 200%" [:span "Shift + 2"]]]]]
      [:span.remove-zoom {:on-click increase} "+"]]))
 
 ;; --- Header Users
@@ -132,35 +133,34 @@
 
 ;; --- Header Component
 
+(def router-ref
+  (-> (l/key :router)
+      (l/derive st/state)))
+
 (mf/defc header
-  [{:keys [page file layout] :as props}]
-  (let [toggle-layout #(st/emit! (dw/toggle-layout-flag %))
-        on-undo (constantly nil)
-        on-redo (constantly nil)
+  [{:keys [page file layout project] :as props}]
+  (let [go-to-dashboard #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))
+        toggle-sitemap #(st/emit! (dw/toggle-layout-flag :sitemap))
         locale (i18n/use-locale)
-
-        on-image #(modal/show! import-image-modal {})
-        ;;on-download #(udl/open! :download)
-        selected-drawtool (mf/deref refs/selected-drawing-tool)
-        select-drawtool #(st/emit! :interrupt
-                                   #_(dw/deactivate-ruler)
-                                   (dw/select-for-drawing %))]
-
+        router (mf/deref router-ref)
+        view-url (rt/resolve router :viewer {:page-id (:id page) :index 0})]
     [:header.workspace-bar
      [:div.main-icon
-      [:a {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))}
-       i/logo-icon]]
-
+      [:a {:on-click go-to-dashboard} i/logo-icon]]
 
      [:& menu {:layout layout}]
 
-     [:div.project-tree-btn
-      {:alt (tr "header.sitemap")
-       :class (when (contains? layout :sitemap) "selected")
-       :on-click #(st/emit! (dw/toggle-layout-flag :sitemap))}
-      [:span.project-name "Project name /"]
+     [:div.project-tree-btn {:alt (tr "header.sitemap")
+                             :class (classnames :selected (contains? layout :sitemap))
+                             :on-click toggle-sitemap}
+      [:span.project-name (:name project) " /"]
       [:span (:name file)]]
 
      [:div.workspace-options
       [:& active-users]]
-     [:& zoom-widget]]))
+
+     [:& zoom-widget]
+
+     [:a.preview {
+                  ;; :target "__blank"
+                  :href (str "#" view-url)} i/play]]))

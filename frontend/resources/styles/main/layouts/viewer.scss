@@ -1,0 +1,28 @@
+.viewer-layout {
+  display: grid;
+  grid-template-rows: 40px auto;
+  grid-template-columns: 1fr;
+
+  &.fullscreen {
+    .viewer-header {
+      opacity: 0;
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    .viewer-content {
+      grid-row: 1 / span 2;
+    }
+  }
+
+  .viewer-header {
+    grid-column: 1 / span 1;
+    grid-row: 1 / span 1;
+  }
+
+  .viewer-content {
+    grid-column: 1 / span 1;
+    grid-row: 2 / span 1;
+  }
+}
