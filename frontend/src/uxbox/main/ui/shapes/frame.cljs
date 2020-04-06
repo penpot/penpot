@@ -53,7 +53,8 @@
                    false)))))))))
 
 
-(defn frame-wrapper [shape-wrapper]
+(defn frame-wrapper
+  [shape-wrapper]
   (mf/fnc frame-wrapper
     {::mf/wrap [wrap-memo-frame]}
     [{:keys [shape objects] :as props}]
@@ -97,28 +98,29 @@
            [:& (frame-shape shape-wrapper) {:shape shape
                                             :childs childs}]])))))
 
-(defn frame-shape [shape-wrapper]
- (mf/fnc frame-shape
-   [{:keys [shape childs] :as props}]
-   (let [rotation    (:rotation shape)
-         ds-modifier (:displacement-modifier shape)
-         rz-modifier (:resize-modifier shape)
-         shape (cond-> shape
-                 (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                 (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
+(defn frame-shape
+  [shape-wrapper]
+  (mf/fnc frame-shape
+    [{:keys [shape childs] :as props}]
+    (let [rotation    (:rotation shape)
+          ds-modifier (:displacement-modifier shape)
+          rz-modifier (:resize-modifier shape)
+          shape (cond-> shape
+                  (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
+                  (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
 
-         {:keys [id x y width height]} shape
+          {:keys [id x y width height]} shape
 
-         props (-> (attrs/extract-style-attrs shape)
-                   (itr/obj-assign!
-                    #js {:x 0
-                         :y 0
-                         :id (str "shape-" id)
-                         :width width
-                         :height height}))]
+          props (-> (attrs/extract-style-attrs shape)
+                    (itr/obj-assign!
+                     #js {:x 0
+                          :y 0
+                          :id (str "shape-" id)
+                          :width width
+                          :height height}))]
 
-     [:svg {:x x :y y :width width :height height}
-      [:> "rect" props]
-      (for [item childs]
-        [:& shape-wrapper {:frame shape :shape item :key (:id item)}])])))
+      [:svg {:x x :y y :width width :height height}
+       [:> "rect" props]
+       (for [item childs]
+         [:& shape-wrapper {:frame shape :shape item :key (:id item)}])])))
 

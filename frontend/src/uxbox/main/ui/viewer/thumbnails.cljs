@@ -80,22 +80,24 @@
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
   [{:keys [objects frame zoom] :or {zoom 1} :as props}]
-  (let [childs (mapv #(get objects %) (:shapes frame))
-        modifier (-> (gpt/point (:x frame) (:y frame))
+  (let [modifier (-> (gpt/point (:x frame) (:y frame))
                      (gpt/negate)
                      (gmt/translate-matrix))
         frame (assoc frame :displacement-modifier modifier)
 
         width (* (:width frame) zoom)
-        height (* (:height frame) zoom)]
+        height (* (:height frame) zoom)
+        vbox (str "0 0 " (:width frame 0) " " (:height frame 0))]
 
-    [:svg {:view-box (str "0 0 " (:width frame 0) " " (:height frame 0))
+    [:svg {:view-box vbox
            :width width
            :height height
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
-     [:& exports/frame-shape {:shape frame :childs childs}]]))
+                  :xmlns "http://www.w3.org/2000/svg"}
+     [:& exports/frame-wrapper {:shape frame
+                                :objects objects
+                                :view-box vbox}]]))
 
 (mf/defc thumbnails-summary
   [{:keys [on-toggle-expand on-close total] :as props}]

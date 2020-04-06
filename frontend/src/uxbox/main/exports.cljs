@@ -52,23 +52,21 @@
   (let [children (mapv #(get objects %) (:shapes shape))]
     [:& group-shape {:shape shape :children children}]))
 
-(declare group-shape)
-(declare frame-shape)
-
 (mf/defc shape-wrapper
-  [{:keys [shape objects] :as props}]
+  [{:keys [frame shape objects] :as props}]
+  (prn "shape-wrapper" frame)
   (when (and shape (not (:hidden shape)))
-    (case (:type shape)
-      :frame [:& rect/rect-shape {:shape shape}]
-      :curve [:& path/path-shape {:shape shape}]
-      :text [:& text/text-shape {:shape shape}]
-      :icon [:& icon/icon-shape {:shape shape}]
-      :rect [:& rect/rect-shape {:shape shape}]
-      :path [:& path/path-shape {:shape shape}]
-      :image [:& image/image-shape {:shape shape}]
-      :circle [:& circle/circle-shape {:shape shape}]
-      :group [:& group-shape {:shape shape :objects objects}]
-      nil)))
+    (let [shape (geom/transform-shape frame shape)]
+      (case (:type shape)
+        :curve [:& path/path-shape {:shape shape}]
+        :text [:& text/text-shape {:shape shape}]
+        :icon [:& icon/icon-shape {:shape shape}]
+        :rect [:& rect/rect-shape {:shape shape}]
+        :path [:& path/path-shape {:shape shape}]
+        :image [:& image/image-shape {:shape shape}]
+        :circle [:& circle/circle-shape {:shape shape}]
+        :group [:& group-wrapper {:shape shape :objects objects}]
+        nil))))
 
 (def group-shape (group/group-shape shape-wrapper))
 (def frame-shape (frame/frame-shape shape-wrapper))
@@ -85,7 +83,7 @@
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
      [:& background]
-     (for [item (reverse shapes)]
+     (for [item shapes]
        (if (= (:type item) :frame)
          [:& frame-wrapper {:shape item
                             :key (:id item)
