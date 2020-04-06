@@ -1001,7 +1001,9 @@
                            (assoc :id id))
               frame-id (calculate-frame-overlap objects shape)
               shape    (merge shape-default-attrs shape {:frame-id frame-id})]
-          (impl-assoc-shape state shape)))
+          (-> state
+              (impl-assoc-shape shape)
+              (assoc-in [:workspace-local :selected] #{id}))))
 
       ptk/WatchEvent
       (watch [_ state stream]
@@ -1185,6 +1187,9 @@
         data (get-in state [:workspace-data page-id])
         match (fn [acc {:keys [type id] :as shape}]
                 (cond
+                  (helpers/is-shape-grouped (:id shape) (:objects data))
+                  acc
+
                   (geom/contained-in? shape selrect)
                   (conj acc id)
 
@@ -1347,7 +1352,6 @@
 
             shapes (map lookup selected)
             shape? #(not= (:type %) :frame)]
-
         (cond
           (and (= (count shapes) 1)
                (= (:type (first shapes)) :frame))
@@ -1951,7 +1955,7 @@
     (watch [_ state stream]
       (let [project-id (get-in state [:workspace-project :id])
             file-id (get-in state [:workspace-page :file-id])
-            path-params {:file-id file-id}
+            path-params {:project-id project-id :file-id file-id}
             query-params {:page-id page-id}]
         (rx/of (rt/nav :workspace path-params query-params))))))
 
@@ -2188,47 +2192,71 @@
 (defn create-group []
   (let [id (uuid/next)]
     (ptk/reify ::create-group
-      ptk/UpdateEvent
-      (update [_ state]
+      ptk/WatchEvent
+      (watch [_ state stream]
         (let [selected (get-in state [:workspace-local :selected])]
-          (if (and selected (-> selected count (> 1)))
+          (if (not-empty selected)
             (let [page-id (get-in state [:workspace-page :id])
                   objects (get-in state [:workspace-data page-id :objects])
                   parent (get-parent (first selected) (vals objects))
+                  parent-id (:id parent) 
                   selected-objects (map (partial get objects) selected)
                   selection-rect (geom/selection-rect selected-objects)
-                  new-shape (group-shape id (-> selected-objects first :frame-id) selected selection-rect)
-                  objects-removed (-> objects
-                                      #_(apply dissoc $ selected)
-                                      (assoc (:id new-shape) new-shape)
-                                      (update-in [(:id parent) :shapes]
-                                                 (fn [shapes] (filter #(not (selected %)) shapes)))
-                                      (update-in [(:id parent) :shapes] conj (:id new-shape)))]
-              (-> state
-                  (assoc-in [:workspace-data page-id :objects] objects-removed )
-                  (assoc-in [:workspace-local :selected] #{(:id new-shape)})))
-            state)))
+                  frame-id (-> selected-objects first :frame-id)
+                  group-shape (group-shape id frame-id selected selection-rect)]
 
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [obj (get-in state [:workspace-data (::page-id state) :objects id])
-              frame-id (:frame-id obj)
-              frame (get-in state [:workspace-data (::page-id state) :objects frame-id])]
-          (rx/of (commit-changes [{:type :add-obj
-                                   :id id
-                                   :frame-id (:frame-id obj)
-                                   :obj obj}
-                                  {:type :mod-obj
-                                   :id frame-id
-                                   :operations [{:type :set
-                                                 :attr :shapes
-                                                 :val (:shapes frame)}]}]
-                                 [{:type :del-obj :id id}
-                                  {:type :mod-obj
-                                   :id frame-id
-                                   :operations [{:type :set
-                                                 :attr :shapes
-                                                 :val (into (:shapes frame) (:shapes obj))}]}])))))))
+              (let [updated-parent (helpers/replace-shapes parent selected id)
+                    rchanges [{:type :add-obj
+                               :id id
+                               :frame-id frame-id
+                               :obj group-shape}
+                              {:type :mod-obj
+                               :id parent-id
+                               :operations [{:type :set
+                                             :attr :shapes
+                                             :val (:shapes updated-parent)}]}]
+                    uchanges [{:type :del-obj
+                               :id id}
+                              {:type :mod-obj
+                               :id parent-id
+                               :operations [{:type :set
+                                             :attr :shapes
+                                             :val (:shapes parent)}]}]]
+                (rx/of (commit-changes rchanges uchanges {:commit-local? true})
+                       (fn [state] (assoc-in state [:workspace-local :selected] #{id})))))
+            rx/empty))))))
+
+(defn remove-group []
+  (ptk/reify ::remove-group
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [selected (get-in state [:workspace-local :selected])
+            group-id (first selected)
+            group (get-in state [:workspace-data (::page-id state) :objects group-id])]
+        (if (and (= (count selected) 1) (= (:type group) :group))
+          (let [objects (get-in state [:workspace-data (::page-id state) :objects])
+                parent-id (helpers/get-parent group-id objects)
+                parent (get objects parent-id)]
+            (let [changed-parent (helpers/replace-shapes parent group-id (:shapes group))
+                  rchanges [{:type :mod-obj
+                             :id parent-id
+                             :operations [{:type :set :attr :shapes :val (:shapes changed-parent)}]}
+
+                            ;; Need to modify the object otherwise the children will be deleted
+                            {:type :mod-obj
+                             :id group-id
+                             :operations [{:type :set :attr :shapes :val []}]}
+                            {:type :del-obj
+                             :id group-id}]
+                  uchanges [{:type :add-obj
+                             :id group-id
+                             :frame-id (:frame-id group)
+                             :obj group}
+                            {:type :mod-obj
+                             :id parent-id
+                             :operations [{:type :set :attr :shapes :val (:shapes parent)}]}]] 
+              (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))
+          rx/empty)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
@@ -2255,7 +2283,7 @@
    "ctrl+c" #(rx/of copy-selected)
    "ctrl+v" #(rx/of paste)
    "ctrl+g" #(rx/of (create-group))
-   ;; "ctrl+shift+g" #(rx/of remove-group)
+   "ctrl+shift+g" #(rx/of (remove-group))
    "esc" #(rx/of :interrupt deselect-all)
    "delete" #(rx/of delete-selected)
    "ctrl+up" #(rx/of (vertical-order-selected :up))

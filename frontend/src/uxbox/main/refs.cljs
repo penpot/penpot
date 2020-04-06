@@ -56,6 +56,13 @@
                  (get-in % [:workspace-data page-id :objects])))
       (l/derive st/state)))
 
+(defn objects-by-id [ids]
+  (let [set-ids (set ids)]
+   (-> (l/lens #(let [page-id (get-in % [:workspace-page :id])
+                      objects (get-in % [:workspace-data page-id :objects])]
+                  (filter (fn [it] (set-ids (:id it))) (vals objects))))
+       (l/derive st/state))))
+
 (def selected-shapes
   (-> (l/key :selected)
       (l/derive workspace-local)))

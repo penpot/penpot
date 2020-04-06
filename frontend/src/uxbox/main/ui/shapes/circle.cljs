@@ -20,7 +20,7 @@
 (declare circle-shape)
 
 (mf/defc circle-wrapper
-  [{:keys [shape] :as props}]
+  [{:keys [shape frame] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape)
@@ -28,20 +28,13 @@
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& circle-shape {:shape shape}]]))
+     [:& circle-shape {:shape (geom/transform-shape frame shape)}]]))
 
 ;; --- Circle Shape
 
 (mf/defc circle-shape
   [{:keys [shape] :as props}]
-  (let [ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
-
-        shape (cond-> shape
-                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
-
-        {:keys [id cx cy rx ry rotation]} shape
+  (let [{:keys [id cx cy rx ry rotation]} shape
 
         center    (gpt/point cx cy)
         rotation  (or rotation 0)

@@ -222,7 +222,7 @@
         (update-in [:objects frame-id :shapes] (fn [s] (filterv #(not= % id) s)))
 
         (seq shapes)                    ; Recursive delete all dependend objects
-        (as-> $ (reduce #(process-change %1 {:type :del-obj :id %2}) $ shapes))))))
+        (as-> $ (reduce #(or (process-change %1 {:type :del-obj :id %2}) %1) $ shapes))))))
 
 (defmethod process-operation :set
   [shape op]

@@ -18,7 +18,8 @@
    [uxbox.main.ui.shapes.rect :as rect]
    [uxbox.main.ui.shapes.text :as text]
    [uxbox.main.ui.shapes.group :as group]
-   [uxbox.main.ui.shapes.frame :as frame]))
+   [uxbox.main.ui.shapes.frame :as frame]
+   [uxbox.main.refs :as refs]))
 
 (defn wrap-memo-shape
   ([component]
@@ -34,19 +35,20 @@
 
 (mf/defc shape-wrapper
   {::mf/wrap [wrap-memo-shape]}
-  [{:keys [shape] :as props}]
-  (when (and shape (not (:hidden shape)))
-    (case (:type shape)
-      :group [:& group-wrapper {:shape shape}]
-      :curve [:& path/path-wrapper {:shape shape}]
-      :text [:& text/text-wrapper {:shape shape}]
-      :icon [:& icon/icon-wrapper {:shape shape}]
-      :rect [:& rect/rect-wrapper {:shape shape}]
-      :path [:& path/path-wrapper {:shape shape}]
-      :image [:& image/image-wrapper {:shape shape}]
-      :circle [:& circle/circle-wrapper {:shape shape}]
-      :frame [:& frame-wrapper {:shape shape}]
-      nil)))
+  [{:keys [shape frame] :as props}]
+  (let [opts {:shape shape :frame frame}]
+    (when (and shape (not (:hidden shape)))
+      (case (:type shape)
+        :group [:& group-wrapper opts]
+        :curve [:& path/path-wrapper opts]
+        :text [:& text/text-wrapper opts]
+        :icon [:& icon/icon-wrapper opts]
+        :rect [:& rect/rect-wrapper opts]
+        :path [:& path/path-wrapper opts]
+        :image [:& image/image-wrapper opts]
+        :circle [:& circle/circle-wrapper opts]
+        :frame [:& frame-wrapper opts]
+        nil))))
 
 (def group-wrapper (group/group-wrapper shape-wrapper))
 (def frame-wrapper (frame/frame-wrapper shape-wrapper))

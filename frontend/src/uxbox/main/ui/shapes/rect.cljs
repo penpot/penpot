@@ -12,9 +12,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.interop :as itr]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.util.interop :as itr]))
 
 ;; --- Rect Wrapper
 
@@ -24,11 +22,12 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
+        frame (unchecked-get props "frame")
         on-mouse-down #(common/on-mouse-down % shape)
         on-context-menu #(common/on-context-menu % shape)]
     [:g.shape {:on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& rect-shape {:shape shape}]]))
+     [:& rect-shape {:shape (geom/transform-shape frame shape) }]]))
 
 ;; --- Rect Shape
 
@@ -36,15 +35,7 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
-
-        shape (cond-> shape
-                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
-
         {:keys [id x y width height rotation]} shape
-
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"
                                 rotation

@@ -12,9 +12,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.interop :as itr]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.util.interop :as itr]))
 
 
 ;; --- Icon Wrapper
@@ -22,27 +20,19 @@
 (declare icon-shape)
 
 (mf/defc icon-wrapper
-  [{:keys [shape] :as props}]
+  [{:keys [shape frame] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape selected)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
-     [:& icon-shape {:shape shape}]]))
+     [:& icon-shape {:shape (geom/transform-shape frame shape)}]]))
 
 ;; --- Icon Shape
 
 (mf/defc icon-shape
   [{:keys [shape] :as props}]
-  (let [ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
-
-        shape (cond-> shape
-                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
-
-        {:keys [id x y width height metadata rotation content] :as shape} shape
-
+  (let [{:keys [id x y width height metadata rotation content] :as shape} shape
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"
                                 rotation
