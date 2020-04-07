@@ -15,6 +15,7 @@
    [uxbox.images :as images]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
+   [uxbox.util.uuid :as uuid]
    [uxbox.util.blob :as blob]))
 
 ;; --- Helpers & Specs
@@ -32,11 +33,19 @@
 
 ;; --- Query: Profile (own)
 
-(defn retrieve-profile
-  [conn id]
-  (let [sql "select * from profile where id=$1 and deleted_at is null"]
-    (db/query-one db/pool [sql id])))
+(declare retrieve-profile)
+(declare retrieve-additional-data)
 
+(s/def ::profile
+  (s/keys :opt-un [::profile-id]))
+
+(sq/defquery ::profile
+  [{:keys [profile-id] :as params}]
+  (if profile-id
+    (db/with-atomic [conn db/pool]
+      (retrieve-profile conn profile-id))
+    {:id uuid/zero
+     :fullname "Anonymous User"}))
 
 ;; NOTE: this query make the assumption that union all preserves the
 ;; order so the first id will always be the team id and the second the
@@ -65,18 +74,19 @@
                  {:default-team-id (:id team)
                   :default-project-id (:id project)}))))
 
-(s/def ::profile
-  (s/keys :req-un [::profile-id]))
+(defn retrieve-profile-data
+  [conn id]
+  (let [sql "select * from profile where id=$1 and deleted_at is null"]
+    (db/query-one conn [sql id])))
 
-(sq/defquery ::profile
-  [{:keys [profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (p/let [prof (-> (retrieve-profile conn profile-id)
-                     (p/then' su/raise-not-found-if-nil)
-                     (p/then' strip-private-attrs)
-                     (p/then' #(images/resolve-media-uris % [:photo :photo-uri])))
-            addt (retrieve-additional-data conn profile-id)]
-      (merge prof addt))))
+(defn retrieve-profile
+  [conn id]
+  (p/let [prof (-> (retrieve-profile-data conn id)
+                   (p/then' su/raise-not-found-if-nil)
+                   (p/then' strip-private-attrs)
+                   (p/then' #(images/resolve-media-uris % [:photo :photo-uri])))
+          addt (retrieve-additional-data conn id)]
+    (merge prof addt)))
 
 ;; --- Attrs Helpers
 
