@@ -10,13 +10,14 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.util.uuid :as uuid]))
 
 (mf/defc align-options
   []
-  (let [data (mf/deref refs/workspace-data)
-        objects (:objects data)
-        selected (mf/deref refs/selected-shapes)
+  (let [selected (mf/deref refs/selected-shapes)
+        objects (deref refs/objects) ; don't need to watch objects, only read the value
 
         disabled (cond
                    (empty? selected) true
@@ -25,7 +26,7 @@
                      (= uuid/zero (:frame-id (get objects (first selected)))))
 
         on-align-button-clicked
-        (fn [axis] (when-not disabled (println axis)))]
+        (fn [axis] (when-not disabled (st/emit! (dw/align-objects axis))))]
 
     [:div.align-options
      [:div.align-button {:class (when disabled "disabled")

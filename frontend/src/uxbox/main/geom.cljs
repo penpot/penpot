@@ -525,12 +525,12 @@
     (gmt/matrix? displacement-modifier)
     (transform displacement-modifier)))
 
-;; NOTE: we need applu `shape->rect-shape` 3 times because we need to
+;; NOTE: we need apply `shape->rect-shape` 3 times because we need to
 ;; update the x1 x2 y1 y2 attributes on each step; this is because
 ;; some transform functions still uses that attributes. WE NEED TO
 ;; REFACTOR this, and remove any usage of the old xN yN attributes.
 
-(def ^:private xf-resolve-shapes
+(def ^:private xf-resolve-shape
   (comp (map shape->rect-shape)
         (map resolve-modifier)
         (map shape->rect-shape)
@@ -541,7 +541,7 @@
   "Returns a rect that contains all the shapes and is aware of the
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
-  (let [shapes (into [] xf-resolve-shapes shapes)
+  (let [shapes (into [] xf-resolve-shape shapes)
         minx (transduce (map :x1) min shapes)
         miny (transduce (map :y1) min shapes)
         maxx (transduce (map :x2) max shapes)
@@ -563,6 +563,52 @@
 (defn translate-from-frame
   [shape {:keys [x y] :as frame}]
   (move shape (gpt/point (+ x) (+ y))))
+
+
+;; --- Alignment
+
+(s/def ::axis #{:hleft :hcenter :hright :vtop :vcenter :vbottom})
+
+(declare calc-align-pos)
+
+(defn align-to-rect
+  "Move the shape so that it is aligned with the given rectangle
+  in the given axis. Take account the form of the shape and the
+  possible rotation. What is aligned is the rectangle that wraps
+  the shape with the given rectangle."
+  [shape rect axis]
+  (let [wrapper-rect (selection-rect [shape])
+        align-pos (calc-align-pos wrapper-rect rect axis)
+        delta {:x (- (:x align-pos) (:x wrapper-rect))
+               :y (- (:y align-pos) (:y wrapper-rect))}]
+    (move shape delta)))
+
+(defn calc-align-pos
+  [wrapper-rect rect axis]
+  (case axis
+    :hleft (let [left (:x rect)]
+             {:x left
+              :y (:y wrapper-rect)})
+
+    :hcenter (let [center (+ (:x rect) (/ (:width rect) 2))]
+               {:x (- center (/ (:width wrapper-rect) 2))
+                :y (:y wrapper-rect)})
+
+    :hright (let [right (+ (:x rect) (:width rect))]
+              {:x (- right (:width wrapper-rect))
+               :y (:y wrapper-rect)})
+
+    :vtop (let [top (:y rect)]
+             {:x (:x wrapper-rect)
+              :y top})
+
+    :vcenter (let [center (+ (:y rect) (/ (:height rect) 2))]
+               {:x (:x wrapper-rect)
+                :y (- center (/ (:height wrapper-rect) 2))})
+
+    :vbottom (let [bottom (+ (:y rect) (:height rect))]
+               {:x (:x wrapper-rect)
+                :y (- bottom (:height wrapper-rect))})))
 
 ;; --- Helpers
 
