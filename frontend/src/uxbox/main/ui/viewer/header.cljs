@@ -18,8 +18,10 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.data.viewer :as dv]
+   [uxbox.main.refs :as refs]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.math :as mth]
    [uxbox.util.router :as rt])
@@ -64,7 +66,6 @@
         create #(st/emit! dv/create-share-link)
         delete #(st/emit! dv/delete-share-link)
         href (.-href js/location)]
-
     [:*
      [:span.btn-share.tooltip.tooltip-bottom
       {:alt "Share link"
@@ -78,7 +79,7 @@
        [:span.share-link-title "Share link"]
        [:div.share-link-input
         (if (string? token)
-          [:span.link (str href "&" token)]
+          [:span.link (str href "&token=" token)]
           [:span "Share link will apear here"])
         i/chain]
        [:span.share-link-subtitle "Anyone with the link will have access"]
@@ -87,16 +88,23 @@
           [:button.btn-delete {:on-click delete} "Remove link"]
           [:button.btn-primary {:on-click create} "Create link"])]]]]))
 
-
 (mf/defc header
   [{:keys [data index local fullscreen? toggle-fullscreen] :as props}]
   (let [{:keys [project file page frames]} data
         total (count frames)
         on-click #(st/emit! dv/toggle-thumbnails-panel)
+
+        profile (mf/deref refs/profile)
+        anonymous? (= uuid/zero (:id profile))
+
+        project-id (get-in data [:project :id])
+        file-id (get-in data [:file :id])
+        page-id (get-in data [:page :id])
+
         on-edit #(st/emit! (rt/nav :workspace
-                                   {:project-id (get-in data [:project :id])
-                                    :file-id (get-in data [:file :id])}
-                                   {:page-id (get-in data [:page :id])}))]
+                                   {:project-id project-id
+                                    :file-id file-id}
+                                   {:page-id page-id}))]
     [:header.viewer-header
      [:div.main-icon
       [:a i/logo-icon]]
@@ -112,8 +120,10 @@
       [:span.counters (str (inc index) " / " total)]]
 
      [:div.options-zone
-      [:& share-link {:page (:page data)}]
-      [:span.btn-primary {:on-click on-edit} "Edit page"]
+      (when-not anonymous?
+        [:& share-link {:page (:page data)}])
+      (when-not anonymous?
+        [:span.btn-primary {:on-click on-edit} "Edit page"])
       [:& zoom-widget {:zoom (:zoom local)}]
       [:span.btn-fullscreen.tooltip.tooltip-bottom
        {:alt "Full screen"

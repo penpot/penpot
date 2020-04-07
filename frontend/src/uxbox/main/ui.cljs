@@ -101,12 +101,6 @@
     :profile-recovery
     [:& profile-recovery-page]
 
-    :viewer
-    (let [index (d/parse-integer (get-in route [:params :query :index]))
-          page-id (uuid (get-in route [:params :path :page-id]))]
-      [:& viewer-page {:page-id page-id
-                       :index index}])
-
     (:settings-profile
      :settings-password)
     [:& settings/settings {:route route}]
@@ -125,6 +119,14 @@
      :dashboard-library-palettes
      :dashboard-library-palettes-index)
     [:& dashboard {:route route}]
+
+    :viewer
+    (let [index (d/parse-integer (get-in route [:params :query :index]))
+          token (get-in route [:params :query :token])
+          page-id (uuid (get-in route [:params :path :page-id]))]
+      [:& viewer-page {:page-id page-id
+                       :index index
+                       :token token}])
 
     :workspace
     (let [project-id (uuid (get-in route [:params :path :project-id]))
