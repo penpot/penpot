@@ -124,6 +124,8 @@ CREATE TABLE page (
   version bigint NOT NULL DEFAULT 0,
   revn bigint NOT NULL DEFAULT 0,
 
+  share_token text NULL DEFAULT NULL,
+
   ordering smallint NOT NULL,
 
   name text NOT NULL,
@@ -132,6 +134,10 @@ CREATE TABLE page (
 
 CREATE INDEX page__file_id__idx
     ON page(file_id);
+
+ALTER TABLE page
+  ALTER COLUMN data SET STORAGE EXTERNAL,
+  ALTER COLUMN share_token SET STORAGE PLAIN;
 
 CREATE FUNCTION handle_page_update()
   RETURNS TRIGGER AS $pagechange$

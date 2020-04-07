@@ -106,6 +106,42 @@
 
 
 
+;; --- Mutation: Generate Share Token
+
+(declare assign-page-share-token)
+
+(s/def ::generate-page-share-token
+  (s/keys :req-un [::id]))
+
+(sm/defmutation ::generate-page-share-token
+  [{:keys [id] :as params}]
+  (let [token (-> (sodi.prng/random-bytes 16)
+                  (sodi.util/bytes->b64s))]
+    (db/with-atomic [conn db/pool]
+      (assign-page-share-token conn id token))))
+
+(def ^:private sql:update-page-share-token
+  "update page set share_token = $2 where id = $1")
+
+(defn- assign-page-share-token
+  [conn id token]
+  (-> (db/query-one conn [sql:update-page-share-token id token])
+      (p/then (fn [_] {:id id :share-token token}))))
+
+
+
+;; --- Mutation: Clear Share Token
+
+(s/def ::clear-page-share-token
+  (s/keys :req-un [::id]))
+
+(sm/defmutation ::clear-page-share-token
+  [{:keys [id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (assign-page-share-token conn id nil)))
+
+
+
 ;; --- Mutation: Update Page
 
 ;; A generic, Changes based (granular) page update method.

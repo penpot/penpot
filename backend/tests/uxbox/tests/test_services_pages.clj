@@ -39,8 +39,19 @@
           (t/is (= (:id data) (:id result)))
           (t/is (= (:name data) (:name result)))
           (t/is (= (:data data) (:data result)))
+          (t/is (nil? (:share-token result)))
           (t/is (= 0 (:version result)))
           (t/is (= 0 (:revn result))))))
+
+    (t/testing "generate share token"
+      (let [data {::sm/type :generate-page-share-token
+                  :id page-id}
+             out (th/try-on! (sm/handle data))]
+
+        (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (string? (:share-token result))))))
 
     (t/testing "query pages"
       (let [data {::sq/type :pages
@@ -55,6 +66,7 @@
           (t/is (= 1 (count result)))
           (t/is (= page-id (get-in result [0 :id])))
           (t/is (= "test page" (get-in result [0 :name])))
+          (t/is (string? (get-in result [0 :share-token])))
           (t/is (:id file) (get-in result [0 :file-id])))))
 
     (t/testing "delete page"
