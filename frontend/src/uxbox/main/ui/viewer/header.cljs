@@ -107,7 +107,7 @@
                                    {:page-id page-id}))]
     [:header.viewer-header
      [:div.main-icon
-      [:a i/logo-icon]]
+      [:a {:on-click on-edit} i/logo-icon]]
 
      [:div.sitemap-zone {:alt (tr "header.sitemap")
                          :on-click on-click}
