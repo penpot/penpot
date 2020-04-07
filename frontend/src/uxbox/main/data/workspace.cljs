@@ -1502,20 +1502,21 @@
   (let [page-id (::page-id state)
         objects (get-in state [:workspace-data page-id :objects])
         groups-to-adjust (->> ids
-                              (map #(helpers/get-parent % objects))
+                              (mapcat #(reverse (helpers/get-all-parents % objects)))
                               (map #(get objects %))
                               (filter #(= (:type %) :group))
                               (map #(:id %))
                               distinct)
 
         update-group
-        (fn [group]
-          (let [group-objects (map #(get objects %) (:shapes group))
+        (fn [state group]
+          (let [objects (get-in state [:workspace-data page-id :objects])
+                group-objects (map #(get objects %) (:shapes group))
                 selrect (geom/selection-rect group-objects)]
             (merge group (select-keys selrect [:x :y :width :height]))))
 
         reduce-fn
-        #(update-in %1 [:workspace-data page-id :objects %2] update-group)]
+        #(update-in %1 [:workspace-data page-id :objects %2] (partial update-group %1))]
 
     (reduce reduce-fn state groups-to-adjust)))
 
