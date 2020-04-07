@@ -141,3 +141,7 @@
   (if (or (nil? val) (nan? val))
     default
     (str val)))
+
+(defn coalesce
+  [val default]
+  (or val default))

@@ -20,7 +20,6 @@ const postcss = require('postcss')
 const paths = {};
 paths.resources = "./resources/";
 paths.output = "./resources/public/";
-paths.build = "./target/build/";
 paths.dist = "./target/dist/";
 paths.scss = "./resources/styles/**/*.scss";
 

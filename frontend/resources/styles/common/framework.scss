@@ -330,8 +330,9 @@ ul.slider-dots {
 // Input elements
 .input-element {
   display: flex;
+  flex-shrink: 0;
   position: relative;
-  width: 100%;
+  width: 75px;
 
   &::after {
     color: $color-gray-20;
@@ -756,7 +757,8 @@ input[type=checkbox]:checked + label{
 input[type=range] {
   background-color: transparent;
   -webkit-appearance: none;
-  margin: 10px 0;
+  margin: 10px 0 10px 3px;
+  max-width: 70px;
   width: 100%;
 }
 input[type=range]:focus {
@@ -764,7 +766,7 @@ input[type=range]:focus {
 }
 input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
-  height: 8px;
+  height: 6px;
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
@@ -775,13 +777,13 @@ input[type=range]::-webkit-slider-runnable-track {
 input[type=range]::-webkit-slider-thumb {
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
   border: 0px solid #000000;
-  height: 24px;
-  width: 8px;
+  height: 18px;
+  width: 6px;
   border-radius: 7px;
   background: $color-gray-20;
   cursor: pointer;
   -webkit-appearance: none;
-  margin-top: -8px;
+  margin-top: -6px;
 }
 input[type=range]:focus::-webkit-slider-runnable-track {
   background: $color-gray-60;

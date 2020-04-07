@@ -2,8 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace.sidebar.options.stroke
   (:require
@@ -14,14 +16,14 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
-   [uxbox.util.data :refer [parse-int parse-float read-string]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.i18n :as i18n :refer  [tr t]]
    [uxbox.util.math :as math]))
 
 (mf/defc stroke-menu
   [{:keys [shape] :as props}]
-  (let [show-options (not= (:stroke-style shape) :none)
+  (let [locale (i18n/use-locale)
+        show-options (not= (:stroke-style shape) :none)
 
         on-stroke-style-change
         (fn [event]
@@ -34,15 +36,15 @@
         (fn [event]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-double 1))]
+                          (d/parse-integer 0))]
             (st/emit! (udw/update-shape (:id shape) {:stroke-width value}))))
 
         on-stroke-opacity-change
         (fn [event]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-double 1)
-                          (/ 10000))]
+                          (d/parse-integer 0)
+                          (/ 100))]
             (st/emit! (udw/update-shape (:id shape) {:stroke-opacity value}))))
 
         show-color-picker
@@ -56,50 +58,60 @@
                        :transparent? true}]
             (modal/show! colorpicker-modal props)))]
 
+    ;; COLLAPSED
+    ;; [:div.element-set
+    ;;  [:div.element-set-title (tr "workspace.options.stroke")]
+    ;;  [:div.add-page i/close]]
+
+    ;; EXPANDED
     [:div.element-set
-     [:div.element-set-title (tr "workspace.options.stroke")]
+     [:div.element-set-title (t locale "workspace.options.stroke")]
      [:div.element-set-content
 
+      ;; Stroke Color
+      [:div.row-flex.color-data
+       [:span.color-th {:style {:background-color (:stroke-color shape)}
+                        :on-click show-color-picker}]
+       [:div.color-info
+        [:input {:read-only true
+                 :key (:stroke-color shape)
+                 :default-value (:stroke-color shape)}]]
+
+       [:div.input-element.percentail
+        [:input.input-text {:placeholder ""
+                            :value (str (-> (:stroke-opacity shape)
+                                            (d/coalesce 1)
+                                            (* 100)
+                                            (math/round)))
+                            :type "number"
+                            :on-change on-stroke-opacity-change
+                            :min "0"
+                            :max "100"}]]
+
+       [:input.slidebar {:type "range"
+                         :min "0"
+                         :max "100"
+                         :value (str (-> (:stroke-opacity shape)
+                                         (d/coalesce 1)
+                                         (* 100)
+                                         (math/round)))
+                         :step "1"
+                         :on-change on-stroke-opacity-change}]]
+
       ;; Stroke Style & Width
-      [:span (tr "workspace.options.stroke.style")]
       [:div.row-flex
        [:select#style.input-select {:value (pr-str (:stroke-style shape))
                                     :on-change on-stroke-style-change}
-        [:option {:value ":none"} (tr "workspace.options.stroke.none")]
-        [:option {:value ":solid"} (tr "workspace.options.stroke.solid")]
-        [:option {:value ":dotted"} (tr "workspace.options.stroke.dotted")]
-        [:option {:value ":dashed"} (tr "workspace.options.stroke.dashed")]
-        [:option {:value ":mixed"} (tr "workspace.options.stroke.mixed")]]
+        [:option {:value ":none"} (t locale "workspace.options.stroke.none")]
+        [:option {:value ":solid"} (t locale "workspace.options.stroke.solid")]
+        [:option {:value ":dotted"} (t locale "workspace.options.stroke.dotted")]
+        [:option {:value ":dashed"} (t locale "workspace.options.stroke.dashed")]
+        [:option {:value ":mixed"} (t locale "workspace.options.stroke.mixed")]]
 
-        [:div.input-element {:class (when show-options "pixels")}
-         (when show-options
-           [:input.input-text {:type "number"
-                              :min "0"
-                              :value (-> (:stroke-width shape)
-                                         (math/precision 2)
-                                         (d/coalesce-str "1"))
-                              :on-change on-stroke-width-change}])]]
-
-      ;; Stroke Color
-      (when show-options
-        [:*
-         [:span (tr "workspace.options.color")]
-
-         [:div.row-flex.color-data
-          [:span.color-th {:style {:background-color (:stroke-color shape)}
-                           :on-click show-color-picker}]
-          [:div.color-info
-           [:input {:read-only true
-                    :default-value (:stroke-color shape "")}]]]
-
-         [:span (tr "workspace.options.opacity")]
-
-         [:div.row-flex
-          [:input.slidebar {:type "range"
+       [:div.input-element.pixels
+        [:input.input-text {:type "number"
                             :min "0"
-                            :max "10000"
-                            :value (-> (:stroke-opacity shape 1)
-                                       (* 10000)
-                                       (d/coalesce-str "1"))
-                            :step "1"
-                            :on-change on-stroke-opacity-change}]]])]]))
+                            :value (str (-> (:stroke-width shape)
+                                            (d/coalesce 1)
+                                            (math/round)))
+                            :on-change on-stroke-width-change}]]]]]))

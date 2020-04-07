@@ -73,7 +73,6 @@
         on-pos-y-change #(on-position-change % :y)]
 
     [:div.element-set
-     [:div.element-set-title (tr "workspace.options.measures")]
 
      [:div.element-set-content
 
@@ -96,10 +95,15 @@
        [:span.orientation-icon {on-click #(on-orientation-clicked :horiz)} i/size-horiz]
        ]
 
-      [:span (tr "workspace.options.size")]
 
       ;; WIDTH & HEIGHT
       [:div.row-flex
+       [:span.element-set-subtitle (tr "workspace.options.size")]
+       [:div.lock-size {:class (when (:proportion-lock shape) "selected")
+                        :on-click on-proportion-lock-change}
+        (if (:proportion-lock shape)
+          i/lock
+          i/unlock)]
        [:div.input-element.pixels
         [:input.input-text {:type "number"
                             :min "0"
@@ -108,11 +112,6 @@
                                        (math/precision 2)
                                        (d/coalesce-str "0"))}]]
 
-       [:div.lock-size {:class (when (:proportion-lock shape) "selected")
-                        :on-click on-proportion-lock-change}
-        (if (:proportion-lock shape)
-          i/lock
-          i/unlock)]
 
        [:div.input-element.pixels
         [:input.input-text {:type "number"
@@ -123,8 +122,8 @@
                                        (d/coalesce-str "0"))}]]]
 
       ;; POSITION
-      [:span (tr "workspace.options.position")]
       [:div.row-flex
+       [:span.element-set-subtitle (tr "workspace.options.position")]
        [:div.input-element.pixels
         [:input.input-text {:placeholder "x"
                             :type "number"

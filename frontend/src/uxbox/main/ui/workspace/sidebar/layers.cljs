@@ -177,7 +177,7 @@
          i/arrow-slide])]
      (when (and (:shapes item) (not collapsed?))
        [:ul.element-children
-        (for [[index id] (d/enumerate (:shapes item))]
+        (for [[index id] (reverse (d/enumerate (:shapes item)))]
           (when-let [item (get objects id)]
             [:& layer-item
              {:item item
@@ -194,7 +194,7 @@
         objects (:objects data)
         root (get objects uuid/zero)]
     [:ul.element-list
-     (for [[index id] (d/enumerate (reverse (:shapes root)))]
+     (for [[index id] (reverse (d/enumerate (:shapes root)))]
        (let [item (get objects id)]
          [:& layer-item
           {:item item

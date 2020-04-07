@@ -214,9 +214,10 @@
     }
   }
 
-  span {
+  .element-set-subtitle {
     color: $color-gray-10;
     font-size: $fs12;
+    width: 12rem;
   }
 
   .lock-size {
@@ -255,6 +256,7 @@
   }
 
   .custom-select {
+    cursor: pointer;
     border: 1px solid $color-gray-40;
     padding: $x-small $big $x-small $x-small;
     position: relative;
@@ -269,6 +271,10 @@
         height: 10px;
         width: 10px;
       }
+    }
+
+    span {
+      font-size: $fs13;
     }
 
     .custom-select-dropdown {
@@ -343,12 +349,12 @@
 
 .color-th {
   background-color: $color-gray-lighter;
-  border: 1px solid $color-gray-40;
+  border: 1px solid $color-gray-10;
   border-radius: $br-small;
   cursor: pointer;
   flex-shrink: 0;
   height: 25px;
-  margin: 5px 4px 0 4px;
+  margin: 5px 4px 0 0;
   width: 25px;
 
   &.palette-th {
@@ -436,10 +442,11 @@
   margin-left: $small;
 
   svg {
+    cursor: pointer;
+    height: 20px;
     stroke: $color-gray-40;
     stroke-width: 30px;
-    height: 25px;
-    width: 25px;
+    width: 20px;
   }
 
   &:hover {

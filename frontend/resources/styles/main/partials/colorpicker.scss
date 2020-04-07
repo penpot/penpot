@@ -154,16 +154,18 @@
 
   .color-info {
     input {
-      border: 1px solid $color-gray-40;
+      background-color: $color-gray-50;
+      border: 1px solid $color-gray-30;
       border-radius: $br-small;
-      color: $color-gray-10;
-      margin: 3px 0 0 $x-small;
+      color: $color-gray-20;
+      height: 25px;
+      margin: 5px 0 0 0;
       padding: 0 $x-small;
       width: 58px;
       font-size: $fs13;
 
       &:focus {
-        border-color: $color-gray-10;
+        color: $color-white;
       }
     }
   }
