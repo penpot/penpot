@@ -44,49 +44,24 @@
   [conn id]
   (db/query-one conn [sql:project id]))
 
-(s/def ::viewer-bundle-by-page-id
-  (s/keys :req-un [::profile-id ::page-id]))
+(s/def ::share-token ::us/string)
+(s/def ::viewer-bundle
+  (s/keys :req-un [::page-id]
+          :opt-un [::profile-id ::share-token]))
 
-(sq/defquery ::viewer-bundle-by-page-id
-  [{:keys [profile-id page-id]}]
+(sq/defquery ::viewer-bundle
+  [{:keys [profile-id page-id share-token] :as params}]
   (db/with-atomic [conn db/pool]
     (p/let [page (pages/retrieve-page conn page-id)
             file (files/retrieve-file conn (:file-id page))
             images (files/retrieve-file-images conn page)
             project (retrieve-project conn (:project-id file))]
-      (files/check-edition-permissions! conn profile-id (:file-id page))
+      (if (string? share-token)
+        (when (not= share-token (:share-token page))
+          (ex/raise :type :validation
+                    :code :not-authorized))
+        (files/check-edition-permissions! conn profile-id (:file-id page)))
       {:page page
        :file file
        :images images
        :project project})))
-
-
-;; --- Query: Viewer Bundle (By Share ID)
-
-(declare retrieve-page-by-share-id)
-
-(s/def ::viewer-bundle-by-share-id
-  (s/keys :req-un [::share-id]
-          :opt-un [::profile-id]))
-
-(sq/defquery ::viewer-bundle-by-share-id
-  [{:keys [share-id]}]
-  (db/with-atomic [conn db/pool]
-    (p/let [page (retrieve-page-by-share-id conn share-id)
-            file (files/retrieve-file conn (:file-id page))
-            images (files/retrieve-file-images conn page)
-            project (retrieve-project conn (:project-id file))]
-      {:page page
-       :file file
-       :images images
-       :project project})))
-
-(def ^:private sql:page-by-share-id
-  "select p.* from page as p where share_id=$1")
-
-(defn- retrieve-page-by-share-id
-  [conn share-id]
-  (-> (db/query-one conn [sql:page-by-share-id share-id])
-      (p/then' su/raise-not-found-if-nil)
-      (p/then' pages/decode-row)))
-

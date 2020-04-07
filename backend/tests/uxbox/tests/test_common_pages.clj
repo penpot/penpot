@@ -13,151 +13,167 @@
    [uxbox.util.uuid :as uuid]
    [uxbox.tests.helpers :as th]))
 
-(t/deftest process-change-add-shape
+(t/deftest process-change-add-obj-1
   (let [data cp/default-page-data
         id   (uuid/next)
-        chg  {:type :add-shape
+        chg  {:type :add-obj
               :id id
-              :session-id (uuid/next)
-              :shape {:id id
-                      :type :rect
-                      :name "rect"}}
+              :frame-id uuid/zero
+              :obj {:id id
+                    :frame-id uuid/zero
+                    :type :rect
+                    :name "rect"}}
         res (cp/process-changes data [chg])]
 
-    (t/is (= 1 (count (:shapes res))))
-    (t/is (= 0 (count (:canvas res))))
+    (t/is (= 2 (count (:objects res))))
+    (t/is (= (:obj chg) (get-in res [:objects id])))
+    (t/is (= [id] (get-in res [:objects uuid/zero :shapes])))))
 
-    (t/is (= id (get-in res [:shapes 0])))
-    (t/is (= (:shape chg)
-             (get-in res [:shapes-by-id id])))))
-
-(t/deftest process-change-add-canvas
+(t/deftest process-change-mod-obj
   (let [data cp/default-page-data
-        id   (uuid/next)
-        chg  {:type :add-canvas
-              :id id
-              :session-id (uuid/next)
-              :shape {:id id
-                      :type :rect
-                      :name "rect"}}
+        chg  {:type :mod-obj
+              :id uuid/zero
+              :operations [{:type :set
+                            :attr :name
+                            :val "foobar"}]}
         res (cp/process-changes data [chg])]
-    (t/is (= 0 (count (:shapes res))))
-    (t/is (= 1 (count (:canvas res))))
-
-    (t/is (= id (get-in res [:canvas 0])))
-    (t/is (= (:shape chg)
-             (get-in res [:shapes-by-id id])))))
+    (t/is (= "foobar" (get-in res [:objects uuid/zero :name])))))
 
 
-(t/deftest process-change-mod-shape
+(t/deftest process-change-del-obj-1
   (let [id   (uuid/next)
-        data (merge cp/default-page-data
-                    {:shapes [id]
-                     :shapes-by-id {id {:id id
-                                        :type :rect
-                                        :name "rect"}}})
-
-        chg  {:type :mod-shape
-              :id id
-              :session-id (uuid/next)
-              :operations [[:set :name "foobar"]]}
+        data (-> cp/default-page-data
+                 (assoc-in [:objects uuid/zero :shapes] [id])
+                 (assoc-in [:objects id] {:id id
+                                          :frame-id uuid/zero
+                                          :type :rect
+                                          :name "rect"}))
+        chg  {:type :del-obj
+              :id id}
         res (cp/process-changes data [chg])]
 
-    (t/is (= 1 (count (:shapes res))))
-    (t/is (= 0 (count (:canvas res))))
-    (t/is (= "foobar"
-             (get-in res [:shapes-by-id id :name])))))
+    (t/is (= 1 (count (:objects res))))
+    (t/is (= [] (get-in res [:objects uuid/zero :shapes])))))
 
-(t/deftest process-change-mod-opts
-  (t/testing "mod-opts add"
-    (let [data cp/default-page-data
-          chg  {:type :mod-opts
-                :session-id (uuid/next)
-                :operations [[:set :foo "bar"]]}
-          res (cp/process-changes data [chg])]
-
-      (t/is (= 0 (count (:shapes res))))
-      (t/is (= 0 (count (:canvas res))))
-      (t/is (empty? (:shapes-by-id res)))
-      (t/is (= "bar" (get-in res [:options :foo])))))
-
-  (t/testing "mod-opts set nil"
-    (let [data (merge cp/default-page-data
-                      {:options {:foo "bar"}})
-          chg  {:type :mod-opts
-                :session-id (uuid/next)
-                :operations [[:set :foo nil]]}
-          res (cp/process-changes data [chg])]
-
-      (t/is (= 0 (count (:shapes res))))
-      (t/is (= 0 (count (:canvas res))))
-      (t/is (empty? (:shapes-by-id res)))
-      (t/is (not (contains? (:options res) :foo)))))
-  )
-
-
-(t/deftest process-change-del-shape
+(t/deftest process-change-del-obj-2
   (let [id   (uuid/next)
-        data (merge cp/default-page-data
-                    {:shapes [id]
-                     :shapes-by-id {id {:id id
-                                        :type :rect
-                                        :name "rect"}}})
-        chg  {:type :del-shape
-              :id id
-              :session-id (uuid/next)}
+        data (-> cp/default-page-data
+                 (assoc-in [:objects uuid/zero :shapes] [id])
+                 (assoc-in [:objects id] {:id id
+                                          :frame-id uuid/zero
+                                          :type :rect
+                                          :name "rect"}))
+        chg  {:type :del-obj
+              :id uuid/zero}
         res (cp/process-changes data [chg])]
+    (t/is (= 0 (count (:objects res))))))
 
-    (t/is (= 0 (count (:shapes res))))
-    (t/is (= 0 (count (:canvas res))))
-    (t/is (empty? (:shapes-by-id res)))))
-
-(t/deftest process-change-del-canvas
-  (let [id   (uuid/next)
-        data (merge cp/default-page-data
-                    {:canvas [id]
-                     :shapes-by-id {id {:id id
-                                        :type :canvas
-                                        :name "rect"}}})
-        chg  {:type :del-canvas
-              :id id
-              :session-id (uuid/next)}
-        res (cp/process-changes data [chg])]
-
-    (t/is (= 0 (count (:shapes res))))
-    (t/is (= 0 (count (:canvas res))))
-    (t/is (empty? (:shapes-by-id res)))))
-
-
-(t/deftest process-change-mov-shape
+(t/deftest process-change-mod-obj-abs-order
   (let [id1  (uuid/next)
         id2  (uuid/next)
         id3  (uuid/next)
-        data (merge cp/default-page-data
-                    {:shapes [id1 id2 id3]})]
+        data (-> cp/default-page-data
+                 (assoc-in [:objects uuid/zero :shapes] [id1 id2 id3]))]
 
-    (t/testing "mov-canvas 1"
-      (let [chg {:type :mov-shape
-                 :id id3
-                 :index 0
-                 :session-id (uuid/next)}
+    (t/testing "abs order 1"
+      (let [chg {:type :mod-obj
+                 :id uuid/zero
+                 :operations [{:type :abs-order
+                               :id id3
+                               :index 0}]}
             res (cp/process-changes data [chg])]
-        (t/is (= [id3 id1 id2] (:shapes res)))))
 
-    (t/testing "mov-canvas 2"
-      (let [chg {:type :mov-shape
-                 :id id3
-                 :index 100
-                 :session-id (uuid/next)}
-            res (cp/process-changes data [chg])]
-        (t/is (= [id1 id2 id3] (:shapes res)))))
+        ;; (clojure.pprint/pprint data)
+        ;; (clojure.pprint/pprint res)
 
-    (t/testing "mov-canvas 3"
-      (let [chg {:type :mov-shape
-                 :id id3
-                 :index 1
-                 :session-id (uuid/next)}
+        (t/is (= [id3 id1 id2] (get-in res [:objects uuid/zero :shapes])))))
+
+    (t/testing "abs order 2"
+      (let [chg {:type :mod-obj
+                 :id uuid/zero
+                 :operations [{:type :abs-order
+                               :id id1
+                               :index 100}]}
             res (cp/process-changes data [chg])]
-        (t/is (= [id1 id3 id2] (:shapes res)))))
+
+        ;; (clojure.pprint/pprint data)
+        ;; (clojure.pprint/pprint res)
+
+        (t/is (= [id2 id3 id1] (get-in res [:objects uuid/zero :shapes])))))
+
+    (t/testing "abs order 3"
+      (let [chg {:type :mod-obj
+                 :id uuid/zero
+                 :operations [{:type :abs-order
+                               :id id3
+                               :index 1}]}
+            res (cp/process-changes data [chg])]
+
+        ;; (clojure.pprint/pprint data)
+        ;; (clojure.pprint/pprint res)
+
+        (t/is (= [id1 id3 id2] (get-in res [:objects uuid/zero :shapes])))))
+    ))
+
+
+(t/deftest process-change-mod-obj-rel-order
+  (let [id1  (uuid/next)
+        id2  (uuid/next)
+        id3  (uuid/next)
+        data (-> cp/default-page-data
+                 (assoc-in [:objects uuid/zero :shapes] [id1 id2 id3]))]
+
+    (t/testing "rel order 1"
+      (let [chg {:type :mod-obj
+                 :id uuid/zero
+                 :operations [{:type :rel-order
+                               :id id3
+                               :loc :down}]}
+            res (cp/process-changes data [chg])]
+
+        ;; (clojure.pprint/pprint data)
+        ;; (clojure.pprint/pprint res)
+
+        (t/is (= [id1 id3 id2] (get-in res [:objects uuid/zero :shapes])))))
+
+
+    (t/testing "rel order 2"
+      (let [chg {:type :mod-obj
+                 :id uuid/zero
+                 :operations [{:type :rel-order
+                               :id id1
+                               :loc :top}]}
+            res (cp/process-changes data [chg])]
+
+        ;; (clojure.pprint/pprint data)
+        ;; (clojure.pprint/pprint res)
+
+        (t/is (= [id2 id3 id1] (get-in res [:objects uuid/zero :shapes])))))
+
+    (t/testing "rel order 3"
+      (let [chg {:type :mod-obj
+                 :id uuid/zero
+                 :operations [{:type :rel-order
+                               :id id2
+                               :loc :up}]}
+            res (cp/process-changes data [chg])]
+
+        ;; (clojure.pprint/pprint data)
+        ;; (clojure.pprint/pprint res)
+
+        (t/is (= [id1 id3 id2] (get-in res [:objects uuid/zero :shapes])))))
+
+    (t/testing "rel order 4"
+      (let [chg {:type :mod-obj
+                 :id uuid/zero
+                 :operations [{:type :rel-order
+                               :id id3
+                               :loc :bottom}]}
+            res (cp/process-changes data [chg])]
+
+        ;; (clojure.pprint/pprint data)
+        ;; (clojure.pprint/pprint res)
+
+        (t/is (= [id3 id1 id2] (get-in res [:objects uuid/zero :shapes])))))
     ))
 
