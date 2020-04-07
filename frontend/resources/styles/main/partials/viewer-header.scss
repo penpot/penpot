@@ -84,8 +84,24 @@
   .options-zone {
     align-items: center;
     display: flex;
-    width: 250px;
+    width: 300px;
     justify-content: space-between;
+    position: relative;
+
+    .btn-share {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 25px;
+      height: 25px;
+      cursor: pointer;
+
+      svg {
+        fill: $color-gray-20;
+        width: 20px;
+        height: 20px;
+      }
+    }
 
     .btn-primary {
       padding: 0.4rem 1rem;
@@ -115,6 +131,63 @@
         }
       }
     }
+  }
+
+  .share-link-dropdown {
+    position: absolute;
+    left: -180px;
+    top: 45px;
+
+    background-color: $color-gray-50;
+    display: flex;
+    flex-direction: column;
+
+    padding: 1rem;
+    width: 400px;
+
+    .share-link-title {
+      font-size: 18px;
+      padding-bottom: 1rem;
+    }
+
+    .share-link-subtitle {
+      padding-bottom: 1rem;
+    }
+
+    .share-link-buttons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .btn-delete,
+      .btn-primary {
+        width: 50%;
+        padding: $small;
+      }
+
+    }
+
+    .share-link-input {
+      display: flex;
+      justify-content: space-between;
+      padding: $small;
+      align-items: center;
+      border: 1px solid $color-gray-30;
+      border-radius: 3px;
+      margin-bottom: 1rem;
+
+      .link {
+        user-select: all;
+      }
+
+      svg {
+        width: 20px;
+        height: 20px;
+        fill: $color-gray-20;
+        stroke: $color-gray-20;
+      }
+    }
+
   }
 
   .zoom-widget {

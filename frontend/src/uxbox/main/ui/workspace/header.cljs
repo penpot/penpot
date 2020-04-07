@@ -143,7 +143,7 @@
         toggle-sitemap #(st/emit! (dw/toggle-layout-flag :sitemap))
         locale (i18n/use-locale)
         router (mf/deref router-ref)
-        view-url (rt/resolve router :viewer {:page-id (:id page) :index 0})]
+        view-url (rt/resolve router :viewer {:page-id (:id page)} {:index 0})]
     [:header.workspace-bar
      [:div.main-icon
       [:a {:on-click go-to-dashboard} i/logo-icon]]
