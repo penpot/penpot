@@ -19,6 +19,7 @@
    [uxbox.common.pages :as cp]
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
+   [uxbox.util.router :as rt]
    [uxbox.util.uuid :as uuid]))
 
 ;; --- Specs
@@ -44,7 +45,7 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :viewer-local {:zoom 1}))
+      (assoc state :viewer-local {:zoom 1 :page-id page-id}))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -57,7 +58,7 @@
   (ptk/reify ::fetch-file
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :viewer-bundle-by-page-id {:page-id page-id})
+      (->> (rp/query :viewer-bundle {:page-id page-id})
            (rx/map bundle-fetched)))))
 
 
@@ -84,6 +85,26 @@
                                    :page page
                                    :images images
                                    :frames frames})))))
+
+(def create-share-link
+  (ptk/reify ::create-share-link
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (prn "create-share-link")
+      (let [id (get-in state [:viewer-local :page-id])]
+        (->> (rp/mutation :generate-page-share-token {:id id})
+             (rx/map (fn [{:keys [share-token]}]
+                       #(assoc-in % [:viewer-data :page :share-token] share-token))))))))
+
+(def delete-share-link
+  (ptk/reify ::delete-share-link
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (prn "delete-share-link")
+      (let [id (get-in state [:viewer-local :page-id])]
+        (->> (rp/mutation :clear-page-share-token {:id id})
+             (rx/map (fn [_]
+                       #(assoc-in % [:viewer-data :page :share-token] nil))))))))
 
 ;; --- Zoom Management
 
@@ -131,6 +152,31 @@
     (update [_ state]
       (update-in state [:viewer-local :show-thumbnails] not))))
 
+(def select-prev-frame
+  (ptk/reify ::select-prev-frame
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [route (:route state)
+            qparams (get-in route [:params :query])
+            pparams (get-in route [:params :path])
+            index   (d/parse-integer (:index qparams))]
+        (when (pos? index)
+          (rx/of (rt/nav :viewer pparams (assoc qparams :index (dec index)))))))))
+
+(def select-next-frame
+  (ptk/reify ::select-prev-frame
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [route (:route state)
+            qparams (get-in route [:params :query])
+            pparams (get-in route [:params :path])
+            index   (d/parse-integer (:index qparams))
+
+            total   (count (get-in state [:viewer-data :frames]))]
+        (when (< index (dec total))
+          (rx/of (rt/nav :viewer pparams (assoc qparams :index (inc index)))))))))
+
+
 ;; --- Shortcuts
 
 (def shortcuts
@@ -138,4 +184,6 @@
    "-" #(st/emit! decrease-zoom)
    "shift+0" #(st/emit! zoom-to-50)
    "shift+1" #(st/emit! reset-zoom)
-   "shift+2" #(st/emit! zoom-to-200)})
+   "shift+2" #(st/emit! zoom-to-200)
+   "left" #(st/emit! select-prev-frame)
+   "right" #(st/emit! select-next-frame)})

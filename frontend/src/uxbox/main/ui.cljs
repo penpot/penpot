@@ -50,7 +50,7 @@
     ["/profile" :settings-profile]
     ["/password" :settings-password]]
 
-   ["/view/:page-id/:index" :viewer]
+   ["/view/:page-id" :viewer]
    ["/not-found" :not-found]
 
    (when *assert*
@@ -102,7 +102,7 @@
     [:& profile-recovery-page]
 
     :viewer
-    (let [index (d/parse-integer (get-in route [:params :path :index]))
+    (let [index (d/parse-integer (get-in route [:params :query :index]))
           page-id (uuid (get-in route [:params :path :page-id]))]
       [:& viewer-page {:page-id page-id
                        :index index}])

@@ -133,8 +133,7 @@
         on-item-click
         (fn [event index]
           (compare-and-set! selected false true)
-          (st/emit! (rt/nav :viewer {:page-id page-id
-                                     :index index}))
+          (st/emit! (rt/nav :viewer {:page-id page-id} {:index index}))
           (when @expanded?
             (on-close)))]
     [:& dropdown' {:on-close on-close

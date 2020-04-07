@@ -55,6 +55,39 @@
          "Zoom to 200%"]]]]
      [:span.remove-zoom {:on-click increase} "+"]]))
 
+(mf/defc share-link
+  [{:keys [page] :as props}]
+  (let [show-dropdown? (mf/use-state false)
+        dropdown-ref (mf/use-ref)
+        token (:share-token page)
+
+        create #(st/emit! dv/create-share-link)
+        delete #(st/emit! dv/delete-share-link)
+        href (.-href js/location)]
+
+    [:*
+     [:span.btn-share.tooltip.tooltip-bottom
+      {:alt "Share link"
+       :on-click #(swap! show-dropdown? not)}
+      i/exit]
+
+     [:& dropdown {:show @show-dropdown?
+                   :on-close #(swap! show-dropdown? not)
+                   :container dropdown-ref}
+      [:div.share-link-dropdown {:ref dropdown-ref}
+       [:span.share-link-title "Share link"]
+       [:div.share-link-input
+        (if (string? token)
+          [:span.link (str href "&" token)]
+          [:span "Share link will apear here"])
+        i/chain]
+       [:span.share-link-subtitle "Anyone with the link will have access"]
+       [:div.share-link-buttons
+        (if (string? token)
+          [:button.btn-delete {:on-click delete} "Remove link"]
+          [:button.btn-primary {:on-click create} "Create link"])]]]]))
+
+
 (mf/defc header
   [{:keys [data index local fullscreen? toggle-fullscreen] :as props}]
   (let [{:keys [project file page frames]} data
@@ -79,10 +112,13 @@
       [:span.counters (str (inc index) " / " total)]]
 
      [:div.options-zone
+      [:& share-link {:page (:page data)}]
       [:span.btn-primary {:on-click on-edit} "Edit page"]
       [:& zoom-widget {:zoom (:zoom local)}]
       [:span.btn-fullscreen.tooltip.tooltip-bottom
        {:alt "Full screen"
         :on-click toggle-fullscreen}
-       i/full-screen]]]))
+       i/full-screen]
+      ]]))
+
 
