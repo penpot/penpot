@@ -111,8 +111,8 @@
     [:div.element-set
      [:div.element-set-title (tr "workspace.options.grid-options")]
      [:div.element-set-content
-      [:span (tr "workspace.options.size")]
       [:div.row-flex
+       [:span.element-set-subtitle (tr "workspace.options.size")]
        [:div.input-element.pixels
         [:input.input-text {:type "number"
                             :value (:grid-x options)
@@ -121,8 +121,8 @@
         [:input.input-text {:type "number"
                             :value (:grid-y options)
                             :on-change on-y-change}]]]
-      [:span (tr "workspace.options.color")]
       [:div.row-flex.color-data
+       [:span.element-set-subtitle (tr "workspace.options.color")]
        [:span.color-th {:style {:background-color (:grid-color options)}
                         :on-click show-color-picker}]
        [:div.color-info
