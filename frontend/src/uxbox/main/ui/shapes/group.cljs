@@ -13,9 +13,12 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.interop :as itr]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.main.ui.shapes.attrs :as attrs]))
+   [uxbox.main.ui.shapes.attrs :as attrs]
+   [uxbox.main.data.workspace :as dw]
+   [uxbox.main.store :as st]
+   [uxbox.main.streams :as ms]))
 
-(defonce ^:dynamic *debug* (atom true))
+(defonce ^:dynamic *debug* (atom false))
 
 (declare translate-to-frame)
 (declare group-shape)
@@ -34,7 +37,9 @@
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
-           #_(st/emit! (dw/select-inside-group)))]
+           (st/emit! (dw/select-inside-group
+                      (:id shape)
+                      @ms/mouse-position)))]
 
      [:g.shape {:on-mouse-down on-mouse-down
                 :on-context-menu on-context-menu
@@ -73,7 +78,7 @@
          [:rect {:x x
                  :y y
                  :fill (if (deref *debug*) "red" "transparent")
-                 :opacity 0.8
+                 :opacity 0.5
                  :id (str "group-" id)
                  :width width
                  :height height}])])))

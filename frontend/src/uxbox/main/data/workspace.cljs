@@ -1203,6 +1203,19 @@
         (->> (impl-match-by-selrect state selrect)
              (assoc-in state [:workspace-local :selected]))))))
 
+(defn select-inside-group
+  [group-id position]
+  (ptk/reify ::select-inside-group
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (::page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            group (get objects group-id)
+            children (map #(get objects %) (:shapes group))
+            selected (->> children (filter #(geom/has-point? % position)) first)]
+        (cond-> state
+          selected (assoc-in [:workspace-local :selected] #{(:id selected)}))))))
+
 ;; --- Update Shape Attrs
 
 (defn update-shape

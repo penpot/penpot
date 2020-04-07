@@ -587,6 +587,20 @@
          (< ry1 sy2)
          (> ry2 sy1))))
 
+(defn has-point?
+  [shape position]
+  (let [{:keys [x y]} position
+        selrect {:x1 (- x 5)
+                 :y1 (- y 5)
+                 :x2 (+ x 5)
+                 :y2 (+ y 5)
+                 :x (- x 5)
+                 :y (- y 5)
+                 :width 10
+                 :height 10
+                 :type :rect}]
+    (overlaps? shape selrect)))
+
 (defn transform-shape
   ([shape] (transform-shape nil shape))
   ([frame shape]
