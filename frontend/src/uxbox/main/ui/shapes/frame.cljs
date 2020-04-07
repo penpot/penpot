@@ -61,15 +61,19 @@
     (let [selected-iref (-> (mf/deps (:id shape))
                             (mf/use-memo #(refs/make-selected (:id shape))))
           selected? (mf/deref selected-iref)
-          zoom (mf/deref refs/selected-zoom)]
+          zoom (mf/deref refs/selected-zoom)
+          frame-shape (mf/use-memo #(frame-shape shape-wrapper))]
       (when (and shape (not (:hidden shape)))
         (let [on-mouse-down #(common/on-mouse-down % shape)
               on-context-menu #(common/on-context-menu % shape)
               shape (merge frame-default-props shape)
+
               {:keys [x y width height]} shape
+
               inv-zoom (/ 1 zoom)
               childs (mapv #(get objects %) (:shapes shape))
               ds-modifier (:displacement-modifier shape)
+
               label-pos (cond-> (gpt/point x (- y 10))
                           (gmt/matrix? ds-modifier) (gpt/transform ds-modifier))
 
@@ -95,8 +99,8 @@
                    ;; User may also select the frame with single click in the label
                    :on-click on-double-click}
             (:name shape)]
-           [:& (frame-shape shape-wrapper) {:shape shape
-                                            :childs childs}]])))))
+           [:& frame-shape {:shape shape
+                            :childs childs}]])))))
 
 (defn frame-shape
   [shape-wrapper]
