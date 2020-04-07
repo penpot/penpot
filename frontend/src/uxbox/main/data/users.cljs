@@ -18,23 +18,25 @@
 
 ;; --- Common Specs
 
-(s/def ::id uuid?)
-(s/def ::fullname string?)
+(s/def ::id ::us/uuid)
+(s/def ::fullname ::us/string)
 (s/def ::email ::us/email)
-(s/def ::password string?)
-(s/def ::language string?)
-(s/def ::photo string?)
-(s/def ::created-at inst?)
-(s/def ::password-1 string?)
-(s/def ::password-2 string?)
-(s/def ::password-old string?)
+(s/def ::password ::us/string)
+(s/def ::language ::us/string)
+(s/def ::photo ::us/string)
+(s/def ::created-at ::us/inst)
+(s/def ::password-1 ::us/string)
+(s/def ::password-2 ::us/string)
+(s/def ::password-old ::us/string)
+(s/def ::lang (s/nilable ::us/string))
 
 (s/def ::profile
-  (s/keys :req-un [::id
+  (s/keys :req-un [::id]
+          :opt-un [::created-at
                    ::fullname
+                   ::photo
                    ::email
-                   ::created-at
-                   ::photo]))
+                   ::lang]))
 
 ;; --- Profile Fetched
 
