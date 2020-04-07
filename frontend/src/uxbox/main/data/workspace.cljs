@@ -2284,7 +2284,7 @@
    "ctrl+c" #(st/emit! copy-selected)
    "ctrl+v" #(st/emit! paste)
    "esc" #(st/emit! :interrupt deselect-all)
-   "delete" #(st/emit! delete-selected)
+   "del" #(st/emit! delete-selected)
    "ctrl+up" #(st/emit! (vertical-order-selected :up))
    "ctrl+down" #(st/emit! (vertical-order-selected :down))
    "ctrl+shift+up" #(st/emit! (vertical-order-selected :top))
