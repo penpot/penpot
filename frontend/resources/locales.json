@@ -505,7 +505,7 @@
       "fr" : "VOS IMAGES"
     }
   },
-  "element.fill" : {
+  "workspace.options.fill" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:44" ],
     "translations" : {
       "en" : "Fill",
@@ -1173,10 +1173,17 @@
       "fr" : "Position"
     }
   },
-  "workspace.options.rotation-radius" : {
+  "workspace.options.rotation" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:107", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:112" ],
     "translations" : {
-      "en" : "Rotation & Radius",
+      "en" : "Rotation",
+      "fr" : "TODO"
+    }
+  },
+  "workspace.options.radius" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:107", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:112" ],
+    "translations" : {
+      "en" : "Radius",
       "fr" : "TODO"
     }
   },
