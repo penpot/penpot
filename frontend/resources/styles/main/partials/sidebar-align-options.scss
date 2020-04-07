@@ -1,0 +1,38 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+.align-options {
+  display: flex;
+  width: 100%;
+  justify-content: space-evenly;
+  border-bottom: solid 1px $color-gray-60;
+
+  .align-button {
+    cursor: pointer;
+    padding: $small;
+    svg {
+      height: 16px;
+      width: 16px;
+      fill: $color-gray-light;
+    }
+
+    &:hover {
+      background-color: $color-primary;
+      svg {
+        fill: $color-gray-50;
+      }
+    }
+
+    &.disabled {
+      background-color: transparent;
+      cursor: default;
+      svg {
+        fill: $color-gray-dark;
+      }
+    }
+  }
+}
