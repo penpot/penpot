@@ -17,5 +17,5 @@
     :compiler-options
     {:fn-invoke-direct true
      :source-map true
-     :anon-fn-naming-policy :mapped
+     :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}}}
