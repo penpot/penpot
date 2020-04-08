@@ -40,6 +40,7 @@ services:
       - UXBOX_DATABASE_USERNAME=uxbox
       - UXBOX_DATABASE_PASSWORD=uxbox
       - UXBOX_THEME=light
+      #- UXBOX_THEME=dark
 
   smtp:
     container_name: 'uxbox-devenv-smtp'

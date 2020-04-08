@@ -123,7 +123,7 @@ function templatePipeline(options) {
     const input = options.input;
     const output = options.output;
     const ts = Math.floor(new Date());
-    const th = process.env.theme || 'light';
+    const th = process.env.UXBOX_THEME || 'light';
 
     const locales = readLocales();
     const config = readConfig();
