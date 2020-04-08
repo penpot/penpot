@@ -39,6 +39,7 @@ services:
       - UXBOX_DATABASE_URI=postgresql://postgres/uxbox
       - UXBOX_DATABASE_USERNAME=uxbox
       - UXBOX_DATABASE_PASSWORD=uxbox
+      - UXBOX_THEME=light
 
   smtp:
     container_name: 'uxbox-devenv-smtp'
