@@ -1,0 +1,45 @@
+.zoom-widget {
+  cursor: pointer;
+  display: flex;
+
+  span {
+    color: $color-gray-10;
+    font-size: $fs14;
+    margin-left: $x-small;
+  }
+
+  .dropdown-button svg {
+    fill: $color-gray-10;
+    height: 10px;
+    width: 10px;
+  }
+
+  .zoom-dropdown {
+    position: absolute;
+    z-index: 12;
+    width: 150px;
+
+    background-color: $color-white;
+    border-radius: $br-small;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+    li {
+      color: $color-gray-60;
+      cursor: pointer;
+      font-size: $fs12;
+      display: flex;
+      padding: $small;
+
+      span {
+        color: $color-gray-40;
+        font-size: $fs12;
+        margin-left: auto;
+      }
+
+      &:hover {
+        background-color: $color-primary-lighter;
+      }
+
+    }
+  }
+}

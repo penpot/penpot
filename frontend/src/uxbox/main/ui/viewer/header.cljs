@@ -17,6 +17,7 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.main.ui.workspace.header :refer [zoom-widget]]
    [uxbox.main.data.viewer :as dv]
    [uxbox.main.refs :as refs]
    [uxbox.util.data :refer [classnames]]
@@ -28,34 +29,6 @@
   (:import goog.events.EventType
            goog.events.KeyCodes))
 
-(mf/defc zoom-widget
-  {:wrap [mf/memo]}
-  [{:keys [zoom] :as props}]
-  (let [show-dropdown? (mf/use-state false)
-        increase #(st/emit! dv/increase-zoom)
-        decrease #(st/emit! dv/decrease-zoom)
-        zoom-to-50 #(st/emit! dv/zoom-to-50)
-        zoom-to-100 #(st/emit! dv/reset-zoom)
-        zoom-to-200 #(st/emit! dv/zoom-to-200)]
-    [:div.zoom-widget
-     [:span.add-zoom {:on-click decrease} "-"]
-     [:div.input-container {:on-click #(reset! show-dropdown? true)}
-      [:span {} (str (mth/round (* 100 zoom)) "%")]
-      [:span.dropdown-button i/arrow-down]
-      [:& dropdown {:show @show-dropdown?
-                    :on-close #(reset! show-dropdown? false)}
-       [:ul.zoom-dropdown
-        [:li {:on-click increase}
-         "Zoom in" [:span "+"]]
-        [:li {:on-click decrease}
-         "Zoom out" [:span "-"]]
-        [:li {:on-click zoom-to-50}
-         "Zoom to 50%"]
-        [:li {:on-click zoom-to-100}
-         "Zoom to 100%" [:span "Shift + 0"]]
-        [:li {:on-click zoom-to-200}
-         "Zoom to 200%"]]]]
-     [:span.remove-zoom {:on-click increase} "+"]]))
 
 (mf/defc share-link
   [{:keys [page] :as props}]
@@ -123,8 +96,16 @@
       (when-not anonymous?
         [:& share-link {:page (:page data)}])
       (when-not anonymous?
-        [:span.btn-primary {:on-click on-edit} "Edit page"])
-      [:& zoom-widget {:zoom (:zoom local)}]
+        [:a {:on-click on-edit} "Edit page"])
+
+      [:& zoom-widget
+       {:zoom (:zoom local)
+        :on-increase #(st/emit! dv/increase-zoom)
+        :on-decrease #(st/emit! dv/decrease-zoom)
+        :on-zoom-to-50 #(st/emit! dv/zoom-to-50)
+        :on-zoom-to-100 #(st/emit! dv/reset-zoom)
+        :on-zoom-to-200 #(st/emit! dv/zoom-to-200)}]
+
       [:span.btn-fullscreen.tooltip.tooltip-bottom
        {:alt "Full Screen"
         :on-click toggle-fullscreen}

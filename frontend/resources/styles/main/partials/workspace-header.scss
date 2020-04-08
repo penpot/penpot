@@ -1,0 +1,209 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+.workspace-header {
+  align-items: center;
+  background-color: $color-gray-50;
+  border-bottom: 1px solid  $color-gray-60;
+  display: flex;
+  height: 40px;
+  padding: $x-small $medium $x-small 55px;
+  position: relative;
+  z-index: 12;
+  justify-content: space-between;
+
+  .main-icon {
+    align-items: center;
+    background-color: $color-gray-60;
+    cursor: pointer;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 40px;
+
+    a {
+      height: 30px;
+
+      svg {
+        fill: $color-gray-30;
+        height: 30px;
+        width: 28px;
+
+        }
+
+      &:hover {
+
+        svg {
+          fill: $color-primary;
+        }
+
+      }
+
+    }
+  }
+
+  .menu-section {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .users-section {
+    display: flex;
+  }
+
+  .options-section {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+
+    > * {
+      margin-left: $big;
+    }
+
+    .zoom-dropdown {
+      top: 45px;
+      left: -30px;
+    }
+  }
+
+  .menu-button {
+    align-items: center;
+    background-color: $color-gray-60;
+    cursor: pointer;
+    border-radius: $br-small;
+    display: flex;
+    margin-right: $x-small;
+    padding: $x-small;
+    width: 25px;
+    height: 25px;
+
+    svg {
+      height: 15px;
+      fill: $color-gray-20;
+      width: 15px;
+    }
+
+    &:hover {
+      background-color: $color-primary;
+
+      svg {
+        fill: $color-gray-60;
+      }
+    }
+  }
+
+  .project-tree {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    padding: $x-small;
+
+    svg {
+      fill: $color-gray-20;
+      height: 20px;
+      margin-right: $small;
+      width: 20px;
+    }
+
+    span {
+      color: $color-white;
+      font-size: $fs14;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      &.project-name {
+        color: $color-gray-20;
+        margin-right: $x-small;
+      }
+    }
+  }
+
+  .preview-button {
+    align-items: center;
+    background-color: $color-gray-60;
+    border-radius: $br-small;
+    cursor: pointer;
+    display: flex;
+    height: 25px;
+    justify-content: center;
+    width: 25px;
+
+    svg {
+      fill: $color-gray-20;
+      width: 15px;
+      height: 15px;
+    }
+
+    &:hover {
+      background-color: $color-primary;
+
+      svg {
+        fill: $color-gray-60;
+      }
+    }
+  }
+
+  .menu {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    width: 230px;
+    z-index: 12;
+    @include animation(0,.2s,fadeInDown);
+
+    background-color: $color-white;
+    border-radius: $br-small;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+    li {
+      cursor: pointer;
+      font-size: $fs12;
+      padding: $small $x-small;
+
+      svg {
+        fill: $color-gray-60;
+        height: 12px;
+        width: 12px;
+      }
+
+      span {
+        color: $color-gray-60;
+        margin: 0 $x-small;
+      }
+
+      &:hover {
+        background-color: $color-primary-lighter;
+      }
+    }
+  }
+
+  .active-users {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    margin: 0;
+
+    li {
+      margin-left: $small;
+      position: relative;
+
+      img {
+        border: 3px solid #f3dd14;
+        border-radius: 50%;
+        flex-shrink: 0;
+        height: 25px;
+        width: 25px;
+      }
+    }
+  }
+}
