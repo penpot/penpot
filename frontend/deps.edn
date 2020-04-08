@@ -13,7 +13,7 @@
   funcool/lentes {:mvn/version "1.4.0-SNAPSHOT"}
   funcool/potok {:mvn/version "2.8.0-SNAPSHOT"}
   funcool/promesa {:mvn/version "5.1.0"}
-  funcool/rumext {:mvn/version "2020.04.02-3"}
+  funcool/rumext {:mvn/version "2020.04.08-1"}
   }
  :aliases
  {:dev
