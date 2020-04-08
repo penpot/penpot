@@ -17,10 +17,10 @@
    [uxbox.builtins.icons :as i]
    [uxbox.common.spec :as us]
    [uxbox.main.data.auth :as uda]
+   [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.navigation :as nav]
-   [uxbox.util.messages :as um]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :as i18n :refer [t]]
@@ -36,7 +36,7 @@
 
         on-success
         (fn []
-          (st/emit! (um/info (t locale "profile.recovery.recovery-token-sent"))
+          (st/emit! (dm/info (t locale "profile.recovery.recovery-token-sent"))
                     (rt/nav :profile-recovery)))
 
         on-submit
@@ -70,6 +70,6 @@
   []
   [:div.login
    [:div.login-body
-    [:& messages-widget]
+    [:& messages]
     [:a i/logo]
     [:& recovery-form]]])

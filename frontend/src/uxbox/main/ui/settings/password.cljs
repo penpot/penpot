@@ -14,11 +14,11 @@
    [cljs.spec.alpha :as s]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.users :as udu]
+   [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
-   [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.messages :as um]))
+   [uxbox.util.i18n :refer [tr]]))
 
 (defn- on-error
   [form error]
@@ -33,7 +33,7 @@
   [event form]
   (dom/prevent-default event)
   (let [data (:clean-data form)
-        mdata {:on-success #(st/emit! (um/info (tr "settings.password.password-saved")))
+        mdata {:on-success #(st/emit! (dm/info (tr "settings.password.password-saved")))
               :on-error #(on-error form %)}]
     (st/emit! (udu/update-password (with-meta data mdata)))))
 

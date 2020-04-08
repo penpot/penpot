@@ -13,16 +13,12 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.users :as udu]
+   [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
-   [uxbox.util.data :refer [read-string]]
+   [uxbox.main.refs :as refs]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
-   [uxbox.util.i18n :as i18n :refer [tr t]]
-   [uxbox.util.messages :as um]))
-
-(def ^:private profile-iref
-  (-> (l/key :profile)
-      (l/derive st/state)))
+   [uxbox.util.i18n :as i18n :refer [tr t]]))
 
 (s/def ::fullname ::fm/not-empty-string)
 (s/def ::lang (s/nilable ::fm/not-empty-string))
@@ -48,7 +44,7 @@
   [event form]
   (dom/prevent-default event)
   (let [data (:clean-data form)
-        on-success #(st/emit! (um/info (tr "settings.profile.profile-saved")))
+        on-success #(st/emit! (dm/info (tr "settings.profile.profile-saved")))
         on-error #(on-error % form)]
     (st/emit! (udu/update-profile (with-meta data
                                     {:on-success on-success
@@ -59,7 +55,7 @@
 (mf/defc profile-form
   [props]
   (let [locale (i18n/use-locale)
-        form (fm/use-form ::profile-form #(deref profile-iref))
+        form (fm/use-form ::profile-form #(deref refs/profile))
         data (:data form)]
     (prn "data" form)
     [:form.profile-form {:on-submit #(on-submit % form)}
@@ -108,7 +104,7 @@
 
 (mf/defc profile-photo-form
   [props]
-  (let [profile (mf/deref profile-iref)
+  (let [profile (mf/deref refs/profile)
         photo (:photo-uri profile)
         photo (if (or (str/empty? photo) (nil? photo))
                 "images/avatar.jpg"

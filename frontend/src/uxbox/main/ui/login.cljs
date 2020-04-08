@@ -17,7 +17,7 @@
    [uxbox.config :as cfg]
    [uxbox.main.data.auth :as da]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :refer [tr]]
@@ -94,6 +94,6 @@
   []
   [:div.login
    [:div.login-body
-    [:& messages-widget]
+    [:& messages]
     [:a i/logo]
     [:& login-form]]])

@@ -9,25 +9,20 @@
 
 (ns uxbox.main.ui.viewer.header
   (:require
-   [beicon.core :as rx]
-   [goog.events :as events]
-   [goog.object :as gobj]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
+   [uxbox.main.data.messages :as dm]
+   [uxbox.main.data.viewer :as dv]
+   [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.ui.workspace.header :refer [zoom-widget]]
-   [uxbox.main.data.viewer :as dv]
-   [uxbox.main.refs :as refs]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.i18n :as i18n :refer [t]]
+   [uxbox.util.router :as rt]
    [uxbox.util.uuid :as uuid]
-   [uxbox.util.i18n :as i18n :refer [t tr]]
-   [uxbox.util.math :as mth]
-   [uxbox.util.router :as rt])
-  (:import goog.events.EventType
-           goog.events.KeyCodes))
+   [uxbox.util.webapi :as wapi]))
 
 
 (mf/defc share-link
@@ -36,36 +31,53 @@
         dropdown-ref (mf/use-ref)
         token (:share-token page)
 
+        locale (i18n/use-locale)
+
         create #(st/emit! dv/create-share-link)
         delete #(st/emit! dv/delete-share-link)
-        href (.-href js/location)]
+
+        href (.-href js/location)
+        link (str href "&token=" token)
+
+        copy-link
+        (fn [event]
+          (wapi/write-to-clipboard link)
+          (st/emit! (dm/show {:type :info
+                              :content "Link copied successfuly!"
+                              :timeout 2000})))]
     [:*
      [:span.btn-primary.btn-small
-      {:alt "Share link"
+      {:alt (t locale "viewer.header.share.title")
        :on-click #(swap! show-dropdown? not)}
-      "Share link"]
+      (t locale "viewer.header.share.title")]
 
      [:& dropdown {:show @show-dropdown?
                    :on-close #(swap! show-dropdown? not)
                    :container dropdown-ref}
       [:div.share-link-dropdown {:ref dropdown-ref}
-       [:span.share-link-title "Share link"]
+       [:span.share-link-title (t locale "viewer.header.share.title")]
        [:div.share-link-input
         (if (string? token)
-          [:span.link (str href "&token=" token)]
-          [:span.link-placeholder "Share link will apear here"])
-          [:span.link-button "Copy link"]]
-       [:span.share-link-subtitle "Anyone with the link will have access"]
+          [:span.link link]
+          [:span.link-placeholder (t locale "viewer.header.share.placeholder")])
+        [:span.link-button {:on-click copy-link}
+         (t locale "viewer.header.share.copy-link")]]
+
+       [:span.share-link-subtitle (t locale "viewer.header.share.subtitle")]
        [:div.share-link-buttons
         (if (string? token)
-          [:button.btn-delete {:on-click delete} "Remove link"]
-          [:button.btn-primary {:on-click create} "Create link"])]]]]))
+          [:button.btn-delete {:on-click delete}
+           (t locale "viewer.header.share.remove-link")]
+          [:button.btn-primary {:on-click create}
+           (t locale "viewer.header.share.create-link")])]]]]))
 
 (mf/defc header
   [{:keys [data index local fullscreen? toggle-fullscreen] :as props}]
   (let [{:keys [project file page frames]} data
         total (count frames)
         on-click #(st/emit! dv/toggle-thumbnails-panel)
+
+        locale (i18n/use-locale)
 
         profile (mf/deref refs/profile)
         anonymous? (= uuid/zero (:id profile))
@@ -82,7 +94,7 @@
      [:div.main-icon
       [:a {:on-click on-edit} i/logo-icon]]
 
-     [:div.sitemap-zone {:alt (tr "header.sitemap")
+     [:div.sitemap-zone {:alt (t locale "viewer.header.sitemap")
                          :on-click on-click}
       [:span.project-name (:name project)]
       [:span "/"]
@@ -96,7 +108,8 @@
       (when-not anonymous?
         [:& share-link {:page (:page data)}])
       (when-not anonymous?
-        [:a {:on-click on-edit} "Edit page"])
+        [:a {:on-click on-edit}
+         (t locale "viewer.header.edit-page")])
 
       [:& zoom-widget
        {:zoom (:zoom local)
@@ -107,7 +120,7 @@
         :on-zoom-to-200 #(st/emit! dv/zoom-to-200)}]
 
       [:span.btn-fullscreen.tooltip.tooltip-bottom
-       {:alt "Full Screen"
+       {:alt (t locale "viewer.header.fullscreen")
         :on-click toggle-fullscreen}
        (if fullscreen?
          i/full-screen-off

@@ -16,7 +16,7 @@
    [uxbox.main.repo :as rp]
    [uxbox.main.store :refer [initial-state]]
    [uxbox.main.data.users :as du]
-   [uxbox.util.messages :as um]
+   [uxbox.main.data.messages :as dm]
    [uxbox.util.router :as rt]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.storage :refer [storage]]))
@@ -53,7 +53,7 @@
       (let [params {:email email
                     :password password
                     :scope "webapp"}
-            on-error #(rx/of (um/error (tr "errors.auth.unauthorized")))]
+            on-error #(rx/of (dm/error (tr "errors.auth.unauthorized")))]
         (->> (rp/mutation :login params)
              (rx/map logged-in)
              (rx/catch rp/client-error? on-error))))))

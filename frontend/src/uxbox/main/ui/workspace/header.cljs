@@ -178,5 +178,6 @@
 
       [:a.preview-button
        {;; :target "__blank"
+        :alt (t locale "workspace.header.viewer")
         :href (str "#" view-url)} i/play]]]))
 

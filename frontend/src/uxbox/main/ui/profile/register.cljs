@@ -14,7 +14,7 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.auth :as uda]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.navigation :as nav]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
@@ -115,6 +115,6 @@
   [props]
   [:div.login
    [:div.login-body
-    [:& messages-widget]
+    [:& messages]
     [:a i/logo]
     [:& register-form]]])

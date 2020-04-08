@@ -17,10 +17,10 @@
    [uxbox.builtins.icons :as i]
    [uxbox.common.spec :as us]
    [uxbox.main.data.auth :as uda]
+   [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.navigation :as nav]
-   [uxbox.util.messages :as um]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :as i18n :refer [t]]
@@ -37,12 +37,12 @@
 
         on-success
         (fn []
-          (st/emit! (um/info (t locale "profile.recovery.password-changed"))
+          (st/emit! (dm/info (t locale "profile.recovery.password-changed"))
                     (rt/nav :login)))
 
         on-error
         (fn []
-          (st/emit! (um/error (t locale "profile.recovery.invalid-token"))))
+          (st/emit! (dm/error (t locale "profile.recovery.invalid-token"))))
 
         on-submit
         (fn [event]
@@ -86,6 +86,6 @@
   []
   [:div.login
    [:div.login-body
-    [:& messages-widget]
+    [:& messages]
     [:a i/logo]
     [:& recovery-form]]])

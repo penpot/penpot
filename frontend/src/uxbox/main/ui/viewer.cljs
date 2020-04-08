@@ -15,19 +15,18 @@
    [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.store :as st]
    [uxbox.common.exceptions :as ex]
-   [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.data.viewer :as dv]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.main.ui.hooks :as hooks]
+   [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.viewer.header :refer [header]]
    [uxbox.main.ui.viewer.thumbnails :refer [thumbnails-panel frame-svg]]
-   [uxbox.util.dom :as dom]
-   [uxbox.main.ui.hooks :as hooks]
    [uxbox.util.data :refer [classnames]]
-   [uxbox.util.i18n :as i18n :refer [t tr]]
-   [uxbox.util.math :as mth]
-   [uxbox.util.router :as rt])
+   [uxbox.util.dom :as dom]
+   [uxbox.util.i18n :as i18n :refer [t tr]])
   (:import goog.events.EventType
            goog.events.KeyCodes))
 
@@ -68,21 +67,23 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts dv/shortcuts)
 
-    [:div.viewer-layout {:class (classnames :fullscreen fullscreen?)
-                         :ref container}
+    [:*
+     [:& messages]
+     [:div.viewer-layout {:class (classnames :fullscreen fullscreen?)
+                          :ref container}
 
-     [:& header {:data data
-                 :toggle-fullscreen toggle-fullscreen
-                 :fullscreen? fullscreen?
-                 :local local
-                 :index index}]
-     [:div.viewer-content
-      (when (:show-thumbnails local)
-        [:& thumbnails-panel {:index index
-                              :data data}])
-      [:& main-panel {:data data
-                      :zoom (:zoom local)
-                      :index index}]]]))
+      [:& header {:data data
+                  :toggle-fullscreen toggle-fullscreen
+                  :fullscreen? fullscreen?
+                  :local local
+                  :index index}]
+      [:div.viewer-content
+       (when (:show-thumbnails local)
+         [:& thumbnails-panel {:index index
+                               :data data}])
+       [:& main-panel {:data data
+                       :zoom (:zoom local)
+                       :index index}]]]]))
 
 
 ;; --- Component: Viewer Page

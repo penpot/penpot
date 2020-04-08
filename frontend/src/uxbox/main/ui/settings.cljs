@@ -15,7 +15,7 @@
    [uxbox.main.store :as st]
    [uxbox.util.router :as rt]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
-   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.settings.header :refer [header]]
    [uxbox.main.ui.settings.password :refer [password-page]]
    [uxbox.main.ui.settings.profile :refer [profile-page]]))
@@ -25,7 +25,7 @@
   (let [section (get-in route [:data :name])
         profile (mf/deref refs/profile)]
     [:main.settings-main
-     [:& messages-widget]
+     [:& messages]
      [:div.settings-content
       [:& header {:section section}]
       (case section

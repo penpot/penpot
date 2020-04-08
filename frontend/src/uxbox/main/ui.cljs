@@ -18,6 +18,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.data :as d]
    [uxbox.main.data.auth :refer [logout]]
+   [uxbox.main.data.messages :as dm]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.dashboard :refer [dashboard]]
@@ -31,7 +32,6 @@
    [uxbox.main.ui.shapes]
    [uxbox.main.ui.workspace :as workspace]
    [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.messages :as uum]
    [uxbox.util.timers :as ts]))
 
 (def route-iref
@@ -171,12 +171,12 @@
     (and (map? error)
          (= :unexpected type)
          (= :abort code))
-    (ts/schedule 100 #(st/emit! (uum/error (tr "errors.network"))))
+    (ts/schedule 100 #(st/emit! (dm/error (tr "errors.network"))))
 
     ;; Something else
     :else
     (do
       (js/console.error error)
-      (ts/schedule 100 #(st/emit! (uum/error (tr "errors.generic")))))))
+      (ts/schedule 100 #(st/emit! (dm/error (tr "errors.generic")))))))
 
 (set! st/*on-error* on-error)

@@ -21,7 +21,7 @@
    [uxbox.main.ui.dashboard.recent-files :refer [recent-files-page]]
    [uxbox.main.ui.dashboard.library :refer [library-page]]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
-   [uxbox.main.ui.messages :refer [messages-widget]]))
+   [uxbox.main.ui.messages :refer [messages]]))
 
 (defn ^boolean uuid-str?
   [s]
@@ -64,8 +64,8 @@
         page (get-in route [:data :name])
         {:keys [search-term team-id project-id library-id library-section] :as params}
         (parse-params route profile)]
-    [:main.dashboard-main
-     [:& messages-widget]
+    [:*
+     [:& messages]
      [:section.dashboard-layout
       [:div.main-logo i/logo-icon]
       [:& profile-section {:profile profile}]

@@ -24,7 +24,6 @@
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.dashboard.common :as common]
-   [uxbox.main.ui.messages :refer [messages-widget]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]

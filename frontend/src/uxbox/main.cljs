@@ -22,7 +22,6 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :as i18n]
-   [uxbox.util.messages :as uum]
    [uxbox.util.router :as rt]
    [uxbox.util.storage :refer [storage]]
    [uxbox.util.timers :as ts]))

@@ -1,0 +1,74 @@
+// Messages
+
+.message {
+  position: fixed;
+  top: 0;
+  left: 0px;
+  width: 100%;
+  height: 40px;
+  z-index: 13;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .close-button {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+    svg {
+      fill: $color-black;
+      height: 18px;
+      width: 18px;
+      transform: rotate(45deg);
+    }
+
+    &:hover {
+      opacity: .8;
+    }
+
+  }
+
+  .message-content {
+    color: $color-white;
+
+    span {
+      font-size: $fs18;
+      max-width: 60%;
+    }
+  }
+
+  &.error {
+    background-color: $color-danger;
+    border-color: $color-danger-dark;
+  }
+
+  &.success {
+    background-color: $color-success;
+    border-color: $color-success-dark;
+  }
+
+  &.info {
+    background-color: $color-info;
+    border-color: $color-info-dark;
+  }
+
+  &.quick {
+    .close-button {
+      display: none;
+    }
+  }
+
+  &.hide-message {
+    @include animation(0, .6s, fadeOutUp);
+  }
+}
+

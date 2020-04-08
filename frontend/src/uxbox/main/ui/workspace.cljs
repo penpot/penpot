@@ -20,7 +20,7 @@
    [uxbox.main.ui.confirm]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.hooks :as hooks]
-   [uxbox.main.ui.messages :refer [messages-widget]]
+   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.workspace.viewport :refer [viewport]]
    [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
    [uxbox.main.ui.workspace.context-menu :refer [context-menu]]
@@ -68,33 +68,34 @@
      (when (:colorpalette layout)
        [:& colorpalette {:left-sidebar? left-sidebar?}])
 
-     [:main.main-content
-      [:& context-menu {}]
-      [:section.workspace-content
-       {:class classes
-        :on-scroll on-scroll
-        :on-wheel #(on-wheel % frame)}
+     [:& messages]
+     [:& context-menu {}]
 
-       [:& history-dialog]
+     [:section.workspace-content
+      {:class classes
+       :on-scroll on-scroll
+       :on-wheel #(on-wheel % frame)}
 
-       ;; Rules
-       (when (contains? layout :rules)
-         [:*
-          [:& horizontal-rule]
-          [:& vertical-rule]])
+      [:& history-dialog]
 
-       [:section.workspace-viewport {:id "workspace-viewport"
-                                     :ref frame}
-        [:& viewport {:page page :file file}]]]
+      ;; Rules
+      (when (contains? layout :rules)
+        [:*
+         [:& horizontal-rule]
+         [:& vertical-rule]])
 
-      [:& left-toolbar {:page page
-                        :layout layout}]
+      [:section.workspace-viewport {:id "workspace-viewport"
+                                    :ref frame}
+       [:& viewport {:page page :file file}]]]
 
-      ;; Aside
-      (when left-sidebar?
-        [:& left-sidebar {:file file :page page :layout layout}])
-      (when right-sidebar?
-        [:& right-sidebar {:page page :layout layout}])]]))
+     [:& left-toolbar {:page page
+                       :layout layout}]
+
+     ;; Aside
+     (when left-sidebar?
+       [:& left-sidebar {:file file :page page :layout layout}])
+     (when right-sidebar?
+       [:& right-sidebar {:page page :layout layout}])]))
 
 
 (mf/defc workspace
@@ -121,7 +122,6 @@
         project (mf/deref refs/workspace-project)
         layout (mf/deref refs/workspace-layout)]
     [:> rdnd/provider {:backend rdnd/html5}
-     [:& messages-widget]
      [:& header {:page page
                  :file file
                  :project project
