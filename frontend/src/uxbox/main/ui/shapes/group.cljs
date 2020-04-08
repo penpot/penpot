@@ -13,7 +13,10 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.interop :as itr]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.main.ui.shapes.attrs :as attrs]))
+   [uxbox.main.ui.shapes.attrs :as attrs]
+   [uxbox.main.data.workspace :as dw]
+   [uxbox.main.store :as st]
+   [uxbox.main.streams :as ms]))
 
 (defonce ^:dynamic *debug* (atom false))
 
@@ -29,18 +32,22 @@
          on-mouse-down #(common/on-mouse-down % shape)
          on-context-menu #(common/on-context-menu % shape)
          children (-> (refs/objects-by-id (:shapes shape)) mf/deref)
+         is-child-selected? (-> (refs/is-child-selected? (:id shape)) mf/deref)
          on-double-click
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
-           #_(st/emit! (dw/select-inside-group)))]
+           (st/emit! (dw/select-inside-group
+                      (:id shape)
+                      @ms/mouse-position)))]
 
      [:g.shape {:on-mouse-down on-mouse-down
                 :on-context-menu on-context-menu
                 :on-double-click on-double-click}
       [:& (group-shape shape-wrapper) {:frame frame
                                        :shape (geom/transform-shape frame shape)
-                                       :children children}]])))
+                                       :children children
+                                       :is-child-selected? is-child-selected?}]])))
 
 (defn group-shape [shape-wrapper]
   (mf/fnc group-shape
@@ -49,6 +56,7 @@
     (let [frame (unchecked-get props "frame")
           shape (unchecked-get props "shape")
           children (unchecked-get props "children")
+          is-child-selected? (unchecked-get props "is-child-selected?")
           {:keys [id x y width height rotation
                   displacement-modifier
                   resize-modifier]} shape
@@ -61,17 +69,18 @@
       [:g {:transform transform}
        (for [item children]
          [:& shape-wrapper {:frame frame
-                            :shape (-> item
-                                       (assoc :displacement-modifier displacement-modifier)
-                                       (assoc :resize-modifier resize-modifier))
+                            :shape (cond-> item
+                                       displacement-modifier (assoc :displacement-modifier displacement-modifier)
+                                       resize-modifier (assoc :resize-modifier resize-modifier))
                             :key (:id item)}])
        
-       [:rect {:x x
-               :y y
-               :fill (if (deref *debug*) "red" "transparent")
-               :opacity 0.8
-               :id (str "group-" id)
-               :width width
-               :height height}]])))
+       (when (not is-child-selected?)
+         [:rect {:x x
+                 :y y
+                 :fill (if (deref *debug*) "red" "transparent")
+                 :opacity 0.5
+                 :id (str "group-" id)
+                 :width width
+                 :height height}])])))
 
 

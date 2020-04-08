@@ -102,17 +102,11 @@
            [:& frame-shape {:shape shape
                             :childs childs}]])))))
 
-(defn frame-shape
+(defn frame-shape 
   [shape-wrapper]
   (mf/fnc frame-shape
     [{:keys [shape childs] :as props}]
-    (let [rotation    (:rotation shape)
-          ds-modifier (:displacement-modifier shape)
-          rz-modifier (:resize-modifier shape)
-          shape (cond-> shape
-                  (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                  (gmt/matrix? ds-modifier) (geom/transform ds-modifier))
-
+    (let [shape (geom/transform-shape shape)
           {:keys [id x y width height]} shape
 
           props (-> (attrs/extract-style-attrs shape)
@@ -126,5 +120,7 @@
       [:svg {:x x :y y :width width :height height}
        [:> "rect" props]
        (for [item childs]
-         [:& shape-wrapper {:frame shape :shape item :key (:id item)}])])))
+         [:& shape-wrapper {:frame shape
+                            :shape item
+                            :key (:id item)}])])))
 

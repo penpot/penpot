@@ -1203,6 +1203,19 @@
         (->> (impl-match-by-selrect state selrect)
              (assoc-in state [:workspace-local :selected]))))))
 
+(defn select-inside-group
+  [group-id position]
+  (ptk/reify ::select-inside-group
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (::page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            group (get objects group-id)
+            children (map #(get objects %) (:shapes group))
+            selected (->> children (filter #(geom/has-point? % position)) first)]
+        (cond-> state
+          selected (assoc-in [:workspace-local :selected] #{(:id selected)}))))))
+
 ;; --- Update Shape Attrs
 
 (defn update-shape
@@ -1485,6 +1498,28 @@
           (when-not (empty? rch)
             (rx/of (commit-changes rch uch {:commit-local? true}))))))))
 
+(defn- adjust-group-shapes [state ids]
+  (let [page-id (::page-id state)
+        objects (get-in state [:workspace-data page-id :objects])
+        groups-to-adjust (->> ids
+                              (mapcat #(reverse (helpers/get-all-parents % objects)))
+                              (map #(get objects %))
+                              (filter #(= (:type %) :group))
+                              (map #(:id %))
+                              distinct)
+
+        update-group
+        (fn [state group]
+          (let [objects (get-in state [:workspace-data page-id :objects])
+                group-objects (map #(get objects %) (:shapes group))
+                selrect (geom/selection-rect group-objects)]
+            (merge group (select-keys selrect [:x :y :width :height]))))
+
+        reduce-fn
+        #(update-in %1 [:workspace-data page-id :objects %2] (partial update-group %1))]
+
+    (reduce reduce-fn state groups-to-adjust)))
+
 (defn assoc-resize-modifier-in-bulk
   [ids xfmt]
   (us/verify ::set-of-uuid ids)
@@ -1505,7 +1540,7 @@
       (let [page-id (::page-id state)
             objects (get-in state [:workspace-data page-id :objects])
 
-            ;; Updates the displacement data for a single shape
+            ;; Updates the resize data for a single shape
             materialize-shape
             (fn [state id mtx]
               (update-in
@@ -1525,10 +1560,15 @@
             (fn [state id]
               (let [shape (get objects id)
                     mtx (:resize-modifier shape (gmt/matrix))]
-                (-> state
-                    (materialize-shape id mtx)
-                    (materialize-children id mtx))))]
-        (reduce update-shapes state ids)))
+                (if (= (:type shape) :frame)
+                  (materialize-shape state id mtx)
+                  (-> state
+                      (materialize-shape id mtx)
+                      (materialize-children id mtx)))))]
+
+        (as-> state $
+          (reduce update-shapes $ ids)
+          (adjust-group-shapes $ ids))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -1555,6 +1595,7 @@
                     (->> (assoc shape :displacement-modifier curr)
                          (assoc-in state [:workspace-data page-id :objects id]))))]
         (reduce rfn state ids)))))
+
 
 (defn materialize-displacement-in-bulk
   [ids]
@@ -1588,7 +1629,9 @@
                     (materialize-shape id mtx)
                     (materialize-children id mtx))))]
 
-        (reduce update-shapes state ids)))
+        (as-> state $
+          (reduce update-shapes $ ids)
+          (adjust-group-shapes $ ids))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -1628,7 +1671,7 @@
                         (dissoc :displacement-modifier)
                         (geom/transform xfmt))
 
-            shapes  (->> (:shapes frame)
+            shapes  (->> (helpers/get-children id objects)
                          (map #(get objects %))
                          (map #(geom/transform % xfmt))
                          (d/index-by :id))
@@ -2168,7 +2211,7 @@
   {:id id
    :type :group
    :name (name (gensym "Group-"))
-   :shapes (vec selected)
+   :shapes []
    :frame-id frame-id
    :x (:x selection-rect)
    :y (:y selection-rect)
@@ -2184,30 +2227,26 @@
           (if (not-empty selected)
             (let [page-id (get-in state [:workspace-page :id])
                   objects (get-in state [:workspace-data page-id :objects])
-                  parent (get-parent (first selected) (vals objects))
-                  parent-id (:id parent)
                   selected-objects (map (partial get objects) selected)
                   selection-rect (geom/selection-rect selected-objects)
                   frame-id (-> selected-objects first :frame-id)
-                  group-shape (group-shape id frame-id selected selection-rect)]
+                  group-shape (group-shape id frame-id selected selection-rect)
+                  frame-children (get-in objects [frame-id :shapes])
+                  index-frame (->> frame-children (map-indexed vector) (filter #(selected (second %))) first first)]
 
-              (let [updated-parent (helpers/replace-shapes parent selected id)
-                    rchanges [{:type :add-obj
+              (let [rchanges [{:type :add-obj
                                :id id
                                :frame-id frame-id
-                               :obj group-shape}
-                              {:type :mod-obj
-                               :id parent-id
-                               :operations [{:type :set
-                                             :attr :shapes
-                                             :val (:shapes updated-parent)}]}]
-                    uchanges [{:type :del-obj
-                               :id id}
-                              {:type :mod-obj
-                               :id parent-id
-                               :operations [{:type :set
-                                             :attr :shapes
-                                             :val (:shapes parent)}]}]]
+                               :obj group-shape
+                               :index index-frame}
+                              {:type :mov-objects
+                               :parent-id id
+                               :shapes (into [] selected)}]
+                    uchanges [{:type :mov-objects
+                               :parent-id frame-id
+                               :shapes (into [] selected)}
+                              {:type :del-obj
+                               :id id}]]
                 (rx/of (commit-changes rchanges uchanges {:commit-local? true})
                        (fn [state] (assoc-in state [:workspace-local :selected] #{id})))))
             rx/empty))))))
@@ -2221,26 +2260,28 @@
             group (get-in state [:workspace-data (::page-id state) :objects group-id])]
         (if (and (= (count selected) 1) (= (:type group) :group))
           (let [objects (get-in state [:workspace-data (::page-id state) :objects])
+                shapes (get-in objects [group-id :shapes])
                 parent-id (helpers/get-parent group-id objects)
-                parent (get objects parent-id)]
-            (let [changed-parent (helpers/replace-shapes parent group-id (:shapes group))
-                  rchanges [{:type :mod-obj
-                             :id parent-id
-                             :operations [{:type :set :attr :shapes :val (:shapes changed-parent)}]}
-
-                            ;; Need to modify the object otherwise the children will be deleted
-                            {:type :mod-obj
-                             :id group-id
-                             :operations [{:type :set :attr :shapes :val []}]}
-                            {:type :del-obj
-                             :id group-id}]
+                parent (get objects parent-id)
+                index-in-parent (->> (:shapes parent)
+                                     (map-indexed vector)
+                                     (filter #(#{group-id} (second %)))
+                                     first first)]
+            (let [rchanges [{:type :mov-objects
+                             :parent-id parent-id
+                             :shapes shapes
+                             :index index-in-parent}]
                   uchanges [{:type :add-obj
                              :id group-id
                              :frame-id (:frame-id group)
-                             :obj group}
-                            {:type :mod-obj
-                             :id parent-id
-                             :operations [{:type :set :attr :shapes :val (:shapes parent)}]}]]
+                             :obj (assoc group :shapes [])}
+                            {:type :mov-objects
+                             :parent-id group-id
+                             :shapes shapes}
+                            {:type :mov-objects
+                             :parent-id parent-id
+                             :shapes [group-id]
+                             :index index-in-parent}]]
               (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))
           rx/empty)))))
 

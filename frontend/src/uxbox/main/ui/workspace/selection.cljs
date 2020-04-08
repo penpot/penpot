@@ -250,10 +250,15 @@
   [{:keys [shapes selected zoom] :as props}]
   (let [shape (geom/selection-rect shapes)
         on-resize #(do (dom/stop-propagation %2)
-                       (st/emit! (start-resize %1 selected shape)))]
+                       (st/emit! (start-resize %1 selected shape)))
+
+        on-rotate #(do (dom/stop-propagation %)
+                       (println "ROTATE!"))]
+
     [:& controls {:shape shape
                   :zoom zoom
-                  :on-resize on-resize}]))
+                  :on-resize on-resize
+                  :on-rotate on-rotate}]))
 
 (mf/defc single-selection-handlers
   [{:keys [shape zoom objects] :as props}]

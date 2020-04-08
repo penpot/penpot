@@ -587,13 +587,28 @@
          (< ry1 sy2)
          (> ry2 sy1))))
 
+(defn has-point?
+  [shape position]
+  (let [{:keys [x y]} position
+        selrect {:x1 (- x 5)
+                 :y1 (- y 5)
+                 :x2 (+ x 5)
+                 :y2 (+ y 5)
+                 :x (- x 5)
+                 :y (- y 5)
+                 :width 10
+                 :height 10
+                 :type :rect}]
+    (overlaps? shape selrect)))
+
 (defn transform-shape
-  [frame shape]
-  (let [ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
-        ds-modifier' (:displacement-modifier frame)]
-    (cond-> shape
-      (gmt/matrix? ds-modifier') (transform ds-modifier')
-      (gmt/matrix? rz-modifier)  (transform rz-modifier)
-      frame                      (move (gpt/point (- (:x frame)) (- (:y frame))))
-      (gmt/matrix? ds-modifier)  (transform ds-modifier))))
+  ([shape] (transform-shape nil shape))
+  ([frame shape]
+   (let [ds-modifier (:displacement-modifier shape)
+         rz-modifier (:resize-modifier shape)
+         frame-ds-modifier (:displacement-modifier frame)]
+     (cond-> shape
+       (gmt/matrix? rz-modifier) (transform rz-modifier)
+       frame (move (gpt/point (- (:x frame)) (- (:y frame))))
+       (gmt/matrix? frame-ds-modifier) (transform frame-ds-modifier)
+       (gmt/matrix? ds-modifier) (transform ds-modifier)))))

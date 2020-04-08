@@ -37,6 +37,23 @@
                       (:id shape)))]
     (some check-parenthood (vals objects))))
 
+(defn calculate-child-parent-map
+  [objects]
+  (let [red-fn
+        (fn [acc {:keys [id shapes]}]
+          ;; Insert every pair shape -> parent into accumulated value
+          (into acc (map #(vector % id) (or shapes []))))]
+    (reduce red-fn {} (vals objects))))
+
+(defn get-all-parents
+  [shape-id objects]
+  (let [child->parent (calculate-child-parent-map objects)
+        rec-fn (fn [cur result]
+                 (if-let [parent (child->parent cur)]
+                   (recur parent (conj result parent))
+                   (vec (reverse result))))]
+    (rec-fn shape-id [])))
+
 (defn replace-shapes
   "Replace inside shapes the value `to-replace-id` for the value in items keeping the same order.
   `to-replace-id` can be a set, a sequable or a single value. Any of these will be changed into a
