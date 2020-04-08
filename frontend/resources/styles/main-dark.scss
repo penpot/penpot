@@ -12,7 +12,7 @@
 
 @import 'common/dependencies/colors';
 //@import 'common/dependencies/uxbox-light';
-//@import 'common/dependencies/uxbox-dark';
+@import 'common/dependencies/uxbox-dark';
 @import 'common/dependencies/helpers';
 @import 'common/dependencies/mixin';
 @import 'common/dependencies/fonts';
@@ -27,11 +27,6 @@
 @import 'common/base';
 @import 'main/layouts/main-layout';
 @import 'main/layouts/login';
-@import 'main/layouts/projects-page';
-@import 'main/layouts/recent-files-page';
-@import 'main/layouts/library-page';
-@import "main/layouts/not-found";
-@import "main/layouts/viewer";
 
 //#################################################
 // Commons
@@ -44,20 +39,17 @@
 //#################################################
 
 @import 'main/partials/main-bar';
+@import 'main/partials/workspace-bar';
 @import 'main/partials/workspace';
-@import 'main/partials/workspace-header';
-@import 'main/partials/workspace-libraries';
 @import 'main/partials/tool-bar';
 @import 'main/partials/project-bar';
 @import 'main/partials/sidebar';
 @import 'main/partials/sidebar-tools';
-@import 'main/partials/sidebar-align-options';
 @import 'main/partials/sidebar-element-options';
 @import 'main/partials/sidebar-icons';
 @import 'main/partials/sidebar-layers';
 @import 'main/partials/sidebar-sitemap';
 @import 'main/partials/sidebar-document-history';
-@import 'main/partials/left-toolbar';
 @import 'main/partials/dashboard-bar';
 @import 'main/partials/dashboard-grid';
 @import 'main/partials/user-settings';
@@ -68,15 +60,6 @@
 @import 'main/partials/colorpicker';
 @import 'main/partials/forms';
 @import 'main/partials/loader';
-@import 'main/partials/context-menu';
-@import 'main/partials/debug-icons-preview';
-@import 'main/partials/editable-label';
-@import 'main/partials/tab-container';
-@import "main/partials/zoom-widget";
-@import "main/partials/viewer-header";
-@import "main/partials/viewer-thumbnails";
-@import "main/partials/viewer";
-@import "main/partials/messages";
 
 //#################################################
 // Resources

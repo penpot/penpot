@@ -30,6 +30,7 @@
 (s/def ::path ::us/string)
 (s/def ::user ::us/uuid)
 (s/def ::profile-id ::us/uuid)
+(s/def ::theme ::us/string)
 
 ;; --- Query: Profile (own)
 
@@ -93,4 +94,4 @@
 (defn strip-private-attrs
   "Only selects a publicy visible profile attrs."
   [profile]
-  (select-keys profile [:id :fullname :lang :email :created-at :photo]))
+  (select-keys profile [:id :fullname :lang :email :created-at :photo :theme]))

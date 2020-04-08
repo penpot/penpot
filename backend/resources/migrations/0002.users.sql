@@ -11,6 +11,7 @@ CREATE TABLE profile (
   password text NOT NULL,
 
   lang text NULL,
+  theme text NULL,
   is_demo boolean NOT NULL DEFAULT false
 );
 

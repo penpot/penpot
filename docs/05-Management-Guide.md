@@ -2,6 +2,13 @@
 
 **TODO**
 
+## Frontend configuration parameters ##
+
+**Only available at build time!**
+
+- `-e UXBOX_PUBLIC_URL=...` (defaults to `http://localhost:6060`)
+- `-e UXBOX_DEMO_WARNING=...` (defaults to `true`)
+- `-e UXBOX_THEME=...` (defaults to `light`, accepts `dark` to enable UXBOX dark theme)
 
 ## Backend configuration parameters ##
 

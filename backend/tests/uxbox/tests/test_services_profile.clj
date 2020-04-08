@@ -51,8 +51,8 @@
             out (th/try-on! (sm/handle event))]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (= (:id profile) (get-in out [:result :id])))))
-    ))
+        (t/is (= (:id profile) (get-in out [:result :id])))))))
+
 
 (t/deftest profile-query-and-manipulation
   (let [profile @(th/create-profile db/pool 1)]
@@ -75,7 +75,8 @@
                         ::sm/type :update-profile
                         :fullname "Full Name"
                         :name "profile222"
-                        :lang "en")
+                        :lang "en"
+                        :theme "dark")
             out (th/try-on! (sm/handle data))]
 
         ;; (th/print-result! out)
@@ -84,6 +85,7 @@
         (let [result (:result out)]
           (t/is (= (:fullname data) (:fullname result)))
           (t/is (= (:email data) (:email result)))
+          (t/is (= (:theme data) (:theme result)))
           (t/is (not (contains? result :password))))))
 
     (t/testing "update photo"
@@ -99,8 +101,8 @@
         (t/is (nil? (:error out)))
 
         (let [result (:result out)]
-          (t/is (= (:id profile) (:id result))))))
-    ))
+          (t/is (= (:id profile) (:id result))))))))
+
 
 (t/deftest profile-deletion
   (let [prof @(th/create-profile db/pool 1)
@@ -189,8 +191,8 @@
             out  (th/try-on! (sq/handle data))]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (= 0 (count (:result out))))))
-    ))
+        (t/is (= 0 (count (:result out))))))))
+
 
 (t/deftest registration-domain-whitelist
   (let [whitelist "gmail.com, hey.com, ya.ru"]

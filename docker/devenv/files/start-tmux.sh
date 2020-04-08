@@ -24,6 +24,6 @@ tmux send-keys -t uxbox './bin/start-dev' enter
 tmux rename-window -t uxbox:0 'gulp'
 tmux select-window -t uxbox:0
 tmux send-keys -t uxbox 'cd uxbox/frontend' enter C-l
-tmux send-keys -t uxbox 'npx gulp watch' enter
+tmux send-keys -t uxbox 'npx gulp --theme=${UXBOX_THEME} watch' enter
 
 tmux -2 attach-session -t uxbox

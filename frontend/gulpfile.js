@@ -123,14 +123,18 @@ function templatePipeline(options) {
     const input = options.input;
     const output = options.output;
     const ts = Math.floor(new Date());
+    const th = process.env.UXBOX_THEME || 'light';
+    const themes = ['light', 'dark'];
 
     const locales = readLocales();
     const config = readConfig();
 
     const tmpl = mustache({
       ts: ts,
+      th: th,
       config: JSON.stringify(config),
       translations: JSON.stringify(locales),
+      themes: JSON.stringify(themes),
     });
 
     return gulp.src(input)
@@ -144,12 +148,17 @@ function templatePipeline(options) {
  * Generic
  ***********************************************/
 
-gulp.task("scss:main", scssPipeline({
-  input: paths.resources + "styles/main.scss",
-  output: paths.output + "css/main.css"
+gulp.task("scss:main-light", scssPipeline({
+  input: paths.resources + "styles/main-light.scss",
+  output: paths.output + "css/main-light.css"
 }));
 
-gulp.task("scss", gulp.parallel("scss:main"));
+gulp.task("scss:main-dark", scssPipeline({
+  input: paths.resources + "styles/main-dark.scss",
+  output: paths.output + "css/main-dark.css"
+}));
+
+gulp.task("scss", gulp.parallel("scss:main-light", "scss:main-dark"));
 
 gulp.task("svg:sprite", function() {
   return gulp.src(paths.resources + "images/icons/*.svg")
