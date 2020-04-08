@@ -67,10 +67,10 @@
         delete #(st/emit! dv/delete-share-link)
         href (.-href js/location)]
     [:*
-     [:span.btn-share.tooltip.tooltip-bottom
+     [:span.btn-primary.btn-small
       {:alt "Share link"
        :on-click #(swap! show-dropdown? not)}
-      i/exit]
+      "Share link"]
 
      [:& dropdown {:show @show-dropdown?
                    :on-close #(swap! show-dropdown? not)
@@ -80,8 +80,8 @@
        [:div.share-link-input
         (if (string? token)
           [:span.link (str href "&token=" token)]
-          [:span "Share link will apear here"])
-        i/chain]
+          [:span.link-placeholder "Share link will apear here"])
+          [:span.link-button "Copy link"]]
        [:span.share-link-subtitle "Anyone with the link will have access"]
        [:div.share-link-buttons
         (if (string? token)
@@ -126,9 +126,11 @@
         [:span.btn-primary {:on-click on-edit} "Edit page"])
       [:& zoom-widget {:zoom (:zoom local)}]
       [:span.btn-fullscreen.tooltip.tooltip-bottom
-       {:alt "Full screen"
+       {:alt "Full Screen"
         :on-click toggle-fullscreen}
-       i/full-screen]
+       (if fullscreen?
+         i/full-screen-off
+         i/full-screen)]
       ]]))
 
 
