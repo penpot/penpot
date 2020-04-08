@@ -2,12 +2,29 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.util.perf
-  "Performance and debugging tools."
+  "Performance profiling for react components."
   #?(:cljs (:require-macros [uxbox.util.perf]))
-  #?(:cljs (:require [uxbox.util.math :as math])))
+  #?(:cljs (:require [uxbox.util.math :as math]
+                     [rumext.alpha :as mf]
+                     [goog.functions :as f]
+                     ["react" :as react]
+                     ["tdigest" :as td])))
+
+;; For use it, just wrap the component you want to profile with
+;; `perf/profiler` component and pass a label for debug purpose.
+;;
+;; Example:
+;;
+;; [:& perf/profiler {:label "viewport"}
+;;  [:section
+;;   [:& some-component]]]
+;;
+;; This will catch all renders and print to the console the
+;; percentiles of render time measures. The log function is
+;; automatically debouced for avod excesive spam to the console.
 
 #?(:clj
    (defmacro with-measure
@@ -20,23 +37,32 @@
         res#)))
 
 
-;; id, // the "id" prop of the Profiler tree that has just committed
-;; phase, // either "mount" (if the tree just mounted) or "update" (if it re-rendered)
-;; actualDuration, // time spent rendering the committed update
-;; baseDuration, // estimated time to render the entire subtree without memoization
-;; startTime, // when React began rendering this update
-;; commitTime, // when React committed this update
-;; interactions // the Set of interactions belonging to this update
+#?(:cljs
+   (defn on-render-factory
+     [label]
+     (let [buf (td/TDigest.)
+           log (f/debounce
+                (fn [phase buf]
+                  (js/console.log (str "[profile: " label " (" phase ")] "
+                                       "samples=" (unchecked-get buf "n") "\n"
+                                       "Q50=" (.percentile buf 0.50) "\n"
+                                       "Q75=" (.percentile buf 0.75) "\n"
+                                       "Q95=" (.percentile buf 0.90) "\n"
+                                       "MAX=" (.percentile buf 1))))
+                300)]
+       (fn [id phase adur, bdur, st, ct, itx]
+         (.push buf adur)
+         (log phase buf)))))
 
 #?(:cljs
-   (defn react-on-profile
-     []
-     (let [sum (volatile! 0)
-           ctr (volatile! 0)]
-       (fn [id phase adur, bdur, st, ct, itx]
-         (vswap! sum (fn [prev] (+ prev adur)))
-         (vswap! ctr inc)
-         (js/console.log (str "[profile:" id ":" phase "]")
-                         ""
-                         (str "time=" (math/precision adur 4))
-                         (str "avg="  (math/precision (/ @sum @ctr) 4)))))))
+   (mf/defc profiler
+     {::mf/wrap-props false}
+     [props]
+     (let [children (unchecked-get props "children")
+           label (unchecked-get props "label")
+           on-render (mf/use-memo
+                      (mf/deps label)
+                      #(on-render-factory label))]
+       [:> react/Profiler {:id label
+                           :on-render on-render}
+        children])))

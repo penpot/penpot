@@ -1035,6 +1035,7 @@
 
 
 ;; --- Duplicate Selected
+;; TODO: handle properly naming
 
 (defn duplicate-shapes
   [shapes]
@@ -1120,7 +1121,6 @@
 
           (and (pos? (count shapes))
                (every? shape? shapes))
-          ;; (rx/of (duplicate-shapes shapes))
           (rx/of (duplicate-shapes selected))
 
           :else
