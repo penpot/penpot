@@ -22,6 +22,7 @@
 (s/def ::email ::us/email)
 (s/def ::password ::us/string)
 (s/def ::language ::us/string)
+(s/def ::theme string?)
 (s/def ::photo ::us/string)
 (s/def ::created-at ::us/inst)
 (s/def ::password-1 ::us/string)
@@ -35,7 +36,8 @@
                    ::fullname
                    ::photo
                    ::email
-                   ::lang]))
+                   ::lang
+                   ::theme]))
 
 ;; --- Profile Fetched
 
