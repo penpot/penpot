@@ -48,3 +48,16 @@
     (watch [_ state stream]
       (->> (rx/of #(dissoc % :message))
            (rx/delay +animation-timeout+)))))
+
+
+(defn error
+  [message & {:keys [timeout] :or {timeout 3000}}]
+  (show {:content message
+         :type :error
+         :timeout timeout}))
+
+(defn info
+  [message & {:keys [timeout] :or {timeout 3000}}]
+  (show {:content message
+         :type :info
+         :timeout timeout}))
