@@ -17,32 +17,11 @@
       "en" : "You still have no files here"
     }
   },
-  "dashboard.header.colors" : {
-    "translations" : {
-      "en" : "COLORS",
-      "fr" : "COULEURS"
-    },
-    "unused" : true
-  },
   "dashboard.header.draft" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:57" ],
     "translations" : {
       "en" : "Draft"
     }
-  },
-  "dashboard.header.icons" : {
-    "translations" : {
-      "en" : "ICONS",
-      "fr" : "ICÔNES"
-    },
-    "unused" : true
-  },
-  "dashboard.header.images" : {
-    "translations" : {
-      "en" : "IMAGES",
-      "fr" : "IMAGES"
-    },
-    "unused" : true
   },
   "dashboard.header.new-file" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:74" ],
@@ -83,22 +62,17 @@
       "en" : "Project %s"
     }
   },
-  "dashboard.header.projects" : {
-    "translations" : {
-      "en" : "PROJECTS",
-      "fr" : "PROJETS"
-    },
-    "unused" : true
-  },
   "dashboard.library.add-item.icons" : {
     "translations" : {
-      "en" : "+ New icon"
+      "en" : "+ New icon",
+      "fr" : "+ Nouvel icône"
     },
     "unused" : true
   },
   "dashboard.library.add-item.images" : {
     "translations" : {
-      "en" : "+ New image"
+      "en" : "+ New image",
+      "fr" : "+ Nouvelle image"
     },
     "unused" : true
   },
@@ -129,13 +103,15 @@
   "dashboard.library.menu.icons" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:96" ],
     "translations" : {
-      "en" : "Icons"
+      "en" : "Icons",
+      "fr" : "ICÔNES"
     }
   },
   "dashboard.library.menu.images" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:100" ],
     "translations" : {
-      "en" : "Images"
+      "en" : "Images",
+      "fr" : "Images"
     }
   },
   "dashboard.library.menu.palettes" : {
@@ -180,12 +156,6 @@
       "en" : "Libraries"
     }
   },
-  "dashboard.sidebar.personal" : {
-    "translations" : {
-      "en" : "Personal"
-    },
-    "unused" : true
-  },
   "dashboard.sidebar.recent" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:106" ],
     "translations" : {
@@ -218,39 +188,11 @@
     }
   },
   "ds.cancel" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:115" ],
-    "translations" : {
-      "en" : null,
-      "fr" : "Annuler"
-    }
-  },
-  "ds.color-lightbox.add" : {
-    "translations" : {
-      "en" : "+ Add color",
-      "fr" : "+ Ajouter couleur"
-    },
-    "unused" : true
-  },
-  "ds.color-lightbox.title" : {
     "translations" : {
       "en" : null,
       "fr" : null
     },
-    "unused" : true
-  },
-  "ds.color-new" : {
-    "translations" : {
-      "en" : "+ New color",
-      "fr" : "+ Nouvelle couleur"
-    },
-    "unused" : true
-  },
-  "ds.colors-collection.new" : {
-    "translations" : {
-      "en" : "+ New library",
-      "fr" : "+ Nouvelle librairie"
-    },
-    "unused" : true
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:115" ]
   },
   "ds.confirm-cancel" : {
     "used-in" : [ "src/uxbox/main/ui/confirm.cljs:19" ],
@@ -280,53 +222,24 @@
     },
     "unused" : true
   },
-  "ds.foobar" : {
-    "used-in" : [ ],
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "permanent" : true
-  },
-  "ds.height" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
   "ds.history.pinned" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:96" ],
     "translations" : {
-      "en" : "Pinned",
-      "fr" : "Épinglés"
-    }
+      "en" : null,
+      "fr" : null
+    },
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:96" ]
   },
   "ds.history.versions" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:93" ],
     "translations" : {
-      "en" : "History",
-      "fr" : "Historique"
-    }
-  },
-  "ds.icon-new" : {
-    "translations" : {
-      "en" : "+ New icon",
-      "fr" : "+ Nouvel icône"
+      "en" : null,
+      "fr" : null
     },
-    "unused" : true
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:93" ]
   },
   "ds.icons-collection.new" : {
     "translations" : {
       "en" : "+ New collection",
       "fr" : "+ Nouvelle collection"
-    },
-    "unused" : true
-  },
-  "ds.image-new" : {
-    "translations" : {
-      "en" : "+ New image",
-      "fr" : "+ Nouvelle image"
     },
     "unused" : true
   },
@@ -337,75 +250,12 @@
     },
     "unused" : true
   },
-  "ds.multiselect-bar.copy" : {
-    "translations" : {
-      "en" : "Copy",
-      "fr" : "Copier"
-    },
-    "unused" : true
-  },
-  "ds.multiselect-bar.copy-to-library" : {
-    "translations" : {
-      "en" : "Copy to library",
-      "fr" : "Copier vers la librairie"
-    },
-    "unused" : true
-  },
-  "ds.multiselect-bar.delete" : {
-    "translations" : {
-      "en" : "Delete",
-      "fr" : "Supprimer"
-    },
-    "unused" : true
-  },
-  "ds.multiselect-bar.move" : {
-    "translations" : {
-      "en" : "Move",
-      "fr" : "Déplacer"
-    },
-    "unused" : true
-  },
-  "ds.multiselect-bar.move-to-library" : {
-    "translations" : {
-      "en" : "Move to library",
-      "fr" : "Déplacer vers la librairie"
-    },
-    "unused" : true
-  },
-  "ds.multiselect-bar.rename" : {
-    "translations" : {
-      "en" : "Rename",
-      "fr" : "Renommer"
-    },
-    "unused" : true
-  },
   "ds.new-file" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:110", "src/uxbox/main/ui/dashboard/grid.cljs:116" ],
     "translations" : {
       "en" : "+ New File",
       "fr" : null
     }
-  },
-  "ds.num-elements" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
-  "ds.position" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
-  "ds.rotation" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
   },
   "ds.search.placeholder" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:176" ],
@@ -415,25 +265,11 @@
     }
   },
   "ds.settings.document-history" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:87" ],
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    }
-  },
-  "ds.settings.icons" : {
     "translations" : {
       "en" : null,
       "fr" : null
     },
-    "unused" : true
-  },
-  "ds.size" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:87" ]
   },
   "ds.store-colors-title" : {
     "translations" : {
@@ -470,46 +306,11 @@
     },
     "unused" : true
   },
-  "ds.user.notifications" : {
-    "translations" : {
-      "en" : "Notifications",
-      "fr" : "Notifications"
-    },
-    "unused" : true
-  },
-  "ds.width" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
-  "ds.your-colors-title" : {
-    "translations" : {
-      "en" : "YOUR COLORS",
-      "fr" : "VOS COULEURS"
-    },
-    "unused" : true
-  },
-  "ds.your-icons-title" : {
-    "translations" : {
-      "en" : "YOUR ICONS",
-      "fr" : "VOS ICÔNES"
-    },
-    "unused" : true
-  },
   "ds.your-images-title" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:177" ],
     "translations" : {
       "en" : "YOUR IMAGES",
       "fr" : "VOS IMAGES"
-    }
-  },
-  "workspace.options.fill" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:44" ],
-    "translations" : {
-      "en" : "Fill",
-      "fr" : "Fond"
     }
   },
   "errors.api.form.registration-disabled" : {
@@ -534,21 +335,21 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:162" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:180" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:156" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:174" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal."
     }
   },
   "header.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:158" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:100" ],
     "translations" : {
       "en" : null,
       "fr" : null
@@ -637,12 +438,6 @@
       "en" : "Sign in",
       "fr" : "Se connecter"
     }
-  },
-  "modal.create-color.edit-color" : {
-    "translations" : {
-      "en" : "Edit Color"
-    },
-    "unused" : true
   },
   "modal.create-color.new-color" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:48" ],
@@ -747,20 +542,6 @@
       "en" : "Password",
       "fr" : "Mot de passe"
     }
-  },
-  "settings.exit" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
-  "settings.notifications" : {
-    "translations" : {
-      "en" : "NOTIFICATIONS",
-      "fr" : "NOTIFICATIONS"
-    },
-    "unused" : true
   },
   "settings.notifications.description" : {
     "used-in" : [ "src/uxbox/main/ui/settings/notifications.cljs:19" ],
@@ -888,13 +669,6 @@
       "fr" : "Votre nom complet"
     }
   },
-  "settings.profile.your-username" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
   "settings.update-settings" : {
     "used-in" : [ "src/uxbox/main/ui/settings/notifications.cljs:42", "src/uxbox/main/ui/settings/password.cljs:102", "src/uxbox/main/ui/settings/profile.cljs:105" ],
     "translations" : {
@@ -902,219 +676,175 @@
       "fr" : "Mettre à jour les paramètres"
     }
   },
-  "workspace.header.canvas" : {
+  "viewer.header.edit-page" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:112" ],
     "translations" : {
-      "en" : "Canvas",
-      "fr" : "Calque"
-    },
-    "unused" : true
+      "en" : "Edit page"
+    }
   },
-  "workspace.header.circle" : {
+  "viewer.header.fullscreen" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:123" ],
     "translations" : {
-      "en" : "Circle (Ctrl + E)",
-      "fr" : "Cercle (Ctrl + E)"
-    },
-    "unused" : true
+      "en" : "Full Screen"
+    }
   },
-  "workspace.header.color-palette" : {
+  "viewer.header.share.copy-link" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:64" ],
     "translations" : {
-      "en" : "Color Palette (---)",
-      "fr" : "Palette de couleurs (---)"
-    },
-    "unused" : true
+      "en" : "Copy link"
+    }
   },
-  "workspace.header.curve" : {
+  "viewer.header.share.create-link" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:72" ],
     "translations" : {
-      "en" : "Curve",
-      "fr" : "Courbe"
-    },
-    "unused" : true
+      "en" : "Create link"
+    }
   },
-  "workspace.header.document-history" : {
+  "viewer.header.share.placeholder" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:62" ],
     "translations" : {
-      "en" : "History (Ctrl + Shift + H)",
-      "fr" : "Historique du document (Ctrl + Maj + H)"
-    },
-    "unused" : true
+      "en" : "Share link will apear here"
+    }
   },
-  "workspace.header.download" : {
+  "viewer.header.share.remove-link" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:70" ],
     "translations" : {
-      "en" : "Download (Ctrl + E)",
-      "fr" : "Télécharger (Ctrl + E)"
-    },
-    "unused" : true
+      "en" : "Remove link"
+    }
   },
-  "workspace.header.frame" : {
+  "viewer.header.share.subtitle" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:66" ],
     "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
+      "en" : "Anyone with the link will have access"
+    }
   },
-  "workspace.header.grid" : {
+  "viewer.header.share.title" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:50", "src/uxbox/main/ui/viewer/header.cljs:52", "src/uxbox/main/ui/viewer/header.cljs:58" ],
     "translations" : {
-      "en" : "Grid (Ctrl + G)",
-      "fr" : "Grille (Ctrl + G)"
-    },
-    "unused" : true
+      "en" : "Share link"
+    }
   },
-  "workspace.header.grid-snap" : {
+  "viewer.header.sitemap" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:97" ],
     "translations" : {
-      "en" : "Snap to grid",
-      "fr" : "Coller à la grille"
-    },
-    "unused" : true
-  },
-  "workspace.header.icons" : {
-    "translations" : {
-      "en" : "Icons (Ctrl + Shift + I)",
-      "fr" : "Icônes (Ctrl + Maj + I)"
-    },
-    "unused" : true
-  },
-  "workspace.header.image" : {
-    "translations" : {
-      "en" : "Image (Ctrl + I)",
-      "fr" : "Image (Ctrl + I)"
-    },
-    "unused" : true
+      "en" : "Sitemap"
+    }
   },
   "workspace.header.menu.hide-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:108" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:120" ],
     "translations" : {
       "en" : "Hide grid"
     }
   },
   "workspace.header.menu.hide-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:115" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:127" ],
     "translations" : {
       "en" : "Hide layers"
     }
   },
   "workspace.header.menu.hide-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:129" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:141" ],
     "translations" : {
       "en" : "Hide libraries"
     }
   },
   "workspace.header.menu.hide-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:122" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:134" ],
     "translations" : {
       "en" : "Hide color palette"
     }
   },
   "workspace.header.menu.hide-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:101" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:113" ],
     "translations" : {
       "en" : "Hide rules"
     }
   },
   "workspace.header.menu.show-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:109" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:121" ],
     "translations" : {
       "en" : "Show grid"
     }
   },
   "workspace.header.menu.show-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:116" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:128" ],
     "translations" : {
       "en" : "Show layers"
     }
   },
   "workspace.header.menu.show-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:130" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:142" ],
     "translations" : {
       "en" : "Show libraries"
     }
   },
   "workspace.header.menu.show-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:123" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:135" ],
     "translations" : {
       "en" : "Show color palette"
     }
   },
   "workspace.header.menu.show-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:102" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:114" ],
     "translations" : {
       "en" : "Show rules"
     }
   },
-  "workspace.header.path" : {
-    "translations" : {
-      "en" : "Path",
-      "fr" : "Chemin"
-    },
-    "unused" : true
-  },
-  "workspace.header.rect" : {
-    "translations" : {
-      "en" : "Box (Ctrl + B)",
-      "fr" : "Boîte (Ctrl + B)"
-    },
-    "unused" : true
-  },
-  "workspace.header.rules" : {
-    "translations" : {
-      "en" : "Rules",
-      "fr" : "Règles"
-    },
-    "unused" : true
-  },
-  "workspace.header.text" : {
-    "translations" : {
-      "en" : "Text",
-      "fr" : "Texte"
-    },
-    "unused" : true
-  },
-  "workspace.header.view-mode" : {
+  "workspace.header.viewer" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:181" ],
     "translations" : {
       "en" : "View mode (Ctrl + P)",
       "fr" : "Mode visualisation (Ctrl + P)"
-    },
-    "unused" : true
+    }
   },
   "workspace.library.all" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:119" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:126" ],
     "translations" : {
       "en" : "All libraries"
     }
   },
   "workspace.library.icons" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:169" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:176" ],
     "translations" : {
       "en" : "Icons"
     }
   },
   "workspace.library.images" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:174" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:181" ],
     "translations" : {
       "en" : "Images"
     }
   },
   "workspace.library.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:151" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:158" ],
     "translations" : {
       "en" : "Libraries"
     }
   },
   "workspace.library.own" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:120" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:127" ],
     "translations" : {
       "en" : "My libraries"
     }
   },
   "workspace.library.store" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:121" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:128" ],
     "translations" : {
       "en" : "Store libraries"
     }
   },
   "workspace.options.color" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:124", "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:47", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:125" ],
     "translations" : {
       "en" : "Color",
       "fr" : "Couleur"
+    }
+  },
+  "workspace.options.fill" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:51" ],
+    "translations" : {
+      "en" : "Fill",
+      "fr" : "Fond"
     }
   },
   "workspace.options.font-family" : {
@@ -1153,94 +883,101 @@
     }
   },
   "workspace.options.measures" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:66", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:62", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:76", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:66" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:68" ],
     "translations" : {
       "en" : "Size, position & rotation",
       "fr" : "Taille, position et rotation"
     }
   },
   "workspace.options.opacity" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:58", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:89" ],
     "translations" : {
       "en" : "Opacity",
       "fr" : "Opacité"
-    }
+    },
+    "unused" : true
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:97", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:91", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:126", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:95" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:97", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:126", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:99", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:94" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
     }
   },
-  "workspace.options.rotation" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:107", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:112" ],
-    "translations" : {
-      "en" : "Rotation",
-      "fr" : "TODO"
-    }
-  },
   "workspace.options.radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:108", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:107", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:132", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:141", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:137", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:136" ],
     "translations" : {
       "en" : "Radius",
       "fr" : "TODO"
     }
   },
+  "workspace.options.rotation" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:110", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:118", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:113" ],
+    "translations" : {
+      "en" : "Rotation",
+      "fr" : "TODO"
+    }
+  },
+  "workspace.options.rotation-radius" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:114" ],
+    "translations" : {
+      "en" : null,
+      "fr" : null
+    }
+  },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:64", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:99", "src/uxbox/main/ui/workspace/sidebar/options/rect.cljs:68" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:101", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:67" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
     }
   },
   "workspace.options.size-presets" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:82" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:81" ],
     "translations" : {
       "en" : "Size presets"
     }
   },
   "workspace.options.stroke" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:58" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:73", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:127" ],
     "translations" : {
       "en" : "Stroke",
       "fr" : null
     }
   },
   "workspace.options.stroke.dashed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:69" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:114" ],
     "translations" : {
       "en" : "Dashed",
       "fr" : "Tiré"
     }
   },
   "workspace.options.stroke.dotted" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:68" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:113" ],
     "translations" : {
       "en" : "Dotted",
       "fr" : "Pointillé"
     }
   },
   "workspace.options.stroke.mixed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:70" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:115" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : "Mixte"
     }
   },
   "workspace.options.stroke.solid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:67" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:112" ],
     "translations" : {
       "en" : "Solid",
       "fr" : "Solide"
     }
   },
   "workspace.options.stroke.style" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:62" ],
     "translations" : {
       "en" : "Style",
       "fr" : "Style"
-    }
+    },
+    "unused" : true
   },
   "workspace.options.text-align" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:262" ],
@@ -1264,14 +1001,111 @@
     "unused" : true
   },
   "workspace.sidebar.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:129" ],
     "translations" : {
       "en" : "Pages",
       "fr" : "Pages"
     }
   },
+  "workspace.toolbar.circle" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:45" ],
+    "translations" : {
+      "en" : "Circle (Ctrl + E)",
+      "fr" : "Cercle (Ctrl + E)"
+    }
+  },
+  "workspace.toolbar.color-palette" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:84" ],
+    "translations" : {
+      "en" : "Color Palette (---)",
+      "fr" : "Palette de couleurs (---)"
+    }
+  },
+  "workspace.toolbar.curve" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:59" ],
+    "translations" : {
+      "en" : "Curve",
+      "fr" : "Courbe"
+    }
+  },
+  "workspace.toolbar.download" : {
+    "translations" : {
+      "en" : "Download (Ctrl + E)",
+      "fr" : "Télécharger (Ctrl + E)"
+    },
+    "unused" : true
+  },
+  "workspace.toolbar.frame" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:35" ],
+    "translations" : {
+      "en" : "Artboard",
+      "fr" : null
+    }
+  },
+  "workspace.toolbar.grid" : {
+    "translations" : {
+      "en" : "Grid (Ctrl + G)",
+      "fr" : "Grille (Ctrl + G)"
+    },
+    "unused" : true
+  },
+  "workspace.toolbar.grid-snap" : {
+    "translations" : {
+      "en" : "Snap to grid",
+      "fr" : "Coller à la grille"
+    },
+    "unused" : true
+  },
+  "workspace.toolbar.image" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:55" ],
+    "translations" : {
+      "en" : "Image (Ctrl + I)",
+      "fr" : "Image (Ctrl + I)"
+    }
+  },
+  "workspace.toolbar.libraries" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:76" ],
+    "translations" : {
+      "en" : "Libraries (Ctrl + Shift + L)"
+    }
+  },
+  "workspace.toolbar.path" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:64" ],
+    "translations" : {
+      "en" : "Path",
+      "fr" : "Chemin"
+    }
+  },
+  "workspace.toolbar.pencil" : {
+    "translations" : {
+      "en" : "Image (Ctrl + I)",
+      "fr" : "Image (Ctrl + I)"
+    },
+    "unused" : true
+  },
+  "workspace.toolbar.rect" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:40" ],
+    "translations" : {
+      "en" : "Box (Ctrl + B)",
+      "fr" : "Boîte (Ctrl + B)"
+    }
+  },
+  "workspace.toolbar.rules" : {
+    "translations" : {
+      "en" : "Rules",
+      "fr" : "Règles"
+    },
+    "unused" : true
+  },
+  "workspace.toolbar.text" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:50" ],
+    "translations" : {
+      "en" : "Text",
+      "fr" : "Texte"
+    }
+  },
   "workspace.viewport.click-to-close-path" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:338" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:336" ],
     "translations" : {
       "en" : "Click to close the path"
     }
