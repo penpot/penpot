@@ -17,26 +17,25 @@
    [vertx.web :as vw]
    [vertx.eventbus :as ve]))
 
-(def mutation-types-hierarchy
-  (-> (make-hierarchy)
-      (derive :login ::unauthenticated)
-      (derive :logout ::unauthenticated)
-      (derive :register-profile ::unauthenticated)
-      (derive :request-profile-recovery ::unauthenticated)
-      (derive :recover-profile ::unauthenticated)
-      (derive :create-demo-profile ::unauthenticated)))
-
-(def query-types-hierarchy
-  (make-hierarchy))
+(def unauthorized-services
+  #{:create-demo-profile
+    :logout
+    :profile
+    :recover-profile
+    :register-profile
+    :request-profile-recovery
+    :viewer-bundle
+    :login})
 
 (defn query-handler
   [req]
   (let [type (keyword (get-in req [:path-params :type]))
         data (merge (:params req)
-                    {::sq/type type
-                     :profile-id (:profile-id req)})]
+                    {::sq/type type})
+        data (cond-> data
+               (:profile-id req) (assoc :profile-id (:profile-id req)))]
     (if (or (:profile-id req)
-            (isa? query-types-hierarchy type ::unauthenticated))
+            (contains? unauthorized-services type))
       (-> (sq/handle (with-meta data {:req req}))
           (p/then' (fn [result]
                      {:status 200
@@ -51,10 +50,11 @@
         data (merge (:params req)
                     (:body-params req)
                     (:uploads req)
-                    {::sm/type type
-                     :profile-id (:profile-id req)})]
+                    {::sm/type type})
+        data (cond-> data
+               (:profile-id req) (assoc :profile-id (:profile-id req)))]
     (if (or (:profile-id req)
-            (isa? mutation-types-hierarchy type ::unauthenticated))
+            (contains? unauthorized-services type))
       (-> (sm/handle (with-meta data {:req req}))
           (p/then' (fn [result]
                      {:status 200 :body result})))

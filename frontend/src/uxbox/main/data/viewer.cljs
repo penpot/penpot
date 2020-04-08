@@ -41,7 +41,7 @@
 (declare bundle-fetched)
 
 (defn initialize
-  [page-id]
+  [page-id share-token]
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
@@ -49,18 +49,21 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (fetch-bundle page-id)))))
+      (rx/of (fetch-bundle page-id share-token)))))
 
 ;; --- Data Fetching
 
 (defn fetch-bundle
-  [page-id]
+  [page-id share-token]
   (ptk/reify ::fetch-file
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :viewer-bundle {:page-id page-id})
-           (rx/map bundle-fetched)))))
-
+      (let [params (cond-> {:page-id page-id}
+                     (string? share-token) (assoc :share-token share-token))]
+        (->> (rp/query :viewer-bundle params)
+             (rx/map bundle-fetched)
+             (rx/catch (fn [error-data]
+                         (rx/of (rt/nav :not-found)))))))))
 
 (defn- extract-frames
   [page]

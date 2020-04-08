@@ -91,15 +91,6 @@
   (db/query-one conn [sql:profile-by-email email]))
 
 
-;; --- Mutation: Add additional email
-;; TODO
-
-;; --- Mutation: Mark email as main email
-;; TODO
-
-;; --- Mutation: Verify email (or maybe query?)
-;; TODO
-
 ;; --- Mutation: Update Profile (own)
 
 (def ^:private sql:update-profile
@@ -156,6 +147,7 @@
   (db/with-atomic [conn db/pool]
     (validate-password! conn params)
     (update-password conn params)))
+
 
 
 ;; --- Mutation: Update Photo

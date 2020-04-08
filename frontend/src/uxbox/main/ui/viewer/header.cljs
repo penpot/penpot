@@ -17,43 +17,18 @@
    [uxbox.builtins.icons :as i]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.main.ui.workspace.header :refer [zoom-widget]]
    [uxbox.main.data.viewer :as dv]
+   [uxbox.main.refs :as refs]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.math :as mth]
    [uxbox.util.router :as rt])
   (:import goog.events.EventType
            goog.events.KeyCodes))
 
-(mf/defc zoom-widget
-  {:wrap [mf/memo]}
-  [{:keys [zoom] :as props}]
-  (let [show-dropdown? (mf/use-state false)
-        increase #(st/emit! dv/increase-zoom)
-        decrease #(st/emit! dv/decrease-zoom)
-        zoom-to-50 #(st/emit! dv/zoom-to-50)
-        zoom-to-100 #(st/emit! dv/reset-zoom)
-        zoom-to-200 #(st/emit! dv/zoom-to-200)]
-    [:div.zoom-widget
-     [:span.add-zoom {:on-click decrease} "-"]
-     [:div.input-container {:on-click #(reset! show-dropdown? true)}
-      [:span {} (str (mth/round (* 100 zoom)) "%")]
-      [:span.dropdown-button i/arrow-down]
-      [:& dropdown {:show @show-dropdown?
-                    :on-close #(reset! show-dropdown? false)}
-       [:ul.zoom-dropdown
-        [:li {:on-click increase}
-         "Zoom in" [:span "+"]]
-        [:li {:on-click decrease}
-         "Zoom out" [:span "-"]]
-        [:li {:on-click zoom-to-50}
-         "Zoom to 50%"]
-        [:li {:on-click zoom-to-100}
-         "Zoom to 100%" [:span "Shift + 0"]]
-        [:li {:on-click zoom-to-200}
-         "Zoom to 200%"]]]]
-     [:span.remove-zoom {:on-click increase} "+"]]))
 
 (mf/defc share-link
   [{:keys [page] :as props}]
@@ -64,12 +39,11 @@
         create #(st/emit! dv/create-share-link)
         delete #(st/emit! dv/delete-share-link)
         href (.-href js/location)]
-
     [:*
-     [:span.btn-share.tooltip.tooltip-bottom
+     [:span.btn-primary.btn-small
       {:alt "Share link"
        :on-click #(swap! show-dropdown? not)}
-      i/exit]
+      "Share link"]
 
      [:& dropdown {:show @show-dropdown?
                    :on-close #(swap! show-dropdown? not)
@@ -78,28 +52,35 @@
        [:span.share-link-title "Share link"]
        [:div.share-link-input
         (if (string? token)
-          [:span.link (str href "&" token)]
-          [:span "Share link will apear here"])
-        i/chain]
+          [:span.link (str href "&token=" token)]
+          [:span.link-placeholder "Share link will apear here"])
+          [:span.link-button "Copy link"]]
        [:span.share-link-subtitle "Anyone with the link will have access"]
        [:div.share-link-buttons
         (if (string? token)
           [:button.btn-delete {:on-click delete} "Remove link"]
           [:button.btn-primary {:on-click create} "Create link"])]]]]))
 
-
 (mf/defc header
   [{:keys [data index local fullscreen? toggle-fullscreen] :as props}]
   (let [{:keys [project file page frames]} data
         total (count frames)
         on-click #(st/emit! dv/toggle-thumbnails-panel)
+
+        profile (mf/deref refs/profile)
+        anonymous? (= uuid/zero (:id profile))
+
+        project-id (get-in data [:project :id])
+        file-id (get-in data [:file :id])
+        page-id (get-in data [:page :id])
+
         on-edit #(st/emit! (rt/nav :workspace
-                                   {:project-id (get-in data [:project :id])
-                                    :file-id (get-in data [:file :id])}
-                                   {:page-id (get-in data [:page :id])}))]
+                                   {:project-id project-id
+                                    :file-id file-id}
+                                   {:page-id page-id}))]
     [:header.viewer-header
      [:div.main-icon
-      [:a i/logo-icon]]
+      [:a {:on-click on-edit} i/logo-icon]]
 
      [:div.sitemap-zone {:alt (tr "header.sitemap")
                          :on-click on-click}
@@ -112,13 +93,25 @@
       [:span.counters (str (inc index) " / " total)]]
 
      [:div.options-zone
-      [:& share-link {:page (:page data)}]
-      [:span.btn-primary {:on-click on-edit} "Edit page"]
-      [:& zoom-widget {:zoom (:zoom local)}]
+      (when-not anonymous?
+        [:& share-link {:page (:page data)}])
+      (when-not anonymous?
+        [:a {:on-click on-edit} "Edit page"])
+
+      [:& zoom-widget
+       {:zoom (:zoom local)
+        :on-increase #(st/emit! dv/increase-zoom)
+        :on-decrease #(st/emit! dv/decrease-zoom)
+        :on-zoom-to-50 #(st/emit! dv/zoom-to-50)
+        :on-zoom-to-100 #(st/emit! dv/reset-zoom)
+        :on-zoom-to-200 #(st/emit! dv/zoom-to-200)}]
+
       [:span.btn-fullscreen.tooltip.tooltip-bottom
-       {:alt "Full screen"
+       {:alt "Full Screen"
         :on-click toggle-fullscreen}
-       i/full-screen]
+       (if fullscreen?
+         i/full-screen-off
+         i/full-screen)]
       ]]))
 
 

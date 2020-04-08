@@ -30,33 +30,38 @@
 
 (mf/defc zoom-widget
   {:wrap [mf/memo]}
-  [props]
-  (let [zoom (mf/deref refs/selected-zoom)
-        show-dropdown? (mf/use-state false)
-        increase #(st/emit! dw/increase-zoom)
-        decrease #(st/emit! dw/decrease-zoom)
-        zoom-to-50 #(st/emit! dw/zoom-to-50)
-        zoom-to-100 #(st/emit! dw/reset-zoom)
-        zoom-to-200 #(st/emit! dw/zoom-to-200)]
-    [:div.zoom-input
-     [:span.add-zoom {:on-click decrease} "-"]
-     [:div {:on-click #(reset! show-dropdown? true)}
-      [:span {} (str (mth/round (* 100 zoom)) "%")]
-      [:span.dropdown-button i/arrow-down]
-      [:& dropdown {:show @show-dropdown?
-                    :on-close #(reset! show-dropdown? false)}
-       [:ul.zoom-dropdown
-        [:li {:on-click increase}
-         "Zoom in" [:span "+"]]
-        [:li {:on-click decrease}
-         "Zoom out" [:span "-"]]
-        [:li {:on-click zoom-to-50}
-         "Zoom to 50%" [:span "Shift + 0"]]
-        [:li {:on-click zoom-to-100}
-         "Zoom to 100%" [:span "Shift + 1"]]
-        [:li {:on-click zoom-to-200}
-         "Zoom to 200%" [:span "Shift + 2"]]]]]
-     [:span.remove-zoom {:on-click increase} "+"]]))
+  [{:keys [zoom
+           on-increase
+           on-decrease
+           on-zoom-to-50
+           on-zoom-to-100
+           on-zoom-to-200]
+    :as props}]
+  (let [show-dropdown? (mf/use-state false)
+        ;; increase #(st/emit! dv/increase-zoom)
+        ;; decrease #(st/emit! dv/decrease-zoom)
+        ;; zoom-to-50 #(st/emit! dv/zoom-to-50)
+        ;; zoom-to-100 #(st/emit! dv/reset-zoom)
+        ;; zoom-to-200 #(st/emit! dv/zoom-to-200)
+        ]
+    [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
+     [:span {} (str (mth/round (* 100 zoom)) "%")]
+     [:span.dropdown-button i/arrow-down]
+     [:& dropdown {:show @show-dropdown?
+                   :on-close #(reset! show-dropdown? false)}
+      [:ul.zoom-dropdown
+       [:li {:on-click on-increase}
+        "Zoom in" [:span "+"]]
+       [:li {:on-click on-decrease}
+        "Zoom out" [:span "-"]]
+       [:li {:on-click on-zoom-to-50}
+        "Zoom to 50%"]
+       [:li {:on-click on-zoom-to-100}
+        "Zoom to 100%" [:span "Shift + 0"]]
+       [:li {:on-click on-zoom-to-200}
+        "Zoom to 200%"]]]]))
+
+
 
 ;; --- Header Users
 
@@ -77,7 +82,7 @@
   [props]
   (let [profile (mf/deref refs/profile)
         users (mf/deref refs/workspace-users)]
-    [:ul.user-multi
+    [:ul.active-users
      [:& user-widget {:user profile :self? true}]
      (for [id (->> (:active users)
                    (remove #(= % (:id profile))))]
@@ -85,16 +90,22 @@
                         :key id}])]))
 
 (mf/defc menu
-  [{:keys [layout] :as props}]
+  [{:keys [layout project file] :as props}]
   (let [show-menu? (mf/use-state false)
+        toggle-sitemap #(st/emit! (dw/toggle-layout-flag :sitemap))
         locale (i18n/use-locale)]
 
-    [:*
-     [:div.menu-btn {:on-click #(reset! show-menu? true)} i/actions]
+    [:div.menu-section
+     [:div.menu-button {:on-click #(reset! show-menu? true)} i/actions]
+     [:div.project-tree {:alt (t locale "header.sitemap")
+                         :class (classnames :selected (contains? layout :sitemap))
+                         :on-click toggle-sitemap}
+      [:span.project-name (:name project) " /"]
+      [:span (:name file)]]
 
      [:& dropdown {:show @show-menu?
                    :on-close #(reset! show-menu? false)}
-      [:ul.workspace-menu
+      [:ul.menu
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :rules))}
         [:span i/ruler]
         [:span
@@ -139,28 +150,33 @@
 
 (mf/defc header
   [{:keys [page file layout project] :as props}]
-  (let [go-to-dashboard #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))
-        toggle-sitemap #(st/emit! (dw/toggle-layout-flag :sitemap))
+  (let [locale (i18n/use-locale)
+        go-to-dashboard #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))
+        zoom (mf/deref refs/selected-zoom)
         locale (i18n/use-locale)
         router (mf/deref router-ref)
         view-url (rt/resolve router :viewer {:page-id (:id page)} {:index 0})]
-    [:header.workspace-bar
+    [:header.workspace-header
      [:div.main-icon
       [:a {:on-click go-to-dashboard} i/logo-icon]]
 
-     [:& menu {:layout layout}]
+     [:& menu {:layout layout
+               :project project
+               :file file}]
 
-     [:div.project-tree-btn {:alt (tr "header.sitemap")
-                             :class (classnames :selected (contains? layout :sitemap))
-                             :on-click toggle-sitemap}
-      [:span.project-name (:name project) " /"]
-      [:span (:name file)]]
-
-     [:div.workspace-options
+     [:div.users-section
       [:& active-users]]
 
-     [:& zoom-widget]
+     [:div.options-section
+      [:& zoom-widget
+       {:zoom zoom
+        :on-increase #(st/emit! dw/increase-zoom)
+        :on-decrease #(st/emit! dw/decrease-zoom)
+        :on-zoom-to-50 #(st/emit! dw/zoom-to-50)
+        :on-zoom-to-100 #(st/emit! dw/reset-zoom)
+        :on-zoom-to-200 #(st/emit! dw/zoom-to-200)}]
 
-     [:a.preview {
-                  ;; :target "__blank"
-                  :href (str "#" view-url)} i/play]]))
+      [:a.preview-button
+       {;; :target "__blank"
+        :href (str "#" view-url)} i/play]]]))
+

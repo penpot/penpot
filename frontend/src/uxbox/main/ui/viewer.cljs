@@ -96,8 +96,11 @@
       (l/derive st/state)))
 
 (mf/defc viewer-page
-  [{:keys [page-id index] :as props}]
-  (mf/use-effect (mf/deps page-id) #(st/emit! (dv/initialize page-id)))
+  [{:keys [page-id index token] :as props}]
+  (mf/use-effect
+   (mf/deps page-id token)
+   #(st/emit! (dv/initialize page-id token)))
+
   (let [data (mf/deref viewer-data-ref)
         local (mf/deref viewer-local-ref)]
     (when data

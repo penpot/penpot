@@ -39,6 +39,7 @@
 (def folder (icon-xref :folder))
 (def folder-zip (icon-xref :folder-zip))
 (def full-screen (icon-xref :full-screen))
+(def full-screen-off (icon-xref :full-screen-off))
 (def grid (icon-xref :grid))
 (def grid-snap (icon-xref :grid-snap))
 (def icon-set (icon-xref :icon-set))
@@ -103,7 +104,7 @@
   {::mf/wrap-props false}
   [props]
   [:section.debug-icons-preview
-   (for [[key val] (ns-publics 'uxbox.builtins.icons)]
+   (for [[key val] (sort-by first (ns-publics 'uxbox.builtins.icons))]
      (when (not= key 'debug-icons-preview)
        [:div.icon-item {:key key}
         (deref val)
