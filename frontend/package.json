@@ -38,6 +38,7 @@
     "react-dom": "^16.13.1",
     "rxjs": "^7.0.0-alpha.1",
     "source-map-support": "^0.5.16",
+    "tdigest": "^0.1.1",
     "xregexp": "^4.3.0"
   }
 }
