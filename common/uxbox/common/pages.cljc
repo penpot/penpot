@@ -25,6 +25,7 @@
 (s/def ::shape-id uuid?)
 (s/def ::session-id uuid?)
 (s/def ::name string?)
+(s/def ::parent-id uuid?)
 
 ;; Page Options
 (s/def ::grid-x number?)
@@ -151,6 +152,10 @@
   (s/keys :req-un [::id ::frame-id]
           :opt-un [::session-id]))
 
+(defmethod change-spec-impl :mov-objects [_]
+  (s/keys :req-un [::parent-id ::shapes]
+          :opt-un [::index]))
+
 (s/def ::change (s/multi-spec change-spec-impl :type))
 (s/def ::changes (s/coll-of ::change))
 
@@ -201,15 +206,9 @@
         (update-in [:objects frame-id :shapes]
                    (fn [shapes]
                      (cond
-                       (some #{id} shapes)
-                       shapes
-
-                       (nil? index)
-                       (conj shapes id)
-
-                       :else
-                       (let [[before after] (split-at index shapes)]
-                         (d/concat [] before [id] after))))))))
+                       (some #{id} shapes) shapes
+                       (nil? index) (conj shapes id)
+                       :else (d/insert-at-index shapes index [id])))))))
 
 (defmethod process-change :mod-obj
   [data {:keys [id operations] :as change}]
@@ -237,6 +236,73 @@
 
         (seq shapes)                    ; Recursive delete all dependend objects
         (as-> $ (reduce #(or (process-change %1 {:type :del-obj :id %2}) %1) $ shapes))))))
+
+(defn- calculate-child-parent-map
+  [objects]
+  (let [red-fn
+        (fn [acc {:keys [id shapes]}]
+          ;; Insert every pair shape -> parent into accumulated value
+          (into acc (map #(vector % id) (or shapes []))))]
+    (reduce red-fn {} (vals objects))))
+
+(defn- calculate-invalid-targets [shape-id objects]
+  (let [result #{shape-id}
+        children (get-in objects [shape-id :shape])
+        reduce-fn (fn [result child-id]
+                    (into result (calculate-invalid-targets child-id objects)))]
+    (reduce reduce-fn result children)))
+
+(defmethod process-change :mov-objects
+  [data {:keys [parent-id shapes index] :as change}]
+  (let [child->parent (calculate-child-parent-map (:objects data))
+        ;; Check if the move from shape-id -> parent-id is valid
+        is-valid-move
+        (fn [shape-id]
+          (let [invalid (calculate-invalid-targets shape-id (:objects data))]
+            (not (invalid parent-id))))
+        
+        valid? (every? is-valid-move shapes)
+
+        ;; Add items into the :shapes property of the target parent-id
+        add-items
+        (fn [old-shapes]
+          (let [old-shapes (or old-shapes [])]
+            (if index
+              (d/insert-at-index old-shapes index shapes)
+              (into old-shapes shapes))))
+
+        ;; Remove from the old :shapes the references that have been moved
+        remove-in-parent
+        (fn [data shape-id]
+          (let [parent-id (child->parent shape-id)
+                filter-shape (partial filterv #(not (= % shape-id)) )
+                data-removed (update-in data [:objects parent-id :shapes] filter-shape)
+                parent (get-in data-removed [:objects parent-id])]
+            ;; When the group is empty we should remove it
+            (if (and (= :group (:type parent))
+                     (empty? (:shapes parent)))
+              (-> data-removed
+                  (update :objects dissoc parent-id )
+                  (recur parent-id))
+              data-removed)))
+
+        ;; Frame-id of the target element
+        frame-id (if (= :frame (get-in data [:objects parent-id :type]))
+                   parent-id
+                   (get-in data [:objects parent-id :frame-id]))
+
+        ;; Updates the frame-id references that might be outdated
+        update-frame-ids
+        (fn update-frame-ids [data shape-id]
+          (as-> data $
+            (assoc-in $ [:objects shape-id :frame-id] frame-id)
+            (reduce update-frame-ids $ (get-in $ [:objects shape-id :shapes]))))]
+    (if valid?
+      (as-> data $
+        (update-in $ [:objects parent-id :shapes] add-items)
+        (reduce remove-in-parent $ shapes)
+        (reduce update-frame-ids $ (get-in $ [:objects parent-id :shapes])))
+      data)))
 
 (defmethod process-operation :set
   [shape op]
