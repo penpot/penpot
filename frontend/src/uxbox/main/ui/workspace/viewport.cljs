@@ -256,7 +256,8 @@
                 key3 (events/listen dnode EventType.MOUSEMOVE on-mouse-move)
                 ;; bind with passive=false to allow the event to be cancelled
                 ;; https://stackoverflow.com/a/57582286/3219895
-                key4 (events/listen js/window EventType.WHEEL on-mouse-wheel #js {"passive" false})]
+                key4 (events/listen js/window EventType.WHEEL on-mouse-wheel
+                                    #js {"passive" false})]
             (fn []
               (events/unlistenByKey key1)
               (events/unlistenByKey key2)
