@@ -67,7 +67,7 @@
    returning id;")
 
 (def sql:create-icon-library
-  "insert into icon_library (team_id, name) 
+  "insert into icon_library (team_id, name)
    values ($1, $2)
    returning id;")
 
@@ -87,7 +87,7 @@
    :num-draft-files-per-profile 10
    :num-draft-pages-per-file 3})
 
-(defn rng-ids
+(defn- rng-ids
   [rng n max]
   (let [stream (->> (.longs rng 0 max)
                     (.iterator)
@@ -99,19 +99,19 @@
             #{}
             stream)))
 
-(defn rng-vec
+(defn- rng-vec
   [rng vdata n]
   (let [ids (rng-ids rng n (count vdata))]
     (mapv #(nth vdata %) ids)))
 
-(defn rng-nth
+(defn- rng-nth
   [rng vdata]
   (let [stream (->> (.longs rng 0 (count vdata))
                     (.iterator)
                     (iterator-seq))]
     (nth vdata (first stream))))
 
-(defn collect
+(defn- collect
   [f items]
   (reduce (fn [acc n]
             (p/then acc (fn [acc]
@@ -121,7 +121,7 @@
           (p/promise [])
           items))
 
-(defn run
+(defn impl-run
   [opts]
   (let [rng (java.util.Random. 1)
 
@@ -269,6 +269,17 @@
         (assign-teams-and-profiles conn teams (map :id profiles))
         (p/run! (partial create-draft-files conn) profiles)))))
 
+(defn run
+  [preset]
+  (let [preset (if (map? preset)
+                 preset
+                 (case preset
+                   (nil "small" :small) preset-small
+                   ;; "medium" preset-medium
+                   ;; "big" preset-big
+                   preset-small))]
+    (deref (impl-run preset))))
+
 (defn -main
   [& args]
   (try
@@ -277,12 +288,7 @@
                       #'uxbox.db/pool
                       #'uxbox.migrations/migrations})
         (mount/start))
-    (let [preset (case (first args)
-                   (nil "small") preset-small
-                   ;; "medium" preset-medium
-                   ;; "big" preset-big
-                   preset-small)]
-      (log/info "Using preset:" (pr-str preset))
-      (deref (run preset)))
+
+    (run (first args))
     (finally
       (mount/stop))))

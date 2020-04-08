@@ -310,8 +310,7 @@
 
 (defn- read-file
   [path]
-  (let [path (validate-path path)
-        reader (java.io.PushbackReader. (io/reader path))]
+  (let [reader (java.io.PushbackReader. (io/reader path))]
     [(fs/parent path)
      (read reader)]))
 
@@ -335,11 +334,16 @@
      (p/run! #(process-colors-library conn %) colors)
      nil)))
 
+(defn run
+  [path]
+  (p/let [[basedir data] (read-file path)]
+    (db/with-atomic [conn db/pool]
+      (importer conn basedir data))))
+
 (defn -main
   [& [path]]
-  (let [[basedir data] (read-file path)]
+  (let [path (validate-path path)]
     (start-system)
-    (-> (db/with-atomic [conn db/pool]
-          (importer conn basedir data))
-        (p/finally (fn [_ _]
-                     (stop-system))))))
+    (-> (run path)
+        (p/finally (fn [_ _] (stop-system))))))
+

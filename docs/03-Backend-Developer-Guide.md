@@ -10,9 +10,8 @@ This is a development feature that allows populate the database with a
 good amount of random content (usually used for just test the
 application or perform performance tweaks on queries).
 
-
 In order to load fixtures, enter to the REPL environment executing the
-`bin/repl` script, and then execute `(uxbox.fixtures/-main)`.
+`bin/repl` script, and then execute `(uxbox.fixtures/run :small)`.
 
 You also can execute this as a standalone script with:
 

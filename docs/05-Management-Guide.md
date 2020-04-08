@@ -36,6 +36,18 @@ respective defaults):
 - `UXBOX_DEBUG_HUMANIZE_TRANSIT=true`
 
 
+## REPL ##
+
+The production environment by default starts a server REPL where you
+can connect and perform diagnosis operations. For this you will need
+`netcat` or `telnet` installed in the server.
+
+```bash
+$ rlwrap netcat localhost 5555
+user=>
+```
+
+
 ## Collections import ##
 
 This is the way we can preload default collections of images and icons to the
@@ -63,4 +75,11 @@ Then, you need to execute:
 
 ```bash
 clojure -Adev -m uxbox.media-loader ../path/to/config.edn
+```
+
+If you have a REPL access to the running process, you can execute it from there:
+
+```clojure
+(require 'uxbox.media-loader)
+@(uxbox.media-loader/run "/path/to/config.edn")
 ```
