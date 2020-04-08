@@ -93,7 +93,6 @@
   (ptk/reify ::create-share-link
     ptk/WatchEvent
     (watch [_ state stream]
-      (prn "create-share-link")
       (let [id (get-in state [:viewer-local :page-id])]
         (->> (rp/mutation :generate-page-share-token {:id id})
              (rx/map (fn [{:keys [share-token]}]
@@ -103,7 +102,6 @@
   (ptk/reify ::delete-share-link
     ptk/WatchEvent
     (watch [_ state stream]
-      (prn "delete-share-link")
       (let [id (get-in state [:viewer-local :page-id])]
         (->> (rp/mutation :clear-page-share-token {:id id})
              (rx/map (fn [_]
