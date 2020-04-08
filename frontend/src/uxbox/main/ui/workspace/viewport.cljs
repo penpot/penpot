@@ -9,7 +9,6 @@
   (:require
    [beicon.core :as rx]
    [goog.events :as events]
-   [goog.object :as gobj]
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
@@ -17,15 +16,13 @@
    [uxbox.common.data :as d]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.hooks :refer [use-rxsub]]
+   [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.shapes :refer [shape-wrapper frame-wrapper]]
-   [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
-   [uxbox.main.ui.workspace.drawarea :refer [start-drawing]]
+   [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing]]
    [uxbox.main.ui.workspace.grid :refer [grid]]
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
@@ -39,7 +36,7 @@
 
 (mf/defc coordinates
   [{:keys [zoom] :as props}]
-  (let [coords (some-> (use-rxsub ms/mouse-position)
+  (let [coords (some-> (hooks/use-rxsub ms/mouse-position)
                        (gpt/divide (gpt/point zoom zoom))
                        (gpt/round 0))]
     [:ul.coordinates
@@ -50,7 +47,7 @@
 
 (mf/defc cursor-tooltip
   [{:keys [zoom tooltip] :as props}]
-  (let [coords (some-> (use-rxsub ms/mouse-position)
+  (let [coords (some-> (hooks/use-rxsub ms/mouse-position)
                        (gpt/divide (gpt/point zoom zoom)))
         pos-x (- (:x coords) 100)
         pos-y (+ (:y coords) 30)]
@@ -110,7 +107,7 @@
 (mf/defc frames-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [page     (gobj/get props "page")
+  (let [page     (unchecked-get props "page")
         page-id  (:id page)
         data-ref (-> (mf/deps page-id)
                      (mf/use-memo #(-> (l/in [:workspace-data page-id])
@@ -144,6 +141,7 @@
                 tooltip
                 selected]
          :as local} (mf/deref refs/workspace-local)
+
         viewport-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
 
@@ -244,7 +242,11 @@
         (fn [event]
           (when (kbd/ctrl? event)
             ;; Disable browser zoom with ctrl+mouse wheel
-            (dom/prevent-default event)))
+            (dom/prevent-default event)
+            (let [event (.getBrowserEvent event)]
+              (if (pos? (.-deltaY event))
+                (st/emit! dw/decrease-zoom)
+                (st/emit! dw/increase-zoom)))))
 
         on-mount
         (fn []

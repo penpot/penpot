@@ -37,24 +37,20 @@
 
 ;; --- Workspace
 
-(defn- on-scroll
-  [event]
-  (let [target (.-target event)
-        top (.-scrollTop target)
-        left (.-scrollLeft target)]
-    (st/emit! (ms/->ScrollEvent (gpt/point left top)))))
+;; (defn- on-scroll
+;;   [event]
+;;   (let [target (.-target event)
+;;         top (.-scrollTop target)
+;;         left (.-scrollLeft target)]
+;;     (st/emit! (ms/->ScrollEvent (gpt/point left top)))))
 
-(defn- on-wheel
-  [event frame]
-  (when (kbd/ctrl? event)
-    ;; global ctrl+wheel browser zoom must be disabled (see main/ui/workspace/wiewport.cljs)
-    (let [dom (mf/ref-val frame)
-          scroll-position (scroll/get-current-position-absolute dom)
-          mouse-point @ms/mouse-position]
-      (if (pos? (.-deltaY event))
-        (st/emit! dw/decrease-zoom)
-        (st/emit! dw/increase-zoom))
-      (scroll/scroll-to-point dom mouse-point scroll-position))))
+;; (defn- on-wheel
+;;   [event frame]
+;;   (when (kbd/ctrl? event)
+;;     (let [dom (mf/ref-val frame)
+;;           scroll-position (scroll/get-current-position-absolute dom)
+;;           mouse-point @ms/mouse-position]
+;;       (scroll/scroll-to-point dom mouse-point scroll-position))))
 
 (mf/defc workspace-content
   [{:keys [page file layout] :as params}]
@@ -73,8 +69,9 @@
 
      [:section.workspace-content
       {:class classes
-       :on-scroll on-scroll
-       :on-wheel #(on-wheel % frame)}
+       ;; :on-scroll on-scroll
+       ;; :on-wheel #(on-wheel % frame)
+       }
 
       [:& history-dialog]
 

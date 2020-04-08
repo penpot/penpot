@@ -52,8 +52,12 @@
         on-mouse-wheel
         (fn [event]
           (when (kbd/ctrl? event)
-            ;; Disable browser zoom with ctrl+mouse wheel
-            (dom/prevent-default event)))
+            (dom/prevent-default event)
+            (let [event (.getBrowserEvent event)]
+              (if (pos? (.-deltaY event))
+                (st/emit! dv/decrease-zoom)
+                (st/emit! dv/increase-zoom)))))
+
 
         on-mount
         (fn []
