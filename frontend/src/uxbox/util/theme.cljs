@@ -14,6 +14,7 @@
    [beicon.core :as rx]
    [goog.object :as gobj]
    [uxbox.config :as cfg]
+   [uxbox.util.dom :as dom]
    [uxbox.util.transit :as t]
    [uxbox.util.storage :refer [storage]]))
 
@@ -27,9 +28,12 @@
 
 (defn set-current-theme!
   [v]
-  (swap! storage assoc ::theme v)
-  (set! theme v)
-  (rx/push! theme-sub v))
+  (when (not= theme v)
+    (when-some [el (dom/get-element "theme")]
+      (set! (.-href el) (str "css/main-" v ".css")))
+    (swap! storage assoc ::theme v)
+    (set! theme v)
+    (rx/push! theme-sub v)))
 
 (defn set-default-theme!
   []

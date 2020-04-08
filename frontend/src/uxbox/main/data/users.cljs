@@ -13,7 +13,8 @@
    [uxbox.common.spec :as us]
    [uxbox.main.repo :as rp]
    [uxbox.util.i18n :as i18n :refer [tr]]
-   [uxbox.util.storage :refer [storage]]))
+   [uxbox.util.storage :refer [storage]]
+   [uxbox.util.theme :as theme]))
 
 ;; --- Common Specs
 
@@ -53,7 +54,9 @@
     (effect [_ state stream]
       (swap! storage assoc :profile data)
       (when-let [lang (:lang data)]
-        (i18n/set-current-locale! lang)))))
+        (i18n/set-current-locale! lang))
+      (when-let [theme (:theme data)]
+        (theme/set-current-theme! theme)))))
 
 ;; --- Fetch Profile
 
