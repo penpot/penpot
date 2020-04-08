@@ -2072,7 +2072,9 @@
       (watch [_ state stream]
         (let [selected (get-in state [:workspace-local :selected])
               cdata    (prepare-selected state selected)]
-          (->> (rx/from (wapi/write-to-clipboard cdata))
+          (->> (t/encode cdata)
+               (wapi/write-to-clipboard)
+               (rx/from)
                (rx/catch on-copy-error)
                (rx/ignore)))))))
 
@@ -2160,12 +2162,13 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rx/from (wapi/read-from-clipboard))
+           (rx/map t/decode)
            (rx/filter #(= :copied-shapes (:type %)))
            (rx/pr-log "pasting:")
            (rx/map :data)
            (rx/map paste-impl)
            (rx/catch (fn [err]
-                       (js/console.error "Clipboard blocked:" err)
+                       (js/console.error "Clipboard error:" err)
                        (rx/empty)))))))
 
 (defn select-pasted-objs

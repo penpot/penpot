@@ -69,18 +69,15 @@
 
 (defn write-to-clipboard
   [data]
+  (assert (string? data) "`data` should be string")
   (let [cboard (unchecked-get js/navigator "clipboard")]
-    (.writeText cboard (uxbox.util.transit/encode data))))
+    (.writeText cboard data)))
 
 (defn- read-from-clipboard
   []
   (let [cboard (unchecked-get js/navigator "clipboard")]
     (-> (.readText cboard)
-        (p/then (fn [data]
-                  (try
-                    (t/decode data)
-                    (catch :default e
-                      nil)))))))
+        (p/then identity))))
 
 (defn request-fullscreen
   [el]
