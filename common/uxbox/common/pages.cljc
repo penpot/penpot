@@ -15,6 +15,10 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]))
 
+;; TODO: should be replaced when uuid is unified under
+;; uxbox.common.uuid namespace.
+(def uuid-zero #uuid "00000000-0000-0000-0000-000000000000")
+
 ;; --- Specs
 
 (s/def ::id uuid?)
@@ -53,7 +57,7 @@
 (s/def ::ry number?)
 (s/def ::stroke-color string?)
 (s/def ::stroke-opacity number?)
-(s/def ::stroke-style #{:none :solid :dotted :dashed :mixed})
+(s/def ::stroke-style #{:solid :dotted :dashed :mixed :none})
 (s/def ::stroke-width number?)
 (s/def ::text-align #{"left" "right" "center" "justify"})
 (s/def ::type #{:rect :path :circle :image :text :canvas :curve :icon :frame :group})
@@ -162,6 +166,16 @@
      :type :frame
      :name "root"
      :shapes []}}})
+
+(def default-shape-attrs
+  {:fill-color "#000000"
+   :fill-opacity 1})
+
+(def default-frame-attrs
+  {:frame-id uuid-zero
+   :fill-color "#ffffff"
+   :fill-opacity 1
+   :shapes []})
 
 ;; --- Changes Processing Impl
 

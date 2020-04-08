@@ -1228,13 +1228,6 @@
       "fr" : "Mixte"
     }
   },
-  "workspace.options.stroke.none" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:66" ],
-    "translations" : {
-      "en" : "None",
-      "fr" : "Aucun"
-    }
-  },
   "workspace.options.stroke.solid" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:67" ],
     "translations" : {

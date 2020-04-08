@@ -966,12 +966,6 @@
 
 (declare select-shape)
 
-(def shape-default-attrs
-  {:stroke-color "#000000"
-   :stroke-opacity 1
-   :fill-color "#000000"
-   :fill-opacity 1})
-
 (defn- calculate-frame-overlap
   [objects shape]
   (let [rshp (geom/shape->rect-shape shape)
@@ -1000,7 +994,7 @@
               shape    (-> (geom/setup-proportions attrs)
                            (assoc :id id))
               frame-id (calculate-frame-overlap objects shape)
-              shape    (merge shape-default-attrs shape {:frame-id frame-id})]
+              shape    (merge cp/default-shape-attrs shape {:frame-id frame-id})]
           (-> state
               (impl-assoc-shape shape)
               (assoc-in [:workspace-local :selected] #{id}))))
@@ -1016,14 +1010,6 @@
                                  [{:type :del-obj
                                    :id id}])))))))
 
-(def frame-default-attrs
-  {:stroke-color "#000000"
-   :stroke-opacity 1
-   :frame-id uuid/zero
-   :fill-color "#ffffff"
-   :shapes []
-   :fill-opacity 1})
-
 (defn add-frame
   [data]
   (us/verify ::shape-attrs data)
@@ -1033,7 +1019,7 @@
       (update [_ state]
         (let [shape (-> (geom/setup-proportions data)
                         (assoc :id id))
-              shape (merge frame-default-attrs shape)]
+              shape (merge cp/default-frame-attrs shape)]
           (impl-assoc-shape state shape)))
 
       ptk/WatchEvent
@@ -2261,6 +2247,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Shortcuts impl https://github.com/ccampbell/mousetrap
 
 (def shortcuts
   {"ctrl+shift+m" #(st/emit! (toggle-layout-flag :sitemap))

@@ -27,7 +27,7 @@
                    :fillOpacity (:fill-opacity shape nil)
                    :rx (:rx shape nil)
                    :ry (:ry shape nil)}]
-    (when (not= :none stroke-style)
+    (when (not= stroke-style :none)
       (itr/obj-assign! attrs
                        #js {:stroke (:stroke-color shape nil)
                             :strokeWidth (:stroke-width shape nil)

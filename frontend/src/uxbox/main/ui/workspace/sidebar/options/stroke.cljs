@@ -39,6 +39,16 @@
                           (d/parse-integer 0))]
             (st/emit! (udw/update-shape (:id shape) {:stroke-width value}))))
 
+        on-add-stroke
+        (fn [event]
+          (st/emit! (udw/update-shape (:id shape) {:stroke-style :solid
+                                                   :stroke-color "#000000"
+                                                   :stroke-opacity 1})))
+
+        on-del-stroke
+        (fn [event]
+          (st/emit! (udw/update-shape (:id shape) {:stroke-style :none})))
+
         on-stroke-opacity-change
         (fn [event]
           (let [value (-> (dom/get-target event)
@@ -58,60 +68,61 @@
                        :transparent? true}]
             (modal/show! colorpicker-modal props)))]
 
-    ;; COLLAPSED
-    ;; [:div.element-set
-    ;;  [:div.element-set-title (tr "workspace.options.stroke")]
-    ;;  [:div.add-page i/close]]
+    (if (not= :none (:stroke-style shape :none))
+      [:div.element-set
+       [:div.element-set-title (t locale "workspace.options.stroke")]
+       [:div.add-page {:on-click on-del-stroke} i/close]
 
-    ;; EXPANDED
-    [:div.element-set
-     [:div.element-set-title (t locale "workspace.options.stroke")]
-     [:div.element-set-content
+       [:div.element-set-content
 
-      ;; Stroke Color
-      [:div.row-flex.color-data
-       [:span.color-th {:style {:background-color (:stroke-color shape)}
-                        :on-click show-color-picker}]
-       [:div.color-info
-        [:input {:read-only true
-                 :key (:stroke-color shape)
-                 :default-value (:stroke-color shape)}]]
+        ;; Stroke Color
+        [:div.row-flex.color-data
+         [:span.color-th {:style {:background-color (:stroke-color shape)}
+                          :on-click show-color-picker}]
+         [:div.color-info
+          [:input {:read-only true
+                   :key (:stroke-color shape)
+                   :default-value (:stroke-color shape)}]]
 
-       [:div.input-element.percentail
-        [:input.input-text {:placeholder ""
-                            :value (str (-> (:stroke-opacity shape)
-                                            (d/coalesce 1)
-                                            (* 100)
-                                            (math/round)))
-                            :type "number"
-                            :on-change on-stroke-opacity-change
-                            :min "0"
-                            :max "100"}]]
+         [:div.input-element.percentail
+          [:input.input-text {:placeholder ""
+                              :value (str (-> (:stroke-opacity shape)
+                                              (d/coalesce 1)
+                                              (* 100)
+                                              (math/round)))
+                              :type "number"
+                              :on-change on-stroke-opacity-change
+                              :min "0"
+                              :max "100"}]]
 
-       [:input.slidebar {:type "range"
-                         :min "0"
-                         :max "100"
-                         :value (str (-> (:stroke-opacity shape)
-                                         (d/coalesce 1)
-                                         (* 100)
-                                         (math/round)))
-                         :step "1"
-                         :on-change on-stroke-opacity-change}]]
+         [:input.slidebar {:type "range"
+                           :min "0"
+                           :max "100"
+                           :value (str (-> (:stroke-opacity shape)
+                                           (d/coalesce 1)
+                                           (* 100)
+                                           (math/round)))
+                           :step "1"
+                           :on-change on-stroke-opacity-change}]]
 
-      ;; Stroke Style & Width
-      [:div.row-flex
-       [:select#style.input-select {:value (pr-str (:stroke-style shape))
-                                    :on-change on-stroke-style-change}
-        [:option {:value ":none"} (t locale "workspace.options.stroke.none")]
-        [:option {:value ":solid"} (t locale "workspace.options.stroke.solid")]
-        [:option {:value ":dotted"} (t locale "workspace.options.stroke.dotted")]
-        [:option {:value ":dashed"} (t locale "workspace.options.stroke.dashed")]
-        [:option {:value ":mixed"} (t locale "workspace.options.stroke.mixed")]]
+        ;; Stroke Style & Width
+        [:div.row-flex
+         [:select#style.input-select {:value (pr-str (:stroke-style shape))
+                                      :on-change on-stroke-style-change}
+          [:option {:value ":solid"} (t locale "workspace.options.stroke.solid")]
+          [:option {:value ":dotted"} (t locale "workspace.options.stroke.dotted")]
+          [:option {:value ":dashed"} (t locale "workspace.options.stroke.dashed")]
+          [:option {:value ":mixed"} (t locale "workspace.options.stroke.mixed")]]
 
-       [:div.input-element.pixels
-        [:input.input-text {:type "number"
-                            :min "0"
-                            :value (str (-> (:stroke-width shape)
-                                            (d/coalesce 1)
-                                            (math/round)))
-                            :on-change on-stroke-width-change}]]]]]))
+         [:div.input-element.pixels
+          [:input.input-text {:type "number"
+                              :min "0"
+                              :value (str (-> (:stroke-width shape)
+                                              (d/coalesce 1)
+                                              (math/round)))
+                              :on-change on-stroke-width-change}]]]]]
+
+      ;; NO STROKE
+      [:div.element-set
+       [:div.element-set-title (t locale "workspace.options.stroke")]
+       [:div.add-page {:on-click on-add-stroke} i/close]])))
