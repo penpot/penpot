@@ -104,7 +104,7 @@
   {::mf/wrap-props false}
   [props]
   [:section.debug-icons-preview
-   (for [[key val] (ns-publics 'uxbox.builtins.icons)]
+   (for [[key val] (sort-by first (ns-publics 'uxbox.builtins.icons))]
      (when (not= key 'debug-icons-preview)
        [:div.icon-item {:key key}
         (deref val)
