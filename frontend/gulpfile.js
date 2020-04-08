@@ -124,6 +124,7 @@ function templatePipeline(options) {
     const output = options.output;
     const ts = Math.floor(new Date());
     const th = process.env.UXBOX_THEME || 'light';
+    const themes = ['light', 'dark'];
 
     const locales = readLocales();
     const config = readConfig();
@@ -133,6 +134,7 @@ function templatePipeline(options) {
       th: th,
       config: JSON.stringify(config),
       translations: JSON.stringify(locales),
+      themes: themes,
     });
 
     return gulp.src(input)
