@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+// Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .login {
   align-items: center;
@@ -24,7 +24,7 @@
     flex-direction: column;
 
     svg {
-      fill: $color-white;
+      fill: $color-black;
       height: 70px;
       margin-bottom: $x-big;
       width: 200px;
@@ -39,9 +39,9 @@
 
       .input-text {
         background-color: transparent;
-        border-color: $color-gray;
-        color: $color-gray-lighter;
-        font-size: $fs18;
+        border-color: $color-black;
+        color: $color-black;
+        font-size: $fs16;
         margin-bottom: $big*2;
 
         @include placeholder {
@@ -51,13 +51,13 @@
         &:hover {
 
           @include placeholder {
-            color: $color-white;
+            color: $color-black;
           }
 
         }
 
         &:focus {
-          background-color: rgba(255,255,255,.3);
+          background-color: $color-white;
           border-color: $color-gray-lighter;
         }
 
@@ -99,8 +99,17 @@
         margin-top: $medium;
 
         a {
+          color: $color-black;
           text-align: center;
+
+          &:hover {
+            color: $color-primary-dark;
+          }
         }
+      }
+
+      .btn-dashboard {
+        margin-top: 5rem;
       }
 
     }
