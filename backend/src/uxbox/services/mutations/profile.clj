@@ -46,6 +46,7 @@
 (s/def ::profile-id ::us/uuid)
 (s/def ::password ::us/string)
 (s/def ::old-password ::us/string)
+(s/def ::theme ::us/string)
 
 
 ;; --- Mutation: Login
@@ -96,20 +97,21 @@
 (def ^:private sql:update-profile
   "update profile
       set fullname = $2,
-          lang = $3
+          lang = $3,
+          theme = $4
     where id = $1
       and deleted_at is null
    returning *")
 
 (defn- update-profile
-  [conn {:keys [id fullname lang] :as params}]
-  (let [sqlv [sql:update-profile id fullname lang]]
+  [conn {:keys [id fullname lang theme] :as params}]
+  (let [sqlv [sql:update-profile id fullname lang theme]]
     (-> (db/query-one conn sqlv)
         (p/then' su/raise-not-found-if-nil)
         (p/then' profile/strip-private-attrs))))
 
 (s/def ::update-profile
-  (s/keys :req-un [::id ::fullname ::lang]))
+  (s/keys :req-un [::id ::fullname ::lang ::theme]))
 
 (sm/defmutation ::update-profile
   [params]
