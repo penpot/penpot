@@ -16,7 +16,7 @@
    [uxbox.util.transit :as t]
    [uxbox.util.storage :refer [storage]]))
 
-(defonce locale (get storage ::locale cfg/default-language))
+(defonce locale (get storage ::locale cfg/default-lang))
 (defonce locale-sub (rx/subject))
 (defonce translations #js {})
 
@@ -38,7 +38,7 @@
 
 (defn set-default-locale!
   []
-  (set-current-locale! cfg/default-language))
+  (set-current-locale! cfg/default-lang))
 
 (deftype C [val]
   IDeref

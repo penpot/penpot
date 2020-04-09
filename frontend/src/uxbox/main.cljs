@@ -60,13 +60,6 @@
     (mf/mount (mf/element modal) (dom/get-element "modal"))
     (mf/mount (mf/element loader) (dom/get-element "loader"))
 
-    ;; TODO Update theme href attribute based on user theme
-    ;;(letfn [(on-theme [dom theme]
-    ;;          (set! (href dom) (+ "css/main-" theme ".css"))))]
-    ;;  (let [theme (theme/use-theme)
-    ;;            dom (dom/get-element "theme")]
-    ;;        (-> (rx/subscribe #(theme-sub dom theme)))))
-
     (on-navigate router cpath)))
 
 (def app-sym (.for js/Symbol "uxbox.app"))
