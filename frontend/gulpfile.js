@@ -149,12 +149,12 @@ function templatePipeline(options) {
  ***********************************************/
 
 gulp.task("scss:main-light", scssPipeline({
-  input: paths.app + "styles/main-light.scss",
+  input: paths.resources + "styles/main-light.scss",
   output: paths.output + "css/main-light.css"
 }));
 
 gulp.task("scss:main-dark", scssPipeline({
-  input: paths.app + "styles/main-dark.scss",
+  input: paths.resources + "styles/main-dark.scss",
   output: paths.output + "css/main-dark.css"
 }));
 
