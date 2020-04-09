@@ -1445,14 +1445,14 @@
         (rx/of (commit-changes [rchange] [uchange]))))))
 
 
-;; --- Shape / Selection Alignment
+;; --- Shape / Selection Alignment and Distribution
 
 (declare align-object-to-frame)
 (declare align-objects-list)
 
 (defn align-objects
   [axis]
-  (us/verify ::geom/axis axis)
+  (us/verify ::geom/align-axis axis)
   (ptk/reify :align-objects
     IBatchedChange
     ptk/UpdateEvent
@@ -1477,6 +1477,21 @@
   (let [selected-objs (map #(get objects %) selected)
         rect (geom/selection-rect selected-objs)]
     (map #(geom/align-to-rect % rect axis) selected-objs)))
+
+(defn distribute-objects
+  [axis]
+  (us/verify ::geom/dist-axis axis)
+  (ptk/reify :align-objects
+    IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (::page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            selected (get-in state [:workspace-local :selected])
+            selected-objs (map #(get objects %) selected)
+            moved-objs (geom/distribute-space selected-objs axis)
+            updated-objs (merge objects (d/index-by :id moved-objs))]
+        (assoc-in state [:workspace-data page-id :objects] updated-objs)))))
 
 
 ;; --- Temportal displacement for Shape / Selection

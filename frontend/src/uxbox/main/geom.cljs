@@ -107,7 +107,6 @@
 
 ;; --- Size
 
-(declare size-rect)
 (declare size-circle)
 (declare size-path)
 
@@ -140,6 +139,39 @@
   [{:keys [rx ry] :as shape}]
   (merge shape {:width (* rx 2)
                 :height (* ry 2)}))
+
+;; --- Center
+
+(declare center-rect)
+(declare center-circle)
+(declare center-path)
+
+(defn center
+  "Calculate the center of the shape."
+  [shape]
+  (case (:type shape)
+    :circle (center-circle shape)
+    :curve (center-path shape)
+    :path (center-path shape)
+    (center-rect shape)))
+
+(defn- center-rect
+  [{:keys [x y width height] :as shape}]
+  (gpt/point (+ x (/ width 2)) (+ y (/ height 2))))
+
+(defn- center-circle
+  [{:keys [cx cy] :as shape}]
+  (gpt/point cx cy))
+
+(defn- center-path
+  [{:keys [segments x1 y1 x2 y2] :as shape}]
+  (if (and x1 y1 x2 y2)
+    (gpt/point (/ (+ x1 x2) 2) (/ (+ y1 y2) 2))
+    (let [minx (apply min (map :x segments))
+          miny (apply min (map :y segments))
+          maxx (apply max (map :x segments))
+          maxy (apply max (map :y segments))]
+      (gpt/point (/ (+ minx maxx) 2) (/ (+ miny maxy) 2)))))
 
 ;; --- Proportions
 
@@ -566,10 +598,9 @@
   [shape {:keys [x y] :as frame}]
   (move shape (gpt/point (+ x) (+ y))))
 
-
 ;; --- Alignment
 
-(s/def ::axis #{:hleft :hcenter :hright :vtop :vcenter :vbottom})
+(s/def ::align-axis #{:hleft :hcenter :hright :vtop :vcenter :vbottom})
 
 (declare calc-align-pos)
 
@@ -611,6 +642,51 @@
     :vbottom (let [bottom (+ (:y rect) (:height rect))]
                {:x (:x wrapper-rect)
                 :y (- bottom (:height wrapper-rect))})))
+
+;; --- Distribute
+
+(s/def ::dist-axis #{:horizontal :vertical})
+
+(defn distribute-space
+  "Distribute equally the space between shapes in the given axis. If
+  there is no space enough, it does nothing. It takes into account
+  the form of the shape and the rotation, what is distributed is
+  the wrapping recangles of the shapes."
+  [shapes axis]
+  (let [coord (if (= axis :horizontal) :x :y)
+        other-coord (if (= axis :horizontal) :y :x)
+        size (if (= axis :horizontal) :width :height)
+        ; The rectangle that wraps the whole selection
+        wrapper-rect (selection-rect shapes)
+        ; Sort shapes by the center point in the given axis
+        sorted-shapes (sort-by #(coord (center %)) shapes)
+        ; Each shape wrapped in its own rectangle
+        wrapped-shapes (map #(selection-rect [%]) sorted-shapes)
+        ; The total space between shapes
+        space (reduce - (size wrapper-rect) (map size wrapped-shapes))]
+
+    (if (<= space 0)
+      shapes
+      (let [unit-space (/ space (- (count wrapped-shapes) 1))
+            ; Calculate the distance we need to move each shape.
+            ; The new position of each one is the position of the
+            ; previous one plus its size plus the unit space.
+            deltas (loop [shapes' wrapped-shapes
+                          start-pos (coord wrapper-rect)
+                          deltas []]
+
+                     (let [first-shape (first shapes')
+                           delta (- start-pos (coord first-shape))
+                           new-pos (+ start-pos (size first-shape) unit-space)]
+
+                       (if (= (count shapes') 1)
+                         (conj deltas delta)
+                         (recur (rest shapes')
+                                new-pos
+                                (conj deltas delta)))))]
+
+        (map #(move %1 {coord %2 other-coord 0}) sorted-shapes deltas)))))
+
 
 ;; --- Helpers
 

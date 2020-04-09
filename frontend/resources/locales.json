@@ -145,19 +145,19 @@
     }
   },
   "dashboard.sidebar.drafts" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:112" ],
     "translations" : {
       "en" : "Drafts"
     }
   },
   "dashboard.sidebar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:120" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:119" ],
     "translations" : {
       "en" : "Libraries"
     }
   },
   "dashboard.sidebar.recent" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:106" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:105" ],
     "translations" : {
       "en" : "Recent"
     }
@@ -188,11 +188,11 @@
     }
   },
   "ds.cancel" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:115" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    },
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:115" ]
+    }
   },
   "ds.confirm-cancel" : {
     "used-in" : [ "src/uxbox/main/ui/confirm.cljs:19" ],
@@ -223,18 +223,18 @@
     "unused" : true
   },
   "ds.history.pinned" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:96" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    },
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:96" ]
+    }
   },
   "ds.history.versions" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:93" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    },
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:93" ]
+    }
   },
   "ds.icons-collection.new" : {
     "translations" : {
@@ -258,18 +258,18 @@
     }
   },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:176" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:175" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher..."
     }
   },
   "ds.settings.document-history" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:87" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    },
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/history.cljs:87" ]
+    }
   },
   "ds.store-colors-title" : {
     "translations" : {
@@ -628,49 +628,49 @@
     }
   },
   "settings.profile.lang" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:92" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:88" ],
     "translations" : {
       "en" : "Default language",
       "fr" : "Langue par défaut"
     }
   },
   "settings.profile.profile-saved" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:51" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:47" ],
     "translations" : {
       "en" : "Profile saved successfully!",
       "fr" : "Profil enregistré avec succès !"
     }
   },
   "settings.profile.section-basic-data" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:66" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:62" ],
     "translations" : {
       "en" : "Name, username and email",
       "fr" : "Nom, nom d'utilisateur et adresse email"
     }
   },
   "settings.profile.your-avatar" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:138" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:134" ],
     "translations" : {
       "en" : "Your avatar",
       "fr" : "Votre avatar"
     }
   },
   "settings.profile.your-email" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:87" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:83" ],
     "translations" : {
       "en" : null,
       "fr" : null
     }
   },
   "settings.profile.your-name" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:75" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:71" ],
     "translations" : {
       "en" : "Your name",
       "fr" : "Votre nom complet"
     }
   },
   "settings.update-settings" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/notifications.cljs:42", "src/uxbox/main/ui/settings/password.cljs:102", "src/uxbox/main/ui/settings/profile.cljs:105" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/notifications.cljs:42", "src/uxbox/main/ui/settings/password.cljs:102", "src/uxbox/main/ui/settings/profile.cljs:101" ],
     "translations" : {
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres"
@@ -728,6 +728,54 @@
     "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:97" ],
     "translations" : {
       "en" : "Sitemap"
+    }
+  },
+  "workspace.align.hcenter" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:51" ],
+    "translations" : {
+      "en" : "Align horizontal center"
+    }
+  },
+  "workspace.align.hdistribute" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:63" ],
+    "translations" : {
+      "en" : "Distribute horizontal spacing"
+    }
+  },
+  "workspace.align.hleft" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:45" ],
+    "translations" : {
+      "en" : "Align left"
+    }
+  },
+  "workspace.align.hright" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:57" ],
+    "translations" : {
+      "en" : "Align right"
+    }
+  },
+  "workspace.align.vbottom" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:82" ],
+    "translations" : {
+      "en" : "Align bottom"
+    }
+  },
+  "workspace.align.vcenter" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:76" ],
+    "translations" : {
+      "en" : "Align vertical center"
+    }
+  },
+  "workspace.align.vdistribute" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:88" ],
+    "translations" : {
+      "en" : "Distribute vertical spacing"
+    }
+  },
+  "workspace.align.vtop" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:70" ],
+    "translations" : {
+      "en" : "Align top"
     }
   },
   "workspace.header.menu.hide-grid" : {
@@ -897,21 +945,21 @@
     "unused" : true
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:97", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:126", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:99", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:94" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:97", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:99", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:94", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:126" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
     }
   },
   "workspace.options.radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:132", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:141", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:137", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:136" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:141", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:137", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:132", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:136" ],
     "translations" : {
       "en" : "Radius",
       "fr" : "TODO"
     }
   },
   "workspace.options.rotation" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:110", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:118", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:118", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:110", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:113" ],
     "translations" : {
       "en" : "Rotation",
       "fr" : "TODO"
@@ -925,7 +973,7 @@
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:101", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:67" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:67", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:101" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
@@ -938,35 +986,35 @@
     }
   },
   "workspace.options.stroke" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:73", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:127" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:74", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:129" ],
     "translations" : {
       "en" : "Stroke",
       "fr" : null
     }
   },
   "workspace.options.stroke.dashed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:114" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:115" ],
     "translations" : {
       "en" : "Dashed",
       "fr" : "Tiré"
     }
   },
   "workspace.options.stroke.dotted" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:114" ],
     "translations" : {
       "en" : "Dotted",
       "fr" : "Pointillé"
     }
   },
   "workspace.options.stroke.mixed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:115" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:116" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : "Mixte"
     }
   },
   "workspace.options.stroke.solid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:113" ],
     "translations" : {
       "en" : "Solid",
       "fr" : "Solide"
