@@ -1447,21 +1447,37 @@
 
 ;; --- Shape / Selection Alignment
 
-(defn initial-selection-align
-  "Align the selection of shapes."
-  [ids]
-  (us/verify ::set-of-uuid ids)
-  (ptk/reify ::initialize-shapes-align-in-bulk
-    ptk/WatchEvent
-    (watch [_ state stream]
-      #_(let [shapes-by-id (get-in state [:workspace-data :objects])
-            shapes (mapv #(get shapes-by-id %) ids)
-            sshape (geom/shapes->rect-shape shapes)
-            point (gpt/point (:x1 sshape)
-                             (:y1 sshape))]
-        (->> (uwrk/align-point point)
-             (rx/map (fn [{:keys [x y] :as pt}]
-                       (apply-displacement-in-bulk ids (gpt/subtract pt point)))))))))
+(declare align-object-to-frame)
+(declare align-objects-list)
+
+(defn align-objects
+  [axis]
+  (us/verify ::geom/axis axis)
+  (ptk/reify :align-objects
+    IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (::page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            selected (get-in state [:workspace-local :selected])
+            moved-objs (if (= 1 (count selected))
+                         [(align-object-to-frame objects (first selected) axis)]
+                         (align-objects-list objects selected axis))
+            updated-objs (merge objects (d/index-by :id moved-objs))]
+        (assoc-in state [:workspace-data page-id :objects] updated-objs)))))
+
+(defn align-object-to-frame
+  [objects object-id axis]
+  (let [object (get objects object-id)
+        frame (get objects (:frame-id object))]
+    (geom/align-to-rect object frame axis)))
+
+(defn align-objects-list
+  [objects selected axis]
+  (let [selected-objs (map #(get objects %) selected)
+        rect (geom/selection-rect selected-objs)]
+    (map #(geom/align-to-rect % rect axis) selected-objs)))
+
 
 ;; --- Temportal displacement for Shape / Selection
 
