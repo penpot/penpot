@@ -11,6 +11,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [uxbox.common.spec :as us]
+   [uxbox.config :as cfg]
    [uxbox.main.repo :as rp]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.storage :refer [storage]]
@@ -22,14 +23,13 @@
 (s/def ::fullname ::us/string)
 (s/def ::email ::us/email)
 (s/def ::password ::us/string)
-(s/def ::language ::us/string)
-(s/def ::theme string?)
+(s/def ::lang ::us/string)
+(s/def ::theme ::us/string)
 (s/def ::photo ::us/string)
 (s/def ::created-at ::us/inst)
 (s/def ::password-1 ::us/string)
 (s/def ::password-2 ::us/string)
 (s/def ::password-old ::us/string)
-(s/def ::lang (s/nilable ::us/string))
 
 (s/def ::profile
   (s/keys :req-un [::id]
@@ -48,15 +48,16 @@
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :profile data))
+      (assoc state :profile (cond-> data
+                              (nil? (:land data)) (assoc :lang cfg/default-lang)
+                              (nil? (:theme data)) (assoc :theme cfg/default-theme))))
 
     ptk/EffectEvent
     (effect [_ state stream]
-      (swap! storage assoc :profile data)
-      (when-let [lang (:lang data)]
-        (i18n/set-current-locale! lang))
-      (when-let [theme (:theme data)]
-        (theme/set-current-theme! theme)))))
+      (let [profile (:profile state)]
+        (swap! storage assoc :profile profile)
+        (i18n/set-current-locale! (:lang profile))
+        (theme/set-current-theme! (:theme profile))))))
 
 ;; --- Fetch Profile
 

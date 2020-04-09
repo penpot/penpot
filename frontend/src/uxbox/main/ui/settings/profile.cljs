@@ -87,7 +87,7 @@
                          :field :email}]
 
      [:span.settings-label (t locale "settings.profile.lang")]
-     [:select.input-select {:value (or (:lang data) "en")
+     [:select.input-select {:value (:lang data)
                             :name "lang"
                             :class (fm/error-class form :lang)
                             :on-blur (fm/on-input-blur form :lang)
