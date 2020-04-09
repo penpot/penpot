@@ -7,13 +7,23 @@
 
 .align-options {
   display: flex;
-  width: 100%;
-  justify-content: space-evenly;
   border-bottom: solid 1px $color-gray-60;
+  height: 37px;
+  padding: 0 $x-small;
+
+  .align-group {
+    display: flex;
+    justify-content: space-evenly;
+    width: 100%;
+
+    &:not(:last-child) {
+      border-right: solid 1px $color-gray-60;
+    }
+  }
 
   .align-button {
     cursor: pointer;
-    padding: $small;
+    padding: $small $x-small;
     svg {
       height: 16px;
       width: 16px;
