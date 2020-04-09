@@ -2,8 +2,8 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 (ns uxbox.main.ui.workspace.sidebar.options.text
   (:require
@@ -65,12 +65,11 @@
         on-pos-y-change #(on-position-change % :y)]
 
     [:div.element-set
-     [:div.element-set-title (tr "workspace.options.measures")]
      [:div.element-set-content
-      [:span (tr "workspace.options.size")]
 
       ;; WIDTH & HEIGHT
       [:div.row-flex
+       [:span (tr "workspace.options.size")]
        [:div.input-element.pixels
         [:input.input-text {:type "number"
                             :min "0"
@@ -199,7 +198,6 @@
     [:div.element-set
      [:div.element-set-title (tr "workspace.options.font-options")]
      [:div.element-set-content
-      [:span (tr "workspace.options.font-family")]
       [:div.row-flex
        [:select.input-select {:value font-family
                               :on-change on-font-family-change}
@@ -208,7 +206,6 @@
                     :key (:id font)}
            (:name font)])]]
 
-      [:span (tr "workspace.options.font-weight")]
       [:div.row-flex
        [:div.editable-select
         [:select.input-select {:value font-size
@@ -240,39 +237,106 @@
                     :key (:name style)}
            (:name style)])]]
 
-      [:span (tr "workspace.options.line-height-letter-spacing")]
-      [:div.row-flex
-       [:input.input-text {:type "number"
-                           :step "0.1"
-                           :min "0"
-                           :max "200"
-                           :value (-> line-height
-                                      (math/precision 2)
-                                      (d/coalesce-str "0"))
-                           :on-change on-font-line-height-change}]
-       [:input.input-text {:type "number"
-                           :step "0.1"
-                           :min "0"
-                           :max "200"
-                           :value (-> letter-spacing
-                                      (math/precision 2)
-                                      (d/coalesce-str "0"))
-                           :on-change on-font-letter-spacing-change}]]
-
-      [:span (tr "workspace.options.text-align")]
       [:div.row-flex.align-icons
-       [:span {:class (when (= text-align "left") "current")
+       [:span.tooltip.tooltip-bottom
+               {:alt "Align left"
+               :class (when (= text-align "left") "current")
                :on-click #(on-font-align-change % "left")}
         i/text-align-left]
-       [:span {:class (when (= text-align "center") "current")
+       [:span.tooltip.tooltip-bottom
+               {:alt "Align center"
+               :class (when (= text-align "center") "current")
                :on-click #(on-font-align-change % "center")}
         i/text-align-center]
-       [:span {:class (when (= text-align "right") "current")
+       [:span.tooltip.tooltip-bottom
+               {:alt "Align right"
+               :class (when (= text-align "right") "current")
                :on-click #(on-font-align-change % "right")}
         i/text-align-right]
-       [:span {:class (when (= text-align "justify") "current")
+       [:span.tooltip.tooltip-bottom
+               {:alt "Justify"
+               :class (when (= text-align "justify") "current")
                :on-click #(on-font-align-change % "justify")}
-        i/text-align-justify]]]]))
+        i/text-align-justify]]
+
+      [:div.row-flex
+       [:div.input-icon
+        [:span.icon-before.tooltip.tooltip-bottom
+                           {:alt "Line height"} 
+                           i/line-height]
+        [:input.input-text {:type "number"
+                            :step "0.1"
+                            :min "0"
+                            :max "200"
+                            :value (-> line-height
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))
+                            :on-change on-font-line-height-change}]]
+       [:div.input-icon
+        [:span.icon-before.tooltip.tooltip-bottom
+                           {:alt "Letter spacing"} 
+                           i/letter-spacing]
+        [:input.input-text {:type "number"
+                            :step "0.1"
+                            :min "0"
+                            :max "200"
+                            :value (-> letter-spacing
+                                       (math/precision 2)
+                                       (d/coalesce-str "0"))
+                            :on-change on-font-letter-spacing-change}]]]
+
+      [:div.row-flex
+       [:div.align-icons
+        [:span.tooltip.tooltip-bottom
+               {:alt "Align top"}
+         i/align-top]
+        [:span.tooltip.tooltip-bottom
+               {:alt "Align middle"}
+         i/align-middle]
+        [:span.tooltip.tooltip-bottom
+               {:alt "Align bottom"}
+         i/align-bottom]]
+
+       [:div.align-icons
+        [:span.tooltip.tooltip-bottom
+               {:alt "Auto height"}
+         i/auto-height]
+        [:span.tooltip.tooltip-bottom
+               {:alt "Auto width"}
+         i/auto-width]
+        [:span.tooltip.tooltip-bottom
+               {:alt "Fixed size"}
+         i/auto-fix]]]
+
+      [:div.row-flex
+       [:span.element-set-subtitle "Decoration"]
+       [:div.align-icons
+        [:span.tooltip.tooltip-bottom
+               {:alt "None"}
+         i/minus]
+        [:span.tooltip.tooltip-bottom
+               {:alt "Underline"}
+         i/underline]
+        [:span.tooltip.tooltip-bottom
+               {:alt "Strikethrough"}
+         i/strikethrough]]]
+
+      [:div.row-flex
+       [:span.element-set-subtitle "Case"]
+       [:div.align-icons
+        [:span.tooltip.tooltip-bottom
+               {:alt "None"}
+         i/minus]
+        [:span.tooltip.tooltip-bottom
+               {:alt "Uppercase"}
+         i/uppercase]
+        [:span.tooltip.tooltip-bottom
+               {:alt "Lowercase"}
+         i/lowercase]
+        [:span.tooltip.tooltip-bottom
+               {:alt "Titlecase"}
+         i/titlecase]]]
+     ]]))
 
 (def +fonts+
   [{:id "sourcesanspro"

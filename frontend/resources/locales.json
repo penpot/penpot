@@ -912,7 +912,7 @@
   "workspace.options.font-options" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:200" ],
     "translations" : {
-      "en" : "Fonts & Font Size",
+      "en" : "Text",
       "fr" : "TODO"
     }
   },

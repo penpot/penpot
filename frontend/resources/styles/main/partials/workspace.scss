@@ -50,11 +50,11 @@
   background-color: $color-canvas;
   display: flex;
   height: 100%;
-  width: calc(100% - 500px);
+  width: calc(100% - 520px);
   padding: 0;
   margin: 0;
   position: fixed;
-  right: 230px;
+  right: 240px;
 
   &.scrolling {
     cursor: grab;
