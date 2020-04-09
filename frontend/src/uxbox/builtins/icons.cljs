@@ -53,6 +53,7 @@
 (def logo (icon-xref :uxbox-logo))
 (def logo-icon (icon-xref :uxbox-logo-icon))
 (def mail (icon-xref :mail))
+(def minus (icon-xref :minus))
 (def move (icon-xref :move))
 (def options (icon-xref :options))
 (def organize (icon-xref :organize))
