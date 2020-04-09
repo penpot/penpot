@@ -134,7 +134,7 @@ function templatePipeline(options) {
       th: th,
       config: JSON.stringify(config),
       translations: JSON.stringify(locales),
-      themes: themes,
+      themes: JSON.stringify(themes),
     });
 
     return gulp.src(input)

@@ -16,7 +16,7 @@
     <script>
       window.uxboxConfig = JSON.parse({{& config }});
       window.uxboxTranslations = JSON.parse({{& translations }});
-      window.uxboxThemes = JSON.parse({{& themes }});
+      window.uxboxThemes = {{& themes }};
     </script>
     <script src="/js/main.js?ts={{& ts}}"></script>
     <script>uxbox.main.init()</script>
