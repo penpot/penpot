@@ -1461,7 +1461,7 @@
             objects (get-in state [:workspace-data page-id :objects])
             selected (get-in state [:workspace-local :selected])
             moved-objs (if (= 1 (count selected))
-                         [(align-object-to-frame objects (first selected) axis)]
+                         (align-object-to-frame objects (first selected) axis)
                          (align-objects-list objects selected axis))
             updated-objs (merge objects (d/index-by :id moved-objs))]
         (assoc-in state [:workspace-data page-id :objects] updated-objs)))))
@@ -1470,13 +1470,13 @@
   [objects object-id axis]
   (let [object (get objects object-id)
         frame (get objects (:frame-id object))]
-    (geom/align-to-rect object frame axis)))
+    (geom/align-to-rect object frame axis objects)))
 
 (defn align-objects-list
   [objects selected axis]
   (let [selected-objs (map #(get objects %) selected)
         rect (geom/selection-rect selected-objs)]
-    (map #(geom/align-to-rect % rect axis) selected-objs)))
+    (mapcat #(geom/align-to-rect % rect axis objects) selected-objs)))
 
 (defn distribute-objects
   [axis]
@@ -1489,7 +1489,7 @@
             objects (get-in state [:workspace-data page-id :objects])
             selected (get-in state [:workspace-local :selected])
             selected-objs (map #(get objects %) selected)
-            moved-objs (geom/distribute-space selected-objs axis)
+            moved-objs (geom/distribute-space selected-objs axis objects)
             updated-objs (merge objects (d/index-by :id moved-objs))]
         (assoc-in state [:workspace-data page-id :objects] updated-objs)))))
 
