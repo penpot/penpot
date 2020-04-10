@@ -31,32 +31,28 @@
 (declare frame-shape)
 (declare translate-to-frame)
 
-(defn wrap-memo-frame
-  ([component]
-   (mf/memo'
-    component
-    (fn [np op]
-      (let [n-shape (aget np "shape")
-            o-shape (aget op "shape")
-            n-objs  (aget np "objects")
-            o-objs  (aget op "objects")
+(defn frame-wrapper-memo-equals?
+  [np op]
+  (let [n-shape (aget np "shape")
+        o-shape (aget op "shape")
+        n-objs  (aget np "objects")
+        o-objs  (aget op "objects")
 
-            ids (:shapes n-shape)]
-        (and (identical? n-shape o-shape)
-             (loop [id (first ids)
-                    ids (rest ids)]
-               (if (nil? id)
-                 true
-                 (if (identical? (get n-objs id)
-                                 (get o-objs id))
-                   (recur (first ids) (rest ids))
-                   false)))))))))
-
+        ids (:shapes n-shape)]
+    (and (identical? n-shape o-shape)
+         (loop [id (first ids)
+                ids (rest ids)]
+           (if (nil? id)
+             true
+             (if (identical? (get n-objs id)
+                             (get o-objs id))
+               (recur (first ids) (rest ids))
+               false))))))
 
 (defn frame-wrapper
   [shape-wrapper]
   (mf/fnc frame-wrapper
-    {::mf/wrap [wrap-memo-frame]}
+    {::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)]}
     [{:keys [shape objects] :as props}]
     (let [selected-iref (-> (mf/deps (:id shape))
                             (mf/use-memo #(refs/make-selected (:id shape))))
