@@ -37,3 +37,6 @@
   [s]
   (UUID/fromString s))
 
+(defn custom
+  ([a] (UUID. 0 a))
+  ([b a] (UUID. b a)))
