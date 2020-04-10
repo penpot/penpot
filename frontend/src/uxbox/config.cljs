@@ -18,7 +18,7 @@
 (let [config (gobj/get goog.global "uxboxConfig")
       public-url (gobj/get config "publicURL" "http://localhost:6060")]
 
-  (def default-lang "en")
+  (def default-language "en")
   (def demo-warning (gobj/get config "demoWarning" true))
   (def url public-url)
   (def default-theme "light"))

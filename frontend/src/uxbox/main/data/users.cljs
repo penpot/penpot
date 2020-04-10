@@ -49,7 +49,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :profile (cond-> data
-                              (nil? (:land data)) (assoc :lang cfg/default-lang)
+                              (nil? (:land data)) (assoc :lang cfg/default-language)
                               (nil? (:theme data)) (assoc :theme cfg/default-theme))))
 
     ptk/EffectEvent
