@@ -57,7 +57,7 @@
   [props]
   (let [children (unchecked-get props "children")
         label    (unchecked-get props "label")
-        enabled? (unchecked-get props "enabled")
+        enabled? (or (unchecked-get props "enabled") true)
         on-render (mf/use-memo
                    (mf/deps label)
                    #(on-render-factory label))]
