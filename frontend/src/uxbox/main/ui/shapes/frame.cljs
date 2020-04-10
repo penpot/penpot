@@ -5,8 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.shapes.frame
   (:require
@@ -51,33 +50,44 @@
 
 (defn frame-wrapper
   [shape-wrapper]
-  (mf/fnc frame-wrapper
-    {::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)]}
-    [{:keys [shape objects] :as props}]
-    (let [selected-iref (-> (mf/deps (:id shape))
-                            (mf/use-memo #(refs/make-selected (:id shape))))
-          selected? (mf/deref selected-iref)
-          zoom (mf/deref refs/selected-zoom)
-          frame-shape (mf/use-memo #(frame-shape shape-wrapper))]
-      (when (and shape (not (:hidden shape)))
-        (let [on-mouse-down #(common/on-mouse-down % shape)
-              on-context-menu #(common/on-context-menu % shape)
-              shape (merge frame-default-props shape)
+  (let [frame-shape (frame-shape shape-wrapper)]
+    (mf/fnc frame-wrapper
+      {::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)]
+       ::mf/wrap-props false}
+      [props]
+      (let [shape (unchecked-get props "shape")
+            objects (unchecked-get props "objects")
 
-              {:keys [x y width height]} shape
+            selected-iref (mf/use-memo (mf/deps (:id shape))
+                                       #(refs/make-selected (:id shape)))
+            selected? (mf/deref selected-iref)
+            zoom (mf/deref refs/selected-zoom)
 
-              inv-zoom (/ 1 zoom)
-              childs (mapv #(get objects %) (:shapes shape))
-              ds-modifier (:displacement-modifier shape)
 
-              label-pos (cond-> (gpt/point x (- y 10))
-                          (gmt/matrix? ds-modifier) (gpt/transform ds-modifier))
+            on-mouse-down   (mf/use-callback (mf/deps shape)
+                                             #(common/on-mouse-down % shape))
+            on-context-menu (mf/use-callback (mf/deps shape)
+                                             #(common/on-context-menu % shape))
 
-              on-double-click
-              (fn [event]
-                (dom/prevent-default event)
-                (st/emit! dw/deselect-all
-                          (dw/select-shape (:id shape))))]
+
+            {:keys [x y width height]} shape
+
+            inv-zoom    (/ 1 zoom)
+            childs      (mapv #(get objects %) (:shapes shape))
+            ds-modifier (:displacement-modifier shape)
+
+            label-pos (cond-> (gpt/point x (- y 10))
+                        (gmt/matrix? ds-modifier) (gpt/transform ds-modifier))
+
+            on-double-click
+            (mf/use-callback
+             (mf/deps (:id shape))
+             (fn [event]
+               (dom/prevent-default event)
+               (st/emit! dw/deselect-all
+                         (dw/select-shape (:id shape)))))]
+
+        (when-not (:hidden shape)
           [:g {:class (when selected? "selected")
                :on-context-menu on-context-menu
                :on-double-click on-double-click
@@ -86,25 +96,32 @@
                    :y 0
                    :width width
                    :height 20
-                   :class-name "workspace-frame-label"
-                   ;; Ensure that the label has always the same font size, regardless of zoom
+                   :class "workspace-frame-label"
+                   ;; Ensure that the label has always the same font
+                   ;; size, regardless of zoom
                    ;; https://css-tricks.com/transforms-on-svg-elements/
                    :transform (str
                                "scale(" inv-zoom ", " inv-zoom ") "
-                               "translate(" (* zoom (:x label-pos)) ", " (* zoom (:y label-pos)) ")")
+                               "translate(" (* zoom (:x label-pos)) ", "
+                               (* zoom (:y label-pos)) ")")
                    ;; User may also select the frame with single click in the label
                    :on-click on-double-click}
             (:name shape)]
-           [:& frame-shape {:shape (geom/transform-shape shape)
-                            :childs childs}]])))))
+           [:& frame-shape
+            {:shape (geom/transform-shape shape)
+             :childs childs}]])))))
 
 (defn frame-shape
   [shape-wrapper]
   (mf/fnc frame-shape
-    [{:keys [shape childs] :as props}]
-    (let [{:keys [id x y width height]} shape
+    {::mf/wrap-props false}
+    [props]
+    (let [childs (unchecked-get props "childs")
+          shape (unchecked-get props "shape")
+          {:keys [id x y width height]} shape
 
-          props (-> (attrs/extract-style-attrs shape)
+          props (-> (merge frame-default-props shape)
+                    (attrs/extract-style-attrs)
                     (itr/obj-assign!
                      #js {:x 0
                           :y 0
