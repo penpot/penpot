@@ -2193,28 +2193,52 @@
                   frame-id (if frame-id
                              frame-id
                              (calculate-frame-overlap objects moved-obj))
-                  reframed-obj (assoc moved-obj :frame-id frame-id)]
-              {:type :add-obj
-               :id id
-               :frame-id frame-id
-               :obj reframed-obj}))
+
+                  prepare-child
+                  (fn [child-id]
+                    (prepare-shape-change objects (get objects child-id) delta frame-id))
+
+                  children-changes (mapcat prepare-child (:shapes obj))
+                  is-child? (set (:shapes obj))
+                  children-uuids (->> children-changes
+                                      (filter #(and (= :add-obj (:type %)) (is-child? (:old-id %))))
+                                      (map #(:id %)))
+
+                  move-change (when (not (empty? (:shapes obj)))
+                                [{:type :mov-objects
+                                  :parent-id id
+                                  :shapes (vec children-uuids)}])
+
+                  reframed-obj (-> moved-obj
+                                   (assoc  :frame-id frame-id)
+                                   (dissoc :shapes))]
+              (into [{:type :add-obj
+                      :id id
+                      :old-id (:id obj)
+                      :frame-id frame-id
+                      :obj (dissoc reframed-obj :shapes)}]
+                    (concat children-changes move-change))))
 
           (prepare-frame-change [objects obj delta]
             (let [frame-id (uuid/next)
                   frame-name (impl-generate-unique-name objects (:name obj))
                   sch (->> (map #(get objects %) (:shapes obj))
-                           (map #(prepare-shape-change objects % delta frame-id)))
+                           (mapcat #(prepare-shape-change objects % delta frame-id)))
+                  is-child? (set (:shapes obj))
+                  children-uuids (->> sch
+                                      (filter #(and (= :add-obj (:type %)) (is-child? (:old-id %))))
+                                      (map #(:id %)))
                   renamed-frame (-> obj
                                     (assoc :id frame-id)
                                     (assoc :name frame-name)
                                     (assoc :frame-id uuid/zero)
-                                    (assoc :shapes (mapv :id sch)))
+                                    (assoc :shapes (vec children-uuids)))
                   moved-frame (geom/move renamed-frame delta)
                   fch {:type :add-obj
                        :id frame-id
                        :frame-id uuid/zero
                        :obj moved-frame}]
-              (d/concat [fch] sch)))]
+              (into [fch] sch)))]
 
   (ptk/reify ::paste-impl
     ptk/WatchEvent
@@ -2229,11 +2253,11 @@
             uchanges (map (fn [ch]
                             {:type :del-obj
                              :id (:id ch)})
-                          rchanges)]
+                          (filter #(= :add-obj (:type %)) rchanges))]
         (rx/of (commit-changes (vec rchanges)
                                (vec (reverse uchanges))
                                {:commit-local? true})
-               (select-pasted-objs rchanges)))))))
+               (select-pasted-objs selected rchanges)))))))
 
 (def paste
   (ptk/reify ::paste
@@ -2250,12 +2274,15 @@
                        (rx/empty)))))))
 
 (defn select-pasted-objs
-  [rchanges]
+  [selected rchanges]
   (ptk/reify ::select-pasted-objs
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :selected]
-                (into #{} (map #(get-in % [:obj :id])) rchanges)))))
+      (let [new-selected (->> rchanges
+                 (filter #(selected (:old-id %)))
+                 (map #(get-in % [:obj :id]))
+                 (into #{}))]
+        (assoc-in state [:workspace-local :selected] new-selected)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions
