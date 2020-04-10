@@ -21,22 +21,28 @@
    [uxbox.main.ui.shapes.frame :as frame]
    [uxbox.main.refs :as refs]))
 
-(defn wrap-memo-shape
-  ([component]
-   (mf/memo'
-    component
-    (fn [np op]
-      (let [n-shape (unchecked-get np "shape")
-            o-shape (unchecked-get op "shape")]
-        (= n-shape o-shape))))))
+(defn- shape-wrapper-memo-equals?
+  [np op]
+  (let [n-shape (unchecked-get np "shape")
+        o-shape (unchecked-get op "shape")
+        n-frame (unchecked-get np "frame")
+        o-frame (unchecked-get op "frame")]
+    ;; (prn "shape-wrapper-memo-equals?" (identical? n-frame o-frame))
+    (if (= (:type n-shape) :group)
+      false
+      (and (identical? n-shape o-shape)
+           (identical? n-frame o-frame)))))
 
 (declare group-wrapper)
 (declare frame-wrapper)
 
 (mf/defc shape-wrapper
-  {::mf/wrap [wrap-memo-shape]}
-  [{:keys [shape frame] :as props}]
-  (let [opts #js {:shape shape :frame frame}]
+  {::mf/wrap [#(mf/memo' % shape-wrapper-memo-equals?)]
+   ::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        frame (unchecked-get props "frame")
+        opts #js {:shape shape :frame frame}]
     (when (and shape (not (:hidden shape)))
       (case (:type shape)
         :group [:> group-wrapper opts]
@@ -47,6 +53,8 @@
         :path [:> path/path-wrapper opts]
         :image [:> image/image-wrapper opts]
         :circle [:> circle/circle-wrapper opts]
+
+        ;; Only used when drawing a new frame.
         :frame [:> frame-wrapper opts]
         nil))))
 
