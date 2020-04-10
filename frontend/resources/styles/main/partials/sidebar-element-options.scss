@@ -68,9 +68,9 @@
 
     .element-set-title {
       color: $color-gray-10;
+      display: flex;
       font-size: $fs14;
-      margin-top: $x-small;
-      padding: $x-small;
+      padding: $small $x-small;
       width: 100%;
     }
 

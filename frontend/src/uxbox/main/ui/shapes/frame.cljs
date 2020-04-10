@@ -99,15 +99,14 @@
                    ;; User may also select the frame with single click in the label
                    :on-click on-double-click}
             (:name shape)]
-           [:& frame-shape {:shape shape
+           [:& frame-shape {:shape (geom/transform-shape shape)
                             :childs childs}]])))))
 
 (defn frame-shape 
   [shape-wrapper]
   (mf/fnc frame-shape
     [{:keys [shape childs] :as props}]
-    (let [shape (geom/transform-shape shape)
-          {:keys [id x y width height]} shape
+    (let [{:keys [id x y width height]} shape
 
           props (-> (attrs/extract-style-attrs shape)
                     (itr/obj-assign!

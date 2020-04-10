@@ -8,6 +8,8 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.geom.point :as gpt]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
@@ -36,12 +38,10 @@
   [props]
   (let [shape (unchecked-get props "shape")
         {:keys [id x y width height rotation]} shape
-        transform (when (and rotation (pos? rotation))
-                    (str/format "rotate(%s %s %s)"
-                                rotation
-                                (+ x (/ width 2))
-                                (+ y (/ height 2))))
-
+        center (gpt/center shape)
+        transform (when (pos? rotation)
+                    (str (-> (gmt/matrix)
+                             (gmt/rotate rotation center))))
         props (-> (attrs/extract-style-attrs shape)
                   (itr/obj-assign!
                    #js {:x x
@@ -50,5 +50,4 @@
                         :id (str "shape-" id)
                         :width width
                         :height height}))]
-
     [:> "rect" props]))

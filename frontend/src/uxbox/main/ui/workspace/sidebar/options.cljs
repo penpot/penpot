@@ -13,6 +13,7 @@
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
+   [uxbox.main.ui.workspace.sidebar.align :refer [align-options]]
    [uxbox.main.ui.workspace.sidebar.options.frame :as frame]
    [uxbox.main.ui.workspace.sidebar.options.group :as group]
    [uxbox.main.ui.workspace.sidebar.options.rect :as rect]
@@ -55,11 +56,12 @@
   [{:keys [page selected] :as props}]
   (let [close #(st/emit! (udw/toggle-layout-flag :element-options))
         selected (mf/deref refs/selected-shapes)]
-    [:div.elementa-options.tool-window
+    [:div.element-options.tool-window
      ;; [:div.tool-window-bar
      ;;  [:div.tool-window-icon i/options]
      ;;  [:span (tr "ds.settings.element-options")]
      ;;  [:div.tool-window-close {:on-click close} i/close]]
+     [:& align-options]
      [:div.tool-window-content
       [:div.element-options
        (if (= (count selected) 1)

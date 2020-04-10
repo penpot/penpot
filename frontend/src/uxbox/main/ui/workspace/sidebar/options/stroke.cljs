@@ -70,8 +70,9 @@
 
     (if (not= :none (:stroke-style shape :none))
       [:div.element-set
-       [:div.element-set-title (t locale "workspace.options.stroke")]
-       [:div.add-page {:on-click on-del-stroke} i/close]
+       [:div.element-set-title
+        [:span (t locale "workspace.options.stroke")]
+        [:div.add-page {:on-click on-del-stroke} i/minus]]
 
        [:div.element-set-content
 
@@ -124,5 +125,6 @@
 
       ;; NO STROKE
       [:div.element-set
-       [:div.element-set-title (t locale "workspace.options.stroke")]
-       [:div.add-page {:on-click on-add-stroke} i/close]])))
+       [:div.element-set-title
+        [:span (t locale "workspace.options.stroke")]
+        [:div.add-page {:on-click on-add-stroke} i/close]]])))

@@ -84,11 +84,11 @@
         (tr "login.forgot-password")]
        [:a {:on-click #(st/emit! (rt/nav :profile-register))
             :tab-index "6"}
-        (tr "login.register")]
-       [:a {:on-click #(st/emit! da/create-demo-profile)
-            :tab-index "7"
-            :title (tr "login.create-demo-profile-description")}
-        (tr "login.create-demo-profile")]]]]))
+        (tr "login.register")]]
+      [:a.btn-dashboard {:on-click #(st/emit! da/create-demo-profile)
+           :tab-index "7"
+           :title (tr "login.create-demo-profile-description")}
+       (tr "login.create-demo-profile")]]]))
 
 (mf/defc login-page
   []

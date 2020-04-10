@@ -87,7 +87,8 @@
 
         width (* (:width frame) zoom)
         height (* (:height frame) zoom)
-        vbox (str "0 0 " (:width frame 0) " " (:height frame 0))]
+        vbox (str "0 0 " (:width frame 0) " " (:height frame 0))
+        frame-wrapper (exports/frame-wrapper objects)]
 
     [:svg {:view-box vbox
            :width width
@@ -95,9 +96,8 @@
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
                   :xmlns "http://www.w3.org/2000/svg"}
-     [:& exports/frame-wrapper {:shape frame
-                                :objects objects
-                                :view-box vbox}]]))
+     [:& frame-wrapper {:shape frame
+                                          :view-box vbox}]]))
 
 (mf/defc thumbnails-summary
   [{:keys [on-toggle-expand on-close total] :as props}]

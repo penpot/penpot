@@ -263,16 +263,16 @@
       [:div.row-flex.align-icons
        [:span {:class (when (= text-align "left") "current")
                :on-click #(on-font-align-change % "left")}
-        i/align-left]
+        i/text-align-left]
        [:span {:class (when (= text-align "center") "current")
                :on-click #(on-font-align-change % "center")}
-        i/align-center]
+        i/text-align-center]
        [:span {:class (when (= text-align "right") "current")
                :on-click #(on-font-align-change % "right")}
-        i/align-right]
+        i/text-align-right]
        [:span {:class (when (= text-align "justify") "current")
                :on-click #(on-font-align-change % "justify")}
-        i/align-justify]]]]))
+        i/text-align-justify]]]]))
 
 (def +fonts+
   [{:id "sourcesanspro"
