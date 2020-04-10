@@ -56,10 +56,13 @@
   {::mf/wrap-props false}
   [props]
   (let [children (unchecked-get props "children")
-        label (unchecked-get props "label")
+        label    (unchecked-get props "label")
+        enabled? (unchecked-get props "enabled")
         on-render (mf/use-memo
                    (mf/deps label)
                    #(on-render-factory label))]
-    [:> react/Profiler {:id label
-                        :on-render on-render}
-     children]))
+    (if enabled?
+      [:> react/Profiler {:id label
+                          :on-render on-render}
+       children]
+      children)))
