@@ -41,51 +41,62 @@
 
 (declare shape-wrapper)
 
-(defn frame-wrapper [objects]
+(defn frame-wrapper
+  [objects]
   (mf/fnc frame-wrapper
     [{:keys [shape] :as props}]
-    (let [childs (mapv #(get objects %) (:shapes shape))
-          shape-wrapper (shape-wrapper objects)
-          frame-shape (frame/frame-shape shape-wrapper)
+    (let [childs (mapv #(get objects %)
+                       (:shapes shape))
+          shape-wrapper (mf/use-memo (mf/deps objects)
+                                     #(shape-wrapper objects))
+          frame-shape   (mf/use-memo (mf/deps objects)
+                                     #(frame/frame-shape shape-wrapper))
           shape (geom/transform-shape shape)]
       [:& frame-shape {:shape shape :childs childs}])))
 
-(defn group-wrapper [objects]
+(defn group-wrapper
+  [objects]
   (mf/fnc group-wrapper
     [{:keys [shape frame] :as props}]
-    (let [children (mapv #(get objects %) (:shapes shape))
-          shape-wrapper (shape-wrapper objects)
-          group-shape (group/group-shape shape-wrapper)]
+    (let [children (mapv #(get objects %)
+                         (:shapes shape))
+          shape-wrapper (mf/use-memo (mf/deps objects)
+                                     #(shape-wrapper objects))
+          group-shape   (mf/use-memo (mf/deps objects)
+                                     #(group/group-shape shape-wrapper))]
       [:& group-shape {:frame frame
                        :shape shape
                        :children children}])))
 
-(defn shape-wrapper [objects]
+(defn shape-wrapper
+  [objects]
   (mf/fnc shape-wrapper
     [{:keys [frame shape] :as props}]
-    (when (and shape (not (:hidden shape)))
-      (let [shape (geom/transform-shape frame shape)
-            opts #js {:shape shape :frame frame}]
-        (case (:type shape)
-          :curve [:> path/path-shape opts]
-          :text [:> text/text-shape opts]
-          :icon [:> icon/icon-shape opts]
-          :rect [:> rect/rect-shape opts]
-          :path [:> path/path-shape opts]
-          :image [:> image/image-shape opts]
-          :circle [:> circle/circle-shape opts]
-          :group [:> (group-wrapper objects) opts]
-          nil)))))
+    (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper objects))]
+      (when (and shape (not (:hidden shape)))
+        (let [shape (geom/transform-shape frame shape)
+              opts #js {:shape shape :frame frame}]
+          (case (:type shape)
+            :curve [:> path/path-shape opts]
+            :text [:> text/text-shape opts]
+            :icon [:> icon/icon-shape opts]
+            :rect [:> rect/rect-shape opts]
+            :path [:> path/path-shape opts]
+            :image [:> image/image-shape opts]
+            :circle [:> circle/circle-shape opts]
+            :group [:> group-wrapper opts]
+            nil))))))
 
 (mf/defc page-svg
+  {::mf/wrap [mf/memo]}
   [{:keys [data] :as props}]
   (let [objects (:objects data)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))
         dim (calculate-dimensions data)
-        frame-wrapper (frame-wrapper objects)
-        shape-wrapper (shape-wrapper objects)]
+        frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper objects))
+        shape-wrapper (mf/use-memo (mf/deps objects) #(shape-wrapper objects))]
     [:svg {:view-box (str "0 0 " (:width dim 0) " " (:height dim 0))
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
