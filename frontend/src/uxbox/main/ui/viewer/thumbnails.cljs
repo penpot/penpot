@@ -88,7 +88,8 @@
         width (* (:width frame) zoom)
         height (* (:height frame) zoom)
         vbox (str "0 0 " (:width frame 0) " " (:height frame 0))
-        frame-wrapper (exports/frame-wrapper objects)]
+        frame-wrapper (mf/use-memo (mf/deps objects)
+                                   #(exports/frame-wrapper objects))]
 
     [:svg {:view-box vbox
            :width width
