@@ -2,18 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.tests.test-common-pages
   (:require
    [clojure.test :as t]
+   [clojure.pprint :refer [pprint]]
    [promesa.core :as p]
    [mockery.core :refer [with-mock]]
    [uxbox.common.pages :as cp]
    [uxbox.util.uuid :as uuid]
    [uxbox.tests.helpers :as th]))
 
-(t/deftest process-change-add-obj-1
+(t/deftest process-change-add-obj
   (let [data cp/default-page-data
         id-a (uuid/next)
         id-b (uuid/next)
@@ -33,7 +34,7 @@
         (t/is (= [id-a] (get-in res [:objects uuid/zero :shapes])))))
     (t/testing "Adds several objects with different indexes"
       (let [data cp/default-page-data
-            
+
             chg  (fn [id index] {:type :add-obj
                                  :id id
                                  :frame-id uuid/zero
@@ -212,25 +213,35 @@
         rect-e-id  (uuid/next)
         data (-> cp/default-page-data
                  (assoc-in [cp/root :shapes] [frame-a-id])
-                 (assoc-in [:objects frame-a-id] {:id frame-a-id :name "Frame a" :type :frame})
-                 (assoc-in [:objects frame-b-id] {:id frame-b-id :name "Frame b" :type :frame})
+                 (assoc-in [:objects frame-a-id]
+                           {:id frame-a-id :name "Frame a" :type :frame})
+                 (assoc-in [:objects frame-b-id]
+                           {:id frame-b-id :name "Frame b" :type :frame})
 
                  ;; Groups
-                 (assoc-in [:objects group-a-id] {:id group-a-id :name "Group A" :type :group :frame-id frame-a-id})
-                 (assoc-in [:objects group-b-id] {:id group-b-id :name "Group B" :type :group :frame-id frame-a-id})
+                 (assoc-in [:objects group-a-id]
+                           {:id group-a-id :name "Group A" :type :group :frame-id frame-a-id})
+                 (assoc-in [:objects group-b-id]
+                           {:id group-b-id :name "Group B" :type :group :frame-id frame-a-id})
 
                  ;; Shapes
-                 (assoc-in [:objects rect-a-id] {:id rect-a-id :name "Rect A" :type :rect :frame-id frame-a-id})
-                 (assoc-in [:objects rect-b-id] {:id rect-b-id :name "Rect B" :type :rect :frame-id frame-a-id})
-                 (assoc-in [:objects rect-c-id] {:id rect-c-id :name "Rect C" :type :rect :frame-id frame-a-id})
-                 (assoc-in [:objects rect-d-id] {:id rect-d-id :name "Rect D" :type :rect :frame-id frame-a-id})
-                 (assoc-in [:objects rect-e-id] {:id rect-e-id :name "Rect E" :type :rect :frame-id frame-a-id})
-                 
+                 (assoc-in [:objects rect-a-id]
+                           {:id rect-a-id :name "Rect A" :type :rect :frame-id frame-a-id})
+                 (assoc-in [:objects rect-b-id]
+                           {:id rect-b-id :name "Rect B" :type :rect :frame-id frame-a-id})
+                 (assoc-in [:objects rect-c-id]
+                           {:id rect-c-id :name "Rect C" :type :rect :frame-id frame-a-id})
+                 (assoc-in [:objects rect-d-id]
+                           {:id rect-d-id :name "Rect D" :type :rect :frame-id frame-a-id})
+                 (assoc-in [:objects rect-e-id]
+                           {:id rect-e-id :name "Rect E" :type :rect :frame-id frame-a-id})
+
                  ;; Relationships
                  (assoc-in [:objects cp/root :shapes] [frame-a-id frame-b-id])
                  (assoc-in [:objects frame-a-id :shapes] [group-a-id group-b-id rect-e-id])
                  (assoc-in [:objects group-a-id :shapes] [rect-a-id rect-b-id rect-c-id])
                  (assoc-in [:objects group-b-id :shapes] [rect-d-id]))]
+
     (t/testing "Create new group an add objects from the same group"
       (let [new-group-id (uuid/next)
             changes [{:type :add-obj
@@ -244,9 +255,13 @@
                       :parent-id new-group-id
                       :shapes [rect-b-id rect-c-id]}]
             res (cp/process-changes data changes)]
-        (t/is (= [group-a-id group-b-id rect-e-id new-group-id] (get-in res [:objects frame-a-id :shapes])))
-        (t/is (= [rect-b-id rect-c-id] (get-in res [:objects new-group-id :shapes])))
-        (t/is (= [rect-a-id] (get-in res [:objects group-a-id :shapes])))))
+
+        (t/is (= [group-a-id group-b-id rect-e-id new-group-id]
+                 (get-in res [:objects frame-a-id :shapes])))
+        (t/is (= [rect-b-id rect-c-id]
+                 (get-in res [:objects new-group-id :shapes])))
+        (t/is (= [rect-a-id]
+                 (get-in res [:objects group-a-id :shapes])))))
 
     (t/testing "Move elements to an existing group at index"
       (let [changes [{:type :mov-objects
@@ -254,9 +269,13 @@
                       :index 0
                       :shapes [rect-a-id rect-c-id]}]
             res (cp/process-changes data changes)]
-        (t/is (= [group-a-id group-b-id rect-e-id] (get-in res [:objects frame-a-id :shapes])))
-        (t/is (= [rect-b-id] (get-in res [:objects group-a-id :shapes])))
-        (t/is (= [rect-a-id rect-c-id rect-d-id] (get-in res [:objects group-b-id :shapes])))))
+
+        (t/is (= [group-a-id group-b-id rect-e-id]
+                 (get-in res [:objects frame-a-id :shapes])))
+        (t/is (= [rect-b-id]
+                 (get-in res [:objects group-a-id :shapes])))
+        (t/is (= [rect-a-id rect-c-id rect-d-id]
+                 (get-in res [:objects group-b-id :shapes])))))
 
     (t/testing "Move elements from group and frame to an existing group at index"
       (let [changes [{:type :mov-objects
@@ -264,9 +283,13 @@
                       :index 0
                       :shapes [rect-a-id rect-e-id]}]
             res (cp/process-changes data changes)]
-        (t/is (= [group-a-id group-b-id] (get-in res [:objects frame-a-id :shapes])))
-        (t/is (= [rect-b-id rect-c-id] (get-in res [:objects group-a-id :shapes])))
-        (t/is (= [rect-a-id rect-e-id rect-d-id] (get-in res [:objects group-b-id :shapes])))))
+
+        (t/is (= [group-a-id group-b-id]
+                 (get-in res [:objects frame-a-id :shapes])))
+        (t/is (= [rect-b-id rect-c-id]
+                 (get-in res [:objects group-a-id :shapes])))
+        (t/is (= [rect-a-id rect-e-id rect-d-id]
+                 (get-in res [:objects group-b-id :shapes])))))
 
     (t/testing "Move elements from several groups"
       (let [changes [{:type :mov-objects
@@ -274,16 +297,22 @@
                       :index 0
                       :shapes [rect-a-id rect-e-id]}]
             res (cp/process-changes data changes)]
-        (t/is (= [group-a-id group-b-id] (get-in res [:objects frame-a-id :shapes])))
-        (t/is (= [rect-b-id rect-c-id] (get-in res [:objects group-a-id :shapes])))
-        (t/is (= [rect-a-id rect-e-id rect-d-id] (get-in res [:objects group-b-id :shapes])))))
+
+        (t/is (= [group-a-id group-b-id]
+                 (get-in res [:objects frame-a-id :shapes])))
+        (t/is (= [rect-b-id rect-c-id]
+                 (get-in res [:objects group-a-id :shapes])))
+        (t/is (= [rect-a-id rect-e-id rect-d-id]
+                 (get-in res [:objects group-b-id :shapes])))))
 
     (t/testing "Move elements and delete the empty group"
       (let [changes [{:type :mov-objects
                       :parent-id group-a-id
                       :shapes [rect-d-id]}]
             res (cp/process-changes data changes)]
-        (t/is (= [group-a-id rect-e-id] (get-in res [:objects frame-a-id :shapes])))
+
+        (t/is (= [group-a-id rect-e-id]
+                 (get-in res [:objects frame-a-id :shapes])))
         (t/is (nil? (get-in res [:objects group-b-id])))))
 
     (t/testing "Move elements to a group with different frame"
@@ -291,6 +320,7 @@
                       :parent-id frame-b-id
                       :shapes [group-a-id]}]
             res (cp/process-changes data changes)]
+
         (t/is (= [group-b-id rect-e-id] (get-in res [:objects frame-a-id :shapes])))
         (t/is (= [group-a-id] (get-in res [:objects frame-b-id :shapes])))
         (t/is (= frame-b-id (get-in res [:objects group-a-id :frame-id])))
@@ -304,7 +334,8 @@
                       :shapes [group-a-id]
                       :index 0}]
             res (cp/process-changes data changes)]
-        (t/is (= [group-a-id frame-a-id frame-b-id] (get-in res [:objects cp/root :shapes])))))
+        (t/is (= [group-a-id frame-a-id frame-b-id]
+                 (get-in res [:objects cp/root :shapes])))))
 
     (t/testing "Don't allow to move inside self"
       (let [changes [{:type :mov-objects
@@ -312,3 +343,213 @@
                       :shapes [group-a-id]}]
             res (cp/process-changes data changes)]
         (t/is (= data res))))))
+
+
+(t/deftest process-changes-move-objects-2
+  (let [shape-1-id (uuid/custom 1 1)
+        shape-2-id (uuid/custom 1 2)
+        shape-3-id (uuid/custom 1 3)
+        shape-4-id (uuid/custom 1 4)
+        group-1-id (uuid/custom 2 1)
+        changes [{:type :add-obj
+                  :id shape-1-id
+                  :frame-id cp/root
+                  :obj {:id shape-1-id
+                        :type :rect
+                        :name "Shape a"}}
+                 {:type :add-obj
+                  :id shape-2-id
+                  :frame-id cp/root
+                  :obj {:id shape-2-id
+                        :type :rect
+                        :name "Shape b"}}
+                 {:type :add-obj
+                  :id shape-3-id
+                  :frame-id cp/root
+                  :obj {:id shape-3-id
+                        :type :rect
+                        :name "Shape c"}}
+                 {:type :add-obj
+                  :id shape-4-id
+                  :frame-id cp/root
+                  :obj {:id shape-4-id
+                        :type :rect
+                        :name "Shape d"}}
+                 {:type :add-obj
+                  :id group-1-id
+                  :frame-id cp/root
+                  :obj {:id group-1-id
+                        :type :group
+                        :name "Group"}}
+                 {:type :mov-objects
+                  :parent-id group-1-id
+                  :shapes [shape-1-id shape-2-id]}]
+        data (cp/process-changes cp/default-page-data changes)]
+
+    (t/testing "case 1"
+      (let [changes [{:type :mov-objects
+                      :parent-id cp/root
+                      :index 2
+                      :shapes [shape-3-id]}]
+            res (cp/process-changes data changes)]
+
+        ;; Before
+
+        (t/is (= [shape-3-id shape-4-id group-1-id]
+                 (get-in data [:objects cp/root :shapes])))
+
+        ;; After
+
+        (t/is (= [shape-4-id shape-3-id group-1-id]
+                 (get-in res [:objects cp/root :shapes])))
+
+        ;; (pprint (get-in data [:objects cp/root]))
+        ;; (pprint (get-in res [:objects cp/root]))
+        ))
+
+    (t/testing "case 2"
+      (let [changes [{:type :mov-objects
+                      :parent-id group-1-id
+                      :index 2
+                      :shapes [shape-3-id]}]
+            res (cp/process-changes data changes)]
+
+        ;; Before
+
+        (t/is (= [shape-3-id shape-4-id group-1-id]
+                 (get-in data [:objects cp/root :shapes])))
+
+        (t/is (= [shape-1-id shape-2-id]
+                 (get-in data [:objects group-1-id :shapes])))
+
+        ;; After:
+
+        (t/is (= [shape-4-id group-1-id]
+                 (get-in res [:objects cp/root :shapes])))
+
+        (t/is (= [shape-1-id shape-2-id shape-3-id]
+                 (get-in res [:objects group-1-id :shapes])))
+
+        ;; (pprint (get-in data [:objects group-1-id]))
+        ;; (pprint (get-in res [:objects group-1-id]))
+        ))
+
+    (t/testing "case 3"
+      (let [changes [{:type :mov-objects
+                      :parent-id group-1-id
+                      :index 1
+                      :shapes [shape-3-id]}]
+            res (cp/process-changes data changes)]
+
+        ;; Before
+
+        (t/is (= [shape-3-id shape-4-id group-1-id]
+                 (get-in data [:objects cp/root :shapes])))
+
+        (t/is (= [shape-1-id shape-2-id]
+                 (get-in data [:objects group-1-id :shapes])))
+
+        ;; After
+
+        (t/is (= [shape-4-id group-1-id]
+                 (get-in res [:objects cp/root :shapes])))
+
+        (t/is (= [shape-1-id shape-3-id shape-2-id]
+                 (get-in res [:objects group-1-id :shapes])))
+
+        ;; (pprint (get-in data [:objects group-1-id]))
+        ;; (pprint (get-in res [:objects group-1-id]))
+        ))
+
+    (t/testing "case 4"
+      (let [changes [{:type :mov-objects
+                      :parent-id group-1-id
+                      :index 0
+                      :shapes [shape-3-id]}]
+            res (cp/process-changes data changes)]
+
+        ;; Before
+
+        (t/is (= [shape-3-id shape-4-id group-1-id]
+                 (get-in data [:objects cp/root :shapes])))
+
+        (t/is (= [shape-1-id shape-2-id]
+                 (get-in data [:objects group-1-id :shapes])))
+
+        ;; After
+
+        (t/is (= [shape-4-id group-1-id]
+                 (get-in res [:objects cp/root :shapes])))
+
+        (t/is (= [shape-3-id shape-1-id shape-2-id]
+                 (get-in res [:objects group-1-id :shapes])))
+
+        ;; (pprint (get-in data [:objects group-1-id]))
+        ;; (pprint (get-in res [:objects group-1-id]))
+        ))
+
+    (t/testing "case 5"
+      (let [changes [{:type :mov-objects
+                      :parent-id cp/root
+                      :index 0
+                      :shapes [shape-2-id]}]
+            res (cp/process-changes data changes)]
+
+        ;; (pprint (get-in data [:objects cp/root]))
+        ;; (pprint (get-in res [:objects cp/root]))
+
+        ;; (pprint (get-in data [:objects group-1-id]))
+        ;; (pprint (get-in res [:objects group-1-id]))
+
+        ;; Before
+
+        (t/is (= [shape-3-id shape-4-id group-1-id]
+                 (get-in data [:objects cp/root :shapes])))
+
+        (t/is (= [shape-1-id shape-2-id]
+                 (get-in data [:objects group-1-id :shapes])))
+
+        ;; After
+
+        (t/is (= [shape-2-id shape-3-id shape-4-id group-1-id]
+                 (get-in res [:objects cp/root :shapes])))
+
+        (t/is (= [shape-1-id]
+                 (get-in res [:objects group-1-id :shapes])))
+
+        ))
+
+    (t/testing "case 6"
+      (let [changes [{:type :mov-objects
+                      :parent-id cp/root
+                      :index 0
+                      :shapes [shape-2-id shape-1-id]}]
+            res (cp/process-changes data changes)]
+
+        ;; (pprint (get-in data [:objects cp/root]))
+        ;; (pprint (get-in res [:objects cp/root]))
+
+        ;; (pprint (get-in data [:objects group-1-id]))
+        ;; (pprint (get-in res [:objects group-1-id]))
+
+        ;; Before
+
+        (t/is (= [shape-3-id shape-4-id group-1-id]
+                 (get-in data [:objects cp/root :shapes])))
+
+        (t/is (= [shape-1-id shape-2-id]
+                 (get-in data [:objects group-1-id :shapes])))
+
+        ;; After
+
+        (t/is (= [shape-2-id shape-1-id shape-3-id shape-4-id]
+                 (get-in res [:objects cp/root :shapes])))
+
+        (t/is (= nil
+                 (get-in res [:objects group-1-id])))
+
+        ))
+
+    ))
+
+

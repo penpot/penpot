@@ -90,11 +90,6 @@
   (persistent!
    (reduce #(dissoc! %1 %2) (transient data) keys)))
 
-(defn insert-at-index [vector index elements]
-  (let [[before after] (split-at index vector)]
-    (concat [] before elements after)))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
