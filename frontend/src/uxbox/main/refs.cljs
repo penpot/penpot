@@ -70,7 +70,7 @@
                        (map #(get objects %))
                        (filter identity)
                        (vec)))))
-      (l/derive st/state)))
+      (l/derive st/state {:equals? =})))
 
 (defn is-child-selected?
   [id]
