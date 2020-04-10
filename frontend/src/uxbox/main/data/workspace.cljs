@@ -1592,7 +1592,6 @@
         (rx/of (diff-and-commit-changes page-id)
                (rehash-shape-frame-relationship ids))))))
 
-
 (defn apply-displacement-in-bulk
   "Apply the same displacement delta to all shapes identified by the set
   if ids."
@@ -1695,6 +1694,54 @@
             shapes (assoc shapes (:id frame) frame)]
         (update-in state [:workspace-data page-id :objects] merge shapes)))))
 
+
+(defn apply-rotation
+  [delta-rotation shapes]
+  (ptk/reify ::apply-rotation
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [group  (geom/selection-rect shapes)
+            group-center (gpt/center group)
+            calculate-displacement
+            (fn [shape angle]
+              (let [shape-rect (geom/shape->rect-shape shape)
+                    shape-center (gpt/center shape-rect)]
+                (-> (gmt/matrix)
+                    (gmt/rotate angle group-center)
+                    (gmt/rotate (- angle) shape-center))))
+
+            page-id (::page-id state)
+            rotate-shape
+            (fn [state shape]
+              (let [path [:workspace-data page-id :objects (:id shape)]
+                    ds (calculate-displacement shape delta-rotation)]
+                (-> state
+                    (assoc-in (conj path :rotation-modifier) delta-rotation)
+                    (assoc-in (conj path :displacement-modifier) ds))))]
+        (reduce rotate-shape state shapes)))))
+
+(defn materialize-rotation
+  [shapes]
+  (ptk/reify ::materialize-rotation
+    IBatchedChange
+    
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [apply-rotation
+            (fn [shape]
+              (let [ds-modifier (or (:displacement-modifier shape) (gmt/matrix))]
+                (-> shape
+                    (update :rotation #(mod (+ % (:rotation-modifier shape)) 360))
+                    (geom/transform ds-modifier)
+                    (dissoc :rotation-modifier)
+                    (dissoc :displacement-modifier))))
+
+            materialize-shape
+            (fn [state shape]
+              (let [path [:workspace-data (::page-id state) :objects (:id shape)]]
+                (update-in state path apply-rotation)))]
+
+        (reduce materialize-shape state shapes)))))
 
 (defn commit-changes
   ([changes undo-changes] (commit-changes changes undo-changes {}))

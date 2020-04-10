@@ -275,8 +275,7 @@
                         vid width height scalex scaley rotation))
         (gmt/scale (gpt/point scalex scaley)
                    (gpt/point (cor-x shape)
-                              (cor-y shape)))
-        )))
+                              (cor-y shape))))))
 
 (defn resize-shape
   "Apply a resize transformation to a rect-like shape. The shape
@@ -517,13 +516,16 @@
   (transform shape (rotation-matrix shape)))
 
 (defn resolve-modifier
-  [{:keys [resize-modifier displacement-modifier] :as shape}]
+  [{:keys [resize-modifier displacement-modifier rotation-modifier] :as shape}]
   (cond-> shape
     (gmt/matrix? resize-modifier)
     (transform resize-modifier)
 
     (gmt/matrix? displacement-modifier)
-    (transform displacement-modifier)))
+    (transform displacement-modifier)
+
+    rotation-modifier
+    (update :rotation #(+ (or % 0) rotation-modifier))))
 
 ;; NOTE: we need apply `shape->rect-shape` 3 times because we need to
 ;; update the x1 x2 y1 y2 attributes on each step; this is because
@@ -652,9 +654,11 @@
   ([frame shape]
    (let [ds-modifier (:displacement-modifier shape)
          rz-modifier (:resize-modifier shape)
-         frame-ds-modifier (:displacement-modifier frame)]
+         frame-ds-modifier (:displacement-modifier frame)
+         rt-modifier (:rotation-modifier shape)]
      (cond-> shape
        (gmt/matrix? rz-modifier) (transform rz-modifier)
        frame (move (gpt/point (- (:x frame)) (- (:y frame))))
        (gmt/matrix? frame-ds-modifier) (transform frame-ds-modifier)
-       (gmt/matrix? ds-modifier) (transform ds-modifier)))))
+       (gmt/matrix? ds-modifier) (transform ds-modifier)
+       rt-modifier (update :rotation #(+ (or % 0) rt-modifier))))))

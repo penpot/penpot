@@ -68,35 +68,39 @@
            (rx/of (dw/materialize-resize-modifier-in-bulk ids))))))))
 
 (defn start-rotate
-  [shape]
+  [shapes]
   (ptk/reify ::start-rotate
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [shape  (geom/shape->rect-shape shape)
-            stoper (rx/filter ms/mouse-up? stream)
-            center (gpt/point (+ (:x shape) (/ (:width shape) 2))
-                              (+ (:y shape) (/ (:height shape) 2)))]
-
+      (let [stoper (rx/filter ms/mouse-up? stream)
+            group  (geom/selection-rect shapes)
+            group-center (gpt/center group)
+            initial-angle (gpt/angle @ms/mouse-position group-center)
+            calculate-angle (fn [pos ctrl?]
+                              (let [angle (- (gpt/angle pos group-center) initial-angle)
+                                    angle (if (neg? angle) (+ 360 angle) angle)
+                                    modval (mod angle 90)
+                                    angle (if ctrl?
+                                            (if (< 50 modval)
+                                              (+ angle (- 90 modval))
+                                              (- angle modval))
+                                            angle)
+                                    angle (if (= angle 360)
+                                            0
+                                            angle)]
+                                angle))]
         (rx/concat
          (->> ms/mouse-position
               (rx/map apply-zoom)
               (rx/with-latest vector ms/mouse-position-ctrl)
               (rx/map (fn [[pos ctrl?]]
-                        (let [angle (+ (gpt/angle pos center) 90)
-                              angle (if (neg? angle)
-                                      (+ 360 angle)
-                                      angle)
-                              modval (mod angle 90)
-                              angle (if ctrl?
-                                      (if (< 50 modval)
-                                        (+ angle (- 90 modval))
-                                        (- angle modval))
-                                      angle)
-                              angle (if (= angle 360)
-                                      0
-                                      angle)]
-                          (dw/update-shape (:id shape) {:rotation angle}))))
-              (rx/take-until stoper)))))))
+                        (let [delta-angle (calculate-angle pos ctrl?)]
+                          (dw/apply-rotation delta-angle shapes))))
+              
+              
+              (rx/take-until stoper))
+         (rx/of (dw/materialize-rotation shapes))
+         )))))
 
 ;; --- Controls (Component)
 
@@ -120,78 +124,67 @@
     :cx cx
     :cy cy}])
 
+(def ^:private rotate-cursor-svg "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20px' height='20px' transform='rotate(%s)' viewBox='0 0 132.292 132.006'%3E%3Cpath d='M85.225 3.48c.034 4.989-.093 9.852-.533 14.78-29.218 5.971-54.975 27.9-63.682 56.683-1.51 2.923-1.431 7.632-3.617 9.546-5.825.472-11.544.5-17.393.45 11.047 15.332 20.241 32.328 32.296 46.725 5.632 1.855 7.155-5.529 10.066-8.533 8.12-12.425 17.252-24.318 24.269-37.482-6.25-.86-12.564-.88-18.857-1.057 5.068-17.605 19.763-31.81 37.091-37.122.181 6.402.206 12.825 1.065 19.184 15.838-9.05 30.899-19.617 45.601-30.257 2.985-4.77-3.574-7.681-6.592-9.791C111.753 17.676 98.475 8.889 85.23.046l-.005 3.435z'/%3E%3Cpath fill='%23fff' d='M92.478 23.995s-1.143.906-6.714 1.923c-29.356 5.924-54.352 30.23-59.717 59.973-.605 3.728-1.09 5.49-1.09 5.49l-11.483-.002s7.84 10.845 10.438 15.486c3.333 4.988 6.674 9.971 10.076 14.912a2266.92 2266.92 0 0019.723-29.326c-5.175-.16-10.35-.343-15.522-.572 3.584-27.315 26.742-50.186 53.91-54.096.306 5.297.472 10.628.631 15.91a2206.462 2206.462 0 0029.333-19.726c-9.75-6.7-19.63-13.524-29.483-20.12z'/%3E%3C/svg%3E\") 10 10, auto")
+
+(mf/defc rotation-handler
+  [{:keys [cx cy position on-mouse-down rotation]}]
+  (when (#{:top-left :top-right :bottom-left :bottom-right} position)
+    (let [size 20
+          rotation (or rotation 0)
+          x (- cx (if (#{:top-left :bottom-left} position) size 0))
+          y (- cy (if (#{:top-left :top-right} position) size 0))
+          angle (case position
+                  :top-left 0
+                  :top-right 90
+                  :bottom-right 180
+                  :bottom-left 270)]
+      [:rect {:style {:cursor (str/format rotate-cursor-svg (str (+ rotation angle)))}
+              :x x
+              :y y
+              :width size
+              :height size
+              :fill "transparent"
+              :on-mouse-down (or on-mouse-down (fn []))}])))
+
 (mf/defc controls
   [{:keys [shape zoom on-resize on-rotate] :as props}]
   (let [{:keys [x y width height rotation] :as shape} (geom/shape->rect-shape shape)
         radius (if (> (max width height) handler-size-threshold) 6.0 4.0)
-        transform (geom/rotation-matrix shape)]
+        transform (geom/rotation-matrix shape)
+        
+        resize-handlers {:top          [(+ x (/ width 2 )) (- y 2)]
+                         :right        [(+ x width 1) (+ y (/ height 2))]
+                         :bottom       [(+ x (/ width 2)) (+ y height 2)]
+                         :left         [(- x 3) (+ y (/ height 2))]
+                         :top-left     [x y]
+                         :top-right    [(+ x width) y]
+                         :bottom-left  [x (+ y height)]
+                         :bottom-right [(+ x width) (+ y height)]}]
+    
     [:g.controls {:transform transform}
      [:rect.main {:x x :y y
                   :width width
                   :height height
                   :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
-                  :style {:stroke "#31EFB8" :fill "transparent"
+                  :style {:stroke "#31EFB8"
+                          :fill "transparent"
                           :stroke-opacity "1"}}]
 
-     (when (and (fn? on-rotate)
-                (not= :frame (:type shape)))
-       [:*
-        [:path {:stroke "#31EFB8"
-                :stroke-opacity "1"
-                :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
-                :fill "transparent"
-                :d (str/format "M %s %s L %s %s"
-                               (+ x (/ width 2))
-                               y
-                               (+ x (/ width 2))
-                               (- y 30))}]
+     (for [[position [cx cy]] resize-handlers]
+       [:* {:key (str "fragment-" (name position))}
+        [:& rotation-handler {:key (str "rotation-" (name position))
+                              :cx cx
+                              :cy cy
+                              :position position
+                              :rotation (:rotation shape)
+                              :on-mouse-down on-rotate}]
 
-        [:& control-item {:class "rotate"
+        [:& control-item {:key (str "resize-" (name position))
+                          :class (name position)
+                          :on-click #(on-resize position %)
                           :r (/ radius zoom)
-                          :cx (+ x (/ width 2))
-                          :on-click on-rotate
-                          :cy (- y 30)}]])
-
-     [:& control-item {:class "top"
-                       :on-click #(on-resize :top %)
-                       :r (/ radius zoom)
-                       :cx (+ x (/ width 2))
-                       :cy (- y 2)}]
-     [:& control-item {:on-click #(on-resize :right %)
-                       :r (/ radius zoom)
-                       :cy (+ y (/ height 2))
-                       :cx (+ x width 1)
-                       :class "right"}]
-     [:& control-item {:on-click #(on-resize :bottom %)
-                       :r (/ radius zoom)
-                       :cx (+ x (/ width 2))
-                       :cy (+ y height 2)
-                       :class "bottom"}]
-     [:& control-item {:on-click #(on-resize :left %)
-                       :r (/ radius zoom)
-                       :cy (+ y (/ height 2))
-                       :cx (- x 3)
-                       :class "left"}]
-     [:& control-item {:on-click #(on-resize :top-left %)
-                       :r (/ radius zoom)
-                       :cx x
-                       :cy y
-                       :class "top-left"}]
-     [:& control-item {:on-click #(on-resize :top-right %)
-                       :r (/ radius zoom)
-                       :cx (+ x width)
-                       :cy y
-                       :class "top-right"}]
-     [:& control-item {:on-click #(on-resize :bottom-left %)
-                       :r (/ radius zoom)
-                       :cx x
-                       :cy (+ y height)
-                       :class "bottom-left"}]
-     [:& control-item {:on-click #(on-resize :bottom-right %)
-                       :r (/ radius zoom)
-                       :cx (+ x width)
-                       :cy (+ y height)
-                       :class "bottom-right"}]]))
+                          :cx cx
+                          :cy cy}]])]))
 
 ;; --- Selection Handlers (Component)
 
@@ -253,7 +246,7 @@
                        (st/emit! (start-resize %1 selected shape)))
 
         on-rotate #(do (dom/stop-propagation %)
-                       (println "ROTATE!"))]
+                       (st/emit! (start-rotate shapes)))]
 
     [:& controls {:shape shape
                   :zoom zoom
@@ -262,17 +255,11 @@
 
 (mf/defc single-selection-handlers
   [{:keys [shape zoom objects] :as props}]
-  (let [on-resize #(do (dom/stop-propagation %2)
+  (let [shape (geom/transform-shape shape)
+        on-resize #(do (dom/stop-propagation %2)
                        (st/emit! (start-resize %1 #{(:id shape)} shape)))
         on-rotate #(do (dom/stop-propagation %)
-                       (st/emit! (start-rotate shape)))
-
-        ds-modifier (:displacement-modifier shape)
-        rz-modifier (:resize-modifier shape)
-        ;; shape (geom/resolve-shape objects shape)
-        shape (cond-> (geom/shape->rect-shape shape)
-                (gmt/matrix? rz-modifier) (geom/transform rz-modifier)
-                (gmt/matrix? ds-modifier) (geom/transform ds-modifier))]
+                       (st/emit! (start-rotate [shape])))]
 
     [:& controls {:shape shape
                   :zoom zoom
