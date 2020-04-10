@@ -39,36 +39,43 @@
     {:width (if (mth/nan? width) 100 width)
      :height (if (mth/nan? height) 100 height)}))
 
-(declare frame-shape)
-(declare group-shape)
+(declare shape-wrapper)
 
-(mf/defc frame-wrapper
-  [{:keys [shape objects] :as props}]
-  (let [childs (mapv #(get objects %) (:shapes shape))]
-    [:& frame-shape {:shape shape :childs childs}]))
+(defn frame-wrapper [objects]
+  (mf/fnc frame-wrapper
+    [{:keys [shape] :as props}]
+    (let [childs (mapv #(get objects %) (:shapes shape))
+          shape-wrapper (shape-wrapper objects)
+          frame-shape (frame/frame-shape shape-wrapper)
+          shape (geom/transform-shape shape)]
+      [:& frame-shape {:shape shape :childs childs}])))
 
-(mf/defc group-wrapper
-  [{:keys [shape-wrapper shape objects] :as props}]
-  (let [children (mapv #(get objects %) (:shapes shape))]
-    [:& group-shape {:shape shape :children children}]))
+(defn group-wrapper [objects]
+  (mf/fnc group-wrapper
+    [{:keys [shape frame] :as props}]
+    (let [children (mapv #(get objects %) (:shapes shape))
+          shape-wrapper (shape-wrapper objects)
+          group-shape (group/group-shape shape-wrapper)]
+      [:& group-shape {:frame frame
+                       :shape shape
+                       :children children}])))
 
-(mf/defc shape-wrapper
-  [{:keys [frame shape objects] :as props}]
-  (when (and shape (not (:hidden shape)))
-    (let [shape (geom/transform-shape frame shape)]
-      (case (:type shape)
-        :curve [:& path/path-shape {:shape shape}]
-        :text [:& text/text-shape {:shape shape}]
-        :icon [:& icon/icon-shape {:shape shape}]
-        :rect [:& rect/rect-shape {:shape shape}]
-        :path [:& path/path-shape {:shape shape}]
-        :image [:& image/image-shape {:shape shape}]
-        :circle [:& circle/circle-shape {:shape shape}]
-        :group [:& group-wrapper {:shape shape :objects objects}]
-        nil))))
-
-(def group-shape (group/group-shape shape-wrapper))
-(def frame-shape (frame/frame-shape shape-wrapper))
+(defn shape-wrapper [objects]
+  (mf/fnc shape-wrapper
+    [{:keys [frame shape] :as props}]
+    (when (and shape (not (:hidden shape)))
+      (let [shape (geom/transform-shape frame shape)
+            opts #js {:shape shape :frame frame}]
+        (case (:type shape)
+          :curve [:> path/path-shape opts]
+          :text [:> text/text-shape opts]
+          :icon [:> icon/icon-shape opts]
+          :rect [:> rect/rect-shape opts]
+          :path [:> path/path-shape opts]
+          :image [:> image/image-shape opts]
+          :circle [:> circle/circle-shape opts]
+          :group [:> (group-wrapper objects) opts]
+          nil)))))
 
 (mf/defc page-svg
   [{:keys [data] :as props}]
@@ -76,7 +83,9 @@
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))
-        dim (calculate-dimensions data)]
+        dim (calculate-dimensions data)
+        frame-wrapper (frame-wrapper objects)
+        shape-wrapper (shape-wrapper objects)]
     [:svg {:view-box (str "0 0 " (:width dim 0) " " (:height dim 0))
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
@@ -85,9 +94,7 @@
      (for [item shapes]
        (if (= (:type item) :frame)
          [:& frame-wrapper {:shape item
-                            :key (:id item)
-                            :objects objects}]
+                            :key (:id item)}]
          [:& shape-wrapper {:shape item
-                            :key (:id item)
-                            :objects objects}]))]))
+                            :key (:id item)}]))]))
 
