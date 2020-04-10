@@ -11,6 +11,7 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]
+   [uxbox.main.data.helpers :as helpers]
    [uxbox.main.store :as st]))
 
 ;; --- Relative Movement
@@ -60,6 +61,13 @@
             (map #(update % :x + dx))
             (map #(update % :y + dy)))]
     (assoc shape :segments (into [] xf segments))))
+
+(defn recursive-move
+  "Move the shape and all its recursive children."
+  [shape dpoint objects]
+  (let [children-ids (helpers/get-children (:id shape) objects)
+        children (map #(get objects %) children-ids)]
+    (map #(move % dpoint) (cons shape children))))
 
 ;; --- Absolute Movement
 
@@ -608,13 +616,14 @@
   "Move the shape so that it is aligned with the given rectangle
   in the given axis. Take account the form of the shape and the
   possible rotation. What is aligned is the rectangle that wraps
-  the shape with the given rectangle."
-  [shape rect axis]
+  the shape with the given rectangle. If the shape is a group,
+  move also all of its recursive children."
+  [shape rect axis objects]
   (let [wrapper-rect (selection-rect [shape])
         align-pos (calc-align-pos wrapper-rect rect axis)
         delta {:x (- (:x align-pos) (:x wrapper-rect))
                :y (- (:y align-pos) (:y wrapper-rect))}]
-    (move shape delta)))
+    (recursive-move shape delta objects)))
 
 (defn calc-align-pos
   [wrapper-rect rect axis]
@@ -651,8 +660,9 @@
   "Distribute equally the space between shapes in the given axis. If
   there is no space enough, it does nothing. It takes into account
   the form of the shape and the rotation, what is distributed is
-  the wrapping recangles of the shapes."
-  [shapes axis]
+  the wrapping recangles of the shapes. If any shape is a group,
+  move also all of its recursive children."
+  [shapes axis objects]
   (let [coord (if (= axis :horizontal) :x :y)
         other-coord (if (= axis :horizontal) :y :x)
         size (if (= axis :horizontal) :width :height)
@@ -685,7 +695,8 @@
                                 new-pos
                                 (conj deltas delta)))))]
 
-        (map #(move %1 {coord %2 other-coord 0}) sorted-shapes deltas)))))
+        (mapcat #(recursive-move %1 {coord %2 other-coord 0} objects)
+                sorted-shapes deltas)))))
 
 
 ;; --- Helpers
