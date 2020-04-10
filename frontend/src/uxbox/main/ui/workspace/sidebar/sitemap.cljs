@@ -60,15 +60,17 @@
                                                    :index index}))
 
         navigate-fn #(st/emit! (dw/go-to-page (:id page)))
-        [dprops ref] (use-sortable {:type "page-item"
-                                    :data {:id (:id page)
-                                           :index index}
-                                    :on-hover on-hover
-                                    :on-drop on-drop})]
-    [:li {:ref ref :class (classnames :selected selected?)}
+        ;; [dprops ref] (use-sortable {:type "page-item"
+        ;;                             :data {:id (:id page)
+        ;;                                    :index index}
+        ;;                             :on-hover on-hover
+        ;;                             :on-drop on-drop})
+        ]
+    [:li {:class (classnames :selected selected?)}
      [:div.element-list-body {:class (classnames
                                       :selected selected?
-                                      :dragging (:dragging? dprops))
+                                      ;; :dragging (:dragging? dprops)
+                                      )
                               :on-click navigate-fn
                               :on-double-click on-double-click}
       [:div.page-icon i/file-html]

@@ -118,7 +118,7 @@
         page (mf/deref refs/workspace-page)
         project (mf/deref refs/workspace-project)
         layout (mf/deref refs/workspace-layout)]
-    [:> rdnd/provider {:backend rdnd/html5}
+    [:*
      [:& header {:page page
                  :file file
                  :project project
