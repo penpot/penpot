@@ -1018,3 +1018,21 @@ input[type=range]:focus::-ms-fill-upper {
     font-family: monospace;
   }
 }
+
+[draggable] {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Required to make elements draggable in old WebKit */
+  -khtml-user-drag: element;
+  -webkit-user-drag: element;
+}
+
+.dnd-over-top {
+  border-top: 1px solid white !important;
+}
+
+.dnd-over-bot {
+  border-bottom: 1px solid white !important;
+}

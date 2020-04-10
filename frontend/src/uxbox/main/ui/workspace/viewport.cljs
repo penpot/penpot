@@ -295,10 +295,7 @@
                      :on-drag-over on-drag-over
                      :on-drop on-drop}
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
-       ;; [:> js/React.Profiler
-       ;;  {:id "foobar"
-       ;;   :on-render (perf/react-on-profile)}
-       ;;  [:& frame-and-shapes]]
+       ;; [:& perf/profiler {:label "viewport-frames"}
        [:& frames-wrapper {:page page}]
 
        (when (seq selected)

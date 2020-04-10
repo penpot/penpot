@@ -1407,20 +1407,27 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
-(defn shape-order-change
-  [id index]
+;; TODO: pending UNDO
+
+(defn relocate-shape
+  [id ref-id index]
   (us/verify ::us/uuid id)
+  (us/verify ::us/uuid ref-id)
   (us/verify number? index)
-  (ptk/reify ::change-shape-order
-    ptk/UpdateEvent
-    (update [_ state]
+
+  (ptk/reify ::reloacate-shape
+    ptk/WatchEvent
+    (watch [_ state stream]
       (let [page-id (::page-id state)
-            obj (get-in state [:workspace-data page-id :objects id])
-            frm (get-in state [:workspace-data page-id :objects (:frame-id obj)])
-            shp (remove #(= % id) (:shapes frm))
-            [b a] (split-at index shp)
-            shp (d/concat [] b [id] a)]
-        (assoc-in state [:workspace-data page-id :objects (:id frm) :shapes] shp)))))
+            selected (get-in state [:workspace-local :selected])
+            objects (get-in state [:workspace-data page-id :objects])
+            parent-id (helpers/get-parent ref-id objects)]
+        (rx/of (commit-changes [{:type :mov-objects
+                                 :parent-id parent-id
+                                 :index index
+                                 :shapes (vec selected)}]
+                               []
+                               {:commit-local? true}))))))
 
 (defn commit-shape-order-change
   [id]
@@ -2332,7 +2339,8 @@
                        (fn [state] (assoc-in state [:workspace-local :selected] #{id})))))
             rx/empty))))))
 
-(defn remove-group []
+(defn remove-group
+  []
   (ptk/reify ::remove-group
     ptk/WatchEvent
     (watch [_ state stream]

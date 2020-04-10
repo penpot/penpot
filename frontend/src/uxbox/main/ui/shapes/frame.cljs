@@ -102,7 +102,7 @@
            [:& frame-shape {:shape (geom/transform-shape shape)
                             :childs childs}]])))))
 
-(defn frame-shape 
+(defn frame-shape
   [shape-wrapper]
   (mf/fnc frame-shape
     [{:keys [shape childs] :as props}]

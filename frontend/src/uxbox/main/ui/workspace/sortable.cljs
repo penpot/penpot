@@ -21,18 +21,35 @@
          on-drop (constantly nil)}
     :as options}]
   (let [ref (mf/use-ref nil)
-        [_, drop] (rdnd/useDrop
+
+        on-hover
+        (fn [item monitor]
+          (when (mf/ref-val ref)
+            (on-hover (unchecked-get item "data") monitor)))
+
+        on-drop
+        (fn [item monitor]
+          (when (mf/ref-val ref)
+            (on-drop (unchecked-get item "data") monitor)))
+
+        on-drop-collect
+        (fn [monitor]
+          #js {:is-over (.isOver ^js monitor)
+               :can-drop (.canDrop ^js monitor)})
+
+        on-drag-collect
+        (fn [monitor]
+          #js {:dragging? (.isDragging monitor)})
+
+        [props1, drop] (rdnd/useDrop
                    #js {:accept type
-                        :hover (fn [item monitor]
-                                 (when (mf/ref-val ref)
-                                   (on-hover (unchecked-get item "data") monitor)))
-                        :drop (fn [item monitor]
-                                (when (mf/ref-val ref)
-                                  (on-drop (unchecked-get item "data") monitor)))})
-        [props, drag] (rdnd/useDrag
+                        :collect on-drop-collect
+                        :hover on-hover
+                        :drop on-drop})
+        [props2, drag] (rdnd/useDrag
                        #js {:item #js {:type type :data data}
-                            :collect (fn [^js/ReactDnd.Monitor monitor]
-                                       #js {:dragging? (.isDragging monitor)})})]
+                            :collect on-drag-collect})
+        props (js/Object.assign props1 props2)]
     [(mfu/obj->map props)
      (drag (drop ref))]))
 

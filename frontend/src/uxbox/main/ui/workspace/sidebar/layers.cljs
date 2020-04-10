@@ -17,10 +17,12 @@
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.perf :as perf]
    [uxbox.util.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [t]]))
 
@@ -78,21 +80,33 @@
        {:on-double-click on-click}
        (:name shape "")])))
 
+(defn- layer-item-memo-equals?
+  [nprops oprops]
+  (let [n-item (unchecked-get nprops "item")
+        o-item (unchecked-get oprops "item")
+        n-selc (unchecked-get nprops "selected")
+        o-selc (unchecked-get oprops "selected")
+        n-indx (unchecked-get nprops "index")
+        o-indx (unchecked-get oprops "index")]
+    ;; (js/console.log "FOR" (:name n-item)
+    ;;                 "NEW SEL" n-selc
+    ;;                 "OLD SEL" o-selc)6
+    (and (identical? n-item o-item)
+         (identical? n-indx o-indx)
+         (identical? n-selc o-selc))))
 
-(def strip-attrs
-  #(select-keys % [:id :frame :name :type :hidden :blocked]))
+(declare layer-item)
 
 (mf/defc layer-item
-  {:wrap [mf/memo]}
+  {::mf/wrap [#(mf/memo' % layer-item-memo-equals?)]}
   [{:keys [index item selected objects] :as props}]
   (let [selected? (contains? selected (:id item))
-        local (mf/use-state {:collapsed false})
-        collapsed? (:collapsed @local)
+        collapsed? (mf/use-state false)
 
         toggle-collapse
         (fn [event]
           (dom/stop-propagation event)
-          (swap! local update :collapsed not))
+          (swap! collapsed? not))
 
         toggle-blocking
         (fn [event]
@@ -135,26 +149,35 @@
             (st/emit! (dw/show-shape-context-menu {:position pos
                                                    :shape item}))))
 
-        on-hover
-        (fn [item monitor]
-          (st/emit! (dw/shape-order-change (:obj-id item) index)))
+        on-drag
+        (fn [{:keys [id]}]
+          (when (not (contains? selected id))
+            (st/emit! dw/deselect-all
+                      (dw/select-shape id))))
 
         on-drop
-        (fn [item monitor]
-          (st/emit! (dw/commit-shape-order-change (:obj-id item))))
+        (fn [side {:keys [id name] :as data}]
+          (let [index (if (= :top side) (inc index) index)]
+            ;; (println "droping" name "on" side "of" (:name item) "/" index)
+            (st/emit! (dw/relocate-shape id (:id item) index))))
 
-        [dprops dnd-ref] (use-sortable
-                          {:type (str "layer-item" (:frame-id item))
-                           :data {:obj-id (:id item)
-                                  :page-id (:page item)
-                                  :index index}
-                           :on-hover on-hover
-                           :on-drop on-drop})]
-    [:li {:ref dnd-ref
-          :on-context-menu on-context-menu
+        [dprops dref] (hooks/use-sortable
+                       :type (str (:frame-id item))
+                       :on-drop on-drop
+                       :on-drag on-drag
+                       :data {:id (:id item)
+                              :index index
+                              :name (:name item)})
+        ]
+    ;; (prn "layer-item" (:name item) index)
+    [:li {:on-context-menu on-context-menu
+          :ref dref
+          :data-index index
           :class (dom/classnames
+                  :dnd-over-top (= (:over dprops) :top)
+                  :dnd-over-bot (= (:over dprops) :bot)
                   :selected selected?
-                  :dragging-TODO (:dragging? dprops))}
+                  )}
      [:div.element-list-body {:class (dom/classnames :selected selected?
                                                      :icon-layer (= (:type item) :icon))
                               :on-click select-shape
@@ -173,13 +196,13 @@
       (when (:shapes item)
         [:span.toggle-content
          {:on-click toggle-collapse
-          :class (when-not collapsed? "inverse")}
+          :class (when-not @collapsed? "inverse")}
          i/arrow-slide])]
-     (when (and (:shapes item) (not collapsed?))
+     (when (and (:shapes item) (not @collapsed?))
        [:ul.element-children
         (for [[index id] (reverse (d/enumerate (:shapes item)))]
           (when-let [item (get objects id)]
-            [:& layer-item
+            [:& uxbox.main.ui.workspace.sidebar.layers/layer-item
              {:item item
               :selected selected
               :index index
@@ -193,15 +216,16 @@
         data (mf/deref refs/workspace-data)
         objects (:objects data)
         root (get objects uuid/zero)]
+
+    ;; [:& perf/profiler {:label "layers-tree" :enabled false}
     [:ul.element-list
      (for [[index id] (reverse (d/enumerate (:shapes root)))]
-       (let [item (get objects id)]
-         [:& layer-item
-          {:item item
-           :selected selected
-           :index index
-           :objects objects
-           :key (:id item)}]))]))
+       [:& layer-item
+        {:item (get objects id)
+         :selected selected
+         :index index
+         :objects objects
+         :key id}])]))
 
 ;; --- Layers Toolbox
 
