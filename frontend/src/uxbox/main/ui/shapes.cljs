@@ -17,4 +17,4 @@
    [uxbox.main.ui.shapes.shape :as shape]))
 
 (def shape-wrapper shape/shape-wrapper)
-(def frame-wrapper (frame/frame-wrapper shape-wrapper))
+(def frame-wrapper shape/frame-wrapper)
