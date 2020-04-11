@@ -17,7 +17,7 @@
    [uxbox.services.queries :as sq]
    [uxbox.util.blob :as blob]
    [uxbox.util.transit :as t]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [vertx.eventbus :as ve]
    [vertx.http :as vh]
    [vertx.util :as vu]

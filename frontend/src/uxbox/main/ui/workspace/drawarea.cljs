@@ -25,7 +25,7 @@
    [uxbox.util.geom.path :as path]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.i18n :as i18n :refer [t]]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 ;; --- Events
 

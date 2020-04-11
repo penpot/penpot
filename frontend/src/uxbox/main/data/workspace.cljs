@@ -38,7 +38,7 @@
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.webapi :as wapi]
    #_[vendor.randomcolor])
   (:import goog.events.EventType

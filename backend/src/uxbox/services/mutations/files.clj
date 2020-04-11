@@ -26,7 +26,7 @@
    [uxbox.services.mutations.images :as imgs]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.storage :as ust]
    [vertx.util :as vu]))
 

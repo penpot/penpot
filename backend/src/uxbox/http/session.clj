@@ -9,7 +9,7 @@
    [promesa.core :as p]
    [vertx.core :as vc]
    [uxbox.db :as db]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 ;; --- Main API
 
@@ -40,7 +40,7 @@
   [request]
   (try
     (when-let [token (get-in request [:cookies "auth-token"])]
-      (uuid/from-string token))
+      (uuid/uuid token))
     (catch java.lang.IllegalArgumentException e
       nil)))
 

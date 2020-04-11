@@ -6,7 +6,9 @@
 
   environ/environ {:mvn/version "1.1.0"}
   metosin/reitit-core {:mvn/version "0.3.10"}
-  expound/expound {:mvn/version "0.7.2"}
+  expound/expound {:mvn/version "0.8.4"}
+
+  danlentz/clj-uuid {:mvn/version "0.1.9"}
 
   funcool/beicon {:mvn/version "2020.03.29-1"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}

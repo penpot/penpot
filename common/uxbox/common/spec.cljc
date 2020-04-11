@@ -13,6 +13,7 @@
    #?(:clj [clojure.spec.alpha :as s]
       :cljs [cljs.spec.alpha :as s])
    [expound.alpha :as expound]
+   [uxbox.common.uuid :as uuid]
    [uxbox.common.exceptions :as ex]
    [cuerdas.core :as str]))
 
@@ -34,9 +35,7 @@
     v
     (if (string? v)
       (if (re-matches uuid-rx v)
-        #?(:cljs (uuid v)
-           :clj (java.util.UUID/fromString v))
-
+        (uuid/uuid v)
         (if (str/empty? v) nil ::s/invalid))
       ::s/invalid)))
 

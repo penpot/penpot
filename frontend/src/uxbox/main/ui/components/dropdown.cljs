@@ -1,7 +1,7 @@
 (ns uxbox.main.ui.components.dropdown
   (:require
    [rumext.alpha :as mf]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.dom :as dom]
    [goog.events :as events]
    [goog.object :as gobj])

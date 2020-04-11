@@ -20,7 +20,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.util.router :as rt]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 ;; --- Specs
 

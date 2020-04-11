@@ -23,7 +23,7 @@
    [uxbox.tasks :as tasks]
    [uxbox.util.blob :as blob]
    [uxbox.util.sql :as sql]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [vertx.eventbus :as ve]))
 
 ;; --- Helpers & Specs

@@ -17,7 +17,7 @@
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 ;; --- Helpers & Specs
 

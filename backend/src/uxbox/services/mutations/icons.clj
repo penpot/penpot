@@ -20,7 +20,7 @@
    [uxbox.services.util :as su]
    [uxbox.tasks :as tasks]
    [uxbox.util.blob :as blob]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 ;; --- Helpers & Specs
 

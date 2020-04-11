@@ -17,7 +17,7 @@
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 ;; ;; TODO: need a good refactor
 ;; 

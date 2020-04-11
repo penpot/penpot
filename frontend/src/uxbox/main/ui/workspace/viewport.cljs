@@ -29,7 +29,7 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.perf :as perf]
-   [uxbox.util.uuid :as uuid])
+   [uxbox.common.uuid :as uuid])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget

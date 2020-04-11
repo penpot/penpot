@@ -7,7 +7,7 @@
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
    [uxbox.tests.helpers :as th]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)

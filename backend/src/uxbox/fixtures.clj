@@ -20,12 +20,12 @@
    [uxbox.migrations]
    [uxbox.services.mutations.profile :as mt.profile]
    [uxbox.util.blob :as blob]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [vertx.util :as vu]))
 
 (defn- mk-uuid
   [prefix & args]
-  (uuid/namespaced uuid/oid (apply str prefix (interpose "-" args))))
+  (uuid/namespaced uuid/zero (apply str prefix (interpose "-" args))))
 
 ;; --- Profiles creation
 

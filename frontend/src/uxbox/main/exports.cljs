@@ -8,7 +8,7 @@
   "The main logic for SVG export functionality."
   (:require
    [rumext.alpha :as mf]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.math :as mth]
    [uxbox.main.geom :as geom]
    [uxbox.util.geom.point :as gpt]

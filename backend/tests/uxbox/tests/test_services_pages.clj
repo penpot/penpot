@@ -8,7 +8,7 @@
    [uxbox.http :as http]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)

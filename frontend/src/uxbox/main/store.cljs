@@ -8,7 +8,7 @@
   (:require [beicon.core :as rx]
             [lentes.core :as l]
             [potok.core :as ptk]
-            [uxbox.util.uuid :as uuid]
+            [uxbox.common.uuid :as uuid]
             [uxbox.util.storage :refer [storage]]))
 
 ;; TODO: move outside uxbox.main

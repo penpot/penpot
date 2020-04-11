@@ -13,7 +13,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.data.workspace :as dw]
    [uxbox.util.i18n :as i18n :refer [t]]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 (mf/defc align-options
   []
