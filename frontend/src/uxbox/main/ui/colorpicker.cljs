@@ -6,7 +6,7 @@
 
 (ns uxbox.main.ui.colorpicker
   (:require
-   [lentes.core :as l]
+   [okulary.core :as l]
    [uxbox.main.store :as st]
    [goog.object :as gobj]
    [rumext.alpha :as mf]
@@ -15,7 +15,6 @@
 (mf/defc colorpicker
   [{:keys [on-change value colors] :as props}]
   (let [local-value (mf/use-state value)
-
         on-change-complete #(do
                               (reset! local-value %)
                               (on-change (gobj/get % "hex")))]
@@ -26,18 +25,16 @@
                         :onChangeComplete on-change-complete
                         :style {:box-shadow "none"}}]))
 
-(defn- lookup-colors
-  [state]
-  (as-> {} $
-    (reduce (fn [acc shape]
-              (-> acc
-                  (update (:fill-color shape) (fnil inc 0))
-                  (update (:stroke-color shape) (fnil inc 0))))
-            $ (vals (:shapes state)))
-    (reverse (sort-by second $))
-    (map first $)
-    (remove nil? $)))
 
 (def most-used-colors
-  (-> (l/lens lookup-colors)
-      (l/derive st/state)))
+  (letfn [(selector [{:keys [objects]}]
+            (as-> {} $
+              (reduce (fn [acc shape]
+                        (-> acc
+                            (update (:fill-color shape) (fnil inc 0))
+                            (update (:stroke-color shape) (fnil inc 0))))
+                      $ (vals objects))
+              (reverse (sort-by second $))
+              (map first $)
+              (remove nil? $)))]
+    (l/derived selector st/state)))

@@ -9,7 +9,7 @@
 
 (ns uxbox.main.ui.dashboard.project
   (:require
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.util.i18n :as i18n :refer [t]]
@@ -24,13 +24,11 @@
    [uxbox.main.ui.dashboard.grid :refer [grid]]))
 
 (def projects-ref
-  (-> (l/key :projects)
-      (l/derive st/state)))
+  (l/derived :projects st/state))
 
 (def files-ref
-  (-> (comp (l/key :files)
-            (l/lens vals))
-      (l/derive st/state)))
+  (-> (comp vals :files)
+      (l/derived st/state)))
 
 (mf/defc project-header
   [{:keys [team-id project-id] :as props}]

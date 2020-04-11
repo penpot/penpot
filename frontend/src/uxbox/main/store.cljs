@@ -2,14 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.store
-  (:require [beicon.core :as rx]
-            [lentes.core :as l]
-            [potok.core :as ptk]
-            [uxbox.common.uuid :as uuid]
-            [uxbox.util.storage :refer [storage]]))
+  (:require
+   [beicon.core :as rx]
+   [okulary.core :as l]
+   [potok.core :as ptk]
+   [uxbox.common.uuid :as uuid]
+   [uxbox.util.storage :refer [storage]]))
 
 ;; TODO: move outside uxbox.main
 
@@ -17,8 +18,8 @@
 
 (def ^:dynamic *on-error* identity)
 
-(defonce state (atom {}))
-(defonce loader (atom false))
+(defonce state (l/atom {}))
+(defonce loader (l/atom false))
 (defonce store (ptk/store {:on-error #(*on-error* %)}))
 (defonce stream (ptk/input-stream store))
 
@@ -44,10 +45,6 @@
       (rx/filter (fn [s] (deref *debug*)) $)
       (rx/subscribe $ (fn [event]
                         (println "[stream]: " (repr-event event)))))))
-(def auth-ref
-  (-> (l/key :auth)
-      (l/derive state)))
-
 (defn emit!
   ([] nil)
   ([event]

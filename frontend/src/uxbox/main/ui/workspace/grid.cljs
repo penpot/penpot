@@ -2,27 +2,27 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace.grid
   (:require
    [cuerdas.core :as str]
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.main.refs :as refs]
-   [uxbox.main.constants :as c]))
+   [uxbox.main.constants :as c]
+   [uxbox.main.refs :as refs]))
 
 ;; --- Grid (Component)
 
 (def options-iref
-  (-> (l/key :options)
-      (l/derive refs/workspace-data)))
+  (l/derived :options refs/workspace-data))
 
 (mf/defc grid
   {:wrap [mf/memo]}
   [props]
-  (prn "grid$render")
   (let [options (mf/deref options-iref)
         width (:grid-x options 10)
         height (:grid-y options 10)

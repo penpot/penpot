@@ -8,7 +8,7 @@
 (ns uxbox.main.ui.workspace.sidebar.sitemap
   (:require
    [cuerdas.core :as str]
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.workspace :as dw]
@@ -92,8 +92,7 @@
 
 (defn- make-page-ref
   [page-id]
-  (-> (l/in [:pages page-id])
-      (l/derive st/state)))
+  (l/derived #(get-in % [:pages page-id]) st/state))
 
 (mf/defc page-item-wrapper
   [{:keys [page-id index deletable? selected?] :as props}]

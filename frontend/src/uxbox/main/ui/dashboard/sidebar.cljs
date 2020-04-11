@@ -11,7 +11,7 @@
 (ns uxbox.main.ui.dashboard.sidebar
   (:require
    [cuerdas.core :as str]
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [goog.functions :as f]
    [uxbox.builtins.icons :as i]
@@ -65,8 +65,7 @@
         [:span.element-title name]])]))
 
 (def projects-iref
-  (-> (l/key :projects)
-      (l/derive st/state)))
+  (l/derived :projects st/state))
 
 (mf/defc sidebar-projects
   [{:keys [team-id selected-project-id] :as props}]

@@ -10,7 +10,7 @@
   (:require
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
-   [lentes.core :as l]
+   [okulary.core :as l]
    [uxbox.common.data :as d]
    [uxbox.builtins.icons :as i]
    [uxbox.main.constants :as c]
@@ -66,8 +66,7 @@
    :grid-color "#cccccc"})
 
 (def options-iref
-  (-> (l/key :options)
-      (l/derive refs/workspace-data)))
+  (l/derived :options refs/workspace-data))
 
 (mf/defc grid-options
   {:wrap [mf/memo]}

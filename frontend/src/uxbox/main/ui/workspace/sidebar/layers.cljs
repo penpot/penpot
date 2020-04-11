@@ -10,7 +10,6 @@
 
 (ns uxbox.main.ui.workspace.sidebar.layers
   (:require
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
    [uxbox.builtins.icons :as i]
@@ -25,10 +24,6 @@
    [uxbox.util.perf :as perf]
    [uxbox.common.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [t]]))
-
-(def ^:private shapes-iref
-  (-> (l/key :shapes)
-      (l/derive st/state)))
 
 ;; --- Helpers
 

@@ -10,7 +10,6 @@
 
 (ns uxbox.main.ui.workspace.header
   (:require
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i :include-macros true]
    [uxbox.config :as cfg]
@@ -144,17 +143,13 @@
 
 ;; --- Header Component
 
-(def router-ref
-  (-> (l/key :router)
-      (l/derive st/state)))
-
 (mf/defc header
   [{:keys [page file layout project] :as props}]
   (let [locale (i18n/use-locale)
         go-to-dashboard #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))
         zoom (mf/deref refs/selected-zoom)
         locale (i18n/use-locale)
-        router (mf/deref router-ref)
+        router (mf/deref refs/router)
         view-url (rt/resolve router :viewer {:page-id (:id page)} {:index 0})]
     [:header.workspace-header
      [:div.main-icon

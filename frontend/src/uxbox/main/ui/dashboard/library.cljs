@@ -10,7 +10,7 @@
 
 (ns uxbox.main.ui.dashboard.library
   (:require
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [uxbox.util.router :as rt]
@@ -302,16 +302,16 @@
                          :accept-text "Delete"}))]]}]]])))
 
 (defn libraries-ref [section team-id]
-  (-> (comp (l/key :library) (l/key section) (l/key team-id))
-      (l/derive st/state)))
+  (-> (l/in [:library section team-id])
+      (l/derived st/state)))
 
 (defn selected-items-ref [section library-id]
-  (-> (comp (l/key :library-items) (l/key section) (l/key library-id))
-      (l/derive st/state)))
+  (-> (l/in [:library-items section library-id])
+      (l/derived st/state)))
 
 (def last-deleted-library-ref
-  (-> (comp (l/key :library) (l/key :last-deleted-library))
-      (l/derive st/state)))
+  (-> (l/in [:library :last-deleted-library])
+      (l/derived st/state)))
 
 (mf/defc library-page
   [{:keys [team-id library-id section]}]

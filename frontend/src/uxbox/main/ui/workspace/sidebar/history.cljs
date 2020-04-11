@@ -73,7 +73,7 @@
 
 (mf/defc history-toolbox
   [props]
-  (let [history (mf/deref refs/history)
+  (let [history nil #_(mf/deref refs/history)
         section (mf/use-state :main)
         ;; close #(st/emit! (dw/toggle-flag :history))
         close (constantly nil)
@@ -102,7 +102,7 @@
 
 (mf/defc history-dialog
   [props]
-  (let [history (mf/deref refs/history)
+  (let [history nil  #_(mf/deref refs/history)
         version (:selected history)
         on-accept #(st/emit! udh/apply-selected)
         on-cancel #(st/emit! udh/deselect)]
