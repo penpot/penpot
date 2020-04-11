@@ -6,6 +6,7 @@
 
 (ns uxbox.util.perf
   "Performance profiling for react components."
+  (:require-macros [uxbox.util.perf])
   (:require [uxbox.util.math :as math]
             [rumext.alpha :as mf]
             [goog.functions :as f]
@@ -35,29 +36,77 @@
 ;;         (println (str "[perf|" ~name "] => " time#))
 ;;         res#)))
 
+(defn tdigest
+  []
+  (specify! (td/TDigest.)
+    ITransientCollection
+    (-conj! [this n]
+      (.push this n)
+      this)
+
+    (-persistent! [this]
+      this)))
+
+(defn timestamp
+  []
+  (js/performance.now))
+
+(def registry (js/Map.))
+
+(def register-measure
+  (let [insert!
+        (fn [name measure]
+          (let [td (.get registry name)]
+            (if td
+              (conj! td measure)
+              (.set registry name (conj! (tdigest) measure)))))
+
+        print-single-summary!
+        (fn [name td]
+          (js/console.log (str "[measure: " name "] "
+                               "samples=" (unchecked-get td "n") "\n"
+                               "Q50=" (.percentile td 0.50) "\n"
+                               "Q75=" (.percentile td 0.75) "\n"
+                               "Q95=" (.percentile td 0.90) "\n"
+                               "MAX=" (.percentile td 1))))
+        print-summary!
+        (f/debounce
+         #(.forEach registry (fn [td name] (print-single-summary! name td)))
+         500)]
+    (fn [name measure]
+      (insert! name measure)
+      (print-summary!))))
+
+(defn mesurable
+  [name f]
+  (fn [& args]
+    (uxbox.util.perf/with-measure name
+      (apply f args))))
+
 
 (defn on-render-factory
   [label]
-  (let [buf (td/TDigest.)
+  (let [td  (tdigest)
         log (f/debounce
-             (fn [phase buf]
+             (fn [phase td]
                (js/console.log (str "[profile: " label " (" phase ")] "
-                                    "samples=" (unchecked-get buf "n") "\n"
-                                    "Q50=" (.percentile buf 0.50) "\n"
-                                    "Q75=" (.percentile buf 0.75) "\n"
-                                    "Q95=" (.percentile buf 0.90) "\n"
-                                    "MAX=" (.percentile buf 1))))
+                                    "samples=" (unchecked-get td "n") "\n"
+                                    "Q50=" (.percentile td 0.50) "\n"
+                                    "Q75=" (.percentile td 0.75) "\n"
+                                    "Q95=" (.percentile td 0.90) "\n"
+                                    "MAX=" (.percentile td 1))))
              300)]
     (fn [id phase adur, bdur, st, ct, itx]
-      (.push buf adur)
-      (log phase buf))))
+      (conj! td adur)
+      (log phase td))))
 
 (mf/defc profiler
   {::mf/wrap-props false}
   [props]
   (let [children (unchecked-get props "children")
         label    (unchecked-get props "label")
-        enabled? (or (unchecked-get props "enabled") true)
+        enabled? (unchecked-get props "enabled")
+        enabled? (if (nil? enabled?) true enabled?)
         on-render (mf/use-memo
                    (mf/deps label)
                    #(on-render-factory label))]
