@@ -10,7 +10,7 @@
 
 (ns uxbox.main.ui.dashboard.search
   (:require
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [uxbox.main.store :as st]
    [uxbox.main.data.dashboard :as dsh]
@@ -20,8 +20,8 @@
 ;; --- Component: Search
 
 (def search-result-ref
-  (-> (l/in [:dashboard-local :search-result])
-      (l/derive st/state)))
+  (-> #(get-in % [:dashboard-local :search-result])
+      (l/derived st/state)))
 
 (mf/defc search-page
   [{:keys [team-id search-term] :as props}]

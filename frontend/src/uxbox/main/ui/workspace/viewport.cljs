@@ -102,23 +102,12 @@
 ;; --- Viewport
 
 (declare remote-user-cursors)
-(declare frames)
-
-(mf/defc frames-wrapper
-  {::mf/wrap-props false}
-  [props]
-  (let [page     (unchecked-get props "page")
-        page-id  (:id page)
-        data-ref (-> (mf/deps page-id)
-                     (mf/use-memo #(-> (l/in [:workspace-data page-id])
-                                       (l/derive st/state))))
-        data (mf/deref data-ref)]
-    [:& frames {:data data}]))
 
 (mf/defc frames
   {:wrap [mf/memo]}
-  [{:keys [data] :as props}]
-  (let [objects (:objects data)
+  []
+  (let [data    (mf/deref refs/workspace-data)
+        objects (:objects data)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))]
@@ -304,7 +293,7 @@
                      :on-drop on-drop}
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
        ;; [:& perf/profiler {:label "viewport-frames"}
-       [:& frames-wrapper {:page page}]
+       [:& frames]
 
        (when (seq selected)
          [:& selection-handlers {:selected selected

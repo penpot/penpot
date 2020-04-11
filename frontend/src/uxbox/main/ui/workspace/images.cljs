@@ -21,6 +21,7 @@
    [uxbox.common.uuid :as uuid]))
 
 ;; --- Refs
+;; TODO: pending refactor
 
 (def ^:private collections-iref
   (-> (l/key :images-collections)

@@ -7,28 +7,9 @@
 
 (ns uxbox.main.ui.workspace.colorpicker
   (:require
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.main.store :as st]
    [uxbox.main.ui.colorpicker :as cp]))
-
-;; --- Recent Colors Calc. Algorithm
-
-(defn- lookup-colors
-  [state]
-  (as-> {} $
-    (reduce (fn [acc shape]
-              (-> acc
-                  (update (:fill-color shape) (fnil inc 0))
-                  (update (:stroke-color shape) (fnil inc 0))))
-            $ (vals (:shapes state)))
-    (reverse (sort-by second $))
-    (map first $)
-    (remove nil? $)))
-
-(def most-used-colors
-  (-> (l/lens lookup-colors)
-      (l/derive st/state)))
 
 ;; --- Color Picker Modal
 
@@ -38,7 +19,7 @@
    {:style {:left (str (- x 260) "px")
             :top (str (- y 50) "px")}}
    [:& cp/colorpicker {:value (or value default)
-                       :colors (into-array @most-used-colors)
+                       :colors (into-array @cp/most-used-colors)
                        :on-change on-change}]])
 
 

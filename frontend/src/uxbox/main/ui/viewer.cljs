@@ -12,7 +12,7 @@
    [beicon.core :as rx]
    [goog.events :as events]
    [goog.object :as gobj]
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.common.exceptions :as ex]
@@ -93,12 +93,10 @@
 ;; --- Component: Viewer Page
 
 (def viewer-data-ref
-  (-> (l/key :viewer-data)
-      (l/derive st/state)))
+  (l/derived :viewer-data st/state))
 
 (def viewer-local-ref
-  (-> (l/key :viewer-local)
-      (l/derive st/state)))
+  (l/derived :viewer-local st/state))
 
 (mf/defc viewer-page
   [{:keys [page-id index token] :as props}]

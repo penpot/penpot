@@ -9,7 +9,7 @@
 
 (ns uxbox.main.ui.dashboard.recent-files
   (:require
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.common.exceptions :as ex]
@@ -31,16 +31,13 @@
 ;; --- Component: Content
 
 (def projects-ref
-  (-> (l/key :projects)
-      (l/derive st/state)))
+  (l/derived :projects st/state))
 
 (def recent-file-ids-ref
-  (-> (l/key :recent-file-ids)
-      (l/derive st/state)))
+  (l/derived :recent-file-ids st/state))
 
 (def files-ref
-  (-> (l/key :files)
-      (l/derive st/state)))
+  (l/derived :files st/state))
 
 ;; --- Component: Recent files
 

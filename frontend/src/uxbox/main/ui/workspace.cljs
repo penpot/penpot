@@ -65,7 +65,7 @@
        [:& colorpalette {:left-sidebar? left-sidebar?}])
 
      [:& messages]
-     [:& context-menu {}]
+     [:& context-menu]
 
      [:section.workspace-content
       {:class classes

@@ -2,12 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace.sidebar.options
   (:require
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.workspace :as udw]
@@ -46,8 +48,8 @@
   [{:keys [shape-id page-id] :as props}]
   (let [shape-iref (-> (mf/deps shape-id page-id)
                        (mf/use-memo
-                        #(-> (l/in [:workspace-data page-id :objects shape-id])
-                             (l/derive st/state))))
+                        #(-> (l/in [:objects shape-id])
+                             (l/derived refs/workspace-data))))
         shape (mf/deref shape-iref)]
     [:& shape-options {:shape shape}]))
 

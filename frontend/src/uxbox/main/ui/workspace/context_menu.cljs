@@ -11,7 +11,7 @@
   "A workspace specific context menu (mouse right click)."
   (:require
    [beicon.core :as rx]
-   [lentes.core :as l]
+   [okulary.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.main.store :as st]
@@ -24,8 +24,7 @@
    [uxbox.main.ui.components.dropdown :refer [dropdown]]))
 
 (def menu-ref
-  (-> (l/key :context-menu)
-      (l/derive refs/workspace-local)))
+  (l/derived :context-menu refs/workspace-local))
 
 (defn- prevent-default
   [event]
@@ -102,8 +101,8 @@
        [:& menu-entry {:title "Hide"
                        :on-click do-hide-shape}])
 
-     
-     
+
+
      (if (:blocked shape)
        [:& menu-entry {:title "Unlock"
                        :on-click do-unlock-shape}]

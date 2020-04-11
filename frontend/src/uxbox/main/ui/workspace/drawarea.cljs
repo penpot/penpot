@@ -131,13 +131,10 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [{:keys [zoom flags]} (:workspace-local state)
-              align? (refs/alignment-activated? flags)
-
               stoper? #(or (ms/mouse-up? %) (= % :interrupt))
               stoper (rx/filter stoper? stream)
 
               mouse (->> ms/mouse-position
-                         ;; (rx/mapcat #(conditional-align % align?))
                          (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (->> mouse
@@ -181,14 +178,12 @@
       (watch [_ state stream]
         (let [{:keys [zoom flags]} (:workspace-local state)
 
-              align? (refs/alignment-activated? flags)
               last-point (volatile! (gpt/divide @ms/mouse-position (gpt/point zoom)))
 
               stoper (->> (rx/filter stoper-event? stream)
                           (rx/share))
 
               mouse (->> (rx/sample 10 ms/mouse-position)
-                         ;; (rx/mapcat #(conditional-align % align?))
                          (rx/map #(gpt/divide % (gpt/point zoom))))
 
               points (->> stream
@@ -255,10 +250,8 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [{:keys [zoom flags]} (:workspace-local state)
-              align? (refs/alignment-activated? flags)
               stoper (rx/filter stoper-event? stream)
               mouse  (->> (rx/sample 10 ms/mouse-position)
-                          ;; (rx/mapcat #(conditional-align % align?))
                           (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
            (rx/of initialize-drawing)
@@ -350,8 +343,3 @@
            :on-click on-click
            :on-mouse-enter on-mouse-enter
            :on-mouse-leave on-mouse-leave}])])))
-
-;; (defn- conditional-align [point align?]
-;;   (if align?
-;;     (uwrk/align-point point)
-;;     (rx/of point)))

@@ -18,7 +18,9 @@
 (mf/defc align-options
   []
   (let [selected (mf/deref refs/selected-shapes)
-        objects (deref refs/objects) ; don't need to watch objects, only read the value
+
+        ;; don't need to watch objects, only read the value
+        objects  (:objects (deref refs/workspace-data))
 
         disabled (cond
                    (empty? selected) true

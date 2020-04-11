@@ -11,32 +11,27 @@
   (:require
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.common.exceptions :as ex]
    [uxbox.common.data :as d]
+   [uxbox.common.exceptions :as ex]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.dashboard :refer [dashboard]]
    [uxbox.main.ui.login :refer [login-page]]
+   [uxbox.main.ui.not-found :refer [not-found-page]]
    [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
    [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
    [uxbox.main.ui.profile.register :refer [profile-register-page]]
-   [uxbox.main.ui.viewer :refer [viewer-page]]
    [uxbox.main.ui.settings :as settings]
-   [uxbox.main.ui.not-found :refer [not-found-page]]
    [uxbox.main.ui.shapes]
+   [uxbox.main.ui.viewer :refer [viewer-page]]
    [uxbox.main.ui.workspace :as workspace]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.timers :as ts]))
-
-(def route-iref
-  (-> (l/key :route)
-      (l/derive st/state)))
 
 ;; --- Routes
 
@@ -142,7 +137,7 @@
 
 (mf/defc app
   []
-  (let [route (mf/deref route-iref)]
+  (let [route (mf/deref refs/route)]
     (when route
       [:& app-container {:route route :key (get-in route [:data :name])}])))
 

@@ -2,42 +2,40 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace.colorpalette
   (:require
    [beicon.core :as rx]
-   [lentes.core :as l]
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.colors :as udc]
-   [uxbox.main.data.workspace :as udw]
    [uxbox.main.data.library :as dlib]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.components.context-menu :refer [context-menu]]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.util.color :refer [hex->rgb]]
-   [uxbox.util.data :refer [read-string seek]]
-   [uxbox.util.dom :as dom]
-   [uxbox.main.ui.components.context-menu :refer [context-menu]]))
+   [uxbox.util.dom :as dom]))
 
 ;; --- Refs
 
-(def project-ref
-  (-> (l/key :workspace-project)
-      (l/derive st/state)))
-
 (def libraries-ref
-  (-> (comp (l/key :library) (l/key :palettes))
-      (l/derive st/state)))
+  (l/derived #(get-in % [:library :palettes]) st/state))
 
-(defn selected-items-ref [library-id]
-  (-> (comp (l/key :library-items) (l/key :palettes) (l/key library-id))
-      (l/derive st/state)))
+(defn selected-items-ref
+  [library-id]
+  (->> #(get-in % [:library-items :palettes library-id])
+       (l/derived st/state)))
 
 (def selected-library-ref
-  (-> (comp (l/key :library-selected) (l/key :palettes))
-      (l/derive st/state)))
+  (-> #(get-in % [:library-selected :palettes])
+      (l/derived st/state)))
 
 ;; --- Components
 
@@ -64,7 +62,7 @@
       (mf/use-effect
        (mf/deps current-selection)
        #(st/emit! (dlib/retrieve-library-data :palettes current-selection)))
-      
+
       (let [items (-> current-selection selected-items-ref  mf/deref)
             doc-width (.. js/document -documentElement -clientWidth)
             width (:width @state (* doc-width 0.84))
@@ -108,7 +106,7 @@
 
         [:div.color-palette {:class (when left-sidebar? "left-sidebar-open")}
          [:& context-menu {:selectable true
-                           :selected (->> libraries (filter #(= (:id %) current-selection)) first :name) 
+                           :selected (->> libraries (filter #(= (:id %) current-selection)) first :name)
                            :show (:show-menu @state)
                            :on-close #(swap! state assoc :show-menu false)
                            :options (mapv #(vector (:name %) (partial handle-click %)) libraries)} ]
@@ -130,7 +128,7 @@
 
 (mf/defc colorpalette
   [{:keys [left-sidebar?]}]
-  (let [team-id (-> project-ref mf/deref :team-id)
+  (let [team-id (-> refs/workspace-project mf/deref :team-id)
         libraries (-> libraries-ref mf/deref vals flatten)]
     (mf/use-effect #(st/emit! (dlib/retrieve-libraries :palettes)
                               (dlib/retrieve-libraries :palettes team-id)))

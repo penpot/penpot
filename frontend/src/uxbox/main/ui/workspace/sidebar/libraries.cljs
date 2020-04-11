@@ -9,7 +9,7 @@
 
 (ns uxbox.main.ui.workspace.sidebar.libraries
   (:require
-   [lentes.core :as l]
+   [okulary.core :as l]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
@@ -31,25 +31,21 @@
 
 ;; --- Refs
 
-(def project-ref
-  (-> (l/key :workspace-project)
-      (l/derive st/state)))
-
 (defn libraries-ref [section]
-  (-> (comp (l/key :library) (l/key section))
-      (l/derive st/state)))
+  (-> (l/in [:library section])
+      (l/derived st/state)))
 
 (defn selected-items-ref [section library-id]
-  (-> (comp (l/key :library-items) (l/key section) (l/key library-id))
-      (l/derive st/state)))
+  (-> (l/in [:library-items section library-id])
+      (l/derived st/state)))
 
 (defn selected-library-ref [section]
-  (-> (comp (l/key :library-selected) (l/key section))
-      (l/derive st/state)))
+  (-> (l/in [:library-selected section])
+      (l/derived st/state)))
 
 (defn selected-filter-ref [section]
-  (-> (comp (l/key :library-filter) (l/key section))
-      (l/derive st/state)))
+  (-> (l/in [:library-filter section])
+      (l/derived st/state)))
 
 (defmulti shape-from-item (fn [type _] type))
 
@@ -111,7 +107,7 @@
              (if (= section :icons)
                [:svg {:view-box (->> item :metadata :view-box (str/join " "))
                       :width (-> item :metadata :width)
-                      :height (-> item :metadat :height) 
+                      :height (-> item :metadat :height)
                       :dangerouslySetInnerHTML {:__html (:content item)}}]
                [:img {:draggable false
                       :src (:thumb-uri item)}])
@@ -121,7 +117,7 @@
   [{:keys [key]}]
   (let [state (mf/use-state {:menu-open false})
         selected-filter (fn [section] (or (mf/deref (selected-filter-ref section)) :all))
-        team-id (-> project-ref mf/deref :team-id)
+        team-id (-> refs/workspace-project mf/deref :team-id)
 
         filter-to-str {:all (tr "workspace.library.all")
                        :own (tr "workspace.library.own")
