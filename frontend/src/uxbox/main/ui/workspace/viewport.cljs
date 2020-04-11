@@ -148,79 +148,86 @@
         zoom (or zoom 1)
 
         on-mouse-down
-        (fn [event]
-          (dom/stop-propagation event)
-          (let [ctrl? (kbd/ctrl? event)
-                shift? (kbd/shift? event)
-                opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :down ctrl? shift?))
-            (when (and (not edition)
-                       (= 1 (.-which (.-nativeEvent event))))
-              (if drawing-tool
-                (st/emit! (start-drawing drawing-tool))
-                (st/emit! dw/handle-selection)))))
+        (mf/use-callback
+         (mf/deps drawing-tool)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [ctrl? (kbd/ctrl? event)
+                 shift? (kbd/shift? event)
+                 opts {:shift? shift?
+                       :ctrl? ctrl?}]
+             (st/emit! (ms/->MouseEvent :down ctrl? shift?))
+             (when (and (not edition)
+                        (= 1 (.-which (.-nativeEvent event))))
+               (if drawing-tool
+                 (st/emit! (start-drawing drawing-tool))
+                 (st/emit! dw/handle-selection))))))
 
         on-context-menu
-        (fn [event]
-          (dom/prevent-default event)
-          (dom/stop-propagation event)
-          (let [position (dom/get-client-position event)]
-            (st/emit! (dw/show-context-menu {:position position}))))
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (let [position (dom/get-client-position event)]
+             (st/emit! (dw/show-context-menu {:position position})))))
 
         on-mouse-up
-        (fn [event]
-          (dom/stop-propagation event)
-          (let [ctrl? (kbd/ctrl? event)
-                shift? (kbd/shift? event)
-                opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :up ctrl? shift?))))
+        (mf/use-callback
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [ctrl? (kbd/ctrl? event)
+                 shift? (kbd/shift? event)
+                 opts {:shift? shift?
+                       :ctrl? ctrl?}]
+             (st/emit! (ms/->MouseEvent :up ctrl? shift?)))))
 
         on-click
-        (fn [event]
-          (dom/stop-propagation event)
-          (let [ctrl? (kbd/ctrl? event)
-                shift? (kbd/shift? event)
-                opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :click ctrl? shift?))))
+        (mf/use-callback
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [ctrl? (kbd/ctrl? event)
+                 shift? (kbd/shift? event)
+                 opts {:shift? shift?
+                       :ctrl? ctrl?}]
+             (st/emit! (ms/->MouseEvent :click ctrl? shift?)))))
 
         on-double-click
-        (fn [event]
-          (dom/stop-propagation event)
-          (let [ctrl? (kbd/ctrl? event)
-                shift? (kbd/shift? event)
-                opts {:shift? shift?
-                      :ctrl? ctrl?}]
-            (st/emit! (ms/->MouseEvent :double-click ctrl? shift?))))
+        (mf/use-callback
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [ctrl? (kbd/ctrl? event)
+                 shift? (kbd/shift? event)
+                 opts {:shift? shift?
+                       :ctrl? ctrl?}]
+             (st/emit! (ms/->MouseEvent :double-click ctrl? shift?)))))
 
         on-key-down
-        (fn [event]
-          (let [bevent (.getBrowserEvent event)
-                key (.-keyCode event)
-                ctrl? (kbd/ctrl? event)
-                shift? (kbd/shift? event)
-                opts {:key key
-                      :shift? shift?
-                      :ctrl? ctrl?}]
-            (when-not (.-repeat bevent)
-              (st/emit! (ms/->KeyboardEvent :down key ctrl? shift?))
-              (when (kbd/space? event)
-                (st/emit! handle-viewport-positioning)
-                #_(st/emit! (dw/start-viewport-positioning))))))
+        (mf/use-callback
+         (fn [event]
+           (let [bevent (.getBrowserEvent event)
+                 key (.-keyCode event)
+                 ctrl? (kbd/ctrl? event)
+                 shift? (kbd/shift? event)
+                 opts {:key key
+                       :shift? shift?
+                       :ctrl? ctrl?}]
+             (when-not (.-repeat bevent)
+               (st/emit! (ms/->KeyboardEvent :down key ctrl? shift?))
+               (when (kbd/space? event)
+                 (st/emit! handle-viewport-positioning))))))
 
         on-key-up
-        (fn [event]
-          (let [key (.-keyCode event)
-                ctrl? (kbd/ctrl? event)
-                shift? (kbd/shift? event)
-                opts {:key key
-                      :shift? shift?
-                      :ctrl? ctrl?}]
-            (when (kbd/space? event)
-              (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
-            (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?))))
+        (mf/use-callback
+         (fn [event]
+           (let [key (.-keyCode event)
+                 ctrl? (kbd/ctrl? event)
+                 shift? (kbd/shift? event)
+                 opts {:key key
+                       :shift? shift?
+                       :ctrl? ctrl?}]
+             (when (kbd/space? event)
+               (st/emit! ::finish-positioning #_(dw/stop-viewport-positioning)))
+             (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?)))))
 
         translate-point-to-viewport
         (fn [pt]
@@ -239,14 +246,15 @@
                                          (kbd/shift? event)))))
 
         on-mouse-wheel
-        (fn [event]
-          (when (kbd/ctrl? event)
-            ;; Disable browser zoom with ctrl+mouse wheel
-            (dom/prevent-default event)
-            (let [event (.getBrowserEvent event)]
-              (if (pos? (.-deltaY event))
-                (st/emit! dw/decrease-zoom)
-                (st/emit! dw/increase-zoom)))))
+        (mf/use-callback
+         (fn [event]
+           (when (kbd/ctrl? event)
+             ;; Disable browser zoom with ctrl+mouse wheel
+             (dom/prevent-default event)
+             (let [event (.getBrowserEvent event)]
+               (if (pos? (.-deltaY event))
+                 (st/emit! dw/decrease-zoom)
+                 (st/emit! dw/increase-zoom))))))
 
         on-mount
         (fn []

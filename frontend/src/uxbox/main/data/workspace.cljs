@@ -1746,7 +1746,7 @@
   [shapes]
   (ptk/reify ::materialize-rotation
     IBatchedChange
-    
+
     ptk/UpdateEvent
     (update [_ state]
       (let [apply-rotation
