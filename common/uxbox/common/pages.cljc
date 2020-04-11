@@ -11,6 +11,7 @@
   "A common (clj/cljs) functions and specs for pages."
   (:require
    [clojure.spec.alpha :as s]
+   [uxbox.common.uuid :as uuid]
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]))

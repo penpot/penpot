@@ -21,7 +21,7 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.router :as rt]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.webapi :as wapi]))
 
 

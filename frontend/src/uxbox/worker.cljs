@@ -8,7 +8,7 @@
   (:require [beicon.core :as rx]
             [cuerdas.core :as str]
             [uxbox.util.transit :as t]
-            [uxbox.util.uuid :as uuid]
+            [uxbox.common.uuid :as uuid]
             [uxbox.worker.impl :as impl]
             [uxbox.worker.align]))
 

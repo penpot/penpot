@@ -9,7 +9,7 @@
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
    [uxbox.util.storage :as ust]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.tests.helpers :as th]
    [vertx.core :as vc]))
 

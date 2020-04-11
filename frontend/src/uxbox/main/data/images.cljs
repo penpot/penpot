@@ -16,7 +16,7 @@
    [uxbox.main.repo :as rp]
    [uxbox.util.i18n :refer [tr]]
    [uxbox.util.router :as rt]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.time :as ts]
    [uxbox.util.router :as r]
    [uxbox.util.files :as files]))

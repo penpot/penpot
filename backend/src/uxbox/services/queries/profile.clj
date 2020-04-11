@@ -15,7 +15,7 @@
    [uxbox.images :as images]
    [uxbox.services.queries :as sq]
    [uxbox.services.util :as su]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.blob :as blob]))
 
 ;; --- Helpers & Specs

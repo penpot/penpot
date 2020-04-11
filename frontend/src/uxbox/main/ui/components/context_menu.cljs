@@ -3,7 +3,7 @@
    [rumext.alpha :as mf]
    [goog.object :as gobj]
    [uxbox.main.ui.components.dropdown :refer [dropdown']]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.data :refer [classnames]]))
 
 (mf/defc context-menu

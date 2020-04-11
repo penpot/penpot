@@ -28,7 +28,7 @@
    [uxbox.util.svg :as svg]
    [uxbox.util.transit :as t]
    [uxbox.util.blob :as blob]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.data :as data]
    [uxbox.services.mutations.colors :as colors]
    [uxbox.services.mutations.icons :as icons]

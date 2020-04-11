@@ -18,7 +18,7 @@
    [uxbox.services.queries.teams :as teams]
    [uxbox.services.mutations :as sm]
    [uxbox.services.util :as su]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 ;; --- Helpers & Specs
 

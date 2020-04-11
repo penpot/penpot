@@ -19,7 +19,7 @@
    [uxbox.services.mutations :as sm]
    [uxbox.services.mutations.profile :as profile]
    [uxbox.tasks :as tasks]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.time :as tm]))
 
 (sm/defmutation ::create-demo-profile

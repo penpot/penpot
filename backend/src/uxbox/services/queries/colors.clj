@@ -22,7 +22,7 @@
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
    [uxbox.util.data :as data]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [vertx.core :as vc]))
 
 ;; --- Helpers & Specs

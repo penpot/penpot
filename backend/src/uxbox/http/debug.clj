@@ -11,7 +11,7 @@
    [promesa.core :as p]
    [uxbox.http.errors :as errors]
    [uxbox.http.session :as session]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 (defn emails-list
   [req]

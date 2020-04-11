@@ -17,7 +17,7 @@
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
    [uxbox.util.timers :as ts]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 ;; --- Specs
 

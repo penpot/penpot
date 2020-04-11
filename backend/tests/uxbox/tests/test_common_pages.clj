@@ -11,7 +11,7 @@
    [promesa.core :as p]
    [mockery.core :refer [with-mock]]
    [uxbox.common.pages :as cp]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.tests.helpers :as th]))
 
 (t/deftest process-change-add-obj

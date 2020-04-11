@@ -33,7 +33,7 @@
    [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]
    [uxbox.util.storage :as ust]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.time :as tm]
    [vertx.util :as vu]))
 

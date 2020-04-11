@@ -23,7 +23,7 @@
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.dom :as dom]
    [uxbox.util.perf :as perf]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [t]]))
 
 (def ^:private shapes-iref

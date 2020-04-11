@@ -11,7 +11,7 @@
    [vertx.util :as vu]
    [uxbox.core :refer [system]]
    [uxbox.common.exceptions :as ex]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.dispatcher :as uds]))
 
 (defn raise-not-found-if-nil

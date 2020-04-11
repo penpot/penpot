@@ -18,7 +18,7 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [tr t]]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 ;; --- Refs
 

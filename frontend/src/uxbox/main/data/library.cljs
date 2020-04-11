@@ -12,7 +12,7 @@
    [uxbox.util.webapi :as wapi]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as r]
-   [uxbox.util.uuid :as uuid]))
+   [uxbox.common.uuid :as uuid]))
 
 (defn initialize-workspace-libraries []
   ())

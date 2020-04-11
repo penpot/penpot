@@ -13,7 +13,7 @@
    [uxbox.services.init]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [vertx.web :as vw]
    [vertx.eventbus :as ve]))
 
@@ -75,7 +75,7 @@
 (defn logout-handler
   [req]
   (some-> (get-in req [:cookies "auth-token"])
-          (uuid/from-string)
+          (uuid/uuid)
           (session/delete)
           (p/then' (fn [token]
                      {:status 204

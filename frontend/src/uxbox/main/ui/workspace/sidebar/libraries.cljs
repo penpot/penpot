@@ -22,7 +22,7 @@
    [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.dom :as dom]
    [uxbox.util.timers :as timers]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]

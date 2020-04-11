@@ -19,7 +19,7 @@
    [uxbox.media]
    [uxbox.db :as db]
    [uxbox.util.blob :as blob]
-   [uxbox.util.uuid :as uuid]
+   [uxbox.common.uuid :as uuid]
    [uxbox.util.storage :as ust]
    [uxbox.config :as cfg]
    [vertx.util :as vu]))
@@ -67,7 +67,7 @@
 
 (defn mk-uuid
   [prefix & args]
-  (uuid/namespaced uuid/oid (apply str prefix args)))
+  (uuid/namespaced uuid/zero (apply str prefix args)))
 
 ;; --- Profile creation
 
