@@ -25,8 +25,12 @@
   [props]
   (let [shape (unchecked-get props "shape")
         frame (unchecked-get props "frame")
-        on-mouse-down #(common/on-mouse-down % shape)
-        on-context-menu #(common/on-context-menu % shape)]
+        on-mouse-down   (mf/use-callback
+                         (mf/deps shape)
+                         #(common/on-mouse-down % shape))
+        on-context-menu (mf/use-callback
+                         (mf/deps shape)
+                         #(common/on-context-menu % shape))]
     [:g.shape {:on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
      [:& rect-shape {:shape (geom/transform-shape frame shape) }]]))
