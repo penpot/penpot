@@ -293,7 +293,7 @@
                      :on-drop on-drop}
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
        ;; [:& perf/profiler {:label "viewport-frames"}
-       [:& frames]
+       [:& frames {:key (:id page)}]
 
        (when (seq selected)
          [:& selection-handlers {:selected selected
