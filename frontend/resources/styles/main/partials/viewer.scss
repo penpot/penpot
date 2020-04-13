@@ -19,6 +19,12 @@
   align-items: center;
   flex-flow: wrap;
 
+
+  .empty-state {
+    justify-content: center;
+    align-items: center;
+  }
+
   svg {
     transform-origin: center;
   }
