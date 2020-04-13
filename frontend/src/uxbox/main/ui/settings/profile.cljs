@@ -101,8 +101,8 @@
                             :class (fm/error-class form :theme)
                             :on-blur (fm/on-input-blur form :theme)
                             :on-change (fm/on-input-change form :theme)}
-      [:option {:value "light"} "Light"]
-      [:option {:value "dark"} "Dark"]]
+      [:option {:value "light"} "Default"]]
+
 
      [:input.btn-primary
       {:type "submit"
