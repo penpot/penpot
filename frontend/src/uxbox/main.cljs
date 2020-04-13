@@ -22,6 +22,7 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :as i18n]
+   [uxbox.util.theme :as theme]
    [uxbox.util.router :as rt]
    [uxbox.util.storage :refer [storage]]
    [uxbox.util.timers :as ts]))
@@ -65,8 +66,10 @@
 
 (defn ^:export init
   []
-  (let [translations (gobj/get goog.global "uxboxTranslations")]
+  (let [translations (gobj/get goog.global "uxboxTranslations")
+        themes (gobj/get goog.global "uxboxThemes")]
     (i18n/init! translations)
+    (theme/init! themes)
     (unchecked-set js/window app-sym "main")
     (st/init)
     (init-ui)))

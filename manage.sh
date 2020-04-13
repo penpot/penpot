@@ -59,6 +59,7 @@ function build-frontend {
            -e UXBOX_DEMO_WARNING=${UXBOX_DEMO_WARNING} \
            -e UXBOX_DEPLOY_DATE=${UXBOX_DEPLOY_DATE} \
            -e UXBOX_DEPLOY_COMMIT=${UXBOX_DEPLOY_COMMIT} \
+           -e UXBOX_THEME=${UXBOX_THEME} \
            $IMAGE ./scripts/build-app.sh
 }
 

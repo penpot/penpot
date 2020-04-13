@@ -87,7 +87,9 @@
   [^Row row]
   (reduce (fn [acc index]
             (let [cname (.getColumnName row index)]
-              (assoc acc cname (.getValue row ^int index))))
+              (if-some [value (.getValue row ^int index)]
+                (assoc acc cname value)
+                acc)))
           {}
           (range (.size row))))
 
