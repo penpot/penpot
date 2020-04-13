@@ -93,7 +93,7 @@
 (declare layer-item)
 
 (mf/defc layer-item
-  {::mf/wrap [#(mf/memo' % layer-item-memo-equals?)]}
+  ;; {::mf/wrap [#(mf/memo' % layer-item-memo-equals?)]}
   [{:keys [index item selected objects] :as props}]
   (let [selected? (contains? selected (:id item))
         collapsed? (mf/use-state false)
@@ -238,4 +238,4 @@
       [:span (:name page)]
       #_[:div.tool-window-close {:on-click on-click} i/close]]
      [:div.tool-window-content
-      [:& layers-tree]]]))
+      [:& layers-tree {:key (:id page)}]]]))
