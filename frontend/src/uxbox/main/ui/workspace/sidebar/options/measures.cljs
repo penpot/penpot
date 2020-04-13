@@ -30,6 +30,13 @@
                           (d/parse-integer 0))]
             (st/emit! (udw/update-rect-dimensions (:id shape) attr value))))
 
+        on-circle-size-change
+        (fn [event attr]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/parse-integer 0))]
+            (st/emit! (udw/update-circle-dimensions (:id shape) attr value))))
+
         on-proportion-lock-change
         (fn [event]
           (st/emit! (udw/toggle-shape-proportion-lock (:id shape))))
@@ -58,7 +65,9 @@
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
         on-pos-x-change #(on-position-change % :x)
-        on-pos-y-change #(on-position-change % :y)]
+        on-pos-y-change #(on-position-change % :y)
+        on-size-rx-change #(on-circle-size-change % :rx)
+        on-size-ry-change #(on-circle-size-change % :ry)]
 
     [:div.element-set
      [:div.element-set-content
@@ -90,6 +99,30 @@
                              :value (str (-> (:height shape)
                                              (d/coalesce 0)
                                              (math/round)))}]]])
+
+      ;; Circle RX RY
+      (when (options :circle-size)
+        [:div.row-flex
+         [:span.element-set-subtitle (t locale "workspace.options.size")]
+         [:div.lock-size {:class (when (:proportion-lock shape) "selected")
+                          :on-click on-proportion-lock-change}
+          (if (:proportion-lock shape)
+            i/lock
+            i/unlock)]
+         [:div.input-element.pixels
+          [:input.input-text {:type "number"
+                              :min "0"
+                              :on-change on-size-rx-change
+                              :value (str (-> (:rx shape)
+                                              (d/coalesce 0)
+                                              (math/round)))}]]
+         [:div.input-element.pixels
+          [:input.input-text {:type "number"
+                              :min "0"
+                              :on-change on-size-ry-change
+                              :value (str (-> (:ry shape)
+                                              (d/coalesce 0)
+                                              (math/round)))}]]])
 
       ;; POSITION
       (when (options :position)
