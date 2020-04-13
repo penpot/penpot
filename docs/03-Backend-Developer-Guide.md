@@ -29,3 +29,16 @@ in the aplication. All users uses the following pattern:
 - Password: `123123`
 
 Where `N` is a number from 0 to 49 on the default fixture parameters.
+
+
+## Sample media ##
+
+There is also a media collection with some libraries (material design
+icons and some colors). It may be loaded with:
+
+```bash
+clojure -Adev -m uxbox.media-loader ../sample_media/config.edn
+```
+
+You have more information at 05-Management-Guide.md document.
+
