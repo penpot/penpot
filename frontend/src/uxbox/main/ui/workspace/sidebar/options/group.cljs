@@ -16,5 +16,6 @@
 (mf/defc options
   [{:keys [shape] :as props}]
   [:div
-   [:& measures-menu {:shape shape}]])
+   [:& measures-menu {:options #{:position :rotation}
+                      :shape shape}]])
 

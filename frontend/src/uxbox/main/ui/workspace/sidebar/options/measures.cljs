@@ -19,8 +19,9 @@
    [uxbox.util.i18n :refer [t] :as i18n]))
 
 (mf/defc measures-menu
-  [{:keys [shape] :as props}]
-  (let [locale (i18n/use-locale)
+  [{:keys [shape options] :as props}]
+  (let [options (or options #{:size :position :rotation :radius})
+        locale (i18n/use-locale)
 
         on-size-change
         (fn [event attr]
@@ -63,83 +64,87 @@
      [:div.element-set-content
 
       ;; WIDTH & HEIGHT
-      [:div.row-flex
-       [:span.element-set-subtitle (t locale "workspace.options.size")]
-       [:div.lock-size {:class (when (:proportion-lock shape) "selected")
-                        :on-click on-proportion-lock-change}
-        (if (:proportion-lock shape)
-          i/lock
-          i/unlock)]
-       [:div.input-element.pixels
-        [:input.input-text {:type "number"
-                            :min "0"
-                            :no-validate true
-                            :on-change on-width-change
-                            :value (str (-> (:width shape)
-                                            (d/coalesce 0)
-                                            (math/round)))}]]
+      (when (options :size)
+       [:div.row-flex
+        [:span.element-set-subtitle (t locale "workspace.options.size")]
+        [:div.lock-size {:class (when (:proportion-lock shape) "selected")
+                         :on-click on-proportion-lock-change}
+         (if (:proportion-lock shape)
+           i/lock
+           i/unlock)]
+        [:div.input-element.pixels
+         [:input.input-text {:type "number"
+                             :min "0"
+                             :no-validate true
+                             :on-change on-width-change
+                             :value (str (-> (:width shape)
+                                             (d/coalesce 0)
+                                             (math/round)))}]]
 
 
-       [:div.input-element.pixels
-        [:input.input-text {:type "number"
-                            :min "0"
-                            :no-validate true
-                            :on-change on-height-change
-                            :value (str (-> (:height shape)
-                                            (d/coalesce 0)
-                                            (math/round)))}]]]
+        [:div.input-element.pixels
+         [:input.input-text {:type "number"
+                             :min "0"
+                             :no-validate true
+                             :on-change on-height-change
+                             :value (str (-> (:height shape)
+                                             (d/coalesce 0)
+                                             (math/round)))}]]])
 
       ;; POSITION
-      [:div.row-flex
-       [:span.element-set-subtitle (t locale "workspace.options.position")]
-       [:div.input-element.pixels
-        [:input.input-text {:placeholder "x"
-                            :type "number"
-                            :no-validate true
-                            :on-change on-pos-x-change
-                            :value (str (-> (:x shape)
-                                            (d/coalesce 0)
-                                            (math/round)))}]]
-       [:div.input-element.pixels
-        [:input.input-text {:placeholder "y"
-                            :type "number"
-                            :no-validate true
-                            :on-change on-pos-y-change
-                            :value (str (-> (:y shape)
-                                            (d/coalesce 0)
-                                            (math/round)))}]]]
+      (when (options :position)
+        [:div.row-flex
+        [:span.element-set-subtitle (t locale "workspace.options.position")]
+        [:div.input-element.pixels
+         [:input.input-text {:placeholder "x"
+                             :type "number"
+                             :no-validate true
+                             :on-change on-pos-x-change
+                             :value (str (-> (:x shape)
+                                             (d/coalesce 0)
+                                             (math/round)))}]]
+        [:div.input-element.pixels
+         [:input.input-text {:placeholder "y"
+                             :type "number"
+                             :no-validate true
+                             :on-change on-pos-y-change
+                             :value (str (-> (:y shape)
+                                             (d/coalesce 0)
+                                             (math/round)))}]]])
 
-      [:div.row-flex
-       [:span.element-set-subtitle (t locale "workspace.options.rotation")]
-       [:div.input-element.degrees
-        [:input.input-text
-         {:placeholder ""
-          :type "number"
-          :no-validate true
+      (when (options :rotation)
+       [:div.row-flex
+        [:span.element-set-subtitle (t locale "workspace.options.rotation")]
+        [:div.input-element.degrees
+         [:input.input-text
+          {:placeholder ""
+           :type "number"
+           :no-validate true
+           :min "0"
+           :max "360"
+           :on-change on-rotation-change
+           :value (str (-> (:rotation shape)
+                           (d/coalesce 0)
+                           (math/round)))}]]
+        [:input.slidebar
+         {:type "range"
           :min "0"
           :max "360"
+          :step "1"
+          :no-validate true
           :on-change on-rotation-change
           :value (str (-> (:rotation shape)
-                          (d/coalesce 0)
-                          (math/round)))}]]
-       [:input.slidebar
-        {:type "range"
-         :min "0"
-         :max "360"
-         :step "1"
-         :no-validate true
-         :on-change on-rotation-change
-         :value (str (-> (:rotation shape)
-                         (d/coalesce 0)))}]]
+                          (d/coalesce 0)))}]])
 
-      [:div.row-flex
-       [:span.element-set-subtitle (t locale "workspace.options.radius")]
-       [:div.input-element.pixels
-        [:input.input-text
-         {:placeholder "rx"
-          :type "number"
-          :on-change on-radius-change
-          :value (str (-> (:rx shape)
-                          (d/coalesce 0)
-                          (math/round)))}]]
-       [:div.input-element]]]]))
+      (when (options :radius)
+       [:div.row-flex
+        [:span.element-set-subtitle (t locale "workspace.options.radius")]
+        [:div.input-element.pixels
+         [:input.input-text
+          {:placeholder "rx"
+           :type "number"
+           :on-change on-radius-change
+           :value (str (-> (:rx shape)
+                           (d/coalesce 0)
+                           (math/round)))}]]
+        [:div.input-element]])]]))
