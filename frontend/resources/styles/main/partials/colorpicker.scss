@@ -165,6 +165,7 @@
       font-size: $fs13;
 
       &:focus {
+        border-color: $color-primary;
         color: $color-white;
       }
     }

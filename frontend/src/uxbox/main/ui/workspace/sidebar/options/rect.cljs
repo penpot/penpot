@@ -11,8 +11,8 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]))
+   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
