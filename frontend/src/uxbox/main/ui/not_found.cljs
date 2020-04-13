@@ -20,5 +20,6 @@
    [:div.not-found-header i/logo]
    [:div.not-found-content
     [:div.message-container
+     [:div.error-img i/icon-empty]
      [:div.main-message "404"]
      [:div.desc-message "Oops! Page not found"]]]])

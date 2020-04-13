@@ -29,15 +29,30 @@
   justify-content: center;
   align-items: center;
 
+  .error-img {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+
+    svg {
+      height: 320px;
+      width: 200px;
+    }
+  }
+
   .main-message {
-    font-size: 18rem;
     color: $color-black;
-    line-height: 226px;
+    font-size: 11rem;
+    line-height: 200px;
+    text-align: center;
   }
 
   .desc-message {
-    font-size: 3rem;
     color: $color-black;
+    font-size: 2.2rem;
+    font-weight: 300;
+    text-align: center;
   }
 }
 
