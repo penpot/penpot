@@ -2,8 +2,8 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.main.ui.workspace.selection
   "Selection handlers component."
@@ -119,8 +119,8 @@
     :style {:fillOpacity "1"
             :strokeWidth "2px"
             :vectorEffect "non-scaling-stroke"}
-    :fill "rgba(49,239,184,.7)"
-    :stroke "#31EFB8"
+    :fill "#ffffff"
+    :stroke "#1FDEA7"
     :cx cx
     :cy cy}])
 
@@ -166,7 +166,7 @@
                   :width width
                   :height height
                   :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
-                  :style {:stroke "#31EFB8"
+                  :style {:stroke "#1FDEA7"
                           :fill "transparent"
                           :stroke-opacity "1"}}]
 
@@ -220,8 +220,8 @@
                    :r (/ 6.0 zoom)
                    :key index
                    :on-mouse-down #(on-mouse-down % index)
-                   :fill "rgba(49,239,184,.7)"
-                   :stroke "#31EFB8"
+                   :fill "#ffffff"
+                   :stroke "#1FDEA7"
                    :style {:cursor "pointer"}}])])))
 
 ;; TODO: add specs for clarity
@@ -234,7 +234,7 @@
                   :width width
                   :height height
                   ;; :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-                  :style {:stroke "#31EFB8"
+                  :style {:stroke "#1FDEA7"
                           :stroke-width "0.5"
                           :stroke-opacity "1"
                           :fill "transparent"}}]]))
