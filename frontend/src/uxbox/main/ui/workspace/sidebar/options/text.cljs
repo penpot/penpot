@@ -16,6 +16,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.math :as math]
    [uxbox.util.i18n :refer [tr]]))
 
 (declare +fonts+)
