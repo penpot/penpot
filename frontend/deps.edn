@@ -14,7 +14,7 @@
   funcool/cuerdas {:mvn/version "2020.03.26-3"}
   funcool/lentes {:mvn/version "1.4.0-SNAPSHOT"}
 
-  funcool/okulary {:mvn/version "2020.04.11-0"}
+  funcool/okulary {:mvn/version "2020.04.13-0"}
   funcool/potok {:mvn/version "2.8.0-SNAPSHOT"}
   funcool/promesa {:mvn/version "5.1.0"}
   funcool/rumext {:mvn/version "2020.04.11-0"}
