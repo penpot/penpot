@@ -72,6 +72,7 @@
     (->> (:shapes root)
          (map #(get objects %))
          (filter #(= :frame (:type %)))
+         (reverse)
          (vec))))
 
 (defn bundle-fetched

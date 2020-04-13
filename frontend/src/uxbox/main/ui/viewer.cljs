@@ -27,21 +27,29 @@
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]])
-  (:import goog.events.EventType
-           goog.events.KeyCodes))
+  (:import goog.events.EventType))
 
 (mf/defc main-panel
   [{:keys [data zoom index]}]
-  (let [frames  (:frames data [])
+  (let [locale  (i18n/use-locale)
+        frames  (:frames data [])
         objects (:objects data)
         frame   (get frames index)]
 
-    (when-not frame
-      (ex/raise :type :not-found
-                :hint "Frame not found"))
-
     [:section.viewer-preview
-     [:& frame-svg {:frame frame :zoom zoom :objects objects}]]))
+     (cond
+       (empty? frames)
+       [:section.empty-state
+        [:span (t locale "viewer.empty-state")]]
+
+       (nil? frame)
+       [:section.empty-state
+        [:span (t locale "viewer.frame-not-found")]]
+
+       :else
+       [:& frame-svg {:frame frame
+                      :zoom zoom
+                      :objects objects}])]))
 
 (mf/defc viewer-content
   [{:keys [data local index] :as props}]

@@ -1,12 +1,12 @@
 {
   "dashboard.grid.delete" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:63", "src/uxbox/main/ui/dashboard/grid.cljs:92" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:61", "src/uxbox/main/ui/dashboard/grid.cljs:92" ],
     "translations" : {
       "en" : "Delete"
     }
   },
   "dashboard.grid.edit" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:62", "src/uxbox/main/ui/dashboard/grid.cljs:91" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:60", "src/uxbox/main/ui/dashboard/grid.cljs:91" ],
     "translations" : {
       "en" : "Edit"
     }
@@ -18,19 +18,19 @@
     }
   },
   "dashboard.header.draft" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:57" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:55" ],
     "translations" : {
       "en" : "Draft"
     }
   },
   "dashboard.header.new-file" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:74" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:72" ],
     "translations" : {
       "en" : "+ New file"
     }
   },
   "dashboard.header.new-project" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/recent_files.cljs:53" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/recent_files.cljs:50" ],
     "translations" : {
       "en" : "+ New project"
     }
@@ -57,7 +57,7 @@
     }
   },
   "dashboard.header.project" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:70" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:68" ],
     "translations" : {
       "en" : "Project %s"
     }
@@ -145,19 +145,19 @@
     }
   },
   "dashboard.sidebar.drafts" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:111" ],
     "translations" : {
       "en" : "Drafts"
     }
   },
   "dashboard.sidebar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:119" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:118" ],
     "translations" : {
       "en" : "Libraries"
     }
   },
   "dashboard.sidebar.recent" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:105" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:104" ],
     "translations" : {
       "en" : "Recent"
     }
@@ -258,7 +258,7 @@
     }
   },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:175" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:174" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher..."
@@ -286,7 +286,7 @@
     "unused" : true
   },
   "ds.store-images-title" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:180" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:181" ],
     "translations" : {
       "en" : "IMAGES STORE",
       "fr" : "BOUTIQUE"
@@ -307,7 +307,7 @@
     "unused" : true
   },
   "ds.your-images-title" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:177" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:178" ],
     "translations" : {
       "en" : "YOUR IMAGES",
       "fr" : "VOS IMAGES"
@@ -335,21 +335,21 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:180" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:175" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:174" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:169" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal."
     }
   },
   "header.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:100" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:99" ],
     "translations" : {
       "en" : null,
       "fr" : null
@@ -363,28 +363,28 @@
     }
   },
   "image.import-library" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:169" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:170" ],
     "translations" : {
       "en" : "Import image from library",
       "fr" : "Importer une image depuis une librairie"
     }
   },
   "image.new" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:83" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:84" ],
     "translations" : {
       "en" : "New image",
       "fr" : "Nouvelle image"
     }
   },
   "image.select" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:89", "src/uxbox/main/ui/workspace/images.cljs:94" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:90", "src/uxbox/main/ui/workspace/images.cljs:95" ],
     "translations" : {
       "en" : "Select from library",
       "fr" : "Choisir depuis une librairie"
     }
   },
   "image.upload" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:101" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:102" ],
     "translations" : {
       "en" : "Upload file",
       "fr" : "Envoyer un fichier"
@@ -628,59 +628,71 @@
     }
   },
   "settings.profile.lang" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:88" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:89" ],
     "translations" : {
       "en" : "Default language",
       "fr" : "Langue par défaut"
     }
   },
-  "settings.profile.section-theme-data" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:102" ],
-    "translations" : {
-      "en" : "Default theme",
-      "fr" : "Thème par défaut"
-    }
-  },
   "settings.profile.profile-saved" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:47" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:48" ],
     "translations" : {
       "en" : "Profile saved successfully!",
       "fr" : "Profil enregistré avec succès !"
     }
   },
   "settings.profile.section-basic-data" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:62" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:63" ],
     "translations" : {
       "en" : "Name, username and email",
       "fr" : "Nom, nom d'utilisateur et adresse email"
     }
   },
+  "settings.profile.section-theme-data" : {
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:98" ],
+    "translations" : {
+      "en" : "Default theme",
+      "fr" : "Thème par défaut"
+    }
+  },
   "settings.profile.your-avatar" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:143" ],
     "translations" : {
       "en" : "Your avatar",
       "fr" : "Votre avatar"
     }
   },
   "settings.profile.your-email" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:83" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:84" ],
     "translations" : {
       "en" : null,
       "fr" : null
     }
   },
   "settings.profile.your-name" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:71" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:72" ],
     "translations" : {
       "en" : "Your name",
       "fr" : "Votre nom complet"
     }
   },
   "settings.update-settings" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/notifications.cljs:42", "src/uxbox/main/ui/settings/password.cljs:102", "src/uxbox/main/ui/settings/profile.cljs:101" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/notifications.cljs:42", "src/uxbox/main/ui/settings/password.cljs:102", "src/uxbox/main/ui/settings/profile.cljs:110" ],
     "translations" : {
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres"
+    }
+  },
+  "viewer.empty-state" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer.cljs:43" ],
+    "translations" : {
+      "en" : "No frames found on the page."
+    }
+  },
+  "viewer.frame-not-found" : {
+    "used-in" : [ "src/uxbox/main/ui/viewer.cljs:47" ],
+    "translations" : {
+      "en" : "Frame not found."
     }
   },
   "viewer.header.edit-page" : {
@@ -738,158 +750,158 @@
     }
   },
   "workspace.align.hcenter" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:51" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:53" ],
     "translations" : {
       "en" : "Align horizontal center"
     }
   },
   "workspace.align.hdistribute" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:63" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:65" ],
     "translations" : {
       "en" : "Distribute horizontal spacing"
     }
   },
   "workspace.align.hleft" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:45" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:47" ],
     "translations" : {
       "en" : "Align left"
     }
   },
   "workspace.align.hright" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:57" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:59" ],
     "translations" : {
       "en" : "Align right"
     }
   },
   "workspace.align.vbottom" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:82" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:84" ],
     "translations" : {
       "en" : "Align bottom"
     }
   },
   "workspace.align.vcenter" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:76" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:78" ],
     "translations" : {
       "en" : "Align vertical center"
     }
   },
   "workspace.align.vdistribute" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:88" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:90" ],
     "translations" : {
       "en" : "Distribute vertical spacing"
     }
   },
   "workspace.align.vtop" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:70" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/align.cljs:72" ],
     "translations" : {
       "en" : "Align top"
     }
   },
   "workspace.header.menu.hide-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:120" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:119" ],
     "translations" : {
       "en" : "Hide grid"
     }
   },
   "workspace.header.menu.hide-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:127" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:126" ],
     "translations" : {
       "en" : "Hide layers"
     }
   },
   "workspace.header.menu.hide-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:141" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:140" ],
     "translations" : {
       "en" : "Hide libraries"
     }
   },
   "workspace.header.menu.hide-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:133" ],
     "translations" : {
       "en" : "Hide color palette"
     }
   },
   "workspace.header.menu.hide-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:112" ],
     "translations" : {
       "en" : "Hide rules"
     }
   },
   "workspace.header.menu.show-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:121" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:120" ],
     "translations" : {
       "en" : "Show grid"
     }
   },
   "workspace.header.menu.show-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:128" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:127" ],
     "translations" : {
       "en" : "Show layers"
     }
   },
   "workspace.header.menu.show-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:142" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:141" ],
     "translations" : {
       "en" : "Show libraries"
     }
   },
   "workspace.header.menu.show-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:135" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:134" ],
     "translations" : {
       "en" : "Show color palette"
     }
   },
   "workspace.header.menu.show-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:114" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:113" ],
     "translations" : {
       "en" : "Show rules"
     }
   },
   "workspace.header.viewer" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:181" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:176" ],
     "translations" : {
       "en" : "View mode (Ctrl + P)",
       "fr" : "Mode visualisation (Ctrl + P)"
     }
   },
   "workspace.library.all" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:126" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:122" ],
     "translations" : {
       "en" : "All libraries"
     }
   },
   "workspace.library.icons" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:176" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:172" ],
     "translations" : {
       "en" : "Icons"
     }
   },
   "workspace.library.images" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:181" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:177" ],
     "translations" : {
       "en" : "Images"
     }
   },
   "workspace.library.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:158" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:154" ],
     "translations" : {
       "en" : "Libraries"
     }
   },
   "workspace.library.own" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:127" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:123" ],
     "translations" : {
       "en" : "My libraries"
     }
   },
   "workspace.library.store" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:128" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:124" ],
     "translations" : {
       "en" : "Store libraries"
     }
   },
   "workspace.options.color" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:125" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:88" ],
     "translations" : {
       "en" : "Color",
       "fr" : "Couleur"
@@ -903,46 +915,46 @@
     }
   },
   "workspace.options.font-family" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:202" ],
     "translations" : {
       "en" : "Font Family",
       "fr" : "Police de caractères"
-    }
+    },
+    "unused" : true
   },
   "workspace.options.font-options" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:200" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:85" ],
     "translations" : {
       "en" : "Text",
       "fr" : "TODO"
     }
   },
   "workspace.options.font-weight" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:211" ],
     "translations" : {
       "en" : "Font Size & Weight",
       "fr" : "Taille et graisse"
-    }
+    },
+    "unused" : true
   },
   "workspace.options.grid-options" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:75" ],
     "translations" : {
       "en" : "Grid settings",
       "fr" : "Paramètres de la grille"
     }
   },
   "workspace.options.line-height-letter-spacing" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:243" ],
     "translations" : {
       "en" : "Line height and Letter spacing",
       "fr" : "Hauteur de ligne et Espacement de caractères"
-    }
+    },
+    "unused" : true
   },
   "workspace.options.measures" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:68" ],
     "translations" : {
       "en" : "Size, position & rotation",
       "fr" : "Taille, position et rotation"
-    }
+    },
+    "unused" : true
   },
   "workspace.options.opacity" : {
     "translations" : {
@@ -952,35 +964,35 @@
     "unused" : true
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:97", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:99", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:95", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:94", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:126" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:130", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:126" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
     }
   },
   "workspace.options.radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:141", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:137", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:132", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:136" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:174" ],
     "translations" : {
       "en" : "Radius",
       "fr" : "TODO"
     }
   },
   "workspace.options.rotation" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:118", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:110", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:150" ],
     "translations" : {
       "en" : "Rotation",
       "fr" : "TODO"
     }
   },
   "workspace.options.rotation-radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:114" ],
     "translations" : {
       "en" : null,
       "fr" : null
-    }
+    },
+    "unused" : true
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:115", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:70", "src/uxbox/main/ui/workspace/sidebar/options/icon.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/image.cljs:68", "src/uxbox/main/ui/workspace/sidebar/options/circle.cljs:72", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:67", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:101" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:78", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:106", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:78", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:101" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
@@ -1035,11 +1047,11 @@
     "unused" : true
   },
   "workspace.options.text-align" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:262" ],
     "translations" : {
       "en" : "Text Alignment",
       "fr" : "Alignement de texte"
-    }
+    },
+    "unused" : true
   },
   "workspace.sidebar.icons" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/icons.cljs:88" ],
@@ -1056,7 +1068,7 @@
     "unused" : true
   },
   "workspace.sidebar.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:129" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:130" ],
     "translations" : {
       "en" : "Pages",
       "fr" : "Pages"
@@ -1160,7 +1172,7 @@
     }
   },
   "workspace.viewport.click-to-close-path" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:336" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:329" ],
     "translations" : {
       "en" : "Click to close the path"
     }
