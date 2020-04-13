@@ -23,12 +23,12 @@
 ;; --- Events
 
 (defn handle-mouse-down
-  [event {:keys [id group] :as shape} selected]
+  [event {:keys [id group] :as shape}]
   (if (and (not (:blocked shape))
            (or @refs/selected-drawing-tool
                @refs/selected-edition))
     (dom/stop-propagation event)
-    (common/on-mouse-down event shape selected)))
+    (common/on-mouse-down event shape)))
 
 ;; --- Text Wrapper
 
@@ -45,12 +45,16 @@
         selected? (and (contains? selected id)
                        (= (count selected) 1))
 
-        on-mouse-down #(common/on-mouse-down % shape)
+        on-mouse-down #(handle-mouse-down % shape)
         on-context-menu #(common/on-context-menu % shape)
+
         on-double-click
         (fn [event]
+          (dom/stop-propagation event)
+          (dom/prevent-default event)
           (when selected?
             (st/emit! (dw/start-edition-mode (:id shape)))))]
+
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}

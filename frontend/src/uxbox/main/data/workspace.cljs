@@ -1832,7 +1832,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> stream
-           (rx/filter #(= % :interrupt))
+           (rx/filter interrupt?)
            (rx/take 1)
            (rx/map (constantly clear-edition-mode))))))
 
@@ -2428,7 +2428,7 @@
    "ctrl+t" #(st/emit! (select-for-drawing :text))
    "ctrl+c" #(st/emit! copy-selected)
    "ctrl+v" #(st/emit! paste)
-   "esc" #(st/emit! :interrupt deselect-all)
+   "escape" #(st/emit! :interrupt deselect-all)
    "del" #(st/emit! delete-selected)
    "ctrl+up" #(st/emit! (vertical-order-selected :up))
    "ctrl+down" #(st/emit! (vertical-order-selected :down))

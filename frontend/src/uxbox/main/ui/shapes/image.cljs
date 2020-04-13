@@ -25,7 +25,7 @@
   [{:keys [shape frame] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
-        on-mouse-down #(common/on-mouse-down % shape selected)]
+        on-mouse-down #(common/on-mouse-down % shape)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
      [:& image-shape {:shape (geom/transform-shape frame shape)}]]))

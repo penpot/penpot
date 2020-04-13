@@ -60,44 +60,43 @@
          (rx/of (dw/materialize-frame-displacement frame-id)))))))
 
 (defn on-mouse-down
-  ([event shape] (on-mouse-down event shape nil))
-  ([event {:keys [id type] :as shape} kk-tmp]
-   (let [selected @refs/selected-shapes
-         selected? (contains? selected id)
-         drawing? @refs/selected-drawing-tool
-         button (.-which (.-nativeEvent event))]
-     (when-not (:blocked shape)
-       (cond
-         (not= 1 button)
-         nil
+  [event {:keys [id type] :as shape}]
+  (let [selected @refs/selected-shapes
+        selected? (contains? selected id)
+        drawing? @refs/selected-drawing-tool
+        button (.-which (.-nativeEvent event))]
+    (when-not (:blocked shape)
+      (cond
+        (not= 1 button)
+        nil
 
-         drawing?
-         nil
+        drawing?
+        nil
 
-         (= type :frame)
-         (when selected?
-           (dom/stop-propagation event)
-           (st/emit! start-move-frame))
+        (= type :frame)
+        (when selected?
+          (dom/stop-propagation event)
+          (st/emit! start-move-frame))
 
-         (and (not selected?) (empty? selected))
-         (do
-           (dom/stop-propagation event)
-           (st/emit! dw/deselect-all
-                     (dw/select-shape id)
-                     start-move-selected))
+        (and (not selected?) (empty? selected))
+        (do
+          (dom/stop-propagation event)
+          (st/emit! dw/deselect-all
+                    (dw/select-shape id)
+                    start-move-selected))
 
-         (and (not selected?) (not (empty? selected)))
-         (do
-           (dom/stop-propagation event)
-           (if (kbd/shift? event)
-             (st/emit! (dw/select-shape id))
-             (st/emit! dw/deselect-all
-                       (dw/select-shape id)
-                       start-move-selected)))
-         :else
-         (do
-           (dom/stop-propagation event)
-           (st/emit! start-move-selected)))))))
+        (and (not selected?) (not (empty? selected)))
+        (do
+          (dom/stop-propagation event)
+          (if (kbd/shift? event)
+            (st/emit! (dw/select-shape id))
+            (st/emit! dw/deselect-all
+                      (dw/select-shape id)
+                      start-move-selected)))
+        :else
+        (do
+          (dom/stop-propagation event)
+          (st/emit! start-move-selected))))))
 
 
 (defn on-context-menu
