@@ -21,4 +21,4 @@
   (def default-language "en")
   (def demo-warning (gobj/get config "demoWarning" true))
   (def url public-url)
-  (def default-theme "light"))
+  (def default-theme "default"))
