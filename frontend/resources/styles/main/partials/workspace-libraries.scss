@@ -122,14 +122,19 @@
 }
 
 .library-tab-libraries {
-    background-color: #303236;
+    background-color: $color-gray-50;
     margin: 0.5rem;
     width: 90%;
     padding: 0.5rem;
     box-sizing: border-box;
-    color: #AFB2BF;
+    color: $color-gray-20;
     font-size: 12px;
-    border: 1px solid #7c7c7c;
+    border: 1px solid $color-gray-40;
+
+    option {
+        background-color: $color-white;
+        color: $color-gray-60;
+    }
 }
 
 .library-tab-libraries-item {
