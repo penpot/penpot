@@ -6,7 +6,7 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .tool-bar {
-  background-color: $color-gray-dark;
+  background-color: $color-gray-40;
   bottom: 0;
   height: 100%;
   position: fixed;
@@ -27,7 +27,7 @@
         margin-bottom: $big;
 
         svg {
-          fill: $color-gray-light;
+          fill: $color-gray-20;
           height: 25px;
           width: 25px;
         }

@@ -62,12 +62,12 @@
       .toggle-layout {
 
         svg {
-          fill: $color-gray;
+          fill: $color-gray-30;
           height: 20px;
           width: 20px;
 
           &:hover {
-            fill: $color-gray-darker;
+            fill: $color-gray-50;
           }
 
         }
@@ -134,12 +134,12 @@
   margin: 1rem;
 
   .big-svg {
-    background-color: $color-gray-lighter;
+    background-color: $color-gray-10;
     border-radius: $br-medium;
     padding: 3rem;
 
     svg {
-      fill: $color-gray;
+      fill: $color-gray-30;
       height: 40px;
       width: 40px;
     }
@@ -155,7 +155,7 @@
   }
 
   .text {
-    color: $color-gray-light;
+    color: $color-gray-20;
     margin-top: .5rem;
   }
 
@@ -251,8 +251,8 @@
 }
 
 .confirm-dialog-cancel-button {
-    border: 1px solid $color-gray;
-    background: $color-gray-lightest;
+    border: 1px solid $color-gray-30;
+    background: $color-canvas;
     border-radius: 2px;
     padding: 0.5rem;
     margin-right: 1rem;
@@ -262,7 +262,7 @@
     cursor: pointer;
 
     &:hover {
-        background: $color-gray-light;
+        background: $color-gray-20;
     }
 }
 

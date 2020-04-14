@@ -22,7 +22,7 @@
       cursor: pointer;
 
     svg {
-      fill: $color-gray-light;
+      fill: $color-gray-20;
       height: 1rem;
       margin: 0 .5rem;
       width: 1rem;
@@ -30,7 +30,7 @@
     
     &:hover {
       svg {
-        fill: $color-gray-darker;
+        fill: $color-gray-50;
       }
     }
     &.disabled {
@@ -89,7 +89,7 @@
 
 .btn-palette {
   align-items: center;
-  border: 2px solid $color-gray-lighter;
+  border: 2px solid $color-gray-10;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -97,14 +97,14 @@
   justify-content: center;
   padding: .6rem;
   svg {
-    fill: $color-gray-lighter;
+    fill: $color-gray-10;
     height: 20px;
     width: 20px;
   }
   &:hover {
-    border-color: $color-gray-dark;
+    border-color: $color-gray-40;
     svg {
-      fill: $color-gray-dark;
+      fill: $color-gray-40;
     }
   }
   &.current {
@@ -143,26 +143,26 @@
   flex-basis: 66px;
 
   .color {
-    background-color: $color-gray-lighter;
+    background-color: $color-gray-10;
     border: 2px solid $color-gray-60;
     border-radius: 50%;
     flex-shrink: 0;
     padding: 1.5rem;
   }
   .color-text {
-    color: $color-gray-light;
+    color: $color-gray-20;
     font-size: $fs12;
   }
   &.current {
     .color {
-      border-color: $color-gray-darker;
+      border-color: $color-gray-50;
     }
     .color-text {
-      color: $color-gray-darker;
+      color: $color-gray-50;
       font-weight: bold;
     }
     &::before {
-      background-color: $color-gray-darker;
+      background-color: $color-gray-50;
       border-radius: 3px;
       color: $color-white;
       content: "selected";
@@ -175,10 +175,10 @@
   }
   &:hover {
     .color {
-      border-color: $color-gray-darker;
+      border-color: $color-gray-50;
     }
     .color-text {
-      color: $color-gray-darker;
+      color: $color-gray-50;
     }
   }
   &.add-color {
@@ -186,14 +186,14 @@
     .color {
       align-items: center;
       background-color: $color-gray-50;
-      border: 3px dashed $color-gray-lighter;
+      border: 3px dashed $color-gray-10;
       cursor: pointer;
       display: flex;
       justify-content: center;
       margin-bottom: 1rem;
       padding: .6rem;
       svg {
-        fill: $color-gray-lighter;
+        fill: $color-gray-10;
         height: 30px;
         width: 30px;
       }
@@ -203,13 +203,13 @@
     }
     &:hover {
       .color {
-        border-color: $color-gray;
+        border-color: $color-gray-30;
         svg {
-          fill: $color-gray;
+          fill: $color-gray-30;
         }
       }
       .color-text {
-        color: $color-gray-dark;
+        color: $color-gray-40;
       }
     }
   }
@@ -220,7 +220,7 @@
   cursor: pointer;
   flex-shrink: 0;
   svg {
-    fill: $color-gray-light;
+    fill: $color-gray-20;
     height: 25px;
     transform: rotate(45deg);
     width: 25px;
@@ -234,7 +234,7 @@
 
 .color-tooltip {
   background-color: $color-gray-50;
-  border: 1px solid $color-gray-lighter;
+  border: 1px solid $color-gray-10;
   border-radius: 3px;
   left: -102px;
   padding: 1rem;
@@ -251,8 +251,8 @@
     &::after {
       background-color: $color-gray-50;
       bottom: -32px;
-      border-bottom: 1px solid $color-gray-lighter;
-      border-right: 1px solid $color-gray-lighter;
+      border-bottom: 1px solid $color-gray-10;
+      border-right: 1px solid $color-gray-10;
       content: "";
       height: 20px;
       left: 105px;

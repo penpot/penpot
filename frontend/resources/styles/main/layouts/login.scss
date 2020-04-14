@@ -7,7 +7,7 @@
 
 .login {
   align-items: center;
-  background-color: $color-gray-dark;
+  background-color: $color-gray-40;
   background-image: url("/images/login-bg.jpg");
   background-position: center;
   background-repeat: no-repeat;
@@ -45,7 +45,7 @@
         margin-bottom: $big*2;
 
         @include placeholder {
-          color: $color-gray;
+          color: $color-gray-30;
         }
 
         &:hover {
@@ -58,7 +58,7 @@
 
         &:focus {
           background-color: $color-white;
-          border-color: $color-gray-lighter;
+          border-color: $color-gray-10;
         }
 
         &.success {
@@ -87,7 +87,7 @@
         margin: $big 0;
 
         label {
-          color: $color-gray-light;
+          color: $color-gray-20;
         }
 
       }

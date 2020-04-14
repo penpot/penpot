@@ -7,7 +7,7 @@
 
 .project-bar {
   background-color: $color-gray-50;
-  border-right: 1px solid $color-gray-lighter;
+  border-right: 1px solid $color-gray-10;
   bottom: 0;
   height: 100%;
   left: 50px;
@@ -27,7 +27,7 @@
     padding-top: 60px;
 
     .project-name {
-      border-bottom: 1px solid $color-gray-lighter;
+      border-bottom: 1px solid $color-gray-10;
       font-size: $fs14;
       font-weight: bold;
       padding: 0 $small;
@@ -57,7 +57,7 @@
     position: relative;
 
     svg {
-      fill: $color-gray-light;
+      fill: $color-gray-20;
       height: 12px;
       margin-right: $x-small;
       width: 12px;
@@ -84,13 +84,13 @@
       top: 40%;
 
       svg {
-        fill: $color-gray-light;
+        fill: $color-gray-20;
         height: 12px;
         margin-right: $small;
         width: 12px;
 
         &:hover {
-          fill: $color-gray-dark;
+          fill: $color-gray-40;
         }
 
       }

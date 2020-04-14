@@ -22,14 +22,14 @@
   }
 
   h4 {
-    color: $color-gray-dark;
+    color: $color-gray-40;
     font-size: $fs16;
     font-weight: bold;
     margin-bottom: $x-small;
   }
 
   .date-ribbon {
-    background-color: lighten($color-gray-light, 12%);
+    background-color: lighten($color-gray-20, 12%);
     color: $color-white;
     font-size: $fs12;
     font-weight: bold;
@@ -39,7 +39,7 @@
   }
 
   .activity-input {
-    border-bottom: 1px solid $color-gray-lighter;
+    border-bottom: 1px solid $color-gray-10;
     display: flex;
     font-size: $fs13;
     padding: $small;
@@ -70,7 +70,7 @@
       }
 
       .activity-time {
-        color: $color-gray-light;
+        color: $color-gray-20;
         font-size: $fs11;
         font-style: italic;
       }

@@ -67,10 +67,10 @@
 
 .btn-gray {
   @extend %btn;
-  background: $color-gray;
+  background: $color-gray-30;
   color: $color-white;
   &:hover {
-    background: $color-gray-dark;
+    background: $color-gray-40;
   }
 }
 
@@ -259,7 +259,7 @@ ul.slider-dots {
   }
 
   .tag  {
-    background-color: $color-gray-light;
+    background-color: $color-gray-20;
     border-radius: 3px;
     color: $color-white;
     cursor: pointer;
@@ -270,7 +270,7 @@ ul.slider-dots {
     text-transform: uppercase;
 
     &:hover {
-      background-color: $color-gray-dark;
+      background-color: $color-gray-40;
     }
 
     &.tag-primary {
@@ -539,7 +539,7 @@ input.element-name {
     & + label {
 
       &:before {
-        box-shadow: inset 0 0 0 5px $color-gray-light ;
+        box-shadow: inset 0 0 0 5px $color-gray-20 ;
       }
 
     }
@@ -596,7 +596,7 @@ input[type=radio]:checked + label:before{
     & + label {
 
       &:after {
-        background-color: $color-gray-lighter;
+        background-color: $color-gray-10;
       }
 
     }

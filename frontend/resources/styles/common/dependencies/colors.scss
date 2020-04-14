@@ -2,24 +2,31 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+// Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 // Colors
 $color-white: #ffffff;
 $color-black: #000000;
-$color-gray: #90969d;
 $color-canvas: #E8E9EA;
 
 // Main color
 $color-primary: #31EFB8;
 
 // Secondary colors
-$color-success: #b6dd75;
+$color-success: #49D793;
 $color-complete : #a599c6;
-$color-warning: #e6a16f;
-$color-danger: #de4762;
+$color-warning: #FC8802;
+$color-danger: #E65244;
 $color-info: #59b9e2;
+
+// Gray scale
+$color-gray-10: #E3E3E3;
+$color-gray-20: #b1b2b5;
+$color-gray-30: #7B7D85;
+$color-gray-40: #64666A;
+$color-gray-50: #303236; 
+$color-gray-60: #1F1F1F;
 
 // Mixing Color variable for creating both light and dark colors
 $mix-percentage-dark: 81%;
@@ -27,19 +34,6 @@ $mix-percentage-darker: 60%;
 $mix-percentage-light: 80%;
 $mix-percentage-lighter: 20%;
 $mix-percentage-lightest: 10%;
-
-// Gray scale
-$color-gray-light: mix($color-gray, $color-white, $mix-percentage-light);
-$color-gray-lighter: mix($color-gray, $color-white, $mix-percentage-lighter);
-$color-gray-lightest: mix($color-gray, $color-white, $mix-percentage-lightest);
-$color-gray-dark: mix($color-gray, $color-black, $mix-percentage-dark);
-$color-gray-darker: mix($color-gray, $color-black, $mix-percentage-darker);
-$color-gray-10: #E3E3E3;
-$color-gray-20: #b1b2b5;
-$color-gray-30: #7B7D85;
-$color-gray-40: #64666A;
-$color-gray-50: #303236; 
-$color-gray-60: #1F1F1F;
 
 // Lighter colors
 $color-success-light: mix($color-success, $color-white, $mix-percentage-light);

@@ -4,7 +4,7 @@
     grid-template-rows: 40px 1fr;
     grid-template-columns: 14.5rem 1fr;
     grid-template-areas: "header header" "sidebar content";
-    border-right: 1px solid $color-gray;
+    border-right: 1px solid $color-gray-30;
 
     & .main-bar {
         grid-area: header;
@@ -47,7 +47,7 @@
 
 .library-header-navigation-item {
     margin: 0 $size-6;
-    color: $color-gray;
+    color: $color-gray-30;
     text-transform: uppercase;
     border-bottom: 1px solid transparent;
     
@@ -257,7 +257,7 @@
 }
 
 .library-card-footer {
-    border-top: 1px solid $color-gray-lighter;
+    border-top: 1px solid $color-gray-10;
     padding: $size-2 $size-2 $size-2 $size-4;
     display: grid;
     grid-template-rows: 50% 50%;
@@ -289,7 +289,7 @@
 }
 
 .library-card-footer-color-label {
-    color: $color-gray;
+    color: $color-gray-30;
     margin-right: 0.25rem;
 }
 
@@ -326,7 +326,7 @@
 
     & .sketch-picker {
         box-shadow: none !important;
-        border: 1px solid $color-gray-lighter !important;
+        border: 1px solid $color-gray-10 !important;
         border-radius: 0 !important;
 
         & input {
