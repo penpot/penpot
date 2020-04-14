@@ -301,25 +301,40 @@
                          :message "Are you sure you want to delete this color?"
                          :accept-text "Delete"}))]]}]]])))
 
-(defn libraries-ref [section team-id]
-  (-> (l/in [:library section team-id])
-      (l/derived st/state)))
+(defn- make-libraries-ref
+  [section team-id]
+  #(-> (l/in [:library section team-id])
+       (l/derived st/state =)))
 
-(defn selected-items-ref [section library-id]
-  (-> (l/in [:library-items section library-id])
-      (l/derived st/state)))
+(defn- make-library-items-ref
+  [section library-id]
+  #(-> (l/in [:library-items section library-id])
+       (l/derived st/state =)))
 
 (def last-deleted-library-ref
   (-> (l/in [:library :last-deleted-library])
-      (l/derived st/state)))
+      (l/derived st/state =)))
+
+(defonce counter (atom 0))
 
 (mf/defc library-page
   [{:keys [team-id library-id section]}]
   (let [state (mf/use-state {:selected #{}})
-        libraries (mf/deref (libraries-ref section team-id))
-        items (mf/deref (selected-items-ref section library-id))
+        libs-ref   (mf/use-memo
+                    (mf/deps section team-id)
+                    (make-libraries-ref section team-id))
+
+        libraries  (mf/deref libs-ref)
+        items-ref  (mf/use-memo
+                    (mf/deps section library-id)
+                    (make-library-items-ref section library-id))
+
+        items      (mf/deref items-ref)
+
         last-deleted-library (mf/deref last-deleted-library-ref)
-        selected-library (first (filter #(= (:id %) library-id) libraries))]
+        selected-library (first (filter #(= (:id %) library-id) libraries))
+
+        ]
 
     (mf/use-effect
      (mf/deps libraries)

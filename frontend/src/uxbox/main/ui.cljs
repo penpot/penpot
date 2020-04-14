@@ -139,7 +139,7 @@
   []
   (let [route (mf/deref refs/route)]
     (when route
-      [:& app-container {:route route :key (get-in route [:data :name])}])))
+      [:& app-container {:route route}])))
 
 ;; --- Error Handling
 

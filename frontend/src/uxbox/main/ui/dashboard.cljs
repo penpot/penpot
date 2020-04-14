@@ -75,10 +75,10 @@
       [:div.dashboard-content
        (case page
          :dashboard-search
-         (mf/element search-page #js {:team-id team-id :search-term search-term})
+         [:& search-page {:team-id team-id :search-term search-term}]
 
          :dashboard-team
-         (mf/element recent-files-page #js {:team-id team-id})
+         [:& recent-files-page {:team-id team-id}]
 
          (:dashboard-library-icons
           :dashboard-library-icons-index
@@ -86,11 +86,11 @@
           :dashboard-library-images-index
           :dashboard-library-palettes
           :dashboard-library-palettes-index)
-         (mf/element library-page #js {:key library-id
-                                       :team-id team-id
-                                       :library-id library-id
-                                       :section library-section})
+         [:& library-page {:key (str library-id)
+                           :team-id team-id
+                           :library-id library-id
+                           :section library-section}]
 
          :dashboard-project
-         (mf/element project-page #js {:team-id team-id
-                                       :project-id project-id}))]]]))
+         [:& project-page {:team-id team-id
+                           :project-id project-id}])]]]))
