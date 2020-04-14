@@ -12,6 +12,7 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.store :as st]
+   [uxbox.main.refs :as refs]
    [uxbox.common.data :as d]
    [uxbox.util.dom :as dom]
    [uxbox.main.data.workspace :as udw]
@@ -22,6 +23,17 @@
   [{:keys [shape options] :as props}]
   (let [options (or options #{:size :position :rotation :radius})
         locale (i18n/use-locale)
+
+        data (deref refs/workspace-data)
+        parent (get-in data [:objects (:frame-id shape)])
+
+        x (cond
+            (:x shape) :x
+            (:cx shape) :cx)
+
+        y (cond
+            (:y shape) :y
+            (:cy shape) :cy)
 
         on-size-change
         (fn [event attr]
@@ -45,8 +57,10 @@
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-integer 0))]
-            (st/emit! (udw/update-position (:id shape) {attr value}))))
+                          (d/parse-integer 0))
+                ; Convert back to absolute position before update
+                abs-value (+ value (attr parent))]
+            (st/emit! (udw/update-position (:id shape) {attr abs-value}))))
 
         on-rotation-change
         (fn [event]
@@ -133,7 +147,7 @@
                              :type "number"
                              :no-validate true
                              :on-change on-pos-x-change
-                             :value (str (-> (:x shape)
+                             :value (str (-> (- (x shape) (:x parent)) ; Show to user position relative to frame
                                              (d/coalesce 0)
                                              (math/round)))}]]
         [:div.input-element.pixels
@@ -141,7 +155,7 @@
                              :type "number"
                              :no-validate true
                              :on-change on-pos-y-change
-                             :value (str (-> (:y shape)
+                             :value (str (-> (- (y shape) (:y parent))
                                              (d/coalesce 0)
                                              (math/round)))}]]])
 
