@@ -9,7 +9,7 @@
   background-color: $color-white;
 
   .library-bar-inside {
-    border-right: 1px solid $color-gray-lighter;
+    border-right: 1px solid $color-gray-10;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -26,7 +26,7 @@
       li {
         background-color: $color-white;
         border-bottom: 2px solid transparent;
-        color: $color-gray;
+        color: $color-gray-30;
         cursor: pointer;
         font-size: $fs14;
         padding: .6rem;
@@ -108,7 +108,7 @@
             padding: 3px 5px;
 
             svg {
-              fill: $color-gray;
+              fill: $color-gray-30;
               height: 15px;
               transform: rotate(45deg) translateY(7px);
               width: 15px;
@@ -117,7 +117,7 @@
         }
 
         .element-subtitle {
-          color: $color-gray-light;
+          color: $color-gray-20;
           font-style: italic;
         }
 

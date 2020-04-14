@@ -27,7 +27,7 @@
     svg {
       height: 16px;
       width: 16px;
-      fill: $color-gray-light;
+      fill: $color-gray-20;
     }
 
     &:hover {
@@ -41,7 +41,7 @@
       background-color: transparent;
       cursor: default;
       svg {
-        fill: $color-gray-dark;
+        fill: $color-gray-40;
       }
     }
   }

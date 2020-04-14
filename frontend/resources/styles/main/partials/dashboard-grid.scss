@@ -30,7 +30,7 @@
           cursor: pointer;
           svg {
             transform: rotate(45deg);
-            fill: $color-gray;
+            fill: $color-gray-30;
             height: 20px;
             width: 20px;
           }
@@ -48,7 +48,7 @@
         cursor: pointer;
 
         svg {
-          fill: $color-gray;
+          fill: $color-gray-30;
           height: 20px;
           margin: 0 10px;
           width: 20px;
@@ -57,7 +57,7 @@
         &:hover {
 
           svg {
-            fill: $color-gray-darker;
+            fill: $color-gray-50;
           }
 
         }
@@ -156,7 +156,7 @@
       }
 
       &.add-file {
-        border: 1px dashed $color-gray-light;
+        border: 1px dashed $color-gray-20;
         justify-content: center;
         box-shadow: none;
 
@@ -196,7 +196,7 @@
           width: 100%;
 
           svg {
-            fill: $color-gray-light;
+            fill: $color-gray-20;
             height: 14px;
             margin-right: $x-small;
             width: 14px;
@@ -279,8 +279,8 @@
 
       // IMAGES SECTION
       &.images-th {
-        border: 1px dashed $color-gray-light;
-        border-bottom: 2px solid lighten($color-gray-light, 12%);
+        border: 1px dashed $color-gray-20;
+        border-bottom: 2px solid lighten($color-gray-20, 12%);
 
         &:hover {
           border-color: $color-primary;
@@ -311,7 +311,7 @@
       }
 
       .color-data {
-        color: $color-gray;
+        color: $color-gray-30;
         margin-top: 15px;
       }
 
@@ -431,7 +431,7 @@
       padding-bottom: $medium;
 
       &.title {
-        color: $color-gray-darker;
+        color: $color-gray-50;
       }
 
     }
@@ -447,6 +447,11 @@
     margin: $size-4;
     padding: 3rem;
     width: 100%;
+
+    .grid-files-desc {
+      color: $color-gray-40;
+      margin-bottom: $medium;
+    }
 }
 
 .grid-files-link-text {
