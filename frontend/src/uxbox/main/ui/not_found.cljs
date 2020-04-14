@@ -22,4 +22,6 @@
     [:div.message-container
      [:div.error-img i/icon-empty]
      [:div.main-message "404"]
-     [:div.desc-message "Oops! Page not found"]]]])
+     [:div.desc-message "Oops! Page not found"]
+     [:a.btn-primary.btn-small "Go back"]]]])
+
