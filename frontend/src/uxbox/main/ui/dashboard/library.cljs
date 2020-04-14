@@ -315,8 +315,6 @@
   (-> (l/in [:library :last-deleted-library])
       (l/derived st/state =)))
 
-(defonce counter (atom 0))
-
 (mf/defc library-page
   [{:keys [team-id library-id section]}]
   (let [state (mf/use-state {:selected #{}})
@@ -333,7 +331,6 @@
 
         last-deleted-library (mf/deref last-deleted-library-ref)
         selected-library (first (filter #(= (:id %) library-id) libraries))
-
         ]
 
     (mf/use-effect

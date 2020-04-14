@@ -11,6 +11,7 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
+   [uxbox.common.data :as d]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.geom :as geom]
@@ -128,11 +129,10 @@
                           :id (str "shape-" id)
                           :width width
                           :height height}))]
-
       [:svg {:x x :y y :width width :height height}
        [:> "rect" props]
-       (for [item childs]
+       (for [[i item] (d/enumerate childs)]
          [:& shape-wrapper {:frame shape
                             :shape item
-                            :key (:id item)}])])))
+                            :key (str i (:id item))}])])))
 
