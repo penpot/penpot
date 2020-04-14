@@ -701,6 +701,14 @@
 
 ;; --- Helpers
 
+(defn apply-zoom
+  [selrect zoom]
+  (assoc selrect
+         :x (/ (:x selrect) (:x zoom))
+         :y (/ (:y selrect) (:y zoom))
+         :width (/ (:width selrect) (:x zoom))
+         :height (/ (:height selrect) (:y zoom))))
+
 (defn contained-in?
   "Check if a shape is contained in the
   provided selection rect."

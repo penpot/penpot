@@ -1169,17 +1169,19 @@
 
 (defn impl-match-by-selrect
   [state selrect]
-  (let [page-id (::page-id state)
+  (let [zoom (gpt/point (get-in state [:workspace-local :zoom]))
+        selrect' (geom/apply-zoom selrect zoom)
+        page-id (::page-id state)
         data (get-in state [:workspace-data page-id])
         match (fn [acc {:keys [type id] :as shape}]
                 (cond
                   (helpers/is-shape-grouped (:id shape) (:objects data))
                   acc
 
-                  (geom/contained-in? shape selrect)
+                  (geom/contained-in? shape selrect')
                   (conj acc id)
 
-                  (geom/overlaps? shape selrect)
+                  (geom/overlaps? shape selrect')
                   (conj acc id)
 
                   :else
