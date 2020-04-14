@@ -18,8 +18,8 @@
 
 (def ^:dynamic *on-error* identity)
 
-(defonce state (l/atom {}))
-(defonce loader (l/atom false))
+(defonce state (atom {}))
+(defonce loader (atom false))
 (defonce store (ptk/store {:on-error #(*on-error* %)}))
 (defonce stream (ptk/input-stream store))
 
