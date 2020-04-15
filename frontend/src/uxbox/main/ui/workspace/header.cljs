@@ -54,11 +54,11 @@
        [:li {:on-click on-decrease}
         "Zoom out" [:span "-"]]
        [:li {:on-click on-zoom-to-50}
-        "Zoom to 50%"]
+        "Zoom to 50%" [:span "Shift + 0"]]
        [:li {:on-click on-zoom-to-100}
-        "Zoom to 100%" [:span "Shift + 0"]]
+        "Zoom to 100%" [:span "Shift + 1"]]
        [:li {:on-click on-zoom-to-200}
-        "Zoom to 200%"]]]]))
+        "Zoom to 200%" [:span "Shift + 2"]]]]]))
 
 
 
