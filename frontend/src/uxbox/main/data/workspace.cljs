@@ -1344,17 +1344,6 @@
                   (reverse (map :id rchanges)))]
         (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
 
-(defn- delete-frame
-  [id]
-  (ptk/reify ::delete-shapes
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (::page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            obj (get objects id)
-            ids (d/concat [] (:shapes obj) [(:id obj)])]
-        (rx/of (delete-shapes ids))))))
-
 (def delete-selected
   "Deselect all and remove all selected shapes."
   (ptk/reify ::delete-selected
@@ -1366,17 +1355,8 @@
 
             shapes (map lookup selected)
             shape? #(not= (:type %) :frame)]
-        (cond
-          (and (= (count shapes) 1)
-               (= (:type (first shapes)) :frame))
-          (rx/of (delete-frame (first selected)))
+        (rx/of (delete-shapes selected))))))
 
-          (and (pos? (count shapes))
-               (every? shape? shapes))
-          (rx/of (delete-shapes selected))
-
-          :else
-          (rx/empty))))))
 
 ;; --- Rename Shape
 
