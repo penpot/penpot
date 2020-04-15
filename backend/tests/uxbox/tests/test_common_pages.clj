@@ -213,15 +213,15 @@
     ))
 
 (t/deftest process-changes-move-objects
-  (let [frame-a-id (uuid/next)
-        frame-b-id (uuid/next)
-        group-a-id (uuid/next)
-        group-b-id (uuid/next)
-        rect-a-id  (uuid/next)
-        rect-b-id  (uuid/next)
-        rect-c-id  (uuid/next)
-        rect-d-id  (uuid/next)
-        rect-e-id  (uuid/next)
+  (let [frame-a-id (uuid/custom 1)
+        frame-b-id (uuid/custom 2)
+        group-a-id (uuid/custom 3)
+        group-b-id (uuid/custom 4)
+        rect-a-id  (uuid/custom 5)
+        rect-b-id  (uuid/custom 6)
+        rect-c-id  (uuid/custom 7)
+        rect-d-id  (uuid/custom 8)
+        rect-e-id  (uuid/custom 9)
         data (-> cp/default-page-data
                  (assoc-in [cp/root :shapes] [frame-a-id])
                  (assoc-in [:objects frame-a-id]
@@ -356,12 +356,47 @@
         (t/is (= data res))))))
 
 
+(t/deftest process-changes-move-objects-3
+  (let [shape-2-id (uuid/custom 1 2)
+        shape-3-id (uuid/custom 1 3)
+        frame-id (uuid/custom 1 1)
+        changes [{:type :add-obj
+                  :id frame-id
+                  :frame-id uuid/zero
+                  :obj {:type :frame
+                        :name "Frame"}}
+                 {:type :add-obj
+                  :frame-id frame-id
+                  :id shape-2-id
+                  :obj {:type :shape
+                        :name "Shape"}}
+                 {:type :add-obj
+                  :id shape-3-id
+                  :frame-id uuid/zero
+                  :obj {:type :rect
+                        :name "Shape"}}]
+        data (cp/process-changes cp/default-page-data changes)]
+    (t/testing "move inside->outside-inside"
+      (let [changes [{:type :mov-objects
+                      :shapes [shape-3-id]
+                      :parent-id frame-id}
+                     {:type :mov-objects
+                      :shapes [shape-3-id]
+                      :parent-id uuid/zero}]
+            res (cp/process-changes data changes)]
+
+        (t/is (= (get-in res [:objects shape-2-id :frame-id])
+                 (get-in data [:objects shape-2-id :frame-id])))
+        (t/is (= (get-in res [:objects shape-3-id :frame-id])
+                 (get-in data [:objects shape-3-id :frame-id])))))))
+
+
 (t/deftest process-changes-move-objects-2
   (let [shape-1-id (uuid/custom 1 1)
         shape-2-id (uuid/custom 1 2)
         shape-3-id (uuid/custom 1 3)
         shape-4-id (uuid/custom 1 4)
-        group-1-id (uuid/custom 2 1)
+        group-1-id (uuid/custom 1 5)
         changes [{:type :add-obj
                   :id shape-1-id
                   :frame-id cp/root

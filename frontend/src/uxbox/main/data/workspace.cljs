@@ -1403,7 +1403,7 @@
   (us/verify ::us/uuid ref-id)
   (us/verify number? index)
 
-  (ptk/reify ::reloacate-shape
+  (ptk/reify ::relocate-shape
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (::page-id state)
@@ -1416,28 +1416,6 @@
                                  :shapes (vec selected)}]
                                []
                                {:commit-local? true}))))))
-
-(defn commit-shape-order-change
-  [id]
-  (ptk/reify ::commit-shape-order-change
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [pid (::page-id state)
-            obj (get-in state [:workspace-data pid :objects id])
-
-            cfrm (get-in state [:workspace-data pid :objects (:frame-id obj)])
-            pfrm (get-in state [:pages-data pid :objects (:frame-id obj)])
-
-            cindex (d/index-of (:shapes cfrm) id)
-            pindex (d/index-of (:shapes pfrm) id)
-
-            rchange {:type :mod-obj
-                     :id (:id cfrm)
-                     :operations [{:type :abs-order :id id :index cindex}]}
-            uchange {:type :mod-obj
-                     :id (:id cfrm)
-                     :operations [{:type :abs-order :id id :index pindex}]}]
-        (rx/of (commit-changes [rchange] [uchange]))))))
 
 
 ;; --- Shape / Selection Alignment and Distribution
@@ -1491,40 +1469,64 @@
 
 ;; --- Temportal displacement for Shape / Selection
 
+(defn- retrieve-toplevel-shapes
+  [objects]
+  (let [lookup #(get objects %)
+        root   (lookup uuid/zero)
+        childs (:shapes root)]
+    (loop [id  (first childs)
+           ids (rest childs)
+           res []]
+      (if (nil? id)
+        res
+        (let [obj (lookup id)
+              typ (:type obj)]
+          (recur (first ids)
+                 (rest ids)
+                 (if (= :frame typ)
+                   (into res (:shapes obj))
+                   (conj res id))))))))
+
+(defn- calculate-shape-to-frame-relationship-changes
+  [objects ids]
+  (loop [id  (first ids)
+         ids (rest ids)
+         rch []
+         uch []]
+    (if (nil? id)
+      [rch uch]
+      (let [obj (get objects id)
+            fid (calculate-frame-overlap objects obj)]
+        (if (not= fid (:frame-id obj))
+          (recur (first ids)
+                 (rest ids)
+                 (conj rch {:type :mov-objects
+                            :parent-id fid
+                            :shapes [id]})
+                 (conj uch {:type :mov-objects
+                            :parent-id (:frame-id obj)
+                            :shapes [id]}))
+          (recur (first ids)
+                 (rest ids)
+                 rch
+                 uch))))))
+
 (defn- rehash-shape-frame-relationship
   [ids]
-  (letfn [(impl-diff [state]
-            (loop [id  (first ids)
-                   ids (rest ids)
-                   rch []
-                   uch []]
-              (if (nil? id)
-                [rch uch]
-                (let [pid (::page-id state)
-                      objects (get-in state [:workspace-data pid :objects])
-                      obj (get objects id)
-                      fid (calculate-frame-overlap objects obj)]
-                  (if (not= fid (:frame-id obj))
-                    (recur (first ids)
-                           (rest ids)
-                           (conj rch {:type :mov-obj
-                                      :id id
-                                      :frame-id fid})
-                           (conj uch {:type :mov-obj
-                                      :id id
-                                      :frame-id (:frame-id obj)}))
-                    (recur (first ids)
-                           (rest ids)
-                           rch
-                           uch))))))]
-    (ptk/reify ::rehash-shape-frame-relationship
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [[rch uch] (impl-diff state)]
-          (when-not (empty? rch)
-            (rx/of (commit-changes rch uch {:commit-local? true}))))))))
+  (ptk/reify ::rehash-shape-frame-relationship
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (::page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            ids     (retrieve-toplevel-shapes objects)
+            [rch uch] (calculate-shape-to-frame-relationship-changes objects ids)
+            ]
 
-(defn- adjust-group-shapes [state ids]
+        (when-not (empty? rch)
+          (rx/of (commit-changes rch uch {:commit-local? true})))))))
+
+(defn- adjust-group-shapes
+  [state ids]
   (let [page-id (::page-id state)
         objects (get-in state [:workspace-data page-id :objects])
         groups-to-adjust (->> ids
@@ -1930,25 +1932,6 @@
       (let [page-id (::page-id state)]
         (update-in state [:workspace-data page-id :objects id :segments index] gpt/add delta)))))
 
-;; --- Initial Path Point Alignment
-
-;; ;; TODO: revisit on alignemt refactor
-;; (deftype InitialPathPointAlign [id index]
-;;   ptk/WatchEvent
-;;   (watch [_ state s]
-;;     (let [shape (get-in state [:workspace-data :objects id])
-;;           point (get-in shape [:segments index])]
-;;       (->> (uwrk/align-point point)
-;;            (rx/map #(update-path id index %))))))
-
-;; (defn initial-path-point-align
-;;   "Event responsible of align a specified point of the
-;;   shape by `index` with the grid."
-;;   [id index]
-;;   {:pre [(uuid? id)
-;;          (number? index)
-;;          (not (neg? index))]}
-;;   (InitialPathPointAlign. id index))
 
 ;; --- Shape Visibility
 
@@ -2216,14 +2199,8 @@
 ;; GROUPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-parent [object-id objects]
-  (let [include-object
-        (fn [object]
-          (and (:shapes object)
-               (some #(= object-id %) (:shapes object))))]
-    (first (filter include-object objects))))
-
-(defn group-shape [id frame-id selected selection-rect]
+(defn group-shape
+  [id frame-id selected selection-rect]
   {:id id
    :type :group
    :name (name (gensym "Group-"))

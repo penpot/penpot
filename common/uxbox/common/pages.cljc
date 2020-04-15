@@ -222,7 +222,6 @@
 
 (defmethod process-change :mod-obj
   [data {:keys [id operations] :as change}]
-  (assert (contains? (:objects data) id) "process-change/mod-obj")
   (update data :objects
           (fn [objects]
             (if-let [obj (get objects id)]
@@ -285,7 +284,7 @@
           (let [invalid (calculate-invalid-targets shape-id (:objects data))]
             (not (invalid parent-id))))
 
-          valid? (every? is-valid-move shapes)
+        valid? (every? is-valid-move shapes)
 
         ;; Add items into the :shapes property of the target parent-id
         insert-items
@@ -293,7 +292,12 @@
           (let [prev-shapes (or prev-shapes [])]
             (if index
               (insert-at-index prev-shapes index shapes)
-              (into prev-shapes shapes))))
+              (reduce (fn [acc id]
+                        (if (some #{id} acc)
+                          acc
+                          (conj acc id)))
+                      prev-shapes
+                      shapes))))
 
         strip-id
         (fn [id]
@@ -326,17 +330,18 @@
 
         ;; Updates the frame-id references that might be outdated
         update-frame-ids
-        (fn update-frame-ids [data shape-id]
-          (as-> data $
-            (assoc-in $ [:objects shape-id :frame-id] frame-id)
-            (reduce update-frame-ids $ (get-in $ [:objects shape-id :shapes]))))]
+        (fn update-frame-ids [data id]
+          (let [data (assoc-in data [:objects id :frame-id] frame-id)
+                obj (get-in data [:objects id])]
+            (cond-> data
+              (not= :frame (:type obj))
+              (as-> $$ (reduce update-frame-ids $$ (:shapes obj))))))]
 
-    (if valid?
+    (when valid?
       (as-> data $
         (update-in $ [:objects parent-id :shapes] insert-items)
         (reduce remove-in-parent $ shapes)
-        (reduce update-frame-ids $ (get-in $ [:objects parent-id :shapes])))
-      data)))
+        (reduce update-frame-ids $ (get-in $ [:objects parent-id :shapes]))))))
 
 (defmethod process-operation :set
   [shape op]
