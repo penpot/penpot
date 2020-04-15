@@ -75,7 +75,7 @@
 
 (defn- color-conformer
   [v]
-  (if (and (string? v) (re-matches #"^#[0-9A-Fa-f]{6}$" v))
+  (if (and (string? v) (re-matches #"^#(?:[0-9a-fA-F]{3}){1,2}$" v))
     v
     ::s/invalid))
 

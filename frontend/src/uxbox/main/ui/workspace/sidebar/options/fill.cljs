@@ -28,6 +28,13 @@
         (fn [color]
           (st/emit! (udw/update-shape (:id shape) {:fill-color color})))
 
+        on-color-input-change
+        (fn [event]
+          (let [input (dom/get-target event)
+                value (dom/get-value input)]
+            (when (dom/valid? input)
+              (on-color-change value))))
+
         on-opacity-change
         (fn [event]
           (let [value (-> (dom/get-target event)
@@ -57,9 +64,9 @@
          :on-click show-color-picker}]
 
        [:div.color-info
-        [:input {:read-only true
-                 :key (:fill-color shape)
-                 :default-value (:fill-color shape)}]]
+        [:input {:default-value (:fill-color shape)
+                 :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
+                 :on-change on-color-input-change}]]
 
        [:div.input-element.percentail
         [:input.input-text {:type "number"

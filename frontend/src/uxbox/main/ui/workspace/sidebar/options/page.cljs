@@ -55,11 +55,12 @@
         (fn [color]
           (st/emit! (dw/update-options {:grid-color color})))
 
-        on-color-change
+        on-color-input-change
         (fn [event]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value))]
-            (change-color value)))
+          (let [input (dom/get-target event)
+                value (dom/get-value input)]
+            (when (dom/valid? input)
+              (change-color value))))
 
         show-color-picker
         (fn [event]
@@ -89,8 +90,9 @@
        [:span.color-th {:style {:background-color (:grid-color options)}
                         :on-click show-color-picker}]
        [:div.color-info
-        [:input {:on-change on-color-change
-                 :value (:grid-color options)}]]]]]))
+        [:input {:default-value (:grid-color options)
+                 :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
+                 :on-change on-color-input-change}]]]]]))
 
 (mf/defc options
   [{:keys [page] :as props}]
