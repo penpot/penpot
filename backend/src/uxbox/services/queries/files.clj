@@ -55,10 +55,17 @@
              ppr.is_owner = true or
              ppr.can_edit = true)
    )
-   select file.*
+   select distinct
+          file.*,
+          array_agg(page.id) over pages_w as pages,
+          first_value(page.data) over pages_w as data
      from file
     inner join projects as pr on (file.project_id = pr.id)
+     left join page on (file.id = page.file_id)
     where file.name ilike ('%' || $3 || '%')
+   window pages_w as (partition by file.id order by page.created_at
+                      range between unbounded preceding
+                                and unbounded following)
     order by file.created_at asc")
 
 (s/def ::search-files
