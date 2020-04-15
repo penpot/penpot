@@ -30,8 +30,8 @@
 
 (defn selected-items-ref
   [library-id]
-  (->> #(get-in % [:library-items :palettes library-id])
-       (l/derived st/state)))
+  (-> #(get-in % [:library-items :palettes library-id])
+      (l/derived st/state)))
 
 (def selected-library-ref
   (-> #(get-in % [:library-selected :palettes])
@@ -56,75 +56,77 @@
 (mf/defc palette
   [{:keys [libraries left-sidebar?] :as props}]
 
-  (when (and libraries (-> libraries count (> 0)))
-    (let [current-selection (or (mf/deref selected-library-ref) (-> libraries first :id))
-          state (mf/use-state {:show-menu false })]
-      (mf/use-effect
-       (mf/deps current-selection)
-       #(st/emit! (dlib/retrieve-library-data :palettes current-selection)))
+  (let [current-selection (or (mf/deref selected-library-ref) (-> libraries first :id))
+        state (mf/use-state {:show-menu false })]
 
-      (let [items (-> current-selection selected-items-ref  mf/deref)
-            doc-width (.. js/document -documentElement -clientWidth)
-            width (:width @state (* doc-width 0.84))
-            offset (:offset @state 0)
-            visible (/ width 86)
-            invisible (- (count items) visible)
-            close #(st/emit! (udw/toggle-layout-flag :colorpalette))
-            container (mf/use-ref nil)
-            container-child (mf/use-ref nil)
+    (mf/use-effect
+     (mf/deps current-selection)
+     #(when current-selection
+        (st/emit! (dlib/retrieve-library-data :palettes current-selection))))
 
-            on-left-arrow-click
-            (fn [event]
-              (when (> offset 0)
-                (let [element (mf/ref-val container-child)]
-                  (swap! state update :offset dec))))
+    (let [items (or (mf/deref (selected-items-ref current-selection)) [])
+          doc-width (.. js/document -documentElement -clientWidth)
+          width (:width @state (* doc-width 0.84))
+          offset (:offset @state 0)
+          visible (/ width 86)
+          invisible (- (count items) visible)
+          close #(st/emit! (udw/toggle-layout-flag :colorpalette))
+          container (mf/use-ref nil)
+          container-child (mf/use-ref nil)
 
-            on-right-arrow-click
-            (fn [event]
-              (when (< offset invisible)
-                (let [element (mf/ref-val container-child)]
-                  (swap! state update :offset inc))))
+          on-left-arrow-click
+          (fn [event]
+            (when (> offset 0)
+              (let [element (mf/ref-val container-child)]
+                (swap! state update :offset dec))))
 
-            on-scroll
-            (fn [event]
-              (if (pos? (.. event -nativeEvent -deltaY))
-                (on-right-arrow-click event)
-                (on-left-arrow-click event)))
+          on-right-arrow-click
+          (fn [event]
+            (when (< offset invisible)
+              (let [element (mf/ref-val container-child)]
+                (swap! state update :offset inc))))
 
-            after-render
-            (fn []
-              (let [dom (mf/ref-val container)
-                    width (.-clientWidth dom)]
-                (when (not= (:width @state) width)
-                  (swap! state assoc :width width))))
+          on-scroll
+          (fn [event]
+            (if (pos? (.. event -nativeEvent -deltaY))
+              (on-right-arrow-click event)
+              (on-left-arrow-click event)))
 
-            handle-click
-            (fn [library]
-              (st/emit! (dlib/select-library :palettes (:id library))))]
+          after-render
+          (fn []
+            (let [dom (mf/ref-val container)
+                  width (.-clientWidth dom)]
+              (when (not= (:width @state) width)
+                (swap! state assoc :width width))))
 
-        (mf/use-effect nil after-render)
+          handle-click
+          (fn [library]
+            (st/emit! (dlib/select-library :palettes (:id library))))]
 
-        [:div.color-palette {:class (when left-sidebar? "left-sidebar-open")}
-         [:& context-menu {:selectable true
-                           :selected (->> libraries (filter #(= (:id %) current-selection)) first :name)
-                           :show (:show-menu @state)
-                           :on-close #(swap! state assoc :show-menu false)
-                           :options (mapv #(vector (:name %) (partial handle-click %)) libraries)} ]
-         [:div.color-palette-actions
-          {:on-click #(swap! state assoc :show-menu true)}
-          [:div.color-palette-actions-button i/actions]]
+      (mf/use-effect nil after-render)
 
-         [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
+      [:div.color-palette {:class (when left-sidebar? "left-sidebar-open")}
+       [:& context-menu {:selectable true
+                         :selected (->> libraries (filter #(= (:id %) current-selection)) first :name)
+                         :show (:show-menu @state)
+                         :on-close #(swap! state assoc :show-menu false)
+                         :options (mapv #(vector (:name %) (partial handle-click %)) libraries)} ]
+       [:div.color-palette-actions
+        {:on-click #(swap! state assoc :show-menu true)}
+        [:div.color-palette-actions-button i/actions]]
 
-         [:div.color-palette-content {:ref container :on-wheel on-scroll}
-          [:div.color-palette-inside {:ref container-child
-                                      :style {:position "relative"
-                                              :width (str (* 86 (count items)) "px")
-                                              :right (str (* 86 offset) "px")}}
-           (for [item items]
-             [:& palette-item {:color (:content item) :key (:id item)}])]]
+       [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
 
-         [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))))
+       [:div.color-palette-content {:ref container :on-wheel on-scroll}
+        [:div.color-palette-inside {:ref container-child
+                                    :style {:position "relative"
+                                            :width (str (* 86 (count items)) "px")
+                                            :right (str (* 86 offset) "px")}}
+         (for [item items]
+           [:& palette-item {:color (:content item) :key (:id item)}])]]
+
+       [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
+  )
 
 (mf/defc colorpalette
   [{:keys [left-sidebar?]}]
