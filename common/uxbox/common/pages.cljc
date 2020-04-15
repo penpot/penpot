@@ -139,7 +139,7 @@
 
 (defmethod change-spec-impl :add-obj [_]
   (s/keys :req-un [::id ::frame-id ::obj]
-          :opt-un [::session-id]))
+          :opt-un [::session-id ::parent-id]))
 
 (defmethod change-spec-impl :mod-obj [_]
   (s/keys :req-un [::id ::operations]
@@ -247,7 +247,7 @@
         (contains? (:objects data) frame-id)
         (update-in [:objects frame-id :shapes] (fn [s] (filterv #(not= % id) s)))
 
-        (seq shapes)                    ; Recursive delete all dependend objects
+        (seq shapes)   ; Recursive delete all dependend objects
         (as-> $ (reduce #(or (process-change %1 {:type :del-obj :id %2}) %1) $ shapes))))))
 
 (defn- calculate-child-parent-map

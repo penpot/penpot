@@ -1318,17 +1318,28 @@
       (let [page-id (::page-id state)
             session-id (:session-id state)
             objects (get-in state [:workspace-data page-id :objects])
-            rchanges (mapv #(array-map :type :del-obj :id %) ids)
-            uchanges (mapv (fn [id]
-                             (let [obj (get objects id)
-                                   frm (get objects (:frame-id obj))
-                                   idx (d/index-of (:shapes frm) id)]
-                               {:type :add-obj
-                                :id id
-                                :frame-id (:id frm)
-                                :index idx
-                                :obj obj}))
-                           (reverse ids))]
+            cpindex (helpers/calculate-child-parent-map objects)
+
+            del-change #(array-map :type :del-obj :id %)
+
+            rchanges
+            (reduce (fn [res id]
+                      (let [chd (helpers/get-children id objects)]
+                        (into res (d/concat
+                                   (mapv del-change (reverse chd))
+                                   [(del-change id)]))))
+                    []
+                    ids)
+
+            uchanges
+            (mapv (fn [id]
+                    (let [obj (get objects id)]
+                     {:type :add-obj
+                      :id id
+                      :frame-id (:frame-id obj)
+                      :parent-id (get cpindex id)
+                      :obj obj}))
+                  (reverse (map :id rchanges)))]
         (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn- delete-frame
