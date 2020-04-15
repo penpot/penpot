@@ -865,24 +865,6 @@
     (update [_ state]
       (assoc-in state [:workspace-local :zoom] 2))))
 
-;; --- Grid Alignment
-
-;; (defn initialize-alignment
-;;   [id]
-;;   (us/verify ::us/uuid id)
-;;   (ptk/reify ::initialize-alignment
-;;     ptk/WatchEvent
-;;     (watch [_ state stream]
-;;       (let [metadata (get-in state [:workspace-page :metadata])
-;;             params {:width c/viewport-width
-;;                     :height c/viewport-height
-;;                     :x-axis (:grid-x-axis metadata c/grid-x-axis)
-;;                     :y-axis (:grid-y-axis metadata c/grid-y-axis)}]
-;;         (rx/concat
-;;          (rx/of (deactivate-flag :grid-indexed))
-;;          (->> (uwrk/initialize-alignment params)
-;;               (rx/map #(activate-flag :grid-indexed))))))))
-
 ;; --- Selection Rect
 
 (declare select-shapes-by-current-selrect)
