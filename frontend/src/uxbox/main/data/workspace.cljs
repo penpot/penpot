@@ -1036,98 +1036,135 @@
                                    :id id}])))))))
 
 
-;; --- Duplicate Selected
-;; TODO: handle properly naming
+;; --- Duplicate Shapes
 
-(defn duplicate-shapes
-  [shapes]
-  (ptk/reify ::duplicate-shapes
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (::page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            rchanges (mapv (fn [id]
-                             (let [obj (assoc (get objects id)
-                                              :id (uuid/next))]
-                               {:type :add-obj
-                                :id (:id obj)
-                                :frame-id (:frame-id obj)
-                                :obj obj
-                                :session-id (:session-id state)}))
-                           shapes)
-            uchanges (mapv (fn [rch]
-                             {:type :del-obj
-                              :id (:id rch)
-                              :session-id (:session-id state)})
-                           rchanges)]
-        (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
+(declare prepare-duplicate-changes)
+(declare prepare-duplicate-change)
+(declare prepare-duplicate-frame-change)
+(declare prepare-duplicate-shape-change)
 
-(defn duplicate-frame
-  [frame-id]
-  (ptk/reify ::duplicate-frame
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (::page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
+(defn impl-generate-unique-name2
+  "A unique name generator"
+  [used basename]
+  (let [[prefix initial] (extract-numeric-suffix basename)]
+    (loop [counter initial]
+      (let [candidate (str prefix "-" counter)]
+        (if (contains? used candidate)
+          (recur (inc counter))
+          candidate)))))
 
-            frame (get objects frame-id)
-            frame-id (uuid/next)
+(def ^:private change->name #(get-in % [:obj :name]))
 
-            rchanges (mapv (fn [id]
-                             (let [obj (assoc (get objects id)
-                                              :id (uuid/next))]
-                               {:type :add-obj
-                                :id (:id obj)
-                                :frame-id frame-id
-                                :obj (assoc obj :frame-id frame-id)}))
-                           (:shapes frame))
+(defn- prepare-duplicate-changes
+  "Prepare objects to paste: generate new id, give them unique names,
+  move to the position of mouse pointer, and find in what frame they
+  fit."
+  [objects names ids delta]
+  (loop [names names
+         chgs []
+         id   (first ids)
+         ids  (rest ids)]
+    (if (nil? id)
+      chgs
+      (let [result (prepare-duplicate-change objects names id delta)
+            result (if (vector? result) result [result])]
+        (recur
+         (into names (map change->name) result)
+         (into chgs result)
+         (first ids)
+         (rest ids))))))
 
-            uchanges (mapv (fn [rch]
-                             {:type :del-obj
-                              :id (:id rch)})
-                           rchanges)
+(defn- prepare-duplicate-change
+  [objects names id delta]
+  (let [obj (get objects id)]
+    (if (= :frame (:type obj))
+      (prepare-duplicate-frame-change objects names obj delta)
+      (prepare-duplicate-shape-change objects names obj delta nil nil))))
 
-            shapes (mapv :id rchanges)
+(defn- prepare-duplicate-shape-change
+  [objects names obj delta frame-id parent-id]
+  (let [id (uuid/next)
+        name (impl-generate-unique-name2 names (:name obj))
+        renamed-obj (assoc obj :id id :name name)
+        moved-obj (geom/move renamed-obj delta)
+        frame-id (if frame-id
+                   frame-id
+                   (calculate-frame-overlap objects moved-obj))
 
-            rchange {:type :add-obj
-                     :id frame-id
-                     :frame-id uuid/zero
-                     :obj (assoc frame
-                                 :id frame-id
-                                 :shapes shapes)
+        parent-id (or parent-id frame-id)
 
-                     :session-id (:session-id state)}
+        children-changes
+        (loop [names names
+               result []
+               cid (first (:shapes obj))
+               cids (rest (:shapes obj))]
+          (if (nil? cid)
+            result
+            (let [obj (get objects cid)
+                  changes (prepare-duplicate-shape-change objects names obj delta frame-id id)]
+              (recur
+               (into names (map change->name changes))
+               (into result changes)
+               (first cids)
+               (rest cids)))))
 
-            uchange {:type :del-obj
-                     :id frame-id
-                     :session-id (:session-id state)}]
-        (rx/of (commit-changes (d/concat [rchange] rchanges)
-                               (d/concat [] uchanges [uchange])
-                               {:commit-local? true}))))))
+        reframed-obj (-> moved-obj
+                         (assoc  :frame-id frame-id)
+                         (dissoc :shapes))]
+    (into [{:type :add-obj
+            :id id
+            :old-id (:id obj)
+            :frame-id frame-id
+            :parent-id parent-id
+            :obj (dissoc reframed-obj :shapes)}]
+          children-changes)))
 
+(defn- prepare-duplicate-frame-change
+  [objects names obj delta]
+  (let [frame-id (uuid/next)
+        frame-name (impl-generate-unique-name2 names (:name obj))
+        sch (->> (map #(get objects %) (:shapes obj))
+                 (mapcat #(prepare-duplicate-shape-change objects names % delta frame-id frame-id)))
+
+        renamed-frame (-> obj
+                          (assoc :id frame-id)
+                          (assoc :name frame-name)
+                          (assoc :frame-id uuid/zero)
+                          (dissoc :shapes))
+
+        moved-frame (geom/move renamed-frame delta)
+
+        fch {:type :add-obj
+             :old-id (:id obj)
+             :id frame-id
+             :frame-id uuid/zero
+             :obj moved-frame}]
+
+    (into [fch] sch)))
+
+(declare select-shapes)
 
 (def duplicate-selected
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (::page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
             selected (get-in state [:workspace-local :selected])
-            lookup #(get objects %)
-            shapes (map lookup selected)
-            shape? #(not= (:type %) :frame)]
-        (cond
-          (and (= (count shapes) 1)
-               (= (:type (first shapes)) :frame))
-          (rx/of (duplicate-frame (first selected)))
+            objects (get-in state [:workspace-data page-id :objects])
+            delta (gpt/point 0 0)
+            unames (impl-retrieve-used-names objects)
 
-          (and (pos? (count shapes))
-               (every? shape? shapes))
-          (rx/of (duplicate-shapes selected))
+            rchanges (prepare-duplicate-changes objects unames selected delta)
+            uchanges (mapv #(array-map :type :del-obj :id (:id %))
+                           (reverse rchanges))
 
-          :else
-          (rx/empty))))))
+            selected (->> rchanges
+                          (filter #(selected (:old-id %)))
+                          (map #(get-in % [:obj :id]))
+                          (into #{}))]
 
+        (rx/of (commit-changes rchanges uchanges {:commit-local? true})
+               (select-shapes selected))))))
 
 
 ;; --- Toggle shape's selection status (selected or deselected)
@@ -1143,6 +1180,14 @@
                    (if (contains? selected id)
                      (disj selected id)
                      (conj selected id)))))))
+
+(defn select-shapes
+  [ids]
+  (us/verify ::set-of-uuid ids)
+  (ptk/reify ::select-shapes
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected] ids))))
 
 (def deselect-all
   "Clear all possible state of drawing, edition
@@ -2130,18 +2175,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def copy-selected
-  (letfn [(prepare-selected [state selected]
-            (let [data (reduce #(prepare %1 state %2) {} selected)]
+  (letfn [(prepare-selected [objects selected]
+            (let [data (reduce #(prepare %1 objects %2) {} selected)]
               {:type :copied-shapes
-               :data (assoc data :selected selected)}))
+               :selected selected
+               :objects data}))
 
-          (prepare [result state id]
-            (let [page-id (::page-id state)
-                  objects (get-in state [:workspace-data page-id :objects])
-                  object  (get objects id)]
-              (cond-> (assoc-in result [:objects id] object)
-                (= :frame (:type object))
-                (as-> $ (reduce #(prepare %1 state %2) $ (:shapes object))))))
+          (prepare [result objects id]
+            (let [obj (get objects id)]
+              (as-> result $$
+                (assoc $$ id obj)
+                (reduce #(prepare %1 objects %2) $$ (:shapes obj)))))
 
           (on-copy-error [error]
             (js/console.error "Clipboard blocked:" error)
@@ -2150,98 +2194,18 @@
     (ptk/reify ::copy-selected
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [selected (get-in state [:workspace-local :selected])
-              cdata    (prepare-selected state selected)]
+        (let [page-id (::page-id state)
+              objects (get-in state [:workspace-data page-id :objects])
+              selected (get-in state [:workspace-local :selected])
+              cdata    (prepare-selected objects selected)]
           (->> (t/encode cdata)
                (wapi/write-to-clipboard)
                (rx/from)
                (rx/catch on-copy-error)
                (rx/ignore)))))))
 
-
-(declare select-pasted-objs)
-
 (defn- paste-impl
   [{:keys [selected objects] :as data}]
-  (letfn [(prepare-changes [state delta]
-            "Prepare objects to paste: generate new id, give them unique names, move
-            to the position of mouse pointer, and find in what frame they fit."
-            (let [page-id (::page-id state)]
-              (loop [existing-objs (get-in state [:workspace-data page-id :objects])
-                     chgs []
-                     id   (first selected)
-                     ids  (rest selected)]
-                (if (nil? id)
-                  chgs
-                  (let [result (prepare-change id existing-objs delta)
-                        result (if (vector? result) result [result])]
-                    (recur
-                     (reduce #(assoc %1 (:id %2) (:obj %2)) existing-objs result)
-                     (into chgs result)
-                     (first ids)
-                     (rest ids)))))))
-
-          (prepare-change [id existing-objs delta]
-            (let [obj (get objects id)]
-              (if (= :frame (:type obj))
-                (prepare-frame-change existing-objs obj delta)
-                (prepare-shape-change existing-objs obj delta nil))))
-
-          (prepare-shape-change [objects obj delta frame-id]
-            (let [id (uuid/next)
-                  name (impl-generate-unique-name objects (:name obj))
-                  renamed-obj (assoc obj :id id :name name)
-                  moved-obj (geom/move renamed-obj delta)
-                  frame-id (if frame-id
-                             frame-id
-                             (calculate-frame-overlap objects moved-obj))
-
-                  prepare-child
-                  (fn [child-id]
-                    (prepare-shape-change objects (get objects child-id) delta frame-id))
-
-                  children-changes (mapcat prepare-child (:shapes obj))
-                  is-child? (set (:shapes obj))
-                  children-uuids (->> children-changes
-                                      (filter #(and (= :add-obj (:type %)) (is-child? (:old-id %))))
-                                      (map #(:id %)))
-
-                  move-change (when (not (empty? (:shapes obj)))
-                                [{:type :mov-objects
-                                  :parent-id id
-                                  :shapes (vec children-uuids)}])
-
-                  reframed-obj (-> moved-obj
-                                   (assoc  :frame-id frame-id)
-                                   (dissoc :shapes))]
-              (into [{:type :add-obj
-                      :id id
-                      :old-id (:id obj)
-                      :frame-id frame-id
-                      :obj (dissoc reframed-obj :shapes)}]
-                    (concat children-changes move-change))))
-
-          (prepare-frame-change [objects obj delta]
-            (let [frame-id (uuid/next)
-                  frame-name (impl-generate-unique-name objects (:name obj))
-                  sch (->> (map #(get objects %) (:shapes obj))
-                           (mapcat #(prepare-shape-change objects % delta frame-id)))
-                  is-child? (set (:shapes obj))
-                  children-uuids (->> sch
-                                      (filter #(and (= :add-obj (:type %)) (is-child? (:old-id %))))
-                                      (map #(:id %)))
-                  renamed-frame (-> obj
-                                    (assoc :id frame-id)
-                                    (assoc :name frame-name)
-                                    (assoc :frame-id uuid/zero)
-                                    (assoc :shapes (vec children-uuids)))
-                  moved-frame (geom/move renamed-frame delta)
-                  fch {:type :add-obj
-                       :id frame-id
-                       :frame-id uuid/zero
-                       :obj moved-frame}]
-              (into [fch] sch)))]
-
   (ptk/reify ::paste-impl
     ptk/WatchEvent
     (watch [_ state stream]
@@ -2251,15 +2215,20 @@
             mouse-pos @ms/mouse-position
             delta (gpt/subtract mouse-pos orig-pos)
 
-            rchanges (prepare-changes state delta)
-            uchanges (map (fn [ch]
-                            {:type :del-obj
-                             :id (:id ch)})
-                          (filter #(= :add-obj (:type %)) rchanges))]
-        (rx/of (commit-changes (vec rchanges)
-                               (vec (reverse uchanges))
-                               {:commit-local? true})
-               (select-pasted-objs selected rchanges)))))))
+            page-id (::page-id state)
+            unames (-> (get-in state [:workspace-data page-id :objects])
+                       (impl-retrieve-used-names))
+
+            rchanges (prepare-duplicate-changes objects unames selected delta)
+            uchanges (mapv #(array-map :type :del-obj :id (:id %))
+                           (reverse rchanges))
+
+            selected (->> rchanges
+                          (filter #(selected (:old-id %)))
+                          (map #(get-in % [:obj :id]))
+                          (into #{}))]
+        (rx/of (commit-changes rchanges uchanges {:commit-local? true})
+               (select-shapes selected))))))
 
 (def paste
   (ptk/reify ::paste
@@ -2268,23 +2237,12 @@
       (->> (rx/from (wapi/read-from-clipboard))
            (rx/map t/decode)
            (rx/filter #(= :copied-shapes (:type %)))
-           (rx/pr-log "pasting:")
-           (rx/map :data)
+           (rx/map #(select-keys % [:selected :objects]))
            (rx/map paste-impl)
            (rx/catch (fn [err]
                        (js/console.error "Clipboard error:" err)
                        (rx/empty)))))))
 
-(defn select-pasted-objs
-  [selected rchanges]
-  (ptk/reify ::select-pasted-objs
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [new-selected (->> rchanges
-                 (filter #(selected (:old-id %)))
-                 (map #(get-in % [:obj :id]))
-                 (into #{}))]
-        (assoc-in state [:workspace-local :selected] new-selected)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions

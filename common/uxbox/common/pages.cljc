@@ -209,16 +209,16 @@
                (contains? objects frame-id))
       (let [obj (assoc obj
                    :frame-id frame-id
-                   :parent-id parent-id
                    :id id)]
         (-> data
             (update :objects assoc id obj)
             (update-in [:objects parent-id :shapes]
                        (fn [shapes]
-                         (cond
-                           (some #{id} shapes) shapes
-                           (nil? index) (conj shapes id)
-                           :else (insert-at-index shapes index [id])))))))))
+                         (let [shapes (or shapes [])]
+                           (cond
+                             (some #{id} shapes) shapes
+                             (nil? index) (conj shapes id)
+                             :else (insert-at-index shapes index [id]))))))))))
 
 (defmethod process-change :mod-obj
   [data {:keys [id operations] :as change}]
