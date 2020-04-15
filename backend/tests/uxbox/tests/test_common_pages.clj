@@ -54,14 +54,25 @@
         (t/is (= [id-b id-c id-a] (get-in res [:objects uuid/zero :shapes])))))))
 
 (t/deftest process-change-mod-obj
-  (let [data cp/default-page-data
-        chg  {:type :mod-obj
-              :id uuid/zero
-              :operations [{:type :set
-                            :attr :name
-                            :val "foobar"}]}
-        res (cp/process-changes data [chg])]
-    (t/is (= "foobar" (get-in res [:objects uuid/zero :name])))))
+  (t/testing "simple mod-obj"
+    (let [data cp/default-page-data
+          chg  {:type :mod-obj
+                :id uuid/zero
+                :operations [{:type :set
+                              :attr :name
+                              :val "foobar"}]}
+          res (cp/process-changes data [chg])]
+      (t/is (= "foobar" (get-in res [:objects uuid/zero :name])))))
+
+  (t/testing "mod-obj for not existing shape"
+    (let [data cp/default-page-data
+          chg  {:type :mod-obj
+                :id (uuid/next)
+                :operations [{:type :set
+                              :attr :name
+                              :val "foobar"}]}
+          res (cp/process-changes data [chg])]
+      (t/is (= res cp/default-page-data)))))
 
 
 (t/deftest process-change-del-obj-1

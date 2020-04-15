@@ -194,30 +194,40 @@
 (defn process-changes
   [data items]
   (->> (us/verify ::changes items)
-       (reduce #(or (process-change %1 %2) %1) data)))
+       (reduce #(do
+                  ;; (prn "process-change" (:type %2) (:id %2))
+                  (or (process-change %1 %2) %1))
+               data)))
 
 (declare insert-at-index)
 
 (defmethod process-change :add-obj
-  [data {:keys [id obj frame-id index] :as change}]
-  (assert (contains? (:objects data) frame-id) "process-change/add-obj")
-  (let [obj (assoc obj
+  [data {:keys [id obj frame-id parent-id index] :as change}]
+  (let [parent-id (or parent-id frame-id)
+        objects (:objects data)]
+    (when (and (contains? objects parent-id)
+               (contains? objects frame-id))
+      (let [obj (assoc obj
                    :frame-id frame-id
+                   :parent-id parent-id
                    :id id)]
-    (-> data
-        (update :objects assoc id obj)
-        (update-in [:objects frame-id :shapes]
-                   (fn [shapes]
-                     (cond
-                       (some #{id} shapes) shapes
-                       (nil? index) (conj shapes id)
-                       :else (insert-at-index shapes index [id])))))))
+        (-> data
+            (update :objects assoc id obj)
+            (update-in [:objects parent-id :shapes]
+                       (fn [shapes]
+                         (cond
+                           (some #{id} shapes) shapes
+                           (nil? index) (conj shapes id)
+                           :else (insert-at-index shapes index [id])))))))))
 
 (defmethod process-change :mod-obj
   [data {:keys [id operations] :as change}]
   (assert (contains? (:objects data) id) "process-change/mod-obj")
-  (update-in data [:objects id]
-             #(reduce process-operation % operations)))
+  (update data :objects
+          (fn [objects]
+            (if-let [obj (get objects id)]
+              (assoc objects id (reduce process-operation obj operations))
+              objects))))
 
 (defmethod process-change :mov-obj
   [data {:keys [id frame-id] :as change}]
