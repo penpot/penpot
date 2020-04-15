@@ -32,30 +32,14 @@
    [uxbox.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.rdnd :as rdnd]))
+   [uxbox.util.geom.point :as gpt]))
 
 ;; --- Workspace
 
-;; (defn- on-scroll
-;;   [event]
-;;   (let [target (.-target event)
-;;         top (.-scrollTop target)
-;;         left (.-scrollLeft target)]
-;;     (st/emit! (ms/->ScrollEvent (gpt/point left top)))))
-
-;; (defn- on-wheel
-;;   [event frame]
-;;   (when (kbd/ctrl? event)
-;;     (let [dom (mf/ref-val frame)
-;;           scroll-position (scroll/get-current-position-absolute dom)
-;;           mouse-point @ms/mouse-position]
-;;       (scroll/scroll-to-point dom mouse-point scroll-position))))
-
 (mf/defc workspace-content
   [{:keys [page file layout] :as params}]
-  (let [frame (mf/use-ref nil)
-        left-sidebar? (not (empty? (keep layout [:layers :sitemap :document-history :libraries])))
+  (let [left-sidebar? (not (empty? (keep layout [:layers :sitemap
+                                                 :document-history :libraries])))
         right-sidebar? (not (empty? (keep layout [:icons :drawtools :element-options])))
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
@@ -67,12 +51,7 @@
      [:& messages]
      [:& context-menu]
 
-     [:section.workspace-content
-      {:class classes
-       ;; :on-scroll on-scroll
-       ;; :on-wheel #(on-wheel % frame)
-       }
-
+     [:section.workspace-content {:class classes}
       [:& history-dialog]
 
       ;; Rules
@@ -81,12 +60,10 @@
          [:& horizontal-rule]
          [:& vertical-rule]])
 
-      [:section.workspace-viewport {:id "workspace-viewport"
-                                    :ref frame}
+      [:section.workspace-viewport {:id "workspace-viewport"}
        [:& viewport {:page page :file file}]]]
 
-     [:& left-toolbar {:page page
-                       :layout layout}]
+     [:& left-toolbar {:page page :layout layout}]
 
      ;; Aside
      (when left-sidebar?
@@ -94,21 +71,20 @@
      (when right-sidebar?
        [:& right-sidebar {:page page :layout layout}])]))
 
-
 (mf/defc workspace
   [{:keys [project-id file-id page-id] :as props}]
 
-  (-> (mf/deps file-id page-id)
-      (mf/use-effect
-       (fn []
-         (st/emit! (dw/initialize project-id file-id page-id))
-         #(st/emit! (dw/finalize project-id file-id page-id)))))
+  (mf/use-effect
+   (mf/deps file-id page-id)
+   (fn []
+     (st/emit! (dw/initialize project-id file-id page-id))
+     #(st/emit! (dw/finalize project-id file-id page-id))))
 
-  (-> (mf/deps file-id)
-      (mf/use-effect
-       (fn []
-         (st/emit! (dw/initialize-ws file-id))
-         #(st/emit! (dw/finalize-ws file-id)))))
+  (mf/use-effect
+   (mf/deps file-id)
+   (fn []
+     (st/emit! (dw/initialize-ws file-id))
+     #(st/emit! (dw/finalize-ws file-id))))
 
   (hooks/use-shortcuts dw/shortcuts)
 

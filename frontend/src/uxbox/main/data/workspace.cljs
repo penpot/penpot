@@ -368,7 +368,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [local (:workspace-local state)]
-        (assoc-in state [:workspace-cache page-id] local)))))
+        (-> state
+            (assoc-in [:workspace-cache page-id] local)
+            (update :workspace-data dissoc page-id))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
