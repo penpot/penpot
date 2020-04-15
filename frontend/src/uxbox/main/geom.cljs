@@ -82,6 +82,7 @@
     :frame (absolute-move-rect shape position)
     :image (absolute-move-rect shape position)
     :rect (absolute-move-rect shape position)
+    :text (absolute-move-rect shape position)
     :group (absolute-move-rect shape position)
     :circle (absolute-move-circle shape position)
     shape))
