@@ -2286,73 +2286,75 @@
    :width (:width selection-rect)
    :height (:height selection-rect)})
 
-(defn create-group []
-  (let [id (uuid/next)]
-    (ptk/reify ::create-group
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [selected (get-in state [:workspace-local :selected])]
-          (if (not-empty selected)
-            (let [page-id (get-in state [:workspace-page :id])
-                  objects (get-in state [:workspace-data page-id :objects])
-                  selected-objects (map (partial get objects) selected)
-                  selection-rect (geom/selection-rect selected-objects)
-                  frame-id (-> selected-objects first :frame-id)
-                  group-shape (group-shape id frame-id selected selection-rect)
-                  frame-children (get-in objects [frame-id :shapes])
-                  index-frame (->> frame-children (map-indexed vector) (filter #(selected (second %))) first first)]
+(def create-group
+  (ptk/reify ::create-group
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [id (uuid/next)
+            selected (get-in state [:workspace-local :selected])]
+        (when (not-empty selected)
+          (let [page-id (get-in state [:workspace-page :id])
+                objects (get-in state [:workspace-data page-id :objects])
+                selected-objects (map (partial get objects) selected)
+                selection-rect (geom/selection-rect selected-objects)
+                frame-id (-> selected-objects first :frame-id)
+                group-shape (group-shape id frame-id selected selection-rect)
+                frame-children (get-in objects [frame-id :shapes])
+                index-frame (->> frame-children
+                                 (map-indexed vector)
+                                 (filter #(selected (second %)))
+                                 (ffirst))
 
-              (let [rchanges [{:type :add-obj
-                               :id id
-                               :frame-id frame-id
-                               :obj group-shape
-                               :index index-frame}
-                              {:type :mov-objects
-                               :parent-id id
-                               :shapes (into [] selected)}]
-                    uchanges [{:type :mov-objects
-                               :parent-id frame-id
-                               :shapes (into [] selected)}
-                              {:type :del-obj
-                               :id id}]]
-                (rx/of (commit-changes rchanges uchanges {:commit-local? true})
-                       (fn [state] (assoc-in state [:workspace-local :selected] #{id})))))
-            rx/empty))))))
+                rchanges [{:type :add-obj
+                           :id id
+                           :frame-id frame-id
+                           :obj group-shape
+                           :index index-frame}
+                          {:type :mov-objects
+                           :parent-id id
+                           :shapes (vec selected)}]
+                uchanges [{:type :mov-objects
+                           :parent-id frame-id
+                           :shapes (vec selected)}
+                          {:type :del-obj
+                           :id id}]]
+            (rx/of (commit-changes rchanges uchanges {:commit-local? true})
+                   (select-shapes #{id}))))))))
 
-(defn remove-group
-  []
+(def remove-group
   (ptk/reify ::remove-group
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])
+      (let [page-id  (::page-id state)
+            objects  (get-in state [:workspace-data page-id :objects])
+            selected (get-in state [:workspace-local :selected])
             group-id (first selected)
-            group (get-in state [:workspace-data (::page-id state) :objects group-id])]
-        (if (and (= (count selected) 1) (= (:type group) :group))
-          (let [objects (get-in state [:workspace-data (::page-id state) :objects])
-                shapes (get-in objects [group-id :shapes])
+            group    (get objects group-id)]
+        (when (and (= 1 (count selected))
+                   (= (:type group) :group))
+          (let [shapes    (:shapes group)
                 parent-id (helpers/get-parent group-id objects)
-                parent (get objects parent-id)
+                parent    (get objects parent-id)
                 index-in-parent (->> (:shapes parent)
                                      (map-indexed vector)
                                      (filter #(#{group-id} (second %)))
-                                     first first)]
-            (let [rchanges [{:type :mov-objects
-                             :parent-id parent-id
-                             :shapes shapes
-                             :index index-in-parent}]
-                  uchanges [{:type :add-obj
-                             :id group-id
-                             :frame-id (:frame-id group)
-                             :obj (assoc group :shapes [])}
-                            {:type :mov-objects
-                             :parent-id group-id
-                             :shapes shapes}
-                            {:type :mov-objects
-                             :parent-id parent-id
-                             :shapes [group-id]
-                             :index index-in-parent}]]
-              (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))
-          rx/empty)))))
+                                     (ffirst))
+                rchanges [{:type :mov-objects
+                           :parent-id parent-id
+                           :shapes shapes
+                           :index index-in-parent}]
+                uchanges [{:type :add-obj
+                           :id group-id
+                           :frame-id (:frame-id group)
+                           :obj (assoc group :shapes [])}
+                          {:type :mov-objects
+                           :parent-id group-id
+                           :shapes shapes}
+                          {:type :mov-objects
+                           :parent-id parent-id
+                           :shapes [group-id]
+                           :index index-in-parent}]]
+            (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
@@ -2366,8 +2368,8 @@
    "ctrl+shift+l" #(st/emit! (toggle-layout-flag :layers))
    "+" #(st/emit! increase-zoom)
    "-" #(st/emit! decrease-zoom)
-   "ctrl+g" #(st/emit! (create-group))
-   "ctrl+shift+g" #(st/emit! (remove-group))
+   "ctrl+g" #(st/emit! create-group)
+   "ctrl+shift+g" #(st/emit! remove-group)
    "shift+0" #(st/emit! zoom-to-50)
    "shift+1" #(st/emit! reset-zoom)
    "shift+2" #(st/emit! zoom-to-200)
