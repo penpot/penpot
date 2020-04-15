@@ -953,21 +953,6 @@
           (recur (inc counter))
           candidate)))))
 
-(defn impl-assoc-shape
-  "Add a shape to the current workspace page, inside a given frame.
-  Give it a name that is unique in the page"
-  [state {:keys [id frame-id] :as data}]
-  (let [page-id (::page-id state)
-        objects (get-in state [:workspace-data page-id :objects])
-        name (impl-generate-unique-name objects (:name data))
-        shape (assoc data :name name)
-        page-id (::page-id state)]
-    (-> state
-        (update-in [:workspace-data page-id :objects frame-id :shapes] conj id)
-        (update-in [:workspace-data page-id :objects] assoc id shape))))
-
-(declare select-shape)
-
 (defn- calculate-frame-overlap
   [objects shape]
   (let [rshp (geom/shape->rect-shape shape)
@@ -987,53 +972,40 @@
 (defn add-shape
   [attrs]
   (us/verify ::shape-attrs attrs)
-  (let [id (uuid/next)]
-    (ptk/reify ::add-shape
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [page-id  (::page-id state)
-              objects  (get-in state [:workspace-data page-id :objects])
-              shape    (-> (geom/setup-proportions attrs)
-                           (assoc :id id))
-              frame-id (calculate-frame-overlap objects shape)
-              shape    (merge cp/default-shape-attrs shape {:frame-id frame-id})]
-          (-> state
-              (impl-assoc-shape shape)
-              (assoc-in [:workspace-local :selected] #{id}))))
+  (ptk/reify ::add-shape
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (::page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
 
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [page-id (::page-id state)
-              obj (get-in state [:workspace-data page-id :objects id])]
-          (rx/of (commit-changes [{:type :add-obj
-                                   :id id
-                                   :frame-id (:frame-id obj)
-                                   :obj obj}]
-                                 [{:type :del-obj
-                                   :id id}])))))))
+            id       (uuid/next)
+            shape    (geom/setup-proportions attrs)
 
-(defn add-frame
-  [data]
-  (us/verify ::shape-attrs data)
-  (let [id (uuid/next)]
-    (ptk/reify ::add-frame
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [shape (-> (geom/setup-proportions data)
-                        (assoc :id id))
-              shape (merge cp/default-frame-attrs shape)]
-          (impl-assoc-shape state shape)))
+            unames   (retrieve-used-names objects)
+            name     (generate-unique-name unames (:name shape))
 
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [page-id (::page-id state)
-              obj (get-in state [:workspace-data page-id :objects id])]
-          (rx/of (commit-changes [{:type :add-obj
-                                   :id id
-                                   :frame-id (:frame-id obj)
-                                   :obj obj}]
-                                 [{:type :del-obj
-                                   :id id}])))))))
+            frame-id (if (= :frame (:type shape))
+                       uuid/zero
+                       (calculate-frame-overlap objects shape))
+
+            shape    (merge
+                      (if (= :frame (:type shape))
+                        cp/default-frame-attrs
+                        cp/default-shape-attrs)
+                      (assoc shape
+                             :id id
+                             :name name
+                             :frame-id frame-id))
+
+            rchange  {:type :add-obj
+                      :id id
+                      :frame-id frame-id
+                      :obj shape}
+            uchange  {:type :del-obj
+                      :id id}]
+
+        (rx/of (commit-changes [rchange] [uchange] {:commit-local? true})
+               (select-shapes #{id}))))))
 
 
 ;; --- Duplicate Shapes
