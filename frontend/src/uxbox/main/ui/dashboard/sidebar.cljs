@@ -148,8 +148,8 @@
         on-search-blur
         (fn [event]
           (let [target (dom/get-target event)]
-            (dom/clean-value! target)
-            (debounced-emit! (rt/nav :dashboard-team {:team-id team-id}))))
+            (dom/clean-value! target)))
+            ;; (debounced-emit! (rt/nav :dashboard-team {:team-id team-id}))))
 
         on-search-change
         (fn [event]
