@@ -52,8 +52,11 @@
 ;; --- Specs
 
 (s/def ::shape-attrs ::cp/shape-attrs)
+
 (s/def ::set-of-uuid
   (s/every uuid? :kind set?))
+(s/def ::set-of-string
+  (s/every string? :kind set?))
 
 ;; --- Expose inner functions
 
@@ -930,23 +933,57 @@
 ;; Shapes events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; --- Toggle shape's selection status (selected or deselected)
+
+(defn select-shape
+  [id]
+  (us/verify ::us/uuid id)
+  (ptk/reify ::select-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :selected]
+                 (fn [selected]
+                   (if (contains? selected id)
+                     (disj selected id)
+                     (conj selected id)))))))
+
+(defn select-shapes
+  [ids]
+  (us/verify ::set-of-uuid ids)
+  (ptk/reify ::select-shapes
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected] ids))))
+
+(def deselect-all
+  "Clear all possible state of drawing, edition
+  or any similar action taken by the user."
+  (ptk/reify ::deselect-all
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local #(-> %
+                                          (assoc :selected #{})
+                                          (dissoc :selected-frame))))))
+
+
 ;; --- Add shape to Workspace
 
-(defn impl-retrieve-used-names
+(defn- retrieve-used-names
   [objects]
   (into #{} (map :name) (vals objects)))
 
-(defn extract-numeric-suffix
+(defn- extract-numeric-suffix
   [basename]
   (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
     [p1 (+ 1 (d/parse-integer p2))]
     [basename 1]))
 
-(defn impl-generate-unique-name
+(defn- generate-unique-name
   "A unique name generator"
-  [objects basename]
-  (let [used (impl-retrieve-used-names objects)
-        [prefix initial] (extract-numeric-suffix basename)]
+  [used basename]
+  (s/assert ::set-of-string used)
+  (s/assert ::us/string basename)
+  (let [[prefix initial] (extract-numeric-suffix basename)]
     (loop [counter initial]
       (let [candidate (str prefix "-" counter)]
         (if (contains? used candidate)
@@ -1015,16 +1052,6 @@
 (declare prepare-duplicate-frame-change)
 (declare prepare-duplicate-shape-change)
 
-(defn impl-generate-unique-name2
-  "A unique name generator"
-  [used basename]
-  (let [[prefix initial] (extract-numeric-suffix basename)]
-    (loop [counter initial]
-      (let [candidate (str prefix "-" counter)]
-        (if (contains? used candidate)
-          (recur (inc counter))
-          candidate)))))
-
 (def ^:private change->name #(get-in % [:obj :name]))
 
 (defn- prepare-duplicate-changes
@@ -1056,7 +1083,7 @@
 (defn- prepare-duplicate-shape-change
   [objects names obj delta frame-id parent-id]
   (let [id (uuid/next)
-        name (impl-generate-unique-name2 names (:name obj))
+        name (generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
         moved-obj (geom/move renamed-obj delta)
         frame-id (if frame-id
@@ -1093,8 +1120,8 @@
 
 (defn- prepare-duplicate-frame-change
   [objects names obj delta]
-  (let [frame-id (uuid/next)
-        frame-name (impl-generate-unique-name2 names (:name obj))
+  (let [frame-id   (uuid/next)
+        frame-name (generate-unique-name names (:name obj))
         sch (->> (map #(get objects %) (:shapes obj))
                  (mapcat #(prepare-duplicate-shape-change objects names % delta frame-id frame-id)))
 
@@ -1124,7 +1151,7 @@
             selected (get-in state [:workspace-local :selected])
             objects (get-in state [:workspace-data page-id :objects])
             delta (gpt/point 0 0)
-            unames (impl-retrieve-used-names objects)
+            unames (retrieve-used-names objects)
 
             rchanges (prepare-duplicate-changes objects unames selected delta)
             uchanges (mapv #(array-map :type :del-obj :id (:id %))
@@ -1137,39 +1164,6 @@
 
         (rx/of (commit-changes rchanges uchanges {:commit-local? true})
                (select-shapes selected))))))
-
-
-;; --- Toggle shape's selection status (selected or deselected)
-
-(defn select-shape
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::select-shape
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-local :selected]
-                 (fn [selected]
-                   (if (contains? selected id)
-                     (disj selected id)
-                     (conj selected id)))))))
-
-(defn select-shapes
-  [ids]
-  (us/verify ::set-of-uuid ids)
-  (ptk/reify ::select-shapes
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :selected] ids))))
-
-(def deselect-all
-  "Clear all possible state of drawing, edition
-  or any similar action taken by the user."
-  (ptk/reify ::deselect-all
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local #(-> %
-                                          (assoc :selected #{})
-                                          (dissoc :selected-frame))))))
 
 
 ;; --- Select Shapes (By selrect)
@@ -2189,7 +2183,7 @@
 
             page-id (::page-id state)
             unames (-> (get-in state [:workspace-data page-id :objects])
-                       (impl-retrieve-used-names))
+                       (retrieve-used-names))
 
             rchanges (prepare-duplicate-changes objects unames selected delta)
             uchanges (mapv #(array-map :type :del-obj :id (:id %))
