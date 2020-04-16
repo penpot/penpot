@@ -2,10 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.util.workers
-  "A lightweight layer on top of webworkers api."
+  "A lightweight layer on top of Web Workers API."
   (:require [beicon.core :as rx]
             [uxbox.common.uuid :as uuid]
             [uxbox.util.transit :as t]))
