@@ -168,6 +168,11 @@
         border-color: $color-primary;
         color: $color-white;
       }
+
+      &:invalid {
+        border-color: $color-danger;
+      }
+
     }
   }
 

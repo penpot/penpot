@@ -57,6 +57,17 @@
                           (/ 100))]
             (st/emit! (udw/update-shape (:id shape) {:stroke-opacity value}))))
 
+        on-color-change
+        (fn [color]
+          (st/emit! (udw/update-shape (:id shape) {:stroke-color color})))
+
+        on-color-input-change
+        (fn [event]
+          (let [input (dom/get-target event)
+                value (dom/get-value input)]
+            (when (dom/valid? input)
+              (on-color-change value))))
+
         show-color-picker
         (fn [event]
           (let [x (.-clientX event)
@@ -64,7 +75,7 @@
                 props {:x x :y y
                        :default "#ffffff"
                        :value (:stroke-color shape)
-                       :on-change #(st/emit! (udw/update-shape (:id shape) {:stroke-color %}))
+                       :on-change on-color-change
                        :transparent? true}]
             (modal/show! colorpicker-modal props)))]
 
@@ -81,9 +92,12 @@
          [:span.color-th {:style {:background-color (:stroke-color shape)}
                           :on-click show-color-picker}]
          [:div.color-info
-          [:input {:read-only true
-                   :key (:stroke-color shape)
-                   :default-value (:stroke-color shape)}]]
+          [:input {:default-value (:stroke-color shape)
+                   :ref (fn [el]
+                          (when el
+                            (set! (.-value el) (:stroke-color shape))))
+                   :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
+                   :on-change on-color-input-change}]]
 
          [:div.input-element.percentail
           [:input.input-text {:placeholder ""

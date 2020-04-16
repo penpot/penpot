@@ -85,10 +85,17 @@
   (.-files node))
 
 (defn checked?
-  "Check if the node that reprsents a radio
+  "Check if the node that represents a radio
   or checkbox is checked or not."
   [node]
   (.-checked node))
+
+(defn valid?
+  "Check if the node that is a form input
+  has a valid value, against html5 form validation
+  properties (required, min/max, pattern...)."
+  [node]
+  (.-valid (.-validity node)))
 
 (defn clean-value!
   [node]
