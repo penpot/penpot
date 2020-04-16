@@ -1875,7 +1875,7 @@
 (defn update-circle-dimensions
   [id attr value]
   (us/verify ::us/uuid id)
-  (us/verify #{::rx ::ry} attr)
+  (us/verify #{:rx :ry} attr)
   (us/verify ::us/number value)
   (ptk/reify ::update-rect-dimensions
     IBatchedChange
@@ -1883,7 +1883,7 @@
     (update [_ state]
       (let [page-id (::page-id state)]
         (update-in state [:workspace-data page-id :objects id]
-                   geom/resize-rect attr value)))))
+                   geom/resize-circle attr value)))))
 
 ;; --- Shape Proportions
 
