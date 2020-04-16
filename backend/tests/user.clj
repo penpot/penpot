@@ -15,14 +15,17 @@
    [clojure.pprint :refer [pprint]]
    [clojure.test :as test]
    [clojure.java.io :as io]
+   [uxbox.common.pages :as cp]
    [clojure.repl :refer :all]
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
    [clj-kondo.core :as kondo]
    [promesa.core :as p]
    [promesa.exec :as px]
    [uxbox.migrations]
+   [uxbox.db :as db]
    [uxbox.util.storage :as st]
    [uxbox.util.time :as tm]
+   [uxbox.util.blob :as blob]
    [mount.core :as mount]))
 
 ;; --- Benchmarking Tools
@@ -86,80 +89,16 @@
                               '(promesa.core/let)]}}}})
        (kondo/print!))))
 
-(comment
-  {:version 1
-   :options {}
-   :shapes [:id1  :id2]
-   :canvas [:id3]
-   :shapes-by-id {:id1 {:canvas :id3} :id2 {} :id3 {}}})
 
+;; (defn red
+;;   [items]
+;;   (as-> items $$
+;;     (reduce (fn [acc item]
+;;               (cp/process-changes acc (:changes item)))
+;;             cp/default-page-data
+;;             $$)))
 
-(comment
-  {:version 2
-   :options {}
-
-   :objects
-   {:root
-    {:type :frame
-     :shapes [:sid0 :frame-0]}
-
-    :frame0
-    {:type :frame
-     :parent :root
-     :shapes [:sid1 :sid2]}
-
-    :sid0
-    {:type :rect
-     :parent :root}
-
-    :sid1
-    {:type :rect
-     :parent :frame0}
-
-    :sid2
-    {:type :group
-     :shapes [:sid3 :sid4]
-     :parent :frame0}
-
-    :sid3
-    {:type :elipse
-     :parent :sid2}
-
-    :sid4
-    {:type :elipse
-     :parent :sid2}}})
-
-(comment
-  {:version 3
-   :options {}
-
-   :rmap
-   {:id1 :root-frame
-    :id2 :root-frame
-    :id3 :frame-id-1
-    :id4 :frame-id-2
-    :id5 :frame-id-2
-    :id6 :frame-id-2}
-
-   :frames
-   {:root-frame
-    {:type :frame
-     :shapes [:id1 :id2]
-     :objects
-     {:id1 {:type :rect}
-      :id2 {:type :elipse}}}
-
-    :frame-id-1
-    {:type :frame
-     :shapes [:id3]
-     :objects
-     {:id3 {:type :path}}}
-
-    :frame-id-2
-    {:type :frame
-     :shapes [:id4]
-     :objects
-     {:id4 {:type :group
-            :shapes [:id5 :id6]}
-      :id5 {:type :path :parent :id4}
-      :id6 {:type :elipse :parent :id4}}}}})
+;; (defn update-page-data
+;;   [id data]
+;;   (let [data (blob/encode data)]
+;;     (db/query-one db/pool ["update page set data=$1 where id=$2" data id])))

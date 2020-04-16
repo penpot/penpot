@@ -134,5 +134,5 @@
        (for [[i item] (d/enumerate childs)]
          [:& shape-wrapper {:frame shape
                             :shape item
-                            :key (str i (:id item))}])])))
+                            :key (:id item)}])])))
 

@@ -81,52 +81,38 @@
       (p/then' decode-row)))
 
 
+;; --- Query: Page Changes
 
-;; --- Query: Project Page History (by Page ID)
+(def ^:private
+  sql:page-changes
+  "select pc.id,
+          pc.created_at,
+          pc.changes,
+          pc.revn
+     from page_change as pc
+    where pc.page_id=$1
+    order by pc.revn asc
+    limit $2
+   offset $3")
 
-;; (def ^:private sql:generic-page-history
-;;   "select pph.*
-;;      from project_page_history as pph
-;;     where pph.page_id = $2
-;;       and pph.version < $3
-;;     order by pph.version < desc")
 
-;; (def ^:private sql:page-history
-;;   (str "with history as (" sql:generic-page-history ")"
-;;        " select * from history limit $4"))
+(s/def ::skip ::us/integer)
+(s/def ::limit ::us/integer)
 
-;; (def ^:private sql:pinned-page-history
-;;   (str "with history as (" sql:generic-page-history ")"
-;;        " select * from history where pinned = true limit $4"))
+(s/def ::page-changes
+  (s/keys :req-un [::profile-id ::id ::skip ::limit]))
 
-;; (s/def ::page-id ::us/uuid)
-;; (s/def ::max ::us/integer)
-;; (s/def ::pinned ::us/boolean)
-;; (s/def ::since ::us/integer)
+(defn retrieve-page-changes
+  [conn id skip limit]
+  (-> (db/query conn [sql:page-changes id limit skip])
+      (p/then' #(mapv decode-row %))))
 
-;; (s/def ::project-page-snapshots
-;;   (s/keys :req-un [::page-id ::user]
-;;           :opt-un [::max ::pinned ::since]))
+(sq/defquery ::page-changes
+  [{:keys [profile-id id skip limit]}]
+  (when *assert*
+    (-> (db/query db/pool [sql:page-changes id limit skip])
+        (p/then' #(mapv decode-row %)))))
 
-;; (defn retrieve-page-snapshots
-;;   [conn {:keys [page-id user since max pinned] :or {since Long/MAX_VALUE max 10}}]
-;;   (let [sql (-> (sql/from ["project_page_snapshots" "ph"])
-;;                 (sql/select "ph.*")
-;;                 (sql/where ["ph.user_id = ?" user]
-;;                            ["ph.page_id = ?" page-id]
-;;                            ["ph.version < ?" since]
-;;                            (when pinned
-;;                              ["ph.pinned = ?" true]))
-;;                 (sql/order "ph.version desc")
-;;                 (sql/limit max))]
-;;     (-> (db/query conn (sql/fmt sql))
-;;         (p/then (partial mapv decode-row)))))
-
-;; (sq/defquery ::project-page-snapshots
-;;   [{:keys [page-id user] :as params}]
-;;   (db/with-atomic [conn db/pool]
-;;     (p/do! (retrieve-page conn {:id page-id :user user})
-;;            (retrieve-page-snapshots conn params))))
 
 ;; --- Helpers
 
