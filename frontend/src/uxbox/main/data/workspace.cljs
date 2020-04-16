@@ -9,21 +9,22 @@
 
 (ns uxbox.main.data.workspace
   (:require
-   [clojure.set :as set]
    [beicon.core :as rx]
-   [goog.object :as gobj]
-   [goog.events :as events]
    [cljs.spec.alpha :as s]
+   [clojure.set :as set]
+   [goog.events :as events]
+   [goog.object :as gobj]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
-   [uxbox.common.exceptions :as ex]
+   [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.icons :as udi]
    [uxbox.main.data.dashboard :as dd]
    [uxbox.main.data.helpers :as helpers]
+   [uxbox.main.data.icons :as udi]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.repo :as rp]
@@ -38,7 +39,6 @@
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]
-   [uxbox.common.uuid :as uuid]
    [uxbox.util.webapi :as wapi]
    #_[vendor.randomcolor])
   (:import goog.events.EventType
@@ -530,7 +530,10 @@
       (->> (rp/query :file-with-users {:id id})
            (rx/merge-map (fn [result]
                            (rx/of (file-fetched (dissoc result :users))
-                                  (users-fetched (:users result)))))))))
+                                  (users-fetched (:users result)))))
+           (rx/catch (fn [{:keys [type] :as error}]
+                       (when (= :not-found type)
+                         (rx/of (rt/nav :not-found)))))))))
 (defn fetch-file
   [id]
   (us/verify ::us/uuid id)
