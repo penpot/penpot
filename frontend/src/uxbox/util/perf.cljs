@@ -47,6 +47,14 @@
     (-persistent! [this]
       this)))
 
+(defn tdigest-summary
+  [td]
+  (str "samples=" (unchecked-get td "n") "\n"
+       "Q50=" (.percentile td 0.50) "\n"
+       "Q75=" (.percentile td 0.75) "\n"
+       "Q95=" (.percentile td 0.90) "\n"
+       "MAX=" (.percentile td 1)))
+
 (defn timestamp
   []
   (js/performance.now))
@@ -63,12 +71,8 @@
 
         print-single-summary!
         (fn [name td]
-          (js/console.log (str "[measure: " name "] "
-                               "samples=" (unchecked-get td "n") "\n"
-                               "Q50=" (.percentile td 0.50) "\n"
-                               "Q75=" (.percentile td 0.75) "\n"
-                               "Q95=" (.percentile td 0.90) "\n"
-                               "MAX=" (.percentile td 1))))
+          (js/console.log (str "[measure: " name "] " (tdigest-summary td))))
+
         print-summary!
         (f/debounce
          #(.forEach registry (fn [td name] (print-single-summary! name td)))
@@ -83,18 +87,13 @@
     (uxbox.util.perf/with-measure name
       (apply f args))))
 
-
 (defn on-render-factory
   [label]
   (let [td  (tdigest)
         log (f/debounce
              (fn [phase td]
                (js/console.log (str "[profile: " label " (" phase ")] "
-                                    "samples=" (unchecked-get td "n") "\n"
-                                    "Q50=" (.percentile td 0.50) "\n"
-                                    "Q75=" (.percentile td 0.75) "\n"
-                                    "Q95=" (.percentile td 0.90) "\n"
-                                    "MAX=" (.percentile td 1))))
+                                    (tdigest-summary td))))
              300)]
     (fn [id phase adur, bdur, st, ct, itx]
       (conj! td adur)
