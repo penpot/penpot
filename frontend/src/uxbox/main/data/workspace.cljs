@@ -9,21 +9,22 @@
 
 (ns uxbox.main.data.workspace
   (:require
-   [clojure.set :as set]
    [beicon.core :as rx]
-   [goog.object :as gobj]
-   [goog.events :as events]
    [cljs.spec.alpha :as s]
+   [clojure.set :as set]
+   [goog.events :as events]
+   [goog.object :as gobj]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
-   [uxbox.common.exceptions :as ex]
+   [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.icons :as udi]
    [uxbox.main.data.dashboard :as dd]
    [uxbox.main.data.helpers :as helpers]
+   [uxbox.main.data.icons :as udi]
    [uxbox.main.geom :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.repo :as rp]
@@ -38,12 +39,7 @@
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]
-   [uxbox.common.uuid :as uuid]
-   [uxbox.util.webapi :as wapi]
-   #_[vendor.randomcolor])
-  (:import goog.events.EventType
-           goog.events.KeyCodes
-           goog.ui.KeyboardShortcutHandler))
+   [uxbox.util.webapi :as wapi]))
 
 ;; TODO: temporal workaround
 (def clear-ruler nil)
@@ -52,8 +48,11 @@
 ;; --- Specs
 
 (s/def ::shape-attrs ::cp/shape-attrs)
+
 (s/def ::set-of-uuid
   (s/every uuid? :kind set?))
+(s/def ::set-of-string
+  (s/every string? :kind set?))
 
 ;; --- Expose inner functions
 
@@ -368,7 +367,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [local (:workspace-local state)]
-        (assoc-in state [:workspace-cache page-id] local)))))
+        (-> state
+            (assoc-in [:workspace-cache page-id] local)
+            (update :workspace-data dissoc page-id))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -525,7 +526,10 @@
       (->> (rp/query :file-with-users {:id id})
            (rx/merge-map (fn [result]
                            (rx/of (file-fetched (dissoc result :users))
-                                  (users-fetched (:users result)))))))))
+                                  (users-fetched (:users result)))))
+           (rx/catch (fn [{:keys [type] :as error}]
+                       (when (= :not-found type)
+                         (rx/of (rt/nav :not-found)))))))))
 (defn fetch-file
   [id]
   (us/verify ::us/uuid id)
@@ -860,24 +864,6 @@
     (update [_ state]
       (assoc-in state [:workspace-local :zoom] 2))))
 
-;; --- Grid Alignment
-
-;; (defn initialize-alignment
-;;   [id]
-;;   (us/verify ::us/uuid id)
-;;   (ptk/reify ::initialize-alignment
-;;     ptk/WatchEvent
-;;     (watch [_ state stream]
-;;       (let [metadata (get-in state [:workspace-page :metadata])
-;;             params {:width c/viewport-width
-;;                     :height c/viewport-height
-;;                     :x-axis (:grid-x-axis metadata c/grid-x-axis)
-;;                     :y-axis (:grid-y-axis metadata c/grid-y-axis)}]
-;;         (rx/concat
-;;          (rx/of (deactivate-flag :grid-indexed))
-;;          (->> (uwrk/initialize-alignment params)
-;;               (rx/map #(activate-flag :grid-indexed))))))))
-
 ;; --- Selection Rect
 
 (declare select-shapes-by-current-selrect)
@@ -928,43 +914,62 @@
 ;; Shapes events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; --- Toggle shape's selection status (selected or deselected)
+
+(defn select-shape
+  [id]
+  (us/verify ::us/uuid id)
+  (ptk/reify ::select-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :selected]
+                 (fn [selected]
+                   (if (contains? selected id)
+                     (disj selected id)
+                     (conj selected id)))))))
+
+(defn select-shapes
+  [ids]
+  (us/verify ::set-of-uuid ids)
+  (ptk/reify ::select-shapes
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected] ids))))
+
+(def deselect-all
+  "Clear all possible state of drawing, edition
+  or any similar action taken by the user."
+  (ptk/reify ::deselect-all
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local #(-> %
+                                          (assoc :selected #{})
+                                          (dissoc :selected-frame))))))
+
+
 ;; --- Add shape to Workspace
 
-(defn impl-retrieve-used-names
+(defn- retrieve-used-names
   [objects]
   (into #{} (map :name) (vals objects)))
 
-(defn extract-numeric-suffix
+(defn- extract-numeric-suffix
   [basename]
   (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
     [p1 (+ 1 (d/parse-integer p2))]
     [basename 1]))
 
-(defn impl-generate-unique-name
+(defn- generate-unique-name
   "A unique name generator"
-  [objects basename]
-  (let [used (impl-retrieve-used-names objects)
-        [prefix initial] (extract-numeric-suffix basename)]
+  [used basename]
+  (s/assert ::set-of-string used)
+  (s/assert ::us/string basename)
+  (let [[prefix initial] (extract-numeric-suffix basename)]
     (loop [counter initial]
       (let [candidate (str prefix "-" counter)]
         (if (contains? used candidate)
           (recur (inc counter))
           candidate)))))
-
-(defn impl-assoc-shape
-  "Add a shape to the current workspace page, inside a given frame.
-  Give it a name that is unique in the page"
-  [state {:keys [id frame-id] :as data}]
-  (let [page-id (::page-id state)
-        objects (get-in state [:workspace-data page-id :objects])
-        name (impl-generate-unique-name objects (:name data))
-        shape (assoc data :name name)
-        page-id (::page-id state)]
-    (-> state
-        (update-in [:workspace-data page-id :objects frame-id :shapes] conj id)
-        (update-in [:workspace-data page-id :objects] assoc id shape))))
-
-(declare select-shape)
 
 (defn- calculate-frame-overlap
   [objects shape]
@@ -985,172 +990,161 @@
 (defn add-shape
   [attrs]
   (us/verify ::shape-attrs attrs)
-  (let [id (uuid/next)]
-    (ptk/reify ::add-shape
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [page-id  (::page-id state)
-              objects  (get-in state [:workspace-data page-id :objects])
-              shape    (-> (geom/setup-proportions attrs)
-                           (assoc :id id))
-              frame-id (calculate-frame-overlap objects shape)
-              shape    (merge cp/default-shape-attrs shape {:frame-id frame-id})]
-          (-> state
-              (impl-assoc-shape shape)
-              (assoc-in [:workspace-local :selected] #{id}))))
-
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [page-id (::page-id state)
-              obj (get-in state [:workspace-data page-id :objects id])]
-          (rx/of (commit-changes [{:type :add-obj
-                                   :id id
-                                   :frame-id (:frame-id obj)
-                                   :obj obj}]
-                                 [{:type :del-obj
-                                   :id id}])))))))
-
-(defn add-frame
-  [data]
-  (us/verify ::shape-attrs data)
-  (let [id (uuid/next)]
-    (ptk/reify ::add-frame
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [shape (-> (geom/setup-proportions data)
-                        (assoc :id id))
-              shape (merge cp/default-frame-attrs shape)]
-          (impl-assoc-shape state shape)))
-
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [page-id (::page-id state)
-              obj (get-in state [:workspace-data page-id :objects id])]
-          (rx/of (commit-changes [{:type :add-obj
-                                   :id id
-                                   :frame-id (:frame-id obj)
-                                   :obj obj}]
-                                 [{:type :del-obj
-                                   :id id}])))))))
-
-
-;; --- Duplicate Selected
-;; TODO: handle properly naming
-
-(defn duplicate-shapes
-  [shapes]
-  (ptk/reify ::duplicate-shapes
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (::page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            rchanges (mapv (fn [id]
-                             (let [obj (assoc (get objects id)
-                                              :id (uuid/next))]
-                               {:type :add-obj
-                                :id (:id obj)
-                                :frame-id (:frame-id obj)
-                                :obj obj
-                                :session-id (:session-id state)}))
-                           shapes)
-            uchanges (mapv (fn [rch]
-                             {:type :del-obj
-                              :id (:id rch)
-                              :session-id (:session-id state)})
-                           rchanges)]
-        (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
-
-(defn duplicate-frame
-  [frame-id]
-  (ptk/reify ::duplicate-frame
+  (ptk/reify ::add-shape
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (::page-id state)
             objects (get-in state [:workspace-data page-id :objects])
 
-            frame (get objects frame-id)
-            frame-id (uuid/next)
+            id       (uuid/next)
+            shape    (geom/setup-proportions attrs)
 
-            rchanges (mapv (fn [id]
-                             (let [obj (assoc (get objects id)
-                                              :id (uuid/next))]
-                               {:type :add-obj
-                                :id (:id obj)
-                                :frame-id frame-id
-                                :obj (assoc obj :frame-id frame-id)}))
-                           (:shapes frame))
+            unames   (retrieve-used-names objects)
+            name     (generate-unique-name unames (:name shape))
 
-            uchanges (mapv (fn [rch]
-                             {:type :del-obj
-                              :id (:id rch)})
-                           rchanges)
+            frame-id (if (= :frame (:type shape))
+                       uuid/zero
+                       (calculate-frame-overlap objects shape))
 
-            shapes (mapv :id rchanges)
+            shape    (merge
+                      (if (= :frame (:type shape))
+                        cp/default-frame-attrs
+                        cp/default-shape-attrs)
+                      (assoc shape
+                             :id id
+                             :name name
+                             :frame-id frame-id))
 
-            rchange {:type :add-obj
-                     :id frame-id
-                     :frame-id uuid/zero
-                     :obj (assoc frame
-                                 :id frame-id
-                                 :shapes shapes)
+            rchange  {:type :add-obj
+                      :id id
+                      :frame-id frame-id
+                      :obj shape}
+            uchange  {:type :del-obj
+                      :id id}]
 
-                     :session-id (:session-id state)}
+        (rx/of (commit-changes [rchange] [uchange] {:commit-local? true})
+               (select-shapes #{id}))))))
 
-            uchange {:type :del-obj
-                     :id frame-id
-                     :session-id (:session-id state)}]
-        (rx/of (commit-changes (d/concat [rchange] rchanges)
-                               (d/concat [] uchanges [uchange])
-                               {:commit-local? true}))))))
 
+;; --- Duplicate Shapes
+
+(declare prepare-duplicate-changes)
+(declare prepare-duplicate-change)
+(declare prepare-duplicate-frame-change)
+(declare prepare-duplicate-shape-change)
+
+(def ^:private change->name #(get-in % [:obj :name]))
+
+(defn- prepare-duplicate-changes
+  "Prepare objects to paste: generate new id, give them unique names,
+  move to the position of mouse pointer, and find in what frame they
+  fit."
+  [objects names ids delta]
+  (loop [names names
+         chgs []
+         id   (first ids)
+         ids  (rest ids)]
+    (if (nil? id)
+      chgs
+      (let [result (prepare-duplicate-change objects names id delta)
+            result (if (vector? result) result [result])]
+        (recur
+         (into names (map change->name) result)
+         (into chgs result)
+         (first ids)
+         (rest ids))))))
+
+(defn- prepare-duplicate-change
+  [objects names id delta]
+  (let [obj (get objects id)]
+    (if (= :frame (:type obj))
+      (prepare-duplicate-frame-change objects names obj delta)
+      (prepare-duplicate-shape-change objects names obj delta nil nil))))
+
+(defn- prepare-duplicate-shape-change
+  [objects names obj delta frame-id parent-id]
+  (let [id (uuid/next)
+        name (generate-unique-name names (:name obj))
+        renamed-obj (assoc obj :id id :name name)
+        moved-obj (geom/move renamed-obj delta)
+        frame-id (if frame-id
+                   frame-id
+                   (calculate-frame-overlap objects moved-obj))
+
+        parent-id (or parent-id frame-id)
+
+        children-changes
+        (loop [names names
+               result []
+               cid (first (:shapes obj))
+               cids (rest (:shapes obj))]
+          (if (nil? cid)
+            result
+            (let [obj (get objects cid)
+                  changes (prepare-duplicate-shape-change objects names obj delta frame-id id)]
+              (recur
+               (into names (map change->name changes))
+               (into result changes)
+               (first cids)
+               (rest cids)))))
+
+        reframed-obj (-> moved-obj
+                         (assoc  :frame-id frame-id)
+                         (dissoc :shapes))]
+    (into [{:type :add-obj
+            :id id
+            :old-id (:id obj)
+            :frame-id frame-id
+            :parent-id parent-id
+            :obj (dissoc reframed-obj :shapes)}]
+          children-changes)))
+
+(defn- prepare-duplicate-frame-change
+  [objects names obj delta]
+  (let [frame-id   (uuid/next)
+        frame-name (generate-unique-name names (:name obj))
+        sch (->> (map #(get objects %) (:shapes obj))
+                 (mapcat #(prepare-duplicate-shape-change objects names % delta frame-id frame-id)))
+
+        renamed-frame (-> obj
+                          (assoc :id frame-id)
+                          (assoc :name frame-name)
+                          (assoc :frame-id uuid/zero)
+                          (dissoc :shapes))
+
+        moved-frame (geom/move renamed-frame delta)
+
+        fch {:type :add-obj
+             :old-id (:id obj)
+             :id frame-id
+             :frame-id uuid/zero
+             :obj moved-frame}]
+
+    (into [fch] sch)))
+
+(declare select-shapes)
 
 (def duplicate-selected
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (::page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
             selected (get-in state [:workspace-local :selected])
-            lookup #(get objects %)
-            shapes (map lookup selected)
-            shape? #(not= (:type %) :frame)]
-        (cond
-          (and (= (count shapes) 1)
-               (= (:type (first shapes)) :frame))
-          (rx/of (duplicate-frame (first selected)))
+            objects (get-in state [:workspace-data page-id :objects])
+            delta (gpt/point 0 0)
+            unames (retrieve-used-names objects)
 
-          (and (pos? (count shapes))
-               (every? shape? shapes))
-          (rx/of (duplicate-shapes selected))
+            rchanges (prepare-duplicate-changes objects unames selected delta)
+            uchanges (mapv #(array-map :type :del-obj :id (:id %))
+                           (reverse rchanges))
 
-          :else
-          (rx/empty))))))
+            selected (->> rchanges
+                          (filter #(selected (:old-id %)))
+                          (map #(get-in % [:obj :id]))
+                          (into #{}))]
 
-
-
-;; --- Toggle shape's selection status (selected or deselected)
-
-(defn select-shape
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::select-shape
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-local :selected]
-                 (fn [selected]
-                   (if (contains? selected id)
-                     (disj selected id)
-                     (conj selected id)))))))
-
-(def deselect-all
-  "Clear all possible state of drawing, edition
-  or any similar action taken by the user."
-  (ptk/reify ::deselect-all
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local #(-> %
-                                          (assoc :selected #{})
-                                          (dissoc :selected-frame))))))
+        (rx/of (commit-changes rchanges uchanges {:commit-local? true})
+               (select-shapes selected))))))
 
 
 ;; --- Select Shapes (By selrect)
@@ -1318,29 +1312,29 @@
       (let [page-id (::page-id state)
             session-id (:session-id state)
             objects (get-in state [:workspace-data page-id :objects])
-            rchanges (mapv #(array-map :type :del-obj :id %) ids)
-            uchanges (mapv (fn [id]
-                             (let [obj (get objects id)
-                                   frm (get objects (:frame-id obj))
-                                   idx (d/index-of (:shapes frm) id)]
-                               {:type :add-obj
-                                :id id
-                                :frame-id (:id frm)
-                                :index idx
-                                :obj obj}))
-                           (reverse ids))]
-        (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
+            cpindex (helpers/calculate-child-parent-map objects)
 
-(defn- delete-frame
-  [id]
-  (ptk/reify ::delete-shapes
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (::page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            obj (get objects id)
-            ids (d/concat [] (:shapes obj) [(:id obj)])]
-        (rx/of (delete-shapes ids))))))
+            del-change #(array-map :type :del-obj :id %)
+
+            rchanges
+            (reduce (fn [res id]
+                      (let [chd (helpers/get-children id objects)]
+                        (into res (d/concat
+                                   (mapv del-change (reverse chd))
+                                   [(del-change id)]))))
+                    []
+                    ids)
+
+            uchanges
+            (mapv (fn [id]
+                    (let [obj (get objects id)]
+                     {:type :add-obj
+                      :id id
+                      :frame-id (:frame-id obj)
+                      :parent-id (get cpindex id)
+                      :obj obj}))
+                  (reverse (map :id rchanges)))]
+        (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (def delete-selected
   "Deselect all and remove all selected shapes."
@@ -1353,17 +1347,8 @@
 
             shapes (map lookup selected)
             shape? #(not= (:type %) :frame)]
-        (cond
-          (and (= (count shapes) 1)
-               (= (:type (first shapes)) :frame))
-          (rx/of (delete-frame (first selected)))
+        (rx/of (delete-shapes selected))))))
 
-          (and (pos? (count shapes))
-               (every? shape? shapes))
-          (rx/of (delete-shapes selected))
-
-          :else
-          (rx/empty))))))
 
 ;; --- Rename Shape
 
@@ -1417,7 +1402,7 @@
   (us/verify ::us/uuid ref-id)
   (us/verify number? index)
 
-  (ptk/reify ::reloacate-shape
+  (ptk/reify ::relocate-shape
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (::page-id state)
@@ -1430,28 +1415,6 @@
                                  :shapes (vec selected)}]
                                []
                                {:commit-local? true}))))))
-
-(defn commit-shape-order-change
-  [id]
-  (ptk/reify ::commit-shape-order-change
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [pid (::page-id state)
-            obj (get-in state [:workspace-data pid :objects id])
-
-            cfrm (get-in state [:workspace-data pid :objects (:frame-id obj)])
-            pfrm (get-in state [:pages-data pid :objects (:frame-id obj)])
-
-            cindex (d/index-of (:shapes cfrm) id)
-            pindex (d/index-of (:shapes pfrm) id)
-
-            rchange {:type :mod-obj
-                     :id (:id cfrm)
-                     :operations [{:type :abs-order :id id :index cindex}]}
-            uchange {:type :mod-obj
-                     :id (:id cfrm)
-                     :operations [{:type :abs-order :id id :index pindex}]}]
-        (rx/of (commit-changes [rchange] [uchange]))))))
 
 
 ;; --- Shape / Selection Alignment and Distribution
@@ -1505,40 +1468,64 @@
 
 ;; --- Temportal displacement for Shape / Selection
 
+(defn- retrieve-toplevel-shapes
+  [objects]
+  (let [lookup #(get objects %)
+        root   (lookup uuid/zero)
+        childs (:shapes root)]
+    (loop [id  (first childs)
+           ids (rest childs)
+           res []]
+      (if (nil? id)
+        res
+        (let [obj (lookup id)
+              typ (:type obj)]
+          (recur (first ids)
+                 (rest ids)
+                 (if (= :frame typ)
+                   (into res (:shapes obj))
+                   (conj res id))))))))
+
+(defn- calculate-shape-to-frame-relationship-changes
+  [objects ids]
+  (loop [id  (first ids)
+         ids (rest ids)
+         rch []
+         uch []]
+    (if (nil? id)
+      [rch uch]
+      (let [obj (get objects id)
+            fid (calculate-frame-overlap objects obj)]
+        (if (not= fid (:frame-id obj))
+          (recur (first ids)
+                 (rest ids)
+                 (conj rch {:type :mov-objects
+                            :parent-id fid
+                            :shapes [id]})
+                 (conj uch {:type :mov-objects
+                            :parent-id (:frame-id obj)
+                            :shapes [id]}))
+          (recur (first ids)
+                 (rest ids)
+                 rch
+                 uch))))))
+
 (defn- rehash-shape-frame-relationship
   [ids]
-  (letfn [(impl-diff [state]
-            (loop [id  (first ids)
-                   ids (rest ids)
-                   rch []
-                   uch []]
-              (if (nil? id)
-                [rch uch]
-                (let [pid (::page-id state)
-                      objects (get-in state [:workspace-data pid :objects])
-                      obj (get objects id)
-                      fid (calculate-frame-overlap objects obj)]
-                  (if (not= fid (:frame-id obj))
-                    (recur (first ids)
-                           (rest ids)
-                           (conj rch {:type :mov-obj
-                                      :id id
-                                      :frame-id fid})
-                           (conj uch {:type :mov-obj
-                                      :id id
-                                      :frame-id (:frame-id obj)}))
-                    (recur (first ids)
-                           (rest ids)
-                           rch
-                           uch))))))]
-    (ptk/reify ::rehash-shape-frame-relationship
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [[rch uch] (impl-diff state)]
-          (when-not (empty? rch)
-            (rx/of (commit-changes rch uch {:commit-local? true}))))))))
+  (ptk/reify ::rehash-shape-frame-relationship
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (::page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            ids     (retrieve-toplevel-shapes objects)
+            [rch uch] (calculate-shape-to-frame-relationship-changes objects ids)
+            ]
 
-(defn- adjust-group-shapes [state ids]
+        (when-not (empty? rch)
+          (rx/of (commit-changes rch uch {:commit-local? true})))))))
+
+(defn- adjust-group-shapes
+  [state ids]
   (let [page-id (::page-id state)
         objects (get-in state [:workspace-data page-id :objects])
         groups-to-adjust (->> ids
@@ -1944,25 +1931,6 @@
       (let [page-id (::page-id state)]
         (update-in state [:workspace-data page-id :objects id :segments index] gpt/add delta)))))
 
-;; --- Initial Path Point Alignment
-
-;; ;; TODO: revisit on alignemt refactor
-;; (deftype InitialPathPointAlign [id index]
-;;   ptk/WatchEvent
-;;   (watch [_ state s]
-;;     (let [shape (get-in state [:workspace-data :objects id])
-;;           point (get-in shape [:segments index])]
-;;       (->> (uwrk/align-point point)
-;;            (rx/map #(update-path id index %))))))
-
-;; (defn initial-path-point-align
-;;   "Event responsible of align a specified point of the
-;;   shape by `index` with the grid."
-;;   [id index]
-;;   {:pre [(uuid? id)
-;;          (number? index)
-;;          (not (neg? index))]}
-;;   (InitialPathPointAlign. id index))
 
 ;; --- Shape Visibility
 
@@ -2137,18 +2105,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def copy-selected
-  (letfn [(prepare-selected [state selected]
-            (let [data (reduce #(prepare %1 state %2) {} selected)]
+  (letfn [(prepare-selected [objects selected]
+            (let [data (reduce #(prepare %1 objects %2) {} selected)]
               {:type :copied-shapes
-               :data (assoc data :selected selected)}))
+               :selected selected
+               :objects data}))
 
-          (prepare [result state id]
-            (let [page-id (::page-id state)
-                  objects (get-in state [:workspace-data page-id :objects])
-                  object  (get objects id)]
-              (cond-> (assoc-in result [:objects id] object)
-                (= :frame (:type object))
-                (as-> $ (reduce #(prepare %1 state %2) $ (:shapes object))))))
+          (prepare [result objects id]
+            (let [obj (get objects id)]
+              (as-> result $$
+                (assoc $$ id obj)
+                (reduce #(prepare %1 objects %2) $$ (:shapes obj)))))
 
           (on-copy-error [error]
             (js/console.error "Clipboard blocked:" error)
@@ -2157,98 +2124,18 @@
     (ptk/reify ::copy-selected
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [selected (get-in state [:workspace-local :selected])
-              cdata    (prepare-selected state selected)]
+        (let [page-id (::page-id state)
+              objects (get-in state [:workspace-data page-id :objects])
+              selected (get-in state [:workspace-local :selected])
+              cdata    (prepare-selected objects selected)]
           (->> (t/encode cdata)
                (wapi/write-to-clipboard)
                (rx/from)
                (rx/catch on-copy-error)
                (rx/ignore)))))))
 
-
-(declare select-pasted-objs)
-
 (defn- paste-impl
   [{:keys [selected objects] :as data}]
-  (letfn [(prepare-changes [state delta]
-            "Prepare objects to paste: generate new id, give them unique names, move
-            to the position of mouse pointer, and find in what frame they fit."
-            (let [page-id (::page-id state)]
-              (loop [existing-objs (get-in state [:workspace-data page-id :objects])
-                     chgs []
-                     id   (first selected)
-                     ids  (rest selected)]
-                (if (nil? id)
-                  chgs
-                  (let [result (prepare-change id existing-objs delta)
-                        result (if (vector? result) result [result])]
-                    (recur
-                     (reduce #(assoc %1 (:id %2) (:obj %2)) existing-objs result)
-                     (into chgs result)
-                     (first ids)
-                     (rest ids)))))))
-
-          (prepare-change [id existing-objs delta]
-            (let [obj (get objects id)]
-              (if (= :frame (:type obj))
-                (prepare-frame-change existing-objs obj delta)
-                (prepare-shape-change existing-objs obj delta nil))))
-
-          (prepare-shape-change [objects obj delta frame-id]
-            (let [id (uuid/next)
-                  name (impl-generate-unique-name objects (:name obj))
-                  renamed-obj (assoc obj :id id :name name)
-                  moved-obj (geom/move renamed-obj delta)
-                  frame-id (if frame-id
-                             frame-id
-                             (calculate-frame-overlap objects moved-obj))
-
-                  prepare-child
-                  (fn [child-id]
-                    (prepare-shape-change objects (get objects child-id) delta frame-id))
-
-                  children-changes (mapcat prepare-child (:shapes obj))
-                  is-child? (set (:shapes obj))
-                  children-uuids (->> children-changes
-                                      (filter #(and (= :add-obj (:type %)) (is-child? (:old-id %))))
-                                      (map #(:id %)))
-
-                  move-change (when (not (empty? (:shapes obj)))
-                                [{:type :mov-objects
-                                  :parent-id id
-                                  :shapes (vec children-uuids)}])
-
-                  reframed-obj (-> moved-obj
-                                   (assoc  :frame-id frame-id)
-                                   (dissoc :shapes))]
-              (into [{:type :add-obj
-                      :id id
-                      :old-id (:id obj)
-                      :frame-id frame-id
-                      :obj (dissoc reframed-obj :shapes)}]
-                    (concat children-changes move-change))))
-
-          (prepare-frame-change [objects obj delta]
-            (let [frame-id (uuid/next)
-                  frame-name (impl-generate-unique-name objects (:name obj))
-                  sch (->> (map #(get objects %) (:shapes obj))
-                           (mapcat #(prepare-shape-change objects % delta frame-id)))
-                  is-child? (set (:shapes obj))
-                  children-uuids (->> sch
-                                      (filter #(and (= :add-obj (:type %)) (is-child? (:old-id %))))
-                                      (map #(:id %)))
-                  renamed-frame (-> obj
-                                    (assoc :id frame-id)
-                                    (assoc :name frame-name)
-                                    (assoc :frame-id uuid/zero)
-                                    (assoc :shapes (vec children-uuids)))
-                  moved-frame (geom/move renamed-frame delta)
-                  fch {:type :add-obj
-                       :id frame-id
-                       :frame-id uuid/zero
-                       :obj moved-frame}]
-              (into [fch] sch)))]
-
   (ptk/reify ::paste-impl
     ptk/WatchEvent
     (watch [_ state stream]
@@ -2258,15 +2145,20 @@
             mouse-pos @ms/mouse-position
             delta (gpt/subtract mouse-pos orig-pos)
 
-            rchanges (prepare-changes state delta)
-            uchanges (map (fn [ch]
-                            {:type :del-obj
-                             :id (:id ch)})
-                          (filter #(= :add-obj (:type %)) rchanges))]
-        (rx/of (commit-changes (vec rchanges)
-                               (vec (reverse uchanges))
-                               {:commit-local? true})
-               (select-pasted-objs selected rchanges)))))))
+            page-id (::page-id state)
+            unames (-> (get-in state [:workspace-data page-id :objects])
+                       (retrieve-used-names))
+
+            rchanges (prepare-duplicate-changes objects unames selected delta)
+            uchanges (mapv #(array-map :type :del-obj :id (:id %))
+                           (reverse rchanges))
+
+            selected (->> rchanges
+                          (filter #(selected (:old-id %)))
+                          (map #(get-in % [:obj :id]))
+                          (into #{}))]
+        (rx/of (commit-changes rchanges uchanges {:commit-local? true})
+               (select-shapes selected))))))
 
 (def paste
   (ptk/reify ::paste
@@ -2275,23 +2167,12 @@
       (->> (rx/from (wapi/read-from-clipboard))
            (rx/map t/decode)
            (rx/filter #(= :copied-shapes (:type %)))
-           (rx/pr-log "pasting:")
-           (rx/map :data)
+           (rx/map #(select-keys % [:selected :objects]))
            (rx/map paste-impl)
            (rx/catch (fn [err]
                        (js/console.error "Clipboard error:" err)
                        (rx/empty)))))))
 
-(defn select-pasted-objs
-  [selected rchanges]
-  (ptk/reify ::select-pasted-objs
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [new-selected (->> rchanges
-                 (filter #(selected (:old-id %)))
-                 (map #(get-in % [:obj :id]))
-                 (into #{}))]
-        (assoc-in state [:workspace-local :selected] new-selected)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Changes Reactions
@@ -2317,14 +2198,8 @@
 ;; GROUPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-parent [object-id objects]
-  (let [include-object
-        (fn [object]
-          (and (:shapes object)
-               (some #(= object-id %) (:shapes object))))]
-    (first (filter include-object objects))))
-
-(defn group-shape [id frame-id selected selection-rect]
+(defn group-shape
+  [id frame-id selected selection-rect]
   {:id id
    :type :group
    :name (name (gensym "Group-"))
@@ -2335,73 +2210,75 @@
    :width (:width selection-rect)
    :height (:height selection-rect)})
 
-(defn create-group []
-  (let [id (uuid/next)]
-    (ptk/reify ::create-group
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [selected (get-in state [:workspace-local :selected])]
-          (if (not-empty selected)
-            (let [page-id (get-in state [:workspace-page :id])
-                  objects (get-in state [:workspace-data page-id :objects])
-                  selected-objects (map (partial get objects) selected)
-                  selection-rect (geom/selection-rect selected-objects)
-                  frame-id (-> selected-objects first :frame-id)
-                  group-shape (group-shape id frame-id selected selection-rect)
-                  frame-children (get-in objects [frame-id :shapes])
-                  index-frame (->> frame-children (map-indexed vector) (filter #(selected (second %))) first first)]
+(def create-group
+  (ptk/reify ::create-group
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [id (uuid/next)
+            selected (get-in state [:workspace-local :selected])]
+        (when (not-empty selected)
+          (let [page-id (get-in state [:workspace-page :id])
+                objects (get-in state [:workspace-data page-id :objects])
+                selected-objects (map (partial get objects) selected)
+                selection-rect (geom/selection-rect selected-objects)
+                frame-id (-> selected-objects first :frame-id)
+                group-shape (group-shape id frame-id selected selection-rect)
+                frame-children (get-in objects [frame-id :shapes])
+                index-frame (->> frame-children
+                                 (map-indexed vector)
+                                 (filter #(selected (second %)))
+                                 (ffirst))
 
-              (let [rchanges [{:type :add-obj
-                               :id id
-                               :frame-id frame-id
-                               :obj group-shape
-                               :index index-frame}
-                              {:type :mov-objects
-                               :parent-id id
-                               :shapes (into [] selected)}]
-                    uchanges [{:type :mov-objects
-                               :parent-id frame-id
-                               :shapes (into [] selected)}
-                              {:type :del-obj
-                               :id id}]]
-                (rx/of (commit-changes rchanges uchanges {:commit-local? true})
-                       (fn [state] (assoc-in state [:workspace-local :selected] #{id})))))
-            rx/empty))))))
+                rchanges [{:type :add-obj
+                           :id id
+                           :frame-id frame-id
+                           :obj group-shape
+                           :index index-frame}
+                          {:type :mov-objects
+                           :parent-id id
+                           :shapes (vec selected)}]
+                uchanges [{:type :mov-objects
+                           :parent-id frame-id
+                           :shapes (vec selected)}
+                          {:type :del-obj
+                           :id id}]]
+            (rx/of (commit-changes rchanges uchanges {:commit-local? true})
+                   (select-shapes #{id}))))))))
 
-(defn remove-group
-  []
+(def remove-group
   (ptk/reify ::remove-group
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])
+      (let [page-id  (::page-id state)
+            objects  (get-in state [:workspace-data page-id :objects])
+            selected (get-in state [:workspace-local :selected])
             group-id (first selected)
-            group (get-in state [:workspace-data (::page-id state) :objects group-id])]
-        (if (and (= (count selected) 1) (= (:type group) :group))
-          (let [objects (get-in state [:workspace-data (::page-id state) :objects])
-                shapes (get-in objects [group-id :shapes])
+            group    (get objects group-id)]
+        (when (and (= 1 (count selected))
+                   (= (:type group) :group))
+          (let [shapes    (:shapes group)
                 parent-id (helpers/get-parent group-id objects)
-                parent (get objects parent-id)
+                parent    (get objects parent-id)
                 index-in-parent (->> (:shapes parent)
                                      (map-indexed vector)
                                      (filter #(#{group-id} (second %)))
-                                     first first)]
-            (let [rchanges [{:type :mov-objects
-                             :parent-id parent-id
-                             :shapes shapes
-                             :index index-in-parent}]
-                  uchanges [{:type :add-obj
-                             :id group-id
-                             :frame-id (:frame-id group)
-                             :obj (assoc group :shapes [])}
-                            {:type :mov-objects
-                             :parent-id group-id
-                             :shapes shapes}
-                            {:type :mov-objects
-                             :parent-id parent-id
-                             :shapes [group-id]
-                             :index index-in-parent}]]
-              (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))
-          rx/empty)))))
+                                     (ffirst))
+                rchanges [{:type :mov-objects
+                           :parent-id parent-id
+                           :shapes shapes
+                           :index index-in-parent}]
+                uchanges [{:type :add-obj
+                           :id group-id
+                           :frame-id (:frame-id group)
+                           :obj (assoc group :shapes [])}
+                          {:type :mov-objects
+                           :parent-id group-id
+                           :shapes shapes}
+                          {:type :mov-objects
+                           :parent-id parent-id
+                           :shapes [group-id]
+                           :index index-in-parent}]]
+            (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
@@ -2415,8 +2292,8 @@
    "ctrl+shift+l" #(st/emit! (toggle-layout-flag :layers))
    "+" #(st/emit! increase-zoom)
    "-" #(st/emit! decrease-zoom)
-   "ctrl+g" #(st/emit! (create-group))
-   "ctrl+shift+g" #(st/emit! (remove-group))
+   "ctrl+g" #(st/emit! create-group)
+   "ctrl+shift+g" #(st/emit! remove-group)
    "shift+0" #(st/emit! zoom-to-50)
    "shift+1" #(st/emit! reset-zoom)
    "shift+2" #(st/emit! zoom-to-200)

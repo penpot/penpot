@@ -139,7 +139,7 @@
 
 (defmethod change-spec-impl :add-obj [_]
   (s/keys :req-un [::id ::frame-id ::obj]
-          :opt-un [::session-id]))
+          :opt-un [::session-id ::parent-id]))
 
 (defmethod change-spec-impl :mod-obj [_]
   (s/keys :req-un [::id ::operations]
@@ -147,10 +147,6 @@
 
 (defmethod change-spec-impl :del-obj [_]
   (s/keys :req-un [::id]
-          :opt-un [::session-id]))
-
-(defmethod change-spec-impl :mov-obj [_]
-  (s/keys :req-un [::id ::frame-id]
           :opt-un [::session-id]))
 
 (defmethod change-spec-impl :mov-objects [_]
@@ -194,40 +190,39 @@
 (defn process-changes
   [data items]
   (->> (us/verify ::changes items)
-       (reduce #(or (process-change %1 %2) %1) data)))
+       (reduce #(do
+                  ;; (prn "process-change" (:type %2) (:id %2))
+                  (or (process-change %1 %2) %1))
+               data)))
 
 (declare insert-at-index)
 
 (defmethod process-change :add-obj
-  [data {:keys [id obj frame-id index] :as change}]
-  (assert (contains? (:objects data) frame-id) "process-change/add-obj")
-  (let [obj (assoc obj
+  [data {:keys [id obj frame-id parent-id index] :as change}]
+  (let [parent-id (or parent-id frame-id)
+        objects (:objects data)]
+    (when (and (contains? objects parent-id)
+               (contains? objects frame-id))
+      (let [obj (assoc obj
                    :frame-id frame-id
                    :id id)]
-    (-> data
-        (update :objects assoc id obj)
-        (update-in [:objects frame-id :shapes]
-                   (fn [shapes]
-                     (cond
-                       (some #{id} shapes) shapes
-                       (nil? index) (conj shapes id)
-                       :else (insert-at-index shapes index [id])))))))
+        (-> data
+            (update :objects assoc id obj)
+            (update-in [:objects parent-id :shapes]
+                       (fn [shapes]
+                         (let [shapes (or shapes [])]
+                           (cond
+                             (some #{id} shapes) shapes
+                             (nil? index) (conj shapes id)
+                             :else (insert-at-index shapes index [id]))))))))))
 
 (defmethod process-change :mod-obj
   [data {:keys [id operations] :as change}]
-  (assert (contains? (:objects data) id) "process-change/mod-obj")
-  (update-in data [:objects id]
-             #(reduce process-operation % operations)))
-
-(defmethod process-change :mov-obj
-  [data {:keys [id frame-id] :as change}]
-  (assert (contains? (:objects data) frame-id))
-  (let [frame-id' (get-in data [:objects id :frame-id])]
-    (when (not= frame-id frame-id')
-      (-> data
-          (update-in [:objects frame-id' :shapes] (fn [s] (filterv #(not= % id) s)))
-          (update-in [:objects id] assoc :frame-id frame-id)
-          (update-in [:objects frame-id :shapes] conj id)))))
+  (update data :objects
+          (fn [objects]
+            (if-let [obj (get objects id)]
+              (assoc objects id (reduce process-operation obj operations))
+              objects))))
 
 (defmethod process-change :del-obj
   [data {:keys [id] :as change}]
@@ -237,7 +232,7 @@
         (contains? (:objects data) frame-id)
         (update-in [:objects frame-id :shapes] (fn [s] (filterv #(not= % id) s)))
 
-        (seq shapes)                    ; Recursive delete all dependend objects
+        (seq shapes)   ; Recursive delete all dependend objects
         (as-> $ (reduce #(or (process-change %1 {:type :del-obj :id %2}) %1) $ shapes))))))
 
 (defn- calculate-child-parent-map
@@ -275,7 +270,7 @@
           (let [invalid (calculate-invalid-targets shape-id (:objects data))]
             (not (invalid parent-id))))
 
-          valid? (every? is-valid-move shapes)
+        valid? (every? is-valid-move shapes)
 
         ;; Add items into the :shapes property of the target parent-id
         insert-items
@@ -283,7 +278,12 @@
           (let [prev-shapes (or prev-shapes [])]
             (if index
               (insert-at-index prev-shapes index shapes)
-              (into prev-shapes shapes))))
+              (reduce (fn [acc id]
+                        (if (some #{id} acc)
+                          acc
+                          (conj acc id)))
+                      prev-shapes
+                      shapes))))
 
         strip-id
         (fn [id]
@@ -316,17 +316,18 @@
 
         ;; Updates the frame-id references that might be outdated
         update-frame-ids
-        (fn update-frame-ids [data shape-id]
-          (as-> data $
-            (assoc-in $ [:objects shape-id :frame-id] frame-id)
-            (reduce update-frame-ids $ (get-in $ [:objects shape-id :shapes]))))]
+        (fn update-frame-ids [data id]
+          (let [data (assoc-in data [:objects id :frame-id] frame-id)
+                obj (get-in data [:objects id])]
+            (cond-> data
+              (not= :frame (:type obj))
+              (as-> $$ (reduce update-frame-ids $$ (:shapes obj))))))]
 
-    (if valid?
+    (when valid?
       (as-> data $
         (update-in $ [:objects parent-id :shapes] insert-items)
         (reduce remove-in-parent $ shapes)
-        (reduce update-frame-ids $ (get-in $ [:objects parent-id :shapes])))
-      data)))
+        (reduce update-frame-ids $ (get-in $ [:objects parent-id :shapes]))))))
 
 (defmethod process-operation :set
   [shape op]

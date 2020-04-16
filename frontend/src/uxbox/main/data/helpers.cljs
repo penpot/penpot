@@ -7,16 +7,15 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.main.data.helpers)
+(ns uxbox.main.data.helpers
+  (:require [uxbox.common.data :as d]))
 
 (defn get-children
   "Retrieve all children ids recursively for a given shape"
   [shape-id objects]
   (let [shapes (get-in objects [shape-id :shapes])]
     (if shapes
-      (concat
-       shapes
-       (mapcat #(get-children % objects) shapes))
+      (d/concat shapes (mapcat #(get-children % objects) shapes))
       [])))
 
 (defn is-shape-grouped
@@ -25,11 +24,11 @@
   (let [contains-shape-fn
         (fn [{:keys [shapes]}] ((set shapes) shape-id))
 
-        shapes (remove #(= (:type %) :frame) (vals objects))] 
+        shapes (remove #(= (:type %) :frame) (vals objects))]
     (some contains-shape-fn shapes)))
 
 (defn get-parent
-  "Retrieve the id of the parent for the shape-id (if exists"
+  "Retrieve the id of the parent for the shape-id (if exists)"
   [shape-id objects]
   (let [check-parenthood
         (fn [shape] (when (and (:shapes shape)
@@ -55,9 +54,10 @@
     (rec-fn shape-id [])))
 
 (defn replace-shapes
-  "Replace inside shapes the value `to-replace-id` for the value in items keeping the same order.
-  `to-replace-id` can be a set, a sequable or a single value. Any of these will be changed into a
-  set to make the replacement"
+  "Replace inside shapes the value `to-replace-id` for the value in
+  items keeping the same order.  `to-replace-id` can be a set, a
+  sequable or a single value. Any of these will be changed into a set
+  to make the replacement"
   [shape to-replace-id items]
   (let [should-replace
         (cond

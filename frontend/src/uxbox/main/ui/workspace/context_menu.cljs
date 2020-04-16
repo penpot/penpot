@@ -58,8 +58,8 @@
         do-hide-shape #(st/emit! (dw/hide-shape (:id shape)))
         do-lock-shape #(st/emit! (dw/block-shape (:id shape)))
         do-unlock-shape #(st/emit! (dw/unblock-shape (:id shape)))
-        do-create-group #(st/emit! (dw/create-group))
-        do-remove-group #(st/emit! (dw/remove-group))]
+        do-create-group #(st/emit! dw/create-group)
+        do-remove-group #(st/emit! dw/remove-group)]
     [:*
      [:& menu-entry {:title "Copy"
                      :shortcut "Ctrl + c"

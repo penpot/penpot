@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.main.ui.not-found
+(ns uxbox.main.ui.static
   (:require
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]
@@ -15,7 +15,6 @@
 
 (mf/defc not-found-page
   [{:keys [error] :as props}]
-  (js/console.log "not-found" error)
   [:section.not-found-layout
    [:div.not-found-header i/logo]
    [:div.not-found-content
@@ -24,4 +23,15 @@
      [:div.main-message "404"]
      [:div.desc-message "Oops! Page not found"]
      [:a.btn-primary.btn-small "Go back"]]]])
+
+(mf/defc not-authorized-page
+  [{:keys [error] :as props}]
+  [:section.not-found-layout
+   [:div.not-found-header i/logo]
+   [:div.not-found-content
+    [:div.message-container
+     [:div.error-img i/icon-lock]
+     [:div.main-message "403"]
+     [:div.desc-message "Sorry, you are not authorized to access this page."]
+     #_[:a.btn-primary.btn-small "Go back"]]]])
 

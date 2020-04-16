@@ -22,7 +22,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.dashboard :refer [dashboard]]
    [uxbox.main.ui.login :refer [login-page]]
-   [uxbox.main.ui.not-found :refer [not-found-page]]
+   [uxbox.main.ui.static :refer [not-found-page not-authorized-page]]
    [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
    [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
    [uxbox.main.ui.profile.register :refer [profile-register-page]]
@@ -47,6 +47,7 @@
 
    ["/view/:page-id" :viewer]
    ["/not-found" :not-found]
+   ["/not-authorized" :not-authorized]
 
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
@@ -132,8 +133,11 @@
                                :page-id page-id
                                :key file-id}])
 
+    :not-authorized
+    [:& not-authorized-page]
+
     :not-found
-    [:& not-found-page {}]))
+    [:& not-found-page]))
 
 (mf/defc app
   []
