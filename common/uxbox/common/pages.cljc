@@ -149,10 +149,6 @@
   (s/keys :req-un [::id]
           :opt-un [::session-id]))
 
-(defmethod change-spec-impl :mov-obj [_]
-  (s/keys :req-un [::id ::frame-id]
-          :opt-un [::session-id]))
-
 (defmethod change-spec-impl :mov-objects [_]
   (s/keys :req-un [::parent-id ::shapes]
           :opt-un [::index]))
@@ -227,16 +223,6 @@
             (if-let [obj (get objects id)]
               (assoc objects id (reduce process-operation obj operations))
               objects))))
-
-(defmethod process-change :mov-obj
-  [data {:keys [id frame-id] :as change}]
-  (assert (contains? (:objects data) frame-id))
-  (let [frame-id' (get-in data [:objects id :frame-id])]
-    (when (not= frame-id frame-id')
-      (-> data
-          (update-in [:objects frame-id' :shapes] (fn [s] (filterv #(not= % id) s)))
-          (update-in [:objects id] assoc :frame-id frame-id)
-          (update-in [:objects frame-id :shapes] conj id)))))
 
 (defmethod process-change :del-obj
   [data {:keys [id] :as change}]
