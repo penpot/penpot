@@ -65,6 +65,9 @@
 
        [:div.color-info
         [:input {:default-value (:fill-color shape)
+                 :ref (fn [el]
+                        (when el
+                          (set! (.-value el) (:fill-color shape))))
                  :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
                  :on-change on-color-input-change}]]
 

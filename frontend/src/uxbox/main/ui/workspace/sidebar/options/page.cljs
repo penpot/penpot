@@ -91,6 +91,9 @@
                         :on-click show-color-picker}]
        [:div.color-info
         [:input {:default-value (:grid-color options)
+                 :ref (fn [el]
+                        (when el
+                          (set! (.-value el) (:grid-color options))))
                  :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
                  :on-change on-color-input-change}]]]]]))
 
