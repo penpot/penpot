@@ -8,7 +8,15 @@
   {:target :browser
    :output-dir "resources/public/js/"
    :asset-path "/js"
-   :modules {:main {:entries [uxbox.main]}}
+   :devtools {:browser-inject :main}
+
+   :modules
+   {:shared {:entries []}
+    :main {:entries [uxbox.main]
+           :depends-on #{:shared}}
+    :worker {:entries [uxbox.worker]
+             :web-worker true
+             :depends-on #{:shared}}}
    :compiler-options
    {:output-feature-set :es8
     :output-wrapper false}

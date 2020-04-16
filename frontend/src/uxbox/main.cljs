@@ -19,6 +19,7 @@
    [uxbox.main.ui :as ui]
    [uxbox.main.ui.modal :refer [modal]]
    [uxbox.main.ui.loader :refer [loader]]
+   [uxbox.main.worker]
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :as i18n]

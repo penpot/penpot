@@ -18,7 +18,6 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
-   [uxbox.main.workers :as uwrk]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.matrix :as gmt]))
@@ -96,8 +95,8 @@
               (rx/map (fn [[pos ctrl?]]
                         (let [delta-angle (calculate-angle pos ctrl?)]
                           (dw/apply-rotation delta-angle shapes))))
-              
-              
+
+
               (rx/take-until stoper))
          (rx/of (dw/materialize-rotation shapes))
          )))))
@@ -151,7 +150,7 @@
   (let [{:keys [x y width height rotation] :as shape} (geom/shape->rect-shape shape)
         radius (if (> (max width height) handler-size-threshold) 6.0 4.0)
         transform (geom/rotation-matrix shape)
-        
+
         resize-handlers {:top          [(+ x (/ width 2 )) (- y 2)]
                          :right        [(+ x width 1) (+ y (/ height 2))]
                          :bottom       [(+ x (/ width 2)) (+ y height 2)]
@@ -160,7 +159,7 @@
                          :top-right    [(+ x width) y]
                          :bottom-left  [x (+ y height)]
                          :bottom-right [(+ x width) (+ y height)]}]
-    
+
     [:g.controls {:transform transform}
      [:rect.main {:x x :y y
                   :width width

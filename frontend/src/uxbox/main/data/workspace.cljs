@@ -31,7 +31,6 @@
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.main.websockets :as ws]
-   [uxbox.main.workers :as uwrk]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]

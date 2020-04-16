@@ -17,14 +17,6 @@
   [message]
   (println "Unexpected message:" message))
 
-;; --- Helpers
-
-(defn worker?
-  "Check if the code is executed in webworker context."
-  []
-  (undefined? (.-document js/self)))
-
-(defn reply!
-  [sender message]
-  (let [message (assoc message :reply-to sender)]
-    (.postMessage js/self (t/encode message))))
+(defmethod handler :echo
+  [message]
+  message)

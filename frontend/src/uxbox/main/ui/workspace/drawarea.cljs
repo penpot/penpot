@@ -17,7 +17,6 @@
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.shapes :as shapes]
-   [uxbox.main.workers :as uwrk]
    [uxbox.util.math :as mth]
    [uxbox.util.dom :as dom]
    [uxbox.util.data :refer [seek]]
