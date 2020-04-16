@@ -39,11 +39,7 @@
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]
-   [uxbox.util.webapi :as wapi]
-   #_[vendor.randomcolor])
-  (:import goog.events.EventType
-           goog.events.KeyCodes
-           goog.ui.KeyboardShortcutHandler))
+   [uxbox.util.webapi :as wapi]))
 
 ;; TODO: temporal workaround
 (def clear-ruler nil)
