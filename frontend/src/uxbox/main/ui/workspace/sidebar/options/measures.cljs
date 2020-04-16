@@ -46,7 +46,8 @@
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-integer 0))]
+                          (d/parse-integer 0)
+                          (/ 2))] ; Convert back to radius before update
             (st/emit! (udw/update-circle-dimensions (:id shape) attr value))))
 
         on-proportion-lock-change
@@ -57,10 +58,9 @@
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-integer 0))
-                ; Convert back to absolute position before update
-                abs-value (+ value (attr parent))]
-            (st/emit! (udw/update-position (:id shape) {attr abs-value}))))
+                          (d/parse-integer 0)
+                          (+ (attr parent)))] ; Convert back to absolute position before update
+            (st/emit! (udw/update-position (:id shape) {attr value}))))
 
         on-rotation-change
         (fn [event]
@@ -127,14 +127,14 @@
           [:input.input-text {:type "number"
                               :min "0"
                               :on-change on-size-rx-change
-                              :value (str (-> (:rx shape)
+                              :value (str (-> (* 2 (:rx shape)) ; Show to user diameter and not radius
                                               (d/coalesce 0)
                                               (math/round)))}]]
          [:div.input-element.pixels
           [:input.input-text {:type "number"
                               :min "0"
                               :on-change on-size-ry-change
-                              :value (str (-> (:ry shape)
+                              :value (str (-> (* 2 (:ry shape))
                                               (d/coalesce 0)
                                               (math/round)))}]]])
 
