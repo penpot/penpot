@@ -19,7 +19,6 @@
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes.icon :as icon]
-   [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.dom :as dom]
    [uxbox.util.perf :as perf]
    [uxbox.common.uuid :as uuid]
