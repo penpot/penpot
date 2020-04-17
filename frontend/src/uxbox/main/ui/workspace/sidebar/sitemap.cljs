@@ -17,7 +17,6 @@
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.modal :as modal]
-   [uxbox.main.ui.workspace.sortable :refer [use-sortable]]
    [uxbox.util.data :refer [classnames enumerate]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]
