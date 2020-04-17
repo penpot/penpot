@@ -91,14 +91,16 @@
 ;; --- Page Item Wrapper
 
 (defn- make-page-ref
-  [page-id]
-  (l/derived #(get-in % [:pages page-id]) st/state))
+  [id]
+  #(-> (l/in [:workspace-pages id])
+       (l/derived st/state)))
 
 (mf/defc page-item-wrapper
   [{:keys [page-id index deletable? selected?] :as props}]
-  (let [page-ref (-> (mf/deps page-id)
-                     (mf/use-memo #(make-page-ref page-id)))
-        page (mf/deref page-ref)]
+  (let [page-iref (mf/use-memo
+                   (mf/deps page-id)
+                   (make-page-ref page-id))
+        page (mf/deref page-iref)]
     [:& page-item {:page page
                    :index index
                    :deletable? deletable?

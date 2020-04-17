@@ -7,8 +7,6 @@
 (ns uxbox.util.storage
   (:require [uxbox.util.transit :as t]))
 
-(enable-console-print!)
-
 (defn- persist
   [alias value]
   (let [key (name alias)

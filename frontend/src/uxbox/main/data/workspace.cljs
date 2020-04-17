@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.data.workspace
   (:require
@@ -31,6 +31,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.main.websockets :as ws]
+   [uxbox.main.worker :as uw]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]
@@ -63,8 +64,6 @@
 
 ;; --- Declarations
 
-(declare fetch-users)
-(declare fetch-images)
 (declare fetch-project)
 (declare handle-who)
 (declare handle-pointer-update)
@@ -72,6 +71,119 @@
 (declare handle-page-change)
 (declare shapes-changes-commited)
 (declare commit-changes)
+(declare fetch-bundle)
+(declare initialize-ws)
+(declare finalize-ws)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Workspace Initialization
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- Initialize Workspace
+
+(def default-layout
+  #{:sitemap
+    :sitemap-pages
+    :layers
+    :element-options
+    :rules})
+
+(def workspace-default
+  {:zoom 1
+   :flags #{}
+   :selected #{}
+   :drawing nil
+   :drawing-tool nil
+   :tooltip nil})
+
+(def initialize-layout
+  (ptk/reify ::initialize-layout
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-layout default-layout))))
+
+(defn initialized
+  [project-id file-id]
+  (ptk/reify ::initialized
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-file
+              (fn [file]
+                (if (= (:id file) file-id)
+                  (assoc file :initialized true)
+                  file))))))
+(defn initialize
+  [project-id file-id]
+  (us/verify ::us/uuid project-id)
+  (us/verify ::us/uuid file-id)
+
+  (letfn [(setup-index [{:keys [file pages] :as params}]
+            (let [msg {:cmd :selection/create-index
+                       :file-id (:id file)
+                       :pages pages}]
+              (->> (uw/ask! msg)
+                   (rx/map (constantly ::index-initialized)))))]
+
+    (ptk/reify ::initialize
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (rx/merge
+         (rx/of (fetch-bundle project-id file-id)
+                (initialize-ws file-id))
+
+         (->> stream
+              (rx/filter (ptk/type? ::bundle-fetched))
+              (rx/map deref)
+              (rx/mapcat setup-index)
+              (rx/first))
+
+         (->> stream
+              (rx/filter #(= ::index-initialized %))
+              (rx/map (constantly
+                       (initialized project-id file-id)))))))))
+
+
+(defn finalize
+  [project-id file-id]
+  (ptk/reify ::finalize
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :workspace-file :workspace-project))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (finalize-ws file-id)))))
+
+
+(declare initialize-page-persistence)
+
+(defn initialize-page
+  [page-id]
+  (ptk/reify ::initialize-page
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page  (get-in state [:workspace-pages page-id])
+            local (get-in state [:workspace-cache page-id] workspace-default)]
+        (-> state
+            (assoc ::page-id page-id   ; mainly used by events
+                   :workspace-local local
+                   :workspace-page (dissoc page :data))
+            (assoc-in [:workspace-data page-id] (:data page)))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (initialize-page-persistence page-id)))))
+
+(defn finalize-page
+  [page-id]
+  (us/verify ::us/uuid page-id)
+  (ptk/reify ::finalize-page
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [local (:workspace-local state)]
+        (-> state
+            (assoc-in [:workspace-cache page-id] local)
+            (update :workspace-data dissoc page-id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace WebSocket
@@ -260,117 +372,6 @@
     (update [_ state]
       (update state :workspace-local dissoc :undo-index :undo))))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Workspace Initialization
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- Initialize Workspace
-
-(declare initialize-alignment)
-
-(def default-layout #{:sitemap :sitemap-pages :layers :element-options :rules})
-
-(def workspace-default
-  {:zoom 1
-   :flags #{}
-   :selected #{}
-   :drawing nil
-   :drawing-tool nil
-   :tooltip nil})
-
-(declare initialize-layout)
-(declare initialize-page)
-(declare initialize-file)
-(declare fetch-file-with-users)
-(declare fetch-pages)
-(declare fetch-page)
-
-(def initialize-layout
-  (ptk/reify ::initialize-layout
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-layout default-layout))))
-
-(defn initialize
-  "Initialize the workspace state."
-  [project-id file-id page-id]
-  (us/verify ::us/uuid project-id)
-  (us/verify ::us/uuid file-id)
-  (us/verify ::us/uuid page-id)
-  (ptk/reify ::initialize
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [file (:workspace-file state)]
-        (if (not= (:id file) file-id)
-          (rx/merge
-           (rx/of (fetch-file-with-users file-id)
-                  (fetch-pages file-id)
-                  (fetch-images file-id)
-                  (fetch-project project-id))
-           (->> (rx/zip (rx/filter (ptk/type? ::pages-fetched) stream)
-                        (rx/filter (ptk/type? ::file-fetched) stream)
-                        (rx/filter (ptk/type? ::project-fetched) stream))
-                (rx/take 1)
-                (rx/do (fn [_]
-                         (uxbox.util.timers/schedule 500 #(reset! st/loader false))))
-                (rx/mapcat (fn [_]
-                             (rx/of (initialize-file file-id)
-                                    (initialize-page page-id))))))
-
-          (rx/merge
-           (rx/of (fetch-page page-id))
-           (->> stream
-                (rx/filter (ptk/type? ::pages-fetched))
-                (rx/take 1)
-                (rx/merge-map (fn [_]
-                                (rx/of (initialize-file file-id)
-                                       (initialize-page page-id)))))))))))
-
-(defn- initialize-file
-  [file-id]
-  (us/verify ::us/uuid file-id)
-  (ptk/reify ::initialize-file
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [file (get-in state [:files file-id])]
-        (assoc state :workspace-file file)))))
-
-(declare diff-and-commit-changes)
-(declare initialize-page-persistence)
-
-(defn initialize-page
-  [page-id]
-  (ptk/reify ::initialize-page
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page (get-in state [:pages page-id])
-            data (get-in state [:pages-data page-id])
-            local (get-in state [:workspace-cache page-id] workspace-default)]
-        (-> state
-            (assoc ::page-id page-id)   ; mainly used by events
-            (assoc :workspace-local local)
-            (assoc :workspace-page page)
-            (assoc-in [:workspace-data page-id] data))))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (rx/of (initialize-page-persistence page-id)))))
-
-(defn finalize
-  [project-id file-id page-id]
-  (us/verify ::us/uuid project-id)
-  (us/verify ::us/uuid file-id)
-  (us/verify ::us/uuid page-id)
-  (ptk/reify ::finalize
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [local (:workspace-local state)]
-        (-> state
-            (assoc-in [:workspace-cache page-id] local)
-            (update :workspace-data dissoc page-id))))))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Persistence
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -415,7 +416,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [session-id (:session-id state)
-            page (get-in state [:pages page-id])
+            page (get-in state [:workspace-pages page-id])
             changes (->> changes
                          (mapcat identity)
                          (map #(assoc % :session-id session-id))
@@ -472,7 +473,7 @@
     (watch [_ state stream]
       (let [page-id (::page-id state)
             curr (get-in state [:workspace-data page-id])
-            prev (get-in state [:pages-data page-id])
+            prev (get-in state [:workspace-pages page-id :data])
 
             changes (generate-changes prev curr)
             undo-changes (generate-changes curr prev)]
@@ -511,84 +512,47 @@
                    ::ordering
                    ::data]))
 
-;; --- Fetch Workspace Users
+;; --- Fetch Workspace Bundle
 
-(declare users-fetched)
-(declare file-fetched)
+(declare bundle-fetched)
 
-(defn fetch-file-with-users
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::fetch-file-with-users
+(defn- fetch-bundle
+  [project-id file-id]
+  (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :file-with-users {:id id})
-           (rx/merge-map (fn [result]
-                           (rx/of (file-fetched (dissoc result :users))
-                                  (users-fetched (:users result)))))
+      (->> (rx/zip (rp/query :file-with-users {:id file-id})
+                   (rp/query :project-by-id {:project-id project-id})
+                   (rp/query :pages {:file-id file-id}))
+           (rx/first)
+           (rx/map (fn [[file project pages]]
+                     (bundle-fetched file project pages)))
            (rx/catch (fn [{:keys [type] :as error}]
                        (when (= :not-found type)
                          (rx/of (rt/nav :not-found)))))))))
-(defn fetch-file
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::fetch-file
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query :file {:id id})
-           (rx/map file-fetched)))))
 
-(defn file-fetched
-  [{:keys [id] :as file}]
-  (us/verify ::file file)
-  (ptk/reify ::file-fetched
+(defn- bundle-fetched
+  [file project pages]
+  (ptk/reify ::bundle-fetched
+    IDeref
+    (-deref [_]
+      {:file file
+       :project project
+       :pages pages})
+
     ptk/UpdateEvent
     (update [_ state]
-      (update state :files assoc id file))))
-
-(defn users-fetched
-  [users]
-  (ptk/reify ::users-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (reduce (fn [state user]
-                (update-in state [:workspace-users :by-id (:id user)] merge user))
-              state
-              users))))
-
-;; --- Fetch Project data
-(declare project-fetched)
-
-(defn fetch-project
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::fetch-project
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query :project-by-id {:project-id id})
-           (rx/map project-fetched)))))
-
-(defn project-fetched
-  [project]
-  (us/verify ::project project)
-  (ptk/reify ::project-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-project project))))
+      (let [assoc-page #(assoc-in %1 [:workspace-pages (:id %2)] %2)]
+        (as-> state $$
+          (assoc $$
+                 :workspace-file file
+                 :workspace-pages {}
+                 :workspace-project project)
+          (reduce assoc-page $$ pages))))))
 
 ;; --- Fetch Pages
 
-(declare pages-fetched)
-(declare unpack-page)
-
-(defn fetch-pages
-  [file-id]
-  (us/verify ::us/uuid file-id)
-  (ptk/reify ::fetch-pages
-    ptk/WatchEvent
-    (watch [_ state s]
-      (->> (rp/query :pages {:file-id file-id})
-           (rx/map pages-fetched)))))
+(declare page-fetched)
 
 (defn fetch-page
   [page-id]
@@ -597,18 +561,18 @@
     ptk/WatchEvent
     (watch [_ state s]
       (->> (rp/query :page {:id page-id})
-           (rx/map #(pages-fetched [%]))))))
+           (rx/map page-fetched)))))
 
-(defn pages-fetched
-  [pages]
-  (us/verify (s/every ::page) pages)
-  (ptk/reify ::pages-fetched
+(defn page-fetched
+  [{:keys [id] :as page}]
+  (us/verify ::page page)
+  (ptk/reify ::page-fetched
     IDeref
-    (-deref [_] pages)
+    (-deref [_] page)
 
     ptk/UpdateEvent
     (update [_ state]
-      (reduce unpack-page state pages))))
+      (assoc-in state [:workspace-pages id] page))))
 
 ;; --- Page Crud
 
@@ -618,9 +582,9 @@
   (ptk/reify ::create-empty-page
     ptk/WatchEvent
     (watch [this state stream]
-      (let [file-id (get-in state [:workspace-page :file-id])
+      (let [file-id (get-in state [:workspace-file :id])
             name (str "Page " (gensym "p"))
-            ordering (count (get-in state [:files file-id :pages]))
+            ordering (count (get-in state [:workspace-file :pages]))
             params {:name name
                     :file-id file-id
                     :ordering ordering
@@ -639,11 +603,7 @@
     (update [_ state]
       (-> state
           (update-in [:workspace-file :pages] (fnil conj []) id)
-          (unpack-page page)))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (rx/of (fetch-file file-id)))))
+          (assoc-in [:workspace-pages id] page)))))
 
 (s/def ::rename-page
   (s/keys :req-un [::id ::name]))
@@ -656,7 +616,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (get-in state [:workspac-page :id])
-            state (assoc-in state [:pages id :name] name)]
+            state (assoc-in state [:workspac-pages id :name] name)]
         (cond-> state
           (= pid id) (assoc-in [:workspace-page :name] name))))
 
@@ -684,9 +644,8 @@
          (->> (rp/mutation :delete-page  {:id id})
               (rx/flat-map (fn [_]
                              (if (= id (:id page))
-                               (rx/of (go-to-file (:file-id page)))
+                               (rx/of go-to-file)
                                (rx/empty))))))))))
-
 
 ;; --- Fetch Workspace Images
 
@@ -772,25 +731,14 @@
     (update [_ state]
       (update state :workspace-images assoc (:id item) item))))
 
-
 ;; --- Helpers
-
-(defn unpack-page
-  [state {:keys [id data] :as page}]
-  (-> state
-      (update :pages assoc id (dissoc page :data))
-      (update :pages-data assoc id data)))
 
 (defn purge-page
   "Remove page and all related stuff from the state."
   [state id]
-  (if-let [file-id (get-in state [:pages id :file-id])]
-    (-> state
-        (update-in [:files file-id :pages] #(filterv (partial not= id) %))
-        (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
-        (update :pages dissoc id)
-        (update :pages-data dissoc id))
-    state))
+  (-> state
+      (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
+      (update :workspace-pages dissoc id)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace State Manipulation
@@ -800,8 +748,6 @@
 
 (defn toggle-layout-flag
   [& flags]
-  ;; Verify all?
-  #_(us/verify keyword? flag)
   (ptk/reify ::toggle-layout-flag
     ptk/UpdateEvent
     (update [_ state]
@@ -903,10 +849,11 @@
                              {:start pos :stop pos}))
                          nil)
                 (rx/map data->selrect)
+                (rx/filter #(or (> (:width %) 10)
+                                (> (:height %) 10)))
                 (rx/map update-selrect)
                 (rx/take-until stoper))
-           (rx/of select-shapes-by-current-selrect
-                  (update-selrect nil))))))))
+           (rx/of select-shapes-by-current-selrect)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1148,55 +1095,19 @@
 
 ;; --- Select Shapes (By selrect)
 
-(defn- impl-try-match-shape
-  [selrect acc {:keys [type id] :as shape}]
-  (cond
-    (geom/contained-in? shape selrect)
-    (conj acc id)
-
-    (geom/overlaps? shape selrect)
-    (conj acc id)
-
-    :else
-    acc))
-
-(defn impl-match-by-selrect
-  [state selrect]
-  (let [zoom (gpt/point (get-in state [:workspace-local :zoom]))
-        selrect' (geom/apply-zoom selrect zoom)
-        page-id (::page-id state)
-        data (get-in state [:workspace-data page-id])
-        match (fn [acc {:keys [type id] :as shape}]
-                (cond
-                  (helpers/is-shape-grouped (:id shape) (:objects data))
-                  acc
-
-                  (geom/contained-in? shape selrect')
-                  (conj acc id)
-
-                  (geom/overlaps? shape selrect')
-                  (conj acc id)
-
-                  :else
-                  acc))
-
-        xf (comp (remove :hidden)
-                 (remove :blocked)
-                 (remove #(= :frame (:type %)))
-                 (remove #(= uuid/zero (:id %)))
-                 (map geom/shape->rect-shape)
-                 (map geom/resolve-rotation)
-                 (map geom/shape->rect-shape))]
-
-    (transduce xf match #{} (vals (:objects data)))))
-
 (def select-shapes-by-current-selrect
   (ptk/reify ::select-shapes-by-current-selrect
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [{:keys [selrect id]} (:workspace-local state)]
-        (->> (impl-match-by-selrect state selrect)
-             (assoc-in state [:workspace-local :selected]))))))
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (get-in state [:workspace-page :id])
+            selrect (get-in state [:workspace-local :selrect])]
+        (rx/merge
+         (rx/of (update-selrect nil))
+         (when selrect
+           (->> (uw/ask! {:cmd :selection/query
+                          :page-id page-id
+                          :rect selrect})
+                (rx/map select-shapes))))))))
 
 (defn select-inside-group
   [group-id position]
@@ -1753,6 +1664,17 @@
 
         (reduce materialize-shape state shapes)))))
 
+(defn- update-selection-index
+  [page-id]
+  (ptk/reify ::update-selection-index
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (let [objects (get-in state [:workspace-pages page-id :data :objects])
+            lookup  #(get objects %)]
+        (uw/ask! {:cmd :selection/update-index
+                  :page-id page-id
+                  :objects objects})))))
+
 (defn commit-changes
   ([changes undo-changes] (commit-changes changes undo-changes {}))
   ([changes undo-changes {:keys [save-undo?
@@ -1770,7 +1692,7 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [page-id (::page-id state)
-             state (update-in state [:pages-data page-id] cp/process-changes changes)]
+             state (update-in state [:workspace-pages page-id :data] cp/process-changes changes)]
          (cond-> state
            commit-local? (update-in [:workspace-data page-id] cp/process-changes changes))))
 
@@ -1779,6 +1701,8 @@
        (let [page (:workspace-page state)
              uidx (get-in state [:workspace-local :undo-index] ::not-found)]
          (rx/concat
+          (rx/of (update-selection-index (:id page)))
+
           (when (and save-undo? (not= uidx ::not-found))
             (rx/of (reset-undo uidx)))
 
@@ -1786,7 +1710,6 @@
             (let [entry {:undo-changes undo-changes
                          :redo-changes changes}]
               (rx/of (append-undo entry))))))))))
-
 
 (s/def ::shapes-changes-commited
   (s/keys :req-un [::page-id ::revn ::cp/changes]))
@@ -1799,11 +1722,11 @@
     (update [_ state]
       (let [session-id (:session-id state)
             state (-> state
-                      (assoc-in [:pages page-id :revn] revn))
+                      (assoc-in [:workspace-pages page-id :revn] revn))
             changes (filter #(not= session-id (:session-id %)) changes)]
         (-> state
             (update-in [:workspace-data page-id] cp/process-changes changes)
-            (update-in [:pages-data page-id] cp/process-changes changes))))))
+            (update-in [:workspace-pages page-id :data] cp/process-changes changes))))))
 
 ;; --- Start shape "edition mode"
 
@@ -2042,14 +1965,16 @@
             query-params {:page-id page-id}]
         (rx/of (rt/nav :workspace path-params query-params))))))
 
-(defn go-to-file
-  [file-id]
-  (us/verify ::us/uuid file-id)
+(def go-to-file
   (ptk/reify ::go-to-file
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [project-id (get-in state [:workspace-project :id])
-            page-ids (get-in state [:files file-id :pages])
+      (let [file (:workspace-file state)
+
+            file-id (:id file)
+            project-id (:project-id file)
+            page-ids (:pages file)
+
             path-params {:project-id project-id :file-id file-id}
             query-params {:page-id (first page-ids)}]
         (rx/of (rt/nav :workspace path-params query-params))))))

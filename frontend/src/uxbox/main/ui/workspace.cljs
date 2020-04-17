@@ -2,8 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace
   (:require
@@ -48,10 +50,8 @@
      (when (:colorpalette layout)
        [:& colorpalette {:left-sidebar? left-sidebar?}])
 
-     [:& messages]
-     [:& context-menu]
-
      [:section.workspace-content {:class classes}
+
       [:& history-dialog]
 
       ;; Rules
@@ -71,36 +71,47 @@
      (when right-sidebar?
        [:& right-sidebar {:page page :layout layout}])]))
 
+(mf/defc workspace-page
+  [{:keys [project file layout page-id] :as props}]
+
+  (mf/use-effect
+   (mf/deps page-id)
+   (fn []
+     (st/emit! (dw/initialize-page page-id))
+     #(st/emit! (dw/finalize-page page-id))))
+
+  (when-let [page (mf/deref refs/workspace-page)]
+    [:& workspace-content {:page page
+                           :project project
+                           :file file
+                           :layout layout}]))
+
 (mf/defc workspace
   [{:keys [project-id file-id page-id] :as props}]
-
+  (mf/use-effect #(st/emit! dw/initialize-layout))
   (mf/use-effect
-   (mf/deps file-id page-id)
+   (mf/deps project-id file-id)
    (fn []
-     (st/emit! (dw/initialize project-id file-id page-id))
-     #(st/emit! (dw/finalize project-id file-id page-id))))
-
-  (mf/use-effect
-   (mf/deps file-id)
-   (fn []
-     (st/emit! (dw/initialize-ws file-id))
-     #(st/emit! (dw/finalize-ws file-id))))
+     (st/emit! (dw/initialize project-id file-id))
+     #(st/emit! (dw/finalize project-id file-id))))
 
   (hooks/use-shortcuts dw/shortcuts)
 
-  (mf/use-effect #(st/emit! dw/initialize-layout))
-
   (let [file (mf/deref refs/workspace-file)
-        page (mf/deref refs/workspace-page)
         project (mf/deref refs/workspace-project)
         layout (mf/deref refs/workspace-layout)]
+
     [:*
-     [:& header {:page page
-                 :file file
+     [:& header {:file file
                  :project project
                  :layout layout}]
 
-     (when page
-       [:& workspace-content {:file file
-                              :page page
-                              :layout layout}])]))
+     [:& messages]
+     [:& context-menu]
+
+     (when (and (and file project)
+                (:initialized file))
+       [:& workspace-page {:file file
+                           :project project
+                           :layout layout
+                           :page-id page-id}])]))
