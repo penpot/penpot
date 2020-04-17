@@ -144,10 +144,11 @@
 ;; --- Header Component
 
 (mf/defc header
-  [{:keys [page file layout project] :as props}]
+  [{:keys [file layout project] :as props}]
   (let [locale (i18n/use-locale)
         go-to-dashboard #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))
         zoom (mf/deref refs/selected-zoom)
+        page (mf/deref refs/workspace-page)
         locale (i18n/use-locale)
         router (mf/deref refs/router)
         view-url (rt/resolve router :viewer {:page-id (:id page)} {:index 0})]
