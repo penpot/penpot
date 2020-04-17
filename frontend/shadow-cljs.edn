@@ -9,7 +9,7 @@
    :output-dir "resources/public/js/"
    :asset-path "/js"
    :devtools {:browser-inject :main}
-
+   :build-options {:manifest-name "manifest.json"}
    :modules
    {:shared {:entries []}
     :main {:entries [uxbox.main]
