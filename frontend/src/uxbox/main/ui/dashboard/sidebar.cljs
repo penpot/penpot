@@ -145,12 +145,6 @@
               (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {}))
               (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {:search-term value})))))
 
-        on-search-blur
-        (fn [event]
-          (let [target (dom/get-target event)]
-            (dom/clean-value! target)))
-            ;; (debounced-emit! (rt/nav :dashboard-team {:team-id team-id}))))
-
         on-search-change
         (fn [event]
           (let [value (-> (dom/get-target event)
@@ -175,8 +169,8 @@
          :default-value search-term-not-nil
          :autoComplete "off"
          :on-focus on-search-focus
-         :on-blur on-search-blur
-         :on-change on-search-change}]
+         :on-change on-search-change
+         :ref #(when % (set! (.-value %) search-term-not-nil))}]
        [:div.clear-search
         {:on-click on-clear-click}
         i/close]]

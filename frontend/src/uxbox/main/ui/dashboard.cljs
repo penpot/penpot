@@ -71,7 +71,8 @@
       [:& profile-section {:profile profile}]
       [:& sidebar {:team-id team-id
                    :project-id project-id
-                   :section page}]
+                   :section page
+                   :search-term search-term}]
       [:div.dashboard-content
        (case page
          :dashboard-search
