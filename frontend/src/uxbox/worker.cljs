@@ -17,6 +17,7 @@
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.worker.impl :as impl]
+   [uxbox.worker.selection]
    [uxbox.util.transit :as t]
    [uxbox.util.worker :as w]))
 
