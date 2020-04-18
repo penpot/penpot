@@ -13,16 +13,17 @@
    :modules
    {:shared {:entries []}
     :main {:entries [uxbox.main]
-           :depends-on #{:shared}}
+           :depends-on #{:shared}
+           :init-fn uxbox.main/init}
     :worker {:entries [uxbox.worker]
              :web-worker true
              :depends-on #{:shared}}}
    :compiler-options
    {:output-feature-set :es8
+    ;; :optimizations :simple
     :output-wrapper false}
    :release
-   {:output-dir "target/dist/js"
-    :compiler-options
+   {:compiler-options
     {:fn-invoke-direct true
      :source-map true
      :anon-fn-naming-policy :off

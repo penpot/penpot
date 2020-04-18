@@ -10,6 +10,7 @@
 (ns uxbox.main.worker
   (:require
    [cljs.spec.alpha :as s]
+   [uxbox.config :as cfg]
    [uxbox.common.spec :as us]
    [uxbox.util.worker :as uw]))
 
