@@ -7,9 +7,11 @@ npm ci
 
 export NODE_ENV=production;
 
-npx gulp dist:clean || exit 1;
-npx gulp dist || exit 1;
+# Clean the output directory
+npx gulp clean || exit 1;
 
 shadow-cljs release main
-
+npx gulp build || exit 1;
+npx gulp dist:clean || exit 1;
+npx gulp dist:copy || exit 1;
 npx gulp dist:gzip || exit 1;

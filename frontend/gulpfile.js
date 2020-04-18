@@ -93,7 +93,7 @@ function readLocales() {
   return JSON.stringify(result);
 }
 
-function readConfig() {
+function readConfig(data) {
   const publicURL = process.env.UXBOX_PUBLIC_URL;
   const demoWarn = process.env.UXBOX_DEMO_WARNING;
   const deployDate = process.env.UXBOX_DEPLOY_DATE;
@@ -115,6 +115,8 @@ function readConfig() {
     cfg.deployCommit = deployCommit;
   }
 
+  Object.assign(cfg, data);
+
   return JSON.stringify(cfg);
 }
 
@@ -128,7 +130,7 @@ function templatePipeline(options) {
     const themes = ["default"];
 
     const locales = readLocales();
-    const config = readConfig();
+    const config = readConfig({themes});
 
     const tmpl = mustache({
       ts: ts,
@@ -174,22 +176,21 @@ gulp.task("templates", gulp.series("template:main"));
  * Development
  ***********************************************/
 
-gulp.task("dev:clean", function(next) {
+gulp.task("clean", function(next) {
   rimraf(paths.output, next);
 });
 
-gulp.task("dev:copy:images", function() {
+gulp.task("copy:assets:images", function() {
   return gulp.src(paths.resources + "images/**/*")
     .pipe(gulp.dest(paths.output + "images/"));
 });
 
-gulp.task("dev:copy:fonts", function() {
+gulp.task("copy:assets:fonts", function() {
   return gulp.src(paths.resources + "fonts/**/*")
     .pipe(gulp.dest(paths.output + "fonts/"));
 });
 
-gulp.task("dev:copy", gulp.parallel("dev:copy:images",
-                                    "dev:copy:fonts"));
+gulp.task("copy:assets", gulp.parallel("copy:assets:images", "copy:assets:fonts"));
 
 gulp.task("dev:dirs", function(next) {
   mkdirp("./resources/public/css/").then(() => next())
@@ -198,18 +199,18 @@ gulp.task("dev:dirs", function(next) {
 gulp.task("watch:main", function() {
   gulp.watch(paths.scss, gulp.series("scss"));
   gulp.watch(paths.resources + "images/**/*",
-             gulp.series("svg:sprite",
-                         "dev:copy:images"));
+             gulp.series("svg:sprite", "copy:assets:images"));
 
   gulp.watch([paths.resources + "templates/*.mustache",
               paths.resources + "locales.json"],
              gulp.series("templates"));
 });
 
+gulp.task("build", gulp.parallel("scss", "svg:sprite", "templates", "copy:assets"));
+
 gulp.task("watch", gulp.series(
   "dev:dirs",
-  gulp.parallel("scss", "templates", "svg:sprite"),
-  "dev:copy",
+  "build",
   "watch:main"
 ));
 
@@ -231,10 +232,3 @@ gulp.task("dist:gzip", function() {
     .pipe(gzip({gzipOptions: {level: 9}}))
     .pipe(gulp.dest(paths.dist));
 });
-
-gulp.task("dist", gulp.series(
-  "dev:clean",
-  "dist:clean",
-  gulp.parallel("scss", "templates", "svg:sprite", "dev:copy"),
-  "dist:copy"
-));

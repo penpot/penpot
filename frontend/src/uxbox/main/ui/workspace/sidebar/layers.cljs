@@ -11,9 +11,11 @@
 (ns uxbox.main.ui.workspace.sidebar.layers
   (:require
    [rumext.alpha :as mf]
+   [okulary.core :as l]
    [uxbox.common.data :as d]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.workspace :as dw]
+   [uxbox.main.data.helpers :as dh]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.hooks :as hooks]
@@ -74,33 +76,27 @@
        {:on-double-click on-click}
        (:name shape "")])))
 
-(defn- layer-item-memo-equals?
-  [nprops oprops]
-  (let [n-item (unchecked-get nprops "item")
-        o-item (unchecked-get oprops "item")
-        n-selc (unchecked-get nprops "selected")
-        o-selc (unchecked-get oprops "selected")
-        n-indx (unchecked-get nprops "index")
-        o-indx (unchecked-get oprops "index")]
-    ;; (js/console.log "FOR" (:name n-item)
-    ;;                 "NEW SEL" n-selc
-    ;;                 "OLD SEL" o-selc)6
-    (and (identical? n-item o-item)
-         (identical? n-indx o-indx)
-         (identical? n-selc o-selc))))
-
-(declare layer-item)
+(defn- make-collapsed-iref
+  [id]
+  #(-> (l/in [:expanded id])
+       (l/derived refs/workspace-local)))
 
 (mf/defc layer-item
-  ;; {::mf/wrap [#(mf/memo' % layer-item-memo-equals?)]}
   [{:keys [index item selected objects] :as props}]
   (let [selected? (contains? selected (:id item))
-        collapsed? (mf/use-state false)
+
+        expanded-iref (mf/use-memo
+                        (mf/deps (:id item))
+                        (make-collapsed-iref (:id item)))
+
+        expanded? (mf/deref expanded-iref)
 
         toggle-collapse
         (fn [event]
           (dom/stop-propagation event)
-          (swap! collapsed? not))
+          (if (and expanded? (kbd/shift? event))
+            (st/emit! dw/collapse-all)
+            (st/emit! (dw/toggle-collapse (:id item)))))
 
         toggle-blocking
         (fn [event]
@@ -163,7 +159,6 @@
                               :index index
                               :name (:name item)})
         ]
-    ;; (prn "layer-item" (:name item) index)
     [:li {:on-context-menu on-context-menu
           :ref dref
           :data-index index
@@ -190,36 +185,91 @@
       (when (:shapes item)
         [:span.toggle-content
          {:on-click toggle-collapse
-          :class (when-not @collapsed? "inverse")}
+          :class (when expanded? "inverse")}
          i/arrow-slide])]
-     (when (and (:shapes item) (not @collapsed?))
+     (when (and (:shapes item) expanded?)
        [:ul.element-children
         (for [[index id] (reverse (d/enumerate (:shapes item)))]
           (when-let [item (get objects id)]
-            [:& uxbox.main.ui.workspace.sidebar.layers/layer-item
+            [:& layer-item
              {:item item
               :selected selected
               :index index
               :objects objects
               :key (:id item)}]))])]))
 
+(defn frame-wrapper-memo-equals?
+  [oprops nprops]
+  (let [new-sel (unchecked-get nprops "selected")
+        old-sel (unchecked-get oprops "selected")
+        new-itm (unchecked-get nprops "item")
+        old-itm (unchecked-get oprops "item")
+        new-idx (unchecked-get nprops "index")
+        old-idx (unchecked-get oprops "index")
+        new-obs (unchecked-get nprops "objects")
+        old-obs (unchecked-get oprops "objects")]
+    (and (= new-itm old-itm)
+         (identical? new-idx old-idx)
+         (let [childs (dh/get-children (:id new-itm) new-obs)
+               childs' (conj childs (:id new-itm))]
+           (and (or (= new-sel old-sel)
+                    (not (or (boolean (some new-sel childs'))
+                             (boolean (some old-sel childs')))))
+                (loop [ids (rest childs)
+                       id (first childs)]
+                  (if (nil? id)
+                    true
+                    (if (= (get new-obs id)
+                           (get old-obs id))
+                      (recur (rest ids)
+                             (first ids))
+                      false))))))))
+
+;; This components is a piece for sharding equality check between top
+;; level frames and try to avoid rerender frames that are does not
+;; affected by the selected set.
+
+(mf/defc frame-wrapper
+  {::mf/wrap-props false
+   ::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)]}
+  [props]
+  [:> layer-item props])
+
+(def ^:private layers-objects
+  (letfn [(strip-data [obj]
+            (select-keys obj [:id :name :blocked :hidden :shapes :type]))
+          (selector [{:keys [objects] :as data}]
+            (persistent!
+             (reduce-kv (fn [res id obj]
+                          (assoc! res id (strip-data obj)))
+                        (transient {})
+                        objects)))]
+  (l/derived selector refs/workspace-data =)))
+
 (mf/defc layers-tree
   {::mf/wrap [mf/memo]}
-  [props]
+  []
   (let [selected (mf/deref refs/selected-shapes)
-        data (mf/deref refs/workspace-data)
-        objects (:objects data)
+        objects (mf/deref layers-objects)
         root (get objects uuid/zero)]
-
     ;; [:& perf/profiler {:label "layers-tree" :enabled false}
     [:ul.element-list
      (for [[index id] (reverse (d/enumerate (:shapes root)))]
-       [:& layer-item
-        {:item (get objects id)
-         :selected selected
-         :index index
-         :objects objects
-         :key id}])]))
+       (let [obj (get objects id)]
+         (if (= :frame (:type obj))
+           [:& frame-wrapper
+            {:item (get objects id)
+             :selected selected
+             :index index
+             :objects objects
+             :key id}]
+           [:& layer-item
+            {:item (get objects id)
+             :selected selected
+             :index index
+             :objects objects
+             :key id}])))]))
+
 
 ;; --- Layers Toolbox
 
