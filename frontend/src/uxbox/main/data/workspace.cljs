@@ -1851,62 +1851,10 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (::page-id state)]
-        (update-in state [:workspace-data page-id :objects id :segments index] gpt/add delta)))))
+        (update-in state [:workspace-data page-id :objects id :segments index]
+                   gpt/add delta)))))
 
-
-;; --- Shape Visibility
-
-(declare impl-update-shape-hidden)
-
-(defn hide-shape
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::hide-shape
-    IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (impl-update-shape-hidden state id true))))
-
-(defn show-shape
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::show-shape
-    IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (impl-update-shape-hidden state id false))))
-
-(defn hide-frame
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::hide-shape
-    IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [hide #(impl-update-shape-hidden %1 %2 true)
-            page-id (::page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            frame   (get objects id)]
-        (reduce hide state (cons id (:shapes frame)))))))
-
-(defn show-frame
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::hide-shape
-    IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [show #(impl-update-shape-hidden %1 %2 false)
-            page-id (::page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            frame   (get objects id)]
-        (reduce show state (cons id (:shapes frame)))))))
-
-(defn- impl-update-shape-hidden
-  [state id hidden?]
-  (let [page-id (::page-id state)]
-    (assoc-in state [:workspace-data page-id :objects id :hidden] hidden?)))
-
+;; --- Shape attrs (Layers Sidebar)
 
 (defn toggle-collapse
   [id]
@@ -1921,38 +1869,21 @@
     (update [_ state]
       (update state :workspace-local dissoc :expanded))))
 
-;; --- Shape Blocking
-
-(declare impl-update-shape-blocked)
-
-(defn block-shape
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::hide-shape
+(defn recursive-assign
+  "A helper for assign recursively a shape attr."
+  [id attr value]
+  (ptk/reify ::recursive-assign
     ptk/UpdateEvent
     (update [_ state]
-      (impl-update-shape-blocked state id true))))
-
-(defn unblock-shape
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::hide-shape
-    ptk/UpdateEvent
-    (update [_ state]
-      (impl-update-shape-blocked state id false))))
-
-(defn- impl-update-shape-blocked
-  [state id blocked?]
-  (let [page-id (::page-id state)
-        obj (get-in state [:workspace-data page-id :objects id])
-        obj (assoc obj :blocked blocked?)
-        state (assoc-in state [:workspace-data page-id :objects id] obj)]
-    (if (= :frame (:type obj))
-      (update-in state [:workspace-data page-id :objects]
-                 (fn [objects]
-                   (reduce #(update %1 %2 assoc :blocked blocked?) objects (:shapes obj))))
-      state)))
-
+      (let [page-id (get-in state [:workspace-page :id])
+            objects (get-in state [:workspace-data page-id :objects])
+            childs (helpers/get-children id objects)]
+        (update-in state [:workspace-data page-id :objects]
+                   (fn [objects]
+                     (reduce (fn [objects id]
+                               (assoc-in objects [id attr] value))
+                             objects
+                             (conj childs id))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
