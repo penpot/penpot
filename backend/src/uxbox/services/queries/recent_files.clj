@@ -32,7 +32,7 @@
       and (fp_r.is_admin = true or
            fp_r.is_owner = true or
            fp_r.can_edit = true)
-   window pages_w as (partition by f.id order by pg.created_at
+   window pages_w as (partition by f.id order by pg.ordering
                       range between unbounded preceding
                                 and unbounded following)
     order by f.modified_at desc

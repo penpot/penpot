@@ -93,7 +93,7 @@
       and (fp_r.is_admin = true or
            fp_r.is_owner = true or
            fp_r.can_edit = true)
-   window pages_w as (partition by f.id order by pg.created_at
+   window pages_w as (partition by f.id order by pg.ordering
                       range between unbounded preceding
                                 and unbounded following)
     order by f.modified_at desc")
@@ -182,7 +182,7 @@
     where f.id = $1
       and f.deleted_at is null
       and pg.deleted_at is null
-   window pages_w as (partition by f.id order by pg.created_at
+   window pages_w as (partition by f.id order by pg.ordering
                       range between unbounded preceding
                                 and unbounded following)")
 
@@ -229,22 +229,6 @@
     (check-edition-permissions! conn profile-id id)
     (retrieve-file conn id)))
 
-;; --- Query: Project Files
-
-;; (declare retrieve-project-files)
-
-;; (s/def ::project-files
-;;   (s/keys :req-un [::profile-id]
-;;           :opt-un [::project-id]))
-
-;; (sq/defquery ::project-files
-;;   [{:keys [project-id] :as params}]
-;;   (retrieve-project-files db/pool params))
-
-;; (defn retrieve-project-files
-;;   [conn {:keys [profile-id project-id]}]
-;;   (-> (db/query conn [sql:project-files profile-id project-id])
-;;       (p/then' (partial mapv decode-row))))
 
 ;; --- Helpers
 

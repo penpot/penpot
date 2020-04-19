@@ -162,7 +162,6 @@
         ]
     [:li {:on-context-menu on-context-menu
           :ref dref
-          :data-index index
           :class (dom/classnames
                   :dnd-over-top (= (:over dprops) :top)
                   :dnd-over-bot (= (:over dprops) :bot)

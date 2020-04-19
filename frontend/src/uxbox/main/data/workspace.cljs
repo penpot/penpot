@@ -1326,6 +1326,28 @@
                                []
                                {:commit-local? true}))))))
 
+;; --- Change Page Order (D&D Ordering)
+
+(defn relocate-page
+  [id index]
+  (ptk/reify ::relocate-pages
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pages (get-in state [:workspace-file :pages])
+            [before after] (split-at index pages)
+            p? (partial = id)
+            pages' (d/concat []
+                             (remove p? before)
+                             [id]
+                             (remove p? after))]
+        (assoc-in state [:workspace-file :pages] pages')))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [file (:workspace-file state)]
+        (->> (rp/mutation! :reorder-pages {:page-ids (:pages file)
+                                           :file-id (:id file)})
+             (rx/ignore))))))
 
 ;; --- Shape / Selection Alignment and Distribution
 
