@@ -25,9 +25,17 @@
   [{:keys [shape frame] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
-        on-mouse-down #(common/on-mouse-down % shape)]
+        on-mouse-down   (mf/use-callback
+                         (mf/deps shape)
+                         #(common/on-mouse-down % shape))
+
+        on-context-menu (mf/use-callback
+                         (mf/deps shape)
+                         #(common/on-context-menu % shape))]
+
     [:g.shape {:class (when selected? "selected")
-               :on-mouse-down on-mouse-down}
+               :on-mouse-down on-mouse-down
+               :on-context-menu on-context-menu}
      [:& image-shape {:shape (geom/transform-shape frame shape)}]]))
 
 ;; --- Image Shape
