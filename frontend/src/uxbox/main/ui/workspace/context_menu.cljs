@@ -43,7 +43,7 @@
 
 (mf/defc shape-context-menu
   [{:keys [mdata] :as props}]
-  (let [shape (:shape mdata)
+  (let [{:keys [id] :as shape} (:shape mdata)
         selected (:selected mdata)
 
         do-duplicate #(st/emit! dw/duplicate-selected)
@@ -54,10 +54,10 @@
         do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
         do-send-backward #(st/emit! (dw/vertical-order-selected :down))
         do-send-to-back #(st/emit! (dw/vertical-order-selected :bottom))
-        do-show-shape #(st/emit! (dw/show-shape (:id shape)))
-        do-hide-shape #(st/emit! (dw/hide-shape (:id shape)))
-        do-lock-shape #(st/emit! (dw/block-shape (:id shape)))
-        do-unlock-shape #(st/emit! (dw/unblock-shape (:id shape)))
+        do-show-shape #(st/emit! (dw/recursive-assign id :hidden false))
+        do-hide-shape #(st/emit! (dw/recursive-assign id :hidden true))
+        do-lock-shape #(st/emit! (dw/recursive-assign id :blocked true))
+        do-unlock-shape #(st/emit! (dw/recursive-assign id :blocked false))
         do-create-group #(st/emit! dw/create-group)
         do-remove-group #(st/emit! dw/remove-group)]
     [:*

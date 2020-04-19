@@ -83,11 +83,12 @@
 
 (mf/defc layer-item
   [{:keys [index item selected objects] :as props}]
-  (let [selected? (contains? selected (:id item))
+  (let [id        (:id item)
+        selected? (contains? selected id)
 
         expanded-iref (mf/use-memo
-                        (mf/deps (:id item))
-                        (make-collapsed-iref (:id item)))
+                        (mf/deps id)
+                        (make-collapsed-iref id))
 
         expanded? (mf/deref expanded-iref)
 
@@ -96,21 +97,21 @@
           (dom/stop-propagation event)
           (if (and expanded? (kbd/shift? event))
             (st/emit! dw/collapse-all)
-            (st/emit! (dw/toggle-collapse (:id item)))))
+            (st/emit! (dw/toggle-collapse id))))
 
         toggle-blocking
         (fn [event]
           (dom/stop-propagation event)
           (if (:blocked item)
-            (st/emit! (dw/unblock-shape (:id item)))
-            (st/emit! (dw/block-shape (:id item)))))
+            (st/emit! (dw/recursive-assign id :blocked false))
+            (st/emit! (dw/recursive-assign id :blocked true))))
 
         toggle-visibility
         (fn [event]
           (dom/stop-propagation event)
           (if (:hidden item)
-            (st/emit! (dw/show-shape (:id item)))
-            (st/emit! (dw/hide-shape (:id item)))))
+            (st/emit! (dw/recursive-assign id :hidden false))
+            (st/emit! (dw/recursive-assign id :hidden true))))
 
         select-shape
         (fn [event]
